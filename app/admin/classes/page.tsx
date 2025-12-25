@@ -173,7 +173,7 @@ export default function ClassManagementPage() {
   };
 
   // --- 드래그 앤 드롭 (시간 이동) ---
-  const handleEventDrop = async (info) => {
+  const handleEventDrop = async (info: any) => {
     if (!confirm(`${info.event.title} 수업 시간을 이동하시겠습니까?`)) {
       info.revert();
       return;
