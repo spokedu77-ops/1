@@ -43,8 +43,8 @@ export default function SalesDashboard() {
         .eq('month', month);
 
       let total = 0;
-      const centers = {};
-      const teachers = {};
+      const centers: any = {};
+      const teachers: any = {};
 
       // 수업 매출 집계
       sessions?.forEach(s => {
