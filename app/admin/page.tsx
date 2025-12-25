@@ -177,7 +177,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
     fetchDashboardData();
   };
 
-  const handleDeleteGoal = async (id) => {
+  const handleDeleteGoal = async (id: any) => {
     if(!confirm('목표를 삭제하시겠습니까?')) return;
     await supabase.from('goals').delete().eq('id', id);
     fetchDashboardData();
