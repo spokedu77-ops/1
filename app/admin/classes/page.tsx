@@ -36,8 +36,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function ClassManagementPage() {
   const [selectedIds, setSelectedIds] = useState([]);
-  const [allEvents, setAllEvents] = useState([]);
-  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [filterTeacher, setFilterTeacher] = useState('ALL');
