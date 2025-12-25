@@ -26,8 +26,8 @@ const TAGS = ['General', 'Finance', 'Meeting', 'CS', 'Ops', 'Class'];
 export default function SpokeduDashboard() {
   // --- Data State ---
   const [todayClasses, setTodayClasses] = useState<any[]>([]);
-  const [tasks, setTasks] = useState([]);
-  const [goals, setGoals] = useState([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+const [goals, setGoals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // --- Modal State ---
