@@ -63,8 +63,8 @@ export default function SalesDashboard() {
         const amount = Number(a.amount);
         total += amount;
         
-      // const { data: userData }: any = await (supabase.from('users').select('name').eq('id', a.teacher_id).single() as any);
-const userData = { name: '강사' };
+     // const { data: userData }: any = await (supabase.from('users').select('name').eq('id', a.teacher_id).single() as any);
+        const userData = { name: '강사' };
 
       setStats({
         totalSales: total,
