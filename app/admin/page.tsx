@@ -136,7 +136,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
   const addChecklistItem = () => {
     if (!newCheckItem.trim()) return;
     const newItem = { id: Date.now(), text: newCheckItem, checked: false };
-    setGoalForm(prev => ({ ...prev, checklist: [...prev.checklist, newItem] }));
+    setGoalForm((prev: any) => ({ ...prev, checklist: [...prev.checklist, newItem] }));
     setNewCheckItem('');
   };
 
@@ -145,13 +145,13 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
     const updatedList = goalForm.checklist.map(item => 
       item.id === itemId ? { ...item, checked: !item.checked } : item
     );
-    setGoalForm(prev => ({ ...prev, checklist: updatedList }));
+    setGoalForm((prev: any) => ({ ...prev, checklist: updatedList }));
   };
 
   // 체크리스트 삭제
   const deleteChecklistItem = (itemId) => {
     const updatedList = goalForm.checklist.filter(item => item.id !== itemId);
-    setGoalForm(prev => ({ ...prev, checklist: updatedList }));
+    setGoalForm((prev: any) => ({ ...prev, checklist: updatedList }));
   };
 
   const handleSaveGoal = async () => {
