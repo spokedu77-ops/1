@@ -142,7 +142,7 @@ export default function SalesDashboard() {
 
         <div className="space-y-10">
           {stats.teacherPerformance.length > 0 ? (
-            stats.teacherPerformance.map(([name, total], index) => (
+            stats.teacherPerformance.map(([name, total]: any, index: number) => (
               <div key={name} className="group">
                 <div className="flex justify-between items-end mb-4 px-2">
                   <div className="flex items-center gap-4">
