@@ -64,8 +64,7 @@ export default function SalesDashboard() {
         total += amount;
         
         // 강사별 성과에 보너스 합산
-        const { data: userData } = await supabase.from('users').select('name').eq('id', a.teacher_id).single();
-        // 실제 운영 시에는 user 정보를 join해서 가져오는 것이 효율적입니다.
+      const { data: userData }: any = await (supabase.from('users').select('name').eq('id', a.teacher_id).single() as any);        // 실제 운영 시에는 user 정보를 join해서 가져오는 것이 효율적입니다.
       });
 
       setStats({
