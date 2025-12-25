@@ -82,14 +82,13 @@ export default function SpokeduDashboard() {
   useEffect(() => { fetchDashboardData(); }, []);
 
   // --- Handlers (Task) ---
-  const openTaskModal = (task = null, initialStatus = 'To Do', initialAssignee = '최지훈') => {
-    if (task) {
+const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssignee = '최지훈') => {    if (task) {
         setEditingTask(task);
         setTaskForm({ 
-            title: task.title, 
-            assignee: task.assignee || '최지훈', 
-            status: task.status || 'To Do', 
-            tag: task.tag || 'General', 
+            title: (task as any).title, 
+            assignee: (task as any).assignee || '최지훈', 
+            status: (task as any).status || 'To Do', 
+            tag: (task as any).tag || 'General', 
             description: task.description || '' 
         });
     } else {
