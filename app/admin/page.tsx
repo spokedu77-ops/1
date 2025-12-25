@@ -415,7 +415,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
                         <div className="flex justify-between items-center">
                             <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Checklist</label>
                             <span className="text-xs font-bold text-blue-600">
-                                {goalForm.checklist.filter(i => i.checked).length}/{goalForm.checklist.length} 완료
+                                {goalForm.checklist.filter((i: any) => i.checked).length}/{goalForm.checklist.length} 완료
                             </span>
                         </div>
                         
