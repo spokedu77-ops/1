@@ -30,8 +30,8 @@ const EditIcon = () => (
   </svg>
 );
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+const supabaseUrl: string = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey: string = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function ClassManagementPage() {
