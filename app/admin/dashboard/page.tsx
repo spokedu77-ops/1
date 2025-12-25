@@ -10,11 +10,11 @@ const supabase = createClient(
 
 export default function SalesDashboard() {
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalSales: 0,
-    centerSales: {},
-    teacherPerformance: [],
-  });
+  const [stats, setStats] = useState<any>({
+  totalSales: 0,
+  centerSales: [],
+  teacherPerformance: [],
+});
 
   const now = new Date();
   const currentYear = now.getFullYear();
