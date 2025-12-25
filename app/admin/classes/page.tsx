@@ -331,7 +331,7 @@ export default function ClassManagementPage() {
 
     } catch (e) {
       console.error("연기 오류:", e);
-      alert('오류 발생: ' + e.message);
+      alert('오류 발생: ' + (e as any).message);
     } finally {
       setLoading(false);
     }
