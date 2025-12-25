@@ -27,7 +27,7 @@ export default function SpokeduDashboard() {
   // --- Data State ---
   const [todayClasses, setTodayClasses] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
-const [goals, setGoals] = useState<any[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // --- Modal State ---
