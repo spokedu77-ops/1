@@ -159,7 +159,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
     
     // 진행률 계산 (체크된 수 / 전체 수 * 100)
     const total = goalForm.checklist.length;
-    const checkedCount = goalForm.checklist.filter(i => i.checked).length;
+    const checkedCount = goalForm.checklist.filter((i: any) => i.checked).length;
     const calculatedProgress = total === 0 ? 0 : Math.round((checkedCount / total) * 100);
 
     const saveData = {
