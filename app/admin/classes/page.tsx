@@ -338,7 +338,7 @@ export default function ClassManagementPage() {
   };
 
   // --- 상태 업데이트 (완료/취소/삭제 등) ---
-  const updateStatus = async (newStatus) => {
+  const updateStatus = async (newStatus: any) => {
     if (!selectedEvent) return;
     if (newStatus === 'deleted') {
       if (!confirm('정말 영구 삭제하시겠습니까? 복구할 수 없습니다.')) return;
