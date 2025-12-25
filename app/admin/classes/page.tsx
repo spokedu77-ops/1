@@ -61,7 +61,7 @@ export default function ClassManagementPage() {
 
     if (data) {
       // 강사 목록 추출
-      const uniqueTeachers = [];
+      const uniqueTeachers: { id: string; name: string }[] = [];
       const map = new Map();
       data.forEach(item => {
         if(item.users?.id && !map.has(item.users.id)){
