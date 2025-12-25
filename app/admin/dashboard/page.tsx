@@ -47,7 +47,7 @@ export default function SalesDashboard() {
       const teachers: any = {};
 
       // 수업 매출 집계
-      sessions?.forEach(s => {
+      sessions?.forEach((s: any) => {
         const fee = Number(s.fee) || Number(s.price) || Number(s.teacher_fee) || 0;
         total += fee;
 
@@ -58,18 +58,19 @@ export default function SalesDashboard() {
         teachers[tName] = (teachers[tName] || 0) + fee;
       });
 
-      // 기타 정산 집계 (매출에 포함 또는 별도 표기 가능, 여기서는 합산)
-      adjs?.forEach(a => {
-        const amount = Number(a.amount);
+      // 기타 정산 집계
+      adjs?.forEach((a: any) => {
+        const amount = Number(a.amount) || 0;
         total += amount;
         
-     // const { data: userData }: any = await (supabase.from('users').select('name').eq('id', a.teacher_id).single() as any);
-        const userData = { name: '강사' };
+        const tName = a.instructor_name || '기타강사'; // 강사명을 직접 사용하거나 고정
+        teachers[tName] = (teachers[tName] || 0) + amount;
+      });
 
       setStats({
         totalSales: total,
-        centerSales: centers,
-        teacherPerformance: Object.entries(teachers).sort((a, b) => b[1] - a[1]),
+        centerSales: Object.entries(centers),
+        teacherPerformance: Object.entries(teachers).sort((a: any, b: any) => (b[1] as number) - (a[1] as number)),
       });
     } catch (error) {
       console.error('Stats load error:', error);
@@ -77,7 +78,7 @@ export default function SalesDashboard() {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => { fetchStats(); }, [year, month]);
 
   return (
