@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
+// 1. 환경 변수 뒤에 느낌표(!) 추가 (에러 방지)
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 export default function UserAccordionPage() {
-  const [users, setUsers] = useState([]);
+  // 2. useState에 any[] 추가 (데이터 형식 에러 방지)
+  const [users, setUsers] = useState<any[]>([]);
   const [openCategory, setOpenCategory] = useState('관리자');
 
   useEffect(() => {
@@ -26,9 +28,11 @@ export default function UserAccordionPage() {
     { title: '학부모(학생)', roleKey: 'parent', icon: '🏠', color: 'text-gray-600', bg: 'bg-gray-100' }
   ];
 
-  const renderAccordion = (cat) => {
+  // 3. 매개변수 cat에 : any 추가
+  const renderAccordion = (cat: any) => {
     const isOpen = openCategory === cat.title;
-    const filtered = users.filter(u => {
+    // 4. u에 : any 추가
+    const filtered = users.filter((u: any) => {
       if (cat.roleKey === 'admin') return u.role === 'admin' || u.role === 'master';
       if (cat.roleKey === 'teacher') return u.role === 'teacher';
       return u.role === 'parent' || u.role === 'student' || !u.role;
@@ -65,7 +69,8 @@ export default function UserAccordionPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.length > 0 ? filtered.map(user => (
+                  {/* 5. user에 : any 추가 */}
+                  {filtered.length > 0 ? filtered.map((user: any) => (
                     <tr key={user.id} className="border-b border-gray-50 last:border-none hover:bg-gray-50/50 transition-colors">
                       <td className="p-4 font-black text-gray-900 text-sm italic">{user.name}</td>
                       <td className="p-4 font-bold text-blue-600 text-xs italic">
