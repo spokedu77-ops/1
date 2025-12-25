@@ -434,18 +434,18 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
 
                         {/* List items */}
                         <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
-                            {goalForm.checklist.map(item => (
+                            {goalForm.checklist.map((item: any) => (
                                 <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
                                     <input 
                                         type="checkbox" 
                                         checked={item.checked} 
-                                        onChange={() => toggleChecklistItem(item.id)}
+                                        onChange={() => toggleChecklistItem((item as any).id)}
                                         className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                     />
                                     <span className={`flex-1 text-sm font-bold ${item.checked ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
                                         {item.text}
                                     </span>
-                                    <button onClick={() => deleteChecklistItem(item.id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => deleteChecklistItem((item as any).id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <TrashIcon />
                                     </button>
                                 </div>
