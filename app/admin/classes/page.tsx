@@ -152,7 +152,7 @@ export default function ClassManagementPage() {
   };
 
   // --- 이벤트 클릭 시 모달 오픈 ---
-  const handleEventClick = (info) => {
+  const handleEventClick = (info: any) => {
     const sEvent = {
       id: info.event.id,
       title: info.event.title,
