@@ -42,7 +42,7 @@ export default function ClassManagementPage() {
   
   const [filterTeacher, setFilterTeacher] = useState('ALL');
   const [filterType, setFilterType] = useState('ALL');
-  const [teacherList, setTeacherList] = useState([]);
+  const [teacherList, setTeacherList] = useState<any[]>([]);
 
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
