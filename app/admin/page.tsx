@@ -244,7 +244,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
           <div className="flex-1 space-y-4">
             {goals.map((goal) => {
                 const total = goal.checklist ? goal.checklist.length : 0;
-                const checked = goal.checklist ? goal.checklist.filter(i => i.checked).length : 0;
+                const checked = goal.checklist ? goal.checklist.filter((i: any) => i.checked).length : 0;
                 
                 return (
                   <div 
