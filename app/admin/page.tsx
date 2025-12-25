@@ -119,7 +119,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
   };
 
   // --- Handlers (Goal & Checklist) ---
-  const openGoalModal = (goal = null) => {
+  const openGoalModal = (goal: any = null) => {
     setNewCheckItem('');
     if (goal) {
       setEditingGoal(goal);
@@ -127,7 +127,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
       setGoalForm({ text: goal.text, checklist: goal.checklist || [] });
     } else {
       setEditingGoal(null);
-      setGoalForm({ text: '', checklist: [] });
+      setGoalForm({ text: (goal as any).text, checklist: (goal as any).checklist || [] });
     }
     setIsGoalModalOpen(true);
   };
