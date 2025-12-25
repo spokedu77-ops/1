@@ -150,7 +150,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
 
   // 체크리스트 삭제
   const deleteChecklistItem = (itemId: any) => {
-    const updatedList = goalForm.checklist.filter(item => item.id !== itemId);
+    const updatedList = goalForm.checklist.filter((item: any) => item.id !== itemId);
     setGoalForm((prev: any) => ({ ...prev, checklist: updatedList }));
   };
 
