@@ -39,7 +39,7 @@ export default function SpokeduDashboard() {
   const [taskForm, setTaskForm] = useState({ title: '', assignee: '최지훈', status: 'To Do', tag: 'General', description: '' });
   
   const [editingGoal, setEditingGoal] = useState<any>(null);
-  const [goalForm, setGoalForm] = useState({ text: '', checklist: [] }); // checklist array
+  const [goalForm, setGoalForm] = useState<any>({ text: '', checklist: [] });
   const [newCheckItem, setNewCheckItem] = useState('');
 
   // --- Data Fetching ---
