@@ -141,7 +141,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
   };
 
   // 체크리스트 토글 & 진행률 자동 계산
-  const toggleChecklistItem = (itemId) => {
+  const toggleChecklistItem = (itemId: any) => {
     const updatedList = goalForm.checklist.map(item => 
       item.id === itemId ? { ...item, checked: !item.checked } : item
     );
@@ -149,7 +149,7 @@ const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssigne
   };
 
   // 체크리스트 삭제
-  const deleteChecklistItem = (itemId) => {
+  const deleteChecklistItem = (itemId: any) => {
     const updatedList = goalForm.checklist.filter(item => item.id !== itemId);
     setGoalForm((prev: any) => ({ ...prev, checklist: updatedList }));
   };
