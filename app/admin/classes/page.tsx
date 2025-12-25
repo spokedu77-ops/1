@@ -60,7 +60,7 @@ export default function ClassManagementPage() {
     const { data } = await supabase.from('sessions').select('*, users(id, name)');
 
     if (data) {
-      // 강사 목록 추출
+      // spokedu fix
       const uniqueTeachers: { id: string; name: string }[] = [];
       const map = new Map();
       data.forEach(item => {
