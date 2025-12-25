@@ -126,7 +126,7 @@ export default function SalesDashboard() {
             {Object.entries(stats.centerSales).map(([key, val]) => (
               <div key={key} className="flex justify-between items-center font-black">
                 <span className="text-[11px] text-gray-400 uppercase">{key}</span>
-                <span className="text-sm text-gray-800">{((val / stats.totalSales) * 100 || 0).toFixed(1)}%</span>
+                <span className="text-sm text-gray-800">{(((val as number) / stats.totalSales) * 100 || 0).toFixed(1)}%</span>
               </div>
             ))}
           </div>
