@@ -189,7 +189,7 @@ export default function ClassManagementPage() {
 
       if (error) throw error;
     } catch (e) {
-      alert('이동 실패: ' + e.message);
+      alert('이동 실패: ' + (e as any).message);
       info.revert();
     }
   };
