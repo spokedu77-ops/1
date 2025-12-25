@@ -35,7 +35,7 @@ const supabaseKey: string = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function ClassManagementPage() {
-  const [selectedIds, setSelectedIds] = useState([]);
+  onst [selectedIds, setSelectedIds] = useState<any[]>([]);
   const [allEvents, setAllEvents] = useState<any[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
