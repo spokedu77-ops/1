@@ -35,10 +35,10 @@ const [goals, setGoals] = useState<any[]>([]);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   
   // --- Form State ---
-  const [editingTask, setEditingTask] = useState(null);
+  const [editingTask, setEditingTask] = useState<any>(null);
   const [taskForm, setTaskForm] = useState({ title: '', assignee: '최지훈', status: 'To Do', tag: 'General', description: '' });
   
-  const [editingGoal, setEditingGoal] = useState(null);
+  const [editingGoal, setEditingGoal] = useState<any>(null);
   const [goalForm, setGoalForm] = useState({ text: '', checklist: [] }); // checklist array
   const [newCheckItem, setNewCheckItem] = useState('');
 
