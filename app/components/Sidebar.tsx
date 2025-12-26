@@ -16,6 +16,7 @@ import {
   CreditCard
 } from 'lucide-react';
 
+// 1. 환경 변수 뒤에 느낌표(!) 추가
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -29,7 +30,8 @@ export default function Sidebar() {
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserEmail(user.email);
+      // 2. 에러 지점 해결: user.email이 없을 경우를 대비해 확실히 처리
+      if (user) setUserEmail(user.email ?? null);
     };
     getUser();
   }, []);
@@ -44,7 +46,6 @@ export default function Sidebar() {
     }
   };
 
-  // 관리자 메뉴 (한글화 및 마스터 권한 체크)
   const adminMenuItems = [
     {
       group: "운영 관리",
@@ -99,7 +100,6 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col bg-[#1e293b] text-white shrink-0 md:flex">
-      {/* 로고 영역 (기존 스타일 유지) */}
       <div className="p-6 border-b border-slate-700">
         <h1 className="text-xl font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
         <p className="text-[10px] text-slate-400 mt-1 uppercase font-medium tracking-tight">
@@ -107,7 +107,6 @@ export default function Sidebar() {
         </p>
       </div>
       
-      {/* 메뉴 리스트 (글씨 크기 조절 및 간격 유지) */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-7 no-scrollbar">
         {menuItems.map((group, idx) => (
           <div key={idx}>
@@ -115,7 +114,7 @@ export default function Sidebar() {
               {group.group}
             </p>
             <div className="space-y-0.5">
-              {group.items.map((item) => {
+              {group.items.map((item: any) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
@@ -129,8 +128,7 @@ export default function Sidebar() {
                     }`}
                   >
                     <Icon size={17} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
-                    {/* 글씨 크기를 text-sm에서 13px 정도로 살짝 축소 */}
-                    <span className="text-[10px] font-semibold">{item.name}</span>
+                    <span className="text-[13px] font-semibold">{item.name}</span>
                   </Link>
                 );
               })}
@@ -139,7 +137,6 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* 하단 정보 섹션 (기존 스타일 유지) */}
       <div className="border-t border-slate-700 bg-slate-900/50 p-4">
         <div className="mb-4 rounded-xl border border-slate-700/50 bg-slate-800/50 px-3 py-3">
           <p className="text-[10px] font-medium leading-relaxed text-slate-400">
