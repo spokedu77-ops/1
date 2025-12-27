@@ -4,11 +4,11 @@ import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
-// 1. 환경 변수 뒤에 느낌표(!) 추가 (에러 방지)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// 1. 환경 변수를 더 안전하게 선언 (as string 사용)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function LoginPage() {
   const [id, setId] = useState('');
@@ -44,20 +44,20 @@ export default function LoginPage() {
       alert('로그인 실패: 아이디나 비밀번호를 다시 확인해 주세요.');
     } else {
       // 로그인 성공 시 역할(Role) 체크 및 분기 처리
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: userData } = await supabase.auth.getUser();
 
-      if (user) {
+      if (userData?.user) {
         // profiles 테이블에서 이 사람의 role 확인
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', user.id)
+          .eq('id', userData.user.id)
           .single();
 
         if (profile?.role === 'admin') {
-          router.push('/admin'); // 관리자는 관리자 페이지로
+          router.push('/admin'); 
         } else {
-          router.push('/teacher/my-classes'); // 선생님은 내 수업 일정으로
+          router.push('/teacher/my-classes'); 
         }
         
         router.refresh();
@@ -69,7 +69,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
       <form onSubmit={handleLogin} className="w-full max-w-md space-y-8 bg-white p-12 rounded-[50px] shadow-2xl border border-gray-100">
         <div className="text-center">
-          <h1 className="text-4xl font-black italic text-blue-900 tracking-tighter uppercase leading-none">Spokedu</h1>
+          <h1 className="text-4xl font-black italic text-blue-900 tracking-tighter uppercase leading-none">SPOKEDU</h1>
           <div className="h-1 w-10 bg-blue-600 mx-auto mt-4 rounded-full"></div>
           <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mt-4 font-mono">Operations Management</p>
         </div>
