@@ -37,9 +37,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     checkAdmin();
   }, [router]);
 
-  // 권한 확인 전에는 아무것도 렌더링하지 않음
   if (!isAdmin) return null;
 
-  // 관리자라면 내용물만 보여줌 (사이드바는 RootLayout에서 그려줌)
-  return <>{children}</>;
+  // 핵심 수정: main 태그로 감싸고 상단 여백(pt-16)을 추가함
+  return (
+    <main className="flex-1 pt-16 md:pt-0">
+      {children}
+    </main>
+  );
 }
