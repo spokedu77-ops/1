@@ -37,11 +37,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     checkAdmin();
   }, [router]);
 
-  if (!isAdmin) return null;
+  // 권한 체크 중일 때도 배경색은 흰색으로 유지되도록 함
+  if (!isAdmin) return <div className="min-h-screen bg-white"></div>;
 
-  // 핵심 수정: main 태그로 감싸고 상단 여백(pt-16)을 추가함
   return (
-    <main className="flex-1 pt-16 md:pt-0">
+    // bg-white와 min-h-screen을 추가하여 다크 모드 침범을 막음
+    <main className="flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900">
       {children}
     </main>
   );

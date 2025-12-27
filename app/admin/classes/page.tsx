@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
@@ -7,7 +6,6 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-
 // --- 아이콘 컴포넌트들 ---
 const ClockIcon = () => (
   <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -29,11 +27,9 @@ const EditIcon = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
   </svg>
 );
-
 const supabaseUrl: string = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey: string = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
-
 export default function ClassManagementPage() {
   const [selectedIds, setSelectedIds] = useState<any[]>([]);
   const [allEvents, setAllEvents] = useState<any[]>([]);
@@ -43,7 +39,6 @@ export default function ClassManagementPage() {
   const [filterTeacher, setFilterTeacher] = useState('ALL');
   const [filterType, setFilterType] = useState('ALL');
   const [teacherList, setTeacherList] = useState<any[]>([]);
-
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [studentMemo, setStudentMemo] = useState('');
@@ -52,13 +47,11 @@ export default function ClassManagementPage() {
   const [editTime, setEditTime] = useState(''); 
   const [editTitle, setEditTitle] = useState('');
   const [editTeacherId, setEditTeacherId] = useState('');
-
   // --- 데이터 불러오기 ---
   const fetchSessions = async () => {
     setLoading(true);
     // group_id 등 필요한 컬럼을 확실하게 조회합니다.
     const { data } = await supabase.from('sessions').select('*, users(id, name)');
-
     if (data) {
       // spokedu fix
       const uniqueTeachers: { id: string; name: string }[] = [];
@@ -70,13 +63,11 @@ export default function ClassManagementPage() {
         }
       });
       setTeacherList(uniqueTeachers);
-
       // 캘린더 이벤트 매핑
       const calendarEvents = data.map((session) => {
         let bgColor = '#3B82F6'; 
         let borderColor = '#2563EB';
         let textColor = '#FFFFFF'; 
-
         if (session.session_type === 'regular_center') {
           bgColor = '#8B5CF6'; 
           borderColor = '#7C3AED';
@@ -84,7 +75,6 @@ export default function ClassManagementPage() {
           bgColor = '#10B981'; 
           borderColor = '#059669';
         }
-
         // 상태별 스타일 적용
         if (session.status === 'finished') {
           bgColor = bgColor + 'CC'; // 투명도 추가
@@ -98,7 +88,6 @@ export default function ClassManagementPage() {
           borderColor = '#F59E0B';
           textColor = '#92400E';
         }
-
         return {
           id: session.id,
           title: session.title,
@@ -123,11 +112,9 @@ export default function ClassManagementPage() {
     }
     setLoading(false);
   };
-
   useEffect(() => { 
     fetchSessions(); 
   }, []);
-
   // --- 필터링 로직 ---
   useEffect(() => {
     let result = allEvents;
@@ -135,12 +122,10 @@ export default function ClassManagementPage() {
     if (filterType !== 'ALL') result = result.filter(e => e.extendedProps.type === filterType);
     setFilteredEvents(result);
   }, [filterTeacher, filterType, allEvents]);
-
   // --- 일괄 삭제 로직 ---
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) return;
     if (!confirm(`${selectedIds.length}개 수업을 일괄 삭제할까요?`)) return;
-
     const { error } = await supabase.from('sessions').delete().in('id', selectedIds);
     if (!error) {
       alert('삭제 완료');
@@ -150,7 +135,6 @@ export default function ClassManagementPage() {
       alert('삭제 실패: ' + error.message);
     }
   };
-
   // --- 이벤트 클릭 시 모달 오픈 ---
   const handleEventClick = (info: any) => {
     const sEvent = {
@@ -171,7 +155,6 @@ export default function ClassManagementPage() {
     
     setIsModalOpen(true);
   };
-
   // --- 드래그 앤 드롭 (시간 이동) ---
   const handleEventDrop = async (info: any) => {
     if (!confirm(`${info.event.title} 수업 시간을 이동하시겠습니까?`)) {
@@ -181,21 +164,17 @@ export default function ClassManagementPage() {
     try {
       const duration = info.oldEvent.end.getTime() - info.oldEvent.start.getTime();
       const newEnd = new Date(info.event.start.getTime() + duration);
-
       const { error } = await supabase.from('sessions').update({
         start_at: info.event.start.toISOString(),
         end_at: newEnd.toISOString()
       }).eq('id', info.event.id);
-
       if (error) throw error;
     } catch (e) {
       alert('이동 실패: ' + (e as any).message);
       info.revert();
     }
   };
-
   // --- 데이터 업데이트 함수들 ---
-
   const saveStudentMemo = async () => {
     if (!selectedEvent) return;
     let query = supabase.from('sessions').update({ students_text: studentMemo });
@@ -216,7 +195,6 @@ export default function ClassManagementPage() {
     else alert('명단이 저장되었습니다.');
     fetchSessions();
   };
-
   const updateTitle = async () => {
     if (!selectedEvent || !editTitle) return;
     const { error } = await supabase.from('sessions')
@@ -230,13 +208,11 @@ export default function ClassManagementPage() {
       fetchSessions();
     }
   };
-
   const updateTeacher = async () => {
     if (!selectedEvent || !editTeacherId) return;
     const { error } = await supabase.from('sessions')
       .update({ created_by: editTeacherId }) 
       .eq('id', selectedEvent.id);
-
     if (error) alert('강사 변경 실패');
     else {
       alert('담당 강사가 변경되었습니다.');
@@ -244,7 +220,6 @@ export default function ClassManagementPage() {
       fetchSessions();
     }
   };
-
   const updateSessionTime = async () => {
     if (!selectedEvent || !editTime) return;
     const [hours, minutes] = editTime.split(':').map(Number);
@@ -263,7 +238,6 @@ export default function ClassManagementPage() {
       fetchSessions();
     }
   };
-
   // --- ★ 핵심 기능: 1주일 연쇄 연기 로직 ---
   const handlePostponeOneWeek = async () => {
     if (!selectedEvent) return;
@@ -271,13 +245,10 @@ export default function ClassManagementPage() {
     const currentId = selectedEvent.id;
     const currentStart = new Date(selectedEvent.start);
     const groupId = selectedEvent.groupId;
-
     // 안내 메시지
     if (!confirm(`이 수업을 1주일 연기하시겠습니까?${groupId ? '\n(같은 그룹의 이후 수업들도 자동으로 1주일씩 밀립니다)' : ''}`)) return;
-
     try {
       setLoading(true);
-
       // 1. 단건 수업인 경우
       if (!groupId) {
         const newStart = new Date(currentStart.getTime() + (7 * 24 * 60 * 60 * 1000));
@@ -299,9 +270,7 @@ export default function ClassManagementPage() {
           .select('id, start_at, end_at')
           .eq('group_id', groupId)
           .gte('start_at', selectedEvent.start.toISOString());
-
         if (fetchError) throw fetchError;
-
         // 하나씩 업데이트
         for (const session of targetSessions) {
           const sStart = new Date(session.start_at);
@@ -309,7 +278,6 @@ export default function ClassManagementPage() {
           
           const nextStart = new Date(sStart.getTime() + (7 * 24 * 60 * 60 * 1000));
           const nextEnd = new Date(sEnd.getTime() + (7 * 24 * 60 * 60 * 1000));
-
           const { error: updateError } = await supabase
             .from('sessions')
             .update({ 
@@ -317,18 +285,15 @@ export default function ClassManagementPage() {
               end_at: nextEnd.toISOString()
             })
             .eq('id', session.id);
-
           if (updateError) throw updateError;
         }
         
         // 현재 선택한 수업은 명시적으로 'postponed' 상태로 변경해줄 수도 있음 (옵션)
         // await supabase.from('sessions').update({ status: 'postponed' }).eq('id', currentId);
       }
-
       alert('수업 일정이 1주일 연기되었습니다.');
       setIsModalOpen(false);
       fetchSessions(); 
-
     } catch (e) {
       console.error("연기 오류:", e);
       alert('오류 발생: ' + (e as any).message);
@@ -336,7 +301,6 @@ export default function ClassManagementPage() {
       setLoading(false);
     }
   };
-
   // --- 상태 업데이트 (완료/취소/삭제 등) ---
   const updateStatus = async (newStatus: any) => {
     if (!selectedEvent) return;
@@ -349,7 +313,6 @@ export default function ClassManagementPage() {
     setIsModalOpen(false);
     fetchSessions();
   };
-
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       {/* 캘린더 커스텀 스타일 */}
@@ -364,7 +327,6 @@ export default function ClassManagementPage() {
           word-break: break-all !important;
         }
       `}</style>
-
       {/* 헤더 및 필터 영역 */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
@@ -384,7 +346,6 @@ export default function ClassManagementPage() {
           <Link href="/class/create" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center">+ 수업 개설</Link>
         </div>
       </div>
-
       {/* 캘린더 영역 */}
       <div className="bg-white p-4 md:p-6 rounded-2xl shadow-xl border border-gray-100">
         {loading && <div className="text-center py-10 font-bold text-gray-400 animate-pulse">데이터를 불러오는 중입니다...</div>}
@@ -423,7 +384,6 @@ export default function ClassManagementPage() {
           )}
         />
       </div>
-
       {/* 하단 일괄 삭제 관리 영역 */}
       <div className="mt-10 space-y-6">
         <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
@@ -441,7 +401,6 @@ export default function ClassManagementPage() {
             </button>
           )}
         </div>
-
         <div className="grid grid-cols-1 gap-3">
          {filteredEvents.map((event) => (
             <div 
@@ -496,7 +455,6 @@ export default function ClassManagementPage() {
           ))}
         </div>
       </div>
-
       {/* --- 모달 (수정/관리) --- */}
       {isModalOpen && selectedEvent && (
         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
@@ -529,7 +487,6 @@ export default function ClassManagementPage() {
                 ✕
               </button>
             </div>
-
             {/* 2. 모달 바디 */}
             <div className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
               
@@ -553,7 +510,6 @@ export default function ClassManagementPage() {
                     </button>
                   </div>
                 </div>
-
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center gap-1">
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
                     <ClockIcon /> 시간 변경
@@ -571,7 +527,6 @@ export default function ClassManagementPage() {
                   </div>
                 </div>
               </div>
-
               {/* 학생 명단 메모 */}
               <div>
                 <label className="flex items-center justify-between text-sm font-bold text-gray-700 mb-2">
@@ -594,7 +549,6 @@ export default function ClassManagementPage() {
                   </button>
                 </div>
               </div>
-
               {/* ★ 핵심 UI: 버튼 배치 최적화 ★ */}
               <div className="pt-4 border-t border-gray-100 mt-4 space-y-3">
                 
@@ -614,7 +568,6 @@ export default function ClassManagementPage() {
                     📅 1주 연기
                   </button>
                 </div>
-
                 {/* 상태 초기화 (완료/취소/연기 상태일 때만 노출하여 실수 방지) */}
                 {selectedEvent.status !== 'opened' && (
                   <button 
@@ -624,7 +577,6 @@ export default function ClassManagementPage() {
                     ↺ 상태 초기화 (수업 예정으로 변경)
                   </button>
                 )}
-
                 {/* 하단 위험 구역 (취소 / 삭제) - 작고 덜 눈에 띄게 배치 */}
                 <div className="flex justify-between items-center pt-2 px-1">
                    <button 
@@ -642,10 +594,8 @@ export default function ClassManagementPage() {
                      <span className="group-hover:underline">영구 삭제</span>
                    </button>
                 </div>
-
               </div>
               {/* --- 버튼 UI 끝 --- */}
-
             </div>
           </div>
         </div>
@@ -653,3 +603,4 @@ export default function ClassManagementPage() {
     </div>
   );
 }
+
