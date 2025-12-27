@@ -4,24 +4,26 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// 1. 환경 변수 뒤에 느낌표(!) 추가
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function CreateClassPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [teachers, setTeachers] = useState([]);
+  // 2. useState에 any[] 추가
+  const [teachers, setTeachers] = useState<any[]>([]);
   
   const [form, setForm] = useState({
     title: '',
     type: 'regular_private', 
     teacherId: '',
     startDate: new Date().toISOString().split('T')[0],
-    startTime: '10:00', // 시작 시간 디폴트 오전(10시)으로 설정
-    durationMinutes: '60', // 수업 시간 디폴트 60분
+    startTime: '10:00',
+    durationMinutes: '60',
     durationWeeks: 4, 
-    price: 30000 // 수업 단가 디폴트 30,000원
+    price: 30000 
   });
 
   useEffect(() => {
@@ -32,16 +34,16 @@ export default function CreateClassPage() {
     fetchTeachers();
   }, []);
 
-  const handleChange = (field, value) => {
+  // 3. 매개변수에 타입/any 추가
+  const handleChange = (field: string, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  // 숫자에 콤마를 찍어주는 함수
-  const formatNumber = (num) => {
+  const formatNumber = (num: number | string) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.teacherId) return alert('수업명과 강사를 확인해주세요!');
     
@@ -66,7 +68,7 @@ export default function CreateClassPage() {
           status: 'opened',
           group_id: commonGroupId,
           sequence_number: i + 1,
-          price: parseInt(form.price) || 0,
+          price: parseInt(form.price as any) || 0,
           created_by: form.teacherId,
         });
       }
@@ -76,7 +78,7 @@ export default function CreateClassPage() {
 
       alert('수업이 성공적으로 등록되었습니다!');
       router.push('/admin/classes');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       alert('등록 중 에러가 발생했습니다.');
     } finally {
@@ -86,13 +88,13 @@ export default function CreateClassPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center py-12 px-4">
+      {/* 4. JSX 스타일 태그 에러 방지는 그대로 유지 */}
       <style jsx global>{`
         button, select, input, .cursor-pointer { cursor: pointer !important; }
         input:focus, select:focus { outline: none; border-color: #3b82f6 !important; ring: 2px solid #3b82f6; }
       `}</style>
 
       <div className="max-w-2xl w-full bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100 flex flex-col">
-        
         <div className="px-10 py-8 border-b border-gray-50 flex justify-between items-center bg-white sticky top-0 z-20">
           <div>
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">✨ 수업 커리큘럼 등록</h1>
@@ -108,7 +110,6 @@ export default function CreateClassPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-10 space-y-8">
-          
           <div className="grid grid-cols-2 gap-4">
             {[
               { id: 'regular_private', label: '과외 수업', icon: '🏠' },
@@ -132,7 +133,7 @@ export default function CreateClassPage() {
             <input
               type="text"
               placeholder="수업 명칭을 입력하세요"
-              className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-lg font-bold placeholder:text-gray-300 shadow-inner"
+              className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-lg font-bold placeholder:text-gray-300 shadow-inner text-black"
               value={form.title}
               onChange={(e) => handleChange('title', e.target.value)}
             />
@@ -146,7 +147,8 @@ export default function CreateClassPage() {
                   onChange={(e) => handleChange('teacherId', e.target.value)}
                 >
                   <option value="">강사를 선택하세요</option>
-                  {teachers.map(t => <option key={t.id} value={t.id}>{t.name} T</option>)}
+                  {/* 5. t: any 추가 */}
+                  {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.name} T</option>)}
                 </select>
               </div>
               <div className="bg-gray-50 rounded-2xl p-4 shadow-inner">

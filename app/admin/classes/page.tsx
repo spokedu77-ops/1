@@ -35,16 +35,16 @@ const supabaseKey: string = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function ClassManagementPage() {
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [allEvents, setAllEvents] = useState([]);
-  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [selectedIds, setSelectedIds] = useState<any[]>([]);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [filterTeacher, setFilterTeacher] = useState('ALL');
   const [filterType, setFilterType] = useState('ALL');
-  const [teacherList, setTeacherList] = useState([]);
+  const [teacherList, setTeacherList] = useState<any[]>([]);
 
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [studentMemo, setStudentMemo] = useState('');
   
@@ -60,7 +60,7 @@ export default function ClassManagementPage() {
     const { data } = await supabase.from('sessions').select('*, users(id, name)');
 
     if (data) {
-      // 강사 목록 추출
+      // spokedu fix
       const uniqueTeachers: { id: string; name: string }[] = [];
       const map = new Map();
       data.forEach(item => {
@@ -152,7 +152,7 @@ export default function ClassManagementPage() {
   };
 
   // --- 이벤트 클릭 시 모달 오픈 ---
-  const handleEventClick = (info) => {
+  const handleEventClick = (info: any) => {
     const sEvent = {
       id: info.event.id,
       title: info.event.title,
@@ -173,7 +173,7 @@ export default function ClassManagementPage() {
   };
 
   // --- 드래그 앤 드롭 (시간 이동) ---
-  const handleEventDrop = async (info) => {
+  const handleEventDrop = async (info: any) => {
     if (!confirm(`${info.event.title} 수업 시간을 이동하시겠습니까?`)) {
       info.revert();
       return;
@@ -189,7 +189,7 @@ export default function ClassManagementPage() {
 
       if (error) throw error;
     } catch (e) {
-      alert('이동 실패: ' + e.message);
+      alert('이동 실패: ' + (e as any).message);
       info.revert();
     }
   };
@@ -331,14 +331,14 @@ export default function ClassManagementPage() {
 
     } catch (e) {
       console.error("연기 오류:", e);
-      alert('오류 발생: ' + e.message);
+      alert('오류 발생: ' + (e as any).message);
     } finally {
       setLoading(false);
     }
   };
 
   // --- 상태 업데이트 (완료/취소/삭제 등) ---
-  const updateStatus = async (newStatus) => {
+  const updateStatus = async (newStatus: any) => {
     if (!selectedEvent) return;
     if (newStatus === 'deleted') {
       if (!confirm('정말 영구 삭제하시겠습니까? 복구할 수 없습니다.')) return;

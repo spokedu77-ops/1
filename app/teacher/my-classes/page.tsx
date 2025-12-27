@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const FEEDBACK_TEMPLATE = `✅ 오늘 수업의 주요 활동
@@ -33,13 +33,13 @@ export default function MyClassesPage() {
 
   const getMySchedule = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) { setLoading(false); return; }
     
     const { data: rawSessions, error } = await supabase
       .from('sessions')
       .select('*')
-      .eq('created_by', user.id)
+      .eq('created_by', userData.user.id)
       .order('start_at', { ascending: true });
     
     if (!error && rawSessions) setSessions(rawSessions);
@@ -52,18 +52,16 @@ export default function MyClassesPage() {
     setSelectedEvent(session);
     setFeedback(session.students_text || FEEDBACK_TEMPLATE);
     
-    // [수정] JSON 파싱 대신 콤마 구분자로 사진 불러오기
     let initialPhotos: string[] = [];
     if (session.photo_url && typeof session.photo_url === 'string') {
       initialPhotos = session.photo_url
         .split(',')
-        .filter(url => url && url.trim() !== "" && url.startsWith('http'));
+        .filter((url: string) => url && url.trim() !== "" && url.startsWith('http'));
     }
     setPhotoUrls(initialPhotos);
     setIsModalOpen(true);
   };
 
-  // [수정] 기록 완료 함수: 관리자/학부모 리포트와 형식을 맞춤 (콤마 구분자 저장)
   const handleCompleteSession = async () => {
     if (!selectedEvent) return;
     
@@ -73,7 +71,7 @@ export default function MyClassesPage() {
         .update({ 
           status: 'finished', 
           students_text: feedback.trim(), 
-          photo_url: photoUrls.join(',') // JSON.stringify 대신 join(',') 사용
+          photo_url: photoUrls.join(',')
         })
         .eq('id', selectedEvent.id);
 
@@ -98,7 +96,7 @@ export default function MyClassesPage() {
       .update({ 
         status: 'pending',
         students_text: FEEDBACK_TEMPLATE, 
-        photo_url: "" // 초기화 시 빈 문자열
+        photo_url: "" 
       })
       .eq('id', selectedEvent.id);
 
@@ -111,17 +109,25 @@ export default function MyClassesPage() {
     }
   };
 
-  const handlePhotoUpload = async (e: any) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (photoUrls.length >= 3) return alert('사진은 최대 3장까지만 가능합니다.');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     try {
       setUploading(true);
-      const file = e.target.files[0];
-      if (!file) return;
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      await supabase.storage.from('session-photos').upload(fileName, file);
+      const { error: uploadError } = await supabase.storage.from('session-photos').upload(fileName, file);
+      
+      if (uploadError) throw uploadError;
+
       const { data } = supabase.storage.from('session-photos').getPublicUrl(fileName);
       setPhotoUrls(prev => [...prev, data.publicUrl]);
-    } catch (error) { alert('업로드 실패'); } finally { setUploading(false); }
+    } catch (error) { 
+      alert('업로드 실패'); 
+    } finally { 
+      setUploading(false); 
+    }
   };
 
   return (
@@ -135,7 +141,7 @@ export default function MyClassesPage() {
       <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
         <header className="flex justify-between items-end pb-6 border-b-2 border-slate-200">
           <div>
-            <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 text-left">Spokidue Management</p>
+            <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 text-left">SPOKEDU Management</p>
             <h1 className="text-3xl font-black text-slate-900 tracking-tighter">내 수업 일정</h1>
           </div>
         </header>

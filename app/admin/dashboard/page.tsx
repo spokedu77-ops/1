@@ -4,17 +4,17 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 export default function SalesDashboard() {
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalSales: 0,
-    centerSales: {},
-    teacherPerformance: [],
-  });
+  const [stats, setStats] = useState<any>({
+  totalSales: 0,
+  centerSales: [],
+  teacherPerformance: [],
+});
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -43,11 +43,11 @@ export default function SalesDashboard() {
         .eq('month', month);
 
       let total = 0;
-      const centers = {};
-      const teachers = {};
+      const centers: any = {};
+      const teachers: any = {};
 
       // 수업 매출 집계
-      sessions?.forEach(s => {
+      sessions?.forEach((s: any) => {
         const fee = Number(s.fee) || Number(s.price) || Number(s.teacher_fee) || 0;
         total += fee;
 
@@ -58,20 +58,19 @@ export default function SalesDashboard() {
         teachers[tName] = (teachers[tName] || 0) + fee;
       });
 
-      // 기타 정산 집계 (매출에 포함 또는 별도 표기 가능, 여기서는 합산)
-      adjs?.forEach(a => {
-        const amount = Number(a.amount);
+      // 기타 정산 집계
+      adjs?.forEach((a: any) => {
+        const amount = Number(a.amount) || 0;
         total += amount;
         
-        // 강사별 성과에 보너스 합산
-        const { data: userData } = supabase.from('users').select('name').eq('id', a.teacher_id).single();
-        // 실제 운영 시에는 user 정보를 join해서 가져오는 것이 효율적입니다.
+        const tName = a.instructor_name || '기타강사'; // 강사명을 직접 사용하거나 고정
+        teachers[tName] = (teachers[tName] || 0) + amount;
       });
 
       setStats({
         totalSales: total,
-        centerSales: centers,
-        teacherPerformance: Object.entries(teachers).sort((a, b) => b[1] - a[1]),
+        centerSales: Object.entries(centers),
+        teacherPerformance: Object.entries(teachers).sort((a: any, b: any) => (b[1] as number) - (a[1] as number)),
       });
     } catch (error) {
       console.error('Stats load error:', error);
@@ -79,7 +78,7 @@ export default function SalesDashboard() {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => { fetchStats(); }, [year, month]);
 
   return (
@@ -127,7 +126,7 @@ export default function SalesDashboard() {
             {Object.entries(stats.centerSales).map(([key, val]) => (
               <div key={key} className="flex justify-between items-center font-black">
                 <span className="text-[11px] text-gray-400 uppercase">{key}</span>
-                <span className="text-sm text-gray-800">{((val / stats.totalSales) * 100 || 0).toFixed(1)}%</span>
+                <span className="text-sm text-gray-800">{(((val as number) / stats.totalSales) * 100 || 0).toFixed(1)}%</span>
               </div>
             ))}
           </div>
@@ -143,7 +142,7 @@ export default function SalesDashboard() {
 
         <div className="space-y-10">
           {stats.teacherPerformance.length > 0 ? (
-            stats.teacherPerformance.map(([name, total], index) => (
+            stats.teacherPerformance.map(([name, total]: any, index: number) => (
               <div key={name} className="group">
                 <div className="flex justify-between items-end mb-4 px-2">
                   <div className="flex items-center gap-4">

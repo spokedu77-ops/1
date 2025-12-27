@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// 1. 환경 변수를 더 안전하게 선언 (as string 사용)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function LoginPage() {
   const [id, setId] = useState('');
@@ -20,13 +21,11 @@ export default function LoginPage() {
     // 1. 아이디 처리 (이름 뒤에 자동으로 도메인 추가)
     const loginEmail = id.includes('@') ? id : `${id}@spokedu.com`;
 
-    // 2. 비밀번호 처리 (하이픈이 있든 없든 둘 다 시도)
-    const rawPw = pw.replace(/-/g, ''); // 하이픈 제거 버전
-    // const hyphenPw = pw.includes('-') ? pw : pw.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3'); 
-    // (주석: hyphenPw는 현재 로직상 굳이 변수로 안 만들어도 아래 flow로 해결됩니다)
+    // 2. 비밀번호 처리 (하이픈 제거 버전)
+    const rawPw = pw.replace(/-/g, '');
 
     // A. 우선 입력한 값(pw) 그대로 시도
-    let { error } = await supabase.auth.signInWithPassword({ 
+    let { data, error } = await supabase.auth.signInWithPassword({ 
       email: loginEmail, 
       password: pw 
     });
@@ -37,32 +36,28 @@ export default function LoginPage() {
         email: loginEmail, 
         password: rawPw 
       });
+      data = retry.data;
       error = retry.error;
     }
 
     if (error) {
       alert('로그인 실패: 아이디나 비밀번호를 다시 확인해 주세요.');
     } else {
-      // ---------------------------------------------------------
-      // [수정된 부분] 로그인 성공 시 역할(Role) 체크 및 분기 처리
-      // ---------------------------------------------------------
-      
-      // 1. 현재 로그인된 유저 정보 가져오기
-      const { data: { user } } = await supabase.auth.getUser();
+      // 로그인 성공 시 역할(Role) 체크 및 분기 처리
+      const { data: userData } = await supabase.auth.getUser();
 
-      if (user) {
-        // 2. profiles 테이블에서 이 사람의 role 확인
+      if (userData?.user) {
+        // profiles 테이블에서 이 사람의 role 확인
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', user.id)
+          .eq('id', userData.user.id)
           .single();
 
-        // 3. 역할에 따라 다른 방으로 보냄
         if (profile?.role === 'admin') {
-          router.push('/admin'); // 관리자는 관리자 페이지로
+          router.push('/admin'); 
         } else {
-          router.push('/teacher/my-classes'); // 선생님은 내 수업 일정으로
+          router.push('/teacher/my-classes'); 
         }
         
         router.refresh();
@@ -74,7 +69,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
       <form onSubmit={handleLogin} className="w-full max-w-md space-y-8 bg-white p-12 rounded-[50px] shadow-2xl border border-gray-100">
         <div className="text-center">
-          <h1 className="text-4xl font-black italic text-blue-900 tracking-tighter uppercase leading-none">Spokedu</h1>
+          <h1 className="text-4xl font-black italic text-blue-900 tracking-tighter uppercase leading-none">SPOKEDU</h1>
           <div className="h-1 w-10 bg-blue-600 mx-auto mt-4 rounded-full"></div>
           <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mt-4 font-mono">Operations Management</p>
         </div>
@@ -87,7 +82,7 @@ export default function LoginPage() {
               placeholder="이름을 입력하세요" 
               value={id} 
               onChange={(e) => setId(e.target.value)} 
-              className="w-full p-5 bg-gray-50 rounded-3xl border-2 border-transparent font-bold outline-none focus:border-blue-600 focus:bg-white transition-all text-sm" 
+              className="w-full p-5 bg-gray-50 rounded-3xl border-2 border-transparent font-bold outline-none focus:border-blue-600 focus:bg-white transition-all text-sm text-black" 
             />
           </div>
           <div>
@@ -97,7 +92,7 @@ export default function LoginPage() {
               placeholder="전화번호를 입력하세요" 
               value={pw} 
               onChange={(e) => setPw(e.target.value)} 
-              className="w-full p-5 bg-gray-50 rounded-3xl border-2 border-transparent font-bold outline-none focus:border-blue-600 focus:bg-white transition-all text-sm" 
+              className="w-full p-5 bg-gray-50 rounded-3xl border-2 border-transparent font-bold outline-none focus:border-blue-600 focus:bg-white transition-all text-sm text-black" 
             />
           </div>
         </div>

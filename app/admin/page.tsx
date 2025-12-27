@@ -13,7 +13,6 @@ const XIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" str
 const TrashIcon = () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
 const MoreIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>;
 
-// --- Constants ---
 const USERS = [
   { name: '최지훈', role: '대표', color: 'bg-slate-900 text-white' },
   { name: '김윤기', role: '총괄', color: 'bg-blue-600 text-white' },
@@ -73,17 +72,10 @@ export default function SpokeduDashboard() {
 
   useEffect(() => { fetchDashboardData(); }, []);
 
-  // --- Handlers (Task) ---
   const openTaskModal = (task = null, initialStatus = 'To Do', initialAssignee = '최지훈') => {
     if (task) {
         setEditingTask(task);
-        setTaskForm({ 
-            title: task.title, 
-            assignee: task.assignee || '최지훈', 
-            status: task.status || 'To Do', 
-            tag: task.tag || 'General', 
-            description: task.description || '' 
-        });
+        setTaskForm({ title: task.title, assignee: task.assignee || '최지훈', status: task.status || 'To Do', tag: task.tag || 'General', description: task.description || '' });
     } else {
         setEditingTask(null);
         setTaskForm({ title: '', assignee: initialAssignee, status: initialStatus, tag: 'General', description: '' });
@@ -109,15 +101,11 @@ export default function SpokeduDashboard() {
     fetchDashboardData();
   };
 
-  // --- Handlers (Goal) ---
   const openGoalModal = (goal = null) => {
     setNewCheckItem('');
     if (goal) {
       setEditingGoal(goal);
-      setGoalForm({ 
-        text: goal.text || '', 
-        checklist: Array.isArray(goal.checklist) ? goal.checklist : [] 
-      });
+      setGoalForm({ text: goal.text || '', checklist: Array.isArray(goal.checklist) ? goal.checklist : [] });
     } else {
       setEditingGoal(null);
       setGoalForm({ text: '', checklist: [] });
@@ -133,9 +121,7 @@ export default function SpokeduDashboard() {
   };
 
   const toggleChecklistItem = (itemId) => {
-    const updatedList = goalForm.checklist.map(item => 
-      item.id === itemId ? { ...item, checked: !item.checked } : item
-    );
+    const updatedList = goalForm.checklist.map(item => item.id === itemId ? { ...item, checked: !item.checked } : item);
     setGoalForm(prev => ({ ...prev, checklist: updatedList }));
   };
 
@@ -146,17 +132,11 @@ export default function SpokeduDashboard() {
 
   const handleSaveGoal = async () => {
     if (!goalForm.text) return alert('목표를 입력해주세요.');
-    
     const total = goalForm.checklist.length;
     const checkedCount = goalForm.checklist.filter(i => i.checked).length;
     const calculatedProgress = total === 0 ? 0 : Math.round((checkedCount / total) * 100);
 
-    const saveData = {
-        text: goalForm.text,
-        checklist: goalForm.checklist,
-        progress: calculatedProgress
-    };
-
+    const saveData = { text: goalForm.text, checklist: goalForm.checklist, progress: calculatedProgress };
     if (editingGoal) {
       await supabase.from('goals').update(saveData).eq('id', editingGoal.id);
     } else {
@@ -180,7 +160,7 @@ export default function SpokeduDashboard() {
           <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase italic">SPOKEDU Dashboard</h1>
           <p className="text-sm text-gray-500 font-medium mt-1">{new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</p>
         </div>
-        <button onClick={() => openTaskModal()} className="bg-gray-900 hover:bg-black text-white text-sm font-bold px-4 py-2 rounded-xl transition-all active:scale-95 shadow-lg shadow-gray-200 cursor-pointer flex items-center gap-2">
+        <button onClick={() => openTaskModal()} className="bg-gray-900 hover:bg-black text-white text-sm font-bold px-4 py-2 rounded-xl transition-all active:scale-95 shadow-lg shadow-gray-200 flex items-center gap-2 cursor-pointer">
             <PlusIcon /> 업무 추가
         </button>
       </header>
@@ -216,7 +196,7 @@ export default function SpokeduDashboard() {
             {goals.map((goal) => {
               if (!goal) return null;
               const total = goal.checklist?.length || 0;
-              const checked = goal.checklist?.filter((i: any) => i.checked).length || 0;
+              const checked = goal.checklist?.filter((i) => i.checked).length || 0;
               return (
                 <div key={goal.id} onClick={() => openGoalModal(goal)} className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:border-blue-300 transition-all cursor-pointer relative">
                   <div className="flex justify-between items-start mb-3">
@@ -233,7 +213,7 @@ export default function SpokeduDashboard() {
                 </div>
               );
             })}
-            <button onClick={() => openGoalModal()} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-sm font-bold hover:bg-slate-100 transition-all">+ 목표 추가하기</button>
+            <button onClick={() => openGoalModal()} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-sm font-bold hover:bg-slate-100 transition-all cursor-pointer">+ 목표 추가하기</button>
           </div>
         </section>
       </div>
@@ -248,16 +228,16 @@ export default function SpokeduDashboard() {
             <div className="divide-y divide-gray-100">
                 {USERS.map((user) => (
                     <div key={user.name} className="grid grid-cols-[80px_1fr_1fr_1fr] min-h-[140px] group">
-                        <div className="border-r border-gray-100 flex flex-col items-center justify-center p-2 gap-1 bg-white group-hover:bg-gray-50">
+                        <div className="border-r border-gray-100 flex flex-col items-center justify-center p-2 gap-1 bg-white group-hover:bg-gray-50 transition-colors">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm ${user.color}`}>{user.name.slice(0,1)}</div>
                             <span className="text-[10px] font-extrabold text-gray-900">{user.name}</span>
                         </div>
                         {STATUSES.map((status) => {
-                             const userTasks = tasks.filter((t: any) => t.assignee === user.name && t.status === status);
+                             const userTasks = tasks.filter(t => t.assignee === user.name && t.status === status);
                              return (
                                 <div key={status} className={`p-3 border-r border-gray-100 last:border-r-0 relative transition-colors ${status === 'Done' ? 'bg-gray-50/30' : 'bg-white'}`}>
                                     <div className="space-y-2 h-full">
-                                        {userTasks.map((task: any) => (
+                                        {userTasks.map(task => (
                                             <div key={task.id} onClick={() => openTaskModal(task)} className={`p-3 rounded-xl border transition-all cursor-pointer ${task.status === 'Done' ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-blue-200'}`}>
                                                 <div className="flex justify-between items-start mb-2">
                                                     <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{task.tag}</span>
@@ -279,13 +259,13 @@ export default function SpokeduDashboard() {
         </div>
       </section>
 
-      {/* Task Modal */}
+      {/* 업무 추가 모달 - z-[100] 상향 조정 */}
       {isTaskModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/30 backdrop-blur-sm" onClick={() => setIsTaskModalOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in" onClick={() => setIsTaskModalOpen(false)}>
             <div className="bg-white w-full max-w-md rounded-[24px] shadow-2xl p-6" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-start mb-6">
                     <h3 className="text-xl font-extrabold text-gray-900">{editingTask ? '업무 수정' : '새 업무 추가'}</h3>
-                    <button onClick={() => setIsTaskModalOpen(false)} className="text-gray-400 hover:text-gray-800"><XIcon /></button>
+                    <button onClick={() => setIsTaskModalOpen(false)} className="text-gray-400 hover:text-gray-800 cursor-pointer"><XIcon /></button>
                 </div>
                 <div className="space-y-5">
                     <div className="space-y-1">
@@ -295,13 +275,13 @@ export default function SpokeduDashboard() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-gray-400 uppercase">Assignee</label>
-                            <select className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 outline-none" value={taskForm.assignee} onChange={(e) => setTaskForm({...taskForm, assignee: e.target.value})}>
+                            <select className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 outline-none cursor-pointer" value={taskForm.assignee} onChange={(e) => setTaskForm({...taskForm, assignee: e.target.value})}>
                                 {USERS.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
                             </select>
                         </div>
                         <div className="space-y-1">
                              <label className="text-xs font-bold text-gray-400 uppercase">Status</label>
-                             <select className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 outline-none" value={taskForm.status} onChange={(e) => setTaskForm({...taskForm, status: e.target.value})}>
+                             <select className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 outline-none cursor-pointer" value={taskForm.status} onChange={(e) => setTaskForm({...taskForm, status: e.target.value})}>
                                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                              </select>
                         </div>
@@ -310,7 +290,7 @@ export default function SpokeduDashboard() {
                         <label className="text-xs font-bold text-gray-400 uppercase">Tag</label>
                          <div className="flex flex-wrap gap-2">
                             {TAGS.map(tag => (
-                                <button key={tag} onClick={() => setTaskForm({...taskForm, tag})} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${taskForm.tag === tag ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200'}`}>{tag}</button>
+                                <button key={tag} onClick={() => setTaskForm({...taskForm, tag})} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${taskForm.tag === tag ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>{tag}</button>
                             ))}
                          </div>
                     </div>
@@ -320,16 +300,16 @@ export default function SpokeduDashboard() {
                     </div>
                 </div>
                 <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end gap-2">
-                    <button onClick={() => setIsTaskModalOpen(false)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100">취소</button>
-                    <button onClick={handleSaveTask} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95">{editingTask ? '저장하기' : '추가하기'}</button>
+                    <button onClick={() => setIsTaskModalOpen(false)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 cursor-pointer">취소</button>
+                    <button onClick={handleSaveTask} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-lg shadow-blue-100 cursor-pointer">{editingTask ? '저장하기' : '추가하기'}</button>
                 </div>
             </div>
         </div>
       )}
 
-      {/* Goal Modal */}
+      {/* 이달의 목표 모달 - z-[100] 상향 조정 */}
       {isGoalModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/30 backdrop-blur-sm" onClick={() => setIsGoalModalOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in" onClick={() => setIsGoalModalOpen(false)}>
             <div className="bg-white w-full max-w-sm rounded-[32px] shadow-2xl p-8 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <h3 className="text-2xl font-black text-gray-900 mb-6">{editingGoal ? '목표 수정' : '새 목표 설정'}</h3>
                 <div className="space-y-6">
@@ -338,25 +318,25 @@ export default function SpokeduDashboard() {
                         <input type="text" className="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm text-gray-900 font-bold outline-none" placeholder="큰 목표 입력" value={goalForm.text} onChange={(e) => setGoalForm({...goalForm, text: e.target.value})} />
                     </div>
                     <div className="space-y-2">
-                        <div className="flex justify-between items-center"><label className="text-xs font-black text-gray-400 uppercase">Checklist</label></div>
+                        <label className="text-xs font-black text-gray-400 uppercase">Checklist</label>
                         <div className="flex gap-2 mb-2">
                             <input type="text" className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold outline-none" placeholder="+ 세부 과제" value={newCheckItem} onChange={(e) => setNewCheckItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addChecklistItem()} />
-                            <button onClick={addChecklistItem} className="bg-gray-100 hover:bg-gray-200 rounded-xl px-3 font-bold text-lg">+</button>
+                            <button onClick={addChecklistItem} className="bg-gray-100 hover:bg-gray-200 rounded-xl px-3 font-bold text-lg cursor-pointer">+</button>
                         </div>
-                        <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                            {goalForm.checklist.map((item: any) => (
-                                <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl group">
-                                    <input type="checkbox" checked={item.checked} onChange={() => toggleChecklistItem(item.id)} className="w-5 h-5 cursor-pointer" />
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                            {goalForm.checklist.map((item) => (
+                                <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl group transition-colors hover:bg-gray-100">
+                                    <input type="checkbox" checked={item.checked} onChange={() => toggleChecklistItem(item.id)} className="w-5 h-5 cursor-pointer rounded" />
                                     <span className={`flex-1 text-sm font-bold ${item.checked ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{item.text}</span>
-                                    <button onClick={() => deleteChecklistItem(item.id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><TrashIcon /></button>
+                                    <button onClick={() => deleteChecklistItem(item.id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"><TrashIcon /></button>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
                 <div className="mt-8 flex gap-3">
-                    <button onClick={() => setIsGoalModalOpen(false)} className="flex-1 py-4 rounded-2xl text-sm font-bold text-gray-400 hover:bg-gray-50">취소</button>
-                    <button onClick={handleSaveGoal} className="flex-[2] py-4 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95">{editingGoal ? '업데이트' : '목표 생성'}</button>
+                    <button onClick={() => setIsGoalModalOpen(false)} className="flex-1 py-4 rounded-2xl text-sm font-bold text-gray-400 hover:bg-gray-50 cursor-pointer">취소</button>
+                    <button onClick={handleSaveGoal} className="flex-[2] py-4 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-xl shadow-blue-100 cursor-pointer">{editingGoal ? '업데이트' : '목표 생성'}</button>
                 </div>
             </div>
         </div>
