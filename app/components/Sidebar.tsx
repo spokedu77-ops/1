@@ -16,7 +16,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  User
+  User,
+  Wallet // 가계부용 아이콘 추가
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -65,7 +66,10 @@ export default function Sidebar() {
       items: [
         { name: "사용자 관리", href: "/admin/users", icon: Users },
         ...(userEmail === 'choijihoon@spokedu.com' 
-          ? [{ name: "정산 리포트", href: "/admin/master/reports", icon: CreditCard }] 
+          ? [
+              { name: "정산 리포트", href: "/admin/master/reports", icon: CreditCard },
+              { name: "가계부 관리", href: "/admin/master/finance", icon: Wallet } // 가계부 메뉴 추가
+            ] 
           : [])
       ]
     }
@@ -93,7 +97,7 @@ export default function Sidebar() {
     }
   ];
 
-  const isAdmin = pathname.startsWith('/admin');
+  const isAdmin = pathname.startsWith('/admin') || pathname.startsWith('/master'); // /master 경로 대응 추가
   const groups = isAdmin ? adminMenuItems : teacherMenuItems;
 
   return (
@@ -175,7 +179,7 @@ export default function Sidebar() {
           </div>
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full p-2 text-slate-500 hover:text-rose-400 transition-colors group cursor-pointer"
+            className="flex items-center gap-3 w-full p-2 text-slate-500 hover: Rose-400 transition-colors group cursor-pointer"
           >
             <LogOut size={18} className="group-hover:rotate-12 transition-transform" />
             <span className="text-sm font-bold">로그아웃</span>
