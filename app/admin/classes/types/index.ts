@@ -1,4 +1,26 @@
-// types.ts 파일 하단에 추가
+import React from 'react';
+
+export interface SessionEvent {
+  id: string;
+  title: string;
+  start: Date | string;
+  end: Date | string;
+  teacher: string;
+  teacherId: string;
+  type: string;
+  status: string;
+  groupId?: string;
+  price: number;
+  studentsText: string;
+  themeColor: string;
+  isAdmin: boolean;
+  roundInfo?: string;
+}
+
+export interface TeacherInput {
+  id: string;
+  price: number;
+}
 
 export interface ModalProps {
   isOpen: boolean;
@@ -12,12 +34,11 @@ export interface ModalProps {
     end: string;
     memo: string;
   };
-  setEditFields: React.Dispatch<React.SetStateAction<any>>;
-  teacherList: any[];
-  onUpdate: () => Promise<void>;
-  onUpdateStatus: (status: string | null) => Promise<void>;
-  onPostpone: (e: React.MouseEvent) => Promise<void>;
-  onUndoPostpone: (e: React.MouseEvent) => Promise<void>;
-  // 에러의 핵심: 인자 타입을 명확히 규정합니다.
-  onToggleMileage: (label: string, val: number) => Promise<void>; 
+  setEditFields: (fields: any) => void;
+  teacherList: { id: string; name: string }[];
+  onUpdate: () => void;
+  onUpdateStatus: (status: string | null) => void;
+  onPostpone: (e: React.MouseEvent) => void;
+  onUndoPostpone: (e: React.MouseEvent) => void;
+  onToggleMileage?: (label: string, val: number) => void; // ? 추가해서 안전하게 설정
 }
