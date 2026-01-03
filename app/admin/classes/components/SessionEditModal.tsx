@@ -56,7 +56,7 @@ export default function SessionEditModal({
                 {MILEAGE_ACTIONS.map((act) => {
                   const isActive = editFields.memo.includes(`[${act.label}]`);
                   return (
-                    <button key={act.label} onClick={() => onToggleMileage(act.label, act.val)} className={`py-3 px-2 rounded-xl text-[10px] font-black border transition-all flex flex-col items-center justify-center gap-1 ${isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                    <button key={act.label} onClick={() => onToggleMileage?.(act.label, act.val)} className={`py-3 px-2 rounded-xl text-[10px] font-black border transition-all flex flex-col items-center justify-center gap-1 ${isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
                       <span>{act.label}</span>
                       <span className={isActive ? 'text-blue-100' : 'text-slate-400'}>{act.val > 0 ? '+' : ''}{act.val.toLocaleString()}</span>
                     </button>

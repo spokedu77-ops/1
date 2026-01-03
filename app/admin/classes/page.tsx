@@ -69,7 +69,7 @@ export default function ClassManagementPage() {
   };
 
   // [수정 핵심] 마일리지 토글 함수를 명확하게 정의했습니다.
-  const handleToggleMileage = async () => {
+  const handleToggleMileage = async (label: string, val: number) => {
     if (!selectedEvent) return;
     const { data: curr } = await supabase.from('sessions').select('is_mileage_added').eq('id', selectedEvent.id).single();
     await supabase.from('sessions').update({ is_mileage_added: !curr?.is_mileage_added }).eq('id', selectedEvent.id);
@@ -173,14 +173,19 @@ export default function ClassManagementPage() {
         </main>
       </div>
 
-      {/* [수정 핵심] 여기에 onToggleMileage가 반드시 있어야 에러가 안 납니다. */}
       <SessionEditModal 
-        isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
-        selectedEvent={selectedEvent} editFields={editFields} setEditFields={setEditFields}
-        teacherList={teacherList} onUpdate={handleUpdate} onUpdateStatus={updateStatus}
-        onPostpone={handlePostponeCascade} onUndoPostpone={handleUndoPostpone}
-        onToggleMileage={handleToggleMileage} 
-      />
+  isOpen={isModalOpen} 
+  onClose={() => setIsModalOpen(false)}
+  selectedEvent={selectedEvent} 
+  editFields={editFields} 
+  setEditFields={setEditFields}
+  teacherList={teacherList} 
+  onUpdate={handleUpdate} 
+  onUpdateStatus={updateStatus}
+  onPostpone={handlePostponeCascade} 
+  onUndoPostpone={handleUndoPostpone}
+  onToggleMileage={(label: string, val: number) => handleToggleMileage(label, val)} 
+/>
     </div>
   );
 }
