@@ -27,7 +27,6 @@ export default function UltimateSettlementPage() {
   const [month, setMonth] = useState(currentMonth);
   const [period, setPeriod] = useState(currentDay >= 16 ? 'second' : 'first');
 
-  // [보안] 마스터 계정 체크
   useEffect(() => {
     const checkMaster = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -40,7 +39,6 @@ export default function UltimateSettlementPage() {
     checkMaster();
   }, [router]);
 
-  // [데이터 로드]
   const fetchReport = async () => {
     if (!isAdmin) return; 
     setLoading(true);
@@ -49,7 +47,12 @@ export default function UltimateSettlementPage() {
       const startDate = `${year}-${String(month).padStart(2, '0')}-${period === 'first' ? '01' : '16'}`;
       const endDate = `${year}-${String(month).padStart(2, '0')}-${period === 'first' ? '15' : lastDay}`;
 
-      const { data: teachers } = await supabase.from('users').select('id, name').eq('role', 'teacher');
+      const { data: teachers } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('role', 'teacher')
+        .eq('is_active', true);
+
       const { data: sessions } = await supabase
         .from('sessions')
         .select('*')
@@ -63,14 +66,36 @@ export default function UltimateSettlementPage() {
         .eq('year', year).eq('month', month).eq('period', period);
 
       const calculatedData = (teachers || []).map((teacher: any) => {
-        // 1. 수업 필터링 및 날짜순 정렬
-        const teacherSessions = (sessions || [])
-          .filter(s => s.created_by === teacher.id || (s.instructor || '').trim() === teacher.name.trim())
-          .sort((a, b) => a.start_at.localeCompare(b.start_at));
+        const teacherSessions = (sessions || []).filter(s => {
+          const isMain = String(s.created_by) === String(teacher.id);
+          let isExtra = false;
+          
+          if (s.students_text && s.students_text.includes('EXTRA_TEACHERS:')) {
+            try {
+              const parts = s.students_text.split('EXTRA_TEACHERS:');
+              const jsonStr = parts[1].trim();
+              const extras = JSON.parse(jsonStr);
+              if (Array.isArray(extras)) {
+                isExtra = extras.some((ex: any) => String(ex.id) === String(teacher.id));
+              }
+            } catch (e) {}
+          }
+          return isMain || isExtra;
+        }).sort((a, b) => a.start_at.localeCompare(b.start_at));
 
-        // 2. [수정] 강사료 합산 로직 (price 포함)
         const sessionsTotal = teacherSessions.reduce((acc, cur) => {
-          const amount = Number(cur.teacher_fee) || Number(cur.fee) || Number(cur.price) || 0;
+          let amount = 0;
+          if (String(cur.created_by) === String(teacher.id)) {
+            amount = Number(cur.price) || 0;
+          } else {
+            try {
+              const parts = cur.students_text.split('EXTRA_TEACHERS:');
+              const jsonStr = parts[1].trim();
+              const extras = JSON.parse(jsonStr);
+              const myInfo = extras.find((ex: any) => String(ex.id) === String(teacher.id));
+              amount = Number(myInfo?.price) || 0;
+            } catch (e) {}
+          }
           return acc + amount;
         }, 0);
         
@@ -86,7 +111,9 @@ export default function UltimateSettlementPage() {
           details: teacherSessions,
           adjs: teacherAdjs
         };
-      });
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
       setReportData(calculatedData);
     } catch (error) {
       console.error('Data load error:', error);
@@ -99,7 +126,6 @@ export default function UltimateSettlementPage() {
     if (isAdmin) fetchReport(); 
   }, [year, month, period, isAdmin]);
 
-  // [영수증 출력]
   const downloadImage = async (teacher: any) => {
     const container = document.createElement('div');
     container.style.position = 'absolute';
@@ -118,12 +144,22 @@ export default function UltimateSettlementPage() {
           <p style="font-size: 36px; font-weight: 900; color: #2563eb; margin: 0;">${teacher.finalPay.toLocaleString()}원</p>
         </div>
         <div style="font-size: 12px; color: #333; margin-bottom: 12px; font-weight: bold; border-left: 4px solid #2563eb; padding-left: 8px;">Breakdown</div>
-        ${teacher.details.map((s: any) => `
-          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f8f8f8; font-size: 13px;">
-            <span>${s.start_at.slice(8, 10)}일 - ${s.title}</span>
-            <span style="font-weight: bold;">${(Number(s.teacher_fee) || Number(s.fee) || Number(s.price) || 0).toLocaleString()}원</span>
-          </div>
-        `).join('')}
+        ${teacher.details.map((s: any) => {
+          let fee = 0;
+          if (String(s.created_by) === String(teacher.id)) fee = Number(s.price) || 0;
+          else {
+            try {
+              const extras = JSON.parse(s.students_text.split('EXTRA_TEACHERS:')[1].trim());
+              fee = Number(extras.find((ex: any) => String(ex.id) === String(teacher.id))?.price) || 0;
+            } catch (e) {}
+          }
+          return `
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f8f8f8; font-size: 13px;">
+              <span>${s.start_at.slice(8, 10)}일 - ${s.title}</span>
+              <span style="font-weight: bold;">${fee.toLocaleString()}원</span>
+            </div>
+          `;
+        }).join('')}
         ${teacher.adjs.map((a: any) => `
           <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f7ff; font-size: 13px; color: #2563eb;">
              <span>[기타] ${a.reason}</span>
@@ -163,8 +199,7 @@ export default function UltimateSettlementPage() {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6 pt-10">
         <div>
           <h1 className="text-3xl font-black text-gray-900 italic tracking-tighter uppercase">Payroll</h1>
           <p className="text-blue-500 font-bold text-xs uppercase tracking-widest mt-1">Settlement Management</p>
@@ -185,7 +220,6 @@ export default function UltimateSettlementPage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-black rounded-[28px] p-6 text-white shadow-lg">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Total Payout</p>
@@ -199,13 +233,12 @@ export default function UltimateSettlementPage() {
           <p className="text-3xl font-black text-gray-800 italic tracking-tighter">{reportData.length}<span className="text-sm ml-1 font-bold not-italic text-gray-400">명</span></p>
         </div>
         <div className="hidden md:flex bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm flex-col justify-center items-end text-right">
-          <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest italic">Spokedu Admin</p>
+          <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest italic">SPOKEDU ADMIN</p>
           <p className="text-[10px] font-black text-gray-300 uppercase mt-1">Management Insight</p>
         </div>
       </div>
 
-      {/* Grid List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start pb-20">
         {reportData.map((teacher: any) => (
           <div key={teacher.id} className="flex flex-col gap-3">
             <div 
@@ -244,16 +277,25 @@ export default function UltimateSettlementPage() {
                 <div className="space-y-3 min-w-0">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-2 italic text-blue-500">Breakdown List (날짜순)</p>
                   <div className="max-h-[350px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                    {teacher.details.map((s: any) => (
-                      <div key={s.id} className="flex justify-between items-center p-4 bg-gray-50/30 rounded-2xl text-[13px] font-bold gap-3 overflow-hidden">
-                        <span className="text-gray-400 font-mono w-10 italic shrink-0">{s.start_at.slice(8, 10)}일</span>
-                        <span className="flex-1 text-gray-700 truncate block">{s.title}</span>
-                        <span className="text-gray-900 font-black shrink-0">
-                          {/* [수정 완료] price 필드까지 빠짐없이 체크 */}
-                          {(Number(s.teacher_fee) || Number(s.fee) || Number(s.price) || 0).toLocaleString()}원
-                        </span>
-                      </div>
-                    ))}
+                    {teacher.details.map((s: any) => {
+                       let fee = 0;
+                       if (String(s.created_by) === String(teacher.id)) fee = Number(s.price) || 0;
+                       else {
+                         try {
+                           const extras = JSON.parse(s.students_text.split('EXTRA_TEACHERS:')[1].trim());
+                           fee = Number(extras.find((ex: any) => String(ex.id) === String(teacher.id))?.price) || 0;
+                         } catch (e) {}
+                       }
+                       return (
+                        <div key={s.id} className="flex justify-between items-center p-4 bg-gray-50/30 rounded-2xl text-[13px] font-bold gap-3 overflow-hidden">
+                          <span className="text-gray-400 font-mono w-10 italic shrink-0">{s.start_at.slice(8, 10)}일</span>
+                          <span className="flex-1 text-gray-700 truncate block">{s.title}</span>
+                          <span className="text-gray-900 font-black shrink-0">
+                            {fee.toLocaleString()}원
+                          </span>
+                        </div>
+                       );
+                    })}
                     {teacher.adjs.map((a: any) => (
                       <div key={a.id} className="flex flex-col sm:flex-row sm:items-start justify-between p-4 bg-blue-50/30 rounded-2xl text-[13px] font-black text-blue-600 border border-blue-100/20 gap-3">
                         <div className="flex items-start gap-3 flex-1 min-w-0">

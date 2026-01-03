@@ -37,9 +37,33 @@ export default function SpokeduDashboard() {
   const [goalForm, setGoalForm] = useState<{text: string, checklist: any[]}>({ text: '', checklist: [] });
   const [newCheckItem, setNewCheckItem] = useState('');
 
+  // --- 핵심 로직: 로그인 상태 체크 ---
+  useEffect(() => {
+    const checkAuthAndFetch = async () => {
+      setLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          // 세션 없으면 로그인 페이지로 이동
+          window.location.href = '/login';
+          return;
+        }
+        
+        // 로그인 성공 시에만 데이터 로드
+        await fetchDashboardData();
+      } catch (error) {
+        console.error('Auth check error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuthAndFetch();
+  }, []);
+
   const fetchDashboardData = async () => {
     try {
-      setLoading(true);
       const today = new Date();
       today.setHours(0,0,0,0);
       const tomorrow = new Date(today);
@@ -69,12 +93,8 @@ export default function SpokeduDashboard() {
       if (goalsData) setGoals(goalsData);
     } catch (error) {
       console.error('Data fetch error:', error);
-    } finally {
-      setLoading(false);
     }
   };
-
-  useEffect(() => { fetchDashboardData(); }, []);
 
   const openTaskModal = (task: any = null, initialStatus = 'To Do', initialAssignee = '최지훈') => {
     if (task) {
@@ -173,7 +193,7 @@ export default function SpokeduDashboard() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
-        {/* 1. 오늘 수업 스케줄 (가로 잘림 방지) */}
+        {/* 1. 오늘 수업 스케줄 */}
         <section className="lg:col-span-2 bg-white rounded-[24px] p-5 md:p-6 border border-gray-100 shadow-sm min-h-[300px]">
           <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2 mb-6 text-left">📅 오늘 수업 스케줄 <span className="bg-blue-100 text-blue-600 text-[10px] px-2 py-0.5 rounded-full">{todayClasses.length}</span></h2>
           <div className="space-y-3">
@@ -194,7 +214,7 @@ export default function SpokeduDashboard() {
           </div>
         </section>
 
-        {/* 2. 이달의 목표 (데이터 무결성 방어) */}
+        {/* 2. 이달의 목표 */}
         <section className="bg-slate-50 rounded-[24px] p-5 md:p-6 border border-slate-100 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-extrabold text-slate-800">🚀 이달의 목표</h2>
@@ -226,11 +246,10 @@ export default function SpokeduDashboard() {
         </section>
       </div>
 
-      {/* 3. Team Tasks (모바일 가로잘림 완전 방지 레이아웃) */}
+      {/* 3. Team Tasks */}
       <section className="text-left">
         <h2 className="text-xl font-extrabold text-gray-900 mb-4 mt-8">Team Tasks</h2>
         <div className="bg-white border border-gray-200 rounded-[24px] shadow-sm overflow-hidden">
-            {/* PC 전용 헤더 */}
             <div className="hidden md:grid grid-cols-[100px_1fr_1fr_1fr] border-b border-gray-100 bg-gray-50/50">
                 <div className="p-3 text-center text-[10px] font-black text-gray-400 uppercase">Team</div>
                 {STATUSES.map(status => <div key={status} className="p-3 text-[10px] font-black text-gray-400 uppercase tracking-wider pl-4">{status}</div>)}
@@ -239,13 +258,11 @@ export default function SpokeduDashboard() {
             <div className="divide-y divide-gray-100">
                 {USERS.map((user) => (
                     <div key={user.name} className="flex flex-col md:grid md:grid-cols-[100px_1fr_1fr_1fr] min-h-[140px] group">
-                        {/* 유저 프로필 유닛 */}
                         <div className="border-b md:border-b-0 md:border-r border-gray-100 flex md:flex-col items-center justify-start md:justify-center p-3 gap-3 bg-white md:bg-gray-50/30 transition-colors">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shadow-sm shrink-0 ${user.color}`}>{user.name.slice(0,1)}</div>
                             <span className="text-xs font-extrabold text-gray-900">{user.name}</span>
                         </div>
                         
-                        {/* 업무 상태별 칸 (모바일에서는 세로로 쌓임) */}
                         {STATUSES.map((status) => {
                              const userTasks = tasks.filter(t => t?.assignee === user.name && t?.status === status);
                              return (
@@ -276,7 +293,7 @@ export default function SpokeduDashboard() {
         </div>
       </section>
 
-      {/* 4. 업무 모달 (모바일 대응 강화) */}
+      {/* 4. 업무 모달 */}
       {isTaskModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm" onClick={() => setIsTaskModalOpen(false)}>
             <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl p-6 md:p-8 text-left animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
@@ -324,7 +341,7 @@ export default function SpokeduDashboard() {
         </div>
       )}
 
-      {/* 5. 목표 모달 (명도 조절로 가독성 강화) */}
+      {/* 5. 목표 모달 */}
       {isGoalModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm" onClick={() => setIsGoalModalOpen(false)}>
             <div className="bg-white w-full max-w-sm rounded-[32px] shadow-2xl p-7 md:p-8 max-h-[85vh] overflow-y-auto text-left animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
@@ -344,7 +361,6 @@ export default function SpokeduDashboard() {
                             {goalForm.checklist.map((item: any) => (
                                 <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl group transition-colors hover:bg-gray-100">
                                     <input type="checkbox" checked={item.checked} onChange={() => toggleChecklistItem(item.id)} className="w-4 h-4 cursor-pointer rounded" />
-                                    {/* text-gray-700으로 색상을 강화하여 가독성 확보 */}
                                     <span className={`flex-1 text-xs font-bold ${item.checked ? 'text-gray-300 line-through' : 'text-gray-700'}`}>{item.text}</span>
                                     <button onClick={() => deleteChecklistItem(item.id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"><TrashIcon /></button>
                                 </div>

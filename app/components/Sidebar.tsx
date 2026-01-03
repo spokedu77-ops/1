@@ -17,7 +17,9 @@ import {
   Menu, 
   X,
   User,
-  Wallet // 가계부용 아이콘 추가
+  Wallet,
+  Medal, 
+  CalendarCheck
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -49,26 +51,27 @@ export default function Sidebar() {
       group: "운영 관리",
       items: [
         { name: "대시보드", href: "/admin", icon: LayoutDashboard },
-        { name: "수업 스케줄", href: "/admin/classes", icon: Calendar },
+        { name: "수업 관리", href: "/admin/classes", icon: Calendar },
         { name: "피드백 검수", href: "/admin/teachers-classes", icon: CheckCircle },
+        { name: "공지사항", href: "/admin/notice", icon: ClipboardList },
       ]
     },
     {
-      group: "자산 및 공지",
+      group: "강사 및 기타 관리",
       items: [
         { name: "연간 커리큘럼", href: "/admin/curriculum", icon: BookOpen },
         { name: "교구/재고 관리", href: "/admin/inventory", icon: Box },
-        { name: "공지사항", href: "/admin/notice", icon: ClipboardList },
+        { name: "강사 정보 관리", href: "/admin/users", icon: Users },
+        { name: "강사 마일리지", href: "/admin/mileage", icon: Medal },
       ]
     },
     {
       group: "시스템 관리",
       items: [
-        { name: "사용자 관리", href: "/admin/users", icon: Users },
         ...(userEmail === 'choijihoon@spokedu.com' 
           ? [
               { name: "정산 리포트", href: "/admin/master/reports", icon: CreditCard },
-              { name: "가계부 관리", href: "/admin/master/finance", icon: Wallet } // 가계부 메뉴 추가
+              { name: "가계부 관리", href: "/admin/master/finance", icon: Wallet } 
             ] 
           : [])
       ]
@@ -97,12 +100,14 @@ export default function Sidebar() {
     }
   ];
 
-  const isAdmin = pathname.startsWith('/admin') || pathname.startsWith('/master'); // /master 경로 대응 추가
+  const isAdmin = 
+  pathname.startsWith('/admin') || 
+  pathname.startsWith('/master') || 
+  pathname.startsWith('/class');
   const groups = isAdmin ? adminMenuItems : teacherMenuItems;
 
   return (
     <>
-      {/* 1. 모바일 상단 네비바 */}
       <div className="fixed top-0 left-0 z-[60] flex h-16 w-full items-center justify-between bg-[#1e293b] px-6 md:hidden shadow-lg">
         <h1 className="text-lg font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
         <button 
@@ -113,7 +118,6 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* 2. 모바일 오버레이 */}
       {isOpen && (
         <div 
           className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm md:hidden"
@@ -121,25 +125,22 @@ export default function Sidebar() {
         />
       )}
 
-      {/* 3. 사이드바 본체 */}
       <aside className={`
         fixed left-0 top-0 z-[59] flex h-screen w-64 flex-col bg-[#1e293b] text-white transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
         md:translate-x-0 md:flex md:shrink-0
       `}>
-        {/* PC 로고 영역 */}
-        <div className="p-6 border-b border-slate-700 hidden md:block">
+        <div className="p-6 border-b border-slate-700 hidden md:block text-left">
           <h1 className="text-xl font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
           <p className="text-[10px] text-slate-400 mt-1 uppercase font-medium">
             {isAdmin ? 'Admin Portal' : 'Teacher Portal'}
           </p>
         </div>
 
-        {/* 메뉴 리스트 */}
-        <nav className="flex-1 p-4 space-y-6 overflow-y-auto pt-20 md:pt-4">
+        <nav className="flex-1 p-4 space-y-6 overflow-y-auto pt-20 md:pt-4 text-left">
           {groups.map((group, gIdx) => (
-            <div key={gIdx} className="space-y-2">
-              <h3 className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            <div key={gIdx} className="space-y-2 text-left">
+              <h3 className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">
                 {group.group}
               </h3>
               <div className="space-y-1">
@@ -166,20 +167,19 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        {/* 하단 유저 정보 및 로그아웃 */}
         <div className="p-4 border-t border-slate-700 bg-slate-900/50">
           <div className="flex items-center gap-3 px-2 py-3 mb-2 border-b border-slate-800">
             <div className="bg-blue-500/10 p-2 rounded-lg text-blue-400">
               <User size={16} />
             </div>
             <div className="overflow-hidden text-left">
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Account</p>
-              <p className="text-[11px] text-slate-200 font-bold truncate">{userEmail || 'Admin'}</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight text-left">Account</p>
+              <p className="text-[11px] text-slate-200 font-bold truncate text-left">{userEmail || 'Admin'}</p>
             </div>
           </div>
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full p-2 text-slate-500 hover: Rose-400 transition-colors group cursor-pointer"
+            className="flex items-center gap-3 w-full p-2 text-slate-500 hover:text-rose-400 transition-colors group cursor-pointer"
           >
             <LogOut size={18} className="group-hover:rotate-12 transition-transform" />
             <span className="text-sm font-bold">로그아웃</span>
