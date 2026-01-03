@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -68,6 +68,14 @@ export default function ClassManagementPage() {
     setIsModalOpen(false); fetchSessions();
   };
 
+  // [수정 핵심] 마일리지 토글 함수를 명확하게 정의했습니다.
+  const handleToggleMileage = async () => {
+    if (!selectedEvent) return;
+    const { data: curr } = await supabase.from('sessions').select('is_mileage_added').eq('id', selectedEvent.id).single();
+    await supabase.from('sessions').update({ is_mileage_added: !curr?.is_mileage_added }).eq('id', selectedEvent.id);
+    fetchSessions();
+  };
+
   const handlePostponeCascade = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     const targetId = selectedEvent?.id;
@@ -121,7 +129,7 @@ export default function ClassManagementPage() {
 
         <nav className="border-b px-4 py-3 bg-white flex justify-between items-center z-50">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-black italic uppercase">SPOKEDU</h1>
+            <h1 className="text-lg font-black italic uppercase text-slate-950">SPOKEDU</h1>
             <div className="flex bg-slate-100 rounded-lg p-0.5">
               <button onClick={() => calendarRef.current?.getApi().prev()} className="p-1.5 hover:bg-white rounded-md transition-all"><ChevronLeft size={16}/></button>
               <button onClick={() => calendarRef.current?.getApi().today()} className="px-3 text-[10px] font-black uppercase">TODAY</button>
@@ -165,11 +173,13 @@ export default function ClassManagementPage() {
         </main>
       </div>
 
+      {/* [수정 핵심] 여기에 onToggleMileage가 반드시 있어야 에러가 안 납니다. */}
       <SessionEditModal 
         isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
         selectedEvent={selectedEvent} editFields={editFields} setEditFields={setEditFields}
         teacherList={teacherList} onUpdate={handleUpdate} onUpdateStatus={updateStatus}
         onPostpone={handlePostponeCascade} onUndoPostpone={handleUndoPostpone}
+        onToggleMileage={handleToggleMileage} 
       />
     </div>
   );

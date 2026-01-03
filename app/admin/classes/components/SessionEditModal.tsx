@@ -17,7 +17,7 @@ interface ModalProps {
   setEditFields: any; teacherList: { id: string; name: string }[];
   onUpdate: () => void; onUpdateStatus: (status: string | null) => void;
   onPostpone: (e: React.MouseEvent) => void; onUndoPostpone: (e: React.MouseEvent) => void;
-  onToggleMileage: (label: string, val: number) => void;
+  onToggleMileage?: (label: string, val: number) => void;
 }
 
 export default function SessionEditModal({
