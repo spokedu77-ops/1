@@ -2,201 +2,258 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, X, Check, User, Calendar, Star, Edit3 } from 'lucide-react';
+import { Search, X, User, Calendar, Star, Edit3, ArrowUpRight, ArrowDownRight, History } from 'lucide-react';
+import Sidebar from '@/app/components/Sidebar';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-interface Teacher { id: string; name: string; points: number | null; }
-interface Session { id: string; title: string; start_at: string; }
+interface Teacher {
+  id: string;
+  name: string;
+  points: number;
+}
+
+interface MileageLog {
+  id: string;
+  teacher_id: string;
+  amount: number;
+  reason: string;
+  session_title: string;
+  created_at: string;
+}
 
 export default function AdminMileagePage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [logs, setLogs] = useState<MileageLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(''); // 초기값 빈 문자열 보장
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
-  const [teacherSessions, setTeacherSessions] = useState<Session[]>([]);
+  const [teacherLogs, setTeacherLogs] = useState<MileageLog[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // 현재 세션에서 활성화된 토글 상태 관리
-  const [activeActions, setActiveActions] = useState<string[]>([]);
 
-  const fetchTeachers = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('users')
-      .select('id, name, points')
-      .eq('is_active', true)
-      .not('name', 'in', '("최지훈","김구민","김윤기")')
-      .order('name', { ascending: true });
-    
-    // null 방어: points가 null이면 0으로 치환해서 저장
-    if (data) {
-      setTeachers(data.map(t => ({ ...t, points: t.points ?? 0 })));
+    try {
+      const { data: tData } = await supabase
+        .from('users')
+        .select('id, name, points')
+        .eq('is_active', true)
+        .not('name', 'in', '("최지훈","김구민","김윤기")')
+        .order('name', { ascending: true });
+
+      if (tData) {
+        setTeachers(tData.map(t => ({ ...t, points: t.points ?? 0 })));
+      }
+
+      const { data: lData } = await supabase
+        .from('mileage_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (lData) setLogs(lData);
+    } catch (error) {
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  useEffect(() => { fetchTeachers(); }, [fetchTeachers]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  const openManageModal = async (teacher: Teacher) => {
+  const openDetailModal = async (teacher: Teacher) => {
     setSelectedTeacher(teacher);
-    setActiveActions([]); 
-    const today = new Date();
-    const startRange = new Date(today.setDate(today.getDate() - today.getDay())).toISOString();
-    const endRange = new Date(today.setDate(today.getDate() + 14)).toISOString();
-    const { data } = await supabase.from('sessions').select('id, title, start_at').eq('created_by', teacher.id).gte('start_at', startRange).lte('start_at', endRange).order('start_at', { ascending: true });
-    if (data) setTeacherSessions(data);
+    setTeacherLogs([]);
+    const { data } = await supabase
+      .from('mileage_logs')
+      .select('*')
+      .eq('teacher_id', teacher.id)
+      .order('created_at', { ascending: false });
+    
+    if (data) setTeacherLogs(data);
     setIsModalOpen(true);
-  };
-
-  const saveLog = async (teacherId: string, amount: number, reason: string, sessionTitle?: string) => {
-    await supabase.from('mileage_logs').insert([{
-      teacher_id: teacherId,
-      amount: amount,
-      reason: reason,
-      session_title: sessionTitle || '공통 항목'
-    }]);
-  };
-
-  // 토글 포인트 반영 (Undo 기능 포함)
-  const handleToggleAction = async (amount: number, label: string, actionKey: string, sessionTitle?: string) => {
-    if (!selectedTeacher) return;
-
-    const isActive = activeActions.includes(actionKey);
-    const finalAmount = isActive ? -amount : amount;
-    const finalReason = isActive ? `${label} (취소됨)` : label;
-
-    const currentPoints = selectedTeacher.points ?? 0;
-    const newPoints = currentPoints + finalAmount;
-
-    const { error } = await supabase
-      .from('users')
-      .update({ points: newPoints })
-      .eq('id', selectedTeacher.id);
-
-    if (!error) {
-      await saveLog(selectedTeacher.id, finalAmount, finalReason, sessionTitle);
-      
-      if (isActive) {
-        setActiveActions(prev => prev.filter(a => a !== actionKey));
-      } else {
-        setActiveActions(prev => [...prev, actionKey]);
-      }
-      
-      const updatedTeacher = { ...selectedTeacher, points: newPoints };
-      setSelectedTeacher(updatedTeacher);
-      setTeachers(prev => prev.map(t => t.id === selectedTeacher.id ? updatedTeacher : t));
-    }
   };
 
   const handleManualEdit = async (val: number) => {
     if (!selectedTeacher) return;
-    const currentPoints = selectedTeacher.points ?? 0;
+    const currentPoints = selectedTeacher.points;
     const diff = val - currentPoints;
+    if (diff === 0) return;
+
     const { error } = await supabase.from('users').update({ points: val }).eq('id', selectedTeacher.id);
     if (!error) {
-      await saveLog(selectedTeacher.id, diff, `관리자 수기 수정 (이전: ${currentPoints}P)`);
-      const updatedTeacher = { ...selectedTeacher, points: val };
-      setSelectedTeacher(updatedTeacher);
-      setTeachers(prev => prev.map(t => t.id === selectedTeacher.id ? updatedTeacher : t));
+      await supabase.from('mileage_logs').insert([{
+        teacher_id: selectedTeacher.id,
+        amount: diff,
+        reason: `관리자 직접 수정 (이전: ${currentPoints}P)`,
+        session_title: '운영진 조정'
+      }]);
+      setSelectedTeacher({ ...selectedTeacher, points: val });
+      fetchData();
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 pb-32">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <header className="flex justify-between items-end">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">강사 마일리지 관리</h1>
-          <div className="relative w-64">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input type="text" placeholder="강사 검색" className="w-full bg-white border-none py-2.5 pl-10 pr-4 rounded-xl shadow-sm text-sm outline-none" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} />
-          </div>
-        </header>
+    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-900">
+      <Sidebar />
+      <style jsx global>{`
+        .cursor-pointer-all button, 
+        .cursor-pointer-all [role="button"],
+        .cursor-pointer-all input {
+          cursor: pointer !important;
+        }
+      `}</style>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {teachers.filter(t => t.name?.includes(searchTerm)).map(t => (
-            <button key={t.id} onClick={() => openManageModal(t)} className="bg-white p-6 rounded-[32px] shadow-sm text-left cursor-pointer hover:border-blue-500 border border-transparent transition-all active:scale-95">
-              <h3 className="font-black text-slate-800 text-lg mb-1">{t.name} T</h3>
-              <p className="text-2xl font-black text-blue-600">{(t.points ?? 0).toLocaleString()} P</p>
-            </button>
-          ))}
+      <main className="flex-1 p-4 sm:p-8 overflow-auto cursor-pointer-all">
+        <div className="max-w-6xl mx-auto space-y-8">
+          
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-black tracking-tighter italic uppercase text-slate-950">MILEAGE DASHBOARD</h1>
+              <p className="text-slate-400 text-sm font-bold mt-1">강사별 마일리지 현황 및 투명한 활동 로그</p>
+            </div>
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+              <input 
+                type="text" 
+                placeholder="강사명 검색" 
+                className="w-full bg-white border-none py-3 pl-12 pr-4 rounded-2xl shadow-sm text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all" 
+                value={searchTerm || ''} // undefined 방지
+                onChange={(e) => setSearchTerm(e.target.value)} 
+              />
+            </div>
+          </header>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {teachers.filter(t => (t.name || '').includes(searchTerm)).map(t => (
+              <button 
+                key={t.id} 
+                onClick={() => openDetailModal(t)} 
+                className="group bg-white p-6 rounded-[32px] shadow-sm text-left border border-transparent hover:border-blue-500 transition-all active:scale-95"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="bg-slate-50 p-3 rounded-2xl group-hover:bg-blue-50 transition-colors">
+                    <User size={20} className="text-slate-400 group-hover:text-blue-500" />
+                  </div>
+                  <ArrowUpRight size={20} className="text-slate-200 group-hover:text-blue-500" />
+                </div>
+                <h3 className="font-black text-slate-900 text-lg">{t.name} T</h3>
+                <p className="text-2xl font-black text-blue-600 mt-1">{(t.points || 0).toLocaleString()} <span className="text-xs">P</span></p>
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-50 flex items-center gap-3">
+              <History className="text-blue-500" size={20}/>
+              <h3 className="text-lg font-black italic uppercase tracking-tight">Recent Global Logs</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Teacher</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Reason / Session</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {logs.map((log) => (
+                    <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-8 py-5 text-xs font-bold text-slate-400 tabular-nums">
+                        {new Date(log.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-8 py-5 text-sm font-black text-slate-900">
+                        {teachers.find(t => t.id === log.teacher_id)?.name || '알 수 없음'}T
+                      </td>
+                      <td className={`px-8 py-5 text-sm font-black ${log.amount >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                        {log.amount >= 0 ? '+' : ''}{log.amount.toLocaleString()}
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="text-xs font-black text-slate-800">{log.reason}</div>
+                        <div className="text-[10px] text-slate-400 font-bold mt-0.5">{log.session_title || ''}</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
 
       {isModalOpen && selectedTeacher && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="p-10 max-h-[85vh] overflow-y-auto">
-              <div className="flex justify-between items-start mb-8">
-                <h2 className="text-3xl font-black text-slate-900">{selectedTeacher.name} T 관리</h2>
-                <button onClick={() => setIsModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-600"><X size={24}/></button>
-              </div>
-
-              {/* 수기 수정 */}
-              <div className="mb-8 p-5 bg-blue-50 rounded-[24px] flex items-center gap-4 border border-blue-100">
-                <Edit3 size={18} className="text-blue-500"/>
-                <span className="text-xs font-black text-blue-700 uppercase tracking-tighter">Current Points Edit:</span>
-                <input type="number" value={selectedTeacher.points ?? 0} onChange={(e) => handleManualEdit(Number(e.target.value))} className="w-32 p-2 rounded-xl font-black text-blue-600 outline-none border-none shadow-sm"/>
-              </div>
-
-              {/* 공통 항목 */}
-              <div className="mb-10">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Star size={14}/> Common Achievements</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {[
-                    { label: '베스트 포토/피드백', val: 2000 },
-                    { label: '베스트 수업안 선정', val: 4000 },
-                    { label: '하루 3개 이상 수업', val: 5000 },
-                    { label: '개인수업 25회 달성', val: 15000 },
-                    { label: '공지 댓글 미등록', val: -5000 },
-                  ].map((item) => {
-                    const key = `common-${item.label}`;
-                    const isActive = activeActions.includes(key);
-                    return (
-                      <button key={key} onClick={() => handleToggleAction(item.val, item.label, key)} className={`p-4 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between h-20 ${isActive ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-slate-100 hover:border-blue-400 hover:shadow-md'}`}>
-                        <div className={`text-[10px] font-black ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>{item.label}</div>
-                        <div className="text-sm font-black flex justify-between items-center w-full">
-                          <span>{item.val > 0 ? '+' : ''}{item.val.toLocaleString()}</span>
-                          {isActive && <Check size={14}/>}
-                        </div>
-                      </button>
-                    );
-                  })}
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
+          <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="p-8 sm:p-10 overflow-y-auto">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-950 italic uppercase">{selectedTeacher.name} T LOGS</h2>
+                  <p className="text-blue-600 font-black text-lg">Current Total: {(selectedTeacher.points || 0).toLocaleString()} P</p>
                 </div>
+                <button onClick={() => setIsModalOpen(false)} className="bg-slate-100 p-2 rounded-full text-slate-400 hover:text-slate-900 transition-all"><X size={20}/></button>
               </div>
 
-              {/* 세션 항목 */}
-              <div>
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Calendar size={14}/> Weekly Schedule Actions</h3>
-                <div className="space-y-4">
-                  {teacherSessions.map((session) => (
-                    <div key={session.id} className="bg-slate-50 p-6 rounded-[28px] border border-slate-100">
-                      <div className="text-xs font-black text-slate-800 mb-4">{session.title} <span className="text-slate-400 ml-2 font-medium">{new Date(session.start_at).toLocaleDateString()}</span></div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {[
-                          { label: '보고 누락', val: -2500 },
-                          { label: '피드백 누락', val: -2500 },
-                          { label: '당일 연기 (센터)', val: 5000 },
-                          { label: '당일 연기 요청 (강사)', val: -15000 },
-                          { label: '무단 결강', val: -50000 },
-                        ].map((act) => {
-                          const key = `${session.id}-${act.label}`;
-                          const isActive = activeActions.includes(key);
-                          return (
-                            <button key={key} onClick={() => handleToggleAction(act.val, act.label, key, session.title)} className={`py-3 px-2 rounded-xl text-[9px] font-black border cursor-pointer transition-all flex items-center justify-center gap-1 ${isActive ? 'bg-rose-500 border-rose-500 text-white' : 'bg-white border-slate-100 hover:border-blue-500'}`}>
-                              {isActive ? <><Check size={10}/> 반영됨</> : `${act.label} (${act.val > 0 ? '+' : ''}${act.val.toLocaleString()})`}
-                            </button>
-                          );
-                        })}
+              <div className="mb-8 p-6 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Edit3 size={18} className="text-slate-400"/>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">Manual Correction</span>
+                </div>
+                <input 
+                  type="number" 
+                  value={selectedTeacher.points ?? 0} // 절대 undefined 안되게 수정
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setSelectedTeacher({...selectedTeacher, points: val});
+                  }}
+                  onBlur={(e) => handleManualEdit(Number(e.target.value))} 
+                  className="w-32 p-3 rounded-2xl font-black text-blue-600 outline-none border-2 border-transparent focus:border-blue-500 shadow-sm text-right"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Calendar size={14}/> Activity Timeline
+                </h3>
+                {teacherLogs.length > 0 ? (
+                  teacherLogs.map((log) => (
+                    <div key={log.id} className="flex gap-4 p-4 rounded-2xl border border-slate-50 bg-white shadow-sm hover:border-blue-100 transition-all">
+                      <div className={`mt-1 p-2 rounded-xl h-fit ${log.amount >= 0 ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-500'}`}>
+                        {log.amount >= 0 ? <ArrowUpRight size={16}/> : <ArrowDownRight size={16}/>}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <span className="text-sm font-black text-slate-900 leading-tight">{log.reason || ''}</span>
+                          <span className="text-[10px] font-bold text-slate-300 tabular-nums whitespace-nowrap ml-2">
+                            {new Date(log.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-black mt-1 uppercase tracking-tighter">{log.session_title || '일반 항목'}</p>
+                        <p className={`text-sm font-black mt-2 ${log.amount >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                          {log.amount >= 0 ? '+' : ''}{(log.amount || 0).toLocaleString()} P
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <div className="py-20 text-center">
+                    <History size={40} className="mx-auto text-slate-100 mb-4"/>
+                    <p className="text-slate-300 font-bold text-sm italic">기록된 로그가 없습니다.</p>
+                  </div>
+                )}
               </div>
-
-              <button onClick={() => setIsModalOpen(false)} className="mt-10 w-full py-5 bg-slate-900 text-white rounded-[24px] font-black cursor-pointer hover:bg-blue-600 transition-all shadow-xl active:scale-95">반영 확인 및 닫기</button>
             </div>
+            <button 
+              onClick={() => setIsModalOpen(false)} 
+              className="m-8 mt-0 py-4 bg-slate-950 text-white rounded-2xl font-black hover:bg-blue-600 transition-all shadow-xl shadow-slate-200"
+            >
+              CONFIRM & CLOSE
+            </button>
           </div>
         </div>
       )}

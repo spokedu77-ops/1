@@ -15,6 +15,7 @@ export interface SessionEvent {
   themeColor: string;
   isAdmin: boolean;
   roundInfo?: string;
+  mileageAction?: string; // 선택된 마일리지 액션 (하나만)
 }
 
 export interface TeacherInput {
@@ -33,6 +34,7 @@ export interface ModalProps {
     start: string;
     end: string;
     memo: string;
+    mileageAction?: string; // 선택된 마일리지 액션
   };
   setEditFields: (fields: any) => void;
   teacherList: { id: string; name: string }[];
@@ -40,5 +42,7 @@ export interface ModalProps {
   onUpdateStatus: (status: string | null) => void;
   onPostpone: (e: React.MouseEvent) => void;
   onUndoPostpone: (e: React.MouseEvent) => void;
-  onToggleMileage?: (label: string, val: number) => void; // ? 추가해서 안전하게 설정
+  onToggleMileage?: (label: string, val: number) => void;
+  onAddTeacher?: () => void; // 강사 추가
+  onRemoveTeacher?: (index: number) => void; // 강사 제거
 }

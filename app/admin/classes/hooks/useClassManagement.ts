@@ -34,6 +34,7 @@ export function useClassManagement() {
         }
 
         let displayTeacher = s.users?.name || '미정';
+        // [주의] students_text 내부의 EXTRA_TEACHERS 데이터를 읽기만 해야 합니다.
         if (s.students_text?.includes('EXTRA_TEACHERS:')) {
           try {
             const extras = JSON.parse(s.students_text.split('EXTRA_TEACHERS:')[1]);
@@ -43,11 +44,22 @@ export function useClassManagement() {
         }
 
         return {
-          id: s.id, title: s.title.replace(/(\d+\/\d+)\s?/, '').trim(),
-          start: s.start_at, end: s.end_at, teacher: displayTeacher, teacherId: s.users?.id || '', 
-          type: s.session_type, status: s.status, groupId: s.group_id, price: s.price || 0,
-          studentsText: s.students_text || '', isAdmin: ADMIN_NAMES.some(admin => displayTeacher.includes(admin)), 
-          roundInfo: roundStr, themeColor: (s.session_type === 'regular_center' ? '#2563EB' : '#10B981'),
+          id: s.id, 
+          title: s.title.replace(/(\d+\/\d+)\s?/, '').trim(),
+          start: s.start_at, 
+          end: s.end_at, 
+          teacher: displayTeacher, 
+          teacherId: s.users?.id || '', 
+          type: s.session_type, 
+          status: s.status, 
+          groupId: s.group_id, 
+          price: s.price || 0,
+          studentsText: s.students_text || '', 
+          isAdmin: ADMIN_NAMES.some(admin => displayTeacher.includes(admin)), 
+          roundInfo: roundStr, 
+          themeColor: (s.session_type === 'regular_center' ? '#2563EB' : '#10B981'),
+          // 마일리지 옵션이 있다면 여기 추가되어야 합니다.
+          mileageOption: s.mileage_option || null, 
         };
       });
       setAllEvents(events);
@@ -55,7 +67,38 @@ export function useClassManagement() {
     }
   }, []);
 
+  // [핵심 추가] 마일리지 전용 업데이트 함수
+  // 이 함수는 오직 마일리지 필드만 건드리므로 피드백 양식을 지우지 않습니다.
+  const updateMileageOnly = async (sessionId: string, mileageOption: any) => {
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ 
+          mileage_option: mileageOption,
+          // 여기서 status나 students_text를 명시하지 않음으로써 기존 데이터를 보호합니다.
+        })
+        .eq('id', sessionId);
+      
+      if (error) throw error;
+      await fetchSessions(); // 변경 후 목록 새로고침
+      return true;
+    } catch (err) {
+      console.error("Mileage Update Error:", err);
+      return false;
+    }
+  };
+
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
-  return { filteredEvents, teacherList, filterTeacher, setFilterTeacher, currentView, setCurrentView, fetchSessions, supabase };
+  return { 
+    filteredEvents, 
+    teacherList, 
+    filterTeacher, 
+    setFilterTeacher, 
+    currentView, 
+    setCurrentView, 
+    fetchSessions, 
+    updateMileageOnly, // 새로 만든 안전한 함수를 내보냅니다.
+    supabase 
+  };
 }

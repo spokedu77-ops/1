@@ -19,6 +19,7 @@ import {
   User,
   Wallet,
   Medal, 
+  MessageCircle,
   CalendarCheck
 } from 'lucide-react';
 
@@ -59,6 +60,7 @@ export default function Sidebar() {
     {
       group: "강사 및 기타 관리",
       items: [
+        { name: "강사 소통 채팅", href: "/admin/chat", icon: MessageCircle },
         { name: "연간 커리큘럼", href: "/admin/curriculum", icon: BookOpen },
         { name: "교구/재고 관리", href: "/admin/inventory", icon: Box },
         { name: "강사 정보 관리", href: "/admin/users", icon: Users },
@@ -71,7 +73,6 @@ export default function Sidebar() {
         ...(userEmail === 'choijihoon@spokedu.com' 
           ? [
               { name: "정산 리포트", href: "/admin/master/reports", icon: CreditCard },
-              { name: "가계부 관리", href: "/admin/master/finance", icon: Wallet } 
             ] 
           : [])
       ]

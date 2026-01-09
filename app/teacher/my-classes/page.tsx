@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
@@ -33,8 +33,8 @@ interface Session {
   session_type: string;
   status: string;
   students_text?: string;
-  photo_url?: string[]; // jsonb이므로 배열 타입
-  file_url?: string[];  // jsonb이므로 배열 타입
+  photo_url?: string[];
+  file_url?: string[];
 }
 
 function MyClassesContent() {
@@ -97,14 +97,21 @@ function MyClassesContent() {
   const handleItemClick = (session: Session) => {
     setSelectedEvent(session);
     setFeedback(session.students_text || FEEDBACK_TEMPLATE);
-    // jsonb 대응: 배열인지 확인 후 바로 세팅
     setPhotoUrls(Array.isArray(session.photo_url) ? session.photo_url : []);
     setFileUrls(Array.isArray(session.file_url) ? session.file_url : []);
     setIsModalOpen(true);
   };
 
+  // [핵심 수정] 마일리지 등 다른 필드를 보호하며 피드백만 저장
   const handleCompleteSession = async () => {
     if (!selectedEvent || uploading) return;
+    
+    // 빈 양식 방지: 템플릿 제외 실질적 내용이 있는지 체크
+    const pureContent = feedback.replace(FEEDBACK_TEMPLATE, '').replace(/\s/g, '');
+    if (pureContent.length < 5) {
+      return alert('수업 피드백 내용을 입력해주세요.');
+    }
+
     setUploading(true);
     try {
       const { error } = await supabase
@@ -112,13 +119,14 @@ function MyClassesContent() {
         .update({ 
           status: 'finished', 
           students_text: feedback.trim(), 
-          photo_url: photoUrls, // 배열 그대로 저장
-          file_url: fileUrls    // 배열 그대로 저장
+          photo_url: photoUrls, 
+          file_url: fileUrls 
+          // mileage_option 등을 명시하지 않음으로써 관리자가 설정한 정산 데이터 보호
         })
         .eq('id', selectedEvent.id);
 
       if (error) throw error;
-      alert('기록이 저장되었습니다.');
+      alert('성공적으로 저장되었습니다.');
       setIsModalOpen(false);
       getMySchedule();
     } catch (err: any) {
@@ -129,41 +137,37 @@ function MyClassesContent() {
   };
 
   const handleResetStatus = async () => {
-    if (!selectedEvent || !confirm('초기화하시겠습니까?')) return;
+    if (!selectedEvent || !confirm('초기화하시겠습니까? (작성된 피드백이 삭제됩니다)')) return;
     setUploading(true);
     try {
       await supabase.from('sessions').update({ 
-        status: 'pending', students_text: null, photo_url: [], file_url: [] 
+        status: 'pending', 
+        students_text: null, 
+        photo_url: [], 
+        file_url: [] 
       }).eq('id', selectedEvent.id);
       setIsModalOpen(false);
       getMySchedule();
     } finally { setUploading(false); }
   };
 
-const uploadFile = async (file: File, bucket: string) => {
-  if (!selectedEvent) return null;
-  setUploading(true);
-  try {
-    const fileExt = file.name.split('.').pop();
-    // 한글/특수문자 없는 안전한 파일명 생성
-    const safeFileName = `${selectedEvent.id}/${Date.now()}.${fileExt}`;
-    
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(safeFileName, file);
-
-    if (error) throw error;
-
-    const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(safeFileName).data;
-    return publicUrl;
-  } catch (err: any) {
-    console.error('RLS/Upload Error:', err);
-    alert(`권한 오류가 발생했습니다. Supabase Storage Policy를 확인해 주세요. (${err.message})`);
-    return null;
-  } finally {
-    setUploading(false);
-  }
-};
+  const uploadFile = async (file: File, bucket: string) => {
+    if (!selectedEvent) return null;
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const safeFileName = `${selectedEvent.id}/${Date.now()}.${fileExt}`;
+      const { error } = await supabase.storage.from(bucket).upload(safeFileName, file);
+      if (error) throw error;
+      const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(safeFileName).data;
+      return publicUrl;
+    } catch (err: any) {
+      alert(`파일 업로드 오류: ${err.message}`);
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const { monday, sunday } = getWeekRange(new Date(currentDate));
 
@@ -193,28 +197,44 @@ const uploadFile = async (file: File, bucket: string) => {
           ) : sessions.length === 0 ? (
             <div className="py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-slate-100 text-slate-300 font-bold text-sm tracking-widest uppercase">No Data</div>
           ) : (
-            sessions.map((session) => (
-              <div key={session.id} onClick={() => handleItemClick(session)} className={`p-6 rounded-[28px] shadow-sm border-2 transition-all cursor-pointer flex items-center justify-between ${isToday(session.start_at) ? 'border-blue-400 bg-blue-50/30' : 'bg-white border-transparent hover:border-slate-200'}`}>
-                <div className="flex items-center gap-6">
-                  <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center ${isToday(session.start_at) ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-900'}`}>
-                    <span className="text-base font-black">{new Date(session.start_at).getHours()}:{String(new Date(session.start_at).getMinutes()).padStart(2, '0')}</span>
-                  </div>
-                  <div className="text-left">
-                    <div className="flex gap-2 mb-1">
-                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${session.session_type === 'regular_center' ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>{session.session_type === 'regular_center' ? 'Center' : 'Visit'}</span>
+            sessions.map((session) => {
+              const startDate = new Date(session.start_at);
+              const dayName = startDate.toLocaleDateString('ko-KR', { weekday: 'short' });
+              const dateDisplay = `${startDate.getMonth() + 1}.${startDate.getDate()}`;
+              const timeDisplay = `${startDate.getHours()}:${String(startDate.getMinutes()).padStart(2, '0')}`;
+              
+              // [상태 판별 개선] 템플릿 제외 텍스트가 있어야 Done으로 표시
+              const pureContent = session.students_text 
+                ? session.students_text.replace(FEEDBACK_TEMPLATE, '').replace(/\s/g, '') 
+                : '';
+              
+              const isVerified = session.status === 'verified';
+              const isActuallyDone = (session.status === 'finished' || isVerified) && pureContent.length > 5;
+
+              return (
+                <div key={session.id} onClick={() => handleItemClick(session)} className={`p-4 md:p-6 rounded-[28px] shadow-sm border-2 transition-all cursor-pointer flex items-center justify-between ${isToday(session.start_at) ? 'border-blue-400 bg-blue-50/30' : 'bg-white border-transparent hover:border-slate-200'}`}>
+                  <div className="flex items-center gap-4 md:gap-6">
+                    <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center shrink-0 ${isToday(session.start_at) ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-900'}`}>
+                      <span className={`text-[10px] font-black uppercase mb-0.5 ${isToday(session.start_at) ? 'text-blue-100' : 'text-slate-400'}`}>{dayName} {dateDisplay}</span>
+                      <span className="text-lg font-black leading-none">{timeDisplay}</span>
                     </div>
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight">{session.title || 'Untitled'}</h3>
+                    <div className="text-left">
+                      <div className="flex gap-2 mb-1">
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${session.session_type === 'regular_center' ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>{session.session_type === 'regular_center' ? 'Center' : 'Visit'}</span>
+                      </div>
+                      <h3 className="text-base md:text-lg font-black text-slate-800 tracking-tight line-clamp-1">{session.title || 'Untitled'}</h3>
+                    </div>
+                  </div>
+                  <div className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
+                    isActuallyDone || isVerified
+                      ? 'bg-emerald-50 text-emerald-500' 
+                      : 'bg-slate-50 text-slate-300'
+                  }`}>
+                    {(isActuallyDone || isVerified) ? 'Done' : 'Wait'}
                   </div>
                 </div>
-                <div className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest ${
-  (session.status === 'finished' || session.status === 'verified') 
-    ? 'bg-emerald-50 text-emerald-500' 
-    : 'bg-slate-50 text-slate-300'
-}`}>
-  {(session.status === 'finished' || session.status === 'verified') ? 'Done' : 'Wait'}
-</div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -223,11 +243,16 @@ const uploadFile = async (file: File, bucket: string) => {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
           <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
             <div className="px-8 py-6 border-b flex justify-between items-center bg-white sticky top-0 z-10 text-left">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">Session Report</h2>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">Session Report</h2>
+                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">
+                  {new Date(selectedEvent.start_at).toLocaleString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
               <button onClick={() => setIsModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 space-y-10 text-left">
+            <div className="flex-1 overflow-y-auto p-8 space-y-10 text-left bg-slate-50/30">
               {selectedEvent.session_type === 'regular_center' && (
                 <div className="space-y-4 p-6 bg-blue-50/50 rounded-[32px] border border-blue-100">
                   <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest">
@@ -254,9 +279,10 @@ const uploadFile = async (file: File, bucket: string) => {
               <div className="space-y-4">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Daily Feedback</label>
                 <textarea 
-                  className="w-full min-h-[250px] bg-slate-50 rounded-[32px] p-8 text-[15px] leading-relaxed text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-50 shadow-inner resize-none border-none transition-all"
+                  className="w-full min-h-[300px] bg-white rounded-[32px] p-8 text-[15px] leading-relaxed text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 shadow-sm border border-slate-100 resize-none transition-all"
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="아이들의 성장을 기록해주세요..."
                 />
               </div>
 
@@ -270,7 +296,7 @@ const uploadFile = async (file: File, bucket: string) => {
                     </div>
                   ))}
                   {photoUrls.length < 3 && (
-                    <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center bg-slate-50 text-slate-300 hover:bg-white hover:border-blue-400 cursor-pointer transition-all active:scale-95">
+                    <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center bg-white text-slate-300 hover:bg-slate-50 hover:border-blue-400 cursor-pointer transition-all active:scale-95">
                       <Camera size={24} />
                       <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
                         const url = await uploadFile(e.target.files?.[0] as File, 'session-photos');
