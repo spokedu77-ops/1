@@ -51,7 +51,7 @@ export default function SessionEditModal({
   const canFinish = 
     selectedEvent.status === 'opened' || 
     selectedEvent.status === null || 
-    selectedEvent.session_type === 'regular_center';
+    ('session_type' in selectedEvent && selectedEvent.session_type === 'regular_center');
 
   const selectedActions = editFields.mileageAction 
     ? editFields.mileageAction.split(',').map(s => s.trim()).filter(Boolean)
