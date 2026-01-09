@@ -8,14 +8,18 @@ export interface SessionEvent {
   teacher: string;
   teacherId: string;
   type: string;
-  status: string;
+  status: string | null;
   groupId?: string;
   price: number;
   studentsText: string;
   themeColor: string;
   isAdmin: boolean;
   roundInfo?: string;
-  mileageAction?: string; // 선택된 마일리지 액션 (하나만)
+  mileageAction?: string; // 선택된 마일리지 액션 (UI 반영용)
+  
+  // [필수 추가] 근본적인 빌드 에러 해결을 위한 속성
+  session_type?: string;   // SessionEditModal.tsx 54번 줄 에러 해결
+  mileage_option?: string; // page.tsx 데이터 로딩 에러 해결
 }
 
 export interface TeacherInput {
@@ -34,7 +38,7 @@ export interface ModalProps {
     start: string;
     end: string;
     memo: string;
-    mileageAction?: string; // 선택된 마일리지 액션
+    mileageAction?: string;
   };
   setEditFields: (fields: any) => void;
   teacherList: { id: string; name: string }[];
@@ -43,6 +47,6 @@ export interface ModalProps {
   onPostpone: (e: React.MouseEvent) => void;
   onUndoPostpone: (e: React.MouseEvent) => void;
   onToggleMileage?: (label: string, val: number) => void;
-  onAddTeacher?: () => void; // 강사 추가
-  onRemoveTeacher?: (index: number) => void; // 강사 제거
+  onAddTeacher?: () => void;
+  onRemoveTeacher?: (index: number) => void;
 }

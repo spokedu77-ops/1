@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin, { EventDropArg } from '@fullcalendar/interaction';
-import { EventClickArg } from '@fullcalendar/core';
+import interactionPlugin from "@fullcalendar/interaction";
+import { EventClickArg, EventDropArg } from "@fullcalendar/core";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Sidebar from '@/app/components/Sidebar';
 import { useClassManagement } from './hooks/useClassManagement';
@@ -13,12 +13,12 @@ import SessionEditModal from './components/SessionEditModal';
 import { SessionEvent, TeacherInput } from './types';
 
 const MILEAGE_DATA = [
-  { label: '보고 누락', val: -1000 },
-  { label: '피드백 누락', val: -1000 },
-  { label: '연기 요청', val: -5000 },
-  { label: '당일 요청', val: -15000 },
-  { label: '수업 연기', val: 2500 },
-  { label: '당일 연기', val: 5000 },
+  { label: '蹂닿퀬 ?꾨씫', val: -1000 },
+  { label: '?쇰뱶諛??꾨씫', val: -1000 },
+  { label: '?곌린 ?붿껌', val: -5000 },
+  { label: '?뱀씪 ?붿껌', val: -15000 },
+  { label: '?섏뾽 ?곌린', val: 2500 },
+  { label: '?뱀씪 ?곌린', val: 5000 },
 ];
 
 export default function ClassManagementPage() {
@@ -71,8 +71,8 @@ export default function ClassManagementPage() {
     if (!startObj || !endObj) return;
     
     let cleanMemo = p.studentsText || '';
-    // mileageOption 컬럼에서 우선 로드하고, 없으면 예전 방식(텍스트 파싱)으로 백업
-    let existingMileage = p.mileageOption || ''; 
+    // [洹쇰낯 ?닿껐 3] types.ts??異붽???mileage_option ?띿꽦???덉쟾?섍쾶 李몄“
+    let existingMileage = p.mileage_option || p.mileageOption || ''; 
     
     if (!existingMileage && cleanMemo.includes('MILEAGE_ACTIONS:')) {
       const parts = cleanMemo.split('MILEAGE_ACTIONS:');
@@ -80,14 +80,28 @@ export default function ClassManagementPage() {
       existingMileage = parts[1]?.trim() || '';
     }
 
-    setSelectedEvent({ 
+    // [洹쇰낯 ?닿껐 4] SessionEvent ?명꽣?섏씠??洹쒓꺽??留욎떠 媛앹껜 ?앹꽦
+    const eventData: SessionEvent = { 
       id: info.event.id, 
       title: info.event.title, 
       start: startObj, 
       end: endObj, 
-      ...p,
-      mileageAction: existingMileage 
-    });
+      teacher: p.teacher || '',
+      teacherId: p.teacherId || '',
+      type: p.type || '',
+      status: p.status || null,
+      groupId: p.groupId,
+      price: p.price || 0,
+      studentsText: p.studentsText || '',
+      themeColor: p.themeColor || '',
+      isAdmin: !!p.isAdmin,
+      roundInfo: p.roundInfo,
+      mileageAction: existingMileage,
+      session_type: p.session_type, // Modal ?먮윭 ?닿껐??
+      mileage_option: existingMileage // ?곗씠???뺥빀?깆슜
+    };
+
+    setSelectedEvent(eventData);
     
     let loadedTeachers: TeacherInput[] = [{ id: p.teacherId || '', price: p.price || 0 }];
     if (cleanMemo.includes('EXTRA_TEACHERS:')) {
@@ -126,7 +140,7 @@ export default function ClassManagementPage() {
   const handleUpdate = async () => {
     if (!selectedEvent) return;
     const mainT = editFields.teachers[0];
-    if (!mainT?.id) { alert('강사를 선택해주세요.'); return; }
+    if (!mainT?.id) { alert('媛뺤궗瑜??좏깮?댁＜?몄슂.'); return; }
     
     try {
       const [y, m, d] = editFields.date.split('-').map(Number);
@@ -170,7 +184,7 @@ export default function ClassManagementPage() {
           await supabase.from('mileage_logs').insert([{
             teacher_id: mainT.id,
             amount: diff,
-            reason: `[수업연동] ${diff > 0 ? '원복' : '차감'}: ${editFields.mileageAction || '해제'}`,
+            reason: `[?섏뾽?곕룞] ${diff > 0 ? '?먮났' : '李④컧'}: ${editFields.mileageAction || '?댁젣'}`,
             session_title: editFields.title
           }]);
         } catch (e) { console.warn(e); }
@@ -179,7 +193,7 @@ export default function ClassManagementPage() {
       setIsModalOpen(false); 
       fetchSessions();
     } catch (error: any) {
-      alert('저장 실패: ' + (error.message || 'Error'));
+      alert('????ㅽ뙣: ' + (error.message || 'Error'));
     }
   };
 
@@ -187,7 +201,7 @@ export default function ClassManagementPage() {
     if (!selectedEvent) return;
     try {
       if (status === 'deleted') {
-        if (!confirm('영구 삭제하시겠습니까?')) return;
+        if (!confirm('?곴뎄 ??젣?섏떆寃좎뒿?덇퉴?')) return;
         await supabase.from('sessions').delete().eq('id', selectedEvent.id);
       } else {
         await supabase.from('sessions').update({ status }).eq('id', selectedEvent.id);
@@ -199,7 +213,7 @@ export default function ClassManagementPage() {
   const handlePostponeCascade = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     const targetId = selectedEvent?.id;
-    if (!targetId || !confirm('1주일씩 미루시겠습니까?')) return;
+    if (!targetId || !confirm('1二쇱씪??誘몃（?쒓쿋?듬땲源?')) return;
     try {
       const { data: curr } = await supabase.from('sessions').select('*').eq('id', targetId).single();
       if (!curr?.group_id) return;
@@ -220,7 +234,7 @@ export default function ClassManagementPage() {
   const handleUndoPostpone = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     const targetId = selectedEvent?.id;
-    if (!targetId || !confirm('복구하시겠습니까?')) return;
+    if (!targetId || !confirm('蹂듦뎄?섏떆寃좎뒿?덇퉴?')) return;
     try {
       const { data: curr } = await supabase.from('sessions').select('*').eq('id', targetId).single();
       if (!curr?.group_id) return;
@@ -249,22 +263,10 @@ export default function ClassManagementPage() {
           .fc-daygrid-day-number { font-size: 0.9rem; font-weight: 900; font-style: italic; color: #CBD5E1; padding: 6px 10px !important; position: relative; z-index: 1; }
           .fc-day-today { background-color: #F8FAFC !important; }
           .fc-daygrid-event { white-space: normal !important; overflow: hidden !important; background: transparent !important; border: none !important; }
-          
-          .month-event-card { 
-            background: white; border-radius: 6px; padding: 4px; margin: 1px 2px; 
-            font-size: 10px; line-height: 1.2; border-left: 3px solid; 
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05); width: calc(100% - 4px); box-sizing: border-box;
-            overflow: hidden;
-          }
+          .month-event-card { background: white; border-radius: 6px; padding: 4px; margin: 1px 2px; font-size: 10px; line-height: 1.2; border-left: 3px solid; box-shadow: 0 1px 2px rgba(0,0,0,0.05); width: calc(100% - 4px); box-sizing: border-box; overflow: hidden; }
           .month-event-time { font-weight: 700; color: #64748b; font-size: 9px; }
           .month-event-teacher { font-weight: 800; font-size: 9px; margin-top: 1px; }
-          
-          .month-event-title { 
-            font-weight: 600; color: #1e293b; margin-top: 1px; 
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
-            overflow: hidden; text-overflow: ellipsis; word-break: break-all;
-          }
-
+          .month-event-title { font-weight: 600; color: #1e293b; margin-top: 1px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; word-break: break-all; }
           .four-day-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; font-size: 10px; font-weight: 800; margin-top: 4px; color: #1E293B; word-break: keep-all; white-space: normal; }
           .fc-daygrid-day-frame { min-height: 100px !important; }
         `}</style>
@@ -328,7 +330,7 @@ export default function ClassManagementPage() {
                 <div className="w-full flex flex-col p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border-l-[3px] sm:border-l-[4px] shadow-sm" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
                   <div className="flex justify-between items-start">
                     <div className="text-[9px] sm:text-[10px] font-bold text-slate-400 tabular-nums">{time24}</div>
-                    {(isPostponed || isCancelled) && <span className={`text-white text-[6px] sm:text-[7px] px-1 sm:px-1.5 py-0.5 rounded-full font-black ${isPostponed ? 'bg-purple-500' : 'bg-red-500'}`}>{isPostponed ? '연기됨' : '취소됨'}</span>}
+                    {(isPostponed || isCancelled) && <span className={`text-white text-[6px] sm:text-[7px] px-1 sm:px-1.5 py-0.5 rounded-full font-black ${isPostponed ? 'bg-purple-500' : 'bg-red-500'}`}>{isPostponed ? '?곌린?? : '痍⑥냼??}</span>}
                   </div>
                   <div className="flex justify-between items-end mt-0.5 sm:mt-1">
                     <div className={`text-[10px] sm:text-[11px] font-black ${isAdmin ? 'text-amber-700' : 'text-blue-600'}`}>{teacher}T</div>
