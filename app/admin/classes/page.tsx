@@ -4,8 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from "@fullcalendar/interaction";
-import { EventClickArg, EventDropArg } from "@fullcalendar/core";
+import interactionPlugin from '@fullcalendar/interaction';
+import { EventClickArg, EventDropArg } from '@fullcalendar/core';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Sidebar from '@/app/components/Sidebar';
 import { useClassManagement } from './hooks/useClassManagement';
@@ -13,18 +13,22 @@ import SessionEditModal from './components/SessionEditModal';
 import { SessionEvent, TeacherInput } from './types';
 
 const MILEAGE_DATA = [
-  { label: '蹂닿퀬 ?꾨씫', val: -1000 },
-  { label: '?쇰뱶諛??꾨씫', val: -1000 },
-  { label: '?곌린 ?붿껌', val: -5000 },
-  { label: '?뱀씪 ?붿껌', val: -15000 },
-  { label: '?섏뾽 ?곌린', val: 2500 },
-  { label: '?뱀씪 ?곌린', val: 5000 },
+  { label: '보고 누락', val: -1000 },
+  { label: '피드백 누락', val: -1000 },
+  { label: '연기 요청', val: -5000 },
+  { label: '당일 요청', val: -15000 },
+  { label: '수업 연기', val: 2500 },
+  { label: '당일 연기', val: 5000 },
 ];
 
 export default function ClassManagementPage() {
   const calendarRef = useRef<FullCalendar>(null);
   const { filteredEvents, teacherList, fetchSessions, supabase, currentView, setCurrentView } = useClassManagement();
   
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const initialDateStr = yesterday.toISOString().split('T')[0];
+
   const [selectedEvent, setSelectedEvent] = useState<SessionEvent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editFields, setEditFields] = useState({ 
@@ -71,7 +75,6 @@ export default function ClassManagementPage() {
     if (!startObj || !endObj) return;
     
     let cleanMemo = p.studentsText || '';
-    // [洹쇰낯 ?닿껐 3] types.ts??異붽???mileage_option ?띿꽦???덉쟾?섍쾶 李몄“
     let existingMileage = p.mileage_option || p.mileageOption || ''; 
     
     if (!existingMileage && cleanMemo.includes('MILEAGE_ACTIONS:')) {
@@ -80,7 +83,6 @@ export default function ClassManagementPage() {
       existingMileage = parts[1]?.trim() || '';
     }
 
-    // [洹쇰낯 ?닿껐 4] SessionEvent ?명꽣?섏씠??洹쒓꺽??留욎떠 媛앹껜 ?앹꽦
     const eventData: SessionEvent = { 
       id: info.event.id, 
       title: info.event.title, 
@@ -97,8 +99,8 @@ export default function ClassManagementPage() {
       isAdmin: !!p.isAdmin,
       roundInfo: p.roundInfo,
       mileageAction: existingMileage,
-      session_type: p.session_type, // Modal ?먮윭 ?닿껐??
-      mileage_option: existingMileage // ?곗씠???뺥빀?깆슜
+      session_type: p.session_type,
+      mileage_option: existingMileage
     };
 
     setSelectedEvent(eventData);
@@ -140,7 +142,7 @@ export default function ClassManagementPage() {
   const handleUpdate = async () => {
     if (!selectedEvent) return;
     const mainT = editFields.teachers[0];
-    if (!mainT?.id) { alert('媛뺤궗瑜??좏깮?댁＜?몄슂.'); return; }
+    if (!mainT?.id) { alert('강사를 선택해주세요.'); return; }
     
     try {
       const [y, m, d] = editFields.date.split('-').map(Number);
@@ -184,7 +186,7 @@ export default function ClassManagementPage() {
           await supabase.from('mileage_logs').insert([{
             teacher_id: mainT.id,
             amount: diff,
-            reason: `[?섏뾽?곕룞] ${diff > 0 ? '?먮났' : '李④컧'}: ${editFields.mileageAction || '?댁젣'}`,
+            reason: `[수업연동] ${diff > 0 ? '원복' : '차감'}: ${editFields.mileageAction || '해제'}`,
             session_title: editFields.title
           }]);
         } catch (e) { console.warn(e); }
@@ -193,7 +195,7 @@ export default function ClassManagementPage() {
       setIsModalOpen(false); 
       fetchSessions();
     } catch (error: any) {
-      alert('????ㅽ뙣: ' + (error.message || 'Error'));
+      alert('저장 실패: ' + (error.message || 'Error'));
     }
   };
 
@@ -201,7 +203,7 @@ export default function ClassManagementPage() {
     if (!selectedEvent) return;
     try {
       if (status === 'deleted') {
-        if (!confirm('?곴뎄 ??젣?섏떆寃좎뒿?덇퉴?')) return;
+        if (!confirm('영구 삭제하시겠습니까?')) return;
         await supabase.from('sessions').delete().eq('id', selectedEvent.id);
       } else {
         await supabase.from('sessions').update({ status }).eq('id', selectedEvent.id);
@@ -213,7 +215,7 @@ export default function ClassManagementPage() {
   const handlePostponeCascade = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     const targetId = selectedEvent?.id;
-    if (!targetId || !confirm('1二쇱씪??誘몃（?쒓쿋?듬땲源?')) return;
+    if (!targetId || !confirm('1주일씩 미루시겠습니까?')) return;
     try {
       const { data: curr } = await supabase.from('sessions').select('*').eq('id', targetId).single();
       if (!curr?.group_id) return;
@@ -234,7 +236,7 @@ export default function ClassManagementPage() {
   const handleUndoPostpone = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     const targetId = selectedEvent?.id;
-    if (!targetId || !confirm('蹂듦뎄?섏떆寃좎뒿?덇퉴?')) return;
+    if (!targetId || !confirm('복구하시겠습니까?')) return;
     try {
       const { data: curr } = await supabase.from('sessions').select('*').eq('id', targetId).single();
       if (!curr?.group_id) return;
@@ -294,6 +296,7 @@ export default function ClassManagementPage() {
             ref={calendarRef} 
             plugins={[dayGridPlugin, interactionPlugin]} 
             initialView="rollingFourDay"
+            initialDate={initialDateStr} 
             views={{ rollingFourDay: { type: 'dayGrid', duration: { days: 4 } } }}
             editable={true} 
             eventDrop={handleEventDrop}
@@ -308,6 +311,14 @@ export default function ClassManagementPage() {
               const time24 = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
               const isPostponed = status === 'postponed', isCancelled = status === 'cancelled';
               const isFinished = (info.event.end || info.event.start || new Date()) < new Date();
+              
+              // [추가] 마지막 회차 판단 로직 (예: 4/4, 8/8)
+              let isLastRound = false;
+              if (roundInfo && roundInfo.includes('/')) {
+                const [curr, total] = roundInfo.split('/').map((s: string) => s.trim());
+                if (curr === total && total !== '0') isLastRound = true;
+              }
+
               let bgColor = isAdmin ? '#FEFCE8' : '#FFFFFF', borderColor = themeColor;
               if (isCancelled) { bgColor = '#FEF2F2'; borderColor = '#EF4444'; }
               if (isPostponed) { bgColor = '#F5F3FF'; borderColor = '#8B5CF6'; }
@@ -318,10 +329,10 @@ export default function ClassManagementPage() {
                   <div className="month-event-card" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
                     <div className="flex justify-between items-center pb-0.5 border-b border-slate-50 mb-0.5">
                       <span className="month-event-time">{time24}</span>
-                      {roundInfo && <span className="text-[8px] font-bold text-slate-300">{roundInfo}</span>}
+                      {roundInfo && <span className={`text-[8px] font-bold ${isLastRound && !isCancelled ? 'text-red-500' : 'text-slate-300'}`}>{roundInfo}</span>}
                     </div>
                     <div className={`month-event-teacher ${isAdmin ? 'text-amber-600' : 'text-blue-600'}`}>{teacher}T</div>
-                    <div className={`month-event-title ${isFinished || isPostponed || isCancelled ? 'line-through text-slate-400' : ''}`}>{info.event.title}</div>
+                    <div className={`month-event-title ${isLastRound && !isCancelled && !isPostponed && !isFinished ? 'text-red-600 font-bold' : ''} ${isFinished || isPostponed || isCancelled ? 'line-through text-slate-400' : ''}`}>{info.event.title}</div>
                   </div>
                 );
               }
@@ -330,13 +341,16 @@ export default function ClassManagementPage() {
                 <div className="w-full flex flex-col p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border-l-[3px] sm:border-l-[4px] shadow-sm" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
                   <div className="flex justify-between items-start">
                     <div className="text-[9px] sm:text-[10px] font-bold text-slate-400 tabular-nums">{time24}</div>
-                    {(isPostponed || isCancelled) && <span className={`text-white text-[6px] sm:text-[7px] px-1 sm:px-1.5 py-0.5 rounded-full font-black ${isPostponed ? 'bg-purple-500' : 'bg-red-500'}`}>{isPostponed ? '?곌린?? : '痍⑥냼??}</span>}
+                    <div className="flex gap-1">
+                      {isLastRound && !isCancelled && !isPostponed && <span className="text-white text-[6px] sm:text-[7px] px-1 sm:px-1.5 py-0.5 rounded-full font-black bg-red-600 shadow-sm animate-pulse">마지막</span>}
+                      {(isPostponed || isCancelled) && <span className={`text-white text-[6px] sm:text-[7px] px-1 sm:px-1.5 py-0.5 rounded-full font-black ${isPostponed ? 'bg-purple-500' : 'bg-red-500'}`}>{isPostponed ? '연기됨' : '취소됨'}</span>}
+                    </div>
                   </div>
                   <div className="flex justify-between items-end mt-0.5 sm:mt-1">
                     <div className={`text-[10px] sm:text-[11px] font-black ${isAdmin ? 'text-amber-700' : 'text-blue-600'}`}>{teacher}T</div>
-                    {roundInfo && <span className="text-[8px] font-black text-slate-300">{roundInfo}</span>}
+                    {roundInfo && <span className={`text-[8px] font-black ${isLastRound && !isCancelled ? 'text-red-500' : 'text-slate-300'}`}>{roundInfo}</span>}
                   </div>
-                  <div className={`four-day-title ${isFinished || isPostponed || isCancelled ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{info.event.title}</div>
+                  <div className={`four-day-title ${isLastRound && !isCancelled && !isPostponed && !isFinished ? 'text-red-600 font-black' : ''} ${isFinished || isPostponed || isCancelled ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{info.event.title}</div>
                 </div>
               );
             }}

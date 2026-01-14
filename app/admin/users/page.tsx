@@ -3,15 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
-  Search, Smartphone, School, 
-  Loader2, Upload, Trash2, Edit3, X, Save, FileText, Download,
-  Activity, CheckCircle2, Power, GraduationCap, UserPlus
+  Search, Smartphone, Loader2, Edit3, X, FileText, Download,
+  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, Tag
 } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface DocumentFile {
   name: string;
@@ -24,7 +22,8 @@ interface UserData {
   role: 'admin' | 'teacher';
   phone: string | null;
   organization: string | null;
-  bio?: string | null;
+  schedule?: string | null;
+  vacation?: string | null;
   documents: DocumentFile[] | null;
   is_active: boolean; 
 }
@@ -34,17 +33,14 @@ export default function UserDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTab, setCurrentTab] = useState<'live' | 'done'>('live');
-  
+  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<UserData>>({});
   const [uploadingId, setUploadingId] = useState<string | null>(null);
-
-  // 강사 추가 모달 상태
+  
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newPartner, setNewPartner] = useState<Partial<UserData>>({
-    role: 'teacher',
-    is_active: true
-  });
+  const [newPartner, setNewPartner] = useState<Partial<UserData>>({ role: 'teacher', is_active: true });
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -54,8 +50,21 @@ export default function UserDashboardPage() {
         .select('*')
         .in('role', ['admin', 'teacher'])
         .order('name');
+      
       if (error) throw error;
-      setUsers((data as UserData[]).map(u => ({ ...u, is_active: u.is_active ?? true })));
+      
+      const fetchedUsers = (data as UserData[]).map(u => ({ 
+        ...u, 
+        is_active: u.is_active ?? true,
+        documents: u.documents || [] 
+      }));
+      setUsers(fetchedUsers);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const loggedInUser = fetchedUsers.find(u => u.id === user.id);
+        if (loggedInUser) setCurrentUser(loggedInUser);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -67,21 +76,32 @@ export default function UserDashboardPage() {
     fetchUsers();
   }, [fetchUsers]);
 
-  // 새로운 강사 등록 로직
-  const handleAddPartner = async () => {
-    if (!newPartner.name) return alert('이름을 입력해주세요.');
+  const handleSaveInfo = async (userId: string) => {
+    if (currentUser?.role !== 'admin') return alert('관리자 권한이 없습니다.');
     try {
-      const { error } = await supabase.from('users').insert([newPartner]);
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: editForm.name,
+          phone: editForm.phone,
+          organization: editForm.organization,
+          schedule: editForm.schedule,
+          vacation: editForm.vacation
+        })
+        .eq('id', userId);
+      
       if (error) throw error;
-      setIsAddModalOpen(false);
-      setNewPartner({ role: 'teacher', is_active: true });
+      
+      setEditingId(null);
       fetchUsers();
+      alert('성공적으로 업데이트되었습니다.');
     } catch (error) {
-      alert('등록 실패: RLS 정책 및 컬럼을 확인하세요.');
+      alert('저장 실패: DB 컬럼을 확인해주세요.');
     }
   };
 
   const toggleActiveStatus = async (user: UserData) => {
+    if (currentUser?.role !== 'admin') return alert('권한이 없습니다.');
     const nextStatus = !user.is_active;
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: nextStatus } : u));
     try {
@@ -91,18 +111,17 @@ export default function UserDashboardPage() {
     }
   };
 
-  const handleSaveInfo = async (userId: string) => {
+  const handleAddPartner = async () => {
+    if (currentUser?.role !== 'admin') return alert('관리자 권한이 필요합니다.');
+    if (!newPartner.name) return alert('이름을 입력해주세요.');
     try {
-      await supabase.from('users').update({
-        name: editForm.name,
-        phone: editForm.phone,
-        organization: editForm.organization,
-        bio: editForm.bio
-      }).eq('id', userId);
-      setEditingId(null);
+      const { error } = await supabase.from('users').insert([newPartner]);
+      if (error) throw error;
+      setIsAddModalOpen(false);
+      setNewPartner({ role: 'teacher', is_active: true });
       fetchUsers();
     } catch (error) {
-      alert('저장 실패');
+      alert('등록 실패');
     }
   };
 
@@ -119,6 +138,17 @@ export default function UserDashboardPage() {
       fetchUsers();
     } finally {
       setUploadingId(null);
+    }
+  };
+
+  const deleteDocument = async (user: UserData, index: number) => {
+    if (!confirm('해당 서류를 삭제하시겠습니까?')) return;
+    const updatedDocs = (user.documents || []).filter((_, i) => i !== index);
+    try {
+      await supabase.from('users').update({ documents: updatedDocs }).eq('id', user.id);
+      fetchUsers();
+    } catch (error) {
+      alert('삭제 실패');
     }
   };
 
@@ -141,9 +171,11 @@ export default function UserDashboardPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input type="text" placeholder="검색..." className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-sm font-bold transition-all" onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
-            <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-600 transition-all cursor-pointer shadow-lg shadow-slate-900/10">
-              <UserPlus className="w-4 h-4" /> 추가
-            </button>
+            {currentUser?.role === 'admin' && (
+              <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-600 transition-all cursor-pointer shadow-lg shadow-slate-900/10">
+                <UserPlus className="w-4 h-4" /> 추가
+              </button>
+            )}
           </div>
         </div>
 
@@ -159,47 +191,112 @@ export default function UserDashboardPage() {
 
       <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredUsers.map((user) => (
-          <div key={user.id} className={`bg-white rounded-[2rem] p-6 border-2 transition-all duration-300 flex flex-col hover:shadow-xl ${user.is_active ? 'border-blue-500 shadow-blue-500/5' : 'border-transparent shadow-sm'}`}>
+          <div key={user.id} className={`bg-white rounded-[2.5rem] p-6 border-2 transition-all duration-300 flex flex-col hover:shadow-xl ${user.is_active ? 'border-blue-500 shadow-blue-500/5' : 'border-transparent shadow-sm'}`}>
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-2">
                 <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${user.role === 'teacher' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>{user.role === 'teacher' ? 'Inst' : 'Adm'}</span>
                 <span className={`text-[9px] font-black px-2 py-1 rounded-lg ${user.is_active ? 'bg-blue-600 text-white animate-pulse' : 'bg-slate-100 text-slate-500'}`}>{user.is_active ? '수업 중' : '종료'}</span>
               </div>
-              <div className="flex gap-1">
-                <button onClick={() => toggleActiveStatus(user)} className={`p-2 rounded-xl transition-all cursor-pointer shadow-sm ${user.is_active ? 'bg-blue-500 text-white hover:bg-rose-500' : 'bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white'}`}><Power className="w-3.5 h-3.5" /></button>
-                <button onClick={() => editingId === user.id ? setEditingId(null) : (setEditingId(user.id), setEditForm(user))} className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 cursor-pointer"><Edit3 className="w-3.5 h-3.5" /></button>
-              </div>
+              {currentUser?.role === 'admin' && (
+                <div className="flex gap-1">
+                  <button onClick={() => toggleActiveStatus(user)} className={`p-2 rounded-xl transition-all cursor-pointer shadow-sm ${user.is_active ? 'bg-blue-500 text-white hover:bg-rose-500' : 'bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white'}`}><Power className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => { if (editingId === user.id) { setEditingId(null); } else { setEditingId(user.id); setEditForm({ ...user }); } }} className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 cursor-pointer"><Edit3 className="w-3.5 h-3.5" /></button>
+                </div>
+              )}
             </div>
 
             {editingId === user.id ? (
               <div className="space-y-3 flex-1">
-                <input className="w-full px-2 py-1 text-xl font-black border-b-2 border-blue-500 outline-none" value={editForm.name || ''} onChange={e => setEditForm({...editForm, name: e.target.value})} />
-                <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="학교 / 학과" value={editForm.organization || ''} onChange={e => setEditForm({...editForm, organization: e.target.value})} />
-                <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="전화번호" value={editForm.phone || ''} onChange={e => setEditForm({...editForm, phone: e.target.value})} />
-                <button onClick={() => handleSaveInfo(user.id)} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black cursor-pointer">수정 완료</button>
+                <input className="w-full px-2 py-1 text-xl font-black border-b-2 border-blue-500 outline-none" value={editForm.name || ''} onChange={e => setEditForm(prev => ({...prev, name: e.target.value}))} />
+                <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="학력" value={editForm.organization || ''} onChange={e => setEditForm(prev => ({...prev, organization: e.target.value}))} />
+                <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="연락처" value={editForm.phone || ''} onChange={e => setEditForm(prev => ({...prev, phone: e.target.value}))} />
+                <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="스케줄 (쉼표로 구분: 월 15-18, 화 16-19)" value={editForm.schedule || ''} onChange={e => setEditForm(prev => ({...prev, schedule: e.target.value}))} />
+                <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="연기 희망 (쉼표로 구분: 1.23 화요일, 1.30 금요일)" value={editForm.vacation || ''} onChange={e => setEditForm(prev => ({...prev, vacation: e.target.value}))} />
+                <button onClick={() => handleSaveInfo(user.id)} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black cursor-pointer">저장</button>
               </div>
             ) : (
               <div className="flex-1">
-                <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">{user.name} <span className="text-lg text-slate-400 font-bold">선생님</span></h3>
-                <div className="flex flex-col gap-2 mb-6 text-[11px] font-bold">
-                  <div className="flex items-center text-blue-600 bg-blue-50/50 w-fit px-3 py-1.5 rounded-xl border border-blue-100"><GraduationCap className="w-3.5 h-3.5 mr-2" /> {user.organization || '학교 미등록'}</div>
-                  <div className="flex items-center text-slate-500 bg-slate-50 w-fit px-3 py-1.5 rounded-xl border border-slate-100"><Smartphone className="w-3.5 h-3.5 mr-2" /> {user.phone || '연락처 미등록'}</div>
+                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">{user.name} <span className="text-lg text-slate-400 font-bold">선생님</span></h3>
+                
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-center text-[11px] font-bold text-slate-600">
+                    <GraduationCap className="w-4 h-4 mr-3 text-blue-500" />
+                    <span className="text-slate-400 w-12 shrink-0">학력</span>
+                    <span className="truncate">{user.organization || '-'}</span>
+                  </div>
+                  <div className="flex items-center text-[11px] font-bold text-slate-600">
+                    <Smartphone className="w-4 h-4 mr-3 text-blue-500" />
+                    <span className="text-slate-400 w-12 shrink-0">연락처</span>
+                    <span>{user.phone || '-'}</span>
+                  </div>
+
+                  {/* 1번 아이디어 적용: 스케줄 태그 리스트 */}
+                  <div className="space-y-2">
+                    <div className="flex items-center text-[11px] font-bold text-slate-400 mb-1">
+                      <Clock className="w-3.5 h-3.5 mr-3 text-blue-500" /> 수업 스케줄
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pl-7">
+                      {(user.schedule || '').split(',').filter(s => s.trim()).length > 0 ? (
+                        (user.schedule || '').split(',').map((s, i) => (
+                          <span key={i} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-[10px] font-black border border-blue-100">
+                            {s.trim()}
+                          </span>
+                        ))
+                      ) : <span className="text-[10px] text-slate-300 italic">등록된 스케줄 없음</span>}
+                    </div>
+                  </div>
+
+                  {/* 1번 아이디어 적용: 연기 희망 태그 리스트 */}
+                  <div className="space-y-2 bg-rose-50/50 p-3 rounded-2xl border border-rose-100/50">
+                    <div className="flex items-center text-[11px] font-bold text-rose-400 mb-1">
+                      <AlertCircle className="w-3.5 h-3.5 mr-3" /> 연기 희망 날짜
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pl-7">
+                      {(user.vacation || '').split(',').filter(v => v.trim()).length > 0 ? (
+                        (user.vacation || '').split(',').map((v, i) => (
+                          <span key={i} className="px-2 py-1 bg-white text-rose-600 rounded-md text-[10px] font-black border border-rose-200 shadow-sm">
+                            {v.trim()}
+                          </span>
+                        ))
+                      ) : <span className="text-[10px] text-slate-300 italic">없음</span>}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            <div className="mt-6 pt-6 border-t border-slate-100">
-              <div className="flex flex-wrap gap-2 mb-4">
-                {user.documents?.map((doc, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-                    <FileText className="w-3 h-3 text-blue-500" />
-                    <span className="text-[10px] font-bold text-slate-600 truncate max-w-[60px]">{doc.name}</span>
-                    <a href={doc.url} target="_blank" className="text-slate-300 hover:text-blue-500"><Download className="w-3 h-3" /></a>
-                  </div>
-                ))}
+            {/* 서류 관리 섹션 */}
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                  <FileCheck className="w-3 h-3" /> Partner Documents
+                </h4>
+              </div>
+              <div className="space-y-2 mb-4">
+                {(user.documents || []).length > 0 ? (
+                  (user.documents || []).map((doc, i) => (
+                    <div key={i} className="flex items-center justify-between bg-slate-50 hover:bg-blue-50/50 p-2.5 rounded-xl border border-slate-100 group transition-all">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="bg-white p-1.5 rounded-lg shadow-sm"><FileText className="w-3.5 h-3.5 text-blue-500" /></div>
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-black text-slate-700 truncate max-w-[120px]">{doc.name}</span>
+                          <span className="text-[9px] font-bold text-blue-500 uppercase">
+                            {doc.name.includes('신분증') ? 'Identity' : doc.name.includes('통장') ? 'Bank' : 'Doc'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <a href={doc.url} target="_blank" className="p-1.5 hover:text-blue-600 text-slate-400"><Download className="w-3.5 h-3.5" /></a>
+                        <button onClick={() => deleteDocument(user, i)} className="p-1.5 hover:text-rose-600 text-slate-400"><X className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[10px] text-center py-4 text-slate-300 font-bold border-2 border-dashed border-slate-50 rounded-2xl">No documents</p>
+                )}
               </div>
               <label className="flex items-center justify-center w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:bg-blue-50 transition-all">
-                {uploadingId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Document Add</span>}
+                {uploadingId === user.id ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <span className="text-[10px] font-black text-slate-400 uppercase">Add Document</span>}
                 <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, user)} disabled={!!uploadingId} />
               </label>
             </div>
@@ -207,7 +304,7 @@ export default function UserDashboardPage() {
         ))}
       </main>
 
-      {/* 강사 추가 모달 */}
+      {/* 모달 등 나머지 UI 동일 */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl animate-in zoom-in duration-200">
@@ -220,15 +317,6 @@ export default function UserDashboardPage() {
                 <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" onChange={e => setNewPartner({...newPartner, name: e.target.value})} /></div>
               <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">학교 / 학과</label>
                 <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" onChange={e => setNewPartner({...newPartner, organization: e.target.value})} /></div>
-              <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">전화번호</label>
-                <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" placeholder="010-0000-0000" onChange={e => setNewPartner({...newPartner, phone: e.target.value})} /></div>
-              <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">구분</label>
-                <div className="flex gap-2 mt-1">
-                  {['teacher', 'admin'].map(r => (
-                    <button key={r} onClick={() => setNewPartner({...newPartner, role: r as any})} className={`flex-1 py-3 rounded-xl text-xs font-black transition-all cursor-pointer ${newPartner.role === r ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-400'}`}>{r === 'teacher' ? '강사' : '관리자'}</button>
-                  ))}
-                </div>
-              </div>
               <button onClick={handleAddPartner} className="w-full py-4 bg-blue-600 text-white rounded-[1.5rem] font-black mt-6 shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer">등록하기</button>
             </div>
           </div>
