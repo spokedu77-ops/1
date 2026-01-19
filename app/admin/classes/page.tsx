@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
@@ -6,28 +6,30 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { EventClickArg, EventDropArg } from '@fullcalendar/core';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import Sidebar from '@/app/components/Sidebar';
 import { useClassManagement } from './hooks/useClassManagement';
 import SessionEditModal from './components/SessionEditModal';
 import { SessionEvent, TeacherInput } from './types';
+import { extractMileageAction, parseExtraTeachers, buildMemoWithExtras, getMileageTotal } from './lib/sessionUtils';
+import { MILEAGE_ACTIONS } from './constants/mileage';
 
-const MILEAGE_DATA = [
-  { label: '보고 누락', val: -1000 },
-  { label: '피드백 누락', val: -1000 },
-  { label: '연기 요청', val: -5000 },
-  { label: '당일 요청', val: -15000 },
-  { label: '수업 연기', val: 2500 },
-  { label: '당일 연기', val: 5000 },
-];
+const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  regular_private: { bg: '#ECFDF5', border: '#10B981', text: '#065F46' },
+  regular_center: { bg: '#EFF6FF', border: '#2563EB', text: '#1E3A8A' },
+  one_day: { bg: '#FFF7ED', border: '#FB923C', text: '#9A3412' },
+};
 
 export default function ClassManagementPage() {
   const calendarRef = useRef<FullCalendar>(null);
-  const { filteredEvents, teacherList, fetchSessions, supabase, currentView, setCurrentView } = useClassManagement();
+  const { filteredEvents, teacherList, fetchSessions, supabase, currentView, setCurrentView, filterTeacher, setFilterTeacher } = useClassManagement();
   
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const initialDateStr = yesterday.toISOString().split('T')[0];
+  const getYesterday = (base: Date = new Date()) => {
+    const d = new Date(base);
+    d.setDate(d.getDate() - 1);
+    return d;
+  };
+  const initialDateStr = getYesterday().toISOString().split('T')[0];
 
   const [selectedEvent, setSelectedEvent] = useState<SessionEvent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,6 +42,25 @@ export default function ClassManagementPage() {
     memo: '',
     mileageAction: '' 
   });
+
+  // ✅ 뷰 전환 시 오늘 날짜로 즉시 이동하는 헬퍼
+  const handleViewChange = (viewName: string) => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    api.changeView(viewName);
+    // 4-day는 항상 "어제-오늘-내일-모레"로 고정
+    if (viewName === 'rollingFourDay') api.gotoDate(getYesterday());
+    else api.gotoDate(new Date());
+    setCurrentView(viewName);
+  };
+
+  const handleToday = () => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    // 4-day에서는 TODAY를 눌러도 "어제 시작"이 유지되어야 함
+    if (currentView === 'rollingFourDay') api.gotoDate(getYesterday());
+    else api.today();
+  };
 
   const autoFinishSessions = async () => {
     const now = new Date().toISOString();
@@ -64,24 +85,15 @@ export default function ClassManagementPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const safeJsonParse = (text: string, fallback: any = []) => {
-    try { return JSON.parse(text); } catch (e) { return fallback; }
-  };
-
   const handleEventClick = (info: EventClickArg) => {
     const p = info.event.extendedProps;
     const startObj = info.event.start; 
     const endObj = info.event.end;
     if (!startObj || !endObj) return;
     
-    let cleanMemo = p.studentsText || '';
-    let existingMileage = p.mileage_option || p.mileageOption || ''; 
-    
-    if (!existingMileage && cleanMemo.includes('MILEAGE_ACTIONS:')) {
-      const parts = cleanMemo.split('MILEAGE_ACTIONS:');
-      cleanMemo = parts[0].trim();
-      existingMileage = parts[1]?.trim() || '';
-    }
+    const { cleanMemo, mileageAction } = extractMileageAction(p.studentsText || '', p.mileageAction || p.mileage_option);
+    const { extraTeachers, cleanMemo: memoWithoutExtras } = parseExtraTeachers(cleanMemo);
+    const finalMemo = memoWithoutExtras;
 
     const eventData: SessionEvent = { 
       id: info.event.id, 
@@ -92,27 +104,24 @@ export default function ClassManagementPage() {
       teacherId: p.teacherId || '',
       type: p.type || '',
       status: p.status || null,
-      groupId: p.groupId,
+      groupId: info.event.groupId || p.groupId, 
       price: p.price || 0,
       studentsText: p.studentsText || '',
       themeColor: p.themeColor || '',
       isAdmin: !!p.isAdmin,
       roundInfo: p.roundInfo,
-      mileageAction: existingMileage,
+      mileageAction: mileageAction,
       session_type: p.session_type,
-      mileage_option: existingMileage
+      mileage_option: mileageAction,
+      roundIndex: p.roundIndex,
+      roundTotal: p.roundTotal
     };
 
     setSelectedEvent(eventData);
     
     let loadedTeachers: TeacherInput[] = [{ id: p.teacherId || '', price: p.price || 0 }];
-    if (cleanMemo.includes('EXTRA_TEACHERS:')) {
-      const parts = cleanMemo.split('EXTRA_TEACHERS:');
-      cleanMemo = parts[0].trim();
-      const extraTeachers = safeJsonParse(parts[1], []);
-      if (Array.isArray(extraTeachers)) {
-        loadedTeachers = [{ id: p.teacherId || '', price: p.price || 0 }, ...extraTeachers];
-      }
+    if (extraTeachers && Array.isArray(extraTeachers) && extraTeachers.length > 0) {
+      loadedTeachers = [{ id: p.teacherId || '', price: p.price || 0 }, ...extraTeachers];
     }
 
     setEditFields({ 
@@ -121,8 +130,8 @@ export default function ClassManagementPage() {
       date: startObj.toLocaleDateString('en-CA'), 
       start: startObj.toTimeString().slice(0, 5), 
       end: endObj.toTimeString().slice(0, 5), 
-      memo: cleanMemo,
-      mileageAction: existingMileage
+      memo: finalMemo,
+      mileageAction: mileageAction
     });
     setIsModalOpen(true);
   };
@@ -151,18 +160,12 @@ export default function ClassManagementPage() {
       const duration = new Date(selectedEvent.end).getTime() - new Date(selectedEvent.start).getTime();
       const newEnd = new Date(newStart.getTime() + (isNaN(duration) ? 3600000 : duration));
 
-      const getActionTotal = (actionStr: string) => {
-        const actions = actionStr ? actionStr.split(',').map(s => s.trim()).filter(Boolean) : [];
-        return actions.reduce((sum, label) => sum + (MILEAGE_DATA.find(d => d.label === label)?.val || 0), 0);
-      };
-
-      const oldTotal = getActionTotal(selectedEvent.mileageAction || '');
-      const newTotal = getActionTotal(editFields.mileageAction || '');
+      const oldTotal = getMileageTotal(selectedEvent.mileageAction || '', MILEAGE_ACTIONS);
+      const newTotal = getMileageTotal(editFields.mileageAction || '', MILEAGE_ACTIONS);
       const diff = newTotal - oldTotal; 
 
       const extras = editFields.teachers.slice(1).filter(t => t.id);
-      let finalMemo = editFields.memo; 
-      if (extras.length > 0) finalMemo += `\nEXTRA_TEACHERS:${JSON.stringify(extras)}`;
+      const finalMemo = buildMemoWithExtras(editFields.memo, extras);
       
       const updatePayload: any = {
         title: editFields.title, 
@@ -240,8 +243,8 @@ export default function ClassManagementPage() {
     try {
       const { data: curr } = await supabase.from('sessions').select('*').eq('id', targetId).single();
       if (!curr?.group_id) return;
-      const { data: future } = await supabase.from('sessions').select('*').eq('group_id', curr.group_id).gt('start_at', curr.start_at);
-      if (future) {
+      const { data: future = [] } = await supabase.from('sessions').select('*').eq('group_id', curr.group_id).gt('start_at', curr.start_at);
+      if (future && future.length > 0) {
         await Promise.all(future.map(async (s) => {
           const ns = new Date(new Date(s.start_at).getTime() - 7*24*60*60*1000).toISOString();
           const ne = new Date(new Date(s.end_at).getTime() - 7*24*60*60*1000).toISOString();
@@ -253,8 +256,96 @@ export default function ClassManagementPage() {
     } catch (error) {}
   };
 
+  const handleDeleteGroup = async () => {
+    if (!selectedEvent?.groupId) return alert('그룹 정보가 없습니다.');
+    if (!confirm('해당 그룹 전체를 삭제하시겠습니까?')) return;
+    await supabase.from('sessions').delete().eq('group_id', selectedEvent.groupId);
+    setIsModalOpen(false);
+    fetchSessions();
+  };
+
+  const handleExtendGroup = async () => {
+    if (!selectedEvent?.groupId) return alert('그룹 정보가 없습니다.');
+    const { data: sessions } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('group_id', selectedEvent.groupId)
+      .order('start_at', { ascending: true });
+
+    if (!sessions || sessions.length === 0) return;
+
+    const last = sessions[sessions.length - 1];
+    const newTotal = sessions.length + 1;
+
+    const newStart = new Date(last.start_at);
+    newStart.setDate(newStart.getDate() + 7);
+    const newEnd = new Date(last.end_at);
+    newEnd.setDate(newEnd.getDate() + 7);
+
+    const { id, created_at, ...insertData } = last;
+    await supabase.from('sessions').insert([{
+      ...insertData,
+      start_at: newStart.toISOString(),
+      end_at: newEnd.toISOString(),
+      round_index: newTotal,
+      round_total: newTotal,
+      round_display: `${newTotal}/${newTotal}`,
+      status: 'opened'
+    }]);
+
+    await supabase.from('sessions').update({ round_total: newTotal }).eq('group_id', selectedEvent.groupId);
+    
+    for (let i = 0; i < sessions.length; i++) {
+        const s = sessions[i];
+        const currentIndex = i + 1;
+        await supabase.from('sessions').update({
+            round_index: currentIndex,
+            round_total: newTotal,
+            round_display: `${currentIndex}/${newTotal}`
+        }).eq('id', s.id);
+    }
+    fetchSessions();
+  };
+
+  const handleShrinkGroup = async () => {
+    if (!selectedEvent?.groupId || !selectedEvent?.roundIndex) return alert('그룹 정보 또는 회차 정보가 없습니다.');
+    
+    if (!confirm(`현재 회차(${selectedEvent.roundIndex}회)를 마지막으로 설정하고 이후 회차를 모두 삭제하시겠습니까?`)) return;
+
+    const targetDate = typeof selectedEvent.start === 'string' ? selectedEvent.start : selectedEvent.start.toISOString();
+
+    await supabase.from('sessions')
+      .delete()
+      .eq('group_id', selectedEvent.groupId)
+      .gt('start_at', targetDate);
+
+    const newTotal = selectedEvent.roundIndex;
+    await supabase.from('sessions').update({ round_total: newTotal }).eq('group_id', selectedEvent.groupId);
+
+    const { data: remains } = await supabase.from('sessions').select('id, round_index').eq('group_id', selectedEvent.groupId);
+    if (remains) {
+        for (const r of remains) {
+            await supabase.from('sessions').update({ round_display: `${r.round_index}/${newTotal}` }).eq('id', r.id);
+        }
+    }
+
+    setIsModalOpen(false);
+    fetchSessions();
+  };
+
   const handleAddTeacher = () => setEditFields({ ...editFields, teachers: [...editFields.teachers, { id: '', price: 0 }] });
   const handleRemoveTeacher = (i: number) => setEditFields({ ...editFields, teachers: editFields.teachers.filter((_, idx) => idx !== i) });
+
+  const goRollingFourDay = () => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    api.changeView('rollingFourDay');
+    api.gotoDate(yesterday);
+    setCurrentView('rollingFourDay');
+  };
 
   return (
     <div className="flex min-h-screen bg-white text-slate-900 w-full overflow-hidden">
@@ -262,30 +353,37 @@ export default function ClassManagementPage() {
       <div className="flex-1 flex flex-col min-w-0">
         <style>{`
           .fc-event, .fc-daygrid-event, .fc-daygrid-day-top, button, select, a, [role="button"], .cursor-pointer { cursor: pointer !important; }
-          .fc-daygrid-day-number { font-size: 0.9rem; font-weight: 900; font-style: italic; color: #CBD5E1; padding: 6px 10px !important; position: relative; z-index: 1; }
-          .fc-day-today { background-color: #F8FAFC !important; }
-          .fc-daygrid-event { white-space: normal !important; overflow: hidden !important; background: transparent !important; border: none !important; }
-          .month-event-card { background: white; border-radius: 6px; padding: 4px; margin: 1px 2px; font-size: 10px; line-height: 1.2; border-left: 3px solid; box-shadow: 0 1px 2px rgba(0,0,0,0.05); width: calc(100% - 4px); box-sizing: border-box; overflow: hidden; }
-          .month-event-time { font-weight: 700; color: #64748b; font-size: 9px; }
-          .month-event-teacher { font-weight: 800; font-size: 9px; margin-top: 1px; }
-          .month-event-title { font-weight: 600; color: #1e293b; margin-top: 1px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; word-break: break-all; }
-          .four-day-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; font-size: 10px; font-weight: 800; margin-top: 4px; color: #1E293B; word-break: keep-all; white-space: normal; }
-          .fc-daygrid-day-frame { min-height: 100px !important; }
+          .fc-daygrid-day-number { font-size: 1rem; font-weight: 900; color: #1E293B; }
+          .fc-day-today { background-color: #E0F2FE !important; }
+          .fc-daygrid-event { white-space: normal !important; }
+          .event-title { overflow-wrap: anywhere; word-break: break-word; white-space: normal; }
         `}</style>
 
         <nav className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-white flex justify-between items-center z-50">
           <div className="flex items-center gap-2 sm:gap-4">
-            <h1 className="text-base sm:text-lg font-black italic uppercase text-slate-950">SPOKEDU</h1>
+            <h1 className="text-base sm:text-lg font-black italic uppercase text-slate-950 flex items-center gap-2">
+              <CalendarIcon size={18} className="text-blue-600" /> SPOKEDU
+            </h1>
             <div className="flex bg-slate-100 rounded-lg p-0.5">
               <button onClick={() => calendarRef.current?.getApi().prev()} className="p-1 sm:p-1.5 hover:bg-white rounded-md transition-all"><ChevronLeft size={14}/></button>
-              <button onClick={() => calendarRef.current?.getApi().today()} className="px-2 sm:px-3 text-[9px] sm:text-[10px] font-black uppercase">TODAY</button>
+              <button onClick={handleToday} className="px-2 sm:px-3 text-[9px] sm:text-[10px] font-black uppercase">TODAY</button>
               <button onClick={() => calendarRef.current?.getApi().next()} className="p-1 sm:p-1.5 hover:bg-white rounded-md transition-all"><ChevronRight size={14}/></button>
             </div>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <select
+              value={filterTeacher}
+              onChange={(e) => setFilterTeacher(e.target.value)}
+              className="hidden sm:block h-8 sm:h-9 px-2 sm:px-3 bg-slate-100 rounded-lg text-[10px] sm:text-xs font-bold text-slate-700 border border-slate-200"
+            >
+              <option value="ALL">전체 강사</option>
+              {teacherList.map(t => (
+                <option key={t.id} value={t.id}>{t.name} T</option>
+              ))}
+            </select>
             <div className="h-8 sm:h-9 p-0.5 bg-slate-100 rounded-lg flex items-center">
-              <button onClick={() => { calendarRef.current?.getApi().changeView('rollingFourDay'); setCurrentView('rollingFourDay'); }} className={`px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-black ${currentView === 'rollingFourDay' ? 'bg-white rounded-md shadow-sm text-blue-600' : 'text-slate-400'}`}>4-DAY</button>
-              <button onClick={() => { calendarRef.current?.getApi().changeView('dayGridMonth'); setCurrentView('dayGridMonth'); }} className={`px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-black ${currentView === 'dayGridMonth' ? 'bg-white rounded-md shadow-sm text-blue-600' : 'text-slate-400'}`}>MONTH</button>
+              <button onClick={() => handleViewChange('rollingFourDay')} className={`px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-black ${currentView === 'rollingFourDay' ? 'bg-white rounded-md shadow-sm text-blue-600' : 'text-slate-400'}`}>4-DAY</button>
+              <button onClick={() => handleViewChange('dayGridMonth')} className={`px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-black ${currentView === 'dayGridMonth' ? 'bg-white rounded-md shadow-sm text-blue-600' : 'text-slate-400'}`}>MONTH</button>
             </div>
             <Link href="/class/create" className="h-8 sm:h-9 px-3 sm:px-4 bg-blue-600 text-white text-[10px] sm:text-xs font-black rounded-lg flex items-center shadow-md">+ NEW</Link>
           </div>
@@ -302,55 +400,83 @@ export default function ClassManagementPage() {
             eventDrop={handleEventDrop}
             headerToolbar={false} 
             locale="ko" 
+            dayMaxEvents={currentView === 'dayGridMonth' ? 3 : false}
             events={filteredEvents} 
             eventClick={handleEventClick} 
             height="auto"
             eventContent={(info) => {
-              const { teacher, themeColor, status, isAdmin, roundInfo } = info.event.extendedProps;
+              const { teacher, status, isAdmin, roundInfo, type, roundIndex, roundTotal } = info.event.extendedProps;
+              const isMonthView = info.view.type === 'dayGridMonth';
               const dateObj = new Date(info.event.start || '');
               const time24 = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+              const start = info.event.start ? new Date(info.event.start) : null;
+              const end = info.event.end ? new Date(info.event.end) : null;
+              const durationMin = start && end ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000)) : null;
+              
               const isPostponed = status === 'postponed', isCancelled = status === 'cancelled';
               const isFinished = (info.event.end || info.event.start || new Date()) < new Date();
-              
-              // [추가] 마지막 회차 판단 로직 (예: 4/4, 8/8)
-              let isLastRound = false;
-              if (roundInfo && roundInfo.includes('/')) {
-                const [curr, total] = roundInfo.split('/').map((s: string) => s.trim());
-                if (curr === total && total !== '0') isLastRound = true;
+              const isLastRound = roundIndex && roundTotal && roundIndex === roundTotal;
+
+              let bgColor = '#FFFFFF';
+              let borderColor = '#CBD5E1';
+              let textColor = '#1E293B';
+
+              if (type && TYPE_COLORS[type]) {
+                bgColor = TYPE_COLORS[type].bg;
+                borderColor = TYPE_COLORS[type].border;
+                textColor = TYPE_COLORS[type].text;
               }
+              
+              if (isFinished) { bgColor = '#F1F5F9'; borderColor = '#94A3B8'; textColor = '#64748B'; }
+              if (isPostponed) { bgColor = '#FAF5FF'; borderColor = '#A855F7'; textColor = '#7E22CE'; }
+              if (isCancelled) { bgColor = '#FFF1F2'; borderColor = '#F43F5E'; textColor = '#BE123C'; }
 
-              let bgColor = isAdmin ? '#FEFCE8' : '#FFFFFF', borderColor = themeColor;
-              if (isCancelled) { bgColor = '#FEF2F2'; borderColor = '#EF4444'; }
-              if (isPostponed) { bgColor = '#F5F3FF'; borderColor = '#8B5CF6'; }
-              if (isFinished && !isCancelled && !isPostponed) { bgColor = '#F8FAFC'; borderColor = '#CBD5E1'; }
-
-              if (currentView === 'dayGridMonth') {
+              if (isMonthView) {
                 return (
                   <div className="month-event-card" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
-                    <div className="flex justify-between items-center pb-0.5 border-b border-slate-50 mb-0.5">
-                      <span className="month-event-time">{time24}</span>
-                      {roundInfo && <span className={`text-[8px] font-bold ${isLastRound && !isCancelled ? 'text-red-500' : 'text-slate-300'}`}>{roundInfo}</span>}
+                    <div className="flex justify-between items-center mb-0.5">
+                      <span className="month-event-time flex items-center gap-1">
+                        {time24}
+                        {durationMin !== null && (
+                          <span className="text-[7px] px-1 rounded bg-slate-900/10 text-slate-600 font-bold">
+                            {durationMin}
+                          </span>
+                        )}
+                      </span>
+                      {roundInfo && (
+                        <span className={`text-[7px] px-1 rounded font-medium ${isLastRound ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                          {roundInfo}
+                        </span>
+                      )}
                     </div>
-                    <div className={`month-event-teacher ${isAdmin ? 'text-amber-600' : 'text-blue-600'}`}>{teacher}T</div>
-                    <div className={`month-event-title ${isLastRound && !isCancelled && !isPostponed && !isFinished ? 'text-red-600 font-bold' : ''} ${isFinished || isPostponed || isCancelled ? 'line-through text-slate-400' : ''}`}>{info.event.title}</div>
+                    <div className="month-event-teacher" style={{ color: textColor }}>{teacher}T</div>
+                    <div className={`month-event-title ${isFinished || isPostponed || isCancelled ? 'opacity-60 line-through' : ''}`} style={{ color: textColor }}>
+                      {info.event.title}
+                    </div>
                   </div>
                 );
               }
 
               return (
-                <div className="w-full flex flex-col p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border-l-[3px] sm:border-l-[4px] shadow-sm" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
-                  <div className="flex justify-between items-start">
-                    <div className="text-[9px] sm:text-[10px] font-bold text-slate-400 tabular-nums">{time24}</div>
-                    <div className="flex gap-1">
-                      {isLastRound && !isCancelled && !isPostponed && <span className="text-white text-[6px] sm:text-[7px] px-1 sm:px-1.5 py-0.5 rounded-full font-black bg-red-600 shadow-sm animate-pulse">마지막</span>}
-                      {(isPostponed || isCancelled) && <span className={`text-white text-[6px] sm:text-[7px] px-1 sm:px-1.5 py-0.5 rounded-full font-black ${isPostponed ? 'bg-purple-500' : 'bg-red-500'}`}>{isPostponed ? '연기됨' : '취소됨'}</span>}
+                <div className="w-full flex flex-col p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border-l-[3px] sm:border-l-[4px] shadow-sm min-w-0" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 tabular-nums flex items-center gap-1">
+                      {time24}
+                      {durationMin !== null && (
+                        <span className="text-[8px] px-1 rounded bg-slate-900/10 text-slate-600 font-black">
+                          {durationMin}
+                        </span>
+                      )}
                     </div>
+                    {isLastRound && <span className="bg-red-600 text-white text-[8px] px-1.5 rounded font-black">FINAL</span>}
                   </div>
-                  <div className="flex justify-between items-end mt-0.5 sm:mt-1">
-                    <div className={`text-[10px] sm:text-[11px] font-black ${isAdmin ? 'text-amber-700' : 'text-blue-600'}`}>{teacher}T</div>
-                    {roundInfo && <span className={`text-[8px] font-black ${isLastRound && !isCancelled ? 'text-red-500' : 'text-slate-300'}`}>{roundInfo}</span>}
+                  <div className="flex justify-between items-end min-w-0">
+                    <div className={`text-[10px] sm:text-[11px] font-black ${isAdmin ? 'text-amber-700' : 'text-blue-600'} truncate`}>{teacher}T</div>
+                    {roundInfo && <span className="text-[8px] font-black text-slate-500">{roundInfo}</span>}
                   </div>
-                  <div className={`four-day-title ${isLastRound && !isCancelled && !isPostponed && !isFinished ? 'text-red-600 font-black' : ''} ${isFinished || isPostponed || isCancelled ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{info.event.title}</div>
+                  <div className={`event-title text-[10px] sm:text-[11px] font-black ${isFinished || isPostponed || isCancelled ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                    {info.event.title}
+                  </div>
                 </div>
               );
             }}
@@ -371,6 +497,9 @@ export default function ClassManagementPage() {
         onUndoPostpone={handleUndoPostpone}
         onAddTeacher={handleAddTeacher}
         onRemoveTeacher={handleRemoveTeacher}
+        onDeleteGroup={handleDeleteGroup}
+        onExtendGroup={handleExtendGroup}
+        onShrinkGroup={handleShrinkGroup}
       />
     </div>
   );
