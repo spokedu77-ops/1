@@ -111,14 +111,37 @@ export default function TeacherCurriculumPage() {
         <div className="space-y-6 w-full text-left">
             {/* 월 선택 */}
             <div className="grid grid-cols-6 md:grid-cols-12 gap-2 w-full">
-                {MONTHS.map((m) => (
-                    <button key={m} onClick={() => setSelectedMonth(m)}
-                        className={`h-16 rounded-2xl flex items-center justify-center transition-all border font-black
-                        ${selectedMonth === m ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
-                    >
-                        {m}월
-                    </button>
-                ))}
+                {MONTHS.map((m) => {
+                    const isCurrentMonth = m === currentMonth;
+                    const isLocked = m !== currentMonth;
+                    const isSelected = selectedMonth === m;
+                    
+                    return (
+                        <button 
+                            key={m} 
+                            onClick={() => {
+                                if (isLocked) {
+                                    alert('관리자 권한입니다');
+                                    return;
+                                }
+                                setSelectedMonth(m);
+                            }}
+                            className={`h-16 rounded-2xl flex items-center justify-center transition-all border font-black relative
+                            ${isSelected ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 
+                              isLocked ? 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed' : 
+                              'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
+                        >
+                            {isLocked && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-slate-100/80 rounded-2xl">
+                                    <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                            )}
+                            <span className={isLocked ? 'opacity-0' : ''}>{m}월</span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* 배너 */}
