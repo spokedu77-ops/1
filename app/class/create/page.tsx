@@ -112,7 +112,7 @@ export default function CreateClassPage() {
 
     setLoading(true);
     try {
-      const sessionsToInsert = [];
+      const sessionsToInsert: any[] = [];
       const commonGroupId = crypto.randomUUID();
       const dates = buildDates();
       const totalRounds = dates.length;

@@ -28,6 +28,11 @@ export interface TeacherInput {
   price: number;
 }
 
+export interface MileageAction {
+  label: string;
+  val: number;
+}
+
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
