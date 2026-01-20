@@ -64,7 +64,7 @@ export default function Sidebar() {
         { name: "연간 커리큘럼", href: "/admin/curriculum", icon: BookOpen },
         { name: "교구/재고 관리", href: "/admin/inventory", icon: Box },
         { name: "강사 정보 관리", href: "/admin/users", icon: Users },
-        { name: "강사 마일리지", href: "/admin/mileage", icon: Medal },
+        { name: "강사 카운팅 관리", href: "/admin/mileage", icon: Medal },
       ]
     },
     {

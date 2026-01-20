@@ -38,6 +38,7 @@ export default function MasterQCPage() {
 
   const [selectedDate, setSelectedDate] = useState(getTodayKST());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -48,9 +49,18 @@ export default function MasterQCPage() {
 
   const fetchListData = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('sessions').select('*').order('start_at', { ascending: true });
-    if (!error && data) setSessions(data);
-    setLoading(false);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase.from('sessions').select('*').order('start_at', { ascending: true });
+      if (error) throw error;
+      if (data) setSessions(data);
+    } catch (err: any) {
+      console.error('데이터 로드 실패:', err);
+      setError('데이터를 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -77,33 +87,31 @@ export default function MasterQCPage() {
     setIsModalOpen(true);
   };
 
-  // [핵심 수정] 변경된 필드만 선택적으로 업데이트하여 마일리지 로그 등 데이터 꼬임 방지
   const handleSave = async (newStatus = 'verified') => {
     if (!selectedEvent) return;
 
-    // 1. 기본적으로 상태값은 무조건 업데이트
-    const updateData: any = { status: newStatus };
+    try {
+      const updateData: any = { 
+        status: newStatus,
+        students_text: feedback,
+        photo_url: photoUrls,
+        file_url: fileUrls,
+        updated_at: new Date().toISOString()
+      };
 
-    // 2. 피드백 내용이 처음 불러왔을 때와 다를 때만 업데이트 필드에 포함 (데이터 보호)
-    if (feedback !== (selectedEvent.students_text || FEEDBACK_TEMPLATE)) {
-      updateData.students_text = feedback;
-    }
+      const { error } = await supabase
+        .from('sessions')
+        .update(updateData)
+        .eq('id', selectedEvent.id);
 
-    // 3. 사진 및 파일은 항상 현재 모달의 상태로 갱신 (이미 모달에서 관리됨)
-    updateData.photo_url = photoUrls;
-    updateData.file_url = fileUrls;
+      if (error) throw error;
 
-    const { error } = await supabase
-      .from('sessions')
-      .update(updateData)
-      .eq('id', selectedEvent.id);
-
-    if (!error) {
-      alert(newStatus === 'verified' ? '검수 승인 완료!' : '수정 요청 처리가 완료되었습니다.');
+      alert(newStatus === 'verified' ? '검수 승인 완료!' : '수정 요청 완료!');
       setIsModalOpen(false);
       fetchListData();
-    } else {
-      alert('저장 실패: ' + error.message);
+    } catch (error: any) {
+      console.error('저장 실패:', error);
+      alert('저장에 실패했습니다: ' + error.message);
     }
   };
 
@@ -131,6 +139,12 @@ export default function MasterQCPage() {
           </div>
         </header>
 
+        {error && (
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-4 border border-red-200">
+            <p className="font-bold">{error}</p>
+          </div>
+        )}
+
         {loading ? (
           <div className="py-40 text-center font-black text-slate-300 animate-pulse tracking-widest uppercase">Syncing Spokedu Data...</div>
         ) : filteredSessions.length === 0 ? (
@@ -140,14 +154,10 @@ export default function MasterQCPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredSessions.map((s) => {
-              // [상태 판별 개선] 템플릿 제외 순수 글자 수가 10자 이상일 때만 DONE으로 표시
-              const pureContent = s.students_text 
-                ? s.students_text.replace(FEEDBACK_TEMPLATE, '').replace(/\s/g, '') 
-                : '';
-              
+              // 상태 판별 단순화
+              const isEmpty = !s.students_text || s.students_text.trim() === '' || s.students_text === FEEDBACK_TEMPLATE;
               const isVerified = s.status === 'verified';
-              const isFinished = (s.status === 'finished' || s.status === 'pending') && pureContent.length > 10;
-              const isEmpty = !isVerified && !isFinished;
+              const isDone = !isEmpty && !isVerified;
               
               const time = new Date(s.start_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
               const coachName = coaches.find(c => c.id === s.created_by)?.name || '강사';
@@ -158,10 +168,10 @@ export default function MasterQCPage() {
                     <span className="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-xs font-black tracking-tight">{time}</span>
                     <span className={`text-[11px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest ${
                       isVerified ? 'bg-blue-600 text-white shadow-md' : 
-                      isFinished ? 'bg-emerald-500 text-white shadow-md' : 
+                      isDone ? 'bg-emerald-500 text-white shadow-md' : 
                       'bg-slate-100 text-slate-300'
                     }`}>
-                      {isVerified ? 'VERIFIED' : isFinished ? 'DONE' : 'EMPTY'}
+                      {isVerified ? 'VERIFIED' : isDone ? 'DONE' : 'EMPTY'}
                     </span>
                   </div>
 

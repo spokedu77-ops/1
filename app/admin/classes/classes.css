@@ -1,0 +1,98 @@
+.fc-event,
+.fc-daygrid-event,
+.fc-daygrid-day-top,
+button,
+select,
+a,
+[role="button"],
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+.fc-daygrid-day-number {
+  font-size: 0.8rem;
+  font-weight: 900;
+  font-style: italic;
+  color: #94A3B8;
+  padding: 4px 8px !important;
+  position: relative;
+  z-index: 1;
+}
+
+.fc-day-today {
+  background-color: #F8FAFC !important;
+}
+
+.fc-daygrid-event {
+  white-space: normal !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Month 뷰 카드 규격화 */
+.month-event-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: 2px 0; /* 좌우 여백을 없애고 꽉 채움 */
+  border-left: 4px solid; 
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  width: 100%; /* 칸 꽉 채우기 */
+  box-sizing: border-box;
+  transition: transform 0.1s ease;
+  overflow: hidden; /* 카드 컨테이너: overflow hidden */
+}
+
+.month-event-card:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
+/* 텍스트 가독성 (굵기 조절) */
+.month-event-time {
+  font-size: 7px;
+  font-weight: 500;
+  color: #64748B;
+  letter-spacing: -0.02em;
+}
+
+.month-event-teacher {
+  font-size: 8px;
+  font-weight: 400;
+  margin: 1px 0;
+}
+
+.month-event-title {
+  font-size: 8px;
+  font-weight: 300;
+  line-height: 1.3;
+  white-space: nowrap; /* 제목 텍스트: nowrap */
+  text-overflow: ellipsis; /* 제목 텍스트: ellipsis */
+  overflow: hidden;
+}
+
+/* 마지막 회차 강조 스타일 */
+.last-round-badge {
+  background: #0F172A;
+  color: white;
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-size: 7px;
+  font-weight: 900;
+  margin-left: 4px;
+}
+
+.four-day-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.25;
+  font-size: 10px;
+  font-weight: 800;
+  margin-top: 4px;
+  color: #1E293B;
+  word-break: break-word;
+}

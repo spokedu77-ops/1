@@ -15,11 +15,12 @@ export interface SessionEvent {
   themeColor: string;
   isAdmin: boolean;
   roundInfo?: string;
-  mileageAction?: string; // 선택된 마일리지 액션 (UI 반영용)
-  
-  // [필수 추가] 근본적인 빌드 에러 해결을 위한 속성
-  session_type?: string;   // SessionEditModal.tsx 54번 줄 에러 해결
-  mileage_option?: string; // page.tsx 데이터 로딩 에러 해결
+  mileageAction?: string;
+  session_type?: string;
+  mileage_option?: string;
+  roundIndex?: number;
+  roundTotal?: number;
+  roundDisplay?: string;
 }
 
 export interface TeacherInput {
@@ -46,7 +47,8 @@ export interface ModalProps {
   onUpdateStatus: (status: string | null) => void;
   onPostpone: (e: React.MouseEvent) => void;
   onUndoPostpone: (e: React.MouseEvent) => void;
-  onToggleMileage?: (label: string, val: number) => void;
   onAddTeacher?: () => void;
   onRemoveTeacher?: (index: number) => void;
+  onShrinkGroup?: () => void;
+  onCloneGroup?: () => void;
 }

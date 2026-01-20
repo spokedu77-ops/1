@@ -33,6 +33,12 @@ export default function ClassManagementPage() {
 
   const [selectedEvent, setSelectedEvent] = useState<SessionEvent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+  const [cloneMode, setCloneMode] = useState<'fixed' | 'manual'>('fixed');
+  const [cloneRounds, setCloneRounds] = useState(6);
+  const [cloneInterval, setCloneInterval] = useState(7);
+  const [cloneDates, setCloneDates] = useState<string[]>([]);
+  const [cloneTimes, setCloneTimes] = useState<string[]>([]);
   const [editFields, setEditFields] = useState({ 
     title: '', 
     teachers: [] as TeacherInput[], 
@@ -47,10 +53,15 @@ export default function ClassManagementPage() {
   const handleViewChange = (viewName: string) => {
     const api = calendarRef.current?.getApi();
     if (!api) return;
+    
+    // 뷰 변경 전에 날짜 설정
+    if (viewName === 'rollingFourDay') {
+      api.gotoDate(getYesterday());
+    } else {
+      api.gotoDate(new Date());
+    }
+    
     api.changeView(viewName);
-    // 4-day는 항상 "어제-오늘-내일-모레"로 고정
-    if (viewName === 'rollingFourDay') api.gotoDate(getYesterday());
-    else api.gotoDate(new Date());
     setCurrentView(viewName);
   };
 
@@ -67,16 +78,39 @@ export default function ClassManagementPage() {
     try {
       const { data: endedSessions } = await supabase
         .from('sessions')
-        .select('id')
+        .select('id, created_by')
         .lt('end_at', now)
         .in('status', ['opened', null])
         .not('status', 'in', '("cancelled","postponed","deleted")');
       
       if (endedSessions && endedSessions.length > 0) {
+        // 1. 세션 상태를 finished로 변경
         await supabase.from('sessions').update({ status: 'finished' }).in('id', endedSessions.map(s => s.id));
+        
+        // 2. 각 강사의 session_count 증가
+        const teacherCounts = endedSessions.reduce((acc, s) => {
+          acc[s.created_by] = (acc[s.created_by] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        for (const [teacherId, count] of Object.entries(teacherCounts)) {
+          const { data: user } = await supabase
+            .from('users')
+            .select('session_count')
+            .eq('id', teacherId)
+            .single();
+          
+          await supabase
+            .from('users')
+            .update({ session_count: (user?.session_count || 0) + count })
+            .eq('id', teacherId);
+        }
+        
         fetchSessions();
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('Auto-finish error:', error);
+    }
   };
 
   useEffect(() => {
@@ -138,14 +172,24 @@ export default function ClassManagementPage() {
 
   const handleEventDrop = async (info: EventDropArg) => {
     const eventId = info.event.id;
-    if (!info.event.start || !info.event.end) { info.revert(); return; }
+    if (!info.event.start || !info.event.end) { 
+      info.revert(); 
+      return; 
+    }
     try {
-      await supabase.from('sessions').update({
+      const { error } = await supabase.from('sessions').update({
         start_at: info.event.start.toISOString(),
         end_at: info.event.end.toISOString()
       }).eq('id', eventId);
+      
+      if (error) throw error;
+      
       fetchSessions();
-    } catch (err) { info.revert(); }
+    } catch (err: any) {
+      console.error('일정 변경 에러:', err);
+      alert('일정 변경에 실패했습니다.');
+      info.revert();
+    }
   };
 
   const handleUpdate = async () => {
@@ -186,13 +230,20 @@ export default function ClassManagementPage() {
         await supabase.from('users').update({ points: currentPoints + diff }).eq('id', mainT.id);
         
         try {
-          await supabase.from('mileage_logs').insert([{
+          const { error: logError } = await supabase.from('mileage_logs').insert([{
             teacher_id: mainT.id,
             amount: diff,
             reason: `[수업연동] ${diff > 0 ? '원복' : '차감'}: ${editFields.mileageAction || '해제'}`,
             session_title: editFields.title
           }]);
-        } catch (e) { console.warn(e); }
+          if (logError) {
+            console.error('마일리지 로그 저장 에러:', logError);
+            alert('경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.');
+          }
+        } catch (e) { 
+          console.error('마일리지 로그 에러:', e); 
+          alert('경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.');
+        }
       }
 
       setIsModalOpen(false); 
@@ -209,10 +260,29 @@ export default function ClassManagementPage() {
         if (!confirm('영구 삭제하시겠습니까?')) return;
         await supabase.from('sessions').delete().eq('id', selectedEvent.id);
       } else {
+        const prevStatus = selectedEvent.status;
         await supabase.from('sessions').update({ status }).eq('id', selectedEvent.id);
+        
+        // finished로 변경되는 경우에만 session_count 증가
+        if (status === 'finished' && prevStatus !== 'finished') {
+          const { data: user } = await supabase
+            .from('users')
+            .select('session_count')
+            .eq('id', selectedEvent.teacherId)
+            .single();
+          
+          await supabase
+            .from('users')
+            .update({ session_count: (user?.session_count || 0) + 1 })
+            .eq('id', selectedEvent.teacherId);
+        }
       }
-      setIsModalOpen(false); fetchSessions();
-    } catch (error) {}
+      setIsModalOpen(false); 
+      fetchSessions();
+    } catch (error) {
+      console.error('Status update error:', error);
+      alert('상태 변경에 실패했습니다.');
+    }
   };
 
   const handlePostponeCascade = async (e: React.MouseEvent) => {
@@ -220,9 +290,16 @@ export default function ClassManagementPage() {
     const targetId = selectedEvent?.id;
     if (!targetId || !confirm('1주일씩 미루시겠습니까?')) return;
     try {
-      const { data: curr } = await supabase.from('sessions').select('*').eq('id', targetId).single();
-      if (!curr?.group_id) return;
-      const { data: future } = await supabase.from('sessions').select('*').eq('group_id', curr.group_id).gte('start_at', curr.start_at);
+      const { data: curr, error: fetchError } = await supabase.from('sessions').select('*').eq('id', targetId).single();
+      if (fetchError) throw fetchError;
+      if (!curr?.group_id) {
+        alert('그룹 정보가 없습니다.');
+        return;
+      }
+      
+      const { data: future, error: futureError } = await supabase.from('sessions').select('*').eq('group_id', curr.group_id).gte('start_at', curr.start_at);
+      if (futureError) throw futureError;
+      
       if (future) {
         await Promise.all(future.map(async (s) => {
           const ns = new Date(new Date(s.start_at).getTime() + 7*24*60*60*1000).toISOString();
@@ -230,10 +307,18 @@ export default function ClassManagementPage() {
           return supabase.from('sessions').update({ start_at: ns, end_at: ne }).eq('id', s.id);
         }));
       }
+      
       const { id, created_at, ...copyData } = curr;
-      await supabase.from('sessions').insert([{ ...copyData, start_at: curr.start_at, status: 'postponed' }]);
-      setIsModalOpen(false); fetchSessions();
-    } catch (error) {}
+      const { error: insertError } = await supabase.from('sessions').insert([{ ...copyData, start_at: curr.start_at, status: 'postponed' }]);
+      if (insertError) throw insertError;
+      
+      alert('일정이 성공적으로 연기되었습니다.');
+      setIsModalOpen(false); 
+      fetchSessions();
+    } catch (error: any) {
+      console.error('연기 에러:', error);
+      alert('일정 연기에 실패했습니다: ' + (error.message || '알 수 없는 오류'));
+    }
   };
 
   const handleUndoPostpone = async (e: React.MouseEvent) => {
@@ -241,9 +326,16 @@ export default function ClassManagementPage() {
     const targetId = selectedEvent?.id;
     if (!targetId || !confirm('복구하시겠습니까?')) return;
     try {
-      const { data: curr } = await supabase.from('sessions').select('*').eq('id', targetId).single();
-      if (!curr?.group_id) return;
-      const { data: future = [] } = await supabase.from('sessions').select('*').eq('group_id', curr.group_id).gt('start_at', curr.start_at);
+      const { data: curr, error: fetchError } = await supabase.from('sessions').select('*').eq('id', targetId).single();
+      if (fetchError) throw fetchError;
+      if (!curr?.group_id) {
+        alert('그룹 정보가 없습니다.');
+        return;
+      }
+      
+      const { data: future = [], error: futureError } = await supabase.from('sessions').select('*').eq('group_id', curr.group_id).gt('start_at', curr.start_at);
+      if (futureError) throw futureError;
+      
       if (future && future.length > 0) {
         await Promise.all(future.map(async (s) => {
           const ns = new Date(new Date(s.start_at).getTime() - 7*24*60*60*1000).toISOString();
@@ -251,90 +343,183 @@ export default function ClassManagementPage() {
           return supabase.from('sessions').update({ start_at: ns, end_at: ne }).eq('id', s.id);
         }));
       }
-      await supabase.from('sessions').delete().eq('id', targetId);
-      setIsModalOpen(false); fetchSessions();
-    } catch (error) {}
-  };
-
-  const handleDeleteGroup = async () => {
-    if (!selectedEvent?.groupId) return alert('그룹 정보가 없습니다.');
-    if (!confirm('해당 그룹 전체를 삭제하시겠습니까?')) return;
-    await supabase.from('sessions').delete().eq('group_id', selectedEvent.groupId);
-    setIsModalOpen(false);
-    fetchSessions();
-  };
-
-  const handleExtendGroup = async () => {
-    if (!selectedEvent?.groupId) return alert('그룹 정보가 없습니다.');
-    const { data: sessions } = await supabase
-      .from('sessions')
-      .select('*')
-      .eq('group_id', selectedEvent.groupId)
-      .order('start_at', { ascending: true });
-
-    if (!sessions || sessions.length === 0) return;
-
-    const last = sessions[sessions.length - 1];
-    const newTotal = sessions.length + 1;
-
-    const newStart = new Date(last.start_at);
-    newStart.setDate(newStart.getDate() + 7);
-    const newEnd = new Date(last.end_at);
-    newEnd.setDate(newEnd.getDate() + 7);
-
-    const { id, created_at, ...insertData } = last;
-    await supabase.from('sessions').insert([{
-      ...insertData,
-      start_at: newStart.toISOString(),
-      end_at: newEnd.toISOString(),
-      round_index: newTotal,
-      round_total: newTotal,
-      round_display: `${newTotal}/${newTotal}`,
-      status: 'opened'
-    }]);
-
-    await supabase.from('sessions').update({ round_total: newTotal }).eq('group_id', selectedEvent.groupId);
-    
-    for (let i = 0; i < sessions.length; i++) {
-        const s = sessions[i];
-        const currentIndex = i + 1;
-        await supabase.from('sessions').update({
-            round_index: currentIndex,
-            round_total: newTotal,
-            round_display: `${currentIndex}/${newTotal}`
-        }).eq('id', s.id);
+      
+      const { error: deleteError } = await supabase.from('sessions').delete().eq('id', targetId);
+      if (deleteError) throw deleteError;
+      
+      alert('일정이 성공적으로 복구되었습니다.');
+      setIsModalOpen(false); 
+      fetchSessions();
+    } catch (error: any) {
+      console.error('복구 에러:', error);
+      alert('일정 복구에 실패했습니다: ' + (error.message || '알 수 없는 오류'));
     }
-    fetchSessions();
   };
 
   const handleShrinkGroup = async () => {
-    if (!selectedEvent?.groupId || !selectedEvent?.roundIndex) return alert('그룹 정보 또는 회차 정보가 없습니다.');
+    if (!selectedEvent?.groupId || !selectedEvent?.roundIndex) {
+      alert('그룹 정보 또는 회차 정보가 없습니다.');
+      return;
+    }
     
-    if (!confirm(`현재 회차(${selectedEvent.roundIndex}회)를 마지막으로 설정하고 이후 회차를 모두 삭제하시겠습니까?`)) return;
-
-    const targetDate = typeof selectedEvent.start === 'string' ? selectedEvent.start : selectedEvent.start.toISOString();
-
-    await supabase.from('sessions')
-      .delete()
-      .eq('group_id', selectedEvent.groupId)
-      .gt('start_at', targetDate);
-
-    const newTotal = selectedEvent.roundIndex;
-    await supabase.from('sessions').update({ round_total: newTotal }).eq('group_id', selectedEvent.groupId);
-
-    const { data: remains } = await supabase.from('sessions').select('id, round_index').eq('group_id', selectedEvent.groupId);
-    if (remains) {
-        for (const r of remains) {
-            await supabase.from('sessions').update({ round_display: `${r.round_index}/${newTotal}` }).eq('id', r.id);
-        }
+    if (!confirm(`현재 회차(${selectedEvent.roundIndex}회)를 마지막으로 설정하고 이후 회차를 모두 삭제하시겠습니까?`)) {
+      return;
     }
 
-    setIsModalOpen(false);
-    fetchSessions();
+    try {
+      const targetDate = typeof selectedEvent.start === 'string' 
+        ? selectedEvent.start 
+        : selectedEvent.start.toISOString();
+
+      // 1. 이후 회차 삭제
+      const { error: deleteError } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('group_id', selectedEvent.groupId)
+        .gt('start_at', targetDate);
+
+      if (deleteError) throw deleteError;
+
+      const newTotal = selectedEvent.roundIndex;
+
+      // 2. 남은 세션들 조회
+      const { data: remains, error: fetchError } = await supabase
+        .from('sessions')
+        .select('id, round_index')
+        .eq('group_id', selectedEvent.groupId);
+
+      if (fetchError) throw fetchError;
+
+      // 3. Promise.all로 병렬 업데이트
+      if (remains && remains.length > 0) {
+        await Promise.all(
+          remains.map(r => 
+            supabase.from('sessions').update({
+              round_total: newTotal,
+              round_display: `${r.round_index}/${newTotal}`
+            }).eq('id', r.id)
+          )
+        );
+      }
+
+      alert('회차가 성공적으로 축소되었습니다.');
+      setIsModalOpen(false);
+      fetchSessions();
+    } catch (error: any) {
+      console.error('회차 축소 에러:', error);
+      alert('회차 축소에 실패했습니다: ' + (error.message || '알 수 없는 오류'));
+    }
   };
 
   const handleAddTeacher = () => setEditFields({ ...editFields, teachers: [...editFields.teachers, { id: '', price: 0 }] });
   const handleRemoveTeacher = (i: number) => setEditFields({ ...editFields, teachers: editFields.teachers.filter((_, idx) => idx !== i) });
+
+  const handleOpenCloneModal = () => {
+    setCloneMode('fixed');
+    setCloneRounds(4);
+    setCloneInterval(7);
+    setCloneDates([]);
+    setCloneTimes([]);
+    setIsCloneModalOpen(true);
+  };
+
+  const handleCloneGroup = async () => {
+    if (!selectedEvent) return;
+    
+    try {
+      const baseSession = selectedEvent;
+      const sessionsToCopy: any[] = [];
+      
+      if (cloneMode === 'fixed') {
+        // 고정 간격 복제
+        const baseDate = new Date(baseSession.start);
+        const baseDuration = new Date(baseSession.end).getTime() - new Date(baseSession.start).getTime();
+        
+        for (let i = 1; i <= cloneRounds; i++) {
+          const newStart = new Date(baseDate);
+          newStart.setDate(baseDate.getDate() + (cloneInterval * i));
+          const newEnd = new Date(newStart.getTime() + baseDuration);
+          
+          sessionsToCopy.push({
+            title: baseSession.title,
+            created_by: baseSession.teacherId,
+            price: baseSession.price,
+            start_at: newStart.toISOString(),
+            end_at: newEnd.toISOString(),
+            students_text: baseSession.studentsText,
+            session_type: baseSession.type,
+            status: 'opened',
+            mileage_option: baseSession.mileageAction,
+            group_id: baseSession.groupId || null,
+            round_index: (baseSession.roundIndex || 0) + i,
+            round_total: (baseSession.roundTotal || 0) + cloneRounds,
+            round_display: `${(baseSession.roundIndex || 0) + i}/${(baseSession.roundTotal || 0) + cloneRounds}`
+          });
+        }
+      } else {
+        // 수동 날짜 복제
+        const baseDuration = new Date(baseSession.end).getTime() - new Date(baseSession.start).getTime();
+        const baseTime = new Date(baseSession.start);
+        
+        cloneDates.forEach((dateStr, i) => {
+          if (!dateStr) return;
+          const newStart = new Date(dateStr);
+          
+          // 시간이 입력되었으면 사용, 아니면 기존 시간 사용
+          if (cloneTimes[i]) {
+            const [hours, minutes] = cloneTimes[i].split(':').map(Number);
+            newStart.setHours(hours, minutes);
+          } else {
+            newStart.setHours(baseTime.getHours(), baseTime.getMinutes());
+          }
+          
+          const newEnd = new Date(newStart.getTime() + baseDuration);
+          
+          sessionsToCopy.push({
+            title: baseSession.title,
+            created_by: baseSession.teacherId,
+            price: baseSession.price,
+            start_at: newStart.toISOString(),
+            end_at: newEnd.toISOString(),
+            students_text: baseSession.studentsText,
+            session_type: baseSession.type,
+            status: 'opened',
+            mileage_option: baseSession.mileageAction,
+            group_id: baseSession.groupId || null,
+            round_index: (baseSession.roundIndex || 0) + i + 1,
+            round_total: (baseSession.roundTotal || 0) + cloneDates.filter(d => d).length,
+            round_display: `${(baseSession.roundIndex || 0) + i + 1}/${(baseSession.roundTotal || 0) + cloneDates.filter(d => d).length}`
+          });
+        });
+      }
+      
+      if (sessionsToCopy.length === 0) {
+        alert('복제할 세션이 없습니다.');
+        return;
+      }
+      
+      const { error } = await supabase.from('sessions').insert(sessionsToCopy);
+      if (error) throw error;
+      
+      // 기존 세션들의 round_total 업데이트
+      if (baseSession.groupId) {
+        const newTotal = (baseSession.roundTotal || 0) + sessionsToCopy.length;
+        await supabase
+          .from('sessions')
+          .update({ round_total: newTotal })
+          .eq('group_id', baseSession.groupId)
+          .lte('round_index', baseSession.roundIndex || 0);
+      }
+      
+      alert(`${sessionsToCopy.length}개의 수업이 복제되었습니다.`);
+      setIsCloneModalOpen(false);
+      setIsModalOpen(false);
+      fetchSessions();
+    } catch (error: any) {
+      console.error('복제 에러:', error);
+      alert('복제에 실패했습니다: ' + (error.message || '알 수 없는 오류'));
+    }
+  };
 
   const goRollingFourDay = () => {
     const api = calendarRef.current?.getApi();
@@ -374,7 +559,7 @@ export default function ClassManagementPage() {
             <select
               value={filterTeacher}
               onChange={(e) => setFilterTeacher(e.target.value)}
-              className="hidden sm:block h-8 sm:h-9 px-2 sm:px-3 bg-slate-100 rounded-lg text-[10px] sm:text-xs font-bold text-slate-700 border border-slate-200"
+              className="h-8 sm:h-9 px-2 sm:px-3 bg-slate-100 rounded-lg text-[10px] sm:text-xs font-bold text-slate-700 border border-slate-200"
             >
               <option value="ALL">전체 강사</option>
               {teacherList.map(t => (
@@ -383,7 +568,7 @@ export default function ClassManagementPage() {
             </select>
             <div className="h-8 sm:h-9 p-0.5 bg-slate-100 rounded-lg flex items-center">
               <button onClick={() => handleViewChange('rollingFourDay')} className={`px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-black ${currentView === 'rollingFourDay' ? 'bg-white rounded-md shadow-sm text-blue-600' : 'text-slate-400'}`}>4-DAY</button>
-              <button onClick={() => handleViewChange('dayGridMonth')} className={`px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-black ${currentView === 'dayGridMonth' ? 'bg-white rounded-md shadow-sm text-blue-600' : 'text-slate-400'}`}>MONTH</button>
+              <button onClick={() => handleViewChange('twoMonthGrid')} className={`px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-black ${currentView === 'twoMonthGrid' ? 'bg-white rounded-md shadow-sm text-blue-600' : 'text-slate-400'}`}>MONTH</button>
             </div>
             <Link href="/class/create" className="h-8 sm:h-9 px-3 sm:px-4 bg-blue-600 text-white text-[10px] sm:text-xs font-black rounded-lg flex items-center shadow-md">+ NEW</Link>
           </div>
@@ -395,18 +580,21 @@ export default function ClassManagementPage() {
             plugins={[dayGridPlugin, interactionPlugin]} 
             initialView="rollingFourDay"
             initialDate={initialDateStr} 
-            views={{ rollingFourDay: { type: 'dayGrid', duration: { days: 4 } } }}
+            views={{ 
+              rollingFourDay: { type: 'dayGrid', duration: { days: 4 } },
+              twoMonthGrid: { type: 'dayGrid', duration: { months: 2 } }
+            }}
             editable={true} 
             eventDrop={handleEventDrop}
             headerToolbar={false} 
             locale="ko" 
-            dayMaxEvents={currentView === 'dayGridMonth' ? 3 : false}
+            dayMaxEvents={currentView === 'dayGridMonth' || currentView === 'twoMonthGrid' ? 3 : false}
             events={filteredEvents} 
             eventClick={handleEventClick} 
             height="auto"
             eventContent={(info) => {
               const { teacher, status, isAdmin, roundInfo, type, roundIndex, roundTotal } = info.event.extendedProps;
-              const isMonthView = info.view.type === 'dayGridMonth';
+              const isMonthView = info.view.type === 'dayGridMonth' || info.view.type === 'twoMonthGrid';
               const dateObj = new Date(info.event.start || '');
               const time24 = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
               const start = info.event.start ? new Date(info.event.start) : null;
@@ -416,6 +604,7 @@ export default function ClassManagementPage() {
               const isPostponed = status === 'postponed', isCancelled = status === 'cancelled';
               const isFinished = (info.event.end || info.event.start || new Date()) < new Date();
               const isLastRound = roundIndex && roundTotal && roundIndex === roundTotal;
+              const isUrgent = teacher === '미정';
 
               let bgColor = '#FFFFFF';
               let borderColor = '#CBD5E1';
@@ -430,6 +619,7 @@ export default function ClassManagementPage() {
               if (isFinished) { bgColor = '#F1F5F9'; borderColor = '#94A3B8'; textColor = '#64748B'; }
               if (isPostponed) { bgColor = '#FAF5FF'; borderColor = '#A855F7'; textColor = '#7E22CE'; }
               if (isCancelled) { bgColor = '#FFF1F2'; borderColor = '#F43F5E'; textColor = '#BE123C'; }
+              if (isUrgent) { bgColor = '#FEF2F2'; borderColor = '#EF4444'; textColor = '#991B1B'; }
 
               if (isMonthView) {
                 return (
@@ -444,7 +634,7 @@ export default function ClassManagementPage() {
                         )}
                       </span>
                       {roundInfo && (
-                        <span className={`text-[7px] px-1 rounded font-medium ${isLastRound ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                        <span className={`text-[7px] px-1.5 py-0.5 rounded font-black ${isLastRound ? 'bg-red-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
                           {roundInfo}
                         </span>
                       )}
@@ -467,8 +657,13 @@ export default function ClassManagementPage() {
                           {durationMin}
                         </span>
                       )}
+                      {isPostponed && (
+                        <span className="bg-purple-600 text-white text-[8px] px-1.5 rounded font-black">
+                          연기
+                        </span>
+                      )}
                     </div>
-                    {isLastRound && <span className="bg-red-600 text-white text-[8px] px-1.5 rounded font-black">FINAL</span>}
+                    {isLastRound && <span className="bg-red-600 text-white text-[8px] px-1.5 rounded font-black">FIN</span>}
                   </div>
                   <div className="flex justify-between items-end min-w-0">
                     <div className={`text-[10px] sm:text-[11px] font-black ${isAdmin ? 'text-amber-700' : 'text-blue-600'} truncate`}>{teacher}T</div>
@@ -497,10 +692,137 @@ export default function ClassManagementPage() {
         onUndoPostpone={handleUndoPostpone}
         onAddTeacher={handleAddTeacher}
         onRemoveTeacher={handleRemoveTeacher}
-        onDeleteGroup={handleDeleteGroup}
-        onExtendGroup={handleExtendGroup}
         onShrinkGroup={handleShrinkGroup}
+        onCloneGroup={handleOpenCloneModal}
       />
+      
+      {/* 복제 모달 */}
+      {isCloneModalOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4" onClick={() => setIsCloneModalOpen(false)}>
+          <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-2xl font-black text-slate-900 mb-6">수업 복제</h3>
+            
+            <div className="space-y-4">
+              {/* 복제 방식 선택 */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">복제 방식</h4>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setCloneMode('fixed')}
+                    className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${
+                      cloneMode === 'fixed' 
+                        ? 'bg-blue-600 text-white shadow-lg' 
+                        : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                    }`}
+                  >
+                    고정 간격
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setCloneMode('manual');
+                      setCloneDates(Array(cloneRounds).fill(''));
+                      setCloneTimes(Array(cloneRounds).fill(''));
+                    }}
+                    className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${
+                      cloneMode === 'manual' 
+                        ? 'bg-blue-600 text-white shadow-lg' 
+                        : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                    }`}
+                  >
+                    수동 입력
+                  </button>
+                </div>
+              </div>
+              
+              {cloneMode === 'fixed' ? (
+                <>
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">간격 (일)</h4>
+                    <input 
+                      type="number" 
+                      value={cloneInterval} 
+                      onChange={(e) => setCloneInterval(Number(e.target.value))}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-blue-600"
+                      min="1"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">회차 수</h4>
+                    <input 
+                      type="number" 
+                      value={cloneRounds} 
+                      onChange={(e) => setCloneRounds(Number(e.target.value))}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-blue-600"
+                      min="1"
+                      max="20"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">회차 수</h4>
+                      <button 
+                        onClick={() => {
+                          const newRounds = cloneRounds + 1;
+                          setCloneRounds(newRounds);
+                          setCloneDates([...cloneDates, '']);
+                        }}
+                        className="text-xs font-black text-blue-600 hover:text-blue-700"
+                      >
+                        + 추가
+                      </button>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto space-y-2">
+                      {Array.from({length: cloneRounds}).map((_, i) => (
+                        <div key={i} className="flex gap-2 items-center">
+                          <span className="text-xs font-black text-slate-400 w-8">{i+1}회</span>
+                          <input 
+                            type="date" 
+                            value={cloneDates[i] || ''} 
+                            onChange={(e) => {
+                              const newDates = [...cloneDates];
+                              newDates[i] = e.target.value;
+                              setCloneDates(newDates);
+                            }}
+                            className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-blue-600"
+                          />
+                          <input 
+                            type="time" 
+                            value={cloneTimes[i] || ''} 
+                            onChange={(e) => {
+                              const newTimes = [...cloneTimes];
+                              newTimes[i] = e.target.value;
+                              setCloneTimes(newTimes);
+                            }}
+                            className="w-24 bg-slate-50 border-2 border-slate-100 rounded-lg px-2 py-2 text-xs font-bold outline-none focus:border-blue-600"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              <div className="flex gap-2 pt-4">
+                <button 
+                  onClick={() => setIsCloneModalOpen(false)}
+                  className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-sm hover:bg-slate-200 transition-all"
+                >
+                  취소
+                </button>
+                <button 
+                  onClick={handleCloneGroup}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg"
+                >
+                  복제 시작
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

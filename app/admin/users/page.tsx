@@ -130,12 +130,37 @@ export default function UserDashboardPage() {
     if (!file) return;
     setUploadingId(user.id);
     try {
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
-      await supabase.storage.from('instructors').upload(filePath, file);
-      const { data: { publicUrl } } = supabase.storage.from('instructors').getPublicUrl(filePath);
-      const updatedDocs = [...(user.documents || []), { name: file.name, url: publicUrl }];
+      // 파일명을 안전하게 인코딩
+      const timestamp = Date.now();
+      const fileExt = file.name.substring(file.name.lastIndexOf('.'));
+      const baseName = file.name.substring(0, file.name.lastIndexOf('.'));
+      const sanitizedBaseName = baseName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '_');
+      
+      const filePath = `${user.id}/${timestamp}_${sanitizedBaseName}${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('instructors')
+        .upload(filePath, file);
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('instructors')
+        .getPublicUrl(filePath);
+      
+      const updatedDocs = [...(user.documents || []), { 
+        name: file.name,
+        url: publicUrl 
+      }];
+      
       await supabase.from('users').update({ documents: updatedDocs }).eq('id', user.id);
       fetchUsers();
+    } catch (error: any) {
+      console.error('File upload error:', error);
+      alert('파일 업로드에 실패했습니다: ' + error.message);
     } finally {
       setUploadingId(null);
     }

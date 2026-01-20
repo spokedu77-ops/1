@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, X, User, Calendar, Edit3, ArrowUpRight, ArrowDownRight, History, Save, Trash2 } from 'lucide-react';
+import { Search, X, User, Calendar, Edit3, ArrowUpRight, ArrowDownRight, History, Save, Trash2, BookOpen } from 'lucide-react';
 import Sidebar from '@/app/components/Sidebar';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
@@ -11,6 +11,7 @@ interface Teacher {
   id: string;
   name: string;
   points: number;
+  session_count: number;
 }
 
 interface MileageLog {
@@ -30,12 +31,13 @@ export default function AdminMileagePage() {
   const [teacherLogs, setTeacherLogs] = useState<MileageLog[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editPointValue, setEditPointValue] = useState<number>(0);
+  const [editSessionCount, setEditSessionCount] = useState<number>(0);
 
   const fetchData = useCallback(async () => {
     try {
       const { data: tData } = await supabase
         .from('users')
-        .select('id, name, points')
+        .select('id, name, points, session_count')
         .eq('is_active', true)
         .not('name', 'in', '("최지훈","김구민","김윤기")')
         .order('name', { ascending: true });
@@ -59,6 +61,7 @@ export default function AdminMileagePage() {
   const openDetailModal = async (teacher: Teacher) => {
     setSelectedTeacher(teacher);
     setEditPointValue(teacher.points || 0);
+    setEditSessionCount(teacher.session_count || 0);
     setTeacherLogs([]);
     
     const { data } = await supabase
@@ -76,19 +79,32 @@ export default function AdminMileagePage() {
     const prevPoints = selectedTeacher.points || 0;
     const nextPoints = editPointValue;
     const diff = nextPoints - prevPoints;
-    if (diff === 0) return;
+    
+    const prevSessionCount = selectedTeacher.session_count || 0;
+    const nextSessionCount = editSessionCount;
+    
+    if (diff === 0 && prevSessionCount === nextSessionCount) {
+      alert("변경된 내용이 없습니다.");
+      return;
+    }
 
     try {
-      const { error: uError } = await supabase.from('users').update({ points: nextPoints }).eq('id', selectedTeacher.id);
+      const updateData: any = {};
+      if (diff !== 0) updateData.points = nextPoints;
+      if (prevSessionCount !== nextSessionCount) updateData.session_count = nextSessionCount;
+      
+      const { error: uError } = await supabase.from('users').update(updateData).eq('id', selectedTeacher.id);
       if (uError) throw uError;
 
-      const { error: lError } = await supabase.from('mileage_logs').insert([{
-        teacher_id: selectedTeacher.id,
-        amount: diff,
-        reason: '운영진 수동 조정',
-        session_title: '직접 수정'
-      }]);
-      if (lError) throw lError;
+      if (diff !== 0) {
+        const { error: lError } = await supabase.from('mileage_logs').insert([{
+          teacher_id: selectedTeacher.id,
+          amount: diff,
+          reason: '운영진 수동 조정',
+          session_title: '직접 수정'
+        }]);
+        if (lError) throw lError;
+      }
 
       alert("반영되었습니다.");
       fetchData();
@@ -149,9 +165,13 @@ export default function AdminMileagePage() {
                   <User size={16} />
                 </div>
                 <h3 className="font-black text-slate-900 text-sm mb-0.5">{t.name} T</h3>
-                <div className="flex items-baseline gap-0.5">
+                <div className="flex items-baseline gap-0.5 mb-2">
                   <span className="text-lg font-black text-blue-600">{(t.points || 0).toLocaleString()}</span>
                   <span className="text-[10px] font-black text-blue-300 italic">P</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <BookOpen size={12} className="text-slate-400" />
+                  <span className="text-xs font-bold text-slate-600">{(t.session_count || 0)}회 수업</span>
                 </div>
               </button>
             ))}
@@ -201,21 +221,37 @@ export default function AdminMileagePage() {
                 <div>
                   <h2 className="text-xl font-black text-slate-950 italic uppercase tracking-tighter">{selectedTeacher.name} T</h2>
                   <p className="text-blue-600 font-black text-2xl mt-1">{(selectedTeacher.points || 0).toLocaleString()} <span className="text-xs">P</span></p>
+                  <p className="text-slate-400 font-bold text-sm mt-1 flex items-center gap-1">
+                    <BookOpen size={14} /> {(selectedTeacher.session_count || 0)}회 수업 완료
+                  </p>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer text-slate-400"><X size={20}/></button>
               </div>
 
-              <div className="mb-8 p-1.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-2">
-                <input 
-                  type="number" 
-                  value={editPointValue} 
-                  onChange={(e) => setEditPointValue(Number(e.target.value))}
-                  className="flex-1 bg-transparent px-4 py-2 font-black text-blue-600 text-lg outline-none cursor-text"
-                />
-                <button onClick={handleSavePoints} className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 hover:bg-blue-600 transition-all shadow-md cursor-pointer">
-                  <Save size={14}/> UPDATE
-                </button>
+              <div className="mb-4 space-y-3">
+                <div className="p-1.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3">마일리지</span>
+                  <input 
+                    type="number" 
+                    value={editPointValue} 
+                    onChange={(e) => setEditPointValue(Number(e.target.value))}
+                    className="flex-1 bg-transparent px-4 py-2 font-black text-blue-600 text-lg outline-none cursor-text"
+                  />
+                </div>
+                <div className="p-1.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3">수업 수</span>
+                  <input 
+                    type="number" 
+                    value={editSessionCount} 
+                    onChange={(e) => setEditSessionCount(Number(e.target.value))}
+                    className="flex-1 bg-transparent px-4 py-2 font-black text-emerald-600 text-lg outline-none cursor-text"
+                  />
+                </div>
               </div>
+              
+              <button onClick={handleSavePoints} className="w-full bg-slate-900 text-white px-5 py-3.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-md cursor-pointer mb-8">
+                <Save size={14}/> 변경사항 저장
+              </button>
 
               <div className="space-y-4">
                 <div className="flex items-center gap-2 px-1">
