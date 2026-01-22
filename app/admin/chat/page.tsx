@@ -142,7 +142,8 @@ export default function AdminChatPage() {
       .select('id, name, role, is_active')
       .eq('is_active', true)
       .neq('role', 'ADMIN')
-      .not('id', 'is', null);
+      .not('id', 'is', null)
+      .order('name', { ascending: true });  // 가나다순 정렬
     
     if (error) {
       console.error("선생님 목록 로드 실패:", error.message);

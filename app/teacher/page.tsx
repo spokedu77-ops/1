@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package } from 'lucide-react';
+import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package, FileText, Receipt } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -61,18 +61,30 @@ export default function TeacherMainPage() {
             <h2 className="text-2xl font-black mb-6 leading-tight">
               선생님, 오늘도<br />아이들과 즐겁게 몰입하세요!
             </h2>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <button 
                 onClick={() => router.push('/teacher/my-classes')}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
                 오늘 스케줄 <ChevronRight size={16} />
               </button>
               <button 
+                onClick={() => router.push('/teacher/lesson-plans')}
+                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <FileText size={16} /> 수업안
+              </button>
+              <button 
                 onClick={() => router.push('/teacher/inventory')}
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
                 <Package size={16} /> 교구 목록
+              </button>
+              <button 
+                onClick={() => router.push('/teacher/report')}
+                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <Receipt size={16} /> 정산 확인
               </button>
             </div>
           </div>
