@@ -28,20 +28,29 @@ export interface TeacherInput {
   price: number;
 }
 
+export interface MileageAction {
+  label: string;
+  val: number;
+}
+
+export interface EditFields {
+  title: string;
+  teachers: TeacherInput[];
+  date: string;
+  start: string;
+  end: string;
+  memo: string;
+  mileageAction?: string;
+  roundIndex?: number;
+  roundTotal?: number;
+}
+
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedEvent: SessionEvent | null;
-  editFields: {
-    title: string;
-    teachers: TeacherInput[];
-    date: string;
-    start: string;
-    end: string;
-    memo: string;
-    mileageAction?: string;
-  };
-  setEditFields: (fields: any) => void;
+  editFields: EditFields;
+  setEditFields: React.Dispatch<React.SetStateAction<EditFields>>;
   teacherList: { id: string; name: string }[];
   onUpdate: () => void;
   onUpdateStatus: (status: string | null) => void;

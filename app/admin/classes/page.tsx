@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-reac
 import Sidebar from '@/app/components/Sidebar';
 import { useClassManagement } from './hooks/useClassManagement';
 import SessionEditModal from './components/SessionEditModal';
-import { SessionEvent, TeacherInput } from './types';
+import { SessionEvent, TeacherInput, EditFields } from './types';
 import { extractMileageAction, parseExtraTeachers, buildMemoWithExtras, getMileageTotal } from './lib/sessionUtils';
 import { MILEAGE_ACTIONS } from './constants/mileage';
 
@@ -46,7 +46,7 @@ export default function ClassManagementPage() {
   const [cloneInterval, setCloneInterval] = useState(7);
   const [cloneDates, setCloneDates] = useState<string[]>([]);
   const [cloneTimes, setCloneTimes] = useState<string[]>([]);
-  const [editFields, setEditFields] = useState({ 
+  const [editFields, setEditFields] = useState<EditFields>({ 
     title: '', 
     teachers: [] as TeacherInput[], 
     date: '', 
