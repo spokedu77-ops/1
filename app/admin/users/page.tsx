@@ -19,6 +19,7 @@ interface DocumentFile {
 interface UserData {
   id: string;
   name: string;
+  email: string;
   role: 'admin' | 'teacher';
   phone: string | null;
   organization: string | null;
@@ -117,11 +118,16 @@ export default function UserDashboardPage() {
     if (currentUser?.role !== 'admin') return alert('관리자 권한이 필요합니다.');
     if (!newPartner.name) return alert('이름을 입력해주세요.');
     try {
-      const insertData = {
+      const name = newPartner.name;
+      const email = (newPartner as Partial<UserData & { email?: string }>).email || 
+                    `${name.toLowerCase().replace(/\s+/g, '.')}@spokedu.com`;
+      
+      const insertData: Partial<UserData> & { id: string; email: string } = {
         ...newPartner,
         id: crypto.randomUUID(),
-        email: newPartner.email || `${newPartner.name.toLowerCase().replace(/\s+/g, '.')}@spokedu.com`
+        email: email
       };
+      
       const { data, error } = await supabase
         .from('users')
         .insert([insertData])
