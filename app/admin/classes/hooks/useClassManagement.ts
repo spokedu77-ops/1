@@ -22,7 +22,18 @@ export function useClassManagement() {
     const tList = usersData || [];
     setTeacherList(tList);
 
-    const { data, error } = await supabase.from('sessions').select('*, users(id, name)').order('start_at', { ascending: true });
+    // 최근 6개월 + 미래 6개월 = 총 1년치 데이터만 로드
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const sixMonthsLater = new Date();
+    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('*, users:created_by(id, name)')
+      .gte('start_at', sixMonthsAgo.toISOString())
+      .lte('start_at', sixMonthsLater.toISOString())
+      .order('start_at', { ascending: true });
     
     if (!error && data) {
       const groupTotals: Record<string, number> = {};
@@ -68,6 +79,7 @@ export function useClassManagement() {
           roundDisplay: s.round_display
         };
       });
+      
       setAllEvents(events);
       setFilteredEvents(events);
     }

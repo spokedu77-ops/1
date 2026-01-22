@@ -227,6 +227,33 @@ export default function SessionEditModal({
                 </div>
               </div>
 
+              {/* 회차 정보 */}
+              {selectedEvent.groupId && (
+                <div className="pt-2 border-t border-slate-100">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1 text-left">회차 정보</h3>
+                  <div className="flex gap-2 sm:gap-3 items-center">
+                    <input 
+                      type="number" 
+                      value={editFields.roundIndex || 0} 
+                      onChange={(e) => setEditFields({...editFields, roundIndex: Number(e.target.value)})} 
+                      className="flex-1 bg-slate-50 border-none rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-bold outline-none text-center" 
+                      placeholder="현재 회차"
+                      min="1"
+                    />
+                    <span className="text-slate-400 font-black text-lg">/</span>
+                    <input 
+                      type="number" 
+                      value={editFields.roundTotal || 0} 
+                      onChange={(e) => setEditFields({...editFields, roundTotal: Number(e.target.value)})} 
+                      className="flex-1 bg-slate-50 border-none rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-bold outline-none text-center" 
+                      placeholder="총 회차"
+                      min="1"
+                    />
+                  </div>
+                  <p className="text-[9px] text-slate-400 mt-1 px-1">현재 회차 / 총 회차를 입력하세요</p>
+                </div>
+              )}
+
               {/* 메모 (학생 정보) */}
               <div className="pt-2 border-t border-slate-100">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1 text-left flex items-center gap-2">

@@ -1,30 +1,20 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
-  ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
-  Camera, X, CheckCircle2, FileText, Paperclip 
+  ChevronLeft, ChevronRight, 
+  Camera, X, FileText, Paperclip 
 } from 'lucide-react';
+import { 
+  FeedbackFields,
+  parseTemplateToFields,
+  fieldsToTemplateText
+} from '@/app/lib/feedbackValidation';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-const FEEDBACK_TEMPLATE = `✅ 오늘 수업의 주요 활동
-- 
-
-✅ 강점 및 긍정적인 부분
-- 
-
-✅ 개선이 필요한 부분 및 피드백
-- 
-
-✅ 다음 수업 목표 및 계획
-- 
-
-✅ 특이사항 및 컨디션 체크
-- `;
 
 interface Session {
   id: string;
@@ -35,6 +25,7 @@ interface Session {
   students_text?: string;
   photo_url?: string[];
   file_url?: string[];
+  feedback_fields?: FeedbackFields;
 }
 
 function MyClassesContent() {
@@ -42,7 +33,7 @@ function MyClassesContent() {
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<Session | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [feedback, setFeedback] = useState(FEEDBACK_TEMPLATE);
+  const [feedbackFields, setFeedbackFields] = useState<FeedbackFields>({});
   const [uploading, setUploading] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [fileUrls, setFileUrls] = useState<string[]>([]);
@@ -96,20 +87,45 @@ function MyClassesContent() {
 
   const handleItemClick = (session: Session) => {
     setSelectedEvent(session);
-    setFeedback(session.students_text || FEEDBACK_TEMPLATE);
+    
+    if (session.feedback_fields && Object.keys(session.feedback_fields).length > 0) {
+      setFeedbackFields(session.feedback_fields);
+    } else if (session.students_text) {
+      setFeedbackFields(parseTemplateToFields(session.students_text));
+    } else {
+      setFeedbackFields({});
+    }
+    
     setPhotoUrls(Array.isArray(session.photo_url) ? session.photo_url : []);
     setFileUrls(Array.isArray(session.file_url) ? session.file_url : []);
     setIsModalOpen(true);
   };
 
-  // [핵심 수정] 마일리지 등 다른 필드를 보호하며 피드백만 저장
   const handleCompleteSession = async () => {
     if (!selectedEvent || uploading) return;
     
-    // 빈 양식 방지: 템플릿 제외 실질적 내용이 있는지 체크
-    const pureContent = feedback.replace(FEEDBACK_TEMPLATE, '').replace(/\s/g, '');
-    if (pureContent.length < 5) {
-      return alert('수업 피드백 내용을 입력해주세요.');
+    // 센터 수업: 파일만 체크
+    if (selectedEvent.session_type === 'regular_center') {
+      if (fileUrls.length === 0) {
+        return alert('파일을 최소 1개 업로드해주세요.');
+      }
+    } else {
+      // 개인 수업: 필수 필드 체크
+      const requiredFields = ['main_activity', 'strengths', 'next_goals'];
+      const missingFields = requiredFields.filter(
+        field => !feedbackFields[field as keyof FeedbackFields] || 
+                 feedbackFields[field as keyof FeedbackFields]!.trim().length < 5
+      );
+      
+      if (missingFields.length > 0) {
+        const fieldNames: Record<string, string> = {
+          main_activity: '오늘 수업의 주요 활동',
+          strengths: '강점 및 긍정적인 부분',
+          next_goals: '다음 수업 목표 및 계획'
+        };
+        const missingFieldNames = missingFields.map(f => fieldNames[f]).join(', ');
+        return alert(`다음 필드를 작성해주세요: ${missingFieldNames}`);
+      }
     }
 
     setUploading(true);
@@ -118,10 +134,10 @@ function MyClassesContent() {
         .from('sessions')
         .update({ 
           status: 'finished', 
-          students_text: feedback.trim(), 
+          feedback_fields: feedbackFields,
+          students_text: fieldsToTemplateText(feedbackFields),
           photo_url: photoUrls, 
-          file_url: fileUrls 
-          // mileage_option 등을 명시하지 않음으로써 관리자가 설정한 정산 데이터 보호
+          file_url: fileUrls
         })
         .eq('id', selectedEvent.id);
 
@@ -142,7 +158,8 @@ function MyClassesContent() {
     try {
       await supabase.from('sessions').update({ 
         status: 'pending', 
-        students_text: null, 
+        students_text: null,
+        feedback_fields: {},
         photo_url: [], 
         file_url: [] 
       }).eq('id', selectedEvent.id);
@@ -203,13 +220,12 @@ function MyClassesContent() {
               const dateDisplay = `${startDate.getMonth() + 1}.${startDate.getDate()}`;
               const timeDisplay = `${startDate.getHours()}:${String(startDate.getMinutes()).padStart(2, '0')}`;
               
-              // [상태 판별 개선] 템플릿 제외 텍스트가 있어야 Done으로 표시
-              const pureContent = session.students_text 
-                ? session.students_text.replace(FEEDBACK_TEMPLATE, '').replace(/\s/g, '') 
-                : '';
+              // 간소화된 상태 판별
+              const feedbackFields = session.feedback_fields || parseTemplateToFields(session.students_text || '');
+              const hasContent = feedbackFields.main_activity || feedbackFields.strengths || feedbackFields.next_goals;
               
               const isVerified = session.status === 'verified';
-              const isActuallyDone = (session.status === 'finished' || isVerified) && pureContent.length > 5;
+              const isActuallyDone = hasContent;
 
               return (
                 <div key={session.id} onClick={() => handleItemClick(session)} className={`p-4 md:p-6 rounded-[28px] shadow-sm border-2 transition-all cursor-pointer flex items-center justify-between ${isToday(session.start_at) ? 'border-blue-400 bg-blue-50/30' : 'bg-white border-transparent hover:border-slate-200'}`}>
@@ -226,11 +242,13 @@ function MyClassesContent() {
                     </div>
                   </div>
                   <div className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
-                    isActuallyDone || isVerified
+                    isVerified
+                      ? 'bg-blue-50 text-blue-500'
+                      : isActuallyDone
                       ? 'bg-emerald-50 text-emerald-500' 
                       : 'bg-slate-50 text-slate-300'
                   }`}>
-                    {(isActuallyDone || isVerified) ? 'Done' : 'Wait'}
+                    {isVerified ? 'Verified' : isActuallyDone ? 'Done' : 'Wait'}
                   </div>
                 </div>
               );
@@ -252,50 +270,120 @@ function MyClassesContent() {
               <button onClick={() => setIsModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 space-y-10 text-left bg-slate-50/30">
-              {selectedEvent.session_type === 'regular_center' && (
-                <div className="space-y-4 p-6 bg-blue-50/50 rounded-[32px] border border-blue-100">
-                  <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest">
-                    <Paperclip size={14} /> Center Documents
+            <div className="flex-1 overflow-y-auto p-8 space-y-6 text-left bg-slate-50/30">
+              {/* 센터 수업: 파일 업로드만 */}
+              {selectedEvent.session_type === 'regular_center' ? (
+                <div className="space-y-6">
+                  <div className="space-y-4 p-6 bg-blue-50/50 rounded-[32px] border border-blue-100">
+                    <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest">
+                      <Paperclip size={14} /> Center Documents
+                    </div>
+                    <div className="grid gap-2">
+                      {fileUrls.map((url, i) => (
+                        <div key={i} className="flex items-center justify-between bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
+                          <span className="text-xs font-bold text-slate-600 truncate max-w-[300px]">{url.split('/').pop()}</span>
+                          <button onClick={() => setFileUrls(fileUrls.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-red-500 cursor-pointer"><X size={16} /></button>
+                        </div>
+                      ))}
+                      <label className="flex items-center justify-center p-4 bg-white border-2 border-dashed border-blue-200 rounded-xl text-blue-500 hover:bg-blue-50 cursor-pointer transition-all active:scale-95">
+                        <span className="text-xs font-black uppercase tracking-widest">+ Add File</span>
+                        <input type="file" className="hidden" onChange={async (e) => {
+                          const url = await uploadFile(e.target.files?.[0] as File, 'session-files');
+                          if (url) setFileUrls(prev => [...prev, url]);
+                        }} disabled={uploading} />
+                      </label>
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    {fileUrls.map((url, i) => (
-                      <div key={i} className="flex items-center justify-between bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
-                        <span className="text-xs font-bold text-slate-600 truncate max-w-[300px]">{url.split('/').pop()}</span>
-                        <button onClick={() => setFileUrls(fileUrls.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-red-500 cursor-pointer"><X size={16} /></button>
-                      </div>
-                    ))}
-                    <label className="flex items-center justify-center p-4 bg-white border-2 border-dashed border-blue-200 rounded-xl text-blue-500 hover:bg-blue-50 cursor-pointer transition-all active:scale-95">
-                      <span className="text-xs font-black uppercase tracking-widest">+ Add File</span>
-                      <input type="file" className="hidden" onChange={async (e) => {
-                        const url = await uploadFile(e.target.files?.[0] as File, 'session-files');
-                        if (url) setFileUrls(prev => [...prev, url]);
-                      }} disabled={uploading} />
+                  
+                  {/* 센터 수업 메모 (선택) */}
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">
+                      메모 (선택사항)
                     </label>
+                    <textarea 
+                      className="w-full h-32 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
+                      value={feedbackFields.condition_notes || ''}
+                      onChange={(e) => setFeedbackFields({...feedbackFields, condition_notes: e.target.value})}
+                      placeholder="특이사항이나 간단한 메모를 남겨주세요"
+                    />
                   </div>
                 </div>
-              )}
-
+              ) : (
+                /* 개인 수업: 구조화된 필드 입력 */
+                <>
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Daily Feedback</label>
-                <textarea 
-                  className="w-full min-h-[300px] bg-white rounded-[32px] p-8 text-[15px] leading-relaxed text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 shadow-sm border border-slate-100 resize-none transition-all"
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="아이들의 성장을 기록해주세요..."
-                />
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">
+                    ✅ 오늘 수업의 주요 활동 *
+                  </label>
+                  <textarea 
+                    className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
+                    value={feedbackFields.main_activity || ''}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, main_activity: e.target.value})}
+                    placeholder="예: 축구 기본기 드리블 연습, 미니 게임 진행"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">
+                    ✅ 강점 및 긍정적인 부분 *
+                  </label>
+                  <textarea 
+                    className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
+                    value={feedbackFields.strengths || ''}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, strengths: e.target.value})}
+                    placeholder="예: 드리블 속도가 빨라졌고, 팀워크가 좋아졌습니다"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">
+                    ✅ 개선이 필요한 부분 및 피드백 (선택)
+                  </label>
+                  <textarea 
+                    className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
+                    value={feedbackFields.improvements || ''}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, improvements: e.target.value})}
+                    placeholder="예: 슈팅 정확도 연습이 더 필요합니다"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">
+                    ✅ 다음 수업 목표 및 계획 *
+                  </label>
+                  <textarea 
+                    className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
+                    value={feedbackFields.next_goals || ''}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, next_goals: e.target.value})}
+                    placeholder="예: 패스 연습과 전술 이해도 향상"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">
+                    ✅ 특이사항 및 컨디션 체크 (선택)
+                  </label>
+                  <textarea 
+                    className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
+                    value={feedbackFields.condition_notes || ''}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, condition_notes: e.target.value})}
+                    placeholder="예: 오늘 컨디션 좋음, 집중력 우수"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Photos ({photoUrls.length}/3)</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {photoUrls.map((url, i) => (
-                    <div key={i} className="relative aspect-square">
-                      <img src={url} className="w-full h-full rounded-2xl object-cover border-2 border-white shadow-md" alt="" referrerPolicy="no-referrer" />
-                      <button onClick={() => setPhotoUrls(photoUrls.filter((_, idx) => idx !== i))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg cursor-pointer"><X size={12} /></button>
-                    </div>
-                  ))}
-                  {photoUrls.length < 3 && (
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">
+                    Photos ({photoUrls.length})
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {photoUrls.map((url, i) => (
+                      <div key={i} className="relative aspect-square">
+                        <img src={url} className="w-full h-full rounded-2xl object-cover border-2 border-white shadow-md" alt="" referrerPolicy="no-referrer" />
+                        <button onClick={() => setPhotoUrls(photoUrls.filter((_, idx) => idx !== i))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg cursor-pointer"><X size={12} /></button>
+                      </div>
+                    ))}
                     <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center bg-white text-slate-300 hover:bg-slate-50 hover:border-blue-400 cursor-pointer transition-all active:scale-95">
                       <Camera size={24} />
                       <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
@@ -303,9 +391,10 @@ function MyClassesContent() {
                         if (url) setPhotoUrls(prev => [...prev, url]);
                       }} disabled={uploading} />
                     </label>
-                  )}
+                  </div>
                 </div>
-              </div>
+              </>
+              )}
             </div>
 
             <div className="p-8 bg-white border-t flex gap-4">

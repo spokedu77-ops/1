@@ -20,7 +20,8 @@ import {
   Wallet,
   Medal, 
   MessageCircle,
-  CalendarCheck
+  CalendarCheck,
+  Zap
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -53,15 +54,21 @@ export default function Sidebar() {
       items: [
         { name: "대시보드", href: "/admin", icon: LayoutDashboard },
         { name: "수업 관리", href: "/admin/classes", icon: Calendar },
-        { name: "피드백 검수", href: "/admin/teachers-classes", icon: CheckCircle },
+        { name: "수업 관련 검수", href: "/admin/teachers-classes", icon: CheckCircle },
         { name: "공지사항", href: "/admin/notice", icon: ClipboardList },
       ]
     },
     {
-      group: "강사 및 기타 관리",
+      group: "수업 자료 관리",
+      items: [
+        { name: "연간 커리큘럼", href: "/admin/curriculum", icon: BookOpen },
+        { name: "I.I.Warm-up", href: "/admin/iiwarmup", icon: Zap },
+      ]
+    },
+    {
+      group: "강사 관리",
       items: [
         { name: "강사 소통 채팅", href: "/admin/chat", icon: MessageCircle },
-        { name: "연간 커리큘럼", href: "/admin/curriculum", icon: BookOpen },
         { name: "교구/재고 관리", href: "/admin/inventory", icon: Box },
         { name: "강사 정보 관리", href: "/admin/users", icon: Users },
         { name: "강사 카운팅 관리", href: "/admin/mileage", icon: Medal },
@@ -84,6 +91,7 @@ export default function Sidebar() {
       group: "내 활동",
       items: [
         { name: "내 수업 일정", href: "/teacher/my-classes", icon: Calendar },
+        { name: "내 수업안 관리", href: "/teacher/lesson-plans", icon: BookOpen },
       ]
     },
     {
@@ -105,7 +113,11 @@ export default function Sidebar() {
   pathname.startsWith('/admin') || 
   pathname.startsWith('/master') || 
   pathname.startsWith('/class');
-  const groups = isAdmin ? adminMenuItems : teacherMenuItems;
+  
+  // Teacher 페이지에서는 Sidebar 렌더링 안 함
+  if (!isAdmin) return null;
+  
+  const groups = adminMenuItems;
 
   return (
     <>

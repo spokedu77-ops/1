@@ -20,6 +20,13 @@ const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> 
   one_day: { bg: '#FFF7ED', border: '#FB923C', text: '#9A3412' },
 };
 
+const STATUS_COLORS = {
+  finished: { bg: '#F1F5F9', border: '#94A3B8', text: '#64748B' },
+  postponed: { bg: '#FAF5FF', border: '#A855F7', text: '#7E22CE' },
+  cancelled: { bg: '#FFF1F2', border: '#F43F5E', text: '#BE123C' },
+  urgent: { bg: '#FEF2F2', border: '#EF4444', text: '#991B1B' },
+};
+
 export default function ClassManagementPage() {
   const calendarRef = useRef<FullCalendar>(null);
   const { filteredEvents, teacherList, fetchSessions, supabase, currentView, setCurrentView, filterTeacher, setFilterTeacher } = useClassManagement();
@@ -46,7 +53,9 @@ export default function ClassManagementPage() {
     start: '', 
     end: '', 
     memo: '',
-    mileageAction: '' 
+    mileageAction: '',
+    roundIndex: 0,
+    roundTotal: 0
   });
 
   // ✅ 뷰 전환 시 오늘 날짜로 즉시 이동하는 헬퍼
@@ -57,6 +66,15 @@ export default function ClassManagementPage() {
     // 뷰 변경 전에 날짜 설정
     if (viewName === 'rollingFourDay') {
       api.gotoDate(getYesterday());
+    } else if (viewName === 'twoMonthGrid') {
+      // 오늘 날짜로 이동
+      const today = new Date();
+      api.gotoDate(today);
+      // 뷰 변경 후 오늘 날짜로 스크롤
+      setTimeout(() => {
+        const todayEl = document.querySelector('.fc-day-today');
+        todayEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     } else {
       api.gotoDate(new Date());
     }
@@ -78,7 +96,7 @@ export default function ClassManagementPage() {
     try {
       const { data: endedSessions } = await supabase
         .from('sessions')
-        .select('id, created_by')
+        .select('id, created_by, title')
         .lt('end_at', now)
         .in('status', ['opened', null])
         .not('status', 'in', '("cancelled","postponed","deleted")');
@@ -87,7 +105,7 @@ export default function ClassManagementPage() {
         // 1. 세션 상태를 finished로 변경
         await supabase.from('sessions').update({ status: 'finished' }).in('id', endedSessions.map(s => s.id));
         
-        // 2. 각 강사의 session_count 증가
+        // 2. 각 강사의 session_count 증가 및 로그 생성
         const teacherCounts = endedSessions.reduce((acc, s) => {
           acc[s.created_by] = (acc[s.created_by] || 0) + 1;
           return acc;
@@ -106,7 +124,32 @@ export default function ClassManagementPage() {
             .eq('id', teacherId);
         }
         
-        fetchSessions();
+        // 3. 수업 카운팅 로그 생성
+        const countLogs = endedSessions.map(session => ({
+          teacher_id: session.created_by,
+          session_id: session.id,
+          session_title: session.title,
+          count_change: 1,
+          reason: '수업 완료'
+        }));
+        
+        if (countLogs.length > 0) {
+          const { error: logError } = await supabase
+            .from('session_count_logs')
+            .insert(countLogs);
+          
+          if (logError) {
+            console.error('수업 카운팅 로그 저장 실패:', {
+              message: logError.message,
+              details: logError.details,
+              hint: logError.hint,
+              code: logError.code
+            });
+          }
+        }
+        
+        // fetchSessions() 제거 - 전체 데이터 재로드 불필요
+        // 세션 상태는 DB에서 업데이트되며, 다음 페이지 로드 시 반영됨
       }
     } catch (error) {
       console.error('Auto-finish error:', error);
@@ -165,7 +208,9 @@ export default function ClassManagementPage() {
       start: startObj.toTimeString().slice(0, 5), 
       end: endObj.toTimeString().slice(0, 5), 
       memo: finalMemo,
-      mileageAction: mileageAction
+      mileageAction: mileageAction,
+      roundIndex: p.roundIndex || 0,
+      roundTotal: p.roundTotal || 0
     });
     setIsModalOpen(true);
   };
@@ -220,6 +265,13 @@ export default function ClassManagementPage() {
         students_text: finalMemo,
         mileage_option: editFields.mileageAction
       };
+
+      // 회차 정보 업데이트 (그룹이 있는 경우만)
+      if (selectedEvent.groupId && editFields.roundIndex && editFields.roundTotal) {
+        updatePayload.round_index = editFields.roundIndex;
+        updatePayload.round_total = editFields.roundTotal;
+        updatePayload.round_display = `${editFields.roundIndex}/${editFields.roundTotal}`;
+      }
 
       const { error: sessionError } = await supabase.from('sessions').update(updatePayload).eq('id', selectedEvent.id);
       if (sessionError) throw sessionError;
@@ -601,25 +653,21 @@ export default function ClassManagementPage() {
               const end = info.event.end ? new Date(info.event.end) : null;
               const durationMin = start && end ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000)) : null;
               
-              const isPostponed = status === 'postponed', isCancelled = status === 'cancelled';
+              const isPostponed = status === 'postponed';
+              const isCancelled = status === 'cancelled';
               const isFinished = (info.event.end || info.event.start || new Date()) < new Date();
               const isLastRound = roundIndex && roundTotal && roundIndex === roundTotal;
               const isUrgent = teacher === '미정';
 
-              let bgColor = '#FFFFFF';
-              let borderColor = '#CBD5E1';
-              let textColor = '#1E293B';
-
-              if (type && TYPE_COLORS[type]) {
-                bgColor = TYPE_COLORS[type].bg;
-                borderColor = TYPE_COLORS[type].border;
-                textColor = TYPE_COLORS[type].text;
-              }
+              // 색상 결정 로직 최적화
+              let colors = TYPE_COLORS[type] || { bg: '#FFFFFF', border: '#CBD5E1', text: '#1E293B' };
               
-              if (isFinished) { bgColor = '#F1F5F9'; borderColor = '#94A3B8'; textColor = '#64748B'; }
-              if (isPostponed) { bgColor = '#FAF5FF'; borderColor = '#A855F7'; textColor = '#7E22CE'; }
-              if (isCancelled) { bgColor = '#FFF1F2'; borderColor = '#F43F5E'; textColor = '#BE123C'; }
-              if (isUrgent) { bgColor = '#FEF2F2'; borderColor = '#EF4444'; textColor = '#991B1B'; }
+              if (isUrgent) colors = STATUS_COLORS.urgent;
+              else if (isCancelled) colors = STATUS_COLORS.cancelled;
+              else if (isPostponed) colors = STATUS_COLORS.postponed;
+              else if (isFinished) colors = STATUS_COLORS.finished;
+              
+              const { bg: bgColor, border: borderColor, text: textColor } = colors;
 
               if (isMonthView) {
                 return (
@@ -635,7 +683,7 @@ export default function ClassManagementPage() {
                       </span>
                       {roundInfo && (
                         <span className={`text-[7px] px-1.5 py-0.5 rounded font-black ${isLastRound ? 'bg-red-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                          {roundInfo}
+                          {isLastRound ? 'Fin' : roundInfo}
                         </span>
                       )}
                     </div>

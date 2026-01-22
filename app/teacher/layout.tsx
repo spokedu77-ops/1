@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js'; // Supabase 추가
-import { Home, BookOpen, Calendar, Package, MessageCircle, MoreHorizontal, Receipt, X, LogOut } from 'lucide-react';
+import { Home, BookOpen, Calendar, Package, MessageCircle, MoreHorizontal, Receipt, X, LogOut, FileText } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,6 +30,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   };
 
   const moreMenus = [
+    { id: '/teacher/lesson-plans', label: '수업안 관리', icon: FileText },
     { id: '/teacher/inventory', label: '교구목록', icon: Package },
     { id: '/teacher/report', label: '정산 확인', icon: Receipt },
   ];
