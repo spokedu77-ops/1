@@ -294,11 +294,11 @@ export default function SessionEditModal({
                     </button>
                   ) : (
                     <>
-                      <button onClick={() => onUpdateStatus(null)} className="bg-slate-900 text-white py-3 sm:py-4 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black flex items-center justify-center gap-1 hover:bg-slate-800 transition-colors">
-                        <Undo2 size={12}/> 정상 원복
-                      </button>
                       <button onClick={(e) => onPostpone(e)} className="bg-purple-50 text-purple-600 border border-purple-100 py-3 sm:py-4 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black flex items-center justify-center gap-1 hover:bg-purple-100 transition-colors">
                         <RotateCcw size={12}/> 1주 연기
+                      </button>
+                      <button onClick={() => onUpdateStatus(null)} className="bg-slate-900 text-white py-3 sm:py-4 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black flex items-center justify-center gap-1 hover:bg-slate-800 transition-colors">
+                        <Undo2 size={12}/> 정상 원복
                       </button>
                     </>
                   )}
