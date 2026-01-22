@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
-  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, Tag
+  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, Tag, MapPin
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -22,6 +22,7 @@ interface UserData {
   role: 'admin' | 'teacher';
   phone: string | null;
   organization: string | null;
+  departure_location?: string | null;
   schedule?: string | null;
   vacation?: string | null;
   documents: DocumentFile[] | null;
@@ -85,6 +86,7 @@ export default function UserDashboardPage() {
           name: editForm.name,
           phone: editForm.phone,
           organization: editForm.organization,
+          departure_location: editForm.departure_location,
           schedule: editForm.schedule,
           vacation: editForm.vacation
         })
@@ -115,13 +117,28 @@ export default function UserDashboardPage() {
     if (currentUser?.role !== 'admin') return alert('관리자 권한이 필요합니다.');
     if (!newPartner.name) return alert('이름을 입력해주세요.');
     try {
-      const { error } = await supabase.from('users').insert([newPartner]);
-      if (error) throw error;
+      const insertData = {
+        ...newPartner,
+        id: crypto.randomUUID(),
+        email: newPartner.email || `${newPartner.name.toLowerCase().replace(/\s+/g, '.')}@spokedu.com`
+      };
+      const { data, error } = await supabase
+        .from('users')
+        .insert([insertData])
+        .select();
+      
+      if (error) {
+        console.error('등록 실패 상세:', error);
+        throw error;
+      }
+      
       setIsAddModalOpen(false);
       setNewPartner({ role: 'teacher', is_active: true });
       fetchUsers();
-    } catch (error) {
-      alert('등록 실패');
+      alert('성공적으로 등록되었습니다.');
+    } catch (error: any) {
+      console.error('등록 실패:', error);
+      alert(`등록 실패: ${error.message || JSON.stringify(error)}`);
     }
   };
 
@@ -235,8 +252,9 @@ export default function UserDashboardPage() {
                 <input className="w-full px-2 py-1 text-xl font-black border-b-2 border-blue-500 outline-none" value={editForm.name || ''} onChange={e => setEditForm(prev => ({...prev, name: e.target.value}))} />
                 <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="학력" value={editForm.organization || ''} onChange={e => setEditForm(prev => ({...prev, organization: e.target.value}))} />
                 <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="연락처" value={editForm.phone || ''} onChange={e => setEditForm(prev => ({...prev, phone: e.target.value}))} />
-                <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="스케줄 (쉼표로 구분: 월 15-18, 화 16-19)" value={editForm.schedule || ''} onChange={e => setEditForm(prev => ({...prev, schedule: e.target.value}))} />
-                <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="연기 희망 (쉼표로 구분: 1.23 화요일, 1.30 금요일)" value={editForm.vacation || ''} onChange={e => setEditForm(prev => ({...prev, vacation: e.target.value}))} />
+                <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="출발장소" value={editForm.departure_location || ''} onChange={e => setEditForm(prev => ({...prev, departure_location: e.target.value}))} />
+                <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="수업 스케줄 (쉼표로 구분: 월 15-18, 화 16-19)" value={editForm.schedule || ''} onChange={e => setEditForm(prev => ({...prev, schedule: e.target.value}))} />
+                <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="연기 요청 (쉼표로 구분: 1.23 화요일, 1.30 금요일)" value={editForm.vacation || ''} onChange={e => setEditForm(prev => ({...prev, vacation: e.target.value}))} />
                 <button onClick={() => handleSaveInfo(user.id)} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black cursor-pointer">저장</button>
               </div>
             ) : (
@@ -244,18 +262,28 @@ export default function UserDashboardPage() {
                 <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">{user.name} <span className="text-lg text-slate-400 font-bold">선생님</span></h3>
                 
                 <div className="space-y-4 mb-6">
+                  {/* 학력 */}
                   <div className="flex items-center text-[11px] font-bold text-slate-600">
                     <GraduationCap className="w-4 h-4 mr-3 text-blue-500" />
-                    <span className="text-slate-400 w-12 shrink-0">학력</span>
+                    <span className="text-slate-400 w-20 shrink-0">학력</span>
                     <span className="truncate">{user.organization || '-'}</span>
                   </div>
+                  
+                  {/* 연락처 */}
                   <div className="flex items-center text-[11px] font-bold text-slate-600">
                     <Smartphone className="w-4 h-4 mr-3 text-blue-500" />
-                    <span className="text-slate-400 w-12 shrink-0">연락처</span>
+                    <span className="text-slate-400 w-20 shrink-0">연락처</span>
                     <span>{user.phone || '-'}</span>
                   </div>
-
-                  {/* 1번 아이디어 적용: 스케줄 태그 리스트 */}
+                  
+                  {/* 출발장소 */}
+                  <div className="flex items-center text-[11px] font-bold text-slate-600">
+                    <MapPin className="w-4 h-4 mr-3 text-blue-500" />
+                    <span className="text-slate-400 w-20 shrink-0">출발장소</span>
+                    <span>{user.departure_location || '-'}</span>
+                  </div>
+                  
+                  {/* 수업 스케줄 */}
                   <div className="space-y-2">
                     <div className="flex items-center text-[11px] font-bold text-slate-400 mb-1">
                       <Clock className="w-3.5 h-3.5 mr-3 text-blue-500" /> 수업 스케줄
@@ -270,11 +298,11 @@ export default function UserDashboardPage() {
                       ) : <span className="text-[10px] text-slate-300 italic">등록된 스케줄 없음</span>}
                     </div>
                   </div>
-
-                  {/* 1번 아이디어 적용: 연기 희망 태그 리스트 */}
+                  
+                  {/* 연기 요청 */}
                   <div className="space-y-2 bg-rose-50/50 p-3 rounded-2xl border border-rose-100/50">
                     <div className="flex items-center text-[11px] font-bold text-rose-400 mb-1">
-                      <AlertCircle className="w-3.5 h-3.5 mr-3" /> 연기 희망 날짜
+                      <AlertCircle className="w-3.5 h-3.5 mr-3" /> 연기 요청
                     </div>
                     <div className="flex flex-wrap gap-1.5 pl-7">
                       {(user.vacation || '').split(',').filter(v => v.trim()).length > 0 ? (
@@ -294,7 +322,7 @@ export default function UserDashboardPage() {
             <div className="mt-4 pt-4 border-t border-slate-100">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                  <FileCheck className="w-3 h-3" /> Partner Documents
+                  <FileCheck className="w-3 h-3" /> 서류 등록
                 </h4>
               </div>
               <div className="space-y-2 mb-4">
@@ -342,6 +370,8 @@ export default function UserDashboardPage() {
                 <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" onChange={e => setNewPartner({...newPartner, name: e.target.value})} /></div>
               <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">학교 / 학과</label>
                 <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" onChange={e => setNewPartner({...newPartner, organization: e.target.value})} /></div>
+              <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">출발장소</label>
+                <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" onChange={e => setNewPartner({...newPartner, departure_location: e.target.value})} /></div>
               <button onClick={handleAddPartner} className="w-full py-4 bg-blue-600 text-white rounded-[1.5rem] font-black mt-6 shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer">등록하기</button>
             </div>
           </div>

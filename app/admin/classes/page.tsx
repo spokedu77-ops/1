@@ -139,12 +139,7 @@ export default function ClassManagementPage() {
             .insert(countLogs);
           
           if (logError) {
-            console.error('수업 카운팅 로그 저장 실패:', {
-              message: logError.message,
-              details: logError.details,
-              hint: logError.hint,
-              code: logError.code
-            });
+            console.error('수업 카운팅 로그 저장 실패:', logError);
           }
         }
         
@@ -502,10 +497,10 @@ export default function ClassManagementPage() {
             session_type: baseSession.type,
             status: 'opened',
             mileage_option: baseSession.mileageAction,
-            group_id: baseSession.groupId || null,
-            round_index: (baseSession.roundIndex || 0) + i,
-            round_total: (baseSession.roundTotal || 0) + cloneRounds,
-            round_display: `${(baseSession.roundIndex || 0) + i}/${(baseSession.roundTotal || 0) + cloneRounds}`
+            group_id: null,
+            round_index: i,
+            round_total: cloneRounds,
+            round_display: `${i}/${cloneRounds}`
           });
         }
       } else {
@@ -537,10 +532,10 @@ export default function ClassManagementPage() {
             session_type: baseSession.type,
             status: 'opened',
             mileage_option: baseSession.mileageAction,
-            group_id: baseSession.groupId || null,
-            round_index: (baseSession.roundIndex || 0) + i + 1,
-            round_total: (baseSession.roundTotal || 0) + cloneDates.filter(d => d).length,
-            round_display: `${(baseSession.roundIndex || 0) + i + 1}/${(baseSession.roundTotal || 0) + cloneDates.filter(d => d).length}`
+            group_id: null,
+            round_index: i + 1,
+            round_total: cloneDates.filter(d => d).length,
+            round_display: `${i + 1}/${cloneDates.filter(d => d).length}`
           });
         });
       }
@@ -552,16 +547,6 @@ export default function ClassManagementPage() {
       
       const { error } = await supabase.from('sessions').insert(sessionsToCopy);
       if (error) throw error;
-      
-      // 기존 세션들의 round_total 업데이트
-      if (baseSession.groupId) {
-        const newTotal = (baseSession.roundTotal || 0) + sessionsToCopy.length;
-        await supabase
-          .from('sessions')
-          .update({ round_total: newTotal })
-          .eq('group_id', baseSession.groupId)
-          .lte('round_index', baseSession.roundIndex || 0);
-      }
       
       alert(`${sessionsToCopy.length}개의 수업이 복제되었습니다.`);
       setIsCloneModalOpen(false);
