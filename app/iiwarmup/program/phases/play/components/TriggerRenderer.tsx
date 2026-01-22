@@ -12,7 +12,7 @@ interface TriggerRendererProps {
 
 export function TriggerRenderer({ event, scene, onComplete }: TriggerRendererProps) {
   const meshRef = useRef<THREE.Group | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!scene) return;
@@ -31,7 +31,7 @@ export function TriggerRenderer({ event, scene, onComplete }: TriggerRendererPro
     group.position.set(x, y, z);
 
     // 오브젝트 타입별 메시 생성
-    let mesh: THREE.Mesh | THREE.Group;
+    let mesh: THREE.Mesh | THREE.Group | THREE.Points;
 
     switch (object_type) {
       case 'flame':

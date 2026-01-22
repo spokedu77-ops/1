@@ -20,7 +20,7 @@ export function TimelineEngine({ episode, onTriggerSpawn, onComplete }: Timeline
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
   const activeTriggersRef = useRef<Map<string, ActiveTrigger>>(new Map());
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number>(0);
 
   // 타임라인 이벤트를 활성 트리거로 변환
