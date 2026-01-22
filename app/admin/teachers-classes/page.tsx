@@ -167,7 +167,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
       
       const { data, error } = await query;
       if (error) throw error;
-      if (data) setSessions(data as Session[]);
+      if (data) setSessions(data as unknown as Session[]);
     } catch (err: any) {
       console.error('데이터 로드 실패:', err);
       setError(err.message || '데이터를 불러오지 못했습니다.');
