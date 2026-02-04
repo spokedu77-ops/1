@@ -322,18 +322,28 @@ export default function ClassManagementPage() {
         const prevStatus = selectedEvent.status;
         await supabase.from('sessions').update({ status }).eq('id', selectedEvent.id);
         
-        // finished로 변경되는 경우에만 session_count 증가
+        // finished로 변경되는 경우: 로그 1건 삽입(중복 시 23505만 스킵) 후 session_count 반영
         if (status === 'finished' && prevStatus !== 'finished') {
-          const { data: user } = await supabase
-            .from('users')
-            .select('session_count')
-            .eq('id', selectedEvent.teacherId)
-            .single();
-          
-          await supabase
-            .from('users')
-            .update({ session_count: (user?.session_count || 0) + 1 })
-            .eq('id', selectedEvent.teacherId);
+          const teacherId = selectedEvent.teacherId;
+          if (teacherId) {
+            const { error: logError } = await supabase.from('session_count_logs').insert({
+              teacher_id: teacherId,
+              session_id: selectedEvent.id,
+              session_title: selectedEvent.title ?? null,
+              count_change: 1,
+              reason: '수동 완료',
+            });
+            if (logError?.code === '23505') return; // 이미 로그 있음(유니크), 카운트 중복 방지
+            const { data: user } = await supabase
+              .from('users')
+              .select('session_count')
+              .eq('id', teacherId)
+              .single();
+            await supabase
+              .from('users')
+              .update({ session_count: (user?.session_count || 0) + 1 })
+              .eq('id', teacherId);
+          }
         }
       }
       setIsModalOpen(false); 

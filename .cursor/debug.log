@@ -1,1 +1,0 @@
-{"location":"page.tsx:80","message":"page load auth check","data":{"hasUser":true,"userId":"d86773c0-ff7f-4ade-9ef8-340f1a9bb4b0","userEmail":"choijihoon@spokedu.com","supabaseUrl":"https://mwgvserdyflsqyhcqecp.supabase.co","hasAnonKey":true},"timestamp":1770119237965,"sessionId":"debug-session","runId":"initial","hypothesisId":"H4,H5"}
