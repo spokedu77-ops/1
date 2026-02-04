@@ -14,27 +14,29 @@ export function useClassManagement() {
   const [currentView, setCurrentView] = useState('rollingFourDay');
 
   const fetchSessions = useCallback(async () => {
-    const { data: usersData } = await supabase
-      .from('users')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name', { ascending: true });
-    const tList = usersData || [];
-    setTeacherList(tList);
-
-    // 최근 6개월 + 미래 6개월 = 총 1년치 데이터만 로드
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     const sixMonthsLater = new Date();
     sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
 
-    const { data, error } = await supabase
-      .from('sessions')
-      .select('*, users:created_by(id, name)')
-      .gte('start_at', sixMonthsAgo.toISOString())
-      .lte('start_at', sixMonthsLater.toISOString())
-      .order('start_at', { ascending: true });
-    
+    const [usersRes, sessionsRes] = await Promise.all([
+      supabase
+        .from('users')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name', { ascending: true }),
+      supabase
+        .from('sessions')
+        .select('*, users:created_by(id, name)')
+        .gte('start_at', sixMonthsAgo.toISOString())
+        .lte('start_at', sixMonthsLater.toISOString())
+        .order('start_at', { ascending: true })
+    ]);
+
+    const tList = usersRes.data || [];
+    setTeacherList(tList);
+
+    const { data, error } = sessionsRes;
     if (!error && data) {
       const groupTotals: Record<string, number> = {};
       data.forEach(s => { if(s.group_id) groupTotals[s.group_id] = (groupTotals[s.group_id] || 0) + 1; });

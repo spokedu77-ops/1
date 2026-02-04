@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SPOKEDU Space Flow - Immersive</title>
+  
+  <!--
+    ⚠️ DEPRECATED / LEGACY ONLY
+    This single-file HTML is kept for iframe backward compatibility.
+    New development should use the modular Next.js route: /flow-phase
+    See: app/flow-phase/ for the modular engine implementation.
+  -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -506,7 +513,7 @@ function createTrackLanes(){
   for(let i=-1;i<=1;i++){
     const strip = new THREE.Mesh(
       new THREE.PlaneGeometry(laneWidth,60000),
-      new THREE.MeshPhongMaterial({ color:0x050818, transparent:true, opacity:0.9 })
+      new THREE.MeshPhongMaterial({ color:0x3b82f6, transparent:true, opacity:0.9 })
     );
     strip.rotation.x = -Math.PI/2;
     strip.position.set(i*laneWidth,-30,-20000);
@@ -1317,6 +1324,25 @@ function animate(){
   document.getElementById('progress-bar').style.width = (gameTime / totalDuration * 100) + '%';
   renderer.render(scene, camera);
 }
+
+/* ===============================
+   INIT_PHASE 메시지 리스너
+================================ */
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'INIT_PHASE' && event.data.phase === 'flow') {
+    const data = event.data.data;
+    if (data.duration) {
+      // duration 업데이트 (필요시)
+      const totalDuration = data.duration;
+      // durations 배열 업데이트 로직 (필요시)
+    }
+    // 자동 시작
+    console.log('✅ [Flow Phase] INIT_PHASE 수신, 자동 시작');
+    setTimeout(() => {
+      startGame();
+    }, 500);
+  }
+});
 
 /* ===============================
    이벤트 바인딩

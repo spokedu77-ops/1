@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Phase - Immersive Actions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background-color: #000; 
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .immersive-container {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .immersive-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        .image-active {
+            display: block;
+        }
+
+        #start-overlay {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            cursor: pointer;
+        }
+
+        #intro-overlay {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 90;
+            color: white;
+        }
+
+        .text-focus-in {
+            animation: text-focus-in 0.8s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+        }
+
+        @keyframes text-focus-in {
+            0% { filter: blur(15px); opacity: 0; transform: scale(0.8); }
+            100% { filter: blur(0px); opacity: 1; transform: scale(1); }
+        }
+
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.6) 150%);
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .progress-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 30;
+        }
+
+        .progress-segment {
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .progress-segment.active {
+            background: rgba(59, 130, 246, 1);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .progress-segment.completed {
+            background: rgba(34, 197, 94, 1);
+        }
+
+        .action-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            z-index: 30;
+        }
+    </style>
+</head>
+<body>
+    <!-- 시작 전 대기 화면 -->
+    <div id="start-overlay" onclick="handleStart()">
+        <h1 class="text-5xl font-black text-orange-600 mb-6 tracking-tighter">PLAY PHASE</h1>
+        <div class="px-8 py-3 bg-white/10 rounded-full text-white text-xl animate-pulse">
+            화면을 클릭하여 시작하세요
+        </div>
+    </div>
+
+    <!-- 인트로 오버레이 -->
+    <div id="intro-overlay">
+        <div class="text-center text-focus-in">
+            <h2 id="intro-text-en" class="text-[10rem] font-black leading-none mb-4"></h2>
+            <p id="intro-text-ko" class="text-6xl font-bold text-blue-400 mt-6"></p>
+        </div>
+    </div>
+
+    <!-- 메인 이미지 영역 -->
+    <div class="immersive-container">
+        <img id="img-off" class="immersive-image" alt="OFF">
+        <img id="img-on" class="immersive-image" alt="ON">
+    </div>
+
+    <!-- 진행 표시 (15개 세그먼트) -->
+    <div class="progress-indicator" id="progress-indicator"></div>
+
+    <!-- 액션 카운터 -->
+    <div class="action-counter" id="action-counter">ACTION 1/15</div>
+
+    <div class="vignette"></div>
+
+    <script>
+        const supabaseUrl = 'https://mwgvserdyflsqyhcqecp.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13Z3ZzZXJkeWZsc3F5aGNxZWNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ2NzY4MDAsImV4cCI6MjA1MDI1MjgwMH0.7qJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq';
+        const supabase = window.supabase?.createClient(supabaseUrl, supabaseAnonKey) || null;
+
+        const config = {
+            stepTime: 500, // 0.5초 (500ms)
+            introTime: 2000, // 2초 인트로
+            actionDuration: 10000 // 10초 (10번 반복)
+        };
+
+        let scenarioData = null;
+        let currentActionIndex = 0;
+        let isRunning = false;
+        let toggleState = false;
+        let actionInterval = null;
+        let progressInterval = null;
+
+        // 15개 동작 타입 정의
+        const ACTION_TYPES = [
+            'POINT', 'KNOCK', 'CHOP', 'TOUCH', 'PUSH',
+            'CLAP', 'PULL', 'SWIPE', 'SNAP', 'GRAB',
+            'WALK', 'JUMP', 'LEAN', 'SHRINK', 'EXPLODE'
+        ];
+
+        // URL 파라미터에서 데이터 가져오기
+        const params = new URLSearchParams(window.location.search);
+        let scenarioId = params.get('scenarioId') || 'week1_kitchen'; // INIT_PHASE에서 받은 값으로 업데이트 가능하도록 let으로 변경
+        const token = params.get('token');
+        const phaseIndex = parseInt(params.get('phaseIndex') || '0');
+        
+        // 시작 상태 추적 (무한 깜빡거림 방지)
+        let isStarted = false;
+        let isStarting = false;
+
+        // 부모에게 PHASE_READY 전송
+        function sendPhaseReady() {
+            window.parent.postMessage({
+                type: 'PHASE_READY',
+                phase: 'play'
+            }, '*');
+        }
+
+        // 부모에게 PHASE_PROGRESS 전송
+        function sendPhaseProgress(progress) {
+            window.parent.postMessage({
+                type: 'PHASE_PROGRESS',
+                phase: 'play',
+                progress: progress
+            }, '*');
+        }
+
+        // 부모에게 PHASE_COMPLETE 전송
+        function sendPhaseComplete() {
+            window.parent.postMessage({
+                type: 'PHASE_COMPLETE',
+                phase: 'play',
+                elapsedTime: config.actionDuration * ACTION_TYPES.length
+            }, '*');
+        }
+
+        // INIT_PHASE 메시지 리스너 (한 번만 실행)
+        let initPhaseReceived = false;
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'INIT_PHASE' && event.data.phase === 'play' && !initPhaseReceived) {
+                initPhaseReceived = true;
+                const data = event.data.data;
+                
+                // INIT_PHASE에서 받은 scenarioId를 전역 변수에 저장 (우선순위 높음)
+                if (data.scenarioId) {
+                    scenarioId = data.scenarioId;
+                    console.log('📥 [Play Phase] INIT_PHASE에서 scenarioId 받음:', scenarioId);
+                }
+                
+                // 오버레이 즉시 제거
+                removeStartOverlay();
+                
+                if (data.scenarioId) {
+                    loadScenario(data.scenarioId).then(() => {
+                        // 시나리오 로드 완료 후 scenarioData 검증
+                        if (!scenarioData || !scenarioData.actions || scenarioData.actions.length === 0) {
+                            console.warn('⚠️ [Play Phase] 시나리오 로드 완료했지만 데이터가 유효하지 않음, 기본 데이터 사용');
+                            scenarioData = null; // handleStart에서 기본 데이터 생성하도록
+                        } else {
+                            console.log('✅ [Play Phase] 시나리오 로드 완료, 액션 수:', scenarioData.actions.length);
+                        }
+                        
+                        // 자동 시작
+                        setTimeout(() => {
+                            handleStart();
+                        }, 300);
+                    }).catch((error) => {
+                        console.error('❌ [Play Phase] 시나리오 로드 실패, 기본 데이터로 시작:', error);
+                        // 기본 데이터로 시작
+                        scenarioData = null; // handleStart에서 기본 데이터 생성하도록
+                        setTimeout(() => {
+                            handleStart();
+                        }, 300);
+                    });
+                } else {
+                    // scenarioId가 없으면 기본 데이터로 시작
+                    console.log('⚠️ [Play Phase] scenarioId 없음, 기본 데이터로 시작');
+                    scenarioData = null; // handleStart에서 기본 데이터 생성하도록
+                    setTimeout(() => {
+                        handleStart();
+                    }, 300);
+                }
+            }
+        });
+
+        // 시나리오 로드
+        async function loadScenario(id) {
+            try {
+                if (supabase) {
+                    const { data, error } = await supabase
+                        .from('play_scenarios')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (error) throw error;
+                    if (data && data.scenario_json) {
+                        scenarioData = data.scenario_json;
+                        console.log('✅ 시나리오 로드 성공:', scenarioData);
+                        
+                        // 이미지 URL이 비어있을 경우 placeholder 사용
+                        if (scenarioData.actions) {
+                            scenarioData.actions = scenarioData.actions.map(action => {
+                                if (!action.images || !action.images.off || !action.images.on) {
+                                    return {
+                                        ...action,
+                                        images: {
+                                            off: action.images?.off || `https://via.placeholder.com/1920x1080/000000/FFFFFF?text=${action.type}_OFF`,
+                                            on: action.images?.on || `https://via.placeholder.com/1920x1080/FF6600/FFFFFF?text=${action.type}_ON`
+                                        }
+                                    };
+                                }
+                                return action;
+                            });
+                        }
+                    }
+                } else {
+                    // Supabase가 없으면 기본 데이터 사용
+                    scenarioData = {
+                        theme: 'kitchen',
+                        actions: ACTION_TYPES.map((type, index) => ({
+                            type,
+                            startTime: index * 13, // 인트로 2초 + 액션 10초 + 여유 1초
+                            duration: 10,
+                            introText: { en: type, ko: getActionKoreanName(type) },
+                            images: {
+                                off: `https://via.placeholder.com/1920x1080/000000/FFFFFF?text=${type}_OFF`,
+                                on: `https://via.placeholder.com/1920x1080/FF6600/FFFFFF?text=${type}_ON`
+                            }
+                        }))
+                    };
+                }
+            } catch (error) {
+                console.error('시나리오 로드 실패:', error);
+                // 기본 데이터 사용
+                scenarioData = {
+                    theme: 'kitchen',
+                    duration: 120,
+                    actions: ACTION_TYPES.slice(0, 15).map((type, index) => ({
+                        id: `action_${String(index + 1).padStart(3, '0')}`,
+                        type,
+                        startTime: index * 8,
+                        duration: 8,
+                        position: { x: 50, y: 50 },
+                        intensity: 'MID',
+                        introText: { en: type, ko: getActionKoreanName(type) },
+                        images: {
+                            off: `https://via.placeholder.com/1920x1080/000000/FFFFFF?text=${type}_OFF`,
+                            on: `https://via.placeholder.com/1920x1080/FF6600/FFFFFF?text=${type}_ON`
+                        }
+                    }))
+                };
+            }
+            
+            // 시나리오 데이터가 없으면 기본 데이터 반환
+            if (!scenarioData) {
+                scenarioData = {
+                    theme: 'kitchen',
+                    duration: 120,
+                    actions: ACTION_TYPES.slice(0, 15).map((type, index) => ({
+                        id: `action_${String(index + 1).padStart(3, '0')}`,
+                        type,
+                        startTime: index * 8,
+                        duration: 8,
+                        position: { x: 50, y: 50 },
+                        intensity: 'MID',
+                        introText: { en: type, ko: getActionKoreanName(type) },
+                        images: {
+                            off: `https://via.placeholder.com/1920x1080/000000/FFFFFF?text=${type}_OFF`,
+                            on: `https://via.placeholder.com/1920x1080/FF6600/FFFFFF?text=${type}_ON`
+                        }
+                    }))
+                };
+            }
+            
+            return scenarioData;
+        }
+
+        // 동작 한글명 매핑
+        function getActionKoreanName(type) {
+            const names = {
+                'POINT': '찌르기',
+                'KNOCK': '두드리기',
+                'CHOP': '가르기',
+                'TOUCH': '터치',
+                'PUSH': '살짝 밀기',
+                'CLAP': '박수',
+                'PULL': '당기기',
+                'SWIPE': '훑기',
+                'SNAP': '손가락 튕기기',
+                'GRAB': '움켜쥐기',
+                'WALK': '제자리 걷기',
+                'JUMP': '가벼운 점프',
+                'LEAN': '기울이기',
+                'SHRINK': '웅크리기',
+                'EXPLODE': '전신 펴기'
+            };
+            return names[type] || type;
+        }
+
+        // 진행 표시 초기화
+        function initProgressIndicator() {
+            const container = document.getElementById('progress-indicator');
+            container.innerHTML = '';
+            for (let i = 0; i < ACTION_TYPES.length; i++) {
+                const segment = document.createElement('div');
+                segment.className = 'progress-segment';
+                segment.id = `segment-${i}`;
+                container.appendChild(segment);
+            }
+        }
+
+        // 진행 표시 업데이트
+        function updateProgressIndicator(index, isActive, isCompleted) {
+            const segment = document.getElementById(`segment-${index}`);
+            if (!segment) return;
+            segment.classList.remove('active', 'completed');
+            if (isCompleted) {
+                segment.classList.add('completed');
+            } else if (isActive) {
+                segment.classList.add('active');
+            }
+        }
+
+        // 액션 카운터 업데이트
+        function updateActionCounter(index) {
+            const counter = document.getElementById('action-counter');
+            if (counter) {
+                counter.textContent = `ACTION ${index + 1}/15`;
+            }
+        }
+
+        const imgOn = document.getElementById('img-on');
+        const imgOff = document.getElementById('img-off');
+        const startOverlay = document.getElementById('start-overlay');
+        const introOverlay = document.getElementById('intro-overlay');
+
+        // 오버레이를 완전히 제거하는 함수 (한 번만 실행)
+        function removeStartOverlay() {
+            if (startOverlay) {
+                startOverlay.style.display = 'none';
+                startOverlay.style.visibility = 'hidden';
+                startOverlay.style.opacity = '0';
+                startOverlay.style.pointerEvents = 'none';
+                startOverlay.style.position = 'absolute';
+                startOverlay.style.zIndex = '-1';
+                // DOM에서 완전히 제거
+                try {
+                    startOverlay.remove();
+                } catch (e) {
+                    console.warn('오버레이 제거 실패:', e);
+                }
+            }
+        }
+
+        async function handleStart() {
+            // 이미 시작했거나 시작 중이면 무시 (무한 깜빡거림 방지)
+            if (isStarted || isStarting) {
+                console.log('⚠️ [Play Phase] 이미 시작했거나 시작 중입니다');
+                return;
+            }
+            
+            console.log('🚀 [Play Phase] handleStart 호출됨');
+            isStarting = true;
+            
+            // 오버레이 즉시 완전히 제거 (깜빡거림 방지) - 절대 다시 표시하지 않음
+            removeStartOverlay();
+            
+            try {
+                // 시나리오 데이터가 이미 로드되었고 유효한지 확인
+                const isScenarioDataValid = scenarioData && 
+                                           scenarioData.actions && 
+                                           Array.isArray(scenarioData.actions) && 
+                                           scenarioData.actions.length > 0;
+                
+                if (!isScenarioDataValid) {
+                    // 시나리오 데이터가 없거나 유효하지 않으면 로드 시도
+                    console.log('📥 시나리오 데이터가 없거나 유효하지 않음, 로드 시도...');
+                    try {
+                        await loadScenario(scenarioId);
+                        
+                        // 로드 후 다시 검증
+                        if (!scenarioData || !scenarioData.actions || scenarioData.actions.length === 0) {
+                            console.warn('⚠️ 시나리오 로드 후에도 데이터가 유효하지 않음, 기본 데이터 사용');
+                            scenarioData = null; // 기본 데이터로 대체
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ 시나리오 로드 실패, 기본 데이터 사용:', error);
+                        scenarioData = null; // 기본 데이터로 대체
+                    }
+                } else {
+                    console.log('✅ 시나리오 데이터가 이미 로드되어 있음, 재로드하지 않음');
+                }
+                
+                // 시나리오 데이터가 없거나 액션이 없으면 기본 데이터 사용
+                if (!scenarioData || !scenarioData.actions || scenarioData.actions.length === 0) {
+                    console.warn('⚠️ 시나리오 데이터가 없어 기본 데이터를 사용합니다');
+                    scenarioData = {
+                        theme: 'kitchen',
+                        duration: 120,
+                        actions: ACTION_TYPES.slice(0, 15).map((type, index) => ({
+                            id: `action_${String(index + 1).padStart(3, '0')}`,
+                            type,
+                            startTime: index * 8,
+                            duration: 8,
+                            position: { x: 50, y: 50 },
+                            intensity: 'MID',
+                            introText: { en: type, ko: getActionKoreanName(type) },
+                            images: {
+                                off: `https://via.placeholder.com/1920x1080/000000/FFFFFF?text=${type}_OFF`,
+                                on: `https://via.placeholder.com/1920x1080/FF6600/FFFFFF?text=${type}_ON`
+                            }
+                        }))
+                    };
+                }
+
+                // 이미지가 비어있는 액션 처리 - "이미지 없음" 표시용
+                scenarioData.actions = scenarioData.actions.map(action => {
+                    // 이미지가 없으면 null로 설정 (나중에 "이미지 없음" 텍스트 표시)
+                    if (!action.images || !action.images.off || !action.images.on || 
+                        action.images.off === '' || action.images.on === '') {
+                        return {
+                            ...action,
+                            images: {
+                                off: null, // 이미지 없음 표시
+                                on: null   // 이미지 없음 표시
+                            },
+                            hasNoImage: true // 이미지 없음 플래그
+                        };
+                    }
+                    return action;
+                });
+
+                // startActionSequence() 호출 전 최종 검증
+                if (!scenarioData || !scenarioData.actions || scenarioData.actions.length === 0) {
+                    console.error('❌ 최종 검증 실패: scenarioData가 유효하지 않음');
+                    throw new Error('scenarioData is invalid');
+                }
+
+                console.log('✅ 시나리오 로드 완료, 액션 수:', scenarioData.actions.length, ', 액션 시퀀스 시작');
+                initProgressIndicator();
+                sendPhaseReady();
+                startActionSequence();
+                isStarted = true;
+                isStarting = false;
+            } catch (error) {
+                console.error('❌ handleStart 오류:', error);
+                // 에러 발생 시에도 기본 데이터로 시작
+                scenarioData = {
+                    theme: 'kitchen',
+                    duration: 120,
+                    actions: ACTION_TYPES.slice(0, 15).map((type, index) => ({
+                        id: `action_${String(index + 1).padStart(3, '0')}`,
+                        type,
+                        startTime: index * 8,
+                        duration: 8,
+                        position: { x: 50, y: 50 },
+                        intensity: 'MID',
+                        introText: { en: type, ko: getActionKoreanName(type) },
+                        images: {
+                            off: `https://via.placeholder.com/1920x1080/000000/FFFFFF?text=${type}_OFF`,
+                            on: `https://via.placeholder.com/1920x1080/FF6600/FFFFFF?text=${type}_ON`
+                        }
+                    }))
+                };
+                
+                // 에러 케이스에서도 최종 검증
+                if (scenarioData && scenarioData.actions && scenarioData.actions.length > 0) {
+                    initProgressIndicator();
+                    sendPhaseReady();
+                    startActionSequence();
+                    isStarted = true;
+                } else {
+                    console.error('❌ 기본 데이터 생성도 실패했습니다');
+                    // 최후의 수단: 오버레이 다시 표시하지 않음 (무한 루프 방지)
+                }
+                isStarting = false;
+            }
+        }
+
+        // 전역 노출
+        window.handleStart = handleStart;
+
+        function startActionSequence() {
+            // 최종 검증: scenarioData와 actions가 존재하는지 확인
+            if (!scenarioData) {
+                console.error('❌ startActionSequence: scenarioData가 없습니다');
+                // 기본 데이터 생성
+                scenarioData = {
+                    theme: 'kitchen',
+                    duration: 120,
+                    actions: ACTION_TYPES.slice(0, 15).map((type, index) => ({
+                        id: `action_${String(index + 1).padStart(3, '0')}`,
+                        type,
+                        startTime: index * 8,
+                        duration: 8,
+                        position: { x: 50, y: 50 },
+                        intensity: 'MID',
+                        introText: { en: type, ko: getActionKoreanName(type) },
+                        images: {
+                            off: `https://via.placeholder.com/1920x1080/000000/FFFFFF?text=${type}_OFF`,
+                            on: `https://via.placeholder.com/1920x1080/FF6600/FFFFFF?text=${type}_ON`
+                        }
+                    }))
+                };
+            }
+            
+            if (!scenarioData.actions || !Array.isArray(scenarioData.actions) || scenarioData.actions.length === 0) {
+                console.error('❌ startActionSequence: scenarioData.actions가 유효하지 않습니다');
+                // 기본 actions 생성
+                scenarioData.actions = ACTION_TYPES.slice(0, 15).map((type, index) => ({
+                    id: `action_${String(index + 1).padStart(3, '0')}`,
+                    type,
+                    startTime: index * 8,
+                    duration: 8,
+                    position: { x: 50, y: 50 },
+                    intensity: 'MID',
+                    introText: { en: type, ko: getActionKoreanName(type) },
+                    images: {
+                        off: `https://via.placeholder.com/1920x1080/000000/FFFFFF?text=${type}_OFF`,
+                        on: `https://via.placeholder.com/1920x1080/FF6600/FFFFFF?text=${type}_ON`
+                    }
+                }));
+            }
+            
+            console.log('✅ startActionSequence 시작, 액션 수:', scenarioData.actions.length);
+            isRunning = true;
+            currentActionIndex = 0;
+            executeAction(0);
+        }
+
+        function executeAction(index) {
+            // 방어 코드: scenarioData와 actions 검증
+            if (!scenarioData || !scenarioData.actions || !Array.isArray(scenarioData.actions)) {
+                console.error('❌ executeAction: scenarioData.actions가 유효하지 않습니다');
+                isRunning = false;
+                return;
+            }
+            
+            if (index >= scenarioData.actions.length) {
+                // 모든 액션 완료
+                isRunning = false;
+                sendPhaseComplete();
+                return;
+            }
+
+            const action = scenarioData.actions[index];
+            currentActionIndex = index;
+            updateActionCounter(index);
+            updateProgressIndicator(index, true, false);
+
+            // 인트로 표시
+            const introTextEn = document.getElementById('intro-text-en');
+            const introTextKo = document.getElementById('intro-text-ko');
+            
+            if (introTextEn && introTextKo && action.introText) {
+                introTextEn.textContent = action.introText.en || action.type;
+                introTextKo.textContent = `(${action.introText.ko || getActionKoreanName(action.type)})`;
+            }
+
+            introOverlay.style.display = 'flex';
+
+            // 2초 후 인트로 숨기고 액션 시작
+            setTimeout(() => {
+                introOverlay.style.display = 'none';
+                startImageToggle(action, index);
+            }, config.introTime);
+        }
+
+        function startImageToggle(action, actionIndex) {
+            // 이미지가 없는 경우 처리
+            if (action.hasNoImage || !action.images || !action.images.off || !action.images.on || 
+                action.images.off === '' || action.images.on === '' || 
+                action.images.off === null || action.images.on === null) {
+                
+                // 이미지 없음 텍스트 표시
+                imgOff.style.display = 'none';
+                imgOn.style.display = 'none';
+                
+                // 텍스트 표시용 div 생성
+                let noImageDiv = document.getElementById('no-image-text');
+                if (!noImageDiv) {
+                    noImageDiv = document.createElement('div');
+                    noImageDiv.id = 'no-image-text';
+                    noImageDiv.style.cssText = `
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        font-size: 48px;
+                        font-weight: bold;
+                        color: #ffffff;
+                        text-align: center;
+                        z-index: 100;
+                        background: rgba(0, 0, 0, 0.7);
+                        padding: 40px 60px;
+                        border-radius: 20px;
+                    `;
+                    document.body.appendChild(noImageDiv);
+                }
+                
+                const actionName = action.introText?.ko || action.type || '액션';
+                noImageDiv.textContent = `${actionName}\n이미지 없음`;
+                noImageDiv.style.display = 'block';
+                
+                // 8초 후 다음 액션으로
+                setTimeout(() => {
+                    if (noImageDiv) {
+                        noImageDiv.style.display = 'none';
+                    }
+                    imgOff.style.display = 'block';
+                    imgOn.style.display = 'block';
+                    updateProgressIndicator(actionIndex, false, true);
+                    executeAction(actionIndex + 1);
+                }, 8000);
+                
+                return;
+            }
+            
+            // 이미지가 있는 경우 기존 로직
+            const offUrl = action.images.off;
+            const onUrl = action.images.on;
+            
+            // 이미지 프리로드
+            const offImg = new Image();
+            const onImg = new Image();
+            
+            offImg.src = offUrl;
+            onImg.src = onUrl;
+
+            let toggleCount = 0;
+            const maxToggles = 20; // 10초 = 20번 토글 (0.5초 간격)
+
+            // 초기 상태: OFF
+            imgOff.src = offUrl;
+            imgOff.style.display = 'block';
+            imgOn.style.display = 'block';
+            imgOff.classList.add('image-active');
+            imgOn.classList.remove('image-active');
+
+            toggleState = false;
+
+            actionInterval = setInterval(() => {
+                if (!isRunning) {
+                    clearInterval(actionInterval);
+                    return;
+                }
+
+                toggleState = !toggleState;
+                
+                if (toggleState) {
+                    imgOn.src = onUrl;
+                    imgOn.classList.add('image-active');
+                    imgOff.classList.remove('image-active');
+                } else {
+                    imgOff.src = offUrl;
+                    imgOff.classList.add('image-active');
+                    imgOn.classList.remove('image-active');
+                }
+
+                toggleCount++;
+
+                // 진행률 계산 및 전송 (50% 도달 시 알림)
+                const progress = toggleCount / maxToggles;
+                if (progress === 0.5 || Math.abs(progress - 0.5) < 0.05) {
+                    sendPhaseProgress(progress);
+                }
+
+                // 10초 완료 (20번 토글)
+                if (toggleCount >= maxToggles) {
+                    clearInterval(actionInterval);
+                    updateProgressIndicator(actionIndex, false, true);
+                    
+                    // 다음 액션으로
+                    setTimeout(() => {
+                        executeAction(actionIndex + 1);
+                    }, 100);
+                }
+            }, config.stepTime);
+        }
+
+        // 브라우저 캐싱 방지 및 사전 로드
+        window.addEventListener('DOMContentLoaded', () => {
+            // 토큰 검증 (간단한 클라이언트 사이드 체크)
+            if (!token) {
+                const startOverlay = document.getElementById('start-overlay');
+                if (startOverlay) {
+                    startOverlay.innerHTML = '<div style="color:white;text-align:center;padding:50px;"><h1 style="font-size:24px;margin-bottom:20px;">인증 토큰이 필요합니다</h1><p>토큰 없이는 프로그램을 실행할 수 없습니다.</p></div>';
+                }
+                return;
+            }
+            
+            // INIT_PHASE 메시지가 일정 시간 내에 오지 않으면 자동 시작
+            setTimeout(() => {
+                if (!isStarted && !isStarting && !initPhaseReceived) {
+                    console.log('⚠️ [Play Phase] INIT_PHASE 메시지 미수신, 자동 시작');
+                    removeStartOverlay();
+                    handleStart();
+                }
+            }, 1500); // 1.5초 후 자동 시작
+        });
+    </script>
+</body>
+</html>

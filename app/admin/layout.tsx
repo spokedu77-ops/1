@@ -2,13 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
-
-// Vercel 검수 시 환경변수 에러 방지 처리
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getAuthUserOrRedirect } from '@/app/lib/supabase/auth';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -16,13 +11,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const supabase = getSupabaseBrowserClient();
+      const user = await getAuthUserOrRedirect(supabase);
       if (!user) {
         router.push('/login');
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile } = await getSupabaseBrowserClient()
         .from('profiles')
         .select('role')
         .eq('id', user.id)

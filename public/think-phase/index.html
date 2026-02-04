@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Think Phase - 3-Panel Multi-Stimulus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background-color: #000; 
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        #start-overlay {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            cursor: pointer;
+        }
+
+        #intro-overlay {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 90;
+            color: white;
+        }
+
+        .text-focus-in {
+            animation: text-focus-in 0.8s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+        }
+
+        @keyframes text-focus-in {
+            0% { filter: blur(15px); opacity: 0; transform: scale(0.8); }
+            100% { filter: blur(0px); opacity: 1; transform: scale(1); }
+        }
+
+        .panel-container {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2px;
+            z-index: 10;
+        }
+
+        .panel {
+            background: #1a1a1a;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .panel:hover {
+            background: #2a2a2a;
+        }
+
+        .panel.active {
+            background: #3a3a3a;
+            box-shadow: inset 0 0 50px rgba(59, 130, 246, 0.5);
+        }
+
+        .panel-object {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.6) 150%);
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .progress-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 30;
+        }
+
+        .progress-segment {
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .progress-segment.active {
+            background: rgba(59, 130, 246, 1);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .progress-segment.completed {
+            background: rgba(34, 197, 94, 1);
+        }
+
+        .action-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            z-index: 30;
+        }
+    </style>
+</head>
+<body>
+    <!-- 시작 전 대기 화면 -->
+    <div id="start-overlay" onclick="handleStart()">
+        <h1 class="text-5xl font-black text-cyan-600 mb-6 tracking-tighter">THINK PHASE</h1>
+        <div class="px-8 py-3 bg-white/10 rounded-full text-white text-xl animate-pulse">
+            화면을 클릭하여 시작하세요
+        </div>
+    </div>
+
+    <!-- 인트로 오버레이 -->
+    <div id="intro-overlay">
+        <div class="text-center text-focus-in">
+            <h2 id="intro-text-en" class="text-[10rem] font-black leading-none mb-4">THINK</h2>
+            <p id="intro-text-ko" class="text-6xl font-bold text-cyan-400 mt-6">(생각하기)</p>
+        </div>
+    </div>
+
+    <!-- 3-Panel 컨테이너 -->
+    <div class="panel-container" id="panel-container">
+        <div class="panel" id="panel-0"></div>
+        <div class="panel" id="panel-1"></div>
+        <div class="panel" id="panel-2"></div>
+    </div>
+
+    <!-- 진행 표시 -->
+    <div class="progress-indicator" id="progress-indicator"></div>
+
+    <!-- 액션 카운터 -->
+    <div class="action-counter" id="action-counter">ROUND 1/10</div>
+
+    <div class="vignette"></div>
+
+    <script>
+        const supabaseUrl = 'https://mwgvserdyflsqyhcqecp.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13Z3ZzZXJkeWZsc3F5aGNxZWNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ2NzY4MDAsImV4cCI6MjA1MDI1MjgwMH0.7qJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq';
+        const supabase = window.supabase?.createClient(supabaseUrl, supabaseAnonKey) || null;
+
+        const config = {
+            roundDuration: 18000, // 18초 (3분 = 180초 / 10라운드)
+            totalRounds: 10,
+            objectSpawnInterval: 2000, // 2초마다 객체 스폰
+            objectLifetime: 3000 // 객체 3초 후 사라짐
+        };
+
+        let isRunning = false;
+        let currentRound = 0;
+        let roundStartTime = 0;
+        let objects = [];
+        let roundInterval = null;
+
+        // 테마별 객체 목록
+        const THEME_OBJECTS = {
+            kitchen: ['🍎', '🥕', '🧄', '🧅', '🥔', '🍅', '🥒', '🌶️'],
+            fire_station: ['🚒', '🔥', '💧', '🚨', '⛑️', '🧯', '🚑', '📞'],
+            default: ['⭐', '🌟', '💫', '✨', '🔮', '💎', '🎯', '🎲']
+        };
+
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        const theme = params.get('theme') || 'kitchen';
+
+        const objectsForTheme = THEME_OBJECTS[theme] || THEME_OBJECTS.default;
+
+        function sendPhaseReady() {
+            window.parent.postMessage({
+                type: 'PHASE_READY',
+                phase: 'think'
+            }, '*');
+        }
+
+        function sendPhaseProgress(progress) {
+            window.parent.postMessage({
+                type: 'PHASE_PROGRESS',
+                phase: 'think',
+                progress: progress
+            }, '*');
+        }
+
+        function sendPhaseComplete() {
+            window.parent.postMessage({
+                type: 'PHASE_COMPLETE',
+                phase: 'think',
+                elapsedTime: config.roundDuration * config.totalRounds
+            }, '*');
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'INIT_PHASE' && event.data.phase === 'think') {
+                const data = event.data.data;
+                if (data.duration) {
+                    // duration 업데이트 (필요시)
+                    config.roundDuration = (data.duration * 1000) / config.totalRounds;
+                }
+                // 자동 시작
+                console.log('✅ [Think Phase] INIT_PHASE 수신, 자동 시작');
+                setTimeout(() => {
+                    handleStart();
+                }, 500);
+            }
+        });
+
+        function initProgressIndicator() {
+            const container = document.getElementById('progress-indicator');
+            container.innerHTML = '';
+            for (let i = 0; i < config.totalRounds; i++) {
+                const segment = document.createElement('div');
+                segment.className = 'progress-segment';
+                segment.id = `segment-${i}`;
+                container.appendChild(segment);
+            }
+        }
+
+        function updateProgressIndicator(round, isActive, isCompleted) {
+            const segment = document.getElementById(`segment-${round}`);
+            if (!segment) return;
+            segment.classList.remove('active', 'completed');
+            if (isCompleted) {
+                segment.classList.add('completed');
+            } else if (isActive) {
+                segment.classList.add('active');
+            }
+        }
+
+        function updateRoundCounter(round) {
+            const counter = document.getElementById('action-counter');
+            if (counter) {
+                counter.textContent = `ROUND ${round + 1}/${config.totalRounds}`;
+            }
+        }
+
+        function handleStart() {
+            console.log('🚀 [Think Phase] handleStart 호출됨');
+            const startOverlay = document.getElementById('start-overlay');
+            if (!startOverlay) {
+                console.error('❌ startOverlay를 찾을 수 없습니다');
+                return;
+            }
+            
+            startOverlay.style.display = 'none';
+            initProgressIndicator();
+            sendPhaseReady();
+            startThinkPhase();
+        }
+
+        // 전역 노출
+        window.handleStart = handleStart;
+
+        function startThinkPhase() {
+            isRunning = true;
+            currentRound = 0;
+            roundStartTime = Date.now();
+            executeRound(0);
+        }
+
+        function executeRound(round) {
+            if (round >= config.totalRounds) {
+                isRunning = false;
+                sendPhaseComplete();
+                return;
+            }
+
+            currentRound = round;
+            updateRoundCounter(round);
+            updateProgressIndicator(round, true, false);
+
+            // 패널 초기화
+            clearAllObjects();
+            
+            // 객체 스폰 시작
+            const spawnInterval = setInterval(() => {
+                if (!isRunning) {
+                    clearInterval(spawnInterval);
+                    return;
+                }
+                spawnRandomObject();
+            }, config.objectSpawnInterval);
+
+            // 라운드 종료
+            setTimeout(() => {
+                clearInterval(spawnInterval);
+                clearAllObjects();
+                updateProgressIndicator(round, false, true);
+                
+                // 진행률 전송 (50% 도달 시)
+                const progress = (round + 1) / config.totalRounds;
+                if (progress >= 0.5 && progress < 0.55) {
+                    sendPhaseProgress(progress);
+                }
+
+                // 다음 라운드
+                setTimeout(() => {
+                    executeRound(round + 1);
+                }, 500);
+            }, config.roundDuration);
+        }
+
+        function spawnRandomObject() {
+            const panelIndex = Math.floor(Math.random() * 3);
+            const panel = document.getElementById(`panel-${panelIndex}`);
+            if (!panel) return;
+
+            const obj = document.createElement('div');
+            obj.className = 'panel-object';
+            obj.textContent = objectsForTheme[Math.floor(Math.random() * objectsForTheme.length)];
+            obj.style.left = `${20 + Math.random() * 60}%`;
+            obj.style.top = `${20 + Math.random() * 60}%`;
+            obj.style.transform = 'scale(0)';
+            
+            panel.appendChild(obj);
+            objects.push(obj);
+
+            // 애니메이션
+            setTimeout(() => {
+                obj.style.transform = 'scale(1)';
+            }, 10);
+
+            // 클릭 이벤트
+            obj.style.cursor = 'pointer';
+            obj.onclick = () => {
+                obj.style.transform = 'scale(1.5)';
+                obj.style.opacity = '0';
+                setTimeout(() => {
+                    if (obj.parentNode) {
+                        obj.parentNode.removeChild(obj);
+                    }
+                    objects = objects.filter(o => o !== obj);
+                }, 200);
+            };
+
+            // 자동 제거
+            setTimeout(() => {
+                if (obj.parentNode) {
+                    obj.style.opacity = '0';
+                    obj.style.transform = 'scale(0)';
+                    setTimeout(() => {
+                        if (obj.parentNode) {
+                            obj.parentNode.removeChild(obj);
+                        }
+                        objects = objects.filter(o => o !== obj);
+                    }, 300);
+                }
+            }, config.objectLifetime);
+        }
+
+        function clearAllObjects() {
+            objects.forEach(obj => {
+                if (obj.parentNode) {
+                    obj.parentNode.removeChild(obj);
+                }
+            });
+            objects = [];
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // 토큰 검증 (간단한 클라이언트 사이드 체크)
+            if (!token) {
+                const startOverlay = document.getElementById('start-overlay');
+                if (startOverlay) {
+                    startOverlay.innerHTML = '<div style="color:white;text-align:center;padding:50px;"><h1 style="font-size:24px;margin-bottom:20px;">인증 토큰이 필요합니다</h1><p>토큰 없이는 프로그램을 실행할 수 없습니다.</p></div>';
+                }
+                return;
+            }
+            
+            // 초기화
+        });
+    </script>
+</body>
+</html>

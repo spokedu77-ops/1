@@ -124,22 +124,34 @@ export default function ClassManagementPage() {
             .eq('id', teacherId);
         }
         
-        // 3. 수업 카운팅 로그 생성
-        const countLogs = endedSessions.map(session => ({
-          teacher_id: session.created_by,
-          session_id: session.id,
-          session_title: session.title,
-          count_change: 1,
-          reason: '수업 완료'
-        }));
-        
+        // 3. 수업 카운팅 로그 생성 (teacher_id FK: auth.users(id) — created_by가 없거나 삭제된 사용자면 제외)
+        const countLogs = endedSessions
+          .filter(session => session.created_by != null && session.created_by !== '')
+          .map(session => ({
+            teacher_id: session.created_by,
+            session_id: session.id,
+            session_title: session.title,
+            count_change: 1,
+            reason: '수업 완료'
+          }));
+
         if (countLogs.length > 0) {
           const { error: logError } = await supabase
             .from('session_count_logs')
             .insert(countLogs);
-          
+
           if (logError) {
-            console.error('수업 카운팅 로그 저장 실패:', logError);
+            // FK 위반 등: 한 건씩 삽입해 실패한 건만 건너뛰기 (삭제된/없는 teacher_id 방지)
+            if (logError.code === '23503') {
+              for (const row of countLogs) {
+                const { error: oneError } = await supabase.from('session_count_logs').insert(row);
+                if (oneError) {
+                  console.warn('수업 카운팅 로그 1건 건너뜀 (teacher_id FK):', row.teacher_id, oneError.message);
+                }
+              }
+            } else {
+              console.error('수업 카운팅 로그 저장 실패:', logError?.message ?? logError?.code ?? logError, logError);
+            }
           }
         }
         
