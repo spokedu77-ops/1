@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getAuthUserOrRedirect } from '@/app/lib/supabase/auth';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -21,12 +22,9 @@ import {
   Medal, 
   MessageCircle,
   CalendarCheck,
-  Zap
+  Building2,
+  CalendarDays,
 } from 'lucide-react';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -35,15 +33,16 @@ export default function Sidebar() {
 
   useEffect(() => {
     setIsOpen(false);
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+    const loadUser = async () => {
+      const supabase = getSupabaseBrowserClient();
+      const user = await getAuthUserOrRedirect(supabase);
       if (user) setUserEmail(user.email || '');
     };
-    getUser();
+    loadUser();
   }, [pathname]);
 
   const handleLogout = async () => {
-    try { await supabase.auth.signOut(); } 
+    try { await getSupabaseBrowserClient().auth.signOut(); } 
     catch (error) { console.error('Logout error:', error); } 
     finally { window.location.href = '/login'; }
   };
@@ -53,6 +52,8 @@ export default function Sidebar() {
       group: "운영 관리",
       items: [
         { name: "대시보드", href: "/admin", icon: LayoutDashboard },
+        { name: "일정", href: "/admin/schedules", icon: CalendarDays },
+        { name: "센터 관리", href: "/admin/centers", icon: Building2 },
         { name: "수업 관리", href: "/admin/classes", icon: Calendar },
         { name: "수업 관련 검수", href: "/admin/teachers-classes", icon: CheckCircle },
         { name: "공지사항", href: "/admin/notice", icon: ClipboardList },
@@ -62,7 +63,7 @@ export default function Sidebar() {
       group: "수업 자료 관리",
       items: [
         { name: "연간 커리큘럼", href: "/admin/curriculum", icon: BookOpen },
-        { name: "I.I.Warm-up", href: "/admin/iiwarmup", icon: Zap },
+        { name: "iiwarmup", href: "/admin/iiwarmup", icon: Medal }, // iiwarmup 페이지 링크 추가
       ]
     },
     {
@@ -109,15 +110,27 @@ export default function Sidebar() {
     }
   ];
 
+  const subscriberMenuItems = [
+    {
+      group: "계정 관리",
+      items: [
+        { name: "결제 정보", href: "/billing", icon: CreditCard },
+      ]
+    }
+  ];
+
   const isAdmin = 
-  pathname.startsWith('/admin') || 
-  pathname.startsWith('/master') || 
-  pathname.startsWith('/class');
+    pathname.startsWith('/admin') || 
+    pathname.startsWith('/master') || 
+    pathname.startsWith('/class');
   
-  // Teacher 페이지에서는 Sidebar 렌더링 안 함
-  if (!isAdmin) return null;
+  const isSubscriber = pathname.startsWith('/billing');
   
-  const groups = adminMenuItems;
+  // 관리자도 아니고 구독자 페이지도 아니면 사이드바 숨김
+  if (!isAdmin && !isSubscriber) return null;
+  
+  // 구독자 페이지에서는 구독자 메뉴 사용
+  const groups = isSubscriber ? subscriberMenuItems : adminMenuItems;
 
   return (
     <>
@@ -146,7 +159,7 @@ export default function Sidebar() {
         <div className="p-6 border-b border-slate-700 hidden md:block text-left">
           <h1 className="text-xl font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
           <p className="text-[10px] text-slate-400 mt-1 uppercase font-medium">
-            {isAdmin ? 'Admin Portal' : 'Teacher Portal'}
+            {isAdmin ? 'Admin Portal' : isSubscriber ? 'Warm-up Portal' : 'Teacher Portal'}
           </p>
         </div>
 
@@ -159,11 +172,27 @@ export default function Sidebar() {
               <div className="space-y-1">
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = pathname === item.href;
+                  // 해시 링크도 활성화 상태로 인식
+                  const isActive = pathname === item.href || (item.href.includes('#') && pathname.startsWith(item.href.split('#')[0]));
+                  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+                    if (item.href.includes('#')) {
+                      e.preventDefault();
+                      const [path, hash] = item.href.split('#');
+                      if (pathname !== path) {
+                        window.location.href = item.href;
+                      } else {
+                        const element = document.getElementById(hash);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }
+                    }
+                  };
                   return (
                     <Link 
                       key={item.href} 
                       href={item.href} 
+                      onClick={handleClick}
                       className={`flex items-center gap-3 p-3 rounded-xl transition-all group cursor-pointer ${
                         isActive 
                           ? 'bg-blue-600 text-white shadow-lg' 

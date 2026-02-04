@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Send, Plus, ChevronLeft, MoreVertical, UserPlus, Trash2, Users, Image as ImageIcon, Paperclip, X, Search } from 'lucide-react';
+import { Send, Plus, ChevronLeft, MoreVertical, UserPlus, Trash2, Users, Image as ImageIcon, Paperclip, X, Search, Wifi, WifiOff } from 'lucide-react';
+import { formatChatTimestamp } from '@/app/lib/utils';
+import { ToastContainer, useToast } from '@/app/components/Toast';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,8 +29,14 @@ export default function AdminChatPage() {
   const [filePreview, setFilePreview] = useState<{type: string; url: string; name: string} | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'reconnecting' | 'offline'>('connected');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesStartRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toasts, showToast, removeToast } = useToast();
 
   useEffect(() => {
     const init = async () => {
@@ -50,15 +58,19 @@ export default function AdminChatPage() {
 
   const fetchUnreadCounts = async (userId: string) => {
     try {
-      const { data: messages } = await supabase
-        .from('chat_messages')
-        .select('room_id, id, read_by')
-        .not('sender_id', 'eq', userId);
+      // RPC 함수로 서버에서 집계
+      const { data, error } = await supabase
+        .rpc('get_unread_counts', { p_user_id: userId });
+
+      if (error) {
+        console.error('읽지 않은 메시지 조회 실패:', error);
+        return;
+      }
 
       const counts: {[key: string]: number} = {};
-      messages?.forEach(msg => {
-        if (!msg.read_by || !msg.read_by.includes(userId)) {
-          counts[msg.room_id] = (counts[msg.room_id] || 0) + 1;
+      data?.forEach((item: { room_id: string; unread_count: number }) => {
+        if (item.unread_count > 0) {
+          counts[item.room_id] = item.unread_count;
         }
       });
 
@@ -69,13 +81,14 @@ export default function AdminChatPage() {
   };
 
   const fetchRooms = async () => {
+    // denormalize된 컬럼 사용으로 단순화
     const { data: roomsData, error } = await supabase
       .from('chat_rooms')
       .select(`
-        *, 
-        chat_participants(user_id),
-        chat_messages(content, created_at)
-      `);
+        *,
+        chat_participants(user_id)
+      `)
+      .order('last_message_at', { ascending: false, nullsFirst: false });
 
     if (error) {
       console.error("방 목록 로드 에러:", error.message);
@@ -84,27 +97,28 @@ export default function AdminChatPage() {
 
     if (roomsData) {
       const processed = roomsData.map(room => {
-        const msgs = room.chat_messages || [];
-        const lastMsg = [...msgs].sort((a: any, b: any) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )[0];
-        
         const participantCount = room.chat_participants?.length || 0;
         
         return {
           ...room,
-          last_message_at: lastMsg?.created_at || room.created_at,
-          last_message_content: lastMsg?.content || "대화를 시작해보세요",
+          // denormalize된 컬럼 사용 (이미 DB에 있음)
+          last_message_at: room.last_message_at || room.created_at,
+          last_message_content: room.last_message_content || "대화를 시작해보세요",
           participant_count: participantCount
         };
-      }).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+      });
       
       setRooms(processed);
     }
   };
 
   const fetchRoomsFallback = async () => {
-    const { data: roomsData } = await supabase.from('chat_rooms').select('*');
+    // Fallback도 denormalize된 컬럼 사용
+    const { data: roomsData } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .order('last_message_at', { ascending: false, nullsFirst: false });
+      
     if (!roomsData || roomsData.length === 0) {
       setRooms([]);
       return;
@@ -116,24 +130,16 @@ export default function AdminChatPage() {
         .select('user_id')
         .eq('room_id', room.id);
 
-      const { data: messagesData } = await supabase
-        .from('chat_messages')
-        .select('content, created_at')
-        .eq('room_id', room.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
       return {
         ...room,
-        last_message_at: messagesData?.[0]?.created_at || room.created_at,
-        last_message_content: messagesData?.[0]?.content || "대화를 시작해보세요",
+        // denormalize된 컬럼 사용
+        last_message_at: room.last_message_at || room.created_at,
+        last_message_content: room.last_message_content || "대화를 시작해보세요",
         participant_count: participantsData?.length || 0
       };
     }));
 
-    setRooms(processed.sort((a, b) => 
-      new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
-    ));
+    setRooms(processed);
   };
 
   const fetchTeachers = async () => {
@@ -195,9 +201,12 @@ export default function AdminChatPage() {
   const enterRoom = async (room: any) => {
     setSelectedRoom(room);
     setView('chat');
+    setMessages([]);
+    setHasMoreMessages(false);
     fetchRoomParticipants(room.id);
-    const { data } = await supabase.from('chat_messages').select('*').eq('room_id', room.id).order('created_at', { ascending: true });
-    if (data) setMessages(data);
+    
+    // 초기 로드: 최근 50개
+    await loadMessages(room.id, null);
     
     // 읽음 처리
     if (myId) {
@@ -205,24 +214,74 @@ export default function AdminChatPage() {
     }
   };
 
-  const markAsRead = async (roomId: string, userId: string) => {
+  const loadMessages = async (roomId: string, beforeDate: string | null, limit: number = 50) => {
+    if (loadingMessages) return;
+    
+    setLoadingMessages(true);
     try {
-      const { data: messages } = await supabase
+      let query = supabase
         .from('chat_messages')
-        .select('id, read_by')
+        .select('*')
         .eq('room_id', roomId)
-        .not('sender_id', 'eq', userId);
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
-      for (const msg of messages || []) {
-        if (!msg.read_by || !msg.read_by.includes(userId)) {
-          await supabase
-            .from('chat_messages')
-            .update({ read_by: [...(msg.read_by || []), userId] })
-            .eq('id', msg.id);
-        }
+      if (beforeDate) {
+        query = query.lt('created_at', beforeDate);
       }
 
-      fetchUnreadCounts(userId);
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // 역순으로 정렬하여 prepend (오래된 것부터)
+        const sortedData = [...data].reverse();
+        
+        if (beforeDate) {
+          // 추가 로드: 기존 메시지 앞에 추가
+          setMessages(prev => [...sortedData, ...prev]);
+        } else {
+          // 초기 로드
+          setMessages(sortedData);
+        }
+        
+        // 더 불러올 메시지가 있는지 확인
+        setHasMoreMessages(data.length === limit);
+      } else {
+        setHasMoreMessages(false);
+      }
+    } catch (error) {
+      console.error('메시지 로드 실패:', error);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    if (!selectedRoom || !hasMoreMessages || loadingMessages || messages.length === 0) return;
+    
+    // 가장 오래된 메시지의 날짜를 기준으로 이전 메시지 로드
+    const oldestMessage = messages[0];
+    await loadMessages(selectedRoom.id, oldestMessage.created_at);
+  };
+
+  const markAsRead = async (roomId: string, userId: string) => {
+    try {
+      // participant row 1개만 업데이트 (메시지 N개 업데이트 대신)
+      const { error } = await supabase
+        .from('chat_participants')
+        .update({ last_read_at: new Date().toISOString() })
+        .eq('room_id', roomId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('읽음 처리 실패:', error);
+        return;
+      }
+
+      // unreadCounts 갱신 (RPC 함수 사용)
+      await fetchUnreadCounts(userId);
     } catch (error) {
       console.error('읽음 처리 실패:', error);
     }
@@ -273,7 +332,7 @@ export default function AdminChatPage() {
 
       setIsCreateOpen(false);
       fetchRooms();
-      alert('채팅방이 생성되었습니다.');
+      showToast('채팅방이 생성되었습니다.', 'success');
     } catch (error: any) {
       console.error('방 생성 실패:', error);
       
@@ -287,7 +346,7 @@ export default function AdminChatPage() {
         }
       }
       
-      alert(`방 생성에 실패했습니다:\n${error.message}\n\n관리자에게 문의하세요.`);
+      showToast(`방 생성에 실패했습니다: ${error.message}`, 'error', 5000);
     }
   };
 
@@ -296,7 +355,7 @@ export default function AdminChatPage() {
     
     const isAlreadyIn = participants.some(p => p.user_id === teacherId);
     if (isAlreadyIn) {
-      alert('이미 참여중인 선생님입니다.');
+      showToast('이미 참여중인 선생님입니다.', 'warning');
       return;
     }
 
@@ -310,10 +369,10 @@ export default function AdminChatPage() {
       await fetchRoomParticipants(selectedRoom.id);
       await fetchRooms(); // 참여자 수 업데이트
       setIsInviteOpen(false);
-      alert('선생님을 초대했습니다.');
+      showToast('선생님을 초대했습니다.', 'success');
     } catch (error: any) {
       console.error('초대 실패:', error);
-      alert(`초대에 실패했습니다:\n${error.message}`);
+      showToast(`초대에 실패했습니다: ${error.message}`, 'error');
     }
   };
 
@@ -346,9 +405,9 @@ export default function AdminChatPage() {
       await supabase.from('chat_messages').insert([messageData]);
       setInput('');
       setFilePreview(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('메시지 전송 실패:', error);
-      alert('메시지 전송에 실패했습니다.');
+      showToast('메시지 전송에 실패했습니다.', 'error');
     }
   };
 
@@ -389,7 +448,7 @@ export default function AdminChatPage() {
       });
     } catch (error: any) {
       console.error('파일 업로드 실패:', error);
-      alert('파일 업로드에 실패했습니다: ' + error.message);
+      showToast(`파일 업로드에 실패했습니다: ${error.message}`, 'error');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -398,19 +457,28 @@ export default function AdminChatPage() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
+    // Shift+Enter는 기본 동작(줄바꿈) 허용
   };
 
   useEffect(() => {
     if (!selectedRoom) return;
+    
     const channel = supabase.channel(`room_${selectedRoom.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${selectedRoom.id}` }, 
       (payload) => { 
-        setMessages(prev => [...prev, payload.new]); 
+        // 새 메시지는 항상 마지막에 추가 (최신 메시지)
+        setMessages(prev => {
+          // 중복 방지
+          if (prev.some(m => m.id === payload.new.id)) {
+            return prev;
+          }
+          return [...prev, payload.new];
+        }); 
         fetchRooms();
         
         // 내가 보낸 메시지가 아니면 브라우저 알림
@@ -422,8 +490,20 @@ export default function AdminChatPage() {
           });
         }
       })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setConnectionStatus('offline');
+          showToast('연결이 끊어졌습니다. 재연결 중...', 'warning');
+        } else if (status === 'CLOSED') {
+          setConnectionStatus('reconnecting');
+        }
+      });
+      
+    return () => { 
+      supabase.removeChannel(channel);
+    };
   }, [selectedRoom, myId]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
@@ -447,22 +527,50 @@ export default function AdminChatPage() {
             tag: payload.new.room_id
           });
         }
-        // 읽지 않은 메시지 카운트 갱신
-        fetchUnreadCounts(myId);
+        // 읽지 않은 메시지 카운트 갱신 (RPC 함수 사용)
+        if (myId) {
+          fetchUnreadCounts(myId);
+        }
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setConnectionStatus('offline');
+        } else if (status === 'CLOSED') {
+          setConnectionStatus('reconnecting');
+        }
+      });
       
     return () => { supabase.removeChannel(globalChannel); };
   }, [myId, view, rooms]);
 
   return (
     <div className="flex justify-center bg-[#F2F2F7] h-[100dvh] overflow-hidden text-black font-sans selection:bg-blue-100">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="w-full max-w-md bg-white flex flex-col relative shadow-2xl overflow-hidden">
         
         {view === 'list' && (
           <div className="flex flex-col h-full bg-white">
             <header className="px-5 pt-14 pb-4 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-50">
-              <h1 className="text-3xl font-bold tracking-tight">대화</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">대화</h1>
+                {connectionStatus !== 'connected' && (
+                  <div className="flex items-center gap-1 text-xs">
+                    {connectionStatus === 'reconnecting' ? (
+                      <>
+                        <WifiOff size={14} className="text-yellow-500 animate-pulse" />
+                        <span className="text-yellow-600">재연결 중</span>
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff size={14} className="text-red-500" />
+                        <span className="text-red-600">오프라인</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
               <button onClick={() => setIsCreateOpen(true)} className="p-2 bg-slate-100 rounded-full cursor-pointer"><Plus size={22} /></button>
             </header>
             <div className="flex-1 overflow-y-auto">
@@ -478,7 +586,7 @@ export default function AdminChatPage() {
                       <div className="flex justify-between items-center mb-0.5">
                         <span className="font-bold text-[16px] truncate pr-2">{room.custom_name || '대화방'}</span>
                         <span className="text-[12px] text-slate-400">
-                          {room.last_message_at ? new Date(room.last_message_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}) : ''}
+                          {room.last_message_at ? formatChatTimestamp(room.last_message_at) : ''}
                         </span>
                       </div>
                       <div className="flex justify-between items-center gap-2">
@@ -509,7 +617,16 @@ export default function AdminChatPage() {
                 <ChevronLeft size={28} /><span className="text-[16px]">목록</span>
               </button>
               <div className="flex flex-col items-center flex-1 px-2 overflow-hidden text-center">
-                <span className="text-[15px] font-bold truncate max-w-[150px]">{selectedRoom.custom_name || '대화방'}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-bold truncate max-w-[150px]">{selectedRoom.custom_name || '대화방'}</span>
+                  {connectionStatus !== 'connected' && (
+                    connectionStatus === 'reconnecting' ? (
+                      <WifiOff size={12} className="text-yellow-500 animate-pulse" />
+                    ) : (
+                      <WifiOff size={12} className="text-red-500" />
+                    )
+                  )}
+                </div>
                 <span className="text-[11px] text-slate-400 font-medium">{participants?.length || 0}명 참여중</span>
               </div>
               <div className="flex items-center gap-1">
@@ -547,7 +664,23 @@ export default function AdminChatPage() {
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+            <div 
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-white"
+              onScroll={(e) => {
+                const container = e.currentTarget;
+                // 위로 스크롤 시 (스크롤 위치가 상단 100px 이내)
+                if (container.scrollTop < 100 && hasMoreMessages && !loadingMessages) {
+                  loadMoreMessages();
+                }
+              }}
+            >
+              {loadingMessages && messages.length > 0 && (
+                <div className="flex items-center justify-center py-2">
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+              <div ref={messagesStartRef} />
               {messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-slate-400 text-sm">대화를 시작해보세요</div>
               ) : (
@@ -558,7 +691,7 @@ export default function AdminChatPage() {
                   const sender = participants.find(p => p.user_id === m.sender_id);
                   const senderName = sender?.users?.name || '알 수 없음';
                   const messageTime = new Date(m.created_at);
-                  const timeStr = messageTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+                  const timeStr = formatChatTimestamp(m.created_at);
                   const showDate = idx === 0 || (messages[idx - 1] && new Date(messages[idx - 1].created_at).toDateString() !== messageTime.toDateString());
                   
                   // 읽음 상태 체크
@@ -572,7 +705,7 @@ export default function AdminChatPage() {
                       {showDate && (
                         <div className="flex items-center justify-center my-4">
                           <div className="bg-slate-200 text-slate-600 text-[11px] px-3 py-1 rounded-full">
-                            {messageTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+                            {formatChatTimestamp(m.created_at)}
                           </div>
                         </div>
                       )}
@@ -651,7 +784,15 @@ export default function AdminChatPage() {
                   {uploading ? <div className="w-[18px] h-[18px] border-2 border-slate-400 border-t-transparent rounded-full animate-spin" /> : <Paperclip size={18} />}
                 </button>
                 <div className="flex-1 bg-slate-100 rounded-3xl px-4 py-1.5 border border-slate-200">
-                  <input value={input} onChange={e => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="메시지 입력" className="w-full bg-transparent outline-none py-1 text-[15px]" />
+                  <textarea 
+                    value={input} 
+                    onChange={e => setInput(e.target.value)} 
+                    onKeyDown={handleKeyPress}
+                    placeholder="메시지 입력" 
+                    className="w-full bg-transparent outline-none py-1 text-[15px] resize-none max-h-32 overflow-y-auto"
+                    rows={1}
+                    style={{ minHeight: '24px' }}
+                  />
                 </div>
                 <button onClick={sendMessage} disabled={(!input.trim() && !filePreview) || uploading} className="bg-blue-600 text-white rounded-full p-1.5 cursor-pointer disabled:opacity-30">
                   <Send size={18} fill="currentColor" />

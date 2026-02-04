@@ -75,6 +75,16 @@ export default function TeacherCurriculumPage() {
     return (match && match[2].length === 11) ? match[2] : null;
  };
 
+ const getSafeThumbnailUrl = (item: { url?: string; thumbnail?: string }) => {
+    const id = getYouTubeId(item.url ?? '');
+    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    if (item.thumbnail?.includes('img.youtube.com')) {
+      if (item.thumbnail.includes('vi/null')) return '';
+      return item.thumbnail.replace('maxresdefault', 'hqdefault');
+    }
+    return item.thumbnail ?? '';
+ };
+
  const openDetailModal = (item: any) => {
     setSelectedItem(item);
     setIsDetailModalOpen(true);
@@ -182,7 +192,7 @@ export default function TeacherCurriculumPage() {
                                             <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram Reels</span>
                                         </div>
                                     ) : (
-                                        <img src={item.thumbnail || `https://img.youtube.com/vi/${getYouTubeId(item.url)}/maxresdefault.jpg`} className="w-full h-full object-cover" alt="" />
+                                        <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
                                     )}
                                     <div className="absolute top-4 left-4">
                                         <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type}</span>

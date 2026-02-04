@@ -1,14 +1,10 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, User, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 function LoginContent() {
   const [id, setId] = useState('');
@@ -20,10 +16,27 @@ function LoginContent() {
   // URL에서 접속 유형(teacher/admin) 파악
   const type = searchParams.get('type') || 'teacher';
 
+  // 페이지 로드 시 무효한 세션이 있으면 클리어 (클라이언트에서만 실행)
+  useEffect(() => {
+    const checkInitialSession = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const { error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          await supabase.auth.signOut();
+        }
+      } catch (err) {
+        // 에러 무시 (로그인 페이지이므로 세션이 없어도 정상)
+      }
+    };
+    checkInitialSession();
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
+    const supabase = getSupabaseBrowserClient();
     const loginEmail = id.includes('@') ? id : `${id}@spokedu.com`;
     const rawPw = pw.replace(/-/g, '');
 

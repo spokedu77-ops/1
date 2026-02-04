@@ -57,30 +57,28 @@ export default function AdminMileagePage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const { data: tData } = await supabase
-        .from('users')
-        .select('id, name, points, session_count')
-        .eq('is_active', true)
-        .not('name', 'in', '("최지훈","김구민","김윤기")')
-        .order('name', { ascending: true });
+      const [tRes, lRes, cRes] = await Promise.all([
+        supabase
+          .from('users')
+          .select('id, name, points, session_count')
+          .eq('is_active', true)
+          .not('name', 'in', '("최지훈","김구민","김윤기")')
+          .order('name', { ascending: true }),
+        supabase
+          .from('mileage_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(30),
+        supabase
+          .from('session_count_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(30)
+      ]);
 
-      if (tData) setTeachers(tData as Teacher[]);
-
-      const { data: lData } = await supabase
-        .from('mileage_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(30);
-
-      if (lData) setLogs(lData as MileageLog[]);
-
-      const { data: cData } = await supabase
-        .from('session_count_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(30);
-
-      if (cData) setCountLogs(cData as SessionCountLog[]);
+      if (tRes.data) setTeachers(tRes.data as Teacher[]);
+      if (lRes.data) setLogs(lRes.data as MileageLog[]);
+      if (cRes.data) setCountLogs(cRes.data as SessionCountLog[]);
     } catch (error) {
       console.error('Fetch error:', error);
     }

@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
+import { getSchedules } from '@/app/admin/schedules/actions/schedules';
+import type { Schedule } from '@/app/lib/schedules/types';
 import { 
-  Calendar, AlertCircle, RefreshCw, CheckCircle2, 
-  Circle, Clock, FileText, User, Users, Plus, X, Trash2, Save
+  Calendar, RefreshCw, CheckCircle2, 
+  Circle, Clock, FileText, User, Users, Plus, X, Trash2, Save, CalendarDays, ExternalLink
 } from 'lucide-react';
 
 // --- Supabase Client (Vercel 환경 변수 예외 처리) ---
@@ -24,6 +27,7 @@ interface ITask {
 
 interface IClassSession {
   id: string;
+  startAt?: string;
   time: string;
   endTime: string;
   title: string;
@@ -32,6 +36,7 @@ interface IClassSession {
   isPostponed?: boolean;
   isCancelled?: boolean;
   status?: string;
+  roundDisplay?: string;
 }
 
 interface IVacationRequest {
@@ -52,6 +57,7 @@ export default function SpokeduHQDashboard() {
   const [todayClasses, setTodayClasses] = useState<IClassSession[]>([]);
   const [tasks, setTasks] = useState<ITask[]>([]);
   const [vacationRequests, setVacationRequests] = useState<IVacationRequest[]>([]);
+  const [scheduleSummary, setScheduleSummary] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Modals
@@ -83,7 +89,8 @@ export default function SpokeduHQDashboard() {
           .from('sessions')
           .select('*, users:created_by(id, name)')
           .gte('start_at', startOfDay)
-          .lte('start_at', endOfDay),
+          .lte('start_at', endOfDay)
+          .order('start_at', { ascending: true }),
         supabase.from('todos').select('*').order('created_at', { ascending: false }),
         supabase
           .from('users')
@@ -93,33 +100,47 @@ export default function SpokeduHQDashboard() {
           .neq('vacation', '')
       ]);
 
-      // Class Sessions Sorting
-      const formattedClasses = (classesRes.data || []).map((c: any) => {
-        const endTime = new Date(c.end_at);
-        const isPostponed = c.status === 'postponed';
-        const isCancelled = c.status === 'cancelled';
-        
-        return {
-          id: c.id,
-          time: new Date(c.start_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
-          endTime: endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
-          title: c.title || '제목 없음',
-          teacher: c.users?.name || '미정',
-          isFinished: now > endTime && c.status === 'finished',
-          isPostponed: isPostponed,
-          isCancelled: isCancelled,
-          status: c.status
-        };
-      }).sort((a, b) => {
-        if (a.isPostponed || a.isCancelled) return 1;
-        if (b.isPostponed || b.isCancelled) return -1;
-        if (a.isFinished && !b.isFinished) return 1;
-        if (!a.isFinished && b.isFinished) return -1;
-        return 0;
-      });
+      // Class Sessions: 시간 순서 유지 (start_at 오름차순), 연기/취소는 뒤로
+      const rawClasses = classesRes.data || [];
+      const formattedClasses = rawClasses
+        .map((c: any) => {
+          const endTime = new Date(c.end_at);
+          const isPostponed = c.status === 'postponed';
+          const isCancelled = c.status === 'cancelled';
+          const roundDisplay = c.round_display ?? (c.round_index != null && c.round_total != null ? `${c.round_index}/${c.round_total}` : undefined);
+          return {
+            id: c.id,
+            startAt: c.start_at,
+            time: new Date(c.start_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            endTime: endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            title: c.title || '제목 없음',
+            teacher: c.users?.name || '미정',
+            isFinished: now > endTime && c.status === 'finished',
+            isPostponed: isPostponed,
+            isCancelled: isCancelled,
+            status: c.status,
+            roundDisplay
+          };
+        })
+        .sort((a, b) => {
+          const timeA = new Date(a.startAt).getTime();
+          const timeB = new Date(b.startAt).getTime();
+          if (timeA !== timeB) return timeA - timeB;
+          if (a.isPostponed || a.isCancelled) return 1;
+          if (b.isPostponed || b.isCancelled) return -1;
+          if (a.isFinished && !b.isFinished) return 1;
+          if (!a.isFinished && b.isFinished) return -1;
+          return 0;
+        });
 
       setTodayClasses(formattedClasses);
       setTasks(tasksRes.data as ITask[] || []);
+
+      const recentSchedules = await getSchedules({
+        limit: 7,
+        orderBy: 'start_date_asc',
+      });
+      setScheduleSummary(recentSchedules);
       
       // Vacation Filtering (오늘 이전 데이터 자동 제외)
       const validVacations = (usersRes.data || []).filter(v => {
@@ -198,8 +219,8 @@ export default function SpokeduHQDashboard() {
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black italic text-slate-300">HQ INITIALIZING...</div>;
 
   return (
-    <div className="min-h-screen bg-white p-6 sm:p-12 flex flex-col items-center">
-      <div className="w-full max-w-4xl space-y-12">
+    <div className="min-h-screen bg-white p-4 sm:p-6 md:p-8 flex flex-col items-center">
+      <div className="w-full max-w-4xl space-y-8 md:space-y-12">
         
         {/* Header */}
         <header className="flex justify-between items-end border-b-2 pb-8 border-slate-900">
@@ -238,30 +259,33 @@ export default function SpokeduHQDashboard() {
         </header>
 
         {/* 1. Today's Sessions */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
+        <section className="w-full min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-slate-400" />
+              <Calendar size={14} className="text-slate-400 shrink-0" />
               <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today Session Summary</h2>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[9px] font-bold text-slate-400">
+              <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
                 완료 {todayClasses.filter(c => c.isFinished).length} / 
                 진행중 {todayClasses.filter(c => !c.isFinished && !c.isPostponed && !c.isCancelled).length} / 
                 연기 {todayClasses.filter(c => c.isPostponed).length}
               </span>
             </div>
           </div>
-          <div className="border-t border-slate-50 divide-y divide-slate-50">
+          <div className="border-t border-slate-50 divide-y divide-slate-50 overflow-x-auto">
             {todayClasses.length > 0 ? todayClasses.map((cls) => (
-              <div key={cls.id} className={`py-3 flex items-center justify-between ${
+              <div key={cls.id} className={`py-3 flex flex-wrap items-center justify-between gap-2 min-w-0 ${
                 cls.isFinished ? 'opacity-20 grayscale' : 
                 cls.isPostponed ? 'bg-purple-50 border-l-4 border-purple-400 pl-3' :
                 cls.isCancelled ? 'bg-red-50 border-l-4 border-red-400 pl-3 line-through' : ''
               }`}>
-                <div className="flex items-center gap-10">
-                  <span className="text-[11px] font-bold tabular-nums text-slate-400 w-24">{cls.time} - {cls.endTime}</span>
-                  <span className="text-[12px] font-bold text-slate-800">{cls.title}</span>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                  <span className="text-[11px] font-bold tabular-nums text-slate-400 w-20 sm:w-24 shrink-0">{cls.time} - {cls.endTime}</span>
+                  {cls.roundDisplay && (
+                    <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded uppercase shrink-0">{cls.roundDisplay}</span>
+                  )}
+                  <span className="text-[12px] font-bold text-slate-800 truncate min-w-0">{(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</span>
                   {cls.isPostponed && (
                     <span className="text-[8px] font-black text-purple-600 bg-purple-100 px-2 py-1 rounded uppercase">연기됨</span>
                   )}
@@ -269,20 +293,112 @@ export default function SpokeduHQDashboard() {
                     <span className="text-[8px] font-black text-red-600 bg-red-100 px-2 py-1 rounded uppercase">취소됨</span>
                   )}
                 </div>
-                <span className="text-[9px] font-black text-slate-300 uppercase tracking-tighter">{cls.teacher}</span>
+                <span className="text-[9px] font-black text-slate-300 uppercase tracking-tighter shrink-0">{cls.teacher}</span>
               </div>
             )) : <p className="py-4 text-[11px] text-slate-300 italic">No classes scheduled.</p>}
           </div>
         </section>
 
-        {/* 2~5. Individual Boards Stack */}
-        <div className="space-y-8">
-          {BOARDS.map((board) => (
-            <section key={board.id} className="flex flex-col bg-gradient-to-br from-white to-slate-50 rounded-3xl p-6 border-2 border-slate-100 shadow-sm hover:shadow-md transition-all">
-              <div className={`flex items-center justify-between border-b-4 ${board.accent} pb-4 mb-5`}>
-                <div className="flex items-center gap-3">
+        {/* 2. 일정 요약 */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={14} className="text-slate-400" />
+              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">일정</h2>
+            </div>
+            <Link
+              href="/admin/schedules"
+              className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700"
+            >
+              전체 보기
+              <ExternalLink size={12} />
+            </Link>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">제목</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">담당</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">기간</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">상태</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {scheduleSummary.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-4 text-center text-slate-400 text-[11px]">
+                        일정이 없습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    scheduleSummary.map((s) => (
+                      <tr key={s.id} className="hover:bg-slate-50">
+                        <td className="px-3 py-2 font-medium text-slate-800 truncate max-w-[140px]">{s.title}</td>
+                        <td className="px-3 py-2 text-slate-600">{s.assignee ?? '-'}</td>
+                        <td className="px-3 py-2 text-slate-600 whitespace-nowrap">
+                          {s.start_date && s.end_date ? `${s.start_date} ~ ${s.end_date}` : s.start_date ?? s.end_date ?? '-'}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-medium ${
+                            s.status === 'done' ? 'bg-slate-100 text-slate-600' : 'bg-green-100 text-green-800'
+                          }`}>
+                            {s.status === 'done' ? '종료' : '진행중'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. 업무 노트 갤러리 (2열 카드) */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">업무 노트</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* 공통 공지 카드 */}
+            <div className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-2 border-b-4 border-slate-400 pb-3 mb-4">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200">
+                  <Users size={18} className="text-slate-900" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 uppercase">공통 공지</h3>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">수업 연기 알림</p>
+                </div>
+              </div>
+              {vacationRequests.length > 0 ? (
+                <div className="space-y-2">
+                  {vacationRequests.map((v) => {
+                    const dateMatch = v.vacation?.match(/(\d{8})/);
+                    const dateStr = dateMatch ? `${dateMatch[0].slice(4, 6)}/${dateMatch[0].slice(6, 8)}` : '';
+                    return (
+                      <div key={v.id} className="px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-slate-800">{v.name}</span>
+                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">{dateStr}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5 truncate">{v.vacation}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 italic">수업 연기 알림 없음</p>
+              )}
+            </div>
+
+            {/* 담당자별 업무 노트 카드 */}
+            {BOARDS.filter((b) => b.id !== 'Common').map((board) => (
+              <div key={board.id} className={`rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all ${board.accent}`}>
+                <div className={`flex items-center gap-2 border-b-4 ${board.accent} pb-3 mb-4`}>
                   <div className={`p-2 rounded-xl bg-gradient-to-br ${
-                    board.id === 'Common' ? 'from-slate-100 to-slate-200' :
                     board.id === '최지훈' ? 'from-indigo-100 to-indigo-200' :
                     board.id === '김윤기' ? 'from-blue-100 to-blue-200' :
                     'from-emerald-100 to-emerald-200'
@@ -290,107 +406,60 @@ export default function SpokeduHQDashboard() {
                     <board.icon size={18} className="text-slate-900" />
                   </div>
                   <div>
-                    <h3 className="text-[16px] font-black text-slate-900 uppercase">{board.name}</h3>
+                    <h3 className="text-base font-black text-slate-900 uppercase">{board.name} 업무 노트</h3>
                     <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
-                      {tasks.filter(t => t.assignee === board.id && t.status !== 'Done').length} Active Tasks
+                      {tasks.filter((t) => t.assignee === board.id && t.status !== 'Done').length} Active Tasks
                     </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Vacation Alerts (Only for Common) */}
-              {board.id === 'Common' && vacationRequests.length > 0 && (
-                <div className="mb-4 p-5 bg-gradient-to-br from-rose-50 to-orange-50 rounded-2xl border-2 border-rose-200 shadow-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AlertCircle size={16} className="text-rose-600" />
-                    <h4 className="text-[11px] font-black text-rose-700 uppercase tracking-widest">수업 연기 알림</h4>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {vacationRequests.map(v => {
-                      const dateMatch = v.vacation?.match(/(\d{8})/);
-                      const dateStr = dateMatch ? `${dateMatch[0].slice(4,6)}/${dateMatch[0].slice(6,8)}` : '';
-                      return (
-                        <div key={v.id} className="px-4 py-3 bg-white border-2 border-rose-100 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[12px] font-black text-slate-800">{v.name} T</span>
-                            <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded">{dateStr}</span>
-                          </div>
-                          <p className="text-[9px] font-medium text-slate-500 mt-1 truncate">{v.vacation}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Task List (With Daily Note if applicable) */}
-              <div className="max-h-[400px] overflow-y-auto custom-scrollbar divide-y divide-slate-50 pr-2">
-                
-                {/* 운영진 전용 데일리 노트 */}
-                {board.hasMemo && (
-                  <div 
-                    onClick={() => openNoteModal(board.id)}
-                    className="py-5 px-3 mb-1 bg-slate-50/50 rounded-2xl flex items-center gap-4 hover:bg-slate-900 hover:text-white transition-all cursor-pointer group border border-dashed border-slate-200"
-                  >
-                    <FileText size={18} className="text-slate-400 group-hover:text-white" />
-                    <div className="flex-1">
-                      <h4 className="text-[13px] font-black uppercase tracking-tight">Open Daily Work Note</h4>
-                      <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest mt-0.5 group-hover:text-slate-300">Detailed memo and history</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Individual Items */}
-                {tasks.filter(t => t.assignee === board.id).map(task => (
-                  <div 
-                    key={task.id} 
-                    onClick={() => { setEditingTask(task); setTaskForm({...task}); setIsTaskModalOpen(true); }}
-                    className={`py-4 px-4 flex items-start gap-4 bg-white hover:bg-slate-50 transition-all cursor-pointer rounded-xl border-2 border-transparent hover:border-slate-200 shadow-sm hover:shadow-md ${
-                      task.status === 'Done' ? 'opacity-40' : ''
-                    }`}
-                  >
-                    <button 
-                      onClick={(e) => toggleStatus(task, e)} 
-                      className="mt-0.5 shrink-0 cursor-pointer hover:scale-110 transition-transform"
+                <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                  {board.hasMemo && (
+                    <div
+                      onClick={() => openNoteModal(board.id)}
+                      className="py-3 px-3 rounded-xl flex items-center gap-3 hover:bg-slate-900 hover:text-white transition-all cursor-pointer group border border-dashed border-slate-200"
                     >
-                      {task.status === 'Done' ? 
-                        <CheckCircle2 size={20} className="text-emerald-500" /> : 
-                       task.status === 'In Progress' ? 
-                        <Clock size={20} className="text-blue-500 animate-pulse" /> : 
-                        <Circle size={20} className="text-slate-300 group-hover:text-slate-400" />
-                      }
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1 gap-4">
-                        <h4 className="text-[13px] font-bold text-slate-800 truncate">{task.title}</h4>
-                        <span className={`text-[8px] font-black uppercase tracking-widest shrink-0 px-2 py-1 rounded ${
-                          task.tag === 'Finance' ? 'bg-emerald-100 text-emerald-700' :
-                          task.tag === 'Meeting' ? 'bg-blue-100 text-blue-700' :
-                          task.tag === 'CS' ? 'bg-purple-100 text-purple-700' :
-                          task.tag === 'Ops' ? 'bg-orange-100 text-orange-700' :
-                          task.tag === 'Class' ? 'bg-pink-100 text-pink-700' :
-                          'bg-slate-100 text-slate-600'
-                        }`}>{task.tag}</span>
-                      </div>
-                      {task.description && (
-                        <div className="space-y-1">
-                          {task.description.split('\n').filter(l => l.trim()).map((line, i) => (
-                            <p key={i} className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                              • {line.trim()}
-                            </p>
-                          ))}
-                        </div>
-                      )}
+                      <FileText size={16} className="text-slate-400 group-hover:text-white" />
+                      <span className="text-sm font-bold">Daily Work Note</span>
                     </div>
-                  </div>
-                ))}
-                {tasks.filter(t => t.assignee === board.id).length === 0 && !board.hasMemo && (
-                  <p className="py-8 text-center text-[11px] text-slate-300 italic font-bold">No active tasks.</p>
-                )}
+                  )}
+                  {tasks.filter((t) => t.assignee === board.id).map((task) => (
+                    <div
+                      key={task.id}
+                      onClick={() => { setEditingTask(task); setTaskForm({ ...task }); setIsTaskModalOpen(true); }}
+                      className={`py-3 px-3 flex items-start gap-3 rounded-xl border border-slate-100 hover:border-slate-200 cursor-pointer transition-all ${
+                        task.status === 'Done' ? 'opacity-60' : ''
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleStatus(task, e); }}
+                        className="shrink-0 mt-0.5"
+                      >
+                        {task.status === 'Done' ? (
+                          <CheckCircle2 size={18} className="text-emerald-500" />
+                        ) : task.status === 'In Progress' ? (
+                          <Clock size={18} className="text-blue-500" />
+                        ) : (
+                          <Circle size={18} className="text-slate-300" />
+                        )}
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-slate-800 truncate">{task.title}</p>
+                        {task.description && (
+                          <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{task.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {tasks.filter((t) => t.assignee === board.id).length === 0 && !board.hasMemo && (
+                    <p className="py-4 text-center text-[11px] text-slate-400 italic">No tasks</p>
+                  )}
+                </div>
               </div>
-            </section>
-          ))}
-        </div>
+            ))}
+          </div>
+        </section>
+
       </div>
 
       {/* Daily Note Modal */}

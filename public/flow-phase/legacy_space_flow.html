@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPOKEDU Space Flow - Immersive</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&display=swap');
+
+    body{
+      font-family:'Noto Sans KR', sans-serif;
+      background:#000;
+      color:#fff;
+      margin:0;
+      overflow:hidden;
+      user-select:none;
+    }
+    .font-game{ font-family:'Black Han Sans', sans-serif; }
+
+    .full-overlay{
+      position:absolute; inset:0;
+      display:flex; flex-direction:column;
+      justify-content:center; align-items:center;
+      background:black;
+      z-index:1000;
+      text-align:center;
+    }
+    .hidden{ display:none !important; }
+    .fade-out{ opacity:0; pointer-events:none; transition:opacity 0.8s; }
+
+    #hud{
+      position:absolute; inset:0;
+      pointer-events:none;
+      z-index:100;
+    }
+    .progress-bar-container{
+      position:absolute; top:0; left:0;
+      width:100%; height:8px;
+      background:rgba(30,41,59,0.4);
+    }
+    #progress-bar{
+      width:0%; height:100%;
+      background:linear-gradient(to right,#34d399,#3b82f6);
+    }
+    .level-badge{
+      position:absolute;
+      top:25px; right:25px;
+      padding:8px 18px;
+      background:rgba(0,0,0,0.6);
+      border:2px solid #3b82f6;
+      border-radius:10px;
+      font-size:1.2rem;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .level-tag{
+      font-size:1rem;
+      padding:2px 10px;
+      border-radius:999px;
+      border:1px solid rgba(147,197,253,0.6);
+      color:#93c5fd;
+      background:rgba(59,130,246,0.15);
+      letter-spacing:1px;
+    }
+
+    #instruction{
+      position:absolute;
+      top:10%;
+      left:0;
+      width:100%;
+      text-align:center;
+      font-size:3.5rem;
+      text-shadow:0 0 30px #3b82f6;
+      z-index:150;
+    }
+    #countdown-overlay{
+      position:absolute;
+      top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      font-size:12rem;
+      color:#fff;
+      text-shadow:0 0 50px #3b82f6;
+      z-index:500;
+      pointer-events:none;
+    }
+    .btn-start{
+      background:#3b82f6;
+      padding:20px 80px;
+      border-radius:12px;
+      font-size:2rem;
+      font-weight:bold;
+      cursor:pointer;
+      color:#fff;
+      border:none;
+      box-shadow:0 0 30px rgba(59,130,246,0.5);
+    }
+    #flash-overlay{
+      position:absolute; inset:0;
+      background:white;
+      opacity:0;
+      pointer-events:none;
+      z-index:200;
+      transition:opacity 0.05s ease-out;
+    }
+    #speed-lines-overlay{
+      position:absolute; inset:0;
+      pointer-events:none;
+      z-index:40;
+      overflow:hidden;
+    }
+    .speed-line-2d{
+      position:absolute;
+      background:white;
+      pointer-events:none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="flash-overlay"></div>
+  <div id="speed-lines-overlay"></div>
+
+  <div id="intro-screen" class="full-overlay">
+    <h1 id="intro-title" class="text-6xl font-game mb-10 text-blue-400">SPOKEDU</h1>
+    <button id="start-btn" class="btn-start font-game">시작하기</button>
+  </div>
+
+  <div id="countdown-overlay" class="font-game hidden"></div>
+
+  <div id="hud" class="hidden">
+    <div class="progress-bar-container"><div id="progress-bar"></div></div>
+    <div class="level-badge font-game">
+      <div>LV <span id="level-num">1</span></div>
+      <div id="level-tag" class="level-tag">JUMP</div>
+    </div>
+    <div id="instruction" class="font-game hidden text-yellow-400">JUMP!</div>
+  </div>
+
+<script>
+/* LEGACY REFERENCE - DO NOT MODIFY
+   This file is preserved as baseline for modular engine development.
+   See app/flow-phase/ for the modular Next.js implementation. */
+   
+/* ===============================
+   전역 상태
+================================ */
+let scene, camera, renderer, stars, speedLines;
+let bridges = [];
+let spaceObjects = [];
+
+let gameState = 'waiting';
+let isResting = false;
+let movementActive = false;
+
+let gameTime = 0;
+let levelTime = 0;
+let currentLevelIndex = 0;
+
+// LV1, LV2, REST(15), LV3(40), LV4(40), END(10)
+const durations = [30, 30, 15, 40, 40, 10];
+const displayLevels = [1, 2, 0, 3, 4, -1];
+const totalDuration = durations.reduce((a,b)=>a+b,0);
+
+let baseSpeed = 0.6;
+const bridgeLength = 2900;
+const bridgeGap = 450;
+const laneWidth = 80;
+
+let visualX = 0;
+let targetX = 0;
+
+let playerJumpY = 0;
+let groundY = 30;
+let isJumping = false;
+let isOnBridge = false;
+let isOnPad = false;
+
+let landingStabilityTimer = 0;
+let cameraTiltZ = 0;
+let landingShake = 0;
+
+let landingImpactY = 0;
+let landingImpactZ = 0;
+let impactYTimer = 0;
+let impactZTimer = 0;
+
+let playerZ = 400;
+let activeBridge = null;
+
+let lastJumpBridgeId = -1;
+let bridgeIdCounter = 0;
+
+let isChangingLane = false;
+
+// ✅ 박스/파편
+let boxes = [];
+let shards = [];
+
+// ✅ LV3 박스 등장률
+const LV3_BOX_RATE = 0.40;
+// ✅ LV4 박스 등장률
+const LV4_BOX_RATE = 0.45;
+
+// ✅ 황금 코인 "무조건 3~4개 보장"
+let goldBudget = 0;
+let goldSpawned = 0;
+let lv3FirstRewardGiven = false;
+
+// ✅ 체감 FOV
+let currentFov = 60;
+let targetFov = 60;
+
+// ✅ 발판 점프 트리거: 발판에 "조금 들어간 후" 점프되도록
+const PAD_TRIGGER_RATIO = 0.65;
+
+// ✅ 시작 시퀀스 타이밍 (요청 반영)
+const WELCOME_DURATION = 5000;   // 5초
+const LV1_GUIDE_DURATION = 10000; // 10초
+
+function getCurrentLevelNum(){
+  return displayLevels[currentLevelIndex];
+}
+
+function setLevelTag(levelNum){
+  const tag = document.getElementById('level-tag');
+  if(!tag) return;
+
+  if(levelNum===1){
+    tag.innerText="JUMP";
+    tag.style.borderColor="rgba(147,197,253,0.6)";
+    tag.style.color="#93c5fd";
+    tag.style.background="rgba(59,130,246,0.15)";
+  } else if(levelNum===2){
+    tag.innerText="FASTER";
+    tag.style.borderColor="rgba(34,211,238,0.7)";
+    tag.style.color="#22d3ee";
+    tag.style.background="rgba(34,211,238,0.12)";
+  } else if(levelNum===3){
+    tag.innerText="PUNCH";
+    tag.style.borderColor="rgba(239,68,68,0.7)";
+    tag.style.color="#ef4444";
+    tag.style.background="rgba(239,68,68,0.12)";
+  } else if(levelNum===4){
+    tag.innerText="FOCUS";
+    tag.style.borderColor="rgba(245,158,11,0.7)";
+    tag.style.color="#f59e0b";
+    tag.style.background="rgba(245,158,11,0.12)";
+  }
+}
+
+function showInstruction(text, colorClass='text-yellow-400', ms=700){
+  const ins = document.getElementById('instruction');
+  if(!ins) return;
+  ins.innerText=text;
+  ins.className=`font-game ${colorClass}`;
+  ins.classList.remove('hidden');
+  clearTimeout(ins._t);
+  ins._t=setTimeout(()=>ins.classList.add('hidden'), ms);
+}
+
+/* ===============================
+   ✅ WebAudio (배경 + 효과음)
+================================ */
+let audioCtx = null;
+let masterGain = null;
+let musicTimer = null;
+let musicStartTime = 0;
+let noiseBuffer = null;
+
+function initAudio(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.35;
+  masterGain.connect(audioCtx.destination);
+
+  const bufferSize = audioCtx.sampleRate * 1;
+  noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = noiseBuffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++){
+    data[i] = (Math.random()*2 - 1) * 0.6;
+  }
+}
+
+function playKick(t){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(160, t);
+  osc.frequency.exponentialRampToValueAtTime(55, t+0.08);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.65, t+0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t+0.12);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start(t);
+  osc.stop(t+0.15);
+}
+
+function playHat(t){
+  const src = audioCtx.createBufferSource();
+  src.buffer = noiseBuffer;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.setValueAtTime(6000, t);
+
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.18, t+0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t+0.05);
+
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+
+  src.start(t);
+  src.stop(t+0.06);
+}
+
+function playSnare(t){
+  const src = audioCtx.createBufferSource();
+  src.buffer = noiseBuffer;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(2000, t);
+
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.25, t+0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t+0.12);
+
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+
+  src.start(t);
+  src.stop(t+0.13);
+}
+
+function startMusic(){
+  if(!audioCtx) return;
+  stopMusic();
+
+  const bpm = 150;
+  const beat = 60 / bpm;
+  const step = beat / 2;
+  let stepIndex = 0;
+
+  musicStartTime = audioCtx.currentTime + 0.05;
+
+  musicTimer = setInterval(() => {
+    const now = audioCtx.currentTime;
+    while (musicStartTime + stepIndex*step < now + 0.25) {
+      const t = musicStartTime + stepIndex*step;
+      const barStep = stepIndex % 8;
+
+      if (barStep === 0 || barStep === 4) playKick(t);
+      if (barStep === 2 || barStep === 6) playSnare(t);
+      playHat(t);
+
+      stepIndex++;
+    }
+  }, 25);
+}
+
+function stopMusic(){
+  if(musicTimer){
+    clearInterval(musicTimer);
+    musicTimer = null;
+  }
+}
+
+function sfxJump(){
+  if(!audioCtx) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(520, t);
+  osc.frequency.exponentialRampToValueAtTime(330, t+0.08);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.12, t+0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t+0.11);
+  osc.connect(gain); gain.connect(masterGain);
+  osc.start(t); osc.stop(t+0.12);
+}
+
+function sfxPunch(){
+  if(!audioCtx) return;
+  const t = audioCtx.currentTime;
+
+  const src = audioCtx.createBufferSource();
+  src.buffer = noiseBuffer;
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(1200, t);
+
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.25, t+0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t+0.09);
+
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+
+  src.start(t);
+  src.stop(t+0.10);
+}
+
+function sfxCoin(){
+  if(!audioCtx) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(1200, t);
+  osc.frequency.exponentialRampToValueAtTime(720, t+0.18);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.16, t+0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t+0.25);
+  osc.connect(gain); gain.connect(masterGain);
+  osc.start(t); osc.stop(t+0.26);
+}
+
+/* ===============================
+   3D 초기화
+================================ */
+function init3D(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+  scene.fog = new THREE.Fog(0x000000, 500, 3800);
+
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 30000);
+
+  renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  document.body.appendChild(renderer.domElement);
+
+  const amb = new THREE.AmbientLight(0xffffff, 0.7);
+  scene.add(amb);
+
+  const spot = new THREE.PointLight(0x3b82f6, 15, 10000);
+  spot.position.set(0, 2000, 1000);
+  scene.add(spot);
+
+  createSpaceBackground();
+  createSpeedLines();
+  createTrackLanes();
+  createSpacePlanets();
+}
+
+function createSpaceBackground(){
+  const starGeo = new THREE.BufferGeometry();
+  const starCount = 45000;
+  const starPos = new Float32Array(starCount*3);
+  for(let i=0;i<starCount;i++){
+    starPos[i*3] = (Math.random()-0.5)*25000;
+    starPos[i*3+1] = (Math.random()-0.5)*25000;
+    starPos[i*3+2] = (Math.random()-0.5)*25000;
+  }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos,3));
+  stars = new THREE.Points(
+    starGeo,
+    new THREE.PointsMaterial({ color:0xffffff, size:2.2, transparent:true, opacity:0.8 })
+  );
+  scene.add(stars);
+}
+
+function createSpacePlanets(){
+  const earthGeo = new THREE.SphereGeometry(1200, 64, 64);
+  const earthMat = new THREE.MeshPhongMaterial({ color:0x2233ff, emissive:0x112244, shininess:25 });
+  const earth = new THREE.Mesh(earthGeo, earthMat);
+  earth.position.set(3500,1500,-12000);
+  scene.add(earth);
+  spaceObjects.push({ mesh:earth, speed:0.15, rotationSpeed:0.001 });
+
+  const bhGroup = new THREE.Group();
+  const bhCore = new THREE.Mesh(new THREE.SphereGeometry(300,64,64), new THREE.MeshBasicMaterial({ color:0x000000 }));
+  const diskGeo = new THREE.TorusGeometry(550,150,2,128);
+  const diskMat = new THREE.MeshBasicMaterial({ color:0xff6600, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending });
+  const disk = new THREE.Mesh(diskGeo, diskMat);
+  disk.rotation.x = Math.PI/2;
+  bhGroup.add(bhCore);
+  bhGroup.add(disk);
+  bhGroup.position.set(1500,3000,-25000);
+  scene.add(bhGroup);
+  spaceObjects.push({ mesh:bhGroup, speed:0.08, rotationSpeed:0.008 });
+}
+
+function createSpeedLines(){
+  speedLines = new THREE.Group();
+  for(let i=0;i<250;i++){
+    const line = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2,1.2,800),
+      new THREE.MeshBasicMaterial({ color:0x60a5fa, transparent:true, opacity:0 })
+    );
+    line.position.set((Math.random()-0.5)*12000,(Math.random()-0.5)*12000,(Math.random()-1)*15000);
+    speedLines.add(line);
+  }
+  scene.add(speedLines);
+}
+
+function createTrackLanes(){
+  for(let i=-1;i<=1;i++){
+    const strip = new THREE.Mesh(
+      new THREE.PlaneGeometry(laneWidth,60000),
+      new THREE.MeshPhongMaterial({ color:0x3b82f6, transparent:true, opacity:0.9 })
+    );
+    strip.rotation.x = -Math.PI/2;
+    strip.position.set(i*laneWidth,-30,-20000);
+    scene.add(strip);
+  }
+  const lineMat = new THREE.MeshBasicMaterial({ color:0x3b82f6, transparent:true, opacity:0.4 });
+  [-laneWidth*1.5, -laneWidth*0.5, laneWidth*0.5, laneWidth*1.5].forEach(x=>{
+    const line = new THREE.Mesh(new THREE.PlaneGeometry(3,60000), lineMat);
+    line.rotation.x = -Math.PI/2;
+    line.position.set(x,-29,-20000);
+    scene.add(line);
+  });
+}
+
+/* ===============================
+   박스 생성/배치
+================================ */
+function createBoxGroup(reward=false){
+  const boxGroup = new THREE.Group();
+
+  const bodyGeo = new THREE.BoxGeometry(65,45,55);
+  const bodyMat = new THREE.MeshPhongMaterial({ color:0x5d4037, emissive:0x221100, shininess:5 });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = 22.5;
+  boxGroup.add(body);
+
+  const lidGeo = new THREE.BoxGeometry(68,18,58);
+  const lidMat = new THREE.MeshPhongMaterial({ color:0x4e342e, emissive:0x1a0a00, shininess:8 });
+  const lid = new THREE.Mesh(lidGeo, lidMat);
+  lid.position.y = 50;
+  boxGroup.add(lid);
+
+  const bandGeo = new THREE.BoxGeometry(18,70,60);
+  const bandMat = new THREE.MeshPhongMaterial({ color:0x3e2723, emissive:0x000000, shininess:20 });
+  const band = new THREE.Mesh(bandGeo, bandMat);
+  band.position.y = 35;
+  boxGroup.add(band);
+
+  const glowGeo = new THREE.SphereGeometry(75, 16, 16);
+  const glowMat = new THREE.MeshBasicMaterial({ color: reward ? 0xffd700 : 0xef4444, transparent:true, opacity:0.09 });
+  const glow = new THREE.Mesh(glowGeo, glowMat);
+  glow.position.y = 35;
+  boxGroup.add(glow);
+
+  return boxGroup;
+}
+
+function shouldSpawnBox(levelNum){
+  if(levelNum===3) return Math.random() < LV3_BOX_RATE;
+  if(levelNum===4) return Math.random() < LV4_BOX_RATE;
+  return false;
+}
+
+function decideRewardForLv3(){
+  if(!lv3FirstRewardGiven){
+    lv3FirstRewardGiven = true;
+    goldSpawned++;
+    return true;
+  }
+  if(goldSpawned < goldBudget){
+    if(Math.random() < 0.55){
+      goldSpawned++;
+      return true;
+    }
+  }
+  return false;
+}
+
+function attachBoxToBridge(bridgeObj, levelNum){
+  if(!bridgeObj || bridgeObj.hasBox) return;
+  bridgeObj.hasBox = true;
+
+  let reward = false;
+  if(levelNum===3){
+    reward = decideRewardForLv3();
+  } else if(levelNum===4){
+    reward = Math.random() < 0.30;
+  }
+
+  const boxGroup = createBoxGroup(reward);
+
+  const localZ = -(bridgeLength * 0.10);
+  boxGroup.position.set(0, 40, localZ);
+
+  bridgeObj.mesh.add(boxGroup);
+
+  boxes.push({
+    mesh: boxGroup,
+    reward: reward
+  });
+}
+
+/* ===============================
+   다리 생성 (발판 -Z 버전 유지)
+================================ */
+function spawnBridge(isFirst=false, levelNumForSpawn=1){
+  let spawnZ = -8000;
+  const padDepth = 200;
+
+  if(isFirst){
+    spawnZ = playerZ;
+  } else if(bridges.length>0){
+    const lastBridge = bridges[bridges.length-1];
+    spawnZ = lastBridge.mesh.position.z - (bridgeLength + padDepth) - bridgeGap;
+  }
+
+  const group = new THREE.Group();
+  const laneColors = [0xe53935, 0x43a047, 0xfdd835];
+  const randLane = isFirst ? 1 : Math.floor(Math.random()*3);
+  const bridgeColor = laneColors[randLane];
+
+  const topGeo = new THREE.BoxGeometry(laneWidth-5, 8, bridgeLength);
+  const topMat = new THREE.MeshBasicMaterial({ color: bridgeColor, fog:false });
+  const topPlate = new THREE.Mesh(topGeo, topMat);
+  topPlate.position.y = 40;
+  group.add(topPlate);
+
+  const padGeo = new THREE.BoxGeometry(laneWidth-10, 6, padDepth);
+  const padMat = new THREE.MeshBasicMaterial({ color:0xffffff, fog:false });
+  const exitPad = new THREE.Mesh(padGeo, padMat);
+  exitPad.position.set(0, 44, -(bridgeLength/2 + padDepth/2));
+  group.add(exitPad);
+
+  const sideGeo = new THREE.BoxGeometry(6, 25, bridgeLength + padDepth);
+  const sideMat = new THREE.MeshPhongMaterial({ color:0x222222, emissive:0x111111 });
+
+  const leftBeam = new THREE.Mesh(sideGeo, sideMat);
+  leftBeam.position.set(-(laneWidth/2 - 4), 30, -padDepth/2);
+  group.add(leftBeam);
+
+  const rightBeam = new THREE.Mesh(sideGeo, sideMat);
+  rightBeam.position.set((laneWidth/2 - 4), 30, -padDepth/2);
+  group.add(rightBeam);
+
+  const crossGeo = new THREE.BoxGeometry(laneWidth-10, 6, 40);
+  for(let j=-1;j<=1;j++){
+    const crossMesh = new THREE.Mesh(crossGeo, sideMat);
+    crossMesh.position.set(0, 20, j*(bridgeLength/3));
+    group.add(crossMesh);
+  }
+
+  group.position.set((randLane-1)*laneWidth, 0, spawnZ);
+  scene.add(group);
+
+  const bridgeObj = {
+    mesh: group,
+    lane: randLane,
+    bridgeId: bridgeIdCounter++,
+    x: (randLane-1)*laneWidth,
+    padDepth: padDepth,
+    hasBox: false
+  };
+  bridges.push(bridgeObj);
+
+  if(levelNumForSpawn>=3 && shouldSpawnBox(levelNumForSpawn)){
+    attachBoxToBridge(bridgeObj, levelNumForSpawn);
+  }
+}
+
+/* ===============================
+   박스 업데이트/파괴
+================================ */
+function updateBoxes(){
+  const worldPos = new THREE.Vector3();
+  for(let i=boxes.length-1;i>=0;i--){
+    const box = boxes[i];
+    if(!box.mesh) { boxes.splice(i,1); continue; }
+
+    box.mesh.rotation.y += 0.015;
+    box.mesh.getWorldPosition(worldPos);
+
+    if(worldPos.z >= 380){
+      destroyBox(box, i);
+    } else if(worldPos.z > 2000){
+      if(box.mesh.parent) box.mesh.parent.remove(box.mesh);
+      boxes.splice(i,1);
+    }
+  }
+}
+
+function destroyBox(box, index){
+  const pos = new THREE.Vector3();
+  box.mesh.getWorldPosition(pos);
+
+  const flash = document.getElementById('flash-overlay');
+  flash.style.opacity="0.8";
+  setTimeout(()=>flash.style.opacity="0", 80);
+
+  cameraTiltZ = (Math.random()>0.5 ? 1 : -1) * 0.2;
+
+  // ✅ 펀치 SFX
+  sfxPunch();
+
+  // ✅ (요청) LV3에서는 펀치할 때마다 "PUNCH!" 띄우기
+  if(getCurrentLevelNum() === 3){
+    showInstruction("PUNCH!", "text-red-400", 220);
+  }
+
+  const shardCount = 18 + Math.floor(Math.random()*15);
+  for(let i=0;i<shardCount;i++){
+    const sSize = 12 + Math.random()*18;
+    const sGeo = new THREE.BoxGeometry(sSize, sSize*0.5, sSize*0.3);
+    const sMat = new THREE.MeshPhongMaterial({
+      color: 0x5d4037,
+      emissive: 0x2a1500,
+      transparent: true,
+      shininess: 10
+    });
+    const sMesh = new THREE.Mesh(sGeo, sMat);
+
+    const angle = Math.random()*Math.PI*2;
+    const force = 18 + Math.random()*22;
+    const vel = new THREE.Vector3(
+      Math.cos(angle)*force,
+      (Math.random()*20)+12,
+      Math.sin(angle)*force
+    );
+
+    sMesh.userData.rotationVel = new THREE.Vector3(
+      (Math.random()-0.5)*0.3,
+      (Math.random()-0.5)*0.3,
+      (Math.random()-0.5)*0.3
+    );
+
+    scene.add(sMesh);
+    sMesh.position.copy(pos);
+    shards.push({ mesh:sMesh, velocity:vel, life:1.8, type:'shard' });
+  }
+
+  if(box.reward){
+    sfxCoin();
+    const coinCount = 14 + Math.floor(Math.random()*6);
+    for(let i=0;i<coinCount;i++){
+      const cGeo = new THREE.CylinderGeometry(8,8,3,16);
+      const cMat = new THREE.MeshPhongMaterial({
+        color: 0xffd700,
+        emissive: 0xffaa00,
+        shininess: 300,
+        transparent: true
+      });
+      const cMesh = new THREE.Mesh(cGeo, cMat);
+      cMesh.rotation.x = Math.PI/2;
+
+      const angle = Math.random()*Math.PI*2;
+      const force = 10 + Math.random()*16;
+      const vel = new THREE.Vector3(
+        Math.cos(angle)*force,
+        55 + Math.random()*35,
+        Math.sin(angle)*force
+      );
+
+      cMesh.userData.rotationSpeed = (Math.random()-0.5)*0.45;
+
+      scene.add(cMesh);
+      cMesh.position.copy(pos);
+      shards.push({ mesh:cMesh, velocity:vel, life:3.2, type:'coin' });
+    }
+  }
+
+  if(box.mesh.parent) box.mesh.parent.remove(box.mesh);
+  boxes.splice(index,1);
+}
+
+function updateShards(){
+  for(let i=shards.length-1;i>=0;i--){
+    const s = shards[i];
+    s.mesh.position.add(s.velocity);
+
+    s.velocity.y -= (s.type==='coin' ? 0.35 : 0.45);
+    s.velocity.multiplyScalar(0.97);
+
+    s.life -= (s.type==='coin' ? 0.012 : 0.028);
+
+    if(s.mesh.userData.rotationVel){
+      s.mesh.rotation.x += s.mesh.userData.rotationVel.x;
+      s.mesh.rotation.y += s.mesh.userData.rotationVel.y;
+      s.mesh.rotation.z += s.mesh.userData.rotationVel.z;
+    } else if(s.mesh.userData.rotationSpeed){
+      s.mesh.rotation.z += s.mesh.userData.rotationSpeed;
+    }
+
+    if(s.mesh.material.transparent){
+      s.mesh.material.opacity = Math.max(0, s.life);
+    }
+
+    const scaleFactor = Math.max(0.35, s.life);
+    s.mesh.scale.setScalar(scaleFactor);
+
+    if(s.life <= 0){
+      scene.remove(s.mesh);
+      shards.splice(i,1);
+    }
+  }
+}
+
+/* =========================================================
+   ✅ 속도감 강화: 2D speed line 4코너 버전 + 더 자주/더 진하게
+========================================================= */
+function spawn2DSpeedLine(){
+  const container = document.getElementById('speed-lines-overlay');
+  const line = document.createElement('div');
+  line.className='speed-line-2d';
+
+  // ✅ 4코너 선택 (좌상/우상/좌하/우하)
+  const corner = Math.floor(Math.random()*4);
+  let xPos, yPos;
+  if(corner === 0){ // 좌상
+    xPos = Math.random()*18;
+    yPos = Math.random()*18;
+  } else if(corner === 1){ // 우상
+    xPos = 82 + Math.random()*18;
+    yPos = Math.random()*18;
+  } else if(corner === 2){ // 좌하
+    xPos = Math.random()*18;
+    yPos = 82 + Math.random()*18;
+  } else { // 우하
+    xPos = 82 + Math.random()*18;
+    yPos = 82 + Math.random()*18;
+  }
+
+  const width = 2 + Math.random()*2.2;
+  const height = window.innerHeight*(0.18 + Math.random()*0.10);
+
+  line.style.width = width+'px';
+  line.style.height = height+'px';
+  line.style.left = xPos+'%';
+  line.style.top = yPos+'%';
+
+  // ✅ 더 진한 시각적 체감 (요청)
+  line.style.opacity = (0.22 + Math.random()*0.18).toString();
+
+  // 코너에 따라 살짝 방향성 부여
+  const angle = (corner === 0 || corner === 3) ? (12 + Math.random()*10) : -(12 + Math.random()*10);
+  line.style.transform = `rotate(${angle}deg)`;
+
+  container.appendChild(line);
+
+  const duration = 260 + Math.random()*140;
+  const anim = line.animate([
+    { transform:`rotate(${angle}deg) translateY(-25%)`, opacity:0 },
+    { opacity:0.35, offset:0.25 },
+    { transform:`rotate(${angle}deg) translateY(140%)`, opacity:0 }
+  ], { duration, easing:'linear' });
+
+  anim.onfinish = ()=>line.remove();
+}
+
+/* ===============================
+   카메라 업데이트
+================================ */
+let jumpProgress = 0;
+
+function updateCamera(){
+  if(!camera) return;
+
+  if(isJumping) visualX += (targetX - visualX) * 0.1;
+  else{
+    const laneX = activeBridge ? activeBridge.x : visualX;
+    visualX = laneX;
+  }
+
+  let yOffset = 0;
+  let zOffset = 0;
+
+  const currentLevelNum = getCurrentLevelNum();
+
+  const isRestrictingMotion = isJumping || isOnPad || landingStabilityTimer > 0;
+
+  // ✅ 속도감 이펙트: 전체적으로 더 자주/상시 느낌
+  let speedLineChance = 0.45;  // 기본도 더 자주
+  if(currentLevelNum===2) speedLineChance = 0.65;
+  if(currentLevelNum===3) speedLineChance = 0.70;
+  if(currentLevelNum===4) speedLineChance = 0.80;
+
+  // ✅ 달리는 동안 흔들림/라인
+  if(movementActive && !isRestrictingMotion && isOnBridge){
+    const freq = 15.7 + (currentLevelNum>=2 ? currentLevelNum*5.5 : 0);
+    const amp  = 0.55 + (currentLevelNum>=2 ? (currentLevelNum-1)*0.12 : 0);
+    yOffset = Math.sin(gameTime*freq) * amp;
+
+    if(Math.random() < speedLineChance) spawn2DSpeedLine();
+  }
+
+  // ✅ 점프높이 유지
+  const currentJumpY = playerJumpY;
+
+  if(isJumping){
+    if(jumpProgress < 0.1) zOffset = (jumpProgress/0.1)*-15;
+    else if(jumpProgress < 0.2) zOffset = (1.0 - (jumpProgress-0.1)/0.1)*-15;
+  }
+
+  const baseCamH = 130;
+  const targetCamY = baseCamH + groundY + currentJumpY + yOffset + landingImpactY;
+  camera.position.y += (targetCamY - camera.position.y) * 0.15;
+  camera.position.z = 600 + zOffset + landingImpactZ;
+  camera.position.x = visualX;
+
+  if(currentLevelNum===1) targetFov = 58;
+  else if(currentLevelNum===2) targetFov = 63;
+  else if(currentLevelNum===3) targetFov = 63;
+  else if(currentLevelNum===4) targetFov = 66;
+  else targetFov = 60;
+
+  if(Math.abs(currentFov - targetFov) > 0.02){
+    currentFov += (targetFov - currentFov) * 0.06;
+    camera.fov = currentFov;
+    camera.updateProjectionMatrix();
+  }
+
+  let targetTilt = 0;
+  if(!isOnPad && isChangingLane && isJumping){
+    if(jumpProgress < 0.15) targetTilt = (targetX > visualX) ? -0.05 : 0.05;
+    else targetTilt = 0;
+  }
+
+  if(landingShake !== 0){
+    targetTilt += landingShake;
+    landingShake *= 0.85;
+    if(Math.abs(landingShake) < 0.001) landingShake = 0;
+  }
+
+  cameraTiltZ += (targetTilt - cameraTiltZ) * 0.1;
+  camera.rotation.z = cameraTiltZ;
+
+  camera.lookAt(visualX, groundY+45, -1500);
+}
+
+/* =========================================================
+   ✅ 착지 빠르게: LEVEL1/2도 자연스러운 착지로 개선
+========================================================= */
+function getJumpParamsByLevel(levelNum){
+  // LEVEL3 착지 느낌을 목표로 1/2도 조금 끌어올림
+  if(levelNum === 1) return { duration: 0.72, height: 98 };
+  if(levelNum === 2) return { duration: 0.70, height: 98 };
+  if(levelNum === 3) return { duration: 0.64, height: 98 };
+  if(levelNum === 4) return { duration: 0.62, height: 98 };
+  return { duration: 0.70, height: 98 };
+}
+
+function triggerJump(){
+  if(isJumping) return;
+  isJumping = true;
+  jumpProgress = 0;
+
+  sfxJump();
+
+  const currentLevelNum = getCurrentLevelNum();
+
+  // ✅ (요청) LEVEL2에서도 점프 지시어 계속 표시
+  if(currentLevelNum===1) showInstruction("JUMP!", "text-yellow-400", 450);
+  if(currentLevelNum===2) showInstruction("JUMP!", "text-yellow-400", 450);
+
+  const jp = getJumpParamsByLevel(currentLevelNum);
+  const jumpDuration = jp.duration;
+  const jumpHeight = jp.height;
+
+  const ji = setInterval(()=>{
+    jumpProgress += 1/60 / jumpDuration;
+
+    let jumpCurve = 0;
+    if(jumpProgress < 0.6){
+      const t = jumpProgress/0.6;
+      jumpCurve = 1 - Math.pow(1 - t, 2);
+    } else {
+      const t = (jumpProgress - 0.6)/0.4;
+      jumpCurve = 1 - Math.pow(t, 3);
+    }
+    playerJumpY = Math.max(0, jumpCurve * jumpHeight);
+
+    if(jumpProgress >= 1){
+      playerJumpY = 0;
+      isJumping = false;
+
+      // ✅ 착지 꿀렁거림 감소(더 자연스럽게)
+      landingStabilityTimer = 0.12;
+      impactYTimer = 0.05;
+      impactZTimer = 0.04;
+
+      isChangingLane = false;
+      clearInterval(ji);
+    }
+  }, 16);
+}
+
+/* ===============================
+   레벨 전환 / 휴식 / 엔딩
+================================ */
+function triggerRest(){
+  isResting = true;
+  movementActive = false;
+
+  const ins = document.getElementById('intro-screen');
+  const txt = document.getElementById('intro-title');
+  const btn = document.getElementById('start-btn');
+
+  btn.style.display = 'none';
+  ins.classList.remove('hidden','fade-out');
+  txt.style.fontSize = '3.2rem';
+  txt.innerHTML = '잠시 숨을 고르세요<br><span style="font-size:2.2rem;color:#60a5fa;">들이마시고... 내쉬세요...</span>';
+
+  setTimeout(()=>{
+    currentLevelIndex++;
+    const nextLevel = getCurrentLevelNum();
+
+    document.getElementById('level-num').innerText = nextLevel;
+    setLevelTag(nextLevel);
+
+    if(nextLevel===3){
+      goldBudget = 3 + Math.floor(Math.random()*2);
+      goldSpawned = 0;
+      lv3FirstRewardGiven = false;
+    }
+
+    if(nextLevel===3){
+      txt.style.fontSize = '3rem';
+      txt.innerHTML = '<span style="color:#ef4444;">LEVEL 3</span><br><span style="font-size:2rem;">다가오는 박스를 부수세요!<br><span style="font-size:4rem;">🥊</span></span>';
+    } else if(nextLevel===4){
+      txt.style.fontSize = '3rem';
+      txt.innerHTML = '<span style="color:#f59e0b;">LEVEL 4</span><br><span style="font-size:2rem;">조금 더 빨라집니다!<br>집중하세요!</span>';
+    }
+
+    setTimeout(()=>{
+      doCountdownStart(()=>{
+        isResting = false;
+        movementActive = true;
+        levelTime = 0;
+        ins.classList.add('fade-out');
+      });
+    }, 2000);
+
+  }, 15000);
+}
+
+function triggerEnding(){
+  gameState = 'finished';
+  isResting = true;
+  movementActive = false;
+
+  stopMusic();
+
+  const ins = document.getElementById('intro-screen');
+  const txt = document.getElementById('intro-title');
+  const btn = document.getElementById('start-btn');
+
+  btn.style.display = 'none';
+  ins.classList.remove('hidden','fade-out');
+
+  txt.style.fontSize = '3.2rem';
+  txt.innerHTML = '<span style="color:#34d399;">수고했어요!</span><br><span style="font-size:2.2rem;color:#60a5fa;">👏👏👏</span>';
+}
+
+/* ===============================
+   카운트다운
+================================ */
+function doCountdownStart(onDone){
+  const cdOverlay = document.getElementById('countdown-overlay');
+  cdOverlay.classList.remove('hidden');
+  let count = 3;
+  cdOverlay.innerText = count;
+
+  const timer = setInterval(()=>{
+    count--;
+    if(count > 0) cdOverlay.innerText = count;
+    else if(count === 0) cdOverlay.innerText = "START!";
+    else{
+      clearInterval(timer);
+      cdOverlay.classList.add('hidden');
+      onDone && onDone();
+    }
+  }, 1000);
+}
+
+/* =========================================================
+   ✅ 시작 화면 시퀀스 (요청 그대로)
+   1) 환영 5초
+   2) LV1 안내 10초
+   3) 맵 + 3-2-1 카운트 → 시작
+========================================================= */
+function triggerStartSequence(){
+  isResting = true;
+  movementActive = false;
+
+  const ins = document.getElementById('intro-screen');
+  const txt = document.getElementById('intro-title');
+  const btn = document.getElementById('start-btn');
+
+  btn.style.display = 'none';
+  ins.classList.remove('hidden','fade-out');
+
+  txt.style.fontSize = '3.1rem';
+  txt.innerHTML =
+    '우주의 세계에 온 것을 환영해요.<br>' +
+    '<span style="font-size:2.2rem;color:#60a5fa;">지금부터 화면을 따라 움직이세요</span>';
+
+  setTimeout(()=>{
+    txt.style.fontSize = '3.0rem';
+    txt.innerHTML =
+      '<span style="color:#93c5fd;">LEVEL 1</span><br>' +
+      '<span style="font-size:2.1rem;">왼쪽/가운데/오른쪽으로 점프하세요.</span>';
+
+    setTimeout(()=>{
+      doCountdownStart(()=>{
+        isResting = false;
+        movementActive = true;
+        levelTime = 0;
+        ins.classList.add('fade-out');
+        showInstruction("JUMP!", "text-yellow-400", 700);
+      });
+    }, LV1_GUIDE_DURATION);
+
+  }, WELCOME_DURATION);
+}
+
+function startGame(){
+  initAudio();
+  audioCtx.resume().then(()=>{
+    startMusic();
+  });
+
+  document.getElementById('hud').classList.remove('hidden');
+
+  // ✅ 검정 오버레이 켜진 상태에서 3D 먼저 초기화
+  init3D();
+  spawnBridge(true, 1);
+
+  gameState = 'playing';
+  movementActive = false;
+  isResting = true;
+
+  gameTime = 0;
+  levelTime = 0;
+  currentLevelIndex = 0;
+
+  document.getElementById('level-num').innerText = 1;
+  setLevelTag(1);
+
+  document.getElementById('start-btn').style.display='none';
+
+  // ✅ 시작 시퀀스 실행
+  triggerStartSequence();
+
+  animate();
+}
+
+/* ===============================
+   메인 루프
+================================ */
+function animate(){
+  requestAnimationFrame(animate);
+
+  if(!renderer || !scene || !camera) return;
+  if(gameState !== 'playing') {
+    renderer.render(scene, camera);
+    return;
+  }
+
+  const currentLevelNum = getCurrentLevelNum();
+
+  if(movementActive){
+    gameTime += 1/60;
+    levelTime += 1/60;
+
+    if(landingStabilityTimer > 0) landingStabilityTimer -= 1/60;
+
+    if(impactYTimer > 0){
+      impactYTimer = Math.max(0, impactYTimer - 1/60);
+      const t = (0.05 - impactYTimer) / 0.05;
+      landingImpactY = -2.4 * (1 - (1 - Math.pow(1 - t, 2)));
+    } else landingImpactY = 0;
+
+    if(impactZTimer > 0){
+      impactZTimer = Math.max(0, impactZTimer - 1/60);
+      landingImpactZ = -7.5 * (impactZTimer / 0.04);
+    } else landingImpactZ = 0;
+
+    // ✅ "상시 속도감"을 위해 제한 상태에서도 가끔 라인 생성
+    if(Math.random() < 0.10) spawn2DSpeedLine();
+  }
+
+  const currentDuration = durations[currentLevelIndex];
+  if(movementActive && levelTime > currentDuration){
+    if(displayLevels[currentLevelIndex + 1] === 0){
+      currentLevelIndex++;
+      levelTime = 0;
+      triggerRest();
+    } else if(displayLevels[currentLevelIndex + 1] === -1){
+      currentLevelIndex++;
+      triggerEnding();
+    } else if(currentLevelIndex < durations.length - 1){
+      currentLevelIndex++;
+      levelTime = 0;
+
+      const nextLv = getCurrentLevelNum();
+      document.getElementById('level-num').innerText = nextLv;
+      setLevelTag(nextLv);
+
+      if(nextLv===2) showInstruction("FASTER!", "text-cyan-300", 900);
+      if(nextLv===3) showInstruction("PUNCH! 🥊", "text-red-400", 900);
+      if(nextLv===4) showInstruction("FOCUS!", "text-orange-300", 900);
+    }
+  }
+
+  if(bridges.length < 3){
+    spawnBridge(bridges.length===0, currentLevelNum);
+  }
+
+  let levelSpeedFactor = 1.0;
+  if(currentLevelNum===1) levelSpeedFactor = 0.8;
+  else if(currentLevelNum===2) levelSpeedFactor = 1.0;
+  else if(currentLevelNum===3) levelSpeedFactor = 1.0;
+  else if(currentLevelNum===4) levelSpeedFactor = 1.25;
+
+  const currentSpeed = movementActive ? ((baseSpeed * levelSpeedFactor) + (gameTime * 0.0001)) : 0;
+
+  for(let i=bridges.length-1;i>=0;i--){
+    bridges[i].mesh.position.z += currentSpeed * 50.0;
+    if(bridges[i].mesh.position.z > 6000){
+      if(activeBridge === bridges[i]) activeBridge = null;
+      scene.remove(bridges[i].mesh);
+      bridges.splice(i,1);
+    }
+  }
+
+  // activeBridge 판정 (-Z 발판 기준)
+  let foundActive = false;
+  isOnPad = false;
+
+  if(activeBridge){
+    const padDepth = activeBridge.padDepth || 200;
+
+    const frontZ = activeBridge.mesh.position.z + (bridgeLength/2);
+    const backZWithPad = activeBridge.mesh.position.z - (bridgeLength/2) - padDepth;
+
+    if(frontZ > playerZ && backZWithPad < playerZ){
+      foundActive = true;
+
+      const relZ = playerZ - activeBridge.mesh.position.z;
+      isOnPad = relZ < -(bridgeLength/2);
+
+      const padStartRel = -(bridgeLength/2);
+      const triggerRel  = padStartRel - (padDepth * PAD_TRIGGER_RATIO);
+
+      if(movementActive && relZ <= triggerRel && activeBridge.bridgeId !== lastJumpBridgeId){
+        lastJumpBridgeId = activeBridge.bridgeId;
+
+        const nextIndex = bridges.indexOf(activeBridge) + 1;
+        if(nextIndex < bridges.length){
+          const nextB = bridges[nextIndex];
+          targetX = nextB.x;
+          isChangingLane = (activeBridge.lane !== nextB.lane);
+        }
+        triggerJump();
+      }
+    } else {
+      activeBridge = null;
+    }
+  }
+
+  if(!activeBridge){
+    for(const b of bridges){
+      const padDepth = b.padDepth || 200;
+
+      const frontZ = b.mesh.position.z + (bridgeLength/2);
+      const backZWithPad = b.mesh.position.z - (bridgeLength/2) - padDepth;
+
+      if(frontZ > playerZ && backZWithPad < playerZ){
+        activeBridge = b;
+        foundActive = true;
+
+        const relZ = playerZ - b.mesh.position.z;
+        isOnPad = relZ < -(bridgeLength/2);
+
+        break;
+      }
+    }
+  }
+
+  if(foundActive){
+    isOnBridge = true;
+    groundY = 30;
+    if(!isJumping) playerJumpY = 0;
+  } else {
+    isOnBridge = false;
+    isOnPad = false;
+    groundY = 0;
+  }
+
+  updateBoxes();
+  updateShards();
+
+  stars.rotation.y += movementActive ? 0.0002 : 0;
+
+  // ✅ 3D speedLine도 더 "상시 + 진하게" (요청)
+  let speedOpacity = 0;
+  if(currentLevelNum===1) speedOpacity = 0.10;
+  if(currentLevelNum===2) speedOpacity = 0.16;
+  if(currentLevelNum===3) speedOpacity = 0.18;
+  if(currentLevelNum===4) speedOpacity = 0.24;
+
+  speedLines.children.forEach(l=>{
+    l.position.z += movementActive ? (260 + currentLevelNum*38) : 0;
+    if(l.position.z > 2500) l.position.z = -12000;
+    l.material.opacity = movementActive ? speedOpacity : 0;
+  });
+
+  updateCamera();
+
+  document.getElementById('progress-bar').style.width = (gameTime / totalDuration * 100) + '%';
+  renderer.render(scene, camera);
+}
+
+/* ===============================
+   INIT_PHASE 메시지 리스너
+================================ */
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'INIT_PHASE' && event.data.phase === 'flow') {
+    const data = event.data.data;
+    if (data.duration) {
+      // duration 업데이트 (필요시)
+      const totalDuration = data.duration;
+      // durations 배열 업데이트 로직 (필요시)
+    }
+    // 자동 시작
+    console.log('✅ [Flow Phase] INIT_PHASE 수신, 자동 시작');
+    setTimeout(() => {
+      startGame();
+    }, 500);
+  }
+});
+
+/* ===============================
+   이벤트 바인딩
+================================ */
+window.onload = () => {
+  document.getElementById('start-btn').addEventListener('click', startGame);
+  window.addEventListener('resize', onWindowResize);
+};
+
+function onWindowResize(){
+  if(camera && renderer){
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+}
+</script>
+</body>
+</html>
