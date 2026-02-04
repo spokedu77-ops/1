@@ -1279,9 +1279,12 @@ export class FlowEngine {
       : 0;
     const currentSpeed = this.currentSpeedValue;
 
-    this.scene.fog.far = FOG_FAR_BY_LEVEL[lv];
-    this.camera.far = CAMERA_FAR_BY_LEVEL[lv];
-    this.camera.updateProjectionMatrix();
+    const fog = this.scene?.fog;
+    if (fog && 'far' in fog) (fog as THREE.Fog).far = FOG_FAR_BY_LEVEL[lv];
+    if (this.camera) {
+      this.camera.far = CAMERA_FAR_BY_LEVEL[lv];
+      this.camera.updateProjectionMatrix();
+    }
 
     const pruneZ = BRIDGE_PRUNE_Z_BY_LEVEL[lv];
     for (let i = this.bridges.length - 1; i >= 0; i--) {
