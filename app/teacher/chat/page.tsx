@@ -218,7 +218,7 @@ export default function TeacherChatPage() {
         if (payload.new.sender_id !== myId) {
           const room = roomsRef.current.find((r: { id: string }) => r.id === payload.new.room_id);
           if (room && 'Notification' in window && Notification.permission === 'granted') {
-            new Notification(room.custom_name || '새 메시지', { body: payload.new.content, icon: '/favicon.ico', tag: payload.new.room_id, vibrate: [200, 100, 200] });
+            new Notification(room.custom_name || '새 메시지', { body: payload.new.content, icon: '/favicon.ico', tag: payload.new.room_id });
           }
           fetchMyRooms(myId);
           fetchUnreadCounts(myId);

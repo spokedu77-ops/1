@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       tokens: fcmTokens,
       notification: { title, body: bodyText },
       data: { room_id: roomId, message_id: messageId || '', title, body: bodyText },
-      android: { notification: { vibrateTimingMillis: [200, 100, 200] } },
+      android: { notification: { vibrateTimingsMillis: [200, 100, 200] } },
       apns: { payload: { aps: { sound: 'default' } } },
     };
     const result = await messaging.sendEachForMulticast(message);
