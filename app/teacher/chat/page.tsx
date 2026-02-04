@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Send, ChevronLeft } from 'lucide-react';
+import { Send, ChevronLeft, Users } from 'lucide-react';
+import { formatChatTimestamp } from '@/app/lib/utils';
+import { fetchUnreadCounts as fetchUnreadCountsApi, markRoomAsRead } from '@/app/lib/chat';
+import { registerFCMTokenIfNeeded } from '@/app/lib/fcm';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +21,14 @@ export default function TeacherChatPage() {
   const [input, setInput] = useState('');
   const [myId, setMyId] = useState<string | null>(null);
   const [myName, setMyName] = useState<string>('');
+  const [unreadCounts, setUnreadCounts] = useState<{ [roomId: string]: number }>({});
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesStartRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const roomsRef = useRef<any[]>([]);
+  roomsRef.current = rooms;
 
   useEffect(() => {
     const init = async () => {
@@ -36,10 +46,18 @@ export default function TeacherChatPage() {
         if (userData) setMyName(userData.name);
         
         fetchMyRooms(user.id);
+        fetchUnreadCounts(user.id);
+        if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
+        if (Notification.permission === 'granted') registerFCMTokenIfNeeded(supabase, user.id);
       }
     };
     init();
   }, []);
+
+  const fetchUnreadCounts = async (userId: string) => {
+    const counts = await fetchUnreadCountsApi(supabase, userId);
+    setUnreadCounts(counts);
+  };
 
   // 내가 참여한 방만 가져오기
   const fetchMyRooms = async (userId: string) => {
@@ -56,47 +74,27 @@ export default function TeacherChatPage() {
 
     const roomIds = myParticipations.map(p => p.room_id);
 
-    // Step 2: 방 정보 가져오기
-    const { data: roomsData } = await supabase
+    const { data: roomsData, error } = await supabase
       .from('chat_rooms')
       .select('*')
-      .in('id', roomIds);
+      .in('id', roomIds)
+      .order('last_message_at', { ascending: false, nullsFirst: false });
 
-    if (!roomsData) {
-      setRooms([]);
-      return;
-    }
+    if (error || !roomsData?.length) { setRooms([]); return; }
 
-    // Step 3: 각 방의 상세 정보 가져오기
-    const processed = await Promise.all(roomsData.map(async (room) => {
-      // 참여자 수
-      const { data: participants } = await supabase
-        .from('chat_participants')
-        .select('user_id')
-        .eq('room_id', room.id);
+    const { data: participantsData } = await supabase
+      .from('chat_participants')
+      .select('room_id')
+      .in('room_id', roomIds);
+    const countByRoom: { [id: string]: number } = {};
+    participantsData?.forEach(p => { countByRoom[p.room_id] = (countByRoom[p.room_id] || 0) + 1; });
 
-      // 마지막 메시지
-      const { data: messages } = await supabase
-        .from('chat_messages')
-        .select('content, created_at')
-        .eq('room_id', room.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      return {
-        ...room,
-        last_message_at: messages?.[0]?.created_at || room.created_at,
-        last_message_content: messages?.[0]?.content || "대화를 시작해보세요",
-        participant_count: participants?.length || 0
-      };
-    }));
-
-    // 최신순 정렬
-    const sorted = processed.sort((a, b) => 
-      new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
-    );
-
-    setRooms(sorted);
+    setRooms(roomsData.map(room => ({
+      ...room,
+      last_message_at: room.last_message_at || room.created_at,
+      last_message_content: room.last_message_content || '대화를 시작해보세요',
+      participant_count: countByRoom[room.id] || 0
+    })));
   };
 
   // 참여자 정보 가져오기
@@ -125,19 +123,40 @@ export default function TeacherChatPage() {
     setParticipants(participantsWithNames);
   };
 
-  // 방 입장
+  const loadMessages = async (roomId: string, beforeDate: string | null, limit = 50) => {
+    if (loadingMessages) return;
+    setLoadingMessages(true);
+    try {
+      let q = supabase.from('chat_messages').select('*').eq('room_id', roomId).order('created_at', { ascending: false }).limit(limit);
+      if (beforeDate) q = q.lt('created_at', beforeDate);
+      const { data, error } = await q;
+      if (error) throw error;
+      if (data?.length) {
+        const sorted = [...data].reverse();
+        if (beforeDate) setMessages(prev => [...sorted, ...prev]); else setMessages(sorted);
+        setHasMoreMessages(data.length === limit);
+      } else setHasMoreMessages(false);
+    } catch { setHasMoreMessages(false); } finally { setLoadingMessages(false); }
+  };
+
+  const loadMoreMessages = () => {
+    if (!selectedRoom || !hasMoreMessages || loadingMessages || !messages.length) return;
+    loadMessages(selectedRoom.id, messages[0].created_at);
+  };
+
+  const markAsRead = async (roomId: string, userId: string) => {
+    await markRoomAsRead(supabase, roomId, userId);
+    await fetchUnreadCounts(userId);
+  };
+
   const enterRoom = async (room: any) => {
     setSelectedRoom(room);
     setView('chat');
+    setMessages([]);
+    setHasMoreMessages(false);
     await fetchRoomParticipants(room.id);
-    
-    const { data } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('room_id', room.id)
-      .order('created_at', { ascending: true });
-    
-    if (data) setMessages(data);
+    await loadMessages(room.id, null);
+    if (myId) await markAsRead(room.id, myId);
   };
 
   // 메시지 전송
@@ -189,12 +208,26 @@ export default function TeacherChatPage() {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [selectedRoom, myId]);
 
-  // 자동 스크롤
+  useEffect(() => {
+    if (!myId || view !== 'list') return;
+    const ch = supabase.channel('teacher_list_messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+        if (payload.new.sender_id !== myId) {
+          const room = roomsRef.current.find((r: { id: string }) => r.id === payload.new.room_id);
+          if (room && 'Notification' in window && Notification.permission === 'granted') {
+            new Notification(room.custom_name || '새 메시지', { body: payload.new.content, icon: '/favicon.ico', tag: payload.new.room_id, vibrate: [200, 100, 200] });
+          }
+          fetchMyRooms(myId);
+          fetchUnreadCounts(myId);
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [myId, view]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -224,22 +257,21 @@ export default function TeacherChatPage() {
                     className="px-5 py-4 flex items-center gap-4 active:bg-slate-50 cursor-pointer border-b border-slate-50 transition-colors"
                   >
                     <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[22px] flex items-center justify-center text-white font-bold text-lg shadow-md">
-                      {room.custom_name[0]}
+                      {(room.custom_name && room.custom_name[0]) || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-0.5">
                         <span className="font-bold text-[16px] truncate pr-2">{room.custom_name}</span>
-                        <span className="text-[12px] text-slate-400 whitespace-nowrap">
-                          {new Date(room.last_message_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})}
-                        </span>
+                        <span className="text-[12px] text-slate-400 whitespace-nowrap">{formatChatTimestamp(room.last_message_at)}</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <p className="text-[14px] text-slate-500 truncate flex-1">{room.last_message_content}</p>
-                        {room.participant_count > 0 && (
-                          <span className="ml-2 bg-blue-50 text-blue-600 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                            {room.participant_count}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {unreadCounts[room.id] > 0 && (
+                            <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black min-w-[20px] text-center">{unreadCounts[room.id]}</span>
+                          )}
+                          <span className="bg-blue-50 text-blue-600 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1"><Users size={10} /> {room.participant_count || 0}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -255,8 +287,7 @@ export default function TeacherChatPage() {
             <header className="h-14 flex items-center justify-between px-2 border-b bg-white/90 backdrop-blur-md sticky top-0 z-20">
               <button 
                 onClick={() => { 
-                  setView('list'); 
-                  if (myId) fetchMyRooms(myId);
+                  setView('list'); if (myId) { fetchMyRooms(myId); fetchUnreadCounts(myId); }
                 }} 
                 className="p-2 text-blue-500 flex items-center cursor-pointer active:opacity-50 transition-opacity"
               >
@@ -272,7 +303,18 @@ export default function TeacherChatPage() {
               <div className="w-[60px]"></div>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-white"
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                if (el.scrollTop < 100 && hasMoreMessages && !loadingMessages) loadMoreMessages();
+              }}
+            >
+              {loadingMessages && messages.length > 0 && (
+                <div className="flex justify-center py-2"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>
+              )}
+              <div ref={messagesStartRef} />
               {messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-slate-400 text-sm">
                   대화를 시작해보세요
@@ -285,33 +327,16 @@ export default function TeacherChatPage() {
                   const sender = participants.find(p => p.user_id === m.sender_id);
                   const senderName = sender?.users?.name || '알 수 없음';
                   
-                  // 시간 포맷팅
                   const messageTime = new Date(m.created_at);
-                  const timeStr = messageTime.toLocaleTimeString('ko-KR', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    hour12: true 
-                  });
-                  
-                  // 날짜 표시 여부 확인
-                  const showDate = idx === 0 || 
-                    new Date(messages[idx - 1].created_at).toDateString() !== messageTime.toDateString();
-                  
-                  const dateStr = messageTime.toLocaleDateString('ko-KR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'long'
-                  });
+                  const timeStr = formatChatTimestamp(m.created_at);
+                  const showDate = idx === 0 || (messages[idx - 1] && new Date(messages[idx - 1].created_at).toDateString() !== messageTime.toDateString());
                   
                   return (
                     <div key={idx}>
                       {/* 날짜 구분선 */}
                       {showDate && (
                         <div className="flex items-center justify-center my-4">
-                          <div className="bg-slate-200 text-slate-600 text-[11px] px-3 py-1 rounded-full">
-                            {dateStr}
-                          </div>
+                          <div className="bg-slate-200 text-slate-600 text-[11px] px-3 py-1 rounded-full">{formatChatTimestamp(m.created_at)}</div>
                         </div>
                       )}
                       
@@ -353,7 +378,7 @@ export default function TeacherChatPage() {
                   <input 
                     value={input} 
                     onChange={e => setInput(e.target.value)} 
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyPress}
                     placeholder="메시지 입력" 
                     className="w-full bg-transparent outline-none py-1 text-[15px]" 
                   />

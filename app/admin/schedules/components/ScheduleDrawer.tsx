@@ -109,103 +109,113 @@ export function ScheduleDrawer({
 
   return (
     <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-xl flex flex-col border-l border-slate-200">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-900">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h2 className="text-lg font-semibold text-slate-900 tracking-tight">
           {isCreate ? '새 일정' : '일정 편집'}
         </h2>
         <button
           type="button"
           onClick={onClose}
-          className="rounded p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-0">
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+          <p className="text-sm text-red-600 bg-red-50 px-4 py-2.5 rounded-xl mb-4">{error}</p>
         )}
         {suggestDone && status === 'active' && (
-          <p className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+          <p className="text-sm text-amber-700 bg-amber-50 px-4 py-2.5 rounded-xl mb-4">
             종료일이 지났습니다. 저장 시 상태가 &quot;종료&quot;로 설정됩니다.
           </p>
         )}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">제목 *</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-            placeholder="일정 제목"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">담당</label>
-          <input
-            type="text"
-            value={assignee}
-            onChange={(e) => setAssignee(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-            placeholder="담당자"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">기간</label>
-          <DateRangeField
-            startDate={startDate}
-            endDate={endDate}
-            onStartChange={setStartDate}
-            onEndChange={setEndDate}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">회기</label>
-          <input
-            type="number"
-            min={0}
-            value={sessionsCount ?? ''}
-            onChange={(e) => {
-              const v = e.target.value;
-              setSessionsCount(v === '' ? null : parseInt(v, 10));
-            }}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-            placeholder="회기 수"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">상태</label>
-          <select
-            value={effectiveStatus}
-            onChange={(e) => setStatus(e.target.value as 'active' | 'done')}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-          >
-            <option value="active">진행중</option>
-            <option value="done">종료</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">비고</label>
+        <section className="py-4 border-b border-slate-100">
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">기본 정보</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">제목 *</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                placeholder="일정 제목"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">담당</label>
+              <input
+                type="text"
+                value={assignee}
+                onChange={(e) => setAssignee(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                placeholder="담당자"
+              />
+            </div>
+          </div>
+        </section>
+        <section className="py-4 border-b border-slate-100">
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">일정 · 회기</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">기간</label>
+              <DateRangeField
+                startDate={startDate}
+                endDate={endDate}
+                onStartChange={setStartDate}
+                onEndChange={setEndDate}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">회기</label>
+              <input
+                type="number"
+                min={0}
+                value={sessionsCount ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setSessionsCount(v === '' ? null : parseInt(v, 10));
+                }}
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm tabular-nums focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                placeholder="회기 수"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">상태</label>
+              <select
+                value={effectiveStatus}
+                onChange={(e) => setStatus(e.target.value as 'active' | 'done')}
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+              >
+                <option value="active">진행중</option>
+                <option value="done">종료</option>
+              </select>
+            </div>
+          </div>
+        </section>
+        <section className="py-4 border-b border-slate-100">
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">비고</h3>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none resize-none"
+            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none resize-none"
             placeholder="비고"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">체크리스트</label>
+        </section>
+        <section className="py-4">
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">체크리스트</h3>
           <ChecklistEditor items={checklist} onChange={setChecklist} />
-        </div>
+        </section>
       </div>
-      <div className="flex items-center gap-2 px-4 py-3 border-t border-slate-200">
+      <div className="flex items-center gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50/50">
         {!isCreate && onDelete && (
           <button
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 transition-colors"
           >
             {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
             삭제
@@ -215,7 +225,7 @@ export function ScheduleDrawer({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
         >
           취소
         </button>
@@ -223,7 +233,7 @@ export function ScheduleDrawer({
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md disabled:opacity-50 transition-all"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           저장

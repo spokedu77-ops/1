@@ -25,6 +25,10 @@ export default function RootLayout({
 
   return (
     <html lang="ko">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#2563eb" />
+      </head>
       <body className="antialiased bg-gray-50 text-slate-900">
         <QueryProvider>
           <div className="flex min-h-screen">

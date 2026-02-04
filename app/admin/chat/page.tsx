@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Send, Plus, ChevronLeft, MoreVertical, UserPlus, Trash2, Users, Image as ImageIcon, Paperclip, X, Search, Wifi, WifiOff } from 'lucide-react';
 import { formatChatTimestamp } from '@/app/lib/utils';
+import { fetchUnreadCounts as fetchUnreadCountsApi, markRoomAsRead } from '@/app/lib/chat';
+import { registerFCMTokenIfNeeded } from '@/app/lib/fcm';
 import { ToastContainer, useToast } from '@/app/components/Toast';
 
 const supabase = createClient(
@@ -51,33 +53,15 @@ export default function AdminChatPage() {
         if ('Notification' in window && Notification.permission === 'default') {
           await Notification.requestPermission();
         }
+        if (Notification.permission === 'granted') registerFCMTokenIfNeeded(supabase, user.id);
       }
     };
     init();
   }, []);
 
   const fetchUnreadCounts = async (userId: string) => {
-    try {
-      // RPC 함수로 서버에서 집계
-      const { data, error } = await supabase
-        .rpc('get_unread_counts', { p_user_id: userId });
-
-      if (error) {
-        console.error('읽지 않은 메시지 조회 실패:', error);
-        return;
-      }
-
-      const counts: {[key: string]: number} = {};
-      data?.forEach((item: { room_id: string; unread_count: number }) => {
-        if (item.unread_count > 0) {
-          counts[item.room_id] = item.unread_count;
-        }
-      });
-
-      setUnreadCounts(counts);
-    } catch (error) {
-      console.error('읽지 않은 메시지 조회 실패:', error);
-    }
+    const counts = await fetchUnreadCountsApi(supabase, userId);
+    setUnreadCounts(counts);
   };
 
   const fetchRooms = async () => {
@@ -267,24 +251,8 @@ export default function AdminChatPage() {
   };
 
   const markAsRead = async (roomId: string, userId: string) => {
-    try {
-      // participant row 1개만 업데이트 (메시지 N개 업데이트 대신)
-      const { error } = await supabase
-        .from('chat_participants')
-        .update({ last_read_at: new Date().toISOString() })
-        .eq('room_id', roomId)
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('읽음 처리 실패:', error);
-        return;
-      }
-
-      // unreadCounts 갱신 (RPC 함수 사용)
-      await fetchUnreadCounts(userId);
-    } catch (error) {
-      console.error('읽음 처리 실패:', error);
-    }
+    await markRoomAsRead(supabase, roomId, userId);
+    await fetchUnreadCounts(userId);
   };
 
   const handleCreateRoom = async (teacher: any) => {

@@ -26,14 +26,14 @@ export function ViewToolbar({
 }: ViewToolbarProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 py-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 p-1 rounded-full bg-slate-100 border border-slate-200/80">
         <button
           type="button"
           onClick={() => onViewModeChange('all')}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-all ${
             viewMode === 'all'
-              ? 'bg-slate-200 text-slate-900'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-200/60'
           }`}
         >
           <LayoutList className="h-4 w-4" />
@@ -42,10 +42,10 @@ export function ViewToolbar({
         <button
           type="button"
           onClick={() => onViewModeChange('groupByAssignee')}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-all ${
             viewMode === 'groupByAssignee'
-              ? 'bg-slate-200 text-slate-900'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-200/60'
           }`}
         >
           <Users className="h-4 w-4" />
@@ -55,7 +55,7 @@ export function ViewToolbar({
       <select
         value={statusFilter}
         onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
-        className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 bg-white focus:border-slate-400 focus:outline-none"
+        className="rounded-full border border-slate-200 px-3.5 py-2 text-sm text-slate-700 bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
       >
         <option value="">전체</option>
         <option value="active">진행중</option>
@@ -68,13 +68,13 @@ export function ViewToolbar({
           placeholder="제목·비고 검색"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm focus:border-slate-400 focus:outline-none"
+          className="w-full rounded-full border border-slate-200 py-2 pl-9 pr-3 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
         />
       </div>
       <button
         type="button"
         onClick={onNewClick}
-        className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        className="flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all"
       >
         <Plus className="h-4 w-4" />
         새로 만들기

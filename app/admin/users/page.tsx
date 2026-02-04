@@ -50,7 +50,7 @@ export default function UserDashboardPage() {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .in('role', ['admin', 'teacher'])
+        .eq('role', 'teacher')
         .order('name');
       
       if (error) throw error;
@@ -64,8 +64,8 @@ export default function UserDashboardPage() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const loggedInUser = fetchedUsers.find(u => u.id === user.id);
-        if (loggedInUser) setCurrentUser(loggedInUser);
+        const { data: me } = await supabase.from('users').select('id, name, role').eq('id', user.id).single();
+        if (me) setCurrentUser(me as UserData);
       }
     } catch (err) {
       console.error(err);
