@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const record = body.record ?? body;
+  const record = (body.record ?? body) as Record<string, unknown>;
   const roomId = record.room_id as string | undefined;
   const senderId = record.sender_id as string | undefined;
   const content = (record.content as string) || '';
