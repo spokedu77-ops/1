@@ -6,6 +6,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 const SW_URL = '/api/firebase-messaging-sw';
 
+/** 세션당 한 번만 등록 (중복 호출 방지) */
+const registeredThisSession = new Set<string>();
+
 function hasFirebaseConfig(): boolean {
   return !!(
     typeof window !== 'undefined' &&
@@ -23,12 +26,22 @@ export async function registerFCMTokenIfNeeded(
   supabase: SupabaseClient,
   userId: string
 ): Promise<void> {
-  if (typeof window === 'undefined' || !hasFirebaseConfig()) return;
-  if (Notification.permission !== 'granted') return;
+  if (typeof window === 'undefined' || !hasFirebaseConfig()) {
+    console.error('[FCM] 건너뜀: window 없음 또는 Firebase 설정 부족');
+    return;
+  }
+  if (Notification.permission !== 'granted') {
+    console.error('[FCM] 건너뜀: Notification.permission =', Notification.permission);
+    return;
+  }
+  if (registeredThisSession.has(userId)) {
+    return;
+  }
 
   try {
     const reg = await navigator.serviceWorker.register(SW_URL, { scope: '/' });
     await reg.update();
+    console.log('[FCM] Service Worker 등록 완료');
 
     const app = getApps().length ? getApps()[0]! : initializeApp({
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -45,9 +58,13 @@ export async function registerFCMTokenIfNeeded(
       serviceWorkerRegistration: reg,
     });
 
-    if (!token) return;
+    if (!token) {
+      console.error('[FCM] getToken 실패: token이 null');
+      return;
+    }
+    console.log('[FCM] 토큰 발급 완료, 길이:', token.length);
 
-    await supabase.from('user_fcm_tokens').upsert(
+    const { error } = await supabase.from('user_fcm_tokens').upsert(
       {
         user_id: userId,
         token,
@@ -56,9 +73,14 @@ export async function registerFCMTokenIfNeeded(
       },
       { onConflict: 'token' }
     );
-  } catch (e) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('FCM token registration skipped or failed:', e);
+
+    if (error) {
+      console.error('[FCM] Supabase upsert 실패:', error.message, error);
+    } else {
+      registeredThisSession.add(userId);
+      console.log('[FCM] user_fcm_tokens 저장 완료');
     }
+  } catch (e) {
+    console.error('[FCM] 토큰 등록 실패:', e);
   }
 }

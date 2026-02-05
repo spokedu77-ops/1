@@ -82,7 +82,7 @@ export default function SpokeduHQDashboard() {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
 
-      const [classesRes, tasksRes, usersRes] = await Promise.all([
+      const [classesRes, tasksRes, usersRes, recentSchedules] = await Promise.all([
         supabase
           .from('sessions')
           .select('*, users:created_by(id, name)')
@@ -95,7 +95,8 @@ export default function SpokeduHQDashboard() {
           .select('id, name, vacation')
           .eq('is_active', true)
           .not('vacation', 'is', null)
-          .neq('vacation', '')
+          .neq('vacation', ''),
+        getSchedules({ limit: 7, orderBy: 'start_date_asc' }),
       ]);
 
       // Class Sessions: 시간 순서 유지 (start_at 오름차순), 연기/취소는 뒤로
@@ -133,11 +134,6 @@ export default function SpokeduHQDashboard() {
 
       setTodayClasses(formattedClasses);
       setTasks(tasksRes.data as ITask[] || []);
-
-      const recentSchedules = await getSchedules({
-        limit: 7,
-        orderBy: 'start_date_asc',
-      });
       setScheduleSummary(recentSchedules);
       
       // Vacation Filtering (오늘 이전 데이터 자동 제외)

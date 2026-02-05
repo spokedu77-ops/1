@@ -36,8 +36,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     checkAdmin();
   }, [router]);
 
-  // 권한 체크 중일 때도 배경색은 흰색으로 유지
-  if (!isAdmin) return <div className="min-h-screen bg-white"></div>;
+  // 권한 체크 중일 때 로딩 표시
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-sm font-bold text-slate-300 animate-pulse">권한 확인 중...</p>
+      </div>
+    );
+  }
 
   return (
     <main className="flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900">
