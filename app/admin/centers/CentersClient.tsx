@@ -110,29 +110,29 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 w-full">
-      <div className="p-4 sm:p-6 md:p-8">
+    <div className="min-h-screen bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="p-4 sm:p-6 md:p-8 min-w-0">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">센터 관리</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">센터 관리</h1>
           <button
             type="button"
             onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all"
+            className="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all touch-manipulation"
           >
             <Plus className="h-4 w-4" />
             센터 추가
           </button>
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-2 p-1.5 rounded-full bg-slate-100 border border-slate-200/80 w-fit">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="mb-4 flex flex-wrap items-center gap-2 p-1.5 rounded-full bg-slate-100 border border-slate-200/80 w-full sm:w-fit">
+          <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="센터명, 주소, 담당자 검색"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-full border border-slate-200 py-2 pl-9 pr-3 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none bg-white"
+              className="w-full min-h-[44px] rounded-full border border-slate-200 py-2 pl-9 pr-3 text-base sm:text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none bg-white touch-manipulation"
             />
           </div>
           <select

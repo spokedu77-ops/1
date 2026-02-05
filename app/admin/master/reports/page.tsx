@@ -2,14 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import html2canvas from 'html2canvas';
 import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp } from 'lucide-react';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 type TeacherRow = { id: string; name: string };
 type ExtraTeacher = { id: string; price?: number };
@@ -28,6 +23,7 @@ type ReportTeacher = {
 
 export default function UltimateSettlementPage() {
   const router = useRouter();
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [isAdmin, setIsAdmin] = useState(false);
   const [expandedTeacher, setExpandedTeacher] = useState<string | null>(null);
   const [, setLoading] = useState(true);
@@ -41,6 +37,7 @@ export default function UltimateSettlementPage() {
 
   useEffect(() => {
     const checkMaster = async () => {
+      if (!supabase) return;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.email !== 'choijihoon@spokedu.com') {
         router.replace('/admin'); 
@@ -49,10 +46,10 @@ export default function UltimateSettlementPage() {
       setIsAdmin(true);
     };
     checkMaster();
-  }, [router]);
+  }, [router, supabase]);
 
   const fetchReport = useCallback(async () => {
-    if (!isAdmin) return; 
+    if (!supabase || !isAdmin) return; 
     setLoading(true);
     try {
       const lastDay = new Date(year, month, 0).getDate();
@@ -132,7 +129,7 @@ export default function UltimateSettlementPage() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, year, month, period]);
+  }, [supabase, isAdmin, year, month, period]);
 
   useEffect(() => { fetchReport(); }, [fetchReport]);
 

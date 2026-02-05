@@ -1,7 +1,7 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-export const supabase: SupabaseClient | null =
-  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+/** 브라우저에서만 사용. PWA/쿠키 세션과 호환되도록 getSupabaseBrowserClient 사용 */
+export function getSupabase() {
+  if (typeof window === 'undefined') return null;
+  return getSupabaseBrowserClient();
+}

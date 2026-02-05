@@ -1,16 +1,11 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
   Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2, 
   CheckSquare, Box, ListOrdered, Play, AlertCircle
 } from 'lucide-react';
-
-// Supabase 설정
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 const MONTHLY_THEMES: { [key: number]: { title: string; desc: string } } = {
   3: { title: '새로운 시작과 적응', desc: '친구들과 친해지고 규칙을 익히는 시기입니다.' },
@@ -35,6 +30,7 @@ interface CurriculumItem {
 
 export default function AdminCurriculumPage() {
   const currentMonth = new Date().getMonth() + 1;
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [items, setItems] = useState<CurriculumItem[]>([]);
@@ -49,6 +45,7 @@ export default function AdminCurriculumPage() {
   });
 
   const fetchItems = async () => {
+    if (!supabase) return;
     const { data, error } = await supabase
       .from('curriculum')
       .select('*')
@@ -73,7 +70,7 @@ export default function AdminCurriculumPage() {
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [supabase]);
 
   const filteredItems = useMemo(() => {
     return items.filter(item => item.month === selectedMonth && item.week === selectedWeek);
@@ -103,6 +100,7 @@ export default function AdminCurriculumPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) return;
     const videoId = getYouTubeId(newPost.url);
     const isInsta = newPost.url.includes('instagram.com');
     const type = isInsta ? 'instagram' : 'youtube';
@@ -152,29 +150,28 @@ export default function AdminCurriculumPage() {
 
   const deleteItem = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if(confirm('정말 삭제하시겠습니까? (복구 불가)')) {
-      try {
-        // .select()를 추가하여 실제로 삭제된 행이 있는지 확인
-        const { data, error } = await supabase
+    if (!supabase || !confirm('정말 삭제하시겠습니까? (복구 불가)')) return;
+    try {
+      // .select()를 추가하여 실제로 삭제된 행이 있는지 확인
+      const { data, error } = await supabase
           .from('curriculum')
           .delete()
           .eq('id', id)
           .select();
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // data 배열이 비어있다면 DB 권한(RLS) 문제로 실제 삭제가 안 된 것임
-        if (!data || data.length === 0) {
-          alert('삭제되지 않았습니다. Supabase의 RLS(Delete) 정책을 확인해주세요.');
-          return;
-        }
-
-        // 실제 삭제가 확인된 경우에만 UI 업데이트
-        setItems(prev => prev.filter(item => item.id !== id));
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        alert('삭제 실패: ' + msg);
+      // data 배열이 비어있다면 DB 권한(RLS) 문제로 실제 삭제가 안 된 것임
+      if (!data || data.length === 0) {
+        alert('삭제되지 않았습니다. Supabase의 RLS(Delete) 정책을 확인해주세요.');
+        return;
       }
+
+      // 실제 삭제가 확인된 경우에만 UI 업데이트
+      setItems(prev => prev.filter(item => item.id !== id));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert('삭제 실패: ' + msg);
     }
   };
 
@@ -206,7 +203,7 @@ export default function AdminCurriculumPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24 text-slate-900 w-full">
+    <div className="min-h-screen bg-[#F8FAFC] pb-[calc(6rem+env(safe-area-inset-bottom,0px))] text-slate-900 w-full">
       <style>{`
         @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
         * { font-family: "Pretendard Variable", sans-serif !important; letter-spacing: -0.025em; box-sizing: border-box; }
@@ -214,8 +211,8 @@ export default function AdminCurriculumPage() {
         button, select, [onClick] { cursor: pointer !important; }
       `}</style>
       
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 h-16 flex items-center justify-center">
-         <div className="max-w-4xl w-full flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-center pt-[env(safe-area-inset-top,0px)]">
+         <div className="max-w-4xl w-full flex items-center justify-between min-w-0">
              <div className="flex items-center gap-2">
                  <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs">S</div>
                  <div>
@@ -230,12 +227,12 @@ export default function AdminCurriculumPage() {
          </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-         <div className="space-y-6 w-full text-left">
-             <div className="grid grid-cols-6 md:grid-cols-12 gap-2 w-full">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+         <div className="space-y-6 w-full text-left min-w-0">
+             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 w-full">
                  {MONTHS.map((m) => (
                      <button key={m} onClick={() => setSelectedMonth(m)}
-                         className={`h-16 rounded-2xl flex items-center justify-center transition-all border font-black
+                         className={`min-h-[48px] sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all border font-black text-sm sm:text-base touch-manipulation
                          ${selectedMonth === m ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
                      >
                          {m}월

@@ -28,6 +28,7 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2563eb" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
       <body className="antialiased bg-gray-50 text-slate-900">
         <QueryProvider>
@@ -37,7 +38,7 @@ export default function RootLayout({
 
             <main 
               className={`flex-1 w-full min-w-0 transition-all duration-300 ${
-                !hideSidebar ? 'md:ml-64' : ''
+                !hideSidebar ? 'pt-[calc(4rem+env(safe-area-inset-top,0px))] md:pt-0 md:ml-64' : ''
               }`}
             >
               {children}

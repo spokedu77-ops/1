@@ -534,17 +534,17 @@ export default function AdminChatPage() {
   }, [supabase, myId, view, rooms]);
 
   return (
-    <div className="flex justify-center bg-[#F2F2F7] h-[100dvh] overflow-hidden text-black font-sans selection:bg-blue-100">
+    <div className="flex justify-center bg-[#F2F2F7] min-h-[100dvh] h-[100dvh] overflow-hidden text-black font-sans selection:bg-blue-100">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
-      <div className="w-full max-w-md bg-white flex flex-col relative shadow-2xl overflow-hidden">
+      <div className="w-full max-w-md bg-white flex flex-col relative shadow-2xl overflow-hidden min-h-0">
         
         {view === 'list' && (
-          <div className="flex flex-col h-full bg-white">
-            <header className="px-5 pt-14 pb-4 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-50">
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">대화</h1>
+          <div className="flex flex-col h-full bg-white min-h-0">
+            <header className="px-4 sm:px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-4 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-50">
+              <div className="flex items-center gap-3 min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">대화</h1>
                 {connectionStatus !== 'connected' && (
-                  <div className="flex items-center gap-1 text-xs">
+                  <div className="flex items-center gap-1 text-xs shrink-0">
                     {connectionStatus === 'reconnecting' ? (
                       <>
                         <WifiOff size={14} className="text-yellow-500 animate-pulse" />
@@ -559,14 +559,14 @@ export default function AdminChatPage() {
                   </div>
                 )}
               </div>
-              <button onClick={() => setIsCreateOpen(true)} className="p-2 bg-slate-100 rounded-full cursor-pointer"><Plus size={22} /></button>
+              <button onClick={() => setIsCreateOpen(true)} className="min-h-[44px] min-w-[44px] p-2 bg-slate-100 rounded-full cursor-pointer flex items-center justify-center touch-manipulation active:bg-slate-200"><Plus size={22} /></button>
             </header>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {rooms.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400">대화방이 없습니다</div>
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 px-4">대화방이 없습니다</div>
               ) : (
                 rooms.map(room => (
-                  <div key={room.id} onClick={() => enterRoom(room)} className="px-5 py-4 flex items-center gap-4 active:bg-slate-50 cursor-pointer border-b border-slate-50 transition-colors">
+                  <div key={room.id} onClick={() => enterRoom(room)} className="px-4 sm:px-5 py-4 flex items-center gap-4 active:bg-slate-50 cursor-pointer border-b border-slate-50 transition-colors min-h-[72px] touch-manipulation">
                     <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[22px] flex items-center justify-center text-white font-bold text-lg shadow-md">
                       {(room.custom_name && room.custom_name[0]) || '?'}
                     </div>
@@ -599,36 +599,36 @@ export default function AdminChatPage() {
         )}
 
         {view === 'chat' && selectedRoom && (
-          <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-300">
-            <header className="h-14 flex items-center justify-between px-2 border-b bg-white/90 backdrop-blur-md sticky top-0 z-20">
-              <button onClick={() => { setView('list'); fetchRooms(); }} className="p-2 text-blue-500 flex items-center cursor-pointer">
-                <ChevronLeft size={28} /><span className="text-[16px]">목록</span>
+          <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-300 min-h-0">
+            <header className="min-h-[56px] flex items-center justify-between px-2 border-b bg-white/90 backdrop-blur-md sticky top-0 z-20 pt-[env(safe-area-inset-top,0px)]">
+              <button onClick={() => { setView('list'); fetchRooms(); }} className="min-h-[44px] min-w-[44px] p-2 text-blue-500 flex items-center cursor-pointer touch-manipulation active:opacity-70">
+                <ChevronLeft size={28} /><span className="text-[16px] hidden sm:inline">목록</span>
               </button>
-              <div className="flex flex-col items-center flex-1 px-2 overflow-hidden text-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-[15px] font-bold truncate max-w-[150px]">{selectedRoom.custom_name || '대화방'}</span>
+              <div className="flex flex-col items-center flex-1 px-2 overflow-hidden text-center min-w-0">
+                <div className="flex items-center gap-2 justify-center">
+                  <span className="text-[15px] font-bold truncate max-w-[140px] sm:max-w-[150px]">{selectedRoom.custom_name || '대화방'}</span>
                   {connectionStatus !== 'connected' && (
                     connectionStatus === 'reconnecting' ? (
-                      <WifiOff size={12} className="text-yellow-500 animate-pulse" />
+                      <WifiOff size={12} className="text-yellow-500 animate-pulse shrink-0" />
                     ) : (
-                      <WifiOff size={12} className="text-red-500" />
+                      <WifiOff size={12} className="text-red-500 shrink-0" />
                     )
                   )}
                 </div>
                 <span className="text-[11px] text-slate-400 font-medium">{participants?.length || 0}명 참여중</span>
               </div>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-blue-500 cursor-pointer">
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="min-h-[44px] min-w-[44px] p-2 text-blue-500 cursor-pointer flex items-center justify-center touch-manipulation">
                   <Search size={22} />
                 </button>
                 <div className="relative">
-                  <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-blue-500 cursor-pointer"><MoreVertical size={22} /></button>
+                  <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="min-h-[44px] min-w-[44px] p-2 text-blue-500 cursor-pointer flex items-center justify-center touch-manipulation"><MoreVertical size={22} /></button>
                   {isMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white shadow-2xl border rounded-2xl p-1 z-50">
-                      <button onClick={() => { setIsInviteOpen(true); setIsMenuOpen(false); }} className="w-full flex items-center gap-2 p-3 text-sm hover:bg-slate-50 border-b cursor-pointer transition-colors font-medium text-slate-700">
+                      <button onClick={() => { setIsInviteOpen(true); setIsMenuOpen(false); }} className="w-full flex items-center gap-2 min-h-[48px] px-3 py-3 text-sm hover:bg-slate-50 border-b cursor-pointer transition-colors font-medium text-slate-700 touch-manipulation">
                         <UserPlus size={16} className="text-blue-500" /> 선생님 초대
                       </button>
-                      <button onClick={handleDeleteRoom} className="w-full flex items-center gap-2 p-3 text-sm text-red-500 hover:bg-red-50 cursor-pointer font-medium">
+                      <button onClick={handleDeleteRoom} className="w-full flex items-center gap-2 min-h-[48px] px-3 py-3 text-sm text-red-500 hover:bg-red-50 cursor-pointer font-medium touch-manipulation">
                         <Trash2 size={16} /> 채팅방 삭제
                       </button>
                     </div>
@@ -646,7 +646,7 @@ export default function AdminChatPage() {
                     placeholder="메시지 검색..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-slate-50 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-500"
+                    className="w-full min-h-[44px] pl-9 pr-4 py-2 bg-slate-50 rounded-lg border border-slate-200 text-base sm:text-sm outline-none focus:border-blue-500 touch-manipulation"
                   />
                 </div>
               </div>
@@ -738,25 +738,25 @@ export default function AdminChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            <footer className="p-3 pb-8 bg-white border-t">
+            <footer className="p-3 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t">
               {filePreview && (
                 <div className="mb-2 p-2 bg-slate-50 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     {filePreview.type.startsWith('image/') ? (
-                      <img src={filePreview.url} alt={filePreview.name} className="w-12 h-12 object-cover rounded" />
+                      <img src={filePreview.url} alt={filePreview.name} className="w-12 h-12 object-cover rounded shrink-0" />
                     ) : (
-                      <div className="w-12 h-12 bg-slate-200 rounded flex items-center justify-center">
+                      <div className="w-12 h-12 bg-slate-200 rounded flex items-center justify-center shrink-0">
                         <Paperclip size={20} />
                       </div>
                     )}
                     <span className="text-xs truncate max-w-[150px]">{filePreview.name}</span>
                   </div>
-                  <button onClick={() => setFilePreview(null)} className="text-slate-400 hover:text-slate-600">
+                  <button onClick={() => setFilePreview(null)} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-slate-600 touch-manipulation">
                     <X size={16} />
                   </button>
                 </div>
               )}
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-end">
                 <input 
                   type="file" 
                   ref={fileInputRef}
@@ -767,22 +767,22 @@ export default function AdminChatPage() {
                 <button 
                   onClick={() => fileInputRef.current?.click()} 
                   disabled={uploading}
-                  className="bg-slate-100 text-slate-600 rounded-full p-1.5 cursor-pointer hover:bg-slate-200 disabled:opacity-30"
+                  className="min-h-[44px] min-w-[44px] bg-slate-100 text-slate-600 rounded-full p-2 cursor-pointer hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center touch-manipulation shrink-0"
                 >
                   {uploading ? <div className="w-[18px] h-[18px] border-2 border-slate-400 border-t-transparent rounded-full animate-spin" /> : <Paperclip size={18} />}
                 </button>
-                <div className="flex-1 bg-slate-100 rounded-3xl px-4 py-1.5 border border-slate-200">
+                <div className="flex-1 min-h-[44px] bg-slate-100 rounded-3xl px-4 py-2 border border-slate-200 flex items-center min-w-0">
                   <textarea 
                     value={input} 
                     onChange={e => setInput(e.target.value)} 
                     onKeyDown={handleKeyPress}
                     placeholder="메시지 입력" 
-                    className="w-full bg-transparent outline-none py-1 text-[15px] resize-none max-h-32 overflow-y-auto"
+                    className="w-full bg-transparent outline-none py-1 text-[15px] resize-none max-h-32 overflow-y-auto touch-manipulation"
                     rows={1}
                     style={{ minHeight: '24px' }}
                   />
                 </div>
-                <button onClick={sendMessage} disabled={(!input.trim() && !filePreview) || uploading} className="bg-blue-600 text-white rounded-full p-1.5 cursor-pointer disabled:opacity-30">
+                <button onClick={sendMessage} disabled={(!input.trim() && !filePreview) || uploading} className="min-h-[44px] min-w-[44px] bg-blue-600 text-white rounded-full p-2 cursor-pointer disabled:opacity-30 flex items-center justify-center touch-manipulation shrink-0 active:scale-95">
                   <Send size={18} fill="currentColor" />
                 </button>
               </div>
@@ -791,23 +791,23 @@ export default function AdminChatPage() {
         )}
 
         {(isCreateOpen || isInviteOpen) && (
-          <div className="absolute inset-0 bg-white z-[100] flex flex-col animate-in slide-in-from-bottom duration-300">
-            <header className="px-4 py-6 flex justify-between items-center border-b sticky top-0 bg-white">
-              <h2 className="text-xl font-bold">{isCreateOpen ? "새로운 대화" : "선생님 초대"}</h2>
-              <button onClick={() => { setIsCreateOpen(false); setIsInviteOpen(false); }} className="text-blue-500 font-bold cursor-pointer p-2">닫기</button>
+          <div className="absolute inset-0 bg-white z-[100] flex flex-col animate-in slide-in-from-bottom duration-300 pt-[env(safe-area-inset-top,0px)]">
+            <header className="px-4 py-4 flex justify-between items-center border-b sticky top-0 bg-white">
+              <h2 className="text-lg sm:text-xl font-bold">{isCreateOpen ? "새로운 대화" : "선생님 초대"}</h2>
+              <button onClick={() => { setIsCreateOpen(false); setIsInviteOpen(false); }} className="min-h-[44px] min-w-[44px] text-blue-500 font-bold cursor-pointer p-2 flex items-center justify-center touch-manipulation">닫기</button>
             </header>
-            <div className="flex-1 overflow-y-auto bg-slate-50 p-3">
+            <div className="flex-1 overflow-y-auto bg-slate-50 p-3 min-h-0">
               <p className="text-xs text-slate-400 mb-3 px-1">활동 중인 선생님 목록 ({teacherList.length})</p>
               {teacherList.map(t => (
-                <div key={t.id} onClick={() => isCreateOpen && handleCreateRoom(t)} className="flex items-center justify-between p-4 bg-white rounded-2xl mb-2 border border-slate-100 shadow-sm cursor-pointer">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600 text-lg">{t.name[0]}</div>
-                    <span className="font-bold text-slate-800">{t.name} 선생님</span>
+                <div key={t.id} onClick={() => isCreateOpen && handleCreateRoom(t)} className="flex items-center justify-between min-h-[64px] p-4 bg-white rounded-2xl mb-2 border border-slate-100 shadow-sm cursor-pointer touch-manipulation active:bg-slate-50">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600 text-lg shrink-0">{t.name[0]}</div>
+                    <span className="font-bold text-slate-800 truncate">{t.name} 선생님</span>
                   </div>
                   {isInviteOpen && (
-                    <button onClick={(e) => { e.stopPropagation(); handleInviteTeacher(t.id); }} className="px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm font-bold shadow-md active:bg-blue-700">초대</button>
+                    <button onClick={(e) => { e.stopPropagation(); handleInviteTeacher(t.id); }} className="min-h-[40px] px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-bold shadow-md active:bg-blue-700 touch-manipulation shrink-0">초대</button>
                   )}
-                  {isCreateOpen && <Plus size={20} className="text-slate-300" />}
+                  {isCreateOpen && <Plus size={20} className="text-slate-300 shrink-0" />}
                 </div>
               ))}
             </div>

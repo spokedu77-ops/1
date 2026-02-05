@@ -74,10 +74,10 @@ function LoginContent() {
           .eq('id', userData.user.id)
           .single();
 
-        if (profile?.role === 'admin') {
-          router.push('/admin'); 
+        if (profile?.role === 'admin' || profile?.role === 'master') {
+          router.push('/admin');
         } else {
-          router.push('/teacher/my-classes'); 
+          router.push('/teacher/my-classes');
         }
         router.refresh();
       }
@@ -85,14 +85,14 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6 relative">
-      {/* 뒤로가기 버튼 */}
-      <Link href="/" className="absolute top-8 left-8 flex items-center text-gray-400 hover:text-gray-900 transition-colors font-bold text-sm">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 sm:p-6 pt-[calc(2rem+env(safe-area-inset-top,0px))] pb-[env(safe-area-inset-bottom,0px)] relative">
+      {/* 뒤로가기 버튼 - 터치 영역 확보 */}
+      <Link href="/" className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-colors font-bold text-sm min-h-[44px] min-w-[44px] items-center touch-manipulation pl-1">
         <ChevronLeft size={20} />
         <span>메인으로</span>
       </Link>
 
-      <form onSubmit={handleLogin} className="w-full max-w-md space-y-8 bg-white p-10 md:p-12 rounded-[40px] shadow-2xl border border-gray-100">
+      <form onSubmit={handleLogin} className="w-full max-w-md space-y-6 sm:space-y-8 bg-white p-6 sm:p-10 md:p-12 rounded-3xl sm:rounded-[40px] shadow-2xl border border-gray-100">
         <div className="text-center">
           <h1 className="text-4xl font-black italic text-blue-900 tracking-tighter uppercase leading-none">SPOKEDU</h1>
           <div className="h-1 w-12 bg-blue-600 mx-auto mt-4 rounded-full"></div>
@@ -113,7 +113,7 @@ function LoginContent() {
                 value={id} 
                 onChange={(e) => setId(e.target.value)} 
                 required
-                className="w-full p-5 pl-14 bg-gray-50 rounded-3xl border-2 border-transparent font-bold outline-none focus:border-blue-600 focus:bg-white transition-all text-sm text-black" 
+                className="w-full min-h-[48px] p-5 pl-14 bg-gray-50 rounded-3xl border-2 border-transparent font-bold outline-none focus:border-blue-600 focus:bg-white transition-all text-base sm:text-sm text-black touch-manipulation" 
               />
             </div>
           </div>
@@ -129,7 +129,7 @@ function LoginContent() {
                 value={pw} 
                 onChange={(e) => setPw(e.target.value)} 
                 required
-                className="w-full p-5 pl-14 bg-gray-50 rounded-3xl border-2 border-transparent font-bold outline-none focus:border-blue-600 focus:bg-white transition-all text-sm text-black" 
+                className="w-full min-h-[48px] p-5 pl-14 bg-gray-50 rounded-3xl border-2 border-transparent font-bold outline-none focus:border-blue-600 focus:bg-white transition-all text-base sm:text-sm text-black touch-manipulation" 
               />
             </div>
           </div>
@@ -148,7 +148,7 @@ function LoginContent() {
         <button 
           type="submit" 
           disabled={isLoading}
-          className={`w-full py-6 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-[0.98] ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+          className={`w-full min-h-[52px] py-6 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-[0.98] touch-manipulation ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
           {isLoading ? 'Processing...' : 'Login'}
         </button>

@@ -1,15 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
   Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin
 } from 'lucide-react';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface DocumentFile {
   name: string;
@@ -31,6 +27,7 @@ interface UserData {
 }
 
 export default function UserDashboardPage() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [users, setUsers] = useState<UserData[]>([]);
   const [, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +42,7 @@ export default function UserDashboardPage() {
   const [newPartner, setNewPartner] = useState<Partial<UserData>>({ role: 'teacher', is_active: true });
 
   const fetchUsers = useCallback(async () => {
+    if (!supabase) return;
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -72,14 +70,14 @@ export default function UserDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   const handleSaveInfo = async (userId: string) => {
-    if (currentUser?.role !== 'admin') return alert('관리자 권한이 없습니다.');
+    if (!supabase || currentUser?.role !== 'admin') return alert('관리자 권한이 없습니다.');
     try {
       const { error } = await supabase
         .from('users')
@@ -104,7 +102,7 @@ export default function UserDashboardPage() {
   };
 
   const toggleActiveStatus = async (user: UserData) => {
-    if (currentUser?.role !== 'admin') return alert('권한이 없습니다.');
+    if (!supabase || currentUser?.role !== 'admin') return alert('권한이 없습니다.');
     const nextStatus = !user.is_active;
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: nextStatus } : u));
     try {
@@ -115,7 +113,7 @@ export default function UserDashboardPage() {
   };
 
   const handleAddPartner = async () => {
-    if (currentUser?.role !== 'admin') return alert('관리자 권한이 필요합니다.');
+    if (!supabase || currentUser?.role !== 'admin') return alert('관리자 권한이 필요합니다.');
     if (!newPartner.name) return alert('이름을 입력해주세요.');
     try {
       const name = newPartner.name;
@@ -150,7 +148,7 @@ export default function UserDashboardPage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, user: UserData) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !supabase) return;
     setUploadingId(user.id);
     try {
       // 파일명을 안전하게 인코딩
@@ -207,29 +205,29 @@ export default function UserDashboardPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10 text-slate-800">
-      <header className="max-w-6xl mx-auto mb-10">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 md:p-10 pb-[env(safe-area-inset-bottom,0px)] text-slate-800">
+      <header className="max-w-6xl mx-auto mb-6 sm:mb-10">
+        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 italic tracking-tighter">SPOKEDU <span className="text-blue-600 not-italic">HRM</span></h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 italic tracking-tighter">SPOKEDU <span className="text-blue-600 not-italic">HRM</span></h1>
             <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Partner Management System</p>
           </div>
-          <div className="flex gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64 group">
+          <div className="flex gap-2 sm:gap-3 w-full md:w-auto min-w-0">
+            <div className="relative flex-1 md:w-64 group min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="text" placeholder="검색..." className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-sm font-bold transition-all" onChange={(e) => setSearchTerm(e.target.value)} />
+              <input type="text" placeholder="검색..." className="w-full min-h-[44px] pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-base sm:text-sm font-bold transition-all touch-manipulation" onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
             {currentUser?.role === 'admin' && (
-              <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-600 transition-all cursor-pointer shadow-lg shadow-slate-900/10">
+              <button onClick={() => setIsAddModalOpen(true)} className="min-h-[44px] flex items-center justify-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-600 transition-all cursor-pointer shadow-lg shadow-slate-900/10 touch-manipulation shrink-0">
                 <UserPlus className="w-4 h-4" /> 추가
               </button>
             )}
           </div>
         </div>
 
-        <div className="flex gap-2 p-1.5 bg-slate-200/50 rounded-2xl w-fit border border-slate-200 shadow-inner">
+        <div className="flex gap-2 p-1.5 bg-slate-200/50 rounded-2xl w-full sm:w-fit border border-slate-200 shadow-inner overflow-x-auto">
           {[{ id: 'live', label: '수업 중', icon: Activity }, { id: 'done', label: '수업 종료', icon: CheckCircle2 }].map((tab) => (
-            <button key={tab.id} onClick={() => setCurrentTab(tab.id)} className={`flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-black transition-all cursor-pointer ${currentTab === tab.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
+            <button key={tab.id} onClick={() => setCurrentTab(tab.id)} className={`min-h-[44px] flex items-center gap-2.5 px-5 sm:px-6 py-2 rounded-xl text-[13px] font-black transition-all cursor-pointer touch-manipulation shrink-0 ${currentTab === tab.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
               <tab.icon className="w-4 h-4" /> {tab.label}
               <span className="ml-1 text-[10px] opacity-60">{users.filter(u => (tab.id === 'live' ? u.is_active : !u.is_active)).length}</span>
             </button>
@@ -237,9 +235,9 @@ export default function UserDashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-w-0">
         {filteredUsers.map((user) => (
-          <div key={user.id} className={`bg-white rounded-[2.5rem] p-6 border-2 transition-all duration-300 flex flex-col hover:shadow-xl ${user.is_active ? 'border-blue-500 shadow-blue-500/5' : 'border-transparent shadow-sm'}`}>
+          <div key={user.id} className={`bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 border-2 transition-all duration-300 flex flex-col hover:shadow-xl min-w-0 ${user.is_active ? 'border-blue-500 shadow-blue-500/5' : 'border-transparent shadow-sm'}`}>
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-2">
                 <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${user.role === 'teacher' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>{user.role === 'teacher' ? 'Inst' : 'Adm'}</span>
@@ -247,8 +245,8 @@ export default function UserDashboardPage() {
               </div>
               {currentUser?.role === 'admin' && (
                 <div className="flex gap-1">
-                  <button onClick={() => toggleActiveStatus(user)} className={`p-2 rounded-xl transition-all cursor-pointer shadow-sm ${user.is_active ? 'bg-blue-500 text-white hover:bg-rose-500' : 'bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white'}`}><Power className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => { if (editingId === user.id) { setEditingId(null); } else { setEditingId(user.id); setEditForm({ ...user }); } }} className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 cursor-pointer"><Edit3 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => toggleActiveStatus(user)} className={`min-h-[44px] min-w-[44px] p-2 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center touch-manipulation ${user.is_active ? 'bg-blue-500 text-white hover:bg-rose-500' : 'bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white'}`}><Power className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => { if (editingId === user.id) { setEditingId(null); } else { setEditingId(user.id); setEditForm({ ...user }); } }} className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 cursor-pointer flex items-center justify-center touch-manipulation"><Edit3 className="w-3.5 h-3.5" /></button>
                 </div>
               )}
             </div>

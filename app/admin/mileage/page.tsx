@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { Search, X, User, Calendar, Save, Trash2, BookOpen } from 'lucide-react';
 import Sidebar from '@/app/components/Sidebar';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 interface Teacher {
   id: string;
@@ -40,6 +38,7 @@ const PENALTY_OPTIONS = [
 ];
 
 export default function AdminMileagePage() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [modalTab, setModalTab] = useState<'mileage' | 'sessions'>('mileage');
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [, setLogs] = useState<MileageLog[]>([]);
@@ -56,6 +55,7 @@ export default function AdminMileagePage() {
   const [lastPenaltyLog, setLastPenaltyLog] = useState<MileageLog | null>(null);
 
   const fetchData = useCallback(async () => {
+    if (!supabase) return;
     try {
       const [tRes, lRes, cRes] = await Promise.all([
         supabase
@@ -82,11 +82,12 @@ export default function AdminMileagePage() {
     } catch (error) {
       console.error('Fetch error:', error);
     }
-  }, []);
+  }, [supabase]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const openDetailModal = async (teacher: Teacher) => {
+    if (!supabase) return;
     setSelectedTeacher(teacher);
     setEditPointValue(teacher.points || 0);
     setEditSessionCount(teacher.session_count || 0);
@@ -115,7 +116,7 @@ export default function AdminMileagePage() {
   };
 
   const handleSavePoints = async () => {
-    if (!selectedTeacher) return;
+    if (!supabase || !selectedTeacher) return;
     const prevPoints = selectedTeacher.points || 0;
     const nextPoints = editPointValue;
     const diff = nextPoints - prevPoints;
@@ -155,7 +156,7 @@ export default function AdminMileagePage() {
   };
 
   const handleDeleteLog = async (logId: string) => {
-    if (!selectedTeacher) return;
+    if (!supabase || !selectedTeacher) return;
     
     const logToDelete = teacherLogs.find(l => l.id === logId);
     if (!logToDelete) return;
@@ -197,7 +198,7 @@ export default function AdminMileagePage() {
   };
 
   const handleQuickPenalty = async () => {
-    if (!selectedTeacher || !selectedPenalty) return;
+    if (!supabase || !selectedTeacher || !selectedPenalty) return;
     
     const penalty = PENALTY_OPTIONS.find(p => p.label === selectedPenalty);
     if (!penalty) return;
@@ -235,7 +236,7 @@ export default function AdminMileagePage() {
   };
 
   const handleUndoPenalty = async () => {
-    if (!selectedTeacher || !lastPenaltyLog) return;
+    if (!supabase || !selectedTeacher || !lastPenaltyLog) return;
     
     if (!confirm(`최근 Penalty (${lastPenaltyLog.amount.toLocaleString()}P)를 취소하시겠습니까?`)) return;
     
@@ -277,7 +278,7 @@ export default function AdminMileagePage() {
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] text-slate-900 overflow-hidden">
       <Sidebar />
-      <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-8 overflow-y-auto pb-[env(safe-area-inset-bottom,0px)] min-w-0">
         <div className="max-w-5xl mx-auto space-y-6">
           
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -334,7 +335,7 @@ export default function AdminMileagePage() {
                     <BookOpen size={14} /> {(selectedTeacher.session_count || 0)}회 수업 완료
                   </p>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer text-slate-400"><X size={20}/></button>
+                <button onClick={() => setIsModalOpen(false)} className="min-h-[44px] min-w-[44px] hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer text-slate-400 flex items-center justify-center touch-manipulation"><X size={20}/></button>
               </div>
 
               <div className="mb-4 space-y-3">

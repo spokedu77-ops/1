@@ -1,13 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 export default function MasterInsightPage() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [stats, setStats] = useState({
     payout: 0,
@@ -19,6 +16,7 @@ export default function MasterInsightPage() {
 
   useEffect(() => {
     async function fetchMasterData() {
+      if (!supabase) return;
       const year = new Date().getFullYear();
       const startDate = new Date(year, selectedMonth - 1, 1).toISOString();
       const endDate = new Date(year, selectedMonth, 0, 23, 59, 59).toISOString();
@@ -47,26 +45,26 @@ export default function MasterInsightPage() {
       }
     }
     fetchMasterData();
-  }, [selectedMonth]);
+  }, [supabase, selectedMonth]);
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white p-4 md:p-10 font-sans">
-      <div className="max-w-7xl mx-auto space-y-10">
+    <div className="min-h-screen bg-[#0F1115] text-white p-4 md:p-10 pb-[env(safe-area-inset-bottom,0px)] font-sans">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-10 min-w-0">
         
         {/* TOP HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="space-y-1">
-            <h1 className="text-5xl font-black tracking-tighter italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
+          <div className="space-y-1 min-w-0">
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tighter italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
               MASTER CONSOLE
             </h1>
-            <p className="text-gray-500 font-bold text-xs tracking-[0.3em] uppercase">Spokiedu Dispatch Management</p>
+            <p className="text-gray-500 font-bold text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase">Spokiedu Dispatch Management</p>
           </div>
           
-          <div className="flex items-center gap-4 bg-[#1A1D23] p-2 rounded-2xl border border-white/5">
+          <div className="flex items-center gap-4 bg-[#1A1D23] p-2 rounded-2xl border border-white/5 min-h-[48px]">
             <select 
               value={selectedMonth} 
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="bg-transparent border-none text-blue-400 font-black text-sm focus:ring-0 cursor-pointer"
+              className="bg-transparent border-none text-blue-400 font-black text-sm focus:ring-0 cursor-pointer touch-manipulation min-h-[44px]"
             >
               {[...Array(12)].map((_, i) => <option key={i+1} value={i+1} className="bg-[#1A1D23]">{i+1}월 분석</option>)}
             </select>
