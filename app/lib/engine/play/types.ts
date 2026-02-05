@@ -12,6 +12,9 @@ export type { MotionId };
 export interface MotionAssets {
   off: string;
   on: string;
+  /** 액션당 set1/set2 별도 이미지 (20슬롯 시 사용) */
+  set1?: { off: string; on: string };
+  set2?: { off: string; on: string };
   frames?: string[];
   objects?: string[];
   /** REVEAL_WIPE용 배경/전경 */

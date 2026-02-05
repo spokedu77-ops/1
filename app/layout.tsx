@@ -38,7 +38,7 @@ export default function RootLayout({
 
             <main 
               className={`flex-1 w-full min-w-0 transition-all duration-300 ${
-                !hideSidebar ? 'pt-[calc(4rem+env(safe-area-inset-top,0px))] md:pt-0 md:ml-64' : ''
+                !hideSidebar ? 'pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0 md:ml-64' : ''
               }`}
             >
               {children}

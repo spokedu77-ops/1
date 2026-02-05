@@ -141,23 +141,26 @@ export function think150ImagePath(
   return `themes/think150/${packId}/month${month}/week${week}/${set}/${color}/${slug}.webp`;
 }
 
-/** Play Asset Pack 슬롯 키 (5 action × off/on = 10) */
+/** Play Asset Pack 슬롯 키 (5 action × set1 off/on, set2 off/on = 20) */
 export type PlaySlotKey =
-  | 'a1_off' | 'a1_on'
-  | 'a2_off' | 'a2_on'
-  | 'a3_off' | 'a3_on'
-  | 'a4_off' | 'a4_on'
-  | 'a5_off' | 'a5_on';
+  | 'a1_set1_off' | 'a1_set1_on' | 'a1_set2_off' | 'a1_set2_on'
+  | 'a2_set1_off' | 'a2_set1_on' | 'a2_set2_off' | 'a2_set2_on'
+  | 'a3_set1_off' | 'a3_set1_on' | 'a3_set2_off' | 'a3_set2_on'
+  | 'a4_set1_off' | 'a4_set1_on' | 'a4_set2_off' | 'a4_set2_on'
+  | 'a5_set1_off' | 'a5_set1_on' | 'a5_set2_off' | 'a5_set2_on';
 
 export const PLAY_SLOT_KEYS: PlaySlotKey[] = [
-  'a1_off', 'a1_on', 'a2_off', 'a2_on', 'a3_off', 'a3_on',
-  'a4_off', 'a4_on', 'a5_off', 'a5_on',
+  'a1_set1_off', 'a1_set1_on', 'a1_set2_off', 'a1_set2_on',
+  'a2_set1_off', 'a2_set1_on', 'a2_set2_off', 'a2_set2_on',
+  'a3_set1_off', 'a3_set1_on', 'a3_set2_off', 'a3_set2_on',
+  'a4_set1_off', 'a4_set1_on', 'a4_set2_off', 'a4_set2_on',
+  'a5_set1_off', 'a5_set1_on', 'a5_set2_off', 'a5_set2_on',
 ];
 
 /**
  * Play Asset Pack 이미지 경로 (주차별)
  * @param weekKey e.g. '2026-01-W1'
- * @param slotKey e.g. 'a1_off', 'a1_on'
+ * @param slotKey e.g. 'a1_set1_off', 'a1_set1_on'
  * @param ext 확장자 (기본 'webp')
  */
 export function playAssetPath(

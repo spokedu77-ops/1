@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { getSchedules } from '@/app/admin/schedules/actions/schedules';
 import type { Schedule } from '@/app/lib/schedules/types';
 import { 
   Calendar, RefreshCw, CheckCircle2, 
@@ -82,7 +81,7 @@ export default function SpokeduHQDashboard() {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
 
-      const [classesRes, tasksRes, usersRes, recentSchedules] = await Promise.all([
+      const [classesRes, tasksRes, usersRes, schedulesRes] = await Promise.all([
         supabase
           .from('sessions')
           .select('*, users:created_by(id, name)')
@@ -96,8 +95,17 @@ export default function SpokeduHQDashboard() {
           .eq('is_active', true)
           .not('vacation', 'is', null)
           .neq('vacation', ''),
-        getSchedules({ limit: 7, orderBy: 'start_date_asc' }),
+        supabase
+          .from('schedules')
+          .select('*')
+          .order('start_date', { ascending: true, nullsFirst: false })
+          .order('updated_at', { ascending: false })
+          .limit(7),
       ]);
+      const recentSchedules: Schedule[] = (schedulesRes.data ?? []).map((row: Schedule) => ({
+        ...row,
+        checklist: Array.isArray(row.checklist) ? row.checklist : [],
+      }));
 
       // Class Sessions: 시간 순서 유지 (start_at 오름차순), 연기/취소는 뒤로
       const rawClasses = classesRes.data || [];
@@ -215,11 +223,11 @@ export default function SpokeduHQDashboard() {
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black italic text-slate-300">HQ INITIALIZING...</div>;
 
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 md:p-8 pb-[env(safe-area-inset-bottom,0px)] flex flex-col items-center">
-      <div className="w-full max-w-4xl space-y-6 sm:space-y-8 md:space-y-12 min-w-0">
+    <div className="min-h-screen bg-white px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:p-6 md:p-8 sm:pt-6 flex flex-col items-center">
+      <div className="w-full max-w-4xl space-y-4 sm:space-y-8 md:space-y-12 min-w-0">
         
         {/* Header - 모바일에서 세로 배치, 터치 영역 확보 */}
-        <header className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 border-b-2 pb-6 sm:pb-8 border-slate-900">
+        <header className="flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 pb-3 sm:pb-8 border-slate-900">
           <div>
             <h1 className="text-2xl sm:text-4xl font-black italic tracking-tighter text-slate-900 uppercase leading-none mb-1">
               Spokedu HQ
@@ -256,7 +264,7 @@ export default function SpokeduHQDashboard() {
 
         {/* 1. Today's Sessions */}
         <section className="w-full min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-4">
             <div className="flex items-center gap-2">
               <Calendar size={14} className="text-slate-400 shrink-0" />
               <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today Session Summary</h2>
@@ -297,7 +305,7 @@ export default function SpokeduHQDashboard() {
 
         {/* 2. 일정 요약 */}
         <section>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
             <div className="flex items-center gap-2">
               <CalendarDays size={14} className="text-slate-400" />
               <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">일정</h2>

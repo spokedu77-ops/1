@@ -8,15 +8,68 @@ import { PLAY_RULES } from '@/app/lib/constants/rules';
 import type { PlayRendererProps, VisualEvent } from '@/app/lib/engine/play/types';
 
 const TICK_MS = PLAY_RULES.TICK_MS;
+const DROP_WINDOW_TICKS = 8;
+const DROP_MAX_PER_TICK = 3;
+const { EXPLAIN, SET, TRANSITION } = PLAY_RULES.TICKS;
+const BLOCK_TICKS = EXPLAIN + SET + SET + TRANSITION; // 50
+
+/** SET 구간 내 setOffset(0..19)별 강·중·약 가중치. action tick에서만 사용. */
+function getIntensityWeight(currentTick: number): number {
+  const localTick = currentTick % BLOCK_TICKS;
+  let setOffset: number;
+  if (localTick >= EXPLAIN && localTick < EXPLAIN + SET) {
+    setOffset = localTick - EXPLAIN; // set1: 0..19
+  } else if (localTick >= EXPLAIN + SET && localTick < EXPLAIN + SET + SET) {
+    setOffset = localTick - (EXPLAIN + SET); // set2: 0..19
+  } else {
+    return 1;
+  }
+  if (setOffset <= 6) return 1.0;
+  if (setOffset <= 13) return 1.06;
+  return 1.1;
+}
+
+const IMPACT_CLAMP = { scale: [1, 1.07] as const, contrast: [1, 1.06] as const, brightness: [1, 1.06] as const };
+function clamp(x: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, x));
+}
+
+/** action tick일 때만 미세 임팩트(scale/contrast/brightness). rest/explain/transition에는 1,1,1. 과자극 방지 clamp 적용. */
+function getActionImpact(currentTick: number, isAction: boolean): { scale: number; contrast: number; brightness: number } {
+  if (!isAction) return { scale: 1, contrast: 1, brightness: 1 };
+  const w = getIntensityWeight(currentTick);
+  return {
+    scale: clamp(1.02 * w, IMPACT_CLAMP.scale[0], IMPACT_CLAMP.scale[1]),
+    contrast: clamp(1.02 * w, IMPACT_CLAMP.contrast[0], IMPACT_CLAMP.contrast[1]),
+    brightness: clamp(1.02 * w, IMPACT_CLAMP.brightness[0], IMPACT_CLAMP.brightness[1]),
+  };
+}
 
 export function PlayRenderer({ tMs, visuals, totalTicks }: PlayRendererProps) {
   const currentTick = Math.floor(tMs / TICK_MS);
-  const eventsAtTick = visuals.filter((v) => v.tick === currentTick);
+  // 단일 순회: eventsAtTick + dropInWindow 동시 수집 (filter 2회 → 1회)
+  const eventsAtTick: VisualEvent[] = [];
+  const dropInWindow: Extract<VisualEvent, { kind: 'DROP' }>[] = [];
+  for (const v of visuals) {
+    if (v.tick === currentTick) eventsAtTick.push(v);
+    if (v.kind === 'DROP' && v.tick <= currentTick && v.tick >= currentTick - DROP_WINDOW_TICKS) dropInWindow.push(v);
+  }
 
-  // DROP: tick <= currentTick인 모든 DROP (누적 표시)
-  const dropEvents = visuals.filter(
-    (v): v is Extract<VisualEvent, { kind: 'DROP' }> => v.kind === 'DROP' && v.tick <= currentTick
-  );
+  // DROP: objIndex 중복 시 최신만 + tick당 최대 N개 (로직 유지)
+  const byKey = new Map<string, Extract<VisualEvent, { kind: 'DROP' }>>();
+  for (const ev of dropInWindow) {
+    const k = `${ev.blockIndex}-${ev.setIndex}-${ev.objIndex}`;
+    const cur = byKey.get(k);
+    if (!cur || ev.tick > cur.tick) byKey.set(k, ev);
+  }
+  const deduped = [...byKey.values()].sort((a, b) => a.tick - b.tick);
+  const byTick = new Map<number, Extract<VisualEvent, { kind: 'DROP' }>[]>();
+  for (const ev of deduped) {
+    const arr = byTick.get(ev.tick) ?? [];
+    if (arr.length < DROP_MAX_PER_TICK) arr.push(ev);
+    byTick.set(ev.tick, arr);
+  }
+  const dropEvents = [...byTick.values()].flat().sort((a, b) => a.tick - b.tick);
 
   const binary = eventsAtTick.find((v): v is Extract<VisualEvent, { kind: 'BINARY' }> => v.kind === 'BINARY');
   const revealWipe = eventsAtTick.find((v): v is Extract<VisualEvent, { kind: 'REVEAL_WIPE' }> => v.kind === 'REVEAL_WIPE');
@@ -33,37 +86,55 @@ export function PlayRenderer({ tMs, visuals, totalTicks }: PlayRendererProps) {
         </div>
       )}
 
-      {/* BINARY: 풀스크린 img */}
-      {binary && !explain && (
-        <img
-          src={binary.src}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      )}
-
-      {/* REVEAL_WIPE: bg + fg 오버레이, clip-path inset 아래->위 */}
-      {revealWipe && !explain && (
-        <div className="absolute inset-0">
+      {/* BINARY: 풀스크린 img (action tick에서만 미세 임팩트) */}
+      {binary && !explain && (() => {
+        const impact = getActionImpact(currentTick, binary.isActionPhase === true);
+        return (
           <img
-            src={revealWipe.bgSrc}
+            src={binary.src}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div
-            className="absolute inset-0"
             style={{
-              clipPath: `inset(${(1 - revealWipe.progress) * 100}% 0 0 0)`,
+              transform: `scale(${impact.scale})`,
+              transformOrigin: 'center center',
+              filter: `contrast(${impact.contrast}) brightness(${impact.brightness})`,
             }}
-          >
+          />
+        );
+      })()}
+
+      {/* REVEAL_WIPE: bg + fg 오버레이 (action phase에서만 미세 임팩트) */}
+      {revealWipe && !explain && (() => {
+        const impact = getActionImpact(currentTick, revealWipe.phase === 'action');
+        const imgStyle = {
+          transform: `scale(${impact.scale})`,
+          transformOrigin: 'center center' as const,
+          filter: `contrast(${impact.contrast}) brightness(${impact.brightness})`,
+        };
+        return (
+          <div className="absolute inset-0">
             <img
-              src={revealWipe.fgSrc}
+              src={revealWipe.bgSrc}
               alt=""
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
+              style={imgStyle}
             />
+            <div
+              className="absolute inset-0"
+              style={{
+                clipPath: `inset(${(1 - revealWipe.progress) * 100}% 0 0 0)`,
+              }}
+            >
+              <img
+                src={revealWipe.fgSrc}
+                alt=""
+                className="h-full w-full object-cover"
+                style={imgStyle}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* DROP: obj 이미지 위->아래 translateY 0.5s, key=tick로 애니메이션 리스타트 */}
       {dropEvents.length > 0 && !explain && !binary && !revealWipe && !transition && (
@@ -84,7 +155,10 @@ export function PlayRenderer({ tMs, visuals, totalTicks }: PlayRendererProps) {
                 src={ev.objSrc}
                 alt=""
                 className="h-full w-auto object-contain animate-drop"
-                style={{ animationDuration: '0.5s' }}
+                style={{
+                  animationDuration: '0.5s',
+                  animationTimingFunction: 'cubic-bezier(0.2, 0, 0.2, 1)',
+                }}
               />
             </div>
           ))}

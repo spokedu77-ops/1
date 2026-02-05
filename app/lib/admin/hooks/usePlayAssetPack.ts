@@ -43,6 +43,8 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
   const weekKey = generateWeekKey(year, month, week);
 
   const [localState, setLocalState] = useState<PlayAssetPackState | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
   const { data: state, isLoading: loading, error: queryError } = useQuery({
     queryKey: ['play_asset_pack', weekKey],
@@ -65,6 +67,18 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
         const raw = (data?.images_json as Record<string, string> | null) ?? {};
         for (const k of PLAY_SLOT_KEYS) {
           images[k] = typeof raw[k] === 'string' ? raw[k] : null;
+        }
+        // 이전 10키 데이터 호환: a1_off/a1_on → set1/set2에 동일하게 채움
+        const oldKeys = ['a1_off', 'a1_on', 'a2_off', 'a2_on', 'a3_off', 'a3_on', 'a4_off', 'a4_on', 'a5_off', 'a5_on'] as const;
+        for (let i = 0; i < 5; i++) {
+          const offPath = raw[oldKeys[i * 2]];
+          const onPath = raw[oldKeys[i * 2 + 1]];
+          if (typeof offPath !== 'string' || typeof onPath !== 'string') continue;
+          const base = i * 4;
+          if (!images[PLAY_SLOT_KEYS[base]]) images[PLAY_SLOT_KEYS[base] as PlaySlotKey] = offPath;
+          if (!images[PLAY_SLOT_KEYS[base + 1]]) images[PLAY_SLOT_KEYS[base + 1] as PlaySlotKey] = onPath;
+          if (!images[PLAY_SLOT_KEYS[base + 2]]) images[PLAY_SLOT_KEYS[base + 2] as PlaySlotKey] = offPath;
+          if (!images[PLAY_SLOT_KEYS[base + 3]]) images[PLAY_SLOT_KEYS[base + 3] as PlaySlotKey] = onPath;
         }
         return {
           bgmPath: data?.bgm_path ?? null,
@@ -101,7 +115,7 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
         if (v) imagesJson[k] = v;
       }
       try {
-        await supabase.from('play_asset_packs').upsert(
+        const { error: upsertError } = await supabase.from('play_asset_packs').upsert(
           {
             week_key: weekKey,
             year,
@@ -113,9 +127,19 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
           },
           { onConflict: 'week_key' }
         );
-        setLocalState(nextState);
-        queryClient.setQueryData(['play_asset_pack', weekKey], nextState);
+        if (upsertError) {
+          setSaveError(upsertError.message);
+          setLastSavedAt(null);
+          throw new Error(upsertError.message);
+        }
+        setSaveError(null);
+        setLastSavedAt(Date.now());
+        await queryClient.refetchQueries({ queryKey: ['play_asset_pack', weekKey] });
+        setLocalState(null);
       } catch (err) {
+        const msg = (err as Error).message;
+        setSaveError(msg);
+        setLastSavedAt(null);
         throw err;
       }
     },
@@ -184,6 +208,9 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
     loading,
     error: tableMissing ? null : error,
     tableMissing,
+    weekKey,
+    saveError,
+    lastSavedAt,
     load: () => queryClient.invalidateQueries({ queryKey: ['play_asset_pack', weekKey] }),
     uploadImage,
     removeImage,

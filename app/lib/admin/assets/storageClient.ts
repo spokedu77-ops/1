@@ -1,6 +1,7 @@
 /**
  * Storage Client
  * Supabase Storage 업로드/URL 생성 중앙화
+ * 업로드는 API 경유로 수행 → 쿠키 기반 admin 세션으로 Storage RLS 통과
  */
 
 import { getSupabaseClient } from '@/app/lib/supabase/client';
@@ -9,8 +10,8 @@ import { BUCKET_NAME } from '../constants/storage';
 const supabase = getSupabaseClient();
 
 /**
- * Storage에 파일 업로드
- * @param path Storage 경로 (e.g., 'themes/kitchen_v1/actions/POINT/off.webp')
+ * Storage에 파일 업로드 (API 경유 → admin RLS 통과)
+ * @param path Storage 경로 (e.g., 'play_assets/2026-01-W1/bgm/foo.mp3')
  * @param fileOrBlob 업로드할 파일 또는 Blob
  * @param contentType MIME 타입 (기본값: 'image/webp')
  * @returns Storage path
@@ -20,16 +21,20 @@ export async function uploadToStorage(
   fileOrBlob: File | Blob,
   contentType?: string
 ): Promise<string> {
-  const { data, error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(path, fileOrBlob, {
-      contentType: contentType || 'image/webp',
-      upsert: true, // 기존 파일 덮어쓰기
-    });
+  const formData = new FormData();
+  formData.set('path', path);
+  formData.set('file', fileOrBlob);
+  formData.set('contentType', contentType ?? 'image/webp');
 
-  if (error) {
-    console.error('Storage upload error:', error);
-    throw new Error(`Storage 업로드 실패: ${error.message}`);
+  const res = await fetch('/api/admin/storage/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const message = (body as { error?: string })?.error ?? res.statusText;
+    throw new Error(message);
   }
 
   return path;

@@ -5,6 +5,7 @@ import { Send, Plus, ChevronLeft, MoreVertical, UserPlus, Trash2, Users, Papercl
 import { formatChatTimestamp } from '@/app/lib/utils';
 import { fetchUnreadCounts as fetchUnreadCountsApi, markRoomAsRead } from '@/app/lib/chat';
 import { registerFCMTokenIfNeeded } from '@/app/lib/fcm';
+import { useEdgeSwipeBack } from '@/app/lib/useEdgeSwipeBack';
 import { ToastContainer, useToast } from '@/app/components/Toast';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
@@ -60,11 +61,21 @@ export default function AdminChatPage() {
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'reconnecting' | 'offline'>('connected');
+  const [notificationPermission, setNotificationPermission] = useState<'default' | 'granted' | 'denied'>(() =>
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
+  const [notificationRequesting, setNotificationRequesting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesStartRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toasts, showToast, removeToast } = useToast();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   useEffect(() => {
     if (!supabase) return;
@@ -75,13 +86,25 @@ export default function AdminChatPage() {
         fetchRooms();
         fetchTeachers();
         fetchUnreadCounts(user.id);
-        if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
         if (Notification.permission === 'granted') registerFCMTokenIfNeeded(supabase, user.id);
       }
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once when supabase ready; fetchRooms/fetchTeachers/fetchUnreadCounts are stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once when supabase ready
   }, [supabase]);
+
+  const handleEnableNotifications = async () => {
+    if (!supabase || !myId || notificationRequesting || notificationPermission !== 'default') return;
+    if (!('Notification' in window)) return;
+    setNotificationRequesting(true);
+    try {
+      const result = await Notification.requestPermission();
+      setNotificationPermission(result);
+      if (result === 'granted') await registerFCMTokenIfNeeded(supabase, myId);
+    } finally {
+      setNotificationRequesting(false);
+    }
+  };
 
   const fetchUnreadCounts = async (userId: string) => {
     if (!supabase) return;
@@ -160,6 +183,13 @@ export default function AdminChatPage() {
 
     setRooms(processed);
   };
+
+  const handleBackToList = () => {
+    setView('list');
+    fetchRooms();
+  };
+
+  useEdgeSwipeBack({ enabled: view === 'chat', onBack: handleBackToList });
 
   const fetchTeachers = async () => {
     if (!supabase) return;
@@ -564,6 +594,19 @@ export default function AdminChatPage() {
               </div>
               <button onClick={() => setIsCreateOpen(true)} className="min-h-[44px] min-w-[44px] p-2 bg-slate-100 rounded-full cursor-pointer flex items-center justify-center touch-manipulation active:bg-slate-200"><Plus size={22} /></button>
             </header>
+            {notificationPermission === 'default' && (
+              <div className="px-4 py-3 bg-indigo-50 border-b border-indigo-100">
+                <p className="text-[13px] text-indigo-800 font-medium mb-2">채팅 알림을 받으시려면 버튼을 눌러주세요.</p>
+                <button
+                  type="button"
+                  onClick={handleEnableNotifications}
+                  disabled={notificationRequesting}
+                  className="w-full py-2.5 px-4 bg-indigo-600 text-white text-sm font-bold rounded-xl touch-manipulation active:bg-indigo-700 disabled:opacity-60"
+                >
+                  {notificationRequesting ? '요청 중…' : '알림 켜기'}
+                </button>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto min-h-0">
               {rooms.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-slate-400 px-4">대화방이 없습니다</div>
@@ -604,10 +647,10 @@ export default function AdminChatPage() {
         {view === 'chat' && selectedRoom && (
           <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-300 min-h-0">
             <header className="min-h-[56px] flex items-center justify-between px-2 border-b bg-white/90 backdrop-blur-md sticky top-0 z-20 pt-[env(safe-area-inset-top,0px)]">
-              <button onClick={() => { setView('list'); fetchRooms(); }} className="min-h-[44px] min-w-[44px] p-2 text-blue-500 flex items-center cursor-pointer touch-manipulation active:opacity-70">
+              <button type="button" onClick={handleBackToList} className="min-h-[44px] min-w-[44px] p-2 text-blue-500 flex items-center cursor-pointer touch-manipulation active:opacity-70">
                 <ChevronLeft size={28} /><span className="text-[16px] hidden sm:inline">목록</span>
               </button>
-              <div className="flex flex-col items-center flex-1 px-2 overflow-hidden text-center min-w-0">
+              <button type="button" onClick={handleBackToList} className="flex flex-col items-center flex-1 px-2 overflow-hidden text-center min-w-0 min-h-[44px] justify-center cursor-pointer touch-manipulation active:opacity-70">
                 <div className="flex items-center gap-2 justify-center">
                   <span className="text-[15px] font-bold truncate max-w-[140px] sm:max-w-[150px]">{selectedRoom.custom_name || '대화방'}</span>
                   {connectionStatus !== 'connected' && (
@@ -619,7 +662,7 @@ export default function AdminChatPage() {
                   )}
                 </div>
                 <span className="text-[11px] text-slate-400 font-medium">{participants?.length || 0}명 참여중</span>
-              </div>
+              </button>
               <div className="flex items-center gap-1 shrink-0">
                 <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="min-h-[44px] min-w-[44px] p-2 text-blue-500 cursor-pointer flex items-center justify-center touch-manipulation">
                   <Search size={22} />

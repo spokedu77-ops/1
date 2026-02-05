@@ -84,6 +84,7 @@ export function PlayTestContent({ debug = true, seed = 12345, className = '' }: 
           onAudioEvent={(e) => {
             console.log('[AUDIO]', e.kind, 'tick', e.tick);
           }}
+          snapToTick
         />
       </div>
 

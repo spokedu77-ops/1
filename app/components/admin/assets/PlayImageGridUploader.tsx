@@ -4,16 +4,26 @@ import { useRef } from 'react';
 import { PLAY_SLOT_KEYS, type PlaySlotKey } from '@/app/lib/admin/assets/storagePaths';
 
 const SLOT_LABELS: Record<PlaySlotKey, string> = {
-  a1_off: '액션1 Off',
-  a1_on: '액션1 On',
-  a2_off: '액션2 Off',
-  a2_on: '액션2 On',
-  a3_off: '액션3 Off',
-  a3_on: '액션3 On',
-  a4_off: '액션4 Off',
-  a4_on: '액션4 On',
-  a5_off: '액션5 Off',
-  a5_on: '액션5 On',
+  a1_set1_off: '액션1 Set1 Off',
+  a1_set1_on: '액션1 Set1 On',
+  a1_set2_off: '액션1 Set2 Off',
+  a1_set2_on: '액션1 Set2 On',
+  a2_set1_off: '액션2 Set1 Off',
+  a2_set1_on: '액션2 Set1 On',
+  a2_set2_off: '액션2 Set2 Off',
+  a2_set2_on: '액션2 Set2 On',
+  a3_set1_off: '액션3 Set1 Off',
+  a3_set1_on: '액션3 Set1 On',
+  a3_set2_off: '액션3 Set2 Off',
+  a3_set2_on: '액션3 Set2 On',
+  a4_set1_off: '액션4 Set1 Off',
+  a4_set1_on: '액션4 Set1 On',
+  a4_set2_off: '액션4 Set2 Off',
+  a4_set2_on: '액션4 Set2 On',
+  a5_set1_off: '액션5 Set1 Off',
+  a5_set1_on: '액션5 Set1 On',
+  a5_set2_off: '액션5 Set2 Off',
+  a5_set2_on: '액션5 Set2 On',
 };
 
 export interface PlayImageGridUploaderProps {
@@ -46,9 +56,9 @@ export function PlayImageGridUploader({
   return (
     <section className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800">
       <h3 className="mb-4 text-base font-bold text-neutral-200">
-        5 action × 2 variant (10 슬롯)
+        5 action × Set1/Set2 off·on (20 슬롯)
       </h3>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-5">
         {PLAY_SLOT_KEYS.map((slotKey) => {
           const path = images[slotKey];
           return (
@@ -110,7 +120,7 @@ export function PlayImageGridUploader({
         })}
       </div>
       <p className="mt-2 text-xs text-neutral-500">
-        각 액션별 off/on 이미지를 업로드하세요. Action Library에서 액션·오퍼레이터를 설정합니다.
+        각 액션별 Set1·Set2 off/on 이미지를 업로드하세요. 타임라인 set1/set2 구간에 각각 사용됩니다.
       </p>
     </section>
   );

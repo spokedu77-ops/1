@@ -80,7 +80,13 @@ export async function POST(req: NextRequest) {
     const messages: admin.messaging.Message[] = rows.map(({ user_id, token }) => ({
       token,
       notification: { title, body: bodyText },
-      data: { room_id: roomId, message_id: messageId || '', title, body: bodyText },
+      data: {
+        url: '/teacher/chat',
+        room_id: roomId,
+        message_id: messageId || '',
+        title,
+        body: bodyText,
+      },
       android: { notification: { vibrateTimingsMillis: [200, 100, 200] } },
       apns: {
         payload: {

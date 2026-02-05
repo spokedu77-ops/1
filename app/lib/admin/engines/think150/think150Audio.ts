@@ -12,6 +12,15 @@ let audioCtx: AudioContext | null = null;
 let tickBuffer: AudioBuffer | null = null;
 let recallBuffer: AudioBuffer | null = null;
 let bgmSource: AudioBufferSourceNode | null = null;
+/** Play BGM/SFX용. Think150(tick/recall)는 ctx.destination 직결 유지. */
+let bgmGain: GainNode | null = null;
+let sfxGain: GainNode | null = null;
+const BGM_GAIN_NORMAL = 0.6;
+const SFX_GAIN_NORMAL = 0.9;
+let bgmFadeTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let bgmStopTimeoutId: ReturnType<typeof setTimeout> | null = null;
+const sfxBufferCache = new Map<string, AudioBuffer>();
+const activeSfxSources = new Set<AudioBufferSourceNode>();
 
 function getAudioContext(): AudioContext {
   if (!audioCtx) {
@@ -19,6 +28,19 @@ function getAudioContext(): AudioContext {
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
   }
   return audioCtx;
+}
+
+function ensurePlayGainNodes(ctx: AudioContext): void {
+  if (!bgmGain) {
+    bgmGain = ctx.createGain();
+    bgmGain.gain.value = BGM_GAIN_NORMAL;
+    bgmGain.connect(ctx.destination);
+  }
+  if (!sfxGain) {
+    sfxGain = ctx.createGain();
+    sfxGain.gain.value = SFX_GAIN_NORMAL;
+    sfxGain.connect(ctx.destination);
+  }
 }
 
 /** Storage base URL (Supabase public or relative) */
@@ -97,6 +119,17 @@ export async function initThink150Audio(options?: Think150AudioOptions): Promise
   if (!recallBuffer) recallBuffer = await loadRecallBuffer(ctx);
 }
 
+function clearBGMTimeouts(): void {
+  if (bgmFadeTimeoutId != null) {
+    clearTimeout(bgmFadeTimeoutId);
+    bgmFadeTimeoutId = null;
+  }
+  if (bgmStopTimeoutId != null) {
+    clearTimeout(bgmStopTimeoutId);
+    bgmStopTimeoutId = null;
+  }
+}
+
 export async function startBGM(
   bgmPath: string,
   startOffsetMs: number,
@@ -105,6 +138,7 @@ export async function startBGM(
   stopBGM();
   try {
     const ctx = getAudioContext();
+    ensurePlayGainNodes(ctx);
     const url = getAudioUrl(bgmPath);
     const res = await fetch(url);
     if (!res.ok) return;
@@ -113,17 +147,65 @@ export async function startBGM(
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.loop = true;
-    source.connect(ctx.destination);
+    source.connect(bgmGain!);
+    const now = ctx.currentTime;
     const startOffset = startOffsetMs / 1000;
-    source.start(ctx.currentTime, startOffset);
+    bgmGain!.gain.setValueAtTime(0, now);
+    bgmGain!.gain.linearRampToValueAtTime(BGM_GAIN_NORMAL, now + 0.4);
+    source.start(now, startOffset);
     bgmSource = source;
+
+    if (durationMs > 0) {
+      clearBGMTimeouts();
+      const durationSec = durationMs / 1000;
+      bgmFadeTimeoutId = setTimeout(() => {
+        const c = getAudioContext();
+        if (bgmGain) {
+          const t = c.currentTime;
+          bgmGain.gain.setValueAtTime(bgmGain.gain.value, t);
+          bgmGain.gain.linearRampToValueAtTime(0, t + 0.4);
+        }
+        bgmFadeTimeoutId = null;
+      }, (durationSec - 0.4) * 1000);
+      bgmStopTimeoutId = setTimeout(() => {
+        if (bgmSource) {
+          try {
+            bgmSource.stop();
+          } catch {
+            /* ignore */
+          }
+          bgmSource = null;
+        }
+        bgmStopTimeoutId = null;
+      }, durationSec * 1000);
+    }
   } catch {
     /* ignore */
   }
 }
 
 export function stopBGM(): void {
-  if (bgmSource) {
+  clearBGMTimeouts();
+  if (bgmSource && bgmGain) {
+    try {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      bgmGain.gain.setValueAtTime(bgmGain.gain.value, now);
+      bgmGain.gain.linearRampToValueAtTime(0, now + 0.25);
+      const src = bgmSource;
+      bgmSource = null;
+      bgmStopTimeoutId = setTimeout(() => {
+        try {
+          src.stop();
+        } catch {
+          /* ignore */
+        }
+        bgmStopTimeoutId = null;
+      }, 250);
+    } catch {
+      bgmSource = null;
+    }
+  } else if (bgmSource) {
     try {
       bgmSource.stop();
     } catch {
@@ -131,6 +213,56 @@ export function stopBGM(): void {
     }
     bgmSource = null;
   }
+}
+
+export function duckBGM(amountDb: number, attackMs: number, releaseMs: number): void {
+  const ctx = getAudioContext();
+  ensurePlayGainNodes(ctx);
+  if (!bgmGain) return;
+  const now = ctx.currentTime;
+  const current = bgmGain.gain.value;
+  const targetDuck = BGM_GAIN_NORMAL * Math.pow(10, amountDb / 20);
+  const attackSec = attackMs / 1000;
+  const releaseSec = releaseMs / 1000;
+  bgmGain.gain.setValueAtTime(current, now);
+  bgmGain.gain.linearRampToValueAtTime(targetDuck, now + attackSec);
+  bgmGain.gain.linearRampToValueAtTime(BGM_GAIN_NORMAL, now + attackSec + releaseSec);
+}
+
+export async function playSFX(path: string): Promise<void> {
+  try {
+    const ctx = getAudioContext();
+    ensurePlayGainNodes(ctx);
+    const url = getAudioUrl(path);
+    let buffer = sfxBufferCache.get(url);
+    if (!buffer) {
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const arrayBuffer = await res.arrayBuffer();
+      buffer = await ctx.decodeAudioData(arrayBuffer);
+      sfxBufferCache.set(url, buffer);
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(sfxGain!);
+    source.start(ctx.currentTime);
+    activeSfxSources.add(source);
+    source.onended = () => activeSfxSources.delete(source);
+    duckBGM(-6, 30, 120);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function stopAllSFX(): void {
+  for (const source of activeSfxSources) {
+    try {
+      source.stop();
+    } catch {
+      /* ignore */
+    }
+  }
+  activeSfxSources.clear();
 }
 
 function playBuffer(buffer: AudioBuffer, when: number): void {

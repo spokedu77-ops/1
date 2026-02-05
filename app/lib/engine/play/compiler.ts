@@ -63,11 +63,13 @@ export function compile(input: CompilerInput): ResolvedPlayDraft {
     if (!motionAssets) {
       throw new Error(`Missing assets for motionId: ${block.motionId}`);
     }
-    const { off, on, frames, objects, bgSrc, fgSrc } = motionAssets;
+    const { off, on, set1: set1Assets, set2: set2Assets, frames, objects, bgSrc, fgSrc } = motionAssets;
+    const imageIds1 = set1Assets ?? { off, on };
+    const imageIds2 = set2Assets ?? { off, on };
 
-    const baseSet = (op: SetOperator) => ({
+    const baseSet = (op: SetOperator, imageIds: { off: string; on: string }) => ({
       operator: op,
-      imageIds: { off, on },
+      imageIds,
       ...(frames?.length ? { frames } : undefined),
       ...(objects?.length ? { objects } : undefined),
       ...(bgSrc ? { bgSrc } : undefined),
@@ -76,8 +78,8 @@ export function compile(input: CompilerInput): ResolvedPlayDraft {
 
     return {
       motionId: block.motionId,
-      set1: baseSet(block.set1.operator),
-      set2: baseSet(block.set2.operator),
+      set1: baseSet(block.set1.operator, imageIds1),
+      set2: baseSet(block.set2.operator, imageIds2),
     };
   });
 

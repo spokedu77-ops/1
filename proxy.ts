@@ -49,8 +49,17 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// 세션 갱신이 필요한 경로만 (나머지 요청은 proxy 미실행 → 체감 로딩 감소)
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/',
+    '/login',
+    '/admin/:path*',
+    '/teacher/:path*',
+    '/class/:path*',
+    '/report/:path*',
+    '/play-phase/:path*',
+    '/think-phase/:path*',
+    '/flow-phase/:path*',
   ],
 };

@@ -23,9 +23,11 @@ export interface RuntimePlayerProps {
   debug?: boolean;
   /** 마운트 시 자동 재생 (구독자 전체 플로우용) */
   autoPlay?: boolean;
+  /** true면 표현 시간을 tick 경계로 스냅 (0.5초 리듬 정밀도, Play 전용 권장) */
+  snapToTick?: boolean;
 }
 
-export function RuntimePlayer({ timeline, onAudioEvent, onEnd, debug, autoPlay }: RuntimePlayerProps) {
+export function RuntimePlayer({ timeline, onAudioEvent, onEnd, debug, autoPlay, snapToTick = false }: RuntimePlayerProps) {
   const [tMs, setTMs] = useState(0);
   const [playing, setPlaying] = useState(!!autoPlay);
   const [speed] = useState(1);
@@ -53,12 +55,14 @@ export function RuntimePlayer({ timeline, onAudioEvent, onEnd, debug, autoPlay }
 
     const tick = () => {
       const elapsed = (performance.now() - startMsRef.current) * speed;
-      const newTMs = startTMsRef.current + elapsed;
+      const rawTMs = startTMsRef.current + elapsed;
       const maxTMs = (timeline.totalTicks - 1) * TICK_MS;
-      const clamped = Math.min(newTMs, maxTMs);
-      setTMs(clamped);
+      const displayTMs = snapToTick
+        ? Math.min(maxTMs, Math.floor(rawTMs / TICK_MS) * TICK_MS)
+        : Math.min(rawTMs, maxTMs);
+      setTMs(displayTMs);
 
-      if (clamped >= maxTMs) {
+      if (displayTMs >= maxTMs) {
         setPlaying(false);
         if (!onEndCalledRef.current) {
           onEndCalledRef.current = true;
@@ -72,18 +76,25 @@ export function RuntimePlayer({ timeline, onAudioEvent, onEnd, debug, autoPlay }
     rafRef.current = requestAnimationFrame(tick);
 
     return () => cancelAnimationFrame(rafRef.current);
-  }, [playing, speed, timeline.totalTicks, onEnd]);
+  }, [playing, speed, timeline.totalTicks, onEnd, snapToTick]);
 
   useEffect(() => {
     const currentTick = Math.floor(tMs / TICK_MS);
-    if (currentTick === lastProcessedTickRef.current) return;
-    lastProcessedTickRef.current = currentTick;
-
-    const eventsAtTick = timeline.audio.filter((e) => e.tick === currentTick);
-    for (const ev of eventsAtTick) {
-      onAudioEvent?.(ev);
+    const prev = lastProcessedTickRef.current;
+    if (currentTick <= prev) {
+      if (currentTick < prev) {
+        lastProcessedTickRef.current = currentTick;
+        const events = timeline.audioByTick?.[currentTick] ?? timeline.audio.filter((e) => e.tick === currentTick);
+        for (const ev of events) onAudioEvent?.(ev);
+      }
+      return;
     }
-  }, [tMs, timeline.audio, onAudioEvent]);
+    for (let t = prev + 1; t <= currentTick; t++) {
+      const events = timeline.audioByTick?.[t] ?? timeline.audio.filter((e) => e.tick === t);
+      for (const ev of events) onAudioEvent?.(ev);
+    }
+    lastProcessedTickRef.current = currentTick;
+  }, [tMs, timeline.audio, timeline.audioByTick, onAudioEvent]);
 
   return (
     <div data-runtime-player className="flex h-full flex-col">

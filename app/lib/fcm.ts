@@ -4,7 +4,8 @@ import { getToken, getMessaging } from 'firebase/messaging';
 import { getApps, initializeApp } from 'firebase/app';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const SW_URL = '/api/firebase-messaging-sw';
+/** 루트(/) 서빙으로 scope=/ 가 되도록 (iOS/Android 푸시 안정화) */
+const SW_URL = '/firebase-messaging-sw.js';
 
 /** 세션당 한 번만 등록 (중복 호출 방지) */
 const registeredThisSession = new Set<string>();
@@ -45,7 +46,6 @@ export async function registerFCMTokenIfNeeded(
   }
 
   try {
-    // 이미 등록된 Service Worker가 있는지 확인
     let reg = await navigator.serviceWorker.getRegistration('/');
     if (!reg) {
       reg = await navigator.serviceWorker.register(SW_URL, { scope: '/' });
@@ -53,6 +53,7 @@ export async function registerFCMTokenIfNeeded(
     } else {
       console.log('[FCM] Service Worker 이미 등록됨, 재사용');
     }
+    await navigator.serviceWorker.ready;
 
     const app = getApps().length ? getApps()[0]! : initializeApp({
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

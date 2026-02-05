@@ -1,5 +1,5 @@
 -- ================================================================
--- Play Asset Pack 테이블 (주차별 BGM + 5 action × 2 variant 이미지)
+-- Play Asset Pack 테이블 (주차별 BGM + 5 action × set1/set2 off·on = 20 이미지)
 -- Asset Hub Play 탭에서 사용
 -- ================================================================
 
@@ -32,5 +32,5 @@ CREATE POLICY "All users can read play asset packs"
 ON play_asset_packs FOR SELECT
 USING (true);
 
-COMMENT ON TABLE play_asset_packs IS '주차별 Play Phase 자산 (BGM + 5 action × off/on 이미지)';
-COMMENT ON COLUMN play_asset_packs.images_json IS 'Record<PlaySlotKey, string> e.g. { a1_off: "path", a1_on: "path", ... }';
+COMMENT ON TABLE play_asset_packs IS '주차별 Play Phase 자산 (BGM + 5 action × set1/set2 off·on = 20 이미지)';
+COMMENT ON COLUMN play_asset_packs.images_json IS 'Record<PlaySlotKey, string> e.g. { a1_set1_off: "path", a1_set1_on: "path", ... } 20 keys';

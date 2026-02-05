@@ -4,6 +4,7 @@
  */
 
 import { PLAY_RULES } from '@/app/lib/constants/rules';
+import { getBinaryPatternFromPreset } from './operatorPresets';
 import { MOTION_LABELS } from './presets';
 import type { ResolvedBlock, ResolvedPlayDraft } from './types';
 import type {
@@ -22,8 +23,6 @@ const EXPLAIN = TICKS.EXPLAIN;
 const SET = TICKS.SET;
 const TRANSITION = TICKS.TRANSITION;
 const BLOCKS = TICKS.BLOCKS;
-
-const PRE_CALCULATED_TOTAL_TICKS = BLOCKS * (EXPLAIN + SET + SET + TRANSITION);
 
 /**
  * ResolvedPlayDraft → PlayTimeline (pure)
@@ -90,13 +89,15 @@ export function buildTimeline(resolved: ResolvedPlayDraft): PlayTimeline {
     audio.push({ kind: 'SFX', tick, path: resolved.sfxPath });
   }
 
-  // tick별 인덱스 (렌더 최적화용)
-  const visualsByTick: VisualEvent[][] = Array.from({ length: totalTicks }, (_, tick) =>
-    visuals.filter((v) => v.tick === tick)
-  );
-  const audioByTick: AudioEvent[][] = Array.from({ length: totalTicks }, (_, tick) =>
-    audio.filter((a) => a.tick === tick)
-  );
+  // tick별 인덱스 (O(n) push 방식)
+  const visualsByTick: VisualEvent[][] = Array.from({ length: totalTicks }, () => []);
+  for (const v of visuals) {
+    if (v.tick >= 0 && v.tick < totalTicks) visualsByTick[v.tick]!.push(v);
+  }
+  const audioByTick: AudioEvent[][] = Array.from({ length: totalTicks }, () => []);
+  for (const a of audio) {
+    if (a.tick >= 0 && a.tick < totalTicks) audioByTick[a.tick]!.push(a);
+  }
 
   return { visuals, audio, totalTicks, visualsByTick, audioByTick };
 }
@@ -114,9 +115,9 @@ function emitSetEvents(
   const onSrc = imageIds.on;
 
   if (operator.type === 'BINARY') {
-    // set 시작 첫 tick에 ON. t%2===0 -> ON, t%2===1 -> OFF. tick별 src 직접 주입
+    const pattern = getBinaryPatternFromPreset(blockIndex, setIndex);
     for (let t = 0; t < SET; t++) {
-      const isOn = t % 2 === 0;
+      const isOn = pattern[t] ?? (t % 2 === 0);
       const src = isOn ? onSrc : offSrc;
       out.push({
         kind: 'BINARY',
@@ -137,7 +138,12 @@ function emitSetEvents(
       for (let t = 0; t < SET; t++) {
         const phase = t % 2 === 0 ? 'action' : 'rest';
         const step = Math.floor(t / 2) % 5;
-        const progress = (step + (phase === 'action' ? 1 : 0)) / 5;
+        const stepProgress = step / 5;
+        const raw =
+          phase === 'rest'
+            ? stepProgress * 0.35
+            : 0.35 + stepProgress * 0.65;
+        const progress = Math.min(1, Math.max(0, raw));
         out.push({
           kind: 'REVEAL_WIPE',
           tick: startTick + t,
@@ -151,7 +157,7 @@ function emitSetEvents(
         } as RevealWipeEvent);
       }
     } else {
-      // frames: BINARY로 폴백 (onSrc 사용)
+      // frames: BINARY로 폴백 (onSrc 사용), action tick 판정으로 SFX 정합
       for (let t = 0; t < SET; t++) {
         const src = t < 10 ? (frames?.[t] ?? onSrc) : (frames?.[9] ?? onSrc);
         out.push({
@@ -160,6 +166,7 @@ function emitSetEvents(
           blockIndex,
           setIndex,
           src,
+          isActionPhase: t % 2 === 0,
         } as BinaryEvent);
       }
     }

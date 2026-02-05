@@ -109,7 +109,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 z-[60] flex h-16 w-full items-center justify-between bg-[#1e293b] px-6 pt-[env(safe-area-inset-top)] md:pt-0 md:hidden shadow-lg">
+      <div className="fixed top-0 left-0 z-[60] flex h-12 w-full items-center justify-between bg-[#1e293b] px-4 pt-[env(safe-area-inset-top)] md:pt-0 md:hidden shadow-lg">
         <h1 className="text-lg font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
         <button 
           onClick={() => setIsOpen(!isOpen)}
@@ -138,7 +138,7 @@ export default function Sidebar() {
           </p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-6 overflow-y-auto pt-[calc(4rem+env(safe-area-inset-top,0px))] md:pt-4 text-left">
+        <nav className="flex-1 p-4 space-y-6 overflow-y-auto pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-4 text-left">
           {groups.map((group, gIdx) => (
             <div key={gIdx} className="space-y-2 text-left">
               <h3 className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">

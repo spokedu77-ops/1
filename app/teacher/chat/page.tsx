@@ -5,6 +5,7 @@ import { Send, ChevronLeft, Users } from 'lucide-react';
 import { formatChatTimestamp } from '@/app/lib/utils';
 import { fetchUnreadCounts as fetchUnreadCountsApi, markRoomAsRead } from '@/app/lib/chat';
 import { registerFCMTokenIfNeeded } from '@/app/lib/fcm';
+import { useEdgeSwipeBack } from '@/app/lib/useEdgeSwipeBack';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 export default function TeacherChatPage() {
@@ -20,6 +21,10 @@ export default function TeacherChatPage() {
   const [unreadCounts, setUnreadCounts] = useState<{ [roomId: string]: number }>({});
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<'default' | 'granted' | 'denied'>(() =>
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
+  const [notificationRequesting, setNotificationRequesting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesStartRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -27,30 +32,44 @@ export default function TeacherChatPage() {
   roomsRef.current = rooms;
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!supabase) return;
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setMyId(user.id);
-        
-        // 내 이름 가져오기
         const { data: userData } = await supabase
           .from('users')
           .select('name')
           .eq('id', user.id)
           .single();
-        
         if (userData) setMyName(userData.name);
-        
         fetchMyRooms(user.id);
         fetchUnreadCounts(user.id);
-        if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
         if (Notification.permission === 'granted') registerFCMTokenIfNeeded(supabase, user.id);
       }
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once when supabase ready; fetchMyRooms/fetchUnreadCounts stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once when supabase ready
   }, [supabase]);
+
+  const handleEnableNotifications = async () => {
+    if (!supabase || !myId || notificationRequesting || notificationPermission !== 'default') return;
+    if (!('Notification' in window)) return;
+    setNotificationRequesting(true);
+    try {
+      const result = await Notification.requestPermission();
+      setNotificationPermission(result);
+      if (result === 'granted') await registerFCMTokenIfNeeded(supabase, myId);
+    } finally {
+      setNotificationRequesting(false);
+    }
+  };
 
   const fetchUnreadCounts = async (userId: string) => {
     if (!supabase) return;
@@ -259,16 +278,18 @@ export default function TeacherChatPage() {
   }, [myId]);
 
   const handleBack = () => {
-    if (typeof history !== 'undefined' && history.state?.chatRoom) {
-      history.back();
-    } else {
-      setView('list');
-      if (myId) {
-        fetchMyRooms(myId);
-        fetchUnreadCounts(myId);
-      }
+    setView('list');
+    if (myId) {
+      fetchMyRooms(myId);
+      fetchUnreadCounts(myId);
     }
   };
+
+  useEdgeSwipeBack({
+    enabled: view === 'chat' && !!selectedRoom,
+    onBack: handleBack,
+    containerRef: messagesContainerRef,
+  });
 
   return (
     <div className="flex justify-center bg-[#F2F2F7] min-h-[100dvh] h-[100dvh] overflow-hidden text-black font-sans selection:bg-blue-100">
@@ -280,7 +301,19 @@ export default function TeacherChatPage() {
             <header className="px-4 sm:px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-4 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-50">
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">대화</h1>
             </header>
-            
+            {notificationPermission === 'default' && (
+              <div className="px-4 py-3 bg-indigo-50 border-b border-indigo-100">
+                <p className="text-[13px] text-indigo-800 font-medium mb-2">채팅 알림을 받으시려면 버튼을 눌러주세요.</p>
+                <button
+                  type="button"
+                  onClick={handleEnableNotifications}
+                  disabled={notificationRequesting}
+                  className="w-full py-2.5 px-4 bg-indigo-600 text-white text-sm font-bold rounded-xl touch-manipulation active:bg-indigo-700 disabled:opacity-60"
+                >
+                  {notificationRequesting ? '요청 중…' : '알림 켜기'}
+                </button>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto min-h-0">
               {rooms.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-slate-400 px-8 text-center">
@@ -322,21 +355,25 @@ export default function TeacherChatPage() {
         {/* 채팅 화면 */}
         {view === 'chat' && selectedRoom && (
           <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-300 min-h-0">
-            <header className="min-h-[56px] flex items-center justify-between px-2 border-b bg-white/90 backdrop-blur-md sticky top-0 z-20 pt-[env(safe-area-inset-top,0px)]">
-              <button 
+            <header className="sticky top-0 z-20 flex min-h-[56px] items-center justify-between border-b border-slate-100 bg-white px-2 shadow-sm backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
+              <button
+                type="button"
                 onClick={handleBack}
-                className="min-h-[44px] min-w-[44px] p-2 text-blue-500 flex items-center cursor-pointer active:opacity-70 transition-opacity touch-manipulation"
+                className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center p-2 text-blue-500 touch-manipulation transition-opacity active:opacity-70"
+                aria-label="목록으로"
               >
                 <ChevronLeft size={28} />
-                <span className="text-[16px] hidden sm:inline ml-0.5">목록</span>
+                <span className="ml-0.5 hidden text-[16px] sm:inline">목록</span>
               </button>
-              
-              <div className="flex flex-col items-center flex-1 px-2 overflow-hidden min-w-0">
-                <span className="text-[15px] font-bold truncate max-w-[140px] sm:max-w-[150px]">{selectedRoom.custom_name}</span>
-                <span className="text-[11px] text-slate-400 font-medium">{participants.length}명 참여중</span>
-              </div>
-              
-              <div className="w-[44px] sm:w-[60px] shrink-0" aria-hidden />
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex flex-1 flex-col items-center justify-center overflow-hidden px-2 py-2 min-w-0 touch-manipulation active:opacity-80"
+              >
+                <span className="truncate text-[15px] font-bold max-w-[140px] sm:max-w-[150px]">{selectedRoom.custom_name}</span>
+                <span className="text-[11px] text-slate-400">{participants.length}명 참여중</span>
+              </button>
+              <div className="w-[44px] shrink-0 sm:w-[60px]" aria-hidden />
             </header>
 
             <div
