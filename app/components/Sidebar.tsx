@@ -109,11 +109,11 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 z-[60] flex h-16 w-full items-center justify-between bg-[#1e293b] px-6 md:hidden shadow-lg">
+      <div className="fixed top-0 left-0 z-[60] flex h-16 w-full items-center justify-between bg-[#1e293b] px-6 pt-[env(safe-area-inset-top)] md:pt-0 md:hidden shadow-lg">
         <h1 className="text-lg font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="rounded-lg bg-slate-800 p-2 text-white outline-none cursor-pointer hover:bg-slate-700 transition-colors"
+          className="min-h-[44px] min-w-[44px] rounded-lg bg-slate-800 p-2 text-white outline-none cursor-pointer hover:bg-slate-700 active:bg-slate-600 transition-colors touch-manipulation flex items-center justify-center"
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -168,10 +168,10 @@ export default function Sidebar() {
                       key={item.href} 
                       href={item.href} 
                       onClick={handleClick}
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-all group cursor-pointer ${
+                      className={`flex items-center gap-3 min-h-[48px] p-3 rounded-xl transition-all group cursor-pointer touch-manipulation ${
                         isActive 
                           ? 'bg-blue-600 text-white shadow-lg' 
-                          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                          : 'text-slate-400 hover:bg-slate-800 hover:text-white active:bg-slate-700'
                       }`}
                     >
                       <Icon size={18} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />

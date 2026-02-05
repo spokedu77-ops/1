@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { SessionEvent } from '../types';
 import { parseExtraTeachers } from '../lib/sessionUtils';
 import { ADMIN_NAMES } from '../constants/admins';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-
 export function useClassManagement() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [allEvents, setAllEvents] = useState<SessionEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<SessionEvent[]>([]);
   const [teacherList, setTeacherList] = useState<{id: string; name: string}[]>([]);
@@ -14,6 +13,7 @@ export function useClassManagement() {
   const [currentView, setCurrentView] = useState('rollingFourDay');
 
   const fetchSessions = useCallback(async () => {
+    if (!supabase) return;
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     const sixMonthsLater = new Date();
@@ -85,7 +85,7 @@ export function useClassManagement() {
       setAllEvents(events);
       setFilteredEvents(events);
     }
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     if (filterTeacher === 'ALL') {
@@ -96,6 +96,7 @@ export function useClassManagement() {
   }, [filterTeacher, allEvents]);
 
   const updateMileageOnly = async (sessionId: string, mileageOption: string) => {
+    if (!supabase) return false;
     try {
       const { error } = await supabase
         .from('sessions')

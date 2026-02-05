@@ -1,15 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
   Plus, Trash2, X, Package, ChevronDown, 
   UserCircle2, Check, Image as ImageIcon, CheckSquare, ListOrdered, History, ExternalLink, Menu
 } from 'lucide-react';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const renderTextWithLinks = (text: string) => {
   if (!text) return "";
@@ -32,6 +28,7 @@ interface TeacherBasic { id: string; name?: string; [key: string]: unknown }
 interface InventoryItem { id?: number; name?: string; quantity?: number; category?: string; image?: string; simple_desc?: string; key_points?: string; usage_examples?: string; [key: string]: unknown }
 
 export default function AdminInventoryPage() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [teachers, setTeachers] = useState<TeacherBasic[]>([]);
   const [teacherInventory, setTeacherInventory] = useState<InventoryItem[]>([]);
@@ -48,16 +45,19 @@ export default function AdminInventoryPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const fetchCatalog = useCallback(async () => {
+    if (!supabase) return;
     const { data } = await supabase.from('catalog').select('*').order('created_at', { ascending: false });
     if (data) setCatalog(data);
-  }, []);
+  }, [supabase]);
 
   const fetchTeachers = useCallback(async () => {
+    if (!supabase) return;
     const { data } = await supabase.from('users').select('id, name, role, is_active').eq('is_active', true).order('name');
     if (data) setTeachers(data);
-  }, []);
+  }, [supabase]);
 
   const fetchTeacherData = useCallback(async (userId: string) => {
+    if (!supabase) return;
     const { data: invData } = await supabase.from('inventory').select('*').eq('user_id', userId).order('name', { ascending: true });
     const { data: logData } = await supabase.from('inventory_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
     
@@ -68,7 +68,7 @@ export default function AdminInventoryPage() {
       setTempQuantities(qtyMap);
     }
     if (logData) setLogs(logData);
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     void fetchCatalog();
@@ -82,6 +82,7 @@ export default function AdminInventoryPage() {
   );
 
   const addLog = async (userId: string, content: string, type: 'in' | 'out' | 'info' = 'info') => {
+    if (!supabase) return;
     await supabase.from('inventory_logs').insert([{ user_id: userId, content, type }]);
     const { data } = await supabase.from('inventory_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
     if (data) setLogs(data);
@@ -106,7 +107,7 @@ export default function AdminInventoryPage() {
   };
 
   const processAddItem = async (item: InventoryItem) => {
-    if (!selectedTeacher) return;
+    if (!supabase || !selectedTeacher) return;
     const existing = teacherInventory.find(i => i.name === item.name);
     const now = new Date().toISOString();
 
@@ -157,6 +158,7 @@ export default function AdminInventoryPage() {
   };
 
   const handleReturnAll = async (item: InventoryItem) => {
+    if (!supabase) return;
     if (confirm(`${item.name} 전량을 반납(목록 삭제)하시겠습니까?`)) {
       await supabase.from('inventory').delete().eq('id', item.id);
       await addLog(selectedTeacher.id, `${item.name} 전량 반납 완료`, 'out');
@@ -167,6 +169,7 @@ export default function AdminInventoryPage() {
   };
 
   const commitQuantity = async (item: InventoryItem) => {
+    if (!supabase) return;
     const val = tempQuantities[item.id];
     const newQty = parseInt(val);
     if (isNaN(newQty) || newQty < 0) return alert('올바른 숫자를 입력하세요.');
@@ -180,7 +183,7 @@ export default function AdminInventoryPage() {
   };
 
   const handleSaveCatalog = async () => {
-    if(!catalogForm.name) return alert('교구명을 입력하세요');
+    if (!supabase || !catalogForm.name) return alert('교구명을 입력하세요');
     if (editingCatalogId) {
       await supabase.from('catalog').update(catalogForm).eq('id', editingCatalogId);
     } else {
@@ -192,10 +195,9 @@ export default function AdminInventoryPage() {
 
   const handleDeleteCatalog = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
-    if(confirm('마스터 DB에서 삭제하시겠습니까?')) {
-      await supabase.from('catalog').delete().eq('id', id);
-      await fetchCatalog();
-    }
+    if (!supabase || !confirm('마스터 DB에서 삭제하시겠습니까?')) return;
+    await supabase.from('catalog').delete().eq('id', id);
+    await fetchCatalog();
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -356,7 +358,7 @@ export default function AdminInventoryPage() {
                                     {log.content}
                                 </span>
                             </div>
-                            <button onClick={async () => { if(confirm("로그를 삭제하시겠습니까?")) { await supabase.from('inventory_logs').delete().eq('id', log.id); setLogs(prev => prev.filter(l => l.id !== log.id)); } }} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 p-1 cursor-pointer transition-opacity"><X size={12}/></button>
+                            <button onClick={async () => { if (supabase && confirm("로그를 삭제하시겠습니까?")) { await supabase.from('inventory_logs').delete().eq('id', log.id); setLogs(prev => prev.filter(l => l.id !== log.id)); } }} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 p-1 cursor-pointer transition-opacity"><X size={12}/></button>
                         </div>
                     ))}
                 </div>

@@ -1,17 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { Send, RotateCcw, User, MapPin, X, ExternalLink, FileText, Maximize2, Search, BookOpen, AlertTriangle } from 'lucide-react';
 import { 
   FeedbackFields,
   parseTemplateToFields,
   fieldsToTemplateText
 } from '@/app/lib/feedbackValidation';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface Session {
   id: string;
@@ -35,16 +31,18 @@ interface Coach {
 }
 
 export default function MasterQCPage() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [activeTab, setActiveTab] = useState<'feedback' | 'lessonplan'>('feedback');
   const [coaches, setCoaches] = useState<Coach[]>([]);
   
   useEffect(() => {
     const initPage = async () => {
+      if (!supabase) return;
       const { data: userData } = await supabase.from('users').select('id, name').eq('is_active', true).order('name');
       if (userData) setCoaches(userData as Coach[]);
     };
     initPage();
-  }, []);
+  }, [supabase]);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-12 text-left">
@@ -82,9 +80,9 @@ export default function MasterQCPage() {
 
         {/* 내용 */}
         {activeTab === 'feedback' ? (
-          <FeedbackReviewTab coaches={coaches} />
+          <FeedbackReviewTab coaches={coaches} supabase={supabase} />
         ) : (
-          <LessonPlanTab coaches={coaches} />
+          <LessonPlanTab coaches={coaches} supabase={supabase} />
         )}
       </div>
     </div>
@@ -92,7 +90,7 @@ export default function MasterQCPage() {
 }
 
 // 피드백 검수 탭
-function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
+function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: ReturnType<typeof getSupabaseBrowserClient> | null }) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedCoachId, setSelectedCoachId] = useState('all');
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -116,6 +114,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
   const [duplicateCheck, setDuplicateCheck] = useState<{ duplicate?: boolean; message?: string } | null>(null);
 
   const fetchListData = useCallback(async () => {
+    if (!supabase) return;
     setLoading(true);
     setError(null);
     
@@ -145,7 +144,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, selectedCoachId]);
+  }, [supabase, selectedDate, selectedCoachId]);
 
   useEffect(() => {
     fetchListData();
@@ -198,7 +197,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
   const clearSelection = () => setSelectedSessions(new Set());
 
   const handleBulkApprove = async () => {
-    if (selectedSessions.size === 0) return alert('승인할 리포트를 선택해주세요.');
+    if (!supabase || selectedSessions.size === 0) return alert('승인할 리포트를 선택해주세요.');
     if (!confirm(`선택한 ${selectedSessions.size}개의 리포트를 일괄 승인하시겠습니까?`)) return;
     
     setBulkActionLoading(true);
@@ -225,6 +224,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
   };
 
   const checkDuplicateFeedback = async (currentSession: Session) => {
+    if (!supabase) return { isDuplicate: false };
     try {
       const { data: recentSessions } = await supabase
         .from('sessions')
@@ -275,7 +275,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
   };
 
   const handleSave = async (newStatus = 'verified') => {
-    if (!selectedEvent) return;
+    if (!supabase || !selectedEvent) return;
     try {
       const updatedText = fieldsToTemplateText(feedbackFields);
       const updateData: Record<string, unknown> = { 
@@ -549,7 +549,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
 
 // 수업안 조회 탭 - 세션 타입 (lesson_plans, users 조인 포함)
 type LessonPlanSession = Record<string, unknown> & { id: string; created_by: string; users?: { name?: string } | null };
-function LessonPlanTab({ coaches }: { coaches: Coach[] }) {
+function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: ReturnType<typeof getSupabaseBrowserClient> | null }) {
   const [sessions, setSessions] = useState<LessonPlanSession[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -558,6 +558,7 @@ function LessonPlanTab({ coaches }: { coaches: Coach[] }) {
 
   useEffect(() => {
     const fetchSessions = async () => {
+      if (!supabase) return;
       setLoading(true);
       try {
         // 이번 주 계산
@@ -588,7 +589,7 @@ function LessonPlanTab({ coaches }: { coaches: Coach[] }) {
       }
     };
     fetchSessions();
-  }, [selectedTeacher]);
+  }, [supabase, selectedTeacher]);
 
   const groupedByTeacher = useMemo(() => {
     const groups: Record<string, LessonPlanSession[]> = {};

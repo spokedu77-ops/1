@@ -241,17 +241,17 @@ export default function TeacherChatPage() {
   }, [messages]);
 
   return (
-    <div className="flex justify-center bg-[#F2F2F7] h-[100dvh] overflow-hidden text-black font-sans selection:bg-blue-100">
-      <div className="w-full max-w-md bg-white flex flex-col relative shadow-2xl overflow-hidden">
+    <div className="flex justify-center bg-[#F2F2F7] min-h-[100dvh] h-[100dvh] overflow-hidden text-black font-sans selection:bg-blue-100">
+      <div className="w-full max-w-md bg-white flex flex-col relative shadow-2xl overflow-hidden min-h-0">
         
         {/* 리스트 화면 */}
         {view === 'list' && (
-          <div className="flex flex-col h-full bg-white">
-            <header className="px-5 pt-14 pb-4 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-50">
-              <h1 className="text-3xl font-bold tracking-tight">대화</h1>
+          <div className="flex flex-col h-full bg-white min-h-0">
+            <header className="px-4 sm:px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-4 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-50">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">대화</h1>
             </header>
             
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {rooms.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-slate-400 px-8 text-center">
                   <p className="text-lg font-medium">참여한 대화방이 없습니다</p>
@@ -262,7 +262,7 @@ export default function TeacherChatPage() {
                   <div 
                     key={room.id} 
                     onClick={() => enterRoom(room)} 
-                    className="px-5 py-4 flex items-center gap-4 active:bg-slate-50 cursor-pointer border-b border-slate-50 transition-colors"
+                    className="px-4 sm:px-5 py-4 flex items-center gap-4 active:bg-slate-50 cursor-pointer border-b border-slate-50 transition-colors min-h-[72px] touch-manipulation"
                   >
                     <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-[22px] flex items-center justify-center text-white font-bold text-lg shadow-md">
                       {(room.custom_name && room.custom_name[0]) || '?'}
@@ -291,24 +291,24 @@ export default function TeacherChatPage() {
 
         {/* 채팅 화면 */}
         {view === 'chat' && selectedRoom && (
-          <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-300">
-            <header className="h-14 flex items-center justify-between px-2 border-b bg-white/90 backdrop-blur-md sticky top-0 z-20">
+          <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-300 min-h-0">
+            <header className="min-h-[56px] flex items-center justify-between px-2 border-b bg-white/90 backdrop-blur-md sticky top-0 z-20 pt-[env(safe-area-inset-top,0px)]">
               <button 
                 onClick={() => { 
                   setView('list'); if (myId) { fetchMyRooms(myId); fetchUnreadCounts(myId); }
                 }} 
-                className="p-2 text-blue-500 flex items-center cursor-pointer active:opacity-50 transition-opacity"
+                className="min-h-[44px] min-w-[44px] p-2 text-blue-500 flex items-center cursor-pointer active:opacity-70 transition-opacity touch-manipulation"
               >
                 <ChevronLeft size={28} />
-                <span className="text-[16px]">목록</span>
+                <span className="text-[16px] hidden sm:inline ml-0.5">목록</span>
               </button>
               
-              <div className="flex flex-col items-center flex-1 px-2 overflow-hidden">
-                <span className="text-[15px] font-bold truncate max-w-[150px]">{selectedRoom.custom_name}</span>
+              <div className="flex flex-col items-center flex-1 px-2 overflow-hidden min-w-0">
+                <span className="text-[15px] font-bold truncate max-w-[140px] sm:max-w-[150px]">{selectedRoom.custom_name}</span>
                 <span className="text-[11px] text-slate-400 font-medium">{participants.length}명 참여중</span>
               </div>
               
-              <div className="w-[60px]"></div>
+              <div className="w-[44px] sm:w-[60px] shrink-0" aria-hidden />
             </header>
 
             <div
@@ -380,21 +380,21 @@ export default function TeacherChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            <footer className="p-3 pb-8 bg-white border-t">
+            <footer className="p-3 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t">
               <div className="flex gap-2 items-center">
-                <div className="flex-1 bg-slate-100 rounded-3xl px-4 py-1.5 border border-slate-200">
+                <div className="flex-1 min-h-[44px] bg-slate-100 rounded-3xl px-4 py-2 border border-slate-200 flex items-center min-w-0">
                   <input 
                     value={input} 
                     onChange={e => setInput(e.target.value)} 
                     onKeyDown={handleKeyPress}
                     placeholder="메시지 입력" 
-                    className="w-full bg-transparent outline-none py-1 text-[15px]" 
+                    className="w-full bg-transparent outline-none py-1 text-[15px] touch-manipulation" 
                   />
                 </div>
                 <button 
                   onClick={sendMessage}
                   disabled={!input.trim()} 
-                  className="bg-blue-600 text-white rounded-full p-1.5 cursor-pointer disabled:opacity-30 transition-all active:scale-90"
+                  className="min-h-[44px] min-w-[44px] bg-blue-600 text-white rounded-full p-2 cursor-pointer disabled:opacity-30 transition-all active:scale-95 flex items-center justify-center touch-manipulation shrink-0"
                 >
                   <Send size={18} fill="currentColor" />
                 </button>

@@ -11,20 +11,23 @@
 
 3. **웹 앱 설정**  
    - 프로젝트 설정(톱니) → **일반** → **내 앱**에서 웹 앱 추가(또는 기존 웹 앱).  
-   - 나오는 `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId` 를 복사.
+   - 나오는 `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId` 를 복사.  
+   - **실제 값은 Git/문서에 넣지 말고**, 아래처럼 `.env.local` 등에만 넣을 것.
 
-apiKey: "AIzaSyDfQZhVgcS0xE6r4YIKeeU_MdsUmCpw3mk",
-  authDomain: "spokedu-app.firebaseapp.com",
-  projectId: "spokedu-app",
-  storageBucket: "spokedu-app.firebasestorage.app",
-  messagingSenderId: "972447146593",
-  appId: "1:972447146593:web:b93b4f715bd9fb64138020"
+   예시 형식(값은 Firebase 콘솔에서 복사한 것으로 채움):
+   ```
+   apiKey: "여기_API키",
+   authDomain: "프로젝트ID.firebaseapp.com",
+   projectId: "프로젝트ID",
+   storageBucket: "프로젝트ID.firebasestorage.app",
+   messagingSenderId: "숫자",
+   appId: "1:숫자:web:..."
+   ```
 
 4. **웹 푸시 키(VAPID)**  
    - 프로젝트 설정 → **Cloud Messaging** 탭.  
-   - **웹 푸시 인증서**에서 **키 페어 생성** 후 생성된 키를 복사.
-
-BCvRflaJd8JTuKUIF8eAyJ1gwYxDhQmHvu8qlKW43RAHE2LoxYjidxffKB8DC1CcGMDDS_bSG3qyGzZ4xzbk5Sc
+   - **웹 푸시 인증서**에서 **키 페어 생성** 후 생성된 키를 복사.  
+   - **실제 VAPID 키는 Git/문서에 넣지 말고** `.env.local` 의 `NEXT_PUBLIC_FIREBASE_VAPID_KEY` 에만 넣을 것.
 
 5. **서비스 계정 키(JSON)**  
    - 프로젝트 설정 → **서비스 계정** 탭.  

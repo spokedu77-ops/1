@@ -2,18 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getSchedules } from '@/app/admin/schedules/actions/schedules';
 import type { Schedule } from '@/app/lib/schedules/types';
 import { 
   Calendar, RefreshCw, CheckCircle2, 
   Circle, Clock, FileText, User, Users, Plus, X, Trash2, Save, CalendarDays, ExternalLink
 } from 'lucide-react';
-
-// --- Supabase Client (Vercel 환경 변수 예외 처리) ---
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // --- Interfaces ---
 interface ITask {
@@ -53,7 +48,10 @@ const BOARDS = [
   { id: '김구민', name: '김구민', icon: User, accent: 'border-emerald-500', hasMemo: true },
 ];
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
 export default function SpokeduHQDashboard() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [todayClasses, setTodayClasses] = useState<IClassSession[]>([]);
   const [tasks, setTasks] = useState<ITask[]>([]);
   const [vacationRequests, setVacationRequests] = useState<IVacationRequest[]>([]);
@@ -76,7 +74,7 @@ export default function SpokeduHQDashboard() {
   });
 
   const fetchData = useCallback(async () => {
-    if (!supabaseUrl) return;
+    if (!supabaseUrl || !supabase) return;
     setLoading(true);
     try {
       const now = new Date();
@@ -153,11 +151,12 @@ export default function SpokeduHQDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [supabase]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const openNoteModal = async (boardId: string) => {
+    if (!supabase) return;
     setSelectedBoard(boardId);
     setNoteContent('로딩 중...');
     setIsNoteModalOpen(true);
@@ -167,7 +166,7 @@ export default function SpokeduHQDashboard() {
   };
 
   const handleSaveNote = async () => {
-    if (!selectedBoard) return;
+    if (!selectedBoard || !supabase) return;
     setIsSavingNote(true);
     
     try {
@@ -200,13 +199,14 @@ export default function SpokeduHQDashboard() {
 
   const toggleStatus = async (task: ITask, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!supabase) return;
     const nextStatusMap: Record<string, ITask['status']> = { 'To Do': 'In Progress', 'In Progress': 'Done', 'Done': 'To Do' };
     await supabase.from('todos').update({ status: nextStatusMap[task.status] }).eq('id', task.id);
     fetchData();
   };
 
   const handleSaveTask = async () => {
-    if (!taskForm.title) return;
+    if (!taskForm.title || !supabase) return;
     const { error } = editingTask 
       ? await supabase.from('todos').update(taskForm).eq('id', editingTask.id)
       : await supabase.from('todos').insert([taskForm]);
@@ -219,16 +219,16 @@ export default function SpokeduHQDashboard() {
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black italic text-slate-300">HQ INITIALIZING...</div>;
 
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 md:p-8 flex flex-col items-center">
-      <div className="w-full max-w-4xl space-y-8 md:space-y-12">
+    <div className="min-h-screen bg-white p-4 sm:p-6 md:p-8 pb-[env(safe-area-inset-bottom,0px)] flex flex-col items-center">
+      <div className="w-full max-w-4xl space-y-6 sm:space-y-8 md:space-y-12 min-w-0">
         
-        {/* Header */}
-        <header className="flex justify-between items-end border-b-2 pb-8 border-slate-900">
+        {/* Header - 모바일에서 세로 배치, 터치 영역 확보 */}
+        <header className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 border-b-2 pb-6 sm:pb-8 border-slate-900">
           <div>
-            <h1 className="text-4xl font-black italic tracking-tighter text-slate-900 uppercase leading-none mb-1">
+            <h1 className="text-2xl sm:text-4xl font-black italic tracking-tighter text-slate-900 uppercase leading-none mb-1">
               Spokedu HQ
             </h1>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
               <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
                 Operational Control Center
               </p>
@@ -237,10 +237,10 @@ export default function SpokeduHQDashboard() {
               </span>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             <button 
               onClick={fetchData} 
-              className="p-3 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all cursor-pointer group"
+              className="min-h-[44px] min-w-[44px] p-3 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all cursor-pointer group touch-manipulation flex items-center justify-center"
             >
               <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
             </button>
@@ -250,7 +250,7 @@ export default function SpokeduHQDashboard() {
                 setTaskForm({ title: '', assignee: 'Common', status: 'To Do', tag: 'General', description: '' }); 
                 setIsTaskModalOpen(true); 
               }} 
-              className="px-6 py-3 bg-gradient-to-r from-slate-900 to-slate-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:shadow-lg transition-all cursor-pointer flex items-center gap-2"
+              className="min-h-[44px] px-4 sm:px-6 py-3 bg-gradient-to-r from-slate-900 to-slate-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:shadow-lg transition-all cursor-pointer flex items-center gap-2 touch-manipulation"
             >
               <Plus size={16} />
               New Task
@@ -314,9 +314,9 @@ export default function SpokeduHQDashboard() {
               <ExternalLink size={12} />
             </Link>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden -mx-1 sm:mx-0">
+            <div className="overflow-x-auto overflow-y-visible">
+              <table className="min-w-full divide-y divide-slate-200 text-sm" style={{ minWidth: '320px' }}>
                 <thead className="bg-slate-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">제목</th>
@@ -462,11 +462,11 @@ export default function SpokeduHQDashboard() {
 
       </div>
 
-      {/* Daily Note Modal */}
+      {/* Daily Note Modal - 모바일에서 하단 시트 형태 */}
       {isNoteModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="bg-[#FFFDE7] rounded-[40px] w-full max-w-2xl h-[70vh] flex flex-col p-10 shadow-2xl relative border-8 border-white">
-            <button onClick={() => setIsNoteModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 text-3xl font-light cursor-pointer">×</button>
+        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-[#FFFDE7] rounded-t-[32px] sm:rounded-[40px] w-full max-w-2xl max-h-[90vh] sm:h-[70vh] flex flex-col p-6 sm:p-10 shadow-2xl relative border-8 border-white overflow-hidden">
+            <button onClick={() => setIsNoteModalOpen(false)} className="absolute top-4 right-4 sm:top-8 sm:right-8 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-slate-900 text-3xl font-light cursor-pointer touch-manipulation">×</button>
             <div className="mb-6">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-yellow-600 mb-2">Daily Note Pad</h3>
               <h2 className="text-2xl font-black text-slate-900">{selectedBoard} 업무 메모</h2>
@@ -488,28 +488,28 @@ export default function SpokeduHQDashboard() {
         </div>
       )}
 
-      {/* Task Editor Modal */}
+      {/* Task Editor Modal - 모바일 하단 시트 */}
       {isTaskModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px]">
-          <div className="bg-white rounded-[32px] w-full max-w-md p-10 shadow-2xl relative animate-in zoom-in duration-150">
-            <button onClick={() => setIsTaskModalOpen(false)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-900 cursor-pointer"><X size={20}/></button>
+        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-[2px]">
+          <div className="bg-white rounded-t-[32px] sm:rounded-[32px] w-full max-w-md max-h-[90vh] overflow-y-auto p-6 sm:p-10 shadow-2xl relative animate-in zoom-in duration-150">
+            <button onClick={() => setIsTaskModalOpen(false)} className="absolute top-4 right-4 sm:top-8 sm:right-8 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-300 hover:text-slate-900 cursor-pointer touch-manipulation"><X size={20}/></button>
             <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-8">{editingTask ? 'Edit Task' : 'Register Task'}</h3>
             <div className="space-y-5">
-              <input autoFocus type="text" placeholder="Title" value={taskForm.title} onChange={e => setTaskForm({...taskForm, title: e.target.value})} className="w-full px-5 py-4 bg-slate-50 rounded-2xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-slate-100" />
+              <input autoFocus type="text" placeholder="Title" value={taskForm.title} onChange={e => setTaskForm({...taskForm, title: e.target.value})} className="w-full min-h-[48px] px-5 py-4 bg-slate-50 rounded-2xl text-base sm:text-sm font-bold border-none outline-none focus:ring-2 focus:ring-slate-100 touch-manipulation" />
               <div className="grid grid-cols-2 gap-4">
-                <select value={taskForm.assignee} onChange={e => setTaskForm({...taskForm, assignee: e.target.value})} className="px-5 py-4 bg-slate-50 rounded-2xl text-[11px] font-black border-none outline-none">
+                <select value={taskForm.assignee} onChange={e => setTaskForm({...taskForm, assignee: e.target.value})} className="min-h-[48px] px-5 py-4 bg-slate-50 rounded-2xl text-[11px] font-black border-none outline-none touch-manipulation">
                   {BOARDS.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
-                <select value={taskForm.tag} onChange={e => setTaskForm({...taskForm, tag: e.target.value})} className="px-5 py-4 bg-slate-50 rounded-2xl text-[11px] font-black border-none outline-none">
+                <select value={taskForm.tag} onChange={e => setTaskForm({...taskForm, tag: e.target.value})} className="min-h-[48px] px-5 py-4 bg-slate-50 rounded-2xl text-[11px] font-black border-none outline-none touch-manipulation">
                   {['General', 'Finance', 'Meeting', 'CS', 'Ops', 'Class'].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
-              <textarea placeholder="Description" value={taskForm.description} onChange={e => setTaskForm({...taskForm, description: e.target.value})} className="w-full px-5 py-4 bg-slate-50 rounded-2xl text-[11px] font-bold min-h-[140px] border-none outline-none resize-none" />
+              <textarea placeholder="Description" value={taskForm.description} onChange={e => setTaskForm({...taskForm, description: e.target.value})} className="w-full min-h-[140px] px-5 py-4 bg-slate-50 rounded-2xl text-base sm:text-[11px] font-bold border-none outline-none resize-none touch-manipulation" />
               <div className="flex gap-2 pt-2">
                 {editingTask && (
-                  <button onClick={async () => { if(confirm('Delete?')) { await supabase.from('todos').delete().eq('id', editingTask.id); setIsTaskModalOpen(false); fetchData(); } }} className="p-4 text-red-400 hover:bg-red-50 rounded-2xl transition-all cursor-pointer"><Trash2 size={24}/></button>
+                  <button onClick={async () => { if(supabase && confirm('Delete?')) { await supabase.from('todos').delete().eq('id', editingTask.id); setIsTaskModalOpen(false); fetchData(); } }} className="p-4 text-red-400 hover:bg-red-50 rounded-2xl transition-all cursor-pointer"><Trash2 size={24}/></button>
                 )}
-                <button onClick={handleSaveTask} className="flex-1 bg-slate-900 text-white text-[11px] font-black py-5 rounded-2xl hover:bg-indigo-600 shadow-xl transition-all cursor-pointer">SUBMIT HQ</button>
+                <button onClick={handleSaveTask} className="flex-1 min-h-[48px] bg-slate-900 text-white text-[11px] font-black py-5 rounded-2xl hover:bg-indigo-600 shadow-xl transition-all cursor-pointer touch-manipulation">SUBMIT HQ</button>
               </div>
             </div>
           </div>

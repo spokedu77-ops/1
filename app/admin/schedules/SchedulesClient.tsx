@@ -128,19 +128,19 @@ export default function SchedulesClient({ initialSchedules }: SchedulesClientPro
   const drawerOpen = selectedId !== null || drawerCreate;
 
   return (
-    <div className="min-h-screen bg-slate-50 w-full">
-      <div className="p-4 sm:p-6 md:p-6">
+    <div className="min-h-screen bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="p-4 sm:p-6 md:p-6 min-w-0">
         <div className="mb-4 flex items-center gap-3">
           <Link
             href="/admin"
-            className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900"
+            className="min-h-[44px] flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 touch-manipulation"
           >
             <ChevronLeft className="h-4 w-4" />
             대시보드
           </Link>
         </div>
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">일정</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">일정</h1>
         </div>
 
         <ViewToolbar
