@@ -9,19 +9,16 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function MasterInsightPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [marginRate, setMarginRate] = useState(1.5); 
   const [stats, setStats] = useState({
     payout: 0,
     totalSessions: 0,
     centerCount: 0,
     privateCount: 0,
-    teacherStats: [] as any[]
+    teacherStats: [] as { name: string; count: number }[]
   });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchMasterData() {
-      setLoading(true);
       const year = new Date().getFullYear();
       const startDate = new Date(year, selectedMonth - 1, 1).toISOString();
       const endDate = new Date(year, selectedMonth, 0, 23, 59, 59).toISOString();
@@ -48,7 +45,6 @@ export default function MasterInsightPage() {
 
         setStats({ payout, totalSessions: sessions.length, centerCount: centers, privateCount: privates, teacherStats });
       }
-      setLoading(false);
     }
     fetchMasterData();
   }, [selectedMonth]);
@@ -147,7 +143,7 @@ export default function MasterInsightPage() {
         {/* CEO FOOTER MESSAGE */}
         <div className="text-center pt-10 border-t border-white/5">
           <p className="text-gray-600 font-bold text-sm">
-            "스포키듀의 교육 가치는 29명의 전문 강사진과 연세대학교 운영진의 노하우에서 시작됩니다."
+            &quot;스포키듀의 교육 가치는 29명의 전문 강사진과 연세대학교 운영진의 노하우에서 시작됩니다.&quot;
           </p>
         </div>
 

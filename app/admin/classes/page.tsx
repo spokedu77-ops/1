@@ -146,7 +146,7 @@ export default function ClassManagementPage() {
               for (const row of countLogs) {
                 const { error: oneError } = await supabase.from('session_count_logs').insert(row);
                 if (oneError) {
-                  console.warn('수업 카운팅 로그 1건 건너뜀 (teacher_id FK):', row.teacher_id, oneError.message);
+                  // FK 위반 등으로 1건 건너뜀 (teacher_id 없음)
                 }
               }
             } else {
@@ -167,6 +167,7 @@ export default function ClassManagementPage() {
     autoFinishSessions();
     const interval = setInterval(autoFinishSessions, 5 * 60 * 1000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount + interval only
   }, []);
 
   const handleEventClick = (info: EventClickArg) => {
@@ -237,8 +238,7 @@ export default function ClassManagementPage() {
       if (error) throw error;
       
       fetchSessions();
-    } catch (err: any) {
-      console.error('일정 변경 에러:', err);
+    } catch {
       alert('일정 변경에 실패했습니다.');
       info.revert();
     }
@@ -263,17 +263,15 @@ export default function ClassManagementPage() {
       const extras = editFields.teachers.slice(1).filter(t => t.id);
       const finalMemo = buildMemoWithExtras(editFields.memo, extras);
       
-      const updatePayload: any = {
-        title: editFields.title, 
-        created_by: mainT.id, 
+      const updatePayload: Record<string, unknown> = {
+        title: editFields.title,
+        created_by: mainT.id,
         price: Number(mainT.price) || 0,
         start_at: newStart.toISOString(),
         end_at: newEnd.toISOString(),
         students_text: finalMemo,
         mileage_option: editFields.mileageAction
       };
-
-      // 회차 정보 업데이트 (그룹이 있는 경우만)
       if (selectedEvent.groupId && editFields.roundIndex && editFields.roundTotal) {
         updatePayload.round_index = editFields.roundIndex;
         updatePayload.round_total = editFields.roundTotal;
@@ -307,8 +305,9 @@ export default function ClassManagementPage() {
 
       setIsModalOpen(false); 
       fetchSessions();
-    } catch (error: any) {
-      alert('저장 실패: ' + (error.message || 'Error'));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      alert('저장 실패: ' + msg);
     }
   };
 
@@ -377,16 +376,19 @@ export default function ClassManagementPage() {
         }));
       }
       
-      const { id, created_at, ...copyData } = curr;
+      // id, created_at 제외한 복사본으로 연기 세션 생성
+      const { id: _id, created_at: _createdAt, ...copyData } = curr;
+      void _id;
+      void _createdAt;
       const { error: insertError } = await supabase.from('sessions').insert([{ ...copyData, start_at: curr.start_at, status: 'postponed' }]);
       if (insertError) throw insertError;
       
       alert('일정이 성공적으로 연기되었습니다.');
       setIsModalOpen(false); 
       fetchSessions();
-    } catch (error: any) {
-      console.error('연기 에러:', error);
-      alert('일정 연기에 실패했습니다: ' + (error.message || '알 수 없는 오류'));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      alert('일정 연기에 실패했습니다: ' + msg);
     }
   };
 
@@ -419,9 +421,9 @@ export default function ClassManagementPage() {
       alert('일정이 성공적으로 복구되었습니다.');
       setIsModalOpen(false); 
       fetchSessions();
-    } catch (error: any) {
-      console.error('복구 에러:', error);
-      alert('일정 복구에 실패했습니다: ' + (error.message || '알 수 없는 오류'));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      alert('일정 복구에 실패했습니다: ' + msg);
     }
   };
 
@@ -474,9 +476,10 @@ export default function ClassManagementPage() {
       alert('회차가 성공적으로 축소되었습니다.');
       setIsModalOpen(false);
       fetchSessions();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('회차 축소 에러:', error);
-      alert('회차 축소에 실패했습니다: ' + (error.message || '알 수 없는 오류'));
+      const msg = error instanceof Error ? error.message : String(error);
+      alert('회차 축소에 실패했습니다: ' + msg);
     }
   };
 
@@ -497,7 +500,7 @@ export default function ClassManagementPage() {
     
     try {
       const baseSession = selectedEvent;
-      const sessionsToCopy: any[] = [];
+      const sessionsToCopy: Record<string, unknown>[] = [];
       
       if (cloneMode === 'fixed') {
         // 고정 간격 복제
@@ -574,21 +577,10 @@ export default function ClassManagementPage() {
       setIsCloneModalOpen(false);
       setIsModalOpen(false);
       fetchSessions();
-    } catch (error: any) {
-      console.error('복제 에러:', error);
-      alert('복제에 실패했습니다: ' + (error.message || '알 수 없는 오류'));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      alert('복제에 실패했습니다: ' + msg);
     }
-  };
-
-  const goRollingFourDay = () => {
-    const api = calendarRef.current?.getApi();
-    if (!api) return;
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    api.changeView('rollingFourDay');
-    api.gotoDate(yesterday);
-    setCurrentView('rollingFourDay');
   };
 
   return (

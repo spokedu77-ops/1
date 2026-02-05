@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getFinanceTerms, upsertFinanceTerms } from '../actions/finance';
+import { upsertFinanceTerms } from '../actions/finance';
 import type { CenterFinanceTerms } from '@/app/lib/centers/types';
 import { Save } from 'lucide-react';
 
@@ -34,7 +34,7 @@ export function FinanceTab({ centerId, terms, onSaved }: FinanceTabProps) {
       setDocChecklist([]);
       setSpecialTerms('');
     }
-  }, [terms?.id, terms?.unit_price, terms?.payment_day, terms?.invoice_required, terms?.doc_checklist, terms?.special_terms]);
+  }, [terms]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -103,7 +103,7 @@ export default function SpokeduHQDashboard() {
       // Class Sessions: 시간 순서 유지 (start_at 오름차순), 연기/취소는 뒤로
       const rawClasses = classesRes.data || [];
       const formattedClasses = rawClasses
-        .map((c: any) => {
+        .map((c: { id: string; start_at: string; end_at: string; title?: string; status?: string; round_display?: string; round_index?: number; round_total?: number; users?: { name?: string } }) => {
           const endTime = new Date(c.end_at);
           const isPostponed = c.status === 'postponed';
           const isCancelled = c.status === 'cancelled';
@@ -191,9 +191,9 @@ export default function SpokeduHQDashboard() {
       alert('저장되었습니다!');
       setIsSavingNote(false);
       setIsNoteModalOpen(false);
-    } catch (err: any) {
-      console.error('Unexpected error:', err);
-      alert(`저장 실패: ${err?.message || '알 수 없는 오류'}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '알 수 없는 오류';
+      alert(`저장 실패: ${msg}`);
       setIsSavingNote(false);
     }
   };

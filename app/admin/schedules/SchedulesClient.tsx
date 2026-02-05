@@ -56,6 +56,7 @@ export default function SchedulesClient({ initialSchedules }: SchedulesClientPro
       return;
     }
     loadSchedules();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadSchedules stable, filters trigger reload
   }, [statusFilter, searchQuery]);
 
   useEffect(() => {

@@ -1,13 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package, FileText, Receipt } from 'lucide-react';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package, Receipt, Calendar } from 'lucide-react';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 interface Notice {
   id: number;
@@ -18,6 +14,13 @@ interface Notice {
   created_at: string;
 }
 
+interface TodaySession {
+  id: string;
+  title: string;
+  start_at: string;
+  session_type: string;
+}
+
 const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
   must: { label: '필독', color: 'bg-rose-50 text-rose-600 border-rose-100' },
   general: { label: '일반', color: 'bg-slate-50 text-slate-600 border-slate-100' },
@@ -26,11 +29,15 @@ const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
 
 export default function TeacherMainPage() {
   const router = useRouter();
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [todaySessions, setTodaySessions] = useState<TodaySession[]>([]);
+  const [todayLoading, setTodayLoading] = useState(true);
 
   const fetchNotices = useCallback(async () => {
+    if (!supabase) return;
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -46,11 +53,40 @@ export default function TeacherMainPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [supabase]);
+
+  const fetchTodaySessions = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      setTodayLoading(true);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) return;
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, title, start_at, session_type')
+        .eq('created_by', userData.user.id)
+        .gte('start_at', start.toISOString())
+        .lte('start_at', end.toISOString())
+        .order('start_at', { ascending: true });
+      if (error) throw error;
+      setTodaySessions((data as TodaySession[]) ?? []);
+    } catch (err) {
+      console.error('Today sessions fetch error:', err);
+    } finally {
+      setTodayLoading(false);
+    }
+  }, [supabase]);
 
   useEffect(() => {
     fetchNotices();
   }, [fetchNotices]);
+
+  useEffect(() => {
+    fetchTodaySessions();
+  }, [fetchTodaySessions]);
 
   return (
     <div className="px-6 pt-8 pb-32">
@@ -66,13 +102,7 @@ export default function TeacherMainPage() {
                 onClick={() => router.push('/teacher/my-classes')}
                 className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
-                오늘 스케줄 <ChevronRight size={16} />
-              </button>
-              <button 
-                onClick={() => router.push('/teacher/lesson-plans')}
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-              >
-                <FileText size={16} /> 수업안
+                <Calendar size={16} /> 주간 일정 <ChevronRight size={16} />
               </button>
               <button 
                 onClick={() => router.push('/teacher/inventory')}
@@ -90,6 +120,62 @@ export default function TeacherMainPage() {
           </div>
           <Layout className="absolute -right-4 -bottom-4 w-32 h-32 text-white/5 rotate-12 pointer-events-none" />
         </div>
+      </section>
+
+      {/* 오늘 수업 - 공지 위 */}
+      <section className="mb-10">
+        <h3 className="text-xl font-black text-slate-900 mb-4 px-1">오늘 수업</h3>
+        {todayLoading ? (
+          <div className="py-8 text-center bg-white rounded-[28px] border-2 border-slate-100">
+            <div className="w-6 h-6 border-2 border-slate-200 border-t-indigo-500 rounded-full animate-spin mx-auto mb-2" />
+            <p className="text-slate-400 text-xs font-bold">로딩 중...</p>
+          </div>
+        ) : todaySessions.length === 0 ? (
+          <div className="py-8 text-center bg-white rounded-[28px] border-2 border-dashed border-slate-100">
+            <p className="text-slate-400 text-sm font-bold">오늘 예정된 수업이 없습니다</p>
+            <button
+              type="button"
+              onClick={() => router.push('/teacher/my-classes')}
+              className="mt-3 text-indigo-600 text-xs font-black hover:underline"
+            >
+              주간 일정 보기
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {todaySessions.map((s) => {
+              const start = new Date(s.start_at);
+              const timeStr = start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => router.push('/teacher/my-classes')}
+                  className="w-full p-4 rounded-[24px] bg-white border-2 border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 text-left transition-all flex items-center gap-4 cursor-pointer active:scale-[0.99]"
+                >
+                  <div className="w-14 h-14 rounded-xl bg-slate-900 text-white flex flex-col items-center justify-center shrink-0">
+                    <span className="text-[10px] font-black uppercase">오늘</span>
+                    <span className="text-base font-black leading-none">{timeStr}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
+                      {s.session_type === 'regular_center' ? '센터' : '방문'}
+                    </span>
+                    <p className="text-sm font-black text-slate-800 truncate mt-1">{s.title || '제목 없음'}</p>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-300 shrink-0" />
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => router.push('/teacher/my-classes')}
+              className="w-full py-3 text-center text-slate-500 text-sm font-bold hover:text-indigo-600 transition-colors"
+            >
+              주간 일정 · 수업안 보기
+            </button>
+          </div>
+        )}
       </section>
 
       {/* 공지사항 섹션 */}

@@ -39,6 +39,7 @@ export function FullSequencePlayer({
   const [phase, setPhase] = useState<SequencePhase>('idle');
   const [bridgeSecondsLeft, setBridgeSecondsLeft] = useState(BRIDGE_DURATION_SEC);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const advancePhaseRef = useRef<() => void>(() => {});
 
   const advancePhase = useCallback(() => {
     if (timerRef.current) {
@@ -97,7 +98,7 @@ export function FullSequencePlayer({
               clearInterval(timerRef.current);
               timerRef.current = null;
             }
-            advancePhase();
+            advancePhaseRef.current();
             return 0;
           }
           return s - 1;
@@ -105,6 +106,14 @@ export function FullSequencePlayer({
       }, 1000);
     }
   }, [phase, mode, onPhaseChange]);
+
+  useEffect(() => {
+    advancePhaseRef.current = advancePhase;
+  }, [advancePhase]);
+
+  const onEndStable = useCallback(() => {
+    advancePhaseRef.current();
+  }, []);
 
   const handleSkipBridge = useCallback(() => {
     if (phase === 'bridge1' || phase === 'bridge2') {
@@ -166,7 +175,9 @@ export function FullSequencePlayer({
       <div className="fixed inset-0 flex flex-col bg-black">
         <div className="flex-1">
           {renderPlay ? (
-            renderPlay({ weekKey, onEnd: advancePhase })
+            // weekKey는 문자열 prop이며 ref 아님 (react-hooks/refs 오탐 회피)
+            // eslint-disable-next-line react-hooks/refs
+            renderPlay({ weekKey, onEnd: onEndStable })
           ) : (
             <div className="flex h-full items-center justify-center text-white">
               <div className="text-center">
@@ -192,7 +203,8 @@ export function FullSequencePlayer({
       <div className="fixed inset-0 flex flex-col bg-black">
         <div className="flex-1">
           {renderThink ? (
-            renderThink({ weekKey, onEnd: advancePhase })
+            // eslint-disable-next-line react-hooks/refs
+            renderThink({ weekKey, onEnd: onEndStable })
           ) : (
             <div className="flex h-full items-center justify-center text-white">
               <div className="text-center">
@@ -218,7 +230,8 @@ export function FullSequencePlayer({
       <div className="fixed inset-0 flex flex-col bg-black">
         <div className="flex-1">
           {renderFlow ? (
-            renderFlow({ weekKey, onEnd: advancePhase })
+            // eslint-disable-next-line react-hooks/refs
+            renderFlow({ weekKey, onEnd: onEndStable })
           ) : (
             <div className="flex h-full items-center justify-center text-white">
               <div className="text-center">

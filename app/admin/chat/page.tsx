@@ -1,25 +1,26 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Send, Plus, ChevronLeft, MoreVertical, UserPlus, Trash2, Users, Image as ImageIcon, Paperclip, X, Search, Wifi, WifiOff } from 'lucide-react';
+import { Send, Plus, ChevronLeft, MoreVertical, UserPlus, Trash2, Users, Paperclip, X, Search, WifiOff } from 'lucide-react';
 import { formatChatTimestamp } from '@/app/lib/utils';
 import { fetchUnreadCounts as fetchUnreadCountsApi, markRoomAsRead } from '@/app/lib/chat';
 import { registerFCMTokenIfNeeded } from '@/app/lib/fcm';
 import { ToastContainer, useToast } from '@/app/components/Toast';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+interface ChatRoom { id: string; custom_name?: string }
+interface ChatParticipant { user_id: string; users?: { name?: string } }
+interface ChatTeacher { id: string; name: string }
+interface ChatMessage { created_at: string; [key: string]: unknown }
 
 export default function AdminChatPage() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [view, setView] = useState<'list' | 'chat'>('list');
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [teacherList, setTeacherList] = useState<any[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [participants, setParticipants] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [teacherList, setTeacherList] = useState<ChatTeacher[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [participants, setParticipants] = useState<ChatParticipant[]>([]);
   const [input, setInput] = useState('');
   const [myId, setMyId] = useState<string | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<{[roomId: string]: number}>({});
@@ -41,6 +42,7 @@ export default function AdminChatPage() {
   const { toasts, showToast, removeToast } = useToast();
 
   useEffect(() => {
+    if (!supabase) return;
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -48,24 +50,31 @@ export default function AdminChatPage() {
         fetchRooms();
         fetchTeachers();
         fetchUnreadCounts(user.id);
-        
-        // 브라우저 알림 권한 요청
-        if ('Notification' in window && Notification.permission === 'default') {
-          await Notification.requestPermission();
-        }
+        if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
         if (Notification.permission === 'granted') registerFCMTokenIfNeeded(supabase, user.id);
       }
     };
     init();
-  }, []);
+  }, [supabase]);
 
   const fetchUnreadCounts = async (userId: string) => {
+    if (!supabase) return;
     const counts = await fetchUnreadCountsApi(supabase, userId);
     setUnreadCounts(counts);
   };
 
+  // PWA 앱 아이콘 배지: 미읽음 총 개수 표시 (Badging API)
+  useEffect(() => {
+    const total = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
+    if (typeof navigator !== 'undefined' && 'setAppBadge' in navigator) {
+      const nav = navigator as Navigator & { setAppBadge?(count: number): Promise<void>; clearAppBadge?(): Promise<void> };
+      if (total > 0) nav.setAppBadge?.(total);
+      else nav.clearAppBadge?.();
+    }
+  }, [unreadCounts]);
+
   const fetchRooms = async () => {
-    // denormalize된 컬럼 사용으로 단순화
+    if (!supabase) return;
     const { data: roomsData, error } = await supabase
       .from('chat_rooms')
       .select(`
@@ -127,6 +136,7 @@ export default function AdminChatPage() {
   };
 
   const fetchTeachers = async () => {
+    if (!supabase) return;
     const { data, error } = await supabase
       .from('users')
       .select('id, name, role, is_active')
@@ -145,6 +155,7 @@ export default function AdminChatPage() {
   };
 
   const fetchRoomParticipants = async (roomId: string) => {
+    if (!supabase) return;
     const { data, error } = await supabase
       .from('chat_participants')
       .select('user_id, users(id, name)')
@@ -158,6 +169,7 @@ export default function AdminChatPage() {
   };
 
   const fetchRoomParticipantsFallback = async (roomId: string) => {
+    if (!supabase) return;
     const { data: participantIds } = await supabase
       .from('chat_participants')
       .select('user_id')
@@ -182,7 +194,7 @@ export default function AdminChatPage() {
     setParticipants(participantsWithNames);
   };
 
-  const enterRoom = async (room: any) => {
+  const enterRoom = async (room: ChatRoom) => {
     setSelectedRoom(room);
     setView('chat');
     setMessages([]);
@@ -199,8 +211,7 @@ export default function AdminChatPage() {
   };
 
   const loadMessages = async (roomId: string, beforeDate: string | null, limit: number = 50) => {
-    if (loadingMessages) return;
-    
+    if (!supabase || loadingMessages) return;
     setLoadingMessages(true);
     try {
       let query = supabase
@@ -251,12 +262,13 @@ export default function AdminChatPage() {
   };
 
   const markAsRead = async (roomId: string, userId: string) => {
+    if (!supabase) return;
     await markRoomAsRead(supabase, roomId, userId);
     await fetchUnreadCounts(userId);
   };
 
-  const handleCreateRoom = async (teacher: any) => {
-    if (!myId) return;
+  const handleCreateRoom = async (teacher: ChatTeacher) => {
+    if (!supabase || !myId) return;
 
     let createdRoomId: string | null = null;
 
@@ -271,20 +283,14 @@ export default function AdminChatPage() {
       if (roomError) throw roomError;
       createdRoomId = room.id;
 
-      console.log('방 생성 완료:', room.id);
-      console.log('추가할 참여자:', { admin: myId, teacher: teacher.id, teacherName: teacher.name });
-
       // 2. 관리자 추가 (한 명씩 순차 추가하여 어느 ID가 문제인지 파악)
       const { error: adminError } = await supabase
         .from('chat_participants')
         .insert({ room_id: room.id, user_id: myId });
 
       if (adminError) {
-        console.error('Admin 추가 실패:', adminError);
         throw new Error(`관리자 추가 실패: ${adminError.message}`);
       }
-
-      console.log('관리자 추가 성공:', myId);
 
       // 3. 선생님 추가
       const { error: teacherError } = await supabase
@@ -292,33 +298,28 @@ export default function AdminChatPage() {
         .insert({ room_id: room.id, user_id: teacher.id });
 
       if (teacherError) {
-        console.error('Teacher 추가 실패:', teacherError);
         throw new Error(`선생님 추가 실패: ${teacherError.message} (${teacher.name}, ID: ${teacher.id})`);
       }
-
-      console.log('선생님 추가 성공:', teacher.id);
 
       setIsCreateOpen(false);
       fetchRooms();
       showToast('채팅방이 생성되었습니다.', 'success');
-    } catch (error: any) {
-      console.error('방 생성 실패:', error);
-      
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       // Rollback: 생성된 방 삭제
       if (createdRoomId) {
         try {
           await supabase.from('chat_rooms').delete().eq('id', createdRoomId);
-          console.log('생성된 방 롤백 완료:', createdRoomId);
-        } catch (rollbackError) {
-          console.error('롤백 실패:', rollbackError);
+        } catch {
+          // ignore rollback failure
         }
       }
-      
-      showToast(`방 생성에 실패했습니다: ${error.message}`, 'error', 5000);
+      showToast(`방 생성에 실패했습니다: ${message}`, 'error', 5000);
     }
   };
 
   const handleInviteTeacher = async (teacherId: string) => {
+    if (!supabase) return;
     if (!selectedRoom) return;
     
     const isAlreadyIn = participants.some(p => p.user_id === teacherId);
@@ -338,13 +339,14 @@ export default function AdminChatPage() {
       await fetchRooms(); // 참여자 수 업데이트
       setIsInviteOpen(false);
       showToast('선생님을 초대했습니다.', 'success');
-    } catch (error: any) {
-      console.error('초대 실패:', error);
-      showToast(`초대에 실패했습니다: ${error.message}`, 'error');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      showToast(`초대에 실패했습니다: ${msg}`, 'error');
     }
   };
 
   const handleDeleteRoom = async () => {
+    if (!supabase) return;
     if (!selectedRoom || !confirm("삭제하시겠습니까?")) return;
     const { error } = await supabase.from('chat_rooms').delete().eq('id', selectedRoom.id);
     if (!error) {
@@ -355,33 +357,30 @@ export default function AdminChatPage() {
   };
 
   const sendMessage = async () => {
+    if (!supabase) return;
     if ((!input.trim() && !filePreview) || !selectedRoom || !myId) return;
     
     try {
-      const messageData: any = {
+      const messageData: Record<string, unknown> = {
         room_id: selectedRoom.id,
         sender_id: myId,
         content: input || (filePreview ? filePreview.name : '')
       };
-
-      // 파일이 있으면 파일 정보 추가
       if (filePreview) {
         messageData.file_url = filePreview.url;
         messageData.file_type = filePreview.type;
       }
-
       await supabase.from('chat_messages').insert([messageData]);
       setInput('');
       setFilePreview(null);
-    } catch (error: any) {
-      console.error('메시지 전송 실패:', error);
+    } catch {
       showToast('메시지 전송에 실패했습니다.', 'error');
     }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedRoom) return;
+    if (!supabase || !file || !selectedRoom) return;
 
     setUploading(true);
     try {
@@ -414,9 +413,9 @@ export default function AdminChatPage() {
         url: publicUrl,
         name: file.name
       });
-    } catch (error: any) {
-      console.error('파일 업로드 실패:', error);
-      showToast(`파일 업로드에 실패했습니다: ${error.message}`, 'error');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      showToast(`파일 업로드에 실패했습니다: ${msg}`, 'error');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -434,8 +433,7 @@ export default function AdminChatPage() {
   };
 
   useEffect(() => {
-    if (!selectedRoom) return;
-    
+    if (!supabase || !selectedRoom) return;
     const channel = supabase.channel(`room_${selectedRoom.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${selectedRoom.id}` }, 
       (payload) => { 
@@ -469,17 +467,14 @@ export default function AdminChatPage() {
         }
       });
       
-    return () => { 
-      supabase.removeChannel(channel);
-    };
-  }, [selectedRoom, myId]);
+    return () => { supabase.removeChannel(channel); };
+  }, [supabase, selectedRoom, myId]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   // 방 목록 화면에서도 새 메시지 알림
   useEffect(() => {
-    if (!myId || view !== 'list') return;
-    
+    if (!supabase || !myId || view !== 'list') return;
     const globalChannel = supabase.channel('all_messages')
       .on('postgres_changes', {
         event: 'INSERT',
@@ -511,7 +506,7 @@ export default function AdminChatPage() {
       });
       
     return () => { supabase.removeChannel(globalChannel); };
-  }, [myId, view, rooms]);
+  }, [supabase, myId, view, rooms]);
 
   return (
     <div className="flex justify-center bg-[#F2F2F7] h-[100dvh] overflow-hidden text-black font-sans selection:bg-blue-100">

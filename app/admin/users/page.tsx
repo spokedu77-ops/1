@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
-  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, Tag, MapPin
+  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -32,7 +32,7 @@ interface UserData {
 
 export default function UserDashboardPage() {
   const [users, setUsers] = useState<UserData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTab, setCurrentTab] = useState<'live' | 'done'>('live');
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
@@ -67,7 +67,7 @@ export default function UserDashboardPage() {
         const { data: me } = await supabase.from('users').select('id, name, role').eq('id', user.id).single();
         if (me) setCurrentUser(me as UserData);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -98,7 +98,7 @@ export default function UserDashboardPage() {
       setEditingId(null);
       fetchUsers();
       alert('성공적으로 업데이트되었습니다.');
-    } catch (error) {
+    } catch {
       alert('저장 실패: DB 컬럼을 확인해주세요.');
     }
   };
@@ -109,7 +109,7 @@ export default function UserDashboardPage() {
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: nextStatus } : u));
     try {
       await supabase.from('users').update({ is_active: nextStatus }).eq('id', user.id);
-    } catch (error) {
+    } catch {
       fetchUsers();
     }
   };
@@ -128,7 +128,7 @@ export default function UserDashboardPage() {
         email: email
       };
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .insert([insertData])
         .select();
@@ -142,9 +142,9 @@ export default function UserDashboardPage() {
       setNewPartner({ role: 'teacher', is_active: true });
       fetchUsers();
       alert('성공적으로 등록되었습니다.');
-    } catch (error: any) {
-      console.error('등록 실패:', error);
-      alert(`등록 실패: ${error.message || JSON.stringify(error)}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : JSON.stringify(error);
+      alert(`등록 실패: ${msg}`);
     }
   };
 
@@ -181,9 +181,9 @@ export default function UserDashboardPage() {
       
       await supabase.from('users').update({ documents: updatedDocs }).eq('id', user.id);
       fetchUsers();
-    } catch (error: any) {
-      console.error('File upload error:', error);
-      alert('파일 업로드에 실패했습니다: ' + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      alert('파일 업로드에 실패했습니다: ' + msg);
     } finally {
       setUploadingId(null);
     }
@@ -195,7 +195,7 @@ export default function UserDashboardPage() {
     try {
       await supabase.from('users').update({ documents: updatedDocs }).eq('id', user.id);
       fetchUsers();
-    } catch (error) {
+    } catch {
       alert('삭제 실패');
     }
   };
@@ -229,7 +229,7 @@ export default function UserDashboardPage() {
 
         <div className="flex gap-2 p-1.5 bg-slate-200/50 rounded-2xl w-fit border border-slate-200 shadow-inner">
           {[{ id: 'live', label: '수업 중', icon: Activity }, { id: 'done', label: '수업 종료', icon: CheckCircle2 }].map((tab) => (
-            <button key={tab.id} onClick={() => setCurrentTab(tab.id as any)} className={`flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-black transition-all cursor-pointer ${currentTab === tab.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
+            <button key={tab.id} onClick={() => setCurrentTab(tab.id)} className={`flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-black transition-all cursor-pointer ${currentTab === tab.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
               <tab.icon className="w-4 h-4" /> {tab.label}
               <span className="ml-1 text-[10px] opacity-60">{users.filter(u => (tab.id === 'live' ? u.is_active : !u.is_active)).length}</span>
             </button>

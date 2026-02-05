@@ -1,14 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  listPrograms,
-  createProgram,
-  updateProgram,
-  deleteProgram,
-} from '../actions/programs';
+import { createProgram, updateProgram, deleteProgram } from '../actions/programs';
 import type { Program } from '@/app/lib/centers/types';
-import { Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 
 interface ProgramsTabProps {
   centerId: string;

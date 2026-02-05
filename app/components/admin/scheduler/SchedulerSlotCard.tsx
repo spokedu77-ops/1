@@ -33,10 +33,13 @@ export function SchedulerSlotCard({
   const [isPublished, setIsPublished] = useState(row?.is_published ?? false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Sync from props when row changes (controlled-by-parent pattern)
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional sync from props */
   useEffect(() => {
     setProgramId(row?.program_id ?? '');
     setIsPublished(row?.is_published ?? false);
   }, [row?.program_id, row?.is_published]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleProgramChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setProgramId(e.target.value);

@@ -46,6 +46,8 @@ export class FlowAudio {
 
   async init(): Promise<void> {
     if (this.ctx) return;
+    // Safari 등 레거시: webkitAudioContext는 표준 타입에 없음
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = 0.35;

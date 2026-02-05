@@ -27,17 +27,21 @@ const renderTextWithLinks = (text: string) => {
   });
 };
 
+interface CatalogItem { id?: number; name?: string; category?: string; image?: string; simple_desc?: string; key_points?: string; usage_examples?: string; [key: string]: unknown }
+interface TeacherBasic { id: string; name?: string; [key: string]: unknown }
+interface InventoryItem { id?: number; name?: string; quantity?: number; category?: string; image?: string; simple_desc?: string; key_points?: string; usage_examples?: string; [key: string]: unknown }
+
 export default function AdminInventoryPage() {
-  const [catalog, setCatalog] = useState<any[]>([]);
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [teacherInventory, setTeacherInventory] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
-  const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [teachers, setTeachers] = useState<TeacherBasic[]>([]);
+  const [teacherInventory, setTeacherInventory] = useState<InventoryItem[]>([]);
+  const [logs, setLogs] = useState<Record<string, unknown>[]>([]);
+  const [selectedTeacher, setSelectedTeacher] = useState<TeacherBasic | null>(null);
   const [isTeacherDropdownOpen, setIsTeacherDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
-  const [detailItem, setDetailItem] = useState<any>(null);
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [catalogForm, setCatalogForm] = useState({ name: '', category: '', image: '', simple_desc: '', key_points: '', usage_examples: '' });
   const [tempQuantities, setTempQuantities] = useState<{[key: number]: string}>({});
@@ -67,9 +71,10 @@ export default function AdminInventoryPage() {
   }, []);
 
   useEffect(() => {
-    fetchCatalog();
-    fetchTeachers();
-  }, [fetchCatalog, fetchTeachers]);
+    void fetchCatalog();
+    void fetchTeachers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only init
+  }, []);
 
   const filteredTeachers = useMemo(() => 
     teachers.filter(t => t.name.includes(searchQuery)),
@@ -82,7 +87,7 @@ export default function AdminInventoryPage() {
     if (data) setLogs(data);
   };
 
-  const openCatalogModal = (item: any = null) => {
+  const openCatalogModal = (item: CatalogItem | null = null) => {
     if (item) {
       setEditingCatalogId(item.id);
       setCatalogForm({ name: item.name, category: item.category, image: item.image || '', simple_desc: item.simple_desc || '', key_points: item.key_points || '', usage_examples: item.usage_examples || '' });
@@ -94,13 +99,13 @@ export default function AdminInventoryPage() {
     setIsMobileSidebarOpen(false);
   };
 
-  const handleSelectTeacher = (teacher: any) => {
+  const handleSelectTeacher = (teacher: TeacherBasic) => {
     setSelectedTeacher(teacher);
     setIsTeacherDropdownOpen(false);
     fetchTeacherData(teacher.id);
   };
 
-  const processAddItem = async (item: any) => {
+  const processAddItem = async (item: InventoryItem) => {
     if (!selectedTeacher) return;
     const existing = teacherInventory.find(i => i.name === item.name);
     const now = new Date().toISOString();
@@ -126,7 +131,7 @@ export default function AdminInventoryPage() {
     fetchTeacherData(selectedTeacher.id);
   };
 
-  const handleDragStart = (e: React.DragEvent, item: any) => {
+  const handleDragStart = (e: React.DragEvent, item: InventoryItem) => {
     e.dataTransfer.setData('application/json', JSON.stringify(item));
     e.dataTransfer.effectAllowed = 'copy';
   };
@@ -140,18 +145,18 @@ export default function AdminInventoryPage() {
     try {
       const draggedItem = JSON.parse(dataJson);
       await processAddItem(draggedItem);
-    } catch (err) {
+    } catch {
       alert('데이터 처리에 실패했습니다.');
     }
   };
 
-  const handleDirectAdd = async (e: React.MouseEvent, item: any) => {
+  const handleDirectAdd = async (e: React.MouseEvent, item: InventoryItem) => {
     e.stopPropagation();
     if (!selectedTeacher) return alert('선생님을 먼저 선택해주세요.');
     await processAddItem(item);
   };
 
-  const handleReturnAll = async (item: any) => {
+  const handleReturnAll = async (item: InventoryItem) => {
     if (confirm(`${item.name} 전량을 반납(목록 삭제)하시겠습니까?`)) {
       await supabase.from('inventory').delete().eq('id', item.id);
       await addLog(selectedTeacher.id, `${item.name} 전량 반납 완료`, 'out');
@@ -161,7 +166,7 @@ export default function AdminInventoryPage() {
     }
   };
 
-  const commitQuantity = async (item: any) => {
+  const commitQuantity = async (item: InventoryItem) => {
     const val = tempQuantities[item.id];
     const newQty = parseInt(val);
     if (isNaN(newQty) || newQty < 0) return alert('올바른 숫자를 입력하세요.');

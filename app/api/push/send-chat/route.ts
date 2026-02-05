@@ -53,25 +53,45 @@ export async function POST(req: NextRequest) {
   const userIds = (participantsRes.data ?? []).map((p: { user_id: string }) => p.user_id);
   if (userIds.length === 0) return NextResponse.json({ ok: true, sent: 0 });
 
-  const { data: tokens } = await supabase.from('user_fcm_tokens').select('token').in('user_id', userIds);
-  const fcmTokens = (tokens ?? []).map((t: { token: string }) => t.token).filter(Boolean);
-  if (fcmTokens.length === 0) return NextResponse.json({ ok: true, sent: 0 });
+  const { data: tokenRows } = await supabase
+    .from('user_fcm_tokens')
+    .select('user_id, token')
+    .in('user_id', userIds);
+  const rows = (tokenRows ?? []).filter((r: { token: string }) => r.token) as { user_id: string; token: string }[];
+  if (rows.length === 0) return NextResponse.json({ ok: true, sent: 0 });
 
   const roomName = (roomRes.data as { custom_name?: string } | null)?.custom_name || '새 메시지';
   const title = roomName;
   const bodyText = content.slice(0, 100) + (content.length > 100 ? '…' : '');
 
+  // 수신자별 미읽음 개수(배지용): get_unread_counts RPC로 조회 후 합산
+  const badgeByUser: Record<string, number> = {};
+  await Promise.all(
+    userIds.map(async (uid) => {
+      const { data: unread } = await supabase.rpc('get_unread_counts', { p_user_id: uid });
+      const total = (unread ?? []).reduce((s: number, row: { unread_count: number }) => s + Number(row.unread_count ?? 0), 0);
+      badgeByUser[uid] = Math.min(total, 999);
+    })
+  );
+
   try {
     getAdminApp();
     const messaging = admin.messaging();
-    const message: admin.messaging.MulticastMessage = {
-      tokens: fcmTokens,
+    const messages: admin.messaging.Message[] = rows.map(({ user_id, token }) => ({
+      token,
       notification: { title, body: bodyText },
       data: { room_id: roomId, message_id: messageId || '', title, body: bodyText },
       android: { notification: { vibrateTimingsMillis: [200, 100, 200] } },
-      apns: { payload: { aps: { sound: 'default' } } },
-    };
-    const result = await messaging.sendEachForMulticast(message);
+      apns: {
+        payload: {
+          aps: {
+            sound: 'default',
+            badge: badgeByUser[user_id] ?? 1,
+          },
+        },
+      },
+    }));
+    const result = await messaging.sendEach(messages);
     return NextResponse.json({ ok: true, sent: result.successCount, failed: result.failureCount });
   } catch (e) {
     console.error('FCM send error:', e);

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, X, User, Calendar, Edit3, ArrowUpRight, ArrowDownRight, History, Save, Trash2, BookOpen } from 'lucide-react';
+import { Search, X, User, Calendar, Save, Trash2, BookOpen } from 'lucide-react';
 import Sidebar from '@/app/components/Sidebar';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
@@ -42,8 +42,8 @@ const PENALTY_OPTIONS = [
 export default function AdminMileagePage() {
   const [modalTab, setModalTab] = useState<'mileage' | 'sessions'>('mileage');
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [logs, setLogs] = useState<MileageLog[]>([]);
-  const [countLogs, setCountLogs] = useState<SessionCountLog[]>([]);
+  const [, setLogs] = useState<MileageLog[]>([]);
+  const [, setCountLogs] = useState<SessionCountLog[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [teacherLogs, setTeacherLogs] = useState<MileageLog[]>([]);
@@ -129,7 +129,7 @@ export default function AdminMileagePage() {
     }
 
     try {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       if (diff !== 0) updateData.points = nextPoints;
       if (prevSessionCount !== nextSessionCount) updateData.session_count = nextSessionCount;
       
@@ -149,8 +149,8 @@ export default function AdminMileagePage() {
       alert("반영되었습니다.");
       fetchData();
       setIsModalOpen(false);
-    } catch (error: any) {
-      alert("실패: " + error.message);
+    } catch (error: unknown) {
+      alert("실패: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -191,8 +191,8 @@ export default function AdminMileagePage() {
       setTeacherLogs(prev => prev.filter(l => l.id !== logId));
       fetchData();
       alert('마일리지가 복구되었습니다.');
-    } catch (error: any) {
-      alert("취소 실패: " + error.message);
+    } catch (error: unknown) {
+      alert("취소 실패: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -229,8 +229,8 @@ export default function AdminMileagePage() {
       alert('차감이 완료되었습니다.');
       fetchData();
       openDetailModal(selectedTeacher);
-    } catch (error: any) {
-      alert('차감 실패: ' + error.message);
+    } catch (error: unknown) {
+      alert('차감 실패: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -263,8 +263,9 @@ export default function AdminMileagePage() {
       alert('Penalty가 취소되었습니다.');
       fetchData();
       openDetailModal(selectedTeacher);
-    } catch (error: any) {
-      alert('취소 실패: ' + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      alert('취소 실패: ' + msg);
     }
   };
 

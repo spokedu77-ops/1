@@ -38,22 +38,24 @@ export function ThinkPhaseWrapper({ weekKey, onEnd }: ThinkPhaseWrapperProps) {
   const parsed = parseWeekKey(weekKey);
   const week = (parsed?.week ?? 1) as 1 | 2 | 3 | 4;
   const { selected: bgmPath } = useThinkBGM();
+  const [seed] = useState(() => Date.now());
 
   const config = useMemo<Think150Config>(
     () => ({
       audience: 'elementary',
       week,
-      seed: Date.now(),
+      seed,
       thinkPack: MOCK_THINK_PACK,
       bgmPath: bgmPath || undefined,
     }),
-    [week, bgmPath]
+    [week, bgmPath, seed]
   );
 
   const timeline = useMemo(() => buildThink150Timeline(config), [config]);
   const [currentMs, setCurrentMs] = useState(0);
   const [playing, setPlaying] = useState(true);
-  const [started, setStarted] = useState(true);
+  const [started] = useState(true);
+  void started;
   const rafRef = useRef<number>(0);
   const startMsRef = useRef(0);
   const startTMsRef = useRef(0);
