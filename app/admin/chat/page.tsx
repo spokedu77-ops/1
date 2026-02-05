@@ -709,8 +709,10 @@ export default function AdminChatPage() {
                                 <>
                                   {m.file_type?.startsWith('image/') ? (
                                     <div className="max-w-[200px]">
-                                      {/* eslint-disable-next-line @next/next/no-img-element -- chat attachment URL; next/image not used for dynamic user content */}
-                                      <img src={m.file_url} alt={m.content} className="w-full h-auto rounded-lg" />
+                                      <>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={m.file_url} alt={m.content} className="w-full h-auto rounded-lg" />
+                                      </>
                                       {m.content && <div className="px-3 py-2 text-[15px]">{m.content}</div>}
                                     </div>
                                   ) : (

@@ -63,12 +63,14 @@ export default function PremiumParentReport() {
           <button className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors cursor-pointer">
             <X size={32} />
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element -- modal fullscreen; dynamic session photo */}
-          <img 
-            src={selectedImg} 
-            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-300" 
-            alt="수업 사진 확대"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={selectedImg} 
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-300" 
+              alt="수업 사진 확대"
+            />
+          </>
           <p className="absolute bottom-10 text-white/40 text-[11px] font-bold tracking-widest uppercase">Tap to close</p>
         </div>
       )}
@@ -129,8 +131,10 @@ export default function PremiumParentReport() {
                   className="img-container relative rounded-[40px] overflow-hidden bg-slate-100 magazine-shadow cursor-pointer group"
                   onClick={() => setSelectedImg(url)}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- dynamic session photo URL */}
-                  <img src={url} className="w-full aspect-[4/5] object-cover img-zoom" alt="수업 현장" referrerPolicy="no-referrer" />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} className="w-full aspect-[4/5] object-cover img-zoom" alt="수업 현장" referrerPolicy="no-referrer" />
+                  </>
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <div className="bg-white/20 backdrop-blur-md p-3 rounded-full text-white">
                       <Maximize2 size={24} />

@@ -191,8 +191,10 @@ export default function TeacherCurriculumPage() {
                                             <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram Reels</span>
                                         </div>
                                     ) : (
-                                        {/* eslint-disable-next-line @next/next/no-img-element -- YouTube thumbnail URL */}
-                                        <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
+                                        <>
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
+                                        </>
                                     )}
                                     <div className="absolute top-4 left-4">
                                         <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type}</span>
