@@ -8,10 +8,35 @@ import { registerFCMTokenIfNeeded } from '@/app/lib/fcm';
 import { ToastContainer, useToast } from '@/app/components/Toast';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
-interface ChatRoom { id: string; custom_name?: string }
+interface ChatRoom {
+  id: string;
+  custom_name?: string;
+  last_message_at?: string | null;
+  last_message_content?: string | null;
+  participant_count?: number;
+}
 interface ChatParticipant { user_id: string; users?: { name?: string } }
 interface ChatTeacher { id: string; name: string }
-interface ChatMessage { created_at: string; [key: string]: unknown }
+interface ChatMessage {
+  id?: string;
+  created_at: string;
+  content?: string;
+  sender_id?: string;
+  file_url?: string;
+  file_type?: string;
+  read_by?: unknown[];
+  [key: string]: unknown;
+}
+
+type ChatRoomRow = {
+  id: string;
+  custom_name?: string;
+  created_at?: string;
+  last_message_at?: string | null;
+  last_message_content?: string | null;
+  chat_participants?: { user_id: string }[];
+  [key: string]: unknown;
+};
 
 export default function AdminChatPage() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
@@ -89,7 +114,7 @@ export default function AdminChatPage() {
     }
 
     if (roomsData) {
-      const processed = roomsData.map(room => {
+      const processed = (roomsData as ChatRoomRow[]).map((room: ChatRoomRow) => {
         const participantCount = room.chat_participants?.length || 0;
         
         return {
@@ -117,7 +142,7 @@ export default function AdminChatPage() {
       return;
     }
 
-    const processed = await Promise.all(roomsData.map(async (room) => {
+    const processed = await Promise.all((roomsData as ChatRoomRow[]).map(async (room: ChatRoomRow) => {
       const { data: participantsData } = await supabase
         .from('chat_participants')
         .select('user_id')
@@ -150,7 +175,7 @@ export default function AdminChatPage() {
       return;
     }
 
-    const validTeachers = data?.filter(t => t.id && t.id.trim() !== '') || [];
+    const validTeachers = data?.filter((t: ChatTeacher) => t.id && t.id.trim() !== '') || [];
     setTeacherList(validTeachers);
   };
 
@@ -180,15 +205,15 @@ export default function AdminChatPage() {
       return;
     }
 
-    const userIds = participantIds.map(p => p.user_id);
+    const userIds = participantIds.map((p: { user_id: string }) => p.user_id);
     const { data: users } = await supabase
       .from('users')
       .select('id, name')
       .in('id', userIds);
 
-    const participantsWithNames = participantIds.map(p => ({
+    const participantsWithNames = participantIds.map((p: { user_id: string }) => ({
       user_id: p.user_id,
-      users: users?.find(u => u.id === p.user_id) || { name: '알 수 없음' }
+      users: users?.find((u: { id: string; name?: string }) => u.id === p.user_id) || { name: '알 수 없음' }
     }));
 
     setParticipants(participantsWithNames);
@@ -436,7 +461,7 @@ export default function AdminChatPage() {
     if (!supabase || !selectedRoom) return;
     const channel = supabase.channel(`room_${selectedRoom.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${selectedRoom.id}` }, 
-      (payload) => { 
+      (payload: { new: ChatMessage }) => { 
         // 새 메시지는 항상 마지막에 추가 (최신 메시지)
         setMessages(prev => {
           // 중복 방지
@@ -450,13 +475,13 @@ export default function AdminChatPage() {
         // 내가 보낸 메시지가 아니면 브라우저 알림
         if (payload.new.sender_id !== myId && Notification.permission === 'granted') {
           new Notification('새 메시지', {
-            body: payload.new.content,
+            body: String(payload.new.content ?? ''),
             icon: '/favicon.ico',
             tag: selectedRoom.id
           });
         }
       })
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -480,14 +505,14 @@ export default function AdminChatPage() {
         event: 'INSERT',
         schema: 'public',
         table: 'chat_messages'
-      }, (payload) => {
+      }, (payload: { new: ChatMessage }) => {
         // 내가 보낸 메시지가 아닐 때 알림
         if (payload.new.sender_id !== myId && Notification.permission === 'granted') {
           const room = rooms.find(r => r.id === payload.new.room_id);
           new Notification(room?.custom_name || '새 메시지', {
-            body: payload.new.content,
+            body: String(payload.new.content ?? ''),
             icon: '/favicon.ico',
-            tag: payload.new.room_id
+            tag: String(payload.new.room_id ?? '')
           });
         }
         // 읽지 않은 메시지 카운트 갱신 (RPC 함수 사용)
@@ -495,7 +520,7 @@ export default function AdminChatPage() {
           fetchUnreadCounts(myId);
         }
       })
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {

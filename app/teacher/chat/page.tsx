@@ -80,7 +80,7 @@ export default function TeacherChatPage() {
       return;
     }
 
-    const roomIds = myParticipations.map(p => p.room_id);
+    const roomIds = myParticipations.map((p: { room_id: string }) => p.room_id);
 
     const { data: roomsData, error } = await supabase
       .from('chat_rooms')
@@ -95,9 +95,10 @@ export default function TeacherChatPage() {
       .select('room_id')
       .in('room_id', roomIds);
     const countByRoom: { [id: string]: number } = {};
-    participantsData?.forEach(p => { countByRoom[p.room_id] = (countByRoom[p.room_id] || 0) + 1; });
+    participantsData?.forEach((p: { room_id: string }) => { countByRoom[p.room_id] = (countByRoom[p.room_id] || 0) + 1; });
 
-    setRooms(roomsData.map(room => ({
+    type RoomRow = { id: string; created_at?: string; last_message_at?: string | null; last_message_content?: string | null; [key: string]: unknown };
+    setRooms(roomsData.map((room: RoomRow) => ({
       ...room,
       last_message_at: room.last_message_at || room.created_at,
       last_message_content: room.last_message_content || '대화를 시작해보세요',
@@ -118,15 +119,15 @@ export default function TeacherChatPage() {
       return;
     }
 
-    const userIds = participantIds.map(p => p.user_id);
+    const userIds = participantIds.map((p: { user_id: string }) => p.user_id);
     const { data: users } = await supabase
       .from('users')
       .select('id, name')
       .in('id', userIds);
 
-    const participantsWithNames = participantIds.map(p => ({
+    const participantsWithNames = participantIds.map((p: { user_id: string }) => ({
       user_id: p.user_id,
-      users: users?.find(u => u.id === p.user_id) || { name: '알 수 없음' }
+      users: users?.find((u: { id: string; name?: string }) => u.id === p.user_id) || { name: '알 수 없음' }
     }));
 
     setParticipants(participantsWithNames);
@@ -208,7 +209,7 @@ export default function TeacherChatPage() {
           table: 'chat_messages', 
           filter: `room_id=eq.${selectedRoom.id}` 
         },
-        (payload) => {
+        (payload: { new: { id: string; room_id?: string; sender_id?: string; content?: string; [key: string]: unknown } }) => {
           setMessages(prev => [...prev, payload.new]);
           if (myId) fetchMyRooms(myId);
         }
@@ -221,7 +222,7 @@ export default function TeacherChatPage() {
   useEffect(() => {
     if (!supabase || !myId || view !== 'list') return;
     const ch = supabase.channel('teacher_list_messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload: { new: { room_id?: string; sender_id?: string; content?: string } }) => {
         if (payload.new.sender_id !== myId) {
           const room = roomsRef.current.find((r: { id: string }) => r.id === payload.new.room_id);
           if (room && 'Notification' in window && Notification.permission === 'granted') {
