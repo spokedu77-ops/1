@@ -97,6 +97,7 @@ export function ThinkPhaseWrapper({ weekKey, onEnd }: ThinkPhaseWrapperProps) {
       cancelAnimationFrame(rafRef.current);
       suspendAudioContext();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentMs is set inside tick; adding it would cause loop
   }, [playing, timeline, config.bgmPath, onEnd]);
 
   const handleStart = useCallback(() => {

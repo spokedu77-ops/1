@@ -11,7 +11,7 @@ export async function GET() {
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
   };
-  const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || '';
+  const _vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || '';
 
   const script = `
 importScripts(
@@ -44,7 +44,7 @@ self.addEventListener('notificationclick', function(e) {
   return new NextResponse(script, {
     headers: {
       'Content-Type': 'application/javascript; charset=utf-8',
-      'Cache-Control': 'no-store',
+      'Cache-Control': 'public, max-age=86400, immutable',
       'Service-Worker-Allowed': '/',
     },
   });

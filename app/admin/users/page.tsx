@@ -42,7 +42,11 @@ export default function UserDashboardPage() {
   const [newPartner, setNewPartner] = useState<Partial<UserData>>({ role: 'teacher', is_active: true });
 
   const fetchUsers = useCallback(async () => {
-    if (!supabase) return;
+    if (process.env.NODE_ENV === 'development') console.log('[users] fetchUsers 시작, supabase:', !!supabase);
+    if (!supabase) {
+      if (process.env.NODE_ENV === 'development') console.error('[users] fetchUsers: supabase가 null입니다');
+      return;
+    }
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -51,7 +55,11 @@ export default function UserDashboardPage() {
         .eq('role', 'teacher')
         .order('name');
       
-      if (error) throw error;
+      if (process.env.NODE_ENV === 'development') console.log('[users] fetchUsers 결과, data:', data?.length, 'error:', error);
+      if (error) {
+        console.error('[users] fetchUsers error:', error);
+        throw error;
+      }
       
       const fetchedUsers = (data as UserData[]).map(u => ({ 
         ...u, 
@@ -59,6 +67,7 @@ export default function UserDashboardPage() {
         documents: u.documents || [] 
       }));
       setUsers(fetchedUsers);
+      if (process.env.NODE_ENV === 'development') console.log('[users] setUsers 완료, users.length:', fetchedUsers.length);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -66,9 +75,10 @@ export default function UserDashboardPage() {
         if (me) setCurrentUser(me as UserData);
       }
     } catch (err: unknown) {
-      console.error(err);
+      console.error('[users] fetchUsers catch error:', err);
     } finally {
       setIsLoading(false);
+      if (process.env.NODE_ENV === 'development') console.log('[users] fetchUsers 종료');
     }
   }, [supabase]);
 

@@ -138,7 +138,7 @@ export default function Sidebar() {
           </p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-6 overflow-y-auto pt-20 md:pt-4 text-left">
+        <nav className="flex-1 p-4 space-y-6 overflow-y-auto pt-[calc(4rem+env(safe-area-inset-top,0px))] md:pt-4 text-left">
           {groups.map((group, gIdx) => (
             <div key={gIdx} className="space-y-2 text-left">
               <h3 className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">

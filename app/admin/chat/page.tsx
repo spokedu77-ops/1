@@ -80,6 +80,7 @@ export default function AdminChatPage() {
       }
     };
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once when supabase ready; fetchRooms/fetchTeachers/fetchUnreadCounts are stable
   }, [supabase]);
 
   const fetchUnreadCounts = async (userId: string) => {
@@ -493,6 +494,7 @@ export default function AdminChatPage() {
       });
       
     return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchRooms/showToast in callback only; avoid re-subscribe on every room list change
   }, [supabase, selectedRoom, myId]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
@@ -531,6 +533,7 @@ export default function AdminChatPage() {
       });
       
     return () => { supabase.removeChannel(globalChannel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rooms in callback for notification; fetchUnreadCounts stable
   }, [supabase, myId, view, rooms]);
 
   return (
@@ -706,6 +709,7 @@ export default function AdminChatPage() {
                                 <>
                                   {m.file_type?.startsWith('image/') ? (
                                     <div className="max-w-[200px]">
+                                      {/* eslint-disable-next-line @next/next/no-img-element -- chat attachment URL; next/image not used for dynamic user content */}
                                       <img src={m.file_url} alt={m.content} className="w-full h-auto rounded-lg" />
                                       {m.content && <div className="px-3 py-2 text-[15px]">{m.content}</div>}
                                     </div>
@@ -743,7 +747,10 @@ export default function AdminChatPage() {
                 <div className="mb-2 p-2 bg-slate-50 rounded-lg flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     {filePreview.type.startsWith('image/') ? (
-                      <img src={filePreview.url} alt={filePreview.name} className="w-12 h-12 object-cover rounded shrink-0" />
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={filePreview.url} alt={filePreview.name} className="w-12 h-12 object-cover rounded shrink-0" />
+                      </>
                     ) : (
                       <div className="w-12 h-12 bg-slate-200 rounded flex items-center justify-center shrink-0">
                         <Paperclip size={20} />

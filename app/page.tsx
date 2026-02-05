@@ -14,6 +14,7 @@ export default function SpokeduGatePage() {
 
   // 마운트 시 클라이언트에서만 세션 확인
   useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only client flag */
     setIsMounted(true);
   }, []);
 

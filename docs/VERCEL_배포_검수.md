@@ -18,7 +18,7 @@
 - [ ] **환경 변수**: Vercel에 `NEXT_PUBLIC_SUPABASE_*` 및 푸시 사용 시 Firebase·웹훅 시크릿 등([배포_및_모바일푸시_체크리스트.md](배포_및_모바일푸시_체크리스트.md) 참고) 설정됨.
 - [ ] **Supabase**: 푸시 배지용 `get_unread_counts` 실행 권한이 필요하면 `sql/35_grant_get_unread_counts_service_role.sql` 한 번 실행.
 - [ ] **빌드**: 로컬 `npm run build` 시 .next 정리 단계 EPERM은 무시 가능. Vercel에서는 보통 정상 완료.
-- [ ] **ESLint**: FullSequencePlayer(refs 3건)·FlowAudio(any 1건) 수정 완료. 그 외 구 legacy 경고는 `next.config.ts`에 `eslint: { ignoreDuringBuilds: true }` 로 빌드 실패 방지됨.
+- [ ] **ESLint/TypeScript**: `next.config.ts`에 `typescript: { ignoreBuildErrors: true }`, `eslint: { ignoreDuringBuilds: true }` 설정 시 빌드가 린트/타입 에러로 실패하지 않음. **참고**: 배포 성공 ≠ 품질 검증. 상세 개선 항목은 [PWA_및_전체_개선_보고서.md](PWA_및_전체_개선_보고서.md) 참고.
 
 ### 배포 후 확인
 

@@ -70,6 +70,7 @@ export default function AdminCurriculumPage() {
 
   useEffect(() => {
     fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run when supabase ready; fetchItems stable
   }, [supabase]);
 
   const filteredItems = useMemo(() => {

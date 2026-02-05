@@ -105,7 +105,7 @@ export function FullSequencePlayer({
         });
       }, 1000);
     }
-  }, [phase, mode, onPhaseChange]);
+  }, [phase, mode, onPhaseChange, weekKey]);
 
   useEffect(() => {
     advancePhaseRef.current = advancePhase;

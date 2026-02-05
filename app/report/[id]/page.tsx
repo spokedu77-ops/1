@@ -1,36 +1,43 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { useParams } from 'next/navigation';
 import { X, Maximize2 } from 'lucide-react';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+interface ReportSession {
+  start_at: string;
+  photo_url?: string[] | string;
+  users?: { name?: string } | null;
+  [key: string]: unknown;
+}
 
 export default function PremiumParentReport() {
   const params = useParams();
-  const [session, setSession] = useState<any>(null);
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
+  const [session, setSession] = useState<ReportSession | null>(null);
   const [loading, setLoading] = useState(true);
   
   // 이미지 확대를 위한 상태
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!supabase) return;
+    if (!params?.id) {
+      setLoading(false);
+      return;
+    }
     const fetchSession = async () => {
-      if (!params?.id) return;
       const { data } = await supabase
         .from('sessions')
         .select('*, users(name)')
         .eq('id', params.id)
         .single();
-      if (data) setSession(data);
+      if (data) setSession(data as ReportSession);
       setLoading(false);
     };
     fetchSession();
-  }, [params?.id]);
+  }, [supabase, params?.id]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-300 animate-pulse uppercase tracking-widest">SPOKEDU REPORT LOADING...</div>;
   if (!session) return <div className="min-h-screen flex items-center justify-center font-black text-slate-300">리포트를 찾을 수 없습니다.</div>;
@@ -56,6 +63,7 @@ export default function PremiumParentReport() {
           <button className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors cursor-pointer">
             <X size={32} />
           </button>
+          {/* eslint-disable-next-line @next/next/no-img-element -- modal fullscreen; dynamic session photo */}
           <img 
             src={selectedImg} 
             className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-300" 
@@ -107,7 +115,7 @@ export default function PremiumParentReport() {
         {(() => {
           let validPhotos: string[] = [];
           if (Array.isArray(session.photo_url)) {
-            validPhotos = session.photo_url.filter((url: any) => typeof url === 'string' && url.startsWith('http'));
+            validPhotos = session.photo_url.filter((url: string) => typeof url === 'string' && url.startsWith('http'));
           } else if (typeof session.photo_url === 'string') {
             validPhotos = session.photo_url.split(',').filter((url: string) => url && url.trim() !== "" && url.startsWith('http'));
           }
@@ -121,6 +129,7 @@ export default function PremiumParentReport() {
                   className="img-container relative rounded-[40px] overflow-hidden bg-slate-100 magazine-shadow cursor-pointer group"
                   onClick={() => setSelectedImg(url)}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- dynamic session photo URL */}
                   <img src={url} className="w-full aspect-[4/5] object-cover img-zoom" alt="수업 현장" referrerPolicy="no-referrer" />
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <div className="bg-white/20 backdrop-blur-md p-3 rounded-full text-white">

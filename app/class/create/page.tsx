@@ -1,13 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 type DayOption = { label: string; value: number };
 const DAYS: DayOption[] = [
@@ -22,6 +18,7 @@ const DAYS: DayOption[] = [
 
 export default function CreateClassPage() {
   const router = useRouter();
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [loading, setLoading] = useState(false);
   const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
 
@@ -40,6 +37,7 @@ export default function CreateClassPage() {
   });
 
   useEffect(() => {
+    if (!supabase) return;
     const fetchTeachers = async () => {
       const { data } = await supabase
         .from('users')
@@ -49,7 +47,7 @@ export default function CreateClassPage() {
       if (data) setTeachers(data);
     };
     fetchTeachers();
-  }, []);
+  }, [supabase]);
 
   const handleChange = (field: string, value: string | number | boolean) => {
     setForm(prev => {
@@ -105,6 +103,7 @@ export default function CreateClassPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) return;
     if (!form.title || !form.teacherId) return alert('수업명과 강사를 확인해주세요!');
     if (form.type !== 'one_day' && form.weeklyFrequency > 1 && form.daysOfWeek.length < form.weeklyFrequency) {
       return alert('주간 횟수만큼 요일을 선택해주세요.');

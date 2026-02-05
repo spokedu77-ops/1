@@ -70,6 +70,7 @@ function FlowPhaseContent() {
       engine.dispose();
       engineRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only init; domRefs intentionally excluded to avoid re-init on refs change
   }, []);
 
   return (

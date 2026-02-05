@@ -45,14 +45,26 @@ export default function AdminInventoryPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const fetchCatalog = useCallback(async () => {
-    if (!supabase) return;
-    const { data } = await supabase.from('catalog').select('*').order('created_at', { ascending: false });
+    if (process.env.NODE_ENV === 'development') console.log('[inventory] fetchCatalog 시작, supabase:', !!supabase);
+    if (!supabase) {
+      if (process.env.NODE_ENV === 'development') console.error('[inventory] fetchCatalog: supabase가 null입니다');
+      return;
+    }
+    const { data, error } = await supabase.from('catalog').select('*').order('created_at', { ascending: false });
+    if (process.env.NODE_ENV === 'development') console.log('[inventory] fetchCatalog 결과, data:', data?.length, 'error:', error);
+    if (error) console.error('[inventory] fetchCatalog error:', error);
     if (data) setCatalog(data);
   }, [supabase]);
 
   const fetchTeachers = useCallback(async () => {
-    if (!supabase) return;
-    const { data } = await supabase.from('users').select('id, name, role, is_active').eq('is_active', true).order('name');
+    if (process.env.NODE_ENV === 'development') console.log('[inventory] fetchTeachers 시작, supabase:', !!supabase);
+    if (!supabase) {
+      if (process.env.NODE_ENV === 'development') console.error('[inventory] fetchTeachers: supabase가 null입니다');
+      return;
+    }
+    const { data, error } = await supabase.from('users').select('id, name, role, is_active').eq('is_active', true).order('name');
+    if (process.env.NODE_ENV === 'development') console.log('[inventory] fetchTeachers 결과, data:', data?.length, 'error:', error);
+    if (error) console.error('[inventory] fetchTeachers error:', error);
     if (data) setTeachers(data);
   }, [supabase]);
 
@@ -71,13 +83,13 @@ export default function AdminInventoryPage() {
   }, [supabase]);
 
   useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only data fetch */
     void fetchCatalog();
     void fetchTeachers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only init
-  }, []);
+  }, [fetchCatalog, fetchTeachers]);
 
   const filteredTeachers = useMemo(() => 
-    teachers.filter(t => t.name.includes(searchQuery)),
+    teachers.filter(t => (t.name ?? '').includes(searchQuery)),
     [teachers, searchQuery]
   );
 

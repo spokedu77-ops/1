@@ -26,6 +26,12 @@ export async function registerFCMTokenIfNeeded(
   supabase: SupabaseClient,
   userId: string
 ): Promise<void> {
+  // 개발 환경에서는 FCM 비활성화 (성능 향상)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[FCM] 개발 환경에서는 비활성화됨');
+    return;
+  }
+  
   if (typeof window === 'undefined' || !hasFirebaseConfig()) {
     console.error('[FCM] 건너뜀: window 없음 또는 Firebase 설정 부족');
     return;
@@ -39,9 +45,14 @@ export async function registerFCMTokenIfNeeded(
   }
 
   try {
-    const reg = await navigator.serviceWorker.register(SW_URL, { scope: '/' });
-    await reg.update();
-    console.log('[FCM] Service Worker 등록 완료');
+    // 이미 등록된 Service Worker가 있는지 확인
+    let reg = await navigator.serviceWorker.getRegistration('/');
+    if (!reg) {
+      reg = await navigator.serviceWorker.register(SW_URL, { scope: '/' });
+      console.log('[FCM] Service Worker 새로 등록 완료');
+    } else {
+      console.log('[FCM] Service Worker 이미 등록됨, 재사용');
+    }
 
     const app = getApps().length ? getApps()[0]! : initializeApp({
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

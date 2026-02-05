@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
   async redirects() {
     return [
       { source: "/admin/iiwarmup/play-test", destination: "/admin/iiwarmup/play", permanent: true },

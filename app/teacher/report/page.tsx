@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { CreditCard, Star, LayoutDashboard, CheckCircle2, History, Info } from 'lucide-react';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { CreditCard, Star, CheckCircle2, History, Info } from 'lucide-react';
 
 interface MileageLog {
   id: string;
@@ -22,24 +20,32 @@ interface SessionRecord {
   status: string;
 }
 
+interface TeacherInfo {
+  id: string;
+  name: string | null;
+  points: number | null;
+}
+
 export default function TeacherReportPage() {
-  const [teacher, setTeacher] = useState<any>(null);
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
+  const [teacher, setTeacher] = useState<TeacherInfo | null>(null);
   const [mileageLogs, setMileageLogs] = useState<MileageLog[]>([]);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedPeriod, setSelectedPeriod] = useState(now.getDate() <= 15 ? '1' : '2');
 
   const fetchData = useCallback(async () => {
+    if (!supabase) return;
     setLoading(true);
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) return;
 
       const { data: userData } = await supabase.from('users').select('id, name, points').eq('id', authUser.id).single();
-      setTeacher(userData);
+      setTeacher(userData as TeacherInfo | null);
 
       const { data: mData } = await supabase.from('mileage_logs').select('*').eq('teacher_id', authUser.id).order('created_at', { ascending: false });
       if (mData) setMileageLogs(mData as MileageLog[]);
@@ -51,7 +57,7 @@ export default function TeacherReportPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [supabase]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -199,7 +205,7 @@ export default function TeacherReportPage() {
       <div className="px-4 py-2 bg-blue-50/50 rounded-xl flex gap-3 items-start">
         <Info size={14} className="text-blue-400 mt-0.5" />
         <p className="text-[10px] font-bold text-blue-400 leading-relaxed">
-          스포키듀의 정산은 프리랜서 사업소득(3.3%) 원천징수 후 지급됩니다. 실제 입금액은 공제 후 금액인 '실수령액'과 일치합니다.
+          스포키듀의 정산은 프리랜서 사업소득(3.3%) 원천징수 후 지급됩니다. 실제 입금액은 공제 후 금액인 {'\'실수령액\''}과 일치합니다.
         </p>
       </div>
 

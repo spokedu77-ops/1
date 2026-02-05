@@ -2,11 +2,12 @@
  * Storage 파일 존재 여부 배치 조회
  * POST body: { paths: string[] }
  * response: { exists: Record<string, boolean> }
- * 서버에서 폴더별로 list 호출해 path 존재 여부를 한 번에 반환 (클라이언트 요청 1회)
+ * 서버에서 폴더별로 list 호출해 path 존재 여부를 한 번에 반환 (클라이언트 요청 1회).
+ * 쿠키 기반 서버 클라이언트 사용 → 로그인된 admin 세션으로 Storage RLS 통과.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 
 export async function POST(request: NextRequest) {
@@ -18,13 +19,13 @@ export async function POST(request: NextRequest) {
     }
 
     const uniquePaths = [...new Set(paths)].filter((p) => typeof p === 'string' && p.trim());
-    const supabase = getSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     // 폴더별로 그룹: folder -> [path]
     const byFolder = new Map<string, string[]>();
     for (const path of uniquePaths) {
         const parts = path.split('/');
-        const fileName = parts.pop() || '';
+        parts.pop(); // file name (unused here; path is stored)
         const folder = parts.join('/');
         if (!folder) continue;
         if (!byFolder.has(folder)) byFolder.set(folder, []);

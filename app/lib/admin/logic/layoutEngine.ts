@@ -91,7 +91,7 @@ export function normalizeLayoutSequence(
 
   // 1. start/end를 0~maxSec로 clamp하고 start < end 강제
   let normalized: LayoutSequence[] = seq.map(item => {
-    let start = Math.max(0, Math.min(item.startTime, maxSec));
+    const start = Math.max(0, Math.min(item.startTime, maxSec));
     let end = Math.max(0, Math.min(item.endTime, maxSec));
 
     // start < end 강제

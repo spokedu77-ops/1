@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { logAdminProductivity } from '@/app/lib/logging/logClient';
 import { useQuery } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import {
   useRotationScheduleMonth,
   useSaveSchedule,
@@ -13,11 +13,11 @@ import { useCreateThink150Programs } from '@/app/lib/admin/hooks/useCreateThink1
 import { generate48WeekSlots } from '@/app/lib/admin/scheduler/dragAndDrop';
 import { SchedulerMonthAccordion } from '@/app/components/admin/scheduler/SchedulerMonthAccordion';
 
-const supabase = getSupabaseClient();
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
 
 export default function SchedulerPage() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [year, setYear] = useState(CURRENT_YEAR);
   const [openMonth, setOpenMonth] = useState<number | null>(CURRENT_MONTH);
 
@@ -29,8 +29,9 @@ export default function SchedulerPage() {
   });
 
   const { data: programs = [] } = useQuery({
-    queryKey: ['warmup-programs-list'],
+    queryKey: ['warmup-programs-list', !!supabase],
     queryFn: async () => {
+      if (!supabase) return [];
       const { data, error } = await supabase
         .from('warmup_programs_composite')
         .select('id, title')
@@ -38,6 +39,7 @@ export default function SchedulerPage() {
       if (error) throw error;
       return (data || []) as { id: string; title: string }[];
     },
+    enabled: !!supabase,
   });
 
   const saveSchedule = useSaveSchedule();

@@ -1,17 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
-  Youtube, Instagram, AlertCircle, 
+  Instagram, AlertCircle, 
   Sparkles, X, Calendar, MoreHorizontal, 
   CheckSquare, Box, ListOrdered, Play
 } from 'lucide-react';
-
-// Supabase 설정 (Admin과 동일한 키 사용)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 const MONTHLY_THEMES: { [key: number]: { title: string; desc: string } } = {
   3: { title: '새로운 시작과 적응', desc: '친구들과 친해지고 규칙을 익히는 시기입니다.' },
@@ -30,8 +25,11 @@ export default function TeacherCurriculumPage() {
  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
  const [selectedItem, setSelectedItem] = useState<any>(null);
 
- // 데이터 불러오기 (Read Only)
- const fetchItems = async () => {
+ const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
+
+ // 데이터 불러오기 (Read Only, 쿠키 세션 사용)
+ const fetchItems = useCallback(async () => {
+    if (!supabase) return;
     const { data, error } = await supabase
       .from('curriculum')
       .select('*')
@@ -53,11 +51,12 @@ export default function TeacherCurriculumPage() {
       }));
       setItems(formattedData);
     }
- };
+ }, [supabase]);
 
  useEffect(() => {
-   fetchItems();
- }, []);
+   /* eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only data fetch */
+   void fetchItems();
+ }, [fetchItems]);
 
  const filteredItems = useMemo(() => {
    return items.filter(item => item.month === selectedMonth && item.week === selectedWeek);
@@ -192,6 +191,7 @@ export default function TeacherCurriculumPage() {
                                             <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram Reels</span>
                                         </div>
                                     ) : (
+                                        {/* eslint-disable-next-line @next/next/no-img-element -- YouTube thumbnail URL */}
                                         <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
                                     )}
                                     <div className="absolute top-4 left-4">

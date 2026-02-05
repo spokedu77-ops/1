@@ -1,16 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
-  Package, Search, Loader2, Info, 
+  Package, Search, Loader2, 
   Image as ImageIcon, CheckSquare, ListOrdered, Calendar, History, ExternalLink, UserCircle2
 } from 'lucide-react';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!, 
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // URL 링크 변환 헬퍼
 const renderTextWithLinks = (text: string) => {
@@ -29,6 +24,7 @@ const renderTextWithLinks = (text: string) => {
 };
 
 export default function TeacherInventoryPage() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [inventory, setInventory] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,19 +32,15 @@ export default function TeacherInventoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [detailItem, setDetailItem] = useState<any>(null);
 
-  useEffect(() => {
-    fetchMyData();
-  }, []);
-
-  const fetchMyData = async () => {
+  const fetchMyData = useCallback(async () => {
+    if (!supabase) return;
     setLoading(true);
     
-    // 1. 현재 로그인한 유저 확인
+    // 1. 현재 로그인한 유저 확인 (쿠키 세션 사용)
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       alert('로그인이 필요합니다.');
-      // 로그인 페이지로 리다이렉트 로직이 있다면 여기에 추가
       setLoading(false);
       return;
     }
@@ -75,11 +67,16 @@ export default function TeacherInventoryPage() {
     if (invData) setInventory(invData);
     if (logData) setLogs(logData);
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only data fetch */
+    void fetchMyData();
+  }, [fetchMyData]);
 
   // 검색 필터링
   const filteredInventory = inventory.filter(item => 
-    item.name.includes(searchQuery) || item.category?.includes(searchQuery)
+    (item.name ?? '').includes(searchQuery) || (item.category ?? '').includes(searchQuery)
   );
 
   return (

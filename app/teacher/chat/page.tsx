@@ -49,6 +49,7 @@ export default function TeacherChatPage() {
       }
     };
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once when supabase ready; fetchMyRooms/fetchUnreadCounts stable
   }, [supabase]);
 
   const fetchUnreadCounts = async (userId: string) => {
@@ -165,10 +166,12 @@ export default function TeacherChatPage() {
     setView('chat');
     setMessages([]);
     setHasMoreMessages(false);
+    if (typeof history !== 'undefined') history.pushState({ chatRoom: room.id }, '', window.location.href);
     await fetchRoomParticipants(room.id);
     await loadMessages(room.id, null);
     if (myId) await markAsRead(room.id, myId);
   };
+
 
   // 메시지 전송
   const sendMessage = async () => {
@@ -217,6 +220,7 @@ export default function TeacherChatPage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchMyRooms in callback only
   }, [supabase, selectedRoom, myId]);
 
   useEffect(() => {
@@ -234,11 +238,37 @@ export default function TeacherChatPage() {
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchMyRooms/fetchUnreadCounts in callback only
   }, [supabase, myId, view]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      setView('list');
+      if (myId) {
+        fetchMyRooms(myId);
+        fetchUnreadCounts(myId);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchMyRooms/fetchUnreadCounts in callback only
+  }, [myId]);
+
+  const handleBack = () => {
+    if (typeof history !== 'undefined' && history.state?.chatRoom) {
+      history.back();
+    } else {
+      setView('list');
+      if (myId) {
+        fetchMyRooms(myId);
+        fetchUnreadCounts(myId);
+      }
+    }
+  };
 
   return (
     <div className="flex justify-center bg-[#F2F2F7] min-h-[100dvh] h-[100dvh] overflow-hidden text-black font-sans selection:bg-blue-100">
@@ -294,9 +324,7 @@ export default function TeacherChatPage() {
           <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-300 min-h-0">
             <header className="min-h-[56px] flex items-center justify-between px-2 border-b bg-white/90 backdrop-blur-md sticky top-0 z-20 pt-[env(safe-area-inset-top,0px)]">
               <button 
-                onClick={() => { 
-                  setView('list'); if (myId) { fetchMyRooms(myId); fetchUnreadCounts(myId); }
-                }} 
+                onClick={handleBack}
                 className="min-h-[44px] min-w-[44px] p-2 text-blue-500 flex items-center cursor-pointer active:opacity-70 transition-opacity touch-manipulation"
               >
                 <ChevronLeft size={28} />
