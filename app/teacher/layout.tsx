@@ -2,13 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js'; // Supabase 추가
-import { Home, BookOpen, Calendar, Package, MessageCircle, MoreHorizontal, Receipt, X, LogOut, FileText } from 'lucide-react';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { Home, BookOpen, Calendar, Package, MessageCircle, MoreHorizontal, Receipt, X, LogOut } from 'lucide-react';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -17,10 +12,10 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
   const isActive = (path: string) => pathname === path;
 
-  // 로그아웃 핸들러
+  // 로그아웃 핸들러 (쿠키 기반 세션 사용 → PWA/웹 동일 동작)
   const handleLogout = async () => {
     if (!confirm('로그아웃 하시겠습니까?')) return;
-    
+    const supabase = getSupabaseBrowserClient();
     const { error } = await supabase.auth.signOut();
     if (error) {
       alert('로그아웃 중 오류가 발생했습니다.');
@@ -30,7 +25,6 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   };
 
   const moreMenus = [
-    { id: '/teacher/lesson-plans', label: '수업안 관리', icon: FileText },
     { id: '/teacher/inventory', label: '교구목록', icon: Package },
     { id: '/teacher/report', label: '정산 확인', icon: Receipt },
   ];

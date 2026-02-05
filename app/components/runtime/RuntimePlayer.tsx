@@ -28,14 +28,16 @@ export interface RuntimePlayerProps {
 export function RuntimePlayer({ timeline, onAudioEvent, onEnd, debug, autoPlay }: RuntimePlayerProps) {
   const [tMs, setTMs] = useState(0);
   const [playing, setPlaying] = useState(!!autoPlay);
-  const [speed, setSpeed] = useState(1);
+  const [speed] = useState(1);
   const lastProcessedTickRef = useRef<number>(-1);
   const onEndCalledRef = useRef(false);
   const rafRef = useRef<number>(0);
   const startMsRef = useRef(0);
   const startTMsRef = useRef(0);
   const tMsRef = useRef(tMs);
-  tMsRef.current = tMs;
+  useEffect(() => {
+    tMsRef.current = tMs;
+  }, [tMs]);
 
   const seek = useCallback((ms?: number) => {
     if (ms !== undefined) {

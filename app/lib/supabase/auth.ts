@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-function isRefreshTokenError(err: unknown): boolean {
+/** 로그인 페이지 등에서 세션 에러가 리프레시 토큰 문제인지 판별할 때 사용 */
+export function isRefreshTokenError(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false;
   const msg = typeof (err as { message?: string }).message === 'string'
     ? (err as { message: string }).message

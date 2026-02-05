@@ -62,6 +62,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
       return;
     }
     loadCenters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadCenters stable, filters trigger reload
   }, [statusFilter, regionFilter, search]);
 
   const handleCreate = async (e: React.FormEvent) => {

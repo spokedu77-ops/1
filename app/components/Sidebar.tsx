@@ -18,10 +18,8 @@ import {
   Menu, 
   X,
   User,
-  Wallet,
   Medal, 
   MessageCircle,
-  CalendarCheck,
   Building2,
   CalendarDays,
 } from 'lucide-react';
@@ -83,29 +81,6 @@ export default function Sidebar() {
               { name: "정산 리포트", href: "/admin/master/reports", icon: CreditCard },
             ] 
           : [])
-      ]
-    }
-  ];
-
-  const teacherMenuItems = [
-    {
-      group: "내 활동",
-      items: [
-        { name: "내 수업 일정", href: "/teacher/my-classes", icon: Calendar },
-        { name: "내 수업안 관리", href: "/teacher/lesson-plans", icon: BookOpen },
-      ]
-    },
-    {
-      group: "수업 자료",
-      items: [
-        { name: "커리큘럼 보관함", href: "/teacher/curriculum", icon: BookOpen },
-        { name: "교구 현황 체크", href: "/teacher/inventory", icon: Box },
-      ]
-    },
-    {
-      group: "정보 안내",
-      items: [
-        { name: "공지 및 가이드", href: "/teacher/notice", icon: ClipboardList },
       ]
     }
   ];

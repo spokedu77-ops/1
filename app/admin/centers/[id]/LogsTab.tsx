@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createLog, updateLog, deleteLog } from '../actions/logs';
 import type { CenterLog } from '@/app/lib/centers/types';
-import { Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 
 const LOG_TYPES = [
   { value: 'note', label: '메모' },

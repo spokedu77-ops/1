@@ -4,20 +4,35 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import html2canvas from 'html2canvas';
-import { CreditCard, Users, Calculator, Download, ChevronRight, History, Info, TrendingUp } from 'lucide-react';
+import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+type TeacherRow = { id: string; name: string };
+type ExtraTeacher = { id: string; price?: number };
+type SessionRow = { id: string; created_by: string; price?: number; students_text?: string; start_at?: string; title?: string };
+type SettlementRow = { id: string; teacher_id: string; amount?: number; reason?: string };
+type ReportTeacher = {
+  id: string;
+  name: string;
+  count: number;
+  grossTotal: number;
+  tax: number;
+  netPay: number;
+  details: SessionRow[];
+  adjs: SettlementRow[];
+};
+
 export default function UltimateSettlementPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [expandedTeacher, setExpandedTeacher] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reportData, setReportData] = useState<any[]>([]);
-  const [inputStates, setInputStates] = useState<any>({});
+  const [, setLoading] = useState(true);
+  const [reportData, setReportData] = useState<ReportTeacher[]>([]);
+  const [inputStates, setInputStates] = useState<Record<string, { amount?: string; reason?: string }>>({});
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -62,15 +77,17 @@ export default function UltimateSettlementPage() {
         .select('*')
         .eq('year', year).eq('month', month).eq('period', period);
 
-      const calculatedData = (teachers || []).map((teacher: any) => {
-        const teacherSessions = (sessions || []).filter(s => {
+      const calculatedData = (teachers || []).map((teacher: TeacherRow) => {
+        const teacherSessions = (sessions || []).filter((s: SessionRow) => {
           const isMain = String(s.created_by) === String(teacher.id);
           let isExtra = false;
           if (s.students_text?.includes('EXTRA_TEACHERS:')) {
             try {
-              const extras = JSON.parse(s.students_text.split('EXTRA_TEACHERS:')[1].trim());
-              isExtra = extras.some((ex: any) => String(ex.id) === String(teacher.id));
-            } catch (e) {}
+              const extras = JSON.parse(s.students_text.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
+              isExtra = extras.some((ex) => String(ex.id) === String(teacher.id));
+            } catch {
+              // ignore parse error
+            }
           }
           return isMain || isExtra;
         });
@@ -80,14 +97,16 @@ export default function UltimateSettlementPage() {
           if (String(cur.created_by) === String(teacher.id)) amount = Number(cur.price) || 0;
           else {
             try {
-              const extras = JSON.parse(cur.students_text.split('EXTRA_TEACHERS:')[1].trim());
-              amount = Number(extras.find((ex: any) => String(ex.id) === String(teacher.id))?.price) || 0;
-            } catch (e) {}
+              const extras = JSON.parse(cur.students_text!.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
+              amount = Number(extras.find((ex) => String(ex.id) === String(teacher.id))?.price) || 0;
+            } catch {
+              // ignore parse error
+            }
           }
           return acc + amount;
         }, 0);
         
-        const teacherAdjs = dbAdjs?.filter(a => a.teacher_id === teacher.id) || [];
+        const teacherAdjs = (dbAdjs?.filter((a: SettlementRow) => a.teacher_id === teacher.id) || []) as SettlementRow[];
         const adjTotal = teacherAdjs.reduce((acc, cur) => acc + (Number(cur.amount) || 0), 0);
         
         const grossTotal = sessionsTotal + adjTotal;
@@ -126,7 +145,7 @@ export default function UltimateSettlementPage() {
     totalCount: reportData.length
   };
 
-  const downloadImage = async (teacher: any) => {
+  const downloadImage = async (teacher: ReportTeacher) => {
     const container = document.createElement('div');
     container.style.position = 'absolute'; container.style.left = '-9999px'; container.style.top = '-9999px';
     container.style.width = '500px'; container.style.padding = '40px'; container.style.backgroundColor = '#ffffff';
@@ -225,7 +244,7 @@ export default function UltimateSettlementPage() {
 
       {/* 2. 강사별 정산 리스트 (0원 포함) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-        {reportData.map((teacher: any) => (
+        {reportData.map((teacher: ReportTeacher) => (
           <div key={teacher.id} className="group flex flex-col gap-2">
             <div 
               onClick={() => setExpandedTeacher(expandedTeacher === teacher.id ? null : teacher.id)} 
@@ -269,10 +288,10 @@ export default function UltimateSettlementPage() {
 
                 <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest px-2 mb-2"><History size={10} className="inline mr-1"/> Activity Details</p>
-                  {teacher.details.map((s: any) => {
+                  {teacher.details.map((s: SessionRow) => {
                     let fee = 0;
                     if (String(s.created_by) === String(teacher.id)) fee = Number(s.price) || 0;
-                    else { try { fee = JSON.parse(s.students_text.split('EXTRA_TEACHERS:')[1].trim()).find((ex: any) => String(ex.id) === String(teacher.id))?.price || 0; } catch (e) {} }
+                    else { try { const extras = JSON.parse(s.students_text!.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[]; fee = Number(extras.find((ex) => String(ex.id) === String(teacher.id))?.price) || 0; } catch { /* ignore */ } }
                     return (
                       <div key={s.id} className="flex justify-between items-center p-4 bg-slate-50/50 rounded-2xl text-[11px] font-black group-hover:bg-white transition-colors">
                         <span className="text-slate-300 italic">{(s.start_at || '').slice(8, 10)}일</span>
@@ -281,7 +300,7 @@ export default function UltimateSettlementPage() {
                       </div>
                     );
                   })}
-                  {teacher.adjs.map((a: any) => (
+                  {teacher.adjs.map((a: SettlementRow) => (
                     <div key={a.id} className="flex items-center justify-between p-4 bg-indigo-50/50 rounded-2xl text-[11px] font-black text-indigo-600 border border-indigo-100/20">
                       <span className="flex-1 truncate mx-2">[기타] {a.reason}</span>
                       <div className="flex items-center gap-3">

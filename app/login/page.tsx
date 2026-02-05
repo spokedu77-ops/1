@@ -5,28 +5,33 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, User, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { isRefreshTokenError } from '@/app/lib/supabase/auth';
 
 function LoginContent() {
   const [id, setId] = useState('');
   const [pw, setPw] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
   
   // URL에서 접속 유형(teacher/admin) 파악
   const type = searchParams.get('type') || 'teacher';
 
-  // 페이지 로드 시 무효한 세션이 있으면 클리어 (클라이언트에서만 실행)
+  // 페이지 로드 시 리프레시 토큰이 무효한 경우에만 세션 클리어 (일시적 네트워크/파싱 에러로 로그아웃 방지)
   useEffect(() => {
     const checkInitialSession = async () => {
       try {
         const supabase = getSupabaseBrowserClient();
         const { error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
+        if (sessionError && isRefreshTokenError(sessionError)) {
           await supabase.auth.signOut();
         }
       } catch (err) {
-        // 에러 무시 (로그인 페이지이므로 세션이 없어도 정상)
+        if (isRefreshTokenError(err)) {
+          const supabase = getSupabaseBrowserClient();
+          await supabase.auth.signOut();
+        }
       }
     };
     checkInitialSession();
@@ -129,6 +134,16 @@ function LoginContent() {
             </div>
           </div>
         </div>
+
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={keepLoggedIn}
+            onChange={(e) => setKeepLoggedIn(e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-xs font-medium text-gray-600">이 기기에서 로그인 유지</span>
+        </label>
 
         <button 
           type="submit" 

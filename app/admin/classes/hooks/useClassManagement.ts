@@ -56,7 +56,7 @@ export function useClassManagement() {
         let displayTeacher = s.users?.name || '미정';
         const { extraTeachers } = parseExtraTeachers(s.students_text || '');
         const extraNames = extraTeachers
-          .map((ex: any) => tList.find(t => t.id === ex.id)?.name)
+          .map((ex: { id?: string }) => tList.find(t => t.id === ex.id)?.name)
           .filter(Boolean) as string[];
         if (extraNames.length > 0) displayTeacher += `, ${extraNames.join(', ')}`;
 
@@ -95,7 +95,7 @@ export function useClassManagement() {
     }
   }, [filterTeacher, allEvents]);
 
-  const updateMileageOnly = async (sessionId: string, mileageOption: any) => {
+  const updateMileageOnly = async (sessionId: string, mileageOption: string) => {
     try {
       const { error } = await supabase
         .from('sessions')

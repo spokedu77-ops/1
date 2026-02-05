@@ -23,7 +23,7 @@ const DAYS: DayOption[] = [
 export default function CreateClassPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [teachers, setTeachers] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
 
   const [form, setForm] = useState({
     title: '',
@@ -51,7 +51,7 @@ export default function CreateClassPage() {
     fetchTeachers();
   }, []);
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string | number | boolean) => {
     setForm(prev => {
       // 원데이는 1회만 생성: 스케줄/회차 입력을 강제로 단순화
       if (field === 'type' && value === 'one_day') {
@@ -83,7 +83,7 @@ export default function CreateClassPage() {
     const start = new Date(`${form.startDate}T${form.startTime}`);
     if (form.type === 'one_day') return [start];
     const selectedDays = form.daysOfWeek.length ? form.daysOfWeek : [start.getDay()];
-    let cursor = new Date(start);
+    const cursor = new Date(start);
 
     while (sessions.length < form.sessionCount) {
       const weekStart = new Date(cursor);
@@ -112,7 +112,7 @@ export default function CreateClassPage() {
 
     setLoading(true);
     try {
-      const sessionsToInsert: any[] = [];
+      const sessionsToInsert: Record<string, unknown>[] = [];
       const commonGroupId = crypto.randomUUID();
       const dates = buildDates();
       const totalRounds = dates.length;
@@ -139,7 +139,7 @@ export default function CreateClassPage() {
           round_index: roundIndex,
           round_total: totalRounds,
           round_display: roundDisplay,
-          price: parseInt(form.price as any) || 0,
+          price: Number(form.price) || 0,
           created_by: form.teacherId,
         });
       });
@@ -149,7 +149,7 @@ export default function CreateClassPage() {
 
       alert('수업이 성공적으로 등록되었습니다!');
       router.push('/admin/classes');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       alert('등록 중 에러가 발생했습니다.');
     } finally {
@@ -220,7 +220,7 @@ export default function CreateClassPage() {
                     onChange={(e) => handleChange('teacherId', e.target.value)}
                   >
                     <option value="">강사를 선택하세요</option>
-                    {teachers.map((t: any) => <option key={t.id} value={t.id}>{t.name} T</option>)}
+                    {teachers.map((t: { id: string; name: string }) => <option key={t.id} value={t.id}>{t.name} T</option>)}
                   </select>
                 </div>
                 <div className="bg-gray-50 rounded-2xl p-4 shadow-inner">

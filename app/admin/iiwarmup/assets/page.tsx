@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AssetHubHeader } from '@/app/components/admin/assets/AssetHubHeader';
 import { AssetHubTabs, type AssetHubTabId } from '@/app/components/admin/assets/AssetHubTabs';
 import { ThinkAssetPanel } from '@/app/components/admin/assets/ThinkAssetPanel';
@@ -13,12 +13,12 @@ export default function AssetHubPage() {
   const [year, setYear] = useState(CURRENT_YEAR);
   const [month, setMonth] = useState(1);
   const [week, setWeek] = useState<1 | 2 | 3 | 4>(2);
-  const [activeTab, setActiveTab] = useState<AssetHubTabId>('think');
+  const [activeTab, setActiveTabState] = useState<AssetHubTabId>('think');
 
-  // Think는 2·3·4주차만 지원 → Play에서 1주차 선택 후 Think로 전환 시 2로 보정
-  useEffect(() => {
-    if (activeTab === 'think' && week === 1) setWeek(2);
-  }, [activeTab, week]);
+  const setActiveTab = (tab: AssetHubTabId) => {
+    if (tab === 'think' && week === 1) setWeek(2);
+    setActiveTabState(tab);
+  };
 
   const weekOptions = activeTab === 'think' ? ([2, 3, 4] as const) : ([1, 2, 3, 4] as const);
   const effectiveWeek = activeTab === 'think' ? (week === 1 ? 2 : week) : week;

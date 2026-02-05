@@ -3,9 +3,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
-  Youtube, Instagram, Plus, AlertCircle, 
-  Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2, 
-  CheckSquare, Box, ListOrdered, Play
+  Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2, 
+  CheckSquare, Box, ListOrdered, Play, AlertCircle
 } from 'lucide-react';
 
 // Supabase 설정
@@ -20,15 +19,28 @@ const MONTHLY_THEMES: { [key: number]: { title: string; desc: string } } = {
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const WEEKS = [1, 2, 3, 4];
 
+interface CurriculumItem {
+  id: number;
+  type?: string;
+  title?: string;
+  url?: string;
+  month?: number;
+  week?: number;
+  expertTip?: string;
+  checkList?: string[];
+  equipment?: string[];
+  steps?: string[];
+  [key: string]: unknown;
+}
+
 export default function AdminCurriculumPage() {
   const currentMonth = new Date().getMonth() + 1;
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedWeek, setSelectedWeek] = useState(1);
-  const [items, setItems] = useState<any[]>([]);
-  
+  const [items, setItems] = useState<CurriculumItem[]>([]);
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<CurriculumItem | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   
   const [newPost, setNewPost] = useState({ 
@@ -132,12 +144,12 @@ export default function AdminCurriculumPage() {
       
       await fetchItems();
       closeInputModal();
-    } catch (err: any) {
-      alert('저장 중 오류 발생: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert('저장 중 오류 발생: ' + msg);
     }
   };
 
-  // 문제 해결: 삭제 확인 로직 보강
   const deleteItem = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if(confirm('정말 삭제하시겠습니까? (복구 불가)')) {
@@ -159,13 +171,14 @@ export default function AdminCurriculumPage() {
 
         // 실제 삭제가 확인된 경우에만 UI 업데이트
         setItems(prev => prev.filter(item => item.id !== id));
-      } catch (err: any) {
-         alert('삭제 실패: ' + err.message);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        alert('삭제 실패: ' + msg);
       }
     }
   };
 
-  const openEditModal = (item: any, e: React.MouseEvent) => {
+  const openEditModal = (item: CurriculumItem, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingId(item.id);
     setNewPost({ 
@@ -181,7 +194,7 @@ export default function AdminCurriculumPage() {
     setIsInputModalOpen(true);
   };
 
-  const openDetailModal = (item: any) => {
+  const openDetailModal = (item: CurriculumItem) => {
     setSelectedItem(item);
     setIsDetailModalOpen(true);
   };

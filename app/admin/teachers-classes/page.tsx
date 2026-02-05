@@ -13,21 +13,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const FEEDBACK_TEMPLATE = `✅ 오늘 수업의 주요 활동
-- 
-
-✅ 강점 및 긍정적인 부분
-- 
-
-✅ 개선이 필요한 부분 및 피드백
-- 
-
-✅ 다음 수업 목표 및 계획
-- 
-
-✅ 특이사항 및 컨디션 체크
-- `;
-
 interface Session {
   id: string;
   title: string;
@@ -40,27 +25,13 @@ interface Session {
   session_type: 'regular_center' | 'regular_private' | 'one_day';
   created_by: string;
   feedback_fields?: FeedbackFields;
-  users?: {
-    id: string;
-    name: string;
-  };
+  users?: { id: string; name: string };
+  lesson_plans?: { content?: string }[];
 }
 
 interface Coach {
   id: string;
   name: string;
-}
-
-interface LessonPlan {
-  id: string;
-  teacher_id: string;
-  class_title: string;
-  week_number: number;
-  content: string;
-  users?: {
-    id: string;
-    name: string;
-  };
 }
 
 export default function MasterQCPage() {
@@ -142,7 +113,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  const [duplicateCheck, setDuplicateCheck] = useState<any>(null);
+  const [duplicateCheck, setDuplicateCheck] = useState<{ duplicate?: boolean; message?: string } | null>(null);
 
   const fetchListData = useCallback(async () => {
     setLoading(true);
@@ -168,9 +139,9 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
       const { data, error } = await query;
       if (error) throw error;
       if (data) setSessions(data as unknown as Session[]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('데이터 로드 실패:', err);
-      setError(err.message || '데이터를 불러오지 못했습니다.');
+      setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -237,8 +208,8 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
       alert(`${selectedSessions.size}개의 리포트가 승인되었습니다.`);
       clearSelection();
       fetchListData();
-    } catch (error: any) {
-      alert('일괄 승인에 실패했습니다: ' + error.message);
+    } catch (error: unknown) {
+      alert('일괄 승인에 실패했습니다: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setBulkActionLoading(false);
     }
@@ -307,7 +278,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
     if (!selectedEvent) return;
     try {
       const updatedText = fieldsToTemplateText(feedbackFields);
-      const updateData: any = { 
+      const updateData: Record<string, unknown> = { 
         status: newStatus,
         students_text: updatedText,
         feedback_fields: feedbackFields,
@@ -320,8 +291,8 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
       alert(newStatus === 'verified' ? '검수 승인 완료!' : '수정 요청 완료!');
       setIsModalOpen(false);
       fetchListData();
-    } catch (error: any) {
-      alert('저장에 실패했습니다: ' + error.message);
+    } catch (error: unknown) {
+      alert('저장에 실패했습니다: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -356,7 +327,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
               {['all', 'empty', 'done', 'verified'].map(filter => (
                 <button 
                   key={filter}
-                  onClick={() => setStatusFilter(filter as any)}
+                  onClick={() => setStatusFilter(filter as 'all' | 'empty' | 'done' | 'verified')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     statusFilter === filter ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
                   }`}
@@ -551,7 +522,7 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
                       <label className={`text-[9px] font-bold text-${field.color}-600 uppercase block ml-1`}>{field.label}</label>
                       <textarea 
                         className={`w-full h-20 bg-white rounded-xl p-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-${field.color}-100 resize-none border`}
-                        value={(feedbackFields as any)[field.key] || ''} 
+                        value={(feedbackFields as Record<string, string>)[field.key] || ''} 
                         onChange={(e) => setFeedbackFields({...feedbackFields, [field.key]: e.target.value})}
                         placeholder={field.placeholder}
                       />
@@ -576,12 +547,13 @@ function FeedbackReviewTab({ coaches }: { coaches: Coach[] }) {
   );
 }
 
-// 수업안 조회 탭
+// 수업안 조회 탭 - 세션 타입 (lesson_plans, users 조인 포함)
+type LessonPlanSession = Record<string, unknown> & { id: string; created_by: string; users?: { name?: string } | null };
 function LessonPlanTab({ coaches }: { coaches: Coach[] }) {
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<LessonPlanSession[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [selectedSession, setSelectedSession] = useState<LessonPlanSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -609,8 +581,8 @@ function LessonPlanTab({ coaches }: { coaches: Coach[] }) {
         const { data, error } = await query;
         if (error) throw error;
         setSessions(data || []);
-      } catch (err: any) {
-        console.error('수업안 로드 실패:', err.message || err);
+      } catch (err: unknown) {
+        console.error('수업안 로드 실패:', err instanceof Error ? err.message : err);
       } finally {
         setLoading(false);
       }
@@ -619,9 +591,9 @@ function LessonPlanTab({ coaches }: { coaches: Coach[] }) {
   }, [selectedTeacher]);
 
   const groupedByTeacher = useMemo(() => {
-    const groups: Record<string, any[]> = {};
+    const groups: Record<string, LessonPlanSession[]> = {};
     sessions.forEach(session => {
-      const teacherName = (session.users as any)?.name || coaches.find(c => c.id === session.created_by)?.name || '미정';
+      const teacherName = (session.users as { name?: string } | null)?.name || coaches.find(c => c.id === session.created_by)?.name || '미정';
       if (!groups[teacherName]) groups[teacherName] = [];
       groups[teacherName].push(session);
     });
@@ -649,7 +621,7 @@ function LessonPlanTab({ coaches }: { coaches: Coach[] }) {
             <div key={teacher} className="bg-white rounded-2xl p-6 border-2 border-slate-200 hover:border-blue-200 transition-all">
               <h3 className="text-xl font-black text-slate-900 mb-4">{teacher} 선생님</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {teacherSessions.map((session: any) => {
+                {teacherSessions.map((session: Session) => {
                   const hasLessonPlan = session.lesson_plans && session.lesson_plans.length > 0 && session.lesson_plans[0].content;
                   const date = new Date(session.start_at);
                   const formattedDate = `${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}`;

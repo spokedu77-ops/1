@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { 
-  Plus, Trash2, X, Pin, ChevronDown, 
-  CheckCircle2, AlertCircle, RefreshCw, Edit3
-} from 'lucide-react';
+import { Plus, Trash2, X, Pin, ChevronDown, RefreshCw, Edit3 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -82,8 +79,9 @@ export default function NoticePage() {
       setEditingId(null);
       setForm({ title: '', content: '', category: 'general', is_pinned: false });
       fetchNotices();
-    } catch (e: any) {
-      alert('저장 실패: ' + e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      alert('저장 실패: ' + msg);
     }
   };
 

@@ -1,20 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { 
   ChevronLeft, ChevronRight, 
-  Camera, X, FileText, Paperclip 
+  Camera, X, FileText, Paperclip, ChevronDown, ChevronUp, Copy 
 } from 'lucide-react';
 import { 
   FeedbackFields,
   parseTemplateToFields,
   fieldsToTemplateText
 } from '@/app/lib/feedbackValidation';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 interface Session {
   id: string;
@@ -22,13 +18,21 @@ interface Session {
   start_at: string;
   session_type: string;
   status: string;
+  group_id?: string | null;
   students_text?: string;
   photo_url?: string[];
   file_url?: string[];
   feedback_fields?: FeedbackFields;
 }
 
+interface PreviousLessonPlan {
+  sessionId: string;
+  start_at: string;
+  content: string;
+}
+
 function MyClassesContent() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<Session | null>(null);
@@ -38,6 +42,32 @@ function MyClassesContent() {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [fileUrls, setFileUrls] = useState<string[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isLessonPlanModalOpen, setIsLessonPlanModalOpen] = useState(false);
+  const [lessonPlanContent, setLessonPlanContent] = useState('');
+  const [lessonPlanSaving, setLessonPlanSaving] = useState(false);
+  const [currentSessionLessonPlanId, setCurrentSessionLessonPlanId] = useState<string | null>(null);
+  const [previousPlans, setPreviousPlans] = useState<PreviousLessonPlan[]>([]);
+  const [previousPlansExpandedId, setPreviousPlansExpandedId] = useState<string | null>(null);
+
+  const getBaseTitle = (title: string): string => {
+    const original = title;
+    const cleaned = title
+      .replace(/^\d+\/\d+\s+/i, '')
+      .replace(/\s*[-_/]\s*\d+회차$/i, '')
+      .replace(/\s+\d+회차$/i, '')
+      .replace(/\s*[-_/]\s*\d+회$/i, '')
+      .replace(/\s+\d+회$/i, '')
+      .replace(/\s*[-_/]\s*\d+차$/i, '')
+      .replace(/\s+\d+차$/i, '')
+      .replace(/\s*[-_/]\s*\d+$/i, '')
+      .replace(/\s+\d+$/i, '')
+      .replace(/\d+$/, '')
+      .replace(/\s*\(\d+\)$/i, '')
+      .replace(/\s*\(\d{4}-\d{2}-\d{2}\)$/i, '')
+      .replace(/\s*\d{4}-\d{2}-\d{2}$/i, '')
+      .trim();
+    return cleaned || original;
+  };
 
   const isToday = (dateString: string) => {
     const today = new Date();
@@ -60,6 +90,7 @@ function MyClassesContent() {
   };
 
   const getMySchedule = useCallback(async () => {
+    if (!supabase) return;
     setLoading(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -81,7 +112,7 @@ function MyClassesContent() {
     } finally {
       setLoading(false);
     }
-  }, [currentDate]);
+  }, [supabase, currentDate]);
 
   useEffect(() => { getMySchedule(); }, [getMySchedule]);
 
@@ -102,7 +133,7 @@ function MyClassesContent() {
   };
 
   const handleCompleteSession = async () => {
-    if (!selectedEvent || uploading) return;
+    if (!supabase || !selectedEvent || uploading) return;
     
     // 센터 수업: 파일만 체크
     if (selectedEvent.session_type === 'regular_center') {
@@ -153,7 +184,7 @@ function MyClassesContent() {
   };
 
   const handleResetStatus = async () => {
-    if (!selectedEvent || !confirm('초기화하시겠습니까? (작성된 피드백이 삭제됩니다)')) return;
+    if (!supabase || !selectedEvent || !confirm('초기화하시겠습니까? (작성된 피드백이 삭제됩니다)')) return;
     setUploading(true);
     try {
       await supabase.from('sessions').update({ 
@@ -169,7 +200,7 @@ function MyClassesContent() {
   };
 
   const uploadFile = async (file: File, bucket: string) => {
-    if (!selectedEvent) return null;
+    if (!supabase || !selectedEvent) return null;
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
@@ -184,6 +215,85 @@ function MyClassesContent() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const openLessonPlanModal = async () => {
+    if (!supabase || !selectedEvent) return;
+    setLessonPlanContent('');
+    setCurrentSessionLessonPlanId(null);
+    setPreviousPlans([]);
+    setPreviousPlansExpandedId(null);
+    setIsLessonPlanModalOpen(true);
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) return;
+    const userId = userData.user.id;
+    const baseTitle = getBaseTitle(selectedEvent.title);
+
+    const [currentRes, sessionsRes] = await Promise.all([
+      supabase.from('lesson_plans').select('id, content').eq('session_id', selectedEvent.id).maybeSingle(),
+      supabase.from('sessions').select('id, title, start_at, group_id, lesson_plans(content)').eq('created_by', userId).order('start_at', { ascending: false }).limit(200)
+    ]);
+    const current = currentRes.data as { id: string; content: string } | null;
+    if (current) {
+      setLessonPlanContent(current.content || '');
+      setCurrentSessionLessonPlanId(current.id);
+    }
+    const sessionsWithPlans = (sessionsRes.data || []) as Array<{ id: string; title: string; start_at: string; group_id?: string | null; lesson_plans: { content?: string }[] }>;
+    const sameClass = sessionsWithPlans.filter(s => s.id !== selectedEvent.id && ((selectedEvent.group_id && s.group_id === selectedEvent.group_id) || getBaseTitle(s.title) === baseTitle));
+    const prev: PreviousLessonPlan[] = [];
+    sameClass.forEach(s => {
+      const raw = s.lesson_plans;
+      const lp = Array.isArray(raw) ? raw[0] : raw && typeof raw === 'object' ? raw : null;
+      const content = lp && typeof (lp as { content?: string }).content === 'string' ? (lp as { content: string }).content : '';
+      if (content.trim()) prev.push({ sessionId: s.id, start_at: s.start_at, content });
+    });
+    prev.sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime());
+    setPreviousPlans(prev);
+  };
+
+  const saveLessonPlan = async () => {
+    if (!supabase || !selectedEvent) return;
+    setLessonPlanSaving(true);
+    try {
+      if (currentSessionLessonPlanId) {
+        const { error } = await supabase.from('lesson_plans').update({ content: lessonPlanContent, updated_at: new Date().toISOString() }).eq('id', currentSessionLessonPlanId);
+        if (error) throw error;
+        alert('수업안이 수정되었습니다.');
+      } else {
+        const { error } = await supabase.from('lesson_plans').insert({ session_id: selectedEvent.id, content: lessonPlanContent });
+        if (error) throw error;
+        alert('수업안이 저장되었습니다.');
+      }
+      setIsLessonPlanModalOpen(false);
+      getMySchedule();
+    } catch (err: any) {
+      alert('저장 실패: ' + err.message);
+    } finally {
+      setLessonPlanSaving(false);
+    }
+  };
+
+  const deleteLessonPlan = async () => {
+    if (!supabase || !selectedEvent || !currentSessionLessonPlanId || !confirm('정말 삭제하시겠습니까?')) return;
+    setLessonPlanSaving(true);
+    try {
+      const { error } = await supabase.from('lesson_plans').delete().eq('id', currentSessionLessonPlanId);
+      if (error) throw error;
+      alert('삭제되었습니다.');
+      setCurrentSessionLessonPlanId(null);
+      setLessonPlanContent('');
+      setIsLessonPlanModalOpen(false);
+      getMySchedule();
+    } catch (err: any) {
+      alert('삭제 실패: ' + err.message);
+    } finally {
+      setLessonPlanSaving(false);
+    }
+  };
+
+  const copyPreviousToContent = (content: string) => {
+    setLessonPlanContent(content);
+    if (previousPlansExpandedId) setPreviousPlansExpandedId(null);
   };
 
   const { monday, sunday } = getWeekRange(new Date(currentDate));
@@ -267,7 +377,16 @@ function MyClassesContent() {
                   {new Date(selectedEvent.start_at).toLocaleString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={openLessonPlanModal}
+                  className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black transition-all cursor-pointer shadow-lg shadow-indigo-200 active:scale-[0.98]"
+                >
+                  <FileText size={18} /> 수업안 작성
+                </button>
+                <button onClick={() => setIsModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors p-1"><X size={24} /></button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 space-y-6 text-left bg-slate-50/30">
@@ -403,6 +522,83 @@ function MyClassesContent() {
               )}
               <button onClick={handleCompleteSession} disabled={uploading} className={`flex-[2] py-5 rounded-[22px] font-black text-sm shadow-xl transition-all cursor-pointer active:scale-95 uppercase ${uploading ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-white hover:bg-blue-600'}`}>
                 {uploading ? 'Processing...' : 'Complete & Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 수업안 작성/수정 모달 */}
+      {isLessonPlanModalOpen && selectedEvent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4" onClick={() => setIsLessonPlanModalOpen(false)}>
+          <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="px-8 py-6 border-b flex justify-between items-center bg-white text-left">
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">수업안</h2>
+                <p className="text-[10px] font-bold text-slate-400 mt-1">
+                  {selectedEvent.title} · {new Date(selectedEvent.start_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })}
+                </p>
+              </div>
+              <button type="button" onClick={() => setIsLessonPlanModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/30 text-left">
+              {/* 이전 수업안: 항상 표시 (없을 때 안내 문구) */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">이전 수업안 (같은 수업 다른 날짜 · 복사해서 사용)</label>
+                {previousPlans.length > 0 ? (
+                  <div className="space-y-2">
+                    {previousPlans.map((p) => {
+                      const isExp = previousPlansExpandedId === p.sessionId;
+                      return (
+                        <div key={p.sessionId} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setPreviousPlansExpandedId(isExp ? null : p.sessionId)}
+                            className="w-full px-4 py-3 flex justify-between items-center text-left hover:bg-slate-50 cursor-pointer"
+                          >
+                            <span className="text-sm font-bold text-slate-700">
+                              {new Date(p.start_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })}
+                            </span>
+                            {isExp ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+                          </button>
+                          {isExp && (
+                            <div className="px-4 pb-4 pt-0 border-t border-slate-100">
+                              <pre className="text-xs text-slate-600 whitespace-pre-wrap font-sans max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-xl mb-3">{p.content}</pre>
+                              <button
+                                type="button"
+                                onClick={() => copyPreviousToContent(p.content)}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-black cursor-pointer hover:bg-indigo-200 transition-all"
+                              >
+                                <Copy size={14} /> 내용 가져오기
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400 py-4 px-4 bg-white rounded-2xl border border-slate-100">
+                    같은 수업의 이전 회차 수업안이 없습니다. 다른 날짜에 작성한 같은 수업 수업안이 여기 목록으로 표시됩니다.
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">이번 수업안 내용</label>
+                <textarea
+                  className="w-full min-h-[280px] bg-white rounded-2xl p-6 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
+                  value={lessonPlanContent}
+                  onChange={(e) => setLessonPlanContent(e.target.value)}
+                  placeholder="수업안을 작성하세요..."
+                />
+              </div>
+            </div>
+            <div className="p-8 bg-white border-t flex gap-4">
+              {currentSessionLessonPlanId && (
+                <button type="button" onClick={deleteLessonPlan} disabled={lessonPlanSaving} className="flex-1 bg-rose-50 text-rose-500 py-5 rounded-[22px] font-black text-sm cursor-pointer hover:bg-rose-100 transition-all uppercase disabled:opacity-50">삭제</button>
+              )}
+              <button type="button" onClick={saveLessonPlan} disabled={lessonPlanSaving} className={`flex-[2] py-5 rounded-[22px] font-black text-sm shadow-xl transition-all cursor-pointer active:scale-95 uppercase ${lessonPlanSaving ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-white hover:bg-blue-600'}`}>
+                {lessonPlanSaving ? '저장 중...' : currentSessionLessonPlanId ? '수정' : '저장'}
               </button>
             </div>
           </div>
