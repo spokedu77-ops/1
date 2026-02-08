@@ -8,10 +8,10 @@ export const PLAY_RULES = {
   BPM: 120,
   /** tick당 밀리초 (BPM 120 → 2 beat/sec → 0.5s = 500ms per tick) */
   TICK_MS: 500,
-  /** 구간별 tick 수 */
+  /** 구간별 tick 수 (SET=10 → 5초/set, set1+set2=10초) */
   TICKS: {
     EXPLAIN: 5,
-    SET: 20,
+    SET: 10,
     TRANSITION: 5,
     BLOCKS: 5,
   },

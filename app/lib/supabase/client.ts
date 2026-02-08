@@ -1,23 +1,25 @@
 /**
  * 중앙화된 Supabase 클라이언트
- * 여러 인스턴스 생성을 방지하기 위한 싱글턴 패턴
+ * - 브라우저: 쿠키 기반 (PWA 세션 안정화)
+ * - 서버: anon 클라이언트 (기존 호환)
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from './browser';
 
-let supabaseClient: SupabaseClient | null = null;
+let serverClient: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient {
-  if (!supabaseClient) {
+  if (typeof window !== 'undefined') {
+    return getSupabaseBrowserClient();
+  }
+  if (!serverClient) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error('Supabase environment variables are not set');
     }
-    
-    supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    serverClient = createClient(supabaseUrl, supabaseAnonKey);
   }
-  
-  return supabaseClient;
+  return serverClient;
 }

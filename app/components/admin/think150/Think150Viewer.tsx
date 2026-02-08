@@ -31,16 +31,14 @@ export function Think150Viewer({ event, fullscreen = false }: Think150ViewerProp
 
     if (event.phase === 'intro') {
       const p = event.payload as { type: 'intro'; week: number; subtitle?: string } | undefined;
-      const subtitle = p?.subtitle;
+      const subtitle = p?.subtitle ?? '화면에 나온 색을 보고 같은 색의 패드를 밟아 주세요.';
       return (
         <div className="flex h-full w-full flex-1 flex-col items-center justify-center bg-gradient-to-b from-neutral-900 to-neutral-950 p-8 text-center">
           <h1 className="text-5xl font-black tracking-tight text-cyan-400 md:text-6xl">THINK</h1>
           <p className="mt-4 text-xl text-neutral-400">생각하기</p>
-          {subtitle && (
-            <p className="mt-6 max-w-md rounded-2xl bg-cyan-500/10 px-6 py-4 text-base font-medium text-cyan-300">
-              {subtitle}
-            </p>
-          )}
+          <p className="mt-6 max-w-md rounded-2xl bg-cyan-500/10 px-6 py-4 text-base font-medium text-cyan-300">
+            {subtitle}
+          </p>
         </div>
       );
     }
@@ -99,11 +97,13 @@ export function Think150Viewer({ event, fullscreen = false }: Think150ViewerProp
 
     if (event.phase.startsWith('rest') && event.payload?.type === 'rest') {
       const p = event.payload;
+      const isRest3 = event.phase === 'rest3';
+      const displayText = isRest3 ? '잠시 후 마무리' : p.ruleLabel;
       return (
         <div className="flex h-full w-full flex-1 flex-col items-center justify-center bg-gradient-to-b from-neutral-900 to-neutral-950 p-8">
           <div className="max-w-lg rounded-2xl border border-neutral-700 bg-neutral-800/50 px-8 py-6 text-center">
             <p className="text-xl font-semibold leading-relaxed text-neutral-100 md:text-2xl">
-              {p.ruleLabel}
+              {displayText}
             </p>
           </div>
         </div>

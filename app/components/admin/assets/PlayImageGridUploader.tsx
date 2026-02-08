@@ -3,6 +3,9 @@
 import { useRef } from 'react';
 import { PLAY_SLOT_KEYS, type PlaySlotKey } from '@/app/lib/admin/assets/storagePaths';
 
+const buttonBase =
+  'cursor-pointer transition-colors active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-1 focus:ring-offset-neutral-900';
+
 const SLOT_LABELS: Record<PlaySlotKey, string> = {
   a1_set1_off: '액션1 Set1 Off',
   a1_set1_on: '액션1 Set1 On',
@@ -39,15 +42,22 @@ export function PlayImageGridUploader({
   onUpload,
   onRemove,
 }: PlayImageGridUploaderProps) {
-  const fileRefs = useRef<Partial<Record<PlaySlotKey, HTMLInputElement | null>>>({});
+  const singleFileRef = useRef<HTMLInputElement | null>(null);
+  const currentSlotRef = useRef<PlaySlotKey | null>(null);
 
-  const handleUpload = async (slotKey: PlaySlotKey) => {
-    const el = fileRefs.current[slotKey];
-    const file = el?.files?.[0];
-    if (!file) return;
+  const openFileForSlot = (slotKey: PlaySlotKey) => {
+    currentSlotRef.current = slotKey;
+    singleFileRef.current?.click();
+  };
+
+  const handleFileChange = async () => {
+    const slotKey = currentSlotRef.current;
+    const file = singleFileRef.current?.files?.[0];
+    if (!slotKey || !file) return;
+    currentSlotRef.current = null;
+    if (singleFileRef.current) singleFileRef.current.value = '';
     try {
       await onUpload(slotKey, file);
-      el.value = '';
     } catch (err) {
       console.error(err);
     }
@@ -55,6 +65,13 @@ export function PlayImageGridUploader({
 
   return (
     <section className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800">
+      <input
+        ref={singleFileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={handleFileChange}
+      />
       <h3 className="mb-4 text-base font-bold text-neutral-200">
         5 action × Set1/Set2 off·on (20 슬롯)
       </h3>
@@ -89,26 +106,17 @@ export function PlayImageGridUploader({
                 )}
               </div>
               <div className="flex gap-2">
-                <input
-                  ref={(el) => {
-                    fileRefs.current[slotKey] = el;
-                  }}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="hidden"
-                  onChange={() => handleUpload(slotKey)}
-                />
                 <button
                   type="button"
-                  className="flex-1 rounded bg-neutral-700 py-1.5 text-xs hover:bg-neutral-600"
-                  onClick={() => fileRefs.current[slotKey]?.click()}
+                  className={`flex-1 rounded bg-neutral-700 py-1.5 text-xs hover:bg-neutral-600 ${buttonBase}`}
+                  onClick={() => openFileForSlot(slotKey)}
                 >
                   업로드
                 </button>
                 {path && (
                   <button
                     type="button"
-                    className="rounded bg-red-900/50 py-1.5 text-xs text-red-400 hover:bg-red-900/70"
+                    className={`rounded bg-red-900/50 py-1.5 text-xs text-red-400 hover:bg-red-900/70 ${buttonBase}`}
                     onClick={() => onRemove(slotKey)}
                   >
                     삭제

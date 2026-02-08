@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { uploadToStorage, getPublicUrl, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import {
@@ -12,8 +12,6 @@ import {
   PLAY_SLOT_KEYS,
   type PlaySlotKey,
 } from '@/app/lib/admin/assets/storagePaths';
-
-const supabase = getSupabaseClient();
 
 export type PlayAssetPackState = {
   bgmPath: string | null;
@@ -49,6 +47,8 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
   const { data: state, isLoading: loading, error: queryError } = useQuery({
     queryKey: ['play_asset_pack', weekKey],
     queryFn: async (): Promise<PlayAssetPackState> => {
+      if (typeof window === 'undefined') return emptyState();
+      const supabase = getSupabaseBrowserClient();
       try {
         const { data, error: e } = await supabase
           .from('play_asset_packs')
@@ -115,6 +115,7 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
         if (v) imagesJson[k] = v;
       }
       try {
+        const supabase = getSupabaseBrowserClient();
         const { error: upsertError } = await supabase.from('play_asset_packs').upsert(
           {
             week_key: weekKey,
@@ -151,25 +152,29 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
       const webp = await optimizeToWebP(file);
       const path = playAssetPath(weekKey, slotKey, 'webp');
       await uploadToStorage(path, webp, 'image/webp');
-      const next = { ...resolvedState.images, [slotKey]: path };
+      const latest = queryClient.getQueryData<PlayAssetPackState>(['play_asset_pack', weekKey]);
+      const baseImages = latest?.images ?? resolvedState.images;
+      const next = { ...baseImages, [slotKey]: path };
       await save({ images: next });
     },
-    [weekKey, resolvedState.images, save]
+    [weekKey, resolvedState.images, save, queryClient]
   );
 
   const removeImage = useCallback(
     async (slotKey: PlaySlotKey): Promise<void> => {
-      const path = resolvedState.images[slotKey];
+      const latest = queryClient.getQueryData<PlayAssetPackState>(['play_asset_pack', weekKey]);
+      const currentImages = latest?.images ?? resolvedState.images;
+      const path = currentImages[slotKey];
       if (!path) return;
       try {
         await deleteFromStorage(path);
       } catch {
         /* ignore */
       }
-      const next = { ...resolvedState.images, [slotKey]: null };
+      const next = { ...currentImages, [slotKey]: null };
       await save({ images: next });
     },
-    [resolvedState.images, save]
+    [weekKey, resolvedState.images, save, queryClient]
   );
 
   const uploadBgm = useCallback(
@@ -193,15 +198,55 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
     await save({ bgmPath: null });
   }, [resolvedState.bgmPath, save]);
 
-  const getImageUrl = useCallback((path: string | null) => {
-    if (!path) return '';
-    return getPublicUrl(path);
-  }, []);
+  const getImageUrl = useCallback(
+    (path: string | null) => {
+      if (!path) return '';
+      const url = getPublicUrl(path);
+      return lastSavedAt != null ? `${url}${url.includes('?') ? '&' : '?'}v=${lastSavedAt}` : url;
+    },
+    [lastSavedAt]
+  );
 
   const getBgmUrl = useCallback((path: string | null) => {
     if (!path) return '';
     return getPublicUrl(path);
   }, []);
+
+  const resetPack = useCallback(async () => {
+    const supabase = getSupabaseBrowserClient();
+    for (const path of Object.values(resolvedState.images)) {
+      if (path) {
+        try {
+          await deleteFromStorage(path);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    if (resolvedState.bgmPath) {
+      try {
+        await deleteFromStorage(resolvedState.bgmPath);
+      } catch {
+        /* ignore */
+      }
+    }
+    await supabase.from('play_asset_packs').upsert(
+      {
+        week_key: weekKey,
+        year,
+        month,
+        week,
+        bgm_path: null,
+        images_json: {},
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'week_key' }
+    );
+    setLocalState(null);
+    setSaveError(null);
+    setLastSavedAt(null);
+    await queryClient.invalidateQueries({ queryKey: ['play_asset_pack', weekKey] });
+  }, [weekKey, year, month, week, resolvedState.images, resolvedState.bgmPath, queryClient]);
 
   return {
     state: resolvedState,
@@ -218,5 +263,6 @@ export function usePlayAssetPack(year: number, month: number, week: number) {
     removeBgm,
     getImageUrl,
     getBgmUrl,
+    resetPack,
   };
 }

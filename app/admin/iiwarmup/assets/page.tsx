@@ -13,7 +13,7 @@ export default function AssetHubPage() {
   const [year, setYear] = useState(CURRENT_YEAR);
   const [month, setMonth] = useState(1);
   const [week, setWeek] = useState<1 | 2 | 3 | 4>(2);
-  const [activeTab, setActiveTabState] = useState<AssetHubTabId>('think');
+  const [activeTab, setActiveTabState] = useState<AssetHubTabId>('play');
 
   const setActiveTab = (tab: AssetHubTabId) => {
     if (tab === 'think' && week === 1) setWeek(2);

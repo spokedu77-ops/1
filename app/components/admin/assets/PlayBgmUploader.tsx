@@ -41,7 +41,7 @@ export function PlayBgmUploader({
       <div className="flex flex-wrap items-center gap-4">
         <button
           type="button"
-          className="rounded-lg bg-neutral-700 px-4 py-2 text-sm hover:bg-neutral-600"
+          className="cursor-pointer rounded-lg bg-neutral-700 px-4 py-2 text-sm transition-colors hover:bg-neutral-600 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-1 focus:ring-offset-neutral-900"
           onClick={() => fileRef.current?.click()}
         >
           BGM 업로드
@@ -54,7 +54,7 @@ export function PlayBgmUploader({
             <audio src={getBgmUrl(bgmPath)} controls className="h-8 max-w-[200px]" />
             <button
               type="button"
-              className="rounded bg-red-900/50 px-2 py-1 text-xs text-red-400 hover:bg-red-900/70"
+              className="cursor-pointer rounded bg-red-900/50 px-2 py-1 text-xs text-red-400 transition-colors hover:bg-red-900/70 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 focus:ring-offset-neutral-900"
               onClick={() => onRemove()}
             >
               삭제

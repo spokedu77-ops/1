@@ -49,7 +49,7 @@
 
 - **react/no-unescaped-entities**: [app/teacher/report/page.tsx](app/teacher/report/page.tsx) 202행 — `'` 를 `&apos;` 등으로 이스케이프. 텍스트만 바꾸면 되고 동작 영향 없음.
 - **prefer-const**: [app/lib/admin/logic/layoutEngine.ts](app/lib/admin/logic/layoutEngine.ts) 94행 — `let start` → `const start`. 동작 동일.
-- **@typescript-eslint/no-explicit-any**: 다수 파일. 타입만 구체화하면 되며, 한 번에 전부 말고 **페이지/훅 단위로** `any` → 구체 타입으로 바꾸면 됩니다. (teacher/chat, teacher/curriculum, teacher/my-classes, report/[id] 등)
+- **@typescript-eslint/no-explicit-any**: 다수 파일. 타입만 구체화하면 되며, 한 번에 전부 말고 **페이지/훅 단위로** `any` → 구체 타입으로 바꾸면 됩니다. (teacher/curriculum, teacher/my-classes, report/[id] 등)
 
 ---
 
@@ -77,10 +77,6 @@
 
 - [app/api/admin/storage/exists/route.ts](app/api/admin/storage/exists/route.ts) — `getSupabaseClient()` 사용. 서버에서는 쿠키가 없어 anon만 적용됩니다. Storage RLS가 “인증 필요”이면 실패할 수 있으므로, 필요 시 service role 또는 인증된 세션을 서버에서만 사용하는 방식으로 나중에 정리.
 
-### 4-2. 채팅 미읽음 RPC
-
-- `get_unread_counts` 실행 권한이 Supabase에 있어야 합니다. [sql/35_grant_get_unread_counts_service_role.sql](sql/35_grant_get_unread_counts_service_role.sql), [sql/22_chat_unread_optimization.sql](sql/22_chat_unread_optimization.sql) 미실행 시 채팅 배지/미읽음 에러 가능. 배포 검수 체크리스트에 포함되어 있음.
-
 ---
 
 ## 5. 권장 실행 순서 (영향 적은 것 → 큰 것)
@@ -96,7 +92,7 @@
 | 5 | **세션 통일 (PWA)** | 중간 | 한 페이지씩 적용 후 로그인·데이터 확인 권장. 순서 예: class/create → report/[id] → admin iiwarmup/scheduler 및 lib/admin (범위 넓음, 단계 나눠서) |
 | 6 | **API 라우트**: storage/exists 서버 인증 방식 검토 | 중간 | RLS 정책에 따라 필요 시 |
 | 7 | **타입**: no-explicit-any 점진적 제거 (파일/훅 단위) | 낮음 | 타입만 변경, 런타임 동작 동일 목표 |
-| 8 | **exhaustive-deps, no-img-element** | 낮음 | 적용 완료: exhaustive-deps는 의도적 생략에 eslint-disable 또는 deps 보강(weekKey). no-img-element는 admin/teacher/report 채팅·커리큘럼·리포트 img에 eslint-disable 적용. (next/image 전환은 추후 선택) |
+| 8 | **exhaustive-deps, no-img-element** | 낮음 | 적용 완료: exhaustive-deps는 의도적 생략에 eslint-disable 또는 deps 보강(weekKey). no-img-element는 admin/teacher/report 커리큘럼·리포트 img에 eslint-disable 적용. (next/image 전환은 추후 선택) |
 
 ---
 

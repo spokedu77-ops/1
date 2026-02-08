@@ -31,6 +31,12 @@ export default function IIWarmupAdminLayout({
             </Link>
             <Link
               className="rounded-lg bg-neutral-800 px-3 py-2 hover:bg-neutral-700"
+              href="/admin/iiwarmup/challenge"
+            >
+              Challenge
+            </Link>
+            <Link
+              className="rounded-lg bg-neutral-800 px-3 py-2 hover:bg-neutral-700"
               href="/admin/iiwarmup/think"
             >
               Think

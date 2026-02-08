@@ -43,6 +43,7 @@ export default function AdminInventoryPage() {
   const [catalogForm, setCatalogForm] = useState({ name: '', category: '', image: '', simple_desc: '', key_points: '', usage_examples: '' });
   const [tempQuantities, setTempQuantities] = useState<{[key: number]: string}>({});
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const fetchCatalog = useCallback(async () => {
     if (process.env.NODE_ENV === 'development') console.log('[inventory] fetchCatalog 시작, supabase:', !!supabase);
@@ -84,8 +85,8 @@ export default function AdminInventoryPage() {
 
   useEffect(() => {
     /* eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only data fetch */
-    void fetchCatalog();
-    void fetchTeachers();
+    setIsInitialLoading(true);
+    Promise.all([fetchCatalog(), fetchTeachers()]).finally(() => setIsInitialLoading(false));
   }, [fetchCatalog, fetchTeachers]);
 
   const filteredTeachers = useMemo(() => 
@@ -220,6 +221,17 @@ export default function AdminInventoryPage() {
       reader.readAsDataURL(file);
     }
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex h-screen bg-[#F8FAFC] items-center justify-center font-sans text-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+          <p className="text-sm font-bold text-slate-400">교구 목록 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans text-slate-900 relative">

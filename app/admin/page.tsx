@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import type { Schedule } from '@/app/lib/schedules/types';
 import { 
@@ -56,6 +57,7 @@ export default function SpokeduHQDashboard() {
   const [vacationRequests, setVacationRequests] = useState<IVacationRequest[]>([]);
   const [scheduleSummary, setScheduleSummary] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   
   // Modals
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -71,6 +73,7 @@ export default function SpokeduHQDashboard() {
   const [taskForm, setTaskForm] = useState<Omit<ITask, 'id'>>({ 
     title: '', assignee: 'Common', status: 'To Do', tag: 'General', description: '' 
   });
+  const [vacationExpanded, setVacationExpanded] = useState(true); // 연기 알림 펼침 상태
 
   const fetchData = useCallback(async () => {
     if (!supabaseUrl || !supabase) return;
@@ -150,8 +153,10 @@ export default function SpokeduHQDashboard() {
         return dateMatch ? dateMatch[0] >= todayStr : true;
       });
       setVacationRequests(validVacations as IVacationRequest[]);
+      setFetchError(null);
     } catch (err) {
       console.error('Fetch Error:', err);
+      setFetchError(err instanceof Error ? err.message : '데이터를 불러올 수 없습니다.');
     } finally {
       setLoading(false);
     }
@@ -159,13 +164,44 @@ export default function SpokeduHQDashboard() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // 수업 연기 알림: 날짜순 정렬(가까운 날짜 먼저), D-day 표시
+  const sortedVacations = useMemo(() => {
+    return [...vacationRequests].sort((a, b) => {
+      const matchA = a.vacation?.match(/(\d{8})/);
+      const matchB = b.vacation?.match(/(\d{8})/);
+      const dateA = matchA ? matchA[1] : '';
+      const dateB = matchB ? matchB[1] : '';
+      return dateA.localeCompare(dateB);
+    });
+  }, [vacationRequests]);
+
+  const getVacationLabel = (dateStr: string) => {
+    if (!dateStr || dateStr.length < 8) return dateStr;
+    const y = parseInt(dateStr.slice(0, 4), 10);
+    const m = parseInt(dateStr.slice(4, 6), 10);
+    const d = parseInt(dateStr.slice(6, 8), 10);
+    const date = new Date(y, m - 1, d);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    const diff = Math.floor((date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+    if (diff === 0) return '오늘';
+    if (diff === 1) return '내일';
+    if (diff > 0 && diff <= 7) return `D-${diff}`;
+    return `${y}년 ${m}월 ${d}일`;
+  };
+
   const openNoteModal = async (boardId: string) => {
     if (!supabase) return;
     setSelectedBoard(boardId);
     setNoteContent('로딩 중...');
     setIsNoteModalOpen(true);
     
-    const { data } = await supabase.from('memos').select('content').eq('assignee', boardId).single();
+    const { data, error } = await supabase.from('memos').select('content').eq('assignee', boardId).single();
+    if (error) {
+      setNoteContent('메모를 불러올 수 없습니다. 다시 시도해 주세요.');
+      return;
+    }
     setNoteContent(data?.content || '');
   };
 
@@ -186,17 +222,17 @@ export default function SpokeduHQDashboard() {
       
       if (error) {
         console.error('Save error:', error);
-        alert(`저장 실패: ${error.message || JSON.stringify(error)}`);
+        toast.error(`저장 실패: ${error.message || JSON.stringify(error)}`);
         setIsSavingNote(false);
         return;
       }
       
-      alert('저장되었습니다!');
+      toast.success('저장되었습니다!');
       setIsSavingNote(false);
       setIsNoteModalOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '알 수 없는 오류';
-      alert(`저장 실패: ${msg}`);
+      toast.error(`저장 실패: ${msg}`);
       setIsSavingNote(false);
     }
   };
@@ -220,11 +256,35 @@ export default function SpokeduHQDashboard() {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center font-black italic text-slate-300">HQ INITIALIZING...</div>;
+  if (loading && !fetchError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-white">
+        <div className="w-10 h-10 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+        <p className="text-sm font-bold text-slate-400">HQ INITIALIZING...</p>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4 max-w-md px-4 text-center">
+          <p className="text-sm font-bold text-red-600">{fetchError}</p>
+          <button
+            type="button"
+            onClick={() => { setFetchError(null); fetchData(); }}
+            className="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 cursor-pointer"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:p-6 md:p-8 sm:pt-6 flex flex-col items-center">
-      <div className="w-full max-w-4xl space-y-4 sm:space-y-8 md:space-y-12 min-w-0">
+      <div className="w-full max-w-6xl space-y-4 sm:space-y-8 md:space-y-12 min-w-0">
         
         {/* Header - 모바일에서 세로 배치, 터치 영역 확보 */}
         <header className="flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 pb-3 sm:pb-8 border-slate-900">
@@ -245,8 +305,9 @@ export default function SpokeduHQDashboard() {
             <button 
               onClick={fetchData} 
               className="min-h-[44px] min-w-[44px] p-3 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all cursor-pointer group touch-manipulation flex items-center justify-center"
+              aria-label="새로고침"
             >
-              <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
+              <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" aria-hidden />
             </button>
             <button 
               onClick={() => { 
@@ -303,8 +364,8 @@ export default function SpokeduHQDashboard() {
           </div>
         </section>
 
-        {/* 2. 일정 요약 */}
-        <section>
+        {/* 2. 일정 요약 - PC에서 테이블 폭 충분히 활용 */}
+        <section className="w-full min-w-0">
           <div className="flex items-center justify-between mb-2 sm:mb-4">
             <div className="flex items-center gap-2">
               <CalendarDays size={14} className="text-slate-400" />
@@ -312,7 +373,7 @@ export default function SpokeduHQDashboard() {
             </div>
             <Link
               href="/admin/schedules"
-              className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700"
+              className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
             >
               전체 보기
               <ExternalLink size={12} />
@@ -320,10 +381,10 @@ export default function SpokeduHQDashboard() {
           </div>
           <div className="rounded-xl border border-slate-200 bg-white overflow-hidden -mx-1 sm:mx-0">
             <div className="overflow-x-auto overflow-y-visible">
-              <table className="min-w-full divide-y divide-slate-200 text-sm" style={{ minWidth: '320px' }}>
+              <table className="w-full divide-y divide-slate-200 text-sm" style={{ minWidth: 320 }}>
                 <thead className="bg-slate-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">제목</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase sm:min-w-[200px]">제목</th>
                     <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">담당</th>
                     <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">기간</th>
                     <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">상태</th>
@@ -339,7 +400,7 @@ export default function SpokeduHQDashboard() {
                   ) : (
                     scheduleSummary.map((s) => (
                       <tr key={s.id} className="hover:bg-slate-50">
-                        <td className="px-3 py-2 font-medium text-slate-800 truncate max-w-[140px]">{s.title}</td>
+                        <td className="px-3 py-2 font-medium text-slate-800 truncate max-w-[140px] sm:max-w-[280px] md:max-w-[360px]" title={s.title ?? undefined}>{s.title}</td>
                         <td className="px-3 py-2 text-slate-600">{s.assignee ?? '-'}</td>
                         <td className="px-3 py-2 text-slate-600 whitespace-nowrap">
                           {s.start_date && s.end_date ? `${s.start_date} ~ ${s.end_date}` : s.start_date ?? s.end_date ?? '-'}
@@ -374,28 +435,77 @@ export default function SpokeduHQDashboard() {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 uppercase">공통 공지</h3>
-                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">수업 연기 알림</p>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                    {tasks.filter((t) => t.assignee === 'Common' && t.status !== 'Done').length} Active Tasks · 수업 연기 알림
+                  </p>
                 </div>
               </div>
-              {vacationRequests.length > 0 ? (
-                <div className="space-y-2">
-                  {vacationRequests.map((v) => {
-                    const dateMatch = v.vacation?.match(/(\d{8})/);
-                    const dateStr = dateMatch ? `${dateMatch[0].slice(4, 6)}/${dateMatch[0].slice(6, 8)}` : '';
-                    return (
-                      <div key={v.id} className="px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-slate-800">{v.name}</span>
-                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">{dateStr}</span>
+              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                {tasks.filter((t) => t.assignee === 'Common').map((task) => (
+                  <div
+                    key={task.id}
+                    onClick={() => { setEditingTask(task); setTaskForm({ ...task }); setIsTaskModalOpen(true); }}
+                    className={`py-3 px-3 flex items-start gap-3 rounded-xl border border-slate-100 hover:border-slate-200 cursor-pointer transition-all ${
+                      task.status === 'Done' ? 'opacity-60' : ''
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleStatus(task, e); }}
+                      className="shrink-0 mt-0.5"
+                    >
+                      {task.status === 'Done' ? (
+                        <CheckCircle2 size={18} className="text-emerald-500" />
+                      ) : task.status === 'In Progress' ? (
+                        <Clock size={18} className="text-blue-500" />
+                      ) : (
+                        <Circle size={18} className="text-slate-300" />
+                      )}
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-slate-800 truncate">{task.title}</p>
+                      {task.description && (
+                        <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{task.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {sortedVacations.length > 0 && (
+                  <>
+                    <div className={`pt-2 ${tasks.filter((t) => t.assignee === 'Common').length > 0 ? 'border-t border-slate-100 mt-2' : ''}`}>
+                        <button
+                          type="button"
+                          onClick={() => setVacationExpanded(!vacationExpanded)}
+                          className="flex items-center gap-2 w-full text-left cursor-pointer"
+                        >
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                            수업 연기 알림 {sortedVacations.length}건
+                          </p>
+                          <span className="text-slate-300 text-xs">{vacationExpanded ? '접기' : '펼치기'}</span>
+                        </button>
+                    </div>
+                    {vacationExpanded && sortedVacations.map((v) => {
+                      const dateMatch = v.vacation?.match(/(\d{8})/);
+                      const dateStr = dateMatch ? dateMatch[0] : '';
+                      const label = getVacationLabel(dateStr);
+                      return (
+                        <div key={v.id} className="px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-bold text-slate-800 truncate min-w-0">{v.name}</span>
+                            <span className={`text-[10px] font-bold shrink-0 px-2 py-0.5 rounded ${
+                              label === '오늘' || label === '내일' ? 'bg-rose-200 text-rose-800' : 'bg-rose-50 text-rose-600'
+                            }`}>{label}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5 truncate">{v.vacation}</p>
                         </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5 truncate">{v.vacation}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-[11px] text-slate-400 italic">수업 연기 알림 없음</p>
-              )}
+                      );
+                    })}
+                  </>
+                )}
+                {tasks.filter((t) => t.assignee === 'Common').length === 0 && vacationRequests.length === 0 && (
+                  <p className="py-4 text-center text-[11px] text-slate-400 italic">공통 업무·연기 알림 없음</p>
+                )}
+              </div>
             </div>
 
             {/* 담당자별 업무 노트 카드 */}

@@ -8,42 +8,11 @@ import { PLAY_RULES } from '@/app/lib/constants/rules';
 import type { PlayRendererProps, VisualEvent } from '@/app/lib/engine/play/types';
 
 const TICK_MS = PLAY_RULES.TICK_MS;
+const DROP_FALL_MS = 1000; // 1초 낙하
 const DROP_WINDOW_TICKS = 8;
-const DROP_MAX_PER_TICK = 3;
-const { EXPLAIN, SET, TRANSITION } = PLAY_RULES.TICKS;
-const BLOCK_TICKS = EXPLAIN + SET + SET + TRANSITION; // 50
-
-/** SET 구간 내 setOffset(0..19)별 강·중·약 가중치. action tick에서만 사용. */
-function getIntensityWeight(currentTick: number): number {
-  const localTick = currentTick % BLOCK_TICKS;
-  let setOffset: number;
-  if (localTick >= EXPLAIN && localTick < EXPLAIN + SET) {
-    setOffset = localTick - EXPLAIN; // set1: 0..19
-  } else if (localTick >= EXPLAIN + SET && localTick < EXPLAIN + SET + SET) {
-    setOffset = localTick - (EXPLAIN + SET); // set2: 0..19
-  } else {
-    return 1;
-  }
-  if (setOffset <= 6) return 1.0;
-  if (setOffset <= 13) return 1.06;
-  return 1.1;
-}
-
-const IMPACT_CLAMP = { scale: [1, 1.07] as const, contrast: [1, 1.06] as const, brightness: [1, 1.06] as const };
-function clamp(x: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, x));
-}
-
-/** action tick일 때만 미세 임팩트(scale/contrast/brightness). rest/explain/transition에는 1,1,1. 과자극 방지 clamp 적용. */
-function getActionImpact(currentTick: number, isAction: boolean): { scale: number; contrast: number; brightness: number } {
-  if (!isAction) return { scale: 1, contrast: 1, brightness: 1 };
-  const w = getIntensityWeight(currentTick);
-  return {
-    scale: clamp(1.02 * w, IMPACT_CLAMP.scale[0], IMPACT_CLAMP.scale[1]),
-    contrast: clamp(1.02 * w, IMPACT_CLAMP.contrast[0], IMPACT_CLAMP.contrast[1]),
-    brightness: clamp(1.02 * w, IMPACT_CLAMP.brightness[0], IMPACT_CLAMP.brightness[1]),
-  };
-}
+const DROP_LANES = 5;
+/** 5레인 x 위치 (%, 왼쪽~오른쪽). laneIndex 0..4 */
+const DROP_LANE_X_PERCENT = [10, 30, 50, 70, 90] as const;
 
 export function PlayRenderer({ tMs, visuals, totalTicks }: PlayRendererProps) {
   const currentTick = Math.floor(tMs / TICK_MS);
@@ -55,10 +24,11 @@ export function PlayRenderer({ tMs, visuals, totalTicks }: PlayRendererProps) {
     if (v.kind === 'DROP' && v.tick <= currentTick && v.tick >= currentTick - DROP_WINDOW_TICKS) dropInWindow.push(v);
   }
 
-  // DROP: objIndex 중복 시 최신만 + tick당 최대 N개 (로직 유지)
+  // DROP: 레인별 최신 1개 유지 (5레인 × 윈도우 내 최신)
   const byKey = new Map<string, Extract<VisualEvent, { kind: 'DROP' }>>();
   for (const ev of dropInWindow) {
-    const k = `${ev.blockIndex}-${ev.setIndex}-${ev.objIndex}`;
+    const laneIndex = 'laneIndex' in ev && typeof ev.laneIndex === 'number' ? ev.laneIndex : Math.min(Math.max(ev.objIndex, 0), DROP_LANES - 1);
+    const k = `${ev.blockIndex}-${ev.setIndex}-${laneIndex}`;
     const cur = byKey.get(k);
     if (!cur || ev.tick > cur.tick) byKey.set(k, ev);
   }
@@ -66,7 +36,7 @@ export function PlayRenderer({ tMs, visuals, totalTicks }: PlayRendererProps) {
   const byTick = new Map<number, Extract<VisualEvent, { kind: 'DROP' }>[]>();
   for (const ev of deduped) {
     const arr = byTick.get(ev.tick) ?? [];
-    if (arr.length < DROP_MAX_PER_TICK) arr.push(ev);
+    arr.push(ev);
     byTick.set(ev.tick, arr);
   }
   const dropEvents = [...byTick.values()].flat().sort((a, b) => a.tick - b.tick);
@@ -77,7 +47,9 @@ export function PlayRenderer({ tMs, visuals, totalTicks }: PlayRendererProps) {
   const transition = eventsAtTick.find((v): v is Extract<VisualEvent, { kind: 'TRANSITION' }> => v.kind === 'TRANSITION');
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-neutral-900">
+    <div className="relative h-full w-full min-h-[320px] overflow-hidden rounded-lg bg-neutral-900">
+      {/* DROP: 1초 낙하 */}
+      <style>{`@keyframes dropFall { 0% { transform: translateY(0); } 100% { transform: translateY(70vh); } }`}</style>
       {/* EXPLAIN: 텍스트/아이콘만 (사진 금지) */}
       {explain && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
@@ -86,89 +58,86 @@ export function PlayRenderer({ tMs, visuals, totalTicks }: PlayRendererProps) {
         </div>
       )}
 
-      {/* BINARY: 풀스크린 img (action tick에서만 미세 임팩트) */}
-      {binary && !explain && (() => {
-        const impact = getActionImpact(currentTick, binary.isActionPhase === true);
-        return (
+      {/* BINARY: 500ms 틱별 이미지 (잘림 없이 전체 표시) */}
+      {binary && !explain && (
+        <img
+          src={binary.src}
+          alt=""
+          className="absolute inset-0 h-full w-full object-contain"
+        />
+      )}
+
+      {/* REVEAL_WIPE: 5단계 스냅, 블라인드 한 칸씩 올라가는 느낌. 이미지 잘림 없음 */}
+      {revealWipe && !explain && (
+        <div className="absolute inset-0">
           <img
-            src={binary.src}
+            src={revealWipe.bgSrc}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{
-              transform: `scale(${impact.scale})`,
-              transformOrigin: 'center center',
-              filter: `contrast(${impact.contrast}) brightness(${impact.brightness})`,
-            }}
+            className="absolute inset-0 h-full w-full object-contain"
           />
-        );
-      })()}
-
-      {/* REVEAL_WIPE: bg + fg 오버레이 (action phase에서만 미세 임팩트) */}
-      {revealWipe && !explain && (() => {
-        const impact = getActionImpact(currentTick, revealWipe.phase === 'action');
-        const imgStyle = {
-          transform: `scale(${impact.scale})`,
-          transformOrigin: 'center center' as const,
-          filter: `contrast(${impact.contrast}) brightness(${impact.brightness})`,
-        };
-        return (
-          <div className="absolute inset-0">
+          <div
+            className="absolute inset-0 overflow-hidden"
+            style={{
+              clipPath: `inset(${(1 - revealWipe.progress) * 100}% 0 0 0)`,
+            }}
+          >
             <img
-              src={revealWipe.bgSrc}
+              src={revealWipe.fgSrc}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-              style={imgStyle}
+              className="h-full w-full object-contain"
             />
-            <div
-              className="absolute inset-0"
-              style={{
-                clipPath: `inset(${(1 - revealWipe.progress) * 100}% 0 0 0)`,
-              }}
-            >
-              <img
-                src={revealWipe.fgSrc}
-                alt=""
-                className="h-full w-full object-cover"
-                style={imgStyle}
-              />
-            </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
-      {/* DROP: obj 이미지 위->아래 translateY 0.5s, key=tick로 애니메이션 리스타트 */}
+      {/* DROP: 5개 차례로 1초 낙하 */}
       {dropEvents.length > 0 && !explain && !binary && !revealWipe && !transition && (
         <div className="absolute inset-0">
           {dropEvents[0]?.bgSrc && (
             <img
               src={dropEvents[0].bgSrc}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-contain"
             />
           )}
-          {dropEvents.map((ev) => (
+          {dropEvents.map((ev) => {
+            const lane = 'laneIndex' in ev && typeof ev.laneIndex === 'number' ? ev.laneIndex : Math.min(Math.max(ev.objIndex, 0), DROP_LANES - 1);
+            const xPercent = DROP_LANE_X_PERCENT[lane];
+            const spawnTick = ev.tick;
+            const msSinceSpawn = (currentTick - spawnTick) * TICK_MS;
+            const isFalling = msSinceSpawn < DROP_FALL_MS;
+            const animationDelay = -msSinceSpawn;
+            return (
             <div
-              key={`${ev.blockIndex}-${ev.setIndex}-${ev.tick}-${ev.objIndex}`}
-              className="absolute left-1/2 top-0 flex h-24 w-24 -translate-x-1/2 justify-center"
+              key={`${ev.blockIndex}-${ev.setIndex}-${ev.tick}-${ev.laneIndex ?? ev.objIndex}`}
+              className="absolute flex h-24 w-24 justify-center"
+              style={{
+                top: '8%',
+                left: `${xPercent}%`,
+                transform: 'translateX(-50%)',
+              }}
             >
               <img
                 src={ev.objSrc}
                 alt=""
-                className="h-full w-auto object-contain animate-drop"
-                style={{
-                  animationDuration: '0.5s',
-                  animationTimingFunction: 'cubic-bezier(0.2, 0, 0.2, 1)',
-                }}
+                className="h-full w-auto object-contain"
+                style={
+                  isFalling
+                    ? { animation: `dropFall ${DROP_FALL_MS}ms linear forwards`, animationDelay: `${animationDelay}ms` }
+                    : { transform: 'translateY(70vh)' }
+                }
               />
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* TRANSITION: 빈 화면 또는 간단 표시 */}
+      {/* TRANSITION: 해당 block motion label + motionId (Draft Composer 연결) */}
       {transition && !explain && !binary && !revealWipe && (
-        <div className="absolute inset-0 flex items-center justify-center bg-neutral-800">
-          <span className="text-sm text-neutral-500">전환</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-800 p-4">
+          <span className="text-lg font-bold text-white">{transition.label}</span>
+          <span className="text-sm text-neutral-400">{transition.motionId}</span>
         </div>
       )}
 

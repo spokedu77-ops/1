@@ -38,6 +38,7 @@ export function SchedulerMonthAccordion({
   onSave,
   isSaving,
 }: SchedulerMonthAccordionProps) {
+  const publishedCount = slots.filter((s) => rowMap.get(s.weekKey)?.is_published).length;
   return (
     <div className="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900/50">
       <button
@@ -45,8 +46,11 @@ export function SchedulerMonthAccordion({
         className="flex w-full items-center justify-between px-4 py-3 text-left font-medium text-neutral-200 hover:bg-neutral-800/50"
         onClick={onToggle}
       >
-        <span>
-          {year}년 {MONTH_LABELS[month - 1]}
+        <span className="flex items-center gap-3">
+          <span>{year}년 {MONTH_LABELS[month - 1]}</span>
+          <span className="rounded bg-neutral-700/80 px-2 py-0.5 text-xs font-normal text-neutral-400">
+            Published {publishedCount}/{slots.length}
+          </span>
         </span>
         <span className="text-neutral-500">{isOpen ? '▼' : '▶'}</span>
       </button>

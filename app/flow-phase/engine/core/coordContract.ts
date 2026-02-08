@@ -148,7 +148,7 @@ export const PHRASES = {
   lv1Guide: '<span style="color:#93c5fd;">LEVEL 1</span><br><span style="font-size:2.1rem;">왼쪽/가운데/오른쪽으로 점프하세요.</span>',
   restBreathe: '잠시 숨을 고르세요<br><span style="font-size:2.2rem;color:#60a5fa;">들이마시고... 내쉬세요...</span>',
   lv3Intro: '<span style="color:#ef4444;">LEVEL 3</span><br><span style="font-size:2rem;">다가오는 박스를 부수세요!<br><span style="font-size:4rem;">🥊</span></span>',
-  lv4Intro: '<span style="color:#f59e0b;">LEVEL 4</span><br><span style="font-size:2rem;">우주선이 지나오면 머리를 숙이세요!<br><span style="font-size:3.5rem;">🦆 DUCK!</span></span>',
+  lv4Intro: '<span style="color:#f59e0b;">LEVEL 4</span><br><span style="font-size:2rem;">우주선이 지나오면 머리를 숙이세요!<br><span style="font-size:3.5rem;">DUCK!</span></span>',
   ending: '<span style="color:#34d399;">수고했어요!</span><br><span style="font-size:2.2rem;color:#60a5fa;">👏👏👏</span>',
 } as const;
 /** 전체 플로우 시간 (진행바 100% 기준). gameTime은 play 구간에서만 증가 */

@@ -1,11 +1,20 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { EventClickArg, EventDropArg } from '@fullcalendar/core';
+import type { EventClickArg, EventDropArg } from '@fullcalendar/core';
+
+const FullCalendar = dynamic(
+  () => import('@fullcalendar/react').then((mod) => mod.default),
+  { ssr: false, loading: () => (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+    </div>
+  ) }
+);
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import Sidebar from '@/app/components/Sidebar';
 import { useClassManagement } from './hooks/useClassManagement';
@@ -105,19 +114,23 @@ export default function ClassManagementPage() {
         // 1. 세션 상태를 finished로 변경
         await supabase.from('sessions').update({ status: 'finished' }).in('id', endedSessions.map(s => s.id));
         
-        // 2. 각 강사의 session_count 증가 및 로그 생성
+        // 2. 각 강사의 session_count 증가 및 로그 생성 (created_by 없으면 스킵)
         const teacherCounts = endedSessions.reduce((acc, s) => {
-          acc[s.created_by] = (acc[s.created_by] || 0) + 1;
+          const id = s.created_by;
+          if (id != null && String(id).trim() !== '') {
+            acc[id] = (acc[id] || 0) + 1;
+          }
           return acc;
         }, {} as Record<string, number>);
-        
+
         for (const [teacherId, count] of Object.entries(teacherCounts)) {
+          if (!teacherId || teacherId.trim() === '') continue;
           const { data: user } = await supabase
             .from('users')
             .select('session_count')
             .eq('id', teacherId)
             .single();
-          
+
           await supabase
             .from('users')
             .update({ session_count: (user?.session_count || 0) + count })
@@ -126,7 +139,7 @@ export default function ClassManagementPage() {
         
         // 3. 수업 카운팅 로그 생성 (teacher_id FK: auth.users(id) — created_by가 없거나 삭제된 사용자면 제외)
         const countLogs = endedSessions
-          .filter(session => session.created_by != null && session.created_by !== '')
+          .filter(session => session.created_by != null && String(session.created_by).trim() !== '')
           .map(session => ({
             teacher_id: session.created_by,
             session_id: session.id,
@@ -172,9 +185,12 @@ export default function ClassManagementPage() {
 
   const handleEventClick = (info: EventClickArg) => {
     const p = info.event.extendedProps;
-    const startObj = info.event.start; 
+    const startObj = info.event.start;
     const endObj = info.event.end;
-    if (!startObj || !endObj) return;
+    if (!startObj || !endObj) {
+      alert('이 수업은 편집할 수 없습니다. (날짜/시간 정보 없음)');
+      return;
+    }
     
     const { cleanMemo, mileageAction } = extractMileageAction(p.studentsText || '', p.mileageAction || p.mileage_option);
     const { extraTeachers, cleanMemo: memoWithoutExtras } = parseExtraTeachers(cleanMemo);
@@ -256,6 +272,11 @@ export default function ClassManagementPage() {
       const duration = new Date(selectedEvent.end).getTime() - new Date(selectedEvent.start).getTime();
       const newEnd = new Date(newStart.getTime() + (isNaN(duration) ? 3600000 : duration));
 
+      if (!Number.isFinite(newStart.getTime()) || !Number.isFinite(newEnd.getTime())) {
+        alert('날짜 또는 시간이 올바르지 않습니다.');
+        return;
+      }
+
       const oldTotal = getMileageTotal(selectedEvent.mileageAction || '', MILEAGE_ACTIONS);
       const newTotal = getMileageTotal(editFields.mileageAction || '', MILEAGE_ACTIONS);
       const diff = newTotal - oldTotal; 
@@ -333,6 +354,12 @@ export default function ClassManagementPage() {
               reason: '수동 완료',
             });
             if (logError?.code === '23505') return; // 이미 로그 있음(유니크), 카운트 중복 방지
+            if (logError?.code === '23503') {
+              alert('이 강사는 수업 로그에 기록되지 않습니다. (Auth 미등록)');
+              setIsModalOpen(false);
+              fetchSessions();
+              return;
+            }
             const { data: user } = await supabase
               .from('users')
               .select('session_count')
@@ -500,12 +527,20 @@ export default function ClassManagementPage() {
     
     try {
       const baseSession = selectedEvent;
+      const baseStart = new Date(baseSession.start);
+      const baseEnd = new Date(baseSession.end);
+      if (!Number.isFinite(baseStart.getTime()) || !Number.isFinite(baseEnd.getTime())) {
+        alert('원본 수업의 날짜/시간이 올바르지 않아 복제할 수 없습니다.');
+        return;
+      }
+
       const sessionsToCopy: Record<string, unknown>[] = [];
+      const newGroupId = crypto.randomUUID();
       
       if (cloneMode === 'fixed') {
         // 고정 간격 복제
-        const baseDate = new Date(baseSession.start);
-        const baseDuration = new Date(baseSession.end).getTime() - new Date(baseSession.start).getTime();
+        const baseDate = baseStart;
+        const baseDuration = baseEnd.getTime() - baseStart.getTime();
         
         for (let i = 1; i <= cloneRounds; i++) {
           const newStart = new Date(baseDate);
@@ -522,7 +557,7 @@ export default function ClassManagementPage() {
             session_type: baseSession.type,
             status: 'opened',
             mileage_option: baseSession.mileageAction,
-            group_id: null,
+            group_id: newGroupId,
             round_index: i,
             round_total: cloneRounds,
             round_display: `${i}/${cloneRounds}`
@@ -530,19 +565,19 @@ export default function ClassManagementPage() {
         }
       } else {
         // 수동 날짜 복제
-        const baseDuration = new Date(baseSession.end).getTime() - new Date(baseSession.start).getTime();
-        const baseTime = new Date(baseSession.start);
+        const baseDuration = baseEnd.getTime() - baseStart.getTime();
+        const totalManual = cloneDates.filter(d => d).length;
         
         cloneDates.forEach((dateStr, i) => {
           if (!dateStr) return;
           const newStart = new Date(dateStr);
+          if (!Number.isFinite(newStart.getTime())) return;
           
-          // 시간이 입력되었으면 사용, 아니면 기존 시간 사용
           if (cloneTimes[i]) {
             const [hours, minutes] = cloneTimes[i].split(':').map(Number);
             newStart.setHours(hours, minutes);
           } else {
-            newStart.setHours(baseTime.getHours(), baseTime.getMinutes());
+            newStart.setHours(baseStart.getHours(), baseStart.getMinutes());
           }
           
           const newEnd = new Date(newStart.getTime() + baseDuration);
@@ -557,10 +592,10 @@ export default function ClassManagementPage() {
             session_type: baseSession.type,
             status: 'opened',
             mileage_option: baseSession.mileageAction,
-            group_id: null,
+            group_id: newGroupId,
             round_index: i + 1,
-            round_total: cloneDates.filter(d => d).length,
-            round_display: `${i + 1}/${cloneDates.filter(d => d).length}`
+            round_total: totalManual,
+            round_display: `${i + 1}/${totalManual}`
           });
         });
       }
@@ -644,83 +679,105 @@ export default function ClassManagementPage() {
             eventClick={handleEventClick} 
             height="auto"
             eventContent={(info) => {
-              const { teacher, status, isAdmin, roundInfo, type, roundIndex, roundTotal } = info.event.extendedProps;
-              const isMonthView = info.view.type === 'dayGridMonth' || info.view.type === 'twoMonthGrid';
-              const dateObj = new Date(info.event.start || '');
-              const time24 = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
-              const start = info.event.start ? new Date(info.event.start) : null;
-              const end = info.event.end ? new Date(info.event.end) : null;
-              const durationMin = start && end ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000)) : null;
-              
-              const isPostponed = status === 'postponed';
-              const isCancelled = status === 'cancelled';
-              const isFinished = (info.event.end || info.event.start || new Date()) < new Date();
-              const isLastRound = roundIndex && roundTotal && roundIndex === roundTotal;
-              const isUrgent = teacher === '미정';
+              try {
+                if (!info?.event) {
+                  return <div className="month-event-card opacity-70">수업</div>;
+                }
+                const ev = info.event;
+                const props = ev.extendedProps ?? {};
+                const teacher = props.teacher ?? '';
+                const status = props.status ?? null;
+                const isAdmin = !!props.isAdmin;
+                const roundInfo = props.roundInfo ?? '';
+                const type = props.type ?? '';
+                const roundIndex = props.roundIndex;
+                const roundTotal = props.roundTotal;
+                const isMonthView = info.view?.type === 'dayGridMonth' || info.view?.type === 'twoMonthGrid';
+                const startRaw = ev.start ?? null;
+                const endRaw = ev.end ?? null;
+                const dateObj = startRaw ? new Date(startRaw) : new Date();
+                const hour = dateObj.getHours();
+                const min = dateObj.getMinutes();
+                const time24 = Number.isFinite(hour) && Number.isFinite(min)
+                  ? `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`
+                  : '--:--';
+                const start = startRaw ? new Date(startRaw) : null;
+                const end = endRaw ? new Date(endRaw) : null;
+                const durationMin = start && end && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())
+                  ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000))
+                  : null;
 
-              // 색상 결정 로직 최적화
-              let colors = TYPE_COLORS[type] || { bg: '#FFFFFF', border: '#CBD5E1', text: '#1E293B' };
-              
-              if (isUrgent) colors = STATUS_COLORS.urgent;
-              else if (isCancelled) colors = STATUS_COLORS.cancelled;
-              else if (isPostponed) colors = STATUS_COLORS.postponed;
-              else if (isFinished) colors = STATUS_COLORS.finished;
-              
-              const { bg: bgColor, border: borderColor, text: textColor } = colors;
+                const isPostponed = status === 'postponed';
+                const isCancelled = status === 'cancelled';
+                const isFinished = (endRaw || startRaw ? new Date((endRaw || startRaw) as string | Date).getTime() : Date.now()) < Date.now();
+                const isLastRound = roundIndex != null && roundTotal != null && roundIndex === roundTotal;
+                const isUrgent = teacher === '미정';
 
-              if (isMonthView) {
+                let colors = TYPE_COLORS[type] || { bg: '#FFFFFF', border: '#CBD5E1', text: '#1E293B' };
+                if (isUrgent) colors = STATUS_COLORS.urgent;
+                else if (isCancelled) colors = STATUS_COLORS.cancelled;
+                else if (isPostponed) colors = STATUS_COLORS.postponed;
+                else if (isFinished) colors = STATUS_COLORS.finished;
+                const { bg: bgColor, border: borderColor, text: textColor } = colors;
+                const title = typeof ev.title === 'string' ? ev.title : '수업';
+
+                if (isMonthView) {
+                  return (
+                    <div className="month-event-card" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
+                      <div className="flex justify-between items-center mb-0.5">
+                        <span className="month-event-time flex items-center gap-1">
+                          {time24}
+                          {durationMin !== null && (
+                            <span className="text-[7px] px-1 rounded bg-slate-900/10 text-slate-600 font-bold">
+                              {durationMin}
+                            </span>
+                          )}
+                        </span>
+                        {roundInfo && (
+                          <span className={`text-[7px] px-1.5 py-0.5 rounded font-black ${isLastRound ? 'bg-red-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                            {isLastRound ? 'Fin' : roundInfo}
+                          </span>
+                        )}
+                      </div>
+                      <div className="month-event-teacher" style={{ color: textColor }}>{teacher || '미정'}T</div>
+                      <div className={`month-event-title ${isFinished || isPostponed || isCancelled ? 'opacity-60 line-through' : ''}`} style={{ color: textColor }}>
+                        {title}
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
-                  <div className="month-event-card" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
-                    <div className="flex justify-between items-center mb-0.5">
-                      <span className="month-event-time flex items-center gap-1">
+                  <div className="w-full flex flex-col p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border-l-[3px] sm:border-l-[4px] shadow-sm min-w-0" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 tabular-nums flex items-center gap-1">
                         {time24}
                         {durationMin !== null && (
-                          <span className="text-[7px] px-1 rounded bg-slate-900/10 text-slate-600 font-bold">
+                          <span className="text-[8px] px-1 rounded bg-slate-900/10 text-slate-600 font-black">
                             {durationMin}
                           </span>
                         )}
-                      </span>
-                      {roundInfo && (
-                        <span className={`text-[7px] px-1.5 py-0.5 rounded font-black ${isLastRound ? 'bg-red-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                          {isLastRound ? 'Fin' : roundInfo}
-                        </span>
-                      )}
+                        {isPostponed && (
+                          <span className="bg-purple-600 text-white text-[8px] px-1.5 rounded font-black">
+                            연기
+                          </span>
+                        )}
+                      </div>
+                      {isLastRound && <span className="bg-red-600 text-white text-[8px] px-1.5 rounded font-black">FIN</span>}
                     </div>
-                    <div className="month-event-teacher" style={{ color: textColor }}>{teacher}T</div>
-                    <div className={`month-event-title ${isFinished || isPostponed || isCancelled ? 'opacity-60 line-through' : ''}`} style={{ color: textColor }}>
-                      {info.event.title}
+                    <div className="flex justify-between items-end min-w-0">
+                      <div className={`text-[10px] sm:text-[11px] font-black ${isAdmin ? 'text-amber-700' : 'text-blue-600'} truncate`}>{teacher || '미정'}T</div>
+                      {roundInfo && <span className="text-[8px] font-black text-slate-500">{roundInfo}</span>}
+                    </div>
+                    <div className={`event-title text-[10px] sm:text-[11px] font-black ${isFinished || isPostponed || isCancelled ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                      {title}
                     </div>
                   </div>
                 );
+              } catch (err) {
+                console.warn('eventContent render error', err);
+                return <div className="month-event-card opacity-70 border border-slate-200">수업</div>;
               }
-
-              return (
-                <div className="w-full flex flex-col p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border-l-[3px] sm:border-l-[4px] shadow-sm min-w-0" style={{ borderLeftColor: borderColor, backgroundColor: bgColor }}>
-                  <div className="flex justify-between items-center mb-1">
-                    <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 tabular-nums flex items-center gap-1">
-                      {time24}
-                      {durationMin !== null && (
-                        <span className="text-[8px] px-1 rounded bg-slate-900/10 text-slate-600 font-black">
-                          {durationMin}
-                        </span>
-                      )}
-                      {isPostponed && (
-                        <span className="bg-purple-600 text-white text-[8px] px-1.5 rounded font-black">
-                          연기
-                        </span>
-                      )}
-                    </div>
-                    {isLastRound && <span className="bg-red-600 text-white text-[8px] px-1.5 rounded font-black">FIN</span>}
-                  </div>
-                  <div className="flex justify-between items-end min-w-0">
-                    <div className={`text-[10px] sm:text-[11px] font-black ${isAdmin ? 'text-amber-700' : 'text-blue-600'} truncate`}>{teacher}T</div>
-                    {roundInfo && <span className="text-[8px] font-black text-slate-500">{roundInfo}</span>}
-                  </div>
-                  <div className={`event-title text-[10px] sm:text-[11px] font-black ${isFinished || isPostponed || isCancelled ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                    {info.event.title}
-                  </div>
-                </div>
-              );
             }}
           />
         </main>

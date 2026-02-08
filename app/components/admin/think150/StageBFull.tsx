@@ -22,7 +22,7 @@ export function StageBFull({ color, imageUrl, frame }: StageBFullProps) {
   return (
     <div className="relative h-full min-h-[200px] w-full overflow-hidden" style={{ backgroundColor: hex }}>
       {imageUrl ? (
-        <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-contain" />
       ) : null}
     </div>
   );

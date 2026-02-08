@@ -1,7 +1,8 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import Sidebar from './components/Sidebar'; // 이 파일이 관리자용인지 확인 필수!
+import { Toaster } from 'sonner';
+import Sidebar from './components/Sidebar';
 import { QueryProvider } from './providers/QueryProvider';
 import './globals.css';
 
@@ -32,6 +33,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-gray-50 text-slate-900">
         <QueryProvider>
+          <Toaster position="top-center" richColors closeButton />
           <div className="flex min-h-screen">
             {/* 사이드바 조건부 렌더링 */}
             {!hideSidebar && <Sidebar />}

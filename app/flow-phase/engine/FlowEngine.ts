@@ -164,6 +164,8 @@ export class FlowEngine {
   private panoMesh: THREE.Mesh | null = null;
   private currentSpeedValue = 0;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
+  private restCountdownTimer: ReturnType<typeof setInterval> | null = null;
+  private restStartMs = 0;
   private pendingTimeouts: Array<ReturnType<typeof setTimeout>> = [];
 
   constructor(canvas: HTMLCanvasElement, domRefs: FlowDomRefs) {
@@ -180,6 +182,10 @@ export class FlowEngine {
   }
 
   private clearScheduledTimeouts(): void {
+    if (this.restCountdownTimer !== null) {
+      clearInterval(this.restCountdownTimer);
+      this.restCountdownTimer = null;
+    }
     for (const handle of this.pendingTimeouts) clearTimeout(handle);
     this.pendingTimeouts = [];
   }
@@ -989,14 +995,33 @@ export class FlowEngine {
 
     if (btn) btn.style.display = 'none';
     if (ins) ins.classList.remove('hidden', 'fade-out');
-    if (txt) {
-      txt.style.fontSize = '3.2rem';
-      txt.innerHTML = PHRASES.restBreathe;
-    }
 
     const restDurationSec = this.durations[this.currentLevelIndex] ?? 20;
+    const updateRestCountdown = (remaining: number) => {
+      if (txt) {
+        txt.style.fontSize = '3.2rem';
+        txt.innerHTML =
+          PHRASES.restBreathe +
+          (remaining > 0
+            ? `<br><span style="font-size:2rem;color:#94a3b8;margin-top:1rem;display:block;">다음 레벨까지 ${remaining}초</span>`
+            : '');
+      }
+    };
+    updateRestCountdown(restDurationSec);
+
     this.clearScheduledTimeouts();
+    this.restStartMs = performance.now();
+    this.restCountdownTimer = setInterval(() => {
+      const elapsed = Math.floor((performance.now() - this.restStartMs) / 1000);
+      const remaining = Math.max(0, restDurationSec - elapsed);
+      updateRestCountdown(remaining);
+    }, 1000);
+
     this.registerTimeout(() => {
+      if (this.restCountdownTimer !== null) {
+        clearInterval(this.restCountdownTimer);
+        this.restCountdownTimer = null;
+      }
       this.currentLevelIndex++;
       const nextLevel = this.getCurrentLevelNum();
 
@@ -1160,7 +1185,8 @@ export class FlowEngine {
   private startLoop(): void {
     this.clock = new THREE.Clock();
     const animate = () => {
-      const rawDt = this.clock!.getDelta();
+      if (this.clock == null) return;
+      const rawDt = this.clock.getDelta();
       this.update(rawDt);
       this.rafId = requestAnimationFrame(animate);
     };

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { Plus, Trash2, X, Pin, ChevronDown, RefreshCw, Edit3 } from 'lucide-react';
 
@@ -50,7 +51,7 @@ export default function NoticePage() {
   useEffect(() => { fetchNotices(); }, [fetchNotices]);
 
   const handleSave = async () => {
-    if (!supabase || !form.title.trim() || !form.content.trim()) return alert('제목과 내용을 입력해주세요.');
+    if (!supabase || !form.title.trim() || !form.content.trim()) return toast.error('제목과 내용을 입력해주세요.');
 
     try {
       if (editingId) {
@@ -64,13 +65,13 @@ export default function NoticePage() {
           })
           .eq('id', editingId);
         if (error) throw error;
-        alert('수정되었습니다.');
+        toast.success('수정되었습니다.');
       } else {
         const { error } = await supabase
           .from('notices')
           .insert([{ ...form, author: '운영진', created_at: new Date().toISOString() }]);
         if (error) throw error;
-        alert('등록되었습니다.');
+        toast.success('등록되었습니다.');
       }
 
       setIsModalOpen(false);
@@ -79,7 +80,7 @@ export default function NoticePage() {
       fetchNotices();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      alert('저장 실패: ' + msg);
+      toast.error('저장 실패: ' + msg);
     }
   };
 
@@ -99,7 +100,11 @@ export default function NoticePage() {
     e.stopPropagation();
     if (!supabase || !confirm('정말 삭제하시겠습니까?')) return;
     const { error } = await supabase.from('notices').delete().eq('id', id);
-    if (!error) setNotices(prev => prev.filter(n => n.id !== id));
+    if (error) {
+      toast.error('삭제 실패: ' + (error.message || '알 수 없는 오류'));
+      return;
+    }
+    setNotices(prev => prev.filter(n => n.id !== id));
   };
 
   return (

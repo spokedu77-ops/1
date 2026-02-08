@@ -58,12 +58,14 @@ export function buildTimeline(resolved: ResolvedPlayDraft): PlayTimeline {
     emitSetEvents(block, 2, globalTick, blockIdx, visuals);
     globalTick += SET;
 
-    // transition 5ticks
+    // transition 5ticks (Draft Composer 연결: motionId, label 표시)
     for (let t = 0; t < TRANSITION; t++) {
       visuals.push({
         kind: 'TRANSITION',
         tick: globalTick + t,
         blockIndex: blockIdx,
+        motionId,
+        label,
       } as TransitionEvent);
     }
     globalTick += TRANSITION;
@@ -133,17 +135,13 @@ function emitSetEvents(
 
   if (operator.type === 'PROGRESSIVE') {
     if (operator.style === 'wipe') {
+      // 5단계 스냅, 1초당 1단계 (2틱/단계). SET=10 → 5초/set
       const bg = bgSrc ?? offSrc;
       const fg = fgSrc ?? onSrc;
       for (let t = 0; t < SET; t++) {
+        const step = Math.floor(t / 2);
+        const progress = t >= 9 ? 1 : step / 5;
         const phase = t % 2 === 0 ? 'action' : 'rest';
-        const step = Math.floor(t / 2) % 5;
-        const stepProgress = step / 5;
-        const raw =
-          phase === 'rest'
-            ? stepProgress * 0.35
-            : 0.35 + stepProgress * 0.65;
-        const progress = Math.min(1, Math.max(0, raw));
         out.push({
           kind: 'REVEAL_WIPE',
           tick: startTick + t,
@@ -174,21 +172,21 @@ function emitSetEvents(
   }
 
   if (operator.type === 'DROP') {
-    const objectsArr = objects ?? [];
-    const bg = bgSrc;
-    for (let t = 0; t < SET; t++) {
-      if (t % 2 !== 0) continue;
-      const objIndex = Math.floor(t / 2) % 5;
-      const objSrc = objectsArr[objIndex] ?? onSrc;
+    // 5개 차례로 스폰: 틱 0→lane0, 1→lane1, ..., 4→lane4. 각 1초 낙하.
+    const bgSrc = offSrc;
+    const objSrc = onSrc;
+    for (let laneIndex = 0; laneIndex < 5; laneIndex++) {
+      const actionTick = startTick + laneIndex;
       out.push({
         kind: 'DROP',
-        tick: startTick + t,
+        tick: actionTick,
         blockIndex,
         setIndex,
-        ...(bg ? { bgSrc: bg } : {}),
+        bgSrc,
         objSrc,
         phase: 'drop',
-        objIndex,
+        objIndex: laneIndex,
+        laneIndex,
       } as DropEvent);
     }
   }

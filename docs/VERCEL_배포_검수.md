@@ -7,23 +7,17 @@
 | 요청 | 적용 내용 |
 |------|-----------|
 | 로그인 유지 | 로그인 페이지: 리프레시 토큰 에러일 때만 signOut, "이 기기에서 로그인 유지" 체크박스 추가 |
-| 채팅 숫자 배지 | 선생님/관리자 채팅: Badging API(앱 아이콘 배지) + 푸시 API에서 iOS `aps.badge` 수신자별 전송 |
-| 모바일 알림 설정 설명 | `배포_및_모바일푸시_체크리스트.md` 5-1, 5-2: Coach 단일 항목, 팝업은 채팅 탭 진입 시 뜸 |
 | PWA에서 데이터 안 나옴 | 선생님/관리자 영역 Supabase 클라이언트를 쿠키 기반(`getSupabaseBrowserClient`)으로 통일 |
-
-**채팅 리스트에서 더 하실 일 없습니다.** 위 기능만 배포하면 됩니다.
 
 ### 배포 전 체크리스트
 
-- [ ] **환경 변수**: Vercel에 `NEXT_PUBLIC_SUPABASE_*` 및 푸시 사용 시 Firebase·웹훅 시크릿 등([배포_및_모바일푸시_체크리스트.md](배포_및_모바일푸시_체크리스트.md) 참고) 설정됨.
-- [ ] **Supabase**: 푸시 배지용 `get_unread_counts` 실행 권한이 필요하면 `sql/35_grant_get_unread_counts_service_role.sql` 한 번 실행.
+- [ ] **환경 변수**: Vercel에 `NEXT_PUBLIC_SUPABASE_*` 설정됨.
 - [ ] **빌드**: 로컬 `npm run build` 시 .next 정리 단계 EPERM은 무시 가능. Vercel에서는 보통 정상 완료.
 - [ ] **ESLint/TypeScript**: `next.config.ts`에 `typescript: { ignoreBuildErrors: true }`, `eslint: { ignoreDuringBuilds: true }` 설정 시 빌드가 린트/타입 에러로 실패하지 않음. **참고**: 배포 성공 ≠ 품질 검증. 상세 개선 항목은 [PWA_및_전체_개선_보고서.md](PWA_및_전체_개선_보고서.md) 참고.
 
 ### 배포 후 확인
 
-- [ ] 로그인 → 선생님 메인/일정/채팅 데이터 정상 표시(웹·PWA 동일).
-- [ ] PWA: 홈 화면 앱 실행 → 채팅 탭 진입 시 알림 허용 팝업 → 허용 후 설정에 Coach 표시되는지 확인.
+- [ ] 로그인 → 선생님 메인/일정 데이터 정상 표시(웹·PWA 동일).
 
 ---
 
@@ -49,7 +43,7 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL (teacher/admin 등 전체) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (클라이언트) |
 
-teacher 쪽 페이지는 위 두 개만 사용합니다. Firebase/기타 서비스 사용 시 해당 키도 추가 필요.
+teacher 쪽 페이지는 위 두 개만 사용합니다.
 
 ## 3. 빌드·린트 상태
 
@@ -66,4 +60,4 @@ teacher 쪽 페이지는 위 두 개만 사용합니다. Firebase/기타 서비�
 
 - **console.error**: teacher/admin 에러 로깅용으로만 사용 중. 운영에서 로그 노출을 줄이려면 제거하거나 로깅 서비스로 대체 가능.
 - **ESLint**: `flow-phase`·`app/lib` 등에 남은 `@typescript-eslint/no-explicit-any`, `react-hooks/exhaustive-deps`, `@next/next/no-img-element` 경고는 배포를 막지 않으나, 장기적으로 타입·의존성 배열·이미지 최적화 정리 시 유지보수에 유리합니다.
-- **미사용 변수**: `app/api/admin/storage/exists`의 `fileName`, `firebase-messaging-sw`의 `vapidKey` 등은 추후 로직에서 사용할 수 있어 유지해 두었습니다.
+- **미사용 변수**: `app/api/admin/storage/exists`의 `fileName` 등은 추후 로직에서 사용할 수 있어 유지해 두었습니다.

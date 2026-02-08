@@ -64,7 +64,18 @@ export function SchedulerSlotCard({
       });
       setHasChanges(false);
     } catch (err) {
-      console.error(err);
+      let msg: string;
+      if (err instanceof Error) {
+        msg = err.message;
+      } else if (err != null && typeof err === 'object' && 'message' in err) {
+        msg = String((err as { message: unknown }).message);
+      } else if (err != null && typeof err === 'object') {
+        const raw = JSON.stringify(err);
+        msg = raw === '{}' ? 'Unknown error' : raw;
+      } else {
+        msg = String(err);
+      }
+      console.error('Scheduler slot save failed:', msg || 'Unknown error');
     }
   };
 

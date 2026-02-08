@@ -155,7 +155,7 @@ function LoginContent() {
 
         <div className="space-y-2 text-center">
           <p className="text-[9px] font-bold text-gray-400 italic uppercase tracking-tighter">
-            Play · Think · Grow with Spokedu
+            Play · Think · Flow with Spokedu
           </p>
           <p className="text-[9px] font-medium text-gray-300 uppercase">
             Yonsei University Physical Education Specialists

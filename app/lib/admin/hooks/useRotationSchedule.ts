@@ -224,7 +224,13 @@ export function useSaveSchedule() {
 
   return useMutation({
     mutationFn: async (data: SaveScheduleVariables) => {
-      const { programTitle: _t, ...payload } = data;
+      const { programTitle: _t, ...rest } = data;
+      const payload: Record<string, unknown> = {
+        week_key: rest.week_key,
+        program_id: rest.program_id,
+        is_published: rest.is_published ?? false,
+        program_snapshot: rest.program_snapshot ?? {},
+      };
       const { data: result, error } = await supabase
         .from('rotation_schedule')
         .upsert(payload, {

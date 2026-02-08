@@ -4,13 +4,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
-  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin
+  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin, Medal
 } from 'lucide-react';
+import MileageDetailModal from '@/app/components/admin/MileageDetailModal';
 
 interface DocumentFile {
   name: string;
   url: string;
 }
+
+const STAFF_NAMES = ['최지훈', '김구민', '김윤기'];
 
 interface UserData {
   id: string;
@@ -23,7 +26,9 @@ interface UserData {
   schedule?: string | null;
   vacation?: string | null;
   documents: DocumentFile[] | null;
-  is_active: boolean; 
+  is_active: boolean;
+  points?: number;
+  session_count?: number;
 }
 
 export default function UserDashboardPage() {
@@ -40,6 +45,7 @@ export default function UserDashboardPage() {
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newPartner, setNewPartner] = useState<Partial<UserData>>({ role: 'teacher', is_active: true });
+  const [mileageModalUser, setMileageModalUser] = useState<UserData | null>(null);
 
   const fetchUsers = useCallback(async () => {
     if (process.env.NODE_ENV === 'development') console.log('[users] fetchUsers 시작, supabase:', !!supabase);
@@ -255,6 +261,9 @@ export default function UserDashboardPage() {
               </div>
               {currentUser?.role === 'admin' && (
                 <div className="flex gap-1">
+                  {!STAFF_NAMES.includes(user.name || '') && (
+                    <button onClick={() => setMileageModalUser(user)} className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all cursor-pointer flex items-center justify-center touch-manipulation" title="마일리지/카운팅 관리"><Medal className="w-3.5 h-3.5" /></button>
+                  )}
                   <button onClick={() => toggleActiveStatus(user)} className={`min-h-[44px] min-w-[44px] p-2 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center touch-manipulation ${user.is_active ? 'bg-blue-500 text-white hover:bg-rose-500' : 'bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white'}`}><Power className="w-3.5 h-3.5" /></button>
                   <button onClick={() => { if (editingId === user.id) { setEditingId(null); } else { setEditingId(user.id); setEditForm({ ...user }); } }} className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 cursor-pointer flex items-center justify-center touch-manipulation"><Edit3 className="w-3.5 h-3.5" /></button>
                 </div>
@@ -371,7 +380,15 @@ export default function UserDashboardPage() {
         ))}
       </main>
 
-      {/* 모달 등 나머지 UI 동일 */}
+      {mileageModalUser && (
+        <MileageDetailModal
+          teacher={{ id: mileageModalUser.id, name: mileageModalUser.name || '', points: mileageModalUser.points ?? 0, session_count: mileageModalUser.session_count ?? 0 }}
+          supabase={supabase}
+          onClose={() => setMileageModalUser(null)}
+          onSaved={() => fetchUsers()}
+        />
+      )}
+
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl animate-in zoom-in duration-200">

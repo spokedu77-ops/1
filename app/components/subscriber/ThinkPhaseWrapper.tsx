@@ -32,23 +32,29 @@ function findCurrentEvent(events: ThinkTimelineEvent[], ms: number): ThinkTimeli
 export interface ThinkPhaseWrapperProps {
   weekKey: string;
   onEnd: () => void;
+  /** 스케줄러에서 퍼블리시된 Think 설정 (week, month, audience) */
+  scheduleSnapshot?: { think150?: boolean; week?: number; month?: number; audience?: string } | null;
 }
 
-export function ThinkPhaseWrapper({ weekKey, onEnd }: ThinkPhaseWrapperProps) {
+export function ThinkPhaseWrapper({ weekKey, onEnd, scheduleSnapshot }: ThinkPhaseWrapperProps) {
   const parsed = parseWeekKey(weekKey);
-  const week = (parsed?.week ?? 1) as 1 | 2 | 3 | 4;
+  const weekFromKey = (parsed?.week ?? 1) as 1 | 2 | 3 | 4;
+  const week = (scheduleSnapshot?.week != null ? scheduleSnapshot.week : weekFromKey) as 1 | 2 | 3 | 4;
+  const audience = (scheduleSnapshot?.audience as Think150Config['audience']) ?? 'elementary';
+  const month = scheduleSnapshot?.month;
   const { selected: bgmPath } = useThinkBGM();
   const [seed] = useState(() => Date.now());
 
   const config = useMemo<Think150Config>(
     () => ({
-      audience: 'elementary',
+      audience,
       week,
+      ...(month != null && { month }),
       seed,
       thinkPack: MOCK_THINK_PACK,
       bgmPath: bgmPath || undefined,
     }),
-    [week, bgmPath, seed]
+    [audience, week, month, bgmPath, seed]
   );
 
   const timeline = useMemo(() => buildThink150Timeline(config), [config]);

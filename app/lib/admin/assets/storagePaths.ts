@@ -42,6 +42,11 @@ export function flowBgmPath(fileName: string): string {
   return `audio/flow/bgm/${fileName}`;
 }
 
+/** Challenge (스포키듀 챌린지) BGM 경로 */
+export function challengeBgmPath(fileName: string): string {
+  return `audio/challenge/bgm/${fileName}`;
+}
+
 /** Flow Phase Equirect 배경 (2:1 파노라마) 경로 */
 export function flowPanoPath(fileName: string): string {
   return `flow_backgrounds/pano/${fileName}`;

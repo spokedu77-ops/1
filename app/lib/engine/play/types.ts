@@ -95,16 +95,22 @@ export type DropEvent = {
   tick: number;
   blockIndex: number;
   setIndex: 1 | 2;
-  bgSrc?: string;
+  /** 배경: 항상 set.off */
+  bgSrc: string;
+  /** 떨어지는 물체: 항상 set.on */
   objSrc: string;
   phase: 'drop' | 'rest';
   objIndex: number;
+  /** 5레인 스폰 위치 0..4 (왼쪽→오른쪽) */
+  laneIndex: number;
 };
 
 export type TransitionEvent = {
   kind: 'TRANSITION';
   tick: number;
   blockIndex: number;
+  motionId: string;
+  label: string;
 };
 
 export type VisualEvent = ExplainEvent | BinaryEvent | RevealWipeEvent | DropEvent | TransitionEvent;

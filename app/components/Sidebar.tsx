@@ -19,7 +19,6 @@ import {
   X,
   User,
   Medal, 
-  MessageCircle,
   Building2,
   CalendarDays,
 } from 'lucide-react';
@@ -67,7 +66,6 @@ export default function Sidebar() {
     {
       group: "강사 관리",
       items: [
-        { name: "강사 소통 채팅", href: "/admin/chat", icon: MessageCircle },
         { name: "교구/재고 관리", href: "/admin/inventory", icon: Box },
         { name: "강사 정보 관리", href: "/admin/users", icon: Users },
         { name: "강사 카운팅 관리", href: "/admin/mileage", icon: Medal },

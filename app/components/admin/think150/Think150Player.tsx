@@ -49,11 +49,13 @@ export function Think150Player({ config, debug = false }: Think150PlayerProps) {
 
   const event = findCurrentEvent(timeline, currentMs);
   const ruleLabel =
-    event?.payload?.type === 'rest'
-      ? (event.payload as { ruleLabel?: string }).ruleLabel
-      : event?.phase === 'stageC' && event?.payload?.type === 'stageC'
-        ? getStageCRuleLabel(event.payload as { week: number; slotCount?: number })
-        : null;
+    event?.phase === 'rest3'
+      ? null
+      : event?.payload?.type === 'rest'
+        ? (event.payload as { ruleLabel?: string }).ruleLabel
+        : event?.phase === 'stageC' && event?.payload?.type === 'stageC'
+          ? getStageCRuleLabel(event.payload as { week: number; slotCount?: number })
+          : null;
 
   useEffect(() => {
     if (config.thinkPackByMonthAndWeek && config.month != null) {
@@ -148,13 +150,13 @@ export function Think150Player({ config, debug = false }: Think150PlayerProps) {
 function getStageCRuleLabel(p: { week: number; slotCount?: number }): string {
   switch (p.week) {
     case 1:
-      return '화면에 같은 색이 여러 개 보이면, 그 색의 패드에서 보이는 개수만큼 양발로 점프해 주세요.';
+      return '화면에 나온 색을 보이는 개수만큼 밟으세요!';
     case 2:
-      return '화면에 서로 다른 색 두 개가 보이면, 왼쪽 색은 왼발, 오른쪽 색은 오른발로 동시에 착지해 주세요.';
+      return '화면에 나온 두 가지 색을 밟으세요!';
     case 3:
-      return 'ANTI! 보이는 색의 대각선에 있는 색으로 이동해 주세요. (빨강↔파랑, 초록↔노랑)';
+      return '화면에 나온 색의 대각선 색을 밟으세요!';
     case 4:
-      return '화면에 보여주는 색의 순서를 기억했다가, 빈 화면에서 같은 순서대로 이동해 주세요.';
+      return '화면에 나온 색 순서를 기억했다가 빈 화면에서 밟으세요!';
     default:
       return '';
   }

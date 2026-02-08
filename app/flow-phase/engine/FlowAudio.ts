@@ -54,7 +54,7 @@ export class FlowAudio {
     this.masterGain.connect(this.ctx.destination);
 
     this.bgmGain = this.ctx.createGain();
-    this.bgmGain.gain.value = 0.22;
+    this.bgmGain.gain.value = 0.6;
     this.bgmGain.connect(this.masterGain);
 
     this.sfxGain = this.ctx.createGain();

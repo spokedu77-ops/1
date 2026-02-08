@@ -4,13 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/generate-firebase-sw.js && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-    "firebase": "^10.7.0",
-    "firebase-admin": "^12.0.0",
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@fullcalendar/daygrid": "^6.1.19",
     "@fullcalendar/interaction": "^6.1.19",
     "@fullcalendar/list": "^6.1.20",
@@ -24,12 +23,13 @@
     "framer-motion": "^12.23.26",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.562.0",
-    "next": "16.1.0",
+    "next": "^16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
-    "zod": "^3.23.8",
-    "three": "^0.182.0"
+    "sonner": "^2.0.7",
+    "three": "^0.182.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

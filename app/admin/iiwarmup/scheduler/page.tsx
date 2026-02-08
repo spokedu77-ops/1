@@ -9,7 +9,6 @@ import {
   useSaveSchedule,
   type ScheduleLightRow,
 } from '@/app/lib/admin/hooks/useRotationSchedule';
-import { useCreateThink150Programs } from '@/app/lib/admin/hooks/useCreateThink150Programs';
 import { generate48WeekSlots } from '@/app/lib/admin/scheduler/dragAndDrop';
 import { SchedulerMonthAccordion } from '@/app/components/admin/scheduler/SchedulerMonthAccordion';
 
@@ -43,7 +42,6 @@ export default function SchedulerPage() {
   });
 
   const saveSchedule = useSaveSchedule();
-  const createThink150 = useCreateThink150Programs();
 
   const slotsByMonth = useMemo(() => {
     const slots = generate48WeekSlots(year);
@@ -76,10 +74,13 @@ export default function SchedulerPage() {
           <p className="mt-1 text-sm text-neutral-400">
             월별 주차에 프로그램 배정 후 Publish
           </p>
+          <p className="mt-1 text-xs text-neutral-500">
+            배정 방법: 각 주차 슬롯에서 드롭다운으로 프로그램 선택 후 저장. <strong>Published</strong>로 체크한 주차만 구독자 페이지에 반영됩니다. Think 150이 없으면 <strong>Think Studio</strong>에서 &quot;Think 150 기본 생성&quot; 후 주차별 저장하세요.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <select
-            className="rounded-lg border border-neutral-600 bg-neutral-800 px-3 py-2 text-sm"
+            className="cursor-pointer rounded-lg border border-neutral-600 bg-neutral-800 px-3 py-2 text-sm"
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
           >
@@ -89,19 +90,6 @@ export default function SchedulerPage() {
               </option>
             ))}
           </select>
-          <button
-            type="button"
-            className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
-            onClick={() => createThink150.mutate()}
-            disabled={createThink150.isPending}
-          >
-            {createThink150.isPending ? '생성 중...' : 'Think 150 기본 생성'}
-          </button>
-          {createThink150.isError && (
-            <span className="text-sm text-red-400">
-              {(createThink150.error as Error).message}
-            </span>
-          )}
         </div>
       </div>
 

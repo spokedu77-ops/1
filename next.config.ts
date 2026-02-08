@@ -1,15 +1,20 @@
 import type { NextConfig } from "next";
+import withPWAInit from "@ducanh2912/next-pwa";
 
-const nextConfig = {
+const withPWA = withPWAInit({ dest: "public" });
+
+const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
+  turbopack: {},
   async redirects() {
     return [
       { source: "/admin/iiwarmup/play-test", destination: "/admin/iiwarmup/play", permanent: true },
       { source: "/admin/iiwarmup/creator", destination: "/admin/iiwarmup/think", permanent: true },
       { source: "/teacher/notice", destination: "/teacher", permanent: true },
+      { source: "/teacher/chat", destination: "/teacher", permanent: true },
+      { source: "/admin/chat", destination: "/admin", permanent: true },
     ];
   },
-} as NextConfig;
+};
 
-export default nextConfig;
+export default withPWA(nextConfig);

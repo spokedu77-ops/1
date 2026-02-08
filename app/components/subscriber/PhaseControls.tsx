@@ -11,14 +11,14 @@ const PHASES = [
   {
     mode: 'full' as const,
     label: '전체 재생',
-    sub: 'Play → Think → Flow',
+    sub: 'Challenge → Think → Flow',
     className:
       'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500',
   },
   {
     mode: 'play' as const,
-    label: 'Play',
-    sub: '따라하기',
+    label: 'Challenge',
+    sub: '리듬 워밍업',
     className:
       'bg-neutral-800/80 text-neutral-100 border border-neutral-700 hover:bg-neutral-700/80 hover:border-cyan-500/50',
   },

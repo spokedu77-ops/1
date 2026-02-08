@@ -1,9 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { compile, buildTimeline } from '@/app/lib/engine/play';
 import { buildPlayAssetIndex } from '@/app/lib/engine/play/buildPlayAssetIndex';
-import { RuntimePlayer } from '@/app/components/runtime/RuntimePlayer';
+import type { RuntimePlayerRef } from '@/app/components/runtime/RuntimePlayer';
+
+const RuntimePlayer = dynamic(
+  () => import('@/app/components/runtime/RuntimePlayer').then((m) => ({ default: m.RuntimePlayer })),
+  { ssr: false }
+);
 import type { PlayTimeline, AudioEvent } from '@/app/lib/engine/play/types';
 import { generateWeekKey } from '@/app/lib/admin/assets/storagePaths';
 import { usePlayAssetPack } from '@/app/lib/admin/hooks/usePlayAssetPack';
@@ -69,7 +75,11 @@ function opLabel(op: SetOperator): string {
 function opFromKey(key: string): SetOperator {
   if (key === 'BINARY') return { type: 'BINARY' };
   if (key === 'DROP') return { type: 'DROP' };
-  if (key.startsWith('PROGRESSIVE:')) return { type: 'PROGRESSIVE', style: key.slice(11) as 'wipe' | 'frames' };
+  const prefix = 'PROGRESSIVE:';
+  if (key.startsWith(prefix)) {
+    const style = key.slice(prefix.length).replace(/^:/, '');
+    if (style === 'wipe' || style === 'frames') return { type: 'PROGRESSIVE', style };
+  }
   return { type: 'BINARY' };
 }
 
@@ -112,15 +122,18 @@ export default function PlayStudioPage() {
   const [month, setMonth] = useState(1);
   const [week, setWeek] = useState<1 | 2 | 3 | 4>(1);
   const [seed, setSeed] = useState(() => Date.now());
-  const [debug, setDebug] = useState(true);
+  const [debug, setDebug] = useState(false);
   const [composerDraft, setComposerDraft] = useState<ComposerBlock[]>(() => initialComposerDraft);
+  const [showIntro, setShowIntro] = useState(true);
+  const [showOutro, setShowOutro] = useState(false);
 
   const weekKey = useMemo(() => generateWeekKey(year, month, week), [year, month, week]);
   const { state, loading, error, tableMissing, getImageUrl } = usePlayAssetPack(year, month, week);
 
+  const slotMotionIds = useMemo(() => composerDraft.map((b) => b.motionId), [composerDraft]);
   const assetIndex = useMemo(
-    () => buildPlayAssetIndex(state.images, getImageUrl, state.bgmPath),
-    [state.images, state.bgmPath, getImageUrl]
+    () => buildPlayAssetIndex(state.images, getImageUrl, state.bgmPath, slotMotionIds),
+    [state.images, state.bgmPath, getImageUrl, slotMotionIds]
   );
 
   const packStatus: PackStatus = useMemo(() => {
@@ -131,8 +144,13 @@ export default function PlayStudioPage() {
 
   const draftForCompile = useMemo(() => ({ blocks: composerDraft }), [composerDraft]);
 
-  const timeline: PlayTimeline | null = useMemo(() => {
-    if (!assetIndex) return null;
+  const compileResult = useMemo(() => {
+    if (!assetIndex) {
+      return {
+        timeline: null as PlayTimeline | null,
+        compileError: '에셋 인덱스 없음 — Asset Hub에서 해당 주차 20슬롯 이미지 + BGM을 업로드하세요.',
+      };
+    }
     try {
       const resolved = compile({
         draft: draftForCompile,
@@ -140,15 +158,21 @@ export default function PlayStudioPage() {
         seed,
         policy: 'presets',
       });
-      return buildTimeline(resolved);
-    } catch {
-      return null;
+      const timeline = buildTimeline(resolved);
+      return { timeline, compileError: null as string | null };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { timeline: null as PlayTimeline | null, compileError: msg };
     }
   }, [assetIndex, seed, draftForCompile]);
+
+  const timeline = compileResult.timeline;
+  const compileError = compileResult.compileError;
 
   const totalMs = timeline ? (timeline.totalTicks - 1) * PLAY_RULES.TICK_MS : 0;
   const filledCount = useMemo(() => filledImageCount(state.images), [state.images]);
   const canPlay = !!(timeline && packStatus === 'ready');
+  const playerRef = useRef<RuntimePlayerRef>(null);
 
   useEffect(() => {
     return () => {
@@ -157,11 +181,13 @@ export default function PlayStudioPage() {
     };
   }, []);
 
+  useEffect(() => {
+    setShowIntro(true);
+    setShowOutro(false);
+  }, [weekKey, seed]);
+
   const onAudioEvent = useCallback(
     (ev: AudioEvent) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[PLAY] audioEvent=', ev.kind);
-      }
       if (ev.kind === 'BGM_START' && ev.path) {
         startBGM(ev.path, 0, Math.max(0, totalMs)).catch(() => {});
       } else if (ev.kind === 'BGM_STOP') {
@@ -180,9 +206,7 @@ export default function PlayStudioPage() {
         ? '에셋이 부족합니다. (20슬롯 이미지 + BGM 필요)'
         : packStatus === 'error'
           ? '에러 또는 테이블 미존재'
-          : !timeline
-            ? '컴파일 실패 — draft/assetIndex 정책 확인'
-            : '';
+          : compileError ?? '';
 
   return (
     <div className="space-y-6">
@@ -266,7 +290,7 @@ export default function PlayStudioPage() {
             <span className="text-sm text-neutral-400">디버그 오버레이</span>
           </label>
 
-          {/* 준비 상태 패널 */}
+          {/* 준비 상태 패널: 슬롯 1~5 기준 업로드 O/X */}
           <div className="rounded-lg border border-neutral-700 p-3">
             <p className="mb-2 text-sm font-medium text-neutral-300">준비 상태</p>
             <p className="text-xs text-neutral-400">
@@ -281,11 +305,11 @@ export default function PlayStudioPage() {
               </p>
             )}
             <div className="mt-2 space-y-1">
-              {(['say_hi', 'walk', 'throw', 'clap', 'punch'] as const).map((motion, i) => {
+              {([0, 1, 2, 3, 4] as const).map((i) => {
                 const [s1o, s1n, s2o, s2n] = motionSlotStatus(state.images, i);
                 return (
-                  <div key={motion} className="flex items-center gap-2 text-xs">
-                    <span className="w-14 shrink-0 text-neutral-500">{motion}</span>
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    <span className="w-10 shrink-0 text-neutral-500">slot{i + 1}</span>
                     <span className={s1o ? 'text-green-500' : 'text-neutral-600'}>s1_off</span>
                     <span className={s1n ? 'text-green-500' : 'text-neutral-600'}>s1_on</span>
                     <span className={s2o ? 'text-green-500' : 'text-neutral-600'}>s2_off</span>
@@ -305,71 +329,74 @@ export default function PlayStudioPage() {
           {/* Draft Composer */}
           <div className="rounded-lg border border-neutral-700 p-3">
             <p className="mb-2 text-sm font-medium text-neutral-300">Draft Composer</p>
+            <p className="mb-2 text-[10px] text-neutral-500">
+              Block마다 역할(모션)과 Set1/Set2 오퍼레이터를 드롭다운으로 선택하세요.
+            </p>
             {composerDraft.map((block, idx) => {
-              const pattern1 = MOTION_OPERATOR_MAP[block.motionId as MotionId]?.set1 ?? ['BINARY'];
-              const pattern2 = MOTION_OPERATOR_MAP[block.motionId as MotionId]?.set2 ?? ['BINARY'];
-              const opts1 = patternToOperators(pattern1);
-              const opts2 = patternToOperators(pattern2);
-              const isMotionTaken = (m: string) => composerDraft.some((b, j) => j !== idx && b.motionId === m);
+              const allOperatorOptions: SetOperator[] = [
+                { type: 'BINARY' },
+                { type: 'DROP' },
+                { type: 'PROGRESSIVE', style: 'wipe' },
+                { type: 'PROGRESSIVE', style: 'frames' },
+              ];
               return (
                 <div key={idx} className="mb-3 rounded bg-neutral-800/50 p-2">
                   <p className="mb-1 text-xs font-medium text-neutral-400">Block {idx + 1}</p>
                   <div className="space-y-1">
+                    <label className="block text-[10px] text-neutral-500">역할 (모션)</label>
                     <select
-                      className="w-full rounded bg-neutral-800 px-2 py-1 text-xs"
+                      className="w-full cursor-pointer rounded bg-neutral-800 px-2 py-1 text-xs"
                       value={block.motionId}
                       onChange={(e) => {
                         const next = [...composerDraft];
                         next[idx] = {
                           ...next[idx]!,
                           motionId: e.target.value,
-                          set1: { operator: { type: 'BINARY' } },
-                          set2: { operator: { type: 'BINARY' } },
+                          set1: { operator: next[idx]!.set1.operator },
+                          set2: { operator: next[idx]!.set2.operator },
                         };
                         setComposerDraft(next);
                       }}
                     >
-                      {MOTION_IDS.map((m) => {
-                        const hasAssets = motionHasAssets(m, state.images);
-                        const taken = isMotionTaken(m);
-                        return (
-                          <option
-                            key={m}
-                            value={m}
-                            disabled={!hasAssets || taken}
-                          >
-                            {MOTION_LABELS[m]} {!hasAssets ? '(에셋 없음)' : taken ? '(선택됨)' : ''}
-                          </option>
-                        );
-                      })}
+                      {MOTION_IDS.map((m) => (
+                        <option key={m} value={m}>
+                          {MOTION_LABELS[m]}
+                        </option>
+                      ))}
                     </select>
                     <div className="flex gap-2">
-                      <select
-                        className="flex-1 rounded bg-neutral-800 px-2 py-1 text-xs"
-                        value={opKey(block.set1.operator)}
-                        onChange={(e) => {
-                          const next = [...composerDraft];
-                          next[idx] = { ...next[idx]!, set1: { operator: opFromKey(e.target.value) } };
-                          setComposerDraft(next);
-                        }}
-                      >
-                        {opts1.map((op) => (
-                          <option key={opKey(op)} value={opKey(op)}>{opLabel(op)}</option>
-                        ))}
-                      </select>
-                      <select
-                        className="flex-1 rounded bg-neutral-800 px-2 py-1 text-xs"
-                        value={opKey(block.set2.operator)}
-                        onChange={(e) => {
-                          const next = [...composerDraft];
-                          next[idx] = { ...next[idx]!, set2: { operator: opFromKey(e.target.value) } };
-                          setComposerDraft(next);
-                        }}
-                      >
-                        {opts2.map((op) => (
-                          <option key={opKey(op)} value={opKey(op)}>{opLabel(op)}</option>
-                        ))}
-                      </select>
+                      <div className="flex-1">
+                        <label className="block text-[10px] text-neutral-500">Set1 오퍼레이터</label>
+                        <select
+                          className="w-full cursor-pointer rounded bg-neutral-800 px-2 py-1 text-xs"
+                          value={opKey(block.set1.operator)}
+                          onChange={(e) => {
+                            const next = [...composerDraft];
+                            next[idx] = { ...next[idx]!, set1: { operator: opFromKey(e.target.value) } };
+                            setComposerDraft(next);
+                          }}
+                        >
+                          {allOperatorOptions.map((op) => (
+                            <option key={opKey(op)} value={opKey(op)}>{opLabel(op)}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-[10px] text-neutral-500">Set2 오퍼레이터</label>
+                        <select
+                          className="w-full cursor-pointer rounded bg-neutral-800 px-2 py-1 text-xs"
+                          value={opKey(block.set2.operator)}
+                          onChange={(e) => {
+                            const next = [...composerDraft];
+                            next[idx] = { ...next[idx]!, set2: { operator: opFromKey(e.target.value) } };
+                            setComposerDraft(next);
+                          }}
+                        >
+                          {allOperatorOptions.map((op) => (
+                            <option key={opKey(op)} value={opKey(op)}>{opLabel(op)}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -414,55 +441,75 @@ export default function PlayStudioPage() {
         </aside>
 
         <main>
-          <div className="rounded-xl bg-neutral-900 p-3 ring-1 ring-neutral-800">
-            {/* 재생 프레임: 항상 16:9 영역 */}
-            <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-neutral-800">
-              {canPlay ? (
-                <RuntimePlayer
-                  timeline={timeline!}
-                  debug={debug}
-                  onAudioEvent={onAudioEvent}
-                  snapToTick
-                />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
-                  <p className="text-sm text-neutral-400">{placeholderMessage}</p>
-                  <p className="font-mono text-xs text-neutral-600">{weekKey}</p>
-                </div>
+          <div className="space-y-3">
+            {/* 재생 프레임: 이미지 화면 꽉 참 */}
+            <div
+              className="flex min-h-0 flex-1 overflow-hidden rounded-xl bg-neutral-900 ring-1 ring-neutral-800"
+              style={{ minHeight: 320 }}
+            >
+              <div className="relative h-full w-full min-h-[320px] flex-1 bg-neutral-800">
+                {canPlay ? (
+                  <>
+                    <RuntimePlayer
+                      ref={playerRef}
+                      timeline={timeline!}
+                      debug={debug}
+                      onAudioEvent={onAudioEvent}
+                      onEnd={() => setShowOutro(true)}
+                      snapToTick
+                      hideControls
+                    />
+                    {showIntro && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                        <span className="text-lg font-semibold text-white">INTRO / Ready</span>
+                      </div>
+                    )}
+                    {showOutro && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                        <span className="text-lg font-semibold text-white">OUTRO / Complete</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
+                    <p className="text-sm text-neutral-400">{placeholderMessage}</p>
+                    <p className="font-mono text-xs text-neutral-600">{weekKey}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* 재생/리셋은 항상 같은 위치에 표시 — 선택한 draft 그대로 재생 */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={!canPlay}
+                className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => {
+                  setShowIntro(false);
+                  setShowOutro(false);
+                  playerRef.current?.play();
+                }}
+              >
+                Play
+              </button>
+              <button
+                type="button"
+                disabled={!canPlay}
+                className="cursor-pointer rounded-lg bg-neutral-700 px-4 py-2 text-sm hover:bg-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => {
+                  playerRef.current?.reset();
+                  setShowIntro(true);
+                  setShowOutro(false);
+                }}
+              >
+                Reset
+              </button>
+              {!canPlay && (
+                <span className="text-xs text-neutral-500">
+                  재생하려면: 해당 주차 20슬롯 이미지 + BGM 업로드 후, 블록 역할을 선택한 뒤 Play를 누르세요.
+                </span>
               )}
             </div>
-
-            {/* 컨트롤 바: ready && timeline 이면 RuntimePlayer 내부 버튼만 사용. 없을 때는 비활성 바 */}
-            {!canPlay && (
-              <div className="mt-2">
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled
-                    className="cursor-not-allowed rounded-lg bg-neutral-700 px-3 py-2 text-sm opacity-60"
-                  >
-                    Play
-                  </button>
-                  <button
-                    type="button"
-                    disabled
-                    className="cursor-not-allowed rounded-lg bg-neutral-700 px-3 py-2 text-sm opacity-60"
-                  >
-                    Pause
-                  </button>
-                  <button
-                    type="button"
-                    disabled
-                    className="cursor-not-allowed rounded-lg bg-neutral-700 px-3 py-2 text-sm opacity-60"
-                  >
-                    Reset
-                  </button>
-                </div>
-                <p className="mt-2 text-xs text-neutral-500">
-                  재생하려면 20슬롯 이미지 + BGM을 모두 업로드하세요.
-                </p>
-              </div>
-            )}
           </div>
         </main>
       </div>

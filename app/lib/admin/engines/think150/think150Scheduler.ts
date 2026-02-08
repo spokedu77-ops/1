@@ -57,15 +57,16 @@ function getStageCLayout(week: 1 | 2 | 3 | 4, set: 'setA' | 'setB', slotCount: n
 
 function getRestLabel(week: 1 | 2 | 3 | 4, restId: 'rest1' | 'rest2' | 'rest3'): string {
   if (restId === 'rest1') return '잘하고 있어요!';
+  if (restId === 'rest3') return '잠시 후 마무리';
   switch (week) {
     case 1:
-      return '화면에 같은 색이 여러 개 보이면, 그 색의 패드에서 보이는 개수만큼 양발로 점프해 주세요.';
+      return '화면에 나온 색을 보이는 개수만큼 밟으세요!';
     case 2:
-      return '화면에 서로 다른 색 두 개가 보이면, 왼쪽 색은 왼발, 오른쪽 색은 오른발로 동시에 착지해 주세요.';
+      return '화면에 나온 두 가지 색을 밟으세요!';
     case 3:
-      return 'ANTI! 보이는 색의 대각선에 있는 색으로 이동해 주세요. (빨강↔파랑, 초록↔노랑)';
+      return '화면에 나온 색의 대각선 색을 밟으세요!';
     case 4:
-      return '화면에 보여주는 색의 순서를 기억했다가, 빈 화면에서 같은 순서대로 이동해 주세요.';
+      return '화면에 나온 색 순서를 기억했다가 빈 화면에서 밟으세요!';
     default:
       return '';
   }
@@ -74,6 +75,9 @@ function getRestLabel(week: 1 | 2 | 3 | 4, restId: 'rest1' | 'rest2' | 'rest3'):
 const OUTRO_TEXTS = [
   '오늘도 수고했어요. 내일 다시 만나요!',
   '잘했어요! 다음에 또 도전해봐요.',
+  '집중력과 반응이 좋아졌어요. 수고했어요!',
+  '오늘도 열심히 참여해 줘서 고마워요. 다음에 또 만나요!',
+  '잘 따라와 줘서 고마워요. 다음 시간에도 함께해요!',
 ];
 
 export interface Think150SchedulerConfig {
@@ -229,10 +233,16 @@ export function buildThink150Timeline(config: Think150SchedulerConfig): ThinkTim
     const duration = seg.endMs - seg.startMs;
 
     if (seg.phase === 'intro') {
+      const introSubtitleByWeek: Record<number, string> = {
+        1: '한 가지 색이 나오면 그 색의 패드를 밟아요.',
+        2: '두 가지 색이 나오면 왼쪽은 왼발, 오른쪽은 오른발로 밟아요.',
+        3: 'ANTI (대각선) — 보이는 색의 대각선으로 이동해요.',
+        4: '색 순서를 기억했다가 빈 화면에서 같은 순서로 밟아요.',
+      };
       const payload: IntroPayload = {
         type: 'intro',
         week: config.week,
-        subtitle: config.week === 3 ? 'ANTI (대각선) — 보이는 색의 대각선으로 이동해요' : undefined,
+        subtitle: introSubtitleByWeek[config.week] ?? '화면에 나온 색을 보고 같은 색의 패드를 밟아 주세요.',
       };
       events.push({
         t0: seg.startMs,
@@ -326,7 +336,9 @@ export function buildThink150Timeline(config: Think150SchedulerConfig): ThinkTim
         buildWeek4StageCEvents(events, seg, config, rng, cueBlankMs, pack);
       } else {
         const duration = seg.endMs - seg.startMs;
-        const pairDuration = cueBlankMs * 2;
+        const isWeek2 = config.week === 2;
+        const blankMs = isWeek2 ? cueBlankMs * 1.5 : cueBlankMs;
+        const pairDuration = cueBlankMs + blankMs;
 
         let t = seg.startMs;
         let idx = 0;

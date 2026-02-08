@@ -2,15 +2,16 @@
 
 /**
  * 구독자용 IIWARMUP 페이지
- * 연/월/주차 선택 + 4버튼 (전체/Play/Think/Flow) + FullSequencePlayer
+ * 연/월/주차 선택 + 스케줄 연동(챌린지 BPM/grid, Think 설정) + FullSequencePlayer
  */
 
 import { useMemo, useState } from 'react';
 import { generateWeekKey } from '@/app/lib/admin/assets/storagePaths';
+import { useSubscriberSchedule, getChallengePropsFromPhases } from '@/app/lib/admin/hooks/useSubscriberSchedule';
 import { WeekSelector } from '@/app/components/subscriber/WeekSelector';
 import { PhaseControls, type PlayMode } from '@/app/components/subscriber/PhaseControls';
 import { FullSequencePlayer } from '@/app/components/subscriber/FullSequencePlayer';
-import { PlayRuntimeWrapper } from '@/app/components/subscriber/PlayRuntimeWrapper';
+import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
 import { ThinkPhaseWrapper } from '@/app/components/subscriber/ThinkPhaseWrapper';
 import { FlowFrame } from '@/app/components/subscriber/FlowFrame';
 
@@ -28,6 +29,15 @@ export default function IIWarmupSubscriberPage() {
     [year, month, week]
   );
 
+  const { data: scheduleData, isLoading: scheduleLoading } = useSubscriberSchedule(weekKey);
+  const challengeProps = useMemo(
+    () => getChallengePropsFromPhases(scheduleData?.challengePhases ?? scheduleData?.phases) ?? {},
+    [scheduleData?.challengePhases, scheduleData?.phases]
+  );
+  const thinkSnapshot = scheduleData?.program_snapshot?.think150
+    ? scheduleData.program_snapshot
+    : undefined;
+
   const handleStart = (mode: PlayMode) => {
     setPlayMode(mode);
   };
@@ -44,7 +54,7 @@ export default function IIWarmupSubscriberPage() {
             I.I. Warm-up
           </h1>
           <p className="mt-2 text-sm text-neutral-500">
-            Play → Think → Flow 순서로 진행되는 몰입형 웜업
+            Challenge → Think → Flow 순서로 진행되는 몰입형 웜업
           </p>
         </header>
 
@@ -71,22 +81,43 @@ export default function IIWarmupSubscriberPage() {
       </div>
 
       {playMode && (
-        <FullSequencePlayer
-          weekKey={weekKey}
-          mode={playMode}
-          onPhaseChange={(p) => {
-            if (p === 'end') handlePhaseEnd();
-          }}
-          renderPlay={({ weekKey: wk, onEnd }) => (
-            <PlayRuntimeWrapper weekKey={wk} onEnd={onEnd} />
+        <>
+          {scheduleLoading && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/90 text-neutral-300">
+              <span className="text-sm">프로그램 불러오는 중...</span>
+            </div>
           )}
-          renderThink={({ weekKey: wk, onEnd }) => (
-            <ThinkPhaseWrapper weekKey={wk} onEnd={onEnd} />
+          {!scheduleLoading && (
+            <FullSequencePlayer
+              weekKey={weekKey}
+              mode={playMode}
+              onPhaseChange={(p) => {
+                if (p === 'end') handlePhaseEnd();
+              }}
+              renderPlay={({ onEnd }) => (
+                <SpokeduRhythmGame
+                  allowEdit={false}
+                  onEnd={onEnd}
+                  initialBpm={challengeProps.initialBpm}
+                  initialLevel={challengeProps.initialLevel}
+                  initialGrid={challengeProps.initialGrid}
+                  bgmPath={scheduleData?.challengeBgmPath ?? undefined}
+                  autoStart
+                />
+              )}
+              renderThink={({ weekKey: wk, onEnd }) => (
+                <ThinkPhaseWrapper
+                  weekKey={wk}
+                  onEnd={onEnd}
+                  scheduleSnapshot={thinkSnapshot}
+                />
+              )}
+              renderFlow={({ weekKey: wk, onEnd }) => (
+                <FlowFrame weekKey={wk} onEnd={onEnd} />
+              )}
+            />
           )}
-          renderFlow={({ weekKey: wk, onEnd }) => (
-            <FlowFrame weekKey={wk} onEnd={onEnd} />
-          )}
-        />
+        </>
       )}
     </div>
   );

@@ -34,6 +34,7 @@ export default function AdminCurriculumPage() {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [items, setItems] = useState<CurriculumItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<CurriculumItem | null>(null);
@@ -45,7 +46,11 @@ export default function AdminCurriculumPage() {
   });
 
   const fetchItems = async () => {
-    if (!supabase) return;
+    if (!supabase) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
     const { data, error } = await supabase
       .from('curriculum')
       .select('*')
@@ -53,10 +58,7 @@ export default function AdminCurriculumPage() {
     
     if (error) {
       console.error('Error fetching curriculum:', error);
-      return;
-    }
-
-    if (data) {
+    } else if (data) {
       const formattedData = data.map(item => ({
         ...item,
         expertTip: item.expert_tip,
@@ -66,6 +68,7 @@ export default function AdminCurriculumPage() {
       }));
       setItems(formattedData);
     }
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -229,6 +232,12 @@ export default function AdminCurriculumPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+         {isLoading ? (
+           <div className="flex flex-col items-center justify-center py-24 gap-4">
+             <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+             <p className="text-sm font-bold text-slate-400">커리큘럼 불러오는 중...</p>
+           </div>
+         ) : (
          <div className="space-y-6 w-full text-left min-w-0">
              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 w-full">
                  {MONTHS.map((m) => (
@@ -307,6 +316,7 @@ export default function AdminCurriculumPage() {
                  )}
              </div>
          </div>
+         )}
       </main>
 
       <button className="fixed bottom-8 right-8 w-16 h-16 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 shadow-slate-900/40" onClick={() => {

@@ -12,10 +12,14 @@ const TICK_MS = PLAY_RULES.TICK_MS;
 export interface PlayTestDebugOverlayProps {
   tMs: number;
   timeline: PlayTimeline;
+  /** Tick Clock 사용 시 전달 (검증용) */
+  tickIndex?: number;
+  /** 마지막 tick 간격(ms), 개발 모드 검증용 */
+  lastDeltaMs?: number | null;
 }
 
-export function PlayTestDebugOverlay({ tMs, timeline }: PlayTestDebugOverlayProps) {
-  const currentTick = Math.floor(tMs / TICK_MS);
+export function PlayTestDebugOverlay({ tMs, timeline, tickIndex: tickIndexProp, lastDeltaMs }: PlayTestDebugOverlayProps) {
+  const currentTick = tickIndexProp ?? Math.floor(tMs / TICK_MS);
   const visualsAtTick = timeline.visuals.filter((v) => v.tick === currentTick);
 
   const primary = visualsAtTick.find(
@@ -61,8 +65,14 @@ export function PlayTestDebugOverlay({ tMs, timeline }: PlayTestDebugOverlayProp
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
         <span>tMs</span>
         <span>{Math.round(tMs)}</span>
-        <span>currentTick</span>
+        <span>tickIndex</span>
         <span>{currentTick}</span>
+        {lastDeltaMs != null && (
+          <>
+            <span>last delta (ms)</span>
+            <span>{Math.round(lastDeltaMs)}</span>
+          </>
+        )}
         <span>blockIndex</span>
         <span>{String(blockIndex)}</span>
         <span>setIndex</span>

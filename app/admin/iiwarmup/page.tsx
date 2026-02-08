@@ -15,7 +15,7 @@ export default function IIWarmupAdminOverviewPage() {
           href="/iiwarmup?week=1&audience=elementary"
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >
           <h3 className="text-base font-extrabold">구독자 미리보기</h3>
           <p className="mt-2 text-sm text-neutral-400">
@@ -28,7 +28,7 @@ export default function IIWarmupAdminOverviewPage() {
 
         <Link
           href="/admin/iiwarmup/play"
-          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >
           <h3 className="text-base font-extrabold">Play Studio</h3>
           <p className="mt-2 text-sm text-neutral-400">
@@ -41,7 +41,7 @@ export default function IIWarmupAdminOverviewPage() {
 
         <Link
           href="/admin/iiwarmup/think"
-          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >
           <h3 className="text-base font-extrabold">Think Studio</h3>
           <p className="mt-2 text-sm text-neutral-400">
@@ -54,7 +54,7 @@ export default function IIWarmupAdminOverviewPage() {
 
         <Link
           href="/admin/iiwarmup/flow"
-          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >
           <h3 className="text-base font-extrabold">Flow Studio</h3>
           <p className="mt-2 text-sm text-neutral-400">
@@ -67,7 +67,7 @@ export default function IIWarmupAdminOverviewPage() {
 
         <Link
           href="/admin/iiwarmup/assets"
-          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >
           <h3 className="text-base font-extrabold">AssetHub</h3>
           <p className="mt-2 text-sm text-neutral-400">
@@ -80,7 +80,7 @@ export default function IIWarmupAdminOverviewPage() {
 
         <Link
           href="/admin/iiwarmup/scheduler"
-          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >
           <h3 className="text-base font-extrabold">Scheduler</h3>
           <p className="mt-2 text-sm text-neutral-400">

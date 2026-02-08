@@ -12,15 +12,18 @@ export type PlayPackImages = Record<PlaySlotKey, string | null>;
 
 /**
  * 20슬롯이 모두 채워져 있으면 AssetIndex 반환, 아니면 null
+ * slotMotionIds: 슬롯 1~5에 매핑할 모션 ID 5개 (Composer에서 선택한 순서). 길이 5가 아니면 기존 MOTION_ORDER 사용.
  */
 export function buildPlayAssetIndex(
   images: PlayPackImages,
   getImageUrl: (path: string | null) => string,
-  bgmPath: string | null
+  bgmPath: string | null,
+  slotMotionIds?: readonly string[]
 ): AssetIndex | null {
+  const order = slotMotionIds?.length === 5 ? slotMotionIds : MOTION_ORDER;
   const motions: AssetIndex['motions'] = {};
-  for (let i = 0; i < MOTION_ORDER.length; i++) {
-    const motionId = MOTION_ORDER[i];
+  for (let i = 0; i < order.length; i++) {
+    const motionId = order[i];
     const base = i * 4; // a1_set1_off, a1_set1_on, a1_set2_off, a1_set2_on
     const set1OffKey = PLAY_SLOT_KEYS[base] as PlaySlotKey;
     const set1OnKey = PLAY_SLOT_KEYS[base + 1] as PlaySlotKey;
