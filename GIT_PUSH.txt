@@ -1,0 +1,1 @@
+git add . ; git commit -m "fix: TypeScript 빌드 에러 수정 및 설정 최적화" ; git push origin main

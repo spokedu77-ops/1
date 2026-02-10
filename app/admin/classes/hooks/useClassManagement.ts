@@ -39,10 +39,10 @@ export function useClassManagement() {
     const { data, error } = sessionsRes;
     if (!error && data) {
       const groupTotals: Record<string, number> = {};
-      data.forEach(s => { if(s.group_id) groupTotals[s.group_id] = (groupTotals[s.group_id] || 0) + 1; });
+      data.forEach((s: any) => { if(s.group_id) groupTotals[s.group_id] = (groupTotals[s.group_id] || 0) + 1; });
       const groupCurrentRounds: Record<string, number> = {};
 
-      const events: SessionEvent[] = data.map(s => {
+      const events: SessionEvent[] = data.map((s: any) => {
         let roundStr = s.round_display || '';
         if (!roundStr) {
           const roundMatch = s.title.match(/(\d+\/\d+)/);
