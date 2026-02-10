@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import type { EventClickArg, EventDropArg } from '@fullcalendar/core';
+import type { EventClickArg, EventDropArg, CalendarApi } from '@fullcalendar/core';
 
 const FullCalendar = dynamic(
   () => import('@fullcalendar/react').then((mod) => mod.default),
@@ -37,7 +37,7 @@ const STATUS_COLORS = {
 };
 
 export default function ClassManagementPage() {
-  const calendarRef = useRef<any>(null);
+  const [calendarApi, setCalendarApi] = useState<CalendarApi | null>(null);
   const { filteredEvents, teacherList, fetchSessions, supabase, currentView, setCurrentView, filterTeacher, setFilterTeacher } = useClassManagement();
   
   const getYesterday = (base: Date = new Date()) => {
@@ -69,35 +69,33 @@ export default function ClassManagementPage() {
 
   // ✅ 뷰 전환 시 오늘 날짜로 즉시 이동하는 헬퍼
   const handleViewChange = (viewName: string) => {
-    const api = calendarRef.current?.getApi();
-    if (!api) return;
+    if (!calendarApi) return;
     
     // 뷰 변경 전에 날짜 설정
     if (viewName === 'rollingFourDay') {
-      api.gotoDate(getYesterday());
+      calendarApi.gotoDate(getYesterday());
     } else if (viewName === 'twoMonthGrid') {
       // 오늘 날짜로 이동
       const today = new Date();
-      api.gotoDate(today);
+      calendarApi.gotoDate(today);
       // 뷰 변경 후 오늘 날짜로 스크롤
       setTimeout(() => {
         const todayEl = document.querySelector('.fc-day-today');
         todayEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
     } else {
-      api.gotoDate(new Date());
+      calendarApi.gotoDate(new Date());
     }
     
-    api.changeView(viewName);
+    calendarApi.changeView(viewName);
     setCurrentView(viewName);
   };
 
   const handleToday = () => {
-    const api = calendarRef.current?.getApi();
-    if (!api) return;
+    if (!calendarApi) return;
     // 4-day에서는 TODAY를 눌러도 "어제 시작"이 유지되어야 함
-    if (currentView === 'rollingFourDay') api.gotoDate(getYesterday());
-    else api.today();
+    if (currentView === 'rollingFourDay') calendarApi.gotoDate(getYesterday());
+    else calendarApi.today();
   };
 
   const autoFinishSessions = async () => {
@@ -636,9 +634,9 @@ export default function ClassManagementPage() {
               <CalendarIcon size={18} className="text-blue-600" /> SPOKEDU
             </h1>
             <div className="flex bg-slate-100 rounded-lg p-0.5">
-              <button onClick={() => calendarRef.current?.getApi().prev()} className="p-1 sm:p-1.5 hover:bg-white rounded-md transition-all"><ChevronLeft size={14}/></button>
+              <button onClick={() => calendarApi?.prev()} className="p-1 sm:p-1.5 hover:bg-white rounded-md transition-all"><ChevronLeft size={14}/></button>
               <button onClick={handleToday} className="px-2 sm:px-3 text-[9px] sm:text-[10px] font-black uppercase">TODAY</button>
-              <button onClick={() => calendarRef.current?.getApi().next()} className="p-1 sm:p-1.5 hover:bg-white rounded-md transition-all"><ChevronRight size={14}/></button>
+              <button onClick={() => calendarApi?.next()} className="p-1 sm:p-1.5 hover:bg-white rounded-md transition-all"><ChevronRight size={14}/></button>
             </div>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
@@ -662,7 +660,7 @@ export default function ClassManagementPage() {
 
         <main className="flex-1 p-1 sm:p-2 overflow-auto">
           <FullCalendar
-            ref={calendarRef} 
+            datesSet={(arg) => setCalendarApi(arg.view.calendar)}
             plugins={[dayGridPlugin, interactionPlugin]} 
             initialView="rollingFourDay"
             initialDate={initialDateStr} 
