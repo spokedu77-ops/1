@@ -56,7 +56,7 @@ export function useClassManagement() {
         let displayTeacher = s.users?.name || '미정';
         const { extraTeachers } = parseExtraTeachers(s.students_text || '');
         const extraNames = extraTeachers
-          .map((ex: { id?: string }) => tList.find(t => t.id === ex.id)?.name)
+          .map((ex: { id?: string }) => tList.find((t: any) => t.id === ex.id)?.name)
           .filter(Boolean) as string[];
         if (extraNames.length > 0) displayTeacher += `, ${extraNames.join(', ')}`;
 
