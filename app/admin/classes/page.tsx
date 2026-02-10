@@ -112,10 +112,10 @@ export default function ClassManagementPage() {
       
       if (endedSessions && endedSessions.length > 0) {
         // 1. 세션 상태를 finished로 변경
-        await supabase.from('sessions').update({ status: 'finished' }).in('id', endedSessions.map(s => s.id));
+        await supabase.from('sessions').update({ status: 'finished' }).in('id', endedSessions.map((s: any) => s.id));
         
         // 2. 각 강사의 session_count 증가 및 로그 생성 (created_by 없으면 스킵)
-        const teacherCounts = endedSessions.reduce((acc, s) => {
+        const teacherCounts = endedSessions.reduce((acc: any, s: any) => {
           const id = s.created_by;
           if (id != null && String(id).trim() !== '') {
             acc[id] = (acc[id] || 0) + 1;
@@ -139,8 +139,8 @@ export default function ClassManagementPage() {
         
         // 3. 수업 카운팅 로그 생성 (teacher_id FK: auth.users(id) — created_by가 없거나 삭제된 사용자면 제외)
         const countLogs = endedSessions
-          .filter(session => session.created_by != null && String(session.created_by).trim() !== '')
-          .map(session => ({
+          .filter((session: any) => session.created_by != null && String(session.created_by).trim() !== '')
+          .map((session: any) => ({
             teacher_id: session.created_by,
             session_id: session.id,
             session_title: session.title,
