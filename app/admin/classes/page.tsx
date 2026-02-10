@@ -281,7 +281,7 @@ export default function ClassManagementPage() {
       const newTotal = getMileageTotal(editFields.mileageAction || '', MILEAGE_ACTIONS);
       const diff = newTotal - oldTotal; 
 
-      const extras = editFields.teachers.slice(1).filter(t => t.id);
+      const extras = editFields.teachers.slice(1).filter((t: { id?: string }) => t.id);
       const finalMemo = buildMemoWithExtras(editFields.memo, extras);
       
       const updatePayload: Record<string, unknown> = {
@@ -396,7 +396,7 @@ export default function ClassManagementPage() {
       if (futureError) throw futureError;
       
       if (future) {
-        await Promise.all(future.map(async (s) => {
+        await Promise.all(future.map(async (s: any) => {
           const ns = new Date(new Date(s.start_at).getTime() + 7*24*60*60*1000).toISOString();
           const ne = new Date(new Date(s.end_at).getTime() + 7*24*60*60*1000).toISOString();
           return supabase.from('sessions').update({ start_at: ns, end_at: ne }).eq('id', s.id);
@@ -435,7 +435,7 @@ export default function ClassManagementPage() {
       if (futureError) throw futureError;
       
       if (future && future.length > 0) {
-        await Promise.all(future.map(async (s) => {
+        await Promise.all(future.map(async (s: any) => {
           const ns = new Date(new Date(s.start_at).getTime() - 7*24*60*60*1000).toISOString();
           const ne = new Date(new Date(s.end_at).getTime() - 7*24*60*60*1000).toISOString();
           return supabase.from('sessions').update({ start_at: ns, end_at: ne }).eq('id', s.id);
@@ -491,7 +491,7 @@ export default function ClassManagementPage() {
       // 3. Promise.all로 병렬 업데이트
       if (remains && remains.length > 0) {
         await Promise.all(
-          remains.map(r => 
+          remains.map((r: any) => 
             supabase.from('sessions').update({
               round_total: newTotal,
               round_display: `${r.round_index}/${newTotal}`
@@ -566,9 +566,9 @@ export default function ClassManagementPage() {
       } else {
         // 수동 날짜 복제
         const baseDuration = baseEnd.getTime() - baseStart.getTime();
-        const totalManual = cloneDates.filter(d => d).length;
+        const totalManual = cloneDates.filter((d: string | undefined) => d).length;
         
-        cloneDates.forEach((dateStr, i) => {
+        cloneDates.forEach((dateStr: string | undefined, i: number) => {
           if (!dateStr) return;
           const newStart = new Date(dateStr);
           if (!Number.isFinite(newStart.getTime())) return;
@@ -648,7 +648,7 @@ export default function ClassManagementPage() {
               className="h-8 sm:h-9 px-2 sm:px-3 bg-slate-100 rounded-lg text-[10px] sm:text-xs font-bold text-slate-700 border border-slate-200"
             >
               <option value="ALL">전체 강사</option>
-              {teacherList.map(t => (
+              {teacherList.map((t: { id: string; name: string }) => (
                 <option key={t.id} value={t.id}>{t.name} T</option>
               ))}
             </select>
