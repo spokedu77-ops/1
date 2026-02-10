@@ -21,6 +21,12 @@ import { FlowFrame } from '@/app/components/subscriber/FlowFrame';
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
 
+/** 이번 달 기준 오늘이 몇 주차인지 (1~5). 1–7일→1, 8–14→2, 15–21→3, 22–28→4, 29–31→5 */
+function getCurrentWeekOfMonth(): number {
+  const day = new Date().getDate();
+  return Math.min(5, Math.ceil(day / 7));
+}
+
 type ViewState = 'idle' | 'loading' | 'empty' | 'ready' | 'playing' | 'completed';
 
 function formatMetaLine(bpm?: number, totalMin?: number): string {
@@ -33,7 +39,7 @@ function formatMetaLine(bpm?: number, totalMin?: number): string {
 export default function IIWarmupSubscriberPage() {
   const [year, setYear] = useState(CURRENT_YEAR);
   const [month, setMonth] = useState(CURRENT_MONTH);
-  const [week, setWeek] = useState(1);
+  const [week, setWeek] = useState(getCurrentWeekOfMonth);
   const [playMode, setPlayMode] = useState<PlayMode | null>(null);
   const [viewState, setViewState] = useState<ViewState>('loading');
   const [completedModalOpen, setCompletedModalOpen] = useState(false);
@@ -44,7 +50,7 @@ export default function IIWarmupSubscriberPage() {
     [year, month, week]
   );
 
-  const { data: scheduleData, isLoading: scheduleLoading, isError: scheduleError } = useSubscriberSchedule(weekKey);
+  const { data: scheduleData, isLoading: scheduleLoading } = useSubscriberSchedule(weekKey);
   const challengeProps = useMemo(
     () => getChallengePropsFromPhases(scheduleData?.challengePhases ?? scheduleData?.phases) ?? {},
     [scheduleData?.challengePhases, scheduleData?.phases]
@@ -64,12 +70,12 @@ export default function IIWarmupSubscriberPage() {
       setViewState('loading');
       return;
     }
-    if (scheduleError || !isPublished || !hasPhases) {
+    if (!isPublished || !hasPhases) {
       setViewState('empty');
     } else {
       setViewState('ready');
     }
-  }, [scheduleLoading, scheduleError, isPublished, hasPhases, viewState]);
+  }, [scheduleLoading, isPublished, hasPhases, viewState]);
 
   const handleWeekChange = (payload: WeekSelectorChangePayload) => {
     setYear(payload.year);
