@@ -59,7 +59,7 @@ export default function AdminCurriculumPage() {
     if (error) {
       console.error('Error fetching curriculum:', error);
     } else if (data) {
-      const formattedData = data.map(item => ({
+      const formattedData = data.map((item: any) => ({
         ...item,
         expertTip: item.expert_tip,
         checkList: item.check_list,
@@ -77,7 +77,7 @@ export default function AdminCurriculumPage() {
   }, [supabase]);
 
   const filteredItems = useMemo(() => {
-    return items.filter(item => item.month === selectedMonth && item.week === selectedWeek);
+    return items.filter((item: CurriculumItem) => item.month === selectedMonth && item.week === selectedWeek);
   }, [items, selectedMonth, selectedWeek]);
 
   const currentTheme = MONTHLY_THEMES[selectedMonth] || { 
@@ -109,9 +109,9 @@ export default function AdminCurriculumPage() {
     const isInsta = newPost.url.includes('instagram.com');
     const type = isInsta ? 'instagram' : 'youtube';
     
-    const checkList = newPost.checkListText.split('\n').filter(t => t.trim() !== '');
-    const equipment = newPost.equipmentText.split('\n').filter(t => t.trim() !== '');
-    const steps = newPost.stepsText.split('\n').filter(t => t.trim() !== '');
+    const checkList = newPost.checkListText.split('\n').filter((t: string) => t.trim() !== '');
+    const equipment = newPost.equipmentText.split('\n').filter((t: string) => t.trim() !== '');
+    const steps = newPost.stepsText.split('\n').filter((t: string) => t.trim() !== '');
 
     const postData = {
       title: newPost.title, 
@@ -172,7 +172,7 @@ export default function AdminCurriculumPage() {
       }
 
       // 실제 삭제가 확인된 경우에만 UI 업데이트
-      setItems(prev => prev.filter(item => item.id !== id));
+      setItems(prev => prev.filter((item: CurriculumItem) => item.id !== id));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       alert('삭제 실패: ' + msg);
@@ -240,7 +240,7 @@ export default function AdminCurriculumPage() {
          ) : (
          <div className="space-y-6 w-full text-left min-w-0">
              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 w-full">
-                 {MONTHS.map((m) => (
+                 {MONTHS.map((m: number) => (
                      <button key={m} onClick={() => setSelectedMonth(m)}
                          className={`min-h-[48px] sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all border font-black text-sm sm:text-base touch-manipulation
                          ${selectedMonth === m ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
@@ -262,7 +262,7 @@ export default function AdminCurriculumPage() {
              </div>
 
              <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
-                 {WEEKS.map((w) => (
+                 {WEEKS.map((w: number) => (
                      <button key={w} onClick={() => setSelectedWeek(w)}
                          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all
                          ${selectedWeek === w ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
@@ -275,7 +275,7 @@ export default function AdminCurriculumPage() {
              <div className="w-full">
                  {filteredItems.length > 0 ? (
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         {filteredItems.map((item) => (
+                         {filteredItems.map((item: CurriculumItem) => (
                              <div key={item.id} className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer" onClick={() => openDetailModal(item)}>
                                  <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                      <button onClick={(e) => openEditModal(item, e)} className="p-2 bg-white/90 backdrop-blur rounded-full text-slate-600 hover:text-indigo-600 shadow-sm"><Edit2 size={16}/></button>
@@ -428,13 +428,13 @@ export default function AdminCurriculumPage() {
                 <div className="space-y-2 text-left">
                   <label className="text-xs font-black text-slate-400 uppercase text-left">Month</label>
                   <select className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={newPost.month} onChange={e => setNewPost({...newPost, month: Number(e.target.value)})}>
-                    {MONTHS.map(m => <option key={m} value={m}>{m}월</option>)}
+                    {MONTHS.map((m: number) => <option key={m} value={m}>{m}월</option>)}
                   </select>
                 </div>
                 <div className="space-y-2 text-left">
                   <label className="text-xs font-black text-slate-400 uppercase text-left">Week</label>
                   <select className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={newPost.week} onChange={e => setNewPost({...newPost, week: Number(e.target.value)})}>
-                    {WEEKS.map(w => <option key={w} value={w}>{w}주차</option>)}
+                    {WEEKS.map((w: number) => <option key={w} value={w}>{w}주차</option>)}
                   </select>
                 </div>
               </div>
