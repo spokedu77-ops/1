@@ -37,7 +37,7 @@ const STATUS_COLORS = {
 };
 
 export default function ClassManagementPage() {
-  const calendarRef = useRef<FullCalendar>(null);
+  const calendarRef = useRef<any>(null);
   const { filteredEvents, teacherList, fetchSessions, supabase, currentView, setCurrentView, filterTeacher, setFilterTeacher } = useClassManagement();
   
   const getYesterday = (base: Date = new Date()) => {
