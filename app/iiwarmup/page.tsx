@@ -18,14 +18,10 @@ import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
 import { ThinkPhaseWrapper } from '@/app/components/subscriber/ThinkPhaseWrapper';
 import { FlowFrame } from '@/app/components/subscriber/FlowFrame';
 
-const CURRENT_YEAR = new Date().getFullYear();
-const CURRENT_MONTH = new Date().getMonth() + 1;
-
-/** 이번 달 기준 오늘이 몇 주차인지 (1~5). 1–7일→1, 8–14→2, 15–21→3, 22–28→4, 29–31→5 */
-function getCurrentWeekOfMonth(): number {
-  const day = new Date().getDate();
-  return Math.min(5, Math.ceil(day / 7));
-}
+/** 사용자 페이지 고정: 2월 2주차만 노출 */
+const FIXED_YEAR = 2025;
+const FIXED_MONTH = 2;
+const FIXED_WEEK = 2;
 
 type ViewState = 'idle' | 'loading' | 'empty' | 'ready' | 'playing' | 'completed';
 
@@ -37,9 +33,9 @@ function formatMetaLine(bpm?: number, totalMin?: number): string {
 }
 
 export default function IIWarmupSubscriberPage() {
-  const [year, setYear] = useState(CURRENT_YEAR);
-  const [month, setMonth] = useState(CURRENT_MONTH);
-  const [week, setWeek] = useState(getCurrentWeekOfMonth);
+  const [year, setYear] = useState(FIXED_YEAR);
+  const [month, setMonth] = useState(FIXED_MONTH);
+  const [week, setWeek] = useState(FIXED_WEEK);
   const [playMode, setPlayMode] = useState<PlayMode | null>(null);
   const [viewState, setViewState] = useState<ViewState>('loading');
   const [completedModalOpen, setCompletedModalOpen] = useState(false);
@@ -121,13 +117,13 @@ export default function IIWarmupSubscriberPage() {
     [challengeProps.initialBpm]
   );
 
-  const hasPreviousWeek = week > 1 || month > 1 || year > CURRENT_YEAR;
+  const hasPreviousWeek = week > 1 || month > 1 || year > FIXED_YEAR;
   const goPreviousWeek = () => {
     if (week > 1) {
       handleWeekChange({ year, month, week: week - 1, label: `${year}년 ${month}월 · ${week - 1}주차` });
     } else if (month > 1) {
       handleWeekChange({ year, month: month - 1, week: 5, label: `${year}년 ${month - 1}월 · 5주차` });
-    } else if (year > CURRENT_YEAR) {
+    } else if (year > FIXED_YEAR) {
       handleWeekChange({ year: year - 1, month: 12, week: 5, label: `${year - 1}년 12월 · 5주차` });
     }
   };

@@ -84,6 +84,25 @@ export async function GET(
   const challengeBgmStartOffsetMs =
     typeof bgmRaw?.bgmStartOffsetMs === 'number' ? bgmRaw.bgmStartOffsetMs : 0;
 
+  const { data: row, error: scheduleError } = scheduleResult;
+  if (scheduleError && scheduleError.code !== 'PGRST116') {
+    return NextResponse.json({ error: scheduleError.message }, { status: 500 });
+  }
+  if (!row) {
+    const emptyPayload = {
+      program_snapshot: null,
+      phases: null,
+      challengePhases: null,
+      challengeBgmPath,
+      challengeBgmStartOffsetMs,
+      thinkPackByMonthAndWeek: null,
+    };
+    return NextResponse.json(emptyPayload, {
+      status: 200,
+      headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=120' },
+    });
+  }
+
   let thinkPackByMonthAndWeek: Record<number, Record<string, Think150PackState>> | null = null;
   const byMonth = (thinkPackResult.data?.assets_json as { byMonth?: Record<number, Record<string, Think150PackState>> } | null)?.byMonth;
   if (byMonth && typeof byMonth === 'object') {
@@ -97,25 +116,6 @@ export async function GET(
         week4: pathsToUrls(monthData.week4),
       };
     }
-  }
-
-  const { data: row, error: scheduleError } = scheduleResult;
-  if (scheduleError && scheduleError.code !== 'PGRST116') {
-    return NextResponse.json({ error: scheduleError.message }, { status: 500 });
-  }
-  if (!row) {
-    const emptyPayload = {
-      program_snapshot: null,
-      phases: null,
-      challengePhases: null,
-      challengeBgmPath,
-      challengeBgmStartOffsetMs,
-      thinkPackByMonthAndWeek: thinkPackByMonthAndWeek ?? null,
-    };
-    return NextResponse.json(emptyPayload, {
-      status: 200,
-      headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=120' },
-    });
   }
 
   const programId = row.program_id as string | null;
