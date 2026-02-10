@@ -6,6 +6,7 @@ import { Maximize, Minimize, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
 import { useChallengeBGM } from '@/app/lib/admin/hooks/useChallengeBGM';
+import { useChallengePrograms } from '@/app/lib/admin/hooks/useChallengePrograms';
 import { useDeleteChallengeProgram } from '@/app/lib/admin/hooks/useDeleteChallengeProgram';
 import { useUpsertChallengeProgram } from '@/app/lib/admin/hooks/useUpsertChallengeProgram';
 
@@ -15,6 +16,8 @@ export type BeatPreset = {
   bpm: number;
   level: number;
   grid: string[];
+  /** 1~4단계 그리드 전체 (있으면 스토어·구독자에 4단계 모두 반영) */
+  gridsByLevel?: Record<number, string[]>;
   notes: string;
 };
 
@@ -82,10 +85,40 @@ function WeekPresetSelector({
 function ChallengePageContent() {
   const searchParams = useSearchParams();
   const weekFromUrl = searchParams.get('week');
-  const { list: bgmList, selected: bgmPath, loading: bgmLoading, error: bgmError, upload: uploadBgm, remove: removeBgm, select: selectBgm } = useChallengeBGM();
+  const {
+    list: bgmList,
+    selected: bgmPath,
+    bgmStartOffsetMs,
+    setOffsetMs,
+    loading: bgmLoading,
+    error: bgmError,
+    upload: uploadBgm,
+    remove: removeBgm,
+    select: selectBgm,
+  } = useChallengeBGM();
   const bgmFileRef = useRef<HTMLInputElement>(null);
+  const { data: savedPrograms = [] } = useChallengePrograms();
 
   const [presets, setPresets] = useState<BeatPreset[]>(() => [...DEFAULT_PRESETS]);
+
+  useEffect(() => {
+    if (savedPrograms.length === 0) return;
+    const byWeek = new Map(savedPrograms.map((p) => [p.weekKey, p]));
+    const merge = (p: BeatPreset) => {
+      const saved = byWeek.get(p.weekKey);
+      if (!saved) return p;
+      const hasGrids = saved.gridsByLevel && typeof saved.gridsByLevel === 'object';
+      const hasGrid = saved.grid.length > 0;
+      if (!hasGrids && !hasGrid) return p;
+      const grid = saved.grid.length >= 8 ? saved.grid.slice(0, 8) : ([...saved.grid, ...Array(8 - saved.grid.length).fill('')].slice(0, 8) as string[]);
+      if (hasGrids) {
+        return { ...p, bpm: saved.bpm, level: saved.level, grid: saved.gridsByLevel![1] ?? grid, gridsByLevel: saved.gridsByLevel };
+      }
+      return { ...p, bpm: saved.bpm, level: saved.level, grid };
+    };
+    setPresets((prev) => prev.map(merge));
+    setPreset((prev) => merge(prev));
+  }, [savedPrograms]);
   const initialPreset = useMemo(() => {
     const found = presets.find((p) => p.weekKey === weekFromUrl);
     if (found) return found;
@@ -107,19 +140,18 @@ function ChallengePageContent() {
   }, [weekFromUrl, presets]);
 
   const [preset, setPreset] = useState<BeatPreset>(initialPreset);
-  const [soundOn, setSoundOn] = useState(true);
+  const [soundOn, setSoundOn] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const upsertChallenge = useUpsertChallengeProgram();
   const deleteChallenge = useDeleteChallengeProgram();
 
   const handlePresetChange = useCallback(
-    (data: { bpm: number; level: number; grid: string[] }) => {
+    (data: { bpm: number; level: number; grid: string[]; gridsByLevel?: Record<number, string[]> }) => {
+      const nextPreset = { ...preset, bpm: data.bpm, level: data.level, grid: data.grid, ...(data.gridsByLevel && { gridsByLevel: data.gridsByLevel }) };
       setPresets((prev) =>
-        prev.map((p) =>
-          p.weekKey === preset.weekKey ? { ...p, bpm: data.bpm, level: data.level, grid: data.grid } : p
-        )
+        prev.map((p) => (p.weekKey === preset.weekKey ? nextPreset : p))
       );
-      setPreset((prev) => ({ ...prev, bpm: data.bpm, level: data.level, grid: data.grid }));
+      setPreset(nextPreset);
       upsertChallenge.mutate(
         {
           weekKey: preset.weekKey,
@@ -127,6 +159,7 @@ function ChallengePageContent() {
           bpm: data.bpm,
           level: data.level,
           grid: data.grid,
+          ...(data.gridsByLevel && { gridsByLevel: data.gridsByLevel }),
         },
         {
           onSuccess: () => {
@@ -306,6 +339,21 @@ function ChallengePageContent() {
             </div>
           )}
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <label className="text-xs font-medium text-neutral-400">화면 오프셋 (음원에 맞추기)</label>
+          <input
+            type="number"
+            min={0}
+            step={50}
+            value={bgmStartOffsetMs}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (!Number.isNaN(v) && v >= 0) setOffsetMs(v);
+            }}
+            className="w-24 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-sm text-neutral-200"
+          />
+          <span className="text-xs text-neutral-500">ms (BGM 파일에서 첫 비트가 나오는 위치)</span>
+        </div>
       </section>
 
       <section className="rounded-xl bg-neutral-900/50 border border-neutral-800 px-4 py-3 space-y-2">
@@ -338,9 +386,11 @@ function ChallengePageContent() {
           allowEdit={true}
           soundOn={soundOn}
           bgmPath={bgmPath || undefined}
+          bgmStartOffsetMs={bgmStartOffsetMs}
           initialBpm={preset.bpm}
           initialLevel={preset.level}
           initialGrid={preset.grid}
+          initialLevelData={preset.gridsByLevel}
           onPresetChange={handlePresetChange}
         />
       </div>

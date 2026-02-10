@@ -146,7 +146,8 @@ export const DISPLAY_LEVELS = [1, 2, 0, 3, 0, 4, -1] as const;
 export const PHRASES = {
   welcome: '우주의 세계에 온 것을 환영해요.<br><span style="font-size:2.2rem;color:#60a5fa;">지금부터 화면을 따라 움직이세요</span>',
   lv1Guide: '<span style="color:#93c5fd;">LEVEL 1</span><br><span style="font-size:2.1rem;">왼쪽/가운데/오른쪽으로 점프하세요.</span>',
-  restBreathe: '잠시 숨을 고르세요<br><span style="font-size:2.2rem;color:#60a5fa;">들이마시고... 내쉬세요...</span>',
+  restBreathe:
+    '잠시 숨을 고르세요<br><span style="font-size:2.2rem;color:#60a5fa;">들이마시고... 내쉬세요...</span><br><span style="font-size:1.6rem;color:#94a3b8;margin-top:0.5rem;display:block;">잠깐 쉬면 다음 동작에 더 집중할 수 있어요.</span>',
   lv3Intro: '<span style="color:#ef4444;">LEVEL 3</span><br><span style="font-size:2rem;">다가오는 박스를 부수세요!<br><span style="font-size:4rem;">🥊</span></span>',
   lv4Intro: '<span style="color:#f59e0b;">LEVEL 4</span><br><span style="font-size:2rem;">우주선이 지나오면 머리를 숙이세요!<br><span style="font-size:3.5rem;">DUCK!</span></span>',
   ending: '<span style="color:#34d399;">수고했어요!</span><br><span style="font-size:2.2rem;color:#60a5fa;">👏👏👏</span>',

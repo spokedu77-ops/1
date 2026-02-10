@@ -46,22 +46,35 @@ export function SchedulerSlotCard({
     setHasChanges(true);
   };
 
+  const savePayload = (published: boolean) => ({
+    week_key: weekKey,
+    program_id: programId,
+    asset_pack_id: 'iiwarmup_think_default',
+    program_snapshot: { think150: true, week, month, audience: 'elementary' },
+    is_published: published,
+    programTitle: programs.find((p) => p.id === programId)?.title,
+  });
+
   const handlePublishToggle = () => {
-    setIsPublished((p) => !p);
-    setHasChanges(true);
+    const next = !isPublished;
+    setIsPublished(next);
+    if (programId) {
+      onSave(savePayload(next)).then(
+        () => setHasChanges(false),
+        (err) => {
+          setIsPublished((prev) => !prev);
+          console.error('Scheduler slot save failed:', err);
+        }
+      );
+    } else {
+      setHasChanges(true);
+    }
   };
 
   const handleSave = async () => {
     if (!programId) return;
     try {
-      await onSave({
-        week_key: weekKey,
-        program_id: programId,
-        asset_pack_id: 'iiwarmup_think_default',
-        program_snapshot: { think150: true, week, month, audience: 'elementary' },
-        is_published: isPublished,
-        programTitle: programs.find((p) => p.id === programId)?.title,
-      });
+      await onSave(savePayload(isPublished));
       setHasChanges(false);
     } catch (err) {
       let msg: string;
@@ -79,10 +92,11 @@ export function SchedulerSlotCard({
     }
   };
 
+  const isPublishedDisplay = row?.is_published ?? false;
   return (
     <div
       className={`rounded-lg border p-4 ${
-        row?.is_published
+        isPublishedDisplay
           ? 'border-emerald-600/40 bg-emerald-950/20'
           : 'border-neutral-700/80 bg-neutral-800/50'
       }`}
@@ -91,14 +105,18 @@ export function SchedulerSlotCard({
         <span className="font-mono text-sm font-semibold text-neutral-300">
           {week}주차
         </span>
-        {row?.is_published && (
-          <span className="rounded bg-emerald-600/30 px-1.5 py-0.5 text-xs text-emerald-400">
-            Published
-          </span>
-        )}
+        <span
+          className={`rounded px-2 py-0.5 text-xs font-medium ${
+            isPublishedDisplay
+              ? 'bg-emerald-600/40 text-emerald-300'
+              : 'bg-neutral-700/80 text-neutral-500'
+          }`}
+        >
+          {isPublishedDisplay ? '공개' : '미공개'}
+        </span>
       </div>
       <select
-        className="mb-3 w-full rounded border border-neutral-600 bg-neutral-900 px-3 py-2 text-sm"
+        className="mb-2 w-full rounded border border-neutral-600 bg-neutral-900 px-3 py-2 text-sm"
         value={programId}
         onChange={handleProgramChange}
       >
@@ -109,13 +127,21 @@ export function SchedulerSlotCard({
           </option>
         ))}
       </select>
+      {programId ? (
+        <p className="mb-3 text-xs text-neutral-400" title={programId}>
+          선택: {programs.find((p) => p.id === programId)?.title ?? row?.programTitle ?? programId}
+        </p>
+      ) : (
+        <p className="mb-3 text-xs text-neutral-500">선택된 프로그램 없음</p>
+      )}
       <div className="flex items-center justify-between gap-2">
         <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-400">
           <input
             type="checkbox"
             checked={isPublished}
             onChange={handlePublishToggle}
-            className="rounded border-neutral-600"
+            disabled={isSaving}
+            className="rounded border-neutral-600 disabled:opacity-60"
           />
           Published
         </label>

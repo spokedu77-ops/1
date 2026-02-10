@@ -22,7 +22,7 @@ import type {
 import { SeededRNG } from './seededRng';
 import { computeStageCCueSpec } from './weekRulesEngine';
 import type { PADColor } from '@/app/lib/admin/constants/padGrid';
-import { getImageUrl, getPackForWeek } from './think150AssetLoader';
+import { getImageUrl, getImageUrlAnySet, getPackForWeek } from './think150AssetLoader';
 
 const COLORS: PADColor[] = ['red', 'green', 'yellow', 'blue'];
 
@@ -56,17 +56,21 @@ function getStageCLayout(week: 1 | 2 | 3 | 4, set: 'setA' | 'setB', slotCount: n
 }
 
 function getRestLabel(week: 1 | 2 | 3 | 4, restId: 'rest1' | 'rest2' | 'rest3'): string {
-  if (restId === 'rest1') return '잘하고 있어요!';
-  if (restId === 'rest3') return '잠시 후 마무리';
+  if (restId === 'rest1') {
+    return '잘하고 있어요! 색을 보며 발을 옮기면 반응력과 균형 감각이 좋아져요.';
+  }
+  if (restId === 'rest3') {
+    return '잠시 후 마무리해요. 지금까지 참여해 준 모습 정말 훌륭해요!';
+  }
   switch (week) {
     case 1:
-      return '화면에 나온 색을 보이는 개수만큼 밟으세요!';
+      return '화면에 나온 색을 보이는 개수만큼 밟으세요! 한 번에 하나씩 집중하면 더 정확해요.';
     case 2:
-      return '화면에 나온 두 가지 색을 밟으세요!';
+      return '화면에 나온 두 가지 색을 밟으세요! 왼발·오른발을 같이 쓰면 두뇌 활성화에 도움이 돼요.';
     case 3:
-      return '화면에 나온 색의 대각선 색을 밟으세요!';
+      return '화면에 나온 색의 대각선 색을 밟으세요! 공간 인지력이 커지는 시간이에요.';
     case 4:
-      return '화면에 나온 색 순서를 기억했다가 빈 화면에서 밟으세요!';
+      return '화면에 나온 색 순서를 기억했다가 빈 화면에서 밟으세요! 기억력과 집중력이 쑥쑥 자라요.';
     default:
       return '';
   }
@@ -233,16 +237,10 @@ export function buildThink150Timeline(config: Think150SchedulerConfig): ThinkTim
     const duration = seg.endMs - seg.startMs;
 
     if (seg.phase === 'intro') {
-      const introSubtitleByWeek: Record<number, string> = {
-        1: '한 가지 색이 나오면 그 색의 패드를 밟아요.',
-        2: '두 가지 색이 나오면 왼쪽은 왼발, 오른쪽은 오른발로 밟아요.',
-        3: 'ANTI (대각선) — 보이는 색의 대각선으로 이동해요.',
-        4: '색 순서를 기억했다가 빈 화면에서 같은 순서로 밟아요.',
-      };
       const payload: IntroPayload = {
         type: 'intro',
         week: config.week,
-        subtitle: introSubtitleByWeek[config.week] ?? '화면에 나온 색을 보고 같은 색의 패드를 밟아 주세요.',
+        subtitle: '',
       };
       events.push({
         t0: seg.startMs,
@@ -299,7 +297,7 @@ export function buildThink150Timeline(config: Think150SchedulerConfig): ThinkTim
         lastColor = color;
         const set = 'setA';
         const useImage = useImageRatio === 1 ? true : useImageRatio === 0 ? false : idx >= colorOnlyCount;
-        const imageUrl = useImage ? getImageUrl(pack, set, color) : '';
+        const imageUrl = useImage ? getImageUrlAnySet(pack, color) : '';
         const payload: StageABPayload = {
           type: seg.phase,
           color,
@@ -337,8 +335,9 @@ export function buildThink150Timeline(config: Think150SchedulerConfig): ThinkTim
       } else {
         const duration = seg.endMs - seg.startMs;
         const isWeek2 = config.week === 2;
-        const blankMs = isWeek2 ? cueBlankMs * 1.5 : cueBlankMs;
-        const pairDuration = cueBlankMs + blankMs;
+        const cueMs = isWeek2 ? cueBlankMs * 1.5 : cueBlankMs;
+        const blankMs = isWeek2 ? cueBlankMs * 2 : cueBlankMs;
+        const pairDuration = cueMs + blankMs;
 
         let t = seg.startMs;
         let idx = 0;
@@ -359,7 +358,7 @@ export function buildThink150Timeline(config: Think150SchedulerConfig): ThinkTim
 
           const useImages = (() => {
             if (config.week === 1) return false;
-            if (config.week === 2) return set === 'setB';
+            if (config.week === 2) return false;
             if (config.week === 3) return false;
             return false;
           })();
@@ -383,8 +382,8 @@ export function buildThink150Timeline(config: Think150SchedulerConfig): ThinkTim
             }),
           };
 
-          events.push({ t0: t, t1: t + cueBlankMs, phase: 'stageC', frame: 'cue', payload });
-          events.push({ t0: t + cueBlankMs, t1: t + pairDuration, phase: 'stageC', frame: 'blank', payload });
+          events.push({ t0: t, t1: t + cueMs, phase: 'stageC', frame: 'cue', payload });
+          events.push({ t0: t + cueMs, t1: t + pairDuration, phase: 'stageC', frame: 'blank', payload });
           t += pairDuration;
           idx++;
         }

@@ -21,7 +21,7 @@ export default function SchedulerPage() {
   const [openMonth, setOpenMonth] = useState<number | null>(CURRENT_MONTH);
 
   const monthToFetch = openMonth ?? CURRENT_MONTH;
-  const { data: scheduleRows } = useRotationScheduleMonth({
+  const { data: scheduleRows, refetch: refetchSchedule } = useRotationScheduleMonth({
     year,
     month: monthToFetch,
     prefetchNeighbor: true,
@@ -77,6 +77,9 @@ export default function SchedulerPage() {
           <p className="mt-1 text-xs text-neutral-500">
             배정 방법: 각 주차 슬롯에서 드롭다운으로 프로그램 선택 후 저장. <strong>Published</strong>로 체크한 주차만 구독자 페이지에 반영됩니다. Think 150이 없으면 <strong>Think Studio</strong>에서 &quot;Think 150 기본 생성&quot; 후 주차별 저장하세요.
           </p>
+          <p className="mt-1 text-xs text-neutral-500">
+            이 주차에 다른 주차 챌린지를 쓰려면 드롭다운에서 해당 챌린지(예: 챌린지 2026-01-W1)를 선택한 뒤 <strong>저장</strong>·<strong>Published</strong> 하세요. 구독자 화면에는 선택한 그 챌린지가 나옵니다.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <select
@@ -107,7 +110,10 @@ export default function SchedulerPage() {
               programs={programs}
               isOpen={isOpen}
               onToggle={() => setOpenMonth(isOpen ? null : month)}
-              onSave={saveSchedule.mutateAsync}
+              onSave={async (vars) => {
+                await saveSchedule.mutateAsync(vars);
+                await refetchSchedule();
+              }}
               isSaving={saveSchedule.isPending}
             />
           );

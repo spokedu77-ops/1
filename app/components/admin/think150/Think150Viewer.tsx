@@ -30,15 +30,10 @@ export function Think150Viewer({ event, fullscreen = false }: Think150ViewerProp
     }
 
     if (event.phase === 'intro') {
-      const p = event.payload as { type: 'intro'; week: number; subtitle?: string } | undefined;
-      const subtitle = p?.subtitle ?? '화면에 나온 색을 보고 같은 색의 패드를 밟아 주세요.';
       return (
         <div className="flex h-full w-full flex-1 flex-col items-center justify-center bg-gradient-to-b from-neutral-900 to-neutral-950 p-8 text-center">
           <h1 className="text-5xl font-black tracking-tight text-cyan-400 md:text-6xl">THINK</h1>
           <p className="mt-4 text-xl text-neutral-400">생각하기</p>
-          <p className="mt-6 max-w-md rounded-2xl bg-cyan-500/10 px-6 py-4 text-base font-medium text-cyan-300">
-            {subtitle}
-          </p>
         </div>
       );
     }
@@ -55,8 +50,9 @@ export function Think150Viewer({ event, fullscreen = false }: Think150ViewerProp
 
     if (event.phase === 'stageA' && event.payload?.type === 'stageA') {
       const p = event.payload;
+      const useWhiteBg = event.frame === 'cue' && !!p.imageUrl;
       return (
-        <div className="h-full min-h-[240px] w-full flex-1">
+        <div className={`h-full min-h-[240px] w-full flex-1 ${useWhiteBg ? 'bg-white' : ''}`}>
           <StageAQuad
           activeColor={event.frame === 'cue' ? p.color : null}
           imageUrl={p.imageUrl}
@@ -68,8 +64,9 @@ export function Think150Viewer({ event, fullscreen = false }: Think150ViewerProp
 
     if (event.phase === 'stageB' && event.payload?.type === 'stageB') {
       const p = event.payload;
+      const useWhiteBg = event.frame === 'cue' && !!p.imageUrl;
       return (
-        <div className="h-full min-h-[240px] w-full flex-1">
+        <div className={`h-full min-h-[240px] w-full flex-1 ${useWhiteBg ? 'bg-white' : ''}`}>
           <StageBFull
             color={event.frame === 'cue' ? p.color : null}
             imageUrl={p.imageUrl}
@@ -81,8 +78,10 @@ export function Think150Viewer({ event, fullscreen = false }: Think150ViewerProp
 
     if (event.phase === 'stageC' && event.payload?.type === 'stageC') {
       const p = event.payload;
+      const hasImages = p.images?.some((u) => !!u?.length);
+      const useWhiteBg = event.frame === 'cue' && !!hasImages;
       return (
-        <div className="h-full min-h-[240px] w-full flex-1">
+        <div className={`h-full min-h-[240px] w-full flex-1 ${useWhiteBg ? 'bg-white' : ''}`}>
           <StageCMultiPanel
             slotCount={p.slotCount}
             slotColors={p.slotColors}

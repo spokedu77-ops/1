@@ -32,10 +32,11 @@ export function stopChallengeBGM(): void {
 
 /**
  * 챌린지 BGM 재생 (Storage 경로: audio/challenge/bgm/xxx.mp3)
+ * - startOffsetMs: BGM 파일에서 재생을 시작할 위치(ms). 메타데이터 로드 후 seek 한 다음 재생해 화면 비트와 동기화.
  * - BGM이 durationMs보다 짧으면: loop=true 로 끝까지 반복 후 durationMs에 정지.
- * - BGM이 더 길면: durationMs 시점에 재생 중단(끝나는 시점에 맞춰 잘림).
+ * - BGM이 더 길면: durationMs 시점에 재생 중단.
  * @param bgmPath Storage 상대 경로
- * @param startOffsetMs 재생 시작 위치(ms)
+ * @param startOffsetMs 재생 시작 위치(ms). 음원 첫 비트 위치에 맞추면 화면과 맞음.
  * @param durationMs 재생 길이(ms). 이 시간 후 정지. 0이면 무한 루프.
  */
 export async function startChallengeBGM(
@@ -49,16 +50,29 @@ export async function startChallengeBGM(
     audio = new Audio(url);
     audio.volume = BGM_GAIN;
     audio.loop = true;
-    if (startOffsetMs > 0) {
-      audio.addEventListener(
-        'loadedmetadata',
-        () => {
-          if (audio) audio.currentTime = startOffsetMs / 1000;
-        },
-        { once: true }
-      );
-    }
-    await audio.play();
+
+    await new Promise<void>((resolve, reject) => {
+      if (!audio) {
+        resolve();
+        return;
+      }
+      const startPlay = () => {
+        if (!audio) {
+          resolve();
+          return;
+        }
+        if (startOffsetMs > 0) {
+          audio.currentTime = startOffsetMs / 1000;
+        }
+        audio.play().then(resolve).catch(reject);
+      };
+      if (audio.readyState >= 1) {
+        startPlay();
+      } else {
+        audio.addEventListener('loadedmetadata', startPlay, { once: true });
+        audio.addEventListener('error', () => reject(new Error('BGM load failed')), { once: true });
+      }
+    });
 
     if (durationMs > 0) {
       clearTimeouts();

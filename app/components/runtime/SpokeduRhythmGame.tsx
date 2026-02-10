@@ -25,11 +25,15 @@ export interface SpokeduRhythmGameProps {
   soundOn?: boolean;
   allowEdit?: boolean;
   bgmPath?: string;
+  /** BGM 파일 내 첫 비트 위치(ms). 이만큼 건너뛰고 재생해 화면 비트와 음원 동기화 */
+  bgmStartOffsetMs?: number;
   initialBpm?: number;
   initialLevel?: number;
   initialGrid?: string[];
+  /** 1~4단계 그리드 전체 (있으면 initialLevel/initialGrid 대신 사용) */
+  initialLevelData?: Record<number, string[]>;
   onEnd?: () => void;
-  onPresetChange?: (data: { bpm: number; level: number; grid: string[] }) => void;
+  onPresetChange?: (data: { bpm: number; level: number; grid: string[]; gridsByLevel?: Record<number, string[]> }) => void;
   /** true면 BPM 조절 불가(주차 픽스·BGM 비트 맞출 때 사용) */
   lockBpm?: boolean;
   /** true면 마운트 후 재생 버튼 없이 바로 카운트다운·플레이 시작 (구독자 전체 재생 등) */
@@ -37,33 +41,29 @@ export interface SpokeduRhythmGameProps {
 }
 
 const MAX_LEVELS = 4;
-const ROUNDS_PER_LEVEL = 4;
+const ROUNDS_PER_LEVEL = 5;
 const BEATS_PER_PHASE = 8;
 const BEATS_PER_ROUND = 16;
-const bpmOptions = [60, 80, 100, 120, 150];
+const bpmOptions = [80, 100, 120, 150, 160, 180];
 const SCHEDULE_AHEAD_TIME = 0.1;
 const COUNTDOWN_BEATS = 4;
 
+/** 챌린지 레벨 간 쉬는 시간(ms). 레벨 완료 후 다음 단계 카운트다운 전 전환 화면 노출 시간. */
+const CHALLENGE_TRANSITION_MS = 3350;
+
 /**
- * 레벨 완료 → 다음 beat 0까지 = 전환(ms) + 50ms + 0.1s + 카운트다운 4비트.
- * 이 총 시간이 비트 주기의 정수배가 되도록 전환 시간 반환.
- * 메뉴 BPM별 결과: 60→2850ms, 80→2850ms, 100→2850ms, 120→2850ms, 150→3050ms
+ * 레벨 완료 → 다음 beat 0까지 전환 화면을 CHALLENGE_TRANSITION_MS 동안 표시.
  */
-function getTransitionDurationMs(bpm: number): number {
-  const beatMs = 60000 / bpm;
-  const fixedMs = 50 + 100 + COUNTDOWN_BEATS * beatMs;
-  const targetMs = 3000;
-  const n = Math.round((targetMs + fixedMs) / beatMs);
-  const duration = Math.max(0, n * beatMs - fixedMs);
-  return Math.round(duration);
+function getTransitionDurationMs(_bpm: number): number {
+  return CHALLENGE_TRANSITION_MS;
 }
 
-/** 인트로(카운트다운) + 4단계 플레이 + 3회 전환 + 3회 단계별 카운트다운 + 아웃트로(0.6s) 총 재생 시간(초). 150 BPM 기준 약 119초. */
+/** 인트로(카운트다운) + 4단계 플레이 + 3회 전환(쉬는시간) + 3회 단계별 카운트다운 + 아웃트로(0.6s) 총 재생 시간(초). */
 function getTotalChallengeDurationSec(bpm: number): number {
   const beatSec = 60 / bpm;
   const countdownSec = 0.05 + 0.1 + COUNTDOWN_BEATS * beatSec;
   const levelBeats = MAX_LEVELS * ROUNDS_PER_LEVEL * BEATS_PER_ROUND;
-  const transitionSec = getTransitionDurationMs(bpm) / 1000;
+  const transitionSec = CHALLENGE_TRANSITION_MS / 1000;
   return (
     countdownSec +
     levelBeats * beatSec +
@@ -73,7 +73,7 @@ function getTotalChallengeDurationSec(bpm: number): number {
   );
 }
 
-/** 각 단계 첫 페이지 = 룰(8칸 구성). 2~4라운드는 이 배열을 셔플만 함. */
+/** 각 단계 첫 페이지 = 룰(8칸 구성). 2~5라운드는 이 배열을 셔플만 함. */
 const defaultLevels: Record<number, string[]> = {
   1: ['앞', '뒤', '앞', '뒤', '앞', '뒤', '앞', '뒤'], // 1단계: 앞/뒤만
   2: ['앞', '뒤', '앞', '뒤', '앞', '뒤', '오른쪽', '왼쪽'], // 2단계: 앞/뒤 6, 오른쪽/왼쪽 2
@@ -82,12 +82,14 @@ const defaultLevels: Record<number, string[]> = {
 };
 
 export function SpokeduRhythmGame({
-  soundOn = true,
+  soundOn = false,
   allowEdit = true,
   bgmPath,
+  bgmStartOffsetMs = 0,
   initialBpm,
   initialLevel,
   initialGrid,
+  initialLevelData,
   onEnd,
   onPresetChange,
   lockBpm = false,
@@ -123,14 +125,24 @@ export function SpokeduRhythmGame({
 
   const [levelData, setLevelData] = useState<Record<number, string[]>>(() => {
     const base = { ...defaultLevels };
-    if (initialGrid != null && initialLevel != null) {
+    if (initialLevelData && typeof initialLevelData === 'object') {
+      for (let lv = 1; lv <= MAX_LEVELS; lv++) {
+        if (Array.isArray(initialLevelData[lv]) && initialLevelData[lv].length > 0) {
+          base[lv] = initialLevelData[lv].slice(0, 8);
+        }
+      }
+    } else if (initialGrid != null && initialLevel != null) {
       base[initialLevel] = [...initialGrid];
     }
     return base;
   });
-  const [shuffledGrid, setShuffledGrid] = useState<string[]>(() => [
-    ...(initialGrid ?? defaultLevels[initialLevel ?? 1] ?? defaultLevels[1]),
-  ]);
+  const [shuffledGrid, setShuffledGrid] = useState<string[]>(() => {
+    const firstGrid =
+      initialLevelData && Array.isArray(initialLevelData[1]) && initialLevelData[1].length > 0
+        ? initialLevelData[1]
+        : initialGrid ?? defaultLevels[initialLevel ?? 1] ?? defaultLevels[1];
+    return [...firstGrid];
+  });
 
   const currentLevelRef = useRef(currentLevel);
   const levelDataRef = useRef(levelData);
@@ -160,7 +172,19 @@ export function SpokeduRhythmGame({
     if (initialBpm != null) setBpm(initialBpm);
     if (initialLevel != null)
       setCurrentLevel(Math.min(MAX_LEVELS, Math.max(1, initialLevel)));
-    if (initialGrid != null && initialLevel != null) {
+    if (initialLevelData && typeof initialLevelData === 'object') {
+      setLevelData((prev) => {
+        const next = { ...prev };
+        for (let lv = 1; lv <= MAX_LEVELS; lv++) {
+          if (Array.isArray(initialLevelData[lv]) && initialLevelData[lv].length > 0) {
+            next[lv] = initialLevelData[lv].slice(0, 8);
+          }
+        }
+        return next;
+      });
+      const first = initialLevelData[1];
+      if (Array.isArray(first) && first.length > 0) setShuffledGrid([...first]);
+    } else if (initialGrid != null && initialLevel != null) {
       setLevelData((prev) => ({ ...prev, [initialLevel]: initialGrid }));
       setShuffledGrid([...initialGrid]);
     }
@@ -178,7 +202,7 @@ export function SpokeduRhythmGame({
     currentBeatIndexRef.current = 0;
     levelRoundCountRef.current = 1;
     isFinishingRef.current = false;
-  }, [initialBpm, initialLevel, initialGrid]);
+  }, [initialBpm, initialLevel, initialGrid, initialLevelData]);
 
   useEffect(() => {
     currentLevelRef.current = currentLevel;
@@ -420,38 +444,7 @@ export function SpokeduRhythmGame({
     startCountdownRef.current = startCountdown;
   }, [startCountdown]);
 
-  // autoStart: 구독자 전체/개별 재생 시 재생 버튼 없이 바로 시작
-  useEffect(() => {
-    if (!autoStart || hasAutoStartedRef.current) return;
-    hasAutoStartedRef.current = true;
-    const cancelled = { current: false };
-    const run = async () => {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!Ctx) return;
-      if (!audioContextRef.current) audioContextRef.current = new Ctx();
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
-      }
-      if (cancelled.current) return;
-      setIsPlaying(true);
-      runIdRef.current++;
-      levelRoundCountRef.current = 1;
-      setRoundInLevel(1);
-      setTotalBeatsPlayed(0);
-      isFinishingRef.current = false;
-      setShuffledGrid(shuffleArray(levelData[1] ?? defaultLevels[1]));
-      if (bgmPath) {
-        const totalSec = getTotalChallengeDurationSec(bpm);
-        startChallengeBGM(bgmPath, 0, totalSec * 1000).catch(() => {});
-      }
-      startCountdownRef.current();
-    };
-    const t = setTimeout(run, 120);
-    return () => {
-      cancelled.current = true;
-      clearTimeout(t);
-    };
-  }, [autoStart, levelData, bpm, bgmPath, shuffleArray]);
+  // autoStart는 더 이상 사용하지 않음 - 사용자가 직접 재생 버튼 클릭
 
   useEffect(() => {
     return () => {
@@ -526,7 +519,7 @@ export function SpokeduRhythmGame({
         setShuffledGrid(shuffleArray(levelData[1] ?? defaultLevels[1]));
         if (bgmPath) {
           const totalSec = getTotalChallengeDurationSec(bpm);
-          startChallengeBGM(bgmPath, 0, totalSec * 1000).catch(() => {});
+          startChallengeBGM(bgmPath, bgmStartOffsetMs, totalSec * 1000).catch(() => {});
         }
         startCountdown();
       } else {
@@ -551,6 +544,7 @@ export function SpokeduRhythmGame({
     startCountdown,
     scheduler,
     bgmPath,
+    bgmStartOffsetMs,
     bpm,
     levelData,
     shuffleArray,
@@ -597,6 +591,7 @@ export function SpokeduRhythmGame({
             return { ...prev, [currentLevel]: newWords };
           });
           setUploadTargetIndex(null);
+          event.target.value = '';
         };
         reader.readAsDataURL(file);
       }
@@ -869,7 +864,7 @@ export function SpokeduRhythmGame({
                     <img
                       src={content}
                       alt="grid-item"
-                      className={`w-full h-full object-cover ${effectiveEditing ? 'opacity-50' : ''}`}
+                      className={`w-full h-full object-contain ${effectiveEditing ? 'opacity-50' : ''}`}
                     />
                   ) : effectiveEditing ? (
                     <input
@@ -951,19 +946,19 @@ export function SpokeduRhythmGame({
                     ? 'bg-gray-200 text-gray-500 cursor-pointer hover:bg-gray-300'
                     : isPlaying
                       ? 'bg-red-500 text-white'
-                      : 'bg-green-500 text-white'
-                }
-                ${isTransitioning ? 'opacity-50 cursor-not-allowed' : ''}
-              `}
-            >
-              {isFinished ? (
-                <RefreshCw size={28} />
-              ) : isPlaying ? (
-                <Pause size={28} fill="currentColor" />
-              ) : (
-                <Play size={28} fill="currentColor" className="ml-1" />
-              )}
-            </button>
+                        : 'bg-green-500 text-white'
+                  }
+                  ${isTransitioning ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                {isFinished ? (
+                  <RefreshCw size={28} />
+                ) : isPlaying ? (
+                  <Pause size={28} fill="currentColor" />
+                ) : (
+                  <Play size={28} fill="currentColor" className="ml-1" />
+                )}
+              </button>
 
             <button
               onClick={resetGame}
@@ -1045,13 +1040,20 @@ export function SpokeduRhythmGame({
           {allowEdit && onPresetChange && (
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                const gridsByLevel: Record<number, string[]> = {
+                  1: (levelData[1] ?? defaultLevels[1]).slice(0, 8),
+                  2: (levelData[2] ?? defaultLevels[2]).slice(0, 8),
+                  3: (levelData[3] ?? defaultLevels[3]).slice(0, 8),
+                  4: (levelData[4] ?? defaultLevels[4]).slice(0, 8),
+                };
                 onPresetChange({
                   bpm,
                   level: currentLevel,
                   grid: (levelData[currentLevel] ?? defaultLevels[currentLevel]).slice(0, 8),
-                })
-              }
+                  gridsByLevel,
+                });
+              }}
               disabled={isPlaying}
               className="flex items-center gap-2 px-4 py-2 rounded-xl font-body font-bold text-sm bg-amber-500/20 text-amber-700 border-2 border-amber-400/50 hover:bg-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
             >

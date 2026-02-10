@@ -47,6 +47,8 @@ export interface UfoEntity {
 export interface ObstacleManagerCallbacks {
   onFlash?: () => void;
   onCameraTilt?: (amount: number) => void;
+  /** 박스 타격 시 position 기반 카메라 흔들림 (기존 flash/tilt와 별도) */
+  onCameraShake?: (intensity: number, durationMs: number) => void;
   onPunch?: () => void;
   onCoin?: () => void;
   onShowInstruction?: (text: string, colorClass?: string, ms?: number) => void;
@@ -216,6 +218,7 @@ export class ObstacleManager {
 
     this.callbacks.onFlash?.();
     this.callbacks.onCameraTilt?.(Math.random() > 0.5 ? 0.2 : -0.2);
+    this.callbacks.onCameraShake?.(0.18, 120);
     this.callbacks.onPunch?.();
     if (currentLevelNum === 3) {
       this.callbacks.onShowInstruction?.('PUNCH!', 'text-red-400', 220);

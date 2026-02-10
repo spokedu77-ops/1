@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildThink150Timeline,
   preloadThinkPack,
+  preloadThinkPackByMonth,
   type Think150Config,
   type ThinkTimelineEvent,
 } from '@/app/lib/admin/engines/think150';
@@ -19,6 +20,7 @@ import { useThinkBGM } from '@/app/lib/admin/hooks/useThinkBGM';
 import { Think150Viewer } from '@/app/components/admin/think150/Think150Viewer';
 import { Think150ProgressBar } from '@/app/components/admin/think150/Think150ProgressBar';
 import { parseWeekKey } from '@/app/lib/admin/scheduler/dragAndDrop';
+import type { ThinkPackByMonthAndWeek } from '@/app/lib/admin/engines/think150/types';
 
 const TOTAL_MS = 150000;
 
@@ -34,14 +36,24 @@ export interface ThinkPhaseWrapperProps {
   onEnd: () => void;
   /** 스케줄러에서 퍼블리시된 Think 설정 (week, month, audience) */
   scheduleSnapshot?: { think150?: boolean; week?: number; month?: number; audience?: string } | null;
+  /** API에서 내려준 월별×주차별 Think 이미지 pack (구독자 이미지 노출용) */
+  thinkPackByMonthAndWeek?: ThinkPackByMonthAndWeek | null;
+  /** 현재 월 (1–12). weekKey 파싱값 또는 선택 월 */
+  month?: number;
 }
 
-export function ThinkPhaseWrapper({ weekKey, onEnd, scheduleSnapshot }: ThinkPhaseWrapperProps) {
+export function ThinkPhaseWrapper({
+  weekKey,
+  onEnd,
+  scheduleSnapshot,
+  thinkPackByMonthAndWeek,
+  month: monthProp,
+}: ThinkPhaseWrapperProps) {
   const parsed = parseWeekKey(weekKey);
   const weekFromKey = (parsed?.week ?? 1) as 1 | 2 | 3 | 4;
   const week = (scheduleSnapshot?.week != null ? scheduleSnapshot.week : weekFromKey) as 1 | 2 | 3 | 4;
   const audience = (scheduleSnapshot?.audience as Think150Config['audience']) ?? 'elementary';
-  const month = scheduleSnapshot?.month;
+  const month = scheduleSnapshot?.month ?? monthProp ?? parsed?.month;
   const { selected: bgmPath } = useThinkBGM();
   const [seed] = useState(() => Date.now());
 
@@ -51,10 +63,11 @@ export function ThinkPhaseWrapper({ weekKey, onEnd, scheduleSnapshot }: ThinkPha
       week,
       ...(month != null && { month }),
       seed,
-      thinkPack: MOCK_THINK_PACK,
+      thinkPack: thinkPackByMonthAndWeek ? undefined : MOCK_THINK_PACK,
+      thinkPackByMonthAndWeek: thinkPackByMonthAndWeek ?? undefined,
       bgmPath: bgmPath || undefined,
     }),
-    [audience, week, month, bgmPath, seed]
+    [audience, week, month, thinkPackByMonthAndWeek, bgmPath, seed]
   );
 
   const timeline = useMemo(() => buildThink150Timeline(config), [config]);
@@ -69,8 +82,12 @@ export function ThinkPhaseWrapper({ weekKey, onEnd, scheduleSnapshot }: ThinkPha
   const event = findCurrentEvent(timeline, currentMs);
 
   useEffect(() => {
-    preloadThinkPack(config.thinkPack!).catch(console.warn);
-  }, [config.thinkPack]);
+    if (config.thinkPackByMonthAndWeek && config.month != null) {
+      preloadThinkPackByMonth(config.thinkPackByMonthAndWeek, config.month).catch(console.warn);
+    } else if (config.thinkPack) {
+      preloadThinkPack(config.thinkPack).catch(console.warn);
+    }
+  }, [config.thinkPack, config.thinkPackByMonthAndWeek, config.month]);
 
   useEffect(() => {
     if (!playing) return;

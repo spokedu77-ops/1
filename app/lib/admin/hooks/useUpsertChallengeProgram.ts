@@ -14,6 +14,8 @@ export interface UpsertChallengePayload {
   bpm: number;
   level: number;
   grid: string[];
+  /** 1~4단계 그리드 전체 (있으면 저장·구독자에 4단계 모두 반영) */
+  gridsByLevel?: Record<number, string[]>;
 }
 
 const CHALLENGE_DURATION_SEC = 120;
@@ -32,6 +34,7 @@ export function useUpsertChallengeProgram() {
           bpm: payload.bpm,
           level: payload.level,
           grid: payload.grid,
+          ...(payload.gridsByLevel && { gridsByLevel: payload.gridsByLevel }),
         },
       ];
       const { error } = await supabase.from('warmup_programs_composite').upsert(
@@ -49,6 +52,7 @@ export function useUpsertChallengeProgram() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['warmup-programs-list'] });
+      queryClient.invalidateQueries({ queryKey: ['challenge-programs'] });
     },
   });
 }

@@ -13,6 +13,12 @@ export function getImageUrl(pack: ThinkPackSets | undefined, set: 'setA' | 'setB
   return pack[set][color] ?? '';
 }
 
+/** setA 우선, 없으면 setB — pack에 있는 이미지가 있으면 그걸 사용 (Stage A/B 공통) */
+export function getImageUrlAnySet(pack: ThinkPackSets | undefined, color: PADColor): string {
+  if (!pack) return '';
+  return pack.setA[color] ?? pack.setB[color] ?? '';
+}
+
 /** config에서 현재 week에 해당하는 pack 반환 (1주차=undefined) */
 export function getPackForWeek(
   week: 1 | 2 | 3 | 4,

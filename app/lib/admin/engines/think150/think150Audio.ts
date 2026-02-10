@@ -289,9 +289,8 @@ export function scheduleThink150Sounds(
     const when = baseWhen + (e.t0 - startMs) / 1000;
     if (when < ctxTime - 0.01) continue;
 
-    if (e.frame === 'cue') {
-      playBuffer(tickBuffer, when);
-    }
+    // Think cue 틱음 제거 (부정확·거슬림 요청 반영)
+    // if (e.frame === 'cue') { playBuffer(tickBuffer, when); }
     if (
       e.frame === 'blank' &&
       e.phase === 'stageC' &&

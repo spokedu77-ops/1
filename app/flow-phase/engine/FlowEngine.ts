@@ -164,7 +164,13 @@ export class FlowEngine {
   private panoMesh: THREE.Mesh | null = null;
   private currentSpeedValue = 0;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
+  private introCountdownTimer: ReturnType<typeof setInterval> | null = null;
   private restCountdownTimer: ReturnType<typeof setInterval> | null = null;
+  private hitShakeRemaining = 0;
+  private hitShakeIntensity = 0;
+  private hitShakeDuration = 0;
+  private hitShakeOffsetX = 0;
+  private hitShakeOffsetY = 0;
   private restStartMs = 0;
   private pendingTimeouts: Array<ReturnType<typeof setTimeout>> = [];
 
@@ -194,6 +200,10 @@ export class FlowEngine {
     if (this.countdownTimer !== null) {
       clearInterval(this.countdownTimer);
       this.countdownTimer = null;
+    }
+    if (this.introCountdownTimer !== null) {
+      clearInterval(this.introCountdownTimer);
+      this.introCountdownTimer = null;
     }
     const cdOverlay = getRefEl(this.domRefs.countdownOverlay);
     if (cdOverlay) {
@@ -355,6 +365,11 @@ export class FlowEngine {
         onCameraTilt: (amount) => {
           this.microJolt += 1.2;
           this.cameraTiltZ += amount;
+        },
+        onCameraShake: (intensity: number, durationMs: number) => {
+          this.hitShakeRemaining = durationMs;
+          this.hitShakeIntensity = intensity;
+          this.hitShakeDuration = durationMs;
         },
         onPunch: () => this.audio.sfxPunch(),
         onCoin: () => this.audio.sfxCoin(),
@@ -873,6 +888,17 @@ export class FlowEngine {
       CAMERA_BASE_Z + zOffset + this.landingImpactZ + joltZ;
     this.camera.position.x = this.cameraLagX;
 
+    if (this.hitShakeRemaining > 0) {
+      const ratio = this.hitShakeRemaining / Math.max(1, this.hitShakeDuration);
+      const amp = this.hitShakeIntensity * ratio;
+      this.hitShakeOffsetX = (Math.random() - 0.5) * 2 * amp;
+      this.hitShakeOffsetY = (Math.random() - 0.5) * 2 * amp;
+      this.camera.position.x += this.hitShakeOffsetX;
+      this.camera.position.y += this.hitShakeOffsetY;
+      this.hitShakeRemaining -= dt * 1000;
+      if (this.hitShakeRemaining <= 0) this.hitShakeRemaining = 0;
+    }
+
     if (currentSpeed > HIGH_SPEED_SHAKE_THRESHOLD) {
       const highSpeedRange = Math.max(
         0.0001,
@@ -1116,6 +1142,7 @@ export class FlowEngine {
     const ins = getRefEl(this.domRefs.introScreen);
     const txt = getRefEl(this.domRefs.introTitle);
     const btn = getRefEl(this.domRefs.startBtn);
+    const cdOverlay = getRefEl(this.domRefs.countdownOverlay);
 
     if (btn) btn.style.display = 'none';
     if (ins) ins.classList.remove('hidden', 'fade-out');
@@ -1125,21 +1152,42 @@ export class FlowEngine {
     }
 
     this.clearScheduledTimeouts();
+    this.clearCountdown();
+    // 인트로 문구만 먼저 2초 노출 후 카운트다운 표시 (겹침 방지)
+    const COUNTDOWN_DELAY_MS = 2000;
+    this.registerTimeout(() => {
+      if (cdOverlay) {
+        cdOverlay.classList.remove('hidden');
+        cdOverlay.innerText = '15';
+      }
+      let count = 15;
+      this.introCountdownTimer = setInterval(() => {
+        count--;
+        if (count > 0 && cdOverlay) cdOverlay.innerText = String(count);
+        else {
+          if (this.introCountdownTimer !== null) {
+            clearInterval(this.introCountdownTimer);
+            this.introCountdownTimer = null;
+          }
+          if (cdOverlay) cdOverlay.innerText = 'START!';
+          setTimeout(() => {
+            this.clearCountdown();
+            if (cdOverlay) cdOverlay.classList.add('hidden');
+            this.isResting = false;
+            this.movementActive = true;
+            this.levelTime = 0;
+            if (ins) ins.classList.add('fade-out');
+            showInstruction(this.domRefs, 'JUMP!', 'text-yellow-400', 700);
+          }, 500);
+        }
+      }, 1000);
+    }, COUNTDOWN_DELAY_MS);
+
     this.registerTimeout(() => {
       if (txt) {
         txt.style.fontSize = '3rem';
         txt.innerHTML = PHRASES.lv1Guide;
       }
-
-      this.registerTimeout(() => {
-        this.doCountdownStart(() => {
-          this.isResting = false;
-          this.movementActive = true;
-          this.levelTime = 0;
-          if (ins) ins.classList.add('fade-out');
-          showInstruction(this.domRefs, 'JUMP!', 'text-yellow-400', 700);
-        });
-      }, this.LV1_GUIDE_DURATION);
     }, this.WELCOME_DURATION);
   }
 

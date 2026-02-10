@@ -19,11 +19,17 @@ export function StageBFull({ color, imageUrl, frame }: StageBFullProps) {
   if (!color) return null;
 
   const hex = PAD_COLORS[color];
+  const hasImage = !!imageUrl;
   return (
-    <div className="relative h-full min-h-[200px] w-full overflow-hidden" style={{ backgroundColor: hex }}>
+    <div
+      className={`relative h-full min-h-[200px] w-full overflow-hidden ${hasImage ? 'bg-white' : ''}`}
+      style={hasImage ? undefined : { backgroundColor: hex }}
+    >
       {imageUrl ? (
         <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-contain" />
-      ) : null}
+      ) : (
+        <div className="h-full w-full" style={{ backgroundColor: hex }} />
+      )}
     </div>
   );
 }

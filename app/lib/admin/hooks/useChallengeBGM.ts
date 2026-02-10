@@ -14,6 +14,7 @@ const BGM_SETTINGS_ID = 'iiwarmup_challenge_bgm_settings';
 export function useChallengeBGM() {
   const [list, setList] = useState<string[]>([]);
   const [selected, setSelected] = useState<string>('');
+  const [bgmStartOffsetMs, setBgmStartOffsetMs] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,9 +34,14 @@ export function useChallengeBGM() {
         return;
       }
 
-      const raw = data?.assets_json as { bgmList?: string[]; selectedBgm?: string } | null;
+      const raw = data?.assets_json as {
+        bgmList?: string[];
+        selectedBgm?: string;
+        bgmStartOffsetMs?: number;
+      } | null;
       setList(Array.isArray(raw?.bgmList) ? raw.bgmList : []);
       setSelected(typeof raw?.selectedBgm === 'string' ? raw.selectedBgm : '');
+      setBgmStartOffsetMs(typeof raw?.bgmStartOffsetMs === 'number' ? raw.bgmStartOffsetMs : 0);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -47,26 +53,35 @@ export function useChallengeBGM() {
     load();
   }, [load]);
 
-  const save = useCallback(async (nextList: string[], nextSelected: string) => {
-    setError(null);
-    try {
-      const supabase = getSupabaseClient();
-      await supabase.from('think_asset_packs').upsert(
-        {
-          id: BGM_SETTINGS_ID,
-          name: 'IIWARMUP Challenge BGM 설정',
-          theme: 'iiwarmup',
-          assets_json: { bgmList: nextList, selectedBgm: nextSelected },
-        },
-        { onConflict: 'id' }
-      );
-      setList(nextList);
-      setSelected(nextSelected);
-    } catch (err) {
-      setError((err as Error).message);
-      throw err;
-    }
-  }, []);
+  const save = useCallback(
+    async (nextList: string[], nextSelected: string, nextOffsetMs?: number) => {
+      setError(null);
+      const offset = nextOffsetMs ?? bgmStartOffsetMs;
+      try {
+        const supabase = getSupabaseClient();
+        await supabase.from('think_asset_packs').upsert(
+          {
+            id: BGM_SETTINGS_ID,
+            name: 'IIWARMUP Challenge BGM 설정',
+            theme: 'iiwarmup',
+            assets_json: {
+              bgmList: nextList,
+              selectedBgm: nextSelected,
+              bgmStartOffsetMs: offset,
+            },
+          },
+          { onConflict: 'id' }
+        );
+        setList(nextList);
+        setSelected(nextSelected);
+        if (nextOffsetMs !== undefined) setBgmStartOffsetMs(nextOffsetMs);
+      } catch (err) {
+        setError((err as Error).message);
+        throw err;
+      }
+    },
+    [bgmStartOffsetMs]
+  );
 
   const upload = useCallback(
     async (file: File): Promise<void> => {
@@ -100,5 +115,24 @@ export function useChallengeBGM() {
     [list, save]
   );
 
-  return { list, selected, loading, error, load, upload, remove, select };
+  const setOffsetMs = useCallback(
+    (ms: number) => {
+      setBgmStartOffsetMs(ms);
+      save(list, selected, ms);
+    },
+    [list, selected, save]
+  );
+
+  return {
+    list,
+    selected,
+    bgmStartOffsetMs,
+    setOffsetMs,
+    loading,
+    error,
+    load,
+    upload,
+    remove,
+    select,
+  };
 }

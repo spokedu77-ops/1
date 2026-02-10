@@ -9,12 +9,14 @@ import { useFlowPano } from '@/app/lib/admin/hooks/useFlowPano';
 function FlowPhaseContent() {
   const searchParams = useSearchParams();
   const isAdminMode = searchParams.get('admin') === 'true';
+  const autoStart = searchParams.get('autoStart') === '1' || searchParams.get('autoStart') === 'true';
   const { selected: bgmPath } = useFlowBGM();
   const { selected: panoPath } = useFlowPano();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<FlowEngine | null>(null);
   const [selectedLevel, setSelectedLevel] = useState(1);
+  const [engineReady, setEngineReady] = useState(false);
 
   const progressBarRef = useRef<HTMLDivElement>(null);
   const levelNumRef = useRef<HTMLSpanElement>(null);
@@ -60,6 +62,7 @@ function FlowPhaseContent() {
 
     const engine = new FlowEngine(canvasRef.current, domRefs);
     engineRef.current = engine;
+    setEngineReady(true);
 
     const onResize = () =>
       engine.resize(window.innerWidth, window.innerHeight);
@@ -69,9 +72,18 @@ function FlowPhaseContent() {
       window.removeEventListener('resize', onResize);
       engine.dispose();
       engineRef.current = null;
+      setEngineReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only init; domRefs intentionally excluded to avoid re-init on refs change
   }, []);
+
+  useEffect(() => {
+    if (!autoStart || !engineReady || !engineRef.current) return;
+    const t = setTimeout(() => {
+      engineRef.current?.startGame(bgmPath || undefined, panoPath || undefined);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [autoStart, engineReady, bgmPath, panoPath]);
 
   return (
     <main
@@ -140,19 +152,21 @@ function FlowPhaseContent() {
         >
           SPOKEDU
         </h1>
-        <button
-          ref={startBtnRef}
-          onClick={handleStart}
-          className="px-20 py-5 bg-blue-600 rounded-xl text-2xl font-bold text-white shadow-[0_0_30px_rgba(59,130,246,0.5)] hover:bg-blue-500 transition-colors"
-          style={{ fontFamily: "'Black Han Sans', sans-serif" }}
-        >
-          시작하기
-        </button>
+        {!autoStart && (
+          <button
+            ref={startBtnRef}
+            onClick={handleStart}
+            className="px-20 py-5 bg-blue-600 rounded-xl text-2xl font-bold text-white shadow-[0_0_30px_rgba(59,130,246,0.5)] hover:bg-blue-500 transition-colors"
+            style={{ fontFamily: "'Black Han Sans', sans-serif" }}
+          >
+            시작하기
+          </button>
+        )}
       </div>
 
       <div
         ref={countdownOverlayRef}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[12rem] text-white pointer-events-none z-[500] hidden"
+        className="absolute bottom-24 left-1/2 -translate-x-1/2 text-[6rem] text-white pointer-events-none z-[500] hidden"
         style={{
           fontFamily: "'Black Han Sans', sans-serif",
           textShadow: '0 0 50px #3b82f6',

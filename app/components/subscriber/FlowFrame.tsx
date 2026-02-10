@@ -7,10 +7,12 @@
 export interface FlowFrameProps {
   weekKey: string;
   onEnd?: () => void;
+  /** 구독자 전체 재생 시 30초 브릿지 후 자동 시작 */
+  autoStart?: boolean;
 }
 
-export function FlowFrame({ weekKey, onEnd }: FlowFrameProps) {
-  const src = `/flow-phase?weekKey=${encodeURIComponent(weekKey)}`;
+export function FlowFrame({ weekKey, onEnd, autoStart }: FlowFrameProps) {
+  const src = `/flow-phase?weekKey=${encodeURIComponent(weekKey)}${autoStart ? '&autoStart=1' : ''}`;
 
   return (
     <div className="fixed inset-0 flex flex-col bg-black">
