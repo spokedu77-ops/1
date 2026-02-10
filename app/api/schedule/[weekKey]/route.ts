@@ -60,19 +60,19 @@ export async function GET(
 
   const BGM_SETTINGS_ID = 'iiwarmup_challenge_bgm_settings';
 
-  // 1차: BGM 설정, Think pack, rotation_schedule 동시 조회 (체감 속도 개선)
-  const [bgmResult, thinkPackResult, scheduleResult] = await Promise.all([
+  // 1단계: BGM / Think pack / rotation_schedule 병렬 조회 (로직 동일, 체감 속도 개선)
+  const [bgmRes, thinkPackRes, scheduleRes] = await Promise.all([
     supabase.from('think_asset_packs').select('assets_json').eq('id', BGM_SETTINGS_ID).single(),
     supabase.from('think_asset_packs').select('assets_json').eq('id', THINK_PACK_ID).single(),
     supabase.from('rotation_schedule').select('week_key, program_id, program_snapshot, is_published').eq('week_key', weekKey).single(),
   ]);
 
-  const bgmRaw = bgmResult.data?.assets_json as { selectedBgm?: string; bgmStartOffsetMs?: number } | null;
+  const bgmRaw = bgmRes.data?.assets_json as { selectedBgm?: string; bgmStartOffsetMs?: number } | null;
   const challengeBgmPath = typeof bgmRaw?.selectedBgm === 'string' ? bgmRaw.selectedBgm : null;
   const challengeBgmStartOffsetMs = typeof bgmRaw?.bgmStartOffsetMs === 'number' ? bgmRaw.bgmStartOffsetMs : 0;
 
   let thinkPackByMonthAndWeek: Record<number, Record<string, Think150PackState>> | null = null;
-  const byMonth = (thinkPackResult.data?.assets_json as { byMonth?: Record<number, Record<string, Think150PackState>> } | null)?.byMonth;
+  const byMonth = (thinkPackRes.data?.assets_json as { byMonth?: Record<number, Record<string, Think150PackState>> } | null)?.byMonth;
   if (byMonth && typeof byMonth === 'object') {
     thinkPackByMonthAndWeek = {};
     for (let m = 1; m <= 12; m++) {
@@ -86,13 +86,14 @@ export async function GET(
     }
   }
 
-  const { data: row, error: scheduleError } = scheduleResult;
+  const { data: row, error: scheduleError } = scheduleRes;
   if (scheduleError && scheduleError.code !== 'PGRST116') {
     return NextResponse.json({ error: scheduleError.message }, { status: 500 });
   }
   if (!row) {
     return NextResponse.json({
       program_snapshot: null,
+      is_published: false,
       phases: null,
       challengePhases: null,
       challengeBgmPath,
@@ -104,17 +105,18 @@ export async function GET(
   const programId = row.program_id as string | null;
   const challengeId = `challenge_${weekKey}`;
 
-  // 2차: program_id용 phases / challenge_${weekKey} phases 동시 조회
-  const [programResult, challengeResult] = await Promise.all([
+  // 2단계: 슬롯 program phases / 해당 주차 챌린지 phases 병렬 조회 (선택 로직은 기존과 동일)
+  const [programRes, challengeRes] = await Promise.all([
     programId ? supabase.from('warmup_programs_composite').select('phases').eq('id', programId).single() : Promise.resolve({ data: null }),
     supabase.from('warmup_programs_composite').select('phases').eq('id', challengeId).single(),
   ]);
 
-  let phases: unknown = programResult.data?.phases ?? null;
-  let challengePhases: unknown =
-    programId?.startsWith('challenge_') && phases != null
+  const phases: unknown = programRes.data?.phases ?? null;
+  // 슬롯에 챌린지 프로그램이 배정된 경우 그 phases 사용, 아니면 challenge_${weekKey} 사용
+  const challengePhases: unknown =
+    programId != null && programId.startsWith('challenge_') && phases != null
       ? phases
-      : (challengeResult.data?.phases ?? null);
+      : (challengeRes.data?.phases ?? null);
 
   return NextResponse.json({
     program_snapshot: row.program_snapshot ?? null,

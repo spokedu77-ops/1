@@ -40,10 +40,20 @@ export type SubscriberScheduleData = {
   thinkPackByMonthAndWeek?: ThinkPackByMonthAndWeek | null;
 };
 
+const FETCH_TIMEOUT_MS = 15_000;
+
 async function fetchSchedule(weekKey: string): Promise<SubscriberScheduleData> {
-  const res = await fetch(`/api/schedule/${encodeURIComponent(weekKey)}`);
-  if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
-  return res.json();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(`/api/schedule/${encodeURIComponent(weekKey)}`, {
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
+    return res.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export function useSubscriberSchedule(weekKey: string, enabled = true) {
@@ -52,6 +62,7 @@ export function useSubscriberSchedule(weekKey: string, enabled = true) {
     queryFn: () => fetchSchedule(weekKey),
     enabled: enabled && !!weekKey,
     staleTime: 2 * 60 * 1000,
+    retry: 1,
   });
 }
 
