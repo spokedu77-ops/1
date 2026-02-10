@@ -1,0 +1,15 @@
+# 배포를 위한 Git 명령어 (한번에 실행)
+
+# 1. 모든 변경사항 스테이징
+git add .
+
+# 2. 커밋
+git commit -m "fix: Next.js 빌드 설정 수정 (turbopack 명시적 설정)
+
+- turbopack: {} 설정 추가 (빌드 에러 해결)
+- lint 스크립트 next lint로 수정
+- 구독자 UI 컴포넌트 추가
+- useChallengePrograms 훅 추가"
+
+# 3. 푸시
+git push origin main
