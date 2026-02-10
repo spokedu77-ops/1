@@ -44,7 +44,7 @@ export default function IIWarmupSubscriberPage() {
     [year, month, week]
   );
 
-  const { data: scheduleData, isLoading: scheduleLoading } = useSubscriberSchedule(weekKey);
+  const { data: scheduleData, isLoading: scheduleLoading, isError: scheduleError } = useSubscriberSchedule(weekKey);
   const challengeProps = useMemo(
     () => getChallengePropsFromPhases(scheduleData?.challengePhases ?? scheduleData?.phases) ?? {},
     [scheduleData?.challengePhases, scheduleData?.phases]
@@ -64,12 +64,12 @@ export default function IIWarmupSubscriberPage() {
       setViewState('loading');
       return;
     }
-    if (!isPublished || !hasPhases) {
+    if (scheduleError || !isPublished || !hasPhases) {
       setViewState('empty');
     } else {
       setViewState('ready');
     }
-  }, [scheduleLoading, isPublished, hasPhases, viewState]);
+  }, [scheduleLoading, scheduleError, isPublished, hasPhases, viewState]);
 
   const handleWeekChange = (payload: WeekSelectorChangePayload) => {
     setYear(payload.year);

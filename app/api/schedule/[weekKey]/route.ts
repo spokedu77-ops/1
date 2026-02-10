@@ -58,27 +58,21 @@ export async function GET(
       ? createClient(url, serviceKey)
       : getSupabaseClient();
 
-  // 챌린지(Play) BGM: 관리자 선택 전역 경로 (구독자 재생 시 사용)
   const BGM_SETTINGS_ID = 'iiwarmup_challenge_bgm_settings';
-  let challengeBgmPath: string | null = null;
-  const { data: bgmSettings } = await supabase
-    .from('think_asset_packs')
-    .select('assets_json')
-    .eq('id', BGM_SETTINGS_ID)
-    .single();
-  const bgmRaw = bgmSettings?.assets_json as { selectedBgm?: string; bgmStartOffsetMs?: number } | null;
-  if (typeof bgmRaw?.selectedBgm === 'string') challengeBgmPath = bgmRaw.selectedBgm;
-  const challengeBgmStartOffsetMs =
-    typeof bgmRaw?.bgmStartOffsetMs === 'number' ? bgmRaw.bgmStartOffsetMs : 0;
 
-  // Think 150 월별×주차별 이미지 pack (구독자 Think 단계에서 이미지 노출용)
+  // 1차: BGM 설정, Think pack, rotation_schedule 동시 조회 (체감 속도 개선)
+  const [bgmResult, thinkPackResult, scheduleResult] = await Promise.all([
+    supabase.from('think_asset_packs').select('assets_json').eq('id', BGM_SETTINGS_ID).single(),
+    supabase.from('think_asset_packs').select('assets_json').eq('id', THINK_PACK_ID).single(),
+    supabase.from('rotation_schedule').select('week_key, program_id, program_snapshot, is_published').eq('week_key', weekKey).single(),
+  ]);
+
+  const bgmRaw = bgmResult.data?.assets_json as { selectedBgm?: string; bgmStartOffsetMs?: number } | null;
+  const challengeBgmPath = typeof bgmRaw?.selectedBgm === 'string' ? bgmRaw.selectedBgm : null;
+  const challengeBgmStartOffsetMs = typeof bgmRaw?.bgmStartOffsetMs === 'number' ? bgmRaw.bgmStartOffsetMs : 0;
+
   let thinkPackByMonthAndWeek: Record<number, Record<string, Think150PackState>> | null = null;
-  const { data: thinkPackRow } = await supabase
-    .from('think_asset_packs')
-    .select('assets_json')
-    .eq('id', THINK_PACK_ID)
-    .single();
-  const byMonth = (thinkPackRow?.assets_json as { byMonth?: Record<number, Record<string, Think150PackState>> } | null)?.byMonth;
+  const byMonth = (thinkPackResult.data?.assets_json as { byMonth?: Record<number, Record<string, Think150PackState>> } | null)?.byMonth;
   if (byMonth && typeof byMonth === 'object') {
     thinkPackByMonthAndWeek = {};
     for (let m = 1; m <= 12; m++) {
@@ -92,12 +86,7 @@ export async function GET(
     }
   }
 
-  const { data: row, error: scheduleError } = await supabase
-    .from('rotation_schedule')
-    .select('week_key, program_id, program_snapshot, is_published')
-    .eq('week_key', weekKey)
-    .single();
-
+  const { data: row, error: scheduleError } = scheduleResult;
   if (scheduleError && scheduleError.code !== 'PGRST116') {
     return NextResponse.json({ error: scheduleError.message }, { status: 500 });
   }
@@ -113,30 +102,19 @@ export async function GET(
   }
 
   const programId = row.program_id as string | null;
-  let phases: unknown = null;
+  const challengeId = `challenge_${weekKey}`;
 
-  if (programId) {
-    const { data: program } = await supabase
-      .from('warmup_programs_composite')
-      .select('phases')
-      .eq('id', programId)
-      .single();
-    if (program?.phases) phases = program.phases;
-  }
+  // 2차: program_id용 phases / challenge_${weekKey} phases 동시 조회
+  const [programResult, challengeResult] = await Promise.all([
+    programId ? supabase.from('warmup_programs_composite').select('phases').eq('id', programId).single() : Promise.resolve({ data: null }),
+    supabase.from('warmup_programs_composite').select('phases').eq('id', challengeId).single(),
+  ]);
 
-  // 무빙 챌린지: 슬롯에 챌린지 프로그램이 배정된 경우 그 phases 사용, 아니면 challenge_${weekKey} 사용
-  let challengePhases: unknown = null;
-  if (programId?.startsWith('challenge_') && phases != null) {
-    challengePhases = phases;
-  } else {
-    const challengeId = `challenge_${weekKey}`;
-    const { data: challengeProgram } = await supabase
-      .from('warmup_programs_composite')
-      .select('phases')
-      .eq('id', challengeId)
-      .single();
-    if (challengeProgram?.phases) challengePhases = challengeProgram.phases;
-  }
+  let phases: unknown = programResult.data?.phases ?? null;
+  let challengePhases: unknown =
+    programId?.startsWith('challenge_') && phases != null
+      ? phases
+      : (challengeResult.data?.phases ?? null);
 
   return NextResponse.json({
     program_snapshot: row.program_snapshot ?? null,
