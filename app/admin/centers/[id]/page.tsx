@@ -17,22 +17,19 @@ import {
   ClipboardList,
   Calendar,
   DollarSign,
-  FileText,
-  FolderOpen,
+  MoreHorizontal,
 } from 'lucide-react';
 import { CenterOverview } from './CenterOverview';
 import { OperationsTab } from './OperationsTab';
 import { ProgramsTab } from './ProgramsTab';
 import { FinanceTab } from './FinanceTab';
-import { LogsTab } from './LogsTab';
-import { FilesTab } from './FilesTab';
+import { MiscTab } from './MiscTab';
 
 const TABS = [
-  { id: 'operations', label: 'Operations', icon: ClipboardList },
-  { id: 'programs', label: 'Programs', icon: Calendar },
-  { id: 'finance', label: 'Finance', icon: DollarSign },
-  { id: 'logs', label: 'Logs', icon: FileText },
-  { id: 'files', label: 'Files', icon: FolderOpen },
+  { id: 'operations', label: '운영', icon: ClipboardList },
+  { id: 'programs', label: '프로그램', icon: Calendar },
+  { id: 'finance', label: '재무', icon: DollarSign },
+  { id: 'misc', label: '기타', icon: MoreHorizontal },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -48,12 +45,14 @@ export default function CenterDetailPage({
   const resolvedSearch = use(searchParams);
   const router = useRouter();
   const id = resolvedParams.id;
-  const tabFromUrl = (resolvedSearch.tab as TabId) || 'operations';
+  const tabFromUrlRaw = (resolvedSearch.tab as string) || 'operations';
+  const tabFromUrl: TabId =
+    tabFromUrlRaw === 'logs' || tabFromUrlRaw === 'files'
+      ? 'misc'
+      : TABS.some((t) => t.id === tabFromUrlRaw) ? (tabFromUrlRaw as TabId) : 'operations';
   const [center, setCenter] = useState<CenterWithRelations | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabId>(
-    TABS.some((t) => t.id === tabFromUrl) ? tabFromUrl : 'operations'
-  );
+  const [activeTab, setActiveTab] = useState<TabId>(tabFromUrl);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<{
     name: string;
@@ -97,6 +96,12 @@ export default function CenterDetailPage({
   useEffect(() => {
     loadCenter();
   }, [loadCenter]);
+
+  useEffect(() => {
+    if (tabFromUrlRaw === 'logs' || tabFromUrlRaw === 'files') {
+      router.replace(`/admin/centers/${id}?tab=misc`, { scroll: false });
+    }
+  }, [id, tabFromUrlRaw, router]);
 
   const handleNextActionToggle = async (item: NextActionItem) => {
     if (!center) return;
@@ -204,9 +209,9 @@ export default function CenterDetailPage({
 
   if (loading) {
     return (
-      <div className="flex-1 min-h-screen bg-gray-50 w-full">
+      <div className="flex-1 min-h-screen bg-slate-50 w-full">
         <div className="p-4 sm:p-6 md:p-6 flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
         </div>
       </div>
     );
@@ -214,12 +219,12 @@ export default function CenterDetailPage({
 
   if (!center) {
     return (
-      <div className="flex-1 min-h-screen bg-gray-50 w-full">
+      <div className="flex-1 min-h-screen bg-slate-50 w-full">
         <div className="p-4 sm:p-6 md:p-6 flex flex-col items-center justify-center gap-4 min-h-[60vh]">
-          <p className="text-gray-600">센터를 찾을 수 없습니다.</p>
+          <p className="text-slate-600">센터를 찾을 수 없습니다.</p>
           <Link
             href="/admin/centers"
-            className="text-blue-600 hover:underline"
+            className="text-indigo-600 hover:underline"
           >
             목록으로
           </Link>
@@ -229,27 +234,27 @@ export default function CenterDetailPage({
   }
 
   return (
-    <div className="flex-1 min-h-screen bg-gray-50 w-full">
-      <div className="p-4 sm:p-6 md:p-6">
+    <div className="flex-1 min-h-screen bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="p-4 sm:p-6 md:p-6 min-w-0">
         <div className="mb-4">
           <Link
             href="/admin/centers"
-            className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600"
+            className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-indigo-600"
           >
             <ArrowLeft className="h-4 w-4" />
             센터 목록
           </Link>
         </div>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-            <Building2 className="h-7 w-7 text-blue-600" />
+          <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+            <Building2 className="h-7 w-7 text-indigo-600" />
             {center.name}
           </h1>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={openEditModal}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               <Pencil className="h-4 w-4" />
               수정
@@ -258,7 +263,7 @@ export default function CenterDetailPage({
               type="button"
               onClick={handleDelete}
               disabled={deleteSubmitting}
-              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
             >
               {deleteSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -277,17 +282,17 @@ export default function CenterDetailPage({
           onNextActionRemove={handleNextActionRemove}
         />
 
-        <div className="mt-8 border-b border-gray-200">
-          <nav className="-mb-px flex gap-4">
+        <div className="mt-8 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <nav className="flex gap-2 overflow-x-auto scrollbar-hide pb-px">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setTab(tab.id)}
-                className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium cursor-pointer ${
+                className={`flex min-w-[max-content] shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-white text-slate-600 shadow-sm border border-slate-200/80 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
                 <tab.icon className="h-4 w-4" />
@@ -307,23 +312,25 @@ export default function CenterDetailPage({
           {activeTab === 'finance' && (
             <FinanceTab centerId={center.id} terms={center.finance_terms} onSaved={loadCenter} />
           )}
-          {activeTab === 'logs' && (
-            <LogsTab centerId={center.id} logs={center.logs} onSaved={loadCenter} />
-          )}
-          {activeTab === 'files' && (
-            <FilesTab centerId={center.id} files={center.files} onSaved={loadCenter} />
+          {activeTab === 'misc' && (
+            <MiscTab
+              centerId={center.id}
+              logs={center.logs}
+              files={center.files}
+              onSaved={loadCenter}
+            />
           )}
         </div>
 
         {isEditOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl border border-slate-200 max-h-[85dvh] overflow-y-auto sm:p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">센터 정보 수정</h2>
+                <h2 className="text-lg font-semibold tracking-tight text-slate-900">센터 정보 수정</h2>
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(false)}
-                  className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 cursor-pointer"
+                  className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -331,71 +338,71 @@ export default function CenterDetailPage({
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 {editError && <p className="text-sm text-red-600">{editError}</p>}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">센터명 *</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">센터명 *</label>
                   <input
                     type="text"
                     value={editForm.name}
                     onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">지역 태그</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">지역 태그</label>
                   <input
                     type="text"
                     value={editForm.region_tag}
                     onChange={(e) => setEditForm((f) => ({ ...f, region_tag: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">주소</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">주소</label>
                   <input
                     type="text"
                     value={editForm.address}
                     onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">출입 안내</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">출입 안내</label>
                   <textarea
                     value={editForm.access_note}
                     onChange={(e) => setEditForm((f) => ({ ...f, access_note: e.target.value }))}
                     rows={2}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">담당자명</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">담당자명</label>
                   <input
                     type="text"
                     value={editForm.contact_name}
                     onChange={(e) => setEditForm((f) => ({ ...f, contact_name: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">연락처</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">연락처</label>
                   <input
                     type="text"
                     value={editForm.contact_phone}
                     onChange={(e) => setEditForm((f) => ({ ...f, contact_phone: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">담당자 역할</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">담당자 역할</label>
                   <input
                     type="text"
                     value={editForm.contact_role}
                     onChange={(e) => setEditForm((f) => ({ ...f, contact_role: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">상태</label>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">상태</label>
                   <select
                     value={editForm.status}
                     onChange={(e) =>
@@ -404,7 +411,7 @@ export default function CenterDetailPage({
                         status: e.target.value as 'active' | 'paused' | 'ended',
                       }))
                     }
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                   >
                     <option value="active">활성</option>
                     <option value="paused">일시중지</option>
@@ -413,7 +420,7 @@ export default function CenterDetailPage({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">계약 시작일</label>
+                    <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">계약 시작일</label>
                     <input
                       type="text"
                       placeholder="YYYY-MM-DD"
@@ -421,11 +428,11 @@ export default function CenterDetailPage({
                       onChange={(e) =>
                         setEditForm((f) => ({ ...f, contract_start: e.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">계약 종료일</label>
+                    <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">계약 종료일</label>
                     <input
                       type="text"
                       placeholder="YYYY-MM-DD"
@@ -433,7 +440,7 @@ export default function CenterDetailPage({
                       onChange={(e) =>
                         setEditForm((f) => ({ ...f, contract_end: e.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -441,14 +448,14 @@ export default function CenterDetailPage({
                   <button
                     type="button"
                     onClick={() => setIsEditOpen(false)}
-                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="min-h-[44px] rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
                     취소
                   </button>
                   <button
                     type="submit"
                     disabled={editSubmitting}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="min-h-[44px] rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
                   >
                     {editSubmitting ? '저장 중…' : '저장'}
                   </button>

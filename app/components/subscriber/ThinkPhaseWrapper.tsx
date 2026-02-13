@@ -50,7 +50,8 @@ export function ThinkPhaseWrapper({
   month: monthProp,
 }: ThinkPhaseWrapperProps) {
   const parsed = parseWeekKey(weekKey);
-  const weekFromKey = (parsed?.week ?? 1) as 1 | 2 | 3 | 4;
+  const rawWeek = parsed?.week ?? 1;
+  const weekFromKey = (rawWeek >= 1 && rawWeek <= 4 ? rawWeek : rawWeek === 5 ? 4 : 1) as 1 | 2 | 3 | 4;
   const week = (scheduleSnapshot?.week != null ? scheduleSnapshot.week : weekFromKey) as 1 | 2 | 3 | 4;
   const audience = (scheduleSnapshot?.audience as Think150Config['audience']) ?? 'elementary';
   const month = scheduleSnapshot?.month ?? monthProp ?? parsed?.month;

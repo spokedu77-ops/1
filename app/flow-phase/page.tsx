@@ -9,6 +9,7 @@ import { useFlowPano } from '@/app/lib/admin/hooks/useFlowPano';
 function FlowPhaseContent() {
   const searchParams = useSearchParams();
   const isAdminMode = searchParams.get('admin') === 'true';
+  const showLevelSelector = searchParams.get('showLevelSelector') === '1';
   const autoStart = searchParams.get('autoStart') === '1' || searchParams.get('autoStart') === 'true';
   const { selected: bgmPath } = useFlowBGM();
   const { selected: panoPath } = useFlowPano();
@@ -98,7 +99,7 @@ function FlowPhaseContent() {
         aria-live="polite"
       />
 
-      {isAdminMode && (
+      {(isAdminMode || showLevelSelector) && (
         <div className="absolute top-6 left-6 z-[1500] bg-black/90 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)] min-w-[200px]">
           <div className="text-base text-blue-200 mb-3 font-bold">Admin: 레벨 선택</div>
           <div className="flex gap-2 flex-wrap">

@@ -9,10 +9,15 @@ export interface FlowFrameProps {
   onEnd?: () => void;
   /** 구독자 전체 재생 시 30초 브릿지 후 자동 시작 */
   autoStart?: boolean;
+  /** Flow 개별 실행 시 Admin처럼 좌측 상단 레벨 선택 UI 노출 */
+  showLevelSelector?: boolean;
 }
 
-export function FlowFrame({ weekKey, onEnd, autoStart }: FlowFrameProps) {
-  const src = `/flow-phase?weekKey=${encodeURIComponent(weekKey)}${autoStart ? '&autoStart=1' : ''}`;
+export function FlowFrame({ weekKey, onEnd, autoStart, showLevelSelector }: FlowFrameProps) {
+  const params = new URLSearchParams({ weekKey });
+  if (autoStart) params.set('autoStart', '1');
+  if (showLevelSelector) params.set('showLevelSelector', '1');
+  const src = `/flow-phase?${params.toString()}`;
 
   return (
     <div className="fixed inset-0 flex flex-col bg-black">

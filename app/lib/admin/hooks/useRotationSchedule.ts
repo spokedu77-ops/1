@@ -1,9 +1,9 @@
 /**
  * React Query Hooks for Rotation Schedule
- * 48주 슬롯(12개월×4주). Light(목록) / Detail(상세) 분리.
+ * 60주 슬롯(12개월×5주). Light(목록) / Detail(상세) / Quarter(분기별) 분리.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSupabaseClient } from '@/app/lib/supabase/client';
 import { generate48WeekSlots, parseWeekKey } from '@/app/lib/admin/scheduler/dragAndDrop';
@@ -122,6 +122,68 @@ export function useRotationScheduleMonth({
   }, [year, month, prefetchNeighbor, queryClient]);
 
   return query;
+}
+
+export type UseRotationScheduleQuarterOptions = {
+  year: number;
+  quarter: 1 | 2 | 3 | 4;
+};
+
+/** Q1=1~3월, Q2=4~6월, Q3=7~9월, Q4=10~12월 */
+function getMonthsForQuarter(quarter: 1 | 2 | 3 | 4): number[] {
+  const start = (quarter - 1) * 3 + 1;
+  return [start, start + 1, start + 2];
+}
+
+/**
+ * 분기별 Light 쿼리. 해당 분기 3개월 데이터만 로드.
+ * queryKey: ['rotation_schedule', 'quarter', year, quarter]
+ */
+export function useRotationScheduleQuarter({
+  year,
+  quarter,
+}: UseRotationScheduleQuarterOptions) {
+  const weekKeys = useMemo(() => {
+    const months = getMonthsForQuarter(quarter);
+    const slots = generate48WeekSlots(year);
+    return slots
+      .filter((s) => months.includes(s.month))
+      .map((s) => s.weekKey);
+  }, [year, quarter]);
+
+  return useQuery({
+    queryKey: ['rotation_schedule', 'quarter', year, quarter] as const,
+    queryFn: async (): Promise<ScheduleLightRow[]> => {
+      const { data, error } = await supabase
+        .from('rotation_schedule')
+        .select('week_key, program_id, asset_pack_id, is_published, is_locked')
+        .in('week_key', weekKeys);
+
+      if (error) throw error;
+
+      const rows = (data || []) as ScheduleLightRow[];
+      const programIds = rows.map((s) => s.program_id).filter(Boolean) as string[];
+
+      if (programIds.length > 0) {
+        const { data: programs } = await supabase
+          .from('warmup_programs_composite')
+          .select('id, title')
+          .in('id', programIds);
+        const programMap = new Map(
+          programs?.map((p: { id: string; title: string }) => [p.id, p.title]) || []
+        );
+        return rows.map((schedule) => ({
+          ...schedule,
+          programTitle: programMap.get(schedule.program_id!),
+        }));
+      }
+      return rows;
+    },
+    enabled: weekKeys.length > 0,
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    placeholderData: (previousData) => previousData ?? [],
+  });
 }
 
 /**
@@ -283,6 +345,10 @@ export function useSaveSchedule() {
         queryClient.invalidateQueries({
           queryKey: ['rotation_schedule', parsed.year, parsed.month],
         });
+        const quarter = Math.ceil(parsed.month / 3) as 1 | 2 | 3 | 4;
+        queryClient.invalidateQueries({
+          queryKey: ['rotation_schedule', 'quarter', parsed.year, quarter],
+        });
         queryClient.invalidateQueries({ queryKey: ['rotation-schedule', 'detail', wk] });
       }
     },
@@ -329,6 +395,10 @@ export function useDeleteSchedule() {
       if (parsed) {
         queryClient.invalidateQueries({
           queryKey: ['rotation_schedule', parsed.year, parsed.month],
+        });
+        const quarter = Math.ceil(parsed.month / 3) as 1 | 2 | 3 | 4;
+        queryClient.invalidateQueries({
+          queryKey: ['rotation_schedule', 'quarter', parsed.year, quarter],
         });
         queryClient.invalidateQueries({ queryKey: ['rotation-schedule', 'detail', weekKey] });
       }

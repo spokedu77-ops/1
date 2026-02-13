@@ -63,7 +63,7 @@ export function SchedulerMonthAccordion({
       </button>
       {isOpen && slots.length > 0 && (
         <div className="border-t border-neutral-700 bg-neutral-900/30 p-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {slots.map((slot) => {
                   const row = rowMap.get(slot.weekKey);
                   return (

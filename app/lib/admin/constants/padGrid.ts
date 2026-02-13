@@ -9,11 +9,12 @@ export type PADColor = 'red' | 'green' | 'yellow' | 'blue';
 export type PadPosition = 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT';
 
 /** PAD_GRID: 위치 → 색 (absolute constants) */
+/** 4분할: 빨강/초록(위), 파랑/노랑(아래) */
 export const PAD_GRID: Record<PadPosition, PADColor> = {
   TOP_LEFT: 'red',
   TOP_RIGHT: 'green',
-  BOTTOM_LEFT: 'yellow',
-  BOTTOM_RIGHT: 'blue',
+  BOTTOM_LEFT: 'blue',
+  BOTTOM_RIGHT: 'yellow',
 } as const;
 
 /** 색 → Hex (렌더용) */
@@ -28,8 +29,8 @@ export const PAD_COLORS: Record<PADColor, string> = {
 export const COLOR_TO_POSITION: Record<PADColor, PadPosition> = {
   red: 'TOP_LEFT',
   green: 'TOP_RIGHT',
-  yellow: 'BOTTOM_LEFT',
-  blue: 'BOTTOM_RIGHT',
+  blue: 'BOTTOM_LEFT',
+  yellow: 'BOTTOM_RIGHT',
 } as const;
 
 /** 2x2 그리드 인덱스 (row, col) → 색. StageA 셀 배치 검증용 */
@@ -38,13 +39,13 @@ export const PAD_POSITIONS: PADColor[][] = [
   [PAD_GRID.BOTTOM_LEFT, PAD_GRID.BOTTOM_RIGHT],
 ];
 
-/** Week3 ANTI: 대각선 매핑 RED↔BLUE, GREEN↔YELLOW */
+/** Week3 ANTI: 대각선 매핑 RED↔YELLOW, GREEN↔BLUE (4분할: 빨강/초록 | 파랑/노랑) */
 export function diagonal(color: PADColor): PADColor {
   const map: Record<PADColor, PADColor> = {
-    red: 'blue',
-    blue: 'red',
-    green: 'yellow',
-    yellow: 'green',
+    red: 'yellow',
+    yellow: 'red',
+    green: 'blue',
+    blue: 'green',
   };
   return map[color];
 }
@@ -58,6 +59,6 @@ export function assertPadGridMatch(grid: PADColor[][]): void {
     throw new Error(`assertPadGridMatch: top row mismatch. expected [red, green], got [${grid[0][0]}, ${grid[0][1]}]`);
   }
   if (grid[1][0] !== PAD_GRID.BOTTOM_LEFT || grid[1][1] !== PAD_GRID.BOTTOM_RIGHT) {
-    throw new Error(`assertPadGridMatch: bottom row mismatch. expected [yellow, blue], got [${grid[1][0]}, ${grid[1][1]}]`);
+    throw new Error(`assertPadGridMatch: bottom row mismatch. expected [blue, yellow], got [${grid[1][0]}, ${grid[1][1]}]`);
   }
 }

@@ -25,7 +25,7 @@ export interface FullSequencePlayerProps {
   /** phase별 실제 콘텐츠 렌더. onEnd 호출 시 다음 phase로 전환 */
   renderPlay?: (props: { weekKey: string; onEnd: () => void }) => React.ReactNode;
   renderThink?: (props: { weekKey: string; onEnd: () => void }) => React.ReactNode;
-  renderFlow?: (props: { weekKey: string; onEnd: () => void }) => React.ReactNode;
+  renderFlow?: (props: { weekKey: string; onEnd: () => void; showLevelSelector?: boolean }) => React.ReactNode;
 }
 
 export function FullSequencePlayer({
@@ -231,7 +231,7 @@ export function FullSequencePlayer({
         <div className="flex-1">
           {renderFlow ? (
             // eslint-disable-next-line react-hooks/refs
-            renderFlow({ weekKey, onEnd: onEndStable })
+            renderFlow({ weekKey, onEnd: onEndStable, showLevelSelector: mode === 'flow' })
           ) : (
             <div className="flex h-full items-center justify-center text-white">
               <div className="text-center">

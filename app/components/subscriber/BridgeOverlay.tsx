@@ -22,23 +22,30 @@ export function BridgeOverlay({ secondsLeft, nextPhase, onSkip }: BridgeOverlayP
       : `다음: ${nextPhase}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 text-white">
-      <div className="text-center px-4">
-        <p className="mb-6 text-xl text-neutral-200 max-w-md mx-auto">{description}</p>
-        <p className="mb-1 text-sm text-neutral-500">시작까지</p>
-        <p className="mb-6 text-6xl font-black tabular-nums" style={{ fontFamily: "'Black Han Sans', sans-serif" }}>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-neutral-950 via-black to-neutral-950 text-white">
+      {/* subtle radial glow behind countdown */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_45%,rgb(6_182_212_/0.15),transparent)]" />
+      <div className="relative z-10 text-center px-4">
+        <p className="mb-4 text-lg text-neutral-300 max-w-md mx-auto md:text-xl">{description}</p>
+        <p className="mb-1 text-xs font-medium uppercase tracking-wider text-neutral-500">시작까지</p>
+        <p
+          className="mb-6 text-8xl font-black tabular-nums tracking-tight text-white drop-shadow-[0_0_30px_rgba(6,182,212,0.3)] md:text-9xl"
+          style={{ fontFamily: "'Black Han Sans', sans-serif" }}
+        >
           {secondsLeft}
         </p>
-        <p className="text-lg text-cyan-400">다음: {nextPhase}</p>
+        <p className="text-base font-semibold text-cyan-400 md:text-lg">다음: {nextPhase}</p>
+        {/* 호흡 원 - 부드러운 breathe 애니메이션 */}
         <div
-          className="mx-auto mt-8 h-24 w-24 rounded-full border-4 border-cyan-500/50"
-          style={{ animation: 'pulse 2s ease-in-out infinite' }}
+          className="mx-auto mt-8 h-28 w-28 rounded-full border-2 border-cyan-500/40 bg-cyan-500/5 bridge-breathe"
+          aria-hidden
         />
         {onSkip && (
           <button
             type="button"
-            className="mt-8 rounded-lg bg-neutral-700 px-6 py-2 text-sm hover:bg-neutral-600"
             onClick={onSkip}
+            className="mt-8 min-h-[48px] rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            aria-label="바로 시작"
           >
             바로 시작
           </button>

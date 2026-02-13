@@ -16,6 +16,9 @@ export interface Schedule {
   assignee: string | null;
   start_date: string | null;
   end_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  day_of_week: number[] | null;
   sessions_count: number | null;
   note: string | null;
   checklist: ChecklistItem[];

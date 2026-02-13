@@ -21,6 +21,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
   const [centers, setCenters] = useState<Center[]>(initialCenters);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
   const [regionFilter, setRegionFilter] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -40,13 +41,18 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const isInitialMount = useRef(true);
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const loadCenters = useCallback(async () => {
     setIsLoading(true);
     try {
       const filters: GetCentersFilters = {};
       if (statusFilter) filters.status = statusFilter;
       if (regionFilter) filters.region_tag = regionFilter;
-      if (search.trim()) filters.search = search.trim();
+      if (debouncedSearch.trim()) filters.search = debouncedSearch.trim();
       const list = await getCenters(filters);
       setCenters(list);
     } catch (err) {
@@ -54,7 +60,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [search, statusFilter, regionFilter]);
+  }, [debouncedSearch, statusFilter, regionFilter]);
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -62,8 +68,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
       return;
     }
     loadCenters();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadCenters stable, filters trigger reload
-  }, [statusFilter, regionFilter, search]);
+  }, [loadCenters]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

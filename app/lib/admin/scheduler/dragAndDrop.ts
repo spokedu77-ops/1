@@ -34,11 +34,11 @@ export function generateWeekKey(year: number, month: number, week: number): stri
 }
 
 /**
- * week_key 파싱 (W1~W4만 유효, 그 외는 null)
+ * week_key 파싱 (W1~W5 유효, 그 외는 null)
  * 2026-01-W9 같은 입력은 무조건 null
  */
 export function parseWeekKey(weekKey: string): { year: number; month: number; week: number } | null {
-  const match = weekKey.match(/^(\d{4})-(\d{2})-W([1-4])$/);
+  const match = weekKey.match(/^(\d{4})-(\d{2})-W([1-5])$/);
   if (!match) return null;
   return {
     year: Number(match[1]),
@@ -47,17 +47,17 @@ export function parseWeekKey(weekKey: string): { year: number; month: number; we
   };
 }
 
-/** 48주 = 12개월×4주. 시스템 표준 슬롯 수 */
-const SLOTS_PER_YEAR = 48;
+/** 60주 = 12개월×5주. 시스템 표준 슬롯 수 (W1~W5) */
+const SLOTS_PER_YEAR = 60;
 
 /**
- * 48주 슬롯 생성 (1월 1주차 ~ 12월 4주차)
- * week_key = YYYY-MM-W{1..4}
+ * 60주 슬롯 생성 (1월 1~5주차 ~ 12월 5주차)
+ * week_key = YYYY-MM-W{1..5}
  */
 export function generate48WeekSlots(year: number): Array<{ weekKey: string; month: number; week: number }> {
   const slots: Array<{ weekKey: string; month: number; week: number }> = [];
   for (let month = 1; month <= 12; month++) {
-    for (let week = 1; week <= 4; week++) {
+    for (let week = 1; week <= 5; week++) {
       slots.push({
         weekKey: generateWeekKey(year, month, week),
         month,

@@ -8,17 +8,24 @@ export type GetSchedulesFilters = {
   status?: 'active' | 'done';
   search?: string;
   limit?: number;
+  offset?: number;
   orderBy?: 'start_date_asc' | 'start_date_desc' | 'updated_at_desc';
 };
+
+const DEFAULT_PAGE_SIZE = 50;
 
 export async function getSchedules(filters: GetSchedulesFilters = {}): Promise<Schedule[]> {
   const supabase = await createServerSupabaseClient();
   const orderBy = filters.orderBy ?? 'start_date_asc';
+  const limit = filters.limit ?? DEFAULT_PAGE_SIZE;
+  const offset = filters.offset ?? 0;
+
   let q = supabase
     .from('schedules')
     .select('*')
     .order('start_date', { ascending: orderBy !== 'start_date_desc', nullsFirst: false })
-    .order('updated_at', { ascending: false });
+    .order('updated_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (filters.status) {
     q = q.eq('status', filters.status);
@@ -26,9 +33,6 @@ export async function getSchedules(filters: GetSchedulesFilters = {}): Promise<S
   if (filters.search?.trim()) {
     const term = filters.search.trim();
     q = q.or(`title.ilike.%${term}%,note.ilike.%${term}%`);
-  }
-  if (filters.limit != null && filters.limit > 0) {
-    q = q.limit(filters.limit);
   }
 
   const { data, error } = await q;
@@ -60,6 +64,9 @@ export async function createSchedule(input: unknown): Promise<{ data?: Schedule;
       assignee: parsed.data.assignee ?? null,
       start_date: parsed.data.start_date ?? null,
       end_date: parsed.data.end_date ?? null,
+      start_time: parsed.data.start_time ?? null,
+      end_time: parsed.data.end_time ?? null,
+      day_of_week: parsed.data.day_of_week ?? null,
       sessions_count: parsed.data.sessions_count ?? null,
       note: parsed.data.note ?? null,
       checklist: parsed.data.checklist ?? [],
@@ -85,6 +92,9 @@ export async function updateSchedule(
   if (parsed.data.assignee !== undefined) payload.assignee = parsed.data.assignee;
   if (parsed.data.start_date !== undefined) payload.start_date = parsed.data.start_date;
   if (parsed.data.end_date !== undefined) payload.end_date = parsed.data.end_date;
+  if (parsed.data.start_time !== undefined) payload.start_time = parsed.data.start_time;
+  if (parsed.data.end_time !== undefined) payload.end_time = parsed.data.end_time;
+  if (parsed.data.day_of_week !== undefined) payload.day_of_week = parsed.data.day_of_week;
   if (parsed.data.sessions_count !== undefined) payload.sessions_count = parsed.data.sessions_count;
   if (parsed.data.note !== undefined) payload.note = parsed.data.note;
   if (parsed.data.checklist !== undefined) payload.checklist = parsed.data.checklist;
@@ -128,5 +138,6 @@ function normalizeSchedule(row: Schedule): Schedule {
   return {
     ...row,
     checklist: Array.isArray(row.checklist) ? row.checklist : [],
+    day_of_week: Array.isArray(row.day_of_week) ? row.day_of_week : null,
   };
 }

@@ -20,6 +20,24 @@ export interface SchedulerSlotCardProps {
   isSaving: boolean;
 }
 
+function savePayload(
+  weekKey: string,
+  month: number,
+  week: number,
+  programId: string,
+  programs: { id: string; title: string }[],
+  published: boolean
+) {
+  return {
+    week_key: weekKey,
+    program_id: programId,
+    asset_pack_id: 'iiwarmup_think_default',
+    program_snapshot: { think150: true, week, month, audience: 'elementary' },
+    is_published: published,
+    programTitle: programs.find((p) => p.id === programId)?.title,
+  };
+}
+
 export function SchedulerSlotCard({
   weekKey,
   month,
@@ -30,69 +48,25 @@ export function SchedulerSlotCard({
   isSaving,
 }: SchedulerSlotCardProps) {
   const [programId, setProgramId] = useState(row?.program_id ?? '');
-  const [isPublished, setIsPublished] = useState(row?.is_published ?? false);
-  const [hasChanges, setHasChanges] = useState(false);
 
-  // Sync from props when row changes (controlled-by-parent pattern)
+  // Sync from props when row changes
   /* eslint-disable react-hooks/set-state-in-effect -- intentional sync from props */
   useEffect(() => {
     setProgramId(row?.program_id ?? '');
-    setIsPublished(row?.is_published ?? false);
-  }, [row?.program_id, row?.is_published]);
+  }, [row?.program_id]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const handleProgramChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setProgramId(e.target.value);
-    setHasChanges(true);
-  };
-
-  const savePayload = (published: boolean) => ({
-    week_key: weekKey,
-    program_id: programId,
-    asset_pack_id: 'iiwarmup_think_default',
-    program_snapshot: { think150: true, week, month, audience: 'elementary' },
-    is_published: published,
-    programTitle: programs.find((p) => p.id === programId)?.title,
-  });
-
-  const handlePublishToggle = () => {
-    const next = !isPublished;
-    setIsPublished(next);
-    if (programId) {
-      onSave(savePayload(next)).then(
-        () => setHasChanges(false),
-        (err) => {
-          setIsPublished((prev) => !prev);
-          console.error('Scheduler slot save failed:', err);
-        }
-      );
-    } else {
-      setHasChanges(true);
-    }
-  };
-
-  const handleSave = async () => {
+  const handleSave = async (published: boolean) => {
     if (!programId) return;
     try {
-      await onSave(savePayload(isPublished));
-      setHasChanges(false);
+      await onSave(savePayload(weekKey, month, week, programId, programs, published));
     } catch (err) {
-      let msg: string;
-      if (err instanceof Error) {
-        msg = err.message;
-      } else if (err != null && typeof err === 'object' && 'message' in err) {
-        msg = String((err as { message: unknown }).message);
-      } else if (err != null && typeof err === 'object') {
-        const raw = JSON.stringify(err);
-        msg = raw === '{}' ? 'Unknown error' : raw;
-      } else {
-        msg = String(err);
-      }
-      console.error('Scheduler slot save failed:', msg || 'Unknown error');
+      console.error('Scheduler slot save failed:', err);
     }
   };
 
   const isPublishedDisplay = row?.is_published ?? false;
+
   return (
     <div
       className={`rounded-lg border p-4 ${
@@ -118,7 +92,7 @@ export function SchedulerSlotCard({
       <select
         className="mb-2 w-full rounded border border-neutral-600 bg-neutral-900 px-3 py-2 text-sm"
         value={programId}
-        onChange={handleProgramChange}
+        onChange={(e) => setProgramId(e.target.value)}
       >
         <option value="">프로그램 선택</option>
         {programs.map((p) => (
@@ -129,32 +103,28 @@ export function SchedulerSlotCard({
       </select>
       {programId ? (
         <p className="mb-3 text-xs text-neutral-400" title={programId}>
-          선택: {programs.find((p) => p.id === programId)?.title ?? row?.programTitle ?? programId}
+          {programs.find((p) => p.id === programId)?.title ?? row?.programTitle ?? programId}
         </p>
       ) : (
         <p className="mb-3 text-xs text-neutral-500">선택된 프로그램 없음</p>
       )}
-      <div className="flex items-center justify-between gap-2">
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-400">
-          <input
-            type="checkbox"
-            checked={isPublished}
-            onChange={handlePublishToggle}
-            disabled={isSaving}
-            className="rounded border-neutral-600 disabled:opacity-60"
-          />
-          Published
-        </label>
-        {hasChanges && programId && (
-          <button
-            type="button"
-            className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            저장
-          </button>
-        )}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <button
+          type="button"
+          className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
+          onClick={() => handleSave(true)}
+          disabled={!programId || isSaving}
+        >
+          배정 &amp; 공개
+        </button>
+        <button
+          type="button"
+          className="rounded-lg border border-neutral-600 bg-neutral-800 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-700 disabled:opacity-50"
+          onClick={() => handleSave(false)}
+          disabled={!programId || isSaving}
+        >
+          미공개로 저장
+        </button>
       </div>
     </div>
   );

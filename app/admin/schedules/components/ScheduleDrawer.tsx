@@ -5,6 +5,27 @@ import { X, Save, Trash2, Loader2 } from 'lucide-react';
 import type { Schedule } from '@/app/lib/schedules/types';
 import { ChecklistEditor } from './ChecklistEditor';
 import { DateRangeField } from './DateRangeField';
+import { TimeRangeField } from './TimeRangeField';
+
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+function formatDateWithDay(dateStr: string | null): string {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr + 'T12:00:00');
+    if (Number.isNaN(d.getTime())) return dateStr;
+    const day = DAY_NAMES[d.getDay()];
+    const [y, m, dayNum] = dateStr.split('-');
+    return `${m}/${dayNum} (${day})`;
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatDayOfWeekList(days: number[] | null): string {
+  if (!days?.length) return '';
+  return '매주 ' + days.map((d) => DAY_NAMES[d]).join('·');
+}
 
 interface ScheduleDrawerProps {
   schedule: Schedule | null;
@@ -29,6 +50,9 @@ export function ScheduleDrawer({
   const [assignee, setAssignee] = useState('');
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
+  const [startTime, setStartTime] = useState<string | null>(null);
+  const [endTime, setEndTime] = useState<string | null>(null);
+  const [dayOfWeek, setDayOfWeek] = useState<number[] | null>(null);
   const [sessionsCount, setSessionsCount] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [status, setStatus] = useState<'active' | 'done'>('active');
@@ -43,6 +67,9 @@ export function ScheduleDrawer({
       setAssignee(schedule.assignee ?? '');
       setStartDate(schedule.start_date ?? null);
       setEndDate(schedule.end_date ?? null);
+      setStartTime(schedule.start_time ?? null);
+      setEndTime(schedule.end_time ?? null);
+      setDayOfWeek(Array.isArray(schedule.day_of_week) ? schedule.day_of_week : null);
       setSessionsCount(schedule.sessions_count ?? null);
       setNote(schedule.note ?? '');
       setStatus(schedule.status);
@@ -52,6 +79,9 @@ export function ScheduleDrawer({
       setAssignee('');
       setStartDate(null);
       setEndDate(null);
+      setStartTime(null);
+      setEndTime(null);
+      setDayOfWeek(null);
       setSessionsCount(null);
       setNote('');
       setStatus('active');
@@ -75,6 +105,9 @@ export function ScheduleDrawer({
         assignee: assignee.trim() || null,
         start_date: startDate || null,
         end_date: endDate || null,
+        start_time: startTime || null,
+        end_time: endTime || null,
+        day_of_week: dayOfWeek?.length ? dayOfWeek : null,
         sessions_count: sessionsCount,
         note: note.trim() || null,
         status: suggestDone ? 'done' : status,
@@ -166,6 +199,43 @@ export function ScheduleDrawer({
                 onStartChange={setStartDate}
                 onEndChange={setEndDate}
               />
+              {startDate && (
+                <p className="mt-1 text-xs text-slate-500">
+                  시작일 요일: {formatDateWithDay(startDate)}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">시작 · 종료 시간</label>
+              <TimeRangeField
+                startTime={startTime}
+                endTime={endTime}
+                onStartChange={setStartTime}
+                onEndChange={setEndTime}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">반복 요일</label>
+              <div className="flex flex-wrap gap-2">
+                {DAY_NAMES.map((name, i) => (
+                  <label key={i} className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={dayOfWeek?.includes(i) ?? false}
+                      onChange={(e) => {
+                        const next = dayOfWeek ?? [];
+                        if (e.target.checked) setDayOfWeek([...next, i].sort((a, b) => a - b));
+                        else setDayOfWeek(next.filter((d) => d !== i).length ? next.filter((d) => d !== i) : null);
+                      }}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm text-slate-700">{name}</span>
+                  </label>
+                ))}
+              </div>
+              {dayOfWeek?.length ? (
+                <p className="mt-1 text-xs text-slate-500">{formatDayOfWeekList(dayOfWeek)}</p>
+              ) : null}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">회기</label>

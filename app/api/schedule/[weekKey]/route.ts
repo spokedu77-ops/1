@@ -99,7 +99,7 @@ export async function GET(
     };
     return NextResponse.json(emptyPayload, {
       status: 200,
-      headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=120' },
+      headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
     });
   }
 
@@ -150,7 +150,7 @@ export async function GET(
       thinkPackByMonthAndWeek: thinkPackByMonthAndWeek ?? null,
     },
     {
-      headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=120' },
+      headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
     }
   );
 }

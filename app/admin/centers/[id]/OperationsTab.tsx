@@ -86,41 +86,41 @@ export function OperationsTab({ center, onSaved }: OperationsTabProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div>
-        <label className="block text-sm font-medium text-gray-700">출입 안내 (access_note)</label>
+        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">출입 안내 (access_note)</label>
         <textarea
           value={accessNote}
           onChange={(e) => setAccessNote(e.target.value)}
           rows={3}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">특이사항 (highlights)</label>
+        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">특이사항 (highlights)</label>
         <textarea
           value={highlights}
           onChange={(e) => setHighlights(e.target.value)}
           rows={4}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
         />
       </div>
       <div>
         <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-gray-700">주간 시간표</label>
+          <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">주간 시간표</label>
           <button
             type="button"
             onClick={addSlot}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-indigo-600 hover:underline"
           >
             + 행 추가
           </button>
         </div>
         <div className="mt-2 space-y-2">
           {schedule.map((row, i) => (
-            <div key={i} className="flex flex-wrap items-center gap-2 rounded border border-gray-200 bg-gray-50 p-2">
+            <div key={i} className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200/80 bg-slate-50 p-3">
               <select
                 value={row.day}
                 onChange={(e) => updateSlot(i, 'day', e.target.value)}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
+                className="rounded-lg border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
               >
                 {DAY_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -130,27 +130,27 @@ export function OperationsTab({ center, onSaved }: OperationsTabProps) {
                 type="time"
                 value={row.start}
                 onChange={(e) => updateSlot(i, 'start', e.target.value)}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
+                className="rounded-lg border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
               />
               <input
                 type="time"
                 value={row.end}
                 onChange={(e) => updateSlot(i, 'end', e.target.value)}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
+                className="rounded-lg border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
               />
               <input
                 type="text"
                 placeholder="장소"
                 value={row.place}
                 onChange={(e) => updateSlot(i, 'place', e.target.value)}
-                className="w-24 rounded border border-gray-300 px-2 py-1 text-sm"
+                className="w-24 rounded-lg border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
               />
               <input
                 type="text"
                 placeholder="비고"
                 value={row.note}
                 onChange={(e) => updateSlot(i, 'note', e.target.value)}
-                className="flex-1 min-w-[80px] rounded border border-gray-300 px-2 py-1 text-sm"
+                className="flex-1 min-w-[80px] rounded-lg border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
               />
               <button
                 type="button"
@@ -164,28 +164,28 @@ export function OperationsTab({ center, onSaved }: OperationsTabProps) {
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">강사 기본배정</label>
+        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">강사 기본배정</label>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <div>
-            <span className="text-xs text-gray-500">메인</span>
+            <span className="text-xs text-slate-500">메인</span>
             <input
               type="text"
               value={instructors.main ?? ''}
               onChange={(e) => setInstructors((i) => ({ ...i, main: e.target.value || null }))}
-              className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
             />
           </div>
           <div>
-            <span className="text-xs text-gray-500">서브</span>
+            <span className="text-xs text-slate-500">서브</span>
             <input
               type="text"
               value={instructors.sub ?? ''}
               onChange={(e) => setInstructors((i) => ({ ...i, sub: e.target.value || null }))}
-              className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
             />
           </div>
           <div className="sm:col-span-2">
-            <span className="text-xs text-gray-500">백업 (쉼표 구분)</span>
+            <span className="text-xs text-slate-500">백업 (쉼표 구분)</span>
             <input
               type="text"
               value={instructors.backup?.join(', ') ?? ''}
@@ -195,7 +195,7 @@ export function OperationsTab({ center, onSaved }: OperationsTabProps) {
                   backup: e.target.value ? e.target.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
                 }))
               }
-              className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none"
             />
           </div>
         </div>
@@ -203,7 +203,7 @@ export function OperationsTab({ center, onSaved }: OperationsTabProps) {
       <button
         type="submit"
         disabled={saving}
-        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        className="min-h-[44px] rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
       >
         {saving ? '저장 중…' : '저장'}
       </button>
