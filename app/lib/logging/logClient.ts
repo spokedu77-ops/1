@@ -41,7 +41,7 @@ export function logAdminProductivity(event: AdminProductivityEvent): void {
   supabase
     .from('admin_productivity_events')
     .insert(event)
-    .then(({ error }) => {
+    .then(({ error }: { error: { message: string } | null }) => {
       if (error) console.warn('[logAdminProductivity]', error.message);
     });
 }
@@ -53,7 +53,7 @@ export function logSubscriberRuntime(event: SubscriberRuntimeEvent): void {
   supabase
     .from('subscriber_runtime_events')
     .insert(event)
-    .then(({ error }) => {
+    .then(({ error }: { error: { message: string } | null }) => {
       if (error) console.warn('[logSubscriberRuntime]', error.message);
     });
 }

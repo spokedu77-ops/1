@@ -431,8 +431,8 @@ export default function NoticePage() {
 
   useEffect(() => {
     if (showWeeklyBestWizard && wizardStep === 1 && coaches.length === 0 && supabase) {
-      supabase.from('users').select('id, name').eq('is_active', true).order('name').then(({ data }) => {
-        if (data) setCoaches(data as { id: string; name: string }[]);
+      supabase.from('users').select('id, name').eq('is_active', true).order('name').then(({ data }: { data: { id: string; name: string }[] | null }) => {
+        if (data) setCoaches(data);
       });
     }
   }, [showWeeklyBestWizard, wizardStep, coaches.length, supabase]);

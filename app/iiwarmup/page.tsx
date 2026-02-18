@@ -7,17 +7,32 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Clock, Music2 } from 'lucide-react';
 import { getCurrentWeekKey } from '@/app/lib/admin/scheduler/getCurrentWeekKey';
 import { useSubscriberSchedule, getChallengePropsFromPhases } from '@/app/lib/admin/hooks/useSubscriberSchedule';
 import { PhaseControls, type PlayMode } from '@/app/components/subscriber/PhaseControls';
-import { FullSequencePlayer } from '@/app/components/subscriber/FullSequencePlayer';
 import { LoadingSkeleton } from '@/app/components/subscriber/LoadingSkeleton';
 import { EmptyState } from '@/app/components/subscriber/EmptyState';
 import { CompletionModal } from '@/app/components/subscriber/CompletionModal';
-import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
-import { ThinkPhaseWrapper } from '@/app/components/subscriber/ThinkPhaseWrapper';
-import { FlowFrame } from '@/app/components/subscriber/FlowFrame';
+
+const FullSequencePlayer = dynamic(
+  () => import('@/app/components/subscriber/FullSequencePlayer').then((m) => ({ default: m.FullSequencePlayer })),
+  { ssr: false, loading: () => <LoadingSkeleton /> }
+);
+
+const SpokeduRhythmGame = dynamic(
+  () => import('@/app/components/runtime/SpokeduRhythmGame').then((m) => ({ default: m.SpokeduRhythmGame })),
+  { ssr: false }
+);
+const ThinkPhaseWrapper = dynamic(
+  () => import('@/app/components/subscriber/ThinkPhaseWrapper').then((m) => ({ default: m.ThinkPhaseWrapper })),
+  { ssr: false }
+);
+const FlowFrame = dynamic(
+  () => import('@/app/components/subscriber/FlowFrame').then((m) => ({ default: m.FlowFrame })),
+  { ssr: false }
+);
 
 type ViewState = 'idle' | 'loading' | 'empty' | 'ready' | 'playing' | 'completed';
 

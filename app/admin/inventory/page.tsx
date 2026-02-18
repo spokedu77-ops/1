@@ -221,11 +221,33 @@ export default function AdminInventoryPage() {
 
   if (isInitialLoading) {
     return (
-      <div className="flex h-screen bg-[#F8FAFC] items-center justify-center font-sans text-slate-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
-          <p className="text-sm font-bold text-slate-400">교구 목록 불러오는 중...</p>
-        </div>
+      <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans text-slate-900 relative">
+        <aside className="hidden md:block w-64 shrink-0 bg-white border-r border-slate-200 animate-pulse">
+          <div className="h-16 border-b border-slate-100 bg-slate-50/50" />
+          <div className="p-2 space-y-2">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                <div className="w-10 h-10 rounded-lg bg-slate-200" />
+                <div className="flex-1 space-y-1">
+                  <div className="h-3 w-3/4 bg-slate-200 rounded" />
+                  <div className="h-2 w-1/2 bg-slate-100 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+        <main className="flex-1 flex flex-col">
+          <header className="h-16 px-4 flex items-center border-b border-slate-200 bg-white">
+            <div className="h-8 w-32 bg-slate-100 rounded animate-pulse" />
+            <div className="h-9 w-40 bg-slate-100 rounded-xl animate-pulse ml-4" />
+          </header>
+          <div className="flex-1 p-4 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+              <p className="text-sm font-bold text-slate-400">교구·강사 목록 불러오는 중...</p>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }

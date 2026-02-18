@@ -51,7 +51,7 @@ const SCHEDULE_AHEAD_TIME = 0.1;
 const COUNTDOWN_BEATS = 4;
 
 /** 챌린지 레벨 간 쉬는 시간(ms). BPM 180 기준 "음악 시간". 다른 BPM이면 wall-clock을 이만큼 음악이 흐르도록 맞춤. */
-const CHALLENGE_TRANSITION_MS = 3350;
+const CHALLENGE_TRANSITION_MS = 3000;
 
 const MIN_TRANSITION_MS = 2000;
 const MAX_TRANSITION_MS = 6000;
@@ -335,14 +335,13 @@ export function SpokeduRhythmGame({
 
   const handleLevelComplete = useCallback(() => {
     if (isTransitioningRef.current) return;
-    runIdRef.current++;
     if (timerIDRef.current) cancelAnimationFrame(timerIDRef.current);
-    const myRunId = runIdRef.current;
     const levelWhenComplete = currentLevelRef.current;
-    setCurrentBeat(-1);
 
     if (levelWhenComplete >= MAX_LEVELS) {
-      // 마지막 단계 완주 → 전환 문구 없이 곧바로 완주 화면
+      runIdRef.current++;
+      const myRunId = runIdRef.current;
+      setCurrentBeat(-1);
       setTimeout(() => {
         if (myRunId !== runIdRef.current) return;
         finishGame();
@@ -350,22 +349,30 @@ export function SpokeduRhythmGame({
       return;
     }
 
-    isTransitioningRef.current = true;
-    setIsTransitioning(true);
+    // runIdRef는 한 박자 뒤(rest 표시 직전)에만 올린다. 그래야 마지막 scheduleNote(8번째 초록)의
+    // setTimeout이 myRunId === runIdRef 로 통과해서 setCurrentBeat(15)가 실행되고 8번째 초록이 뜬다.
+    const oneBeatMs = Math.round((60 / bpmRef.current) * 1000);
     setTimeout(() => {
-      if (myRunId !== runIdRef.current) return;
+      runIdRef.current++;
+      const myRunId = runIdRef.current;
+      setCurrentBeat(-1);
+      isTransitioningRef.current = true;
+      setIsTransitioning(true);
+      setTimeout(() => {
+        if (myRunId !== runIdRef.current) return;
 
-      const nextLvl = levelWhenComplete + 1;
-      currentLevelRef.current = nextLvl;
-      levelDataRef.current = levelData;
-      levelRoundCountRef.current = 1;
-      setCurrentLevel(nextLvl);
-      setRoundInLevel(1);
-      setShuffledGrid(shuffleArray(levelData[nextLvl] ?? defaultLevels[nextLvl]));
-      isTransitioningRef.current = false;
-      setIsTransitioning(false);
-      startCountdownRef.current();
-    }, getTransitionDurationMs(bpmRef.current, bgmSourceBpmRef.current));
+        const nextLvl = levelWhenComplete + 1;
+        currentLevelRef.current = nextLvl;
+        levelDataRef.current = levelData;
+        levelRoundCountRef.current = 1;
+        setCurrentLevel(nextLvl);
+        setRoundInLevel(1);
+        setShuffledGrid(shuffleArray(levelData[nextLvl] ?? defaultLevels[nextLvl]));
+        isTransitioningRef.current = false;
+        setIsTransitioning(false);
+        startCountdownRef.current();
+      }, getTransitionDurationMs(bpmRef.current, bgmSourceBpmRef.current));
+    }, oneBeatMs);
   }, [levelData, finishGame, shuffleArray, bpm]);
 
   const scheduleNote = useCallback(
@@ -384,6 +391,11 @@ export function SpokeduRhythmGame({
       }
 
       const drawTime = time - (audioContextRef.current?.currentTime ?? 0);
+      const level = currentLevelRef.current;
+      // 4단계 4·5라운드: 누적 드리프트 보정 — 초록을 호루라기 소리보다 약간 앞당겨서 맞춤
+      const pullMs =
+        level === MAX_LEVELS && currentLevelRound >= 4 ? 80 : 0;
+      const delayMs = Math.max(0, drawTime * 1000 - pullMs);
 
       setTimeout(() => {
         if (myRunId !== runIdRef.current) return;
@@ -403,7 +415,7 @@ export function SpokeduRhythmGame({
             setTotalBeatsPlayed((prev) => prev + 1);
           }
         }
-      }, Math.max(0, drawTime * 1000));
+      }, delayMs);
     },
     [playClick, playGuideTone, playWhistle, shuffleArray, levelData, currentLevel]
   );
