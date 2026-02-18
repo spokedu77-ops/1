@@ -8,21 +8,31 @@ export interface DraftValidationResult {
   errors: string[];
 }
 
+/** Play 초안에서 검증 시 사용하는 필드 */
+interface PlayDraftData {
+  timeline?: unknown;
+  selectedActions?: unknown;
+  asset_pack_id?: unknown;
+}
+
 /**
  * Play 초안 검증
  */
-function validatePlayDraft(data: any): DraftValidationResult {
+function validatePlayDraft(data: PlayDraftData): DraftValidationResult {
   const errors: string[] = [];
 
-  if (!data.timeline || !Array.isArray(data.timeline) || data.timeline.length === 0) {
+  const timeline = data.timeline;
+  if (!timeline || !Array.isArray(timeline) || timeline.length === 0) {
     errors.push('타임라인이 필요합니다.');
   }
 
-  if (!data.selectedActions || !Array.isArray(data.selectedActions) || data.selectedActions.length !== 5) {
+  const selectedActions = data.selectedActions;
+  if (!selectedActions || !Array.isArray(selectedActions) || selectedActions.length !== 5) {
     errors.push('정확히 5개의 액션을 선택해야 합니다.');
   }
 
-  if (!data.asset_pack_id || typeof data.asset_pack_id !== 'string') {
+  const assetPackId = data.asset_pack_id;
+  if (assetPackId === undefined || assetPackId === null || typeof assetPackId !== 'string') {
     errors.push('Asset Pack ID가 필요합니다.');
   }
 
@@ -32,10 +42,16 @@ function validatePlayDraft(data: any): DraftValidationResult {
   };
 }
 
+/** Think 초안에서 검증 시 사용하는 필드 */
+interface ThinkDraftData {
+  layout_sequence?: unknown;
+  seed?: unknown;
+}
+
 /**
  * Think 초안 검증
  */
-function validateThinkDraft(data: any): DraftValidationResult {
+function validateThinkDraft(data: ThinkDraftData): DraftValidationResult {
   const errors: string[] = [];
 
   if (!data.layout_sequence || !Array.isArray(data.layout_sequence) || data.layout_sequence.length === 0) {
@@ -87,10 +103,17 @@ function validateThinkDraft(data: any): DraftValidationResult {
   };
 }
 
+/** Flow 초안에서 검증 시 사용하는 필드 */
+interface FlowDraftData {
+  baseSpeed?: unknown;
+  distortion?: unknown;
+  boxRate?: { lv3?: unknown; lv4?: unknown };
+}
+
 /**
  * Flow 초안 검증
  */
-function validateFlowDraft(data: any): DraftValidationResult {
+function validateFlowDraft(data: FlowDraftData): DraftValidationResult {
   const errors: string[] = [];
 
   if (typeof data.baseSpeed !== 'number' || data.baseSpeed <= 0) {
@@ -124,15 +147,15 @@ function validateFlowDraft(data: any): DraftValidationResult {
  */
 export function validateDraft(
   type: 'play' | 'think' | 'flow',
-  data: any
+  data: PlayDraftData | ThinkDraftData | FlowDraftData
 ): DraftValidationResult {
   switch (type) {
     case 'play':
-      return validatePlayDraft(data);
+      return validatePlayDraft(data as PlayDraftData);
     case 'think':
-      return validateThinkDraft(data);
+      return validateThinkDraft(data as ThinkDraftData);
     case 'flow':
-      return validateFlowDraft(data);
+      return validateFlowDraft(data as FlowDraftData);
     default:
       return {
         isValid: false,

@@ -39,13 +39,20 @@ export function useClassManagement() {
     const { data, error } = sessionsRes;
     if (!error && data) {
       const groupTotals: Record<string, number> = {};
-      data.forEach((s: any) => { if(s.group_id) groupTotals[s.group_id] = (groupTotals[s.group_id] || 0) + 1; });
+      data.forEach((s: { group_id?: string }) => { if(s.group_id) groupTotals[s.group_id] = (groupTotals[s.group_id] || 0) + 1; });
       const groupCurrentRounds: Record<string, number> = {};
 
-      const events: SessionEvent[] = data.map((s: any) => {
+      type SessionRow = {
+        id?: string; title?: string; start_at?: string; end_at?: string; session_type?: string;
+        group_id?: string; users?: { name?: string; id?: string }; students_text?: string;
+        round_display?: string; status?: string; price?: number; mileage_option?: string;
+        round_index?: number; round_total?: number;
+      };
+      const events: SessionEvent[] = data.map((s: SessionRow) => {
+        const title = s.title ?? '';
         let roundStr = s.round_display || '';
         if (!roundStr) {
-          const roundMatch = s.title.match(/(\d+\/\d+)/);
+          const roundMatch = title.match(/(\d+\/\d+)/);
           if (roundMatch) roundStr = roundMatch[1];
           else if (s.group_id) {
             groupCurrentRounds[s.group_id] = (groupCurrentRounds[s.group_id] || 0) + 1;
@@ -56,13 +63,13 @@ export function useClassManagement() {
         let displayTeacher = s.users?.name || '미정';
         const { extraTeachers } = parseExtraTeachers(s.students_text || '');
         const extraNames = extraTeachers
-          .map((ex: { id?: string }) => tList.find((t: any) => t.id === ex.id)?.name)
+          .map((ex: { id?: string }) => tList.find((t: { id?: string; name?: string }) => t.id === ex.id)?.name)
           .filter(Boolean) as string[];
         if (extraNames.length > 0) displayTeacher += `, ${extraNames.join(', ')}`;
 
         return {
           id: s.id, 
-          title: s.title.replace(/(\d+\/\d+)\s?/, '').trim(),
+          title: title.replace(/(\d+\/\d+)\s?/, '').trim(),
           start: s.start_at, 
           end: s.end_at, 
           teacher: displayTeacher, 
@@ -70,7 +77,7 @@ export function useClassManagement() {
           type: s.session_type, 
           status: s.status, 
           groupId: s.group_id, 
-          price: s.price || 0,
+          price: s.price ?? 0,
           studentsText: s.students_text || '', 
           isAdmin: ADMIN_NAMES.some(admin => displayTeacher.includes(admin)), 
           roundInfo: roundStr, 

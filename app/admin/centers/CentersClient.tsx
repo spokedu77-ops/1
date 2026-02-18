@@ -122,7 +122,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
           <button
             type="button"
             onClick={() => setIsCreateOpen(true)}
-            className="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all touch-manipulation"
+            className="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all touch-manipulation cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             센터 추가
@@ -143,7 +143,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-full border border-slate-200 px-3.5 py-2 text-sm bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+            className="rounded-full border border-slate-200 px-3.5 py-2 text-sm bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -196,11 +196,11 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {centers.map((c) => (
-                    <tr key={c.id} className="border-l-2 border-l-transparent hover:bg-indigo-50/40 hover:border-l-indigo-500 transition-colors">
+                    <tr key={c.id} className="border-l-2 border-l-transparent hover:bg-indigo-50/40 hover:border-l-indigo-500 transition-colors cursor-pointer">
                       <td className="px-5 py-3">
                         <Link
                           href={`/admin/centers/${c.id}`}
-                          className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+                          className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
                         >
                           {c.name}
                         </Link>
@@ -232,7 +232,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                           type="button"
                           onClick={() => handleDelete(c)}
                           disabled={deletingId === c.id}
-                          className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
+                          className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors cursor-pointer"
                           title="삭제"
                         >
                           {deletingId === c.id ? (
@@ -259,7 +259,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(false)}
-                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -303,7 +303,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                   onChange={(e) =>
                     setCreateForm((f) => ({ ...f, status: e.target.value as CenterStatus }))
                   }
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                 >
                   <option value="active">활성</option>
                   <option value="paused">일시중지</option>
@@ -314,14 +314,14 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md disabled:opacity-50 transition-all"
+                  className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md disabled:opacity-50 transition-all cursor-pointer"
                 >
                   {submitting ? '저장 중…' : '저장'}
                 </button>

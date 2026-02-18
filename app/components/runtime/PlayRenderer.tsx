@@ -14,7 +14,7 @@ const DROP_LANES = 5;
 /** 5레인 x 위치 (%, 왼쪽~오른쪽). laneIndex 0..4 */
 const DROP_LANE_X_PERCENT = [10, 30, 50, 70, 90] as const;
 
-export function PlayRenderer({ tMs, visuals, totalTicks }: PlayRendererProps) {
+export function PlayRenderer({ tMs, visuals }: PlayRendererProps) {
   const currentTick = Math.floor(tMs / TICK_MS);
   // 단일 순회: eventsAtTick + dropInWindow 동시 수집 (filter 2회 → 1회)
   const eventsAtTick: VisualEvent[] = [];

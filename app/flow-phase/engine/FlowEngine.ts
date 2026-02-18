@@ -5,8 +5,9 @@
  */
 import * as THREE from 'three';
 import { ObstacleManager } from './entities/ObstacleManager';
+import { AdaptiveQuality } from './systems/AdaptiveQuality';
 import { FlowAudio } from './FlowAudio';
-import { getRefEl, setLevelTag, showInstruction } from './FlowUI';
+import { getRefEl, setLevelTag, showInstruction, showDuckWarningLine, showCompleteStamp, showLevelBadge } from './FlowUI';
 import {
   BRIDGE_LENGTH,
   BRIDGE_GAP,
@@ -65,18 +66,60 @@ import {
   RUNBOB_ALPHA,
   PHRASES,
   PAD_DEPTH,
+  PAD_HIGHLIGHT_MS,
+  BEAT_STEP_SEC,
+  FLOW_EFFECT_PROFILES,
+  HIT_STOP_FRAMES,
+  HIT_STOP_LEVEL,
+  PANO_ROTATION_DT60_CW,
 } from './core/coordContract';
 
 import type { FlowDomRefs } from './FlowTypes';
 export type { FlowDomRefs };
 
+/** 파노라마 전방 180°만 선명히 표시, 뒤쪽은 우주 검정. 2K도 덜 뭉개지게 */
+const PANO_VERTEX = `
+  varying vec3 vViewDirection;
+  void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vViewDirection = mv.xyz;
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+const PANO_FRAGMENT = `
+  uniform sampler2D map;
+  uniform float uTime;
+  uniform float uVignetteScale;
+  uniform float uGrainScale;
+  uniform float uPanoRotation;
+  varying vec3 vViewDirection;
+  void main() {
+    vec3 d = normalize(vViewDirection);
+    float u = (atan(d.x, -d.z) + 3.14159265) / 6.2831853 + (uPanoRotation / 6.2831853);
+    u = fract(u);
+    float v = 0.5 - asin(clamp(d.y, -1.0, 1.0)) / 3.14159265;
+    vec4 c = texture2D(map, vec2(u, v));
+    float breath = 1.0 + 0.025 * sin(uTime * 0.4);
+    c.rgb *= breath;
+    float edge = smoothstep(0.08, -0.12, d.z);
+    c.rgb = mix(vec3(0.0, 0.0, 0.0), c.rgb, edge);
+    float vignette = 1.0 - 0.32 * uVignetteScale * (1.0 + d.z);
+    c.rgb *= clamp(vignette, 0.0, 1.0);
+    c.rgb = (c.rgb - 0.5) * 1.06 + 0.5;
+    float n = fract(sin(dot(gl_FragCoord.xy + uTime * 60.0, vec2(12.9898, 78.233))) * 43758.5453);
+    c.rgb += (n - 0.5) * 0.01 * uGrainScale;
+    gl_FragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+  }
+`;
+
 export class FlowEngine {
   private canvas: HTMLCanvasElement;
-  private domRefs: FlowDomRefs;
+  private domRefsRef: { current: FlowDomRefs };
   private rafId: number = 0;
   private clock: THREE.Clock | null = null;
   private obstacleManager!: ObstacleManager;
   private audio = new FlowAudio();
+  private adaptiveQuality = new AdaptiveQuality();
 
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
@@ -92,6 +135,7 @@ export class FlowEngine {
     x: number;
     padDepth: number;
     hasBox: boolean;
+    padMesh?: THREE.Mesh;
   }> = [];
   private spaceObjects: Array<{
     mesh: THREE.Mesh | THREE.Group;
@@ -102,6 +146,7 @@ export class FlowEngine {
   private gameState = 'waiting';
   private isResting = false;
   private movementActive = false;
+  private isPausedByVisibility = false;
   private gameTime = 0;
   private levelTime = 0;
   private currentLevelIndex = 0;
@@ -150,8 +195,10 @@ export class FlowEngine {
   private landingImpactYVel = 0;
   private landingImpactZVel = 0;
 
-  private readonly beatStepSec = (60 / 150) / 2;
+  private readonly beatStepSec = BEAT_STEP_SEC;
   private nextBeatTime = 0;
+  private prevBeatPhase = -1;
+  private hitStopFramesRemaining = 0;
   private beatPulseValue = 0;
   private flashPulseValue = 0;
 
@@ -162,6 +209,7 @@ export class FlowEngine {
   private camYBob = 0;
   private panoStoragePath: string | null = null;
   private panoMesh: THREE.Mesh | null = null;
+  private panoTexture: THREE.Texture | null = null;
   private currentSpeedValue = 0;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
   private introCountdownTimer: ReturnType<typeof setInterval> | null = null;
@@ -173,10 +221,17 @@ export class FlowEngine {
   private hitShakeOffsetY = 0;
   private restStartMs = 0;
   private pendingTimeouts: Array<ReturnType<typeof setTimeout>> = [];
+  private panoStatusText = '';
+  private bgmStatusText = '';
+  private audioDeferred = false;
 
-  constructor(canvas: HTMLCanvasElement, domRefs: FlowDomRefs) {
+  constructor(canvas: HTMLCanvasElement, domRefsRef: { current: FlowDomRefs }) {
     this.canvas = canvas;
-    this.domRefs = domRefs;
+    this.domRefsRef = domRefsRef;
+  }
+
+  private get domRefs(): FlowDomRefs {
+    return this.domRefsRef.current;
   }
 
   private registerTimeout(callback: () => void, delay: number): void {
@@ -214,15 +269,34 @@ export class FlowEngine {
 
   /** 파노 로딩 상태를 좌상단 HUD에 표시 (진단용) */
   private setPanoStatus(text: string): void {
+    this.panoStatusText = text;
+    this.updateDebugHud();
+  }
+
+  private setBgmStatus(text: string): void {
+    this.bgmStatusText = text;
+    this.updateDebugHud();
+  }
+
+  private updateDebugHud(): void {
     const el = getRefEl(this.domRefs.panoDebugHud);
-    if (el) el.textContent = text;
+    if (!el) return;
+    const parts = [this.panoStatusText, this.bgmStatusText].filter(Boolean);
+    el.textContent = parts.join(' | ');
+  }
+
+  /** 사용자 제스처(탭) 후 오디오 활성화. startGame(..., { deferAudio: true }) 후 한 번 호출 */
+  enableAudio(): void {
+    if (!this.audioDeferred) return;
+    this.audioDeferred = false;
+    this.audio.resume().then(() => this.audio.startMusic());
   }
 
   /**
    * Admin: 특정 레벨로 즉시 시작
    * Phase A-1: 원자적 리셋 + 브리지 재스폰
    */
-  setStartLevel(level: 1 | 2 | 3 | 4): void {
+  setStartLevel(level: 1 | 2 | 3 | 4 | 5): void {
     if (!this.scene || !this.camera || this.gameState !== 'playing') return;
 
     this.clearScheduledTimeouts();
@@ -235,12 +309,13 @@ export class FlowEngine {
     this.isResting = false;
     this.currentSpeedValue = 0;
 
-    // 레벨 인덱스 매핑 (displayLevels = [1, 2, 0, 3, 4, -1])
-    const levelToIndex: Record<1 | 2 | 3 | 4, number> = {
-      1: 0, // LV1
-      2: 1, // LV2
-      3: 3, // LV3
-      4: 5, // LV4 (인덱스 2,4는 REST)
+    // 레벨 인덱스 매핑 (displayLevels = [1, 2, 0, 3, 0, 4, 5, -1])
+    const levelToIndex: Record<1 | 2 | 3 | 4 | 5, number> = {
+      1: 0,
+      2: 1,
+      3: 3,
+      4: 5,
+      5: 6,
     };
     this.currentLevelIndex = levelToIndex[level];
 
@@ -298,20 +373,20 @@ export class FlowEngine {
     if (startBtn) startBtn.style.display = 'none';
 
     // 골드 버짓 리셋
-    if (level === 3) {
+    if (level === 3 || level === 5) {
       this.obstacleManager.setGoldBudget(4);
     }
 
-    // Beat 리셋
-    this.nextBeatTime = this.gameTime;
     this.beatPulseValue = 0;
     this.flashPulseValue = 0;
+    this.prevBeatPhase = -1;
 
     // 시작 인스트럭션
     if (level === 1) showInstruction(this.domRefs, 'JUMP!', 'text-yellow-400', 700);
     else if (level === 2) showInstruction(this.domRefs, 'FASTER!', 'text-cyan-300', 900);
     else if (level === 3) showInstruction(this.domRefs, 'PUNCH! 🥊', 'text-red-400', 900);
     else if (level === 4) showInstruction(this.domRefs, 'FOCUS!', 'text-orange-300', 900);
+    else if (level === 5) showInstruction(this.domRefs, 'ALL! 🥊', 'text-purple-300', 900);
   }
 
   private getCurrentLevelNum(): number {
@@ -353,7 +428,6 @@ export class FlowEngine {
     this.createSpaceBackground();
     this.createSpeedLines();
     this.createTrackLanes();
-    this.createSpacePlanets();
 
     this.obstacleManager = new ObstacleManager(
       this.scene,
@@ -385,6 +459,10 @@ export class FlowEngine {
           this.audio.sfxWhoosh();
           this.duckBounceOffset = DUCK_BOUNCE_AFTER_PASS;
         },
+        onUfoWarn: () => showDuckWarningLine(this.domRefs, 700),
+        onHitStop: () => {
+          if (this.getCurrentLevelNum() === HIT_STOP_LEVEL) this.hitStopFramesRemaining = HIT_STOP_FRAMES;
+        },
       }
     );
   }
@@ -395,9 +473,11 @@ export class FlowEngine {
     const clearBackground = () => {
       if (this.panoMesh) {
         this.panoMesh.parent?.remove(this.panoMesh);
-        const mat = this.panoMesh.material as THREE.MeshBasicMaterial;
-        const map = mat?.map;
-        if (map) map.dispose();
+        if (this.panoTexture) {
+          this.panoTexture.dispose();
+          this.panoTexture = null;
+        }
+        const mat = this.panoMesh.material as THREE.MeshBasicMaterial & { uniforms?: { map?: { value: THREE.Texture } } };
         mat?.dispose();
         this.panoMesh.geometry?.dispose();
         this.panoMesh = null;
@@ -449,7 +529,6 @@ export class FlowEngine {
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
     if (!base) {
       this.setPanoStatus('PANO: env-missing');
-      console.warn('[FLOW PANO] env-missing: NEXT_PUBLIC_SUPABASE_URL');
       return;
     }
 
@@ -457,17 +536,14 @@ export class FlowEngine {
     const url = `${base}/storage/v1/object/public/iiwarmup-files/${encodedPath}`;
 
     this.setPanoStatus('PANO: loading');
-    console.log('[FLOW PANO] url=', url, ', head check...');
 
     fetch(url, { method: 'HEAD' })
       .then((res) => {
         const status = res.status;
         if (status !== 200) {
           this.setPanoStatus(`PANO: failed(${status})`);
-          console.warn('[FLOW PANO] head=', status, ', skip load');
           return;
         }
-        console.log('[FLOW PANO] head=200, loading');
         const loader = new THREE.TextureLoader();
         loader.setCrossOrigin('anonymous');
         loader.load(
@@ -480,8 +556,9 @@ export class FlowEngine {
 
             if (this.panoMesh) {
               this.panoMesh.parent?.remove(this.panoMesh);
-              const oldMat = this.panoMesh.material as THREE.MeshBasicMaterial;
-              oldMat?.map?.dispose();
+              const oldMat = this.panoMesh.material as THREE.Material;
+              if ('map' in oldMat && (oldMat as THREE.MeshBasicMaterial).map)
+                (oldMat as THREE.MeshBasicMaterial).map?.dispose();
               oldMat?.dispose();
               this.panoMesh.geometry?.dispose();
               this.panoMesh = null;
@@ -493,12 +570,25 @@ export class FlowEngine {
               (tex as THREE.Texture & { encoding: number }).encoding = 3001;
             }
             tex.needsUpdate = true;
+            if (this.renderer?.capabilities?.getMaxAnisotropy) {
+              tex.anisotropy = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
+            }
 
-            const geo = new THREE.SphereGeometry(4500, 32, 32);
+            const geo = new THREE.SphereGeometry(4500, 64, 32);
             geo.scale(-1, 1, 1);
 
-            const mat = new THREE.MeshBasicMaterial({
-              map: tex,
+            this.panoTexture?.dispose();
+            this.panoTexture = tex;
+            const mat = new THREE.ShaderMaterial({
+              uniforms: {
+                map: { value: tex },
+                uTime: { value: 0 },
+                uVignetteScale: { value: 1 },
+                uGrainScale: { value: 1 },
+                uPanoRotation: { value: 0 },
+              },
+              vertexShader: PANO_VERTEX,
+              fragmentShader: PANO_FRAGMENT,
               side: THREE.FrontSide,
               depthWrite: false,
               depthTest: false,
@@ -512,55 +602,19 @@ export class FlowEngine {
             this.camera.add(this.panoMesh);
 
             const inScene = this.panoMesh.parent != null;
-            const hasMap = !!(mat?.map);
+            const hasMap = !!(tex);
             const srgb = this.renderer && 'outputColorSpace' in this.renderer ? 1 : 0;
             this.setPanoStatus(`PANO: ok (mesh:${inScene ? 1 : 0} map:${hasMap ? 1 : 0} srgb:${srgb})`);
-            console.log('[FLOW PANO] ok', tex.image?.width, tex.image?.height);
           },
           undefined,
-          (err) => {
+          () => {
             this.setPanoStatus('PANO: failed(load)');
-            console.warn('[FLOW PANO] load failed:', url, err);
           }
         );
       })
       .catch(() => {
         this.setPanoStatus('PANO: failed(network)');
-        console.warn('[FLOW PANO] failed(network)', url);
       });
-  }
-
-  private createSpacePlanets(): void {
-    const earthGeo = new THREE.SphereGeometry(1200, 64, 64);
-    const earthMat = new THREE.MeshPhongMaterial({
-      color: 0x2233ff,
-      emissive: 0x112244,
-      shininess: 25,
-    });
-    const earth = new THREE.Mesh(earthGeo, earthMat);
-    earth.position.set(3500, 1500, -12000);
-    this.scene.add(earth);
-    this.spaceObjects.push({ mesh: earth, speed: 0.15, rotationSpeed: 0.001 });
-
-    const bhGroup = new THREE.Group();
-    const bhCore = new THREE.Mesh(
-      new THREE.SphereGeometry(300, 64, 64),
-      new THREE.MeshBasicMaterial({ color: 0x000000 })
-    );
-    const diskGeo = new THREE.TorusGeometry(550, 150, 2, 128);
-    const diskMat = new THREE.MeshBasicMaterial({
-      color: 0xff6600,
-      transparent: true,
-      opacity: 0.6,
-      blending: THREE.AdditiveBlending,
-    });
-    const disk = new THREE.Mesh(diskGeo, diskMat);
-    disk.rotation.x = Math.PI / 2;
-    bhGroup.add(bhCore);
-    bhGroup.add(disk);
-    bhGroup.position.set(1500, 3000, -25000);
-    this.scene.add(bhGroup);
-    this.spaceObjects.push({ mesh: bhGroup, speed: 0.08, rotationSpeed: 0.008 });
   }
 
   private createSpeedLines(): void {
@@ -646,6 +700,17 @@ export class FlowEngine {
       line.position.set(x, -29, -20000);
       this.scene.add(line);
     });
+  }
+
+  private highlightPad(bridge: (typeof this.bridges)[0], ms: number): void {
+    const pad = bridge.padMesh;
+    if (!pad || !(pad.material as THREE.Material) || ms <= 0) return;
+    const mat = pad.material as THREE.MeshBasicMaterial;
+    const originalHex = mat.color.getHex();
+    mat.color.setHex(0xaaccff);
+    this.registerTimeout(() => {
+      mat.color.setHex(originalHex);
+    }, ms);
   }
 
   private spawnBridge(
@@ -734,21 +799,33 @@ export class FlowEngine {
       x: (randLane - 1) * this.laneWidth,
       padDepth,
       hasBox: false,
+      padMesh: exitPad,
     };
     this.bridges.push(bridgeObj);
 
-    // A-3: UFO 우선 스폰(다리 위에), UFO 있으면 박스 스폰 금지
-    let hasUfo = false;
-    if (levelNumForSpawn >= 4) {
-      hasUfo = this.obstacleManager.trySpawnUfo(levelNumForSpawn, bridgeObj);
-    }
-
-    if (
-      !hasUfo &&
-      levelNumForSpawn >= 3 &&
-      this.obstacleManager.shouldSpawnBox(levelNumForSpawn)
-    ) {
-      this.obstacleManager.attachBoxToBridge(bridgeObj, levelNumForSpawn);
+    // LV5: 40% 다리만 / 30% 펀치(박스) / 30% 우주선(duck). 그 외: UFO 우선, 없으면 박스
+    if (levelNumForSpawn === 5) {
+      const r = Math.random();
+      if (r < 0.4) {
+        // 다리만
+      } else if (r < 0.7) {
+        this.obstacleManager.attachBoxToBridge(bridgeObj, levelNumForSpawn);
+      } else {
+        this.obstacleManager.trySpawnUfo(levelNumForSpawn, bridgeObj);
+      }
+    } else {
+      let hasUfo = false;
+      if (levelNumForSpawn >= 4) {
+        hasUfo = this.obstacleManager.trySpawnUfo(levelNumForSpawn, bridgeObj);
+      }
+      // LV4는 duck만. 박스는 LV3·LV5에서만 (LV5는 위 분기에서 처리)
+      if (
+        !hasUfo &&
+        levelNumForSpawn === 3 &&
+        this.obstacleManager.shouldSpawnBox(levelNumForSpawn)
+      ) {
+        this.obstacleManager.attachBoxToBridge(bridgeObj, levelNumForSpawn);
+      }
     }
   }
 
@@ -958,7 +1035,7 @@ export class FlowEngine {
   private getJumpParamsByLevel(
     levelNum: number
   ): { duration: number; height: number } {
-    const lv = (levelNum >= 1 && levelNum <= 4) ? levelNum as 1 | 2 | 3 | 4 : 1;
+    const lv = (levelNum >= 1 && levelNum <= 5) ? levelNum as 1 | 2 | 3 | 4 | 5 : 1;
     return { duration: JUMP_DURATION[lv], height: JUMP_HEIGHT[lv] };
   }
 
@@ -1066,6 +1143,9 @@ export class FlowEngine {
         } else if (nextLevel === 4) {
           txt.style.fontSize = '3rem';
           txt.innerHTML = PHRASES.lv4Intro;
+        } else if (nextLevel === 5) {
+          txt.style.fontSize = '3rem';
+          txt.innerHTML = PHRASES.lv5Intro;
         }
       }
 
@@ -1087,6 +1167,14 @@ export class FlowEngine {
 
     this.audio.stopMusic();
 
+    if (typeof window !== 'undefined') {
+      showCompleteStamp(this.domRefs, 2000);
+      window.dispatchEvent(new CustomEvent('flow-event', { detail: { type: 'complete' } }));
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'flow-ending' }, window.location.origin);
+      }
+    }
+
     const ins = getRefEl(this.domRefs.introScreen);
     const txt = getRefEl(this.domRefs.introTitle);
 
@@ -1094,6 +1182,32 @@ export class FlowEngine {
     if (txt) {
       txt.style.fontSize = '3.2rem';
       txt.innerHTML = PHRASES.ending;
+    }
+
+    const ENDING_AUTO_CLOSE_SEC = 15;
+    this.registerTimeout(() => {
+      if (typeof window !== 'undefined' && window.parent !== window) {
+        window.parent.postMessage({ type: 'flow-ended' }, window.location.origin);
+      }
+    }, ENDING_AUTO_CLOSE_SEC * 1000);
+  }
+
+  private onVisibilityChange(): void {
+    if (typeof document === 'undefined') return;
+    if (document.hidden) {
+      if (this.gameState === 'playing') {
+        this.isPausedByVisibility = true;
+        this.movementActive = false;
+        this.audio.setMasterGain(0);
+      }
+    } else {
+      if (this.isPausedByVisibility) {
+        this.doCountdownStart(() => {
+          this.isPausedByVisibility = false;
+          this.movementActive = true;
+          this.audio.setMasterGain(0.54);
+        });
+      }
     }
   }
 
@@ -1119,14 +1233,8 @@ export class FlowEngine {
   }
 
   private onBeatTick(levelNum: number): void {
-    const pulseStrength =
-      levelNum === 1
-        ? 0.03
-        : levelNum === 2
-        ? 0.05
-        : levelNum === 3
-        ? 0.06
-        : 0.08;
+    const profile = FLOW_EFFECT_PROFILES[levelNum as 1 | 2 | 3 | 4 | 5] ?? FLOW_EFFECT_PROFILES[1];
+    const pulseStrength = profile.pulseStrength;
 
     this.flashPulseValue = Math.min(
       1.0,
@@ -1170,7 +1278,7 @@ export class FlowEngine {
             this.introCountdownTimer = null;
           }
           if (cdOverlay) cdOverlay.innerText = 'START!';
-          setTimeout(() => {
+          this.registerTimeout(() => {
             this.clearCountdown();
             if (cdOverlay) cdOverlay.classList.add('hidden');
             this.isResting = false;
@@ -1191,21 +1299,46 @@ export class FlowEngine {
     }, this.WELCOME_DURATION);
   }
 
-  async startGame(bgmStoragePath?: string, panoStoragePath?: string): Promise<void> {
+  /** autoStart 시 사용자 제스처 없이 오디오를 켜지 않으려면 deferAudio: true. 자동 재생 시도 후 차단되면 onAudioBlocked 호출. */
+  async startGame(
+    bgmStoragePath?: string,
+    panoStoragePath?: string,
+    options?: { deferAudio?: boolean; onAudioBlocked?: () => void }
+  ): Promise<void> {
     this.clearScheduledTimeouts();
     this.clearCountdown();
+    this.audioDeferred = false;
 
     this.panoStoragePath = panoStoragePath ?? null;
 
-    await this.audio.init();
-    if (bgmStoragePath) {
-      await this.audio.loadBgmFromStoragePath(bgmStoragePath);
+    try {
+      await this.audio.init();
+      if (bgmStoragePath) {
+        const loaded = await this.audio.loadBgmFromStoragePath(bgmStoragePath);
+        if (!loaded) this.setBgmStatus('BGM 로드 실패, 기본 비트로 재생');
+      }
+    } catch {
+      this.setBgmStatus('BGM 로드 실패, 기본 비트로 재생');
     }
-    this.audio.resume().then(() => this.audio.startMusic());
+
+    if (!options?.deferAudio) {
+      this.audio.resume().then(() => this.audio.startMusic());
+      if (options?.onAudioBlocked) {
+        setTimeout(() => {
+          if (this.audio.isContextSuspended()) {
+            this.audioDeferred = true;
+            options.onAudioBlocked?.();
+          }
+        }, 500);
+      }
+    } else {
+      this.audioDeferred = true;
+    }
 
     const hud = getRefEl(this.domRefs.hud);
     if (hud) hud.classList.remove('hidden');
 
+    // 엔진 수명 = 페이지 수명. 3D 리소스는 1회 생성 후 재사용. 재시작 기능 도입 시 리셋 경로 추가 후 init3D는 !this.scene 일 때만 호출하도록 변경 권장.
     this.init3D();
     this.spawnBridge(true, 1, 0);
 
@@ -1228,7 +1361,14 @@ export class FlowEngine {
 
     this.triggerStartSequence();
     this.startLoop();
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.boundVisibilityHandler);
+    }
   }
+
+  private boundVisibilityHandler = (): void => {
+    this.onVisibilityChange();
+  };
 
   private startLoop(): void {
     this.clock = new THREE.Clock();
@@ -1251,10 +1391,21 @@ export class FlowEngine {
       this.renderer.render(this.scene, this.camera);
       return;
     }
+    if (this.isPausedByVisibility) {
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
+
+    if (this.hitStopFramesRemaining > 0) {
+      this.hitStopFramesRemaining--;
+    }
+
+    this.adaptiveQuality.update(dt);
 
     const currentLevelNum = this.getCurrentLevelNum();
+    const inHitStop = this.hitStopFramesRemaining > 0;
 
-    if (this.movementActive) {
+    if (!inHitStop && this.movementActive) {
       this.gameTime += dt;
       this.levelTime += dt;
 
@@ -1285,9 +1436,8 @@ export class FlowEngine {
 
       this.microJolt *= Math.exp(-JOLT_DECAY * dt);
 
-      // single source of truth for 2D speedlines (FX)
-      // rates are "per-60fps-frame" legacy-style
-      const lineSpawnRate = currentLevelNum === 4 ? 0.18 : currentLevelNum === 1 ? 0.08 : 0.1;
+      const profile = FLOW_EFFECT_PROFILES[currentLevelNum as 1 | 2 | 3 | 4 | 5] ?? FLOW_EFFECT_PROFILES[1];
+      const lineSpawnRate = profile.speedLineRate * this.adaptiveQuality.getSpeedLineRateScale();
 
       // optional: suppress during landing stability to keep "impact clarity"
       const rate = this.landingStabilityTimer > 0 ? 0 : lineSpawnRate;
@@ -1297,15 +1447,22 @@ export class FlowEngine {
       if (Math.random() < p) this.spawn2DSpeedLine();
     }
 
-    this.updateJump(dt);
+    if (!inHitStop) {
+      this.updateJump(dt);
+    }
 
-    while (this.movementActive && this.gameTime >= this.nextBeatTime) {
-      this.nextBeatTime += this.beatStepSec;
-      this.onBeatTick(currentLevelNum);
+    const beatInfo = this.audio.getBeatInfo();
+    if (this.movementActive && beatInfo !== null) {
+      if (this.prevBeatPhase >= 0 && beatInfo.phase < this.prevBeatPhase) {
+        this.onBeatTick(currentLevelNum);
+      }
+      this.prevBeatPhase = beatInfo.phase;
+    } else if (beatInfo === null) {
+      this.prevBeatPhase = -1;
     }
 
     const currentDuration = this.durations[this.currentLevelIndex];
-    if (this.movementActive && this.levelTime > currentDuration) {
+    if (!inHitStop && this.movementActive && this.levelTime > currentDuration) {
       if (this.displayLevels[this.currentLevelIndex + 1] === 0) {
         this.currentLevelIndex++;
         this.levelTime = 0;
@@ -1321,13 +1478,20 @@ export class FlowEngine {
         const levelNumEl = getRefEl(this.domRefs.levelNum);
         if (levelNumEl) levelNumEl.innerText = String(nextLv);
         setLevelTag(this.domRefs, nextLv);
+        if (typeof window !== 'undefined') {
+          showLevelBadge(this.domRefs, nextLv, 500);
+          window.dispatchEvent(new CustomEvent('flow-event', { detail: { type: 'level', level: nextLv } }));
+        }
 
+        if (nextLv === 5) this.obstacleManager.setGoldBudget(4);
         if (nextLv === 2)
           showInstruction(this.domRefs, 'FASTER!', 'text-cyan-300', 900);
         if (nextLv === 3)
           showInstruction(this.domRefs, 'PUNCH! 🥊', 'text-red-400', 900);
         if (nextLv === 4)
           showInstruction(this.domRefs, 'FOCUS!', 'text-orange-300', 900);
+        if (nextLv === 5)
+          showInstruction(this.domRefs, 'ALL! 🥊', 'text-purple-300', 900);
       }
     }
 
@@ -1339,7 +1503,7 @@ export class FlowEngine {
       );
     }
 
-    const lv = (currentLevelNum >= 1 && currentLevelNum <= 4) ? currentLevelNum as 1 | 2 | 3 | 4 : 1;
+    const lv = (currentLevelNum >= 1 && currentLevelNum <= 5) ? currentLevelNum as 1 | 2 | 3 | 4 | 5 : 1;
     const levelSpeedFactor = SPEED_MULTIPLIERS[lv];
 
     let speedScalar = 1.0;
@@ -1360,13 +1524,15 @@ export class FlowEngine {
       this.camera.updateProjectionMatrix();
     }
 
-    const pruneZ = BRIDGE_PRUNE_Z_BY_LEVEL[lv];
-    for (let i = this.bridges.length - 1; i >= 0; i--) {
-      this.bridges[i].mesh.position.z += currentSpeed * 50 * dt60;
-      if (this.bridges[i].mesh.position.z > pruneZ) {
-        if (this.activeBridge === this.bridges[i]) this.activeBridge = null;
-        this.scene.remove(this.bridges[i].mesh);
-        this.bridges.splice(i, 1);
+    if (!inHitStop) {
+      const pruneZ = BRIDGE_PRUNE_Z_BY_LEVEL[lv];
+      for (let i = this.bridges.length - 1; i >= 0; i--) {
+        this.bridges[i].mesh.position.z += currentSpeed * 50 * dt60;
+        if (this.bridges[i].mesh.position.z > pruneZ) {
+          if (this.activeBridge === this.bridges[i]) this.activeBridge = null;
+          this.scene.remove(this.bridges[i].mesh);
+          this.bridges.splice(i, 1);
+        }
       }
     }
 
@@ -1391,6 +1557,7 @@ export class FlowEngine {
         const triggerRel = padStartRel - padDepth * this.PAD_TRIGGER_RATIO;
 
         if (
+          !inHitStop &&
           this.movementActive &&
           relZ <= triggerRel &&
           this.activeBridge.bridgeId !== this.lastJumpBridgeId
@@ -1401,6 +1568,7 @@ export class FlowEngine {
             const nextB = this.bridges[nextIndex];
             this.targetX = nextB.x;
             this.isChangingLane = this.activeBridge.lane !== nextB.lane;
+            this.highlightPad(nextB, PAD_HIGHLIGHT_MS);
           }
           this.triggerJump();
         }
@@ -1436,17 +1604,32 @@ export class FlowEngine {
       this.groundY = 0;
     }
 
-    this.obstacleManager.update(
-      dt60,
-      currentSpeed,
-      currentLevelNum,
-      this.playerZ,
-      this.cameraLagX
-    );
+    if (!inHitStop) {
+      this.obstacleManager.update(
+        dt60,
+        currentSpeed,
+        currentLevelNum,
+        this.playerZ,
+        this.cameraLagX
+      );
+    }
 
-    // B-3: moveEnabled 연동
-    if (this.stars) this.stars.rotation.y += this.movementActive ? 0.0002 * dt60 : 0;
-    if (this.panoMesh) this.panoMesh.rotation.y += this.movementActive ? 0.0002 * dt60 : 0;
+    // B-3: 배경(별+파노) 항상 시계 방향 360도 회전. 파노 없을 때도 별이 돌아야 보임.
+    if (this.stars) this.stars.rotation.y -= PANO_ROTATION_DT60_CW * dt60;
+    if (this.panoMesh) {
+      const panoMat = this.panoMesh.material as THREE.ShaderMaterial & {
+        uniforms?: { uTime?: { value: number }; uVignetteScale?: { value: number }; uGrainScale?: { value: number }; uPanoRotation?: { value: number } };
+      };
+      if (panoMat?.uniforms?.uPanoRotation) {
+        panoMat.uniforms.uPanoRotation.value -= PANO_ROTATION_DT60_CW * dt60;
+        const twoPi = 2 * Math.PI;
+        if (panoMat.uniforms.uPanoRotation.value < -twoPi) panoMat.uniforms.uPanoRotation.value += twoPi;
+        if (panoMat.uniforms.uPanoRotation.value > twoPi) panoMat.uniforms.uPanoRotation.value -= twoPi;
+      }
+      if (panoMat?.uniforms?.uTime) panoMat.uniforms.uTime.value = this.clock?.getElapsedTime() ?? 0;
+      if (panoMat?.uniforms?.uVignetteScale) panoMat.uniforms.uVignetteScale.value = this.adaptiveQuality.getVignetteScale();
+      if (panoMat?.uniforms?.uGrainScale) panoMat.uniforms.uGrainScale.value = this.adaptiveQuality.getGrainScale();
+    }
 
     if (this.movementActive) {
       for (const obj of this.spaceObjects) {
@@ -1460,7 +1643,7 @@ export class FlowEngine {
     if (currentLevelNum === 1) speedOpacity = 0.1;
     if (currentLevelNum === 2) speedOpacity = 0.16;
     if (currentLevelNum === 3) speedOpacity = 0.18;
-    if (currentLevelNum === 4) speedOpacity = 0.24;
+    if (currentLevelNum === 4 || currentLevelNum === 5) speedOpacity = 0.24;
 
     const targetOpacity = this.movementActive
       ? speedOpacity + this.beatPulseValue * 0.15
@@ -1524,18 +1707,26 @@ export class FlowEngine {
     if (this.camera && this.renderer) {
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
-      this.renderer.setSize(w, h);
+      this.renderer.setSize(w, h, false);
+      const dpr = typeof window !== 'undefined' ? window.devicePixelRatio ?? 1 : 1;
+      this.renderer.setPixelRatio(Math.min(dpr, 2));
     }
   }
 
   dispose(): void {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.boundVisibilityHandler);
+    }
     if (this.rafId) cancelAnimationFrame(this.rafId);
     this.audio.stopMusic();
     this.obstacleManager?.dispose();
+    if (this.panoTexture) {
+      this.panoTexture.dispose();
+      this.panoTexture = null;
+    }
     if (this.panoMesh) {
       this.panoMesh.parent?.remove(this.panoMesh);
-      const mat = this.panoMesh.material as THREE.MeshBasicMaterial;
-      mat?.map?.dispose();
+      const mat = this.panoMesh.material as THREE.Material;
       mat?.dispose();
       this.panoMesh.geometry?.dispose();
       this.panoMesh = null;
@@ -1546,6 +1737,18 @@ export class FlowEngine {
       this.stars.geometry?.dispose();
       mat?.dispose();
       this.stars = null;
+    }
+    if (this.speedLines) {
+      this.speedLines.traverse((obj) => {
+        const m = obj as THREE.Mesh;
+        if (m.isMesh && m.geometry) m.geometry.dispose();
+        if (m.isMesh && m.material) {
+          const mat = m.material as THREE.Material;
+          if (Array.isArray(mat)) mat.forEach((mm) => mm.dispose());
+          else mat.dispose();
+        }
+      });
+      this.scene?.remove(this.speedLines);
     }
     if (this.speedLinesNear) {
       this.speedLinesNear.traverse((obj) => {

@@ -15,7 +15,7 @@ let bgmSource: AudioBufferSourceNode | null = null;
 /** Play BGM/SFX용. Think150(tick/recall)는 ctx.destination 직결 유지. */
 let bgmGain: GainNode | null = null;
 let sfxGain: GainNode | null = null;
-const BGM_GAIN_NORMAL = 0.6;
+const BGM_GAIN_NORMAL = 0.54;
 const SFX_GAIN_NORMAL = 0.9;
 let bgmFadeTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let bgmStopTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -150,6 +150,7 @@ export async function startBGM(
     source.connect(bgmGain!);
     const now = ctx.currentTime;
     const startOffset = startOffsetMs / 1000;
+    stopBGM();
     bgmGain!.gain.setValueAtTime(0, now);
     bgmGain!.gain.linearRampToValueAtTime(BGM_GAIN_NORMAL, now + 0.4);
     source.start(now, startOffset);
@@ -186,32 +187,19 @@ export async function startBGM(
 
 export function stopBGM(): void {
   clearBGMTimeouts();
-  if (bgmSource && bgmGain) {
+  if (bgmSource) {
+    const src = bgmSource;
+    bgmSource = null;
     try {
-      const ctx = getAudioContext();
-      const now = ctx.currentTime;
-      bgmGain.gain.setValueAtTime(bgmGain.gain.value, now);
-      bgmGain.gain.linearRampToValueAtTime(0, now + 0.25);
-      const src = bgmSource;
-      bgmSource = null;
-      bgmStopTimeoutId = setTimeout(() => {
-        try {
-          src.stop();
-        } catch {
-          /* ignore */
-        }
-        bgmStopTimeoutId = null;
-      }, 250);
-    } catch {
-      bgmSource = null;
-    }
-  } else if (bgmSource) {
-    try {
-      bgmSource.stop();
+      src.stop();
     } catch {
       /* ignore */
     }
-    bgmSource = null;
+    if (bgmGain) {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      bgmGain.gain.setValueAtTime(0, now);
+    }
   }
 }
 
@@ -291,11 +279,14 @@ export function scheduleThink150Sounds(
 
     // Think cue 틱음 제거 (부정확·거슬림 요청 반영)
     // if (e.frame === 'cue') { playBuffer(tickBuffer, when); }
+    const week = (e.payload as { week?: number })?.week;
+    const isRecallPhase =
+      (e.phase === 'stageC' && week === 4) ||
+      (e.phase === 'stageD' && (week === 2 || week === 3 || week === 4));
     if (
       e.frame === 'blank' &&
-      e.phase === 'stageC' &&
       e.payload?.type === 'stageC' &&
-      (e.payload as { week?: number }).week === 4 &&
+      isRecallPhase &&
       recallBuffer
     ) {
       playBuffer(recallBuffer, when);

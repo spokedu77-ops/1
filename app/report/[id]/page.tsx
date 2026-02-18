@@ -151,7 +151,7 @@ export default function PremiumParentReport() {
           <div className="bg-white magazine-shadow rounded-[40px] p-10 relative z-10 border border-slate-50 shadow-blue-900/5 text-left">
             <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-6">Activity Note</p>
             <div className="text-[16px] leading-[1.9] text-slate-700 font-medium whitespace-pre-wrap break-keep">
-              {session.students_text}
+              {String(session.students_text ?? '')}
             </div>
           </div>
           <div className="absolute -bottom-10 -right-2 text-6xl font-serif text-blue-100 opacity-20 italic">”</div>

@@ -92,7 +92,7 @@ export default function SpokeduGatePage() {
   ];
 
   // 클릭 핸들러: 상태에 따라 다른 액션 수행
-  const handleRoleClick = (role: any) => {
+  const handleRoleClick = (role: { id: string; status: string }) => {
     if (role.status === 'coming_soon') {
       alert('스포키듀 서비스 준비 중입니다. 곧 만나보실 수 있습니다!');
       return;

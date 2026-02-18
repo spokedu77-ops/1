@@ -5,7 +5,7 @@ import { createScheduleSchema, updateScheduleSchema } from '@/app/lib/schedules/
 import type { Schedule } from '@/app/lib/schedules/types';
 
 export type GetSchedulesFilters = {
-  status?: 'active' | 'done';
+  status?: 'scheduled' | 'active' | 'done';
   search?: string;
   limit?: number;
   offset?: number;
@@ -62,8 +62,10 @@ export async function createSchedule(input: unknown): Promise<{ data?: Schedule;
     .insert({
       title: parsed.data.title,
       assignee: parsed.data.assignee ?? null,
+      center_id: parsed.data.center_id ?? null,
       start_date: parsed.data.start_date ?? null,
       end_date: parsed.data.end_date ?? null,
+      session_dates: (parsed.data.session_dates?.length ? parsed.data.session_dates : null) ?? null,
       start_time: parsed.data.start_time ?? null,
       end_time: parsed.data.end_time ?? null,
       day_of_week: parsed.data.day_of_week ?? null,
@@ -90,8 +92,10 @@ export async function updateSchedule(
   const payload: Record<string, unknown> = {};
   if (parsed.data.title !== undefined) payload.title = parsed.data.title;
   if (parsed.data.assignee !== undefined) payload.assignee = parsed.data.assignee;
+  if (parsed.data.center_id !== undefined) payload.center_id = parsed.data.center_id;
   if (parsed.data.start_date !== undefined) payload.start_date = parsed.data.start_date;
   if (parsed.data.end_date !== undefined) payload.end_date = parsed.data.end_date;
+  if (parsed.data.session_dates !== undefined) payload.session_dates = parsed.data.session_dates?.length ? parsed.data.session_dates : null;
   if (parsed.data.start_time !== undefined) payload.start_time = parsed.data.start_time;
   if (parsed.data.end_time !== undefined) payload.end_time = parsed.data.end_time;
   if (parsed.data.day_of_week !== undefined) payload.day_of_week = parsed.data.day_of_week;
@@ -135,8 +139,15 @@ export async function deleteSchedule(id: string): Promise<{ data?: true; error?:
 }
 
 function normalizeSchedule(row: Schedule): Schedule {
+  const sessionDates = row.session_dates;
+  const normalizedSessionDates =
+    Array.isArray(sessionDates) && sessionDates.length > 0
+      ? sessionDates.map((d) => (typeof d === 'string' ? d : (d as unknown as { toISOString?: () => string })?.toISOString?.()?.split('T')[0] ?? String(d)))
+      : null;
   return {
     ...row,
+    center_id: row.center_id ?? null,
+    session_dates: normalizedSessionDates,
     checklist: Array.isArray(row.checklist) ? row.checklist : [],
     day_of_week: Array.isArray(row.day_of_week) ? row.day_of_week : null,
   };

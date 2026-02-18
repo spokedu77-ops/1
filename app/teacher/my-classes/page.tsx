@@ -176,8 +176,9 @@ function MyClassesContent() {
       alert('성공적으로 저장되었습니다.');
       setIsModalOpen(false);
       getMySchedule();
-    } catch (err: any) {
-      alert('저장 실패: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert('저장 실패: ' + msg);
     } finally {
       setUploading(false);
     }
@@ -209,8 +210,9 @@ function MyClassesContent() {
       if (error) throw error;
       const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(safeFileName).data;
       return publicUrl;
-    } catch (err: any) {
-      alert(`파일 업로드 오류: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert(`파일 업로드 오류: ${msg}`);
       return null;
     } finally {
       setUploading(false);
@@ -266,8 +268,9 @@ function MyClassesContent() {
       }
       setIsLessonPlanModalOpen(false);
       getMySchedule();
-    } catch (err: any) {
-      alert('저장 실패: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert('저장 실패: ' + msg);
     } finally {
       setLessonPlanSaving(false);
     }
@@ -284,8 +287,9 @@ function MyClassesContent() {
       setLessonPlanContent('');
       setIsLessonPlanModalOpen(false);
       getMySchedule();
-    } catch (err: any) {
-      alert('삭제 실패: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert('삭제 실패: ' + msg);
     } finally {
       setLessonPlanSaving(false);
     }

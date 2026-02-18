@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 
-export const scheduleStatusSchema = z.enum(['active', 'done']);
+export const scheduleStatusSchema = z.enum(['scheduled', 'active', 'done']);
 
 export const checklistItemSchema = z.object({
   id: z.string(),
@@ -15,8 +15,10 @@ export const checklistItemSchema = z.object({
 export const createScheduleSchema = z.object({
   title: z.string().min(1, '제목 필수'),
   assignee: z.string().optional().nullable(),
+  center_id: z.string().uuid().optional().nullable(),
   start_date: z.string().optional().nullable(),
   end_date: z.string().optional().nullable(),
+  session_dates: z.array(z.string()).optional().nullable(),
   start_time: z.string().optional().nullable(),
   end_time: z.string().optional().nullable(),
   day_of_week: z.array(z.number().int().min(0).max(6)).optional().nullable(),

@@ -17,10 +17,9 @@ const COLOR_LABELS: Record<PADColor, string> = {
 
 export interface ThinkAssetPanelProps {
   selectedMonth: number;
-  selectedWeek: 2 | 3 | 4;
 }
 
-export function ThinkAssetPanel({ selectedMonth, selectedWeek }: ThinkAssetPanelProps) {
+export function ThinkAssetPanel({ selectedMonth }: ThinkAssetPanelProps) {
   const { pathsByMonthAndWeek, error, upload, remove } = useThink150Pack();
   const {
     list: bgmList,
@@ -44,17 +43,13 @@ export function ThinkAssetPanel({ selectedMonth, selectedWeek }: ThinkAssetPanel
     }
   };
 
-  const handleUpload = async (
-    month: number,
-    week: 2 | 3 | 4,
-    set: 'setA' | 'setB',
-    color: PADColor
-  ) => {
-    const el = fileRefs.current[`${month}-${week}-${set}-${color}`];
+  const handleUpload = async (month: number, week: 3 | 4, color: PADColor) => {
+    const key = `${month}-${week}-${color}`;
+    const el = fileRefs.current[key];
     const file = el?.files?.[0];
     if (!file) return;
     try {
-      await upload(month, week, set, color, file);
+      await upload(month, week, 'setA', color, file);
       el.value = '';
     } catch (err) {
       console.error(err);
@@ -75,7 +70,8 @@ export function ThinkAssetPanel({ selectedMonth, selectedWeek }: ThinkAssetPanel
       setB: { red: '', green: '', yellow: '', blue: '' },
     },
   };
-  const paths = monthPaths[`week${selectedWeek}`];
+  const pathsWeek3 = monthPaths.week3.setA;
+  const pathsWeek4 = monthPaths.week4.setA;
 
   return (
     <div className="space-y-6">
@@ -140,81 +136,140 @@ export function ThinkAssetPanel({ selectedMonth, selectedWeek }: ThinkAssetPanel
         </p>
       </section>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {(['setA', 'setB'] as const).map((set) => (
-          <div key={set} className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800">
-            <h3 className="mb-4 text-base font-bold text-neutral-200">
-              {set === 'setA' ? 'Set A (Stage C 0~30초)' : 'Set B (Stage C 30~60초)'}
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              {COLORS.map((color) => {
-                const path = paths[set][color];
-                const hex = PAD_COLORS[color];
-                const key = `${selectedMonth}-${selectedWeek}-${set}-${color}`;
-                return (
-                  <div
-                    key={key}
-                    className="flex flex-col gap-2 rounded-lg border border-neutral-700 p-3"
+      <section className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800">
+        <h3 className="mb-4 text-base font-bold text-neutral-200">3주차 이미지</h3>
+        <p className="mb-4 text-xs text-neutral-500">
+          여기 등록한 이미지는 각 월 3주차 A·B·C·D에 표시됩니다.
+        </p>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {COLORS.map((color) => {
+            const path = pathsWeek3[color];
+            const hex = PAD_COLORS[color];
+            const key = `${selectedMonth}-3-${color}`;
+            return (
+              <div
+                key={key}
+                className="flex flex-col gap-2 rounded-lg border border-neutral-700 p-3"
+              >
+                <span className="text-sm font-medium text-neutral-300">
+                  {COLOR_LABELS[color]}
+                </span>
+                <div
+                  className="relative aspect-square w-full overflow-hidden rounded-md"
+                  style={{ backgroundColor: hex, minHeight: 80 }}
+                >
+                  {path ? (
+                    <img
+                      src={getPublicUrl(path)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : null}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    ref={(el) => {
+                      fileRefs.current[key] = el;
+                    }}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={() => handleUpload(selectedMonth, 3, color)}
+                  />
+                  <button
+                    type="button"
+                    className="flex-1 rounded bg-neutral-700 py-1.5 text-xs hover:bg-neutral-600"
+                    onClick={() => fileRefs.current[key]?.click()}
                   >
-                    <span className="text-sm font-medium text-neutral-300">
-                      {COLOR_LABELS[color]}
-                    </span>
-                    <div
-                      className="relative aspect-square w-full overflow-hidden rounded-md"
-                      style={{ backgroundColor: hex, minHeight: 80 }}
+                    업로드
+                  </button>
+                  {path && (
+                    <button
+                      type="button"
+                      className="rounded bg-red-900/50 py-1.5 text-xs text-red-400 hover:bg-red-900/70"
+                      onClick={() => remove(selectedMonth, 3, 'setA', color)}
                     >
-                      {path ? (
-                        <img
-                          src={getPublicUrl(path)}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      ) : null}
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        ref={(el) => {
-                          fileRefs.current[key] = el;
-                        }}
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        className="hidden"
-                        onChange={() =>
-                          handleUpload(selectedMonth, selectedWeek, set, color)
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="flex-1 rounded bg-neutral-700 py-1.5 text-xs hover:bg-neutral-600"
-                        onClick={() => fileRefs.current[key]?.click()}
-                      >
-                        업로드
-                      </button>
-                      {path && (
-                        <button
-                          type="button"
-                          className="rounded bg-red-900/50 py-1.5 text-xs text-red-400 hover:bg-red-900/70"
-                          onClick={() =>
-                            remove(selectedMonth, selectedWeek, set, color)
-                          }
-                        >
-                          삭제
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+                      삭제
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800">
+        <h3 className="mb-4 text-base font-bold text-neutral-200">4주차 이미지</h3>
+        <p className="mb-4 text-xs text-neutral-500">
+          여기 등록한 이미지는 각 월 4주차 A·B·C·D에 표시됩니다.
+        </p>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {COLORS.map((color) => {
+            const path = pathsWeek4[color];
+            const hex = PAD_COLORS[color];
+            const key = `${selectedMonth}-4-${color}`;
+            return (
+              <div
+                key={key}
+                className="flex flex-col gap-2 rounded-lg border border-neutral-700 p-3"
+              >
+                <span className="text-sm font-medium text-neutral-300">
+                  {COLOR_LABELS[color]}
+                </span>
+                <div
+                  className="relative aspect-square w-full overflow-hidden rounded-md"
+                  style={{ backgroundColor: hex, minHeight: 80 }}
+                >
+                  {path ? (
+                    <img
+                      src={getPublicUrl(path)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : null}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    ref={(el) => {
+                      fileRefs.current[key] = el;
+                    }}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={() => handleUpload(selectedMonth, 4, color)}
+                  />
+                  <button
+                    type="button"
+                    className="flex-1 rounded bg-neutral-700 py-1.5 text-xs hover:bg-neutral-600"
+                    onClick={() => fileRefs.current[key]?.click()}
+                  >
+                    업로드
+                  </button>
+                  {path && (
+                    <button
+                      type="button"
+                      className="rounded bg-red-900/50 py-1.5 text-xs text-red-400 hover:bg-red-900/70"
+                      onClick={() => remove(selectedMonth, 4, 'setA', color)}
+                    >
+                      삭제
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <p className="text-xs text-neutral-500">
-        * 1주차는 색상만 표시됩니다. 1~12월 × 2·3·4주차별로 다른 이미지를 등록하세요.
+        * 1주차는 색상만, 2주차는 별도 설정입니다. 3주차·4주차는 각각 해당 주차 ABCD에만 적용됩니다.
       </p>
     </div>
   );

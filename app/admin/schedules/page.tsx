@@ -1,5 +1,6 @@
 import { getSchedules } from './actions/schedules';
-import SchedulesClient from './SchedulesClient';
+import { getCenters } from '../centers/actions/centers';
+import { ScheduleCenterTabs } from './components/ScheduleCenterTabs';
 
 export default async function SchedulesPage() {
   let initialSchedules;
@@ -19,5 +20,16 @@ export default async function SchedulesPage() {
       </div>
     );
   }
-  return <SchedulesClient initialSchedules={initialSchedules} />;
+  let initialCenters: Awaited<ReturnType<typeof getCenters>> = [];
+  try {
+    initialCenters = await getCenters({});
+  } catch {
+    // 센터 목록 실패 시 빈 배열로 일정만 표시
+  }
+  return (
+    <ScheduleCenterTabs
+      initialSchedules={initialSchedules}
+      initialCenters={initialCenters}
+    />
+  );
 }

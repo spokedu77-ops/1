@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   buildThink150Timeline,
   validateThinkPlan,
@@ -8,28 +8,12 @@ import {
   preloadThinkPackByWeek,
   preloadThinkPackByMonth,
   type Think150Config,
-  type ThinkTimelineEvent,
 } from '@/app/lib/admin/engines/think150';
 import { verifyThink150Timeline } from '@/app/lib/admin/engines/think150/think150Verify';
-import {
-  initThink150Audio,
-  scheduleThink150Sounds,
-  resumeAudioContext,
-  suspendAudioContext,
-  startBGM,
-} from '@/app/lib/admin/engines/think150/think150Audio';
+import { useThink150Playback } from '@/app/lib/admin/hooks/useThink150Playback';
 import { Think150Viewer } from './Think150Viewer';
 import { Think150ProgressBar } from './Think150ProgressBar';
 import { Think150DebugOverlay } from './Think150DebugOverlay';
-
-const TOTAL_MS = 150000;
-
-function findCurrentEvent(events: ThinkTimelineEvent[], ms: number): ThinkTimelineEvent | null {
-  if (ms >= 150000 && events.length > 0) {
-    return events[events.length - 1]!;
-  }
-  return events.find((e) => ms >= e.t0 && ms < e.t1) ?? null;
-}
 
 interface Think150PlayerProps {
   config: Think150Config;
@@ -41,20 +25,23 @@ export function Think150Player({ config, debug = false }: Think150PlayerProps) {
   const validation = useMemo(() => validateThinkPlan(timeline, config), [timeline, config]);
   const verifyReport = useMemo(() => verifyThink150Timeline(config), [config]);
 
-  const [currentMs, setCurrentMs] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const rafRef = useRef<number>(0);
-  const startMsRef = useRef(0);
-  const startTMsRef = useRef(0);
+  const { currentMs, event, playing, setPlaying, reset, totalMs: TOTAL_MS } = useThink150Playback(
+    timeline,
+    config,
+    { initialPlaying: false }
+  );
+  const remainingSeconds = Math.max(0, Math.ceil((TOTAL_MS - currentMs) / 1000));
 
-  const event = findCurrentEvent(timeline, currentMs);
   const ruleLabel =
     event?.phase === 'rest3'
       ? null
       : event?.payload?.type === 'rest'
         ? (event.payload as { ruleLabel?: string }).ruleLabel
-        : event?.phase === 'stageC' && event?.payload?.type === 'stageC'
-          ? getStageCRuleLabel(event.payload as { week: number; slotCount?: number })
+        : (event?.phase === 'stageC' || event?.phase === 'stageD') && event?.payload?.type === 'stageC'
+          ? getStageCRuleLabel(
+              event.payload as { week: number; slotCount?: number },
+              event.phase
+            )
           : null;
 
   useEffect(() => {
@@ -67,42 +54,6 @@ export function Think150Player({ config, debug = false }: Think150PlayerProps) {
     }
   }, [config.thinkPack, config.thinkPackByWeek, config.thinkPackByMonthAndWeek, config.month]);
 
-  useEffect(() => {
-    if (!playing) return;
-    const startAtMs = currentMs;
-    startMsRef.current = performance.now();
-    startTMsRef.current = startAtMs;
-
-    resumeAudioContext();
-    initThink150Audio().then(() => {
-      scheduleThink150Sounds(timeline, startAtMs, startAtMs);
-      if (config.bgmPath) {
-        startBGM(config.bgmPath, startAtMs, TOTAL_MS - startAtMs).catch(() => {});
-      }
-    });
-
-    const tick = () => {
-      const elapsed = performance.now() - startMsRef.current;
-      const newMs = startTMsRef.current + elapsed;
-      const clamped = Math.min(newMs, TOTAL_MS);
-      setCurrentMs(clamped);
-      if (clamped >= TOTAL_MS) setPlaying(false);
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      suspendAudioContext();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentMs is set inside tick; adding it would cause loop
-  }, [playing, timeline, config.bgmPath]);
-
-  const reset = useCallback(() => {
-    setPlaying(false);
-    setCurrentMs(0);
-  }, []);
-
   return (
     <div className="space-y-3">
       <Think150ProgressBar currentMs={currentMs} totalMs={TOTAL_MS} />
@@ -113,8 +64,8 @@ export function Think150Player({ config, debug = false }: Think150PlayerProps) {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl bg-neutral-900 ring-1 ring-neutral-800" style={{ height: '50vh', minHeight: 320 }}>
-        <Think150Viewer event={event} fullscreen={false} />
+      <div className="relative overflow-hidden rounded-xl bg-neutral-900 ring-1 ring-neutral-800" style={{ height: '50vh', minHeight: 320 }}>
+        <Think150Viewer event={event} fullscreen={false} remainingSeconds={remainingSeconds} />
       </div>
 
       <div className="flex gap-2">
@@ -147,14 +98,31 @@ export function Think150Player({ config, debug = false }: Think150PlayerProps) {
   );
 }
 
-function getStageCRuleLabel(p: { week: number; slotCount?: number }): string {
+function getStageCRuleLabel(
+  p: { week: number; slotCount?: number },
+  phase?: 'stageC' | 'stageD'
+): string {
+  if (phase === 'stageD') {
+    switch (p.week) {
+      case 1:
+        return '화면에 나온 두 가지 색을 가로로 밟으세요!';
+      case 2:
+        return '화면에 나온 색 세 개 순서를 기억했다가 빈 화면에서 밟으세요!';
+      case 3:
+        return '화면에 나온 색 두 개 순서를 기억했다가 빈 화면에서 밟으세요!';
+      case 4:
+        return '화면에 나온 색 세 개 순서를 기억했다가 빈 화면에서 밟으세요!';
+      default:
+        return '';
+    }
+  }
   switch (p.week) {
     case 1:
-      return '화면에 나온 색을 보이는 개수만큼 밟으세요!';
+      return '화면에 나오는 색상을 피해서 밟으세요!';
     case 2:
-      return '화면에 나온 두 가지 색을 밟으세요!';
+      return '화면에 나온 동작을 따라 하세요! (박수/펀치/만세)';
     case 3:
-      return '화면에 나온 색의 대각선 색을 밟으세요!';
+      return '화면에 나온 두 가지 색을 밟으세요!';
     case 4:
       return '화면에 나온 색 순서를 기억했다가 빈 화면에서 밟으세요!';
     default:

@@ -49,8 +49,7 @@ export default function Sidebar() {
       group: "운영 관리",
       items: [
         { name: "대시보드", href: "/admin", icon: LayoutDashboard },
-        { name: "일정", href: "/admin/schedules", icon: CalendarDays },
-        { name: "센터 관리", href: "/admin/centers", icon: Building2 },
+        { name: "일정 및 센터관리", href: "/admin/schedules", icon: CalendarDays },
         { name: "수업 관리", href: "/admin/classes", icon: Calendar },
         { name: "수업 관련 검수", href: "/admin/teachers-classes", icon: CheckCircle },
         { name: "공지사항", href: "/admin/notice", icon: ClipboardList },
@@ -67,8 +66,7 @@ export default function Sidebar() {
       group: "강사 관리",
       items: [
         { name: "교구/재고 관리", href: "/admin/inventory", icon: Box },
-        { name: "강사 정보 관리", href: "/admin/users", icon: Users },
-        { name: "강사 카운팅 관리", href: "/admin/mileage", icon: Medal },
+        { name: "강사 관리", href: "/admin/users", icon: Users },
       ]
     },
     {

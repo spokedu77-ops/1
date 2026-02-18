@@ -1,15 +1,16 @@
 'use client';
 
 const SEGMENTS = [
-  { phase: 'intro', label: 'Intro', start: 0, end: 6 },
-  { phase: 'ready', label: 'Ready', start: 6, end: 10 },
-  { phase: 'stageA', label: 'A', start: 10, end: 34 },
-  { phase: 'rest1', label: 'R1', start: 34, end: 40 },
-  { phase: 'stageB', label: 'B', start: 40, end: 70 },
-  { phase: 'rest2', label: 'R2', start: 70, end: 76 },
-  { phase: 'stageC', label: 'C', start: 76, end: 136 },
-  { phase: 'rest3', label: 'R3', start: 136, end: 142 },
-  { phase: 'outro', label: 'Outro', start: 142, end: 150 },
+  { phase: 'intro', label: 'Intro', start: 0, end: 5 },
+  { phase: 'ready', label: 'Ready', start: 5, end: 10 },
+  { phase: 'stageA', label: 'A', start: 10, end: 30 },
+  { phase: 'rest1', label: 'R1', start: 30, end: 35 },
+  { phase: 'stageB', label: 'B', start: 35, end: 60 },
+  { phase: 'rest2', label: 'R2', start: 60, end: 65 },
+  { phase: 'stageC', label: 'C', start: 65, end: 100 },
+  { phase: 'rest3', label: 'R3', start: 100, end: 105 },
+  { phase: 'stageD', label: 'D', start: 105, end: 140 },
+  { phase: 'outro', label: 'Outro', start: 140, end: 150 },
 ];
 
 interface Think150ProgressBarProps {

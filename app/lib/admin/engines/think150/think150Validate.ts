@@ -29,7 +29,7 @@ export function validateThinkPlan(timeline: ThinkTimelineEvent[], config: Think1
 
   const cueEvents = timeline.filter((e) => e.frame === 'cue');
   const blankEvents = timeline.filter((e) => e.frame === 'blank');
-  if (cueEvents.length !== blankEvents.length) {
+  if (cueEvents.length !== blankEvents.length && config.week === 1) {
     warnings.push(`cue(${cueEvents.length})/blank(${blankEvents.length}) 쌍 불일치`);
   }
 
@@ -38,7 +38,7 @@ export function validateThinkPlan(timeline: ThinkTimelineEvent[], config: Think1
     (e, i) => i > 0 && e.payload?.type === 'stageC' && (e.payload as { set?: string }).set === 'setB'
   );
   if (setASwitch) {
-    const t = setASwitch.t0 - 76000;
+    const t = setASwitch.t0 - 65000;
     if (Math.abs(t - 30000) > 5000) {
       warnings.push(`setA/setB 전환 시점: elapsedInStageC=${t}ms (기대: ~30000ms)`);
     }

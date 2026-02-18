@@ -13,6 +13,7 @@ export type ThinkPhase =
   | 'rest2'
   | 'stageC'
   | 'rest3'
+  | 'stageD'
   | 'outro';
 
 export type ThinkFrameType = 'cue' | 'blank' | 'hold';
@@ -22,10 +23,14 @@ export interface StageABPayload {
   color: PADColor;
   imageUrl: string;
   set: 'setA' | 'setB';
+  /** 뷰어에서 3주차 blank/배경 분기용 */
+  week?: 1 | 2 | 3 | 4;
 }
 
 /** Stage C 레이아웃: 세로길게 | 가로길게 | 전체화면 */
 export type StageCLayout = 'vertical' | 'horizontal' | 'fullscreen';
+
+export type ActionMission = 'clap' | 'punch' | 'hurray';
 
 export interface StageCPayload {
   type: 'stageC';
@@ -39,11 +44,17 @@ export interface StageCPayload {
   stepCount?: 2 | 3;
   subPhase?: string;
   memory?: { sequence: PADColor[] };
+  /** 1주차 ANTI: 상단 표시용 */
+  antiLabel?: string;
+  /** 2주차 행동 미션 */
+  actionMission?: ActionMission;
 }
 
 export interface ReadyPayload {
   type: 'ready';
   count: 3 | 2 | 1;
+  /** A단계 안내 문구 (교육적 멘트) */
+  stageIntro?: string;
 }
 
 export interface RestPayload {
@@ -80,7 +91,7 @@ export interface ThinkTimelineEvent {
 }
 
 export interface Think150Config {
-  audience: 'preschool' | 'senior' | 'elementary' | 'teen' | 'adult';
+  audience: '900ms' | '700ms' | '550ms';
   week: 1 | 2 | 3 | 4;
   /** 월(1-12). thinkPackByMonthAndWeek 사용 시 필요 */
   month?: number;

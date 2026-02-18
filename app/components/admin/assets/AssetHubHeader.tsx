@@ -28,6 +28,7 @@ export function AssetHubHeader({
   const weeks: number[] = Array.isArray(weekOptions)
     ? [...weekOptions]
     : [2, 3, 4];
+  const showWeek = weeks.length > 0;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -54,19 +55,23 @@ export function AssetHubHeader({
           {MONTH_LABELS[m]}
         </button>
       ))}
-      <span className="ml-4 text-sm text-neutral-400">주차:</span>
-      {weeks.map((w) => (
-        <button
-          key={w}
-          type="button"
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-            week === w ? 'bg-cyan-600 text-white' : 'bg-neutral-800 hover:bg-neutral-700'
-          }`}
-          onClick={() => onWeekChange(w)}
-        >
-          {w}주차
-        </button>
-      ))}
+      {showWeek && (
+        <>
+          <span className="ml-4 text-sm text-neutral-400">주차:</span>
+          {weeks.map((w) => (
+            <button
+              key={w}
+              type="button"
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                week === w ? 'bg-cyan-600 text-white' : 'bg-neutral-800 hover:bg-neutral-700'
+              }`}
+              onClick={() => onWeekChange(w)}
+            >
+              {w}주차
+            </button>
+          ))}
+        </>
+      )}
     </div>
   );
 }

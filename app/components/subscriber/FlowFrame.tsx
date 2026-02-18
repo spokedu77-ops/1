@@ -1,5 +1,10 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+
+/** autoStart 시 flow-ended 미수신 시 강제 onEnd 호출 (탭 종료/크래시 대비). 플레이 최대 ~5분 + 버퍼 */
+const FLOW_FAILSAFE_MS = 6 * 60 * 1000;
+
 /**
  * Flow Phase - Next.js Route
  * /flow-phase?weekKey=...
@@ -18,6 +23,33 @@ export function FlowFrame({ weekKey, onEnd, autoStart, showLevelSelector }: Flow
   if (autoStart) params.set('autoStart', '1');
   if (showLevelSelector) params.set('showLevelSelector', '1');
   const src = `/flow-phase?${params.toString()}`;
+  const onEndCalled = useRef(false);
+
+  useEffect(() => {
+    if (!onEnd) return;
+    onEndCalled.current = false;
+    const expectedOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    const handler = (e: MessageEvent) => {
+      if (e.origin !== expectedOrigin) return;
+      if (e.data?.type === 'flow-ended' && !onEndCalled.current) {
+        onEndCalled.current = true;
+        onEnd();
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [onEnd]);
+
+  useEffect(() => {
+    if (!autoStart || !onEnd) return;
+    onEndCalled.current = false;
+    const t = setTimeout(() => {
+      if (onEndCalled.current) return;
+      onEndCalled.current = true;
+      onEnd();
+    }, FLOW_FAILSAFE_MS);
+    return () => clearTimeout(t);
+  }, [autoStart, onEnd, weekKey]);
 
   return (
     <div className="fixed inset-0 flex flex-col bg-black">

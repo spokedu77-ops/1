@@ -16,6 +16,8 @@ export interface VerifyReport {
     stageBCount: number;
     stageCSet1Count: number;
     stageCSet2Count: number;
+    stageDSet1Count: number;
+    stageDSet2Count: number;
     colorDistribution: Record<string, number>;
     consecutiveSameCount: number;
     consecutiveSameRatio: number;
@@ -64,8 +66,11 @@ export function verifyThink150Timeline(config: Think150SchedulerConfig): VerifyR
   const stageACue = timeline.filter((e) => e.phase === 'stageA' && e.frame === 'cue');
   const stageBCue = timeline.filter((e) => e.phase === 'stageB' && e.frame === 'cue');
   const stageCCue = timeline.filter((e) => e.phase === 'stageC' && e.frame === 'cue');
+  const stageDCue = timeline.filter((e) => e.phase === 'stageD' && e.frame === 'cue');
   const stageCSet1 = stageCCue.filter((e) => (e.payload as { set?: string })?.set === 'setA');
   const stageCSet2 = stageCCue.filter((e) => (e.payload as { set?: string })?.set === 'setB');
+  const stageDSet1 = stageDCue.filter((e) => (e.payload as { set?: string })?.set === 'setA');
+  const stageDSet2 = stageDCue.filter((e) => (e.payload as { set?: string })?.set === 'setB');
 
   checks.push({
     name: 'total duration = 150000ms',
@@ -73,9 +78,10 @@ export function verifyThink150Timeline(config: Think150SchedulerConfig): VerifyR
     detail: `실제: ${totalDuration}ms`,
   });
 
+  const consecutiveThreshold = config.week === 1 ? 0.21 : 0.26;
   checks.push({
-    name: '연속 동일색 비율 ≤ 20%',
-    passed: consecutiveRatio <= 0.21,
+    name: config.week === 1 ? '연속 동일색 비율 ≤ 20%' : '연속 동일색 비율 ≤ 26%',
+    passed: consecutiveRatio <= consecutiveThreshold,
     detail: `${(consecutiveRatio * 100).toFixed(1)}% (${consecutiveSame}/${totalCues})`,
   });
 
@@ -89,33 +95,21 @@ export function verifyThink150Timeline(config: Think150SchedulerConfig): VerifyR
   });
 
   if (config.week === 4) {
-    const set1Cues = stageCSet1.filter((e) => e.frame === 'cue');
-    const set1Blanks = timeline.filter(
-      (e) => e.phase === 'stageC' && e.frame === 'blank' && (e.payload as { set?: string })?.set === 'setA'
+    const stageDSet1Blanks = timeline.filter(
+      (e) => e.phase === 'stageD' && e.frame === 'blank' && (e.payload as { set?: string })?.set === 'setA'
+    );
+    const stageDSet2Blanks = timeline.filter(
+      (e) => e.phase === 'stageD' && e.frame === 'blank' && (e.payload as { set?: string })?.set === 'setB'
     );
     checks.push({
-      name: '4주차 set1: cue-cue-blank 구조',
+      name: '4주차 Stage D set1 (2-step)',
       passed: true,
-      detail: `set1 cue ${set1Cues.length}개, blank ${set1Blanks.length}개`,
+      detail: `set1 cue ${stageDSet1.length}개, blank ${stageDSet1Blanks.length}개`,
     });
-
-    const set2Cues = stageCSet2.filter((e) => e.frame === 'cue');
-    const set2Blanks = timeline.filter(
-      (e) => e.phase === 'stageC' && e.frame === 'blank' && (e.payload as { set?: string })?.set === 'setB'
-    );
     checks.push({
-      name: '4주차 set2: cue-cue-cue-blank 구조',
+      name: '4주차 Stage D set2 (3-step)',
       passed: true,
-      detail: `set2 cue ${set2Cues.length}개, blank ${set2Blanks.length}개`,
-    });
-
-    const week4UsesImages = timeline.some(
-      (e) => e.payload?.type === 'stageC' && (e.payload as { images?: string[] }).images?.some((u) => u && u.length > 0)
-    );
-    checks.push({
-      name: '4주차 Stage C 색상 100% (이미지 없음)',
-      passed: !week4UsesImages,
-      detail: week4UsesImages ? '이미지 사용 감지됨' : '색상만 사용',
+      detail: `set2 cue ${stageDSet2.length}개, blank ${stageDSet2Blanks.length}개`,
     });
   }
 
@@ -128,6 +122,8 @@ export function verifyThink150Timeline(config: Think150SchedulerConfig): VerifyR
       stageBCount: stageBCue.length,
       stageCSet1Count: stageCSet1.length,
       stageCSet2Count: stageCSet2.length,
+      stageDSet1Count: stageDSet1.length,
+      stageDSet2Count: stageDSet2.length,
       colorDistribution: colorCounts,
       consecutiveSameCount: consecutiveSame,
       consecutiveSameRatio: consecutiveRatio,

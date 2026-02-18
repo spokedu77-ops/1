@@ -15,4 +15,10 @@ export interface FlowDomRefs {
   speedLinesOverlay: { current: HTMLDivElement | null };
   /** 파노 로딩 상태 진단용 (좌상단 1줄) */
   panoDebugHud: { current: HTMLDivElement | null };
+  /** UFO duck 0.8초 전 상단 경고 라인 */
+  duckWarningLine: { current: HTMLDivElement | null };
+  /** 완주 스탬프 오버레이 */
+  stampOverlay: { current: HTMLDivElement | null };
+  /** 레벨 배지 토스트 */
+  badgeToast: { current: HTMLDivElement | null };
 }

@@ -89,7 +89,7 @@ export default function UltimateSettlementPage() {
           return isMain || isExtra;
         });
 
-        const sessionsTotal = teacherSessions.reduce((acc, cur) => {
+        const sessionsTotal = teacherSessions.reduce((acc: number, cur: { created_by?: string; price?: number; students_text?: string }) => {
           let amount = 0;
           if (String(cur.created_by) === String(teacher.id)) amount = Number(cur.price) || 0;
           else {
@@ -104,7 +104,7 @@ export default function UltimateSettlementPage() {
         }, 0);
         
         const teacherAdjs = (dbAdjs?.filter((a: SettlementRow) => a.teacher_id === teacher.id) || []) as SettlementRow[];
-        const adjTotal = teacherAdjs.reduce((acc, cur) => acc + (Number(cur.amount) || 0), 0);
+        const adjTotal = teacherAdjs.reduce((acc: number, cur: { amount?: number }) => acc + (Number(cur.amount) ?? 0), 0);
         
         const grossTotal = sessionsTotal + adjTotal;
         const tax = Math.floor(grossTotal * 0.033);
@@ -121,7 +121,7 @@ export default function UltimateSettlementPage() {
           adjs: teacherAdjs
         };
       })
-      .sort((a, b) => b.netPay - a.netPay || a.name.localeCompare(b.name, 'ko'));
+      .sort((a: { netPay: number; name: string }, b: { netPay: number; name: string }) => b.netPay - a.netPay || a.name.localeCompare(b.name, 'ko'));
 
       setReportData(calculatedData);
     } catch (error) {
@@ -301,7 +301,7 @@ export default function UltimateSettlementPage() {
                     <div key={a.id} className="flex items-center justify-between p-4 bg-indigo-50/50 rounded-2xl text-[11px] font-black text-indigo-600 border border-indigo-100/20">
                       <span className="flex-1 truncate mx-2">[기타] {a.reason}</span>
                       <div className="flex items-center gap-3">
-                        <span>{a.amount > 0 ? '+' : ''}{(Number(a.amount) || 0).toLocaleString()}원</span>
+                        <span>{(a.amount ?? 0) > 0 ? '+' : ''}{(Number(a.amount ?? 0)).toLocaleString()}원</span>
                         <button onClick={() => removeAdjItem(a.id)} className="text-red-300 hover:text-red-500 transition-colors">✕</button>
                       </div>
                     </div>

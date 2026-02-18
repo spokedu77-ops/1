@@ -10,6 +10,8 @@ import {
   LV4_BOX_RATE,
   BOX_DESTROY_Z,
   BOX_CLEANUP_Z,
+  HIT_STOP_LEVEL,
+  UFO_WARN_SEC,
   UFO_SPAWN_RATE,
   UFO_DUCK_START_Z,
   UFO_PASS_Z,
@@ -42,6 +44,7 @@ export interface UfoEntity {
   mesh: THREE.Group;
   duckStarted: boolean;
   passed: boolean;
+  warned: boolean;
 }
 
 export interface ObstacleManagerCallbacks {
@@ -55,6 +58,10 @@ export interface ObstacleManagerCallbacks {
   onUfoSpawned?: () => void;
   onUfoDuckStart?: () => void; // A-2: Duck 시작
   onUfoPassed?: () => void;
+  /** LV3 박스 파괴 순간 hit stop 트리거 (1회) */
+  onHitStop?: () => void;
+  /** UFO duck 0.8초 전 경고 (UFO당 1회) */
+  onUfoWarn?: () => void;
 }
 
 export class ObstacleManager {
@@ -87,7 +94,7 @@ export class ObstacleManager {
   shouldSpawnBox(levelNum: number): boolean {
     if (this.ufos.some((ufo) => !ufo.passed)) return false;
     if (levelNum === 3) return Math.random() < LV3_BOX_RATE;
-    if (levelNum === 4) return Math.random() < LV4_BOX_RATE;
+    if (levelNum === 4 || levelNum === 5) return Math.random() < LV4_BOX_RATE;
     return false;
   }
 
@@ -159,7 +166,7 @@ export class ObstacleManager {
 
     let reward = false;
     if (levelNum === 3) reward = this.decideRewardForLv3();
-    else if (levelNum === 4) reward = Math.random() < 0.3;
+    else if (levelNum === 4 || levelNum === 5) reward = Math.random() < 0.3;
 
     const boxGroup = this.createBoxGroup(reward);
     const localZ = -(this.bridgeLength * 0.1);
@@ -207,7 +214,7 @@ export class ObstacleManager {
     group.position.set(0, UFO_HEIGHT, 0);
     bridge.mesh.add(group);
 
-    this.ufos.push({ mesh: group, duckStarted: false, passed: false });
+    this.ufos.push({ mesh: group, duckStarted: false, passed: false, warned: false });
     this.callbacks.onUfoSpawned?.();
     return true;
   }
@@ -220,7 +227,10 @@ export class ObstacleManager {
     this.callbacks.onCameraTilt?.(Math.random() > 0.5 ? 0.2 : -0.2);
     this.callbacks.onCameraShake?.(0.18, 120);
     this.callbacks.onPunch?.();
-    if (currentLevelNum === 3) {
+    if (currentLevelNum === HIT_STOP_LEVEL) {
+      this.callbacks.onHitStop?.();
+    }
+    if (currentLevelNum === 3 || currentLevelNum === 5) {
       this.callbacks.onShowInstruction?.('PUNCH!', 'text-red-400', 220);
     }
 
@@ -244,7 +254,7 @@ export class ObstacleManager {
         Math.sin(angle) * force
       );
 
-      (sMesh as any).userData.rotationVel = new THREE.Vector3(
+      (sMesh.userData as { rotationVel?: THREE.Vector3 }).rotationVel = new THREE.Vector3(
         (Math.random() - 0.5) * 0.3,
         (Math.random() - 0.5) * 0.3,
         (Math.random() - 0.5) * 0.3
@@ -278,7 +288,7 @@ export class ObstacleManager {
           Math.sin(angle) * force
         );
 
-        (cMesh as any).userData.rotationSpeed = (Math.random() - 0.5) * 0.45;
+        (cMesh.userData as { rotationSpeed?: number }).rotationSpeed = (Math.random() - 0.5) * 0.45;
 
         this.scene.add(cMesh);
         cMesh.position.copy(pos);
@@ -330,7 +340,7 @@ export class ObstacleManager {
       s.velocity.multiplyScalar(Math.pow(0.97, dt60));
       s.life -= (s.type === 'coin' ? 0.012 : 0.028) * dt60;
 
-      const ud = (s.mesh as any).userData;
+      const ud = s.mesh.userData as { rotationVel?: THREE.Vector3; rotationSpeed?: number };
       if (ud.rotationVel) {
         s.mesh.rotation.x += ud.rotationVel.x * dt60;
         s.mesh.rotation.y += ud.rotationVel.y * dt60;
@@ -352,11 +362,16 @@ export class ObstacleManager {
       }
     }
 
+    const warnDistanceZ = currentSpeed * 50 * 60 * UFO_WARN_SEC;
     for (let i = this.ufos.length - 1; i >= 0; i--) {
       const ufo = this.ufos[i];
       // UFO는 다리의 자식이라 다리와 함께 이동. 별도 position 갱신 없음
       ufo.mesh.getWorldPosition(worldPos);
-      
+      const warnZ = UFO_DUCK_START_Z - warnDistanceZ;
+      if (!ufo.warned && worldPos.z >= warnZ) {
+        ufo.warned = true;
+        this.callbacks.onUfoWarn?.();
+      }
       // A-2: Duck 시작 (UFO가 멀리 있을 때)
       if (!ufo.duckStarted && worldPos.z >= UFO_DUCK_START_Z) {
         ufo.duckStarted = true;

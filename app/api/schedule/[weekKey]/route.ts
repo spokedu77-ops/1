@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getSupabaseClient } from '@/app/lib/supabase/client';
 
 const THINK_PACK_ID = 'iiwarmup_think_default';
+const THINK_BGM_SETTINGS_ID = 'iiwarmup_bgm_settings';
 const BUCKET_NAME = 'iiwarmup-files';
 
 type Think150PackState = {
@@ -60,12 +61,17 @@ export async function GET(
 
   const BGM_SETTINGS_ID = 'iiwarmup_challenge_bgm_settings';
 
-  // 1) BGM, Think pack, rotation_schedule 병렬 조회
-  const [bgmResult, thinkPackResult, scheduleResult] = await Promise.all([
+  // 1) 챌린지 BGM, Think BGM, Think pack, rotation_schedule 병렬 조회
+  const [bgmResult, thinkBgmResult, thinkPackResult, scheduleResult] = await Promise.all([
     supabase
       .from('think_asset_packs')
       .select('assets_json')
       .eq('id', BGM_SETTINGS_ID)
+      .single(),
+    supabase
+      .from('think_asset_packs')
+      .select('assets_json')
+      .eq('id', THINK_BGM_SETTINGS_ID)
       .single(),
     supabase
       .from('think_asset_packs')
@@ -79,10 +85,16 @@ export async function GET(
       .single(),
   ]);
 
-  const bgmRaw = bgmResult.data?.assets_json as { selectedBgm?: string; bgmStartOffsetMs?: number } | null;
+  const bgmRaw = bgmResult.data?.assets_json as {
+    selectedBgm?: string;
+    bgmStartOffsetMs?: number;
+    sourceBpm?: number;
+  } | null;
   const challengeBgmPath = typeof bgmRaw?.selectedBgm === 'string' ? bgmRaw.selectedBgm : null;
   const challengeBgmStartOffsetMs =
     typeof bgmRaw?.bgmStartOffsetMs === 'number' ? bgmRaw.bgmStartOffsetMs : 0;
+  const challengeBgmSourceBpm =
+    typeof bgmRaw?.sourceBpm === 'number' && bgmRaw.sourceBpm > 0 ? bgmRaw.sourceBpm : null;
 
   const { data: row, error: scheduleError } = scheduleResult;
   if (scheduleError && scheduleError.code !== 'PGRST116') {
@@ -95,13 +107,19 @@ export async function GET(
       challengePhases: null,
       challengeBgmPath,
       challengeBgmStartOffsetMs,
+      challengeBgmSourceBpm,
       thinkPackByMonthAndWeek: null,
+      thinkResolvedConfig: null,
+      thinkPackForThisWeek: null,
     };
     return NextResponse.json(emptyPayload, {
       status: 200,
       headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
     });
   }
+
+  const thinkBgmRaw = thinkBgmResult.data?.assets_json as { selectedBgm?: string } | null;
+  const thinkBgmPath = typeof thinkBgmRaw?.selectedBgm === 'string' ? thinkBgmRaw.selectedBgm : null;
 
   let thinkPackByMonthAndWeek: Record<number, Record<string, Think150PackState>> | null = null;
   const byMonth = (thinkPackResult.data?.assets_json as { byMonth?: Record<number, Record<string, Think150PackState>> } | null)?.byMonth;
@@ -116,6 +134,34 @@ export async function GET(
         week4: pathsToUrls(monthData.week4),
       };
     }
+  }
+
+  const snapshot = row.program_snapshot as { think150?: boolean; week?: number; month?: number; audience?: string } | null;
+  const isThink = !!snapshot?.think150;
+  const snapshotMonth = typeof snapshot?.month === 'number' && snapshot.month >= 1 && snapshot.month <= 12 ? snapshot.month : null;
+  const snapshotWeek = (typeof snapshot?.week === 'number' && snapshot.week >= 1 && snapshot.week <= 4 ? snapshot.week : null) as 1 | 2 | 3 | 4 | null;
+  const snapshotAudience = typeof snapshot?.audience === 'string' ? snapshot.audience : '700ms';
+
+  let thinkResolvedConfig: {
+    week: number;
+    month: number;
+    audience: string;
+    seedPolicy: string;
+    bgmPath: string | null;
+  } | null = null;
+  let thinkPackForThisWeek: Think150PackState | null = null;
+
+  if (isThink && snapshotMonth != null && snapshotWeek != null && thinkPackByMonthAndWeek?.[snapshotMonth]) {
+    thinkResolvedConfig = {
+      week: snapshotWeek,
+      month: snapshotMonth,
+      audience: snapshotAudience,
+      seedPolicy: 'weekly_fixed',
+      bgmPath: thinkBgmPath,
+    };
+    const weekKey = snapshotWeek === 1 ? 'week2' : (`week${snapshotWeek}` as 'week2' | 'week3' | 'week4');
+    const pack = thinkPackByMonthAndWeek[snapshotMonth]?.[weekKey];
+    if (pack) thinkPackForThisWeek = pack;
   }
 
   const programId = row.program_id as string | null;
@@ -147,7 +193,10 @@ export async function GET(
       challengePhases,
       challengeBgmPath,
       challengeBgmStartOffsetMs,
+      challengeBgmSourceBpm,
       thinkPackByMonthAndWeek: thinkPackByMonthAndWeek ?? null,
+      thinkResolvedConfig,
+      thinkPackForThisWeek,
     },
     {
       headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },

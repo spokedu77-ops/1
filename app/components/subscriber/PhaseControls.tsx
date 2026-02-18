@@ -10,13 +10,13 @@ export interface PhaseControlsProps {
 const MAIN_PHASE = {
   mode: 'full' as const,
   label: '전체 재생',
-  sub: 'Challenge → Think → Flow',
+  sub: '띵크 → 챌린지 → 플로우',
 };
 
 const SUB_PHASES = [
-  { mode: 'play' as const, label: 'Challenge', sub: '리듬', accent: 'cyan' },
-  { mode: 'think' as const, label: 'Think', sub: '인지', accent: 'violet' },
-  { mode: 'flow' as const, label: 'Flow', sub: '몰입', accent: 'blue' },
+  { mode: 'think' as const, label: '띵크', sub: '인지', accent: 'violet' },
+  { mode: 'play' as const, label: '챌린지', sub: '리듬', accent: 'cyan' },
+  { mode: 'flow' as const, label: '플로우', sub: '몰입', accent: 'blue' },
 ] as const;
 
 export function PhaseControls({ onStart, disabled }: PhaseControlsProps) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Maximize, Minimize, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
@@ -83,6 +83,8 @@ function WeekPresetSelector({
 }
 
 function ChallengePageContent() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const weekFromUrl = searchParams.get('week');
   const {
@@ -90,6 +92,8 @@ function ChallengePageContent() {
     selected: bgmPath,
     bgmStartOffsetMs,
     setOffsetMs,
+    sourceBpm,
+    setSourceBpm,
     loading: bgmLoading,
     error: bgmError,
     upload: uploadBgm,
@@ -100,6 +104,27 @@ function ChallengePageContent() {
   const { data: savedPrograms = [] } = useChallengePrograms();
 
   const [presets, setPresets] = useState<BeatPreset[]>(() => [...DEFAULT_PRESETS]);
+  const initialPreset = useMemo(() => {
+    const found = presets.find((p) => p.weekKey === weekFromUrl);
+    if (found) return found;
+    if (weekFromUrl) {
+      const match = weekFromUrl.match(/^(\d{4})-(\d{2})-W([1-4])$/);
+      if (match) {
+        const [, , m, w] = match;
+        return {
+          weekKey: weekFromUrl,
+          title: `${Number(m)}월 ${Number(w)}주차 - 챌린지`,
+          bpm: 100,
+          level: 1,
+          grid: [...DEFAULT_GRID_LEVEL1],
+          notes: '',
+        };
+      }
+    }
+    return presets[0];
+  }, [weekFromUrl, presets]);
+  const [preset, setPreset] = useState<BeatPreset>(initialPreset);
+  const [soundOn, setSoundOn] = useState(false);
 
   useEffect(() => {
     if (savedPrograms.length === 0) return;
@@ -116,34 +141,23 @@ function ChallengePageContent() {
       }
       return { ...p, bpm: saved.bpm, level: saved.level, grid };
     };
-    setPresets((prev) => prev.map(merge));
-    setPreset((prev) => merge(prev));
+    queueMicrotask(() => {
+      setPresets((prev) => prev.map(merge));
+      setPreset((prev) => merge(prev));
+    });
   }, [savedPrograms]);
-  const initialPreset = useMemo(() => {
-    const found = presets.find((p) => p.weekKey === weekFromUrl);
-    if (found) return found;
-    if (weekFromUrl) {
-      const match = weekFromUrl.match(/^(\d{4})-(\d{2})-W([1-4])$/);
-      if (match) {
-        const [, y, m, w] = match;
-        return {
-          weekKey: weekFromUrl,
-          title: `${Number(m)}월 ${Number(w)}주차 - 챌린지`,
-          bpm: 100,
-          level: 1,
-          grid: [...DEFAULT_GRID_LEVEL1],
-          notes: '',
-        };
-      }
-    }
-    return presets[0];
-  }, [weekFromUrl, presets]);
-
-  const [preset, setPreset] = useState<BeatPreset>(initialPreset);
-  const [soundOn, setSoundOn] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const upsertChallenge = useUpsertChallengeProgram();
   const deleteChallenge = useDeleteChallengeProgram();
+
+  const isThisWeekSaved = useMemo(
+    () => savedPrograms.some((p) => p.weekKey === preset.weekKey),
+    [savedPrograms, preset.weekKey]
+  );
+  const playbackRateLabel =
+    typeof sourceBpm === 'number' && sourceBpm > 0 && preset.bpm > 0
+      ? (preset.bpm / sourceBpm).toFixed(2)
+      : null;
 
   const handlePresetChange = useCallback(
     (data: { bpm: number; level: number; grid: string[]; gridsByLevel?: Record<number, string[]> }) => {
@@ -164,6 +178,7 @@ function ChallengePageContent() {
         {
           onSuccess: () => {
             toast.success('저장되었습니다. 스케줄러에서 이 주차에 배정할 수 있습니다.');
+            router.replace(`${pathname}?week=${encodeURIComponent(preset.weekKey)}`, { scroll: false });
           },
           onError: (err: Error) => {
             toast.error(`저장 실패: ${err?.message ?? '알 수 없는 오류'}`);
@@ -200,13 +215,13 @@ function ChallengePageContent() {
   useEffect(() => {
     const found = presets.find((p) => p.weekKey === weekFromUrl);
     if (found) {
-      setPreset(found);
+      queueMicrotask(() => setPreset(found));
       return;
     }
     if (weekFromUrl) {
       const match = weekFromUrl.match(/^(\d{4})-(\d{2})-W([1-4])$/);
       if (match) {
-        const [, y, m, w] = match;
+        const [, , m, w] = match;
         const generated: BeatPreset = {
           weekKey: weekFromUrl,
           title: `${Number(m)}월 ${Number(w)}주차 - 챌린지`,
@@ -215,12 +230,14 @@ function ChallengePageContent() {
           grid: [...DEFAULT_GRID_LEVEL1],
           notes: '',
         };
-        setPresets((prev) => (prev.some((p) => p.weekKey === weekFromUrl) ? prev : [...prev, generated]));
-        setPreset(generated);
+        queueMicrotask(() => {
+          setPresets((prev) => (prev.some((p) => p.weekKey === weekFromUrl) ? prev : [...prev, generated]));
+          setPreset(generated);
+        });
         return;
       }
     }
-    setPreset(presets[0]);
+    queueMicrotask(() => setPreset(presets[0]));
   }, [weekFromUrl, presets]);
 
   useEffect(() => {
@@ -269,7 +286,7 @@ function ChallengePageContent() {
           <button
             type="button"
             onClick={() => setSoundOn((v) => !v)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm border ${
+            className={`flex gap-2 rounded-lg px-3 py-2 text-sm border ${
               soundOn
                 ? 'bg-teal-900/30 border-teal-600 text-teal-300'
                 : 'bg-neutral-800 border-neutral-700 text-neutral-500'
@@ -282,6 +299,27 @@ function ChallengePageContent() {
         </div>
       </div>
 
+      <div className="rounded-lg border border-neutral-700 bg-neutral-900/50 px-4 py-3 text-sm">
+        <p className="font-medium text-neutral-300">
+          현재 선택 주차: <span className="text-white">{preset.weekKey}</span>
+          {' · '}
+          이 주차 BPM <span className="text-white">{preset.bpm}</span>
+          {playbackRateLabel != null && sourceBpm != null && (
+            <>
+              {' · '}
+              <span className="text-cyan-300">원곡 {sourceBpm} → 재생속도 {playbackRateLabel}배</span>
+            </>
+          )}
+          {' · '}
+          <span className={isThisWeekSaved ? 'text-teal-400' : 'text-amber-400'}>
+            {isThisWeekSaved ? '이 주차 저장됨' : '이 주차 미저장'}
+          </span>
+        </p>
+        <p className="mt-1 text-xs text-neutral-500">
+          BGM(오프셋·원곡 BPM)은 아래 「BGM 설정 (전역)」에서 한 번만 설정하면 모든 주차에 공통 적용됩니다. 저장은 「이 주차로 픽스」로 이 주차의 BPM·그리드만 DB에 넣습니다.
+        </p>
+      </div>
+
       {preset.notes && (
         <div className="rounded-xl bg-neutral-900/50 border border-neutral-800 px-4 py-3">
           <p className="text-sm text-neutral-400">
@@ -292,7 +330,8 @@ function ChallengePageContent() {
       )}
 
       <section className="rounded-xl bg-neutral-900 p-4 ring-1 ring-neutral-800">
-        <h3 className="mb-3 text-sm font-bold text-neutral-300">챌린지 BGM</h3>
+        <h3 className="mb-1 text-sm font-bold text-neutral-300">BGM 설정 (전역)</h3>
+        <p className="mb-3 text-xs text-neutral-500">오프셋·원곡 BPM은 모든 주차에 공통 적용됩니다. 한 번만 설정하면 됩니다.</p>
         {bgmError && (
           <p className="mb-2 text-xs text-red-400">{bgmError}</p>
         )}
@@ -339,25 +378,50 @@ function ChallengePageContent() {
             </div>
           )}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <label className="text-xs font-medium text-neutral-400">화면 오프셋 (음원에 맞추기)</label>
-          <input
-            type="number"
-            min={0}
-            step={50}
-            value={bgmStartOffsetMs}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (!Number.isNaN(v) && v >= 0) setOffsetMs(v);
-            }}
-            className="w-24 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-sm text-neutral-200"
-          />
-          <span className="text-xs text-neutral-500">ms (BGM 파일에서 첫 비트가 나오는 위치)</span>
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-xs font-medium text-neutral-400">화면 오프셋 (음원에 맞추기)</label>
+            <input
+              type="number"
+              min={0}
+              step={50}
+              value={bgmStartOffsetMs}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (!Number.isNaN(v) && v >= 0) setOffsetMs(v);
+              }}
+              className="w-24 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-sm text-neutral-200"
+            />
+            <span className="text-xs text-neutral-500">ms (BGM 파일에서 첫 비트가 나오는 위치)</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-xs font-medium text-neutral-400">원곡 BPM</label>
+            <input
+              type="number"
+              min={1}
+              max={300}
+              step={1}
+              value={sourceBpm ?? ''}
+              onChange={(e) => {
+                const v = e.target.value === '' ? null : Number(e.target.value);
+                if (v === null || (!Number.isNaN(v) && v > 0)) setSourceBpm(v);
+              }}
+              placeholder="예: 180"
+              className="w-20 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-sm text-neutral-200"
+            />
+            <span className="text-xs text-neutral-500">설정 시 화면 BPM에 맞춰 재생 속도 자동 조절 (120이면 BGM이 120 BPM처럼 재생)</span>
+          </div>
         </div>
+        {bgmLoading && (
+          <p className="mt-2 text-xs text-amber-400">BGM 설정 로딩 중… 오프셋·원곡 BPM은 로딩 후 적용됩니다.</p>
+        )}
       </section>
 
       <section className="rounded-xl bg-neutral-900/50 border border-neutral-800 px-4 py-3 space-y-2">
-        <h3 className="text-sm font-bold text-neutral-300">스케줄러 반영</h3>
+        <h3 className="text-sm font-bold text-neutral-300">이 주차 설정 저장 — {preset.weekKey}</h3>
+        <p className="text-xs text-neutral-500">
+          아래 게임에서 BPM·그리드를 바꾼 뒤 재생하면 자동으로 <strong>{preset.weekKey}</strong> 주차에 덮어씌워 저장됩니다. 스케줄러에서 이 주차를 배정하면 구독자에게 노출됩니다. BGM(오프셋·원곡 BPM)은 위 전역 설정을 사용합니다.
+        </p>
         {upsertChallenge.isPending && (
           <p className="text-sm text-amber-400">저장 중...</p>
         )}
@@ -367,9 +431,6 @@ function ChallengePageContent() {
         {upsertChallenge.isError && (
           <p className="text-sm text-red-400">저장 실패: {(upsertChallenge.error as Error)?.message ?? '알 수 없는 오류'}</p>
         )}
-        <p className="text-xs text-neutral-500">
-          수정: 그리드·BPM·레벨을 바꾼 뒤 다시 <strong>이 주차로 픽스</strong>를 누르면 덮어씌워 저장됩니다.
-        </p>
         <button
           type="button"
           onClick={handleDeleteFromScheduler}
@@ -382,17 +443,24 @@ function ChallengePageContent() {
       </section>
 
       <div className="rounded-xl overflow-hidden border border-neutral-800 bg-neutral-900/30">
-        <SpokeduRhythmGame
-          allowEdit={true}
-          soundOn={soundOn}
-          bgmPath={bgmPath || undefined}
-          bgmStartOffsetMs={bgmStartOffsetMs}
-          initialBpm={preset.bpm}
-          initialLevel={preset.level}
-          initialGrid={preset.grid}
-          initialLevelData={preset.gridsByLevel}
-          onPresetChange={handlePresetChange}
-        />
+        {bgmLoading ? (
+          <div className="flex min-h-[200px] items-center justify-center text-neutral-500">
+            BGM 설정 로딩 중… (오프셋·원곡 BPM 적용 후 재생 가능)
+          </div>
+        ) : (
+          <SpokeduRhythmGame
+            allowEdit={true}
+            soundOn={soundOn}
+            bgmPath={bgmPath || undefined}
+            bgmStartOffsetMs={bgmStartOffsetMs}
+            bgmSourceBpm={sourceBpm ?? undefined}
+            initialBpm={preset.bpm}
+            initialLevel={1}
+            initialGrid={preset.grid}
+            initialLevelData={preset.gridsByLevel}
+            onPresetChange={handlePresetChange}
+          />
+        )}
       </div>
     </div>
   );

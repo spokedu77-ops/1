@@ -26,13 +26,14 @@ const renderTextWithLinks = (text: string) => {
 interface CatalogItem { id?: number; name?: string; category?: string; image?: string; simple_desc?: string; key_points?: string; usage_examples?: string; [key: string]: unknown }
 interface TeacherBasic { id: string; name?: string; [key: string]: unknown }
 interface InventoryItem { id?: number; name?: string; quantity?: number; category?: string; image?: string; simple_desc?: string; key_points?: string; usage_examples?: string; [key: string]: unknown }
+interface InventoryLog { id?: number; created_at?: string; type?: string; content?: string; [key: string]: unknown }
 
 export default function AdminInventoryPage() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [teachers, setTeachers] = useState<TeacherBasic[]>([]);
   const [teacherInventory, setTeacherInventory] = useState<InventoryItem[]>([]);
-  const [logs, setLogs] = useState<Record<string, unknown>[]>([]);
+  const [logs, setLogs] = useState<InventoryLog[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherBasic | null>(null);
   const [isTeacherDropdownOpen, setIsTeacherDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,25 +47,15 @@ export default function AdminInventoryPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const fetchCatalog = useCallback(async () => {
-    if (process.env.NODE_ENV === 'development') console.log('[inventory] fetchCatalog 시작, supabase:', !!supabase);
-    if (!supabase) {
-      if (process.env.NODE_ENV === 'development') console.error('[inventory] fetchCatalog: supabase가 null입니다');
-      return;
-    }
+    if (!supabase) return;
     const { data, error } = await supabase.from('catalog').select('*').order('created_at', { ascending: false });
-    if (process.env.NODE_ENV === 'development') console.log('[inventory] fetchCatalog 결과, data:', data?.length, 'error:', error);
     if (error) console.error('[inventory] fetchCatalog error:', error);
     if (data) setCatalog(data);
   }, [supabase]);
 
   const fetchTeachers = useCallback(async () => {
-    if (process.env.NODE_ENV === 'development') console.log('[inventory] fetchTeachers 시작, supabase:', !!supabase);
-    if (!supabase) {
-      if (process.env.NODE_ENV === 'development') console.error('[inventory] fetchTeachers: supabase가 null입니다');
-      return;
-    }
+    if (!supabase) return;
     const { data, error } = await supabase.from('users').select('id, name, role, is_active').eq('is_active', true).order('name');
-    if (process.env.NODE_ENV === 'development') console.log('[inventory] fetchTeachers 결과, data:', data?.length, 'error:', error);
     if (error) console.error('[inventory] fetchTeachers error:', error);
     if (data) setTeachers(data);
   }, [supabase]);
@@ -77,7 +68,9 @@ export default function AdminInventoryPage() {
     if (invData) {
       setTeacherInventory(invData);
       const qtyMap: {[key: number]: string} = {};
-      invData.forEach(item => qtyMap[item.id] = item.quantity.toString());
+      invData.forEach((item: InventoryItem) => {
+        if (item.id != null) qtyMap[item.id] = (item.quantity ?? 0).toString();
+      });
       setTempQuantities(qtyMap);
     }
     if (logData) setLogs(logData);
@@ -103,8 +96,8 @@ export default function AdminInventoryPage() {
 
   const openCatalogModal = (item: CatalogItem | null = null) => {
     if (item) {
-      setEditingCatalogId(item.id);
-      setCatalogForm({ name: item.name, category: item.category, image: item.image || '', simple_desc: item.simple_desc || '', key_points: item.key_points || '', usage_examples: item.usage_examples || '' });
+      setEditingCatalogId(item.id ?? null);
+      setCatalogForm({ name: item.name ?? '', category: item.category ?? '', image: item.image ?? '', simple_desc: item.simple_desc ?? '', key_points: item.key_points ?? '', usage_examples: item.usage_examples ?? '' });
     } else {
       setEditingCatalogId(null);
       setCatalogForm({ name: '', category: '', image: '', simple_desc: '', key_points: '', usage_examples: '' });
@@ -171,27 +164,31 @@ export default function AdminInventoryPage() {
   };
 
   const handleReturnAll = async (item: InventoryItem) => {
-    if (!supabase) return;
-    if (confirm(`${item.name} 전량을 반납(목록 삭제)하시겠습니까?`)) {
+    if (!supabase || !selectedTeacher) return;
+    if (confirm(`${item.name ?? ''} 전량을 반납(목록 삭제)하시겠습니까?`)) {
+      if (item.id == null) return;
       await supabase.from('inventory').delete().eq('id', item.id);
-      await addLog(selectedTeacher.id, `${item.name} 전량 반납 완료`, 'out');
+      await addLog(selectedTeacher.id, `${item.name ?? ''} 전량 반납 완료`, 'out');
       fetchTeacherData(selectedTeacher.id);
     } else {
-      setTempQuantities(prev => ({ ...prev, [item.id]: item.quantity.toString() }));
+      const id = item.id;
+      if (id != null) setTempQuantities(prev => ({ ...prev, [id]: (item.quantity ?? 0).toString() }));
     }
   };
 
   const commitQuantity = async (item: InventoryItem) => {
-    if (!supabase) return;
+    if (!supabase || !selectedTeacher) return;
+    if (item.id == null) return;
     const val = tempQuantities[item.id];
     const newQty = parseInt(val);
     if (isNaN(newQty) || newQty < 0) return alert('올바른 숫자를 입력하세요.');
     if (newQty === item.quantity) return;
     if (newQty === 0) return handleReturnAll(item);
 
-    const diff = newQty - item.quantity;
+    const prevQty = item.quantity ?? 0;
+    const diff = newQty - prevQty;
     await supabase.from('inventory').update({ quantity: newQty, updated_at: new Date().toISOString() }).eq('id', item.id);
-    await addLog(selectedTeacher.id, `${item.name} 수량 변경 (${item.quantity} -> ${newQty})`, diff > 0 ? 'in' : 'out');
+    await addLog(selectedTeacher.id, `${item.name ?? ''} 수량 변경 (${prevQty} -> ${newQty})`, diff > 0 ? 'in' : 'out');
     fetchTeacherData(selectedTeacher.id);
   };
 
@@ -275,7 +272,7 @@ export default function AdminInventoryPage() {
                     <Plus size={14} />
                   </button>
                   <div className="w-0 overflow-hidden group-hover:w-auto opacity-0 group-hover:opacity-100 transition-all">
-                    <button onClick={(e) => handleDeleteCatalog(e, item.id)} className="p-1.5 bg-white text-slate-300 hover:text-red-500 rounded-lg border border-slate-100 cursor-pointer ml-1"><Trash2 size={12} /></button>
+                    <button onClick={(e) => item.id != null && handleDeleteCatalog(e, item.id)} className="p-1.5 bg-white text-slate-300 hover:text-red-500 rounded-lg border border-slate-100 cursor-pointer ml-1"><Trash2 size={12} /></button>
                   </div>
                 </div>
               </div>
@@ -349,11 +346,11 @@ export default function AdminInventoryPage() {
                         <div className="flex-1 bg-slate-50 rounded-2xl p-1 md:p-1.5 border border-slate-100 shadow-inner">
                             <input 
                                 type="number" className="w-full bg-transparent text-center font-black text-xl md:text-2xl text-slate-800 outline-none" 
-                                value={tempQuantities[item.id] || ''}
-                                onChange={(e) => setTempQuantities({ ...tempQuantities, [item.id]: e.target.value })}
+                                value={item.id != null ? (tempQuantities[item.id] ?? '') : ''}
+                                onChange={(e) => { if (item.id != null) setTempQuantities({ ...tempQuantities, [item.id]: e.target.value }); }}
                             />
                         </div>
-                        {tempQuantities[item.id] !== (item.quantity?.toString() || '0') && (
+                        {item.id != null && tempQuantities[item.id] !== (item.quantity?.toString() ?? '0') && (
                             <button onClick={() => commitQuantity(item)} className="bg-indigo-600 text-white p-3 md:p-3.5 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all animate-in zoom-in-50 cursor-pointer"><Check size={18} strokeWidth={3} /></button>
                         )}
                     </div>
@@ -372,11 +369,11 @@ export default function AdminInventoryPage() {
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">활동 히스토리</span>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-1 md:space-y-2 custom-scrollbar">
-                    {logs.map((log) => (
-                        <div key={log.id} className="flex items-center justify-between gap-3 text-xs md:text-sm group">
+                    {logs.map((log, idx) => (
+                        <div key={log.id ?? idx} className="flex items-center justify-between gap-3 text-xs md:text-sm group">
                             <div className="flex items-center gap-2 md:gap-3">
                                 <span className="text-slate-400 text-[9px] font-bold whitespace-nowrap">
-                                    {new Date(log.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(log.created_at ?? 0).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 <span className={`font-bold ${log.type === 'in' ? 'text-indigo-600' : log.type === 'out' ? 'text-rose-500' : 'text-slate-700'}`}>
                                     {log.content}

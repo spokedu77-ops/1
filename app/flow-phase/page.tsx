@@ -18,6 +18,7 @@ function FlowPhaseContent() {
   const engineRef = useRef<FlowEngine | null>(null);
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [engineReady, setEngineReady] = useState(false);
+  const [showTapForAudio, setShowTapForAudio] = useState(false);
 
   const progressBarRef = useRef<HTMLDivElement>(null);
   const levelNumRef = useRef<HTMLSpanElement>(null);
@@ -31,6 +32,9 @@ function FlowPhaseContent() {
   const flashOverlayRef = useRef<HTMLDivElement>(null);
   const speedLinesOverlayRef = useRef<HTMLDivElement>(null);
   const panoDebugHudRef = useRef<HTMLDivElement>(null);
+  const duckWarningLineRef = useRef<HTMLDivElement>(null);
+  const stampOverlayRef = useRef<HTMLDivElement>(null);
+  const badgeToastRef = useRef<HTMLDivElement>(null);
 
   const domRefs: FlowDomRefs = {
     progressBar: progressBarRef,
@@ -45,7 +49,13 @@ function FlowPhaseContent() {
     flashOverlay: flashOverlayRef,
     speedLinesOverlay: speedLinesOverlayRef,
     panoDebugHud: panoDebugHudRef,
+    duckWarningLine: duckWarningLineRef,
+    stampOverlay: stampOverlayRef,
+    badgeToast: badgeToastRef,
   };
+
+  const domRefsRef = useRef<FlowDomRefs>(domRefs);
+  domRefsRef.current = domRefs;
 
   const handleStart = useCallback(async () => {
     await engineRef.current?.startGame(bgmPath || undefined, panoPath || undefined);
@@ -53,15 +63,15 @@ function FlowPhaseContent() {
 
   const handleLevelChange = useCallback((level: number) => {
     setSelectedLevel(level);
-    if (level >= 1 && level <= 4) {
-      engineRef.current?.setStartLevel(level as 1 | 2 | 3 | 4);
+    if (level >= 1 && level <= 5) {
+      engineRef.current?.setStartLevel(level as 1 | 2 | 3 | 4 | 5);
     }
   }, []);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const engine = new FlowEngine(canvasRef.current, domRefs);
+    const engine = new FlowEngine(canvasRef.current, domRefsRef);
     engineRef.current = engine;
     setEngineReady(true);
 
@@ -81,7 +91,10 @@ function FlowPhaseContent() {
   useEffect(() => {
     if (!autoStart || !engineReady || !engineRef.current) return;
     const t = setTimeout(() => {
-      engineRef.current?.startGame(bgmPath || undefined, panoPath || undefined);
+      engineRef.current?.startGame(bgmPath || undefined, panoPath || undefined, {
+        deferAudio: false,
+        onAudioBlocked: () => setShowTapForAudio(true),
+      });
     }, 400);
     return () => clearTimeout(t);
   }, [autoStart, engineReady, bgmPath, panoPath]);
@@ -98,12 +111,45 @@ function FlowPhaseContent() {
         className="fixed top-2 left-2 z-[3000] rounded bg-black/60 px-2 py-1 font-mono text-xs text-white/90"
         aria-live="polite"
       />
+      <div
+        ref={duckWarningLineRef}
+        className="fixed top-0 left-0 right-0 z-[2810] h-1 bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)] pointer-events-none hidden"
+        aria-hidden
+      />
+      <div
+        ref={stampOverlayRef}
+        className="fixed inset-0 z-[3010] flex items-center justify-center pointer-events-none hidden"
+        aria-hidden
+      >
+        <span className="text-4xl md:text-5xl font-black tracking-[0.3em] text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.8)]">FLOW COMPLETE</span>
+      </div>
+      <div
+        ref={badgeToastRef}
+        className="fixed top-1/2 left-1/2 z-[3005] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-black/90 border-2 border-white/30 px-10 py-5 text-3xl font-bold text-white shadow-lg hidden"
+        aria-hidden
+      />
+
+      {showTapForAudio && (
+        <button
+          type="button"
+          className="fixed inset-0 z-[2500] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => {
+            engineRef.current?.enableAudio();
+            setShowTapForAudio(false);
+          }}
+          aria-label="탭하면 소리 재생"
+        >
+          <span className="rounded-2xl bg-white/10 px-8 py-4 text-center text-lg font-medium text-white backdrop-blur-sm">
+            화면을 탭하면 소리가 켜져요
+          </span>
+        </button>
+      )}
 
       {(isAdminMode || showLevelSelector) && (
         <div className="absolute top-6 left-6 z-[1500] bg-black/90 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)] min-w-[200px]">
           <div className="text-base text-blue-200 mb-3 font-bold">Admin: 레벨 선택</div>
           <div className="flex gap-2 flex-wrap">
-            {[1, 2, 3, 4].map((level) => (
+            {[1, 2, 3, 4, 5].map((level) => (
               <button
                 key={level}
                 onClick={() => handleLevelChange(level)}
@@ -121,7 +167,7 @@ function FlowPhaseContent() {
             <input
               type="range"
               min="1"
-              max="4"
+              max="5"
               step="1"
               value={selectedLevel}
               onChange={(e) => handleLevelChange(Number(e.target.value))}

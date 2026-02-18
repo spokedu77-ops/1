@@ -132,9 +132,9 @@ export default function SpokeduHQDashboard() {
             roundDisplay
           };
         })
-        .sort((a, b) => {
-          const timeA = new Date(a.startAt).getTime();
-          const timeB = new Date(b.startAt).getTime();
+        .sort((a: { startAt?: string; isPostponed?: boolean; isCancelled?: boolean; isFinished?: boolean }, b: { startAt?: string; isPostponed?: boolean; isCancelled?: boolean; isFinished?: boolean }) => {
+          const timeA = new Date(a.startAt ?? 0).getTime();
+          const timeB = new Date(b.startAt ?? 0).getTime();
           if (timeA !== timeB) return timeA - timeB;
           if (a.isPostponed || a.isCancelled) return 1;
           if (b.isPostponed || b.isCancelled) return -1;
@@ -148,7 +148,7 @@ export default function SpokeduHQDashboard() {
       setScheduleSummary(recentSchedules);
       
       // Vacation Filtering (오늘 이전 데이터 자동 제외)
-      const validVacations = (usersRes.data || []).filter(v => {
+      const validVacations = (usersRes.data || []).filter((v: { vacation?: string }) => {
         const dateMatch = v.vacation?.match(/\d{8}/);
         return dateMatch ? dateMatch[0] >= todayStr : true;
       });
@@ -247,13 +247,23 @@ export default function SpokeduHQDashboard() {
 
   const handleSaveTask = async () => {
     if (!taskForm.title || !supabase) return;
-    const { error } = editingTask 
-      ? await supabase.from('todos').update(taskForm).eq('id', editingTask.id)
-      : await supabase.from('todos').insert([taskForm]);
-    if (!error) {
-      setIsTaskModalOpen(false);
-      fetchData();
+    const payload = {
+      title: taskForm.title,
+      assignee: taskForm.assignee,
+      status: taskForm.status,
+      tag: taskForm.tag,
+      description: taskForm.description,
+    };
+    const { error } = editingTask
+      ? await supabase.from('todos').update(payload).eq('id', editingTask.id)
+      : await supabase.from('todos').insert([payload]);
+    if (error) {
+      toast.error(`저장 실패: ${error.message}`);
+      return;
     }
+    toast.success(editingTask ? '수정되었습니다.' : '등록되었습니다.');
+    setIsTaskModalOpen(false);
+    fetchData();
   };
 
   if (loading && !fetchError) {
@@ -407,9 +417,13 @@ export default function SpokeduHQDashboard() {
                         </td>
                         <td className="px-3 py-2">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-medium ${
-                            s.status === 'done' ? 'bg-slate-100 text-slate-600' : 'bg-green-100 text-green-800'
+                            s.status === 'done'
+                              ? 'bg-slate-100 text-slate-600'
+                              : s.status === 'scheduled'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-green-100 text-green-800'
                           }`}>
-                            {s.status === 'done' ? '종료' : '진행중'}
+                            {s.status === 'done' ? '종료' : s.status === 'scheduled' ? '진행 예정' : '진행중'}
                           </span>
                         </td>
                       </tr>

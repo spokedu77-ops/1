@@ -205,7 +205,7 @@ export default function TeacherReportPage() {
       <div className="px-4 py-2 bg-blue-50/50 rounded-xl flex gap-3 items-start">
         <Info size={14} className="text-blue-400 mt-0.5" />
         <p className="text-[10px] font-bold text-blue-400 leading-relaxed">
-          스포키듀의 정산은 프리랜서 사업소득(3.3%) 원천징수 후 지급됩니다. 실제 입금액은 공제 후 금액인 {'\'실수령액\''}과 일치합니다.
+          스포키듀의 정산은 프리랜서 사업소득(3.3%) 원천징수 후 지급됩니다. 실제 입금액은 공제 후 금액인 {"'"}실수령액{"'"}과 일치합니다.
         </p>
       </div>
 

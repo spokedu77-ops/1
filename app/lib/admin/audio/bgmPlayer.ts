@@ -57,7 +57,7 @@ export class BgmPlayer {
 
     try {
       await this.audio.play();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // autoplay blocked 또는 기타 에러
       console.warn('[BgmPlayer] Play failed (autoplay blocked or error):', error);
       // throw하지 않고 조용히 무시

@@ -67,7 +67,7 @@ export function InlineCell(props: InlineCellProps) {
         setLocal(props.kind === 'text' ? props.value || '' : String(props.value ?? ''));
         setEditing(true);
       }}
-      className="w-full text-left rounded px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 min-h-[28px] border border-transparent hover:border-slate-200"
+      className="w-full text-left rounded px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 min-h-[28px] border border-transparent hover:border-slate-200 cursor-pointer"
     >
       <span className={!displayValue ? 'text-slate-400' : ''}>
         {displayValue || (props.placeholder ?? '')}

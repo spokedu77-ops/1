@@ -56,7 +56,7 @@ export function ChecklistEditor({ items, onChange, disabled }: ChecklistEditorPr
           type="button"
           onClick={add}
           disabled={disabled || !newText.trim()}
-          className="rounded p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+          className="rounded p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50 cursor-pointer"
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -68,7 +68,7 @@ export function ChecklistEditor({ items, onChange, disabled }: ChecklistEditorPr
               type="button"
               onClick={() => toggle(it.id)}
               disabled={disabled}
-              className="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-600"
+              className="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
             >
               {it.done ? (
                 <Check className="h-4 w-4 text-green-600" />
@@ -89,7 +89,7 @@ export function ChecklistEditor({ items, onChange, disabled }: ChecklistEditorPr
               type="button"
               onClick={() => remove(it.id)}
               disabled={disabled}
-              className="shrink-0 rounded p-1 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600"
+              className="shrink-0 rounded p-1 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 cursor-pointer"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>

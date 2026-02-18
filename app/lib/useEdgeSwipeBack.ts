@@ -39,9 +39,10 @@ export function useEdgeSwipeBack(options: UseEdgeSwipeBackOptions) {
     const el = (containerRef?.current ?? document) as Document | HTMLElement;
     if (!el) return;
 
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      const t = e.touches[0];
+    const onTouchStart = (e: Event) => {
+      const ev = e as TouchEvent;
+      if (ev.touches.length !== 1) return;
+      const t = ev.touches[0];
       state.current.tracking = true;
       state.current.startX = t.clientX;
       state.current.startY = t.clientY;
@@ -50,13 +51,14 @@ export function useEdgeSwipeBack(options: UseEdgeSwipeBackOptions) {
       state.current.fromEdge = t.clientX <= EDGE_PX;
     };
 
-    const onTouchMove = (e: TouchEvent) => {
+    const onTouchMove = (e: Event) => {
+      const ev = e as TouchEvent;
       if (!state.current.tracking || !state.current.fromEdge) return;
-      const t = e.touches[0];
+      const t = ev.touches[0];
       const dx = t.clientX - state.current.startX;
       const dy = t.clientY - state.current.startY;
       if (dx > 10 && Math.abs(dx) > Math.abs(dy) * SLOPE) {
-        e.preventDefault();
+        ev.preventDefault();
       }
       state.current.lastX = t.clientX;
       state.current.lastY = t.clientY;

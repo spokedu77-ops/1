@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Think 150 기본 프로그램 4개 UI 생성 + 주차별 저장
+ * Think 150 주차별 프로그램 저장 (N주차 저장 시 warmup_programs_composite에 upsert)
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -49,36 +49,6 @@ export function useUpsertThink150Program() {
         { onConflict: 'id' }
       );
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['warmup-programs-list'] });
-    },
-  });
-}
-
-export function useCreateThink150Programs() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      const supabase = getSupabaseClient();
-      for (const p of THINK150_PROGRAMS) {
-        const phases = [
-          { type: 'think', content_type: 'think150', duration: 150, config: { week: p.week } },
-        ];
-        const { error } = await supabase.from('warmup_programs_composite').upsert(
-          {
-            id: p.id,
-            week_id: 'template',
-            title: p.title,
-            description: p.description,
-            total_duration: 150,
-            phases,
-          },
-          { onConflict: 'id' }
-        );
-        if (error) throw error;
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['warmup-programs-list'] });

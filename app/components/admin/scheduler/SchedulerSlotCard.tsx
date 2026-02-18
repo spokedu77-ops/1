@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import type { ScheduleLightRow } from '@/app/lib/admin/hooks/useRotationSchedule';
+import type { Audience } from '@/app/lib/admin/constants/thinkTiming';
+
+const AUDIENCE_OPTIONS: { value: Audience; label: string }[] = [
+  { value: '900ms', label: '900ms' },
+  { value: '700ms', label: '700ms' },
+  { value: '550ms', label: '550ms' },
+];
 
 export interface SchedulerSlotCardProps {
   weekKey: string;
@@ -26,13 +33,17 @@ function savePayload(
   week: number,
   programId: string,
   programs: { id: string; title: string }[],
+  audience: Audience,
   published: boolean
 ) {
+  const isThink = programId.startsWith('think150_');
   return {
     week_key: weekKey,
     program_id: programId,
-    asset_pack_id: 'iiwarmup_think_default',
-    program_snapshot: { think150: true, week, month, audience: 'elementary' },
+    asset_pack_id: isThink ? 'iiwarmup_think_default' : undefined,
+    program_snapshot: isThink
+      ? { think150: true, week, month, audience }
+      : {},
     is_published: published,
     programTitle: programs.find((p) => p.id === programId)?.title,
   };
@@ -48,18 +59,31 @@ export function SchedulerSlotCard({
   isSaving,
 }: SchedulerSlotCardProps) {
   const [programId, setProgramId] = useState(row?.program_id ?? '');
+  const snapshotAudience = (row?.program_snapshot as { audience?: string } | undefined)?.audience;
+  const [audience, setAudience] = useState<Audience>(
+    (snapshotAudience as Audience | undefined) && AUDIENCE_OPTIONS.some((o) => o.value === snapshotAudience)
+      ? (snapshotAudience as Audience)
+      : '700ms'
+  );
 
   // Sync from props when row changes
   /* eslint-disable react-hooks/set-state-in-effect -- intentional sync from props */
   useEffect(() => {
     setProgramId(row?.program_id ?? '');
   }, [row?.program_id]);
+  useEffect(() => {
+    const next =
+      (row?.program_snapshot as { audience?: string } | undefined)?.audience;
+    if (next && AUDIENCE_OPTIONS.some((o) => o.value === next)) {
+      setAudience(next as Audience);
+    }
+  }, [row?.program_snapshot]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = async (published: boolean) => {
     if (!programId) return;
     try {
-      await onSave(savePayload(weekKey, month, week, programId, programs, published));
+      await onSave(savePayload(weekKey, month, week, programId, programs, audience, published));
     } catch (err) {
       console.error('Scheduler slot save failed:', err);
     }
@@ -101,6 +125,22 @@ export function SchedulerSlotCard({
           </option>
         ))}
       </select>
+      {programId && programId.startsWith('think150_') && (
+        <div className="mb-2">
+          <label className="mb-1 block text-xs text-neutral-400">대상 연령</label>
+          <select
+            className="w-full rounded border border-neutral-600 bg-neutral-900 px-3 py-2 text-sm"
+            value={audience}
+            onChange={(e) => setAudience(e.target.value as Audience)}
+          >
+            {AUDIENCE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {programId ? (
         <p className="mb-3 text-xs text-neutral-400" title={programId}>
           {programs.find((p) => p.id === programId)?.title ?? row?.programTitle ?? programId}

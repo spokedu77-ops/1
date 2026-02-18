@@ -95,9 +95,9 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
   const [selectedCoachId, setSelectedCoachId] = useState('all');
   const [selectedDate, setSelectedDate] = useState(() => {
     const now = new Date();
-    const offset = now.getTimezoneOffset() * 60000;
-    const kstDate = new Date(now.getTime() - offset);
-    return kstDate.toISOString().split('T')[0];
+    const kst = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    kst.setDate(kst.getDate() - 1);
+    return kst.toISOString().split('T')[0];
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +111,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  const [duplicateCheck, setDuplicateCheck] = useState<{ duplicate?: boolean; message?: string } | null>(null);
+  const [duplicateCheck, setDuplicateCheck] = useState<{ isDuplicate: boolean; similarity?: number; matchedSession?: { title?: string; start_at?: string }; duplicate?: boolean; message?: string } | null>(null);
 
   const fetchListData = useCallback(async () => {
     if (!supabase) return;
@@ -460,8 +460,8 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                     <span className="font-bold text-amber-900">중복 의심</span>
                   </div>
                   <p className="text-sm text-amber-800">
-                    <strong>{duplicateCheck.matchedSession.title}</strong> ({new Date(duplicateCheck.matchedSession.start_at).toLocaleDateString()})와 
-                    <strong className="text-amber-900"> {duplicateCheck.similarity}% 유사</strong>합니다.
+                    <strong>{duplicateCheck.matchedSession?.title ?? ''}</strong> ({new Date(duplicateCheck.matchedSession?.start_at ?? 0).toLocaleDateString()})와 
+                    <strong className="text-amber-900"> {duplicateCheck.similarity ?? 0}% 유사</strong>합니다.
                   </p>
                   <p className="text-xs text-amber-700 mt-1">
                     복사/붙여넣기 피드백일 수 있습니다. 확인 후 검수해주세요.
@@ -548,7 +548,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
 }
 
 // 수업안 조회 탭 - 세션 타입 (lesson_plans, users 조인 포함)
-type LessonPlanSession = Record<string, unknown> & { id: string; created_by: string; users?: { name?: string } | null };
+type LessonPlanSession = Record<string, unknown> & { id: string; created_by: string; users?: { name?: string } | null; title?: string; start_at?: string; lesson_plans?: { content?: unknown }[] };
 function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: ReturnType<typeof getSupabaseBrowserClient> | null }) {
   const [sessions, setSessions] = useState<LessonPlanSession[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState('all');
@@ -622,9 +622,9 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
             <div key={teacher} className="bg-white rounded-2xl p-6 border-2 border-slate-200 hover:border-blue-200 transition-all">
               <h3 className="text-xl font-black text-slate-900 mb-4">{teacher} 선생님</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {teacherSessions.map((session: Session) => {
+                {teacherSessions.map((session: LessonPlanSession) => {
                   const hasLessonPlan = session.lesson_plans && session.lesson_plans.length > 0 && session.lesson_plans[0].content;
-                  const date = new Date(session.start_at);
+                  const date = new Date((session.start_at as string) ?? 0);
                   const formattedDate = `${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
                   
                   return (
@@ -646,7 +646,7 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
                           {hasLessonPlan ? '작성됨' : '미작성'}
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-slate-900 line-clamp-2">{session.title}</p>
+                      <p className="text-sm font-bold text-slate-900 line-clamp-2">{String(session.title ?? '')}</p>
                     </button>
                   );
                 })}
@@ -662,9 +662,9 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
           <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div className="px-8 py-6 border-b flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-black text-slate-900">{selectedSession.title}</h2>
+                <h2 className="text-xl font-black text-slate-900">{String(selectedSession.title ?? '')}</h2>
                 <p className="text-[10px] font-bold text-slate-400 mt-1">
-                  {new Date(selectedSession.start_at).toLocaleDateString('ko-KR')} 수업안
+                  {new Date((selectedSession.start_at as string) ?? 0).toLocaleDateString('ko-KR')} 수업안
                 </p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900 cursor-pointer"><X size={24} /></button>
@@ -672,7 +672,7 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
             <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30">
               <div className="bg-white rounded-2xl p-6 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap min-h-[400px]">
                 {selectedSession.lesson_plans && selectedSession.lesson_plans.length > 0 
-                  ? selectedSession.lesson_plans[0].content 
+                  ? String(selectedSession.lesson_plans[0]?.content ?? '') 
                   : '내용이 없습니다.'}
               </div>
             </div>

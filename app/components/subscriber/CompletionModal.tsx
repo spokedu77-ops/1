@@ -34,6 +34,15 @@ export function CompletionModal({ open, onClose, onRestart }: CompletionModalPro
           <p className="mt-1 text-sm text-neutral-400">
             이번 주 웜업을 모두 완료했어요.
           </p>
+          <div className="mt-4 w-full rounded-xl border border-neutral-700 bg-neutral-800/50 px-4 py-3 text-left">
+            <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">성과 지표</p>
+            <ul className="mt-2 space-y-1 text-sm text-neutral-300">
+              <li>완주: 이번 회차</li>
+              <li>참여 횟수: —</li>
+              <li>누적 완주: —</li>
+            </ul>
+            <p className="mt-2 text-[10px] text-neutral-500">실측 데이터 연동 후 자동 반영됩니다.</p>
+          </div>
         </div>
         <div className="mt-6 flex gap-3">
           <button

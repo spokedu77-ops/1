@@ -35,9 +35,9 @@ export default function IIWarmupSubscriberPage() {
 
   const weekKey = useMemo(() => getCurrentWeekKey(), []);
 
-  const { data: scheduleData, isLoading: scheduleLoading } = useSubscriberSchedule(weekKey);
+  const { data: scheduleData, isLoading: scheduleLoading, refetch: refetchSchedule } = useSubscriberSchedule(weekKey);
   const challengeProps = useMemo(
-    () => getChallengePropsFromPhases(scheduleData?.challengePhases ?? scheduleData?.phases) ?? {},
+    () => (getChallengePropsFromPhases(scheduleData?.challengePhases ?? scheduleData?.phases ?? null) ?? {}) as { initialBpm?: number; initialLevel?: number; initialGrid?: string[]; initialLevelData?: Record<number, string[]> },
     [scheduleData?.challengePhases, scheduleData?.phases]
   );
   const thinkSnapshot = scheduleData?.program_snapshot?.think150
@@ -62,7 +62,8 @@ export default function IIWarmupSubscriberPage() {
     }
   }, [scheduleLoading, isPublished, hasPhases, viewState]);
 
-  const handleStart = (mode: PlayMode) => {
+  const handleStart = async (mode: PlayMode) => {
+    await refetchSchedule();
     setPlayMode(mode);
     setViewState('playing');
   };
@@ -119,7 +120,7 @@ export default function IIWarmupSubscriberPage() {
                   <Clock size={14} strokeWidth={2} className="shrink-0 text-neutral-500" />
                   약 10분
                 </span>
-                <span>챌린지 · 싱크 · 플로우</span>
+                <span>띵크 · 챌린지 · 플로우</span>
                 {challengeProps.initialBpm != null && challengeProps.initialBpm > 0 && (
                   <span className="flex items-center gap-1.5">
                     <Music2 size={14} strokeWidth={2} className="shrink-0 text-neutral-500" />
@@ -153,6 +154,7 @@ export default function IIWarmupSubscriberPage() {
           renderPlay={({ onEnd }) => (
             <SpokeduRhythmGame
               allowEdit={false}
+              autoStart
               onEnd={onEnd}
               initialBpm={challengeProps.initialBpm}
               initialLevel={challengeProps.initialLevel}
@@ -160,6 +162,7 @@ export default function IIWarmupSubscriberPage() {
               initialLevelData={challengeProps.initialLevelData}
               bgmPath={scheduleData?.challengeBgmPath ?? undefined}
               bgmStartOffsetMs={scheduleData?.challengeBgmStartOffsetMs ?? 0}
+              bgmSourceBpm={scheduleData?.challengeBgmSourceBpm ?? undefined}
             />
           )}
           renderThink={({ weekKey: wk, onEnd }) => (
@@ -168,7 +171,10 @@ export default function IIWarmupSubscriberPage() {
               onEnd={onEnd}
               scheduleSnapshot={thinkSnapshot}
               thinkPackByMonthAndWeek={scheduleData?.thinkPackByMonthAndWeek ?? undefined}
+              thinkResolvedConfig={scheduleData?.thinkResolvedConfig ?? undefined}
+              thinkPackForThisWeek={scheduleData?.thinkPackForThisWeek ?? undefined}
               month={undefined}
+              hideProgressBar
             />
           )}
           renderFlow={({ weekKey: wk, onEnd, showLevelSelector }) => (

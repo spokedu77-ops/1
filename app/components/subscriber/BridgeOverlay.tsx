@@ -7,19 +7,23 @@
 export interface BridgeOverlayProps {
   /** 남은 초 */
   secondsLeft: number;
-  /** 다음 단계 이름 */
+  /** 다음 단계 이름 (교육용어: 띵크, 챌린지, 플로우) */
   nextPhase: string;
+  /** 다음 단계 보조 설명 (인지, 리듬, 몰입 등) */
+  nextPhaseSub?: string;
   /** 스킵 버튼 노출 */
   onSkip?: () => void;
 }
 
-export function BridgeOverlay({ secondsLeft, nextPhase, onSkip }: BridgeOverlayProps) {
-  const isThink = nextPhase === 'Think';
-  const description = isThink
-    ? '색을 이용한 활동입니다. 준비되면 시작해요.'
-    : nextPhase === 'Flow'
-      ? '몰입 단계입니다. 잠시 후 시작해요.'
-      : `다음: ${nextPhase}`;
+export function BridgeOverlay({ secondsLeft, nextPhase, nextPhaseSub, onSkip }: BridgeOverlayProps) {
+  const description =
+    nextPhase === '띵크' || nextPhase === 'Think'
+      ? '색을 이용한 인지 활동입니다. 준비되면 시작해요.'
+      : nextPhase === '챌린지' || nextPhase === 'Challenge'
+        ? '리듬에 맞춰 움직이는 챌린지입니다. 잠시 후 시작해요.'
+        : nextPhase === '플로우' || nextPhase === 'Flow'
+          ? '몰입 단계입니다. 잠시 후 시작해요.'
+          : `다음: ${nextPhase}`;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-neutral-950 via-black to-neutral-950 text-white">
@@ -34,7 +38,9 @@ export function BridgeOverlay({ secondsLeft, nextPhase, onSkip }: BridgeOverlayP
         >
           {secondsLeft}
         </p>
-        <p className="text-base font-semibold text-cyan-400 md:text-lg">다음: {nextPhase}</p>
+        <p className="text-base font-semibold text-cyan-400 md:text-lg">
+          다음: {nextPhase}{nextPhaseSub ? ` (${nextPhaseSub})` : ''}
+        </p>
         {/* 호흡 원 - 부드러운 breathe 애니메이션 */}
         <div
           className="mx-auto mt-8 h-28 w-28 rounded-full border-2 border-cyan-500/40 bg-cyan-500/5 bridge-breathe"

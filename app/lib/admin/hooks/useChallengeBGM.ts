@@ -15,6 +15,8 @@ export function useChallengeBGM() {
   const [list, setList] = useState<string[]>([]);
   const [selected, setSelected] = useState<string>('');
   const [bgmStartOffsetMs, setBgmStartOffsetMs] = useState<number>(0);
+  /** 선택한 BGM의 원곡 BPM. 화면 BPM과 다르면 playbackRate로 맞춤 (화면 BPM / sourceBpm) */
+  const [sourceBpm, setSourceBpm] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,10 +40,12 @@ export function useChallengeBGM() {
         bgmList?: string[];
         selectedBgm?: string;
         bgmStartOffsetMs?: number;
+        sourceBpm?: number;
       } | null;
       setList(Array.isArray(raw?.bgmList) ? raw.bgmList : []);
       setSelected(typeof raw?.selectedBgm === 'string' ? raw.selectedBgm : '');
       setBgmStartOffsetMs(typeof raw?.bgmStartOffsetMs === 'number' ? raw.bgmStartOffsetMs : 0);
+      setSourceBpm(typeof raw?.sourceBpm === 'number' && raw.sourceBpm > 0 ? raw.sourceBpm : null);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -54,9 +58,15 @@ export function useChallengeBGM() {
   }, [load]);
 
   const save = useCallback(
-    async (nextList: string[], nextSelected: string, nextOffsetMs?: number) => {
+    async (
+      nextList: string[],
+      nextSelected: string,
+      nextOffsetMs?: number,
+      nextSourceBpm?: number | null
+    ) => {
       setError(null);
       const offset = nextOffsetMs ?? bgmStartOffsetMs;
+      const bpm = nextSourceBpm !== undefined ? nextSourceBpm : sourceBpm;
       try {
         const supabase = getSupabaseClient();
         await supabase.from('think_asset_packs').upsert(
@@ -68,6 +78,7 @@ export function useChallengeBGM() {
               bgmList: nextList,
               selectedBgm: nextSelected,
               bgmStartOffsetMs: offset,
+              sourceBpm: typeof bpm === 'number' && bpm > 0 ? bpm : null,
             },
           },
           { onConflict: 'id' }
@@ -75,12 +86,13 @@ export function useChallengeBGM() {
         setList(nextList);
         setSelected(nextSelected);
         if (nextOffsetMs !== undefined) setBgmStartOffsetMs(nextOffsetMs);
+        if (nextSourceBpm !== undefined) setSourceBpm(nextSourceBpm);
       } catch (err) {
         setError((err as Error).message);
         throw err;
       }
     },
-    [bgmStartOffsetMs]
+    [bgmStartOffsetMs, sourceBpm]
   );
 
   const upload = useCallback(
@@ -123,11 +135,21 @@ export function useChallengeBGM() {
     [list, selected, save]
   );
 
+  const setSourceBpmValue = useCallback(
+    (bpm: number | null) => {
+      setSourceBpm(bpm);
+      save(list, selected, undefined, bpm ?? undefined);
+    },
+    [list, selected, save]
+  );
+
   return {
     list,
     selected,
     bgmStartOffsetMs,
     setOffsetMs,
+    sourceBpm,
+    setSourceBpm: setSourceBpmValue,
     loading,
     error,
     load,

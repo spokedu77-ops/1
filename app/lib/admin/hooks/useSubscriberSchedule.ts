@@ -36,8 +36,20 @@ export type SubscriberScheduleData = {
   challengeBgmPath?: string | null;
   /** 챌린지 BGM 재생 시작 오프셋(ms). 음원 첫 비트에 화면 맞출 때 사용 */
   challengeBgmStartOffsetMs?: number;
+  /** 챌린지 BGM 원곡 BPM. 있으면 playbackRate = 화면 BPM / 이 값으로 재생 */
+  challengeBgmSourceBpm?: number | null;
   /** Think 150 월별×주차별 이미지 pack (구독자 Think 단계 이미지 노출) */
   thinkPackByMonthAndWeek?: ThinkPackByMonthAndWeek | null;
+  /** 이번 주 Think 확정 설정 (API에서 내려주면 구독자는 이걸 우선 사용) */
+  thinkResolvedConfig?: {
+    week: number;
+    month: number;
+    audience: string;
+    seedPolicy: string;
+    bgmPath: string | null;
+  } | null;
+  /** 이번 주 Think 이미지 pack만 (12개월 전체 대신) */
+  thinkPackForThisWeek?: { setA: Record<string, string>; setB: Record<string, string> } | null;
 };
 
 async function fetchSchedule(weekKey: string): Promise<SubscriberScheduleData> {

@@ -8,6 +8,13 @@
 import type { ThinkPackSets, ThinkPackByWeek, ThinkPackByMonthAndWeek } from './types';
 import type { PADColor } from '@/app/lib/admin/constants/padGrid';
 
+function hasAnyUrl(pack: ThinkPackSets): boolean {
+  return (
+    Object.values(pack.setA).some(Boolean) ||
+    Object.values(pack.setB).some(Boolean)
+  );
+}
+
 export function getImageUrl(pack: ThinkPackSets | undefined, set: 'setA' | 'setB', color: PADColor): string {
   if (!pack) return '';
   return pack[set][color] ?? '';
@@ -28,12 +35,35 @@ export function getPackForWeek(
   thinkPackByMonthAndWeek?: ThinkPackByMonthAndWeek
 ): ThinkPackSets | undefined {
   if (week === 1) return undefined;
-  if (month != null && thinkPackByMonthAndWeek?.[month]) {
-    const byWeek = thinkPackByMonthAndWeek[month]?.[`week${week}` as keyof ThinkPackByWeek];
+  if (month != null && thinkPackByMonthAndWeek) {
+    const monthPack = thinkPackByMonthAndWeek[month] ?? (thinkPackByMonthAndWeek as Record<string, ThinkPackByWeek>)[String(month)];
+    const byWeek = monthPack?.[`week${week}` as keyof ThinkPackByWeek];
     if (byWeek) return byWeek;
+    for (const k of Object.keys(thinkPackByMonthAndWeek)) {
+      if (Number(k) === month || k === String(month)) {
+        const mp = (thinkPackByMonthAndWeek as Record<string, ThinkPackByWeek>)[k];
+        const bw = mp?.[`week${week}` as keyof ThinkPackByWeek];
+        if (bw) return bw;
+      }
+    }
   }
   const byWeek = thinkPackByWeek?.[`week${week}` as keyof ThinkPackByWeek];
   return byWeek ?? thinkPack;
+}
+
+/** 3·4주차용: thinkPackByMonthAndWeek에서 해당 주차 pack 중 URL 하나라도 있는 것 반환 (월 순서로 첫 번째) */
+export function getPackForWeekFallback(
+  week: 3 | 4,
+  thinkPackByMonthAndWeek: ThinkPackByMonthAndWeek | undefined
+): ThinkPackSets | undefined {
+  if (!thinkPackByMonthAndWeek) return undefined;
+  const weekKey = `week${week}` as keyof ThinkPackByWeek;
+  for (let m = 1; m <= 12; m++) {
+    const monthPack = thinkPackByMonthAndWeek[m] ?? (thinkPackByMonthAndWeek as Record<string, ThinkPackByWeek>)[String(m)];
+    const pack = monthPack?.[weekKey];
+    if (pack && hasAnyUrl(pack)) return pack;
+  }
+  return undefined;
 }
 
 /** 8개 이미지 preload + decode (Intro 동안 호출) */

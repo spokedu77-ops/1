@@ -3,12 +3,10 @@
  * 60주 슬롯(12개월×5주). Light(목록) / Detail(상세) / Quarter(분기별) 분리.
  */
 
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSupabaseClient } from '@/app/lib/supabase/client';
 import { generate48WeekSlots, parseWeekKey } from '@/app/lib/admin/scheduler/dragAndDrop';
-
-const supabase = getSupabaseClient();
 
 export type ScheduleLightRow = {
   week_key: string;
@@ -17,112 +15,13 @@ export type ScheduleLightRow = {
   is_published: boolean;
   is_locked: boolean;
   programTitle?: string;
+  /** Think150 등 프로그램별 스냅샷(audience 등). Quarter 조회 시 포함 */
+  program_snapshot?: unknown;
 };
 
 export type ScheduleDetailRow = ScheduleLightRow & {
-  program_snapshot: any;
+  program_snapshot: unknown;
 };
-
-/** 월별 week_keys 추출 */
-function getWeekKeysForMonth(year: number, month: number): string[] {
-  return generate48WeekSlots(year)
-    .filter((s) => s.month === month)
-    .map((s) => s.weekKey);
-}
-
-export type UseRotationScheduleMonthOptions = {
-  year: number;
-  month: number;
-  /** true이면 M±1 월을 백그라운드 prefetch */
-  prefetchNeighbor?: boolean;
-};
-
-/**
- * 월별 Light 쿼리. 현재 월만 먼저 로드, M±1 prefetch로 TTFA 개선.
- * queryKey: ['rotation_schedule', year, month]
- */
-export function useRotationScheduleMonth({
-  year,
-  month,
-  prefetchNeighbor = true,
-}: UseRotationScheduleMonthOptions) {
-  const queryClient = useQueryClient();
-  const weekKeys = getWeekKeysForMonth(year, month);
-
-  const query = useQuery({
-    queryKey: ['rotation_schedule', year, month],
-    queryFn: async (): Promise<ScheduleLightRow[]> => {
-      const { data, error } = await supabase
-        .from('rotation_schedule')
-        .select('week_key, program_id, asset_pack_id, is_published, is_locked')
-        .in('week_key', weekKeys);
-
-      if (error) throw error;
-
-      const rows = (data || []) as ScheduleLightRow[];
-      const programIds = rows.map((s) => s.program_id).filter(Boolean) as string[];
-
-      if (programIds.length > 0) {
-        const { data: programs } = await supabase
-          .from('warmup_programs_composite')
-          .select('id, title')
-          .in('id', programIds);
-        const programMap = new Map(
-          programs?.map((p: { id: string; title: string }) => [p.id, p.title]) || []
-        );
-        return rows.map((schedule) => ({
-          ...schedule,
-          programTitle: programMap.get(schedule.program_id!),
-        }));
-      }
-      return rows;
-    },
-    enabled: weekKeys.length > 0,
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    placeholderData: (previousData) => previousData ?? [],
-  });
-
-  // M±1 prefetch
-  useEffect(() => {
-    if (!prefetchNeighbor) return;
-    const prevMonth = month > 1 ? month - 1 : 12;
-    const nextMonth = month < 12 ? month + 1 : 1;
-    const prevYear = month > 1 ? year : year - 1;
-    const nextYear = month < 12 ? year : year + 1;
-
-    const fetchMonth = async (y: number, m: number): Promise<ScheduleLightRow[]> => {
-      const keys = getWeekKeysForMonth(y, m);
-      const { data, error } = await supabase
-        .from('rotation_schedule')
-        .select('week_key, program_id, asset_pack_id, is_published, is_locked')
-        .in('week_key', keys);
-      if (error) throw error;
-      const rows = (data || []) as ScheduleLightRow[];
-      const ids = rows.map((s) => s.program_id).filter(Boolean) as string[];
-      if (ids.length > 0) {
-        const { data: programs } = await supabase
-          .from('warmup_programs_composite')
-          .select('id, title')
-          .in('id', ids);
-        const map = new Map(programs?.map((p: { id: string; title: string }) => [p.id, p.title]) || []);
-        return rows.map((s) => ({ ...s, programTitle: map.get(s.program_id!) }));
-      }
-      return rows;
-    };
-
-    queryClient.prefetchQuery({
-      queryKey: ['rotation_schedule', prevYear, prevMonth],
-      queryFn: () => fetchMonth(prevYear, prevMonth),
-    });
-    queryClient.prefetchQuery({
-      queryKey: ['rotation_schedule', nextYear, nextMonth],
-      queryFn: () => fetchMonth(nextYear, nextMonth),
-    });
-  }, [year, month, prefetchNeighbor, queryClient]);
-
-  return query;
-}
 
 export type UseRotationScheduleQuarterOptions = {
   year: number;
@@ -154,30 +53,14 @@ export function useRotationScheduleQuarter({
   return useQuery({
     queryKey: ['rotation_schedule', 'quarter', year, quarter] as const,
     queryFn: async (): Promise<ScheduleLightRow[]> => {
-      const { data, error } = await supabase
-        .from('rotation_schedule')
-        .select('week_key, program_id, asset_pack_id, is_published, is_locked')
-        .in('week_key', weekKeys);
-
-      if (error) throw error;
-
-      const rows = (data || []) as ScheduleLightRow[];
-      const programIds = rows.map((s) => s.program_id).filter(Boolean) as string[];
-
-      if (programIds.length > 0) {
-        const { data: programs } = await supabase
-          .from('warmup_programs_composite')
-          .select('id, title')
-          .in('id', programIds);
-        const programMap = new Map(
-          programs?.map((p: { id: string; title: string }) => [p.id, p.title]) || []
-        );
-        return rows.map((schedule) => ({
-          ...schedule,
-          programTitle: programMap.get(schedule.program_id!),
-        }));
+      const res = await fetch(
+        `/api/admin/schedule?year=${encodeURIComponent(year)}&quarter=${encodeURIComponent(quarter)}`
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(err?.error ?? res.statusText);
       }
-      return rows;
+      return res.json();
     },
     enabled: weekKeys.length > 0,
     staleTime: 2 * 60 * 1000,
@@ -197,6 +80,7 @@ export function useRotationScheduleLight(year: number) {
   return useQuery({
     queryKey: ['rotation-schedule', 'light', year],
     queryFn: async (): Promise<ScheduleLightRow[]> => {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('rotation_schedule')
         .select('week_key, program_id, asset_pack_id, is_published, is_locked')
@@ -229,39 +113,6 @@ export function useRotationScheduleLight(year: number) {
 }
 
 /**
- * Detail: 클릭/상세 패널 오픈 시에만. program_snapshot 포함
- */
-export function useRotationScheduleDetail(weekKey: string | null, enabled: boolean) {
-  return useQuery({
-    queryKey: ['rotation-schedule', 'detail', weekKey ?? ''],
-    queryFn: async (): Promise<ScheduleDetailRow | null> => {
-      if (!weekKey) return null;
-      const { data, error } = await supabase
-        .from('rotation_schedule')
-        .select('week_key, program_id, asset_pack_id, is_published, is_locked, program_snapshot')
-        .eq('week_key', weekKey)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      if (!data) return null;
-
-      const programId = data.program_id;
-      if (programId) {
-        const { data: program } = await supabase
-          .from('warmup_programs_composite')
-          .select('id, title')
-          .eq('id', programId)
-          .single();
-        return { ...data, programTitle: program?.title } as ScheduleDetailRow;
-      }
-      return data as ScheduleDetailRow;
-    },
-    enabled: !!weekKey && enabled,
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-/**
  * @deprecated Use useRotationScheduleLight. 목록용 Light 쿼리만 사용.
  */
 export function useRotationSchedule(year: number) {
@@ -272,7 +123,7 @@ export type SaveScheduleVariables = {
   week_key: string;
   program_id: string;
   asset_pack_id?: string;
-  program_snapshot: any;
+  program_snapshot: unknown;
   is_published?: boolean;
   is_locked?: boolean;
   programTitle?: string;
@@ -287,32 +138,37 @@ export function useSaveSchedule() {
   return useMutation({
     mutationFn: async (data: SaveScheduleVariables) => {
       const { programTitle: _t, ...rest } = data;
-      const payload: Record<string, unknown> = {
+      const payload = {
         week_key: rest.week_key,
         program_id: rest.program_id,
         is_published: rest.is_published ?? false,
         program_snapshot: rest.program_snapshot ?? {},
       };
-      const { data: result, error } = await supabase
-        .from('rotation_schedule')
-        .upsert(payload, {
-          onConflict: 'week_key',
-          ignoreDuplicates: false
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return result;
+      const res = await fetch('/api/admin/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(err?.error ?? res.statusText);
+      }
+      return res.json();
     },
     onMutate: async (variables) => {
       const parsed = parseWeekKey(variables.week_key);
-      if (!parsed) return { previous: undefined as ScheduleLightRow[] | undefined };
+      if (!parsed) return { previousMonth: undefined, previousQuarter: undefined };
       const { year, month } = parsed;
+      const quarter = Math.ceil(month / 3) as 1 | 2 | 3 | 4;
 
-      const cacheKey = ['rotation_schedule', year, month] as const;
-      await queryClient.cancelQueries({ queryKey: cacheKey });
-      const previous = queryClient.getQueryData<ScheduleLightRow[]>(cacheKey);
+      const monthKey = ['rotation_schedule', year, month] as const;
+      const quarterKey = ['rotation_schedule', 'quarter', year, quarter] as const;
+      await queryClient.cancelQueries({ queryKey: monthKey });
+      await queryClient.cancelQueries({ queryKey: quarterKey });
+
+      const previousMonth = queryClient.getQueryData<ScheduleLightRow[]>(monthKey);
+      const previousQuarter = queryClient.getQueryData<ScheduleLightRow[]>(quarterKey);
+
       const nextRow: ScheduleLightRow = {
         week_key: variables.week_key,
         program_id: variables.program_id,
@@ -321,21 +177,29 @@ export function useSaveSchedule() {
         is_locked: variables.is_locked ?? false,
         programTitle: variables.programTitle
       };
-      const list = previous ?? [];
-      const idx = list.findIndex((r) => r.week_key === variables.week_key);
-      const next = idx >= 0
-        ? list.map((r, i) => (i === idx ? { ...r, ...nextRow, programTitle: nextRow.programTitle ?? r.programTitle } : r))
-        : [...list, nextRow];
-      queryClient.setQueryData(cacheKey, next);
-      return { previous };
+
+      const updateList = (list: ScheduleLightRow[] | undefined) => {
+        const arr = list ?? [];
+        const idx = arr.findIndex((r) => r.week_key === variables.week_key);
+        return idx >= 0
+          ? arr.map((r, i) => (i === idx ? { ...r, ...nextRow, programTitle: nextRow.programTitle ?? r.programTitle } : r))
+          : [...arr, nextRow];
+      };
+
+      queryClient.setQueryData(monthKey, updateList(previousMonth));
+      queryClient.setQueryData(quarterKey, updateList(previousQuarter));
+      return { previousMonth, previousQuarter };
     },
     onError: (_err, variables, context) => {
       const parsed = parseWeekKey(variables.week_key);
-      if (parsed && context?.previous != null) {
-        queryClient.setQueryData(
-          ['rotation_schedule', parsed.year, parsed.month],
-          context.previous
-        );
+      if (!parsed || !context) return;
+      const { year, month } = parsed;
+      const quarter = Math.ceil(month / 3) as 1 | 2 | 3 | 4;
+      if (context.previousMonth != null) {
+        queryClient.setQueryData(['rotation_schedule', year, month], context.previousMonth);
+      }
+      if (context.previousQuarter != null) {
+        queryClient.setQueryData(['rotation_schedule', 'quarter', year, quarter], context.previousQuarter);
       }
     },
     onSettled: (data, _error, variables) => {
@@ -363,6 +227,7 @@ export function useDeleteSchedule() {
 
   return useMutation({
     mutationFn: async (weekKey: string) => {
+      const supabase = getSupabaseClient();
       const { error } = await supabase
         .from('rotation_schedule')
         .delete()

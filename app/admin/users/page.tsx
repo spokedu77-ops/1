@@ -1,19 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
-  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin, Medal
+  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin
 } from 'lucide-react';
-import MileageDetailModal from '@/app/components/admin/MileageDetailModal';
+import { CountingTab } from './CountingTab';
 
 interface DocumentFile {
   name: string;
   url: string;
 }
-
-const STAFF_NAMES = ['최지훈', '김구민', '김윤기'];
 
 interface UserData {
   id: string;
@@ -32,6 +31,15 @@ interface UserData {
 }
 
 export default function UserDashboardPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const mainTab = (tabFromUrl === 'counting' ? 'counting' : 'info') as 'info' | 'counting';
+
+  const setMainTab = (tab: 'info' | 'counting') => {
+    router.replace(tab === 'counting' ? '/admin/users?tab=counting' : '/admin/users');
+  };
+
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [users, setUsers] = useState<UserData[]>([]);
   const [, setIsLoading] = useState(true);
@@ -45,14 +53,9 @@ export default function UserDashboardPage() {
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newPartner, setNewPartner] = useState<Partial<UserData>>({ role: 'teacher', is_active: true });
-  const [mileageModalUser, setMileageModalUser] = useState<UserData | null>(null);
 
   const fetchUsers = useCallback(async () => {
-    if (process.env.NODE_ENV === 'development') console.log('[users] fetchUsers 시작, supabase:', !!supabase);
-    if (!supabase) {
-      if (process.env.NODE_ENV === 'development') console.error('[users] fetchUsers: supabase가 null입니다');
-      return;
-    }
+    if (!supabase) return;
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -60,21 +63,16 @@ export default function UserDashboardPage() {
         .select('*')
         .eq('role', 'teacher')
         .order('name');
-      
-      if (process.env.NODE_ENV === 'development') console.log('[users] fetchUsers 결과, data:', data?.length, 'error:', error);
       if (error) {
         console.error('[users] fetchUsers error:', error);
         throw error;
       }
-      
-      const fetchedUsers = (data as UserData[]).map(u => ({ 
-        ...u, 
+      const fetchedUsers = (data as UserData[]).map(u => ({
+        ...u,
         is_active: u.is_active ?? true,
-        documents: u.documents || [] 
+        documents: u.documents || []
       }));
       setUsers(fetchedUsers);
-      if (process.env.NODE_ENV === 'development') console.log('[users] setUsers 완료, users.length:', fetchedUsers.length);
-
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: me } = await supabase.from('users').select('id, name, role').eq('id', user.id).single();
@@ -84,7 +82,6 @@ export default function UserDashboardPage() {
       console.error('[users] fetchUsers catch error:', err);
     } finally {
       setIsLoading(false);
-      if (process.env.NODE_ENV === 'development') console.log('[users] fetchUsers 종료');
     }
   }, [supabase]);
 
@@ -221,49 +218,72 @@ export default function UserDashboardPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 md:p-10 pb-[env(safe-area-inset-bottom,0px)] text-slate-800">
-      <header className="max-w-6xl mx-auto mb-6 sm:mb-10">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#F8FAFC] p-4 sm:p-6 md:p-10 pb-[env(safe-area-inset-bottom,0px)] text-slate-800">
+      <header className="max-w-6xl mx-auto mb-6 sm:mb-10 w-full min-w-0">
         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 italic tracking-tighter">SPOKEDU <span className="text-blue-600 not-italic">HRM</span></h1>
             <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Partner Management System</p>
           </div>
-          <div className="flex gap-2 sm:gap-3 w-full md:w-auto min-w-0">
-            <div className="relative flex-1 md:w-64 group min-w-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="text" placeholder="검색..." className="w-full min-h-[44px] pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-base sm:text-sm font-bold transition-all touch-manipulation" onChange={(e) => setSearchTerm(e.target.value)} />
+          {mainTab === 'info' && (
+            <div className="flex gap-2 sm:gap-3 w-full md:w-auto min-w-0">
+              <div className="relative flex-1 md:w-64 group min-w-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input type="text" placeholder="검색..." className="w-full min-h-[44px] pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-base sm:text-sm font-bold transition-all touch-manipulation" onChange={(e) => setSearchTerm(e.target.value)} />
+              </div>
+              {currentUser?.role === 'admin' && (
+                <button onClick={() => setIsAddModalOpen(true)} className="min-h-[44px] flex items-center justify-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-600 transition-all cursor-pointer shadow-lg shadow-slate-900/10 touch-manipulation shrink-0">
+                  <UserPlus className="w-4 h-4" /> 추가
+                </button>
+              )}
             </div>
-            {currentUser?.role === 'admin' && (
-              <button onClick={() => setIsAddModalOpen(true)} className="min-h-[44px] flex items-center justify-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-600 transition-all cursor-pointer shadow-lg shadow-slate-900/10 touch-manipulation shrink-0">
-                <UserPlus className="w-4 h-4" /> 추가
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
-        <div className="flex gap-2 p-1.5 bg-slate-200/50 rounded-2xl w-full sm:w-fit border border-slate-200 shadow-inner overflow-x-auto">
-          {[{ id: 'live', label: '수업 중', icon: Activity }, { id: 'done', label: '수업 종료', icon: CheckCircle2 }].map((tab) => (
-            <button key={tab.id} onClick={() => setCurrentTab(tab.id)} className={`min-h-[44px] flex items-center gap-2.5 px-5 sm:px-6 py-2 rounded-xl text-[13px] font-black transition-all cursor-pointer touch-manipulation shrink-0 ${currentTab === tab.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
-              <tab.icon className="w-4 h-4" /> {tab.label}
-              <span className="ml-1 text-[10px] opacity-60">{users.filter(u => (tab.id === 'live' ? u.is_active : !u.is_active)).length}</span>
-            </button>
-          ))}
+        <div className="flex flex-col gap-3">
+          {/* 1단: 정보 관리 / 카운팅 관리 */}
+          <div className="flex gap-2 p-1.5 bg-slate-200/50 rounded-2xl w-full sm:w-fit border border-slate-200 shadow-inner overflow-x-auto">
+            {[
+              { id: 'info' as const, label: '정보 관리' },
+              { id: 'counting' as const, label: '카운팅 관리' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setMainTab(t.id)}
+                className={`flex-1 sm:flex-initial min-w-[7rem] sm:min-w-[8rem] min-h-[44px] flex items-center justify-center gap-2 px-6 sm:px-8 py-3 rounded-xl text-sm font-black transition-all cursor-pointer touch-manipulation ${mainTab === t.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {/* 2단: 수업 중 / 수업 종료 (정보 관리 탭일 때만) */}
+          {mainTab === 'info' && (
+            <div className="flex gap-2 p-1.5 bg-slate-200/50 rounded-2xl w-full sm:w-fit border border-slate-200 shadow-inner overflow-x-auto">
+              {([{ id: 'live', label: '수업 중', icon: Activity }, { id: 'done', label: '수업 종료', icon: CheckCircle2 }] as const).map((tab) => (
+                <button key={tab.id} onClick={() => setCurrentTab(tab.id)} className={`flex-1 sm:flex-initial min-w-[7rem] sm:min-w-[8rem] min-h-[44px] flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3 rounded-xl text-sm font-black transition-all cursor-pointer touch-manipulation ${currentTab === tab.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <tab.icon className="w-4 h-4 shrink-0" /> {tab.label}
+                  <span className="ml-1 text-[10px] opacity-60">{users.filter(u => (tab.id === 'live' ? u.is_active : !u.is_active)).length}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-w-0">
+      <main className="max-w-4xl mx-auto min-w-0">
+        {mainTab === 'counting' ? (
+          <CountingTab supabase={supabase} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 min-w-0">
         {filteredUsers.map((user) => (
-          <div key={user.id} className={`bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 border-2 transition-all duration-300 flex flex-col hover:shadow-xl min-w-0 ${user.is_active ? 'border-blue-500 shadow-blue-500/5' : 'border-transparent shadow-sm'}`}>
+          <div key={user.id} className={`bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 border-2 transition-all duration-300 flex flex-col hover:shadow-xl min-w-0 w-full max-w-full overflow-hidden ${user.is_active ? 'border-blue-500 shadow-blue-500/5' : 'border-transparent shadow-sm'}`}>
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-2">
                 <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${user.role === 'teacher' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>{user.role === 'teacher' ? 'Inst' : 'Adm'}</span>
                 <span className={`text-[9px] font-black px-2 py-1 rounded-lg ${user.is_active ? 'bg-blue-600 text-white animate-pulse' : 'bg-slate-100 text-slate-500'}`}>{user.is_active ? '수업 중' : '종료'}</span>
               </div>
               {currentUser?.role === 'admin' && (
-                <div className="flex gap-1">
-                  {!STAFF_NAMES.includes(user.name || '') && (
-                    <button onClick={() => setMileageModalUser(user)} className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all cursor-pointer flex items-center justify-center touch-manipulation" title="마일리지/카운팅 관리"><Medal className="w-3.5 h-3.5" /></button>
-                  )}
+                <div className="flex flex-wrap gap-1">
                   <button onClick={() => toggleActiveStatus(user)} className={`min-h-[44px] min-w-[44px] p-2 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center touch-manipulation ${user.is_active ? 'bg-blue-500 text-white hover:bg-rose-500' : 'bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white'}`}><Power className="w-3.5 h-3.5" /></button>
                   <button onClick={() => { if (editingId === user.id) { setEditingId(null); } else { setEditingId(user.id); setEditForm({ ...user }); } }} className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 cursor-pointer flex items-center justify-center touch-manipulation"><Edit3 className="w-3.5 h-3.5" /></button>
                 </div>
@@ -286,24 +306,24 @@ export default function UserDashboardPage() {
                 
                 <div className="space-y-4 mb-6">
                   {/* 학력 */}
-                  <div className="flex items-center text-[11px] font-bold text-slate-600">
-                    <GraduationCap className="w-4 h-4 mr-3 text-blue-500" />
+                  <div className="flex items-center text-[11px] font-bold text-slate-600 min-w-0">
+                    <GraduationCap className="w-4 h-4 mr-3 text-blue-500 shrink-0" />
                     <span className="text-slate-400 w-20 shrink-0">학력</span>
-                    <span className="truncate">{user.organization || '-'}</span>
+                    <span className="truncate min-w-0 break-words">{user.organization || '-'}</span>
                   </div>
-                  
+
                   {/* 연락처 */}
-                  <div className="flex items-center text-[11px] font-bold text-slate-600">
-                    <Smartphone className="w-4 h-4 mr-3 text-blue-500" />
+                  <div className="flex items-center text-[11px] font-bold text-slate-600 min-w-0">
+                    <Smartphone className="w-4 h-4 mr-3 text-blue-500 shrink-0" />
                     <span className="text-slate-400 w-20 shrink-0">연락처</span>
-                    <span>{user.phone || '-'}</span>
+                    <span className="min-w-0 break-all">{user.phone || '-'}</span>
                   </div>
-                  
+
                   {/* 출발장소 */}
-                  <div className="flex items-center text-[11px] font-bold text-slate-600">
-                    <MapPin className="w-4 h-4 mr-3 text-blue-500" />
+                  <div className="flex items-center text-[11px] font-bold text-slate-600 min-w-0">
+                    <MapPin className="w-4 h-4 mr-3 text-blue-500 shrink-0" />
                     <span className="text-slate-400 w-20 shrink-0">출발장소</span>
-                    <span>{user.departure_location || '-'}</span>
+                    <span className="min-w-0 break-words">{user.departure_location || '-'}</span>
                   </div>
                   
                   {/* 수업 스케줄 */}
@@ -378,16 +398,9 @@ export default function UserDashboardPage() {
             </div>
           </div>
         ))}
+          </div>
+        )}
       </main>
-
-      {mileageModalUser && (
-        <MileageDetailModal
-          teacher={{ id: mileageModalUser.id, name: mileageModalUser.name || '', points: mileageModalUser.points ?? 0, session_count: mileageModalUser.session_count ?? 0 }}
-          supabase={supabase}
-          onClose={() => setMileageModalUser(null)}
-          onSaved={() => fetchUsers()}
-        />
-      )}
 
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">

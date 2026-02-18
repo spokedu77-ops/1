@@ -1,16 +1,15 @@
 'use client';
 
-export type AssetHubTabId = 'think' | 'play' | 'flow';
+export type AssetHubTabId = 'think' | 'flow';
 
 export interface AssetHubTabsProps {
   activeTab: AssetHubTabId;
   onTabChange: (tab: AssetHubTabId) => void;
 }
 
-const TAB_ORDER: AssetHubTabId[] = ['play', 'think', 'flow'];
+const TAB_ORDER: AssetHubTabId[] = ['think', 'flow'];
 
 const TAB_LABELS: Record<AssetHubTabId, string> = {
-  play: 'Play Asset',
   think: 'Think Asset',
   flow: 'Flow Asset',
 };

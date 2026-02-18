@@ -4,7 +4,11 @@ import { usePathname } from 'next/navigation';
 import { Toaster } from 'sonner';
 import Sidebar from './components/Sidebar';
 import { QueryProvider } from './providers/QueryProvider';
+import { Plus_Jakarta_Sans, Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
+
+const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans-jakarta', display: 'swap' });
+const notoSansKR = Noto_Sans_KR({ subsets: ['latin'], variable: '--font-kr', display: 'swap' });
 
 export default function RootLayout({
   children,
@@ -25,13 +29,13 @@ export default function RootLayout({
   const hideSidebar = isAuthPage || isReportPage || isTeacherPage || isIIWarmupSubscriber || isFlowPhase;
 
   return (
-    <html lang="ko">
+    <html lang="ko" className={`${plusJakarta.variable} ${notoSansKR.variable}`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2563eb" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
-      <body className="antialiased bg-gray-50 text-slate-900">
+      <body className="antialiased bg-gray-50 text-slate-900 font-sans">
         <QueryProvider>
           <Toaster position="top-center" richColors closeButton />
           <div className="flex min-h-screen">

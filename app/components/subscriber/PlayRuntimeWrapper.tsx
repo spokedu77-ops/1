@@ -29,7 +29,7 @@ type PackStatus = 'loading' | 'empty' | 'error' | 'ready';
 
 export function PlayRuntimeWrapper({ weekKey, onEnd }: PlayRuntimeWrapperProps) {
   const parsed = useMemo(() => parseWeekKey(weekKey), [weekKey]);
-  const { state, loading, error, tableMissing, getImageUrl, getBgmUrl } = usePlayAssetPack(
+  const { state, loading, error, tableMissing, getImageUrl } = usePlayAssetPack(
     parsed?.year ?? 0,
     parsed?.month ?? 1,
     parsed?.week ?? 1
@@ -72,13 +72,7 @@ export function PlayRuntimeWrapper({ weekKey, onEnd }: PlayRuntimeWrapperProps) 
 
   const onAudioEvent = useCallback(
     (ev: AudioEvent) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[PLAY] audioEvent=', ev.kind);
-      }
       if (ev.kind === 'BGM_START' && ev.path) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[PLAY] bgmUrl=', getBgmUrl(ev.path));
-        }
         startBGM(ev.path, 0, Math.max(0, totalMs)).catch(() => {});
       } else if (ev.kind === 'BGM_STOP') {
         stopBGM();
@@ -86,13 +80,8 @@ export function PlayRuntimeWrapper({ weekKey, onEnd }: PlayRuntimeWrapperProps) 
         playSFX(ev.path).catch(() => {});
       }
     },
-    [getBgmUrl, totalMs]
+    [totalMs]
   );
-
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
-    console.log('[PLAY] weekKey=', weekKey, 'pack=', packStatus);
-  }, [weekKey, packStatus]);
 
   if (!parsed) {
     return (

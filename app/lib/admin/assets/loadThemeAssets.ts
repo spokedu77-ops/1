@@ -19,6 +19,16 @@ export interface ThemeAssets {
   objects?: string[];
 }
 
+/** play_scenarios.scenario_json 내부 assets 구조 (코드 사용처 기준) */
+interface ScenarioJsonAssets {
+  actions?: Record<string, Record<string, string>>;
+  backgrounds?: { play?: string; think?: string; flow?: string };
+  objects?: string[];
+}
+interface ScenarioJson {
+  assets?: ScenarioJsonAssets;
+}
+
 /**
  * Storage path를 Public URL로 변환
  */
@@ -64,8 +74,8 @@ export async function loadThemeAssets(
       };
     }
 
-    const scenarioJson = data.scenario_json as any;
-    const assets = scenarioJson.assets || {};
+    const scenarioJson = (data.scenario_json ?? null) as ScenarioJson | null;
+    const assets = scenarioJson?.assets ?? {};
 
     // actions 매핑 생성 (off1, off2, on1, on2 지원)
     const actions: Record<string, Record<string, string>> = {};
@@ -115,7 +125,7 @@ export async function loadThemeAssets(
       backgrounds,
       objects
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[loadThemeAssets] 예상치 못한 에러 발생:', error);
     // Fallback: 빈 매핑 반환 (4개 이미지 구조)
     const fallbackActions: Record<string, Record<string, string>> = {};

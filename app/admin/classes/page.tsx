@@ -110,35 +110,12 @@ export default function ClassManagementPage() {
       
       if (endedSessions && endedSessions.length > 0) {
         // 1. 세션 상태를 finished로 변경
-        await supabase.from('sessions').update({ status: 'finished' }).in('id', endedSessions.map((s: any) => s.id));
-        
-        // 2. 각 강사의 session_count 증가 및 로그 생성 (created_by 없으면 스킵)
-        const teacherCounts = endedSessions.reduce((acc: any, s: any) => {
-          const id = s.created_by;
-          if (id != null && String(id).trim() !== '') {
-            acc[id] = (acc[id] || 0) + 1;
-          }
-          return acc;
-        }, {} as Record<string, number>);
+        await supabase.from('sessions').update({ status: 'finished' }).in('id', endedSessions.map((s: { id?: string }) => s.id));
 
-        for (const [teacherId, count] of Object.entries(teacherCounts)) {
-          if (!teacherId || teacherId.trim() === '') continue;
-          const { data: user } = await supabase
-            .from('users')
-            .select('session_count')
-            .eq('id', teacherId)
-            .single();
-
-          await supabase
-            .from('users')
-            .update({ session_count: (user?.session_count || 0) + count })
-            .eq('id', teacherId);
-        }
-        
-        // 3. 수업 카운팅 로그 생성 (teacher_id FK: auth.users(id) — created_by가 없거나 삭제된 사용자면 제외)
+        // 2. 수업 카운팅 로그 먼저 한 건씩 삽입 (23505 중복/23503 FK 시 해당 건만 스킵)
         const countLogs = endedSessions
-          .filter((session: any) => session.created_by != null && String(session.created_by).trim() !== '')
-          .map((session: any) => ({
+          .filter((session: { created_by?: string | null }) => session.created_by != null && String(session.created_by).trim() !== '')
+          .map((session: { created_by?: string | null; id?: string; title?: string }) => ({
             teacher_id: session.created_by,
             session_id: session.id,
             session_title: session.title,
@@ -146,28 +123,33 @@ export default function ClassManagementPage() {
             reason: '수업 완료'
           }));
 
-        if (countLogs.length > 0) {
-          const { error: logError } = await supabase
-            .from('session_count_logs')
-            .insert(countLogs);
-
-          if (logError) {
-            // FK 위반 등: 한 건씩 삽입해 실패한 건만 건너뛰기 (삭제된/없는 teacher_id 방지)
-            if (logError.code === '23503') {
-              for (const row of countLogs) {
-                const { error: oneError } = await supabase.from('session_count_logs').insert(row);
-                if (oneError) {
-                  // FK 위반 등으로 1건 건너뜀 (teacher_id 없음)
-                }
-              }
-            } else {
-              console.error('수업 카운팅 로그 저장 실패:', logError?.message ?? logError?.code ?? logError, logError);
+        const successCountByTeacher: Record<string, number> = {};
+        for (const row of countLogs) {
+          const { error: oneError } = await supabase.from('session_count_logs').insert(row);
+          if (oneError) {
+            // 23505: 이미 로그 있음(유니크), 23503: FK(teacher 없음) — 스킵만 하고 에러 로그 안 찍음
+            if (oneError.code !== '23505' && oneError.code !== '23503') {
+              console.error('수업 카운팅 로그 저장 실패:', oneError?.message ?? oneError?.code ?? oneError, oneError);
             }
+            continue;
           }
+          const tid = String(row.teacher_id);
+          successCountByTeacher[tid] = (successCountByTeacher[tid] || 0) + 1;
         }
-        
-        // fetchSessions() 제거 - 전체 데이터 재로드 불필요
-        // 세션 상태는 DB에서 업데이트되며, 다음 페이지 로드 시 반영됨
+
+        // 3. 실제 삽입된 건수만큼만 각 강사 session_count 증가
+        for (const [teacherId, count] of Object.entries(successCountByTeacher)) {
+          if (!teacherId || count <= 0) continue;
+          const { data: user } = await supabase
+            .from('users')
+            .select('session_count')
+            .eq('id', teacherId)
+            .single();
+          await supabase
+            .from('users')
+            .update({ session_count: (user?.session_count || 0) + count })
+            .eq('id', teacherId);
+        }
       }
     } catch (error) {
       console.error('Auto-finish error:', error);
@@ -394,9 +376,11 @@ export default function ClassManagementPage() {
       if (futureError) throw futureError;
       
       if (future) {
-        await Promise.all(future.map(async (s: any) => {
-          const ns = new Date(new Date(s.start_at).getTime() + 7*24*60*60*1000).toISOString();
-          const ne = new Date(new Date(s.end_at).getTime() + 7*24*60*60*1000).toISOString();
+        await Promise.all(future.map(async (s: { id?: string; start_at?: string; end_at?: string }) => {
+          const startAt = s.start_at ?? '';
+          const endAt = s.end_at ?? '';
+          const ns = new Date(new Date(startAt).getTime() + 7*24*60*60*1000).toISOString();
+          const ne = new Date(new Date(endAt).getTime() + 7*24*60*60*1000).toISOString();
           return supabase.from('sessions').update({ start_at: ns, end_at: ne }).eq('id', s.id);
         }));
       }
@@ -433,9 +417,11 @@ export default function ClassManagementPage() {
       if (futureError) throw futureError;
       
       if (future && future.length > 0) {
-        await Promise.all(future.map(async (s: any) => {
-          const ns = new Date(new Date(s.start_at).getTime() - 7*24*60*60*1000).toISOString();
-          const ne = new Date(new Date(s.end_at).getTime() - 7*24*60*60*1000).toISOString();
+        await Promise.all(future.map(async (s: { id?: string; start_at?: string; end_at?: string }) => {
+          const startAt = s.start_at ?? '';
+          const endAt = s.end_at ?? '';
+          const ns = new Date(new Date(startAt).getTime() - 7*24*60*60*1000).toISOString();
+          const ne = new Date(new Date(endAt).getTime() - 7*24*60*60*1000).toISOString();
           return supabase.from('sessions').update({ start_at: ns, end_at: ne }).eq('id', s.id);
         }));
       }
@@ -489,7 +475,7 @@ export default function ClassManagementPage() {
       // 3. Promise.all로 병렬 업데이트
       if (remains && remains.length > 0) {
         await Promise.all(
-          remains.map((r: any) => 
+          remains.map((r: { id?: string; round_index?: number }) => 
             supabase.from('sessions').update({
               round_total: newTotal,
               round_display: `${r.round_index}/${newTotal}`

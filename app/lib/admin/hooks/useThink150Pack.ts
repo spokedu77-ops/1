@@ -98,8 +98,9 @@ export function useThink150Pack() {
       const base = emptyPathsByMonthAndWeek();
 
       if (raw?.byMonth && typeof raw.byMonth === 'object') {
+        const byMonth = raw.byMonth as Record<string, Think150PathsByWeek>;
         for (let m = 1; m <= 12; m++) {
-          const monthData = raw.byMonth[m];
+          const monthData = byMonth[m] ?? byMonth[String(m)];
           if (monthData?.week2 || monthData?.week3 || monthData?.week4) {
             base[m] = {
               week2: monthData.week2 ?? emptyPathsByWeek().week2,

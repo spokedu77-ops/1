@@ -27,6 +27,8 @@ export interface SpokeduRhythmGameProps {
   bgmPath?: string;
   /** BGM 파일 내 첫 비트 위치(ms). 이만큼 건너뛰고 재생해 화면 비트와 음원 동기화 */
   bgmStartOffsetMs?: number;
+  /** BGM 원곡 BPM. 있으면 재생 속도 = 화면 BPM / 이 값 (한 곡을 여러 BPM에 맞춰 재생) */
+  bgmSourceBpm?: number | null;
   initialBpm?: number;
   initialLevel?: number;
   initialGrid?: string[];
@@ -48,22 +50,29 @@ const bpmOptions = [80, 100, 120, 150, 160, 180];
 const SCHEDULE_AHEAD_TIME = 0.1;
 const COUNTDOWN_BEATS = 4;
 
-/** 챌린지 레벨 간 쉬는 시간(ms). 레벨 완료 후 다음 단계 카운트다운 전 전환 화면 노출 시간. */
+/** 챌린지 레벨 간 쉬는 시간(ms). BPM 180 기준 "음악 시간". 다른 BPM이면 wall-clock을 이만큼 음악이 흐르도록 맞춤. */
 const CHALLENGE_TRANSITION_MS = 3350;
 
+const MIN_TRANSITION_MS = 2000;
+const MAX_TRANSITION_MS = 6000;
+
 /**
- * 레벨 완료 → 다음 beat 0까지 전환 화면을 CHALLENGE_TRANSITION_MS 동안 표시.
+ * 레벨 완료 → 다음 beat 0까지 전환 화면 표시 시간(ms).
+ * BGM이 playbackRate로 재생될 때, 음악이 CHALLENGE_TRANSITION_MS만큼 흐르는 wall-clock 시간을 반환해 2단계부터 비트가 맞도록 함.
  */
-function getTransitionDurationMs(_bpm: number): number {
-  return CHALLENGE_TRANSITION_MS;
+function getTransitionDurationMs(bpm: number, bgmSourceBpm?: number | null): number {
+  if (typeof bgmSourceBpm !== 'number' || bgmSourceBpm <= 0) return CHALLENGE_TRANSITION_MS;
+  const playbackRate = bpm / bgmSourceBpm;
+  const wallClockMs = CHALLENGE_TRANSITION_MS / playbackRate;
+  return Math.round(Math.max(MIN_TRANSITION_MS, Math.min(MAX_TRANSITION_MS, wallClockMs)));
 }
 
 /** 인트로(카운트다운) + 4단계 플레이 + 3회 전환(쉬는시간) + 3회 단계별 카운트다운 + 아웃트로(0.6s) 총 재생 시간(초). */
-function getTotalChallengeDurationSec(bpm: number): number {
+function getTotalChallengeDurationSec(bpm: number, bgmSourceBpm?: number | null): number {
   const beatSec = 60 / bpm;
   const countdownSec = 0.05 + 0.1 + COUNTDOWN_BEATS * beatSec;
   const levelBeats = MAX_LEVELS * ROUNDS_PER_LEVEL * BEATS_PER_ROUND;
-  const transitionSec = CHALLENGE_TRANSITION_MS / 1000;
+  const transitionSec = getTransitionDurationMs(bpm, bgmSourceBpm) / 1000;
   return (
     countdownSec +
     levelBeats * beatSec +
@@ -86,6 +95,7 @@ export function SpokeduRhythmGame({
   allowEdit = true,
   bgmPath,
   bgmStartOffsetMs = 0,
+  bgmSourceBpm,
   initialBpm,
   initialLevel,
   initialGrid,
@@ -116,11 +126,13 @@ export function SpokeduRhythmGame({
   const timerIDRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const bpmRef = useRef(bpm);
+  const bgmSourceBpmRef = useRef(bgmSourceBpm);
   const runIdRef = useRef(0);
   const isFinishingRef = useRef(false);
   const isTransitioningRef = useRef(false);
   const isPlayingRef = useRef(false);
   const startCountdownRef = useRef<() => void>(() => {});
+  const schedulerRef = useRef<() => void>(() => {});
   const hasAutoStartedRef = useRef(false);
 
   const [levelData, setLevelData] = useState<Record<number, string[]>>(() => {
@@ -218,6 +230,10 @@ export function SpokeduRhythmGame({
   useEffect(() => {
     bpmRef.current = bpm;
   }, [bpm]);
+
+  useEffect(() => {
+    bgmSourceBpmRef.current = bgmSourceBpm;
+  }, [bgmSourceBpm]);
 
   useEffect(() => {
     currentLevelRef.current = currentLevel;
@@ -349,7 +365,7 @@ export function SpokeduRhythmGame({
       isTransitioningRef.current = false;
       setIsTransitioning(false);
       startCountdownRef.current();
-    }, getTransitionDurationMs(bpm));
+    }, getTransitionDurationMs(bpmRef.current, bgmSourceBpmRef.current));
   }, [levelData, finishGame, shuffleArray, bpm]);
 
   const scheduleNote = useCallback(
@@ -416,8 +432,12 @@ export function SpokeduRhythmGame({
       }
     }
 
-    timerIDRef.current = requestAnimationFrame(scheduler);
+    timerIDRef.current = requestAnimationFrame(() => schedulerRef.current());
   }, [scheduleNote, nextNote, handleLevelComplete]);
+
+  useEffect(() => {
+    schedulerRef.current = scheduler;
+  }, [scheduler]);
 
   const startCountdown = useCallback(() => {
     const myRunId = runIdRef.current;
@@ -443,8 +463,6 @@ export function SpokeduRhythmGame({
   useEffect(() => {
     startCountdownRef.current = startCountdown;
   }, [startCountdown]);
-
-  // autoStart는 더 이상 사용하지 않음 - 사용자가 직접 재생 버튼 클릭
 
   useEffect(() => {
     return () => {
@@ -518,8 +536,14 @@ export function SpokeduRhythmGame({
         isFinishingRef.current = false;
         setShuffledGrid(shuffleArray(levelData[1] ?? defaultLevels[1]));
         if (bgmPath) {
-          const totalSec = getTotalChallengeDurationSec(bpm);
-          startChallengeBGM(bgmPath, bgmStartOffsetMs, totalSec * 1000).catch(() => {});
+          const currentBpm = bpmRef.current;
+          const currentSourceBpm = bgmSourceBpmRef.current;
+          const totalSec = getTotalChallengeDurationSec(currentBpm, currentSourceBpm);
+          const playbackRate =
+            typeof currentSourceBpm === 'number' && currentSourceBpm > 0
+              ? currentBpm / currentSourceBpm
+              : 1;
+          startChallengeBGM(bgmPath, bgmStartOffsetMs, totalSec * 1000, playbackRate).catch(() => {});
         }
         startCountdown();
       } else {
@@ -545,10 +569,23 @@ export function SpokeduRhythmGame({
     scheduler,
     bgmPath,
     bgmStartOffsetMs,
+    bgmSourceBpm,
     bpm,
     levelData,
     shuffleArray,
   ]);
+
+  const togglePlayRef = useRef<() => void | Promise<void>>(() => {});
+  useEffect(() => {
+    togglePlayRef.current = togglePlay;
+  }, [togglePlay]);
+  useEffect(() => {
+    if (!autoStart || isPlaying || isFinished) return;
+    const id = setTimeout(() => {
+      togglePlayRef.current?.();
+    }, 200);
+    return () => clearTimeout(id);
+  }, [autoStart, isPlaying, isFinished]);
 
   const handleLevelChange = useCallback(
     (direction: number) => {
@@ -570,7 +607,9 @@ export function SpokeduRhythmGame({
 
   const handleBpmChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const index = parseInt(e.target.value, 10);
-    setBpm(bpmOptions[index] ?? 100);
+    const nextBpm = bpmOptions[index] ?? 100;
+    bpmRef.current = nextBpm;
+    setBpm(nextBpm);
   }, []);
 
   const triggerImageUpload = useCallback((index: number) => {
@@ -611,7 +650,7 @@ export function SpokeduRhythmGame({
   const totalActionBeats = MAX_LEVELS * ROUNDS_PER_LEVEL * BEATS_PER_PHASE;
   const progressPercent = Math.min(100, (totalBeatsPlayed / totalActionBeats) * 100);
   const estimatedDuration = Math.round(
-    getTotalChallengeDurationSec(bpm)
+    getTotalChallengeDurationSec(bpm, bgmSourceBpm)
   ).toString();
 
   const isListenPhase = currentBeat >= 0 && currentBeat < 8;

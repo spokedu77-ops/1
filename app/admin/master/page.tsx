@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
+type SessionRow = { session_type?: string; price?: number; users?: { name?: string } };
+
+const MARGIN_RATE = 1;
+
 export default function MasterInsightPage() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -28,12 +32,13 @@ export default function MasterInsightPage() {
         .lte('start_at', endDate);
       
       if (sessions) {
-        const payout = sessions.reduce((acc, cur) => acc + (cur.price || 0), 0);
-        const centers = sessions.filter(s => s.session_type === 'regular_center').length;
-        const privates = sessions.filter(s => s.session_type !== 'regular_center').length;
+        const rows = sessions as SessionRow[];
+        const payout = rows.reduce((acc: number, cur) => acc + (cur.price ?? 0), 0);
+        const centers = rows.filter((s: SessionRow) => s.session_type === 'regular_center').length;
+        const privates = rows.filter((s: SessionRow) => s.session_type !== 'regular_center').length;
 
-        const teacherMap = new Map();
-        sessions.forEach(s => {
+        const teacherMap = new Map<string, number>();
+        rows.forEach((s: SessionRow) => {
           const name = s.users?.name || '미지정';
           teacherMap.set(name, (teacherMap.get(name) || 0) + 1); // 수업 횟수 기준
         });
@@ -41,7 +46,7 @@ export default function MasterInsightPage() {
           .map(([name, count]) => ({ name, count }))
           .sort((a, b) => b.count - a.count);
 
-        setStats({ payout, totalSessions: sessions.length, centerCount: centers, privateCount: privates, teacherStats });
+        setStats({ payout, totalSessions: rows.length, centerCount: centers, privateCount: privates, teacherStats });
       }
     }
     fetchMasterData();
@@ -80,7 +85,7 @@ export default function MasterInsightPage() {
           
           <div className="bg-[#1A1D23] p-8 rounded-[32px] border border-white/5 hover:border-purple-500/30 transition-all">
             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Est. Revenue</p>
-            <p className="text-3xl font-black tracking-tight text-blue-400">{(stats.payout * marginRate).toLocaleString()}<span className="text-sm ml-1 text-gray-600">₩</span></p>
+            <p className="text-3xl font-black tracking-tight text-blue-400">{(stats.payout * MARGIN_RATE).toLocaleString()}<span className="text-sm ml-1 text-gray-600">₩</span></p>
           </div>
 
           <div className="bg-[#1A1D23] p-8 rounded-[32px] border border-white/5">

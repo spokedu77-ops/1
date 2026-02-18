@@ -1,3 +1,5 @@
+import { BEAT_STEP_SEC } from './core/coordContract';
+
 /** Supabase Storage public URL (Think 방식 동일) */
 function getFlowBgmUrl(storagePath: string): string {
   if (typeof window === 'undefined') return '';
@@ -47,14 +49,14 @@ export class FlowAudio {
   async init(): Promise<void> {
     if (this.ctx) return;
     // Safari 등 레거시: webkitAudioContext는 표준 타입에 없음
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioCtor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    this.ctx = new AudioCtor();
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0.35;
+    this.masterGain.gain.value = 0.54;
     this.masterGain.connect(this.ctx.destination);
 
     this.bgmGain = this.ctx.createGain();
-    this.bgmGain.gain.value = 0.6;
+    this.bgmGain.gain.value = 1.0;
     this.bgmGain.connect(this.masterGain);
 
     this.sfxGain = this.ctx.createGain();
@@ -71,9 +73,20 @@ export class FlowAudio {
     return this.ctx?.resume() ?? Promise.resolve();
   }
 
+  /** 자동 재생 차단 여부 확인용. true면 사용자 제스처 후 resume 필요 */
+  isContextSuspended(): boolean {
+    return this.ctx?.state === 'suspended';
+  }
+
+  /** 볼륨 덕(duck)용. 0 = 무음, 0.54 = 기본 */
+  setMasterGain(value: number): void {
+    if (this.masterGain) this.masterGain.gain.value = value;
+  }
+
   startMusic(): void {
     if (!this.ctx) return;
     this.stopMusic();
+    this.musicStartTime = this.ctx.currentTime + 0.05;
     if (this.bgmBuffer && this.bgmGain) {
       this.bgmSource = this.ctx.createBufferSource();
       this.bgmSource.buffer = this.bgmBuffer;
@@ -82,9 +95,8 @@ export class FlowAudio {
       this.bgmSource.start();
       return;
     }
-    const step = (60 / 150) / 2;
+    const step = BEAT_STEP_SEC;
     let stepIndex = 0;
-    this.musicStartTime = this.ctx.currentTime + 0.05;
 
     this.musicTimer = setInterval(() => {
       if (!this.ctx) return;
@@ -101,6 +113,7 @@ export class FlowAudio {
   }
 
   stopMusic(): void {
+    this.musicStartTime = 0;
     if (this.musicTimer) {
       clearInterval(this.musicTimer);
       this.musicTimer = null;
@@ -112,6 +125,19 @@ export class FlowAudio {
       this.bgmSource.disconnect();
       this.bgmSource = null;
     }
+  }
+
+  /** Audio clock master: 다음 비트까지 시간 등. startMusic() 후에만 유효. */
+  getBeatInfo(): { now: number; step: number; phase: number; timeToNext: number; beatIndex: number } | null {
+    if (!this.ctx || this.musicStartTime <= 0) return null;
+    const now = this.ctx.currentTime - this.musicStartTime;
+    if (now < 0) return null;
+    const step = BEAT_STEP_SEC;
+    const beatIndex = Math.floor(now / step);
+    const inStep = now % step;
+    const phase = inStep / step;
+    const timeToNext = step - inStep;
+    return { now, step, phase, timeToNext, beatIndex };
   }
 
   sfxJump(): void {

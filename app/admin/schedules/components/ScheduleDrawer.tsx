@@ -1,13 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Save, Trash2, Loader2 } from 'lucide-react';
-import type { Schedule } from '@/app/lib/schedules/types';
-import { ChecklistEditor } from './ChecklistEditor';
+import { X, Save, Trash2, Loader2, Plus, Minus } from 'lucide-react';
+import type { Schedule, ScheduleStatus } from '@/app/lib/schedules/types';
 import { DateRangeField } from './DateRangeField';
 import { TimeRangeField } from './TimeRangeField';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+export interface CenterOption {
+  id: string;
+  name: string;
+}
 
 function formatDateWithDay(dateStr: string | null): string {
   if (!dateStr) return '-';
@@ -15,7 +19,7 @@ function formatDateWithDay(dateStr: string | null): string {
     const d = new Date(dateStr + 'T12:00:00');
     if (Number.isNaN(d.getTime())) return dateStr;
     const day = DAY_NAMES[d.getDay()];
-    const [y, m, dayNum] = dateStr.split('-');
+    const [, m, dayNum] = dateStr.split('-');
     return `${m}/${dayNum} (${day})`;
   } catch {
     return dateStr;
@@ -30,6 +34,7 @@ function formatDayOfWeekList(days: number[] | null): string {
 interface ScheduleDrawerProps {
   schedule: Schedule | null;
   isCreate: boolean;
+  centers?: CenterOption[];
   onClose: () => void;
   onSave: (data: Partial<Schedule>) => Promise<{ error?: string }>;
   onDelete?: (id: string) => Promise<{ error?: string }>;
@@ -41,51 +46,63 @@ const todayStr = () => new Date().toISOString().split('T')[0];
 export function ScheduleDrawer({
   schedule,
   isCreate,
+  centers = [],
   onClose,
   onSave,
   onDelete,
   onSaved,
 }: ScheduleDrawerProps) {
-  const [title, setTitle] = useState('');
   const [assignee, setAssignee] = useState('');
+  const [centerId, setCenterId] = useState<string | null>(null);
+  const [customTitle, setCustomTitle] = useState('');
+  const [dateMode, setDateMode] = useState<'range' | 'specific'>('range');
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
+  const [sessionDates, setSessionDates] = useState<string[]>([]);
   const [startTime, setStartTime] = useState<string | null>(null);
   const [endTime, setEndTime] = useState<string | null>(null);
   const [dayOfWeek, setDayOfWeek] = useState<number[] | null>(null);
   const [sessionsCount, setSessionsCount] = useState<number | null>(null);
   const [note, setNote] = useState('');
-  const [status, setStatus] = useState<'active' | 'done'>('active');
-  const [checklist, setChecklist] = useState<Schedule['checklist']>([]);
+  const [status, setStatus] = useState<ScheduleStatus>('active');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
 
+  const displayTitle = centerId && centers.length
+    ? (centers.find((c) => c.id === centerId)?.name ?? customTitle)
+    : customTitle;
+
   useEffect(() => {
     if (schedule) {
-      setTitle(schedule.title);
       setAssignee(schedule.assignee ?? '');
+      setCenterId(schedule.center_id ?? null);
+      setCustomTitle(schedule.title ?? '');
+      const hasSpecific = Array.isArray(schedule.session_dates) && schedule.session_dates.length > 0;
+      setDateMode(hasSpecific ? 'specific' : 'range');
       setStartDate(schedule.start_date ?? null);
       setEndDate(schedule.end_date ?? null);
+      setSessionDates(hasSpecific && Array.isArray(schedule.session_dates) ? [...schedule.session_dates] : []);
       setStartTime(schedule.start_time ?? null);
       setEndTime(schedule.end_time ?? null);
       setDayOfWeek(Array.isArray(schedule.day_of_week) ? schedule.day_of_week : null);
       setSessionsCount(schedule.sessions_count ?? null);
       setNote(schedule.note ?? '');
       setStatus(schedule.status);
-      setChecklist(Array.isArray(schedule.checklist) ? schedule.checklist : []);
     } else if (isCreate) {
-      setTitle('');
       setAssignee('');
+      setCenterId(null);
+      setCustomTitle('');
+      setDateMode('range');
       setStartDate(null);
       setEndDate(null);
+      setSessionDates([]);
       setStartTime(null);
       setEndTime(null);
       setDayOfWeek(null);
       setSessionsCount(null);
       setNote('');
       setStatus('active');
-      setChecklist([]);
     }
   }, [schedule, isCreate]);
 
@@ -94,24 +111,34 @@ export function ScheduleDrawer({
 
   const handleSave = async () => {
     setError('');
-    if (!title.trim()) {
-      setError('제목을 입력해주세요.');
+    const finalTitle = centerId && centers.length
+      ? (centers.find((c) => c.id === centerId)?.name ?? customTitle.trim())
+      : customTitle.trim();
+    if (!finalTitle) {
+      setError('제목을 입력하거나 센터를 선택해주세요.');
       return;
     }
+    const useSpecific = dateMode === 'specific' && sessionDates.filter(Boolean).length > 0;
+    const dates = useSpecific ? sessionDates.filter(Boolean) : null;
+    const sortedDates = dates?.length ? [...dates].sort() : null;
+    const start = sortedDates?.length ? sortedDates[0]! : startDate || null;
+    const end = sortedDates?.length ? sortedDates[sortedDates.length - 1]! : endDate || null;
     setSaving(true);
     try {
       const res = await onSave({
-        title: title.trim(),
+        title: finalTitle,
         assignee: assignee.trim() || null,
-        start_date: startDate || null,
-        end_date: endDate || null,
+        center_id: centerId || null,
+        start_date: start,
+        end_date: end,
+        session_dates: useSpecific ? sortedDates : null,
         start_time: startTime || null,
         end_time: endTime || null,
         day_of_week: dayOfWeek?.length ? dayOfWeek : null,
         sessions_count: sessionsCount,
         note: note.trim() || null,
         status: suggestDone ? 'done' : status,
-        checklist,
+        checklist: [],
       });
       if (res.error) {
         setError(res.error);
@@ -149,7 +176,7 @@ export function ScheduleDrawer({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+          className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
         >
           <X className="h-5 w-5" />
         </button>
@@ -168,13 +195,48 @@ export function ScheduleDrawer({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">제목 *</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                placeholder="일정 제목"
-              />
+              {centers.length > 0 ? (
+                <>
+                  <select
+                    value={centerId ?? ''}
+                    onChange={(e) => {
+                      const v = e.target.value || null;
+                      setCenterId(v);
+                      if (!v) setCustomTitle('');
+                    }}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
+                  >
+                    <option value="">직접 입력</option>
+                    {centers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!centerId && (
+                    <input
+                      type="text"
+                      value={customTitle}
+                      onChange={(e) => setCustomTitle(e.target.value)}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                      placeholder="일정 제목 입력"
+                    />
+                  )}
+                  {centerId && (
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      선택한 센터명이 제목으로 표시됩니다.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <input
+                  type="text"
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                  placeholder="일정 제목"
+                />
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">담당</label>
@@ -192,17 +254,76 @@ export function ScheduleDrawer({
           <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">일정 · 회기</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">기간</label>
-              <DateRangeField
-                startDate={startDate}
-                endDate={endDate}
-                onStartChange={setStartDate}
-                onEndChange={setEndDate}
-              />
-              {startDate && (
-                <p className="mt-1 text-xs text-slate-500">
-                  시작일 요일: {formatDateWithDay(startDate)}
-                </p>
+              <label className="block text-sm font-medium text-slate-700 mb-2">날짜</label>
+              <div className="flex gap-4 mb-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="dateMode"
+                    checked={dateMode === 'range'}
+                    onChange={() => setDateMode('range')}
+                    className="text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-slate-700">기간(범위)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="dateMode"
+                    checked={dateMode === 'specific'}
+                    onChange={() => setDateMode('specific')}
+                    className="text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-slate-700">특정 일자만</span>
+                </label>
+              </div>
+              {dateMode === 'range' ? (
+                <>
+                  <DateRangeField
+                    startDate={startDate}
+                    endDate={endDate}
+                    onStartChange={setStartDate}
+                    onEndChange={setEndDate}
+                  />
+                  {startDate && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      시작일 요일: {formatDateWithDay(startDate)}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-2">
+                  {sessionDates.map((d, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={d}
+                        onChange={(e) => {
+                          const next = [...sessionDates];
+                          next[i] = e.target.value || '';
+                          setSessionDates(next);
+                        }}
+                        className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setSessionDates(sessionDates.filter((_, j) => j !== i))}
+                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-red-600 transition-colors cursor-pointer"
+                        aria-label="날짜 제거"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setSessionDates([...sessionDates, ''])}
+                    className="flex items-center gap-2 rounded-xl border border-dashed border-slate-300 px-3.5 py-2.5 text-sm text-slate-600 hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" /> 날짜 추가
+                  </button>
+                  <p className="text-xs text-slate-500">4.11, 11.14처럼 수업하는 날만 선택하세요.</p>
+                </div>
               )}
             </div>
             <div>
@@ -255,9 +376,10 @@ export function ScheduleDrawer({
               <label className="block text-sm font-medium text-slate-700 mb-1.5">상태</label>
               <select
                 value={effectiveStatus}
-                onChange={(e) => setStatus(e.target.value as 'active' | 'done')}
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                onChange={(e) => setStatus(e.target.value as ScheduleStatus)}
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
               >
+                <option value="scheduled">진행 예정</option>
                 <option value="active">진행중</option>
                 <option value="done">종료</option>
               </select>
@@ -269,14 +391,10 @@ export function ScheduleDrawer({
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            rows={3}
-            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none resize-none"
-            placeholder="비고"
+            rows={6}
+            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none resize-y min-h-[120px]"
+            placeholder="한 줄에 하나씩 입력하면 목록으로 표시됩니다"
           />
-        </section>
-        <section className="py-4">
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">체크리스트</h3>
-          <ChecklistEditor items={checklist} onChange={setChecklist} />
         </section>
       </div>
       <div className="flex items-center gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50/50">
@@ -285,7 +403,7 @@ export function ScheduleDrawer({
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
             삭제
@@ -295,7 +413,7 @@ export function ScheduleDrawer({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+          className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
         >
           취소
         </button>
@@ -303,7 +421,7 @@ export function ScheduleDrawer({
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md disabled:opacity-50 transition-all"
+          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md disabled:opacity-50 transition-all cursor-pointer"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           저장

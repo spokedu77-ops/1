@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { preloadThinkPack } from '@/app/lib/admin/engines/think150';
-import { MOCK_THINK_PACK } from '@/app/lib/admin/engines/think150/mockThinkPack';
 import { logSubscriberRuntime } from '@/app/lib/logging/logClient';
+import { stopBGM } from '@/app/lib/admin/engines/think150/think150Audio';
 import { BridgeOverlay } from './BridgeOverlay';
 import type { PlayMode } from './PhaseControls';
 
@@ -16,7 +15,7 @@ export type SequencePhase =
   | 'flow'
   | 'end';
 
-const BRIDGE_DURATION_SEC = 30;
+const BRIDGE_DURATION_SEC = 15;
 
 export interface FullSequencePlayerProps {
   weekKey: string;
@@ -48,14 +47,14 @@ export function FullSequencePlayer({
     }
 
     const next: SequencePhase =
-      phase === 'play'
-        ? mode === 'play'
+      phase === 'think'
+        ? mode === 'think'
           ? 'end'
           : 'bridge1'
         : phase === 'bridge1'
-          ? 'think'
-          : phase === 'think'
-            ? mode === 'think'
+          ? 'play'
+          : phase === 'play'
+            ? mode === 'play'
               ? 'end'
               : 'bridge2'
             : phase === 'bridge2'
@@ -83,7 +82,9 @@ export function FullSequencePlayer({
 
     if (next === 'bridge1' || next === 'bridge2') {
       setBridgeSecondsLeft(BRIDGE_DURATION_SEC);
-      if (next === 'bridge1') preloadThinkPack(MOCK_THINK_PACK).catch(console.warn);
+      if (next === 'bridge1') {
+        // 챌린지(Play) 전 프리로드
+      }
       if (next === 'bridge2') {
         const iframe = document.createElement('iframe');
         iframe.src = `/flow-phase?weekKey=${encodeURIComponent(weekKey)}`;
@@ -115,6 +116,11 @@ export function FullSequencePlayer({
     advancePhaseRef.current();
   }, []);
 
+  const onThinkEnd = useCallback(() => {
+    stopBGM();
+    onEndStable();
+  }, [onEndStable]);
+
   const handleSkipBridge = useCallback(() => {
     if (phase === 'bridge1' || phase === 'bridge2') {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -131,11 +137,11 @@ export function FullSequencePlayer({
     if (phase === 'idle') {
       const startPhase: SequencePhase =
         mode === 'full'
-          ? 'play'
-          : mode === 'play'
-            ? 'play'
-            : mode === 'think'
-              ? 'think'
+          ? 'think'
+          : mode === 'think'
+            ? 'think'
+            : mode === 'play'
+              ? 'play'
               : 'flow';
       setPhase(startPhase);
       onPhaseChange?.(startPhase);
@@ -154,7 +160,8 @@ export function FullSequencePlayer({
     return (
       <BridgeOverlay
         secondsLeft={bridgeSecondsLeft}
-        nextPhase="Think"
+        nextPhase="챌린지"
+        nextPhaseSub="리듬"
         onSkip={handleSkipBridge}
       />
     );
@@ -164,7 +171,8 @@ export function FullSequencePlayer({
     return (
       <BridgeOverlay
         secondsLeft={bridgeSecondsLeft}
-        nextPhase="Flow"
+        nextPhase="플로우"
+        nextPhaseSub="몰입"
         onSkip={handleSkipBridge}
       />
     );
@@ -204,7 +212,7 @@ export function FullSequencePlayer({
         <div className="flex-1">
           {renderThink ? (
             // eslint-disable-next-line react-hooks/refs
-            renderThink({ weekKey, onEnd: onEndStable })
+            renderThink({ weekKey, onEnd: onThinkEnd })
           ) : (
             <div className="flex h-full items-center justify-center text-white">
               <div className="text-center">

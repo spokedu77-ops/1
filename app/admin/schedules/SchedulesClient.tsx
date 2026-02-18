@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
   getSchedules,
@@ -11,6 +11,7 @@ import {
   type GetSchedulesFilters,
 } from './actions/schedules';
 import type { Schedule } from '@/app/lib/schedules/types';
+import type { CenterOption } from './components/ScheduleDrawer';
 import { useDebouncedValue } from './hooks/useDebouncedValue';
 import { ViewToolbar, type ViewMode, type StatusFilter } from './components/ViewToolbar';
 import { ScheduleTable } from './components/ScheduleTable';
@@ -21,9 +22,18 @@ const PAGE_SIZE = 50;
 
 interface SchedulesClientProps {
   initialSchedules: Schedule[];
+  /** 연결 센터 드롭다운 및 테이블 표시용 */
+  centers?: CenterOption[];
+  /** 일정에서 센터 클릭 시 (2탭 레이아웃에서 센터 관리 탭으로 전환 등) */
+  onCenterClick?: (centerId: string) => void;
 }
 
-export default function SchedulesClient({ initialSchedules }: SchedulesClientProps) {
+export default function SchedulesClient({ initialSchedules, centers = [], onCenterClick }: SchedulesClientProps) {
+  const centerIdToName = useMemo(() => {
+    const m: Record<string, string> = {};
+    centers.forEach((c) => { m[c.id] = c.name; });
+    return m;
+  }, [centers]);
   const [schedules, setSchedules] = useState<Schedule[]>(initialSchedules);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -154,7 +164,7 @@ export default function SchedulesClient({ initialSchedules }: SchedulesClientPro
         <div className="mb-4 flex items-center gap-3">
           <Link
             href="/admin"
-            className="min-h-[44px] flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 touch-manipulation"
+            className="min-h-[44px] flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 touch-manipulation cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4 shrink-0" />
             <span className="truncate">대시보드</span>
@@ -191,6 +201,8 @@ export default function SchedulesClient({ initialSchedules }: SchedulesClientPro
               onEditingCell={setEditingCell}
               onRowClick={(s) => openDrawer(s)}
               onFieldSave={handleFieldSave}
+              centerIdToName={centerIdToName}
+              onCenterClick={onCenterClick}
             />
             {hasMore && (
               <div className="mt-4 flex justify-center">
@@ -198,7 +210,7 @@ export default function SchedulesClient({ initialSchedules }: SchedulesClientPro
                   type="button"
                   onClick={() => loadSchedules({ append: true })}
                   disabled={loadingMore}
-                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 min-h-[44px]"
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 min-h-[44px] cursor-pointer"
                 >
                   {loadingMore ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -216,13 +228,14 @@ export default function SchedulesClient({ initialSchedules }: SchedulesClientPro
       {drawerOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/30"
+            className="fixed inset-0 z-40 bg-black/30 cursor-pointer"
             aria-hidden
             onClick={closeDrawer}
           />
           <ScheduleDrawer
             schedule={drawerSchedule}
             isCreate={drawerCreate}
+            centers={centers}
             onClose={closeDrawer}
             onSave={handleDrawerSave}
             onDelete={!drawerCreate && selectedId ? handleDrawerDelete : undefined}

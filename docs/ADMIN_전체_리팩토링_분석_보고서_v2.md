@@ -324,14 +324,14 @@ const handleDelete = async (id: number, e: React.MouseEvent) => {
 
 **주요 컴포넌트·데이터 흐름**
 
-- `useThink150Pack()`, `useThinkBGM()`, `useCreateThink150Programs()`
+- `useThink150Pack()`, `useThinkBGM()`, `useUpsertThink150Program()`
 - `Think150Player` (config: audience, week, month, seed, thinkPack, bgmPath)
 
 | 항목 | 현황 | 개선 제안 |
 |------|------|-----------|
 | 반응형 | grid lg:cols-[280px_1fr] | 유지 |
 | Cursor | select, button cursor-pointer | 유지 |
-| 에러 | createThink150.isError → 인라인 메시지 | 유지 |
+| 에러 | upsertThink150.isError → 인라인 메시지 | 유지 |
 
 ---
 

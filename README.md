@@ -1,5 +1,13 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## 일정 및 센터관리 사용 전 (Supabase)
+
+`/admin/schedules`(일정 및 센터관리)를 사용하려면 Supabase에 아래 마이그레이션을 **순서대로** 적용해야 합니다. 적용하지 않으면 `Could not find the 'center_id' column of 'schedules'` 같은 스키마 오류가 납니다.
+
+- `sql/29_schedules_schema.sql` → `sql/30_schedules_rls.sql` → `sql/34_schedules_time_fields.sql` → `sql/37_schedules_status_and_center.sql` → `sql/38_schedules_session_dates.sql`
+
+자세한 순서와 실행 방법: [sql/README_schedules_일정테이블.md](sql/README_schedules_일정테이블.md)
+
 ## Getting Started
 
 First, run the development server:

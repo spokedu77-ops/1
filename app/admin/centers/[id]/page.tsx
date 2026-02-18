@@ -196,7 +196,7 @@ export default function CenterDetailPage({
         alert(result.error);
         return;
       }
-      router.push('/admin/centers');
+      router.push('/admin/schedules');
     } finally {
       setDeleteSubmitting(false);
     }
@@ -223,10 +223,10 @@ export default function CenterDetailPage({
         <div className="p-4 sm:p-6 md:p-6 flex flex-col items-center justify-center gap-4 min-h-[60vh]">
           <p className="text-slate-600">센터를 찾을 수 없습니다.</p>
           <Link
-            href="/admin/centers"
-            className="text-indigo-600 hover:underline"
+            href="/admin/schedules"
+            className="text-indigo-600 hover:underline cursor-pointer"
           >
-            목록으로
+            일정 및 센터관리로
           </Link>
         </div>
       </div>
@@ -238,11 +238,11 @@ export default function CenterDetailPage({
       <div className="p-4 sm:p-6 md:p-6 min-w-0">
         <div className="mb-4">
           <Link
-            href="/admin/centers"
-            className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-indigo-600"
+            href="/admin/schedules"
+            className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-indigo-600 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />
-            센터 목록
+            일정 및 센터관리
           </Link>
         </div>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -254,7 +254,7 @@ export default function CenterDetailPage({
             <button
               type="button"
               onClick={openEditModal}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
             >
               <Pencil className="h-4 w-4" />
               수정
@@ -263,7 +263,7 @@ export default function CenterDetailPage({
               type="button"
               onClick={handleDelete}
               disabled={deleteSubmitting}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 cursor-pointer"
             >
               {deleteSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -289,7 +289,7 @@ export default function CenterDetailPage({
                 key={tab.id}
                 type="button"
                 onClick={() => setTab(tab.id)}
-                className={`flex min-w-[max-content] shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex min-w-[max-content] shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
                   activeTab === tab.id
                     ? 'bg-slate-900 text-white shadow-sm'
                     : 'bg-white text-slate-600 shadow-sm border border-slate-200/80 hover:bg-slate-50 hover:text-slate-900'
@@ -330,7 +330,7 @@ export default function CenterDetailPage({
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(false)}
-                  className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                  className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -411,7 +411,7 @@ export default function CenterDetailPage({
                         status: e.target.value as 'active' | 'paused' | 'ended',
                       }))
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                   >
                     <option value="active">활성</option>
                     <option value="paused">일시중지</option>
@@ -448,14 +448,14 @@ export default function CenterDetailPage({
                   <button
                     type="button"
                     onClick={() => setIsEditOpen(false)}
-                    className="min-h-[44px] rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="min-h-[44px] rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
                   >
                     취소
                   </button>
                   <button
                     type="submit"
                     disabled={editSubmitting}
-                    className="min-h-[44px] rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                    className="min-h-[44px] rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
                   >
                     {editSubmitting ? '저장 중…' : '저장'}
                   </button>

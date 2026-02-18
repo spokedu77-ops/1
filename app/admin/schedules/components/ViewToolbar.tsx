@@ -3,7 +3,7 @@
 import { Search, Plus, LayoutList, Users } from 'lucide-react';
 
 export type ViewMode = 'all' | 'groupByAssignee';
-export type StatusFilter = '' | 'active' | 'done';
+export type StatusFilter = '' | 'scheduled' | 'active' | 'done';
 
 interface ViewToolbarProps {
   viewMode: ViewMode;
@@ -34,7 +34,7 @@ export function ViewToolbar({
             viewMode === 'all'
               ? 'bg-indigo-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-200/60'
-          }`}
+          } cursor-pointer`}
         >
           <LayoutList className="h-4 w-4 shrink-0" />
           <span className="truncate">전체 보기</span>
@@ -46,7 +46,7 @@ export function ViewToolbar({
             viewMode === 'groupByAssignee'
               ? 'bg-indigo-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-200/60'
-          }`}
+          } cursor-pointer`}
         >
           <Users className="h-4 w-4 shrink-0" />
           <span className="truncate">담당자별</span>
@@ -55,9 +55,10 @@ export function ViewToolbar({
       <select
         value={statusFilter}
         onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
-        className="rounded-full border border-slate-200 px-3.5 py-2 text-sm text-slate-700 bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none min-h-[44px] touch-manipulation shrink-0"
+        className="rounded-full border border-slate-200 px-3.5 py-2 text-sm text-slate-700 bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none min-h-[44px] touch-manipulation shrink-0 cursor-pointer"
       >
         <option value="">전체</option>
+        <option value="scheduled">진행 예정</option>
         <option value="active">진행중</option>
         <option value="done">종료</option>
       </select>
@@ -74,7 +75,7 @@ export function ViewToolbar({
       <button
         type="button"
         onClick={onNewClick}
-        className="flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all min-h-[44px] touch-manipulation shrink-0"
+        className="flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all min-h-[44px] touch-manipulation shrink-0 cursor-pointer"
       >
         <Plus className="h-4 w-4 shrink-0" />
         <span className="truncate">새로 만들기</span>
