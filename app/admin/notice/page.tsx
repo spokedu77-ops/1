@@ -241,7 +241,7 @@ function formatFeedbackFields(f: FeedbackFields): string {
   if (f.strengths) parts.push(`✅ 강점\n${f.strengths}`);
   if (f.improvements) parts.push(`✅ 개선점\n${f.improvements}`);
   if (f.next_goals) parts.push(`✅ 다음 목표\n${f.next_goals}`);
-  if (f.condition_notes) parts.push(`✅ 특이사항\n${f.condition_notes}`);
+  if (f.condition_notes) parts.push(`✅ 특이사항 및 시작/종료 시간\n${f.condition_notes}`);
   return parts.join('\n\n');
 }
 

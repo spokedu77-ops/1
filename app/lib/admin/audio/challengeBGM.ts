@@ -30,6 +30,18 @@ export function stopChallengeBGM(): void {
   }
 }
 
+/** BGM 미리 로드(캐시). 첫 재생/환경별 지연을 줄이기 위해 bgmPath 설정 시 호출 권장. */
+export function preloadChallengeBGM(bgmPath: string): void {
+  try {
+    const url = getPublicUrl(bgmPath);
+    const a = new Audio();
+    a.preload = 'auto';
+    a.src = url;
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * 챌린지 BGM 재생 (Storage 경로: audio/challenge/bgm/xxx.mp3)
  * - startOffsetMs: BGM 파일에서 재생을 시작할 위치(ms). 메타데이터 로드 후 seek 한 다음 재생해 화면 비트와 동기화.

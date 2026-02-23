@@ -19,14 +19,12 @@ import {
   Ear,
   Mic,
 } from 'lucide-react';
-import { startChallengeBGM, stopChallengeBGM } from '@/app/lib/admin/audio/challengeBGM';
+import { preloadChallengeBGM, startChallengeBGM, stopChallengeBGM } from '@/app/lib/admin/audio/challengeBGM';
 
 export interface SpokeduRhythmGameProps {
   soundOn?: boolean;
   allowEdit?: boolean;
   bgmPath?: string;
-  /** BGM 파일 내 첫 비트 위치(ms). 이만큼 건너뛰고 재생해 화면 비트와 음원 동기화 */
-  bgmStartOffsetMs?: number;
   /** BGM 원곡 BPM. 있으면 재생 속도 = 화면 BPM / 이 값 (한 곡을 여러 BPM에 맞춰 재생) */
   bgmSourceBpm?: number | null;
   initialBpm?: number;
@@ -43,41 +41,43 @@ export interface SpokeduRhythmGameProps {
 }
 
 const MAX_LEVELS = 4;
-const ROUNDS_PER_LEVEL = 5;
+const ROUNDS_PER_LEVEL = 4;
 const BEATS_PER_PHASE = 8;
 const BEATS_PER_ROUND = 16;
 const bpmOptions = [80, 100, 120, 150, 160, 180];
+/** 180 선택 시 1단계 21.05초 동기화용 미세조정. 플레이 화면에는 180만 노출. */
+const BPM_180_SYNC = 182.4;
+/** 150 선택 시 정박 미세조정. 3~4단계 살짝 밀림 보정용으로 소폭 상향. */
+const BPM_150_SYNC = 150.5;
+function getEffectiveBpm(displayBpm: number): number {
+  if (displayBpm === 180) return BPM_180_SYNC;
+  if (displayBpm === 150) return BPM_150_SYNC;
+  return displayBpm;
+}
 const SCHEDULE_AHEAD_TIME = 0.1;
-const COUNTDOWN_BEATS = 4;
+/** BGM play() 후 실제 스피커 출력까지 지연 보정(초). 환경에 따라 0.03~0.08 정도. */
+const BGM_OUTPUT_LATENCY = 0.04;
 
-/** 챌린지 레벨 간 쉬는 시간(ms). BPM 180 기준 "음악 시간". 다른 BPM이면 wall-clock을 이만큼 음악이 흐르도록 맞춤. */
-const CHALLENGE_TRANSITION_MS = 3000;
+/** 1단계 시작 전 고정 카운트다운(ms). 끝나면 노래·영상 동시 시작. */
+const INITIAL_COUNTDOWN_MS = 3000;
+/** 레벨 사이: rest 3초만 표시 후 바로 다음 단계. 2단계부터 카운트다운 없음. */
+const BETWEEN_LEVEL_MS = 3000;
+/** 3초 카운트다운에서 4,3,2,1 표시 간격(ms). */
+const COUNTDOWN_TICK_MS = 750;
 
-const MIN_TRANSITION_MS = 2000;
-const MAX_TRANSITION_MS = 6000;
-
-/**
- * 레벨 완료 → 다음 beat 0까지 전환 화면 표시 시간(ms).
- * BGM이 playbackRate로 재생될 때, 음악이 CHALLENGE_TRANSITION_MS만큼 흐르는 wall-clock 시간을 반환해 2단계부터 비트가 맞도록 함.
- */
-function getTransitionDurationMs(bpm: number, bgmSourceBpm?: number | null): number {
-  if (typeof bgmSourceBpm !== 'number' || bgmSourceBpm <= 0) return CHALLENGE_TRANSITION_MS;
-  const playbackRate = bpm / bgmSourceBpm;
-  const wallClockMs = CHALLENGE_TRANSITION_MS / playbackRate;
-  return Math.round(Math.max(MIN_TRANSITION_MS, Math.min(MAX_TRANSITION_MS, wallClockMs)));
+/** 레벨 완료 → 다음 beat 0까지 rest 3초 고정. */
+function getTransitionDurationMs(_bpm: number, _bgmSourceBpm?: number | null): number {
+  return BETWEEN_LEVEL_MS;
 }
 
-/** 인트로(카운트다운) + 4단계 플레이 + 3회 전환(쉬는시간) + 3회 단계별 카운트다운 + 아웃트로(0.6s) 총 재생 시간(초). */
-function getTotalChallengeDurationSec(bpm: number, bgmSourceBpm?: number | null): number {
+/** 초반 3초 + 4단계 플레이(256비트) + 3회 전환(6초) + 아웃트로(0.6s) 총 재생 시간(초). 오프셋 없음. */
+function getTotalChallengeDurationSec(bpm: number, _bgmSourceBpm?: number | null): number {
   const beatSec = 60 / bpm;
-  const countdownSec = 0.05 + 0.1 + COUNTDOWN_BEATS * beatSec;
   const levelBeats = MAX_LEVELS * ROUNDS_PER_LEVEL * BEATS_PER_ROUND;
-  const transitionSec = getTransitionDurationMs(bpm, bgmSourceBpm) / 1000;
   return (
-    countdownSec +
+    INITIAL_COUNTDOWN_MS / 1000 +
     levelBeats * beatSec +
-    3 * transitionSec +
-    3 * countdownSec +
+    3 * (BETWEEN_LEVEL_MS / 1000) +
     0.6
   );
 }
@@ -94,7 +94,6 @@ export function SpokeduRhythmGame({
   soundOn = false,
   allowEdit = true,
   bgmPath,
-  bgmStartOffsetMs = 0,
   bgmSourceBpm,
   initialBpm,
   initialLevel,
@@ -109,6 +108,11 @@ export function SpokeduRhythmGame({
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  /** 4단계 종료 후 rest 구간(큰 숫자 1 숨김 + 아웃트로 직전). finishGame()에서만 isFinishingRef 설정. */
+  const [isFinishingRest, setIsFinishingRest] = useState(false);
+  const isFinishingRestRef = useRef(false);
+  /** 레벨 사이 rest 3초 동안 표시할 카운트다운 (3 → 2 → 1). null이면 표시 안 함. */
+  const [restCountdown, setRestCountdown] = useState<number | null>(null);
 
   const [currentBeat, setCurrentBeat] = useState(-1);
   const [roundInLevel, setRoundInLevel] = useState(1);
@@ -117,10 +121,17 @@ export function SpokeduRhythmGame({
   );
   const [totalBeatsPlayed, setTotalBeatsPlayed] = useState(0);
 
-  const [bpm, setBpm] = useState(initialBpm ?? 100);
+  const [bpm, setBpm] = useState(() => {
+    const v = initialBpm ?? 100;
+    if (typeof v === 'number' && Math.abs(v - BPM_180_SYNC) < 0.5) return 180;
+    if (typeof v === 'number' && Math.abs(v - BPM_150_SYNC) < 0.5) return 150;
+    return bpmOptions.includes(v) ? v : 100;
+  });
   const [isEditing, setIsEditing] = useState(false);
 
   const nextNoteTimeRef = useRef(0.0);
+  /** 스케줄러 시작 시각(AudioContext). 매 비트를 startTime + beatIndex*beatSec 로 계산해 누적 오차 제거. */
+  const schedulerStartTimeRef = useRef(0.0);
   const currentBeatIndexRef = useRef(0);
   const levelRoundCountRef = useRef(1);
   const timerIDRef = useRef<number | null>(null);
@@ -134,6 +145,8 @@ export function SpokeduRhythmGame({
   const startCountdownRef = useRef<() => void>(() => {});
   const schedulerRef = useRef<() => void>(() => {});
   const hasAutoStartedRef = useRef(false);
+  /** 초반 3초 카운트다운 끝에 호출(스케줄러 시작 직전). BGM 재생을 여기서 하면 노래·영상 동시 시작 보장. */
+  const onCountdownEndRef = useRef<(() => void) | null>(null);
 
   const [levelData, setLevelData] = useState<Record<number, string[]>>(() => {
     const base = { ...defaultLevels };
@@ -181,7 +194,12 @@ export function SpokeduRhythmGame({
 
   useEffect(() => {
     if (isPlayingRef.current) return;
-    if (initialBpm != null) setBpm(initialBpm);
+    if (initialBpm != null) {
+      const v = initialBpm;
+      if (Math.abs(v - BPM_180_SYNC) < 0.5) setBpm(180);
+      else if (Math.abs(v - BPM_150_SYNC) < 0.5) setBpm(150);
+      else setBpm(bpmOptions.includes(v) ? v : 100);
+    }
     if (initialLevel != null)
       setCurrentLevel(Math.min(MAX_LEVELS, Math.max(1, initialLevel)));
     if (initialLevelData && typeof initialLevelData === 'object') {
@@ -228,7 +246,7 @@ export function SpokeduRhythmGame({
   }, [initialGrid, initialLevel, isPlaying]);
 
   useEffect(() => {
-    bpmRef.current = bpm;
+    bpmRef.current = getEffectiveBpm(bpm);
   }, [bpm]);
 
   useEffect(() => {
@@ -306,8 +324,6 @@ export function SpokeduRhythmGame({
   );
 
   const nextNote = useCallback(() => {
-    const secondsPerBeat = 60.0 / bpmRef.current;
-    nextNoteTimeRef.current += secondsPerBeat;
     currentBeatIndexRef.current++;
     if (currentBeatIndexRef.current === BEATS_PER_ROUND) {
       currentBeatIndexRef.current = 0;
@@ -321,11 +337,13 @@ export function SpokeduRhythmGame({
   const finishGame = useCallback(() => {
     if (isFinishingRef.current) return;
     isFinishingRef.current = true;
+    isFinishingRestRef.current = false;
     runIdRef.current++;
     if (timerIDRef.current) cancelAnimationFrame(timerIDRef.current);
     stopChallengeBGM();
     setIsPlaying(false);
     setIsCountingDown(false);
+    setIsFinishingRest(false);
     isTransitioningRef.current = false;
     setIsTransitioning(false);
     setIsFinished(true);
@@ -339,28 +357,47 @@ export function SpokeduRhythmGame({
     const levelWhenComplete = currentLevelRef.current;
 
     if (levelWhenComplete >= MAX_LEVELS) {
-      runIdRef.current++;
-      const myRunId = runIdRef.current;
-      setCurrentBeat(-1);
+      // 마지막 비트(15)의 setTimeout이 먼저 실행되어 초록 표시되도록, rest·아웃트로만 지연. isFinishingRef는 finishGame()에서만 설정(아웃트로 진입 보장)
+      const finishDelayMs = 220;
       setTimeout(() => {
-        if (myRunId !== runIdRef.current) return;
-        finishGame();
-      }, 600);
+        runIdRef.current++;
+        const myRunId = runIdRef.current;
+        isFinishingRestRef.current = true;
+        setIsFinishingRest(true);
+        setCurrentBeat(-1);
+        setRoundInLevel(ROUNDS_PER_LEVEL);
+        setTimeout(() => {
+          if (myRunId !== runIdRef.current) return;
+          finishGame();
+        }, 600);
+      }, finishDelayMs);
       return;
     }
 
-    // runIdRef는 한 박자 뒤(rest 표시 직전)에만 올린다. 그래야 마지막 scheduleNote(8번째 초록)의
-    // setTimeout이 myRunId === runIdRef 로 통과해서 setCurrentBeat(15)가 실행되고 8번째 초록이 뜬다.
+    // 한 박자 뒤(rest 표시 직전)에 runId 올리고, 3초 rest 동안 3→2→1 카운트다운 표시 후 다음 단계 시작.
     const oneBeatMs = Math.round((60 / bpmRef.current) * 1000);
+    const transitionMs = getTransitionDurationMs(bpmRef.current, bgmSourceBpmRef.current);
     setTimeout(() => {
       runIdRef.current++;
       const myRunId = runIdRef.current;
       setCurrentBeat(-1);
       isTransitioningRef.current = true;
       setIsTransitioning(true);
+      setRestCountdown(3);
+      stopChallengeBGM();
+
       setTimeout(() => {
         if (myRunId !== runIdRef.current) return;
+        setRestCountdown(2);
+      }, 1000);
+      setTimeout(() => {
+        if (myRunId !== runIdRef.current) return;
+        setRestCountdown(1);
+      }, 2000);
 
+      // 3초 후 다음 레벨 설정, BGM 해당 구간부터 재시작 후 스케줄러 시작 (BGM 실제 재생 시작 후 그리드 시작으로 박자 일치)
+      setTimeout(() => {
+        if (myRunId !== runIdRef.current) return;
         const nextLvl = levelWhenComplete + 1;
         currentLevelRef.current = nextLvl;
         levelDataRef.current = levelData;
@@ -370,10 +407,40 @@ export function SpokeduRhythmGame({
         setShuffledGrid(shuffleArray(levelData[nextLvl] ?? defaultLevels[nextLvl]));
         isTransitioningRef.current = false;
         setIsTransitioning(false);
-        startCountdownRef.current();
-      }, getTransitionDurationMs(bpmRef.current, bgmSourceBpmRef.current));
+        setRestCountdown(null);
+
+        const startSchedulerNow = () => {
+          if (myRunId !== runIdRef.current) return;
+          if (audioContextRef.current) {
+            const t0 = audioContextRef.current.currentTime + 0.1 + BGM_OUTPUT_LATENCY;
+            schedulerStartTimeRef.current = t0;
+            nextNoteTimeRef.current = t0;
+            currentBeatIndexRef.current = 0;
+            schedulerRef.current();
+          }
+        };
+
+        if (bgmPath) {
+          const bpm = bpmRef.current;
+          const beatSec = 60 / bpm;
+          const beatsPerLevel = ROUNDS_PER_LEVEL * BEATS_PER_ROUND;
+          const offsetSec = INITIAL_COUNTDOWN_MS / 1000 + levelWhenComplete * (BETWEEN_LEVEL_MS / 1000 + beatsPerLevel * beatSec);
+          const offsetMs = Math.round(offsetSec * 1000);
+          const totalSec = getTotalChallengeDurationSec(bpm, bgmSourceBpmRef.current);
+          const durationMs = Math.max(0, Math.round((totalSec - offsetSec) * 1000));
+          const playbackRate =
+            typeof bgmSourceBpmRef.current === 'number' && bgmSourceBpmRef.current > 0
+              ? bpm / bgmSourceBpmRef.current
+              : 1;
+          startChallengeBGM(bgmPath, offsetMs, durationMs, playbackRate)
+            .then(startSchedulerNow)
+            .catch(() => startSchedulerNow());
+        } else {
+          startSchedulerNow();
+        }
+      }, transitionMs);
     }, oneBeatMs);
-  }, [levelData, finishGame, shuffleArray, bpm]);
+  }, [levelData, finishGame, shuffleArray, bpm, bgmPath]);
 
   const scheduleNote = useCallback(
     (beatNumber: number, time: number, currentLevelRound: number) => {
@@ -392,14 +459,15 @@ export function SpokeduRhythmGame({
 
       const drawTime = time - (audioContextRef.current?.currentTime ?? 0);
       const level = currentLevelRef.current;
-      // 4단계 4·5라운드: 누적 드리프트 보정 — 초록을 호루라기 소리보다 약간 앞당겨서 맞춤
+      // 4단계 4라운드: 누적 드리프트 보정 — 초록을 호루라기 소리보다 약간 앞당겨서 맞춤
       const pullMs =
-        level === MAX_LEVELS && currentLevelRound >= 4 ? 80 : 0;
+        level === MAX_LEVELS && currentLevelRound >= ROUNDS_PER_LEVEL ? 80 : 0;
       const delayMs = Math.max(0, drawTime * 1000 - pullMs);
 
       setTimeout(() => {
         if (myRunId !== runIdRef.current) return;
         if (isFinishingRef.current) return;
+        if (isFinishingRestRef.current) return;
         if (isTransitioningRef.current) return;
 
         if (beatNumber === 0 && currentLevelRound > 1) {
@@ -422,10 +490,13 @@ export function SpokeduRhythmGame({
 
   const scheduler = useCallback(() => {
     if (!audioContextRef.current) return;
+    const ctx = audioContextRef.current;
+    const now = ctx.currentTime;
+    const secondsPerBeat = 60.0 / bpmRef.current;
 
     while (
       nextNoteTimeRef.current <
-      (audioContextRef.current.currentTime ?? 0) + SCHEDULE_AHEAD_TIME
+      now + SCHEDULE_AHEAD_TIME
     ) {
       const lr = levelRoundCountRef.current;
       const b = currentBeatIndexRef.current;
@@ -437,6 +508,8 @@ export function SpokeduRhythmGame({
 
       scheduleNote(b, nextNoteTimeRef.current, lr);
       const status = nextNote();
+      const levelBeatIndex = (levelRoundCountRef.current - 1) * BEATS_PER_ROUND + currentBeatIndexRef.current;
+      nextNoteTimeRef.current = schedulerStartTimeRef.current + levelBeatIndex * secondsPerBeat;
 
       if (status === 'LEVEL_COMPLETE') {
         handleLevelComplete();
@@ -451,25 +524,48 @@ export function SpokeduRhythmGame({
     schedulerRef.current = scheduler;
   }, [scheduler]);
 
+  /** 초반 3초 카운트다운(4,3,2,1) 후 beat 0부터 스케줄러 시작. 레벨 사이 전환에서는 사용하지 않음. */
   const startCountdown = useCallback(() => {
     const myRunId = runIdRef.current;
     setIsCountingDown(true);
-    setCurrentBeat(-1);
+    setCurrentBeat(-4);
     currentBeatIndexRef.current = -4;
 
-    if (audioContextRef.current) {
-      nextNoteTimeRef.current = audioContextRef.current.currentTime + 0.1;
-    }
-
-    setTimeout(() => {
+    const t1 = setTimeout(() => {
+      if (myRunId !== runIdRef.current) return;
+      setCurrentBeat(-3);
+    }, COUNTDOWN_TICK_MS);
+    const t2 = setTimeout(() => {
+      if (myRunId !== runIdRef.current) return;
+      setCurrentBeat(-2);
+    }, COUNTDOWN_TICK_MS * 2);
+    const t3 = setTimeout(() => {
+      if (myRunId !== runIdRef.current) return;
+      setCurrentBeat(-1);
+    }, COUNTDOWN_TICK_MS * 3);
+    const t4 = setTimeout(() => {
       if (myRunId !== runIdRef.current) return;
       if (isFinishingRef.current) return;
-      setIsCountingDown(false);
-      if (audioContextRef.current) {
-        nextNoteTimeRef.current = audioContextRef.current.currentTime + 0.1;
-        scheduler();
+      const fn = onCountdownEndRef.current;
+      onCountdownEndRef.current = null;
+      const startScheduler = () => {
+        if (myRunId !== runIdRef.current) return;
+        if (isFinishingRef.current) return;
+        setIsCountingDown(false);
+        if (audioContextRef.current) {
+          const t0 = audioContextRef.current.currentTime + 0.1 + BGM_OUTPUT_LATENCY;
+          schedulerStartTimeRef.current = t0;
+          nextNoteTimeRef.current = t0;
+          currentBeatIndexRef.current = 0;
+          scheduler();
+        }
+      };
+      if (fn) {
+        Promise.resolve(fn()).then(startScheduler).catch(() => startScheduler());
+      } else {
+        startScheduler();
       }
-    }, 50);
+    }, INITIAL_COUNTDOWN_MS);
   }, [scheduler]);
 
   useEffect(() => {
@@ -477,7 +573,12 @@ export function SpokeduRhythmGame({
   }, [startCountdown]);
 
   useEffect(() => {
+    if (bgmPath) preloadChallengeBGM(bgmPath);
+  }, [bgmPath]);
+
+  useEffect(() => {
     return () => {
+      onCountdownEndRef.current = null;
       if (timerIDRef.current) cancelAnimationFrame(timerIDRef.current);
       runIdRef.current++;
       stopChallengeBGM();
@@ -499,10 +600,14 @@ export function SpokeduRhythmGame({
 
   const resetGame = useCallback(() => {
     runIdRef.current++;
+    onCountdownEndRef.current = null;
+    isFinishingRestRef.current = false;
     if (timerIDRef.current) cancelAnimationFrame(timerIDRef.current);
     stopChallengeBGM();
     setIsPlaying(false);
     setIsCountingDown(false);
+    setIsFinishingRest(false);
+    setRestCountdown(null);
     isTransitioningRef.current = false;
     setIsTransitioning(false);
     setIsFinished(false);
@@ -555,16 +660,24 @@ export function SpokeduRhythmGame({
             typeof currentSourceBpm === 'number' && currentSourceBpm > 0
               ? currentBpm / currentSourceBpm
               : 1;
-          startChallengeBGM(bgmPath, bgmStartOffsetMs, totalSec * 1000, playbackRate).catch(() => {});
+          onCountdownEndRef.current = () =>
+            startChallengeBGM(bgmPath, 0, totalSec * 1000, playbackRate);
         }
         startCountdown();
       } else {
         runIdRef.current++;
-        nextNoteTimeRef.current = (audioContextRef.current?.currentTime ?? 0) + 0.1;
+        const ctx = audioContextRef.current;
+        if (ctx) {
+          const now = ctx.currentTime + 0.1;
+          const secPerBeat = 60 / bpmRef.current;
+          schedulerStartTimeRef.current = now - currentBeatIndexRef.current * secPerBeat;
+          nextNoteTimeRef.current = now;
+        }
         scheduler();
       }
     } else {
       runIdRef.current++;
+      onCountdownEndRef.current = null;
       stopChallengeBGM();
       setIsPlaying(false);
       if (timerIDRef.current) cancelAnimationFrame(timerIDRef.current);
@@ -580,7 +693,6 @@ export function SpokeduRhythmGame({
     startCountdown,
     scheduler,
     bgmPath,
-    bgmStartOffsetMs,
     bgmSourceBpm,
     bpm,
     levelData,
@@ -620,7 +732,7 @@ export function SpokeduRhythmGame({
   const handleBpmChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const index = parseInt(e.target.value, 10);
     const nextBpm = bpmOptions[index] ?? 100;
-    bpmRef.current = nextBpm;
+    bpmRef.current = getEffectiveBpm(nextBpm);
     setBpm(nextBpm);
   }, []);
 
@@ -860,18 +972,28 @@ export function SpokeduRhythmGame({
               <span className="text-xl font-bold text-gray-500 tracking-widest mb-2 font-outfit">
                 LEVEL {currentLevel} COMPLETE!
               </span>
-              <span className="text-5xl font-black text-gray-900 mb-6 font-outfit">
+              <span className="text-5xl font-black text-gray-900 mb-2 font-outfit">
                 NEXT LEVEL {Math.min(currentLevel + 1, MAX_LEVELS)}
               </span>
-              <div className="flex gap-2 animate-bounce">
-                <ArrowRight size={32} className="text-green-500" />
-                <ArrowRight size={32} className="text-green-500 opacity-50" />
-                <ArrowRight size={32} className="text-green-500 opacity-25" />
-              </div>
+              {restCountdown != null && (
+                <span
+                  className="text-[10rem] md:text-[12rem] font-black text-green-500 drop-shadow-[6px_6px_0px_rgba(0,0,0,1)] animate-pulse mt-4 font-outfit"
+                  style={{ WebkitTextStroke: '3px black' }}
+                >
+                  {restCountdown}
+                </span>
+              )}
+              {restCountdown == null && (
+                <div className="flex gap-2 animate-bounce mt-6">
+                  <ArrowRight size={32} className="text-green-500" />
+                  <ArrowRight size={32} className="text-green-500 opacity-50" />
+                  <ArrowRight size={32} className="text-green-500 opacity-25" />
+                </div>
+              )}
             </div>
           )}
 
-          {currentBeat < 0 && isPlaying && !isTransitioning && (
+          {currentBeat < 0 && isPlaying && !isTransitioning && !isFinishingRest && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none">
               <span
                 className="text-[10rem] md:text-[12rem] font-black text-green-500 drop-shadow-[6px_6px_0px_rgba(0,0,0,1)] animate-pulse"

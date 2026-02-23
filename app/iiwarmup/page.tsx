@@ -176,7 +176,6 @@ export default function IIWarmupSubscriberPage() {
               initialGrid={challengeProps.initialGrid}
               initialLevelData={challengeProps.initialLevelData}
               bgmPath={scheduleData?.challengeBgmPath ?? undefined}
-              bgmStartOffsetMs={scheduleData?.challengeBgmStartOffsetMs ?? 0}
               bgmSourceBpm={scheduleData?.challengeBgmSourceBpm ?? undefined}
             />
           )}

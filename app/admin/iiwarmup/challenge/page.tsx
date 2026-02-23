@@ -90,8 +90,6 @@ function ChallengePageContent() {
   const {
     list: bgmList,
     selected: bgmPath,
-    bgmStartOffsetMs,
-    setOffsetMs,
     sourceBpm,
     setSourceBpm,
     loading: bgmLoading,
@@ -308,6 +306,7 @@ function ChallengePageContent() {
             <>
               {' · '}
               <span className="text-cyan-300">원곡 {sourceBpm} → 재생속도 {playbackRateLabel}배</span>
+              <span className="text-neutral-500"> (원곡은 BGM 파일 실제 BPM만 입력)</span>
             </>
           )}
           {' · '}
@@ -316,7 +315,7 @@ function ChallengePageContent() {
           </span>
         </p>
         <p className="mt-1 text-xs text-neutral-500">
-          BGM(오프셋·원곡 BPM)은 아래 「BGM 설정 (전역)」에서 한 번만 설정하면 모든 주차에 공통 적용됩니다. 저장은 「이 주차로 픽스」로 이 주차의 BPM·그리드만 DB에 넣습니다.
+          BGM 설정의 「원곡 BPM」은 업로드한 MP3의 실제 템포(예: 180)만 넣으세요. 아래 게임에서 주차별 BPM(예: 150)을 고르면 재생속도가 자동으로 맞춰집니다. 저장은 「이 주차로 픽스」로 이 주차 BPM·그리드만 DB에 넣습니다.
         </p>
       </div>
 
@@ -331,7 +330,7 @@ function ChallengePageContent() {
 
       <section className="rounded-xl bg-neutral-900 p-4 ring-1 ring-neutral-800">
         <h3 className="mb-1 text-sm font-bold text-neutral-300">BGM 설정 (전역)</h3>
-        <p className="mb-3 text-xs text-neutral-500">오프셋·원곡 BPM은 모든 주차에 공통 적용됩니다. 한 번만 설정하면 됩니다.</p>
+        <p className="mb-3 text-xs text-neutral-500">원곡 BPM은 모든 주차에 공통 적용됩니다. 한 번만 설정하면 됩니다.</p>
         {bgmError && (
           <p className="mb-2 text-xs text-red-400">{bgmError}</p>
         )}
@@ -380,27 +379,12 @@ function ChallengePageContent() {
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-4">
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs font-medium text-neutral-400">화면 오프셋 (음원에 맞추기)</label>
-            <input
-              type="number"
-              min={0}
-              step={50}
-              value={bgmStartOffsetMs}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (!Number.isNaN(v) && v >= 0) setOffsetMs(v);
-              }}
-              className="w-24 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-sm text-neutral-200"
-            />
-            <span className="text-xs text-neutral-500">ms (BGM 파일에서 첫 비트가 나오는 위치)</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
             <label className="text-xs font-medium text-neutral-400">원곡 BPM</label>
             <input
               type="number"
               min={1}
               max={300}
-              step={1}
+              step={0.01}
               value={sourceBpm ?? ''}
               onChange={(e) => {
                 const v = e.target.value === '' ? null : Number(e.target.value);
@@ -409,18 +393,20 @@ function ChallengePageContent() {
               placeholder="예: 180"
               className="w-20 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-sm text-neutral-200"
             />
-            <span className="text-xs text-neutral-500">설정 시 화면 BPM에 맞춰 재생 속도 자동 조절 (120이면 BGM이 120 BPM처럼 재생)</span>
+            <span className="text-xs text-neutral-500">
+              업로드한 BGM 파일의 실제 템포만 입력 (예: 180). 화면에서 150 선택 시 재생속도 = 150÷원곡. 151.18 같은 미세조정 값은 여기 넣지 마세요.
+            </span>
           </div>
         </div>
         {bgmLoading && (
-          <p className="mt-2 text-xs text-amber-400">BGM 설정 로딩 중… 오프셋·원곡 BPM은 로딩 후 적용됩니다.</p>
+          <p className="mt-2 text-xs text-amber-400">BGM 설정 로딩 중… 원곡 BPM은 로딩 후 적용됩니다.</p>
         )}
       </section>
 
       <section className="rounded-xl bg-neutral-900/50 border border-neutral-800 px-4 py-3 space-y-2">
         <h3 className="text-sm font-bold text-neutral-300">이 주차 설정 저장 — {preset.weekKey}</h3>
         <p className="text-xs text-neutral-500">
-          아래 게임에서 BPM·그리드를 바꾼 뒤 재생하면 자동으로 <strong>{preset.weekKey}</strong> 주차에 덮어씌워 저장됩니다. 스케줄러에서 이 주차를 배정하면 구독자에게 노출됩니다. BGM(오프셋·원곡 BPM)은 위 전역 설정을 사용합니다.
+          아래 게임에서 BPM·그리드를 바꾼 뒤 재생하면 자동으로 <strong>{preset.weekKey}</strong> 주차에 덮어씌워 저장됩니다. 스케줄러에서 이 주차를 배정하면 구독자에게 노출됩니다. 원곡 BPM은 위 전역 설정을 사용합니다.
         </p>
         {upsertChallenge.isPending && (
           <p className="text-sm text-amber-400">저장 중...</p>
@@ -445,14 +431,13 @@ function ChallengePageContent() {
       <div className="rounded-xl overflow-hidden border border-neutral-800 bg-neutral-900/30">
         {bgmLoading ? (
           <div className="flex min-h-[200px] items-center justify-center text-neutral-500">
-            BGM 설정 로딩 중… (오프셋·원곡 BPM 적용 후 재생 가능)
+            BGM 설정 로딩 중… (원곡 BPM 적용 후 재생 가능)
           </div>
         ) : (
           <SpokeduRhythmGame
             allowEdit={true}
             soundOn={soundOn}
             bgmPath={bgmPath || undefined}
-            bgmStartOffsetMs={bgmStartOffsetMs}
             bgmSourceBpm={sourceBpm ?? undefined}
             initialBpm={preset.bpm}
             initialLevel={1}

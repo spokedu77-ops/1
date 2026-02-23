@@ -516,7 +516,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                     { key: 'strengths', label: '✅ 강점 및 긍정적인 부분', color: 'emerald', placeholder: '예: 드리블 속도가 빨라졌습니다' },
                     { key: 'improvements', label: '✅ 개선이 필요한 부분', color: 'amber', placeholder: '예: 슈팅 정확도 연습 필요' },
                     { key: 'next_goals', label: '✅ 다음 수업 목표 및 계획', color: 'blue', placeholder: '예: 패스 연습과 전술 이해도 향상' },
-                    { key: 'condition_notes', label: '✅ 특이사항 및 컨디션', color: 'slate', placeholder: '예: 오늘 컨디션 좋음' }
+                    { key: 'condition_notes', label: '✅ 특이사항 및 시작/종료 시간', color: 'slate', placeholder: '예: 14:00 시작, 15:30 종료' }
                   ].map(field => (
                     <div key={field.key} className="space-y-2">
                       <label className={`text-[9px] font-bold text-${field.color}-600 uppercase block ml-1`}>{field.label}</label>
@@ -547,8 +547,14 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
   );
 }
 
-// 수업안 조회 탭 - 세션 타입 (lesson_plans, users 조인 포함)
-type LessonPlanSession = Record<string, unknown> & { id: string; created_by: string; users?: { name?: string } | null; title?: string; start_at?: string; lesson_plans?: { content?: unknown }[] };
+// 수업안 조회 탭 - 세션 타입 (lesson_plans: API가 배열 또는 단일 객체로 올 수 있음)
+type LessonPlanSession = Record<string, unknown> & { id: string; created_by: string; users?: { name?: string } | null; title?: string; start_at?: string; lesson_plans?: { content?: unknown }[] | { content?: unknown } | null };
+function getLessonPlanContent(session: LessonPlanSession): string | null {
+  const lp = session.lesson_plans;
+  if (lp == null) return null;
+  const content = Array.isArray(lp) ? lp[0]?.content : (lp as { content?: unknown } | null)?.content;
+  return content != null && content !== '' ? String(content) : null;
+}
 function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: ReturnType<typeof getSupabaseBrowserClient> | null }) {
   const [sessions, setSessions] = useState<LessonPlanSession[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState('all');
@@ -558,38 +564,30 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
 
   useEffect(() => {
     const fetchSessions = async () => {
-      if (!supabase) return;
       setLoading(true);
       try {
-        // 이번 주 계산
-        const now = new Date();
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay()); // 일요일
-        startOfWeek.setHours(0, 0, 0, 0);
-        
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 7);
-        
-        let query = supabase
-          .from('sessions')
-          .select('*, lesson_plans(*), users!created_by(id, name)')
-          .gte('start_at', startOfWeek.toISOString())
-          .lt('start_at', endOfWeek.toISOString())
-          .order('start_at');
-        
-        if (selectedTeacher !== 'all') query = query.eq('created_by', selectedTeacher);
-        
-        const { data, error } = await query;
-        if (error) throw error;
-        setSessions(data || []);
+        const res = await fetch(
+          `/api/admin/lesson-plans-sessions?teacherId=${encodeURIComponent(selectedTeacher)}&_=${Date.now()}`,
+          { credentials: 'include', cache: 'no-store' }
+        );
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            setSessions([]);
+            return;
+          }
+          throw new Error(await res.text());
+        }
+        const data = await res.json();
+        setSessions(Array.isArray(data) ? data : []);
       } catch (err: unknown) {
         console.error('수업안 로드 실패:', err instanceof Error ? err.message : err);
+        setSessions([]);
       } finally {
         setLoading(false);
       }
     };
     fetchSessions();
-  }, [supabase, selectedTeacher]);
+  }, [selectedTeacher]);
 
   const groupedByTeacher = useMemo(() => {
     const groups: Record<string, LessonPlanSession[]> = {};
@@ -603,11 +601,12 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
 
   return (
     <>
-      <div className="mb-8">
+      <div className="mb-8 flex flex-wrap items-center gap-4">
         <select value={selectedTeacher} onChange={e => setSelectedTeacher(e.target.value)} className="px-4 py-3 bg-white border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-blue-400 hover:border-slate-300 transition-colors cursor-pointer">
           <option value="all">전체 선생님</option>
           {coaches.map(c => <option key={c.id} value={c.id}>{c.name} 선생님</option>)}
         </select>
+        <span className="text-sm text-slate-500">이번 주 (일요일~토요일)</span>
       </div>
 
       {loading ? (
@@ -623,7 +622,7 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
               <h3 className="text-xl font-black text-slate-900 mb-4">{teacher} 선생님</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {teacherSessions.map((session: LessonPlanSession) => {
-                  const hasLessonPlan = session.lesson_plans && session.lesson_plans.length > 0 && session.lesson_plans[0].content;
+                  const hasLessonPlan = !!getLessonPlanContent(session);
                   const date = new Date((session.start_at as string) ?? 0);
                   const formattedDate = `${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
                   
@@ -671,9 +670,7 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
             </div>
             <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30">
               <div className="bg-white rounded-2xl p-6 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap min-h-[400px]">
-                {selectedSession.lesson_plans && selectedSession.lesson_plans.length > 0 
-                  ? String(selectedSession.lesson_plans[0]?.content ?? '') 
-                  : '내용이 없습니다.'}
+                {getLessonPlanContent(selectedSession) ?? '내용이 없습니다.'}
               </div>
             </div>
           </div>

@@ -44,7 +44,7 @@ export function useClassManagement() {
 
       type SessionRow = {
         id?: string; title?: string; start_at?: string; end_at?: string; session_type?: string;
-        group_id?: string; users?: { name?: string; id?: string }; students_text?: string;
+        group_id?: string; users?: { name?: string; id?: string }; students_text?: string; memo?: string;
         round_display?: string; status?: string; price?: number; mileage_option?: string;
         round_index?: number; round_total?: number;
       };
@@ -61,32 +61,39 @@ export function useClassManagement() {
         }
 
         let displayTeacher = s.users?.name || '미정';
-        const { extraTeachers } = parseExtraTeachers(s.students_text || '');
+        const { extraTeachers } = parseExtraTeachers(s.memo || '');
         const extraNames = extraTeachers
           .map((ex: { id?: string }) => tList.find((t: { id?: string; name?: string }) => t.id === ex.id)?.name)
           .filter(Boolean) as string[];
         if (extraNames.length > 0) displayTeacher += `, ${extraNames.join(', ')}`;
 
-        return {
-          id: s.id, 
-          title: title.replace(/(\d+\/\d+)\s?/, '').trim(),
-          start: s.start_at, 
-          end: s.end_at, 
-          teacher: displayTeacher, 
-          teacherId: s.users?.id || '', 
-          type: s.session_type, 
-          status: s.status, 
-          groupId: s.group_id, 
+        const custom = {
+          teacher: displayTeacher,
+          teacherId: s.users?.id || '',
+          type: s.session_type,
+          status: s.status,
+          groupId: s.group_id ?? undefined,
           price: s.price ?? 0,
-          studentsText: s.students_text || '', 
-          isAdmin: ADMIN_NAMES.some(admin => displayTeacher.includes(admin)), 
-          roundInfo: roundStr, 
+          studentsText: s.students_text || '',
+          memo: s.memo || '',
+          isAdmin: ADMIN_NAMES.some(admin => displayTeacher.includes(admin)),
+          roundInfo: roundStr,
           themeColor: (s.session_type === 'regular_center' ? '#2563EB' : '#10B981'),
-          mileageAction: s.mileage_option || '', 
-          roundIndex: s.round_index,
-          roundTotal: s.round_total,
-          roundDisplay: s.round_display
+          mileageAction: s.mileage_option || '',
+          roundIndex: s.round_index ?? undefined,
+          roundTotal: s.round_total ?? undefined,
+          roundDisplay: s.round_display,
+          session_type: s.session_type,
+          mileage_option: s.mileage_option || ''
         };
+        return {
+          id: s.id,
+          title: title.replace(/(\d+\/\d+)\s?/, '').trim(),
+          start: s.start_at,
+          end: s.end_at,
+          ...custom,
+          extendedProps: custom
+        } as SessionEvent;
       });
       
       setAllEvents(events);

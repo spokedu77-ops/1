@@ -81,7 +81,7 @@ function TeacherWeeklyBestCard({
         if (f.strengths) parts.push(`✅ 강점\n${f.strengths}`);
         if (f.improvements) parts.push(`✅ 개선점\n${f.improvements}`);
         if (f.next_goals) parts.push(`✅ 다음 목표\n${f.next_goals}`);
-        if (f.condition_notes) parts.push(`✅ 특이사항\n${f.condition_notes}`);
+        if (f.condition_notes) parts.push(`✅ 특이사항 및 시작/종료 시간\n${f.condition_notes}`);
         setDetailFeedback(parts.join('\n\n'));
       } else setDetailFeedback(null);
     })();
@@ -145,11 +145,14 @@ export default function TeacherMainPage() {
   const [expandedWbId, setExpandedWbId] = useState<string | null>(null);
   const [todaySessions, setTodaySessions] = useState<TodaySession[]>([]);
   const [todayLoading, setTodayLoading] = useState(true);
+  const [noticeFetchError, setNoticeFetchError] = useState<string | null>(null);
+  const [todayFetchError, setTodayFetchError] = useState<string | null>(null);
 
   const fetchNotices = useCallback(async () => {
     if (!supabase) return;
     try {
       setLoading(true);
+      setNoticeFetchError(null);
       const [noticesRes, weeklyRes] = await Promise.all([
         supabase.from('notices').select('*').order('is_pinned', { ascending: false }).order('created_at', { ascending: false }),
         supabase.from('weekly_best').select('*').order('created_at', { ascending: false }),
@@ -158,6 +161,7 @@ export default function TeacherMainPage() {
       if (!weeklyRes.error) setWeeklyBestList((weeklyRes.data as WeeklyBest[]) ?? []);
     } catch (err) {
       console.error('Fetch error:', err);
+      setNoticeFetchError('공지사항을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -173,6 +177,7 @@ export default function TeacherMainPage() {
     if (!supabase) return;
     try {
       setTodayLoading(true);
+      setTodayFetchError(null);
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) return;
       const now = new Date();
@@ -189,6 +194,7 @@ export default function TeacherMainPage() {
       setTodaySessions((data as TodaySession[]) ?? []);
     } catch (err) {
       console.error('Today sessions fetch error:', err);
+      setTodayFetchError('오늘 수업을 불러오지 못했습니다.');
     } finally {
       setTodayLoading(false);
     }
@@ -239,7 +245,14 @@ export default function TeacherMainPage() {
       {/* 오늘 수업 - 공지 위 */}
       <section className="mb-10">
         <h3 className="text-xl font-black text-slate-900 mb-4 px-1">오늘 수업</h3>
-        {todayLoading ? (
+        {todayFetchError ? (
+          <div className="py-8 text-center bg-white rounded-[28px] border-2 border-slate-100">
+            <p className="text-slate-500 text-sm font-bold mb-3">{todayFetchError}</p>
+            <button type="button" onClick={fetchTodaySessions} className="text-indigo-600 text-xs font-black hover:underline">
+              다시 시도
+            </button>
+          </div>
+        ) : todayLoading ? (
           <div className="py-8 text-center bg-white rounded-[28px] border-2 border-slate-100">
             <div className="w-6 h-6 border-2 border-slate-200 border-t-indigo-500 rounded-full animate-spin mx-auto mb-2" />
             <p className="text-slate-400 text-xs font-bold">로딩 중...</p>
@@ -306,7 +319,14 @@ export default function TeacherMainPage() {
 
         {/* 공지사항 스크롤 영역: 한 화면에 가득 차지 않게 조정 */}
         <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
-          {loading ? (
+          {noticeFetchError ? (
+            <div className="py-20 text-center flex flex-col items-center bg-white rounded-[32px] border border-slate-50">
+              <p className="text-slate-500 text-sm font-bold mb-3">{noticeFetchError}</p>
+              <button type="button" onClick={fetchNotices} className="text-indigo-600 text-xs font-black hover:underline">
+                다시 시도
+              </button>
+            </div>
+          ) : loading ? (
              <div className="py-20 text-center flex flex-col items-center bg-white rounded-[32px] border border-slate-50">
                 <div className="w-8 h-8 border-2 border-slate-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
                 <p className="text-slate-400 text-xs font-bold">로딩 중...</p>
@@ -340,7 +360,7 @@ export default function TeacherMainPage() {
                       tabIndex={0}
                       className="p-6 cursor-pointer flex flex-col"
                       onClick={() => setExpandedId(isExpanded ? null : notice.id)}
-                      onKeyDown={(e) => e.key === 'Enter' && setExpandedId(isExpanded ? null : notice.id)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedId(isExpanded ? null : notice.id); } }}
                     >
                       <div className="flex items-center gap-2 mb-3 pointer-events-none">
                         {notice.is_pinned && <Pin size={12} className="text-rose-500 fill-rose-500" />}

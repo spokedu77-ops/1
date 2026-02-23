@@ -21,6 +21,8 @@ export interface SessionEvent {
   roundIndex?: number;
   roundTotal?: number;
   roundDisplay?: string;
+  /** 수업 관리용 학생 정보/메모 (피드백과 별도, sessions.memo) */
+  memo?: string;
 }
 
 export interface TeacherInput {

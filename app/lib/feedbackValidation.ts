@@ -118,7 +118,7 @@ export function parseTemplateToFields(studentsText: string): FeedbackFields {
 ✅ 다음 수업 목표 및 계획
 - 
 
-✅ 특이사항 및 컨디션 체크
+✅ 특이사항 및 시작/종료 시간
 - `;
 
   if (studentsText === FEEDBACK_TEMPLATE || !studentsText) {
@@ -150,8 +150,8 @@ export function parseTemplateToFields(studentsText: string): FeedbackFields {
     main_activity: extractField(studentsText, '✅ 오늘 수업의 주요 활동', '✅ 강점 및 긍정적인 부분'),
     strengths: extractField(studentsText, '✅ 강점 및 긍정적인 부분', '✅ 개선이 필요한 부분'),
     improvements: extractField(studentsText, '✅ 개선이 필요한 부분 및 피드백', '✅ 다음 수업 목표 및 계획'),
-    next_goals: extractField(studentsText, '✅ 다음 수업 목표 및 계획', '✅ 특이사항 및 컨디션 체크'),
-    condition_notes: extractField(studentsText, '✅ 특이사항 및 컨디션 체크')
+    next_goals: extractField(studentsText, '✅ 다음 수업 목표 및 계획', '✅ 특이사항 및 시작/종료 시간'),
+    condition_notes: extractField(studentsText, '✅ 특이사항 및 시작/종료 시간')
   };
 }
 
@@ -171,7 +171,7 @@ export function fieldsToTemplateText(fields: FeedbackFields): string {
 ✅ 다음 수업 목표 및 계획
 - ${fields.next_goals || ''}
 
-✅ 특이사항 및 컨디션 체크
+✅ 특이사항 및 시작/종료 시간
 - ${fields.condition_notes || ''}`;
 }
 

@@ -26,6 +26,7 @@ interface UserData {
   vacation?: string | null;
   documents: DocumentFile[] | null;
   is_active: boolean;
+  ending_soon?: boolean;
   points?: number;
   session_count?: number;
 }
@@ -44,7 +45,7 @@ export default function UserDashboardPage() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentTab, setCurrentTab] = useState<'live' | 'done'>('live');
+  const [currentTab, setCurrentTab] = useState<'live' | 'ending_soon' | 'done'>('live');
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -70,6 +71,7 @@ export default function UserDashboardPage() {
       const fetchedUsers = (data as UserData[]).map(u => ({
         ...u,
         is_active: u.is_active ?? true,
+        ending_soon: u.ending_soon ?? false,
         documents: u.documents || []
       }));
       setUsers(fetchedUsers);
@@ -100,7 +102,8 @@ export default function UserDashboardPage() {
           organization: editForm.organization,
           departure_location: editForm.departure_location,
           schedule: editForm.schedule,
-          vacation: editForm.vacation
+          vacation: editForm.vacation,
+          ending_soon: editForm.ending_soon
         })
         .eq('id', userId);
       
@@ -120,6 +123,18 @@ export default function UserDashboardPage() {
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: nextStatus } : u));
     try {
       await supabase.from('users').update({ is_active: nextStatus }).eq('id', user.id);
+    } catch {
+      fetchUsers();
+    }
+  };
+
+  const toggleEndingSoon = async (user: UserData) => {
+    if (!supabase || currentUser?.role !== 'admin') return alert('권한이 없습니다.');
+    if (!user.is_active) return; // 종료된 강사는 종료 예정 플래그 무의미
+    const next = !(user.ending_soon ?? false);
+    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, ending_soon: next } : u));
+    try {
+      await supabase.from('users').update({ ending_soon: next }).eq('id', user.id);
     } catch {
       fetchUsers();
     }
@@ -213,9 +228,20 @@ export default function UserDashboardPage() {
 
   const filteredUsers = users.filter(u => {
     const matchesSearch = (u.name || '').includes(searchTerm) || (u.organization || '').includes(searchTerm);
-    const matchesTab = currentTab === 'live' ? u.is_active : !u.is_active;
+    const matchesTab =
+      currentTab === 'live'
+        ? u.is_active && !(u.ending_soon ?? false)
+        : currentTab === 'ending_soon'
+          ? u.is_active && (u.ending_soon ?? false)
+          : !u.is_active;
     return matchesSearch && matchesTab;
   });
+
+  const tabCount = (tabId: 'live' | 'ending_soon' | 'done') => {
+    if (tabId === 'live') return users.filter(u => u.is_active && !(u.ending_soon ?? false)).length;
+    if (tabId === 'ending_soon') return users.filter(u => u.is_active && (u.ending_soon ?? false)).length;
+    return users.filter(u => !u.is_active).length;
+  };
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#F8FAFC] p-4 sm:p-6 md:p-10 pb-[env(safe-area-inset-bottom,0px)] text-slate-800">
@@ -256,13 +282,17 @@ export default function UserDashboardPage() {
               </button>
             ))}
           </div>
-          {/* 2단: 수업 중 / 수업 종료 (정보 관리 탭일 때만) */}
+          {/* 2단: 활동중 / 종료 예정 / 종료 (정보 관리 탭일 때만) */}
           {mainTab === 'info' && (
             <div className="flex gap-2 p-1.5 bg-slate-200/50 rounded-2xl w-full sm:w-fit border border-slate-200 shadow-inner overflow-x-auto">
-              {([{ id: 'live', label: '수업 중', icon: Activity }, { id: 'done', label: '수업 종료', icon: CheckCircle2 }] as const).map((tab) => (
+              {([
+                { id: 'live' as const, label: '활동중', icon: Activity },
+                { id: 'ending_soon' as const, label: '종료 예정', icon: Clock },
+                { id: 'done' as const, label: '종료', icon: CheckCircle2 },
+              ]).map((tab) => (
                 <button key={tab.id} onClick={() => setCurrentTab(tab.id)} className={`flex-1 sm:flex-initial min-w-[7rem] sm:min-w-[8rem] min-h-[44px] flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3 rounded-xl text-sm font-black transition-all cursor-pointer touch-manipulation ${currentTab === tab.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
                   <tab.icon className="w-4 h-4 shrink-0" /> {tab.label}
-                  <span className="ml-1 text-[10px] opacity-60">{users.filter(u => (tab.id === 'live' ? u.is_active : !u.is_active)).length}</span>
+                  <span className="ml-1 text-[10px] opacity-60">{tabCount(tab.id)}</span>
                 </button>
               ))}
             </div>
@@ -278,12 +308,18 @@ export default function UserDashboardPage() {
         {filteredUsers.map((user) => (
           <div key={user.id} className={`bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 border-2 transition-all duration-300 flex flex-col hover:shadow-xl min-w-0 w-full max-w-full overflow-hidden ${user.is_active ? 'border-blue-500 shadow-blue-500/5' : 'border-transparent shadow-sm'}`}>
             <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${user.role === 'teacher' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>{user.role === 'teacher' ? 'Inst' : 'Adm'}</span>
-                <span className={`text-[9px] font-black px-2 py-1 rounded-lg ${user.is_active ? 'bg-blue-600 text-white animate-pulse' : 'bg-slate-100 text-slate-500'}`}>{user.is_active ? '수업 중' : '종료'}</span>
+                <span className={`text-[9px] font-black px-2 py-1 rounded-lg ${user.is_active ? 'bg-blue-600 text-white animate-pulse' : 'bg-slate-100 text-slate-500'}`}>{user.is_active ? '활동중' : '종료'}</span>
+                {user.is_active && (user.ending_soon ?? false) && (
+                  <span className="text-[9px] font-black px-2 py-1 rounded-lg bg-amber-500 text-white">종료 예정</span>
+                )}
               </div>
               {currentUser?.role === 'admin' && (
                 <div className="flex flex-wrap gap-1">
+                  {user.is_active && (
+                    <button onClick={() => toggleEndingSoon(user)} title={user.ending_soon ? '종료 예정 해제' : '종료 예정으로 표시'} className={`min-h-[44px] min-w-[44px] p-2 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center touch-manipulation ${(user.ending_soon ?? false) ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-slate-100 text-slate-400 hover:bg-amber-100 hover:text-amber-600'}`}><Clock className="w-3.5 h-3.5" /></button>
+                  )}
                   <button onClick={() => toggleActiveStatus(user)} className={`min-h-[44px] min-w-[44px] p-2 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center touch-manipulation ${user.is_active ? 'bg-blue-500 text-white hover:bg-rose-500' : 'bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white'}`}><Power className="w-3.5 h-3.5" /></button>
                   <button onClick={() => { if (editingId === user.id) { setEditingId(null); } else { setEditingId(user.id); setEditForm({ ...user }); } }} className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 cursor-pointer flex items-center justify-center touch-manipulation"><Edit3 className="w-3.5 h-3.5" /></button>
                 </div>
@@ -298,6 +334,12 @@ export default function UserDashboardPage() {
                 <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="출발장소" value={editForm.departure_location || ''} onChange={e => setEditForm(prev => ({...prev, departure_location: e.target.value}))} />
                 <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="수업 스케줄 (쉼표로 구분: 월 15-18, 화 16-19)" value={editForm.schedule || ''} onChange={e => setEditForm(prev => ({...prev, schedule: e.target.value}))} />
                 <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="연기 요청 (쉼표로 구분: 1.23 화요일, 1.30 금요일)" value={editForm.vacation || ''} onChange={e => setEditForm(prev => ({...prev, vacation: e.target.value}))} />
+                {user.is_active && (
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={editForm.ending_soon ?? false} onChange={e => setEditForm(prev => ({ ...prev, ending_soon: e.target.checked }))} className="rounded border-slate-300 text-amber-500 focus:ring-amber-500" />
+                    <span className="text-xs font-bold text-slate-600">종료 예정으로 표시</span>
+                  </label>
+                )}
                 <button onClick={() => handleSaveInfo(user.id)} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black cursor-pointer">저장</button>
               </div>
             ) : (

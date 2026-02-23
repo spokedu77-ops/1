@@ -48,6 +48,7 @@ function MyClassesContent() {
   const [currentSessionLessonPlanId, setCurrentSessionLessonPlanId] = useState<string | null>(null);
   const [previousPlans, setPreviousPlans] = useState<PreviousLessonPlan[]>([]);
   const [previousPlansExpandedId, setPreviousPlansExpandedId] = useState<string | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   const getBaseTitle = (title: string): string => {
     const original = title;
@@ -81,7 +82,8 @@ function MyClassesContent() {
     const tempDate = new Date(date);
     const day = tempDate.getDay();
     const diff = tempDate.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(tempDate.setDate(diff));
+    const monday = new Date(tempDate);
+    monday.setDate(diff);
     monday.setHours(0, 0, 0, 0);
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
@@ -92,6 +94,7 @@ function MyClassesContent() {
   const getMySchedule = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
+    setScheduleError(null);
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) return;
@@ -109,6 +112,7 @@ function MyClassesContent() {
       setSessions(data || []);
     } catch (err) {
       console.error(err);
+      setScheduleError('일정을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -314,16 +318,41 @@ function MyClassesContent() {
             <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 bg-white border rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer transition-all active:scale-95">오늘</button>
           </div>
           <div className="flex items-center justify-between bg-white p-2 rounded-2xl shadow-sm border">
-            <button onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() - 7)))} className="p-3 cursor-pointer"><ChevronLeft size={20} className="text-slate-400" /></button>
+            <button
+              onClick={() => {
+                const next = new Date(currentDate);
+                next.setDate(next.getDate() - 7);
+                setCurrentDate(next);
+              }}
+              className="p-3 cursor-pointer"
+            >
+              <ChevronLeft size={20} className="text-slate-400" />
+            </button>
             <span className="text-sm font-black text-slate-700">
               {monday.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })} - {sunday.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
             </span>
-            <button onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() + 7)))} className="p-3 cursor-pointer"><ChevronRight size={20} className="text-slate-400" /></button>
+            <button
+              onClick={() => {
+                const next = new Date(currentDate);
+                next.setDate(next.getDate() + 7);
+                setCurrentDate(next);
+              }}
+              className="p-3 cursor-pointer"
+            >
+              <ChevronRight size={20} className="text-slate-400" />
+            </button>
           </div>
         </header>
 
         <div className="grid gap-4">
-          {loading ? (
+          {scheduleError ? (
+            <div className="py-20 text-center bg-white rounded-[32px] border-2 border-slate-100">
+              <p className="text-slate-500 text-sm font-bold mb-3">{scheduleError}</p>
+              <button type="button" onClick={getMySchedule} className="text-indigo-600 text-xs font-black hover:underline">
+                다시 시도
+              </button>
+            </div>
+          ) : loading ? (
             <div className="py-20 text-center text-slate-400 font-bold animate-pulse">Syncing...</div>
           ) : sessions.length === 0 ? (
             <div className="py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-slate-100 text-slate-300 font-bold text-sm tracking-widest uppercase">No Data</div>
@@ -342,7 +371,14 @@ function MyClassesContent() {
               const isActuallyDone = hasContent;
 
               return (
-                <div key={session.id} onClick={() => handleItemClick(session)} className={`p-4 md:p-6 rounded-[28px] shadow-sm border-2 transition-all cursor-pointer flex items-center justify-between ${isToday(session.start_at) ? 'border-blue-400 bg-blue-50/30' : 'bg-white border-transparent hover:border-slate-200'}`}>
+                <div
+                  key={session.id}
+                  role="button"
+                  tabIndex={0}
+                  className={`p-4 md:p-6 rounded-[28px] shadow-sm border-2 transition-all cursor-pointer flex items-center justify-between ${isToday(session.start_at) ? 'border-blue-400 bg-blue-50/30' : 'bg-white border-transparent hover:border-slate-200'}`}
+                  onClick={() => handleItemClick(session)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleItemClick(session); } }}
+                >
                   <div className="flex items-center gap-4 md:gap-6">
                     <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center shrink-0 ${isToday(session.start_at) ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-900'}`}>
                       <span className={`text-[10px] font-black uppercase mb-0.5 ${isToday(session.start_at) ? 'text-blue-100' : 'text-slate-400'}`}>{dayName} {dateDisplay}</span>
@@ -485,13 +521,13 @@ function MyClassesContent() {
 
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">
-                    ✅ 특이사항 및 컨디션 체크 (선택)
+                    ✅ 특이사항 및 시작/종료 시간 (선택)
                   </label>
                   <textarea 
                     className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
                     value={feedbackFields.condition_notes || ''}
                     onChange={(e) => setFeedbackFields({...feedbackFields, condition_notes: e.target.value})}
-                    placeholder="예: 오늘 컨디션 좋음, 집중력 우수"
+                    placeholder="예: 14:00 시작, 15:30 종료"
                   />
                 </div>
               </div>

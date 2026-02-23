@@ -31,42 +31,49 @@ export default function TeacherInventoryPage() {
   const [userName, setUserName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [detailItem, setDetailItem] = useState<any>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchMyData = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
-    
-    // 1. 현재 로그인한 유저 확인 (쿠키 세션 사용)
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      alert('로그인이 필요합니다.');
+    setFetchError(null);
+    try {
+      // 1. 현재 로그인한 유저 확인 (쿠키 세션 사용)
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        setFetchError('로그인이 필요합니다.');
+        setLoading(false);
+        return;
+      }
+
+      // 2. 유저 이름 가져오기
+      const { data: userData } = await supabase.from('users').select('name').eq('id', user.id).single();
+      if (userData) setUserName(userData.name);
+
+      // 3. 내 교구 리스트 가져오기
+      const { data: invData } = await supabase
+        .from('inventory')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name', { ascending: true });
+
+      // 4. 내 활동 로그 가져오기
+      const { data: logData } = await supabase
+        .from('inventory_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      if (invData) setInventory(invData);
+      if (logData) setLogs(logData);
+    } catch (err) {
+      console.error(err);
+      setFetchError('데이터를 불러오지 못했습니다.');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // 2. 유저 이름 가져오기
-    const { data: userData } = await supabase.from('users').select('name').eq('id', user.id).single();
-    if (userData) setUserName(userData.name);
-
-    // 3. 내 교구 리스트 가져오기
-    const { data: invData } = await supabase
-      .from('inventory')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('name', { ascending: true });
-
-    // 4. 내 활동 로그 가져오기
-    const { data: logData } = await supabase
-      .from('inventory_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(30);
-
-    if (invData) setInventory(invData);
-    if (logData) setLogs(logData);
-    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
@@ -113,7 +120,14 @@ export default function TeacherInventoryPage() {
 
       {/* --- Main Grid (Scrollable) --- */}
       <main className="flex-1 overflow-y-auto p-6 min-h-0 bg-[#F8FAFC]">
-        {loading ? (
+        {fetchError ? (
+            <div className="h-full flex flex-col items-center justify-center gap-3">
+                <p className="text-sm font-bold text-slate-500">{fetchError}</p>
+                <button type="button" onClick={fetchMyData} className="text-indigo-600 text-xs font-black hover:underline">
+                  다시 시도
+                </button>
+            </div>
+        ) : loading ? (
             <div className="h-full flex flex-col items-center justify-center gap-3">
                 <Loader2 className="animate-spin text-indigo-500" size={32} />
                 <p className="text-xs font-bold text-slate-400">데이터를 불러오는 중입니다...</p>
@@ -127,10 +141,13 @@ export default function TeacherInventoryPage() {
         ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5 pb-20">
                 {filteredInventory.map((item) => (
-                    <div 
-                        key={item.id} 
-                        onClick={() => setDetailItem(item)}
+                    <div
+                        key={item.id}
+                        role="button"
+                        tabIndex={0}
                         className="bg-white rounded-[28px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-slate-200 cursor-pointer group"
+                        onClick={() => setDetailItem(item)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailItem(item); } }}
                     >
                         {/* Image Section */}
                         <div className="h-40 relative overflow-hidden bg-slate-100 flex items-center justify-center">

@@ -32,6 +32,7 @@ export default function TeacherReportPage() {
   const [mileageLogs, setMileageLogs] = useState<MileageLog[]>([]);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const now = useMemo(() => new Date(), []);
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
@@ -40,6 +41,7 @@ export default function TeacherReportPage() {
   const fetchData = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
+    setFetchError(null);
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) return;
@@ -54,6 +56,7 @@ export default function TeacherReportPage() {
       if (sData) setSessions(sData as SessionRecord[]);
     } catch (error) {
       console.error(error);
+      setFetchError('데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -79,6 +82,17 @@ export default function TeacherReportPage() {
     if (!reason) return '';
     return reason.replace(/\[수업연동\]\s(원복|차감):\s/, '').trim();
   };
+
+  if (fetchError) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-slate-500 text-sm font-bold mb-3">{fetchError}</p>
+        <button type="button" onClick={fetchData} className="text-indigo-600 text-xs font-black hover:underline">
+          다시 시도
+        </button>
+      </div>
+    );
+  }
 
   if (loading) return <div className="py-20 text-center font-black italic text-indigo-600">SPOKEDU DATA LOADING...</div>;
 

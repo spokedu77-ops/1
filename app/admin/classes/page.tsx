@@ -172,10 +172,8 @@ export default function ClassManagementPage() {
       return;
     }
     
-    const { cleanMemo, mileageAction } = extractMileageAction(p.studentsText || '', p.mileageAction || p.mileage_option);
-    const { extraTeachers, cleanMemo: memoWithoutExtras } = parseExtraTeachers(cleanMemo);
-    const finalMemo = memoWithoutExtras;
-
+    const { mileageAction } = extractMileageAction(p.studentsText || '', p.mileageAction || p.mileage_option);
+    const { extraTeachers, cleanMemo: memoWithoutExtras } = parseExtraTeachers(p.memo || '');
     const eventData: SessionEvent = { 
       id: info.event.id, 
       title: info.event.title, 
@@ -185,9 +183,10 @@ export default function ClassManagementPage() {
       teacherId: p.teacherId || '',
       type: p.type || '',
       status: p.status || null,
-      groupId: info.event.groupId || p.groupId, 
-      price: p.price || 0,
+      groupId: p.groupId ?? (info.event as { groupId?: string }).groupId, 
+      price: p.price ?? 0,
       studentsText: p.studentsText || '',
+      memo: p.memo || '',
       themeColor: p.themeColor || '',
       isAdmin: !!p.isAdmin,
       roundInfo: p.roundInfo,
@@ -211,7 +210,7 @@ export default function ClassManagementPage() {
       date: startObj.toLocaleDateString('en-CA'), 
       start: startObj.toTimeString().slice(0, 5), 
       end: endObj.toTimeString().slice(0, 5), 
-      memo: finalMemo,
+      memo: memoWithoutExtras,
       mileageAction: mileageAction,
       roundIndex: p.roundIndex || 0,
       roundTotal: p.roundTotal || 0
@@ -270,7 +269,7 @@ export default function ClassManagementPage() {
         price: Number(mainT.price) || 0,
         start_at: newStart.toISOString(),
         end_at: newEnd.toISOString(),
-        students_text: finalMemo,
+        memo: finalMemo,
         mileage_option: editFields.mileageAction
       };
       if (selectedEvent.groupId && editFields.roundIndex && editFields.roundTotal) {
@@ -538,6 +537,7 @@ export default function ClassManagementPage() {
             start_at: newStart.toISOString(),
             end_at: newEnd.toISOString(),
             students_text: baseSession.studentsText,
+            memo: baseSession.memo ?? null,
             session_type: baseSession.type,
             status: 'opened',
             mileage_option: baseSession.mileageAction,
@@ -573,6 +573,7 @@ export default function ClassManagementPage() {
             start_at: newStart.toISOString(),
             end_at: newEnd.toISOString(),
             students_text: baseSession.studentsText,
+            memo: baseSession.memo ?? null,
             session_type: baseSession.type,
             status: 'opened',
             mileage_option: baseSession.mileageAction,

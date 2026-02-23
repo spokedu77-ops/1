@@ -179,6 +179,12 @@ export default function TeacherCurriculumPage() {
  const isPersonalItem = (item: CurriculumItem | PersonalCurriculumItem): item is PersonalCurriculumItem =>
    'category' in item && 'sub_tab' in item;
 
+ const hasUrl = (item: { url?: string }) => {
+   const u = item?.url?.trim();
+   if (!u || u === '#' || u === 'null' || u === 'undefined' || u.toLowerCase() === 'none') return false;
+   return u.startsWith('http://') || u.startsWith('https://');
+ };
+
  const isCenterMonthLocked = mainTab === 'center';
 
  return (
@@ -285,9 +291,20 @@ export default function TeacherCurriculumPage() {
                 ) : filteredPersonalItems.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {filteredPersonalItems.map((item) => (
-                      <div key={item.id} className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer" onClick={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}>
+                      <div
+                        key={item.id}
+                        role="button"
+                        tabIndex={0}
+                        className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer"
+                        onClick={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedItem(item); setIsDetailModalOpen(true); } }}
+                      >
                         <div className="relative aspect-video bg-slate-100">
-                          {item.type === 'instagram' ? (
+                          {!hasUrl(item) ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 font-bold text-sm">
+                              아무것도 없음
+                            </div>
+                          ) : item.type === 'instagram' ? (
                             <div className="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex flex-col items-center justify-center text-white p-6">
                               <Instagram size={48} className="mb-2 opacity-80" />
                               <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram</span>
@@ -301,11 +318,13 @@ export default function TeacherCurriculumPage() {
                           <div className="absolute top-4 left-4">
                             <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type ?? 'youtube'}</span>
                           </div>
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
-                            <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                              <Play size={20} className="fill-slate-900 text-slate-900 ml-1"/>
+                          {hasUrl(item) && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
+                              <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                <Play size={20} className="fill-slate-900 text-slate-900 ml-1"/>
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                         <div className="p-6 space-y-3">
                           <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
@@ -388,9 +407,20 @@ export default function TeacherCurriculumPage() {
                   {filteredItems.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {filteredItems.map((item) => (
-                        <div key={item.id} className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer" onClick={() => openDetailModal(item)}>
+                        <div
+                          key={item.id}
+                          role="button"
+                          tabIndex={0}
+                          className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer"
+                          onClick={() => openDetailModal(item)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetailModal(item); } }}
+                        >
                           <div className="relative aspect-video bg-slate-100">
-                            {item.type === 'instagram' ? (
+                            {!hasUrl(item) ? (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 font-bold text-sm">
+                                아무것도 없음
+                              </div>
+                            ) : item.type === 'instagram' ? (
                               <div className="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex flex-col items-center justify-center text-white p-6">
                                 <Instagram size={48} className="mb-2 opacity-80" />
                                 <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram Reels</span>
@@ -404,11 +434,13 @@ export default function TeacherCurriculumPage() {
                             <div className="absolute top-4 left-4">
                               <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type}</span>
                             </div>
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
-                              <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                <Play size={20} className="fill-slate-900 text-slate-900 ml-1"/>
+                            {hasUrl(item) && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
+                                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                  <Play size={20} className="fill-slate-900 text-slate-900 ml-1"/>
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                           <div className="p-6 space-y-3">
                             <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
@@ -439,22 +471,23 @@ export default function TeacherCurriculumPage() {
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)} />
             <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                 <div className="relative w-full aspect-video bg-black">
-                    {selectedItem.type === 'youtube' && (() => {
-                        const ytId = selectedItem.url ? getYouTubeId(selectedItem.url) : undefined;
-                        return ytId ? (
-                        <iframe 
-                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1`} 
-                            className="w-full h-full" 
-                            allow="autoplay; encrypted-media" 
-                            allowFullScreen 
+                    {!hasUrl(selectedItem) ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-white text-slate-400 font-bold">
+                            아무것도 없음
+                        </div>
+                    ) : selectedItem.type === 'youtube' && getYouTubeId(selectedItem.url ?? '') ? (
+                        <iframe
+                            src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url ?? '')}?autoplay=1`}
+                            className="w-full h-full"
+                            allow="autoplay; encrypted-media"
+                            allowFullScreen
                         />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-white">
-                             <Instagram size={64} className="mb-4" />
-                             <a href={selectedItem.url ?? '#'} target="_blank" className="bg-white text-black px-6 py-3 rounded-full font-bold">인스타그램에서 보기</a>
+                            <Instagram size={64} className="mb-4" />
+                            <a href={selectedItem.url ?? '#'} target="_blank" rel="noopener noreferrer" className="bg-white text-black px-6 py-3 rounded-full font-bold">인스타그램에서 보기</a>
                         </div>
-                    );
-                    })()}
+                    )}
                     <button onClick={() => setIsDetailModalOpen(false)} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-all"><X size={20}/></button>
                 </div>
                 <div className="p-8 space-y-8 overflow-y-auto bg-[#2C2C2C] text-white">
