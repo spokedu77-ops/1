@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { useState, useMemo, useEffect } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getCurrentWeekOfMonth } from '@/app/lib/curriculum/weekUtils';
@@ -208,21 +210,21 @@ export default function AdminCurriculumPage() {
           .eq('id', editingId);
 
         if (error) throw error;
-        alert('수정되었습니다.');
+        toast.success('수정되었습니다.');
       } else {
         const { error } = await supabase
           .from('curriculum')
           .insert([postData]);
 
         if (error) throw error;
-        alert('등록되었습니다.');
+        toast.success('등록되었습니다.');
       }
       
       await fetchItems();
       closeInputModal();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      alert('저장 중 오류 발생: ' + msg);
+      toast.error('저장 중 오류 발생: ' + msg);
     }
   };
 
@@ -241,7 +243,7 @@ export default function AdminCurriculumPage() {
 
       // data 배열이 비어있다면 DB 권한(RLS) 문제로 실제 삭제가 안 된 것임
       if (!data || data.length === 0) {
-        alert('삭제되지 않았습니다. Supabase의 RLS(Delete) 정책을 확인해주세요.');
+        toast.error('삭제되지 않았습니다. Supabase의 RLS(Delete) 정책을 확인해주세요.');
         return;
       }
 
@@ -249,7 +251,7 @@ export default function AdminCurriculumPage() {
       setItems(prev => prev.filter((item: CurriculumItem) => item.id !== id));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      alert('삭제 실패: ' + msg);
+      toast.error('삭제 실패: ' + msg);
     }
   };
 
@@ -319,18 +321,18 @@ export default function AdminCurriculumPage() {
       if (personalEditingId) {
         const { error } = await supabase.from('personal_curriculum').update(payload).eq('id', personalEditingId);
         if (error) throw error;
-        alert('수정되었습니다.');
+        toast.success('수정되었습니다.');
       } else {
         const { error } = await supabase.from('personal_curriculum').insert([payload]);
         if (error) throw error;
-        alert('등록되었습니다.');
+        toast.success('등록되었습니다.');
       }
       await fetchPersonalItems();
       setIsPersonalModalOpen(false);
       setPersonalEditingId(null);
       setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
     } catch (err: unknown) {
-      alert('저장 중 오류: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error('저장 중 오류: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -361,10 +363,11 @@ export default function AdminCurriculumPage() {
     if (!supabase || !confirm('정말 삭제하시겠습니까?')) return;
     const { error } = await supabase.from('personal_curriculum').delete().eq('id', id).select();
     if (error) {
-      alert('삭제 실패: ' + error.message);
+      toast.error('삭제 실패: ' + error.message);
       return;
     }
     setPersonalItems((prev) => prev.filter((p) => p.id !== id));
+    toast.success('삭제되었습니다.');
   };
 
   const closePersonalModal = () => {
@@ -403,12 +406,6 @@ export default function AdminCurriculumPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-         {isLoading ? (
-           <div className="flex flex-col items-center justify-center py-24 gap-4">
-             <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
-             <p className="text-sm font-bold text-slate-400">커리큘럼 불러오는 중...</p>
-           </div>
-         ) : (
          <div className="space-y-6 w-full text-left min-w-0">
              {/* 1단 탭: 개인 수업 / 센터 수업 */}
              <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
@@ -432,28 +429,28 @@ export default function AdminCurriculumPage() {
 
              {mainTab === 'personal' ? (
                <>
-                 {/* 2단 카테고리 탭: 5개 / 5개 */}
+                 {/* 2단 카테고리 탭: 모바일에서 가로 스크롤 */}
                  <div className="w-full flex flex-col gap-2">
-                   <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
+                   <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
                      {PERSONAL_CATEGORIES_ROW1.map((cat) => (
                        <button
                          key={cat}
                          type="button"
                          onClick={() => handleCategoryChange(cat)}
-                         className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all min-w-0
+                         className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap
                            ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                        >
                          {cat}
                        </button>
                      ))}
                    </div>
-                   <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
+                   <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
                      {PERSONAL_CATEGORIES_ROW2.map((cat) => (
                        <button
                          key={cat}
                          type="button"
                          onClick={() => handleCategoryChange(cat)}
-                         className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all min-w-0
+                         className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap
                            ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                        >
                          {cat}
@@ -564,7 +561,12 @@ export default function AdminCurriculumPage() {
                  </div>
 
                  <div className="w-full">
-                     {filteredItems.length > 0 ? (
+                     {isLoading ? (
+                       <div className="flex flex-col items-center justify-center py-24 gap-4">
+                         <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+                         <p className="text-sm font-bold text-slate-400">커리큘럼 불러오는 중...</p>
+                       </div>
+                     ) : filteredItems.length > 0 ? (
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              {filteredItems.map((item: CurriculumItem) => (
                                  <div key={item.id} className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer" onClick={() => openDetailModal(item)}>
@@ -609,7 +611,6 @@ export default function AdminCurriculumPage() {
                </>
              )}
          </div>
-         )}
       </main>
 
       {mainTab === 'center' && (

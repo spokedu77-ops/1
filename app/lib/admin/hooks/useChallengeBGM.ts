@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { uploadToStorage, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 import { challengeBgmPath } from '@/app/lib/admin/assets/storagePaths';
 
@@ -24,7 +24,7 @@ export function useChallengeBGM() {
     setLoading(true);
     setError(null);
     try {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       const { data, error: e } = await supabase
         .from('think_asset_packs')
         .select('assets_json')
@@ -68,7 +68,7 @@ export function useChallengeBGM() {
       const offset = nextOffsetMs ?? bgmStartOffsetMs;
       const bpm = nextSourceBpm !== undefined ? nextSourceBpm : sourceBpm;
       try {
-        const supabase = getSupabaseClient();
+        const supabase = getSupabaseBrowserClient();
         await supabase.from('think_asset_packs').upsert(
           {
             id: BGM_SETTINGS_ID,

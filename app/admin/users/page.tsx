@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -75,9 +77,9 @@ export default function UserDashboardPage() {
         documents: u.documents || []
       }));
       setUsers(fetchedUsers);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: me } = await supabase.from('users').select('id, name, role').eq('id', user.id).single();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: me } = await supabase.from('users').select('id, name, role').eq('id', session.user.id).single();
         if (me) setCurrentUser(me as UserData);
       }
     } catch (err: unknown) {
@@ -92,7 +94,7 @@ export default function UserDashboardPage() {
   }, [fetchUsers]);
 
   const handleSaveInfo = async (userId: string) => {
-    if (!supabase || currentUser?.role !== 'admin') return alert('관리자 권한이 없습니다.');
+    if (!supabase || currentUser?.role !== 'admin') return toast.error('관리자 권한이 없습니다.');
     try {
       const { error } = await supabase
         .from('users')
@@ -111,14 +113,14 @@ export default function UserDashboardPage() {
       
       setEditingId(null);
       fetchUsers();
-      alert('성공적으로 업데이트되었습니다.');
+      toast.success('성공적으로 업데이트되었습니다.');
     } catch {
-      alert('저장 실패: DB 컬럼을 확인해주세요.');
+      toast.error('저장 실패: DB 컬럼을 확인해주세요.');
     }
   };
 
   const toggleActiveStatus = async (user: UserData) => {
-    if (!supabase || currentUser?.role !== 'admin') return alert('권한이 없습니다.');
+    if (!supabase || currentUser?.role !== 'admin') return toast.error('권한이 없습니다.');
     const nextStatus = !user.is_active;
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: nextStatus } : u));
     try {
@@ -129,7 +131,7 @@ export default function UserDashboardPage() {
   };
 
   const toggleEndingSoon = async (user: UserData) => {
-    if (!supabase || currentUser?.role !== 'admin') return alert('권한이 없습니다.');
+    if (!supabase || currentUser?.role !== 'admin') return toast.error('권한이 없습니다.');
     if (!user.is_active) return; // 종료된 강사는 종료 예정 플래그 무의미
     const next = !(user.ending_soon ?? false);
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, ending_soon: next } : u));
@@ -141,8 +143,8 @@ export default function UserDashboardPage() {
   };
 
   const handleAddPartner = async () => {
-    if (!supabase || currentUser?.role !== 'admin') return alert('관리자 권한이 필요합니다.');
-    if (!newPartner.name) return alert('이름을 입력해주세요.');
+    if (!supabase || currentUser?.role !== 'admin') return toast.error('관리자 권한이 필요합니다.');
+    if (!newPartner.name) return toast.error('이름을 입력해주세요.');
     try {
       const name = newPartner.name;
       const email = (newPartner as Partial<UserData & { email?: string }>).email || 
@@ -167,10 +169,10 @@ export default function UserDashboardPage() {
       setIsAddModalOpen(false);
       setNewPartner({ role: 'teacher', is_active: true });
       fetchUsers();
-      alert('성공적으로 등록되었습니다.');
+      toast.success('성공적으로 등록되었습니다.');
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : JSON.stringify(error);
-      alert(`등록 실패: ${msg}`);
+      toast.error(`등록 실패: ${msg}`);
     }
   };
 
@@ -209,7 +211,7 @@ export default function UserDashboardPage() {
       fetchUsers();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      alert('파일 업로드에 실패했습니다: ' + msg);
+      toast.error('파일 업로드에 실패했습니다: ' + msg);
     } finally {
       setUploadingId(null);
     }
@@ -222,7 +224,7 @@ export default function UserDashboardPage() {
       await supabase.from('users').update({ documents: updatedDocs }).eq('id', user.id);
       fetchUsers();
     } catch {
-      alert('삭제 실패');
+      toast.error('삭제 실패');
     }
   };
 

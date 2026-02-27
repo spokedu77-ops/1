@@ -2,12 +2,12 @@
  * Asset Hub에서 저장한 이미지를 불러오는 유틸리티
  */
 
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { ACTION_KEYS, ASSET_VARIANTS, type ActionKey } from '@/app/lib/admin/constants/physics';
 import { loadAssetWithFallback } from './loadAssetWithFallback';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 
-const supabase = getSupabaseClient();
+const supabase = getSupabaseBrowserClient();
 
 export interface ThemeAssets {
   actions: Record<string, Record<string, string>>; // { POINT: { off: 'path', on: 'path' } }

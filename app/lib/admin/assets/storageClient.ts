@@ -4,10 +4,10 @@
  * 업로드는 API 경유로 수행 → 쿠키 기반 admin 세션으로 Storage RLS 통과
  */
 
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { BUCKET_NAME } from '../constants/storage';
 
-const supabase = getSupabaseClient();
+const supabase = getSupabaseBrowserClient();
 
 /**
  * Storage에 파일 업로드 (API 경유 → admin RLS 통과)

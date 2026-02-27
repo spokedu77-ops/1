@@ -5,77 +5,32 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-
-async function getServiceSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) throw new Error('Server configuration error');
-  return createClient(url, serviceKey);
-}
-
-const ADMIN_NAMES = ['최지훈', '김구민', '김윤기'];
-
-function isAdminRole(r: string | null | undefined): boolean {
-  if (!r || typeof r !== 'string') return false;
-  const lower = r.trim().toLowerCase();
-  return lower === 'admin' || lower === 'master';
-}
-
-/** 로그인 + 운영진 여부 (role / is_admin / name) */
-async function requireAdmin(
-  serverSupabase: Awaited<ReturnType<typeof createServerSupabaseClient>>
-): Promise<{ ok: true } | { ok: false; status: 401 | 403 }> {
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) return { ok: false, status: 401 };
-
-  const { data: userRow } = await serverSupabase
-    .from('users')
-    .select('role, is_admin, name')
-    .eq('id', user.id)
-    .maybeSingle();
-  const u = userRow as { role?: string; is_admin?: boolean; name?: string } | null;
-  if (u && (isAdminRole(u.role) || u.is_admin === true || (typeof u.name === 'string' && ADMIN_NAMES.includes(u.name))))
-    return { ok: true };
-
-  const { data: profileRow } = await serverSupabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  const p = profileRow as { role?: string } | null;
-  if (p && isAdminRole(p.role)) return { ok: true };
-
-  return { ok: false, status: 403 };
-}
+import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 
 /** GET: 최근 1주 세션 + 수업안 + 선생님 (service role → RLS 없이 lesson_plans 포함) */
 export async function GET(request: NextRequest) {
   try {
-    const serverSupabase = await createServerSupabaseClient();
-    const auth = await requireAdmin(serverSupabase);
-    if (!auth.ok) {
-      return NextResponse.json(
-        { error: auth.status === 401 ? 'Unauthorized' : 'Forbidden' },
-        { status: auth.status }
-      );
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(request.url);
     const teacherId = searchParams.get('teacherId') ?? 'all';
 
-    // 이번 주: 일요일 00:00 ~ 토요일 23:59 (일요일이 주의 시작)
-    const now = new Date();
-    const dayOfWeek = now.getDay(); // 0=일, 1=월, ...
-    const start = new Date(now);
-    start.setDate(now.getDate() - dayOfWeek);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
+    // 이번 주: 일요일 00:00 ~ 토요일 23:59 (KST 기준, UTC+9)
+    const KST_OFFSET = 9 * 60 * 60 * 1000;
+    const nowKST = new Date(Date.now() + KST_OFFSET);
+    const dayOfWeek = nowKST.getUTCDay(); // KST 기준 요일
+    const startKST = new Date(nowKST);
+    startKST.setUTCDate(nowKST.getUTCDate() - dayOfWeek);
+    startKST.setUTCHours(0, 0, 0, 0);
+    const endKST = new Date(startKST);
+    endKST.setUTCDate(startKST.getUTCDate() + 6);
+    endKST.setUTCHours(23, 59, 59, 999);
+    // DB는 UTC로 저장되므로 KST 범위를 UTC로 변환
+    const start = new Date(startKST.getTime() - KST_OFFSET);
+    const end = new Date(endKST.getTime() - KST_OFFSET);
 
-    const supabase = await getServiceSupabase();
+    const supabase = getServiceSupabase();
     let query = supabase
       .from('sessions')
       .select('*, lesson_plans(id, session_id, content), users!created_by(id, name)')

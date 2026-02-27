@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -38,8 +40,8 @@ export default function UltimateSettlementPage() {
   useEffect(() => {
     const checkMaster = async () => {
       if (!supabase) return;
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.email !== 'choijihoon@spokedu.com') {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user || session.user.email !== 'choijihoon@spokedu.com') {
         router.replace('/admin'); 
         return;
       }
@@ -64,7 +66,7 @@ export default function UltimateSettlementPage() {
 
       const { data: sessions } = await supabase
         .from('sessions')
-        .select('*')
+        .select('id, created_by, price, students_text, start_at, title')
         .eq('status', 'finished')
         .gte('start_at', `${startDate}T00:00:00`)
         .lte('start_at', `${endDate}T23:59:59`);
@@ -170,7 +172,7 @@ export default function UltimateSettlementPage() {
 
   const addAdjItem = async (teacherId: string) => {
     const target = inputStates[teacherId];
-    if (!target?.amount || !target?.reason) return alert('금액과 사유를 입력하세요.');
+    if (!target?.amount || !target?.reason) return toast.error('금액과 사유를 입력하세요.');
     await supabase.from('settlements').insert({ teacher_id: teacherId, amount: Number(target.amount), reason: target.reason, year, month, period });
     setInputStates({...inputStates, [teacherId]: { amount: '', reason: '' }});
     fetchReport();

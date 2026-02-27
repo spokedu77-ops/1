@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Home, BookOpen, Calendar, Package, MoreHorizontal, Receipt, X, LogOut } from 'lucide-react';
@@ -18,9 +20,9 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     const supabase = getSupabaseBrowserClient();
     const { error } = await supabase.auth.signOut();
     if (error) {
-      alert('로그아웃 중 오류가 발생했습니다.');
+      toast.error('로그아웃 중 오류가 발생했습니다.');
     } else {
-      router.replace('/admin'); // 로그아웃 후 로그인(관리자) 페이지로 이동
+      router.replace('/login');
     }
   };
 

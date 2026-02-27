@@ -178,14 +178,12 @@ function WeeklyBestList({
   const [detailFeedback, setDetailFeedback] = useState<string | null>(null);
 
   useEffect(() => {
+    setDetailLesson(null);
+    setDetailFeedback(null);
     if (!supabase || !expandedId) return;
     const row = list.find((r) => r.id === expandedId);
     if (!row) return;
-    if (!row.lesson_plan_session_id && !row.feedback_session_id) {
-      setDetailLesson(null);
-      setDetailFeedback(null);
-      return;
-    }
+    if (!row.lesson_plan_session_id && !row.feedback_session_id) return;
     (async () => {
       const [lpRes, fbRes] = await Promise.all([
         row.lesson_plan_session_id
@@ -329,25 +327,30 @@ export default function NoticePage() {
   const fetchNotices = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from('notices')
-      .select('*')
-      .order('is_pinned', { ascending: false })
-      .order('created_at', { ascending: false });
-
-    if (!error && data) setNotices(data as Notice[]);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('notices')
+        .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (!error && data) setNotices(data as Notice[]);
+    } finally {
+      setLoading(false);
+    }
   }, [supabase]);
 
   const fetchWeeklyBest = useCallback(async () => {
     if (!supabase) return;
     setWeeklyBestLoading(true);
-    const { data, error } = await supabase
-      .from('weekly_best')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) setWeeklyBestList(data as WeeklyBest[]);
-    setWeeklyBestLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('weekly_best')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) setWeeklyBestList(data as WeeklyBest[]);
+    } finally {
+      setWeeklyBestLoading(false);
+    }
   }, [supabase]);
 
   const refreshAll = useCallback(() => {
@@ -387,46 +390,52 @@ export default function NoticePage() {
   const fetchLessonCandidates = useCallback(async () => {
     if (!supabase) return;
     setWbStepLoading(true);
-    const { start, end } = getWeeklyBestDateRange();
-    let q = supabase
-      .from('sessions')
-      .select('id, title, start_at, created_by, lesson_plans(content), users!created_by(id, name)')
-      .gte('start_at', start.toISOString())
-      .lte('start_at', end.toISOString())
-      .order('start_at', { ascending: false });
-    if (wbCoachFilter !== 'all') q = q.eq('created_by', wbCoachFilter);
-    const { data, error } = await q;
-    if (!error && data) {
-      const withPlan = (data as { lesson_plans?: { content?: string }[] | { content?: string } }[]).filter((s) => {
-        const lp = s.lesson_plans;
-        const content = Array.isArray(lp) ? lp[0]?.content : (lp as { content?: string } | null)?.content;
-        return !!content;
-      });
-      setLessonSessions(withPlan as typeof lessonSessions);
+    try {
+      const { start, end } = getWeeklyBestDateRange();
+      let q = supabase
+        .from('sessions')
+        .select('id, title, start_at, created_by, lesson_plans(content), users!created_by(id, name)')
+        .gte('start_at', start.toISOString())
+        .lte('start_at', end.toISOString())
+        .order('start_at', { ascending: false });
+      if (wbCoachFilter !== 'all') q = q.eq('created_by', wbCoachFilter);
+      const { data, error } = await q;
+      if (!error && data) {
+        const withPlan = (data as { lesson_plans?: { content?: string }[] | { content?: string } }[]).filter((s) => {
+          const lp = s.lesson_plans;
+          const content = Array.isArray(lp) ? lp[0]?.content : (lp as { content?: string } | null)?.content;
+          return !!content;
+        });
+        setLessonSessions(withPlan as typeof lessonSessions);
+      }
+    } finally {
+      setWbStepLoading(false);
     }
-    setWbStepLoading(false);
   }, [supabase, getWeeklyBestDateRange, wbCoachFilter]);
 
   const fetchFeedbackCandidates = useCallback(async () => {
     if (!supabase) return;
     setWbStepLoading(true);
-    const { start, end } = getWeeklyBestDateRange();
-    let q = supabase
-      .from('sessions')
-      .select('id, title, start_at, created_by, feedback_fields, students_text, users!created_by(id, name)')
-      .gte('start_at', start.toISOString())
-      .lte('start_at', end.toISOString())
-      .order('start_at', { ascending: false });
-    if (wbCoachFilter !== 'all') q = q.eq('created_by', wbCoachFilter);
-    const { data, error } = await q;
-    if (!error && data) {
-      const withFeedback = (data as { feedback_fields?: FeedbackFields; students_text?: string }[]).filter((s) => {
-        const fields = s.feedback_fields ?? parseTemplateToFields(s.students_text || '');
-        return isFieldValid(fields.main_activity) || isFieldValid(fields.strengths) || isFieldValid(fields.next_goals);
-      });
-      setFeedbackSessions(withFeedback as typeof feedbackSessions);
+    try {
+      const { start, end } = getWeeklyBestDateRange();
+      let q = supabase
+        .from('sessions')
+        .select('id, title, start_at, created_by, feedback_fields, students_text, users!created_by(id, name)')
+        .gte('start_at', start.toISOString())
+        .lte('start_at', end.toISOString())
+        .order('start_at', { ascending: false });
+      if (wbCoachFilter !== 'all') q = q.eq('created_by', wbCoachFilter);
+      const { data, error } = await q;
+      if (!error && data) {
+        const withFeedback = (data as { feedback_fields?: FeedbackFields; students_text?: string }[]).filter((s) => {
+          const fields = s.feedback_fields ?? parseTemplateToFields(s.students_text || '');
+          return isFieldValid(fields.main_activity) || isFieldValid(fields.strengths) || isFieldValid(fields.next_goals);
+        });
+        setFeedbackSessions(withFeedback as typeof feedbackSessions);
+      }
+    } finally {
+      setWbStepLoading(false);
     }
-    setWbStepLoading(false);
   }, [supabase, getWeeklyBestDateRange, wbCoachFilter]);
 
   useEffect(() => {

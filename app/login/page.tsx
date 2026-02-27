@@ -12,26 +12,30 @@ function LoginContent() {
   const [pw, setPw] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   
   // URL에서 접속 유형(teacher/admin) 파악
   const type = searchParams.get('type') || 'teacher';
 
-  // 페이지 로드 시 리프레시 토큰이 무효한 경우에만 세션 클리어 (일시적 네트워크/파싱 에러로 로그아웃 방지)
+  // 페이지 로드 시 리프레시 토큰이 무효한 경우에만 세션 클리어
+  // 3초 타임아웃: getSession()이 토큰 갱신 네트워크 호출로 auth lock을 점유해
+  // 이후 signInWithPassword가 무한 대기하는 것을 방지
   useEffect(() => {
     const checkInitialSession = async () => {
       try {
         const supabase = getSupabaseBrowserClient();
-        const { error: sessionError } = await supabase.auth.getSession();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 3000)
+        );
+        const sessionPromise = supabase.auth.getSession();
+        const { error: sessionError } = await Promise.race([sessionPromise, timeoutPromise]);
         if (sessionError && isRefreshTokenError(sessionError)) {
           await supabase.auth.signOut();
         }
-      } catch (err) {
-        if (isRefreshTokenError(err)) {
-          const supabase = getSupabaseBrowserClient();
-          await supabase.auth.signOut();
-        }
+      } catch {
+        // 타임아웃 또는 에러 시 무시하고 로그인 폼 정상 표시
       }
     };
     checkInitialSession();
@@ -40,38 +44,50 @@ function LoginContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError(null);
 
-    const supabase = getSupabaseBrowserClient();
-    const loginEmail = id.includes('@') ? id : `${id}@spokedu.com`;
-    const rawPw = pw.replace(/-/g, '');
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const loginEmail = id.includes('@') ? id : `${id}@spokedu.com`;
+      const rawPw = pw.replace(/-/g, '');
 
-    // A. 1차 로그인 시도
-    let { data, error } = await supabase.auth.signInWithPassword({ 
-      email: loginEmail, 
-      password: pw 
-    });
+      // 90초 타임아웃: Supabase cold start(프로젝트 재시작) 대기 포함
+      const timeout = (ms: number) =>
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), ms)
+        );
 
-    // B. 실패 시 하이픈 제거 버전으로 2차 시도
-    if (error) {
-      const retry = await supabase.auth.signInWithPassword({ 
-        email: loginEmail, 
-        password: rawPw 
-      });
-      data = retry.data;
-      error = retry.error;
-    }
+      // A. 1차 로그인 시도
+      let signInResult = await Promise.race([
+        supabase.auth.signInWithPassword({ email: loginEmail, password: pw }),
+        timeout(90000),
+      ]);
+      let { data, error } = signInResult;
 
-    if (error) {
-      alert('로그인 정보를 다시 확인해 주세요.');
-      setIsLoading(false);
-    } else {
-      const { data: userData } = await supabase.auth.getUser();
+      // B. 실패 시 하이픈 제거 버전으로 2차 시도
+      if (error) {
+        const retry = await Promise.race([
+          supabase.auth.signInWithPassword({ email: loginEmail, password: rawPw }),
+          timeout(90000),
+        ]);
+        data = retry.data;
+        error = retry.error;
+      }
 
-      if (userData?.user) {
+      if (error) {
+        setLoginError('로그인 정보를 다시 확인해 주세요.');
+        setIsLoading(false);
+        return;
+      }
+
+      // 로그인 성공: signInWithPassword의 data.user 직접 사용 (getUser() 추가 호출 제거)
+      const loggedInUser = data?.user;
+
+      if (loggedInUser) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', userData.user.id)
+          .eq('id', loggedInUser.id)
           .single();
 
         if (profile?.role === 'admin' || profile?.role === 'master') {
@@ -80,7 +96,15 @@ function LoginContent() {
           router.push('/teacher/my-classes');
         }
         router.refresh();
+      } else {
+        setIsLoading(false);
       }
+    } catch (err) {
+      const msg = err instanceof Error && err.message === 'TIMEOUT'
+        ? '서버 연결이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.'
+        : '로그인 중 오류가 발생했습니다.';
+      setLoginError(msg);
+      setIsLoading(false);
     }
   };
 
@@ -145,12 +169,16 @@ function LoginContent() {
           <span className="text-xs font-medium text-gray-600">이 기기에서 로그인 유지</span>
         </label>
 
+        {loginError && (
+          <p className="text-sm font-bold text-red-500 text-center">{loginError}</p>
+        )}
+
         <button 
           type="submit" 
           disabled={isLoading}
           className={`w-full min-h-[52px] py-6 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-[0.98] touch-manipulation ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
-          {isLoading ? 'Processing...' : 'Login'}
+          {isLoading ? '연결 중... (최초 접속 시 1분 소요)' : 'Login'}
         </button>
 
         <div className="space-y-2 text-center">

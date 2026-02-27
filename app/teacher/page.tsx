@@ -154,8 +154,8 @@ export default function TeacherMainPage() {
       setLoading(true);
       setNoticeFetchError(null);
       const [noticesRes, weeklyRes] = await Promise.all([
-        supabase.from('notices').select('*').order('is_pinned', { ascending: false }).order('created_at', { ascending: false }),
-        supabase.from('weekly_best').select('*').order('created_at', { ascending: false }),
+        supabase.from('notices').select('*').order('is_pinned', { ascending: false }).order('created_at', { ascending: false }).limit(50),
+        supabase.from('weekly_best').select('*').order('created_at', { ascending: false }).limit(20),
       ]);
       if (!noticesRes.error) setNotices((noticesRes.data as Notice[]) ?? []);
       if (!weeklyRes.error) setWeeklyBestList((weeklyRes.data as WeeklyBest[]) ?? []);
@@ -178,8 +178,9 @@ export default function TeacherMainPage() {
     try {
       setTodayLoading(true);
       setTodayFetchError(null);
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const userData = { user: session.user };
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
       const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);

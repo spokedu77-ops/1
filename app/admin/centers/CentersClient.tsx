@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { getCenters, createCenter, deleteCenter, type GetCentersFilters } from './actions/centers';
@@ -107,7 +109,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
     setDeletingId(c.id);
     try {
       const result = await deleteCenter(c.id);
-      if (result.error) alert(result.error);
+      if (result.error) toast.error(result.error);
       else loadCenters();
     } finally {
       setDeletingId(null);

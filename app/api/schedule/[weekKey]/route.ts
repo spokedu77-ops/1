@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
 const THINK_PACK_ID = 'iiwarmup_think_default';
 const THINK_BGM_SETTINGS_ID = 'iiwarmup_bgm_settings';
@@ -52,12 +51,7 @@ export async function GET(
     return NextResponse.json({ error: 'weekKey required' }, { status: 400 });
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase =
-    url && serviceKey
-      ? createClient(url, serviceKey)
-      : getSupabaseClient();
+  const supabase = getServiceSupabase();
 
   const BGM_SETTINGS_ID = 'iiwarmup_challenge_bgm_settings';
 

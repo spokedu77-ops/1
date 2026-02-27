@@ -6,14 +6,14 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { useQueryClient } from '@tanstack/react-query';
 import { calculateFileHash } from '@/app/lib/admin/assets/imageOptimizer';
 import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { generateThinkPackId, thinkObjectPath } from '@/app/lib/admin/assets/storagePaths';
 import { uploadToStorage, getPublicUrl, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 
-const supabase = getSupabaseClient();
+const supabase = getSupabaseBrowserClient();
 
 export type ThinkColor = 'red' | 'blue' | 'yellow' | 'green';
 

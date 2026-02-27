@@ -3,10 +3,12 @@
 /**
  * 챌린지 프로그램을 warmup_programs_composite에 upsert.
  * "이 주차로 픽스" 시 스케줄러 드롭다운에 항목이 보이도록 함.
+ * 저장 후 캐시만 갱신(optimistic) — 전체 refetch 없이 즉시 반영.
  */
 
+import type { ChallengeProgramSnapshot } from './useChallengePrograms';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 export interface UpsertChallengePayload {
   weekKey: string;
@@ -20,12 +22,23 @@ export interface UpsertChallengePayload {
 
 const CHALLENGE_DURATION_SEC = 120;
 
+function payloadToSnapshot(payload: UpsertChallengePayload): ChallengeProgramSnapshot {
+  return {
+    weekKey: payload.weekKey,
+    title: payload.title || `챌린지 ${payload.weekKey}`,
+    bpm: payload.bpm,
+    level: payload.level,
+    grid: payload.grid,
+    ...(payload.gridsByLevel && { gridsByLevel: payload.gridsByLevel }),
+  };
+}
+
 export function useUpsertChallengeProgram() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (payload: UpsertChallengePayload) => {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       const id = `challenge_${payload.weekKey}`;
       const phases = [
         {
@@ -50,9 +63,17 @@ export function useUpsertChallengeProgram() {
       );
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      const snapshot = payloadToSnapshot(variables);
+      queryClient.setQueryData<ChallengeProgramSnapshot[]>(['challenge-programs'], (old) => {
+        const list = old ?? [];
+        const idx = list.findIndex((p) => p.weekKey === variables.weekKey);
+        if (idx >= 0) {
+          return list.map((p, i) => (i === idx ? snapshot : p));
+        }
+        return [...list, snapshot];
+      });
       queryClient.invalidateQueries({ queryKey: ['warmup-programs-list'] });
-      queryClient.invalidateQueries({ queryKey: ['challenge-programs'] });
     },
   });
 }

@@ -7,6 +7,25 @@ import {
   Image as ImageIcon, CheckSquare, ListOrdered, Calendar, History, ExternalLink, UserCircle2
 } from 'lucide-react';
 
+interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  image?: string | null;
+  quantity: number;
+  updated_at: string;
+  simple_desc?: string | null;
+  key_points?: string | null;
+  usage_examples?: string | null;
+}
+
+interface InventoryLog {
+  id: string;
+  created_at: string;
+  type: 'in' | 'out' | string;
+  content: string;
+}
+
 // URL 링크 변환 헬퍼
 const renderTextWithLinks = (text: string) => {
   if (!text) return "";
@@ -25,12 +44,12 @@ const renderTextWithLinks = (text: string) => {
 
 export default function TeacherInventoryPage() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
-  const [inventory, setInventory] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [logs, setLogs] = useState<InventoryLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [detailItem, setDetailItem] = useState<any>(null);
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchMyData = useCallback(async () => {
@@ -38,8 +57,8 @@ export default function TeacherInventoryPage() {
     setLoading(true);
     setFetchError(null);
     try {
-      // 1. 현재 로그인한 유저 확인 (쿠키 세션 사용)
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
 
       if (!user) {
         setFetchError('로그인이 필요합니다.');
@@ -66,8 +85,8 @@ export default function TeacherInventoryPage() {
         .order('created_at', { ascending: false })
         .limit(30);
 
-      if (invData) setInventory(invData);
-      if (logData) setLogs(logData);
+      if (invData) setInventory(invData as InventoryItem[]);
+      if (logData) setLogs(logData as InventoryLog[]);
     } catch (err) {
       console.error(err);
       setFetchError('데이터를 불러오지 못했습니다.');
@@ -90,30 +109,44 @@ export default function TeacherInventoryPage() {
     <div className="flex flex-col h-screen bg-[#F8FAFC] font-sans text-slate-900 overflow-hidden">
       
       {/* --- Header --- */}
-      <header className="h-16 px-6 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between shrink-0 z-30 sticky top-0">
-        <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
-                <UserCircle2 size={20} />
+      <header className="shrink-0 z-30 sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div className="h-16 px-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
+                    <UserCircle2 size={20} />
+                </div>
+                <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">My Inventory</p>
+                    <h1 className="text-sm font-black text-slate-800">{userName ? `${userName} 선생님` : '선생님'}</h1>
+                </div>
             </div>
-            <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">My Inventory</p>
-                <h1 className="text-sm font-black text-slate-800">{userName ? `${userName} 선생님` : '선생님'}</h1>
+            <div className="flex items-center gap-3">
+                <div className="relative hidden md:block">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                    <input 
+                        type="text" 
+                        placeholder="교구 검색..." 
+                        className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-100 transition-all w-48"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <div className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-black shadow-lg shadow-slate-200">
+                    Total: {inventory.length}
+                </div>
             </div>
         </div>
-        
-        <div className="flex items-center gap-3">
-            <div className="relative hidden md:block">
+        {/* 모바일 전용 검색바 */}
+        <div className="md:hidden px-4 pb-3">
+            <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                <input 
-                    type="text" 
-                    placeholder="교구 검색..." 
-                    className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-100 transition-all w-48"
+                <input
+                    type="text"
+                    placeholder="교구 이름 또는 카테고리 검색..."
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
-            </div>
-            <div className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-black shadow-lg shadow-slate-200">
-                Total: {inventory.length}
             </div>
         </div>
       </header>

@@ -59,7 +59,6 @@ export default function IIWarmupSubscriberPage() {
     ? scheduleData.program_snapshot
     : undefined;
 
-  const isPublished = !!scheduleData?.is_published;
   const hasPhases =
     (Array.isArray(scheduleData?.phases) && scheduleData.phases.length > 0) ||
     (Array.isArray(scheduleData?.challengePhases) && (scheduleData?.challengePhases?.length ?? 0) > 0);
@@ -70,12 +69,12 @@ export default function IIWarmupSubscriberPage() {
       setViewState('loading');
       return;
     }
-    if (!isPublished || !hasPhases) {
+    if (!hasPhases) {
       setViewState('empty');
     } else {
       setViewState('ready');
     }
-  }, [scheduleLoading, isPublished, hasPhases, viewState]);
+  }, [scheduleLoading, hasPhases, viewState]);
 
   const handleStart = async (mode: PlayMode) => {
     await refetchSchedule();

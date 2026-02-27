@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -99,11 +100,12 @@ export default function ClassManagementPage() {
   };
 
   const autoFinishSessions = async () => {
+    if (!supabase) return;
     const now = new Date().toISOString();
     try {
       const { data: endedSessions } = await supabase
         .from('sessions')
-        .select('id, created_by, title')
+        .select('id, created_by, title, memo')
         .lt('end_at', now)
         .in('status', ['opened', null])
         .not('status', 'in', '("cancelled","postponed","deleted")');
@@ -112,16 +114,20 @@ export default function ClassManagementPage() {
         // 1. 세션 상태를 finished로 변경
         await supabase.from('sessions').update({ status: 'finished' }).in('id', endedSessions.map((s: { id?: string }) => s.id));
 
-        // 2. 수업 카운팅 로그 먼저 한 건씩 삽입 (23505 중복/23503 FK 시 해당 건만 스킵)
-        const countLogs = endedSessions
-          .filter((session: { created_by?: string | null }) => session.created_by != null && String(session.created_by).trim() !== '')
-          .map((session: { created_by?: string | null; id?: string; title?: string }) => ({
-            teacher_id: session.created_by,
-            session_id: session.id,
-            session_title: session.title,
-            count_change: 1,
-            reason: '수업 완료'
-          }));
+        // 2. 수업 카운팅 로그: 주강사 + 보조강사 모두 포함
+        type CountLogRow = { teacher_id: string; session_id: string | undefined; session_title: string | undefined; count_change: number; reason: string };
+        const countLogs: CountLogRow[] = [];
+        for (const session of endedSessions) {
+          if (session.created_by && String(session.created_by).trim()) {
+            countLogs.push({ teacher_id: session.created_by, session_id: session.id, session_title: session.title, count_change: 1, reason: '수업 완료' });
+          }
+          if (session.memo?.includes('EXTRA_TEACHERS:')) {
+            const { extraTeachers } = parseExtraTeachers(session.memo);
+            for (const ex of extraTeachers) {
+              if (ex.id) countLogs.push({ teacher_id: ex.id, session_id: session.id, session_title: session.title, count_change: 1, reason: '수업 완료 (보조)' });
+            }
+          }
+        }
 
         const successCountByTeacher: Record<string, number> = {};
         for (const row of countLogs) {
@@ -168,7 +174,7 @@ export default function ClassManagementPage() {
     const startObj = info.event.start;
     const endObj = info.event.end;
     if (!startObj || !endObj) {
-      alert('이 수업은 편집할 수 없습니다. (날짜/시간 정보 없음)');
+      toast.error('이 수업은 편집할 수 없습니다. (날짜/시간 정보 없음)');
       return;
     }
     
@@ -234,7 +240,7 @@ export default function ClassManagementPage() {
       
       fetchSessions();
     } catch {
-      alert('일정 변경에 실패했습니다.');
+      toast.error('일정 변경에 실패했습니다.');
       info.revert();
     }
   };
@@ -242,7 +248,7 @@ export default function ClassManagementPage() {
   const handleUpdate = async () => {
     if (!selectedEvent) return;
     const mainT = editFields.teachers[0];
-    if (!mainT?.id) { alert('강사를 선택해주세요.'); return; }
+    if (!mainT?.id) { toast.error('강사를 선택해주세요.'); return; }
     
     try {
       const [y, m, d] = editFields.date.split('-').map(Number);
@@ -252,7 +258,7 @@ export default function ClassManagementPage() {
       const newEnd = new Date(newStart.getTime() + (isNaN(duration) ? 3600000 : duration));
 
       if (!Number.isFinite(newStart.getTime()) || !Number.isFinite(newEnd.getTime())) {
-        alert('날짜 또는 시간이 올바르지 않습니다.');
+        toast.error('날짜 또는 시간이 올바르지 않습니다.');
         return;
       }
 
@@ -295,11 +301,28 @@ export default function ClassManagementPage() {
           }]);
           if (logError) {
             console.error('마일리지 로그 저장 에러:', logError);
-            alert('경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.');
+            toast.error('경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.');
           }
         } catch (e) { 
           console.error('마일리지 로그 에러:', e); 
-          alert('경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.');
+          toast.error('경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.');
+        }
+
+        // 보조강사에게도 동일한 마일리지 차등 적용
+        for (const ex of extras) {
+          if (!ex.id) continue;
+          try {
+            const { data: exUser } = await supabase.from('users').select('points').eq('id', ex.id).single();
+            await supabase.from('users').update({ points: (exUser?.points ?? 0) + diff }).eq('id', ex.id);
+            await supabase.from('mileage_logs').insert([{
+              teacher_id: ex.id,
+              amount: diff,
+              reason: `[수업연동/보조] ${diff > 0 ? '원복' : '차감'}: ${editFields.mileageAction || '해제'}`,
+              session_title: editFields.title
+            }]);
+          } catch (e) {
+            console.error('보조강사 마일리지 에러:', e);
+          }
         }
       }
 
@@ -307,7 +330,7 @@ export default function ClassManagementPage() {
       fetchSessions();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      alert('저장 실패: ' + msg);
+      toast.error('저장 실패: ' + msg);
     }
   };
 
@@ -334,7 +357,7 @@ export default function ClassManagementPage() {
             });
             if (logError?.code === '23505') return; // 이미 로그 있음(유니크), 카운트 중복 방지
             if (logError?.code === '23503') {
-              alert('이 강사는 수업 로그에 기록되지 않습니다. (Auth 미등록)');
+              toast.error('이 강사는 수업 로그에 기록되지 않습니다. (Auth 미등록)');
               setIsModalOpen(false);
               fetchSessions();
               return;
@@ -348,6 +371,24 @@ export default function ClassManagementPage() {
               .from('users')
               .update({ session_count: (user?.session_count || 0) + 1 })
               .eq('id', teacherId);
+
+            // 보조강사도 동일하게 카운팅
+            const { extraTeachers } = parseExtraTeachers(selectedEvent.memo || '');
+            for (const ex of extraTeachers) {
+              if (!ex.id) continue;
+              const { error: exLog } = await supabase.from('session_count_logs').insert({
+                teacher_id: ex.id,
+                session_id: selectedEvent.id,
+                session_title: selectedEvent.title ?? null,
+                count_change: 1,
+                reason: '수동 완료 (보조)',
+              });
+              if (exLog?.code === '23505' || exLog?.code === '23503') continue;
+              if (!exLog) {
+                const { data: exUser } = await supabase.from('users').select('session_count').eq('id', ex.id).single();
+                await supabase.from('users').update({ session_count: (exUser?.session_count || 0) + 1 }).eq('id', ex.id);
+              }
+            }
           }
         }
       }
@@ -355,7 +396,7 @@ export default function ClassManagementPage() {
       fetchSessions();
     } catch (error) {
       console.error('Status update error:', error);
-      alert('상태 변경에 실패했습니다.');
+      toast.error('상태 변경에 실패했습니다.');
     }
   };
 
@@ -367,7 +408,7 @@ export default function ClassManagementPage() {
       const { data: curr, error: fetchError } = await supabase.from('sessions').select('*').eq('id', targetId).single();
       if (fetchError) throw fetchError;
       if (!curr?.group_id) {
-        alert('그룹 정보가 없습니다.');
+        toast.error('그룹 정보가 없습니다.');
         return;
       }
       
@@ -391,12 +432,12 @@ export default function ClassManagementPage() {
       const { error: insertError } = await supabase.from('sessions').insert([{ ...copyData, start_at: curr.start_at, status: 'postponed' }]);
       if (insertError) throw insertError;
       
-      alert('일정이 성공적으로 연기되었습니다.');
+      toast.success('일정이 성공적으로 연기되었습니다.');
       setIsModalOpen(false); 
       fetchSessions();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      alert('일정 연기에 실패했습니다: ' + msg);
+      toast.error('일정 연기에 실패했습니다: ' + msg);
     }
   };
 
@@ -408,7 +449,7 @@ export default function ClassManagementPage() {
       const { data: curr, error: fetchError } = await supabase.from('sessions').select('*').eq('id', targetId).single();
       if (fetchError) throw fetchError;
       if (!curr?.group_id) {
-        alert('그룹 정보가 없습니다.');
+        toast.error('그룹 정보가 없습니다.');
         return;
       }
       
@@ -428,18 +469,18 @@ export default function ClassManagementPage() {
       const { error: deleteError } = await supabase.from('sessions').delete().eq('id', targetId);
       if (deleteError) throw deleteError;
       
-      alert('일정이 성공적으로 복구되었습니다.');
+      toast.success('일정이 성공적으로 복구되었습니다.');
       setIsModalOpen(false); 
       fetchSessions();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      alert('일정 복구에 실패했습니다: ' + msg);
+      toast.error('일정 복구에 실패했습니다: ' + msg);
     }
   };
 
   const handleShrinkGroup = async () => {
     if (!selectedEvent?.groupId || !selectedEvent?.roundIndex) {
-      alert('그룹 정보 또는 회차 정보가 없습니다.');
+      toast.error('그룹 정보 또는 회차 정보가 없습니다.');
       return;
     }
     
@@ -483,13 +524,13 @@ export default function ClassManagementPage() {
         );
       }
 
-      alert('회차가 성공적으로 축소되었습니다.');
+      toast.success('회차가 성공적으로 축소되었습니다.');
       setIsModalOpen(false);
       fetchSessions();
     } catch (error: unknown) {
       console.error('회차 축소 에러:', error);
       const msg = error instanceof Error ? error.message : String(error);
-      alert('회차 축소에 실패했습니다: ' + msg);
+      toast.error('회차 축소에 실패했습니다: ' + msg);
     }
   };
 
@@ -513,7 +554,7 @@ export default function ClassManagementPage() {
       const baseStart = new Date(baseSession.start);
       const baseEnd = new Date(baseSession.end);
       if (!Number.isFinite(baseStart.getTime()) || !Number.isFinite(baseEnd.getTime())) {
-        alert('원본 수업의 날짜/시간이 올바르지 않아 복제할 수 없습니다.');
+        toast.success('원본 수업의 날짜/시간이 올바르지 않아 복제할 수 없습니다.');
         return;
       }
 
@@ -586,20 +627,20 @@ export default function ClassManagementPage() {
       }
       
       if (sessionsToCopy.length === 0) {
-        alert('복제할 세션이 없습니다.');
+        toast.error('복제할 세션이 없습니다.');
         return;
       }
       
       const { error } = await supabase.from('sessions').insert(sessionsToCopy);
       if (error) throw error;
       
-      alert(`${sessionsToCopy.length}개의 수업이 복제되었습니다.`);
+      toast.success(`${sessionsToCopy.length}개의 수업이 복제되었습니다.`);
       setIsCloneModalOpen(false);
       setIsModalOpen(false);
       fetchSessions();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      alert('복제에 실패했습니다: ' + msg);
+      toast.error('복제에 실패했습니다: ' + msg);
     }
   };
 

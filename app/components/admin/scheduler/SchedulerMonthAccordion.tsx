@@ -70,14 +70,14 @@ export function SchedulerMonthAccordion({
     return Array.from(byId.values());
   }, [programs, allPrograms, slots, rowMap, year, month]);
 
-  const publishedWeeks = slots.filter((s) => rowMap.get(s.weekKey)?.is_published).map((s) => s.week);
-  const publishedCount = publishedWeeks.length;
+  const assignedWeeks = slots.filter((s) => !!rowMap.get(s.weekKey)?.program_id).map((s) => s.week);
+  const assignedCount = assignedWeeks.length;
   const summary =
-    publishedCount === 0
-      ? '미공개'
-      : publishedCount === slots.length
-        ? '전체 공개'
-        : `공개: ${publishedWeeks.sort((a, b) => a - b).join(', ')}주차`;
+    assignedCount === 0
+      ? '미배정'
+      : assignedCount === slots.length
+        ? '전체 배정'
+        : `배정: ${assignedWeeks.sort((a, b) => a - b).join(', ')}주차`;
   return (
     <div className="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900/50">
       <button
@@ -88,7 +88,7 @@ export function SchedulerMonthAccordion({
         <span className="flex items-center gap-3">
           <span>{year}년 {MONTH_LABELS[month - 1]}</span>
           <span className="rounded bg-neutral-700/80 px-2 py-0.5 text-xs font-normal text-neutral-400">
-            {summary} {publishedCount > 0 && publishedCount < slots.length && `(${publishedCount}/${slots.length})`}
+            {summary} {assignedCount > 0 && assignedCount < slots.length && `(${assignedCount}/${slots.length})`}
           </span>
         </span>
         <span className="text-neutral-500">{isOpen ? '▼' : '▶'}</span>

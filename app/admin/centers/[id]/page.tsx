@@ -1,12 +1,20 @@
 'use client';
 
+import { toast } from 'sonner';
 import { useState, useEffect, useCallback, use } from 'react';
+import { toast } from 'sonner';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { getCenterWithRelations } from '../actions/center-detail';
+import { toast } from 'sonner';
 import { updateCenter, deleteCenter } from '../actions/centers';
+import { toast } from 'sonner';
 import { updateCenterNextActions } from '../actions/next-actions';
+import { toast } from 'sonner';
 import type { CenterWithRelations, CenterStatus, NextActionItem } from '@/app/lib/centers/types';
+import { toast } from 'sonner';
 import {
   ArrowLeft,
   Building2,
@@ -19,10 +27,15 @@ import {
   DollarSign,
   MoreHorizontal,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { CenterOverview } from './CenterOverview';
+import { toast } from 'sonner';
 import { OperationsTab } from './OperationsTab';
+import { toast } from 'sonner';
 import { ProgramsTab } from './ProgramsTab';
+import { toast } from 'sonner';
 import { FinanceTab } from './FinanceTab';
+import { toast } from 'sonner';
 import { MiscTab } from './MiscTab';
 
 const TABS = [
@@ -193,7 +206,7 @@ export default function CenterDetailPage({
     try {
       const result = await deleteCenter(center.id);
       if (result.error) {
-        alert(result.error);
+        toast.error(result.error);
         return;
       }
       router.push('/admin/schedules');

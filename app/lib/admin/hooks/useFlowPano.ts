@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { uploadToStorage, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 import { flowPanoPath } from '@/app/lib/admin/assets/storagePaths';
 
@@ -21,7 +21,7 @@ export function useFlowPano() {
     setLoading(true);
     setError(null);
     try {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       const { data, error: e } = await supabase
         .from('think_asset_packs')
         .select('assets_json')
@@ -50,7 +50,7 @@ export function useFlowPano() {
   const save = useCallback(async (nextList: string[], nextSelected: string) => {
     setError(null);
     try {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       await supabase.from('think_asset_packs').upsert(
         {
           id: PANO_SETTINGS_ID,

@@ -24,7 +24,7 @@ function pruneSessionCache(): void {
  * Proxy: Supabase 세션 갱신 + phase 경로 토큰 검사
  * - 매 요청마다 쿠키에서 세션을 읽고 갱신해 응답 쿠키에 설정 (Server Actions auth.uid() 유지)
  * - play/think/flow-phase 접근 시 token 파라미터 검사
- * - 같은 세션은 15초간 getUser() 스킵하여 체감 지연 감소
+ * - 같은 세션은 15초간 재갱신 스킵하여 체감 지연 감소
  */
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
@@ -47,7 +47,7 @@ export async function proxy(request: NextRequest) {
           },
         },
       });
-    await supabase.auth.getUser();
+    await supabase.auth.getSession();
     sessionCache.set(cacheKey, Date.now() + SESSION_CACHE_TTL_MS);
     pruneSessionCache();
     }

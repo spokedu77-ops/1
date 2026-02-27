@@ -1,15 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
 export async function POST() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceKey) {
-    return NextResponse.json({ error: 'Missing env' }, { status: 500 });
-  }
-
-  const supabase = createClient(url, serviceKey);
+  const supabase = getServiceSupabase();
   const now = new Date().toISOString();
 
   const { data: endedSessions } = await supabase

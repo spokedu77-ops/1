@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getCurrentWeekOfMonth } from '@/app/lib/curriculum/weekUtils';
@@ -238,28 +240,28 @@ export default function TeacherCurriculumPage() {
 
             {mainTab === 'personal' ? (
               <>
-                {/* 2단 카테고리 탭: 5개 / 5개 */}
+                {/* 2단 카테고리 탭: 모바일에서 가로 스크롤 */}
                 <div className="w-full flex flex-col gap-2">
-                  <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
+                  <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
                     {PERSONAL_CATEGORIES_ROW1.map((cat) => (
                       <button
                         key={cat}
                         type="button"
                         onClick={() => handleCategoryChange(cat)}
-                        className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all min-w-0
+                        className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap
                           ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                       >
                         {cat}
                       </button>
                     ))}
                   </div>
-                  <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
+                  <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
                     {PERSONAL_CATEGORIES_ROW2.map((cat) => (
                       <button
                         key={cat}
                         type="button"
                         onClick={() => handleCategoryChange(cat)}
-                        className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all min-w-0
+                        className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap
                           ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                       >
                         {cat}
@@ -355,7 +357,7 @@ export default function TeacherCurriculumPage() {
                         type="button"
                         onClick={() => {
                           if (isLocked) {
-                            alert('관리자 권한입니다');
+                            toast.error('이번 달 커리큘럼만 조회 가능합니다.');
                             return;
                           }
                           setSelectedMonth(m);

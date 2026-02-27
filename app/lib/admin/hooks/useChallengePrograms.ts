@@ -6,7 +6,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 export type ChallengeProgramSnapshot = {
   weekKey: string;
@@ -42,7 +42,7 @@ export function useChallengePrograms() {
   return useQuery({
     queryKey: ['challenge-programs'],
     queryFn: async (): Promise<ChallengeProgramSnapshot[]> => {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('warmup_programs_composite')
         .select('id, week_id, title, phases')
@@ -65,5 +65,7 @@ export function useChallengePrograms() {
       }
       return list;
     },
+    staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 }

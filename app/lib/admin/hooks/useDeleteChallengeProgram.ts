@@ -6,14 +6,14 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 export function useDeleteChallengeProgram() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (weekKey: string) => {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       const id = `challenge_${weekKey}`;
       const { error } = await supabase
         .from('warmup_programs_composite')

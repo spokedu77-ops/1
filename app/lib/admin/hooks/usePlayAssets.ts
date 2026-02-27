@@ -6,7 +6,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { useQueryClient } from '@tanstack/react-query';
 import { ACTION_KEYS, type ActionKey } from '@/app/lib/admin/constants/physics';
 import type { Slot } from '@/app/lib/admin/assets/imageOptimizer';
@@ -14,7 +14,7 @@ import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { actionImagePath } from '@/app/lib/admin/assets/storagePaths';
 import { uploadToStorage, getPublicUrl, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 
-const supabase = getSupabaseClient();
+const supabase = getSupabaseBrowserClient();
 
 export type PlayAssetsState = {
   actions: Record<string, Partial<Record<Slot | 'off' | 'on', string>>>;

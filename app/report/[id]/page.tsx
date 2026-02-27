@@ -28,13 +28,16 @@ export default function PremiumParentReport() {
       return;
     }
     const fetchSession = async () => {
-      const { data } = await supabase
-        .from('sessions')
-        .select('*, users(name)')
-        .eq('id', params.id)
-        .single();
-      if (data) setSession(data as ReportSession);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from('sessions')
+          .select('*, users(name)')
+          .eq('id', params.id)
+          .single();
+        if (data) setSession(data as ReportSession);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchSession();
   }, [supabase, params?.id]);

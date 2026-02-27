@@ -1,0 +1,11 @@
+---
+description: 수업·세션 관리 기본 틀 및 연기/그룹 플로우 수정 금지
+alwaysApply: true
+---
+
+# 수업·세션 관리 핵심 로직 수정 금지
+
+- **대상**: admin 수업 관리(classes), 세션(sessions) CRUD, 연기/복구(handlePostponeCascade, handleUndoPostpone), 그룹(group_id) 관련 플로우 및 훅(useClassManagement 등).
+- **원칙**: 위 영역의 기본 틀·플로우·데이터 구조는 리팩터링하거나 “개선” 목적으로 건드리지 않는다.
+- **예외**: 사용자가 명시적으로 요청한 버그 수정만 해당 파일에서 **최소 변경**으로 수행한다. 이때 동작만 고치고, 구조 변경·타입 대규모 수정·추가 기능은 하지 않는다.
+- **데이터 이슈**: “그룹 정보가 없습니다” 등 DB 데이터(group_id NULL 등) 문제는 코드 변경 대신 SQL/데이터 보정으로 해결하는 것을 우선한다.

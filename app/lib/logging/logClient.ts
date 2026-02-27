@@ -3,9 +3,9 @@
  * admin_productivity_events, subscriber_runtime_events
  */
 
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
-const supabase = getSupabaseClient();
+const supabase = getSupabaseBrowserClient();
 
 export type AdminProductivityEventType =
   | 'SCHEDULE_OPEN'

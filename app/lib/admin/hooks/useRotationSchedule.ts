@@ -1,11 +1,11 @@
 /**
  * React Query Hooks for Rotation Schedule
- * 60주 슬롯(12개월×5주). Light(목록) / Detail(상세) / Quarter(분기별) 분리.
+ * 48주 슬롯(12개월×4주). Light(연간 전체) / Quarter(분기별) 분리.
  */
 
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { generate48WeekSlots, parseWeekKey } from '@/app/lib/admin/scheduler/dragAndDrop';
 
 export type ScheduleLightRow = {
@@ -17,10 +17,6 @@ export type ScheduleLightRow = {
   programTitle?: string;
   /** Think150 등 프로그램별 스냅샷(audience 등). Quarter 조회 시 포함 */
   program_snapshot?: unknown;
-};
-
-export type ScheduleDetailRow = ScheduleLightRow & {
-  program_snapshot: unknown;
 };
 
 export type UseRotationScheduleQuarterOptions = {
@@ -70,17 +66,17 @@ export function useRotationScheduleQuarter({
 }
 
 /**
- * Light: 목록용. program_snapshot 미포함 (탭 전환/최초 진입 시 부하 감소)
- * @deprecated Scheduler는 useRotationScheduleMonth 사용. 연간 전체 조회가 필요할 때만 사용.
+ * 연간 전체 Light 쿼리. 스케줄러 상단 48주 현황 테이블용.
+ * program_snapshot 미포함.
  */
 export function useRotationScheduleLight(year: number) {
   const slots = generate48WeekSlots(year);
   const weekKeys = slots.map((s) => s.weekKey);
 
   return useQuery({
-    queryKey: ['rotation-schedule', 'light', year],
+    queryKey: ['rotation_schedule', 'light', year],
     queryFn: async (): Promise<ScheduleLightRow[]> => {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('rotation_schedule')
         .select('week_key, program_id, asset_pack_id, is_published, is_locked')
@@ -110,13 +106,6 @@ export function useRotationScheduleLight(year: number) {
     refetchOnWindowFocus: true,
     placeholderData: (previousData) => previousData,
   });
-}
-
-/**
- * @deprecated Use useRotationScheduleLight. 목록용 Light 쿼리만 사용.
- */
-export function useRotationSchedule(year: number) {
-  return useRotationScheduleLight(year);
 }
 
 export type SaveScheduleVariables = {
@@ -213,7 +202,7 @@ export function useSaveSchedule() {
         queryClient.invalidateQueries({
           queryKey: ['rotation_schedule', 'quarter', parsed.year, quarter],
         });
-        queryClient.invalidateQueries({ queryKey: ['rotation-schedule', 'detail', wk] });
+        queryClient.invalidateQueries({ queryKey: ['rotation_schedule', 'light', parsed.year] });
       }
     },
   });
@@ -227,7 +216,7 @@ export function useDeleteSchedule() {
 
   return useMutation({
     mutationFn: async (weekKey: string) => {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       const { error } = await supabase
         .from('rotation_schedule')
         .delete()
@@ -265,7 +254,7 @@ export function useDeleteSchedule() {
         queryClient.invalidateQueries({
           queryKey: ['rotation_schedule', 'quarter', parsed.year, quarter],
         });
-        queryClient.invalidateQueries({ queryKey: ['rotation-schedule', 'detail', weekKey] });
+        queryClient.invalidateQueries({ queryKey: ['rotation_schedule', 'light', parsed.year] });
       }
     },
   });

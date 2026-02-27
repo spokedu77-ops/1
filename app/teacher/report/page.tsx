@@ -43,16 +43,17 @@ export default function TeacherReportPage() {
     setLoading(true);
     setFetchError(null);
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const authUser = session?.user;
       if (!authUser) return;
 
       const { data: userData } = await supabase.from('users').select('id, name, points').eq('id', authUser.id).single();
       setTeacher(userData as TeacherInfo | null);
 
-      const { data: mData } = await supabase.from('mileage_logs').select('*').eq('teacher_id', authUser.id).order('created_at', { ascending: false });
+      const { data: mData } = await supabase.from('mileage_logs').select('*').eq('teacher_id', authUser.id).order('created_at', { ascending: false }).limit(10);
       if (mData) setMileageLogs(mData as MileageLog[]);
 
-      const { data: sData } = await supabase.from('sessions').select('id, title, price, start_at, status').eq('created_by', authUser.id).in('status', ['finished', 'verified']).order('start_at', { ascending: false });
+      const { data: sData } = await supabase.from('sessions').select('id, title, price, start_at, status').eq('created_by', authUser.id).in('status', ['finished', 'verified']).order('start_at', { ascending: false }).limit(500);
       if (sData) setSessions(sData as SessionRecord[]);
     } catch (error) {
       console.error(error);

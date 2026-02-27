@@ -1,0 +1,52 @@
+---
+description: Admin API 라우트 인증 패턴 강제
+globs: app/api/admin/**/*.ts, app/api/auth/**/*.ts
+alwaysApply: true
+---
+
+# Admin API 인증 규칙
+
+## 반드시 지켜야 할 것
+
+모든 admin API 라우트는 **반드시** `@/app/lib/server/adminAuth`의 함수를 사용해야 합니다.
+
+```typescript
+// ✅ 올바른 패턴
+import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+
+export async function GET() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+  const supabase = getServiceSupabase();
+  // ...
+}
+```
+
+## 절대 하지 말아야 할 것
+
+```typescript
+// ❌ 금지: 직접 getUser() 호출
+const { data: { user } } = await supabase.auth.getUser();
+
+// ❌ 금지: 라우트 파일 안에서 requireAdmin 직접 구현
+async function requireAdmin(...) { ... }
+
+// ❌ 금지: 라우트 파일 안에서 getServiceSupabase 직접 구현
+function getServiceSupabase() {
+  return createClient(url, serviceKey);
+}
+
+// ❌ 금지: isAdminRole, ADMIN_NAMES 등 판별 로직 중복 구현
+function isAdminRole(r: unknown) { ... }
+```
+
+## 이유
+
+- `getUser()`는 매 요청마다 Supabase Auth 서버에 네트워크 요청 → Auth API 한도 소진
+- 라우트별로 다른 체크 로직이 존재하면 일부는 `profiles` 테이블을 확인하고 일부는 안 하는 불일치 발생
+- `adminAuth.ts`는 `users.role`, `users.is_admin`, `ADMIN_NAMES`, `profiles.role` 모두 통합 체크
+
+## Service Role 클라이언트
+
+RLS를 우회하는 데이터 쿼리는 `getServiceSupabase()`를 사용합니다.
+`SUPABASE_SERVICE_ROLE_KEY`는 서버 사이드에서만 사용되며, 클라이언트 컴포넌트에서 절대 접근하면 안 됩니다.

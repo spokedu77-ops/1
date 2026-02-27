@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { getAuthUserOrRedirect } from '@/app/lib/supabase/auth';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -28,15 +27,16 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
+  useEffect(() => { setIsOpen(false); }, [pathname]);
+
   useEffect(() => {
-    setIsOpen(false);
     const loadUser = async () => {
       const supabase = getSupabaseBrowserClient();
-      const user = await getAuthUserOrRedirect(supabase);
-      if (user) setUserEmail(user.email || '');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) setUserEmail(session.user.email);
     };
     loadUser();
-  }, [pathname]);
+  }, []);
 
   const handleLogout = async () => {
     try { await getSupabaseBrowserClient().auth.signOut(); } 
@@ -105,7 +105,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 z-[60] flex h-12 w-full items-center justify-between bg-[#1e293b] px-4 pt-[env(safe-area-inset-top)] md:pt-0 md:hidden shadow-lg">
+      <div className="fixed top-0 left-0 z-[300] flex h-12 w-full items-center justify-between bg-[#1e293b] px-4 pt-[env(safe-area-inset-top)] md:pt-0 md:hidden shadow-lg">
         <h1 className="text-lg font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
         <button 
           onClick={() => setIsOpen(!isOpen)}
@@ -117,13 +117,13 @@ export default function Sidebar() {
 
       {isOpen && (
         <div 
-          className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-sm md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       <aside className={`
-        fixed left-0 top-0 z-[59] flex h-screen w-64 flex-col bg-[#1e293b] text-white transition-transform duration-300 ease-in-out
+        fixed left-0 top-0 z-[260] flex h-screen w-64 flex-col bg-[#1e293b] text-white transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
         md:translate-x-0 md:flex md:shrink-0
       `}>

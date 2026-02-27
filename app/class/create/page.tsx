@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
@@ -51,7 +53,6 @@ export default function CreateClassPage() {
 
   const handleChange = (field: string, value: string | number | boolean) => {
     setForm(prev => {
-      // 원데이는 1회만 생성: 스케줄/회차 입력을 강제로 단순화
       if (field === 'type' && value === 'one_day') {
         return {
           ...prev,
@@ -62,12 +63,30 @@ export default function CreateClassPage() {
           daysOfWeek: [new Date(`${prev.startDate}T${prev.startTime}`).getDay()],
         };
       }
+      // startDate 변경 시: 첫 수업 요일(index 0)을 새 날짜의 요일로 갱신
+      if (field === 'startDate') {
+        const newBaseDay = new Date(`${value}T${prev.startTime}`).getDay();
+        const extras = prev.daysOfWeek.filter(d => d !== new Date(`${prev.startDate}T${prev.startTime}`).getDay());
+        const nextDays = [newBaseDay, ...extras.filter(d => d !== newBaseDay)].sort((a, b) => a - b);
+        return { ...prev, startDate: String(value), daysOfWeek: nextDays };
+      }
+      // 주당 횟수 변경 시: 초과 요일 제거
+      if (field === 'weeklyFrequency') {
+        const baseDay = new Date(`${prev.startDate}T${prev.startTime}`).getDay();
+        const extras = prev.daysOfWeek.filter(d => d !== baseDay);
+        const needed = Number(value) - 1;
+        const nextDays = [baseDay, ...extras.slice(0, needed)].sort((a, b) => a - b);
+        return { ...prev, weeklyFrequency: Number(value), daysOfWeek: nextDays };
+      }
       return { ...prev, [field]: value };
     });
   };
 
+  // 첫 수업 요일(startDate 기준)은 고정, 추가 요일만 토글
   const toggleDay = (dayValue: number) => {
     setForm(prev => {
+      const baseDay = new Date(`${prev.startDate}T${prev.startTime}`).getDay();
+      if (dayValue === baseDay) return prev; // 기준일은 고정
       const exists = prev.daysOfWeek.includes(dayValue);
       const nextDays = exists
         ? prev.daysOfWeek.filter(d => d !== dayValue)
@@ -104,9 +123,9 @@ export default function CreateClassPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) return;
-    if (!form.title || !form.teacherId) return alert('수업명과 강사를 확인해주세요!');
+    if (!form.title || !form.teacherId) return toast.error('수업명과 강사를 확인해주세요!');
     if (form.type !== 'one_day' && form.weeklyFrequency > 1 && form.daysOfWeek.length < form.weeklyFrequency) {
-      return alert('주간 횟수만큼 요일을 선택해주세요.');
+      return toast.error('주간 횟수만큼 요일을 선택해주세요.');
     }
 
     setLoading(true);
@@ -146,11 +165,11 @@ export default function CreateClassPage() {
       const { error } = await supabase.from('sessions').insert(sessionsToInsert);
       if (error) throw error;
 
-      alert('수업이 성공적으로 등록되었습니다!');
+      toast.success('수업이 성공적으로 등록되었습니다!');
       router.push('/admin/classes');
     } catch (err: unknown) {
       console.error(err);
-      alert('등록 중 에러가 발생했습니다.');
+      toast.error('등록 중 에러가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -267,7 +286,7 @@ export default function CreateClassPage() {
                   <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">총 {form.sessionCount}회</span>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <label className="text-white text-xs font-black">주당 횟수</label>
                   <select
                     value={form.weeklyFrequency}
@@ -294,20 +313,49 @@ export default function CreateClassPage() {
                   </select>
                 </div>
 
-                <div className="flex gap-2">
-                  {DAYS.map((d) => (
-                    <button
-                      key={d.value}
-                      type="button"
-                      onClick={() => toggleDay(d.value)}
-                      className={`flex-1 py-2 rounded-lg text-xs font-black ${
-                        form.daysOfWeek.includes(d.value) ? 'bg-white text-slate-900' : 'bg-slate-800 text-slate-500'
-                      }`}
-                    >
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
+                {/* 주 1회: 요일 선택 불필요 (startDate 요일로 자동) */}
+                {form.weeklyFrequency === 1 ? (
+                  <div className="bg-slate-800 rounded-xl px-4 py-3 flex items-center gap-2">
+                    <span className="text-slate-400 text-[10px] font-black uppercase tracking-wider">수업 요일</span>
+                    <span className="text-white text-xs font-black ml-2">
+                      {DAYS.find(d => d.value === new Date(`${form.startDate}T${form.startTime}`).getDay())?.label}요일
+                    </span>
+                    <span className="text-slate-500 text-[10px] ml-1">(첫 수업일 기준 자동)</span>
+                  </div>
+                ) : (
+                  /* 주 2회+: 첫 수업 요일 고정 + 추가 요일 선택 */
+                  <div className="space-y-2">
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">
+                      추가 요일 선택 <span className="text-blue-400">({form.weeklyFrequency - 1}개 더 선택)</span>
+                    </p>
+                    <div className="flex gap-2">
+                      {DAYS.map((d) => {
+                        const baseDay = new Date(`${form.startDate}T${form.startTime}`).getDay();
+                        const isBase = d.value === baseDay;
+                        const isSelected = form.daysOfWeek.includes(d.value);
+                        return (
+                          <button
+                            key={d.value}
+                            type="button"
+                            onClick={() => toggleDay(d.value)}
+                            disabled={isBase}
+                            className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${
+                              isBase
+                                ? 'bg-blue-500 text-white cursor-not-allowed'
+                                : isSelected
+                                  ? 'bg-white text-slate-900'
+                                  : 'bg-slate-800 text-slate-500 hover:bg-slate-700'
+                            }`}
+                            title={isBase ? '첫 수업일 기준 고정' : ''}
+                          >
+                            {d.label}
+                            {isBase && <span className="block text-[8px] opacity-70">고정</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

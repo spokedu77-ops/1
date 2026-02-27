@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
@@ -146,20 +148,20 @@ export default function AdminInventoryPage() {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(false);
-    if (!selectedTeacher) return alert('선생님을 먼저 선택해주세요.');
+    if (!selectedTeacher) return toast.error('선생님을 먼저 선택해주세요.');
     const dataJson = e.dataTransfer.getData('application/json');
     if (!dataJson) return;
     try {
       const draggedItem = JSON.parse(dataJson);
       await processAddItem(draggedItem);
     } catch {
-      alert('데이터 처리에 실패했습니다.');
+      toast.error('데이터 처리에 실패했습니다.');
     }
   };
 
   const handleDirectAdd = async (e: React.MouseEvent, item: InventoryItem) => {
     e.stopPropagation();
-    if (!selectedTeacher) return alert('선생님을 먼저 선택해주세요.');
+    if (!selectedTeacher) return toast.error('선생님을 먼저 선택해주세요.');
     await processAddItem(item);
   };
 
@@ -181,9 +183,9 @@ export default function AdminInventoryPage() {
     if (item.id == null) return;
     const val = tempQuantities[item.id];
     const newQty = parseInt(val);
-    if (isNaN(newQty) || newQty < 0) return alert('올바른 숫자를 입력하세요.');
+    if (isNaN(newQty) || newQty < 0) return toast.error('올바른 숫자를 입력하세요.');
     if (newQty === item.quantity) return;
-    if (newQty === 0) return handleReturnAll(item);
+    if (newQty === 0) { await handleReturnAll(item); return; }
 
     const prevQty = item.quantity ?? 0;
     const diff = newQty - prevQty;
@@ -193,20 +195,33 @@ export default function AdminInventoryPage() {
   };
 
   const handleSaveCatalog = async () => {
-    if (!supabase || !catalogForm.name) return alert('교구명을 입력하세요');
-    if (editingCatalogId) {
-      await supabase.from('catalog').update(catalogForm).eq('id', editingCatalogId);
-    } else {
-      await supabase.from('catalog').insert([catalogForm]);
+    if (!supabase || !catalogForm.name) return toast.error('교구명을 입력하세요');
+    try {
+      if (editingCatalogId) {
+        const { error } = await supabase.from('catalog').update(catalogForm).eq('id', editingCatalogId);
+        if (error) throw error;
+        toast.success('교구 정보가 수정되었습니다.');
+      } else {
+        const { error } = await supabase.from('catalog').insert([catalogForm]);
+        if (error) throw error;
+        toast.success('새 교구가 등록되었습니다.');
+      }
+      await fetchCatalog();
+      setIsCatalogModalOpen(false);
+    } catch (err: unknown) {
+      toast.error('저장 실패: ' + (err instanceof Error ? err.message : String(err)));
     }
-    await fetchCatalog();
-    setIsCatalogModalOpen(false);
   };
 
   const handleDeleteCatalog = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     if (!supabase || !confirm('마스터 DB에서 삭제하시겠습니까?')) return;
-    await supabase.from('catalog').delete().eq('id', id);
+    const { error } = await supabase.from('catalog').delete().eq('id', id);
+    if (error) {
+      toast.error('삭제 실패: ' + error.message);
+      return;
+    }
+    toast.success('삭제되었습니다.');
     await fetchCatalog();
   };
 

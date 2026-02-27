@@ -9,8 +9,9 @@ interface Teacher {
   id: string;
   name: string;
   points: number;
+  /** 앱 도입 이전 누적 수업 수 (기존값) */
   session_count: number;
-  /** 화면 표시용: session_count_logs 실제 건수 */
+  /** 앱 도입 이후 session_count_logs 실제 건수 */
   logCount?: number;
 }
 
@@ -33,9 +34,11 @@ export function CountingTab({ supabase }: CountingTabProps) {
         .not('name', 'in', '("최지훈","김구민","김윤기")')
         .order('name', { ascending: true });
 
+      const teacherIds = (userData || []).map((u) => u.id);
       const { data: logRows } = await supabase
         .from('session_count_logs')
-        .select('teacher_id');
+        .select('teacher_id')
+        .in('teacher_id', teacherIds.length > 0 ? teacherIds : ['']);
 
       const logCountByTeacher: Record<string, number> = {};
       if (logRows) {
@@ -91,7 +94,7 @@ export function CountingTab({ supabase }: CountingTabProps) {
               </div>
               <div className="flex items-center gap-1">
                 <BookOpen size={12} className="text-slate-400" />
-                <span className="text-xs font-bold text-slate-600">{(t.logCount ?? t.session_count ?? 0)}회 수업</span>
+                <span className="text-xs font-bold text-slate-600">{((t.session_count ?? 0) + (t.logCount ?? 0)).toLocaleString()}회 수업</span>
               </div>
             </button>
           ))}

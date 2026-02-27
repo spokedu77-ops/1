@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, School, BookOpen, ShieldCheck, ArrowRight } from 'lucide-react';
@@ -24,16 +26,18 @@ export default function SpokeduGatePage() {
     const run = async () => {
       try {
         const supabase = getSupabaseBrowserClient();
-        const { data: { user }, error } = await supabase.auth.getUser();
+        // getSession: 로컬 쿠키 즉시 읽기 (getUser 네트워크 호출 제거)
+        const { data: { session }, error } = await supabase.auth.getSession();
         if (error && isRefreshTokenError(error)) {
           await supabase.auth.signOut();
           setCheckDone(true);
           return;
         }
-        if (error || !user) {
+        if (error || !session?.user) {
           setCheckDone(true);
           return;
         }
+        const user = session.user;
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
         const role = profile?.role;
         if (role === 'admin' || role === 'master') {
@@ -94,7 +98,7 @@ export default function SpokeduGatePage() {
   // 클릭 핸들러: 상태에 따라 다른 액션 수행
   const handleRoleClick = (role: { id: string; status: string }) => {
     if (role.status === 'coming_soon') {
-      alert('스포키듀 서비스 준비 중입니다. 곧 만나보실 수 있습니다!');
+      toast.error('스포키듀 서비스 준비 중입니다. 곧 만나보실 수 있습니다!');
       return;
     }
     

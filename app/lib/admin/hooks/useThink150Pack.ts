@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, uploadToStorage, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { calculateFileHash } from '@/app/lib/admin/assets/imageOptimizer';
@@ -77,7 +77,7 @@ export function useThink150Pack() {
     setLoading(true);
     setError(null);
     try {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       const { data, error: e } = await supabase
         .from('think_asset_packs')
         .select('assets_json')
@@ -126,7 +126,7 @@ export function useThink150Pack() {
   const save = useCallback(async (next: Think150PathsByMonthAndWeek) => {
     setError(null);
     try {
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       await supabase.from('think_asset_packs').upsert(
         {
           id: PACK_ID,

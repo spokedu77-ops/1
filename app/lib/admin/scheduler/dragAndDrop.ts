@@ -68,9 +68,3 @@ export function generate48WeekSlots(year: number): Array<{ weekKey: string; mont
   return slots;
 }
 
-/**
- * @deprecated Use generate48WeekSlots. 48 slots fixed; alias kept for compatibility.
- */
-export function generate52WeekSlots(year: number): Array<{ weekKey: string; month: number; week: number }> {
-  return generate48WeekSlots(year);
-}

@@ -56,6 +56,8 @@ export default function SchedulerPage() {
     return byMonth;
   }, [allSlots]);
 
+  // allSlots 재사용 (중복 계산 방지)
+
   const { data: programs = [] } = useQuery({
     queryKey: ['warmup-programs-list', !!supabase],
     queryFn: async () => {
@@ -104,13 +106,12 @@ export default function SchedulerPage() {
   }, [quarter]);
 
   const slotsByMonth = useMemo(() => {
-    const slots = generate48WeekSlots(year);
-    const byMonth: Record<number, typeof slots> = {};
+    const byMonth: Record<number, typeof allSlots> = {};
     for (const m of monthsInQuarter) {
-      byMonth[m] = slots.filter((s) => s.month === m);
+      byMonth[m] = allSlots.filter((s) => s.month === m);
     }
     return byMonth;
-  }, [year, monthsInQuarter]);
+  }, [allSlots, monthsInQuarter]);
 
   const rowMap = useMemo(() => {
     const m = new Map<string, ScheduleLightRow>();
@@ -198,14 +199,13 @@ export default function SchedulerPage() {
                       {(slotsByMonthForDetail[month] ?? []).map((slot) => {
                         const row = fullYearRowMap.get(slot.weekKey);
                         const assigned = !!row?.program_id;
-                        const published = !!row?.is_published;
                         return (
                           <td key={slot.weekKey} className="py-2 pr-2">
                             <span
-                              className="inline-block rounded px-1.5 py-0.5 text-xs"
+                              className={`inline-block rounded px-1.5 py-0.5 text-xs ${assigned ? 'text-emerald-400' : 'text-neutral-600'}`}
                               title={row?.programTitle ?? slot.weekKey}
                             >
-                              {assigned ? (published ? '공개' : '배정') : '—'}
+                              {assigned ? '배정' : '—'}
                             </span>
                           </td>
                         );

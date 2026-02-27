@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { generate48WeekSlots } from '@/app/lib/admin/scheduler/dragAndDrop';
 
 function getMonthsForQuarter(quarter: number): number[] {
@@ -15,42 +14,11 @@ function getMonthsForQuarter(quarter: number): number[] {
   return [start, start + 1, start + 2];
 }
 
-async function getServiceSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) throw new Error('Server configuration error');
-  return createClient(url, serviceKey);
-}
-
-/** 로그인 + users.role이 admin 또는 master인지 확인. 실패 시 { ok: false, status } 반환 */
-async function requireAdmin(
-  serverSupabase: Awaited<ReturnType<typeof createServerSupabaseClient>>
-): Promise<{ ok: true } | { ok: false; status: 401 | 403 }> {
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) return { ok: false, status: 401 };
-  const { data: profile } = await serverSupabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-  const role = (profile as { role?: string } | null)?.role;
-  if (role !== 'admin' && role !== 'master') {
-    return { ok: false, status: 403 };
-  }
-  return { ok: true };
-}
-
 /** GET: 분기별 스케줄 목록 (관리자만, service role로 읽기) */
 export async function GET(request: NextRequest) {
   try {
-    const serverSupabase = await createServerSupabaseClient();
-    const auth = await requireAdmin(serverSupabase);
-    if (!auth.ok) {
-      return NextResponse.json(
-        { error: auth.status === 401 ? 'Unauthorized' : 'Forbidden' },
-        { status: auth.status }
-      );
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(request.url);
     const year = Number(searchParams.get('year'));
@@ -63,7 +31,7 @@ export async function GET(request: NextRequest) {
     const slots = generate48WeekSlots(year);
     const weekKeys = slots.filter((s) => months.includes(s.month)).map((s) => s.weekKey);
 
-    const supabase = await getServiceSupabase();
+    const supabase = getServiceSupabase();
     const { data: rows, error } = await supabase
       .from('rotation_schedule')
       .select('week_key, program_id, is_published, is_locked, program_snapshot')
@@ -101,14 +69,8 @@ export async function GET(request: NextRequest) {
 /** POST: 스케줄 한 건 저장 (관리자만, service role로 쓰기) */
 export async function POST(request: NextRequest) {
   try {
-    const serverSupabase = await createServerSupabaseClient();
-    const auth = await requireAdmin(serverSupabase);
-    if (!auth.ok) {
-      return NextResponse.json(
-        { error: auth.status === 401 ? 'Unauthorized' : 'Forbidden' },
-        { status: auth.status }
-      );
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const body = await request.json();
     const week_key = body?.week_key;
@@ -120,7 +82,7 @@ export async function POST(request: NextRequest) {
     const is_published = body?.is_published === true;
     const program_snapshot = body?.program_snapshot != null ? body.program_snapshot : {};
 
-    const supabase = await getServiceSupabase();
+    const supabase = getServiceSupabase();
     const { data, error } = await supabase
       .from('rotation_schedule')
       .upsert(

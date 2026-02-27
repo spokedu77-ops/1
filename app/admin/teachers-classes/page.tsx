@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { Send, RotateCcw, User, MapPin, X, ExternalLink, FileText, Maximize2, Search, BookOpen, AlertTriangle } from 'lucide-react';
@@ -197,18 +199,18 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
   const clearSelection = () => setSelectedSessions(new Set());
 
   const handleBulkApprove = async () => {
-    if (!supabase || selectedSessions.size === 0) return alert('승인할 리포트를 선택해주세요.');
+    if (!supabase || selectedSessions.size === 0) return toast.success('승인할 리포트를 선택해주세요.');
     if (!confirm(`선택한 ${selectedSessions.size}개의 리포트를 일괄 승인하시겠습니까?`)) return;
     
     setBulkActionLoading(true);
     try {
       const { error } = await supabase.from('sessions').update({ status: 'verified', updated_at: new Date().toISOString() }).in('id', Array.from(selectedSessions));
       if (error) throw error;
-      alert(`${selectedSessions.size}개의 리포트가 승인되었습니다.`);
+      toast.success(`${selectedSessions.size}개의 리포트가 승인되었습니다.`);
       clearSelection();
       fetchListData();
     } catch (error: unknown) {
-      alert('일괄 승인에 실패했습니다: ' + (error instanceof Error ? error.message : String(error)));
+      toast.error('일괄 승인에 실패했습니다: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setBulkActionLoading(false);
     }
@@ -288,11 +290,11 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
       };
       const { error } = await supabase.from('sessions').update(updateData).eq('id', selectedEvent.id);
       if (error) throw error;
-      alert(newStatus === 'verified' ? '검수 승인 완료!' : '수정 요청 완료!');
+      toast.success(newStatus === 'verified' ? '검수 승인 완료!' : '수정 요청 완료!');
       setIsModalOpen(false);
       fetchListData();
     } catch (error: unknown) {
-      alert('저장에 실패했습니다: ' + (error instanceof Error ? error.message : String(error)));
+      toast.error('저장에 실패했습니다: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -305,9 +307,9 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
         </div>
       )}
 
-      <div className="flex gap-3 bg-white p-3 rounded-3xl shadow-sm border border-slate-200 mb-8">
-        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer" />
-        <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer">
+      <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-3 rounded-3xl shadow-sm border border-slate-200 mb-8">
+        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer" />
+        <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer">
           <option value="all">전체 강사</option>
           {coaches.map(c => <option key={c.id} value={c.id}>{c.name} 선생님</option>)}
         </select>
@@ -404,9 +406,9 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                     <button 
                       onClick={(e) => { 
                         e.stopPropagation();
-                        if(!isVerified) return alert('검수 완료된 리포트만 복사 가능합니다.');
+                        if(!isVerified) return toast.error('검수 완료된 리포트만 복사 가능합니다.');
                         navigator.clipboard.writeText(`${window.location.origin}/report/${s.id}`); 
-                        alert('링크 복사 완료!'); 
+                        toast.success('링크 복사 완료!'); 
                       }} 
                       className={`p-2 rounded-xl ${isVerified ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}
                     >

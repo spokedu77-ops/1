@@ -80,21 +80,21 @@ export function SchedulerSlotCard({
   }, [row?.program_snapshot]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const handleSave = async (published: boolean) => {
+  const handleSave = async () => {
     if (!programId) return;
     try {
-      await onSave(savePayload(weekKey, month, week, programId, programs, audience, published));
+      await onSave(savePayload(weekKey, month, week, programId, programs, audience, true));
     } catch (err) {
       console.error('Scheduler slot save failed:', err);
     }
   };
 
-  const isPublishedDisplay = row?.is_published ?? false;
+  const isAssigned = !!row?.program_id;
 
   return (
     <div
       className={`rounded-lg border p-4 ${
-        isPublishedDisplay
+        isAssigned
           ? 'border-emerald-600/40 bg-emerald-950/20'
           : 'border-neutral-700/80 bg-neutral-800/50'
       }`}
@@ -105,12 +105,12 @@ export function SchedulerSlotCard({
         </span>
         <span
           className={`rounded px-2 py-0.5 text-xs font-medium ${
-            isPublishedDisplay
+            isAssigned
               ? 'bg-emerald-600/40 text-emerald-300'
               : 'bg-neutral-700/80 text-neutral-500'
           }`}
         >
-          {isPublishedDisplay ? '공개' : '미공개'}
+          {isAssigned ? '배정됨' : '미배정'}
         </span>
       </div>
       <select
@@ -142,30 +142,20 @@ export function SchedulerSlotCard({
         </div>
       )}
       {programId ? (
-        <p className="mb-3 text-xs text-neutral-400" title={programId}>
+        <p className="mb-3 text-xs text-neutral-400">
           {programs.find((p) => p.id === programId)?.title ?? row?.programTitle ?? programId}
         </p>
       ) : (
         <p className="mb-3 text-xs text-neutral-500">선택된 프로그램 없음</p>
       )}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-        <button
-          type="button"
-          className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
-          onClick={() => handleSave(true)}
-          disabled={!programId || isSaving}
-        >
-          배정 &amp; 공개
-        </button>
-        <button
-          type="button"
-          className="rounded-lg border border-neutral-600 bg-neutral-800 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-700 disabled:opacity-50"
-          onClick={() => handleSave(false)}
-          disabled={!programId || isSaving}
-        >
-          미공개로 저장
-        </button>
-      </div>
+      <button
+        type="button"
+        className="w-full rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
+        onClick={handleSave}
+        disabled={!programId || isSaving}
+      >
+        배정
+      </button>
     </div>
   );
 }

@@ -1,14 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { X, Save, Trash2, BookOpen, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { X, Save, Trash2, BookOpen, Calendar, ChevronDown } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface Teacher {
   id: string;
   name: string;
   points: number;
+  /** 앱 도입 이전 누적 기존값 */
   session_count: number;
+  /** 앱 도입 이후 session_count_logs 건수 */
+  logCount?: number;
 }
 
 interface MileageLog {
@@ -41,6 +46,65 @@ interface MileageDetailModalProps {
   supabase: SupabaseClient | null;
   onClose: () => void;
   onSaved?: () => void;
+}
+
+function SessionCountByMonth({ logs }: { logs: SessionCountLog[] }) {
+  const [openMonth, setOpenMonth] = useState<string | null>(null);
+
+  const grouped = useMemo(() => {
+    const map: Record<string, { total: number; items: SessionCountLog[] }> = {};
+    for (const log of logs) {
+      const d = new Date(log.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!map[key]) map[key] = { total: 0, items: [] };
+      map[key].total += log.count_change;
+      map[key].items.push(log);
+    }
+    return Object.entries(map).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [logs]);
+
+  if (logs.length === 0) {
+    return <div className="py-16 text-center text-slate-200 font-black italic text-sm tracking-tighter uppercase">No session logs found</div>;
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {grouped.map(([monthKey, { total, items }]) => {
+        const [y, m] = monthKey.split('-');
+        const isOpen = openMonth === monthKey;
+        return (
+          <div key={monthKey} className="rounded-2xl border border-slate-100 overflow-hidden">
+            <button
+              onClick={() => setOpenMonth(isOpen ? null : monthKey)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">{y}.{m}</span>
+                <span className="text-sm font-black text-emerald-600">+{total}회</span>
+                <span className="text-[9px] text-slate-300 font-bold">{items.length}건</span>
+              </div>
+              <ChevronDown size={14} className={`text-slate-300 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isOpen && (
+              <div className="border-t border-slate-50 divide-y divide-slate-50">
+                {items.map((log) => (
+                  <div key={log.id} className="flex items-center justify-between px-4 py-2.5 bg-slate-50/50">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-[10px] font-black text-slate-400 shrink-0">
+                        {new Date(log.created_at).toLocaleDateString('ko', { month: 'numeric', day: 'numeric' })}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-700 truncate">{log.session_title}</span>
+                    </div>
+                    <span className="text-[10px] font-black text-emerald-500 shrink-0 ml-2">+{log.count_change}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function MileageDetailModal({ teacher, supabase, onClose, onSaved }: MileageDetailModalProps) {
@@ -90,7 +154,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
     const nextSessionCount = editSessionCount;
 
     if (diff === 0 && prevSessionCount === nextSessionCount) {
-      alert("변경된 내용이 없습니다.");
+      toast.error("변경된 내용이 없습니다.");
       return;
     }
 
@@ -112,11 +176,11 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
         if (lError) throw lError;
       }
 
-      alert("반영되었습니다.");
+      toast.success("반영되었습니다.");
       onSaved?.();
       onClose();
     } catch (error: unknown) {
-      alert("실패: " + (error instanceof Error ? error.message : String(error)));
+      toast.error("실패: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -140,9 +204,9 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
       }]);
       setTeacherLogs(prev => prev.filter(l => l.id !== logId));
       onSaved?.();
-      alert('마일리지가 복구되었습니다.');
+      toast.success('마일리지가 복구되었습니다.');
     } catch (error: unknown) {
-      alert("취소 실패: " + (error instanceof Error ? error.message : String(error)));
+      toast.error("취소 실패: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -163,11 +227,11 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
         session_title: '운영진 조치'
       }]).select().single();
       if (newLog) setLastPenaltyLog(newLog as MileageLog);
-      alert('차감이 완료되었습니다.');
+      toast.success('차감이 완료되었습니다.');
       onSaved?.();
       loadLogs();
     } catch (error: unknown) {
-      alert('차감 실패: ' + (error instanceof Error ? error.message : String(error)));
+      toast.error('차감 실패: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -186,11 +250,11 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
         session_title: lastPenaltyLog.session_title
       }]);
       setLastPenaltyLog(null);
-      alert('Penalty가 취소되었습니다.');
+      toast.success('Penalty가 취소되었습니다.');
       onSaved?.();
       loadLogs();
     } catch (error: unknown) {
-      alert('취소 실패: ' + (error instanceof Error ? error.message : String(error)));
+      toast.error('취소 실패: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -208,7 +272,10 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
               <h2 className="text-xl font-black text-slate-950 italic uppercase tracking-tighter">{teacher.name} T</h2>
               <p className="text-blue-600 font-black text-2xl mt-1">{(teacher.points || 0).toLocaleString()} <span className="text-xs">P</span></p>
               <p className="text-slate-400 font-bold text-sm mt-1 flex items-center gap-1">
-                <BookOpen size={14} /> {(teacher.session_count || 0)}회 수업 완료
+                <BookOpen size={14} /> {((teacher.session_count || 0) + (teacher.logCount || 0)).toLocaleString()}회 수업 완료
+                {teacher.logCount !== undefined && teacher.logCount > 0 && (
+                  <span className="text-[10px] text-slate-300 ml-1">(기존 {(teacher.session_count || 0)} + 신규 {teacher.logCount})</span>
+                )}
               </p>
             </div>
             <button onClick={onClose} className="min-h-[44px] min-w-[44px] hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer text-slate-400 flex items-center justify-center touch-manipulation"><X size={20}/></button>
@@ -237,7 +304,12 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
               </div>
             </div>
             <div className="p-1.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3">수업 수</span>
+              <div className="px-3">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">기존 수업 수</span>
+                {(teacher.logCount ?? 0) > 0 && (
+                  <p className="text-[9px] text-slate-300 mt-0.5">신규 {teacher.logCount}회 별도 합산</p>
+                )}
+              </div>
               <input
                 type="number"
                 value={editSessionCount}
@@ -339,25 +411,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
             )}
 
             {modalTab === 'sessions' && (
-              teacherCountLogs.length > 0 ? (
-                teacherCountLogs.map((log) => (
-                  <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 bg-white shadow-sm hover:border-emerald-100 transition-all">
-                    <div className="flex items-center gap-4 sm:gap-6">
-                      <div className="text-sm font-black w-20 sm:w-24 text-emerald-600">+{log.count_change}회</div>
-                      <div className="hidden xs:block h-6 w-[1px] bg-slate-100"></div>
-                      <div>
-                        <p className="text-[11px] font-black text-slate-800 leading-tight">{log.session_title}</p>
-                        <p className="text-[9px] font-bold text-slate-400 mt-0.5">{log.reason}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[9px] font-bold text-slate-300 tabular-nums whitespace-nowrap">{new Date(log.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="py-16 text-center text-slate-200 font-black italic text-sm tracking-tighter uppercase">No session logs found</div>
-              )
+              <SessionCountByMonth logs={teacherCountLogs} />
             )}
           </div>
         </div>

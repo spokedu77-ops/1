@@ -5,7 +5,7 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/app/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import type { Audience } from '@/app/lib/admin/constants/thinkTiming';
 
 const THINK150_PROGRAMS = [
@@ -28,7 +28,7 @@ export function useUpsertThink150Program() {
     mutationFn: async (payload: UpsertThink150Payload) => {
       const p = THINK150_PROGRAMS[payload.week - 1];
       if (!p) throw new Error(`Invalid week: ${payload.week}`);
-      const supabase = getSupabaseClient();
+      const supabase = getSupabaseBrowserClient();
       const config: { week: number; audience: Audience; month?: number } = {
         week: payload.week,
         audience: payload.audience,

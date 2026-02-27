@@ -78,6 +78,7 @@ export default function SpokeduHQDashboard() {
   const fetchData = useCallback(async () => {
     if (!supabaseUrl || !supabase) return;
     setLoading(true);
+    setFetchError(null);
     try {
       const now = new Date();
       const todayStr = now.toISOString().split('T')[0].replace(/-/g, '');
@@ -91,7 +92,7 @@ export default function SpokeduHQDashboard() {
           .gte('start_at', startOfDay)
           .lte('start_at', endOfDay)
           .order('start_at', { ascending: true }),
-        supabase.from('todos').select('*').order('created_at', { ascending: false }),
+        supabase.from('todos').select('*').order('created_at', { ascending: false }).limit(200),
         supabase
           .from('users')
           .select('id, name, vacation')

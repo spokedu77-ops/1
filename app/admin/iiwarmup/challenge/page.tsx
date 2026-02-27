@@ -102,6 +102,10 @@ function ChallengePageContent() {
   const { data: savedPrograms = [] } = useChallengePrograms();
 
   const [presets, setPresets] = useState<BeatPreset[]>(() => [...DEFAULT_PRESETS]);
+  // presetsRef: weekFromUrl 동기화 Effect가 presets를 의존성으로 가지지 않도록 최신값 유지
+  const presetsRef = useRef(presets);
+  useEffect(() => { presetsRef.current = presets; }, [presets]);
+
   const initialPreset = useMemo(() => {
     const found = presets.find((p) => p.weekKey === weekFromUrl);
     if (found) return found;
@@ -184,7 +188,7 @@ function ChallengePageContent() {
         }
       );
     },
-    [preset.weekKey, preset.title, upsertChallenge]
+    [preset.weekKey, preset.title, upsertChallenge, router, pathname]
   );
 
   const handleDeleteFromScheduler = useCallback(() => {
@@ -210,8 +214,10 @@ function ChallengePageContent() {
     }
   }, [uploadBgm]);
 
+  // URL의 weekFromUrl이 바뀔 때만 preset 동기화. presets는 ref로 읽어 의존성 순환 방지.
   useEffect(() => {
-    const found = presets.find((p) => p.weekKey === weekFromUrl);
+    const currentPresets = presetsRef.current;
+    const found = currentPresets.find((p) => p.weekKey === weekFromUrl);
     if (found) {
       queueMicrotask(() => setPreset(found));
       return;
@@ -235,8 +241,8 @@ function ChallengePageContent() {
         return;
       }
     }
-    queueMicrotask(() => setPreset(presets[0]));
-  }, [weekFromUrl, presets]);
+    queueMicrotask(() => setPreset(currentPresets[0]));
+  }, [weekFromUrl]); // presetsRef는 ref이므로 의존성 불필요
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);

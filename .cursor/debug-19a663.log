@@ -1,0 +1,12 @@
+{"sessionId":"19a663","location":"Sidebar.tsx:loadUser-start","message":"getAuthUserOrRedirect called","data":{"pathname":"/admin/iiwarmup"},"hypothesisId":"A","timestamp":1772108238152}
+{"sessionId":"19a663","location":"Sidebar.tsx:loadUser-start","message":"getAuthUserOrRedirect called","data":{"pathname":"/admin/iiwarmup"},"hypothesisId":"A","timestamp":1772108266938}
+{"sessionId":"19a663","location":"admin/layout.tsx:fetch-start","message":"calling /api/auth/check-admin","hypothesisId":"C","timestamp":1772108266939}
+{"sessionId":"19a663","location":"Sidebar.tsx:loadUser-start","message":"getAuthUserOrRedirect called","data":{"pathname":"/admin"},"hypothesisId":"A","timestamp":1772108270617}
+{"sessionId":"19a663","location":"admin/layout.tsx:fetch-start","message":"calling /api/auth/check-admin","hypothesisId":"C","timestamp":1772108270620}
+{"sessionId":"19a663","location":"Sidebar.tsx:loadUser-start","message":"getAuthUserOrRedirect called","data":{"pathname":"/admin"},"hypothesisId":"A","timestamp":1772108275048}
+{"sessionId":"19a663","location":"admin/layout.tsx:fetch-start","message":"calling /api/auth/check-admin","hypothesisId":"C","timestamp":1772108275049}
+{"sessionId":"19a663","location":"Sidebar.tsx:loadUser-start","message":"getAuthUserOrRedirect called","data":{"pathname":"/admin/schedules"},"hypothesisId":"A","timestamp":1772108283102}
+{"sessionId":"19a663","location":"Sidebar.tsx:loadUser-start","message":"getAuthUserOrRedirect called","data":{"pathname":"/admin"},"hypothesisId":"A","timestamp":1772108285030}
+{"sessionId":"19a663","location":"login/page.tsx:handleLogin-start","message":"login attempt started","hypothesisId":"H1-H4","timestamp":1772109008871}
+{"sessionId":"19a663","location":"login/page.tsx:signIn-1st","message":"1st signIn result","data":{"hasUser":false,"hasSession":false,"errorMsg":"Failed to fetch"},"hypothesisId":"H2","timestamp":1772109048284}
+{"sessionId":"19a663","location":"login/page.tsx:signIn-failed","message":"login failed","data":{"errorMsg":"Failed to fetch"},"hypothesisId":"H2","timestamp":1772109086991}

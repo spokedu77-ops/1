@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { 
   ChevronLeft, ChevronRight, 
@@ -96,8 +98,9 @@ function MyClassesContent() {
     setLoading(true);
     setScheduleError(null);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const userData = { user: session.user };
 
       const { monday, sunday } = getWeekRange(new Date(currentDate));
       const { data, error } = await supabase
@@ -142,7 +145,7 @@ function MyClassesContent() {
     // 센터 수업: 파일만 체크
     if (selectedEvent.session_type === 'regular_center') {
       if (fileUrls.length === 0) {
-        return alert('파일을 최소 1개 업로드해주세요.');
+        return toast.error('파일을 최소 1개 업로드해주세요.');
       }
     } else {
       // 개인 수업: 필수 필드 체크
@@ -159,7 +162,7 @@ function MyClassesContent() {
           next_goals: '다음 수업 목표 및 계획'
         };
         const missingFieldNames = missingFields.map(f => fieldNames[f]).join(', ');
-        return alert(`다음 필드를 작성해주세요: ${missingFieldNames}`);
+        return toast.error(`다음 필드를 작성해주세요: ${missingFieldNames}`);
       }
     }
 
@@ -177,12 +180,12 @@ function MyClassesContent() {
         .eq('id', selectedEvent.id);
 
       if (error) throw error;
-      alert('성공적으로 저장되었습니다.');
+      toast.success('성공적으로 저장되었습니다.');
       setIsModalOpen(false);
       getMySchedule();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      alert('저장 실패: ' + msg);
+      toast.error('저장 실패: ' + msg);
     } finally {
       setUploading(false);
     }
@@ -192,16 +195,21 @@ function MyClassesContent() {
     if (!supabase || !selectedEvent || !confirm('초기화하시겠습니까? (작성된 피드백이 삭제됩니다)')) return;
     setUploading(true);
     try {
-      await supabase.from('sessions').update({ 
+      const { error } = await supabase.from('sessions').update({ 
         status: 'pending', 
         students_text: null,
         feedback_fields: {},
         photo_url: [], 
         file_url: [] 
       }).eq('id', selectedEvent.id);
+      if (error) throw error;
       setIsModalOpen(false);
       getMySchedule();
-    } finally { setUploading(false); }
+    } catch (err: unknown) {
+      toast.error('초기화 실패: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const uploadFile = async (file: File, bucket: string) => {
@@ -216,7 +224,7 @@ function MyClassesContent() {
       return publicUrl;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      alert(`파일 업로드 오류: ${msg}`);
+      toast.error(`파일 업로드 오류: ${msg}`);
       return null;
     } finally {
       setUploading(false);
@@ -230,9 +238,9 @@ function MyClassesContent() {
     setPreviousPlans([]);
     setPreviousPlansExpandedId(null);
     setIsLessonPlanModalOpen(true);
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) return;
-    const userId = userData.user.id;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const userId = session.user.id;
     const baseTitle = getBaseTitle(selectedEvent.title);
 
     const [currentRes, sessionsRes] = await Promise.all([
@@ -264,17 +272,17 @@ function MyClassesContent() {
       if (currentSessionLessonPlanId) {
         const { error } = await supabase.from('lesson_plans').update({ content: lessonPlanContent, updated_at: new Date().toISOString() }).eq('id', currentSessionLessonPlanId);
         if (error) throw error;
-        alert('수업안이 수정되었습니다.');
+        toast.success('수업안이 수정되었습니다.');
       } else {
         const { error } = await supabase.from('lesson_plans').insert({ session_id: selectedEvent.id, content: lessonPlanContent });
         if (error) throw error;
-        alert('수업안이 저장되었습니다.');
+        toast.success('수업안이 저장되었습니다.');
       }
       setIsLessonPlanModalOpen(false);
       getMySchedule();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      alert('저장 실패: ' + msg);
+      toast.error('저장 실패: ' + msg);
     } finally {
       setLessonPlanSaving(false);
     }
@@ -286,14 +294,14 @@ function MyClassesContent() {
     try {
       const { error } = await supabase.from('lesson_plans').delete().eq('id', currentSessionLessonPlanId);
       if (error) throw error;
-      alert('삭제되었습니다.');
+      toast.success('삭제되었습니다.');
       setCurrentSessionLessonPlanId(null);
       setLessonPlanContent('');
       setIsLessonPlanModalOpen(false);
       getMySchedule();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      alert('삭제 실패: ' + msg);
+      toast.error('삭제 실패: ' + msg);
     } finally {
       setLessonPlanSaving(false);
     }
@@ -410,26 +418,26 @@ function MyClassesContent() {
       {isModalOpen && selectedEvent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
           <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
-            <div className="px-8 py-6 border-b flex justify-between items-center bg-white sticky top-0 z-10 text-left">
+            <div className="px-4 sm:px-8 py-4 sm:py-6 border-b flex justify-between items-center bg-white sticky top-0 z-10 text-left">
               <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">Session Report</h2>
+                <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight uppercase">Session Report</h2>
                 <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">
                   {new Date(selectedEvent.start_at).toLocaleString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={openLessonPlanModal}
-                  className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black transition-all cursor-pointer shadow-lg shadow-indigo-200 active:scale-[0.98]"
+                  className="flex items-center gap-1.5 px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-black transition-all cursor-pointer shadow-lg shadow-indigo-200 active:scale-[0.98]"
                 >
-                  <FileText size={18} /> 수업안 작성
+                  <FileText size={16} /> <span className="hidden sm:inline">수업안 작성</span><span className="sm:hidden">수업안</span>
                 </button>
                 <button onClick={() => setIsModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors p-1"><X size={24} /></button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 space-y-6 text-left bg-slate-50/30">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 text-left bg-slate-50/30">
               {/* 센터 수업: 파일 업로드만 */}
               {selectedEvent.session_type === 'regular_center' ? (
                 <div className="space-y-6">
@@ -556,7 +564,7 @@ function MyClassesContent() {
               )}
             </div>
 
-            <div className="p-8 bg-white border-t flex gap-4">
+            <div className="p-4 sm:p-8 bg-white border-t flex gap-4">
               {selectedEvent.status === 'finished' && (
                 <button onClick={handleResetStatus} disabled={uploading} className="flex-1 bg-slate-100 text-slate-400 py-5 rounded-[22px] font-black text-sm cursor-pointer hover:bg-red-50 transition-all uppercase">Reset</button>
               )}
@@ -572,7 +580,7 @@ function MyClassesContent() {
       {isLessonPlanModalOpen && selectedEvent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4" onClick={() => setIsLessonPlanModalOpen(false)}>
           <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="px-8 py-6 border-b flex justify-between items-center bg-white text-left">
+            <div className="px-4 sm:px-8 py-4 sm:py-6 border-b flex justify-between items-center bg-white text-left">
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight">수업안</h2>
                 <p className="text-[10px] font-bold text-slate-400 mt-1">
@@ -581,7 +589,7 @@ function MyClassesContent() {
               </div>
               <button type="button" onClick={() => setIsLessonPlanModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/30 text-left">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 bg-slate-50/30 text-left">
               {/* 이전 수업안: 항상 표시 (없을 때 안내 문구) */}
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">이전 수업안 (같은 수업 다른 날짜 · 복사해서 사용)</label>
@@ -633,7 +641,7 @@ function MyClassesContent() {
                 />
               </div>
             </div>
-            <div className="p-8 bg-white border-t flex gap-4">
+            <div className="p-4 sm:p-8 bg-white border-t flex gap-4">
               {currentSessionLessonPlanId && (
                 <button type="button" onClick={deleteLessonPlan} disabled={lessonPlanSaving} className="flex-1 bg-rose-50 text-rose-500 py-5 rounded-[22px] font-black text-sm cursor-pointer hover:bg-rose-100 transition-all uppercase disabled:opacity-50">삭제</button>
               )}
