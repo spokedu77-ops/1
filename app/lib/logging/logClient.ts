@@ -5,7 +5,9 @@
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
-const supabase = getSupabaseBrowserClient();
+function getSupabase() {
+  return getSupabaseBrowserClient();
+}
 
 export type AdminProductivityEventType =
   | 'SCHEDULE_OPEN'
@@ -38,7 +40,7 @@ export interface SubscriberRuntimeEvent {
  * 관리자 생산성 이벤트 기록 (fire-and-forget)
  */
 export function logAdminProductivity(event: AdminProductivityEvent): void {
-  supabase
+  getSupabase()
     .from('admin_productivity_events')
     .insert(event)
     .then(({ error }: { error: { message: string } | null }) => {
@@ -50,7 +52,7 @@ export function logAdminProductivity(event: AdminProductivityEvent): void {
  * 구독자 런타임 이벤트 기록 (fire-and-forget)
  */
 export function logSubscriberRuntime(event: SubscriberRuntimeEvent): void {
-  supabase
+  getSupabase()
     .from('subscriber_runtime_events')
     .insert(event)
     .then(({ error }: { error: { message: string } | null }) => {

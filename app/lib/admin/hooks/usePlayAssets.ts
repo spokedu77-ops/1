@@ -14,7 +14,9 @@ import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { actionImagePath } from '@/app/lib/admin/assets/storagePaths';
 import { uploadToStorage, getPublicUrl, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 
-const supabase = getSupabaseBrowserClient();
+function getSupabase() {
+  return getSupabaseBrowserClient();
+}
 
 export type PlayAssetsState = {
   actions: Record<string, Partial<Record<Slot | 'off' | 'on', string>>>;
@@ -42,7 +44,7 @@ export function usePlayAssets(themeId: string | null) {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from('play_scenarios')
         .select('scenario_json')
         .eq('id', themeId)
@@ -85,7 +87,7 @@ export function usePlayAssets(themeId: string | null) {
   const saveAssetPack = useCallback(
     async (nextAssets: PlayAssetsState) => {
       if (!themeId) return;
-      const { data: row } = await supabase
+      const { data: row } = await getSupabase()
         .from('play_scenarios')
         .select('scenario_json')
         .eq('id', themeId)
@@ -97,7 +99,7 @@ export function usePlayAssets(themeId: string | null) {
         theme,
         assets: nextAssets,
       };
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('play_scenarios')
         .upsert({
           id: themeId,

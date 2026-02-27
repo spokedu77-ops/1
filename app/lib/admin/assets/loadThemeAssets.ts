@@ -7,7 +7,9 @@ import { ACTION_KEYS, ASSET_VARIANTS, type ActionKey } from '@/app/lib/admin/con
 import { loadAssetWithFallback } from './loadAssetWithFallback';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 
-const supabase = getSupabaseBrowserClient();
+function getSupabase() {
+  return getSupabaseBrowserClient();
+}
 
 export interface ThemeAssets {
   actions: Record<string, Record<string, string>>; // { POINT: { off: 'path', on: 'path' } }
@@ -33,7 +35,7 @@ interface ScenarioJson {
  * Storage path를 Public URL로 변환
  */
 function getStoragePublicUrl(storagePath: string): string {
-  const { data } = supabase.storage
+  const { data } = getSupabase().storage
     .from(BUCKET_NAME)
     .getPublicUrl(storagePath);
   return data.publicUrl;
@@ -48,7 +50,7 @@ export async function loadThemeAssets(
 ): Promise<ThemeAssets> {
   try {
     // Asset Pack 조회 (type = 'asset_pack', id = themeId)
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('play_scenarios')
       .select('scenario_json, type')
       .eq('id', themeId)

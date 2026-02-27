@@ -7,7 +7,10 @@
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { BUCKET_NAME } from '../constants/storage';
 
-const supabase = getSupabaseBrowserClient();
+/** 모듈 로드 시 서버에서 실행되지 않도록 함수 호출 시점에만 가져옴 (prerender 안전) */
+function getSupabase() {
+  return getSupabaseBrowserClient();
+}
 
 /**
  * Storage에 파일 업로드 (API 경유 → admin RLS 통과)
@@ -46,7 +49,7 @@ export async function uploadToStorage(
  * @returns Public URL
  */
 export function getPublicUrl(path: string): string {
-  const { data } = supabase.storage
+  const { data } = getSupabase().storage
     .from(BUCKET_NAME)
     .getPublicUrl(path);
 
@@ -62,7 +65,7 @@ export function getPublicUrl(path: string): string {
  * @param path Storage 경로
  */
 export async function deleteFromStorage(path: string): Promise<void> {
-  const { error } = await supabase.storage
+  const { error } = await getSupabase().storage
     .from(BUCKET_NAME)
     .remove([path]);
 
@@ -80,7 +83,7 @@ export async function deleteFromStorageBatch(paths: string[]): Promise<void> {
   const unique = [...new Set(paths)].filter(Boolean);
   if (unique.length === 0) return;
 
-  const { error } = await supabase.storage
+  const { error } = await getSupabase().storage
     .from(BUCKET_NAME)
     .remove(unique);
 
@@ -96,7 +99,7 @@ export async function deleteFromStorageBatch(paths: string[]): Promise<void> {
  * @param destPath 대상 경로
  */
 export async function copyInStorage(sourcePath: string, destPath: string): Promise<void> {
-  const { error } = await supabase.storage
+  const { error } = await getSupabase().storage
     .from(BUCKET_NAME)
     .copy(sourcePath, destPath);
 
@@ -112,7 +115,7 @@ export async function copyInStorage(sourcePath: string, destPath: string): Promi
  * @returns 파일 존재 여부
  */
 export async function checkFileExists(path: string): Promise<boolean> {
-  const { data, error } = await supabase.storage
+  const { data, error } = await getSupabase().storage
     .from(BUCKET_NAME)
     .list(path.split('/').slice(0, -1).join('/'), {
       search: path.split('/').pop(),

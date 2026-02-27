@@ -92,12 +92,12 @@ export function useRotationScheduleLight(year: number) {
           .from('warmup_programs_composite')
           .select('id, title')
           .in('id', programIds);
-        const programMap = new Map(
+        const programMap = new Map<string, string>(
           programs?.map((p: { id: string; title: string }) => [p.id, p.title]) || []
         );
         return rows.map((schedule) => ({
           ...schedule,
-          programTitle: programMap.get(schedule.program_id!),
+          programTitle: programMap.get(schedule.program_id!) as string | undefined,
         }));
       }
       return rows;

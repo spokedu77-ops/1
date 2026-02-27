@@ -13,7 +13,9 @@ import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { generateThinkPackId, thinkObjectPath } from '@/app/lib/admin/assets/storagePaths';
 import { uploadToStorage, getPublicUrl, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 
-const supabase = getSupabaseBrowserClient();
+function getSupabase() {
+  return getSupabaseBrowserClient();
+}
 
 export type ThinkColor = 'red' | 'blue' | 'yellow' | 'green';
 
@@ -51,7 +53,7 @@ export function useThinkAssets(playThemeId: string | null) {
     setLoading(true);
     try {
       const thinkPackId = generateThinkPackId(playThemeId);
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from('play_scenarios')
         .select('scenario_json')
         .eq('id', thinkPackId)
@@ -91,7 +93,7 @@ export function useThinkAssets(playThemeId: string | null) {
           think: { objects: nextObjects },
         },
       };
-      const { error } = await supabase.from('play_scenarios').upsert({
+      const { error } = await getSupabase().from('play_scenarios').upsert({
         id: thinkPackId,
         name: scenarioJson.name,
         type: 'think_asset_pack',
