@@ -1,14 +1,17 @@
 /**
  * 구독자용 주차별 스케줄·프로그램 조회 (읽기 전용)
- * GET /api/schedule/[weekKey] → { program_snapshot, challengePhases?, thinkPackByMonthAndWeek?, ... }
- * service_role 사용 시 RLS 없이 읽어 구독자(비로그인)도 저장된 챌린지 BPM·Think 이미지 반영
+ * GET /api/schedule/[weekKey] → { program_snapshot, challengePhases?, thinkPackByMonthAndWeek?, flowBgmPath?, flowPanoPath?, ... }
+ * service_role 사용 시 RLS 없이 읽어 구독자(비로그인)도 저장된 챌린지 BPM·Think·Flow 월별 테마 반영
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { parseWeekKey } from '@/app/lib/admin/scheduler/dragAndDrop';
 
 const THINK_PACK_ID = 'iiwarmup_think_default';
 const THINK_BGM_SETTINGS_ID = 'iiwarmup_bgm_settings';
+const FLOW_BGM_SETTINGS_ID = 'iiwarmup_flow_bgm_settings';
+const FLOW_PANO_SETTINGS_ID = 'iiwarmup_flow_pano_settings';
 const BUCKET_NAME = 'iiwarmup-files';
 
 type Think150PackState = {
@@ -55,8 +58,8 @@ export async function GET(
 
   const BGM_SETTINGS_ID = 'iiwarmup_challenge_bgm_settings';
 
-  // 1) 챌린지 BGM, Think BGM, Think pack, rotation_schedule 병렬 조회
-  const [bgmResult, thinkBgmResult, thinkPackResult, scheduleResult] = await Promise.all([
+  // 1) 챌린지 BGM, Think BGM, Think pack, Flow BGM/Pano(월별), rotation_schedule 병렬 조회
+  const [bgmResult, thinkBgmResult, thinkPackResult, flowBgmResult, flowPanoResult, scheduleResult] = await Promise.all([
     supabase
       .from('think_asset_packs')
       .select('assets_json')
@@ -71,6 +74,16 @@ export async function GET(
       .from('think_asset_packs')
       .select('assets_json')
       .eq('id', THINK_PACK_ID)
+      .single(),
+    supabase
+      .from('think_asset_packs')
+      .select('assets_json')
+      .eq('id', FLOW_BGM_SETTINGS_ID)
+      .single(),
+    supabase
+      .from('think_asset_packs')
+      .select('assets_json')
+      .eq('id', FLOW_PANO_SETTINGS_ID)
       .single(),
     supabase
       .from('rotation_schedule')
@@ -90,6 +103,44 @@ export async function GET(
   const challengeBgmSourceBpm =
     typeof bgmRaw?.sourceBpm === 'number' && bgmRaw.sourceBpm > 0 ? bgmRaw.sourceBpm : null;
 
+  const parsed = parseWeekKey(weekKey);
+  const scheduleMonth = parsed && parsed.month >= 1 && parsed.month <= 12 ? parsed.month : null;
+  const flowBgmRaw = flowBgmResult.data?.assets_json as { selectedBgm?: string; byMonth?: Partial<Record<number, { selectedBgm: string }>> } | null;
+  const flowPanoRaw = flowPanoResult.data?.assets_json as { selectedPano?: string; byMonth?: Partial<Record<number, { selectedPano: string }>> } | null;
+  const flowBgmPath =
+    scheduleMonth != null && flowBgmRaw
+      ? (typeof flowBgmRaw.byMonth?.[scheduleMonth]?.selectedBgm === 'string'
+          ? flowBgmRaw.byMonth[scheduleMonth].selectedBgm
+          : typeof flowBgmRaw.selectedBgm === 'string'
+            ? flowBgmRaw.selectedBgm
+            : null)
+      : typeof flowBgmRaw?.selectedBgm === 'string'
+        ? flowBgmRaw.selectedBgm
+        : null;
+  const byMonthPano = flowPanoRaw?.byMonth;
+  const panoForMonth =
+    scheduleMonth != null && byMonthPano
+      ? (typeof (byMonthPano as Record<string, { selectedPano?: string }>)[scheduleMonth]?.selectedPano === 'string'
+          ? (byMonthPano as Record<string, { selectedPano: string }>)[scheduleMonth].selectedPano
+          : typeof (byMonthPano as Record<string, { selectedPano?: string }>)[String(scheduleMonth)]?.selectedPano === 'string'
+            ? (byMonthPano as Record<string, { selectedPano: string }>)[String(scheduleMonth)].selectedPano
+            : null)
+      : null;
+  const flowPanoPath =
+    (panoForMonth && panoForMonth.length > 0)
+      ? panoForMonth
+      : (typeof flowPanoRaw?.selectedPano === 'string' && flowPanoRaw.selectedPano.length > 0)
+        ? flowPanoRaw.selectedPano
+        : (byMonthPano && typeof byMonthPano === 'object'
+            ? (() => {
+                for (let m = 1; m <= 12; m++) {
+                  const v = (byMonthPano as Record<string, { selectedPano?: string }>)[m]?.selectedPano ?? (byMonthPano as Record<string, { selectedPano?: string }>)[String(m)]?.selectedPano;
+                  if (typeof v === 'string' && v.length > 0) return v;
+                }
+                return null;
+              })()
+            : null);
+
   const { data: row, error: scheduleError } = scheduleResult;
   if (scheduleError && scheduleError.code !== 'PGRST116') {
     return NextResponse.json({ error: scheduleError.message }, { status: 500 });
@@ -102,6 +153,8 @@ export async function GET(
       challengeBgmPath,
       challengeBgmStartOffsetMs,
       challengeBgmSourceBpm,
+      flowBgmPath: flowBgmPath ?? null,
+      flowPanoPath: flowPanoPath ?? null,
       thinkPackByMonthAndWeek: null,
       thinkResolvedConfig: null,
       thinkPackForThisWeek: null,
@@ -188,6 +241,8 @@ export async function GET(
       challengeBgmPath,
       challengeBgmStartOffsetMs,
       challengeBgmSourceBpm,
+      flowBgmPath: flowBgmPath ?? null,
+      flowPanoPath: flowPanoPath ?? null,
       thinkPackByMonthAndWeek: thinkPackByMonthAndWeek ?? null,
       thinkResolvedConfig,
       thinkPackForThisWeek,

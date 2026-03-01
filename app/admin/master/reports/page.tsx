@@ -112,6 +112,10 @@ export default function UltimateSettlementPage() {
         const tax = Math.floor(grossTotal * 0.033);
         const netPay = grossTotal - tax;
 
+        const detailsByDate = [...teacherSessions].sort((a, b) =>
+          (a.start_at || '').localeCompare(b.start_at || '')
+        );
+
         return {
           id: teacher.id,
           name: teacher.name || 'Unknown',
@@ -119,7 +123,7 @@ export default function UltimateSettlementPage() {
           grossTotal: grossTotal || 0,
           tax: tax || 0,
           netPay: netPay || 0,
-          details: teacherSessions,
+          details: detailsByDate,
           adjs: teacherAdjs
         };
       })

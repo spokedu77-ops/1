@@ -22,11 +22,13 @@ export default function RootLayout({
   const isReportPage = pathname.startsWith('/report');
   const isIIWarmupSubscriber = pathname.startsWith('/iiwarmup');
   const isFlowPhase = pathname.startsWith('/flow-phase');
+  const isProgram = pathname.startsWith('/program');
+  const isInfo = pathname.startsWith('/info');
 
   // 1. 강사 페이지(/teacher)는 강사 전용 사이드바를 쓰거나 아예 숨겨야 함
   const isTeacherPage = pathname.startsWith('/teacher');
 
-  const hideSidebar = isAuthPage || isReportPage || isTeacherPage || isIIWarmupSubscriber || isFlowPhase;
+  const hideSidebar = isAuthPage || isReportPage || isTeacherPage || isIIWarmupSubscriber || isFlowPhase || isProgram || isInfo;
 
   return (
     <html lang="ko" className={`${plusJakarta.variable} ${notoSansKR.variable}`}>

@@ -61,35 +61,41 @@ export function getPublicUrl(path: string): string {
 }
 
 /**
- * Storage에서 파일 삭제
+ * Storage에서 파일 삭제 (API 경유 → admin 세션으로 RLS 통과)
  * @param path Storage 경로
  */
 export async function deleteFromStorage(path: string): Promise<void> {
-  const { error } = await getSupabase().storage
-    .from(BUCKET_NAME)
-    .remove([path]);
+  const res = await fetch('/api/admin/storage/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  });
 
-  if (error) {
-    console.error('Storage delete error:', error);
-    throw new Error(`Storage 삭제 실패: ${error.message}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const message = (body as { error?: string })?.error ?? res.statusText;
+    throw new Error(message);
   }
 }
 
 /**
- * Storage에서 여러 파일 일괄 삭제 (배치)
+ * Storage에서 여러 파일 일괄 삭제 (API 경유, 배치)
  * @param paths Storage 경로 배열
  */
 export async function deleteFromStorageBatch(paths: string[]): Promise<void> {
   const unique = [...new Set(paths)].filter(Boolean);
   if (unique.length === 0) return;
 
-  const { error } = await getSupabase().storage
-    .from(BUCKET_NAME)
-    .remove(unique);
+  const res = await fetch('/api/admin/storage/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paths: unique }),
+  });
 
-  if (error) {
-    console.error('Storage batch delete error:', error);
-    throw new Error(`Storage 일괄 삭제 실패: ${error.message}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const message = (body as { error?: string })?.error ?? res.statusText;
+    throw new Error(message);
   }
 }
 

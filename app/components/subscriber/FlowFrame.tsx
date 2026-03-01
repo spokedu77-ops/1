@@ -22,7 +22,7 @@ export function FlowFrame({ weekKey, onEnd, autoStart, showLevelSelector }: Flow
   const params = new URLSearchParams({ weekKey });
   if (autoStart) params.set('autoStart', '1');
   if (showLevelSelector) params.set('showLevelSelector', '1');
-  const src = `/flow-phase?${params.toString()}`;
+  const src = `/program/iiwarmup/flow?${params.toString()}`;
   const onEndCalled = useRef(false);
 
   useEffect(() => {

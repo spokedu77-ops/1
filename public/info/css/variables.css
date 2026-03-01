@@ -1,0 +1,45 @@
+/* 색상·간격·폰트 디자인 토큰 (운영자: 이 파일만 수정하면 전체 반영) */
+:root {
+  --bg: #0B0F1A;
+  --bg2: #070A12;
+  --text: #EAF0FF;
+  --muted: #A9B4D6;
+  --muted2: #9AA6C8;
+  --line: rgba(255,255,255,.10);
+  --line2: rgba(255,255,255,.14);
+  --accent: #C8F34A;
+  --accent2: #8BE9FF;
+  --ok: #57F287;
+  --warn: #FFC75A;
+
+  --shadow: 0 18px 60px rgba(0,0,0,.40);
+  --shadow2: 0 10px 30px rgba(0,0,0,.25);
+
+  --r-lg: 22px;
+  --r-md: 16px;
+  --r-sm: 12px;
+  --max: 1160px;
+  --pad: 20px;
+  --gap: 16px;
+
+  --cta-bar-h: 62px;
+  --cta-bar-pad: 10px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  --font: ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Pretendard", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --h1: clamp(34px, 4.2vw, 58px);
+  --h2: clamp(22px, 2.5vw, 34px);
+
+  --slide-gap: 12px;
+
+  /* 헤더 통일 */
+  --header-h: 56px;
+  --header-pad-y: 10px;
+  --header-pad-x: 0;
+  --nav-gap: 24px;
+  --menu-gap: 6px;
+  --menu-link-fs: 13px;
+  --menu-link-py: 8px;
+  --menu-link-px: 12px;
+  --nav-cta-gap: 8px;
+}

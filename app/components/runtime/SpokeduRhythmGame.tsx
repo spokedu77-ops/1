@@ -44,7 +44,8 @@ const MAX_LEVELS = 4;
 const ROUNDS_PER_LEVEL = 4;
 const BEATS_PER_PHASE = 8;
 const BEATS_PER_ROUND = 16;
-const bpmOptions = [80, 100, 120, 150, 160, 180];
+/** 허용 BPM (4종). 미지원 값(80/160 등)은 초기화 시 100으로 정규화됨. */
+const bpmOptions = [100, 120, 150, 180];
 /** 180 선택 시 1단계 21.05초 동기화용 미세조정. 플레이 화면에는 180만 노출. */
 const BPM_180_SYNC = 182.4;
 /** 150 선택 시 정박 미세조정. 3~4단계 살짝 밀림 보정용으로 소폭 상향. */
@@ -300,6 +301,7 @@ export function SpokeduRhythmGame({
     (time: number, isStrong: boolean) => {
       if (!soundOn || !audioContextRef.current) return;
       const ctx = audioContextRef.current;
+      const t = Math.max(time, ctx.currentTime + 0.01);
       const osc1 = ctx.createOscillator();
       const osc2 = ctx.createOscillator();
       const gainNode = ctx.createGain();
@@ -307,18 +309,18 @@ export function SpokeduRhythmGame({
       osc2.type = 'triangle';
       const baseFreq = isStrong ? 2800 : 2200;
       const duration = isStrong ? 0.15 : 0.08;
-      osc1.frequency.setValueAtTime(baseFreq, time);
-      osc2.frequency.setValueAtTime(baseFreq + (isStrong ? 200 : 150), time);
-      gainNode.gain.setValueAtTime(0, time);
-      gainNode.gain.linearRampToValueAtTime(isStrong ? 0.5 : 0.35, time + 0.005);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
+      osc1.frequency.setValueAtTime(baseFreq, t);
+      osc2.frequency.setValueAtTime(baseFreq + (isStrong ? 200 : 150), t);
+      gainNode.gain.setValueAtTime(0, t);
+      gainNode.gain.linearRampToValueAtTime(isStrong ? 0.5 : 0.35, t + 0.005);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, t + duration);
       osc1.connect(gainNode);
       osc2.connect(gainNode);
       gainNode.connect(ctx.destination);
-      osc1.start(time);
-      osc2.start(time + duration);
-      osc1.stop(time + duration + 0.1);
-      osc2.stop(time + duration + 0.1);
+      osc1.start(t);
+      osc2.start(t + duration);
+      osc1.stop(t + duration + 0.1);
+      osc2.stop(t + duration + 0.1);
     },
     [soundOn]
   );
@@ -351,14 +353,17 @@ export function SpokeduRhythmGame({
     onEnd?.();
   }, [onEnd]);
 
-  const handleLevelComplete = useCallback(() => {
+  const handleLevelComplete = useCallback((lastBeatScheduledTime?: number) => {
     if (isTransitioningRef.current) return;
     if (timerIDRef.current) cancelAnimationFrame(timerIDRef.current);
     const levelWhenComplete = currentLevelRef.current;
 
     if (levelWhenComplete >= MAX_LEVELS) {
-      // 마지막 비트(15)의 setTimeout이 먼저 실행되어 초록 표시되도록, rest·아웃트로만 지연. isFinishingRef는 finishGame()에서만 설정(아웃트로 진입 보장)
-      const finishDelayMs = 220;
+      // 마지막 비트(15) 호각 후 rest: lastBeatScheduledTime 기준으로 최소 220ms 대기
+      const ctx = audioContextRef.current;
+      const now = ctx?.currentTime ?? 0;
+      const afterLastBeatMs = lastBeatScheduledTime != null ? Math.max(0, (lastBeatScheduledTime - now) * 1000) + 220 : 220;
+      const finishDelayMs = afterLastBeatMs;
       setTimeout(() => {
         runIdRef.current++;
         const myRunId = runIdRef.current;
@@ -374,9 +379,13 @@ export function SpokeduRhythmGame({
       return;
     }
 
-    // 한 박자 뒤(rest 표시 직전)에 runId 올리고, 3초 rest 동안 3→2→1 카운트다운 표시 후 다음 단계 시작.
+    // 마지막 호각(비트 15) 이후에 rest 표시 — lastBeatScheduledTime이 있으면 그 시각 이후로 대기 후 3초 rest
     const oneBeatMs = Math.round((60 / bpmRef.current) * 1000);
     const transitionMs = getTransitionDurationMs(bpmRef.current, bgmSourceBpmRef.current);
+    const ctx = audioContextRef.current;
+    const now = ctx?.currentTime ?? 0;
+    const waitAfterLastBeatMs = lastBeatScheduledTime != null ? Math.max(0, (lastBeatScheduledTime - now) * 1000) + 80 : 0;
+    const delayMs = Math.max(oneBeatMs, waitAfterLastBeatMs);
     setTimeout(() => {
       runIdRef.current++;
       const myRunId = runIdRef.current;
@@ -439,7 +448,7 @@ export function SpokeduRhythmGame({
           startSchedulerNow();
         }
       }, transitionMs);
-    }, oneBeatMs);
+    }, delayMs);
   }, [levelData, finishGame, shuffleArray, bpm, bgmPath]);
 
   const scheduleNote = useCallback(
@@ -506,13 +515,14 @@ export function SpokeduRhythmGame({
         break;
       }
 
-      scheduleNote(b, nextNoteTimeRef.current, lr);
+      const scheduledTime = nextNoteTimeRef.current;
+      scheduleNote(b, scheduledTime, lr);
       const status = nextNote();
       const levelBeatIndex = (levelRoundCountRef.current - 1) * BEATS_PER_ROUND + currentBeatIndexRef.current;
       nextNoteTimeRef.current = schedulerStartTimeRef.current + levelBeatIndex * secondsPerBeat;
 
       if (status === 'LEVEL_COMPLETE') {
-        handleLevelComplete();
+        handleLevelComplete(scheduledTime);
         return;
       }
     }

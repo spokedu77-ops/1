@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * Flow Phase BGM - 업로드 목록 및 선택 (Think 방식 동일)
+ * Flow Phase BGM - 업로드 목록 및 월별 선택 (1~12월)
+ * month 없으면 기존 전역 selectedBgm 사용(하위 호환)
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -11,7 +12,20 @@ import { flowBgmPath } from '@/app/lib/admin/assets/storagePaths';
 
 const BGM_SETTINGS_ID = 'iiwarmup_flow_bgm_settings';
 
-export function useFlowBGM() {
+export type FlowBgmAssetsJson = {
+  bgmList?: string[];
+  selectedBgm?: string;
+  byMonth?: Partial<Record<number, { selectedBgm: string }>>;
+};
+
+function getSelectedForMonth(raw: FlowBgmAssetsJson | null, month: number): string {
+  if (!raw) return '';
+  const fromMonth = raw.byMonth?.[month]?.selectedBgm;
+  if (typeof fromMonth === 'string') return fromMonth;
+  return typeof raw.selectedBgm === 'string' ? raw.selectedBgm : '';
+}
+
+export function useFlowBGM(month?: number) {
   const [list, setList] = useState<string[]>([]);
   const [selected, setSelected] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -33,40 +47,66 @@ export function useFlowBGM() {
         return;
       }
 
-      const raw = data?.assets_json as { bgmList?: string[]; selectedBgm?: string } | null;
+      const raw = data?.assets_json as FlowBgmAssetsJson | null;
       setList(Array.isArray(raw?.bgmList) ? raw.bgmList : []);
-      setSelected(typeof raw?.selectedBgm === 'string' ? raw.selectedBgm : '');
+      const monthNum = month != null && month >= 1 && month <= 12 ? month : undefined;
+      setSelected(monthNum != null ? getSelectedForMonth(raw, monthNum) : (typeof raw?.selectedBgm === 'string' ? raw.selectedBgm : ''));
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [month]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const save = useCallback(async (nextList: string[], nextSelected: string) => {
-    setError(null);
-    try {
-      const supabase = getSupabaseBrowserClient();
-      await supabase.from('think_asset_packs').upsert(
-        {
-          id: BGM_SETTINGS_ID,
-          name: 'IIWARMUP Flow BGM 설정',
-          theme: 'iiwarmup',
-          assets_json: { bgmList: nextList, selectedBgm: nextSelected },
-        },
-        { onConflict: 'id' }
-      );
-      setList(nextList);
-      setSelected(nextSelected);
-    } catch (err) {
-      setError((err as Error).message);
-      throw err;
-    }
-  }, []);
+  const save = useCallback(
+    async (nextList: string[], nextSelected: string) => {
+      setError(null);
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const monthNum = month != null && month >= 1 && month <= 12 ? month : undefined;
+
+        let listToSet = nextList;
+        if (monthNum != null) {
+          const { data: current } = await supabase
+            .from('think_asset_packs')
+            .select('assets_json')
+            .eq('id', BGM_SETTINGS_ID)
+            .single();
+          const raw = (current?.assets_json as FlowBgmAssetsJson | null) ?? {};
+          const byMonth = { ...raw.byMonth, [monthNum]: { selectedBgm: nextSelected } };
+          await supabase.from('think_asset_packs').upsert(
+            {
+              id: BGM_SETTINGS_ID,
+              name: 'IIWARMUP Flow BGM 설정',
+              theme: 'iiwarmup',
+              assets_json: { bgmList: listToSet, selectedBgm: raw.selectedBgm ?? nextSelected, byMonth },
+            },
+            { onConflict: 'id' }
+          );
+        } else {
+          await supabase.from('think_asset_packs').upsert(
+            {
+              id: BGM_SETTINGS_ID,
+              name: 'IIWARMUP Flow BGM 설정',
+              theme: 'iiwarmup',
+              assets_json: { bgmList: nextList, selectedBgm: nextSelected },
+            },
+            { onConflict: 'id' }
+          );
+        }
+        setList(listToSet);
+        setSelected(nextSelected);
+      } catch (err) {
+        setError((err as Error).message);
+        throw err;
+      }
+    },
+    [month]
+  );
 
   const upload = useCallback(
     async (file: File): Promise<void> => {

@@ -12,14 +12,15 @@ import {
   Box, 
   ClipboardList, 
   Users, 
-  CreditCard, 
+  CreditCard,
   LogOut, 
   Menu, 
   X,
   User,
   Medal, 
-  Building2,
   CalendarDays,
+  Gamepad2,
+  Camera,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -46,37 +47,43 @@ export default function Sidebar() {
 
   const adminMenuItems = [
     {
-      group: "운영 관리",
+      group: "대시보드",
       items: [
         { name: "대시보드", href: "/admin", icon: LayoutDashboard },
-        { name: "일정 및 센터관리", href: "/admin/schedules", icon: CalendarDays },
+      ]
+    },
+    {
+      group: "운영",
+      items: [
+        { name: "일정 & 센터", href: "/admin/schedules", icon: CalendarDays },
+        { name: "공지", href: "/admin/notice", icon: ClipboardList },
+        { name: "안내 페이지", href: "/admin/info-pages", icon: BookOpen },
+      ]
+    },
+    {
+      group: "수업",
+      items: [
         { name: "수업 관리", href: "/admin/classes", icon: Calendar },
-        { name: "수업 관련 검수", href: "/admin/teachers-classes", icon: CheckCircle },
-        { name: "공지사항", href: "/admin/notice", icon: ClipboardList },
+        { name: "검수", href: "/admin/teachers-classes", icon: CheckCircle },
+        { name: "교구·재고", href: "/admin/inventory", icon: Box },
       ]
     },
     {
-      group: "수업 자료 관리",
+      group: "콘텐츠",
       items: [
-        { name: "연간 커리큘럼", href: "/admin/curriculum", icon: BookOpen },
-        { name: "iiwarmup", href: "/admin/iiwarmup", icon: Medal }, // iiwarmup 페이지 링크 추가
+        { name: "커리큘럼", href: "/admin/curriculum", icon: BookOpen },
+        { name: "IIWarmup", href: "/admin/iiwarmup", icon: Medal },
+        { name: "메모리게임", href: "/admin/memory-game", icon: Gamepad2, disabled: true },
+        { name: "카메라앱", href: "/admin/camera", icon: Camera, disabled: true },
       ]
     },
     {
-      group: "강사 관리",
+      group: "사람",
       items: [
-        { name: "교구/재고 관리", href: "/admin/inventory", icon: Box },
         { name: "강사 관리", href: "/admin/users", icon: Users },
-      ]
-    },
-    {
-      group: "시스템 관리",
-      items: [
-        ...(userEmail === 'choijihoon@spokedu.com' 
-          ? [
-              { name: "정산 리포트", href: "/admin/master/reports", icon: CreditCard },
-            ] 
-          : [])
+        ...(userEmail === 'choijihoon@spokedu.com'
+          ? [{ name: "정산 리포트", href: "/admin/master/reports", icon: CreditCard }]
+          : []),
       ]
     }
   ];
@@ -134,18 +141,23 @@ export default function Sidebar() {
           </p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-6 overflow-y-auto pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-4 text-left">
+        <nav className="flex-1 p-3 space-y-3 overflow-y-auto pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-3 text-left">
           {groups.map((group, gIdx) => (
-            <div key={gIdx} className="space-y-2 text-left">
-              <h3 className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">
+            <div key={gIdx} className={`space-y-0.5 text-left ${gIdx > 0 ? 'pt-3 mt-3 border-t border-slate-700' : ''}`}>
+              <h3 className="px-2.5 py-1 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">
                 {group.group}
               </h3>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
+                  const disabled = 'disabled' in item && item.disabled;
                   // 해시 링크도 활성화 상태로 인식
-                  const isActive = pathname === item.href || (item.href.includes('#') && pathname.startsWith(item.href.split('#')[0]));
+                  const isActive = !disabled && (pathname === item.href || (item.href.includes('#') && pathname.startsWith(item.href.split('#')[0])));
                   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+                    if (disabled) {
+                      e.preventDefault();
+                      return;
+                    }
                     if (item.href.includes('#')) {
                       e.preventDefault();
                       const [path, hash] = item.href.split('#');
@@ -159,16 +171,28 @@ export default function Sidebar() {
                       }
                     }
                   };
+                  const baseClass = `flex items-center gap-2.5 min-h-[40px] py-2 px-2.5 rounded-lg transition-all group touch-manipulation ${
+                    disabled
+                      ? 'opacity-40 pointer-events-none cursor-not-allowed text-slate-500'
+                      : isActive 
+                        ? 'bg-blue-600 text-white shadow-lg cursor-pointer' 
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-white active:bg-slate-700 cursor-pointer'
+                  }`;
+                  if (disabled) {
+                    return (
+                      <div key={item.href} className={baseClass} aria-disabled>
+                        <Icon size={18} className="text-slate-500" />
+                        <span className="text-sm font-semibold">{item.name}</span>
+                        <span className="text-[10px] text-slate-500 ml-auto">개발 예정</span>
+                      </div>
+                    );
+                  }
                   return (
                     <Link 
                       key={item.href} 
                       href={item.href} 
                       onClick={handleClick}
-                      className={`flex items-center gap-3 min-h-[48px] p-3 rounded-xl transition-all group cursor-pointer touch-manipulation ${
-                        isActive 
-                          ? 'bg-blue-600 text-white shadow-lg' 
-                          : 'text-slate-400 hover:bg-slate-800 hover:text-white active:bg-slate-700'
-                      }`}
+                      className={baseClass}
                     >
                       <Icon size={18} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
                       <span className="text-sm font-semibold">{item.name}</span>

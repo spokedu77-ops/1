@@ -12,7 +12,7 @@ export default function IIWarmupAdminOverviewPage() {
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <a
-          href="/iiwarmup"
+          href="/program/iiwarmup"
           target="_blank"
           rel="noopener noreferrer"
           className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"

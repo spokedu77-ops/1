@@ -1,0 +1,34 @@
+/* 태블릿·모바일: 드롭다운 숨기고 버거만 (항상 반응형) */
+@media (max-width: 992px) {
+  .nav { grid-template-columns: auto 1fr auto; gap: 16px; }
+  .nav-categories { display: none; }
+  .nav-cta .btn:nth-child(1),
+  .nav-cta .btn:nth-child(2) { display: none; }
+  .nav-cta .burger { display: inline-flex; }
+}
+@media (max-width: 980px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .weeks { grid-template-columns: repeat(6,1fr); }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .pricing, .cta-grid, .report-body { grid-template-columns: 1fr; }
+  .day-grid { grid-template-columns: 1fr; }
+}
+/* 모바일: 하단 CTA 바 표시, 푸터 등 정리 */
+@media (max-width: 760px) {
+  .nav { gap: 12px; padding-left: 0; padding-right: 0; }
+  .nav-cta .btn { padding: 10px 12px; font-size: 12px; }
+  .nav-cta .burger { width: 40px; height: 40px; }
+  .hero { padding-top: 28px; }
+  .hero-card .inner { padding: 22px; }
+  .visual-top, .visual-body { padding-left: 18px; padding-right: 18px; }
+  .hero-metrics { grid-template-columns: 1fr; }
+  .weeks { grid-template-columns: repeat(4,1fr); }
+  .foot-grid { grid-template-columns: 1fr; }
+  .foot-links { justify-content: flex-start; }
+  .cta-bar { display: block; }
+  body { padding-bottom: calc(var(--cta-bar-h) + var(--safe-bottom)); }
+  .slide img { height: 300px; }
+  .qrow { grid-template-columns: 1fr; }
+  .filters select, .filters input { min-width: 160px; }
+}

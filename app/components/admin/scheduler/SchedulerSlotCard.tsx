@@ -4,11 +4,7 @@ import { useEffect, useState } from 'react';
 import type { ScheduleLightRow } from '@/app/lib/admin/hooks/useRotationSchedule';
 import type { Audience } from '@/app/lib/admin/constants/thinkTiming';
 
-const AUDIENCE_OPTIONS: { value: Audience; label: string }[] = [
-  { value: '900ms', label: '900ms' },
-  { value: '700ms', label: '700ms' },
-  { value: '550ms', label: '550ms' },
-];
+const DEFAULT_AUDIENCE: Audience = '700ms';
 
 export interface SchedulerSlotCardProps {
   weekKey: string;
@@ -33,7 +29,6 @@ function savePayload(
   week: number,
   programId: string,
   programs: { id: string; title: string }[],
-  audience: Audience,
   published: boolean
 ) {
   const isThink = programId.startsWith('think150_');
@@ -42,10 +37,10 @@ function savePayload(
     program_id: programId,
     asset_pack_id: isThink ? 'iiwarmup_think_default' : undefined,
     program_snapshot: isThink
-      ? { think150: true, week, month, audience }
+      ? { think150: true, week, month, audience: DEFAULT_AUDIENCE }
       : {},
     is_published: published,
-    programTitle: programs.find((p) => p.id === programId)?.title,
+    programTitle: programId ? programs.find((p) => p.id === programId)?.title : undefined,
   };
 }
 
@@ -58,32 +53,19 @@ export function SchedulerSlotCard({
   onSave,
   isSaving,
 }: SchedulerSlotCardProps) {
-  const [programId, setProgramId] = useState(row?.program_id ?? '');
-  const snapshotAudience = (row?.program_snapshot as { audience?: string } | undefined)?.audience;
-  const [audience, setAudience] = useState<Audience>(
-    (snapshotAudience as Audience | undefined) && AUDIENCE_OPTIONS.some((o) => o.value === snapshotAudience)
-      ? (snapshotAudience as Audience)
-      : '700ms'
-  );
+  const [thinkId, setThinkId] = useState(row?.program_id ?? '');
 
-  // Sync from props when row changes
-  /* eslint-disable react-hooks/set-state-in-effect -- intentional sync from props */
+  const thinkOptions = programs.filter((p) => p.id.startsWith('think150_'));
+  const challengeId = `challenge_${weekKey}`;
+  const challengeOption = programs.find((p) => p.id === challengeId);
+
   useEffect(() => {
-    setProgramId(row?.program_id ?? '');
+    setThinkId(row?.program_id ?? '');
   }, [row?.program_id]);
-  useEffect(() => {
-    const next =
-      (row?.program_snapshot as { audience?: string } | undefined)?.audience;
-    if (next && AUDIENCE_OPTIONS.some((o) => o.value === next)) {
-      setAudience(next as Audience);
-    }
-  }, [row?.program_snapshot]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = async () => {
-    if (!programId) return;
     try {
-      await onSave(savePayload(weekKey, month, week, programId, programs, audience, true));
+      await onSave(savePayload(weekKey, month, week, thinkId, programs, true));
     } catch (err) {
       console.error('Scheduler slot save failed:', err);
     }
@@ -113,48 +95,61 @@ export function SchedulerSlotCard({
           {isAssigned ? '배정됨' : '미배정'}
         </span>
       </div>
-      <select
-        className="mb-2 w-full rounded border border-neutral-600 bg-neutral-900 px-3 py-2 text-sm"
-        value={programId}
-        onChange={(e) => setProgramId(e.target.value)}
-      >
-        <option value="">프로그램 선택</option>
-        {programs.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.title}
-          </option>
-        ))}
-      </select>
-      {programId && programId.startsWith('think150_') && (
-        <div className="mb-2">
-          <label className="mb-1 block text-xs text-neutral-400">대상 연령</label>
+
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-400">1) THINK</label>
           <select
-            className="w-full rounded border border-neutral-600 bg-neutral-900 px-3 py-2 text-sm"
-            value={audience}
-            onChange={(e) => setAudience(e.target.value as Audience)}
+            className="w-full rounded border border-neutral-600 bg-neutral-900 px-3 py-2 text-sm text-neutral-200"
+            value={thinkId}
+            onChange={(e) => setThinkId(e.target.value)}
+            aria-label="THINK 프로그램 선택"
           >
-            {AUDIENCE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
+            <option value="">선택</option>
+            {thinkOptions.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
               </option>
             ))}
           </select>
         </div>
-      )}
-      {programId ? (
-        <p className="mb-3 text-xs text-neutral-400">
-          {programs.find((p) => p.id === programId)?.title ?? row?.programTitle ?? programId}
-        </p>
-      ) : (
-        <p className="mb-3 text-xs text-neutral-500">선택된 프로그램 없음</p>
-      )}
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-400">2) CHALLENGE</label>
+          <select
+            className="w-full rounded border border-neutral-600 bg-neutral-900 px-3 py-2 text-sm text-neutral-200"
+            value={challengeId}
+            disabled
+            aria-label="CHALLENGE 해당 주차"
+          >
+            <option value={challengeId}>
+              {challengeOption ? challengeOption.title : '미배정'}
+            </option>
+          </select>
+          <p className="mt-0.5 text-[10px] text-neutral-500">챌린지 스튜디오에서 해당 주차 저장 시 표시</p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-neutral-400">3) FLOW</label>
+          <select
+            className="w-full rounded border border-neutral-600 bg-neutral-900 px-3 py-2 text-sm text-neutral-200"
+            value="flow_monthly"
+            disabled
+            aria-label="FLOW 월별 테마"
+          >
+            <option value="flow_monthly">월별 테마 적용</option>
+          </select>
+          <p className="mt-0.5 text-[10px] text-neutral-500">Asset Hub Flow에서 월별 BGM·배경 설정</p>
+        </div>
+      </div>
+
       <button
         type="button"
-        className="w-full rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
+        className="mt-4 w-full rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
         onClick={handleSave}
-        disabled={!programId || isSaving}
+        disabled={!thinkId || isSaving}
       >
-        배정
+        배정 &amp; 공개
       </button>
     </div>
   );

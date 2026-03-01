@@ -62,16 +62,16 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
   try {
     const serverSupabase = await createServerSupabaseClient();
 
-    // getSession: 쿠키에서 즉시 읽음 (네트워크 호출 없음)
-    const { data: { session } } = await serverSupabase.auth.getSession();
-    if (!session?.user) {
+    // getUser: Auth 서버에 검증 요청 (getSession은 쿠키만 읽어 신뢰할 수 없음)
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) {
       return {
         ok: false,
         response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
       };
     }
 
-    const uid = session.user.id;
+    const uid = user.id;
 
     // users / profiles 병렬 요청 (fallback 시 두 번째 왕복 제거, 판별 기준 동일)
     const usersPromise = serverSupabase

@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0B0F1A" />
+  <title>SPOKEDU | 놀이 기반 멀티스포츠 체육학원 (50분 · 12주 커리큘럼)</title>
+  <meta name="description" content="50분 정규수업 · 12주(1분기) 커리큘럼 · 소그룹 레벨링 · 성장 리포트 · 한국 학원형 운영(단일 센터)" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SPOKEDU | 놀이 기반 멀티스포츠 체육학원" />
+  <meta property="og:description" content="50분 수업 · 12주 커리큘럼 · 소그룹 레벨링 · 성장 리포트" />
+  <meta property="og:image" content="https://example.com/og-image.jpg" />
+  <meta property="og:url" content="https://spokedu.kr" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="SPOKEDU | 놀이 기반 멀티스포츠 체육학원" />
+  <meta name="twitter:description" content="50분 수업 · 12주 커리큘럼 · 소그룹 레벨링" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SportsActivityLocation","name":"SPOKEDU 멀티스포츠 체육학원","description":"놀이 기반 멀티스포츠 체육학원. 50분 정규수업, 12주 커리큘럼.","url":"https://spokedu.kr","telephone":"+82-10-0000-0000","address":{"@type":"PostalAddress","streetAddress":"○○로 ○○","addressLocality":"서울","addressRegion":"서울특별시","postalCode":"00000","addressCountry":"KR"},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"13:00","closes":"20:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":["Saturday"],"opens":"10:00","closes":"15:00"}]}
+  </script>
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/sections.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+
+  <div id="devBanner" role="alert" aria-live="assertive">
+    ⚠️ LEAD_ENDPOINT가 설정되지 않았습니다 — 실제 접수가 저장되지 않습니다. (개발/테스트 모드)
+  </div>
+
+  <header class="header">
+    <div class="container">
+      <div class="nav">
+        <a class="brand" href="#top" aria-label="SPOKEDU 홈으로">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <strong id="brandName">SPOKEDU</strong>
+            <span id="brandTagline"></span>
+          </div>
+        </a>
+        <div class="nav-categories">
+          <div class="nav-cat">
+            <button class="menu-trigger" type="button" aria-expanded="false" aria-haspopup="true">소개 <span class="menu-chevron" aria-hidden="true">▾</span></button>
+            <div class="menu-dropdown" role="menu" aria-label="소개">
+              <a href="#about" role="menuitem">센터 소개</a>
+              <a href="#media" role="menuitem">사진/영상</a>
+            </div>
+          </div>
+          <div class="nav-cat">
+            <button class="menu-trigger" type="button" aria-expanded="false" aria-haspopup="true">프로그램 <span class="menu-chevron" aria-hidden="true">▾</span></button>
+            <div class="menu-dropdown" role="menu" aria-label="프로그램">
+              <a href="#program" role="menuitem">12주 커리큘럼</a>
+              <a href="#schedule" role="menuitem">시간표</a>
+              <a href="#report" role="menuitem">성장 리포트</a>
+            </div>
+          </div>
+          <div class="nav-cat">
+            <button class="menu-trigger" type="button" aria-expanded="false" aria-haspopup="true">이용 안내 <span class="menu-chevron" aria-hidden="true">▾</span></button>
+            <div class="menu-dropdown" role="menu" aria-label="이용 안내">
+              <a href="#pricing" role="menuitem">수강료</a>
+              <a href="#faq" role="menuitem">FAQ</a>
+            </div>
+          </div>
+          <a class="nav-cat-link" href="#contact">상담/등록</a>
+        </div>
+        <div class="nav-cta">
+          <button class="btn" type="button" onclick="scrollToId('pricing')">수강료 보기</button>
+          <button class="btn" type="button" onclick="openKakao()">카카오 상담</button>
+          <button class="btn primary" type="button" onclick="scrollToId('contact')">상담 신청</button>
+          <button class="burger" type="button" aria-label="메뉴 열기" onclick="toggleDrawer(true)">☰</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="drawer" id="drawer" aria-hidden="true" aria-modal="true" onclick="toggleDrawer(false)">
+    <div class="panel" role="dialog" aria-label="메뉴" onclick="event.stopPropagation()">
+      <div class="top">
+        <strong>메뉴</strong>
+        <button class="btn" type="button" onclick="toggleDrawer(false)" aria-label="메뉴 닫기">닫기</button>
+      </div>
+      <nav aria-label="모바일 메뉴">
+        <a href="#about" onclick="toggleDrawer(false)">센터 소개</a>
+        <a href="#media" onclick="toggleDrawer(false)">사진/영상</a>
+        <a href="#program" onclick="toggleDrawer(false)">12주 커리큘럼</a>
+        <a href="#schedule" onclick="toggleDrawer(false)">시간표</a>
+        <a href="#report" onclick="toggleDrawer(false)">성장 리포트</a>
+        <a href="#pricing" onclick="toggleDrawer(false)">수강료</a>
+        <a href="#faq" onclick="toggleDrawer(false)">FAQ</a>
+        <a href="#contact" onclick="toggleDrawer(false)">상담/등록</a>
+      </nav>
+      <div style="padding:6px;">
+        <button class="btn primary" style="width:100%; justify-content:center;" type="button" onclick="toggleDrawer(false); scrollToId('contact')">상담 신청</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-bar" aria-label="빠른 문의">
+    <div class="row">
+      <a class="btn ghost" id="ctaCall" href="tel:01000000000" aria-label="전화 문의">전화</a>
+      <button class="btn ghost" type="button" onclick="openKakao()" aria-label="카카오 채널 문의">카카오</button>
+      <button class="btn primary" type="button" onclick="scrollToId('contact')">상담 신청</button>
+    </div>
+  </div>
+
+  <main id="top" class="container">
+    <section class="hero" aria-labelledby="heroHeading">
+      <div class="hero-grid">
+        <div class="hero-card fade">
+          <div class="inner">
+            <div class="tag"><span class="dot" aria-hidden="true"></span> 50분 수업 · 12주(1분기) 커리큘럼 · 소그룹 레벨링</div>
+            <h1 id="heroHeading">즐거운 놀이체육으로<br/><span style="color:var(--accent)">멀티스포츠 경험</span>을 설계합니다.</h1>
+            <p class="lead">스포키듀는 "재미"를 성과의 반대말로 두지 않습니다. <b>놀이 기반 몰입</b>을 통해 아이가 스포츠 상황을 이해하고, <b>기초 움직임 품질 + 규칙 이해 + 팀 플레이</b>를 함께 형성해 <b>평생 체육 참여의 토대</b>를 만드는 학원형 프로그램입니다.</p>
+            <div class="hero-actions">
+              <button class="btn primary" type="button" onclick="scrollToId('contact')">체험/상담 신청</button>
+              <button class="btn" type="button" onclick="scrollToId('program')">12주 커리큘럼</button>
+              <button class="btn" type="button" onclick="scrollToId('media')">사진/영상</button>
+            </div>
+            <div class="hero-metrics" role="list">
+              <div class="metric" role="listitem"><strong>50분</strong><span>수업 시간 통일<br/>루틴·안전·회복</span></div>
+              <div class="metric" role="listitem"><strong>12주</strong><span>분기 단위 설계<br/>누적 학습</span></div>
+              <div class="metric" role="listitem"><strong>상담 기반</strong><span>정원 안정화<br/>반 편성/확정</span></div>
+            </div>
+          </div>
+        </div>
+        <aside class="hero-visual fade" aria-label="빠른 접수 폼">
+          <div class="visual-top">
+            <div>
+              <div class="title">빠른 접수(선호 시간)</div>
+              <div class="sub">실시간 예약이 아니라, 선호 접수 후 편성/확정 안내.</div>
+            </div>
+            <div class="badge"><i aria-hidden="true"></i> Academy Model</div>
+          </div>
+          <div class="visual-body">
+            <div class="quick" role="form" aria-label="선호 시간 빠른 접수">
+              <div class="qrow">
+                <div class="field">
+                  <label for="qAge">연령</label>
+                  <select id="qAge">
+                    <option value="">선택</option>
+                    <option>유아(5–7)</option>
+                    <option>초등(1–3)</option>
+                    <option>초등(4–6)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="qPref">선호 요일/시간</label>
+                  <input id="qPref" placeholder="예) 수 17:00 / 토 오전" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="qMsg">메모(선택)</label>
+                <textarea id="qMsg" placeholder="예) 운동 경험이 거의 없어요 / 낯가림이 있어요"></textarea>
+              </div>
+              <div class="inline">
+                <button class="btn primary" type="button" onclick="prefillAndGoContact()">상담 폼으로 이동</button>
+                <button class="btn" type="button" onclick="openKakao()">카카오 상담</button>
+              </div>
+              <div class="hint" id="centerHint"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="about" aria-labelledby="aboutHeading">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Center Concept</div>
+          <h2 id="aboutHeading">단일 센터 운영에 최적화된 "학원형 체육 수업"</h2>
+          <p class="desc">실시간 예약/마감 시스템보다 중요한 건 <b>정원 안정화</b>와 <b>수업 품질의 표준화</b>입니다. 스포키듀는 한 곳에서 운영 밀도를 올려, "설명 가능한 수업"으로 신뢰를 확보합니다.</p>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card fade">
+          <div class="icon" aria-hidden="true"></div>
+          <h3>수업 표준화</h3>
+          <p>50분 루틴(도입–기초–게임–정리)을 고정해, 강사가 늘어도 품질이 흔들리지 않게 합니다.</p>
+          <ul class="bullets">
+            <li><span class="check" aria-hidden="true"></span>수업 언어/규범 루틴 통일</li>
+            <li><span class="check" aria-hidden="true"></span>안전 동선/정원 기준 고정</li>
+            <li><span class="check" aria-hidden="true"></span>분기(12주) 운영으로 누적</li>
+          </ul>
+        </div>
+        <div class="card fade">
+          <div class="icon" aria-hidden="true"></div>
+          <h3>멀티스포츠 설계</h3>
+          <p>종목 나열이 아니라, 게임 상황에서 규칙 이해·역할 수행·전환 개념을 학습하게 만듭니다.</p>
+          <ul class="bullets">
+            <li><span class="check" aria-hidden="true"></span>Game-based Learning</li>
+            <li><span class="check" aria-hidden="true"></span>전이(Transfer) 중심</li>
+            <li><span class="check" aria-hidden="true"></span>팀 플레이/자기조절 포함</li>
+          </ul>
+        </div>
+        <div class="card fade">
+          <div class="icon" aria-hidden="true"></div>
+          <h3>부모 커뮤니케이션</h3>
+          <p>관찰 기반 리포트와 짧은 코치 코멘트로 "무엇이 좋아졌는지"를 분기 단위로 정리합니다.</p>
+          <ul class="bullets">
+            <li><span class="check" aria-hidden="true"></span>체험→레벨 진단→반 편성</li>
+            <li><span class="check" aria-hidden="true"></span>중간 점검(Week 6)</li>
+            <li><span class="check" aria-hidden="true"></span>분기 리포트(Week 12)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="media" aria-labelledby="mediaHeading">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Media</div>
+          <h2 id="mediaHeading">사진/영상 섹션(샘플) — 실자료로 교체하면 완성도 급상승</h2>
+          <p class="desc">슬라이더는 ①공간 ②수업(기초) ③게임 ④운영(12주) ⑤리포트 ⑥코칭을 한 번에 보여주는 구조입니다.</p>
+        </div>
+      </div>
+      <div class="slider fade">
+        <div class="slider-top">
+          <div class="mini">* 현재는 <b>샘플 이미지</b>입니다. <code>SLIDES_DATA[n].src</code>에 실 URL을 넣으면 자동 교체됩니다.</div>
+          <div class="slider-controls">
+            <button class="btn" type="button" id="prevBtn" aria-label="이전 슬라이드">← 이전</button>
+            <button class="btn" type="button" id="nextBtn" aria-label="다음 슬라이드">다음 →</button>
+            <button class="btn primary" type="button" onclick="scrollToId('contact')">체험/상담</button>
+          </div>
+        </div>
+        <div class="track" id="track" role="region" aria-label="미디어 슬라이더 (좌우 화살표 키로 탐색)"></div>
+      </div>
+    </section>
+
+    <section id="program" aria-labelledby="programHeading">
+      <div class="section-head">
+        <div>
+          <div class="kicker">12-week Curriculum</div>
+          <h2 id="programHeading">1분기(12주)를 최소 단위로 운영</h2>
+          <p class="desc">'한 번 해보기'가 아니라 '변화를 정리할 수 있는 단위'가 필요합니다. 12주 동안 <b>적응→누적→점검→리포트</b>로 학습 흐름을 완성합니다.</p>
+        </div>
+      </div>
+      <div class="timeline fade">
+        <div class="top">
+          <div>
+            <div class="pill2">수업: <b>50분</b> · 운영: <b>12주</b> · 추천 빈도: <b>주 1~2회</b></div>
+            <p class="note">아래는 샘플. 실제 종목은 센터 컨셉에 맞춰 교체 가능하지만, "주차별 목표/피드백 언어"는 유지됩니다.</p>
+          </div>
+          <div class="pill2">TERM-01 · Foundation → Integration → Application</div>
+        </div>
+        <div class="weeks" role="list" aria-label="12주 커리큘럼">
+          <div class="week" role="listitem"><small>W1</small><b>루틴 정착</b><i>규칙·안전·공간 적응</i></div>
+          <div class="week" role="listitem"><small>W2</small><b>기본 패턴</b><i>점프·착지·정지</i></div>
+          <div class="week" role="listitem"><small>W3</small><b>협응/리듬</b><i>타이밍·반응</i></div>
+          <div class="week" role="listitem"><small>W4</small><b>기초 게임</b><i>룰 이해·역할</i></div>
+          <div class="week" role="listitem"><small>W5</small><b>패스/캐치</b><i>핸들링 전이</i></div>
+          <div class="week" role="listitem"><small>W6</small><b>중간 점검</b><i>코칭 포인트 재설정</i></div>
+          <div class="week" role="listitem"><small>W7</small><b>공간 인지</b><i>마킹·빈공간</i></div>
+          <div class="week" role="listitem"><small>W8</small><b>미니 게임</b><i>전환/협력</i></div>
+          <div class="week" role="listitem"><small>W9</small><b>전략 요소</b><i>간단 전술</i></div>
+          <div class="week" role="listitem"><small>W10</small><b>대인 상황</b><i>1v1·2v2</i></div>
+          <div class="week" role="listitem"><small>W11</small><b>팀 게임</b><i>역할·소통</i></div>
+          <div class="week" role="listitem"><small>W12</small><b>분기 리포트</b><i>성장 요약+다음 목표</i></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="schedule" aria-labelledby="scheduleHeading">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Schedule</div>
+          <h2 id="scheduleHeading">시간표(선호 접수) — 실시간 예약이 아닙니다</h2>
+          <p class="desc">선호 시간/연령을 접수하면 운영팀이 연락드려 반 편성 및 확정을 안내합니다.</p>
+        </div>
+        <div class="filters">
+          <label for="ageFilter" class="sr-only">연령 필터</label>
+          <select id="ageFilter" aria-label="연령 필터">
+            <option value="">연령(전체)</option>
+            <option>유아(5–7)</option>
+            <option>초등(1–3)</option>
+            <option>초등(4–6)</option>
+          </select>
+          <button class="btn" type="button" onclick="scrollToId('contact')">선호 시간 남기기</button>
+        </div>
+      </div>
+      <div class="schedule-wrap fade">
+        <div class="day-grid" id="scheduleGrid"></div>
+        <p class="hint" style="margin-top:12px;">* 라벨 안내: <b>Open</b>(등록 가능) / <b>Limited</b>(마감 임박) / <b>Waitlist</b>(대기 접수)</p>
+      </div>
+    </section>
+
+    <section id="report" aria-labelledby="reportHeading">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Growth Report</div>
+          <h2 id="reportHeading">성장 리포트(샘플) — "무엇이 좋아졌는지"를 기준으로 설명</h2>
+          <p class="desc">학원형 운영에서 가장 강한 설득은 "문구"가 아니라 <b>기준표 + 코치 코멘트</b>입니다.</p>
+        </div>
+        <div class="filters">
+          <button class="btn" type="button" onclick="scrollToId('contact')">리포트 안내 요청</button>
+          <button class="btn" type="button" onclick="openKakao()">카카오 상담</button>
+        </div>
+      </div>
+      <div class="report fade">
+        <div class="report-head">
+          <div class="mini">* 샘플: Week 12 분기 리포트 요약(지표) + 코치 코멘트(다음 목표) 구조</div>
+          <div class="pill2">Sample · <b>Quarter Report</b></div>
+        </div>
+        <div class="report-body">
+          <div class="r-card">
+            <h3>Key Metrics (Sample)</h3>
+            <div class="bars" id="bars" role="list" aria-label="성장 지표"></div>
+            <div class="r-note"><b>Next Goal:</b> Stop &amp; Go 전환 3회 연속 + 팀 게임에서 역할 수행 언어화</div>
+          </div>
+          <div class="report-shot" aria-label="리포트 샘플 이미지">
+            <img id="reportImg" alt="" aria-hidden="true" loading="lazy" />
+            <div class="cap">
+              <div class="pill">리포트 샘플: <b>요약 + 코치 코멘트</b></div>
+              <div class="note">SAMPLE<span>실캡처로 교체 권장</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" aria-labelledby="pricingHeading">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Tuition</div>
+          <h2 id="pricingHeading">수강료(학원형) — 월 단위 등록</h2>
+          <p class="desc">아래는 샘플입니다. (지역/정원/운영비에 맞춰 숫자만 교체)</p>
+        </div>
+      </div>
+      <div class="pricing">
+        <div class="card fade" style="padding:0; overflow:hidden;">
+          <table aria-label="수강료 안내표">
+            <thead>
+              <tr><th scope="col">구분</th><th scope="col">구성</th><th scope="col">월 수강료(샘플)</th><th scope="col">비고</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><b>주 1회</b></td><td>월 4회 · 50분</td><td><b>150,000원</b></td><td>입문/병행 추천</td></tr>
+              <tr><td><b>주 2회</b></td><td>월 8회 · 50분</td><td><b>260,000원</b></td><td>루틴 형성/전이 강화</td></tr>
+              <tr><td><b>주 3회</b></td><td>월 12회 · 50분</td><td><b>360,000원</b></td><td>집중 과정</td></tr>
+              <tr><td><b>체험 수업</b></td><td>1회 · 50분</td><td><b>10,000원</b></td><td>레벨 진단 + 반 추천</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="price-card fade">
+          <div class="inner">
+            <h3>등록/운영 안내(샘플)</h3>
+            <p>등록은 상담 기반으로 진행합니다. 아이의 연령/경험/성향과 정원을 함께 고려해 반을 추천합니다. 12주 단위 운영을 기준으로 "재등록 흐름"이 자연스럽게 이어지도록 설계합니다.</p>
+            <div class="fine">
+              <b>할인(선택)</b><br/>• 형제/자매: 월 수강료 5%<br/>• 3개월 선등록: 5% (분기 운영과 정합)<br/>• 6개월 선등록: 10%<br/><br/>
+              <b>안내</b><br/>• 월 등록 기준이며, 공휴일/센터 일정에 따라 보강 정책 적용<br/>• 본 프로그램은 의료/치료 행위가 아닌 "체육 교육 프로그램"
+            </div>
+            <div class="sep"></div>
+            <div class="inline">
+              <button class="btn primary" type="button" onclick="scrollToId('contact')">상담 신청</button>
+              <button class="btn" type="button" onclick="openKakao()">카카오 상담</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="faq" aria-labelledby="faqHeading">
+      <div class="section-head">
+        <div>
+          <div class="kicker">FAQ</div>
+          <h2 id="faqHeading">자주 묻는 질문</h2>
+          <p class="desc">문의에서 자주 나오는 질문만 남기고, 답변은 짧고 명확하게 정리합니다.</p>
+        </div>
+      </div>
+      <div class="faq fade">
+        <details>
+          <summary>왜 12주(1분기)가 최소 단위인가요? <span class="faq-icon" aria-hidden="true"></span></summary>
+          <div class="ans">기초 움직임과 규칙 적응은 "한두 번의 경험"으로 고정되지 않습니다. 12주는 적응–누적–중간점검–리포트까지 교육 흐름을 완결하기 위한 최소 단위입니다.</div>
+        </details>
+        <details>
+          <summary>실시간 예약/마감은 없나요? <span class="faq-icon" aria-hidden="true"></span></summary>
+          <div class="ans">없습니다. 한국 학원 환경에서는 정원 안정화와 반 운영이 더 중요합니다. 선호 시간 접수 후 운영팀이 연락드려 반 편성과 확정을 안내합니다.</div>
+        </details>
+        <details>
+          <summary>운동을 싫어하거나 낯가림이 있어도 가능한가요? <span class="faq-icon" aria-hidden="true"></span></summary>
+          <div class="ans">가능합니다. 스포키듀는 '기술부터'가 아니라 '경험/루틴부터' 시작합니다. 작은 성공을 반복하도록 과제 난이도와 피드백을 설계합니다.</div>
+        </details>
+        <details>
+          <summary>보강/환불은 어떻게 운영되나요? <span class="faq-icon" aria-hidden="true"></span></summary>
+          <div class="ans">학원 운영 규정 및 관련 기준에 따라 처리합니다. 정원/시간표/안전을 함께 고려하며, 상세 기준은 등록 시 문서로 안내합니다.</div>
+        </details>
+      </div>
+    </section>
+
+    <section id="contact" aria-labelledby="contactHeading">
+      <div class="cta fade">
+        <div class="cta-grid">
+          <div>
+            <div class="kicker">Consultation</div>
+            <h2 id="contactHeading">상담 신청 — "등록"보다 먼저, 반 편성이 우선입니다</h2>
+            <p class="desc">단일 센터 운영에서 가장 중요한 것은 <b>정원 안정화</b>입니다. 아이의 상황을 간단히 확인하고, 체험/레벨 진단 후 반을 추천합니다.</p>
+            <div class="sep"></div>
+            <div class="grid-2">
+              <div class="card" style="background:rgba(255,255,255,.03); box-shadow:none;">
+                <h3 style="margin:0; font-size:15px;">센터 정보(샘플)</h3>
+                <p id="centerInfo" style="margin:10px 0 0; font-size:13px; line-height:1.7; color:var(--muted);"></p>
+              </div>
+              <div class="card" style="background:rgba(255,255,255,.03); box-shadow:none;">
+                <h3 style="margin:0; font-size:15px;">체험 수업 안내</h3>
+                <p style="margin:10px 0 0; font-size:13px; line-height:1.7; color:var(--muted);">• 50분 1회 체험(레벨 진단 포함)<br/>• 편한 운동복/실내화 준비<br/>• 보호자 대기 가능(라운지/상담)</p>
+              </div>
+            </div>
+          </div>
+          <form class="contact-card" id="contactForm" onsubmit="submitLead(event)" novalidate aria-label="상담 신청 폼">
+            <div class="field">
+              <label for="name">보호자 성함 <abbr title="필수">*</abbr></label>
+              <input id="name" name="name" placeholder="예: 김○○" required autocomplete="name" />
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div class="field">
+                <label for="phone">연락처 <abbr title="필수">*</abbr></label>
+                <input id="phone" name="phone" type="tel" placeholder="예: 01012345678" required autocomplete="tel" inputmode="numeric" />
+              </div>
+              <div class="field">
+                <label for="age">자녀 연령 <abbr title="필수">*</abbr></label>
+                <select id="age" name="age" required>
+                  <option value="" selected disabled>선택</option>
+                  <option>유아(5–7)</option>
+                  <option>초등(1–3)</option>
+                  <option>초등(4–6)</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="pref">선호 요일/시간 <abbr title="필수">*</abbr></label>
+              <input id="pref" name="pref" placeholder="예: 수 17:00 / 토 오전" required />
+            </div>
+            <div class="field">
+              <label for="freq">희망 빈도(선택)</label>
+              <select id="freq" name="freq">
+                <option value="">선택</option>
+                <option>주 1회</option>
+                <option>주 2회</option>
+                <option>주 3회</option>
+                <option>상담 후 결정</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="msg">메모(선택)</label>
+              <textarea id="msg" name="msg" placeholder="예: 낯가림/집중/운동경험 등"></textarea>
+            </div>
+            <label class="consent-row">
+              <input type="checkbox" name="consent" id="consentCheck" required />
+              <span><a id="privacyConsent" href="javascript:void(0)" target="_blank" rel="noopener noreferrer">개인정보처리방침</a>에 동의합니다. 수집 항목: 성함·연락처·자녀 연령 / 목적: 수강 상담 / 보유 기간: 상담 종료 후 즉시 파기 <abbr title="필수">(필수)</abbr></span>
+            </label>
+            <div class="hint">* 접수 후 운영팀이 카카오 채널 또는 문자로 연락드립니다.</div>
+            <div class="inline">
+              <button class="btn primary" type="submit">상담 신청 제출</button>
+              <button class="btn" type="button" onclick="openKakao()">카카오 상담</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="container foot-grid">
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <div class="logo" aria-hidden="true" style="width:28px; height:28px; border-radius:10px;"></div>
+            <strong style="color:rgba(234,240,255,.92);" id="footName">SPOKEDU</strong>
+          </div>
+          <div id="footLine"></div>
+          <div style="margin-top:10px;">* 스포키듀는 아동·청소년 체육 교육 기관이며 의료/치료 서비스를 제공하지 않습니다.<br/>&copy; <span id="year"></span> SPOKEDU. All rights reserved.</div>
+        </div>
+        <nav class="foot-links" aria-label="푸터 메뉴">
+          <a href="#about">센터 소개</a>
+          <a href="#program">12주 커리큘럼</a>
+          <a href="#pricing">수강료</a>
+          <a href="#contact">상담</a>
+          <a id="privacyLink" href="javascript:void(0)">개인정보처리방침</a>
+        </nav>
+      </div>
+    </footer>
+  </main>
+
+  <script src="data/config.js" defer></script>
+  <script src="js/utils.js" defer></script>
+  <script src="js/kakao.js" defer></script>
+  <script src="js/observers.js" defer></script>
+  <script src="js/slider.js" defer></script>
+  <script src="js/schedule.js" defer></script>
+  <script src="js/report.js" defer></script>
+  <script src="js/form.js" defer></script>
+  <script src="js/init.js" defer></script>
+</body>
+</html>

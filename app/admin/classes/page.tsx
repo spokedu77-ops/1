@@ -682,7 +682,7 @@ export default function ClassManagementPage() {
               <button onClick={() => handleViewChange('rollingFourDay')} className={`px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-black ${currentView === 'rollingFourDay' ? 'bg-white rounded-md shadow-sm text-blue-600' : 'text-slate-400'}`}>4-DAY</button>
               <button onClick={() => handleViewChange('twoMonthGrid')} className={`px-2.5 sm:px-4 text-[9px] sm:text-[10px] font-black ${currentView === 'twoMonthGrid' ? 'bg-white rounded-md shadow-sm text-blue-600' : 'text-slate-400'}`}>MONTH</button>
             </div>
-            <Link href="/class/create" className="h-8 sm:h-9 px-3 sm:px-4 bg-blue-600 text-white text-[10px] sm:text-xs font-black rounded-lg flex items-center shadow-md">+ NEW</Link>
+            <Link href="/admin/classes/create" className="h-8 sm:h-9 px-3 sm:px-4 bg-blue-600 text-white text-[10px] sm:text-xs font-black rounded-lg flex items-center shadow-md">+ NEW</Link>
           </div>
         </nav>
 

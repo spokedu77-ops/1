@@ -13,7 +13,6 @@ const nextConfig: NextConfig = {
       { source: "/teacher/notice", destination: "/teacher", permanent: true },
       { source: "/teacher/chat", destination: "/teacher", permanent: true },
       { source: "/admin/chat", destination: "/admin", permanent: true },
-      { source: "/admin/mileage", destination: "/admin/users?tab=counting", permanent: false },
     ];
   },
 };

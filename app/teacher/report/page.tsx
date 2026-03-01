@@ -66,12 +66,15 @@ export default function TeacherReportPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredSessions = useMemo(() => {
-    return sessions.filter(s => {
+    const filtered = sessions.filter(s => {
       const d = new Date(s.start_at);
       const sameMonth = (d.getMonth() + 1) === selectedMonth && d.getFullYear() === now.getFullYear();
       if (!sameMonth) return false;
       return selectedPeriod === '1' ? d.getDate() <= 15 : d.getDate() >= 16;
     });
+    return [...filtered].sort((a, b) =>
+      new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+    );
   }, [sessions, selectedMonth, selectedPeriod, now]);
 
   // 정산 계산 로직

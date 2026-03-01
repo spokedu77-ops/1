@@ -87,7 +87,7 @@ export function FullSequencePlayer({
       }
       if (next === 'bridge2') {
         const iframe = document.createElement('iframe');
-        iframe.src = `/flow-phase?weekKey=${encodeURIComponent(weekKey)}`;
+        iframe.src = `/program/iiwarmup/flow?weekKey=${encodeURIComponent(weekKey)}`;
         iframe.style.cssText = 'position:absolute;width:0;height:0;visibility:hidden';
         document.body.appendChild(iframe);
         setTimeout(() => iframe.remove(), 5000);

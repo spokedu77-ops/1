@@ -38,6 +38,10 @@ export type SubscriberScheduleData = {
   challengeBgmStartOffsetMs?: number;
   /** 챌린지 BGM 원곡 BPM. 있으면 playbackRate = 화면 BPM / 이 값으로 재생 */
   challengeBgmSourceBpm?: number | null;
+  /** Flow Phase 월별 BGM Storage 경로 (weekKey의 월에 해당) */
+  flowBgmPath?: string | null;
+  /** Flow Phase 월별 파노라마 배경 Storage 경로 (weekKey의 월에 해당) */
+  flowPanoPath?: string | null;
   /** Think 150 월별×주차별 이미지 pack (구독자 Think 단계 이미지 노출) */
   thinkPackByMonthAndWeek?: ThinkPackByMonthAndWeek | null;
   /** 이번 주 Think 확정 설정 (API에서 내려주면 구독자는 이걸 우선 사용) */
