@@ -12,16 +12,12 @@ interface MileageLog {
   created_at: string;
 }
 
-type ExtraTeacher = { id: string; price?: number };
-
 interface SessionRecord {
   id: string;
   title: string;
   price: number;
   start_at: string;
   status: string;
-  students_text?: string;
-  memo?: string;
 }
 
 /** 정산 내역에는 수업 이름만 표시 (앞의 3/7 회차 표기·끝의 N회차 제거) */
@@ -32,20 +28,6 @@ function displayTitle(title: string | undefined): string {
     .replace(/\s*-?\s*\d+회차\s*$/i, '')
     .replace(/\s+\d+회차\s*$/i, '')
     .trim() || title;
-}
-
-/** 추가 선생님 정보는 memo에 저장됨. students_text도 함께 확인 (마스터 정산과 동일) */
-function getExtraTeachersFromSession(s: { students_text?: string; memo?: string }): ExtraTeacher[] {
-  for (const raw of [s.students_text, s.memo]) {
-    if (!raw?.includes('EXTRA_TEACHERS:')) continue;
-    try {
-      const arr = JSON.parse(raw.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
-      if (Array.isArray(arr) && arr.length > 0) return arr;
-    } catch {
-      // ignore
-    }
-  }
-  return [];
 }
 
 interface TeacherInfo {
@@ -81,37 +63,10 @@ export default function TeacherReportPage() {
       const { data: mData } = await supabase.from('mileage_logs').select('*').eq('teacher_id', authUser.id).order('created_at', { ascending: false }).limit(10);
       if (mData) setMileageLogs(mData as MileageLog[]);
 
-      const selectCols = 'id, title, price, start_at, status, students_text, memo';
-      const statusFilter = ['finished', 'verified'] as const;
-      const [mainRes, extraMemoRes, extraStudentsRes] = await Promise.all([
-        supabase.from('sessions').select(selectCols).eq('created_by', authUser.id).in('status', statusFilter).order('start_at', { ascending: false }).limit(500),
-        supabase.from('sessions').select(selectCols).in('status', statusFilter).ilike('memo', '%EXTRA_TEACHERS%').order('start_at', { ascending: false }).limit(500),
-        supabase.from('sessions').select(selectCols).in('status', statusFilter).ilike('students_text', '%EXTRA_TEACHERS%').order('start_at', { ascending: false }).limit(500),
-      ]);
-
-      const mainList = (mainRes.data || []).map((s: SessionRecord) => ({ ...s, price: Number(s.price) || 0 }));
-      const mainIds = new Set(mainList.map((s: SessionRecord) => s.id));
-      const myId = String(authUser.id).trim().toLowerCase();
-      const isMe = (ex: ExtraTeacher) => String(ex.id).trim().toLowerCase() === myId;
-
-      const extraRowsById = new Map<string, SessionRecord>();
-      for (const s of [...(extraMemoRes.data || []), ...(extraStudentsRes.data || [])]) {
-        if (!mainIds.has(s.id) && !extraRowsById.has(s.id)) extraRowsById.set(s.id, s);
-      }
-      const extraOnly = Array.from(extraRowsById.values())
-        .filter((s: SessionRecord) => {
-          const extras = getExtraTeachersFromSession(s);
-          return extras.some(isMe);
-        })
-        .map((s: SessionRecord) => {
-          const extras = getExtraTeachersFromSession(s);
-          const me = extras.find(isMe);
-          return { ...s, price: Number(me?.price) || 0 };
-        });
-      const combined: SessionRecord[] = [...mainList, ...extraOnly].sort(
-        (a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime()
-      );
-      setSessions(combined);
+      const res = await fetch('/api/teacher/settlement-sessions', { credentials: 'include' });
+      if (!res.ok) throw new Error('정산 세션 조회 실패');
+      const { data: sessionList } = (await res.json()) as { data?: SessionRecord[] };
+      setSessions(sessionList || []);
     } catch (error) {
       console.error(error);
       setFetchError('데이터를 불러오지 못했습니다.');
