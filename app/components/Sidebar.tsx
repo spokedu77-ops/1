@@ -73,7 +73,7 @@ export default function Sidebar() {
       items: [
         { name: "커리큘럼", href: "/admin/curriculum", icon: BookOpen },
         { name: "IIWarmup", href: "/admin/iiwarmup", icon: Medal },
-        { name: "메모리게임", href: "/admin/memory-game", icon: Gamepad2, disabled: true },
+        { name: "메모리게임", href: "/admin/memory-game", icon: Gamepad2 },
         { name: "카메라앱", href: "/admin/camera", icon: Camera },
       ]
     },
