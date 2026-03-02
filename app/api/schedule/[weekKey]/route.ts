@@ -126,8 +126,9 @@ export async function GET(
             ? (byMonthPano as Record<string, { selectedPano: string }>)[String(scheduleMonth)].selectedPano
             : null)
       : null;
+  // 해당 월이 byMonth에 있으면 그 값 사용(빈 문자열 = 배경 없음, 폴백 안 함)
   const flowPanoPath =
-    (panoForMonth && panoForMonth.length > 0)
+    panoForMonth !== null
       ? panoForMonth
       : (typeof flowPanoRaw?.selectedPano === 'string' && flowPanoRaw.selectedPano.length > 0)
         ? flowPanoRaw.selectedPano

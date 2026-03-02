@@ -1,0 +1,310 @@
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772452569785,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772452569950,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772452569950,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772452570381,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772452570381,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772452570384,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772452570384,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772452570386,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772452570387,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772452570410,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772452570411,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772452570413,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772452570415,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772452572959,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772452572959,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772452722534,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772452722537,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772452722536,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772452722538,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772452723628,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772452723629,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772452724952,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772452724952,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772452724953,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772452724953,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772452724967,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772452724968,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772452724969,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772452724970,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453168007,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453168008,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453168008,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453168009,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453168030,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453168031,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453168032,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453168033,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453170998,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453170998,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453170999,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453170999,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453171000,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453171001,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453236709,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453236710,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453357006,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453357009,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453357010,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453357008,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453357032,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453357033,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453357034,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453357036,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453363460,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453363461,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453363464,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453363465,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453363462,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453363463,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453590034,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453590036,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453590036,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453590037,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453591129,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453591130,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453591131,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453591132,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453593372,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453593374,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453593374,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453593375,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453595372,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453595375,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453595373,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453595374,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453597375,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453597376,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453597377,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453597378,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453598800,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453598802,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453598802,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453598803,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453600673,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453600675,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453600677,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453600675,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453617107,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453617109,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453617109,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453617110,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453623874,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453623876,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453623877,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453623876,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453626312,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453626314,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453626315,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453626316,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453641475,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453641479,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453641477,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453641478,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453650367,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453650368,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453655045,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453655046,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772453688437,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772453688643,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772453688643,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772453689683,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772453689683,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453689685,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453689685,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772453689689,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772453689689,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453689725,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453689727,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453689728,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453689730,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453689745,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453689746,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453689747,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453689748,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772453691656,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772453691656,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453691893,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453691894,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453691895,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453691895,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453691930,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453691930,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453691931,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453691932,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453695236,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453695237,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453695239,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453695237,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453695238,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453695240,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453696188,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453696189,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453696190,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453696191,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453696209,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453696211,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453696212,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453696213,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453698557,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453698557,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453698558,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453698559,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453700293,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453700296,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453700294,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453700295,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453700313,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453700314,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453700315,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772453700316,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453702829,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453702830,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453702831,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453702833,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772453987796,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772453988003,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772453988003,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772453988491,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772453988492,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453988494,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772453988494,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772453988497,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772453988498,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453988535,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453988537,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453988538,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453988539,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453988557,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772453988557,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453988558,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772453988559,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772453991011,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772453991011,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454095968,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454095969,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454095970,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454095971,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454116908,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454116909,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454116910,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454116911,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454129811,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454129812,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454129813,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454129814,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772454233184,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772454233376,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":false},"timestamp":1772454233377,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772454234252,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772454234253,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772454234256,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772454234256,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772454234260,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"page.tsx:dynamic loading","message":"Showing dynamic loading UI","data":{},"timestamp":1772454234261,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454234300,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454234302,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454234303,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454234305,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454234320,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454234321,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454234322,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454234323,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772454236385,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"app/admin/layout.tsx:render","message":"AdminLayout render branch","data":{"isAdmin":true},"timestamp":1772454236385,"hypothesisId":"H1"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454331747,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454331748,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454333325,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454333325,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454685321,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454685322,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454685323,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454685323,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454685373,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454685374,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454685375,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454685377,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772454689301,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772454689301,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454689302,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454689302,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454689304,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454689305,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454690601,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454690603,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454690602,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454690604,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454690625,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454690626,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454690627,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454690628,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454691377,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454691378,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454691379,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454691380,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454708529,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454708531,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454708530,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454708531,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454711881,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454711881,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454711882,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454711883,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454712713,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454712713,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454712714,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454712715,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454712744,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454712745,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454712746,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454712747,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454720953,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454720955,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454720954,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454720954,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454721769,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454721769,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454721770,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454721771,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454721784,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454721785,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454721786,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":false},"timestamp":1772454721787,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454824320,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772454824321,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454824322,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772454824323,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455708691,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455708693,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455708694,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455708692,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455710203,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455710204,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455710205,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455710206,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455711737,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455711738,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455711740,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455711741,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455717503,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455717504,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455717505,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455717505,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455719459,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"SpokeduCameraApp.tsx:mount","message":"SpokeduCameraApp render","data":{"curScreen":"home","stylesRoot":"spokedu-camera-module__2DgW8G__root"},"timestamp":1772455719460,"hypothesisId":"H3,H4"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455719461,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455719463,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455733102,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455733102,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455739166,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455739167,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455746608,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455746609,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455751016,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455751017,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772455813215,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"app/admin/camera/page.tsx:render","message":"CameraAppPage render","data":{},"timestamp":1772455813216,"hypothesisId":"H2"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455813223,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455813224,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455817166,"hypothesisId":"H5"}
+{"sessionId":"10e90b","location":"HomeScreen.tsx:render","message":"HomeScreen render","data":{"active":true},"timestamp":1772455817167,"hypothesisId":"H5"}

@@ -10,7 +10,21 @@ import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp } fr
 
 type TeacherRow = { id: string; name: string };
 type ExtraTeacher = { id: string; price?: number };
-type SessionRow = { id: string; created_by: string; price?: number; students_text?: string; start_at?: string; title?: string };
+type SessionRow = { id: string; created_by: string; price?: number; students_text?: string; memo?: string; start_at?: string; title?: string };
+
+/** 추가 선생님 정보는 memo에 저장됨(수업 관리). students_text도 함께 확인해 둘 다 지원 */
+function getExtraTeachersFromSession(s: { students_text?: string; memo?: string }): ExtraTeacher[] {
+  for (const raw of [s.students_text, s.memo]) {
+    if (!raw?.includes('EXTRA_TEACHERS:')) continue;
+    try {
+      const arr = JSON.parse(raw.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
+      if (Array.isArray(arr) && arr.length > 0) return arr;
+    } catch {
+      // ignore parse error
+    }
+  }
+  return [];
+}
 type SettlementRow = { id: string; teacher_id: string; amount?: number; reason?: string };
 type ReportTeacher = {
   id: string;
@@ -64,10 +78,11 @@ export default function UltimateSettlementPage() {
         .eq('role', 'teacher')
         .eq('is_active', true);
 
+      // 정산 대상: finished + verified (검수 승인 포함). 강사 앱·진단 SQL과 동일 기준.
       const { data: sessions } = await supabase
         .from('sessions')
-        .select('id, created_by, price, students_text, start_at, title')
-        .eq('status', 'finished')
+        .select('id, created_by, price, students_text, memo, start_at, title')
+        .in('status', ['finished', 'verified'])
         .gte('start_at', `${startDate}T00:00:00`)
         .lte('start_at', `${endDate}T23:59:59`);
 
@@ -79,30 +94,16 @@ export default function UltimateSettlementPage() {
       const calculatedData = (teachers || []).map((teacher: TeacherRow) => {
         const teacherSessions = (sessions || []).filter((s: SessionRow) => {
           const isMain = String(s.created_by) === String(teacher.id);
-          let isExtra = false;
-          if (s.students_text?.includes('EXTRA_TEACHERS:')) {
-            try {
-              const extras = JSON.parse(s.students_text.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
-              isExtra = extras.some((ex) => String(ex.id) === String(teacher.id));
-            } catch {
-              // ignore parse error
-            }
-          }
+          const extras = getExtraTeachersFromSession(s);
+          const isExtra = extras.some((ex) => String(ex.id) === String(teacher.id));
           return isMain || isExtra;
         });
 
-        const sessionsTotal = teacherSessions.reduce((acc: number, cur: { created_by?: string; price?: number; students_text?: string }) => {
-          let amount = 0;
-          if (String(cur.created_by) === String(teacher.id)) amount = Number(cur.price) || 0;
-          else {
-            try {
-              const extras = JSON.parse(cur.students_text!.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
-              amount = Number(extras.find((ex) => String(ex.id) === String(teacher.id))?.price) || 0;
-            } catch {
-              // ignore parse error
-            }
-          }
-          return acc + amount;
+        const sessionsTotal = teacherSessions.reduce((acc: number, cur: SessionRow) => {
+          if (String(cur.created_by) === String(teacher.id)) return acc + (Number(cur.price) || 0);
+          const extras = getExtraTeachersFromSession(cur);
+          const ex = extras.find((e) => String(e.id) === String(teacher.id));
+          return acc + (Number(ex?.price) || 0);
         }, 0);
         
         const teacherAdjs = (dbAdjs?.filter((a: SettlementRow) => a.teacher_id === teacher.id) || []) as SettlementRow[];
@@ -294,7 +295,10 @@ export default function UltimateSettlementPage() {
                   {teacher.details.map((s: SessionRow) => {
                     let fee = 0;
                     if (String(s.created_by) === String(teacher.id)) fee = Number(s.price) || 0;
-                    else { try { const extras = JSON.parse(s.students_text!.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[]; fee = Number(extras.find((ex) => String(ex.id) === String(teacher.id))?.price) || 0; } catch { /* ignore */ } }
+                    else {
+                      const extras = getExtraTeachersFromSession(s);
+                      fee = Number(extras.find((ex) => String(ex.id) === String(teacher.id))?.price) || 0;
+                    }
                     return (
                       <div key={s.id} className="flex justify-between items-center p-4 bg-slate-50/50 rounded-2xl text-[11px] font-black group-hover:bg-white transition-colors">
                         <span className="text-slate-300 italic">{(s.start_at || '').slice(8, 10)}일</span>

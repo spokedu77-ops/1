@@ -22,16 +22,14 @@ export type FlowPanoAssetsJson = {
 function getSelectedForMonth(raw: FlowPanoAssetsJson | null, month: number): string {
   if (!raw) return '';
   const byMonth = raw.byMonth;
-  const fromMonth = (typeof byMonth?.[month]?.selectedPano === 'string' ? byMonth[month].selectedPano : null)
-    ?? (typeof (byMonth as Record<string, { selectedPano?: string }>)?.[String(month)]?.selectedPano === 'string'
-      ? (byMonth as Record<string, { selectedPano: string }>)[String(month)].selectedPano
-      : null);
-  if (fromMonth) return fromMonth;
+  const byMonthStr = byMonth as Record<string, { selectedPano?: string }> | undefined;
+  const entry = byMonth?.[month] ?? byMonthStr?.[String(month)];
+  // 해당 월이 byMonth에 있으면 selectedPano 그대로 반환 (빈 문자열 = 해당 월 배경 없음)
+  if (entry !== undefined && entry !== null) return (entry.selectedPano ?? '');
   if (typeof raw.selectedPano === 'string' && raw.selectedPano) return raw.selectedPano;
   if (byMonth && typeof byMonth === 'object') {
-    const byMonthStr = byMonth as Record<string, { selectedPano?: string }>;
     for (let m = 1; m <= 12; m++) {
-      const v = byMonth[m]?.selectedPano ?? byMonthStr[String(m)]?.selectedPano;
+      const v = byMonth[m]?.selectedPano ?? byMonthStr?.[String(m)]?.selectedPano;
       if (typeof v === 'string' && v) return v;
     }
   }

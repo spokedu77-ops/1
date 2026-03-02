@@ -17,18 +17,19 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
   
-  // 사이드바를 숨길 페이지들
+  // 사이드바를 숨길 페이지들 (전체 화면 필요 페이지)
   const isAuthPage = pathname === '/login' || pathname === '/';
   const isReportPage = pathname.startsWith('/report');
   const isIIWarmupSubscriber = pathname.startsWith('/iiwarmup');
   const isFlowPhase = pathname.startsWith('/flow-phase');
   const isProgram = pathname.startsWith('/program');
   const isInfo = pathname.startsWith('/info');
+  const isCameraApp = pathname === '/admin/camera';
 
-  // 1. 강사 페이지(/teacher)는 강사 전용 사이드바를 쓰거나 아예 숨겨야 함
+  // 강사 페이지(/teacher)는 강사 전용 사이드바
   const isTeacherPage = pathname.startsWith('/teacher');
 
-  const hideSidebar = isAuthPage || isReportPage || isTeacherPage || isIIWarmupSubscriber || isFlowPhase || isProgram || isInfo;
+  const hideSidebar = isAuthPage || isReportPage || isTeacherPage || isIIWarmupSubscriber || isFlowPhase || isProgram || isInfo || isCameraApp;
 
   return (
     <html lang="ko" className={`${plusJakarta.variable} ${notoSansKR.variable}`}>

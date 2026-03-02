@@ -4,11 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const CACHE_TTL = 5 * 60 * 1000;
+const SLOW_CHECK_MS = 3000;
 let cache: { admin: boolean; ts: number } | null = null;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [checkSlow, setCheckSlow] = useState(false);
+
+  useEffect(() => {
+    const slowTimer = setTimeout(() => setCheckSlow(true), SLOW_CHECK_MS);
+    return () => clearTimeout(slowTimer);
+  }, []);
 
   useEffect(() => {
     const check = async () => {
@@ -42,8 +49,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-2">
         <p className="text-sm font-bold text-slate-300 animate-pulse">권한 확인 중...</p>
+        {checkSlow && (
+          <p className="text-xs text-slate-400">잠시 후 다시 시도해 주세요. 로그인 상태를 확인해 주세요.</p>
+        )}
       </div>
     );
   }

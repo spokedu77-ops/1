@@ -110,7 +110,7 @@ const PANO_FRAGMENT = `
     c.rgb = mix(vec3(0.0, 0.0, 0.0), c.rgb, edge);
     float vignette = 1.0 - 0.32 * uVignetteScale * (1.0 + d.z);
     c.rgb *= clamp(vignette, 0.0, 1.0);
-    c.rgb = (c.rgb - 0.5) * 1.06 + 0.5;
+    c.rgb = (c.rgb - 0.5) * 1.10 + 0.5;
     float n = fract(sin(dot(gl_FragCoord.xy + uTime * 60.0, vec2(12.9898, 78.233))) * 43758.5453);
     c.rgb += (n - 0.5) * 0.01 * uGrainScale;
     gl_FragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
@@ -578,16 +578,17 @@ export class FlowEngine {
             } else if ('encoding' in tex) {
               (tex as THREE.Texture & { encoding: number }).encoding = 3001;
             }
-            tex.minFilter = THREE.LinearFilter;
+            tex.minFilter = THREE.LinearMipmapLinearFilter;
             tex.magFilter = THREE.LinearFilter;
             tex.wrapS = THREE.RepeatWrapping;
             tex.wrapT = THREE.ClampToEdgeWrapping;
+            tex.generateMipmaps = true;
             tex.needsUpdate = true;
             if (this.renderer?.capabilities?.getMaxAnisotropy) {
               tex.anisotropy = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
             }
 
-            const geo = new THREE.SphereGeometry(PANO_SPHERE_RADIUS, 64, 32);
+            const geo = new THREE.SphereGeometry(PANO_SPHERE_RADIUS, 96, 48);
             geo.scale(-1, 1, 1);
 
             this.panoTexture?.dispose();
