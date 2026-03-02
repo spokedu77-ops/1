@@ -8,6 +8,16 @@ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
 type ExtraTeacher = { id: string; price?: number };
 
+type SessionRow = {
+  id: string;
+  title: string | null;
+  price: number | null;
+  start_at: string;
+  status: string;
+  students_text?: string | null;
+  memo?: string | null;
+};
+
 function getExtraTeachersFromSession(s: { students_text?: string | null; memo?: string | null }): ExtraTeacher[] {
   for (const raw of [s.students_text, s.memo]) {
     if (!raw?.includes('EXTRA_TEACHERS:')) continue;
@@ -50,7 +60,7 @@ export async function GET() {
     const myId = String(user.id).trim().toLowerCase();
     const isMe = (ex: ExtraTeacher) => String(ex.id).trim().toLowerCase() === myId;
 
-    const extraRowsById = new Map<string, (typeof mainRes.data)[0]>();
+    const extraRowsById = new Map<string, SessionRow>();
     for (const s of [...(extraMemoRes.data || []), ...(extraStudentsRes.data || [])]) {
       if (!mainIds.has(s.id) && !extraRowsById.has(s.id)) extraRowsById.set(s.id, s);
     }
