@@ -24,6 +24,16 @@ interface SessionRecord {
   memo?: string;
 }
 
+/** 정산 내역에는 수업 이름만 표시 (앞의 3/7 회차 표기·끝의 N회차 제거) */
+function displayTitle(title: string | undefined): string {
+  if (!title) return '';
+  return title
+    .replace(/^\s*\d+\/\d+\s*/, '')   // 앞의 "3/7 " 제거
+    .replace(/\s*-?\s*\d+회차\s*$/i, '')
+    .replace(/\s+\d+회차\s*$/i, '')
+    .trim() || title;
+}
+
 /** 추가 선생님 정보는 memo에 저장됨. students_text도 함께 확인 (마스터 정산과 동일) */
 function getExtraTeachersFromSession(s: { students_text?: string; memo?: string }): ExtraTeacher[] {
   for (const raw of [s.students_text, s.memo]) {
@@ -72,22 +82,30 @@ export default function TeacherReportPage() {
       if (mData) setMileageLogs(mData as MileageLog[]);
 
       const selectCols = 'id, title, price, start_at, status, students_text, memo';
-      const [mainRes, extraRes] = await Promise.all([
-        supabase.from('sessions').select(selectCols).eq('created_by', authUser.id).in('status', ['finished', 'verified']).order('start_at', { ascending: false }).limit(500),
-        supabase.from('sessions').select(selectCols).in('status', ['finished', 'verified']).or('memo.ilike.%EXTRA_TEACHERS%,students_text.ilike.%EXTRA_TEACHERS%').order('start_at', { ascending: false }).limit(500),
+      const statusFilter = ['finished', 'verified'] as const;
+      const [mainRes, extraMemoRes, extraStudentsRes] = await Promise.all([
+        supabase.from('sessions').select(selectCols).eq('created_by', authUser.id).in('status', statusFilter).order('start_at', { ascending: false }).limit(500),
+        supabase.from('sessions').select(selectCols).in('status', statusFilter).ilike('memo', '%EXTRA_TEACHERS%').order('start_at', { ascending: false }).limit(500),
+        supabase.from('sessions').select(selectCols).in('status', statusFilter).ilike('students_text', '%EXTRA_TEACHERS%').order('start_at', { ascending: false }).limit(500),
       ]);
 
       const mainList = (mainRes.data || []).map((s: SessionRecord) => ({ ...s, price: Number(s.price) || 0 }));
       const mainIds = new Set(mainList.map((s: SessionRecord) => s.id));
-      const extraOnly = (extraRes.data || [])
+      const myId = String(authUser.id).trim().toLowerCase();
+      const isMe = (ex: ExtraTeacher) => String(ex.id).trim().toLowerCase() === myId;
+
+      const extraRowsById = new Map<string, SessionRecord>();
+      for (const s of [...(extraMemoRes.data || []), ...(extraStudentsRes.data || [])]) {
+        if (!mainIds.has(s.id) && !extraRowsById.has(s.id)) extraRowsById.set(s.id, s);
+      }
+      const extraOnly = Array.from(extraRowsById.values())
         .filter((s: SessionRecord) => {
-          if (mainIds.has(s.id)) return false;
           const extras = getExtraTeachersFromSession(s);
-          return extras.some((ex) => String(ex.id) === String(authUser.id));
+          return extras.some(isMe);
         })
         .map((s: SessionRecord) => {
           const extras = getExtraTeachersFromSession(s);
-          const me = extras.find((ex) => String(ex.id) === String(authUser.id));
+          const me = extras.find(isMe);
           return { ...s, price: Number(me?.price) || 0 };
         });
       const combined: SessionRecord[] = [...mainList, ...extraOnly].sort(
@@ -241,7 +259,7 @@ export default function TeacherReportPage() {
               filteredSessions.map((session) => (
                 <div key={session.id} className="p-4 flex justify-between items-center">
                   <div className="flex-1 min-w-0 pr-4">
-                    <p className="text-[12px] font-black text-slate-800 truncate">{session.title}</p>
+                    <p className="text-[12px] font-black text-slate-800 truncate">{displayTitle(session.title)}</p>
                     <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 uppercase mt-1 inline-block">
                       {session.status}
                     </span>
