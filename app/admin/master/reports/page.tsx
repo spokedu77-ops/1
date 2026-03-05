@@ -12,9 +12,9 @@ type TeacherRow = { id: string; name: string };
 type ExtraTeacher = { id: string; price?: number };
 type SessionRow = { id: string; created_by: string; price?: number; students_text?: string; memo?: string; start_at?: string; title?: string };
 
-/** 추가 선생님 정보는 memo에 저장됨(수업 관리). students_text도 함께 확인해 둘 다 지원 */
+/** 추가 선생님 정보는 수업 관리에서 memo에 저장됨. memo 우선, 없으면 students_text 확인 */
 function getExtraTeachersFromSession(s: { students_text?: string; memo?: string }): ExtraTeacher[] {
-  for (const raw of [s.students_text, s.memo]) {
+  for (const raw of [s.memo, s.students_text]) {
     if (!raw?.includes('EXTRA_TEACHERS:')) continue;
     try {
       const arr = JSON.parse(raw.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
@@ -44,6 +44,8 @@ export default function UltimateSettlementPage() {
   const [expandedTeacher, setExpandedTeacher] = useState<string | null>(null);
   const [, setLoading] = useState(true);
   const [reportData, setReportData] = useState<ReportTeacher[]>([]);
+  const [sessionFeesTotal, setSessionFeesTotal] = useState(0); // 세션 수업료만 합계 (이중 합산 방지)
+  const [totalAdjAmount, setTotalAdjAmount] = useState(0);   // 기타 정산 합계
   const [inputStates, setInputStates] = useState<Record<string, { amount?: string; reason?: string }>>({});
 
   const now = new Date();
@@ -91,6 +93,21 @@ export default function UltimateSettlementPage() {
         .select('*')
         .eq('year', year).eq('month', month).eq('period', period);
 
+      // 수업료 총합: 세션당 1회만 합산. 보조가 있을 때 session.price가 총액이면 총액만 사용, 주강사만 있으면 price+extras
+      const sessionsList = sessions || [];
+      const rawSessionFees = sessionsList.reduce((sum: number, s: SessionRow) => {
+        const rawPrice = Number(s.price) || 0;
+        const extras = getExtraTeachersFromSession(s);
+        const extrasSum = extras.reduce((eSum: number, ex: ExtraTeacher) => eSum + (Number(ex?.price) || 0), 0);
+        if (extras.length > 0 && rawPrice >= extrasSum) {
+          return sum + rawPrice;
+        }
+        return sum + rawPrice + extrasSum;
+      }, 0);
+      const rawAdjTotal = (dbAdjs || []).reduce((acc: number, cur: { amount?: number }) => acc + (Number(cur?.amount) ?? 0), 0);
+      setSessionFeesTotal(rawSessionFees);
+      setTotalAdjAmount(rawAdjTotal);
+
       const calculatedData = (teachers || []).map((teacher: TeacherRow) => {
         const teacherSessions = (sessions || []).filter((s: SessionRow) => {
           const isMain = String(s.created_by) === String(teacher.id);
@@ -100,8 +117,14 @@ export default function UltimateSettlementPage() {
         });
 
         const sessionsTotal = teacherSessions.reduce((acc: number, cur: SessionRow) => {
-          if (String(cur.created_by) === String(teacher.id)) return acc + (Number(cur.price) || 0);
+          const rawPrice = Number(cur.price) || 0;
           const extras = getExtraTeachersFromSession(cur);
+          const extrasSum = extras.reduce((eSum: number, ex: ExtraTeacher) => eSum + (Number(ex?.price) || 0), 0);
+          const isMain = String(cur.created_by) === String(teacher.id);
+          if (isMain) {
+            if (extras.length > 0 && rawPrice >= extrasSum) return acc + (rawPrice - extrasSum);
+            return acc + rawPrice;
+          }
           const ex = extras.find((e) => String(e.id) === String(teacher.id));
           return acc + (Number(ex?.price) || 0);
         }, 0);
@@ -140,11 +163,16 @@ export default function UltimateSettlementPage() {
 
   useEffect(() => { fetchReport(); }, [fetchReport]);
 
-  // 대시보드 합계 데이터
+  // 대시보드 합계: Total Gross = 세션 수업료 + 기타정산 (단일 기준). Net/Tax는 여기서 파생해 상단 카드가 항상 일치하도록 함
+  const totalGrossFromSessions = sessionFeesTotal + totalAdjAmount;
+  const derivedTax = Math.floor(totalGrossFromSessions * 0.033);
+  const derivedNet = totalGrossFromSessions - derivedTax;
   const stats = {
-    totalNet: reportData.reduce((acc, curr) => acc + (curr.netPay || 0), 0),
-    totalTax: reportData.reduce((acc, curr) => acc + (curr.tax || 0), 0),
-    totalGross: reportData.reduce((acc, curr) => acc + (curr.grossTotal || 0), 0),
+    totalNet: derivedNet,
+    totalTax: derivedTax,
+    totalGross: totalGrossFromSessions,
+    sessionFeesTotal,
+    totalAdjAmount,
     activeCount: reportData.filter(t => t.count > 0 || t.adjs.length > 0).length,
     totalCount: reportData.length
   };
@@ -243,6 +271,10 @@ export default function UltimateSettlementPage() {
             {(stats.totalGross || 0).toLocaleString()}
             <span className="text-xs ml-1 not-italic text-slate-300">원</span>
           </p>
+          <div className="mt-3 pt-3 border-t border-slate-100 text-[10px] font-bold text-slate-400 space-y-1">
+            <p>수업료: {(stats.sessionFeesTotal ?? 0).toLocaleString()}원</p>
+            <p className={stats.totalAdjAmount >= 0 ? 'text-slate-500' : 'text-red-500'}>기타 정산: {stats.totalAdjAmount >= 0 ? '+' : ''}{(stats.totalAdjAmount ?? 0).toLocaleString()}원</p>
+          </div>
         </div>
       </section>
 
@@ -269,6 +301,7 @@ export default function UltimateSettlementPage() {
                 <p className={`text-xl italic tracking-tighter ${teacher.netPay > 0 ? 'text-indigo-600' : 'text-slate-300'}`}>
                   {(teacher.netPay || 0).toLocaleString()}<span className="text-[10px] ml-1 not-italic">원</span>
                 </p>
+                <p className="text-[8px] text-slate-400 font-bold not-italic mt-0.5">실수령액</p>
               </div>
             </div>
 
@@ -293,10 +326,14 @@ export default function UltimateSettlementPage() {
                 <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest px-2 mb-2"><History size={10} className="inline mr-1"/> Activity Details</p>
                   {teacher.details.map((s: SessionRow) => {
+                    const rawPrice = Number(s.price) || 0;
+                    const extras = getExtraTeachersFromSession(s);
+                    const extrasSum = extras.reduce((e: number, ex: ExtraTeacher) => e + (Number(ex?.price) || 0), 0);
+                    const isMain = String(s.created_by) === String(teacher.id);
                     let fee = 0;
-                    if (String(s.created_by) === String(teacher.id)) fee = Number(s.price) || 0;
-                    else {
-                      const extras = getExtraTeachersFromSession(s);
+                    if (isMain) {
+                      fee = extras.length > 0 && rawPrice >= extrasSum ? rawPrice - extrasSum : rawPrice;
+                    } else {
                       fee = Number(extras.find((ex) => String(ex.id) === String(teacher.id))?.price) || 0;
                     }
                     return (

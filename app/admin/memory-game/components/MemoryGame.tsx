@@ -22,7 +22,7 @@ export function MemoryGame({
 }) {
   const [patterns] = useState<ColorItem[][]>(() => Array.from({ length: TOTAL }, () => generateMemoryPattern(level)));
   const [round, setRound] = useState(0);
-  const [phase, setPhase] = useState<'idle' | 'showing' | 'waiting' | 'answer' | 'summary' | 'done'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'showing' | 'waiting' | 'reveal' | 'summary' | 'done'>('idle');
   const [colorIdx, setColorIdx] = useState(-1);
   const [memFlash, setMemFlash] = useState(false);
   const [summaryReady, setSummaryReady] = useState(false);
@@ -99,8 +99,8 @@ export function MemoryGame({
     const p = phaseRef.current;
     const r = roundRef.current;
     if (p === 'waiting') {
-      setPhase('answer');
-    } else if (p === 'answer') {
+      setPhase('reveal');
+    } else if (p === 'reveal') {
       const isLast = r + 1 >= TOTAL;
       if (isLast && level === 3) {
         setSummaryReady(false);
@@ -143,7 +143,7 @@ export function MemoryGame({
         <span style={{ opacity: 0.35, margin: '0 0.1rem' }}>|</span>
         <span style={{ color: '#FCD34D' }}>단계 {level}</span>
         <span style={{ opacity: 0.35, margin: '0 0.1rem' }}>|</span>
-        <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{level === 1 ? '2항' : level === 2 ? '3항' : '10항'}</span>
+        <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{level === 1 ? '3항' : level === 2 ? '5항' : '10항'}</span>
       </div>
       <button onClick={onExit} style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}>✕</button>
     </div>
@@ -159,7 +159,7 @@ export function MemoryGame({
     <div style={{ position: 'absolute', bottom: '2.5rem', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '0.7rem', zIndex: 10 }}>
       {currentPattern.map((_, i) => {
         const isActive = phase === 'showing' && i === colorIdx;
-        const isPast = (phase === 'showing' && i < colorIdx) || phase === 'waiting' || phase === 'answer';
+        const isPast = (phase === 'showing' && i < colorIdx) || phase === 'waiting' || phase === 'reveal';
         return (
           <div
             key={i}
@@ -222,26 +222,20 @@ export function MemoryGame({
         <style>{CSS}</style>
         {hud}
         {progressBar}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2.5rem', padding: '6rem 2rem 4rem' }}>
-          <div style={{ display: 'flex', gap: '0.9rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {currentPattern.map((_, i) => (
-              <div key={i} className="answer-pop" style={{ animationDelay: `${i * 0.06}s`, width: 'clamp(56px,12vw,80px)', height: 'clamp(56px,12vw,80px)', borderRadius: '1rem', background: 'rgba(255,255,255,0.06)', border: '2px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(24px,5vw,36px)', color: 'rgba(255,255,255,0.25)', fontWeight: 900 }}>?</div>
-            ))}
-          </div>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '6rem 2rem 4rem' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 'clamp(1.5rem,4.5vw,2.2rem)', fontWeight: 900, color: '#fff', marginBottom: '0.5rem' }}>색깔 순서를 기억했나요?</div>
-            <div style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500, lineHeight: 1.6 }}>아이들이 정답을 말하면<br />선생님이 버튼을 눌러 확인하세요</div>
+            <div style={{ fontSize: 'clamp(1.35rem,4vw,2rem)', fontWeight: 900, color: '#fff', marginBottom: '0.5rem' }}>선생님 버튼을 누르면 정답이 공개됩니다</div>
+            <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500, lineHeight: 1.6 }}>학생이 순서를 말한 뒤<br />버튼을 눌러 정답을 확인하세요</div>
           </div>
-          <LongPressButton onTrigger={handleAction} label="✅ 정답 확인" />
+          <LongPressButton onTrigger={handleAction} label="정답 공개" />
           <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.2)' }}>길게 누르기 · 스페이스바 · 엔터</div>
         </div>
       </div>
     );
 
-  if (phase === 'answer') {
+  if (phase === 'reveal') {
     const isLast = round + 1 >= TOTAL;
-    const isBackward = level === 4;
-    const displayPattern = isBackward ? [...currentPattern].reverse() : currentPattern;
+    const displayPattern = currentPattern;
     const nextLabel = isLast ? (level === 3 ? '📋 전체 정답 목록' : '🎉 완료') : `▶ 다음 (${round + 2} / ${TOTAL})`;
     const nextBg = isLast && level === 3 ? '#A855F7' : isLast ? '#22C55E' : '#F97316';
     const nextShadow = isLast && level === 3 ? '0 8px 28px rgba(168,85,247,0.4)' : isLast ? '0 8px 28px rgba(34,197,94,0.4)' : '0 8px 28px rgba(249,115,22,0.35)';
@@ -253,7 +247,6 @@ export function MemoryGame({
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.8rem', padding: '6rem 2rem 4rem' }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{round + 1}번 정답</div>
-            {isBackward && <div style={{ fontSize: '0.72rem', color: '#06B6D4', fontWeight: 700, marginTop: '0.25rem', letterSpacing: '0.06em' }}>🔄 거꾸로 순서</div>}
           </div>
           <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '32rem' }}>
             {displayPattern.map((c, i) => (

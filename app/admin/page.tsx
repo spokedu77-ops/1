@@ -104,12 +104,24 @@ export default function SpokeduHQDashboard() {
           .select('*')
           .order('start_date', { ascending: true, nullsFirst: false })
           .order('updated_at', { ascending: false })
-          .limit(7),
+          .limit(30),
       ]);
-      const recentSchedules: Schedule[] = (schedulesRes.data ?? []).map((row: Schedule) => ({
+      const mapped: Schedule[] = (schedulesRes.data ?? []).map((row: Schedule) => ({
         ...row,
         checklist: Array.isArray(row.checklist) ? row.checklist : [],
       }));
+      // 4회기 미만만 표시 (회차 없는 것 제외), 종료 수업 제외: 1 <= sessions_count < 4, status !== 'done'
+      const recentSchedules: Schedule[] = mapped
+        .filter((s) => {
+          const count = s.sessions_count;
+          return (
+            s.status !== 'done' &&
+            count != null &&
+            count >= 1 &&
+            count < 4
+          );
+        })
+        .slice(0, 7);
 
       // Class Sessions: 시간 순서 유지 (start_at 오름차순), 연기/취소는 뒤로
       const rawClasses = classesRes.data || [];

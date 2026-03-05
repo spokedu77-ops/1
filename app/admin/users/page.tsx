@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
-  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin
+  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin, KeyRound
 } from 'lucide-react';
 import { CountingTab } from './CountingTab';
 
@@ -56,6 +56,10 @@ export default function UserDashboardPage() {
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newPartner, setNewPartner] = useState<Partial<UserData>>({ role: 'teacher', is_active: true });
+  const [addPartnerLoading, setAddPartnerLoading] = useState(false);
+  const [createdCredential, setCreatedCredential] = useState<{ email: string; initialPassword: string } | null>(null);
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ email: string; initialPassword: string } | null>(null);
+  const [resetPasswordLoadingId, setResetPasswordLoadingId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     if (!supabase) return;
@@ -143,36 +147,36 @@ export default function UserDashboardPage() {
   };
 
   const handleAddPartner = async () => {
-    if (!supabase || currentUser?.role !== 'admin') return toast.error('관리자 권한이 필요합니다.');
-    if (!newPartner.name) return toast.error('이름을 입력해주세요.');
+    if (currentUser?.role !== 'admin') return toast.error('관리자 권한이 필요합니다.');
+    if (!newPartner.name?.trim()) return toast.error('이름을 입력해주세요.');
+    setAddPartnerLoading(true);
     try {
-      const name = newPartner.name;
-      const email = (newPartner as Partial<UserData & { email?: string }>).email || 
-                    `${name.toLowerCase().replace(/\s+/g, '.')}@spokedu.com`;
-      
-      const insertData: Partial<UserData> & { id: string; email: string } = {
-        ...newPartner,
-        id: crypto.randomUUID(),
-        email: email
-      };
-      
-      const { error } = await supabase
-        .from('users')
-        .insert([insertData])
-        .select();
-      
-      if (error) {
-        console.error('등록 실패 상세:', error);
-        throw error;
+      const res = await fetch('/api/admin/teachers/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newPartner.name.trim(),
+          email: (newPartner.email as string)?.trim() || undefined,
+          phone: newPartner.phone ?? undefined,
+          organization: newPartner.organization ?? undefined,
+          departure_location: newPartner.departure_location ?? undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || '등록에 실패했습니다.');
+        return;
       }
-      
       setIsAddModalOpen(false);
       setNewPartner({ role: 'teacher', is_active: true });
       fetchUsers();
-      toast.success('성공적으로 등록되었습니다.');
+      toast.success('등록되었습니다. 아래 로그인 정보를 강사에게 전달하세요.');
+      setCreatedCredential({ email: data.email ?? '', initialPassword: data.initialPassword ?? '' });
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : JSON.stringify(error);
-      toast.error(`등록 실패: ${msg}`);
+      const msg = error instanceof Error ? error.message : '등록 중 오류가 발생했습니다.';
+      toast.error(msg);
+    } finally {
+      setAddPartnerLoading(false);
     }
   };
 
@@ -214,6 +218,30 @@ export default function UserDashboardPage() {
       toast.error('파일 업로드에 실패했습니다: ' + msg);
     } finally {
       setUploadingId(null);
+    }
+  };
+
+  const handleResetPassword = async (user: UserData) => {
+    if (currentUser?.role !== 'admin') return toast.error('관리자 권한이 필요합니다.');
+    if (!confirm(`${user.name} 선생님 비밀번호를 새로 발급합니다. 강사에게 전달할 새 비밀번호가 한 번 표시됩니다. 계속할까요?`)) return;
+    setResetPasswordLoadingId(user.id);
+    try {
+      const res = await fetch('/api/admin/teachers/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || '비밀번호 재설정에 실패했습니다.');
+        return;
+      }
+      setResetPasswordResult({ email: data.email ?? user.email, initialPassword: data.initialPassword ?? '' });
+      toast.success('비밀번호가 재설정되었습니다. 아래 비밀번호를 강사에게 전달하세요.');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : '비밀번호 재설정 중 오류가 발생했습니다.');
+    } finally {
+      setResetPasswordLoadingId(null);
     }
   };
 
@@ -324,6 +352,7 @@ export default function UserDashboardPage() {
                   )}
                   <button onClick={() => toggleActiveStatus(user)} className={`min-h-[44px] min-w-[44px] p-2 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center touch-manipulation ${user.is_active ? 'bg-blue-500 text-white hover:bg-rose-500' : 'bg-slate-100 text-slate-400 hover:bg-blue-500 hover:text-white'}`}><Power className="w-3.5 h-3.5" /></button>
                   <button onClick={() => { if (editingId === user.id) { setEditingId(null); } else { setEditingId(user.id); setEditForm({ ...user }); } }} className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 cursor-pointer flex items-center justify-center touch-manipulation"><Edit3 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => handleResetPassword(user)} disabled={!!resetPasswordLoadingId} title="비밀번호 재설정" className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer flex items-center justify-center touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed">{resetPasswordLoadingId === user.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}</button>
                 </div>
               )}
             </div>
@@ -446,6 +475,34 @@ export default function UserDashboardPage() {
         )}
       </main>
 
+      {createdCredential && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl">
+            <h3 className="text-lg font-black text-slate-900 mb-4">로그인 정보 (한 번만 표시됩니다)</h3>
+            <p className="text-sm text-slate-600 mb-2">강사에게 전달한 뒤 비밀번호 변경을 권장하세요.</p>
+            <div className="bg-slate-50 rounded-2xl p-4 space-y-2 text-sm">
+              <p><span className="font-bold text-slate-500">로그인 이메일:</span> <span className="font-mono font-bold break-all">{createdCredential.email}</span></p>
+              <p><span className="font-bold text-slate-500">초기 비밀번호:</span> <span className="font-mono font-bold select-all">{createdCredential.initialPassword}</span></p>
+            </div>
+            <button onClick={() => setCreatedCredential(null)} className="w-full mt-6 py-3 bg-slate-900 text-white rounded-xl font-bold cursor-pointer hover:bg-slate-800">확인</button>
+          </div>
+        </div>
+      )}
+
+      {resetPasswordResult && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl">
+            <h3 className="text-lg font-black text-slate-900 mb-4">비밀번호 재설정됨 (한 번만 표시됩니다)</h3>
+            <p className="text-sm text-slate-600 mb-2">강사에게 전달한 뒤 비밀번호 변경을 권장하세요.</p>
+            <div className="bg-slate-50 rounded-2xl p-4 space-y-2 text-sm">
+              <p><span className="font-bold text-slate-500">로그인 이메일:</span> <span className="font-mono font-bold break-all">{resetPasswordResult.email}</span></p>
+              <p><span className="font-bold text-slate-500">새 비밀번호:</span> <span className="font-mono font-bold select-all">{resetPasswordResult.initialPassword}</span></p>
+            </div>
+            <button onClick={() => setResetPasswordResult(null)} className="w-full mt-6 py-3 bg-slate-900 text-white rounded-xl font-bold cursor-pointer hover:bg-slate-800">확인</button>
+          </div>
+        </div>
+      )}
+
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl animate-in zoom-in duration-200">
@@ -455,12 +512,16 @@ export default function UserDashboardPage() {
             </div>
             <div className="space-y-4">
               <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">이름</label>
-                <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" onChange={e => setNewPartner({...newPartner, name: e.target.value})} /></div>
+                <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" placeholder="필수" value={newPartner.name ?? ''} onChange={e => setNewPartner({...newPartner, name: e.target.value})} /></div>
+              <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">로그인용 이메일</label>
+                <input type="email" className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" placeholder="비우면 이름@spokedu.com 으로 생성" value={(newPartner as { email?: string }).email ?? ''} onChange={e => setNewPartner({...newPartner, email: e.target.value})} /></div>
               <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">학교 / 학과</label>
-                <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" onChange={e => setNewPartner({...newPartner, organization: e.target.value})} /></div>
+                <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" value={newPartner.organization ?? ''} onChange={e => setNewPartner({...newPartner, organization: e.target.value})} /></div>
               <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">출발장소</label>
-                <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" onChange={e => setNewPartner({...newPartner, departure_location: e.target.value})} /></div>
-              <button onClick={handleAddPartner} className="w-full py-4 bg-blue-600 text-white rounded-[1.5rem] font-black mt-6 shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer">등록하기</button>
+                <input className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-blue-500 outline-none font-bold" value={newPartner.departure_location ?? ''} onChange={e => setNewPartner({...newPartner, departure_location: e.target.value})} /></div>
+              <button onClick={handleAddPartner} disabled={addPartnerLoading} className="w-full py-4 bg-blue-600 text-white rounded-[1.5rem] font-black mt-6 shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                {addPartnerLoading ? '등록 중...' : '등록하기'}
+              </button>
             </div>
           </div>
         </div>

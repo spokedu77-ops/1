@@ -62,31 +62,18 @@ export function getBeepForSignal(sig: { type?: string } | null): BeepType | null
   return 'mid';
 }
 
+/** 스트룹 모드 단계 1·2에서만 정답 색 이름을 읽어줌. 그 외 모드/단계/비프모드에서는 null. */
 export function getSignalVoice(
   sig: Record<string, unknown> | null,
   mode: string,
   level: number,
   audioMode: string
 ): string | null {
-  if (!sig || audioMode === 'off') return null;
-  if (audioMode === 'beep') return null;
+  if (!sig || audioMode === 'off' || audioMode === 'beep') return null;
+  if (mode !== 'stroop') return null;
+  if (level === 3) return null;
   const type = sig.type as string;
-  const content = sig.content as Record<string, unknown> | undefined;
   const voice = sig.voice as string | undefined;
-
-  if (type === 'stroop') return level !== 3 && voice ? voice : null;
-
-  if (audioMode === 'signal') {
-    if (type === 'full_color') return (content?.name as string) ?? null;
-    if (type === 'arrow') return (content?.voice as string) ?? null;
-    if (type === 'number') return (content?.voice as string) ?? null;
-    if (type === 'dual_num') {
-      const c = content?.color as { name?: string } | undefined;
-      const n = content?.number as { voice?: string } | undefined;
-      return c?.name && n?.voice ? `${c.name} ${n.voice}` : null;
-    }
-    if (type === 'dual_action') return (content?.action as { voice?: string })?.voice ?? null;
-    if (type === 'dual_stroop_action') return (content?.action as { voice?: string })?.voice ?? null;
-  }
+  if (type === 'stroop') return voice ?? null;
   return null;
 }

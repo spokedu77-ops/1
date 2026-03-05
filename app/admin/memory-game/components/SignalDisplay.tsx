@@ -57,8 +57,8 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'dual_action')
     return (
       <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '1rem' }}>
-        <span style={{ fontSize: 'clamp(100px,20vw,180px)', lineHeight: 1 }}>{(content?.action as { emoji?: string })?.emoji}</span>
-        <span style={{ fontSize: 'clamp(56px,12vw,130px)', fontWeight: 900, color: '#fff' }}>{(content?.action as { label?: string })?.label}</span>
+        <span style={{ fontSize: 'clamp(5rem, 18vw, 8rem)', lineHeight: 1 }}>{(content?.action as { emoji?: string })?.emoji}</span>
+        <span style={{ fontSize: 'clamp(1.2rem, 4vw, 2rem)', fontWeight: 700, color: '#fff' }}>{(content?.action as { label?: string })?.label}</span>
       </div>
     );
 
@@ -67,8 +67,8 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '2rem' }}>
         <div style={{ fontSize: 'clamp(72px,16vw,200px)', fontWeight: 900, color: content?.textHex as string, letterSpacing: '-0.03em', textShadow: '0 0 60px rgba(0,0,0,0.5)' }}>{content?.word as string}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(255,255,255,0.15)', padding: '1.5rem 3rem', borderRadius: '2rem', backdropFilter: 'blur(8px)' }}>
-          <span style={{ fontSize: 'clamp(48px,10vw,100px)' }}>{(content?.action as { emoji?: string })?.emoji}</span>
-          <span style={{ fontSize: 'clamp(42px,9vw,90px)', fontWeight: 900, color: '#fff' }}>{(content?.action as { label?: string })?.label}</span>
+          <span style={{ fontSize: 'clamp(5rem, 18vw, 8rem)', lineHeight: 1 }}>{(content?.action as { emoji?: string })?.emoji}</span>
+          <span style={{ fontSize: 'clamp(1.2rem, 4vw, 2rem)', fontWeight: 700, color: '#fff' }}>{(content?.action as { label?: string })?.label}</span>
         </div>
       </div>
     );

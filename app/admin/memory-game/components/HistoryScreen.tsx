@@ -27,8 +27,6 @@ export function HistoryScreen({
     { id: 'stroop', label: '스트룹' },
     { id: 'spatial', label: '순차 기억' },
     { id: 'dual', label: '이중 과제' },
-    { id: 'nback', label: 'N-Back' },
-    { id: 'team', label: '팀 대결' },
   ];
 
   const filtered = records

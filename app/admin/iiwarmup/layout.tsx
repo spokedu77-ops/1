@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export default function IIWarmupAdminLayout({
+export default function ScreenPlayAdminLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -10,9 +10,9 @@ export default function IIWarmupAdminLayout({
       <div className="mx-auto max-w-6xl px-6 py-6">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight">IIWARMUP Admin</h1>
+            <h1 className="text-2xl font-black tracking-tight">스크린 플레이</h1>
             <p className="text-sm text-neutral-400">
-              띵크 → 챌린지 → 플로우 + 에셋 · 스케줄러
+              띵크 → 챌린지 → 플로우 + 메모리 게임 · 카메라 앱 + 에셋 · 스케줄러
             </p>
           </div>
 
@@ -52,6 +52,18 @@ export default function IIWarmupAdminLayout({
               href="/admin/iiwarmup/scheduler"
             >
               Scheduler
+            </Link>
+            <Link
+              className="rounded-lg bg-neutral-800 px-3 py-2 hover:bg-neutral-700"
+              href="/admin/memory-game"
+            >
+              메모리 게임
+            </Link>
+            <Link
+              className="rounded-lg bg-neutral-800 px-3 py-2 hover:bg-neutral-700"
+              href="/admin/camera"
+            >
+              카메라 앱
             </Link>
           </nav>
         </header>

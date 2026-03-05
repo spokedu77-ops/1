@@ -37,10 +37,9 @@ function generateWithMaxDup(
 }
 
 export function generateMemoryPattern(level: number, colors: ColorItem[] = COLORS): ColorItem[] {
-  if (level === 1) return generateWithMaxDup(colors, 2);
-  if (level === 2) return generateWithMaxDup(colors, 3);
+  if (level === 1) return generateWithMaxDup(colors, 3);
+  if (level === 2) return generateWithMaxDup(colors, 5);
   if (level === 3) return generateWithMaxDup(colors, 10);
-  if (level === 4) return generateWithMaxDup(colors, 4);
   return [];
 }
 
@@ -95,6 +94,16 @@ export function generateSignal(
       return { type: 'stroop', bg: '#0F172A', content: { word: w.name, textHex: tc.hex }, voice: tc.name };
     }
     if (level === 2) {
+      // 글자색(textHex), 배경색(bg), 글자 내용(word)이 가리키는 색 — 세 값이 모두 달라야 함
+      for (let retry = 0; retry < 25; retry++) {
+        const [w, tc, bg] = triple(stroopPool);
+        const textHex = tc.hex;
+        const bgHex = bg.hex;
+        const wordMeaningHex = w.hex;
+        if (textHex !== bgHex && textHex !== wordMeaningHex && bgHex !== wordMeaningHex) {
+          return { type: 'stroop', bg: bgHex, content: { word: w.name, textHex }, voice: tc.name };
+        }
+      }
       const [w, tc, bg] = triple(stroopPool);
       return { type: 'stroop', bg: bg.hex, content: { word: w.name, textHex: tc.hex }, voice: tc.name };
     }

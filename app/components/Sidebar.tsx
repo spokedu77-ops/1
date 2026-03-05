@@ -19,8 +19,6 @@ import {
   User,
   Medal, 
   CalendarDays,
-  Gamepad2,
-  Camera,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -72,9 +70,7 @@ export default function Sidebar() {
       group: "콘텐츠",
       items: [
         { name: "커리큘럼", href: "/admin/curriculum", icon: BookOpen },
-        { name: "IIWarmup", href: "/admin/iiwarmup", icon: Medal },
-        { name: "메모리게임", href: "/admin/memory-game", icon: Gamepad2 },
-        { name: "카메라앱", href: "/admin/camera", icon: Camera },
+        { name: "스크린 플레이", href: "/admin/iiwarmup", icon: Medal },
       ]
     },
     {
@@ -151,8 +147,13 @@ export default function Sidebar() {
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const disabled = 'disabled' in item && item.disabled;
-                  // 해시 링크도 활성화 상태로 인식
-                  const isActive = !disabled && (pathname === item.href || (item.href.includes('#') && pathname.startsWith(item.href.split('#')[0])));
+                  // 해시 링크도 활성화 상태로 인식. 스크린 플레이: iiWarmup·메모리게임·카메라 앱 경로에서 모두 활성
+                  const isScreenPlay = item.href === '/admin/iiwarmup';
+                  const isActive = !disabled && (
+                    pathname === item.href ||
+                    (isScreenPlay && (pathname.startsWith('/admin/iiwarmup') || pathname.startsWith('/admin/memory-game') || pathname.startsWith('/admin/camera'))) ||
+                    (item.href.includes('#') && pathname.startsWith(item.href.split('#')[0]))
+                  );
                   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
                     if (disabled) {
                       e.preventDefault();

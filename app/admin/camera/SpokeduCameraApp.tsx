@@ -258,6 +258,20 @@ export default function SpokeduCameraApp() {
         video.srcObject = stream;
         video.onloadedmetadata = () => {
           video.play().catch(() => {});
+          // #region agent log
+          fetch('http://127.0.0.1:7243/ingest/02be4f1f-b8d1-4072-ab62-6634be097f6f', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7b5c8a' },
+            body: JSON.stringify({
+              sessionId: '7b5c8a',
+              location: 'SpokeduCameraApp.tsx:onloadedmetadata',
+              message: 'video metadata loaded, calling loadMediaPipe',
+              data: {},
+              timestamp: Date.now(),
+              hypothesisId: 'H1',
+            }),
+          }).catch(() => {});
+          // #endregion
           loadMediaPipe();
         };
       })
@@ -276,7 +290,36 @@ export default function SpokeduCameraApp() {
     setCalibStatus({ text: 'AI 포즈 인식 엔진 로딩 중...', className: 'calib-wait' });
     const FR = window.FilesetResolver;
     const PLA = window.PoseLandmarker;
+    // #region agent log
+    const mediaPipeLikeKeys = typeof window !== 'undefined' ? Object.keys(window).filter((k) => /fileset|pose|mediapipe|vision|landmark/i.test(k)) : [];
+    fetch('http://127.0.0.1:7243/ingest/02be4f1f-b8d1-4072-ab62-6634be097f6f', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7b5c8a' },
+      body: JSON.stringify({
+        sessionId: '7b5c8a',
+        location: 'SpokeduCameraApp.tsx:loadMediaPipe',
+        message: 'loadMediaPipe called',
+        data: { hasFR: !!FR, hasPLA: !!PLA, mediaPipeLikeKeys, typeFR: typeof FR, typePLA: typeof PLA },
+        timestamp: Date.now(),
+        hypothesisId: 'H1-H5',
+      }),
+    }).catch(() => {});
+    // #endregion
     if (!FR || !PLA) {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/02be4f1f-b8d1-4072-ab62-6634be097f6f', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7b5c8a' },
+        body: JSON.stringify({
+          sessionId: '7b5c8a',
+          location: 'SpokeduCameraApp.tsx:library_load_failed_branch',
+          message: 'library load failed branch',
+          data: { hasFR: !!FR, hasPLA: !!PLA },
+          timestamp: Date.now(),
+          hypothesisId: 'H2',
+        }),
+      }).catch(() => {});
+      // #endregion
       setCalibStatus({ text: '❌ 라이브러리 로드 실패', className: 'calib-err' });
       setLoaderVisible(false);
       return;

@@ -5,6 +5,13 @@ import { Search, Plus, LayoutList, Users } from 'lucide-react';
 export type ViewMode = 'all' | 'groupByAssignee';
 export type StatusFilter = '' | 'scheduled' | 'active' | 'done';
 
+const STATUS_TABS: { value: StatusFilter; label: string }[] = [
+  { value: '', label: '전체' },
+  { value: 'scheduled', label: '진행 예정' },
+  { value: 'active', label: '진행중' },
+  { value: 'done', label: '종료' },
+];
+
 interface ViewToolbarProps {
   viewMode: ViewMode;
   onViewModeChange: (v: ViewMode) => void;
@@ -52,16 +59,22 @@ export function ViewToolbar({
           <span className="truncate">담당자별</span>
         </button>
       </div>
-      <select
-        value={statusFilter}
-        onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
-        className="rounded-full border border-slate-200 px-3.5 py-2 text-sm text-slate-700 bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none min-h-[44px] touch-manipulation shrink-0 cursor-pointer"
-      >
-        <option value="">전체</option>
-        <option value="scheduled">진행 예정</option>
-        <option value="active">진행중</option>
-        <option value="done">종료</option>
-      </select>
+      <div className="flex items-center gap-1 p-1 rounded-full bg-slate-100 border border-slate-200/80 shrink-0 overflow-x-auto">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.value || 'all'}
+            type="button"
+            onClick={() => onStatusFilterChange(tab.value)}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-all min-h-[44px] touch-manipulation whitespace-nowrap cursor-pointer ${
+              statusFilter === tab.value
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-200/60'
+            }`}
+          >
+            <span className="truncate">{tab.label}</span>
+          </button>
+        ))}
+      </div>
       <div className="relative flex-1 min-w-0 w-full sm:w-auto sm:min-w-[180px] sm:max-w-xs">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 shrink-0 pointer-events-none" />
         <input

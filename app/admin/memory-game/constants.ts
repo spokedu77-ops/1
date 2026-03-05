@@ -18,9 +18,10 @@ export const ARROWS = [
 
 export const ACTIONS = [
   { id: 'clap', label: '박수', voice: '박수', emoji: '👏' },
-  { id: 'hurray', label: '만세', voice: '만세', emoji: '🙌' },
   { id: 'jump', label: '점프', voice: '점프', emoji: '⬆️' },
-  { id: 'hop', label: '한 발 점프', voice: '한 발 점프', emoji: '🦶' },
+  { id: 'squat', label: '스쿼트', voice: '스쿼트', emoji: '🦵' },
+  { id: 'spin', label: '제자리 한 바퀴', voice: '한 바퀴', emoji: '🔄' },
+  { id: 'cross', label: '팔 교차', voice: '팔 교차', emoji: '✖️' },
 ];
 
 export const STROOP_COLORS = [
@@ -70,30 +71,9 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
-      { id: 1, name: '2항 기억', enName: '2-Item Recall', desc: '색깔 2개가 1초씩 나옵니다. 끝나면 순서대로 말합니다.' },
-      { id: 2, name: '3항 기억', enName: '3-Item Recall', desc: '색깔 3개가 1초씩 나옵니다. 순서대로 말합니다.' },
-      { id: 3, name: '10항 연속 기억', enName: '10-Item Serial Recall', desc: '색깔이 무작위로 10번 나옵니다. 모두 기억한 뒤 선생님이 정답을 공개합니다.' },
-      { id: 4, name: '역방향 기억', enName: 'Backward Recall', desc: '색깔 4개가 나옵니다. 끝나면 거꾸로 말합니다. (마지막→처음 순)' },
-    ],
-  },
-  team: {
-    id: 'team', title: '팀 대결', en: 'Team Battle', icon: '⚔️', accent: '#F43F5E',
-    tag: '경쟁 · 협동 · 동기부여',
-    desc: '두 팀이 같은 신호에 먼저 반응합니다. 선생님이 득점을 판정해 승부를 가립니다.',
-    levels: [
-      { id: 1, name: '색 신호', enName: 'Color Signal', desc: '색깔 신호에 먼저 달려간 팀이 득점.' },
-      { id: 2, name: '스트룹', enName: 'Stroop', desc: '스트룹 신호를 먼저 판단한 팀이 득점.' },
-      { id: 3, name: '이중과제', enName: 'Dual Task', desc: '색+동작을 먼저 수행한 팀이 득점.' },
-    ],
-  },
-  nback: {
-    id: 'nback', title: 'N-Back', en: 'N-Back Task', icon: '🔁', accent: '#06B6D4',
-    tag: '작업기억 · 업데이트',
-    desc: 'N개 전에 나온 색깔과 지금 색깔이 같으면 반응하세요. 뇌의 작업기억을 직접 단련합니다.',
-    levels: [
-      { id: 1, name: '1-Back', enName: '1-Back', desc: '바로 직전에 나온 색과 지금 색이 같으면 손을 드세요.' },
-      { id: 2, name: '2-Back', enName: '2-Back', desc: '2개 전에 나온 색과 지금 색이 같으면 손을 드세요.' },
-      { id: 3, name: '3-Back', enName: '3-Back', desc: '3개 전에 나온 색과 지금 색이 같으면 손을 드세요.' },
+      { id: 1, name: '3항 기억', enName: '3-Item Recall', desc: '색깔 3개가 1초씩 나온 뒤 순서대로 말합니다.' },
+      { id: 2, name: '5항 기억', enName: '5-Item Recall', desc: '색깔 5개가 1초씩 나온 뒤 순서대로 말합니다.' },
+      { id: 3, name: '10항 기억', enName: '10-Item Serial Recall', desc: '색깔이 무작위 10번 나옵니다. 기억한 뒤 선생님이 정답 공개.' },
     ],
   },
   dual: {
@@ -116,10 +96,6 @@ export const STUDENT_COLORS = [
 
 export const HISTORY_KEY = 'spokedu_history_v1';
 export const MAX_HISTORY = 200;
-
-export const NBACK_ROUNDS = 20;
-export const NBACK_SHOW_MS = 1800;
-export const NBACK_GAP_MS = 600;
 
 export const SPEED_PRESETS = [
   { label: '미취학', sub: '5~7세', value: 5.0, emoji: '🐥', color: '#F59E0B' },

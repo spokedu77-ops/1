@@ -18,8 +18,9 @@ type SessionRow = {
   memo?: string | null;
 };
 
+/** 추가 강사 정보: 수업 관리에서 memo에 저장됨. memo 우선, 없으면 students_text 확인 */
 function getExtraTeachersFromSession(s: { students_text?: string | null; memo?: string | null }): ExtraTeacher[] {
-  for (const raw of [s.students_text, s.memo]) {
+  for (const raw of [s.memo, s.students_text]) {
     if (!raw?.includes('EXTRA_TEACHERS:')) continue;
     try {
       const arr = JSON.parse(raw.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];

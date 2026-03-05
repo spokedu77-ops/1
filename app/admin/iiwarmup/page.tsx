@@ -1,12 +1,12 @@
 import Link from 'next/link';
 
-export default function IIWarmupAdminOverviewPage() {
+export default function ScreenPlayAdminOverviewPage() {
   return (
     <div className="space-y-6">
       <section>
-        <h2 className="text-lg font-extrabold">IIWARMUP Admin</h2>
+        <h2 className="text-lg font-extrabold">스크린 플레이</h2>
         <p className="mt-1 text-sm text-neutral-400">
-          띵크 → 챌린지 → 플로우 3단계 + 에셋 + 스케줄러
+          띵크 → 챌린지 → 플로우 3단계 + 메모리 게임 · 카메라 앱 + 에셋 · 스케줄러
         </p>
       </section>
 
@@ -85,6 +85,32 @@ export default function IIWarmupAdminOverviewPage() {
           <h3 className="text-base font-extrabold">Scheduler</h3>
           <p className="mt-2 text-sm text-neutral-400">
             주차별 워밍업 배정 · 공개/미공개
+          </p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">
+            진입 →
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/memory-game"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">메모리 게임</h3>
+          <p className="mt-2 text-sm text-neutral-400">
+            N-back·시그널 훈련 · 수업용 메모리 게임
+          </p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">
+            진입 →
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/camera"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">카메라 앱</h3>
+          <p className="mt-2 text-sm text-neutral-400">
+            밸런스·미러 포즈 · 수업용 카메라 앱
           </p>
           <span className="mt-3 inline-block text-sm font-medium text-blue-400">
             진입 →
