@@ -1,6 +1,6 @@
 'use client';
 
-import { MonitorPlay, LayoutDashboard, Grid, ClipboardCheck, Bot, Wrench, Settings2 } from 'lucide-react';
+import { MonitorPlay, LayoutDashboard, Grid, ClipboardCheck, Bot, Wrench, Settings2, CreditCard } from 'lucide-react';
 import type { ViewId } from '../hooks/useSpokeduProUI';
 
 const NAV: { id: ViewId; label: string; icon: React.ElementType; group?: string; iconClass?: string }[] = [
@@ -10,6 +10,7 @@ const NAV: { id: ViewId; label: string; icon: React.ElementType; group?: string;
   { id: 'data-center', label: '원생 관리 및 평가', icon: ClipboardCheck, group: '데이터 및 운영', iconClass: 'text-emerald-400' },
   { id: 'ai', label: '에듀-에코 리포트', icon: Bot, group: '데이터 및 운영', iconClass: 'text-purple-400' },
   { id: 'tools', label: '수업 보조도구', icon: Wrench, group: '수업 보조도구', iconClass: 'text-amber-400' },
+  { id: 'settings', label: '플랜 & 결제', icon: CreditCard, group: '계정' },
 ];
 
 export default function SpokeduProAside({

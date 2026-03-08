@@ -18,6 +18,7 @@ import LibraryView from './views/LibraryView';
 import DataCenterView from './views/DataCenterView';
 import AIReportView from './views/AIReportView';
 import AssistantToolsView from './views/AssistantToolsView';
+import SettingsView from './views/SettingsView';
 
 export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -112,6 +113,9 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
         </div>
         <div className={`view-content ${viewId === 'tools' ? 'active' : ''}`}>
           <AssistantToolsView />
+        </div>
+        <div className={`view-content ${viewId === 'settings' ? 'active' : ''}`}>
+          <SettingsView />
         </div>
       </main>
 
