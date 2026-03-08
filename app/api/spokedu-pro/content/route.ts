@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   }
   const { scope, keys } = parsed.data;
   const allowedKeys = scope === 'public' ? [...PUBLIC_SCOPE_KEYS] : [...CATALOG_SCOPE_KEYS];
-  const requested = keys.filter((k) => allowedKeys.includes(k as (typeof allowedKeys)[number]));
+  const requested = keys.filter((k) => (allowedKeys as readonly string[]).includes(k));
   if (requested.length === 0) {
     return NextResponse.json({ data: {} });
   }

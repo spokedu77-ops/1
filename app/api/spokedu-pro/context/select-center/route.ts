@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getServiceSupabase();
-  const role = await getCenterMemberRole(supabase, centerId, user.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const role = await getCenterMemberRole(supabase as any, centerId, user.id);
   if (!role) {
     return NextResponse.json({ error: 'Forbidden: not a member of this center' }, { status: 403 });
   }
