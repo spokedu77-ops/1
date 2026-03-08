@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Users, UserPlus, X, ChevronDown, ChevronUp, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Users, UserPlus, X, ChevronDown, ChevronUp, CheckCircle, Clock, XCircle, RefreshCw, AlertCircle, CloudOff } from 'lucide-react';
 import {
   useStudentStore,
   CLASS_GROUPS,
@@ -154,7 +154,7 @@ function StudentCard({
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────────────
 export default function DataCenterView() {
-  const { students, loaded, addStudent, removeStudent, cycleStatus, markAllPresent, updatePhysical } =
+  const { students, loaded, syncing, syncError, addStudent, removeStudent, cycleStatus, markAllPresent, updatePhysical } =
     useStudentStore();
 
   const [filterGroup, setFilterGroup] = useState('전체');
@@ -185,7 +185,10 @@ export default function DataCenterView() {
   if (!loaded) {
     return (
       <section className="flex items-center justify-center h-full min-h-[60vh]">
-        <div className="text-slate-500 text-sm animate-pulse">불러오는 중...</div>
+        <div className="flex items-center gap-2 text-slate-500 text-sm">
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          <span>데이터 불러오는 중...</span>
+        </div>
       </section>
     );
   }
@@ -202,6 +205,26 @@ export default function DataCenterView() {
           출결을 관리하고 신체 기능을 평가하세요. 평가 데이터는 수업 보조도구의 술래 정하기·팀 나누기에 자동 활용됩니다.
         </p>
       </header>
+
+      {/* 동기화 상태 배너 */}
+      {syncError && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 text-sm">
+          <CloudOff className="w-4 h-4 shrink-0" />
+          <span>서버 연결 실패 — 로컬 캐시로 표시 중. 변경사항은 연결 복구 시 저장됩니다.</span>
+        </div>
+      )}
+      {syncing && !syncError && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-slate-500 text-xs">
+          <RefreshCw className="w-3 h-3 animate-spin" />
+          <span>서버에서 최신 데이터를 불러오고 있어요...</span>
+        </div>
+      )}
+      {!syncing && !syncError && (
+        <div className="flex items-center gap-1.5 text-xs text-emerald-500/70">
+          <AlertCircle className="w-3 h-3" />
+          <span>데이터가 서버에 안전하게 저장됩니다.</span>
+        </div>
+      )}
 
       {/* 툴바 */}
       <div className="flex flex-wrap gap-3 items-center justify-between">
