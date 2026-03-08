@@ -50,3 +50,4 @@ export const patchTenantBodySchema = z.object({
   value: contentValueSchema.optional(),
   expectedVersion: z.number().int().min(0).optional(),
 });
+export type PatchTenantBody = z.infer<typeof patchTenantBodySchema>;

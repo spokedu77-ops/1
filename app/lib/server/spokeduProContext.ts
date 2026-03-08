@@ -22,13 +22,26 @@ export function getActiveCenterIdFromCookie(request: NextRequest): string | null
   return request.cookies.get(SPOKEDU_ACTIVE_CENTER_COOKIE)?.value ?? null;
 }
 
+/** getCenterMemberRole에서만 쓰는 최소 클라이언트 타입. 실제 Supabase 제네릭 전달 시 깊은 인스턴스화 오류 방지 */
+export type SupabaseClientForMemberRole = {
+  from(table: string): {
+    select(columns: string): {
+      eq(col: string, val: string): {
+        eq(col2: string, val2: string): {
+          maybeSingle(): Promise<{ data: { role?: string } | null; error: unknown }>;
+        };
+      };
+    };
+  };
+};
+
 /**
  * 센터 멤버십 검증 후 역할 반환.
  * spokedu_center_members 테이블(50) 필요. 없으면 null 반환.
  * getServiceSupabase() 반환값을 넘긴다.
  */
 export async function getCenterMemberRole(
-  supabase: { from: (t: string) => { select: (c: string) => { eq: (k: string, v: string) => { eq: (k2: string, v2: string) => { maybeSingle: () => Promise<{ data: { role?: string } | null; error: unknown }> } } } } },
+  supabase: SupabaseClientForMemberRole,
   centerId: string,
   userId: string
 ): Promise<'owner' | 'admin' | 'coach' | null> {

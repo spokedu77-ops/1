@@ -6,7 +6,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { getActiveCenterCookieOptions, getCenterMemberRole, SPOKEDU_ACTIVE_CENTER_COOKIE } from '@/app/lib/server/spokeduProContext';
+import {
+  getActiveCenterCookieOptions,
+  getCenterMemberRole,
+  SPOKEDU_ACTIVE_CENTER_COOKIE,
+  type SupabaseClientForMemberRole,
+} from '@/app/lib/server/spokeduProContext';
 
 export async function POST(request: NextRequest) {
   const serverSupabase = await createServerSupabaseClient();
@@ -29,7 +34,7 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getServiceSupabase();
-  const role = await getCenterMemberRole(supabase, centerId, user.id);
+  const role = await getCenterMemberRole(supabase as unknown as SupabaseClientForMemberRole, centerId, user.id);
   if (!role) {
     return NextResponse.json({ error: 'Forbidden: not a member of this center' }, { status: 403 });
   }
