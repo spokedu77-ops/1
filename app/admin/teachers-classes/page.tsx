@@ -8,7 +8,8 @@ import { Send, RotateCcw, User, MapPin, X, ExternalLink, FileText, Maximize2, Se
 import { 
   FeedbackFields,
   parseTemplateToFields,
-  fieldsToTemplateText
+  fieldsToTemplateText,
+  getSessionDisplayStatus
 } from '@/app/lib/feedbackValidation';
 
 interface Session {
@@ -153,10 +154,10 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
   }, [fetchListData]);
 
   const getSessionStatus = (session: Session): 'empty' | 'done' | 'verified' => {
-    if (session.status === 'verified') return 'verified';
-    const feedbackFields = session.feedback_fields || parseTemplateToFields(session.students_text || '');
-    const hasContent = feedbackFields.main_activity || feedbackFields.strengths || feedbackFields.next_goals;
-    return hasContent ? 'done' : 'empty';
+    return getSessionDisplayStatus({
+      ...session,
+      feedback_fields: session.feedback_fields ?? parseTemplateToFields(session.students_text || '')
+    });
   };
 
   const statistics = useMemo(() => {

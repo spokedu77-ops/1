@@ -10,11 +10,15 @@ import {
   PERSONAL_CATEGORIES_ROW2,
   DEFAULT_PERSONAL_CATEGORY,
   getSubTabsForCategory,
+  CENTER_SECTIONS,
+  EIGHTH_SESSION_LABELS,
+  EQUIPMENT_GUIDE_NUMBERS,
+  EQUIPMENT_GUIDE_STEPS,
 } from '@/app/lib/curriculum/constants';
 import { 
   Instagram, AlertCircle, 
   Sparkles, X, Calendar, MoreHorizontal, 
-  CheckSquare, Box, ListOrdered, Play
+  CheckSquare, Box, ListOrdered, Play, Link2, ArrowLeft
 } from 'lucide-react';
 
 type MainCurriculumTab = 'personal' | 'center';
@@ -53,7 +57,28 @@ interface PersonalCurriculumItem {
   checkList?: string[];
   equipment?: string[];
   steps?: string[];
+  detailText?: string;
+  detailText2?: string;
+  link2?: string;
   [key: string]: unknown;
+}
+
+interface CenterEquipmentItem {
+  id: number;
+  number: number;
+  name: string;
+  image_url: string | null;
+}
+
+interface CenterEquipmentGuideItem {
+  id: number;
+  number: number;
+  step: number;
+  name?: string | null;
+  image_url?: string | null;
+  detail_text?: string | null;
+  activity_image_url?: string | null;
+  activity_text?: string | null;
 }
 
 export default function TeacherCurriculumPage() {
@@ -70,6 +95,15 @@ export default function TeacherCurriculumPage() {
  // 상세 모달 상태 (입력 모달은 필요 없음)
  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
  const [selectedItem, setSelectedItem] = useState<CurriculumItem | PersonalCurriculumItem | null>(null);
+
+ const [centerViewMode, setCenterViewMode] = useState<'center' | 'equipment-guide'>('center');
+ const [centerEquipmentList, setCenterEquipmentList] = useState<CenterEquipmentItem[]>([]);
+ const [equipmentGuideItems, setEquipmentGuideItems] = useState<CenterEquipmentGuideItem[]>([]);
+ const [equipmentGuideLoading, setEquipmentGuideLoading] = useState(false);
+ const [selectedEquipmentNumber, setSelectedEquipmentNumber] = useState(1);
+ const [selectedEquipmentStep, setSelectedEquipmentStep] = useState(1);
+ const [selectedEquipmentItem, setSelectedEquipmentItem] = useState<CenterEquipmentGuideItem | null>(null);
+ const [isEquipmentDetailOpen, setIsEquipmentDetailOpen] = useState(false);
 
  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
 
@@ -108,12 +142,15 @@ export default function TeacherCurriculumPage() {
      setPersonalLoading(false);
      return;
    }
-   setPersonalItems((data ?? []).map((row: { expert_tip?: string; check_list?: string[]; equipment?: string[]; steps?: string[]; [key: string]: unknown }) => ({
+   setPersonalItems((data ?? []).map((row: { expert_tip?: string; check_list?: string[]; equipment?: string[]; steps?: string[]; detail_text?: string; detail_text_2?: string; link_2?: string; [key: string]: unknown }) => ({
      ...row,
      expertTip: row.expert_tip,
      checkList: row.check_list,
      equipment: row.equipment,
      steps: row.steps,
+     detailText: row.detail_text,
+     detailText2: row.detail_text_2,
+     link2: row.link_2,
    })));
    setPersonalLoading(false);
  }, [supabase]);
@@ -127,6 +164,29 @@ export default function TeacherCurriculumPage() {
    void fetchPersonalItems();
  }, [fetchPersonalItems]);
 
+ const fetchCenterEquipment = useCallback(async () => {
+   if (!supabase) return;
+   const { data, error } = await supabase.from('center_equipment').select('*').order('number', { ascending: true });
+   if (error) console.error('Error fetching center equipment:', error);
+   else setCenterEquipmentList((data ?? []) as CenterEquipmentItem[]);
+ }, [supabase]);
+
+ const fetchEquipmentGuide = useCallback(async () => {
+   if (!supabase) return;
+   setEquipmentGuideLoading(true);
+   const { data, error } = await supabase.from('center_equipment_guide').select('*').order('id', { ascending: false });
+   if (error) console.error('Error fetching equipment guide:', error);
+   else setEquipmentGuideItems((data ?? []) as CenterEquipmentGuideItem[]);
+   setEquipmentGuideLoading(false);
+ }, [supabase]);
+
+ useEffect(() => {
+   if (supabase && mainTab === 'center') {
+     void fetchEquipmentGuide();
+     void fetchCenterEquipment();
+   }
+ }, [supabase, mainTab, fetchEquipmentGuide, fetchCenterEquipment]);
+
  const filteredItems = useMemo(() => {
    return items.filter(item => item.month === selectedMonth && item.week === selectedWeek);
  }, [items, selectedMonth, selectedWeek]);
@@ -135,7 +195,22 @@ export default function TeacherCurriculumPage() {
    return personalItems.filter(p => p.category === categoryTab && p.sub_tab === subTab);
  }, [personalItems, categoryTab, subTab]);
 
+ const eighthSessionSlots = useMemo(() => {
+   return EIGHTH_SESSION_LABELS.map((label) => {
+     const item = personalItems.find((p: PersonalCurriculumItem) => p.category === '신체 기능향상 8회기' && p.sub_tab === label) ?? null;
+     return { label, item };
+   });
+ }, [personalItems]);
+
  const currentSubTabs = useMemo(() => getSubTabsForCategory(categoryTab), [categoryTab]);
+
+ const filteredEquipmentItems = useMemo(() => {
+   return equipmentGuideItems.filter((i) => i.number === selectedEquipmentNumber && i.step === selectedEquipmentStep);
+ }, [equipmentGuideItems, selectedEquipmentNumber, selectedEquipmentStep]);
+
+ const currentEquipment = useMemo(() => {
+   return centerEquipmentList.find((e) => e.number === selectedEquipmentNumber) ?? null;
+ }, [centerEquipmentList, selectedEquipmentNumber]);
 
  const currentTheme = MONTHLY_THEMES[selectedMonth] || { 
    title: `${selectedMonth}월 집중 교육 목표`, 
@@ -240,34 +315,19 @@ export default function TeacherCurriculumPage() {
 
             {mainTab === 'personal' ? (
               <>
-                {/* 2단 카테고리 탭: 모바일에서 가로 스크롤 */}
-                <div className="w-full flex flex-col gap-2">
-                  <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
-                    {PERSONAL_CATEGORIES_ROW1.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => handleCategoryChange(cat)}
-                        className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap
-                          ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
-                    {PERSONAL_CATEGORIES_ROW2.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => handleCategoryChange(cat)}
-                        className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap
-                          ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
+                {/* 2단 카테고리 탭: 한 영역에서 반응형 줄바꿈 */}
+                <div className="w-full flex flex-wrap gap-2 bg-white border border-slate-100 p-2.5 sm:p-3 rounded-2xl shadow-sm">
+                  {[...PERSONAL_CATEGORIES_ROW1, ...PERSONAL_CATEGORIES_ROW2].map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => handleCategoryChange(cat)}
+                      className={`shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap
+                        ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100'}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
                 </div>
                 {/* 3단: 카테고리별 하위 탭 */}
                 {currentSubTabs.length > 0 && (
@@ -285,10 +345,54 @@ export default function TeacherCurriculumPage() {
                     ))}
                   </div>
                 )}
-                {/* 개인 수업 목록 (조회 전용) */}
+                {/* 개인 수업 목록 (8회기는 카드 8개, 조회 전용) */}
                 {personalLoading ? (
                   <div className="flex justify-center py-12">
                     <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+                  </div>
+                ) : categoryTab === '신체 기능향상 8회기' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {eighthSessionSlots.map(({ label, item }) => {
+                      const thumb1 = item?.url ? (getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '') : '';
+                      const thumb2 = item?.link2 ? (getYouTubeId(item.link2) ? `https://img.youtube.com/vi/${getYouTubeId(item.link2)}/hqdefault.jpg` : '') : '';
+                      return (
+                        <div
+                          key={label}
+                          role="button"
+                          tabIndex={0}
+                          className={`group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm transition-all duration-200 ${item ? 'hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 cursor-pointer' : 'opacity-60 cursor-default'}`}
+                          onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } }}
+                          onKeyDown={(e) => { if (item && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelectedItem(item); setIsDetailModalOpen(true); } }}
+                        >
+                          <div className="aspect-[16/9] grid grid-cols-2 gap-0.5 bg-slate-100">
+                            <div className="relative bg-slate-200 flex items-center justify-center min-h-0">
+                              {thumb1 ? (
+                                <img src={thumb1} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                  <Play size={28} className="text-slate-400" />
+                                </div>
+                              )}
+                              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-black/60 text-white">1</span>
+                            </div>
+                            <div className="relative bg-slate-200 flex items-center justify-center min-h-0">
+                              {thumb2 ? (
+                                <img src={thumb2} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                  <Play size={28} className="text-slate-400" />
+                                </div>
+                              )}
+                              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-black/60 text-white">2</span>
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
+                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : filteredPersonalItems.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -346,6 +450,91 @@ export default function TeacherCurriculumPage() {
               </>
             ) : (
               <>
+                {centerViewMode === 'equipment-guide' ? (
+                  <>
+                    <button type="button" onClick={() => setCenterViewMode('center')} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold text-sm mb-2">
+                      <ArrowLeft size={18} /> 커리큘럼으로
+                    </button>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 w-full">
+                      {EQUIPMENT_GUIDE_NUMBERS.map((num) => (
+                        <button key={num} type="button" onClick={() => setSelectedEquipmentNumber(num)}
+                          className={`min-h-[48px] sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all border font-black text-sm sm:text-base
+                            ${selectedEquipmentNumber === num ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
+                        >
+                          {num}번
+                        </button>
+                      ))}
+                    </div>
+                    {/* 번호-단계 사이: 해당 번호 교구 1개 (읽기 전용) */}
+                    <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
+                      <div className="aspect-square w-24 h-24 sm:w-32 sm:h-32 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                        {currentEquipment?.image_url ? (
+                          <img src={currentEquipment.image_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Box size={40} className="text-slate-300" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 text-center sm:text-left">
+                        <h3 className="font-black text-slate-900 truncate">{currentEquipment?.name || `${selectedEquipmentNumber}번 교구`}</h3>
+                      </div>
+                    </div>
+                    <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
+                      {EQUIPMENT_GUIDE_STEPS.map(({ value, label }) => (
+                        <button key={value} type="button" onClick={() => setSelectedEquipmentStep(value)}
+                          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all
+                            ${selectedEquipmentStep === value ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="w-full">
+                      {equipmentGuideLoading ? (
+                        <div className="flex justify-center py-12"><div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" /></div>
+                      ) : filteredEquipmentItems.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                          {filteredEquipmentItems.map((act) => (
+                            <div key={act.id} role="button" tabIndex={0} className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all cursor-pointer" onClick={() => { setSelectedEquipmentItem(act); setIsEquipmentDetailOpen(true); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedEquipmentItem(act); setIsEquipmentDetailOpen(true); } }}>
+                              <div className="aspect-video bg-slate-100 flex items-center justify-center overflow-hidden">
+                                {act.activity_image_url ? (
+                                  <img src={act.activity_image_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="p-4 text-center">
+                                    <p className="text-sm font-bold text-slate-500 line-clamp-3">{act.activity_text || '활동 내용 없음'}</p>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-4">
+                                <p className="text-sm font-bold text-slate-700 line-clamp-2">{act.activity_text || '활동 내용'}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
+                          {selectedEquipmentNumber}번 · 단계 {selectedEquipmentStep}에 등록된 활동이 없습니다.
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                {/* 센터 고정 섹션: 교구 가이드라인 클릭 시 전용 뷰 */}
+                <div className="w-full flex flex-wrap gap-3">
+                  {CENTER_SECTIONS.map((section) => (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => section.id === 'sports-equipment-guide' ? setCenterViewMode('equipment-guide') : undefined}
+                      className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                        <Box size={20} />
+                      </div>
+                      <span className="font-bold text-slate-800">{section.label}</span>
+                    </button>
+                  ))}
+                </div>
                 {/* 센터 수업: 해당 월만 선택 가능 */}
                 <div className="grid grid-cols-6 md:grid-cols-12 gap-2 w-full">
                   {MONTHS.map((m) => {
@@ -460,6 +649,8 @@ export default function TeacherCurriculumPage() {
                     </div>
                   )}
                 </div>
+                  </>
+                )}
               </>
             )}
         </div>
@@ -467,11 +658,44 @@ export default function TeacherCurriculumPage() {
 
      {/* (+) 버튼 제거됨 */}
 
-     {/* 상세 모달 (읽기 전용) */}
+     {/* 상세 모달 (읽기 전용, 8회기는 세부내용+링크2개) */}
      {isDetailModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)} />
             <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                {isPersonalItem(selectedItem) && selectedItem.category === '신체 기능향상 8회기' ? (
+                  <>
+                    <div className="p-6 border-b border-slate-700 flex justify-between items-start">
+                      <h2 className="text-xl font-black text-white">{selectedItem.title ?? selectedItem.sub_tab}</h2>
+                      <button type="button" onClick={() => setIsDetailModalOpen(false)} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
+                    </div>
+                    <div className="p-6 space-y-6 overflow-y-auto bg-[#2C2C2C] text-white">
+                      <section className="space-y-3">
+                        <div className="flex items-center gap-2 text-indigo-400 font-black text-xs uppercase">링크 1 세부내용</div>
+                        <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
+                          <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText || '등록된 내용이 없습니다.'}</p>
+                          {selectedItem.url?.trim() && (
+                            <a href={selectedItem.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
+                              <Link2 size={16} /> 링크 1 열기
+                            </a>
+                          )}
+                        </div>
+                      </section>
+                      <section className="space-y-3">
+                        <div className="flex items-center gap-2 text-indigo-400 font-black text-xs uppercase">링크 2 세부내용</div>
+                        <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
+                          <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText2 ?? '등록된 내용이 없습니다.'}</p>
+                          {selectedItem.link2?.trim() ? (
+                            <a href={selectedItem.link2} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
+                              <Link2 size={16} /> 링크 2 열기
+                            </a>
+                          ) : null}
+                        </div>
+                      </section>
+                    </div>
+                  </>
+                ) : (
+                  <>
                 <div className="relative w-full aspect-video bg-black">
                     {!hasUrl(selectedItem) ? (
                         <div className="w-full h-full flex flex-col items-center justify-center text-white text-slate-400 font-bold">
@@ -549,8 +773,30 @@ export default function TeacherCurriculumPage() {
                         </p>
                     </div>
                 </div>
+                  </>
+                )}
             </div>
         </div>
+     )}
+
+     {isEquipmentDetailOpen && selectedEquipmentItem && (
+       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+         <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} />
+         <div className="relative bg-white w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+           <div className="p-6 border-b border-slate-100 flex justify-between items-start">
+             <h2 className="text-xl font-black text-slate-900">{selectedEquipmentItem.number}번 · {selectedEquipmentItem.step}단계 활동</h2>
+             <button type="button" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} className="p-2 rounded-full hover:bg-slate-100 text-slate-400"><X size={20}/></button>
+           </div>
+           <div className="p-6 overflow-y-auto space-y-4">
+             {selectedEquipmentItem.activity_image_url && (
+               <div className="aspect-video rounded-2xl bg-slate-100 overflow-hidden">
+                 <img src={selectedEquipmentItem.activity_image_url} alt="" className="w-full h-full object-cover" />
+               </div>
+             )}
+             <div className="text-slate-600 text-sm font-bold leading-relaxed whitespace-pre-wrap">{selectedEquipmentItem.activity_text || '등록된 활동 내용이 없습니다.'}</div>
+           </div>
+         </div>
+       </div>
      )}
    </div>
  );

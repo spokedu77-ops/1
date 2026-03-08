@@ -17,7 +17,8 @@ import {
   Menu, 
   X,
   User,
-  Medal, 
+  Medal,
+  Sparkles,
   CalendarDays,
 } from 'lucide-react';
 
@@ -71,6 +72,7 @@ export default function Sidebar() {
       items: [
         { name: "커리큘럼", href: "/admin/curriculum", icon: BookOpen },
         { name: "스크린 플레이", href: "/admin/iiwarmup", icon: Medal },
+        { name: "스포키듀 구독", href: "/admin/spokedu-pro", icon: Sparkles },
       ]
     },
     {

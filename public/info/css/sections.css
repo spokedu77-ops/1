@@ -16,12 +16,12 @@ section { padding: 42px 0; }
 .hero-card .inner { padding: 30px; position: relative; z-index: 1; }
 .tag { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(234,240,255,.92); padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.03); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 6px rgba(200,243,74,.10); }
-h1 { margin: 14px 0 10px; font-size: var(--h1); line-height: 1.05; letter-spacing: -1.2px; }
-.lead { margin: 0 0 18px; color: var(--muted); font-size: 16px; line-height: 1.55; max-width: 60ch; }
+h1 { margin: 14px 0 10px; font-size: var(--h1); font-family: var(--font); font-weight: var(--font-bold); line-height: 1.05; letter-spacing: -1.2px; }
+.lead { margin: 0 0 18px; color: var(--muted); font-size: 16px; line-height: 1.55; max-width: 60ch; font-family: var(--font); }
 .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 .hero-metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 22px; }
 .metric { border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.03); padding: 14px; min-height: 76px; }
-.metric strong { font-size: 18px; letter-spacing: -0.4px; }
+.metric strong { font-size: 18px; font-weight: var(--font-semibold); letter-spacing: -0.4px; font-family: var(--font); }
 .metric span { display: block; color: var(--muted2); font-size: 12px; margin-top: 6px; line-height: 1.35; }
 
 .hero-visual {
@@ -30,7 +30,7 @@ h1 { margin: 14px 0 10px; font-size: var(--h1); line-height: 1.05; letter-spacin
   box-shadow: var(--shadow2); overflow: hidden; position: relative;
 }
 .visual-top { padding: 22px 22px 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.visual-top .title { font-size: 14px; color: rgba(234,240,255,.92); font-weight: 750; letter-spacing: .2px; }
+.visual-top .title { font-size: 14px; color: rgba(234,240,255,.92); font-weight: var(--font-semibold); letter-spacing: .2px; font-family: var(--font); }
 .visual-top .sub { margin-top: 6px; font-size: 12px; color: var(--muted2); line-height: 1.35; }
 .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.03); font-size: 12px; color: rgba(234,240,255,.92); white-space: nowrap; }
 .badge i { width: 10px; height: 10px; border-radius: 3px; background: var(--accent2); box-shadow: 0 0 0 5px rgba(139,233,255,.10); display: inline-block; }
@@ -110,7 +110,7 @@ h1 { margin: 14px 0 10px; font-size: var(--h1); line-height: 1.05; letter-spacin
 .slot:hover { transform: translateY(-1px); background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.20); }
 .slot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .slot .s-dot { width: 10px; height: 10px; border-radius: 3px; background: linear-gradient(135deg,rgba(200,243,74,.95),rgba(139,233,255,.75)); box-shadow: 0 0 0 5px rgba(200,243,74,.10); }
-.slot .meta { color: var(--muted2); font-weight: 700; }
+.slot .meta { color: var(--muted2); font-weight: var(--font-semibold); }
 .slot.wait { border-color: rgba(255,199,90,.25); background: rgba(255,199,90,.08); }
 .slot.wait .s-dot { background: rgba(255,199,90,.95); box-shadow: 0 0 0 5px rgba(255,199,90,.12); }
 .slot.limited { border-color: rgba(87,242,135,.20); background: rgba(87,242,135,.08); }
@@ -138,7 +138,7 @@ h1 { margin: 14px 0 10px; font-size: var(--h1); line-height: 1.05; letter-spacin
 .pricing { display: grid; grid-template-columns: 1.05fr .95fr; gap: var(--gap); align-items: stretch; }
 table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 16px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); }
 th, td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 13px; text-align: left; vertical-align: top; }
-th { color: rgba(234,240,255,.92); font-weight: 800; background: rgba(255,255,255,.04); }
+th { color: rgba(234,240,255,.92); font-weight: var(--font-bold); font-family: var(--font); background: rgba(255,255,255,.04); }
 td { color: rgba(234,240,255,.86); }
 tr:last-child td { border-bottom: none; }
 .price-card {
@@ -148,7 +148,7 @@ tr:last-child td { border-bottom: none; }
 }
 .price-card::before { content: ""; position: absolute; inset: -2px; background: radial-gradient(420px 220px at 10% 0%, rgba(200,243,74,.12), transparent 60%); pointer-events: none; }
 .price-card .inner { position: relative; z-index: 1; }
-.price-card h3 { margin: 0; font-size: 16px; letter-spacing: -0.3px; }
+.price-card h3 { margin: 0; font-size: 16px; font-family: var(--font); font-weight: var(--font-semibold); letter-spacing: -0.3px; }
 .price-card p { margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .fine { margin-top: 12px; padding: 12px; border-radius: 16px; border: 1px dashed rgba(255,255,255,.18); background: rgba(255,255,255,.02); color: rgba(234,240,255,.84); font-size: 12px; line-height: 1.6; }
 .fine b { color: var(--accent); }
@@ -156,9 +156,9 @@ tr:last-child td { border-bottom: none; }
 
 .faq { display: grid; gap: 10px; }
 details { border-radius: 16px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); padding: 12px 14px; }
-summary { cursor: pointer; font-weight: 850; font-size: 13px; color: rgba(234,240,255,.92); list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+summary { cursor: pointer; font-weight: var(--font-semibold); font-size: 13px; font-family: var(--font); color: rgba(234,240,255,.92); list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 summary::-webkit-details-marker { display: none; }
-summary .faq-icon { font-weight: 900; color: rgba(200,243,74,.90); font-size: 16px; line-height: 1; }
+summary .faq-icon { font-weight: var(--font-bold); color: rgba(200,243,74,.90); font-size: 16px; line-height: 1; }
 details[open] .faq-icon::before { content: "–"; }
 details:not([open]) .faq-icon::before { content: "+"; }
 details .ans { margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.7; }

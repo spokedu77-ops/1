@@ -25,6 +25,8 @@ export interface SessionWithFeedback {
   photo_url?: string[];
   file_url?: string[];
   status?: string;
+  /** 센터 수업은 파일만 올려도 작성완료(done)로 간주 */
+  session_type?: 'regular_center' | 'regular_private' | 'one_day';
 }
 
 /**
@@ -177,12 +179,16 @@ export function fieldsToTemplateText(fields: FeedbackFields): string {
 
 /**
  * 세션의 표시용 상태 판별 (admin/teachers-classes용)
+ * 센터 수업(regular_center)은 파일만 1개 이상 올리면 작성완료(done)로 간주.
  */
 export function getSessionDisplayStatus(session: SessionWithFeedback): 'empty' | 'done' | 'verified' {
   if (session.status === 'verified') return 'verified';
-  
+
+  const fileUrls = session.file_url ?? [];
+  if (session.session_type === 'regular_center' && fileUrls.length > 0) return 'done';
+
   const feedbackFields = session.feedback_fields || {};
   const hasContent = feedbackFields.main_activity || feedbackFields.strengths || feedbackFields.next_goals;
-  
+
   return hasContent ? 'done' : 'empty';
 }

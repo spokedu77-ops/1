@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SLOW_CHECK_MS = 3000;
@@ -9,8 +9,10 @@ let cache: { admin: boolean; ts: number } | null = null;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkSlow, setCheckSlow] = useState(false);
+  const isFullscreenRoute = pathname != null && pathname.startsWith('/admin/spokedu-pro');
 
   useEffect(() => {
     const slowTimer = setTimeout(() => setCheckSlow(true), SLOW_CHECK_MS);
@@ -59,7 +61,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <main className="flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900">
+    <main
+      className={
+        isFullscreenRoute
+          ? 'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0F172A] text-gray-900'
+          : 'flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900'
+      }
+    >
       {children}
     </main>
   );

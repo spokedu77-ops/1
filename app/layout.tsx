@@ -1,8 +1,10 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { Toaster } from 'sonner';
 import Sidebar from './components/Sidebar';
+import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
 import { QueryProvider } from './providers/QueryProvider';
 import { Plus_Jakarta_Sans, Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
@@ -16,20 +18,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  
-  // 사이드바를 숨길 페이지들 (전체 화면 필요 페이지)
-  const isAuthPage = pathname === '/login' || pathname === '/';
-  const isReportPage = pathname.startsWith('/report');
-  const isIIWarmupSubscriber = pathname.startsWith('/iiwarmup');
-  const isFlowPhase = pathname.startsWith('/flow-phase');
-  const isProgram = pathname.startsWith('/program');
-  const isInfo = pathname.startsWith('/info');
-  const isCameraApp = pathname === '/admin/camera';
+  const hideSidebar = isFullscreenPath(pathname);
+  const fullscreenWrapStyle = hideSidebar ? { minHeight: 'var(--viewport-height-px, 100vh)', height: 'var(--viewport-height-px, 100vh)' } : undefined;
 
-  // 강사 페이지(/teacher)는 강사 전용 사이드바
-  const isTeacherPage = pathname.startsWith('/teacher');
-
-  const hideSidebar = isAuthPage || isReportPage || isTeacherPage || isIIWarmupSubscriber || isFlowPhase || isProgram || isInfo || isCameraApp;
+  // viewport-height-px는 hydration 이후에만 설정해 서버/클라이언트 HTML 불일치(hydration error) 방지
+  useEffect(() => {
+    const setViewportHeight = () => {
+      document.documentElement.style.setProperty('--viewport-height-px', `${window.innerHeight}px`);
+    };
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
+    return () => window.removeEventListener('resize', setViewportHeight);
+  }, []);
 
   return (
     <html lang="ko" className={`${plusJakarta.variable} ${notoSansKR.variable}`}>
@@ -41,13 +41,18 @@ export default function RootLayout({
       <body className="antialiased bg-gray-50 text-slate-900 font-sans">
         <QueryProvider>
           <Toaster position="top-center" richColors closeButton />
-          <div className="flex min-h-screen">
+          <div
+            className="flex min-h-screen"
+            style={fullscreenWrapStyle}
+          >
             {/* 사이드바 조건부 렌더링 */}
             {!hideSidebar && <Sidebar />}
 
             <main 
               className={`flex-1 w-full min-w-0 transition-all duration-300 ${
-                !hideSidebar ? 'pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0 md:ml-64' : ''
+                hideSidebar
+                  ? 'flex flex-col min-h-0'
+                  : 'pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0 md:ml-64'
               }`}
             >
               {children}

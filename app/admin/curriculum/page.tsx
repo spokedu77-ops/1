@@ -10,10 +10,14 @@ import {
   PERSONAL_CATEGORIES_ROW2,
   DEFAULT_PERSONAL_CATEGORY,
   getSubTabsForCategory,
+  CENTER_SECTIONS,
+  EIGHTH_SESSION_LABELS,
+  EQUIPMENT_GUIDE_NUMBERS,
+  EQUIPMENT_GUIDE_STEPS,
 } from '@/app/lib/curriculum/constants';
 import { 
   Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2, 
-  CheckSquare, Box, ListOrdered, Play, AlertCircle
+  CheckSquare, Box, ListOrdered, Play, AlertCircle, Link2, ArrowLeft
 } from 'lucide-react';
 
 export type MainCurriculumTab = 'personal' | 'center';
@@ -51,7 +55,30 @@ interface PersonalCurriculumItem {
   checkList?: string[];
   equipment?: string[];
   steps?: string[];
+  detailText?: string;
+  detailText2?: string;
+  link2?: string;
   [key: string]: unknown;
+}
+
+/** 번호별 고정 교구 12개 (이름 + 이미지) */
+interface CenterEquipmentItem {
+  id: number;
+  number: number;
+  name: string;
+  image_url: string | null;
+}
+
+/** 단계별 활동 (활동 이미지 또는 활동 내용) */
+interface CenterEquipmentGuideItem {
+  id: number;
+  number: number;
+  step: number;
+  name?: string | null;
+  image_url?: string | null;
+  detail_text?: string | null;
+  activity_image_url?: string | null;
+  activity_text?: string | null;
 }
 
 export default function AdminCurriculumPage() {
@@ -85,6 +112,24 @@ export default function AdminCurriculumPage() {
     sub_tab: '',
     title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '',
   });
+  const [is8huiModalOpen, setIs8huiModalOpen] = useState(false);
+  const [editing8huiSlot, setEditing8huiSlot] = useState<number | null>(null);
+  const [editing8huiId, setEditing8huiId] = useState<number | null>(null);
+  const [eightHuiForm, setEightHuiForm] = useState({ title: '', detailText: '', detailText2: '', url: '', link2: '' });
+
+  const [centerViewMode, setCenterViewMode] = useState<'center' | 'equipment-guide'>('center');
+  const [centerEquipmentList, setCenterEquipmentList] = useState<CenterEquipmentItem[]>([]);
+  const [equipmentGuideItems, setEquipmentGuideItems] = useState<CenterEquipmentGuideItem[]>([]);
+  const [equipmentGuideLoading, setEquipmentGuideLoading] = useState(false);
+  const [selectedEquipmentNumber, setSelectedEquipmentNumber] = useState(1);
+  const [selectedEquipmentStep, setSelectedEquipmentStep] = useState(1);
+  const [isEquipmentDetailOpen, setIsEquipmentDetailOpen] = useState(false);
+  const [selectedEquipmentItem, setSelectedEquipmentItem] = useState<CenterEquipmentGuideItem | null>(null);
+  const [isEquipmentEditOpen, setIsEquipmentEditOpen] = useState(false);
+  const [editingEquipmentId, setEditingEquipmentId] = useState<number | null>(null);
+  const [equipmentForm, setEquipmentForm] = useState({ number: 1, step: 1, activity_image_url: '', activity_text: '' });
+  const [isEquipmentMasterEditOpen, setIsEquipmentMasterEditOpen] = useState(false);
+  const [equipmentMasterForm, setEquipmentMasterForm] = useState({ name: '', image_url: '' });
 
   const fetchItems = async () => {
     if (!supabase) {
@@ -125,21 +170,52 @@ export default function AdminCurriculumPage() {
     if (error) {
       console.error('Error fetching personal curriculum:', error);
     } else if (data) {
-      setPersonalItems(data.map((row: { expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; [key: string]: unknown }) => ({
+      setPersonalItems(data.map((row: { expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; detail_text?: string; detail_text_2?: string; link_2?: string; [key: string]: unknown }) => ({
         ...row,
         expertTip: row.expert_tip,
         checkList: row.check_list,
         equipment: row.equipment,
         steps: row.steps,
+        detailText: row.detail_text,
+        detailText2: row.detail_text_2,
+        link2: row.link_2,
       })));
     }
     setPersonalLoading(false);
+  };
+
+  const fetchCenterEquipment = async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('center_equipment').select('*').order('number', { ascending: true });
+    if (error) {
+      const err = error as { message?: string; hint?: string };
+      console.error('Error fetching center equipment:', err.message ?? err.hint ?? JSON.stringify(error));
+    } else {
+      setCenterEquipmentList((data ?? []) as CenterEquipmentItem[]);
+    }
+  };
+
+  const fetchEquipmentGuide = async () => {
+    if (!supabase) return;
+    setEquipmentGuideLoading(true);
+    const { data, error } = await supabase.from('center_equipment_guide').select('*').order('id', { ascending: false });
+    if (error) console.error('Error fetching equipment guide:', error);
+    else setEquipmentGuideItems((data ?? []) as CenterEquipmentGuideItem[]);
+    setEquipmentGuideLoading(false);
   };
 
   useEffect(() => {
     fetchItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run when supabase ready; fetchItems stable
   }, [supabase]);
+
+  useEffect(() => {
+    if (supabase && mainTab === 'center') {
+      void fetchCenterEquipment();
+      void fetchEquipmentGuide();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- when center tab active
+  }, [supabase, mainTab]);
 
   useEffect(() => {
     fetchPersonalItems();
@@ -154,7 +230,23 @@ export default function AdminCurriculumPage() {
     return personalItems.filter((p: PersonalCurriculumItem) => p.category === categoryTab && p.sub_tab === subTab);
   }, [personalItems, categoryTab, subTab]);
 
+  /** 신체 기능향상 8회기: 1~8회기 슬롯별 아이템 */
+  const eighthSessionSlots = useMemo(() => {
+    return EIGHTH_SESSION_LABELS.map((label) => {
+      const item = personalItems.find((p: PersonalCurriculumItem) => p.category === '신체 기능향상 8회기' && p.sub_tab === label) ?? null;
+      return { label, item };
+    });
+  }, [personalItems]);
+
   const currentSubTabs = useMemo(() => getSubTabsForCategory(categoryTab), [categoryTab]);
+
+  const currentEquipment = useMemo(() => {
+    return centerEquipmentList.find((e) => e.number === selectedEquipmentNumber) ?? null;
+  }, [centerEquipmentList, selectedEquipmentNumber]);
+
+  const filteredEquipmentItems = useMemo(() => {
+    return equipmentGuideItems.filter((i) => i.number === selectedEquipmentNumber && i.step === selectedEquipmentStep);
+  }, [equipmentGuideItems, selectedEquipmentNumber, selectedEquipmentStep]);
 
   const currentTheme = MONTHLY_THEMES[selectedMonth] || { 
     title: `${selectedMonth}월 집중 교육 목표`, 
@@ -376,6 +468,155 @@ export default function AdminCurriculumPage() {
     setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
   };
 
+  const open8huiEdit = (slotIndex: number, item: PersonalCurriculumItem | null) => {
+    setEditing8huiSlot(slotIndex + 1);
+    setEditing8huiId(item?.id ?? null);
+    setEightHuiForm({
+      title: item?.title ?? `${slotIndex + 1}회기`,
+      detailText: item?.detailText ?? '',
+      detailText2: item?.detailText2 ?? '',
+      url: item?.url ?? '',
+      link2: item?.link2 ?? '',
+    });
+    setIs8huiModalOpen(true);
+  };
+
+  const close8huiModal = () => {
+    setIs8huiModalOpen(false);
+    setEditing8huiSlot(null);
+    setEditing8huiId(null);
+    setEightHuiForm({ title: '', detailText: '', detailText2: '', url: '', link2: '' });
+  };
+
+  const handle8huiSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase || editing8huiSlot == null) return;
+    const subTabLabel = `${editing8huiSlot}회기`;
+    const payload = {
+      category: '신체 기능향상 8회기',
+      sub_tab: subTabLabel,
+      title: eightHuiForm.title,
+      detail_text: eightHuiForm.detailText || null,
+      detail_text_2: eightHuiForm.detailText2 || null,
+      url: eightHuiForm.url || null,
+      link_2: eightHuiForm.link2 || null,
+      type: 'youtube',
+      expert_tip: null,
+      check_list: [],
+      equipment: [],
+      steps: [],
+    };
+    try {
+      if (editing8huiId) {
+        const { error } = await supabase.from('personal_curriculum').update(payload).eq('id', editing8huiId);
+        if (error) throw error;
+        toast.success('수정되었습니다.');
+      } else {
+        const { error } = await supabase.from('personal_curriculum').insert([payload]);
+        if (error) throw error;
+        toast.success('등록되었습니다.');
+      }
+      await fetchPersonalItems();
+      close8huiModal();
+    } catch (err: unknown) {
+      toast.error('저장 중 오류: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const openEquipmentMasterEdit = () => {
+    const eq = centerEquipmentList.find((e) => e.number === selectedEquipmentNumber);
+    setEquipmentMasterForm({ name: eq?.name ?? '', image_url: eq?.image_url ?? '' });
+    setIsEquipmentMasterEditOpen(true);
+  };
+
+  const closeEquipmentMasterEdit = () => {
+    setIsEquipmentMasterEditOpen(false);
+    setEquipmentMasterForm({ name: '', image_url: '' });
+  };
+
+  const handleEquipmentMasterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+    const eq = centerEquipmentList.find((e) => e.number === selectedEquipmentNumber);
+    const payload = { name: equipmentMasterForm.name.trim() || '', image_url: equipmentMasterForm.image_url.trim() || null };
+    try {
+      if (eq) {
+        const { error } = await supabase.from('center_equipment').update(payload).eq('id', eq.id);
+        if (error) throw error;
+        toast.success('교구 정보가 수정되었습니다.');
+      } else {
+        const { error } = await supabase.from('center_equipment').insert([{ number: selectedEquipmentNumber, ...payload }]);
+        if (error) throw error;
+        toast.success('등록되었습니다.');
+      }
+      await fetchCenterEquipment();
+      closeEquipmentMasterEdit();
+    } catch (err: unknown) {
+      toast.error('저장 중 오류: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const openEquipmentEdit = (item: CenterEquipmentGuideItem | null) => {
+    if (item) {
+      setEditingEquipmentId(item.id);
+      setEquipmentForm({ number: item.number, step: item.step, activity_image_url: item.activity_image_url ?? '', activity_text: item.activity_text ?? '' });
+    } else {
+      setEditingEquipmentId(null);
+      setEquipmentForm({ number: selectedEquipmentNumber, step: selectedEquipmentStep, activity_image_url: '', activity_text: '' });
+    }
+    setIsEquipmentEditOpen(true);
+  };
+
+  const closeEquipmentEdit = () => {
+    setIsEquipmentEditOpen(false);
+    setEditingEquipmentId(null);
+    setEquipmentForm({ number: 1, step: 1, activity_image_url: '', activity_text: '' });
+  };
+
+  const handleEquipmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+    const eqName = currentEquipment?.name ?? '활동';
+    const payload = {
+      number: equipmentForm.number,
+      step: equipmentForm.step,
+      name: eqName,
+      image_url: null,
+      detail_text: null,
+      activity_image_url: equipmentForm.activity_image_url.trim() || null,
+      activity_text: equipmentForm.activity_text.trim() || null,
+    };
+    try {
+      if (editingEquipmentId) {
+        const { error } = await supabase.from('center_equipment_guide').update(payload).eq('id', editingEquipmentId);
+        if (error) throw error;
+        toast.success('수정되었습니다.');
+      } else {
+        const { error } = await supabase.from('center_equipment_guide').insert([payload]);
+        if (error) throw error;
+        toast.success('등록되었습니다.');
+      }
+      await fetchEquipmentGuide();
+      closeEquipmentEdit();
+    } catch (err: unknown) {
+      toast.error('저장 중 오류: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const deleteEquipmentItem = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!supabase || !confirm('정말 삭제하시겠습니까?')) return;
+    const { error } = await supabase.from('center_equipment_guide').delete().eq('id', id);
+    if (error) {
+      toast.error('삭제 실패: ' + error.message);
+      return;
+    }
+    setEquipmentGuideItems((prev) => prev.filter((i) => i.id !== id));
+    toast.success('삭제되었습니다.');
+    setIsEquipmentDetailOpen(false);
+    setSelectedEquipmentItem(null);
+  };
+
   const isPersonalItem = (item: CurriculumItem | PersonalCurriculumItem): item is PersonalCurriculumItem => {
     return 'category' in item && 'sub_tab' in item;
   };
@@ -429,34 +670,19 @@ export default function AdminCurriculumPage() {
 
              {mainTab === 'personal' ? (
                <>
-                 {/* 2단 카테고리 탭: 모바일에서 가로 스크롤 */}
-                 <div className="w-full flex flex-col gap-2">
-                   <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
-                     {PERSONAL_CATEGORIES_ROW1.map((cat) => (
-                       <button
-                         key={cat}
-                         type="button"
-                         onClick={() => handleCategoryChange(cat)}
-                         className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap
-                           ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                       >
-                         {cat}
-                       </button>
-                     ))}
-                   </div>
-                   <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
-                     {PERSONAL_CATEGORIES_ROW2.map((cat) => (
-                       <button
-                         key={cat}
-                         type="button"
-                         onClick={() => handleCategoryChange(cat)}
-                         className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap
-                           ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                       >
-                         {cat}
-                       </button>
-                     ))}
-                   </div>
+                 {/* 2단 카테고리 탭: 한 영역에서 반응형 줄바꿈 */}
+                 <div className="w-full flex flex-wrap gap-2 bg-white border border-slate-100 p-2.5 sm:p-3 rounded-2xl shadow-sm">
+                   {[...PERSONAL_CATEGORIES_ROW1, ...PERSONAL_CATEGORIES_ROW2].map((cat) => (
+                     <button
+                       key={cat}
+                       type="button"
+                       onClick={() => handleCategoryChange(cat)}
+                       className={`shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap
+                         ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100'}`}
+                     >
+                       {cat}
+                     </button>
+                   ))}
                  </div>
                  {/* 3단: 카테고리별 하위 탭 */}
                  {currentSubTabs.length > 0 && (
@@ -474,10 +700,57 @@ export default function AdminCurriculumPage() {
                      ))}
                    </div>
                  )}
-                 {/* 개인 수업 목록 */}
+                 {/* 개인 수업 목록 (8회기는 카드 8개 + 전용 모달) */}
                  {personalLoading ? (
                    <div className="flex justify-center py-12">
                      <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+                   </div>
+                 ) : categoryTab === '신체 기능향상 8회기' ? (
+                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                     {eighthSessionSlots.map(({ label, item }, idx) => {
+                       const thumb1 = item?.url ? (getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '') : '';
+                       const thumb2 = item?.link2 ? (getYouTubeId(item.link2) ? `https://img.youtube.com/vi/${getYouTubeId(item.link2)}/hqdefault.jpg` : '') : '';
+                       return (
+                         <div
+                           key={label}
+                           className="group relative cursor-pointer rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 transition-all duration-200"
+                           onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } else open8huiEdit(idx, null); }}
+                         >
+                           <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <button type="button" onClick={(e) => { e.stopPropagation(); open8huiEdit(idx, item); }} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-indigo-600 shadow-md"><Edit2 size={16}/></button>
+                             {item && (
+                               <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"><Trash2 size={16}/></button>
+                             )}
+                           </div>
+                           <div className="aspect-[16/9] grid grid-cols-2 gap-0.5 bg-slate-100">
+                             <div className="relative bg-slate-200 flex items-center justify-center min-h-0">
+                               {thumb1 ? (
+                                 <img src={thumb1} alt="" className="w-full h-full object-cover" />
+                               ) : (
+                                 <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                   <Play size={28} className="text-slate-400" />
+                                 </div>
+                               )}
+                               <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-black/60 text-white">1</span>
+                             </div>
+                             <div className="relative bg-slate-200 flex items-center justify-center min-h-0">
+                               {thumb2 ? (
+                                 <img src={thumb2} alt="" className="w-full h-full object-cover" />
+                               ) : (
+                                 <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                   <Play size={28} className="text-slate-400" />
+                                 </div>
+                               )}
+                               <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-black/60 text-white">2</span>
+                             </div>
+                           </div>
+                           <div className="p-4">
+                             <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
+                             <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
+                           </div>
+                         </div>
+                       );
+                     })}
                    </div>
                  ) : filteredPersonalItems.length > 0 ? (
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -523,6 +796,99 @@ export default function AdminCurriculumPage() {
                </>
              ) : (
                <>
+                 {centerViewMode === 'equipment-guide' ? (
+                   <>
+                     <button type="button" onClick={() => setCenterViewMode('center')} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold text-sm mb-2">
+                       <ArrowLeft size={18} /> 커리큘럼으로
+                     </button>
+                     <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 w-full">
+                       {EQUIPMENT_GUIDE_NUMBERS.map((num) => (
+                         <button key={num} type="button" onClick={() => setSelectedEquipmentNumber(num)}
+                           className={`min-h-[48px] sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all border font-black text-sm sm:text-base touch-manipulation
+                             ${selectedEquipmentNumber === num ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
+                         >
+                           {num}번
+                         </button>
+                       ))}
+                     </div>
+                     {/* 번호-단계 사이: 해당 번호 교구 1개 (이름+이미지, 편집) */}
+                     <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
+                       <div className="aspect-square w-24 h-24 sm:w-32 sm:h-32 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                         {currentEquipment?.image_url ? (
+                           <img src={currentEquipment.image_url} alt="" className="w-full h-full object-cover" />
+                         ) : (
+                           <Box size={40} className="text-slate-300" />
+                         )}
+                       </div>
+                       <div className="flex-1 min-w-0 text-center sm:text-left">
+                         <h3 className="font-black text-slate-900 truncate">{currentEquipment?.name || `${selectedEquipmentNumber}번 교구`}</h3>
+                         <p className="text-xs text-slate-500 mt-0.5">교구 이름 · 이미지를 입력하세요</p>
+                       </div>
+                       <button type="button" onClick={openEquipmentMasterEdit} className="shrink-0 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-indigo-600 transition-all">
+                         교구 편집
+                       </button>
+                     </div>
+                     <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
+                       {EQUIPMENT_GUIDE_STEPS.map(({ value, label }) => (
+                         <button key={value} type="button" onClick={() => setSelectedEquipmentStep(value)}
+                           className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all
+                             ${selectedEquipmentStep === value ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                         >
+                           {label}
+                         </button>
+                       ))}
+                     </div>
+                     <div className="w-full">
+                       {equipmentGuideLoading ? (
+                         <div className="flex justify-center py-12"><div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" /></div>
+                       ) : filteredEquipmentItems.length > 0 ? (
+                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                           {filteredEquipmentItems.map((act) => (
+                             <div key={act.id} className="group bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer" onClick={() => { setSelectedEquipmentItem(act); setIsEquipmentDetailOpen(true); }}>
+                               <div className="absolute top-2 right-2 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <button type="button" onClick={(e) => { e.stopPropagation(); openEquipmentEdit(act); }} className="p-2 bg-white/95 backdrop-blur rounded-xl shadow-md text-slate-600 hover:text-indigo-600"><Edit2 size={16}/></button>
+                                 <button type="button" onClick={(e) => deleteEquipmentItem(act.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl shadow-md text-slate-600 hover:text-red-600"><Trash2 size={16}/></button>
+                               </div>
+                               <div className="aspect-video bg-slate-100 flex items-center justify-center overflow-hidden">
+                                 {act.activity_image_url ? (
+                                   <img src={act.activity_image_url} alt="" className="w-full h-full object-cover" />
+                                 ) : (
+                                   <div className="p-4 text-center">
+                                     <p className="text-sm font-bold text-slate-500 line-clamp-3">{act.activity_text || '활동 내용 없음'}</p>
+                                   </div>
+                                 )}
+                               </div>
+                               <div className="p-4">
+                                 <p className="text-sm font-bold text-slate-700 line-clamp-2">{act.activity_text || '활동 내용'}</p>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       ) : (
+                         <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
+                           {selectedEquipmentNumber}번 · 단계 {selectedEquipmentStep}에 등록된 활동이 없습니다.
+                         </div>
+                       )}
+                     </div>
+                   </>
+                 ) : (
+                   <>
+                 {/* 센터 고정 섹션: 교구 가이드라인 클릭 시 전용 뷰 */}
+                 <div className="w-full flex flex-wrap gap-3">
+                   {CENTER_SECTIONS.map((section) => (
+                     <button
+                       key={section.id}
+                       type="button"
+                       onClick={() => section.id === 'sports-equipment-guide' ? setCenterViewMode('equipment-guide') : undefined}
+                       className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left"
+                     >
+                       <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                         <Box size={20} />
+                       </div>
+                       <span className="font-bold text-slate-800">{section.label}</span>
+                     </button>
+                   ))}
+                 </div>
                  {/* 센터 수업: Admin은 월 제한 없음 (전체 선택 가능) */}
                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 w-full">
                    {MONTHS.map((m: number) => (
@@ -608,6 +974,8 @@ export default function AdminCurriculumPage() {
                          </div>
                      )}
                  </div>
+                   </>
+                 )}
                </>
              )}
          </div>
@@ -615,8 +983,12 @@ export default function AdminCurriculumPage() {
 
       {mainTab === 'center' && (
         <button type="button" className="fixed bottom-8 right-8 w-16 h-16 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 shadow-slate-900/40" onClick={() => {
-          setNewPost({ title: '', url: '', month: selectedMonth, week: selectedWeek, expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
-          setIsInputModalOpen(true);
+          if (centerViewMode === 'equipment-guide') {
+            openEquipmentEdit(null);
+          } else {
+            setNewPost({ title: '', url: '', month: selectedMonth, week: selectedWeek, expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+            setIsInputModalOpen(true);
+          }
         }}>
           <Plus size={32} />
         </button>
@@ -631,6 +1003,39 @@ export default function AdminCurriculumPage() {
          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
              <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)} />
              <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                 {isPersonalItem(selectedItem) && selectedItem.category === '신체 기능향상 8회기' ? (
+                   <>
+                     <div className="p-6 border-b border-slate-700 flex justify-between items-start">
+                       <h2 className="text-xl font-black text-white">{selectedItem.title ?? selectedItem.sub_tab}</h2>
+                       <button type="button" onClick={() => setIsDetailModalOpen(false)} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
+                     </div>
+                     <div className="p-6 space-y-6 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
+                       <section className="space-y-3">
+                         <div className="flex items-center gap-2 text-indigo-400 font-black text-xs uppercase">링크 1 세부내용</div>
+                         <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
+                           <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText || '등록된 내용이 없습니다.'}</p>
+                           {selectedItem.url?.trim() && (
+                             <a href={selectedItem.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
+                               <Link2 size={16} /> 링크 1 열기
+                             </a>
+                           )}
+                         </div>
+                       </section>
+                       <section className="space-y-3">
+                         <div className="flex items-center gap-2 text-indigo-400 font-black text-xs uppercase">링크 2 세부내용</div>
+                         <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
+                           <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText2 ?? '등록된 내용이 없습니다.'}</p>
+                           {selectedItem.link2?.trim() ? (
+                             <a href={selectedItem.link2} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
+                               <Link2 size={16} /> 링크 2 열기
+                             </a>
+                           ) : null}
+                         </div>
+                       </section>
+                     </div>
+                   </>
+                 ) : (
+                   <>
                  <div className="relative w-full aspect-video bg-black">
                      {selectedItem.type === 'youtube' && getYouTubeId(selectedItem.url ?? '') ? (
                          <iframe 
@@ -708,6 +1113,8 @@ export default function AdminCurriculumPage() {
                          </p>
                      </div>
                  </div>
+                   </>
+                 )}
              </div>
          </div>
       )}
@@ -824,6 +1231,121 @@ export default function AdminCurriculumPage() {
               </div>
             </div>
             <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all text-center">{personalEditingId ? '수정 저장' : '등록 완료'}</button>
+          </form>
+        </div>
+      )}
+
+      {is8huiModalOpen && editing8huiSlot != null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={close8huiModal} />
+          <form onSubmit={handle8huiSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-black">{editing8huiId ? '8회기 수정' : `${editing8huiSlot}회기 등록`}</h2>
+              <X className="text-slate-400 cursor-pointer" onClick={close8huiModal} />
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">제목</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="예: 1회기" value={eightHuiForm.title} onChange={e => setEightHuiForm(f => ({ ...f, title: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">링크 1 세부내용</label>
+                <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="링크 1 관련 설명" value={eightHuiForm.detailText} onChange={e => setEightHuiForm(f => ({ ...f, detailText: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">링크 1 URL (선택)</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={eightHuiForm.url} onChange={e => setEightHuiForm(f => ({ ...f, url: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">링크 2 세부내용</label>
+                <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="링크 2 관련 설명" value={eightHuiForm.detailText2} onChange={e => setEightHuiForm(f => ({ ...f, detailText2: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">링크 2 URL (선택)</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={eightHuiForm.link2} onChange={e => setEightHuiForm(f => ({ ...f, link2: e.target.value }))} />
+              </div>
+            </div>
+            <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all text-center">저장</button>
+          </form>
+        </div>
+      )}
+
+      {isEquipmentDetailOpen && selectedEquipmentItem && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} />
+          <div className="relative bg-white w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-start">
+              <h2 className="text-xl font-black text-slate-900">{selectedEquipmentItem.number}번 · {selectedEquipmentItem.step}단계 활동</h2>
+              <button type="button" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} className="p-2 rounded-full hover:bg-slate-100 text-slate-400"><X size={20}/></button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-4">
+              {selectedEquipmentItem.activity_image_url && (
+                <div className="aspect-video rounded-2xl bg-slate-100 overflow-hidden">
+                  <img src={selectedEquipmentItem.activity_image_url} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="text-slate-600 text-sm font-bold leading-relaxed whitespace-pre-wrap">{selectedEquipmentItem.activity_text || '등록된 활동 내용이 없습니다.'}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEquipmentEditOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentEdit} />
+          <form onSubmit={handleEquipmentSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-black">{editingEquipmentId ? '활동 수정' : '활동 등록'}</h2>
+              <X className="text-slate-400 cursor-pointer" onClick={closeEquipmentEdit} />
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase">번호 (1~12)</label>
+                  <select className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={equipmentForm.number} onChange={e => setEquipmentForm(f => ({ ...f, number: Number(e.target.value) }))}>
+                    {EQUIPMENT_GUIDE_NUMBERS.map((n) => <option key={n} value={n}>{n}번</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase">단계</label>
+                  <select className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={equipmentForm.step} onChange={e => setEquipmentForm(f => ({ ...f, step: Number(e.target.value) }))}>
+                    {EQUIPMENT_GUIDE_STEPS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">활동 이미지 URL (선택)</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={equipmentForm.activity_image_url} onChange={e => setEquipmentForm(f => ({ ...f, activity_image_url: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">활동 내용 (선택)</label>
+                <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="활동 설명 또는 텍스트" value={equipmentForm.activity_text} onChange={e => setEquipmentForm(f => ({ ...f, activity_text: e.target.value }))} />
+              </div>
+            </div>
+            <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all text-center">저장</button>
+          </form>
+        </div>
+      )}
+
+      {isEquipmentMasterEditOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentMasterEdit} />
+          <form onSubmit={handleEquipmentMasterSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-black">{selectedEquipmentNumber}번 교구 편집</h2>
+              <X className="text-slate-400 cursor-pointer" onClick={closeEquipmentMasterEdit} />
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">교구 이름</label>
+                <input required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="교구 이름" value={equipmentMasterForm.name} onChange={e => setEquipmentMasterForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">이미지 URL (선택)</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={equipmentMasterForm.image_url} onChange={e => setEquipmentMasterForm(f => ({ ...f, image_url: e.target.value }))} />
+              </div>
+            </div>
+            <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all text-center">저장</button>
           </form>
         </div>
       )}

@@ -1,0 +1,121 @@
+/* SPOKEDU PRO 대시보드 전용 스타일 (원본 HTML 기준) */
+.spokedu-pro {
+  --sp-pro-bg: #0f172a;
+  --sp-pro-surface: #1e293b;
+  --sp-pro-text: #f8fafc;
+  --sp-pro-brand: #3b82f6;
+  --sp-pro-orange: #f97316;
+  --sp-pro-green: #10b981;
+}
+
+.spokedu-pro .custom-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.spokedu-pro .custom-scroll::-webkit-scrollbar-track {
+  background: var(--sp-pro-bg);
+}
+.spokedu-pro .custom-scroll::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 10px;
+}
+.spokedu-pro .custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+.spokedu-pro .view-content {
+  display: none;
+  opacity: 0;
+}
+.spokedu-pro .view-content.active {
+  display: block;
+  animation: spProFadeIn 0.4s ease-out forwards;
+}
+@keyframes spProFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.spokedu-pro .nav-item {
+  color: #94a3b8;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+.spokedu-pro .nav-item:hover {
+  color: #f8fafc;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.spokedu-pro .nav-active {
+  color: #f8fafc;
+  font-weight: 700;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--sp-pro-brand);
+}
+
+.spokedu-pro .media-card {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  transform-origin: center center;
+  cursor: pointer;
+}
+.spokedu-pro .media-card:hover {
+  transform: scale(1.03);
+  z-index: 10;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.spokedu-pro .tool-panel {
+  transform: translateY(120%);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.spokedu-pro .tool-panel.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.spokedu-pro .monster-float {
+  animation: spProFloat 4s ease-in-out infinite;
+}
+@keyframes spProFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.spokedu-pro .score-block {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* 클릭 가능한 요소에 포인터 커서 통일 (input/textarea 제외) */
+.spokedu-pro button,
+.spokedu-pro a,
+.spokedu-pro [role="button"],
+.spokedu-pro .media-card {
+  cursor: pointer;
+}
+.spokedu-pro select {
+  cursor: pointer;
+}
+.spokedu-pro input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+.spokedu-pro textarea {
+  cursor: text;
+}

@@ -15,6 +15,20 @@ const nextConfig: NextConfig = {
       { source: "/admin/chat", destination: "/admin", permanent: true },
     ];
   },
+  // YouTube/Vimeo embed 허용. "www.youtube.com에서 연결을 거부했습니다" 방지 (CSP frame-src만 추가)
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default withPWA(nextConfig);
