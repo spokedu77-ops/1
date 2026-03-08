@@ -5,6 +5,7 @@ import { useState } from 'react';
 const PAGES = [
   { id: 'gym', label: '체육관 수업', url: '/info/gym', title: 'SPOKEDU 체육관 수업 안내' },
   { id: 'private', label: '과외 수업', url: '/info/private', title: 'SPOKEDU 과외 수업 안내' },
+  { id: 'dispatch', label: '파견', url: '/info/dispatch', title: 'SPOKEDU 프리미엄 체육 파견 솔루션' },
 ];
 
 export default function InfoPagesAdmin() {

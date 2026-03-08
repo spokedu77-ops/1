@@ -194,7 +194,7 @@ export default function RoadmapView({
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-6">
             {weekTheme.items.slice(0, 4).map((item, idx) => (
               <ProgramCardRow1
                 key={`row1-${idx}-${item.programId}`}
@@ -225,7 +225,7 @@ export default function RoadmapView({
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-6">
             {row2.items.slice(0, 4).map((item, idx) => (
               <ProgramCardRow2
                 key={`row2-${idx}-${item.programId}`}

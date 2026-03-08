@@ -35,8 +35,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid query', details: parsed.error.flatten() }, { status: 400 });
   }
   const { scope, keys } = parsed.data;
-  const allowedKeys = scope === 'public' ? [...PUBLIC_SCOPE_KEYS] : [...CATALOG_SCOPE_KEYS];
-  const requested = keys.filter((k) => allowedKeys.includes(k as (typeof allowedKeys)[number]));
+  const allowedKeys: readonly string[] =
+    scope === 'public' ? [...PUBLIC_SCOPE_KEYS] : [...CATALOG_SCOPE_KEYS];
+  const requested = keys.filter((k) => allowedKeys.includes(k));
   if (requested.length === 0) {
     return NextResponse.json({ data: {} });
   }

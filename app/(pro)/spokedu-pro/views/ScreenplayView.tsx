@@ -12,7 +12,6 @@ type ScreenMode = {
   gradient: string;
   border: string;
   icon: string;
-  span?: boolean;
 };
 
 const MODES: ScreenMode[] = [
@@ -81,7 +80,6 @@ const MODES: ScreenMode[] = [
     gradient: 'from-teal-600/20 to-cyan-600/10',
     border: 'border-teal-500/30',
     icon: '🔀',
-    span: true,
   },
 ];
 
@@ -112,7 +110,7 @@ export default function ScreenplayView({
             tabIndex={0}
             onClick={() => onOpenInteractive(m.id)}
             onKeyDown={(e) => e.key === 'Enter' && onOpenInteractive(m.id)}
-            className={`media-card bg-gradient-to-br ${m.gradient} border ${m.border} p-8 rounded-3xl relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01] ${m.span ? 'md:col-span-2' : ''}`}
+            className={`media-card bg-gradient-to-br ${m.gradient} border ${m.border} p-8 rounded-3xl relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01]`}
           >
             {/* 배경 아이콘 */}
             <div className="absolute right-6 top-6 text-[80px] opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all select-none pointer-events-none">

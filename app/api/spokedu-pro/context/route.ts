@@ -69,7 +69,8 @@ export async function GET() {
     centersMap.set(owned.id, { id: owned.id, name: owned.name, role: 'owner' });
   }
   for (const member of memberRows ?? []) {
-    const center = member.spokedu_pro_centers as { id: string; name: string } | null;
+    const raw = member.spokedu_pro_centers;
+    const center = (Array.isArray(raw) ? raw[0] : raw) as { id: string; name: string } | null | undefined;
     if (center && !centersMap.has(center.id)) {
       centersMap.set(center.id, { id: center.id, name: center.name, role: member.role as CenterRole });
     }
