@@ -93,6 +93,18 @@ export const DEFAULT_DASHBOARD_V4: DashboardV4 = {
 const THEMES = ['인트로 프로그램', '협동 놀이체육', '스피드리액션', '인지 발달', '챌린지', '술래 대결', '변형스포츠'];
 const ROLES = ['Intro', 'Lead-up', 'Core', 'Play', 'Screen', 'Cooldown', 'Finisher'];
 const GRADIENTS = ['from-orange-500 to-red-600', 'from-emerald-500 to-teal-600', 'from-purple-500 to-indigo-600'];
+const CATEGORIES = ['Play', 'Think', 'Grow'] as const;
+
+/** ThemeKey → PROGRAM_BANK의 theme 문자열 매핑 */
+export const THEME_KEY_TO_BANK_THEME: Record<ThemeKey, string> = {
+  intro: '인트로 프로그램',
+  'co-op': '협동 놀이체육',
+  'speed-reaction': '스피드리액션',
+  cognitive: '인지 발달',
+  challenge: '챌린지',
+  'tag-duel': '술래 대결',
+  'variant-sports': '변형스포츠',
+};
 
 export interface ProgramBankItem {
   id: number;
@@ -100,6 +112,7 @@ export interface ProgramBankItem {
   theme: string;
   role: string;
   gradient: string;
+  category: 'Play' | 'Think' | 'Grow';
 }
 
 export const PROGRAM_BANK: ProgramBankItem[] = Array.from({ length: 100 }, (_, i) => {
@@ -110,6 +123,7 @@ export const PROGRAM_BANK: ProgramBankItem[] = Array.from({ length: 100 }, (_, i
     theme: THEMES[(i + 1) % THEMES.length],
     role: ROLES[(i + 1) % ROLES.length],
     gradient: GRADIENTS[idx],
+    category: CATEGORIES[idx],
   };
 });
 

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPOKEDU — 프리미엄 체육 파견 솔루션</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dispatch.css">
+</head>
+<body class="dispatch-page">
+
+  <!-- NAV -->
+  <nav id="dispatch-navbar">
+    <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
+      <a href="#" class="text-2xl font-black tracking-tighter text-white" style="font-family:'DM Sans',sans-serif;">
+        SPOK<span style="color:var(--sky)">EDU</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-400">
+        <a href="#why" class="hover:text-white transition">독보적 경쟁력</a>
+        <a href="#trust" class="hover:text-white transition">직영 관리 시스템</a>
+        <a href="#program" class="hover:text-white transition">맞춤형 파견</a>
+        <a href="#process" class="hover:text-white transition">도입 절차</a>
+      </div>
+      <a href="#contact" class="dispatch-btn-primary text-sm py-2.5 px-5">
+        제휴 문의하기
+      </a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="dispatch-hero-wrap">
+    <div class="dispatch-hero-video-bg"></div>
+    <div class="dispatch-hero-content">
+      <div class="dispatch-hero-kicker dispatch-reveal">
+        <i data-lucide="building" style="width:14px;height:14px;"></i>
+        B2B 기관 전용 프리미엄 체육 파트너십
+      </div>
+      <h1 class="dispatch-hero-h1 text-white dispatch-reveal delay-1">
+        기관의 교육 수준을 증명하는<br>
+        <span class="dispatch-grad">완벽한 체육 시스템</span>
+      </h1>
+      <p class="dispatch-hero-sub dispatch-reveal delay-2">
+        단순한 시간 때우기식 파견이 아닙니다. 연세대 체육교육 연구진이 설계한<br>
+        몰입형 인터랙티브 웜업 프로그램으로 귀 기관의 교육 퀄리티를 극대화하세요.
+      </p>
+      <div class="flex flex-wrap gap-3 mb-14 dispatch-reveal delay-3">
+        <a href="#contact" class="dispatch-btn-primary">
+          무료 방문 컨설팅 신청
+          <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+        </a>
+        <a href="#why" class="dispatch-btn-outline">
+          스포키듀 솔루션 보기
+        </a>
+      </div>
+      <div class="dispatch-stat-strip dispatch-reveal delay-3">
+        <div class="dispatch-stat-item">
+          <div class="dispatch-stat-num">3<span>만</span>+</div>
+          <div class="dispatch-stat-label">현장 검증 학부모·교사 팬덤</div>
+        </div>
+        <div class="dispatch-stat-item">
+          <div class="dispatch-stat-num">100<span>%</span></div>
+          <div class="dispatch-stat-label">외주 없는 본사 직영 디렉터</div>
+        </div>
+        <div class="dispatch-stat-item">
+          <div class="dispatch-stat-num">Data</div>
+          <div class="dispatch-stat-label">성장 지표 기반 월간 리포트</div>
+        </div>
+        <div class="dispatch-stat-item">
+          <div class="dispatch-stat-num">24<span>h</span></div>
+          <div class="dispatch-stat-label">맞춤형 제안서 발송 기한</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY SPOKEDU -->
+  <section id="why" class="py-28" style="background:var(--ink);">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="max-w-3xl mb-16 dispatch-reveal">
+        <div class="dispatch-section-label">Core Competence</div>
+        <h2 class="text-4xl md:text-5xl font-black leading-tight mb-5">
+          시장에 넘쳐나는 알바 강사 파견,<br><span class="dispatch-grad">스포키듀는 근본부터 다릅니다</span>
+        </h2>
+        <p class="text-slate-400 text-lg leading-relaxed">
+          프리랜서를 단순 중개하고 수수료를 받는 구조가 아닙니다.<br>
+          스포키듀는 학문적 근거 기반의 철학과 혹독하게 훈련된 직영 디렉터를 통해 기관의 골칫거리였던 강사 리스크를 완전히 소거합니다.
+        </p>
+      </div>
+      <div class="dispatch-glass-card overflow-hidden mb-16 dispatch-reveal">
+        <div class="grid grid-cols-3 text-sm font-bold" style="background:rgba(255,255,255,.04);">
+          <div class="p-5 text-slate-500">비교 항목</div>
+          <div class="p-5 text-slate-400 border-l" style="border-color:var(--border);">일반 체육 파견 업체</div>
+          <div class="p-5 text-sky-400 border-l" style="border-color:var(--border);background:rgba(56,189,248,.06);">SPOKEDU 전문 솔루션</div>
+        </div>
+        <div class="dispatch-divider"></div>
+        <div id="dispatch-compare-rows"></div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-10">
+        <div class="dispatch-glass-card p-8 dispatch-reveal" style="border-top:3px solid #38bdf8;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:#38bdf8;line-height:1;">PLAY</div>
+          <h3 class="text-xl font-bold text-white mt-1 mb-3">즐거운 몰입 : 인터랙티브 웜업</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">운동은 괴로운 훈련이 아니라 즐거운 놀이여야 합니다. 강요하지 않아도 아이들이 스스로 먼저 움직이고 싶게 만드는 '자발적 몰입' 루틴으로 현장 분위기를 완벽하게 장악합니다.</p>
+        </div>
+        <div class="dispatch-glass-card p-8 dispatch-reveal delay-1" style="border-top:3px solid #60a5fa;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:#60a5fa;line-height:1;">THINK</div>
+          <h3 class="text-xl font-bold text-white mt-1 mb-3">인지적 자극 : 두뇌를 깨우는 체육</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">기계적인 반복 지시가 아닙니다. 룰 안에서 어떻게 움직일지 스스로 생각하고 판단하며 문제를 해결하는 과정을 통해 신체와 인지 능력을 동시에 발달시킵니다.</p>
+        </div>
+        <div class="dispatch-glass-card p-8 dispatch-reveal delay-2" style="border-top:3px solid #818cf8;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:#818cf8;line-height:1;">GROW</div>
+          <h3 class="text-xl font-bold text-white mt-1 mb-3">전인적 발달 : 모두를 위한 포용</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">느린 학습자나 발달이 지연된 아이들도 단 한 명의 소외 없이 성취감을 경험합니다. 정교한 난이도 조절로 육체적 성장을 넘어 내면의 지속 가능한 성장을 지원합니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIRECTOR & TRUST -->
+  <section id="trust" class="py-28" style="background:#090f1c; border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+    <div class="max-w-7xl mx-auto px-6 dispatch-reveal">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div>
+          <div class="dispatch-section-label mb-3">Uncompromising System</div>
+          <h2 class="text-3xl md:text-5xl font-black leading-tight mb-6">
+            원장님의 가장 큰 고민,<br>
+            <span class="dispatch-grad">체계적인 강사 관리</span>
+          </h2>
+          <p class="text-slate-400 text-lg leading-relaxed mb-10">
+            갑작스러운 강사 펑크, 불성실한 태도, 학부모 컴플레인. 이제 본사가 책임지고 관리합니다. 스포키듀는 교육기관의 신뢰도를 지키는 가장 확실한 파트너입니다.
+          </p>
+          <div class="space-y-5">
+            <div class="flex items-start gap-4 dispatch-glass-card p-6">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style="background:rgba(56,189,248,.15);">
+                <i data-lucide="shield-alert" style="width:20px;height:20px;color:#38bdf8;"></i>
+              </div>
+              <div>
+                <div class="font-bold text-white text-lg mb-1">결근·지각 원천 차단 2-LAYER 시스템</div>
+                <div class="text-slate-400 text-sm leading-relaxed">불가피한 강사 부재 발생 시, 기관 통보 이전에 본사에서 즉시 대체 직영 강사를 파견하여 교육 공백을 0%로 만듭니다.</div>
+              </div>
+            </div>
+            <div class="flex items-start gap-4 dispatch-glass-card p-6">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style="background:rgba(56,189,248,.15);">
+                <i data-lucide="bar-chart-3" style="width:20px;height:20px;color:#38bdf8;"></i>
+              </div>
+              <div>
+                <div class="font-bold text-white text-lg mb-1">데이터 기반 월간 성장 리포트</div>
+                <div class="text-slate-400 text-sm leading-relaxed">단순히 뛰기만 하는 수업이 아닙니다. 아이들의 수업 참여도와 신체 발달 지표를 분석한 시각화 리포트를 매월 제공하여 학부모 상담의 강력한 무기를 드립니다.</div>
+              </div>
+            </div>
+            <div class="flex items-start gap-4 dispatch-glass-card p-6">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style="background:rgba(56,189,248,.15);">
+                <i data-lucide="file-check" style="width:20px;height:20px;color:#38bdf8;"></i>
+              </div>
+              <div>
+                <div class="font-bold text-white text-lg mb-1">안전 최우선, 투명한 책임 보장</div>
+                <div class="text-slate-400 text-sm leading-relaxed">모든 교육 활동은 영업배상책임보험을 통해 완벽하게 보호받습니다. 표준 계약서를 통한 투명하고 명확한 파트너십을 약속합니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-6">
+          <div class="dispatch-glass-card p-8 dispatch-reveal border-l-4" style="border-left-color: #0ea5e9;">
+            <div class="flex gap-1 mb-4">
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+            </div>
+            <h4 class="text-white font-bold text-lg mb-3">"선생님들 업무 부담이 싹 사라졌습니다"</h4>
+            <p class="text-slate-300 leading-relaxed mb-6 text-sm">"기존 체육 강사님들은 오시면 통제도 안 되고 저희 교사들이 다 붙어서 보조해야 했는데, 스포키듀 디렉터님들은 웜업 루틴 하나로 현장을 완벽히 장악합니다. 체계적인 커리큘럼 덕분에 부모님들 입소문이 나서 신입 원아 유치에도 큰 도움이 되고 있습니다."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black" style="background:#0ea5e9;color:#fff;">K</div>
+              <div>
+                <div class="text-sm font-bold text-white">김○○ 원장님</div>
+                <div class="text-xs text-sky-400">수도권 프리미엄 유아 교육 기관</div>
+              </div>
+            </div>
+          </div>
+          <div class="dispatch-glass-card p-8 dispatch-reveal delay-1 border-l-4" style="border-left-color: #8b5cf6;">
+            <div class="flex gap-1 mb-4">
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+              <i data-lucide="star" style="width:18px;height:18px;fill:#fbbf24;color:#fbbf24;"></i>
+            </div>
+            <h4 class="text-white font-bold text-lg mb-3">"느린 학습자도 소외되지 않는 진짜 교육"</h4>
+            <p class="text-slate-300 leading-relaxed mb-6 text-sm">"특수 아동이 섞여 있는 통합반이라 외부 체육 강사를 쓰기 조심스러웠습니다. 하지만 스포키듀는 느린 학습자들을 배려하는 난이도 조절 시스템과 특수 체육 전문 디렉터가 배치되어 모든 아이들이 성취감을 느끼며 수업을 즐기고 있습니다."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black" style="background:#8b5cf6;color:#fff;">P</div>
+              <div>
+                <div class="text-sm font-bold text-white">박○○ 센터장님</div>
+                <div class="text-xs text-sky-400">지역 복지관 아동 발달 센터</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRAMS -->
+  <section id="program" class="py-28" style="background:var(--ink);">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 dispatch-reveal">
+        <div class="dispatch-section-label mb-3">Customized Line-up</div>
+        <h2 class="text-4xl md:text-5xl font-black mb-4">기관 목적에 맞춘 타겟 최적화 파견</h2>
+        <p class="text-slate-400 text-lg">대상 연령과 기관 특성에 맞춰 최고급 장비와 검증된 커리큘럼이 현장으로 직접 투입됩니다.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="dispatch-glass-card overflow-hidden dispatch-reveal group">
+          <div class="dispatch-img-grid-cell" style="aspect-ratio:16/9;">
+            <img src="https://images.unsplash.com/photo-1596464716127-f2a82984de30?q=80&w=900&auto=format&fit=crop" alt="유아 체육" loading="lazy">
+            <div class="dispatch-img-overlay"></div>
+            <div class="absolute bottom-0 left-0 p-5 z-10">
+              <span class="dispatch-badge text-sky-400 mb-2" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">유치원 · 어린이집 · 놀이학교</span>
+            </div>
+          </div>
+          <div class="p-8">
+            <h3 class="text-3xl font-black text-white mb-3">프리미엄 유아 놀이 체육</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">단순한 공놀이가 아닙니다. 기본운동기술(FMS)을 바탕으로 한 감각통합 신체 놀이. 본사에서 검증한 안전하고 트렌디한 최고급 교구를 전량 직접 지참하여 방문합니다.</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">몰입형 웜업 탑재</span>
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">연령별 발달 커리큘럼</span>
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">교구 자체 해결</span>
+            </div>
+          </div>
+        </div>
+        <div class="dispatch-glass-card overflow-hidden dispatch-reveal delay-1 group">
+          <div class="dispatch-img-grid-cell" style="aspect-ratio:16/9;">
+            <img src="https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=900&auto=format&fit=crop" alt="학교 스포츠" loading="lazy">
+            <div class="dispatch-img-overlay"></div>
+            <div class="absolute bottom-0 left-0 p-5 z-10">
+              <span class="dispatch-badge text-sky-400 mb-2" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">초중고 방과후 · 지역아동센터</span>
+            </div>
+          </div>
+          <div class="p-8">
+            <h3 class="text-3xl font-black text-white mb-3">학교 스포츠 & 클럽</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">종목별 전문 스킬 훈련은 기본, 팀 스포츠를 통해 협동심과 리더십을 배양하는 인지 중심 그룹 수업. 축구, 농구, 줄넘기 등 학교와 센터의 니즈에 맞춘 종목 선택이 가능합니다.</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">리더십 배양</span>
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">다양한 종목 선택</span>
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">사회성 강화</span>
+            </div>
+          </div>
+        </div>
+        <div class="dispatch-glass-card overflow-hidden dispatch-reveal group">
+          <div class="dispatch-img-grid-cell" style="aspect-ratio:16/9;">
+            <img src="https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?q=80&w=900&auto=format&fit=crop" alt="특수 체육" loading="lazy">
+            <div class="dispatch-img-overlay"></div>
+            <div class="absolute bottom-0 left-0 p-5 z-10">
+              <span class="dispatch-badge text-sky-400 mb-2" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">발달센터 · 복지관 · 특수학급</span>
+            </div>
+          </div>
+          <div class="p-8">
+            <h3 class="text-3xl font-black text-white mb-3">특수 및 통합 체육</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">느린 학습자, 발달 지연 아동을 위해 세심하게 설계된 인클루시브 교육. 장애인 스포츠 지도사 자격을 갖춘 특수 체육 전문 디렉터가 배치되어 개별 신체 능력에 맞춘 성공 경험을 제공합니다.</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">특수 전문 디렉터</span>
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">개별 맞춤 난이도</span>
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">인클루시브 철학</span>
+            </div>
+          </div>
+        </div>
+        <div class="dispatch-glass-card overflow-hidden dispatch-reveal delay-1 group">
+          <div class="dispatch-img-grid-cell" style="aspect-ratio:16/9;">
+            <img src="https://images.unsplash.com/photo-1526676037777-05a232554f77?q=80&w=900&auto=format&fit=crop" alt="운동회" loading="lazy">
+            <div class="dispatch-img-overlay"></div>
+            <div class="absolute bottom-0 left-0 p-5 z-10">
+              <span class="dispatch-badge text-sky-400 mb-2" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">기관 단체 행사 · 방학 캠프</span>
+            </div>
+          </div>
+          <div class="p-8">
+            <h3 class="text-3xl font-black text-white mb-3">명랑 운동회 & 이벤트 기획</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">소규모 단합 대회부터 100인 이상 다수 인원의 체육대회, 팝업 신체 놀이터까지. 기관의 골칫거리인 복잡한 행사 기획부터 음향, 장비 세팅, 안전한 현장 진행을 본사가 일괄 책임집니다.</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">행사 턴키 솔루션</span>
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">안전 통제 특화</span>
+              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">대형 교구 대여</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section id="process" class="py-28" style="background:#080d18; border-top:1px solid var(--border);">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 dispatch-reveal">
+        <div class="dispatch-section-label mb-3">Easy Onboarding</div>
+        <h2 class="text-4xl md:text-5xl font-black mb-4">가장 빠르고 확실한 도입 프로세스</h2>
+        <p class="text-slate-400 text-lg">복잡한 절차 없이, 문의 접수 후 <strong class="text-white">최단 7일 이내</strong>에 프리미엄 체육 수업이 시작됩니다.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 dispatch-reveal" id="dispatch-process-steps"></div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-28" style="background:var(--ink); border-top:1px solid var(--border);">
+    <div class="max-w-3xl mx-auto px-6">
+      <div class="text-center mb-14 dispatch-reveal">
+        <div class="dispatch-section-label mb-3">FAQ</div>
+        <h2 class="text-4xl font-black">기관 담당자분들이 자주 묻는 질문</h2>
+      </div>
+      <div class="space-y-3 dispatch-reveal" id="dispatch-faq-list"></div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="py-28 relative overflow-hidden" style="background:#06080f;">
+    <div class="absolute inset-0" style="background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(56,189,248,0.08), transparent);"></div>
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 h-px w-full max-w-4xl" style="background:linear-gradient(to right, transparent, rgba(56,189,248,.4), transparent);"></div>
+    <div class="max-w-4xl mx-auto px-6 relative z-10">
+      <div class="text-center mb-12 dispatch-reveal">
+        <div class="dispatch-section-label mb-3">Proposal Request</div>
+        <h2 class="text-4xl md:text-5xl font-black mb-4 text-white">
+          귀 기관만의 압도적인 교육 시스템,<br>스포키듀가 완성합니다
+        </h2>
+        <p class="text-slate-400 text-lg">간단한 정보만 남겨주시면 담당 파트너 디렉터가 <strong class="text-white">24시간 내</strong>에<br>기관에 딱 맞는 맞춤형 제안서를 들고 연락드립니다.</p>
+      </div>
+      <div class="dispatch-glass-card p-8 md:p-12 dispatch-reveal border-t-2" style="border-top-color: #0ea5e9;">
+        <form id="dispatch-contact-form" novalidate>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label class="dispatch-form-label">기관명 / 센터명 <span class="text-sky-400">*</span></label>
+              <input type="text" class="dispatch-form-input" placeholder="예: 스포키유치원, 스포키지역아동센터" required>
+            </div>
+            <div>
+              <label class="dispatch-form-label">담당자 성함 및 직책 <span class="text-sky-400">*</span></label>
+              <input type="text" class="dispatch-form-input" placeholder="예: 홍길동 원장, 김철수 교사" required>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label class="dispatch-form-label">연락처 <span class="text-sky-400">*</span></label>
+              <input type="tel" class="dispatch-form-input" placeholder="010-0000-0000" required>
+            </div>
+            <div>
+              <label class="dispatch-form-label">기관 소재지</label>
+              <input type="text" class="dispatch-form-input" placeholder="예: 서울 마포구, 경기 성남시">
+            </div>
+          </div>
+          <div class="mb-6">
+            <label class="dispatch-form-label">파견 희망 프로그램 (다중 선택 가능)</label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1" id="dispatch-program-checkboxes"></div>
+          </div>
+          <div class="mb-8">
+            <label class="dispatch-form-label">상세 문의 사항 (선택)</label>
+            <textarea class="dispatch-form-input" rows="4" placeholder="대상 연령(유아/초등 등), 대략적 인원, 특수학급 유무, 기존 체육 수업의 아쉬웠던 점 등 기관 환경을 자유롭게 기재해 주시면 보다 정확한 제안이 가능합니다."></textarea>
+          </div>
+          <button type="submit" class="dispatch-btn-primary w-full text-lg py-4">
+            무료 방문 컨설팅 및 제안서 신청하기
+            <i data-lucide="arrow-right" style="width:20px;height:20px;"></i>
+          </button>
+          <p class="text-center text-slate-500 text-xs mt-4">* 수집된 정보는 제휴 상담 및 제안서 발송 외 목적으로 사용되지 않습니다.</p>
+        </form>
+      </div>
+      <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center dispatch-reveal">
+        <a href="tel:010-0000-0000" class="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm font-semibold">
+          <i data-lucide="phone" style="width:16px;height:16px;"></i> 전화 다이렉트 상담 010-0000-0000
+        </a>
+        <span class="hidden sm:block text-slate-700">|</span>
+        <a href="#" class="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm font-semibold">
+          <i data-lucide="message-circle" style="width:16px;height:16px;"></i> 카카오 채널 B2B 전용 상담창
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="background:#040609; border-top:1px solid var(--border);" class="py-10">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div>
+        <div class="text-2xl font-black" style="font-family:'DM Sans',sans-serif;">SPOK<span style="color:var(--sky)">EDU</span></div>
+        <div class="text-slate-600 text-xs mt-1">Play, Think, Grow.</div>
+        <div class="text-slate-500 text-xs mt-2">신체 활동을 통해 스스로 생각하는 힘을 기르고, 아이들의 전인적인 성장을 실현합니다.</div>
+      </div>
+      <div class="text-slate-600 text-xs text-center md:text-right leading-relaxed">
+        사업자등록번호: 000-00-00000 &nbsp;|&nbsp; 대표: 홍길동<br>
+        서울특별시 ○○구 ○○로 ○○ &nbsp;|&nbsp; contact@spokedu.kr<br>
+        © 2025 SPOKEDU. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- FLOATING CTA -->
+  <div id="dispatch-floating-cta">
+    <div class="flex items-center justify-between px-5 py-3 gap-4" style="background:rgba(8,14,26,0.95); backdrop-filter:blur(14px); border-top:1px solid var(--border);">
+      <span class="text-sm font-bold text-white hidden sm:block">체육 강사 구인 스트레스 제로 — 24시간 내 맞춤 제안서 발송</span>
+      <div class="flex gap-3 w-full sm:w-auto">
+        <a href="tel:010-0000-0000" class="dispatch-btn-outline text-sm py-2.5 px-4 flex-1 sm:flex-none">
+          <i data-lucide="phone" style="width:15px;height:15px;"></i> 전화 상담
+        </a>
+        <a href="#contact" class="dispatch-btn-primary text-sm py-2.5 px-5 flex-1 sm:flex-none">
+          도입 제안 받기 →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="dispatch-toast">✅ 성공적으로 접수되었습니다. 담당 디렉터가 곧 연락드리겠습니다.</div>
+
+  <script>lucide.createIcons();</script>
+  <script src="js/dispatch.js"></script>
+</body>
+</html>

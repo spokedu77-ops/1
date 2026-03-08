@@ -7,7 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { getTenantQuerySchema, patchTenantBodySchema, TENANT_KEYS, type PatchTenantBody } from '@/app/lib/spokedu-pro/schemas';
+import { z } from 'zod';
+import { getTenantQuerySchema, patchTenantBodySchema, TENANT_KEYS } from '@/app/lib/spokedu-pro/schemas';
+type PatchTenantBody = z.infer<typeof patchTenantBodySchema>;
 
 async function getUserId(request: NextRequest): Promise<string | null> {
   const serverSupabase = await createServerSupabaseClient();
