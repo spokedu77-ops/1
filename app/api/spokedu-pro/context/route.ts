@@ -7,9 +7,10 @@
  *   true  (DB 마이그레이션 후) — spokedu_pro_centers + spokedu_pro_subscriptions 실제 조회
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { getActiveCenterIdFromCookie } from '@/app/lib/server/spokeduProContext';
 
 /**
  * DB 마이그레이션 준비 여부.
@@ -22,7 +23,7 @@ type Plan = 'free' | 'basic' | 'pro';
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired';
 type CenterRole = 'owner' | 'admin' | 'coach';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const serverSupabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -82,7 +83,11 @@ export async function GET() {
     }
 
     const centers = Array.from(centersMap.values());
-    const activeCenterId = centers.length > 0 ? centers[0].id : null;
+
+    // 쿠키에서 active center 읽기 → 유효한 멤버십이면 사용, 아니면 centers[0] fallback
+    const cookieCenterId = getActiveCenterIdFromCookie(request);
+    const cookieCenterValid = cookieCenterId && centersMap.has(cookieCenterId);
+    const activeCenterId = cookieCenterValid ? cookieCenterId : (centers.length > 0 ? centers[0].id : null);
     const activeCenter = activeCenterId ? centersMap.get(activeCenterId) : null;
 
     // 3. 구독 조회
@@ -90,11 +95,13 @@ export async function GET() {
     let entitlementStatus: SubscriptionStatus = 'active';
     let isPro = false;
     let currentPeriodEndAt: string | null = null;
+    let cancelAtPeriodEnd = false;
+    let stripeSubscriptionId: string | null = null;
 
     if (activeCenterId) {
       const { data: sub } = await supabase
         .from('spokedu_pro_subscriptions')
-        .select('plan, status, current_period_end, trial_end')
+        .select('plan, status, current_period_end, trial_end, cancel_at_period_end, stripe_subscription_id')
         .eq('center_id', activeCenterId)
         .maybeSingle();
 
@@ -104,6 +111,8 @@ export async function GET() {
         entitlementStatus = sub.status as SubscriptionStatus;
         isPro = isActive && (sub.plan === 'pro' || sub.plan === 'basic');
         currentPeriodEndAt = (sub.current_period_end as string | null) ?? (sub.trial_end as string | null) ?? null;
+        cancelAtPeriodEnd = (sub.cancel_at_period_end as boolean | null) ?? false;
+        stripeSubscriptionId = (sub.stripe_subscription_id as string | null) ?? null;
       }
     }
 
@@ -112,7 +121,14 @@ export async function GET() {
       centers,
       role: activeCenter?.role ?? null,
       entitlement: { plan: entitlementPlan, status: entitlementStatus, isPro },
-      billing: { priceKrw: 79900, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt },
+      billing: {
+        priceKrw: 79900,
+        promoPriceKrw: null,
+        promoEndAt: null,
+        currentPeriodEndAt,
+        cancelAtPeriodEnd,
+        stripeSubscriptionId,
+      },
       dbReady: true,
     });
   } catch {

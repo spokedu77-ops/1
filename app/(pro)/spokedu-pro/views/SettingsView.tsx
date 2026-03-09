@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw, Sparkles,
-  CreditCard, AlertTriangle, Clock, XCircle,
+  CreditCard, AlertTriangle, Clock, XCircle, CalendarX,
 } from 'lucide-react';
 import { useProContext, type Plan, type SubscriptionStatus } from '../hooks/useProContext';
 
@@ -49,6 +49,42 @@ const PLANS: PlanDef[] = [
     icon: Crown,
   },
 ];
+
+// ── 종료 예약 배너 ────────────────────────────────────────────────────────────
+function CancelScheduledBanner({
+  currentPeriodEndAt,
+  onReactivate,
+  reactivating,
+}: {
+  currentPeriodEndAt: string | null;
+  onReactivate: () => void;
+  reactivating: boolean;
+}) {
+  const endDate = currentPeriodEndAt ? new Date(currentPeriodEndAt) : null;
+  return (
+    <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm">
+      <CalendarX className="w-4 h-4 mt-0.5 shrink-0" />
+      <div className="flex-1">
+        <p className="font-bold">구독 종료 예약됨</p>
+        <p className="text-amber-400/80">
+          {endDate
+            ? `${endDate.toLocaleDateString('ko-KR')}에 구독이 종료됩니다. `
+            : '현재 결제 기간이 끝나면 구독이 종료됩니다. '}
+          지금 취소를 철회할 수 있습니다.
+        </p>
+      </div>
+      <button
+        type="button"
+        disabled={reactivating}
+        onClick={onReactivate}
+        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition-colors disabled:opacity-50"
+      >
+        {reactivating ? <RefreshCw className="w-3 h-3 animate-spin" /> : null}
+        구독 유지
+      </button>
+    </div>
+  );
+}
 
 // ── 구독 상태 배너 ────────────────────────────────────────────────────────────
 function StatusBanner({
@@ -204,6 +240,42 @@ function PlanCard({
   );
 }
 
+// ── 취소 확인 모달 ────────────────────────────────────────────────────────────
+function CancelModal({ onConfirm, onClose, loading }: { onConfirm: () => void; onClose: () => void; loading: boolean }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-7 max-w-md w-full space-y-5 shadow-2xl">
+        <div className="flex items-center gap-3">
+          <CalendarX className="w-6 h-6 text-amber-400 shrink-0" />
+          <h3 className="text-lg font-black text-white">구독 종료 예약</h3>
+        </div>
+        <p className="text-slate-300 text-sm leading-relaxed">
+          현재 결제 기간이 끝나면 구독이 종료됩니다. 기간 중에는 모든 기능을 계속 이용하실 수 있습니다.
+          언제든지 종료 예약을 철회할 수 있습니다.
+        </p>
+        <div className="flex gap-3 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold transition-colors"
+          >
+            돌아가기
+          </button>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-bold transition-colors flex items-center justify-center gap-2"
+          >
+            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
+            종료 예약
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── 메인 ─────────────────────────────────────────────────────────────────────
 export default function SettingsView() {
   const { ctx, loading, refresh } = useProContext();
@@ -211,9 +283,13 @@ export default function SettingsView() {
   const [managing, setManaging] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'info' | 'error' } | null>(null);
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
 
   const currentPlan = ctx.entitlement.plan;
   const subStatus = ctx.entitlement.status;
+  const cancelAtPeriodEnd = ctx.billing.cancelAtPeriodEnd;
   const hasActiveSubscription =
     currentPlan !== 'free' && (subStatus === 'active' || subStatus === 'trialing' || subStatus === 'past_due');
 
@@ -265,6 +341,53 @@ export default function SettingsView() {
     }
   };
 
+  const handleCancel = async () => {
+    setCanceling(true);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/spokedu-pro/billing/cancel', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.ok) {
+        await refresh();
+        setShowCancelModal(false);
+        setMsg({ text: '구독 종료가 예약되었습니다. 결제 기간이 끝나면 자동 종료됩니다.', type: 'info' });
+      } else {
+        setMsg({ text: data.error ?? '구독 취소에 실패했습니다.', type: 'error' });
+        setShowCancelModal(false);
+      }
+    } catch {
+      setMsg({ text: '네트워크 오류가 발생했습니다.', type: 'error' });
+      setShowCancelModal(false);
+    } finally {
+      setCanceling(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    setReactivating(true);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/spokedu-pro/billing/reactivate', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.ok) {
+        await refresh();
+        setMsg({ text: '구독 종료 예약이 취소되었습니다. 계속 이용하실 수 있습니다.', type: 'info' });
+      } else {
+        setMsg({ text: data.error ?? '구독 유지 처리에 실패했습니다.', type: 'error' });
+      }
+    } catch {
+      setMsg({ text: '네트워크 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setReactivating(false);
+    }
+  };
+
   const handleBootstrap = async () => {
     setBootstrapping(true);
     setMsg(null);
@@ -300,6 +423,14 @@ export default function SettingsView() {
   }
 
   return (
+    <>
+    {showCancelModal && (
+      <CancelModal
+        onConfirm={handleCancel}
+        onClose={() => setShowCancelModal(false)}
+        loading={canceling}
+      />
+    )}
     <section className="px-6 lg:px-12 py-10 pb-32 space-y-10 max-w-4xl mx-auto">
       {/* 헤더 */}
       <header className="space-y-3 border-b border-slate-800 pb-8">
@@ -366,15 +497,27 @@ export default function SettingsView() {
             </p>
           )}
           {hasActiveSubscription && (
-            <button
-              type="button"
-              disabled={managing}
-              onClick={handleManage}
-              className="mt-1 flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
-            >
-              {managing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
-              구독 관리 / 취소
-            </button>
+            <div className="mt-1 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={managing}
+                onClick={handleManage}
+                className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+              >
+                {managing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
+                구독 관리
+              </button>
+              {!cancelAtPeriodEnd && (
+                <button
+                  type="button"
+                  onClick={() => setShowCancelModal(true)}
+                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-400 transition-colors"
+                >
+                  <CalendarX className="w-3 h-3" />
+                  구독 취소
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -385,6 +528,15 @@ export default function SettingsView() {
         currentPeriodEndAt={ctx.billing.currentPeriodEndAt}
         onManage={handleManage}
       />
+
+      {/* 종료 예약 배너 */}
+      {cancelAtPeriodEnd && hasActiveSubscription && (
+        <CancelScheduledBanner
+          currentPeriodEndAt={ctx.billing.currentPeriodEndAt}
+          onReactivate={handleReactivate}
+          reactivating={reactivating}
+        />
+      )}
 
       {/* 피드백 메시지 */}
       {msg && (
@@ -434,5 +586,6 @@ export default function SettingsView() {
         </a>
       </div>
     </section>
+    </>
   );
 }

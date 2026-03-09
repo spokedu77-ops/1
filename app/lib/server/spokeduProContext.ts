@@ -46,7 +46,7 @@ export async function getCenterMemberRole(
   userId: string
 ): Promise<'owner' | 'admin' | 'coach' | null> {
   const { data, error } = await supabase
-    .from('spokedu_center_members')
+    .from('spokedu_pro_center_members')
     .select('role')
     .eq('center_id', centerId)
     .eq('user_id', userId)

@@ -32,9 +32,9 @@ export async function GET() {
 
   const { data: members, error } = await supabase
     .from('spokedu_pro_center_members')
-    .select('id, user_id, role, created_at')
+    .select('id, user_id, role, joined_at')
     .eq('center_id', ownedCenter.id)
-    .order('created_at', { ascending: true });
+    .order('joined_at', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -55,7 +55,7 @@ export async function GET() {
     userId: m.user_id,
     email: emailMap[m.user_id] ?? '',
     role: m.role,
-    joinedAt: m.created_at,
+    joinedAt: m.joined_at,
   }));
 
   return NextResponse.json({ ok: true, members: enriched });
@@ -154,9 +154,9 @@ export async function POST(req: NextRequest) {
       center_id: ownedCenter.id,
       user_id: targetUser.id,
       role,
-      created_at: new Date().toISOString(),
+      joined_at: new Date().toISOString(),
     })
-    .select('id, user_id, role, created_at')
+    .select('id, user_id, role, joined_at')
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
       userId: newMember.user_id,
       email: targetUser.email ?? '',
       role: newMember.role,
-      joinedAt: newMember.created_at,
+      joinedAt: newMember.joined_at,
     },
   }, { status: 201 });
 }

@@ -27,6 +27,8 @@ export type ProContext = {
     promoPriceKrw: number | null;
     promoEndAt: string | null;
     currentPeriodEndAt: string | null;
+    cancelAtPeriodEnd: boolean;
+    stripeSubscriptionId: string | null;
   };
   dbReady: boolean;
 };
@@ -36,7 +38,7 @@ const FREE_CONTEXT: ProContext = {
   centers: [],
   role: null,
   entitlement: { plan: 'free', status: 'active', isPro: false },
-  billing: { priceKrw: 79900, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null },
+  billing: { priceKrw: 79900, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null, cancelAtPeriodEnd: false, stripeSubscriptionId: null },
   dbReady: false,
 };
 
