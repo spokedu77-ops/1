@@ -1,15 +1,17 @@
 'use client';
 
-import { MonitorPlay, LayoutDashboard, Grid, ClipboardCheck, Bot, Wrench, Settings2, CreditCard } from 'lucide-react';
+import { MonitorPlay, LayoutDashboard, Grid, ClipboardCheck, Bot, Wrench, Settings2, CreditCard, Users, Building2 } from 'lucide-react';
 import type { ViewId } from '../hooks/useSpokeduProUI';
 
 const NAV: { id: ViewId; label: string; icon: React.ElementType; group?: string; iconClass?: string }[] = [
   { id: 'screenplay', label: '스크린 플레이 실행', icon: MonitorPlay, group: '수업 플레이어 (Live)', iconClass: 'text-orange-400' },
   { id: 'roadmap', label: '대시보드 (추천 로드맵)', icon: LayoutDashboard, group: '대시보드 및 커리큘럼' },
   { id: 'library', label: '100대 프로그램 뱅크', icon: Grid, group: '대시보드 및 커리큘럼' },
-  { id: 'data-center', label: '원생 관리 및 평가', icon: ClipboardCheck, group: '데이터 및 운영', iconClass: 'text-emerald-400' },
+  { id: 'students', label: '원생 관리', icon: Users, group: '데이터 및 운영', iconClass: 'text-cyan-400' },
+  { id: 'data-center', label: '원생 평가 데이터', icon: ClipboardCheck, group: '데이터 및 운영', iconClass: 'text-emerald-400' },
   { id: 'ai', label: '에듀-에코 리포트', icon: Bot, group: '데이터 및 운영', iconClass: 'text-purple-400' },
   { id: 'tools', label: '수업 보조도구', icon: Wrench, group: '수업 보조도구', iconClass: 'text-amber-400' },
+  { id: 'center', label: '센터 설정', icon: Building2, group: '계정', iconClass: 'text-slate-400' },
   { id: 'settings', label: '플랜 & 결제', icon: CreditCard, group: '계정' },
 ];
 

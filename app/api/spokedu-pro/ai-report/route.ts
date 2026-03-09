@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
 export const maxDuration = 60;
 
@@ -81,6 +82,9 @@ ${req.additionalGoal ? `[추가 목표]: ${req.additionalGoal}` : ''}
 }`;
 }
 
+const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
+const BASIC_REPORT_LIMIT = 20; // basic 플랜 월 한도
+
 export async function POST(req: NextRequest) {
   // Auth check
   const serverSupabase = await createServerSupabaseClient();
@@ -91,6 +95,55 @@ export async function POST(req: NextRequest) {
 
   if (!GEMINI_API_KEY) {
     return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
+  }
+
+  // basic 플랜 월 사용량 제한 체크
+  if (DB_READY) {
+    const supabase = getServiceSupabase();
+    const { data: ownedCenter } = await supabase
+      .from('spokedu_pro_centers')
+      .select('id')
+      .eq('owner_id', user.id)
+      .maybeSingle();
+
+    if (ownedCenter) {
+      const { data: sub } = await supabase
+        .from('spokedu_pro_subscriptions')
+        .select('plan, status')
+        .eq('center_id', ownedCenter.id)
+        .maybeSingle();
+
+      const plan = sub?.plan ?? 'free';
+      const isActive = !sub || sub.status === 'active' || sub.status === 'trialing';
+
+      if (plan === 'basic' && isActive) {
+        // 이번 달 생성된 리포트 수 조회
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const { count } = await supabase
+          .from('spokedu_pro_ai_reports')
+          .select('*', { count: 'exact', head: true })
+          .eq('center_id', ownedCenter.id)
+          .gte('created_at', monthStart);
+
+        if ((count ?? 0) >= BASIC_REPORT_LIMIT) {
+          return NextResponse.json(
+            {
+              error: 'monthly_limit_reached',
+              limit: BASIC_REPORT_LIMIT,
+              used: count ?? 0,
+              message: `Basic 플랜은 월 ${BASIC_REPORT_LIMIT}회 AI 리포트를 제공합니다. Pro로 업그레이드하면 무제한 사용이 가능합니다.`,
+            },
+            { status: 429 }
+          );
+        }
+      } else if (plan === 'free') {
+        return NextResponse.json(
+          { error: 'plan_required', message: 'AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.' },
+          { status: 403 }
+        );
+      }
+    }
   }
 
   let body: ReportRequest;

@@ -19,6 +19,8 @@ import DataCenterView from './views/DataCenterView';
 import AIReportView from './views/AIReportView';
 import AssistantToolsView from './views/AssistantToolsView';
 import SettingsView from './views/SettingsView';
+import StudentsView from './views/StudentsView';
+import CenterView from './views/CenterView';
 
 export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -113,6 +115,12 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
         </div>
         <div className={`view-content ${viewId === 'tools' ? 'active' : ''}`}>
           <AssistantToolsView />
+        </div>
+        <div className={`view-content ${viewId === 'students' ? 'active' : ''}`}>
+          <StudentsView />
+        </div>
+        <div className={`view-content ${viewId === 'center' ? 'active' : ''}`}>
+          <CenterView />
         </div>
         <div className={`view-content ${viewId === 'settings' ? 'active' : ''}`}>
           <SettingsView />

@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw, Sparkles } from 'lucide-react';
-import { useProContext, type Plan } from '../hooks/useProContext';
+import {
+  Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw, Sparkles,
+  CreditCard, AlertTriangle, Clock, XCircle,
+} from 'lucide-react';
+import { useProContext, type Plan, type SubscriptionStatus } from '../hooks/useProContext';
 
 // ── 플랜 정의 ───────────────────────────────────────────────────────────────
 type PlanDef = {
@@ -46,6 +49,80 @@ const PLANS: PlanDef[] = [
     icon: Crown,
   },
 ];
+
+// ── 구독 상태 배너 ────────────────────────────────────────────────────────────
+function StatusBanner({
+  status,
+  currentPeriodEndAt,
+  onManage,
+}: {
+  status: SubscriptionStatus;
+  currentPeriodEndAt: string | null;
+  onManage: () => void;
+}) {
+  if (status === 'active' || status === 'trialing') {
+    const isTrialing = status === 'trialing';
+    const endDate = currentPeriodEndAt ? new Date(currentPeriodEndAt) : null;
+    const today = new Date();
+    const daysLeft = endDate ? Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / 86400000)) : null;
+
+    if (!isTrialing) return null;
+
+    return (
+      <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm">
+        <Clock className="w-4 h-4 mt-0.5 shrink-0" />
+        <div>
+          <p className="font-bold">무료 체험 기간 중</p>
+          <p className="text-blue-400/80">
+            {daysLeft !== null ? `체험 종료까지 ${daysLeft}일 남았습니다.` : '체험 기간 중입니다.'}{' '}
+            체험 후 자동 결제됩니다.{' '}
+            <button onClick={onManage} className="underline hover:text-blue-200 transition-colors">
+              구독 관리
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'past_due') {
+    return (
+      <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+        <div>
+          <p className="font-bold">결제 실패 — 서비스가 곧 중단될 수 있습니다</p>
+          <p className="text-red-400/80">
+            결제 수단을 업데이트하거나 미납 금액을 납부해주세요.{' '}
+            <button onClick={onManage} className="underline hover:text-red-200 transition-colors">
+              결제 정보 업데이트
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'canceled') {
+    const endDate = currentPeriodEndAt ? new Date(currentPeriodEndAt) : null;
+    const isExpired = endDate ? endDate < new Date() : true;
+
+    return (
+      <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-slate-700/50 border border-slate-600 text-slate-300 text-sm">
+        <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
+        <div>
+          <p className="font-bold">구독이 취소되었습니다</p>
+          <p className="text-slate-400">
+            {isExpired
+              ? 'Pro 기능이 비활성화되었습니다. 아래에서 다시 구독할 수 있습니다.'
+              : `${endDate?.toLocaleDateString('ko-KR')}까지 서비스를 이용할 수 있습니다.`}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
 
 // ── 플랜 카드 ────────────────────────────────────────────────────────────────
 function PlanCard({
@@ -131,27 +208,66 @@ function PlanCard({
 export default function SettingsView() {
   const { ctx, loading, refresh } = useProContext();
   const [upgrading, setUpgrading] = useState(false);
-  const [upgradeMsg, setUpgradeMsg] = useState<string | null>(null);
+  const [managing, setManaging] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; type: 'info' | 'error' } | null>(null);
   const [bootstrapping, setBootstrapping] = useState(false);
 
   const currentPlan = ctx.entitlement.plan;
+  const subStatus = ctx.entitlement.status;
+  const hasActiveSubscription =
+    currentPlan !== 'free' && (subStatus === 'active' || subStatus === 'trialing' || subStatus === 'past_due');
 
   const handleUpgrade = async (plan: Plan) => {
+    if (!ctx.dbReady) {
+      setMsg({ text: 'DB 마이그레이션 후 결제를 진행할 수 있습니다.', type: 'info' });
+      return;
+    }
     setUpgrading(true);
-    setUpgradeMsg(null);
+    setMsg(null);
     try {
-      // TODO: 결제 연동 (Portone / 토스페이먼츠) — Phase 2
-      // 현재는 안내 메시지
-      await new Promise((r) => setTimeout(r, 800));
-      setUpgradeMsg(`${plan === 'basic' ? 'Basic' : 'Pro'} 업그레이드는 곧 결제 시스템이 연결될 예정입니다. 구독 신청을 원하시면 운영팀에 문의해주세요.`);
+      const res = await fetch('/api/spokedu-pro/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setMsg({ text: data.error ?? '결제 페이지를 여는 데 실패했습니다.', type: 'error' });
+      }
+    } catch {
+      setMsg({ text: '네트워크 오류가 발생했습니다.', type: 'error' });
     } finally {
       setUpgrading(false);
     }
   };
 
+  const handleManage = async () => {
+    setManaging(true);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/spokedu-pro/billing/portal', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setMsg({ text: data.error ?? '구독 관리 페이지를 여는 데 실패했습니다.', type: 'error' });
+      }
+    } catch {
+      setMsg({ text: '네트워크 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setManaging(false);
+    }
+  };
+
   const handleBootstrap = async () => {
     setBootstrapping(true);
-    setUpgradeMsg(null);
+    setMsg(null);
     try {
       const res = await fetch('/api/spokedu-pro/context/bootstrap', {
         method: 'POST',
@@ -161,12 +277,12 @@ export default function SettingsView() {
       const data = await res.json();
       if (data.ok) {
         await refresh();
-        setUpgradeMsg(data.bootstrapped ? `센터 "${data.centerName}"가 생성되었습니다.` : '이미 센터가 설정되어 있습니다.');
+        setMsg({ text: data.bootstrapped ? `센터 "${data.centerName}"가 생성되었습니다.` : '이미 센터가 설정되어 있습니다.', type: 'info' });
       } else {
-        setUpgradeMsg('센터 생성에 실패했습니다: ' + (data.error ?? '알 수 없는 오류'));
+        setMsg({ text: '센터 생성에 실패했습니다: ' + (data.error ?? '알 수 없는 오류'), type: 'error' });
       }
     } catch {
-      setUpgradeMsg('네트워크 오류가 발생했습니다.');
+      setMsg({ text: '네트워크 오류가 발생했습니다.', type: 'error' });
     } finally {
       setBootstrapping(false);
     }
@@ -190,13 +306,13 @@ export default function SettingsView() {
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-700/50 text-slate-300 rounded-full text-xs font-bold uppercase tracking-widest">
           <Settings2 className="w-4 h-4" /> 구독 및 설정
         </div>
-        <h2 className="text-4xl font-black text-white tracking-tight">플랜 & 결제</h2>
+        <h2 className="text-4xl font-black text-white tracking-tight">플랜 &amp; 결제</h2>
         <p className="text-slate-400 font-medium">
           현재 플랜을 확인하고 필요에 따라 업그레이드하세요.
         </p>
       </header>
 
-      {/* 현재 센터 상태 */}
+      {/* 현재 센터 + 구독 상태 */}
       <div className="flex flex-wrap gap-4 items-start">
         <div className="flex-1 min-w-[220px] p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1">
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">현재 센터</p>
@@ -224,13 +340,24 @@ export default function SettingsView() {
           )}
         </div>
 
-        <div className="flex-1 min-w-[220px] p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1">
+        <div className="flex-1 min-w-[220px] p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-2">
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">현재 플랜</p>
           <p className="text-lg font-bold text-white capitalize">{currentPlan}</p>
           <p className="text-xs text-slate-400">
             상태:{' '}
-            <span className={ctx.entitlement.status === 'active' ? 'text-emerald-400' : 'text-amber-400'}>
-              {ctx.entitlement.status}
+            <span
+              className={
+                subStatus === 'active' ? 'text-emerald-400'
+                  : subStatus === 'trialing' ? 'text-blue-400'
+                  : subStatus === 'past_due' ? 'text-red-400'
+                  : 'text-slate-400'
+              }
+            >
+              {subStatus === 'active' ? '활성'
+                : subStatus === 'trialing' ? '체험 중'
+                : subStatus === 'past_due' ? '결제 실패'
+                : subStatus === 'canceled' ? '취소됨'
+                : subStatus}
             </span>
           </p>
           {ctx.billing.currentPeriodEndAt && (
@@ -238,13 +365,37 @@ export default function SettingsView() {
               갱신일: {new Date(ctx.billing.currentPeriodEndAt).toLocaleDateString('ko-KR')}
             </p>
           )}
+          {hasActiveSubscription && (
+            <button
+              type="button"
+              disabled={managing}
+              onClick={handleManage}
+              className="mt-1 flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+            >
+              {managing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
+              구독 관리 / 취소
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 업그레이드 메시지 */}
-      {upgradeMsg && (
-        <div className="px-5 py-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm">
-          {upgradeMsg}
+      {/* 구독 상태 배너 */}
+      <StatusBanner
+        status={subStatus}
+        currentPeriodEndAt={ctx.billing.currentPeriodEndAt}
+        onManage={handleManage}
+      />
+
+      {/* 피드백 메시지 */}
+      {msg && (
+        <div
+          className={`px-5 py-4 rounded-xl text-sm ${
+            msg.type === 'error'
+              ? 'bg-red-500/10 border border-red-500/20 text-red-300'
+              : 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
+          }`}
+        >
+          {msg.text}
         </div>
       )}
 
@@ -266,8 +417,11 @@ export default function SettingsView() {
         <div className="px-5 py-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm space-y-1">
           <p className="font-bold">구독 DB 마이그레이션 미적용</p>
           <p className="text-amber-400/80">
-            Supabase에서 <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">20260308000000_spokedu_pro_commercial.sql</code>을
-            실행하고 <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">SPOKEDU_PRO_DB_READY=true</code> 환경변수를 설정하면 구독 기능이 활성화됩니다.
+            Supabase에서{' '}
+            <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">20260308000000_spokedu_pro_commercial.sql</code>
+            을 실행하고{' '}
+            <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">SPOKEDU_PRO_DB_READY=true</code>{' '}
+            환경변수를 설정하면 구독 기능이 활성화됩니다.
           </p>
         </div>
       )}

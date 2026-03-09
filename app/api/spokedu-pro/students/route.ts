@@ -78,6 +78,13 @@ export async function GET() {
   return NextResponse.json({ ok: true, students });
 }
 
+// 플랜별 원생 수 한도
+const PLAN_LIMITS: Record<string, number> = {
+  free: 10,
+  basic: 50,
+  pro: Infinity,
+};
+
 // POST /api/spokedu-pro/students
 export async function POST(req: NextRequest) {
   const serverSupabase = await createServerSupabaseClient();
@@ -96,6 +103,35 @@ export async function POST(req: NextRequest) {
 
   const serviceSupabase = getServiceSupabase();
   const students = await loadStudents(serviceSupabase, user.id);
+
+  // 플랜 한도 체크 (DB_READY 환경에서만 엄격 적용)
+  const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
+  if (DB_READY) {
+    const { data: ownedCenter } = await serviceSupabase
+      .from('spokedu_pro_centers')
+      .select('id')
+      .eq('owner_id', user.id)
+      .maybeSingle();
+
+    if (ownedCenter) {
+      const { data: sub } = await serviceSupabase
+        .from('spokedu_pro_subscriptions')
+        .select('plan, status')
+        .eq('center_id', ownedCenter.id)
+        .maybeSingle();
+
+      const plan = sub?.plan ?? 'free';
+      const isActive = !sub || sub.status === 'active' || sub.status === 'trialing';
+      const limit = isActive ? (PLAN_LIMITS[plan] ?? 10) : PLAN_LIMITS['free'];
+
+      if (students.length >= limit) {
+        return NextResponse.json(
+          { error: `plan_limit_reached`, limit, plan },
+          { status: 403 }
+        );
+      }
+    }
+  }
 
   const now = new Date().toISOString();
   const newStudent: StoredStudent = {
