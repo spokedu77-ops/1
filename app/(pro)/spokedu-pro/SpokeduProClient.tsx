@@ -95,7 +95,7 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
         isEditMode={isEditMode}
         onOpenCurationDrawer={isEditMode ? () => setShowCurationDrawer(true) : undefined}
       />
-      <main className="flex-1 h-full overflow-y-auto custom-scroll relative bg-[#0F172A]">
+      <main className="flex-1 w-full max-w-full min-w-0 h-full overflow-y-auto overflow-x-hidden custom-scroll relative bg-[#0F172A] z-0 min-h-0 pr-0 mr-0">
         <div className={`view-content ${viewId === 'screenplay' ? 'active' : ''}`}>
           <ScreenplayView onOpenInteractive={openInteractive} onToast={showToast} />
         </div>

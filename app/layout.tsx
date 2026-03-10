@@ -19,7 +19,9 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
   const hideSidebar = isFullscreenPath(pathname);
-  const fullscreenWrapStyle = hideSidebar ? { minHeight: 'var(--viewport-height-px, 100vh)', height: 'var(--viewport-height-px, 100vh)' } : undefined;
+  const fullscreenWrapStyle = hideSidebar
+    ? { minHeight: 'var(--viewport-height-px, 100vh)', height: 'var(--viewport-height-px, 100vh)', width: '100vw', maxWidth: '100%' }
+    : undefined;
 
   // viewport-height-px는 hydration 이후에만 설정해 서버/클라이언트 HTML 불일치(hydration error) 방지
   useEffect(() => {
@@ -42,7 +44,7 @@ export default function RootLayout({
         <QueryProvider>
           <Toaster position="top-center" richColors closeButton />
           <div
-            className="flex min-h-screen"
+            className={`flex min-h-screen ${hideSidebar ? 'w-full overflow-x-hidden' : ''}`}
             style={fullscreenWrapStyle}
           >
             {/* 사이드바 조건부 렌더링 */}
@@ -51,7 +53,7 @@ export default function RootLayout({
             <main 
               className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                 hideSidebar
-                  ? 'flex flex-col min-h-0'
+                  ? 'flex flex-col min-h-0 pr-0 mr-0 overflow-x-hidden'
                   : 'pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0 md:ml-64'
               }`}
             >

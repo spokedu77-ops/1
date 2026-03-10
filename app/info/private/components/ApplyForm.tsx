@@ -55,7 +55,7 @@ export default function ApplyForm({
     `2. 희망 수업 종목 : ${safeVal(values.f2)}`,
     `3. 방문 지역/장소 : ${safeVal(values.f3)}`,
     `4. 가능 시간대 : ${safeVal(values.f4)}`,
-    `5. 유입 경로 : ${safeVal(values.f5)}`,
+    `5. 전하고 싶은 말 : ${safeVal(values.f5)}`,
   ];
   if (diagnosisSummary) {
     lines.push('', '[SPOKEDU 시스템 사전 진단 내역]', `- ${diagnosisSummary}`);
@@ -211,13 +211,13 @@ export default function ApplyForm({
               </div>
               <div className="pl-input-group">
                 <label htmlFor="f5">
-                  5. 유입 경로 <span style={{ fontWeight: 400 }}>(선택)</span>
+                  5. 전하고 싶은 말 <span style={{ fontWeight: 400 }}>(선택)</span>
                 </label>
                 <input
                   type="text"
                   className="pl-input-field"
                   id="f5"
-                  placeholder="예: 인스타그램, 지인 추천"
+                  placeholder="예: 상담 시 전달하고 싶은 말씀이 있으시면 적어주세요"
                   autoComplete="off"
                   value={values.f5}
                   onChange={(e) => setField('f5', e.target.value)}

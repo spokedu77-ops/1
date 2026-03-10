@@ -209,10 +209,10 @@ function TeamsTab({ presentStudents }: { presentStudents: Student[] }) {
             </div>
           </div>
 
-          {/* 균형도 */}
-          <div className="col-span-2 bg-slate-800/60 border border-slate-700 rounded-xl p-4 flex items-center gap-4">
+          {/* 균형도: 좁은 화면에서 wrap 되도록 */}
+          <div className="col-span-2 bg-slate-800/60 border border-slate-700 rounded-xl p-4 flex flex-wrap items-center gap-3">
             <span className="text-xs text-slate-400 font-bold shrink-0">팀 균형도</span>
-            <div className="flex-1 h-3 bg-slate-700 rounded-full overflow-hidden flex">
+            <div className="flex-1 min-w-[120px] h-3 bg-slate-700 rounded-full overflow-hidden flex">
               {(() => {
                 const total = scoreSum(teams.teamA) + scoreSum(teams.teamB);
                 const aPct = total === 0 ? 50 : Math.round((scoreSum(teams.teamA) / total) * 100);

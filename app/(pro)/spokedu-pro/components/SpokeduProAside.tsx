@@ -101,7 +101,7 @@ export default function SpokeduProAside({
 
       {/* ── 모바일 하단 탭 바 (md 미만) ── */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#0B1120] border-t border-slate-800 flex items-center justify-around px-2 py-2 safe-area-bottom"
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#0B1120] border-t border-slate-800 flex items-center justify-around px-2 py-3 safe-area-bottom"
         role="navigation"
         aria-label="하단 탐색"
       >
@@ -112,14 +112,14 @@ export default function SpokeduProAside({
             onClick={() => onSwitchView(id)}
             aria-label={label}
             aria-current={viewId === id ? 'page' : undefined}
-            className={`flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-xl flex-1 transition-colors ${
+            className={`flex flex-col items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl flex-1 min-h-[56px] transition-colors ${
               viewId === id
                 ? 'text-blue-400'
                 : 'text-slate-500 hover:text-slate-300'
             }`}
           >
-            <Icon className={`w-5 h-5 ${viewId === id ? 'text-blue-400' : (iconClass ?? 'text-slate-500')}`} />
-            <span className="text-[9px] font-bold leading-none line-clamp-1">
+            <Icon className={`w-6 h-6 ${viewId === id ? 'text-blue-400' : (iconClass ?? 'text-slate-500')}`} />
+            <span className="text-[11px] font-bold leading-none line-clamp-1">
               {label.split(' ')[0]}
             </span>
           </button>
@@ -129,10 +129,10 @@ export default function SpokeduProAside({
             type="button"
             onClick={onOpenCurationDrawer}
             aria-label="대시보드 편집"
-            className="flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-xl flex-1 text-amber-500 hover:text-amber-400 transition-colors"
+            className="flex flex-col items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl flex-1 min-h-[56px] text-amber-500 hover:text-amber-400 transition-colors"
           >
-            <Settings2 className="w-5 h-5" />
-            <span className="text-[9px] font-bold leading-none">편집</span>
+            <Settings2 className="w-6 h-6" />
+            <span className="text-[11px] font-bold leading-none">편집</span>
           </button>
         )}
       </nav>
