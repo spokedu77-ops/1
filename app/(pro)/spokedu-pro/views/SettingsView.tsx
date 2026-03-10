@@ -205,8 +205,25 @@ export default function SettingsView() {
     setUpgrading(true);
     setUpgradeMsg(null);
     try {
-      await new Promise((r) => setTimeout(r, 800));
-      setUpgradeMsg(`${plan === 'basic' ? 'Basic' : 'Pro'} 업그레이드는 곧 결제 시스템이 연결될 예정입니다. 구독 신청을 원하시면 운영팀에 문의해주세요.`);
+      const res = await fetch('/api/spokedu-pro/subscription/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      if (data.reason === 'stripe_not_configured' || data.reason === 'price_not_configured') {
+        setUpgradeMsg(
+          `${plan === 'basic' ? 'Basic' : 'Pro'} 업그레이드는 곧 결제 시스템이 연결될 예정입니다. 구독 신청을 원하시면 운영팀에 문의해주세요.`
+        );
+      } else {
+        setUpgradeMsg(data.message ?? data.error ?? '업그레이드를 처리하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      }
+    } catch {
+      setUpgradeMsg('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setUpgrading(false);
     }

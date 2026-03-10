@@ -15,7 +15,8 @@ import SpokeduProInteractiveScreen from './components/SpokeduProInteractiveScree
 import ScreenplayView from './views/ScreenplayView';
 import RoadmapView from './views/RoadmapView';
 import LibraryView from './views/LibraryView';
-import DataCenterView from './views/DataCenterView';
+import StudentsView from './views/StudentsView';
+import CenterView from './views/CenterView';
 import AIReportView from './views/AIReportView';
 import AssistantToolsView from './views/AssistantToolsView';
 import SettingsView from './views/SettingsView';
@@ -106,13 +107,16 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
           <LibraryView onOpenDetail={openDrawer} initialPreset={libraryPreset} programDetails={programDetailsForDrawer} />
         </div>
         <div className={`view-content ${viewId === 'data-center' ? 'active' : ''}`}>
-          <DataCenterView />
+          <StudentsView />
         </div>
         <div className={`view-content ${viewId === 'ai' ? 'active' : ''}`}>
           <AIReportView />
         </div>
         <div className={`view-content ${viewId === 'tools' ? 'active' : ''}`}>
           <AssistantToolsView />
+        </div>
+        <div className={`view-content ${viewId === 'center' ? 'active' : ''}`}>
+          <CenterView />
         </div>
         <div className={`view-content ${viewId === 'settings' ? 'active' : ''}`}>
           <SettingsView />

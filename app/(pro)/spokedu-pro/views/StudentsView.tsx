@@ -394,7 +394,7 @@ export default function StudentsView() {
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-black text-base truncate">{s.name}</p>
                     <p className="text-slate-400 text-xs">
-                      {s.classGroup} · 등록일: {new Date(s.enrolledAt).toLocaleDateString('ko-KR')}
+                      {s.classGroup} · 등록일: {new Date(s.enrolledAt + 'T12:00:00').toLocaleDateString('ko-KR')}
                     </p>
                   </div>
                   <div className="hidden sm:flex flex-wrap gap-1">

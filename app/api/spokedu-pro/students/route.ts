@@ -86,42 +86,42 @@ export async function GET() {
 // POST /api/spokedu-pro/students
 export async function POST(req: NextRequest) {
   try {
-  const serverSupabase = await createServerSupabaseClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const serverSupabase = await createServerSupabaseClient();
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  let body: { name?: string; classGroup?: string; physical?: Partial<PhysicalFunctions>; note?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
+    let body: { name?: string; classGroup?: string; physical?: Partial<PhysicalFunctions>; note?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-  const name = body.name?.trim();
-  if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 });
-  if (name.length > 100) return NextResponse.json({ error: '이름은 100자 이하여야 합니다.' }, { status: 400 });
+    const name = body.name?.trim();
+    if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 });
+    if (name.length > 100) return NextResponse.json({ error: '이름은 100자 이하여야 합니다.' }, { status: 400 });
 
-  const classGroup = body.classGroup ?? '미분류';
-  if (classGroup.length > 50) return NextResponse.json({ error: '반 이름은 50자 이하여야 합니다.' }, { status: 400 });
+    const classGroup = body.classGroup ?? '미분류';
+    if (classGroup.length > 50) return NextResponse.json({ error: '반 이름은 50자 이하여야 합니다.' }, { status: 400 });
 
-  const serviceSupabase = getServiceSupabase();
-  const students = await loadStudents(serviceSupabase, user.id);
+    const serviceSupabase = getServiceSupabase();
+    const students = await loadStudents(serviceSupabase, user.id);
 
-  const now = new Date().toISOString();
-  const newStudent: StoredStudent = {
-    id: crypto.randomUUID(),
-    name,
-    classGroup,
-    physical: { ...DEFAULT_PHYSICAL, ...(body.physical ?? {}) } as PhysicalFunctions,
-    enrolledAt: now.slice(0, 10),
-    note: body.note,
-    createdAt: now,
-    updatedAt: now,
-  };
+    const now = new Date().toISOString();
+    const newStudent: StoredStudent = {
+      id: crypto.randomUUID(),
+      name,
+      classGroup,
+      physical: { ...DEFAULT_PHYSICAL, ...(body.physical ?? {}) } as PhysicalFunctions,
+      enrolledAt: now.slice(0, 10),
+      note: body.note,
+      createdAt: now,
+      updatedAt: now,
+    };
 
-  await saveStudents(serviceSupabase, user.id, [...students, newStudent]);
+    await saveStudents(serviceSupabase, user.id, [...students, newStudent]);
 
-  return NextResponse.json({ ok: true, student: newStudent }, { status: 201 });
+    return NextResponse.json({ ok: true, student: newStudent }, { status: 201 });
   } catch (err) {
     console.error('[students POST]', err);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
