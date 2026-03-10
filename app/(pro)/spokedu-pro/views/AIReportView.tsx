@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Bot,
   Sparkles,
@@ -297,8 +297,6 @@ export default function AIReportView() {
   const [meta, setMeta] = useState<ReportMeta | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const reportRef = useRef<HTMLDivElement>(null);
-
   const selectedStudent = students.find((s) => s.id === selectedStudentId) ?? null;
 
   const handleGenerate = useCallback(async () => {
@@ -416,7 +414,7 @@ export default function AIReportView() {
                   <div className="relative">
                     <select
                       value={selectedStudentId}
-                      onChange={(e) => setSelectedStudentId(e.target.value)}
+                      onChange={(e) => { setSelectedStudentId(e.target.value); setError(null); }}
                       className="w-full appearance-none bg-white/5 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/30 font-medium text-sm transition-all cursor-pointer"
                     >
                       <option value="">— 학생을 선택하세요 —</option>
@@ -552,7 +550,6 @@ export default function AIReportView() {
 
           {/* ── RIGHT: Preview Panel ── */}
           <div
-            ref={reportRef}
             className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 min-h-[400px] flex flex-col"
           >
             {error && (

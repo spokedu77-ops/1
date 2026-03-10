@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw, Sparkles, X, AlertTriangle } from 'lucide-react';
 import { useProContext, type Plan } from '../hooks/useProContext';
 
 // ── 플랜 정의 ───────────────────────────────────────────────────────────────
@@ -47,21 +47,70 @@ const PLANS: PlanDef[] = [
   },
 ];
 
+// ── 취소 확인 모달 ────────────────────────────────────────────────────────────
+function CancelModal({
+  onConfirm,
+  onClose,
+  canceling,
+}: {
+  onConfirm: () => void;
+  onClose: () => void;
+  canceling: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full mx-4 space-y-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-white font-bold">구독을 취소하시겠습니까?</p>
+            <p className="text-slate-400 text-sm mt-1">
+              취소 후 현재 결제 주기가 끝나면 Free 플랜으로 전환됩니다.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3 justify-end pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={canceling}
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            돌아가기
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={canceling}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {canceling ? <RefreshCw className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+            {canceling ? '처리 중...' : '취소 확인'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── 플랜 카드 ────────────────────────────────────────────────────────────────
 function PlanCard({
   plan,
   current,
   onUpgrade,
   upgrading,
+  dbReady,
 }: {
   plan: PlanDef;
   current: Plan;
-  onUpgrade: (p: Plan) => void;
+  onUpgrade: (p: Plan) => Promise<void>;
   upgrading: boolean;
+  dbReady: boolean;
 }) {
   const isCurrent = plan.id === current;
   const isUpgrade = plan.id !== 'free' && plan.id !== current;
   const Icon = plan.icon;
+  const isDisabled = upgrading || !dbReady;
 
   return (
     <div
@@ -111,15 +160,21 @@ function PlanCard({
           현재 플랜
         </div>
       ) : isUpgrade ? (
-        <button
-          type="button"
-          disabled={upgrading}
-          onClick={() => onUpgrade(plan.id)}
-          className="flex items-center gap-2 justify-center py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
-        >
-          {upgrading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {plan.label}로 업그레이드
-        </button>
+        <div className="space-y-1.5">
+          <button
+            type="button"
+            disabled={isDisabled}
+            onClick={() => onUpgrade(plan.id)}
+            title={!dbReady ? 'DB 준비 완료 후 업그레이드 가능합니다' : undefined}
+            className="w-full flex items-center gap-2 justify-center py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
+          >
+            {upgrading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {plan.label}로 업그레이드
+          </button>
+          {!dbReady && (
+            <p className="text-xs text-center text-amber-400/70">DB 준비 완료 후 업그레이드 가능합니다</p>
+          )}
+        </div>
       ) : (
         <div className="h-10" />
       )}
@@ -133,15 +188,23 @@ export default function SettingsView() {
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeMsg, setUpgradeMsg] = useState<string | null>(null);
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [canceling, setCanceling] = useState(false);
 
   const currentPlan = ctx.entitlement.plan;
 
+  // 메시지 5초 후 자동 소멸
+  useEffect(() => {
+    if (!upgradeMsg) return;
+    const t = setTimeout(() => setUpgradeMsg(null), 5000);
+    return () => clearTimeout(t);
+  }, [upgradeMsg]);
+
   const handleUpgrade = async (plan: Plan) => {
+    if (!ctx.dbReady) return;
     setUpgrading(true);
     setUpgradeMsg(null);
     try {
-      // TODO: 결제 연동 (Portone / 토스페이먼츠) — Phase 2
-      // 현재는 안내 메시지
       await new Promise((r) => setTimeout(r, 800));
       setUpgradeMsg(`${plan === 'basic' ? 'Basic' : 'Pro'} 업그레이드는 곧 결제 시스템이 연결될 예정입니다. 구독 신청을 원하시면 운영팀에 문의해주세요.`);
     } finally {
@@ -172,6 +235,29 @@ export default function SettingsView() {
     }
   };
 
+  const handleCancelConfirm = async () => {
+    setCanceling(true);
+    try {
+      const res = await fetch('/api/spokedu-pro/subscription/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        await refresh();
+        setUpgradeMsg('구독이 취소되었습니다. 현재 결제 주기 종료 후 Free 플랜으로 전환됩니다.');
+      } else {
+        setUpgradeMsg('구독 취소에 실패했습니다. 운영팀에 문의해주세요.');
+      }
+    } catch {
+      setUpgradeMsg('네트워크 오류가 발생했습니다.');
+    } finally {
+      setCanceling(false);
+      setShowCancelModal(false);
+    }
+  };
+
   if (loading) {
     return (
       <section className="flex items-center justify-center h-full min-h-[60vh]">
@@ -185,6 +271,15 @@ export default function SettingsView() {
 
   return (
     <section className="px-6 lg:px-12 py-10 pb-32 space-y-10 max-w-4xl mx-auto">
+      {/* 취소 모달 */}
+      {showCancelModal && (
+        <CancelModal
+          onConfirm={handleCancelConfirm}
+          onClose={() => !canceling && setShowCancelModal(false)}
+          canceling={canceling}
+        />
+      )}
+
       {/* 헤더 */}
       <header className="space-y-3 border-b border-slate-800 pb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-700/50 text-slate-300 rounded-full text-xs font-bold uppercase tracking-widest">
@@ -238,6 +333,15 @@ export default function SettingsView() {
               갱신일: {new Date(ctx.billing.currentPeriodEndAt).toLocaleDateString('ko-KR')}
             </p>
           )}
+          {ctx.dbReady && currentPlan !== 'free' && (
+            <button
+              type="button"
+              onClick={() => setShowCancelModal(true)}
+              className="mt-2 text-xs text-red-400/70 hover:text-red-400 transition-colors"
+            >
+              구독 취소
+            </button>
+          )}
         </div>
       </div>
 
@@ -257,6 +361,7 @@ export default function SettingsView() {
             current={currentPlan}
             onUpgrade={handleUpgrade}
             upgrading={upgrading}
+            dbReady={ctx.dbReady}
           />
         ))}
       </div>

@@ -68,18 +68,24 @@ async function saveStudents(serviceSupabase: ReturnType<typeof getServiceSupabas
 
 // GET /api/spokedu-pro/students
 export async function GET() {
-  const serverSupabase = await createServerSupabaseClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const serverSupabase = await createServerSupabaseClient();
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const serviceSupabase = getServiceSupabase();
-  const students = await loadStudents(serviceSupabase, user.id);
+    const serviceSupabase = getServiceSupabase();
+    const students = await loadStudents(serviceSupabase, user.id);
 
-  return NextResponse.json({ ok: true, students });
+    return NextResponse.json({ ok: true, students });
+  } catch (err) {
+    console.error('[students GET]', err);
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+  }
 }
 
 // POST /api/spokedu-pro/students
 export async function POST(req: NextRequest) {
+  try {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -93,6 +99,10 @@ export async function POST(req: NextRequest) {
 
   const name = body.name?.trim();
   if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 });
+  if (name.length > 100) return NextResponse.json({ error: '이름은 100자 이하여야 합니다.' }, { status: 400 });
+
+  const classGroup = body.classGroup ?? '미분류';
+  if (classGroup.length > 50) return NextResponse.json({ error: '반 이름은 50자 이하여야 합니다.' }, { status: 400 });
 
   const serviceSupabase = getServiceSupabase();
   const students = await loadStudents(serviceSupabase, user.id);
@@ -101,7 +111,7 @@ export async function POST(req: NextRequest) {
   const newStudent: StoredStudent = {
     id: crypto.randomUUID(),
     name,
-    classGroup: body.classGroup ?? '미분류',
+    classGroup,
     physical: { ...DEFAULT_PHYSICAL, ...(body.physical ?? {}) } as PhysicalFunctions,
     enrolledAt: now.slice(0, 10),
     note: body.note,
@@ -112,4 +122,8 @@ export async function POST(req: NextRequest) {
   await saveStudents(serviceSupabase, user.id, [...students, newStudent]);
 
   return NextResponse.json({ ok: true, student: newStudent }, { status: 201 });
+  } catch (err) {
+    console.error('[students POST]', err);
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+  }
 }
