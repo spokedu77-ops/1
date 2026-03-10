@@ -29,7 +29,8 @@
 }
 .spokedu-pro .view-content.active {
   display: block;
-  animation: spProFadeIn 0.4s ease-out forwards;
+  opacity: 1;
+  animation: spProFadeIn 0.4s ease-out;
 }
 @keyframes spProFadeIn {
   from {
