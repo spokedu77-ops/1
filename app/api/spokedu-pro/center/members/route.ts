@@ -120,15 +120,22 @@ export async function POST(req: NextRequest) {
 
   // 초대할 사용자 이메일로 검색
   const { data: authUsers } = await supabase.auth.admin.listUsers();
-  const targetUser = authUsers?.users?.find(
+  let targetUser = authUsers?.users?.find(
     (u) => u.email?.toLowerCase() === email
   );
+  let invited = false;
 
   if (!targetUser) {
-    return NextResponse.json(
-      { error: 'User not found. They must sign up for Spokedu first.' },
-      { status: 404 }
-    );
+    // 기존 계정 없음 → Supabase 이메일 초대 발송
+    const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
+    if (inviteError || !inviteData?.user) {
+      return NextResponse.json(
+        { error: 'Failed to send invite. Please check the email address and try again.' },
+        { status: 404 }
+      );
+    }
+    targetUser = inviteData.user;
+    invited = true;
   }
 
   if (targetUser.id === user.id) {
@@ -163,10 +170,11 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
+    invited, // true이면 초대 이메일 발송됨
     member: {
       id: newMember.id,
       userId: newMember.user_id,
-      email: targetUser.email ?? '',
+      email: targetUser.email ?? email,
       role: newMember.role,
       joinedAt: newMember.joined_at,
     },

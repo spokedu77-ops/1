@@ -104,11 +104,13 @@ function StudentModal({
   onSave,
   onClose,
   saving,
+  error,
 }: {
   student: StoredStudent | null;
   onSave: (data: Partial<StoredStudent>) => void;
   onClose: () => void;
   saving: boolean;
+  error?: string | null;
 }) {
   const [name, setName] = useState(student?.name ?? '');
   const [classGroup, setClassGroup] = useState(student?.classGroup ?? '미분류');
@@ -169,6 +171,10 @@ function StudentModal({
             />
           </div>
         </div>
+
+        {error && (
+          <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{error}</p>
+        )}
 
         <div className="flex gap-3 pt-2">
           <button
@@ -321,30 +327,6 @@ function AttendanceTab({ students }: { students: StoredStudent[] }) {
   );
 }
 
-// ── CSV 내보내기 ─────────────────────────────────────────────────────────────
-function exportCSV(students: StoredStudent[]) {
-  const header = ['이름', '반', '등록일', '협응력', '민첩성', '지구력', '균형감', '근력', '메모'];
-  const rows = students.map((s) => [
-    s.name,
-    s.classGroup,
-    s.enrolledAt,
-    s.physical.coordination,
-    s.physical.agility,
-    s.physical.endurance,
-    s.physical.balance,
-    s.physical.strength,
-    s.note ?? '',
-  ]);
-  const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `spokedu_students_${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 // ── 메인 뷰 ─────────────────────────────────────────────────────────────────
 export default function StudentsView() {
   const { ctx } = useProContext();
@@ -354,7 +336,9 @@ export default function StudentsView() {
   const [search, setSearch] = useState('');
   const [modalStudent, setModalStudent] = useState<StoredStudent | null | 'new'>(null);
   const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   const plan = ctx.entitlement.plan;
   const limit = PLAN_LIMITS[plan] ?? 10;
@@ -376,6 +360,7 @@ export default function StudentsView() {
 
   const handleSave = async (formData: Partial<StoredStudent>) => {
     setSaving(true);
+    setModalError(null);
     try {
       if (modalStudent === 'new') {
         const res = await fetch('/api/spokedu-pro/students', {
@@ -388,6 +373,8 @@ export default function StudentsView() {
         if (data.ok) {
           setStudents((prev) => [...prev, data.student]);
           setModalStudent(null);
+        } else {
+          setModalError(data.error ?? '저장에 실패했습니다.');
         }
       } else if (modalStudent) {
         const res = await fetch(`/api/spokedu-pro/students/${modalStudent.id}`, {
@@ -400,8 +387,12 @@ export default function StudentsView() {
         if (data.ok) {
           setStudents((prev) => prev.map((s) => (s.id === data.student.id ? data.student : s)));
           setModalStudent(null);
+        } else {
+          setModalError(data.error ?? '저장에 실패했습니다.');
         }
       }
+    } catch {
+      setModalError('네트워크 오류가 발생했습니다. 다시 시도해 주세요.');
     } finally {
       setSaving(false);
     }
@@ -409,12 +400,44 @@ export default function StudentsView() {
 
   const handleDelete = async (id: string) => {
     setDeleteId(id);
+    setPageError(null);
     try {
       const res = await fetch(`/api/spokedu-pro/students/${id}`, { method: 'DELETE', credentials: 'include' });
       const data = await res.json();
-      if (data.ok) setStudents((prev) => prev.filter((s) => s.id !== id));
+      if (data.ok) {
+        setStudents((prev) => prev.filter((s) => s.id !== id));
+      } else {
+        setPageError(data.error ?? '삭제에 실패했습니다.');
+      }
+    } catch {
+      setPageError('네트워크 오류가 발생했습니다.');
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    setPageError(null);
+    try {
+      const res = await fetch('/api/spokedu-pro/students/export', { credentials: 'include' });
+      if (!res.ok) {
+        const data = await res.json();
+        if (data.error === 'basic_plan_required') {
+          setPageError('CSV 내보내기는 Basic 이상 플랜에서 사용 가능합니다.');
+        } else {
+          setPageError(data.error ?? 'CSV 내보내기에 실패했습니다.');
+        }
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `students_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setPageError('CSV 내보내기 중 오류가 발생했습니다.');
     }
   };
 
@@ -445,7 +468,7 @@ export default function StudentsView() {
             {canExportCSV && students.length > 0 && (
               <button
                 type="button"
-                onClick={() => exportCSV(students)}
+                onClick={handleExportCSV}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-700 text-slate-300 text-sm font-bold hover:bg-slate-800 transition-colors"
               >
                 <Download className="w-4 h-4" /> CSV 내보내기
@@ -454,7 +477,7 @@ export default function StudentsView() {
             <button
               type="button"
               disabled={atLimit}
-              onClick={() => setModalStudent('new')}
+              onClick={() => { setModalError(null); setModalStudent('new'); }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
             >
               <Plus className="w-4 h-4" /> 원생 추가
@@ -462,6 +485,14 @@ export default function StudentsView() {
           </div>
         </div>
       </header>
+
+      {/* 페이지 에러 배너 */}
+      {pageError && (
+        <div className="px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm flex items-center justify-between gap-3">
+          <span>{pageError}</span>
+          <button type="button" onClick={() => setPageError(null)} className="text-red-400 hover:text-red-300 font-bold shrink-0">✕</button>
+        </div>
+      )}
 
       {/* 플랜 한도 배너 */}
       {atLimit && limit !== Infinity && (
@@ -535,7 +566,7 @@ export default function StudentsView() {
                   <div className="flex items-center gap-2 ml-2">
                     <button
                       type="button"
-                      onClick={() => setModalStudent(student)}
+                      onClick={() => { setModalError(null); setModalStudent(student); }}
                       className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
                     >
                       <Pencil className="w-4 h-4" />
@@ -564,8 +595,9 @@ export default function StudentsView() {
         <StudentModal
           student={modalStudent === 'new' ? null : modalStudent}
           onSave={handleSave}
-          onClose={() => setModalStudent(null)}
+          onClose={() => { setModalStudent(null); setModalError(null); }}
           saving={saving}
+          error={modalError}
         />
       )}
     </section>

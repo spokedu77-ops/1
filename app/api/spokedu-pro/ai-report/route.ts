@@ -18,6 +18,7 @@ type PhysicalFunctions = {
 
 type ReportRequest = {
   student: {
+    id?: string; // UUID — used for DB usage recording
     name: string;
     classGroup: string;
     physical: PhysicalFunctions;
@@ -97,7 +98,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
   }
 
-  // basic 플랜 월 사용량 제한 체크
+  // Resolve center and check plan (when DB is ready)
+  let ownedCenterId: string | null = null;
   if (DB_READY) {
     const supabase = getServiceSupabase();
     const { data: ownedCenter } = await supabase
@@ -107,6 +109,8 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (ownedCenter) {
+      ownedCenterId = ownedCenter.id;
+
       const { data: sub } = await supabase
         .from('spokedu_pro_subscriptions')
         .select('plan, status')
@@ -116,8 +120,14 @@ export async function POST(req: NextRequest) {
       const plan = sub?.plan ?? 'free';
       const isActive = !sub || sub.status === 'active' || sub.status === 'trialing';
 
+      if (plan === 'free') {
+        return NextResponse.json(
+          { error: 'plan_required', message: 'AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.' },
+          { status: 403 }
+        );
+      }
+
       if (plan === 'basic' && isActive) {
-        // 이번 달 생성된 리포트 수 조회
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const { count } = await supabase
@@ -137,11 +147,6 @@ export async function POST(req: NextRequest) {
             { status: 429 }
           );
         }
-      } else if (plan === 'free') {
-        return NextResponse.json(
-          { error: 'plan_required', message: 'AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.' },
-          { status: 403 }
-        );
       }
     }
   }
@@ -173,6 +178,19 @@ export async function POST(req: NextRequest) {
       parsed = JSON.parse(jsonText);
     } catch {
       return NextResponse.json({ error: 'Failed to parse Gemini response', raw: text }, { status: 502 });
+    }
+
+    // Record usage in DB (best-effort, non-blocking for response)
+    if (DB_READY && ownedCenterId && body.student.id) {
+      const supabase = getServiceSupabase();
+      const { error: insertError } = await supabase.from('spokedu_pro_ai_reports').insert({
+        student_id: body.student.id,
+        center_id: ownedCenterId,
+        goal: body.developmentGoal,
+        content: JSON.stringify(parsed),
+        created_by: user.id,
+      });
+      if (insertError) console.error('[ai-report] Failed to record usage:', insertError.message);
     }
 
     return NextResponse.json({

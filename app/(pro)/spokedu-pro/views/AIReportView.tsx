@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Bot,
   Sparkles,
@@ -28,6 +28,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { useStudentStore, PHYSICAL_LABELS, LEVEL_LABELS, type Student } from '../hooks/useStudentStore';
+import { useProContext } from '../hooks/useProContext';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Tone = 'warm' | 'professional' | 'friendly';
@@ -282,7 +283,10 @@ function EmptyState() {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AIReportView() {
+  const { ctx } = useProContext();
   const { students } = useStudentStore();
+
+  const plan = ctx.entitlement.plan;
 
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [sessionNotes, setSessionNotes] = useState('');
@@ -296,10 +300,21 @@ export default function AIReportView() {
   const [report, setReport] = useState<ReportData | null>(null);
   const [meta, setMeta] = useState<ReportMeta | null>(null);
   const [copied, setCopied] = useState(false);
+  const [aiUsage, setAiUsage] = useState<{ used: number; limit: number } | null>(null);
 
   const reportRef = useRef<HTMLDivElement>(null);
 
   const selectedStudent = students.find((s) => s.id === selectedStudentId) ?? null;
+
+  const refreshUsage = useCallback(() => {
+    if (plan !== 'basic') return;
+    fetch('/api/spokedu-pro/ai-report/usage', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => { if (d.ok && d.limit != null) setAiUsage({ used: d.used, limit: d.limit }); })
+      .catch(() => {});
+  }, [plan]);
+
+  useEffect(() => { refreshUsage(); }, [refreshUsage]);
 
   const handleGenerate = useCallback(async () => {
     if (!selectedStudent) return;
@@ -314,6 +329,7 @@ export default function AIReportView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           student: {
+            id: selectedStudent.id,
             name: selectedStudent.name,
             classGroup: selectedStudent.classGroup,
             physical: selectedStudent.physical,
@@ -326,20 +342,29 @@ export default function AIReportView() {
           language: 'korean',
           periodLabel,
         }),
+        credentials: 'include',
       });
 
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        throw new Error(data.error ?? '리포트 생성 실패');
+        const msg =
+          data.message ??
+          (data.error === 'monthly_limit_reached'
+            ? `이번 달 AI 리포트 한도(${data.limit}회)에 도달했습니다. Pro 플랜으로 업그레이드하세요.`
+            : data.error === 'plan_required'
+            ? 'AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.'
+            : '리포트 생성 실패');
+        throw new Error(msg);
       }
       setReport(data.report);
       setMeta(data.meta);
+      refreshUsage();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '알 수 없는 오류');
     } finally {
       setLoading(false);
     }
-  }, [selectedStudent, sessionNotes, developmentGoal, additionalGoal, tone, periodLabel]);
+  }, [selectedStudent, sessionNotes, developmentGoal, additionalGoal, tone, periodLabel, refreshUsage]);
 
   const handleCopy = useCallback(async () => {
     if (!report || !meta) return;
@@ -373,7 +398,7 @@ export default function AIReportView() {
     setError(null);
   }, []);
 
-  const canGenerate = !!selectedStudent && !loading;
+  const canGenerate = !!selectedStudent && !loading && plan !== 'free';
 
   return (
     <section className="min-h-screen px-4 sm:px-6 lg:px-10 py-8 pb-28">
@@ -385,10 +410,23 @@ export default function AIReportView() {
             <div className="w-10 h-10 bg-violet-600/20 border border-violet-500/30 rounded-2xl flex items-center justify-center shrink-0">
               <Bot className="w-5 h-5 text-violet-400" />
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
-                에듀-에코 AI 리포트
-              </h1>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
+                  에듀-에코 AI 리포트
+                </h1>
+                {plan === 'basic' && aiUsage && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                    aiUsage.used >= aiUsage.limit
+                      ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                      : aiUsage.used >= aiUsage.limit * 0.8
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                      : 'bg-violet-600/10 border-violet-500/30 text-violet-300'
+                  }`}>
+                    {aiUsage.used}/{aiUsage.limit} 이번 달 리포트
+                  </span>
+                )}
+              </div>
               <p className="text-slate-500 text-sm mt-0.5">Gemini 기반 학부모 연계 리포트 자동 생성</p>
             </div>
           </div>
@@ -527,6 +565,20 @@ export default function AIReportView() {
               </div>
             </div>
 
+            {/* Plan gate / usage warnings */}
+            {plan === 'free' && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
+                <p className="text-amber-400 text-sm font-medium">AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.</p>
+              </div>
+            )}
+            {plan === 'basic' && aiUsage && aiUsage.used >= aiUsage.limit && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                <p className="text-red-400 text-sm font-medium">
+                  이번 달 리포트 한도({aiUsage.limit}회)에 도달했습니다. Pro 플랜으로 업그레이드하면 무제한 사용이 가능합니다.
+                </p>
+              </div>
+            )}
+
             {/* Generate button */}
             <button
               type="button"
@@ -545,7 +597,7 @@ export default function AIReportView() {
               )}
             </button>
 
-            {!selectedStudent && students.length > 0 && (
+            {!selectedStudent && students.length > 0 && plan !== 'free' && (
               <p className="text-center text-slate-600 text-xs">학생을 선택해야 생성할 수 있습니다.</p>
             )}
           </div>
