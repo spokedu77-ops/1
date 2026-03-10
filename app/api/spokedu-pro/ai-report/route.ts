@@ -1,10 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { getActiveCenterIdFromCookie } from '@/app/lib/server/spokeduProContext';
 
 export const maxDuration = 60;
 
 const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY ?? '';
+const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
 
 type PhysicalLevel = 1 | 2 | 3;
 type PhysicalFunctions = {
@@ -17,6 +20,7 @@ type PhysicalFunctions = {
 
 type ReportRequest = {
   student: {
+    id?: string; // DB student UUID (optional — used for DB persistence when DB_READY=true)
     name: string;
     classGroup: string;
     physical: PhysicalFunctions;
@@ -122,6 +126,68 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to parse Gemini response', raw: text }, { status: 502 });
     }
 
+    const generatedAt = new Date().toISOString();
+
+    // ── Persist to DB when DB_READY=true ──────────────────────────────────────
+    if (DB_READY) {
+      try {
+        const svc = getServiceSupabase();
+
+        // Resolve center
+        let centerId: string | null = null;
+        const fromCookie = getActiveCenterIdFromCookie(req);
+        if (fromCookie) {
+          centerId = fromCookie;
+        } else {
+          const { data: centerData } = await svc
+            .from('spokedu_pro_centers')
+            .select('id')
+            .eq('owner_id', user.id)
+            .maybeSingle();
+          if (centerData?.id) {
+            centerId = centerData.id;
+          } else {
+            const { data: memberData } = await svc
+              .from('spokedu_pro_center_members')
+              .select('center_id')
+              .eq('user_id', user.id)
+              .limit(1)
+              .maybeSingle();
+            centerId = memberData?.center_id ?? null;
+          }
+        }
+
+        if (centerId) {
+          // Resolve student_id: use provided id or look up by name+class_group
+          let studentId: string | null = body.student.id ?? null;
+          if (!studentId) {
+            const { data: studentData } = await svc
+              .from('spokedu_pro_students')
+              .select('id')
+              .eq('center_id', centerId)
+              .eq('name', body.student.name)
+              .eq('class_group', body.student.classGroup)
+              .maybeSingle();
+            studentId = studentData?.id ?? null;
+          }
+
+          if (studentId) {
+            await svc.from('spokedu_pro_ai_reports').insert({
+              student_id: studentId,
+              center_id: centerId,
+              goal: body.developmentGoal,
+              content: JSON.stringify(parsed),
+              report_json: parsed,
+              created_by: user.id,
+            });
+          }
+        }
+      } catch (dbErr) {
+        // DB 저장 실패는 리포트 반환을 막지 않음
+        console.error('[ai-report DB save]', dbErr);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       report: parsed,
@@ -129,7 +195,7 @@ export async function POST(req: NextRequest) {
         studentName: body.student.name,
         classGroup: body.student.classGroup,
         period: body.periodLabel,
-        generatedAt: new Date().toISOString(),
+        generatedAt,
       },
     });
   } catch (err: unknown) {
