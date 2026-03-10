@@ -1,4 +1,15 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  PARTNERS,
+  COUNTER_BASE_DATE,
+  COUNTER_BASE_STUDENTS,
+  COUNTER_BASE_SESSIONS,
+  COUNTER_DAILY_STUDENTS,
+  COUNTER_DAILY_SESSIONS,
+} from '../data/config';
 
 function ShieldIcon() {
   return (
@@ -8,11 +19,56 @@ function ShieldIcon() {
   );
 }
 
-const PARTNERS = [
-  '2023년 OO구청 주관 아동 체육 프로그램 운영 연계',
-  '지역 보건소 아동 신체 발달 관리 체육 파견',
-  '프리미엄 호텔 5성급 키즈 웰니스 프로그램 파트너십',
-];
+function getCounterTargets(): { students: number; sessions: number } {
+  const base = new Date(COUNTER_BASE_DATE + 'T00:00:00').getTime();
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const days = Math.max(0, Math.floor((today - base) / (24 * 60 * 60 * 1000)));
+  return {
+    students: COUNTER_BASE_STUDENTS + days * COUNTER_DAILY_STUDENTS,
+    sessions: COUNTER_BASE_SESSIONS + days * COUNTER_DAILY_SESSIONS,
+  };
+}
+
+function useCountUp(target: number, durationMs = 1800, startOnMount = true): number {
+  const [value, setValue] = useState(0);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    if (!startOnMount || started) return;
+    setStarted(true);
+    const start = performance.now();
+    const step = (now: number) => {
+      const elapsed = now - start;
+      const t = Math.min(1, elapsed / durationMs);
+      const easeOut = 1 - Math.pow(1 - t, 2);
+      setValue(Math.round(target * easeOut));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, durationMs, startOnMount, started]);
+
+  return value;
+}
+
+function HeroStats() {
+  const { students, sessions } = getCounterTargets();
+  const displayStudents = useCountUp(students);
+  const displaySessions = useCountUp(sessions);
+
+  return (
+    <div className="pl-hero-stats" aria-live="polite">
+      <div className="pl-hero-stat">
+        <span className="pl-hero-stat-value">{displaySessions.toLocaleString()}</span>
+        <span className="pl-hero-stat-label">누적 수업 (회)</span>
+      </div>
+      <div className="pl-hero-stat">
+        <span className="pl-hero-stat-value">{displayStudents.toLocaleString()}</span>
+        <span className="pl-hero-stat-label">수업 받은 아이 (명)</span>
+      </div>
+    </div>
+  );
+}
 
 export default function Hero() {
   return (
@@ -23,6 +79,7 @@ export default function Hero() {
             <ShieldIcon />
             연세대학교 체육교육 전문가 그룹
           </div>
+          <HeroStats />
           <h1>
             신체 활동으로
             <br />

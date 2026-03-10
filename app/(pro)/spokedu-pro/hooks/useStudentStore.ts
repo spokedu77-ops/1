@@ -149,9 +149,9 @@ export function balanceTeams(students: Student[]): { teamA: Student[]; teamB: St
 export function useStudentStore() {
   const today = todayISO();
 
-  // 기본값: localStorage 즉시 로드 (API 응답 대기 중 빈 화면 방지)
-  const [rawStudents, setRawStudents] = useState<Omit<Student, 'status'>[]>(() => lsGetStudents());
-  const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>(() => lsGetAttendance(today));
+  // SSR/클라이언트 첫 페인트 일치를 위해 빈 값으로 초기화. localStorage는 useEffect에서 복원.
+  const [rawStudents, setRawStudents] = useState<Omit<Student, 'status'>[]>([]);
+  const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
   const [loaded, setLoaded] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -160,8 +160,11 @@ export function useStudentStore() {
   const attendanceRef = useRef(attendance);
   attendanceRef.current = attendance;
 
-  // ── 초기 로드: API에서 최신 데이터 가져오기 ────────────────────────────
+  // ── 초기 로드: localStorage 복원 후 API에서 최신 데이터 가져오기 ─────────
   useEffect(() => {
+    setRawStudents(lsGetStudents());
+    setAttendance(lsGetAttendance(today));
+
     let cancelled = false;
     (async () => {
       setSyncing(true);
@@ -178,7 +181,6 @@ export function useStudentStore() {
         setSyncError(null);
       } catch (err) {
         if (cancelled) return;
-        // API 실패 → localStorage 유지 (이미 초기값으로 설정됨)
         setSyncError(err instanceof Error ? err.message : 'sync failed');
       } finally {
         if (!cancelled) { setSyncing(false); setLoaded(true); }

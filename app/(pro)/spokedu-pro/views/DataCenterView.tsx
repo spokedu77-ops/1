@@ -72,68 +72,55 @@ function StudentCard({
   const pct = Math.round((totalScore / maxScore) * 100);
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-2xl overflow-hidden">
-      {/* 기본 정보 행 */}
-      <div className="flex items-center gap-4 p-4">
-        <div className="w-10 h-10 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-lg shrink-0 font-bold text-white">
-          {student.name[0]}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-black text-base truncate">{student.name}</p>
-          <p className="text-slate-400 text-xs font-medium">{student.classGroup}</p>
-        </div>
-
-        {/* 신체 점수 바 */}
-        <div className="hidden sm:flex items-center gap-2 w-28">
-          <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
-              style={{ width: `${pct}%` }}
-            />
+    <div className="w-full min-w-0 bg-slate-800/60 border border-slate-700 rounded-2xl">
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-lg shrink-0 font-bold text-white">
+            {student.name[0]}
           </div>
-          <span className="text-xs text-slate-400 font-bold shrink-0">{totalScore}/{maxScore}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-black text-base truncate">{student.name}</p>
+            <p className="text-slate-400 text-xs font-medium">{student.classGroup}</p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 w-28 shrink-0">
+            <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden min-w-0">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-xs text-slate-400 font-bold shrink-0">{totalScore}/{maxScore}</span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => onCycleStatus(student.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${cfg.cls}`}
+            >
+              <StatusIcon className="w-3.5 h-3.5" />
+              {cfg.label}
+            </button>
+            <button type="button" onClick={() => setExpanded((e) => !e)} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors" aria-label="신체 기능 펼치기">
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            <button type="button" onClick={() => onRemove(student.id)} className="p-2 rounded-lg bg-slate-700 hover:bg-red-900/40 text-slate-500 hover:text-red-400 transition-colors" aria-label="삭제">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-
-        {/* 출석 상태 토글 */}
-        <button
-          type="button"
-          onClick={() => onCycleStatus(student.id)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${cfg.cls}`}
-        >
-          <StatusIcon className="w-3.5 h-3.5" />
-          {cfg.label}
-        </button>
-
-        {/* 펼치기 */}
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"
-        >
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-
-        {/* 삭제 */}
-        <button
-          type="button"
-          onClick={() => onRemove(student.id)}
-          className="p-2 rounded-lg bg-slate-700 hover:bg-red-900/40 text-slate-500 hover:text-red-400 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
       </div>
 
-      {/* 신체 기능 패널 */}
       {expanded && (
-        <div className="border-t border-slate-700 p-4 bg-slate-900/40">
+        <div className="border-t border-slate-700 p-4 bg-slate-900/40 overflow-x-auto">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
             신체 기능 평가 — 팀 나누기·술래 정하기에 활용됩니다
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* 768px 미만은 1열만 사용해 가로 overflow 제거 — 오른쪽 버튼이 터치를 받지 못하는 현상 방지 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {(Object.keys(PHYSICAL_LABELS) as (keyof PhysicalFunctions)[]).map((key) => (
-              <div key={key} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-slate-300 font-semibold w-14">{PHYSICAL_LABELS[key]}</span>
-                <div className="flex gap-1">
+              <div key={key} className="flex items-center justify-between gap-2 min-w-[180px]">
+                <span className="text-sm text-slate-300 font-semibold shrink-0">{PHYSICAL_LABELS[key]}</span>
+                <div className="flex gap-1 shrink-0">
                   {([1, 2, 3] as PhysicalLevel[]).map((v) => (
                     <LevelButton
                       key={v}

@@ -33,7 +33,7 @@ export default function SpokeduProLayout({
 
   return (
     <div
-      className="w-full overflow-hidden bg-[#0F172A] flex flex-col"
+      className="w-full max-w-full min-w-0 overflow-hidden bg-[#0F172A] flex flex-col flex-1"
       style={{ minHeight: 'var(--viewport-height-px, 100vh)', height: 'var(--viewport-height-px, 100vh)' }}
     >
       {children}

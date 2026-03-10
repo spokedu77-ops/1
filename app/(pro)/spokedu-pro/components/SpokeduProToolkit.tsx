@@ -23,9 +23,12 @@ export default function SpokeduProToolkit({
   }, []);
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4">
+    <div
+      className="flex flex-col items-end gap-4 relative z-[100]"
+      style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem' }}
+    >
       <div
-        className={`tool-panel bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 w-[340px] mb-2 overflow-y-auto max-h-[85vh] custom-scroll ${open ? 'show' : ''}`}
+        className={`tool-panel bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 w-[340px] overflow-y-auto max-h-[85vh] custom-scroll ${open ? 'show' : ''}`}
       >
         <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-3 sticky top-0 bg-slate-800 z-10">
           <h3 className="font-bold text-white flex items-center gap-2">
@@ -130,7 +133,7 @@ export default function SpokeduProToolkit({
       <button
         type="button"
         onClick={onToggle}
-        className="w-16 h-16 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110"
+        className="w-16 h-16 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 pointer-events-auto"
       >
         <MonitorSmartphone className="w-7 h-7" />
       </button>

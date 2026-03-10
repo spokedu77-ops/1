@@ -143,10 +143,10 @@ export default function RoadmapView({
   };
 
   return (
-    <section className="pb-32">
-      {/* Hero: 테마 1개(4개 묶음) 설명 */}
+    <section className="pb-32 pt-0 mt-0">
+      {/* Hero: 테마 1개(4개 묶음) 설명 — 다른 페이지와 동일한 좌/상단 여백만 사용 */}
       <div
-        className="relative w-full h-[35vh] min-h-[250px] bg-slate-900 flex items-end pb-10 px-8 lg:px-16"
+        className="relative w-full min-h-[140px] py-10 bg-slate-900 flex items-end px-6 lg:px-12"
         style={{
           background:
             'linear-gradient(to top, #0F172A 0%, transparent 100%), url(https://images.unsplash.com/photo-1576625807986-773a241e57c5?auto=format&fit=crop&q=80&w=2000) center/cover',
@@ -164,7 +164,7 @@ export default function RoadmapView({
         </div>
       </div>
 
-      <div className="px-8 lg:px-16 mt-8 space-y-12">
+      <div className="px-6 lg:px-12 mt-8 space-y-12">
         {error && (
           <div className="p-3 bg-red-900/20 border border-red-500/30 rounded-lg text-sm text-red-300">{error}</div>
         )}
@@ -174,13 +174,13 @@ export default function RoadmapView({
 
         {/* Row1: 이번 주 테마 4개 */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-400" />
-                {weekTheme.title}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2 truncate">
+                <Zap className="w-5 h-5 text-yellow-400 shrink-0" />
+                <span className="truncate">{weekTheme.title}</span>
               </h3>
-              <span className="hidden md:inline-block px-2 py-0.5 bg-slate-800 text-slate-400 text-[10px] font-bold rounded border border-slate-700">
+              <span className="hidden md:inline-block px-2 py-0.5 bg-slate-800 text-slate-400 text-[10px] font-bold rounded border border-slate-700 shrink-0">
                 {THEME_LABELS[weekTheme.themeKey]}
               </span>
             </div>
@@ -188,7 +188,7 @@ export default function RoadmapView({
               <button
                 type="button"
                 onClick={() => onGoToLibrary(weekTheme.themeKey)}
-                className="text-sm font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-sm font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer shrink-0"
               >
                 전체보기 <ChevronRight className="w-4 h-4" />
               </button>
@@ -210,16 +210,16 @@ export default function RoadmapView({
 
         {/* Row2: 선생님 베스트 4개 */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <Star className="w-5 h-5 text-orange-400" />
-              {row2.title}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-xl font-bold text-white flex items-center gap-2 min-w-0 truncate">
+              <Star className="w-5 h-5 text-orange-400 shrink-0" />
+              <span className="truncate">{row2.title}</span>
             </h3>
             {onGoToLibrary && (
               <button
                 type="button"
                 onClick={() => onGoToLibrary(undefined, row2.preset)}
-                className="text-sm font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-sm font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer shrink-0"
               >
                 전체보기 <ChevronRight className="w-4 h-4" />
               </button>

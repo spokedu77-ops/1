@@ -269,7 +269,17 @@
   color: var(--pl-text);
 }
 
-/* Sections */
+/* Sections: 섹션별 상하 여백 (섹션 간 간격이 자연스럽게 보이도록) */
+.private-landing main > section {
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+.private-landing main > section:first-child {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .pl-section {
   padding: 80px 0;
 }
@@ -322,6 +332,40 @@
   margin-bottom: 24px;
   overflow: visible;
   max-width: 100%;
+}
+
+.pl-hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.pl-hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pl-hero-stat-value {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800;
+  color: var(--pl-text);
+  letter-spacing: -0.02em;
+  background: var(--pl-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pl-hero-stat-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pl-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .pl-hero h1 {
@@ -793,6 +837,68 @@
   white-space: pre-line;
   word-break: keep-all;
   flex-grow: 1;
+}
+
+.pl-result-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-grow: 1;
+}
+
+.pl-result-type-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 20px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: var(--pl-r-md);
+}
+
+.pl-result-type-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pl-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pl-result-type-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--pl-primary);
+}
+
+.pl-result-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pl-result-block-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pl-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pl-result-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--pl-text);
+}
+
+.pl-result-list li {
+  margin-bottom: 4px;
+}
+
+.pl-result-list li:last-child {
+  margin-bottom: 0;
 }
 
 .pl-result-info {
