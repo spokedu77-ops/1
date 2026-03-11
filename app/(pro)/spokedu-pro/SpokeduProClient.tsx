@@ -96,7 +96,8 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
         isEditMode={isEditMode}
         onOpenCurationDrawer={isEditMode ? () => setShowCurationDrawer(true) : undefined}
       />
-      <main className="flex-1 h-full overflow-y-auto custom-scroll relative bg-[#0F172A]">
+      {/* pb-20 md:pb-0: 모바일 하단 탭 바(h-16) 아래에 콘텐츠가 가리지 않도록 패딩 추가 */}
+      <main className="flex-1 h-full overflow-y-auto custom-scroll relative bg-[#0F172A] pb-20 md:pb-0">
         <div className={`view-content ${viewId === 'screenplay' ? 'active' : ''}`}>
           <ScreenplayView onOpenInteractive={openInteractive} onToast={showToast} />
         </div>
@@ -122,7 +123,9 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
           <SettingsView />
         </div>
       </main>
+      </div>
 
+      {/* ── 오버레이 컴포넌트 (flex flow 밖, 최상위 div 안) ── */}
       <SpokeduProToolkit
         open={toolkitOpen}
         onToggle={() => setToolkitOpen((o) => !o)}
@@ -160,7 +163,6 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
         onClose={() => setInteractiveMode(null)}
         onToast={showToast}
       />
-      </div>
     </div>
   );
 }

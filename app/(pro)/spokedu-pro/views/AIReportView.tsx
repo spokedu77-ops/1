@@ -304,7 +304,7 @@ export default function AIReportView() {
   const [studentsLoading, setStudentsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/spokedu-pro/students')
+    fetch('/api/spokedu-pro/students', { credentials: 'include' })
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data.students)) setStudents(data.students); })
       .catch(() => {/* silent — empty list */})

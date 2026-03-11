@@ -9,110 +9,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { getActiveCenterIdFromCookie } from '@/app/lib/server/spokeduProContext';
+import { resolveCenter, loadStudentsFromContent, saveStudentsToContent } from '@/app/lib/server/spokeduProUtils';
+import {
+  type PhysicalFunctions,
+  type StoredStudent,
+  type DbStudentRow,
+  DEFAULT_PHYSICAL,
+  dbToStudent,
+} from '@/app/lib/types/spokeduPro';
+
+// Re-export types for backwards-compat with students/[id]/route.ts
+export type { PhysicalFunctions, StoredStudent };
 
 const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
-const CONTENT_KEY = 'students';
-
-export type PhysicalLevel = 1 | 2 | 3;
-export type PhysicalFunctions = {
-  coordination: PhysicalLevel;
-  agility: PhysicalLevel;
-  endurance: PhysicalLevel;
-  balance: PhysicalLevel;
-  strength: PhysicalLevel;
-};
-
-export type StoredStudent = {
-  id: string;
-  name: string;
-  classGroup: string;
-  physical: PhysicalFunctions;
-  enrolledAt: string;
-  note?: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-const DEFAULT_PHYSICAL: PhysicalFunctions = {
-  coordination: 2,
-  agility: 2,
-  endurance: 2,
-  balance: 2,
-  strength: 2,
-};
-
-// ── tenant_content helpers (DB_READY=false) ───────────────────────────────────
-
-type SvcClient = ReturnType<typeof getServiceSupabase>;
-
-async function loadStudentsFromContent(svc: SvcClient, userId: string): Promise<StoredStudent[]> {
-  const { data } = await svc
-    .from('spokedu_pro_tenant_content')
-    .select('draft_value')
-    .eq('owner_id', userId)
-    .eq('key', CONTENT_KEY)
-    .maybeSingle();
-  if (!data) return [];
-  const val = data.draft_value as { students?: StoredStudent[] };
-  return val?.students ?? [];
-}
-
-async function saveStudentsToContent(svc: SvcClient, userId: string, students: StoredStudent[]): Promise<void> {
-  await svc
-    .from('spokedu_pro_tenant_content')
-    .upsert(
-      { owner_id: userId, key: CONTENT_KEY, draft_value: { students }, draft_updated_at: new Date().toISOString() },
-      { onConflict: 'owner_id,key' }
-    );
-}
-
-// ── DB helpers (DB_READY=true) ────────────────────────────────────────────────
-
-type DbStudentRow = {
-  id: string;
-  name: string;
-  class_group: string;
-  physical: PhysicalFunctions;
-  enrolled_at: string;
-  note: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-function dbToStudent(row: DbStudentRow): StoredStudent {
-  return {
-    id: row.id,
-    name: row.name,
-    classGroup: row.class_group ?? '',
-    physical: (row.physical as PhysicalFunctions) ?? DEFAULT_PHYSICAL,
-    enrolledAt: row.enrolled_at,
-    note: row.note ?? undefined,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-/** 쿠키 또는 owner 조회로 활성 센터 ID를 반환. */
-async function resolveCenter(req: NextRequest, svc: SvcClient, userId: string): Promise<string | null> {
-  const fromCookie = getActiveCenterIdFromCookie(req);
-  if (fromCookie) return fromCookie;
-
-  const { data } = await svc
-    .from('spokedu_pro_centers')
-    .select('id')
-    .eq('owner_id', userId)
-    .maybeSingle();
-  if (data?.id) return data.id;
-
-  const { data: member } = await svc
-    .from('spokedu_pro_center_members')
-    .select('center_id')
-    .eq('user_id', userId)
-    .limit(1)
-    .maybeSingle();
-  return member?.center_id ?? null;
-}
 
 // ── GET ───────────────────────────────────────────────────────────────────────
 
@@ -131,7 +40,6 @@ export async function GET(req: NextRequest) {
 
     const centerId = await resolveCenter(req, svc, user.id);
     if (!centerId) {
-      // 센터 미설정: 빈 목록 반환 (bootstrap 필요)
       return NextResponse.json({ ok: true, students: [] });
     }
 
@@ -192,7 +100,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, student: newStudent }, { status: 201 });
     }
 
-    // DB 경로
     const centerId = await resolveCenter(req, svc, user.id);
     if (!centerId) {
       return NextResponse.json({ error: '센터가 설정되지 않았습니다. 센터를 먼저 생성해주세요.' }, { status: 400 });

@@ -2,21 +2,13 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { getActiveCenterIdFromCookie } from '@/app/lib/server/spokeduProContext';
+import { resolveCenter } from '@/app/lib/server/spokeduProUtils';
+import type { PhysicalFunctions, PhysicalLevel } from '@/app/lib/types/spokeduPro';
 
 export const maxDuration = 60;
 
 const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY ?? '';
 const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
-
-type PhysicalLevel = 1 | 2 | 3;
-type PhysicalFunctions = {
-  coordination: PhysicalLevel;
-  agility: PhysicalLevel;
-  endurance: PhysicalLevel;
-  balance: PhysicalLevel;
-  strength: PhysicalLevel;
-};
 
 type ReportRequest = {
   student: {
@@ -134,28 +126,7 @@ export async function POST(req: NextRequest) {
         const svc = getServiceSupabase();
 
         // Resolve center
-        let centerId: string | null = null;
-        const fromCookie = getActiveCenterIdFromCookie(req);
-        if (fromCookie) {
-          centerId = fromCookie;
-        } else {
-          const { data: centerData } = await svc
-            .from('spokedu_pro_centers')
-            .select('id')
-            .eq('owner_id', user.id)
-            .maybeSingle();
-          if (centerData?.id) {
-            centerId = centerData.id;
-          } else {
-            const { data: memberData } = await svc
-              .from('spokedu_pro_center_members')
-              .select('center_id')
-              .eq('user_id', user.id)
-              .limit(1)
-              .maybeSingle();
-            centerId = memberData?.center_id ?? null;
-          }
-        }
+        const centerId = await resolveCenter(req, svc, user.id);
 
         if (centerId) {
           // Resolve student_id: use provided id or look up by name+class_group

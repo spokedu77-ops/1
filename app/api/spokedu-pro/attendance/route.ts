@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { getActiveCenterIdFromCookie } from '@/app/lib/server/spokeduProContext';
+import { resolveCenter } from '@/app/lib/server/spokeduProUtils';
 
 const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
 
@@ -26,13 +26,11 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-type SvcClient = ReturnType<typeof getServiceSupabase>;
-
 // ── tenant_content helpers ────────────────────────────────────────────────────
 
 function attendanceKey(date: string) { return `attendance_${date}`; }
 
-async function loadFromContent(svc: SvcClient, userId: string, date: string): Promise<AttendanceRecords> {
+async function loadFromContent(svc: ReturnType<typeof getServiceSupabase>, userId: string, date: string): Promise<AttendanceRecords> {
   const { data } = await svc
     .from('spokedu_pro_tenant_content')
     .select('draft_value')
@@ -44,24 +42,13 @@ async function loadFromContent(svc: SvcClient, userId: string, date: string): Pr
   return val?.records ?? {};
 }
 
-async function saveToContent(svc: SvcClient, userId: string, date: string, records: AttendanceRecords): Promise<void> {
+async function saveToContent(svc: ReturnType<typeof getServiceSupabase>, userId: string, date: string, records: AttendanceRecords): Promise<void> {
   await svc
     .from('spokedu_pro_tenant_content')
     .upsert(
       { owner_id: userId, key: attendanceKey(date), draft_value: { records }, draft_updated_at: new Date().toISOString() },
       { onConflict: 'owner_id,key' }
     );
-}
-
-// ── center resolution ─────────────────────────────────────────────────────────
-
-async function resolveCenter(req: NextRequest, svc: SvcClient, userId: string): Promise<string | null> {
-  const fromCookie = getActiveCenterIdFromCookie(req);
-  if (fromCookie) return fromCookie;
-  const { data } = await svc.from('spokedu_pro_centers').select('id').eq('owner_id', userId).maybeSingle();
-  if (data?.id) return data.id;
-  const { data: m } = await svc.from('spokedu_pro_center_members').select('center_id').eq('user_id', userId).limit(1).maybeSingle();
-  return m?.center_id ?? null;
 }
 
 // ── GET ───────────────────────────────────────────────────────────────────────

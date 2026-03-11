@@ -49,18 +49,16 @@ export async function GET(req: NextRequest) {
       .eq('center_id', centerId)
       .order('created_at', { ascending: true });
 
-    // 이메일 정보를 가져오기 위해 auth.users 조회 (service role 필요)
-    const members = await Promise.all(
-      (memberRows ?? []).map(async (row) => {
-        const { data: authUser } = await supabase.auth.admin.getUserById(row.user_id);
-        return {
-          userId: row.user_id,
-          email: authUser?.user?.email ?? row.user_id,
-          role: row.role as CenterRole,
-          joinedAt: row.created_at as string,
-        };
-      })
-    );
+    // 이메일 조회: listUsers 1회 호출로 N+1 쿼리 방지
+    const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    const userEmailMap = new Map(allUsers?.map((u) => [u.id, u.email]) ?? []);
+
+    const members = (memberRows ?? []).map((row) => ({
+      userId: row.user_id,
+      email: userEmailMap.get(row.user_id) ?? row.user_id,
+      role: row.role as CenterRole,
+      joinedAt: row.created_at as string,
+    }));
 
     return NextResponse.json({ ok: true, members });
   } catch (err) {

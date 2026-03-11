@@ -1,6 +1,6 @@
 'use client';
 
-import { MonitorPlay, LayoutDashboard, Grid, ClipboardCheck, Bot, Wrench, CreditCard, Building2 } from 'lucide-react';
+import { MonitorPlay, LayoutDashboard, Grid, ClipboardCheck, Bot, Wrench, CreditCard, Building2, Settings2 } from 'lucide-react';
 import type { ViewId } from '../hooks/useSpokeduProUI';
 
 const NAV: { id: ViewId; label: string; icon: React.ElementType; group?: string; iconClass?: string }[] = [

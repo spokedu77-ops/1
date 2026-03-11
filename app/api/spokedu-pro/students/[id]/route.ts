@@ -9,57 +9,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { getActiveCenterIdFromCookie } from '@/app/lib/server/spokeduProContext';
-import type { StoredStudent, PhysicalFunctions } from '../route';
+import { resolveCenter, loadStudentsFromContent, saveStudentsToContent } from '@/app/lib/server/spokeduProUtils';
+import {
+  type PhysicalFunctions,
+  type StoredStudent,
+  type DbStudentRow,
+  dbToStudent,
+} from '@/app/lib/types/spokeduPro';
 
 const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
-const CONTENT_KEY = 'students';
-
-type SvcClient = ReturnType<typeof getServiceSupabase>;
-
-async function loadStudents(svc: SvcClient, userId: string): Promise<StoredStudent[]> {
-  const { data } = await svc
-    .from('spokedu_pro_tenant_content')
-    .select('draft_value')
-    .eq('owner_id', userId)
-    .eq('key', CONTENT_KEY)
-    .maybeSingle();
-  if (!data) return [];
-  const val = data.draft_value as { students?: StoredStudent[] };
-  return val?.students ?? [];
-}
-
-async function saveStudents(svc: SvcClient, userId: string, students: StoredStudent[]): Promise<void> {
-  await svc
-    .from('spokedu_pro_tenant_content')
-    .upsert(
-      { owner_id: userId, key: CONTENT_KEY, draft_value: { students }, draft_updated_at: new Date().toISOString() },
-      { onConflict: 'owner_id,key' }
-    );
-}
-
-async function resolveCenter(req: NextRequest, svc: SvcClient, userId: string): Promise<string | null> {
-  const fromCookie = getActiveCenterIdFromCookie(req);
-  if (fromCookie) return fromCookie;
-  const { data } = await svc.from('spokedu_pro_centers').select('id').eq('owner_id', userId).maybeSingle();
-  if (data?.id) return data.id;
-  const { data: m } = await svc.from('spokedu_pro_center_members').select('center_id').eq('user_id', userId).limit(1).maybeSingle();
-  return m?.center_id ?? null;
-}
-
-type DbStudentRow = {
-  id: string; name: string; class_group: string; physical: PhysicalFunctions;
-  enrolled_at: string; note: string | null; created_at: string; updated_at: string;
-};
-const DEFAULT_PHYSICAL: PhysicalFunctions = { coordination: 2, agility: 2, endurance: 2, balance: 2, strength: 2 };
-function dbToStudent(row: DbStudentRow): StoredStudent {
-  return {
-    id: row.id, name: row.name, classGroup: row.class_group ?? '',
-    physical: (row.physical as PhysicalFunctions) ?? DEFAULT_PHYSICAL,
-    enrolledAt: row.enrolled_at, note: row.note ?? undefined,
-    createdAt: row.created_at, updatedAt: row.updated_at,
-  };
-}
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -85,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const svc = getServiceSupabase();
 
     if (!DB_READY) {
-      const students = await loadStudents(svc, user.id);
+      const students = await loadStudentsFromContent(svc, user.id);
       const idx = students.findIndex((s) => s.id === id);
       if (idx === -1) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
       const updated: StoredStudent = {
@@ -98,7 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       };
       const next = [...students];
       next[idx] = updated;
-      await saveStudents(svc, user.id, next);
+      await saveStudentsToContent(svc, user.id, next);
       return NextResponse.json({ ok: true, student: updated });
     }
 
@@ -147,10 +105,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const svc = getServiceSupabase();
 
     if (!DB_READY) {
-      const students = await loadStudents(svc, user.id);
+      const students = await loadStudentsFromContent(svc, user.id);
       const next = students.filter((s) => s.id !== id);
       if (next.length === students.length) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
-      await saveStudents(svc, user.id, next);
+      await saveStudentsToContent(svc, user.id, next);
       return NextResponse.json({ ok: true });
     }
 

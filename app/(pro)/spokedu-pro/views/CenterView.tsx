@@ -154,10 +154,11 @@ export default function CenterView() {
         setMsg({ text: data.error ?? '멤버 추가에 실패했습니다.', type: 'err' });
         return;
       }
+      const addedEmail = inviteEmail.trim();
       setMembers((prev) => [...prev, data.member]);
       setInviteEmail('');
       setShowAddForm(false);
-      setMsg({ text: `${inviteEmail} 멤버가 추가되었습니다.`, type: 'ok' });
+      setMsg({ text: `${addedEmail} 멤버가 추가되었습니다.`, type: 'ok' });
     } catch {
       setMsg({ text: '멤버 추가 중 오류가 발생했습니다.', type: 'err' });
     } finally {
