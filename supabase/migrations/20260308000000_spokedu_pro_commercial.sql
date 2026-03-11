@@ -2,6 +2,7 @@
 -- SPOKEDU PRO — 상업 배포 DB 마이그레이션
 -- 생성일: 2026-03-08
 -- 목적: MVP 이후 상업 배포에 필요한 테이블 추가
+-- ※ 멱등성 보장: 이미 존재하는 테이블/정책도 안전하게 재실행 가능
 -- ============================================================
 
 -- ────────────────────────────────────────────────────────────
@@ -17,9 +18,9 @@ CREATE TABLE IF NOT EXISTS spokedu_pro_centers (
 
 CREATE INDEX IF NOT EXISTS idx_spokedu_pro_centers_owner ON spokedu_pro_centers(owner_id);
 
--- RLS
 ALTER TABLE spokedu_pro_centers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "center_owner_all" ON spokedu_pro_centers;
 CREATE POLICY "center_owner_all" ON spokedu_pro_centers
   FOR ALL USING (auth.uid() = owner_id);
 
@@ -40,6 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_spokedu_pro_members_center ON spokedu_pro_center_
 
 ALTER TABLE spokedu_pro_center_members ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "member_read_own_center" ON spokedu_pro_center_members;
 CREATE POLICY "member_read_own_center" ON spokedu_pro_center_members
   FOR SELECT USING (
     user_id = auth.uid()
@@ -72,6 +74,7 @@ CREATE INDEX IF NOT EXISTS idx_spokedu_pro_subscriptions_stripe ON spokedu_pro_s
 
 ALTER TABLE spokedu_pro_subscriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "subscription_read_owner" ON spokedu_pro_subscriptions;
 CREATE POLICY "subscription_read_owner" ON spokedu_pro_subscriptions
   FOR SELECT USING (
     center_id IN (
@@ -80,7 +83,7 @@ CREATE POLICY "subscription_read_owner" ON spokedu_pro_subscriptions
   );
 
 -- ────────────────────────────────────────────────────────────
--- 4. 프로그램 뱅크 (목 데이터 → 실제 콘텐츠)
+-- 4. 프로그램 뱅크
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS spokedu_pro_programs (
   id              SERIAL PRIMARY KEY,
@@ -104,12 +107,13 @@ CREATE TABLE IF NOT EXISTS spokedu_pro_programs (
 CREATE INDEX IF NOT EXISTS idx_spokedu_pro_programs_theme ON spokedu_pro_programs(theme_key);
 CREATE INDEX IF NOT EXISTS idx_spokedu_pro_programs_category ON spokedu_pro_programs(category);
 
--- 프로그램은 퍼블릭 읽기 (인증 사용자 전체)
 ALTER TABLE spokedu_pro_programs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "programs_read_authenticated" ON spokedu_pro_programs;
 CREATE POLICY "programs_read_authenticated" ON spokedu_pro_programs
   FOR SELECT USING (auth.uid() IS NOT NULL AND is_published = true);
 
+DROP POLICY IF EXISTS "programs_all_admin" ON spokedu_pro_programs;
 CREATE POLICY "programs_all_admin" ON spokedu_pro_programs
   FOR ALL USING (
     EXISTS (
@@ -127,7 +131,7 @@ CREATE TABLE IF NOT EXISTS spokedu_pro_students (
   center_id    UUID NOT NULL REFERENCES spokedu_pro_centers(id) ON DELETE CASCADE,
   name         TEXT NOT NULL,
   birth_date   DATE,
-  class_group  TEXT,          -- 수업 반 (예: "유치부 인지반")
+  class_group  TEXT,
   enrolled_at  DATE NOT NULL DEFAULT CURRENT_DATE,
   status       TEXT NOT NULL CHECK (status IN ('active', 'inactive', 'graduated')) DEFAULT 'active',
   note         TEXT,
@@ -140,6 +144,7 @@ CREATE INDEX IF NOT EXISTS idx_spokedu_pro_students_status ON spokedu_pro_studen
 
 ALTER TABLE spokedu_pro_students ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "students_center_members" ON spokedu_pro_students;
 CREATE POLICY "students_center_members" ON spokedu_pro_students
   FOR ALL USING (
     center_id IN (
@@ -170,6 +175,7 @@ CREATE INDEX IF NOT EXISTS idx_spokedu_pro_attendance_center_date ON spokedu_pro
 
 ALTER TABLE spokedu_pro_attendance ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "attendance_center_members" ON spokedu_pro_attendance;
 CREATE POLICY "attendance_center_members" ON spokedu_pro_attendance
   FOR ALL USING (
     center_id IN (
@@ -200,6 +206,7 @@ CREATE INDEX IF NOT EXISTS idx_spokedu_pro_obs_center ON spokedu_pro_observation
 
 ALTER TABLE spokedu_pro_observations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "observations_center_members" ON spokedu_pro_observations;
 CREATE POLICY "observations_center_members" ON spokedu_pro_observations
   FOR ALL USING (
     center_id IN (
@@ -210,62 +217,15 @@ CREATE POLICY "observations_center_members" ON spokedu_pro_observations
   );
 
 -- ────────────────────────────────────────────────────────────
--- 8. 클래스 XP (게이미피케이션)
--- ────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS spokedu_pro_class_xp (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  center_id    UUID NOT NULL REFERENCES spokedu_pro_centers(id) ON DELETE CASCADE,
-  total_xp     INT NOT NULL DEFAULT 0,
-  level        INT NOT NULL DEFAULT 1,
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (center_id)
-);
-
-ALTER TABLE spokedu_pro_class_xp ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "xp_center_members" ON spokedu_pro_class_xp
-  FOR SELECT USING (
-    center_id IN (
-      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = auth.uid()
-      UNION
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
-    )
-  );
-
--- ────────────────────────────────────────────────────────────
--- 9. XP 이벤트 로그
--- ────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS spokedu_pro_xp_events (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  center_id   UUID NOT NULL REFERENCES spokedu_pro_centers(id) ON DELETE CASCADE,
-  event_type  TEXT NOT NULL, -- 'class_complete', 'game_play', 'report_gen', 'attendance' 등
-  xp_delta    INT NOT NULL,
-  note        TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_spokedu_pro_xp_events_center ON spokedu_pro_xp_events(center_id);
-
-ALTER TABLE spokedu_pro_xp_events ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "xp_events_read" ON spokedu_pro_xp_events
-  FOR SELECT USING (
-    center_id IN (
-      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = auth.uid()
-      UNION
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
-    )
-  );
-
--- ────────────────────────────────────────────────────────────
--- 10. AI 리포트 이력
+-- 8. AI 리포트 이력
 -- ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS spokedu_pro_ai_reports (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id  UUID NOT NULL REFERENCES spokedu_pro_students(id) ON DELETE CASCADE,
   center_id   UUID NOT NULL REFERENCES spokedu_pro_centers(id) ON DELETE CASCADE,
   goal        TEXT,
-  content     TEXT NOT NULL,   -- 생성된 리포트 전문 (마크다운)
+  content     TEXT NOT NULL DEFAULT '',
+  report_json JSONB,
   created_by  UUID REFERENCES auth.users(id),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -275,6 +235,7 @@ CREATE INDEX IF NOT EXISTS idx_spokedu_pro_reports_center ON spokedu_pro_ai_repo
 
 ALTER TABLE spokedu_pro_ai_reports ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "reports_center_members" ON spokedu_pro_ai_reports;
 CREATE POLICY "reports_center_members" ON spokedu_pro_ai_reports
   FOR ALL USING (
     center_id IN (
