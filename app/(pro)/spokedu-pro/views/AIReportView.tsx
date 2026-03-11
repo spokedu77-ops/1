@@ -21,6 +21,7 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  History,
 } from 'lucide-react';
 import {
   RadarChart,
@@ -33,6 +34,7 @@ import {
 import { PHYSICAL_LABELS, LEVEL_LABELS, type PhysicalFunctions, type PhysicalLevel } from '../hooks/useStudentStore';
 
 // ── Types ────────────────────────────────────────────────────────────────────
+type Tab = 'generate' | 'history';
 type Tone = 'warm' | 'professional' | 'friendly';
 type AttendanceStatus = 'present' | 'absent' | 'late';
 type ColorKey = 'violet' | 'emerald' | 'blue' | 'amber';
@@ -44,6 +46,14 @@ type ApiStudent = {
   physical: PhysicalFunctions;
   note?: string;
   enrolledAt: string;
+};
+
+type HistoryReport = {
+  id: string;
+  goal: string;
+  report_json: ReportData | null;
+  created_at: string;
+  spokedu_pro_students: { id: string; name: string; class_group: string } | null;
 };
 
 type ReportData = {
@@ -298,8 +308,95 @@ const ATTENDANCE_CONFIG: Record<AttendanceStatus, { label: string; icon: React.E
   absent:  { label: '결석', icon: XCircle,      cls: 'bg-slate-700 text-slate-400 border-slate-600' },
 };
 
+// ── History Panel ─────────────────────────────────────────────────────────────
+function HistoryPanel() {
+  const [reports, setReports] = useState<HistoryReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/spokedu-pro/ai-report/history', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d.reports)) setReports(d.reports); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 gap-2 text-slate-500 text-sm">
+        <Loader2 className="w-4 h-4 animate-spin" /> 이력 불러오는 중...
+      </div>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <History className="w-10 h-10 text-slate-700 mb-3" />
+        <p className="text-slate-500 text-sm">생성된 리포트 이력이 없습니다.</p>
+        <p className="text-slate-600 text-xs mt-1">리포트를 생성하면 여기에 기록됩니다.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 max-w-3xl mx-auto">
+      {reports.map((r) => {
+        const student = r.spokedu_pro_students;
+        const date = new Date(r.created_at).toLocaleDateString('ko-KR', {
+          year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+        });
+        const isOpen = expanded === r.id;
+
+        return (
+          <div key={r.id} className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setExpanded(isOpen ? null : r.id)}
+              className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/5 transition-colors text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-violet-600/20 border border-violet-500/20 rounded-xl flex items-center justify-center shrink-0">
+                  <Bot className="w-4 h-4 text-violet-400" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">
+                    {student?.name ?? '(삭제된 학생)'}
+                    <span className="text-slate-400 font-normal ml-2 text-xs">{student?.class_group}</span>
+                  </p>
+                  <p className="text-xs text-slate-500">{r.goal}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-xs text-slate-600 hidden sm:block">{date}</span>
+                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
+
+            {isOpen && r.report_json && (
+              <div className="px-5 pb-5 space-y-3 border-t border-white/5 pt-4">
+                <p className="text-xs text-slate-600">{date}</p>
+                <ReportSection icon={Sparkles} label="이번 수업 하이라이트" color="violet" content={r.report_json.highlight} />
+                <ReportSection icon={TrendingUp} label="우리 아이 성장 포인트" color="emerald" content={r.report_json.growth} />
+                <ReportSection icon={Home} label="가정 연계 활동 추천" color="blue" content={r.report_json.homeActivity} />
+                <ReportSection icon={Award} label="코치 한마디" color="amber" content={r.report_json.coachMessage} />
+                <div className="bg-gradient-to-r from-violet-600/10 to-blue-600/10 border border-violet-500/20 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-1">다음 수업 목표</p>
+                  <p className="text-white font-medium text-sm">{r.report_json.nextGoal}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AIReportView() {
+  const [activeTab, setActiveTab] = useState<Tab>('generate');
   const [students, setStudents] = useState<ApiStudent[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
 
@@ -407,8 +504,8 @@ export default function AIReportView() {
       <div className="max-w-6xl mx-auto">
 
         {/* ── Page Header ── */}
-        <header className="mb-8">
-          <div className="flex items-center gap-3 mb-1">
+        <header className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-violet-600/20 border border-violet-500/30 rounded-2xl flex items-center justify-center shrink-0">
               <Bot className="w-5 h-5 text-violet-400" />
             </div>
@@ -419,10 +516,38 @@ export default function AIReportView() {
               <p className="text-slate-500 text-sm mt-0.5">Gemini 기반 학부모 연계 리포트 자동 생성</p>
             </div>
           </div>
+          {/* 탭 */}
+          <div className="flex gap-1 bg-white/5 border border-white/10 rounded-xl p-1 w-fit">
+            <button
+              type="button"
+              onClick={() => setActiveTab('generate')}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                activeTab === 'generate'
+                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                  : 'text-slate-400 hover:text-slate-300'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" /> 리포트 생성
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                activeTab === 'history'
+                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                  : 'text-slate-400 hover:text-slate-300'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" /> 이전 이력
+            </button>
+          </div>
         </header>
 
-        {/* ── Main Layout ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-5">
+        {/* ── 이력 탭 ── */}
+        {activeTab === 'history' && <HistoryPanel />}
+
+        {/* ── 생성 탭 ── */}
+        {activeTab !== 'history' && <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-5">
 
           {/* ── LEFT: Form Panel ── */}
           <div className="space-y-4">
@@ -659,7 +784,7 @@ export default function AIReportView() {
               />
             )}
           </div>
-        </div>
+        </div>}
       </div>
     </section>
   );

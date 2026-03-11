@@ -3,11 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { resolveCenter } from '@/app/lib/server/spokeduProUtils';
+import { checkRateLimit } from '@/app/lib/server/rateLimit';
 import type { PhysicalFunctions, PhysicalLevel } from '@/app/lib/types/spokeduPro';
 
 export const maxDuration = 60;
 
 const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY ?? '';
+// AI 리포트: 사용자당 분당 5회, 시간당 30회
+const RATE_PER_MIN = 5;
+const RATE_PER_HOUR = 30;
 const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
 
 type ReportRequest = {
@@ -83,6 +87,22 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Rate limit 검사
+  const limitMin = checkRateLimit(`ai-report-min:${user.id}`, RATE_PER_MIN, 60 * 1000);
+  if (!limitMin.allowed) {
+    return NextResponse.json(
+      { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.', retryAfterMs: limitMin.retryAfterMs },
+      { status: 429 }
+    );
+  }
+  const limitHour = checkRateLimit(`ai-report-hour:${user.id}`, RATE_PER_HOUR, 60 * 60 * 1000);
+  if (!limitHour.allowed) {
+    return NextResponse.json(
+      { error: '시간당 AI 리포트 한도에 도달했습니다. 1시간 후 다시 시도해주세요.', retryAfterMs: limitHour.retryAfterMs },
+      { status: 429 }
+    );
   }
 
   if (!GEMINI_API_KEY) {

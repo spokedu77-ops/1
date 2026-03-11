@@ -1,29 +1,43 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import './styles/spokedu-pro.css';
 import { useSpokeduProUI } from './hooks/useSpokeduProUI';
 import { useSpokeduProContent } from './hooks/useSpokeduProContent';
 import { useSpokeduProAdminBlocks } from './hooks/useSpokeduProContent';
+import { useProContext } from './hooks/useProContext';
 import type { ProgramDetail } from './types';
 import SpokeduProAside from './components/SpokeduProAside';
 import SpokeduProToolkit from './components/SpokeduProToolkit';
 import SpokeduProDrawer from './components/SpokeduProDrawer';
 import DashboardCurationEditor from './components/DashboardCurationEditor';
 import SpokeduProInteractiveScreen from './components/SpokeduProInteractiveScreen';
-import ScreenplayView from './views/ScreenplayView';
+// 초기 로드 필수 뷰 (roadmap, library — 첫 화면)
 import RoadmapView from './views/RoadmapView';
 import LibraryView from './views/LibraryView';
-import StudentsView from './views/StudentsView';
-import CenterView from './views/CenterView';
-import AIReportView from './views/AIReportView';
-import AssistantToolsView from './views/AssistantToolsView';
-import SettingsView from './views/SettingsView';
+// 지연 로드 뷰 (처음 접근 시에만 번들 로드)
+const ScreenplayView = lazy(() => import('./views/ScreenplayView'));
+const StudentsView = lazy(() => import('./views/StudentsView'));
+const CenterView = lazy(() => import('./views/CenterView'));
+const AIReportView = lazy(() => import('./views/AIReportView'));
+const AssistantToolsView = lazy(() => import('./views/AssistantToolsView'));
+const SettingsView = lazy(() => import('./views/SettingsView'));
+
+function ViewFallback() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[300px]">
+      <div className="w-6 h-6 border-2 border-slate-700 border-t-slate-400 rounded-full animate-spin" />
+    </div>
+  );
+}
 
 export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
   const { viewId, switchView, drawerOpen, closeDrawer, showToast } = useSpokeduProUI('roadmap');
+  const { refresh: refreshContext } = useProContext();
   const [toolkitOpen, setToolkitOpen] = useState(false);
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
   const [drawerContext, setDrawerContext] = useState<{ role?: string; themeKey?: string } | null>(null);
@@ -40,6 +54,29 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
   useEffect(() => {
     if (isEditMode) fetchBlocks();
   }, [isEditMode, fetchBlocks]);
+
+  // Stripe Checkout 완료 후 settings 뷰로 이동 + 컨텍스트 갱신
+  useEffect(() => {
+    const upgradeParam = searchParams.get('upgrade');
+    if (!upgradeParam) return;
+
+    if (upgradeParam === 'success') {
+      switchView('settings');
+      refreshContext().then(() => {
+        toast.success('결제가 완료되었습니다. 플랜이 업그레이드되었습니다.');
+      });
+    } else if (upgradeParam === 'canceled') {
+      switchView('settings');
+      toast.info('결제가 취소되었습니다.');
+    }
+
+    // URL에서 쿼리 파라미터 제거
+    const url = new URL(window.location.href);
+    url.searchParams.delete('upgrade');
+    url.searchParams.delete('plan');
+    window.history.replaceState(null, '', url.toString());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (viewId !== 'library') setLibraryPreset(null);
@@ -99,7 +136,9 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
       {/* pb-20 md:pb-0: 모바일 하단 탭 바(h-16) 아래에 콘텐츠가 가리지 않도록 패딩 추가 */}
       <main className="flex-1 h-full overflow-y-auto custom-scroll relative bg-[#0F172A] pb-20 md:pb-0">
         <div className={`view-content ${viewId === 'screenplay' ? 'active' : ''}`}>
-          <ScreenplayView onOpenInteractive={openInteractive} onToast={showToast} />
+          <Suspense fallback={<ViewFallback />}>
+            <ScreenplayView onOpenInteractive={openInteractive} onToast={showToast} />
+          </Suspense>
         </div>
         <div className={`view-content ${viewId === 'roadmap' ? 'active' : ''}`}>
           <RoadmapView onOpenDetail={openDrawer} onGoToLibrary={goToLibrary} programDetails={programDetailsForDrawer} />
@@ -108,19 +147,29 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
           <LibraryView onOpenDetail={openDrawer} initialPreset={libraryPreset} programDetails={programDetailsForDrawer} />
         </div>
         <div className={`view-content ${viewId === 'data-center' ? 'active' : ''}`}>
-          <StudentsView />
+          <Suspense fallback={<ViewFallback />}>
+            <StudentsView />
+          </Suspense>
         </div>
         <div className={`view-content ${viewId === 'ai' ? 'active' : ''}`}>
-          <AIReportView />
+          <Suspense fallback={<ViewFallback />}>
+            <AIReportView />
+          </Suspense>
         </div>
         <div className={`view-content ${viewId === 'tools' ? 'active' : ''}`}>
-          <AssistantToolsView />
+          <Suspense fallback={<ViewFallback />}>
+            <AssistantToolsView />
+          </Suspense>
         </div>
         <div className={`view-content ${viewId === 'center' ? 'active' : ''}`}>
-          <CenterView />
+          <Suspense fallback={<ViewFallback />}>
+            <CenterView />
+          </Suspense>
         </div>
         <div className={`view-content ${viewId === 'settings' ? 'active' : ''}`}>
-          <SettingsView />
+          <Suspense fallback={<ViewFallback />}>
+            <SettingsView />
+          </Suspense>
         </div>
       </main>
       </div>
