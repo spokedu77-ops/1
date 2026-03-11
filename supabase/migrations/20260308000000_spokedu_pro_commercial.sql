@@ -22,7 +22,7 @@ ALTER TABLE spokedu_pro_centers ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "center_owner_all" ON spokedu_pro_centers;
 CREATE POLICY "center_owner_all" ON spokedu_pro_centers
-  FOR ALL USING (auth.uid() = owner_id);
+  FOR ALL USING ((SELECT auth.uid()) = owner_id);
 
 -- ────────────────────────────────────────────────────────────
 -- 2. 센터 멤버 (owner / admin / coach)
@@ -44,9 +44,9 @@ ALTER TABLE spokedu_pro_center_members ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "member_read_own_center" ON spokedu_pro_center_members;
 CREATE POLICY "member_read_own_center" ON spokedu_pro_center_members
   FOR SELECT USING (
-    user_id = auth.uid()
+    user_id = (SELECT auth.uid())
     OR center_id IN (
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
+      SELECT id FROM spokedu_pro_centers WHERE owner_id = (SELECT auth.uid())
     )
   );
 
@@ -78,7 +78,7 @@ DROP POLICY IF EXISTS "subscription_read_owner" ON spokedu_pro_subscriptions;
 CREATE POLICY "subscription_read_owner" ON spokedu_pro_subscriptions
   FOR SELECT USING (
     center_id IN (
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
+      SELECT id FROM spokedu_pro_centers WHERE owner_id = (SELECT auth.uid())
     )
   );
 
@@ -110,18 +110,44 @@ CREATE INDEX IF NOT EXISTS idx_spokedu_pro_programs_category ON spokedu_pro_prog
 ALTER TABLE spokedu_pro_programs ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "programs_read_authenticated" ON spokedu_pro_programs;
-CREATE POLICY "programs_read_authenticated" ON spokedu_pro_programs
-  FOR SELECT USING (auth.uid() IS NOT NULL AND is_published = true);
-
 DROP POLICY IF EXISTS "programs_all_admin" ON spokedu_pro_programs;
-CREATE POLICY "programs_all_admin" ON spokedu_pro_programs
-  FOR ALL USING (
-    EXISTS (
+
+-- Single SELECT: authenticated see published, admins see all
+CREATE POLICY "programs_select" ON spokedu_pro_programs
+  FOR SELECT TO authenticated
+  USING (
+    is_published = true
+    OR EXISTS (
       SELECT 1 FROM auth.users
-      WHERE id = auth.uid()
+      WHERE id = (SELECT auth.uid())
       AND raw_app_meta_data->>'role' = 'admin'
     )
   );
+
+CREATE POLICY "programs_admin_insert" ON spokedu_pro_programs
+  FOR INSERT TO authenticated
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM auth.users
+    WHERE id = (SELECT auth.uid()) AND raw_app_meta_data->>'role' = 'admin'
+  ));
+
+CREATE POLICY "programs_admin_update" ON spokedu_pro_programs
+  FOR UPDATE TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM auth.users
+    WHERE id = (SELECT auth.uid()) AND raw_app_meta_data->>'role' = 'admin'
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM auth.users
+    WHERE id = (SELECT auth.uid()) AND raw_app_meta_data->>'role' = 'admin'
+  ));
+
+CREATE POLICY "programs_admin_delete" ON spokedu_pro_programs
+  FOR DELETE TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM auth.users
+    WHERE id = (SELECT auth.uid()) AND raw_app_meta_data->>'role' = 'admin'
+  ));
 
 -- ────────────────────────────────────────────────────────────
 -- 5. 학생 (원생) 관리
@@ -139,7 +165,7 @@ CREATE TABLE IF NOT EXISTS spokedu_pro_students (
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_spokedu_pro_students_center ON spokedu_pro_students(center_id);
+-- idx_spokedu_pro_students_center removed: covered by idx_spokedu_pro_students_center_name(center_id, name)
 CREATE INDEX IF NOT EXISTS idx_spokedu_pro_students_status ON spokedu_pro_students(status);
 
 ALTER TABLE spokedu_pro_students ENABLE ROW LEVEL SECURITY;
@@ -148,9 +174,9 @@ DROP POLICY IF EXISTS "students_center_members" ON spokedu_pro_students;
 CREATE POLICY "students_center_members" ON spokedu_pro_students
   FOR ALL USING (
     center_id IN (
-      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = auth.uid()
+      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = (SELECT auth.uid())
       UNION
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
+      SELECT id FROM spokedu_pro_centers WHERE owner_id = (SELECT auth.uid())
     )
   );
 
@@ -169,7 +195,7 @@ CREATE TABLE IF NOT EXISTS spokedu_pro_attendance (
   UNIQUE (student_id, date)
 );
 
-CREATE INDEX IF NOT EXISTS idx_spokedu_pro_attendance_student ON spokedu_pro_attendance(student_id);
+-- idx_spokedu_pro_attendance_student removed: covered by UNIQUE(student_id, date) implicit index
 CREATE INDEX IF NOT EXISTS idx_spokedu_pro_attendance_date ON spokedu_pro_attendance(date);
 CREATE INDEX IF NOT EXISTS idx_spokedu_pro_attendance_center_date ON spokedu_pro_attendance(center_id, date);
 
@@ -179,9 +205,9 @@ DROP POLICY IF EXISTS "attendance_center_members" ON spokedu_pro_attendance;
 CREATE POLICY "attendance_center_members" ON spokedu_pro_attendance
   FOR ALL USING (
     center_id IN (
-      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = auth.uid()
+      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = (SELECT auth.uid())
       UNION
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
+      SELECT id FROM spokedu_pro_centers WHERE owner_id = (SELECT auth.uid())
     )
   );
 
@@ -210,9 +236,9 @@ DROP POLICY IF EXISTS "observations_center_members" ON spokedu_pro_observations;
 CREATE POLICY "observations_center_members" ON spokedu_pro_observations
   FOR ALL USING (
     center_id IN (
-      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = auth.uid()
+      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = (SELECT auth.uid())
       UNION
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
+      SELECT id FROM spokedu_pro_centers WHERE owner_id = (SELECT auth.uid())
     )
   );
 
@@ -239,9 +265,9 @@ DROP POLICY IF EXISTS "reports_center_members" ON spokedu_pro_ai_reports;
 CREATE POLICY "reports_center_members" ON spokedu_pro_ai_reports
   FOR ALL USING (
     center_id IN (
-      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = auth.uid()
+      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = (SELECT auth.uid())
       UNION
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
+      SELECT id FROM spokedu_pro_centers WHERE owner_id = (SELECT auth.uid())
     )
   );
 

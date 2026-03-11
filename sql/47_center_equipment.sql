@@ -18,12 +18,16 @@ ON CONFLICT (number) DO NOTHING;
 ALTER TABLE center_equipment ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "center_equipment_admin_all" ON center_equipment;
-CREATE POLICY "center_equipment_admin_all" ON center_equipment
-  FOR ALL TO authenticated
-  USING (is_admin())
-  WITH CHECK (is_admin());
-
 DROP POLICY IF EXISTS "center_equipment_select_authenticated" ON center_equipment;
-CREATE POLICY "center_equipment_select_authenticated" ON center_equipment
-  FOR SELECT TO authenticated
-  USING (true);
+
+CREATE POLICY "center_equipment_select" ON center_equipment
+  FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "center_equipment_admin_insert" ON center_equipment
+  FOR INSERT TO authenticated WITH CHECK (is_admin());
+
+CREATE POLICY "center_equipment_admin_update" ON center_equipment
+  FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+CREATE POLICY "center_equipment_admin_delete" ON center_equipment
+  FOR DELETE TO authenticated USING (is_admin());

@@ -22,17 +22,36 @@ CREATE INDEX IF NOT EXISTS idx_rotation_schedule_program_id ON rotation_schedule
 -- RLS 정책
 ALTER TABLE rotation_schedule ENABLE ROW LEVEL SECURITY;
 
--- Admin 전체 권한
-CREATE POLICY "Admin full access to rotation schedule"
-ON rotation_schedule
-FOR ALL
-USING (is_admin());
+-- SELECT: published는 모든 authenticated, 관리자는 전체
+CREATE POLICY "rotation_schedule_select"
+ON rotation_schedule FOR SELECT TO authenticated
+USING (
+  is_published = true
+  OR EXISTS (
+    SELECT 1 FROM users u WHERE u.id = (SELECT auth.uid()) AND u.role IN ('admin', 'master')
+  )
+);
 
--- 모든 사용자 Published 스케줄 읽기 권한
-CREATE POLICY "All users can read published schedules"
-ON rotation_schedule
-FOR SELECT
-USING (is_published = true);
+CREATE POLICY "rotation_schedule_admin_insert"
+ON rotation_schedule FOR INSERT TO authenticated
+WITH CHECK (EXISTS (
+  SELECT 1 FROM users u WHERE u.id = (SELECT auth.uid()) AND u.role IN ('admin', 'master')
+));
+
+CREATE POLICY "rotation_schedule_admin_update"
+ON rotation_schedule FOR UPDATE TO authenticated
+USING (EXISTS (
+  SELECT 1 FROM users u WHERE u.id = (SELECT auth.uid()) AND u.role IN ('admin', 'master')
+))
+WITH CHECK (EXISTS (
+  SELECT 1 FROM users u WHERE u.id = (SELECT auth.uid()) AND u.role IN ('admin', 'master')
+));
+
+CREATE POLICY "rotation_schedule_admin_delete"
+ON rotation_schedule FOR DELETE TO authenticated
+USING (EXISTS (
+  SELECT 1 FROM users u WHERE u.id = (SELECT auth.uid()) AND u.role IN ('admin', 'master')
+));
 
 -- updated_at 자동 업데이트 트리거
 CREATE OR REPLACE FUNCTION update_rotation_schedule_updated_at()
