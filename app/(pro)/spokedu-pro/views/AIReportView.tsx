@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Bot,
   Sparkles,
@@ -18,6 +18,9 @@ import {
   Home,
   Award,
   RotateCcw,
+  CheckCircle,
+  Clock,
+  XCircle,
 } from 'lucide-react';
 import {
   RadarChart,
@@ -27,12 +30,21 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
-import { useStudentStore, PHYSICAL_LABELS, LEVEL_LABELS, type Student } from '../hooks/useStudentStore';
+import { PHYSICAL_LABELS, LEVEL_LABELS, type PhysicalFunctions, type PhysicalLevel } from '../hooks/useStudentStore';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Tone = 'warm' | 'professional' | 'friendly';
-type PhysicalLevel = 1 | 2 | 3;
+type AttendanceStatus = 'present' | 'absent' | 'late';
 type ColorKey = 'violet' | 'emerald' | 'blue' | 'amber';
+
+type ApiStudent = {
+  id: string;
+  name: string;
+  classGroup: string;
+  physical: PhysicalFunctions;
+  note?: string;
+  enrolledAt: string;
+};
 
 type ReportData = {
   highlight: string;
@@ -61,7 +73,7 @@ function getPeriodLabel(): string {
   return `${y}년 ${m}월 ${week}주차`;
 }
 
-function buildRadarData(student: Student) {
+function buildRadarData(student: ApiStudent) {
   return Object.entries(student.physical).map(([k, v]) => ({
     subject: PHYSICAL_LABELS[k as keyof typeof PHYSICAL_LABELS],
     value: (v as PhysicalLevel) * 33.3,
@@ -101,7 +113,7 @@ function ToneChip({
   );
 }
 
-function RadarChartCard({ student }: { student: Student }) {
+function RadarChartCard({ student }: { student: ApiStudent }) {
   const data = buildRadarData(student);
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
@@ -189,7 +201,7 @@ function ReportCard({
   onCopy: () => void;
   onReset: () => void;
   copied: boolean;
-  student: Student;
+  student: ApiStudent;
 }) {
   const date = new Date(meta.generatedAt).toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -280,11 +292,27 @@ function EmptyState() {
   );
 }
 
+const ATTENDANCE_CONFIG: Record<AttendanceStatus, { label: string; icon: React.ElementType; cls: string }> = {
+  present: { label: '출석', icon: CheckCircle, cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' },
+  late:    { label: '지각', icon: Clock,        cls: 'bg-amber-500/20 text-amber-400 border-amber-500/40' },
+  absent:  { label: '결석', icon: XCircle,      cls: 'bg-slate-700 text-slate-400 border-slate-600' },
+};
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AIReportView() {
-  const { students } = useStudentStore();
+  const [students, setStudents] = useState<ApiStudent[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/spokedu-pro/students')
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data.students)) setStudents(data.students); })
+      .catch(() => {/* silent — empty list */})
+      .finally(() => setStudentsLoading(false));
+  }, []);
 
   const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus>('present');
   const [sessionNotes, setSessionNotes] = useState('');
   const [developmentGoal, setDevelopmentGoal] = useState('인지적 상황 판단력 향상 (Think)');
   const [additionalGoal, setAdditionalGoal] = useState('');
@@ -312,10 +340,11 @@ export default function AIReportView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           student: {
+            id: selectedStudent.id,
             name: selectedStudent.name,
             classGroup: selectedStudent.classGroup,
             physical: selectedStudent.physical,
-            attendanceStatus: selectedStudent.status,
+            attendanceStatus,
           },
           sessionNotes,
           developmentGoal,
@@ -404,7 +433,12 @@ export default function AIReportView() {
                 <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-widest">
                   <User className="w-3.5 h-3.5" /> 수강생 선택
                 </label>
-                {students.length === 0 ? (
+                {studentsLoading ? (
+                  <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
+                    <Loader2 className="w-4 h-4 text-slate-500 animate-spin" />
+                    <span className="text-slate-500 text-sm">학생 목록 불러오는 중...</span>
+                  </div>
+                ) : students.length === 0 ? (
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
                     <p className="text-amber-400 text-xs font-medium">
                       수강생 데이터가 없습니다. 출석부에서 먼저 학생을 등록해 주세요.
@@ -428,6 +462,34 @@ export default function AIReportView() {
                   </div>
                 )}
               </div>
+
+              {/* Attendance status */}
+              {selectedStudent && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                    오늘 출결 상태
+                  </label>
+                  <div className="flex gap-2">
+                    {(Object.keys(ATTENDANCE_CONFIG) as AttendanceStatus[]).map((s) => {
+                      const cfg = ATTENDANCE_CONFIG[s];
+                      const Icon = cfg.icon;
+                      const active = attendanceStatus === s;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setAttendanceStatus(s)}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                            active ? cfg.cls : 'bg-white/5 border-white/10 text-slate-500 hover:border-white/20'
+                          }`}
+                        >
+                          <Icon className="w-3.5 h-3.5" /> {cfg.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Physical preview */}
               {selectedStudent && (
