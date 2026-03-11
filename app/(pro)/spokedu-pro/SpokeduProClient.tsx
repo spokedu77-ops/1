@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import './styles/spokedu-pro.css';
 import { useSpokeduProUI } from './hooks/useSpokeduProUI';
@@ -35,9 +34,8 @@ function ViewFallback() {
 
 export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const searchParams = useSearchParams();
   const { viewId, switchView, drawerOpen, closeDrawer, showToast } = useSpokeduProUI('roadmap');
-  const { refresh: refreshContext } = useProContext();
+  useProContext();
   const [toolkitOpen, setToolkitOpen] = useState(false);
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
   const [drawerContext, setDrawerContext] = useState<{ role?: string; themeKey?: string } | null>(null);
@@ -55,28 +53,7 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
     if (isEditMode) fetchBlocks();
   }, [isEditMode, fetchBlocks]);
 
-  // Stripe Checkout 완료 후 settings 뷰로 이동 + 컨텍스트 갱신
-  useEffect(() => {
-    const upgradeParam = searchParams.get('upgrade');
-    if (!upgradeParam) return;
-
-    if (upgradeParam === 'success') {
-      switchView('settings');
-      refreshContext().then(() => {
-        toast.success('결제가 완료되었습니다. 플랜이 업그레이드되었습니다.');
-      });
-    } else if (upgradeParam === 'canceled') {
-      switchView('settings');
-      toast.info('결제가 취소되었습니다.');
-    }
-
-    // URL에서 쿼리 파라미터 제거
-    const url = new URL(window.location.href);
-    url.searchParams.delete('upgrade');
-    url.searchParams.delete('plan');
-    window.history.replaceState(null, '', url.toString());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // 포트원 결제는 팝업 방식 — 업그레이드 성공·실패는 SettingsView 내부에서 직접 처리
 
   useEffect(() => {
     if (viewId !== 'library') setLibraryPreset(null);

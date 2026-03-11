@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw, Sparkles, X, AlertTriangle } from 'lucide-react';
 import { useProContext, type Plan } from '../hooks/useProContext';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 // ── 플랜 정의 ───────────────────────────────────────────────────────────────
 type PlanDef = {
@@ -190,8 +191,27 @@ export default function SettingsView() {
   const [bootstrapping, setBootstrapping] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const userEmailRef = useRef<string>('');
 
   const currentPlan = ctx.entitlement.plan;
+
+  // 포트원 V2 JS SDK 로드
+  useEffect(() => {
+    if (document.querySelector('script[src="https://cdn.portone.io/v2/browser-sdk.js"]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://cdn.portone.io/v2/browser-sdk.js';
+    script.async = true;
+    document.head.appendChild(script);
+  }, []);
+
+  // 로그인 유저 이메일 조회 (빌링키 발급 시 고객 정보용)
+  useEffect(() => {
+    getSupabaseBrowserClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        userEmailRef.current = data.user?.email ?? '';
+      });
+  }, []);
 
   // 메시지 5초 후 자동 소멸
   useEffect(() => {
@@ -205,17 +225,48 @@ export default function SettingsView() {
     setUpgrading(true);
     setUpgradeMsg(null);
     try {
+      // 1. 포트원 SDK로 빌링키 발급 (카드 등록 팝업)
+      const portone = (window as unknown as { PortOne?: { requestIssueBillingKey: (params: unknown) => Promise<{ billingKey?: string; code?: string; message?: string }> } }).PortOne;
+      if (!portone) {
+        setUpgradeMsg('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+
+      const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
+      const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY_TOSS;
+
+      const issueResult = await portone.requestIssueBillingKey({
+        storeId,
+        channelKey,
+        billingKeyMethod: 'CARD',
+        issueId: `issue-${plan}-${Date.now()}`,
+        issueName: `SPOKEDU PRO ${plan === 'basic' ? 'Basic' : 'Pro'} 정기구독`,
+        customer: { email: userEmailRef.current },
+      });
+
+      if (!issueResult.billingKey) {
+        // 사용자가 직접 닫은 경우 오류 메시지 생략
+        if (issueResult.code !== 'PORTONE_REQUEST_CANCELLED') {
+          setUpgradeMsg(issueResult.message ?? '카드 등록에 실패했습니다. 다시 시도해주세요.');
+        }
+        return;
+      }
+
+      // 2. 백엔드에 billingKey + plan 전송 → 즉시 결제 + 다음 달 예약
       const res = await fetch('/api/spokedu-pro/subscription/upgrade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, billingKey: issueResult.billingKey }),
       });
       const data = await res.json();
-      if (data.ok && data.url) {
-        window.location.href = data.url;
+
+      if (data.ok) {
+        await refresh();
+        setUpgradeMsg(`${plan === 'basic' ? 'Basic' : 'Pro'} 플랜으로 업그레이드되었습니다. 감사합니다!`);
         return;
       }
-      if (data.reason === 'stripe_not_configured' || data.reason === 'price_not_configured') {
+
+      if (data.reason === 'portone_not_configured') {
         setUpgradeMsg(
           `${plan === 'basic' ? 'Basic' : 'Pro'} 업그레이드는 곧 결제 시스템이 연결될 예정입니다. 구독 신청을 원하시면 운영팀에 문의해주세요.`
         );
