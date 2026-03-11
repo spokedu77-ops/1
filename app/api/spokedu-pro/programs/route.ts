@@ -1,23 +1,41 @@
 /**
  * 스포키듀 프로그램 뱅크 API.
- * GET: 인증된 사용자 전체. 필터: theme_key, category, q(검색어), limit, offset.
- * POST: Admin 전용. 프로그램 추가.
- * PATCH: Admin 전용. 프로그램 수정.
- *
- * 참고: DB가 준비되기 전 단계에서는 PROGRAM_BANK 목 데이터를 반환한다.
- * DB 마이그레이션(20260308000000_spokedu_pro_commercial.sql) 적용 후
- * DB_READY = true 로 전환하여 실제 DB 사용.
+ * 분류: 기능 종류, 메인테마, 인원구성 (PTG는 슬로건).
+ * GET: 인증된 사용자. 필터 function_type, main_theme, group_size, q.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { requireAdmin } from '@/app/lib/server/adminAuth';
-import { PROGRAM_BANK, THEME_KEYS, THEME_KEY_TO_BANK_THEME } from '@/app/lib/spokedu-pro/dashboardDefaults';
+import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import {
+  FUNCTION_TYPES,
+  MAIN_THEMES,
+  GROUP_SIZES,
+  isFunctionType,
+  isMainTheme,
+  isGroupSize,
+} from '@/app/lib/spokedu-pro/programClassification';
 
-/** DB 마이그레이션 적용 완료 후 true로 전환 */
-const DB_READY = false;
+const DB_READY = process.env.SPOKEDU_PRO_PROGRAMS_DB_READY === 'true';
 
-const VALID_CATEGORIES = ['Play', 'Think', 'Grow'] as const;
+/** DB 미적용 시 목 데이터 (새 스키마 형태) */
+function getFallbackPrograms() {
+  return Array.from({ length: 20 }, (_, i) => ({
+    id: i + 1,
+    title: `프로그램 #${i + 1}`,
+    video_url: null as string | null,
+    function_type: FUNCTION_TYPES[i % FUNCTION_TYPES.length],
+    main_theme: MAIN_THEMES[i % MAIN_THEMES.length],
+    group_size: GROUP_SIZES[i % GROUP_SIZES.length],
+    checklist: null as string | null,
+    equipment: null as string | null,
+    activity_method: null as string | null,
+    activity_tip: null as string | null,
+    is_published: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }));
+}
 
 export async function GET(request: NextRequest) {
   const serverSupabase = await createServerSupabaseClient();
@@ -27,52 +45,47 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const themeKey = searchParams.get('theme_key') ?? '';
-  const category = searchParams.get('category') ?? '';
+  const functionType = searchParams.get('function_type') ?? '';
+  const mainTheme = searchParams.get('main_theme') ?? '';
+  const groupSize = searchParams.get('group_size') ?? '';
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const limit = Math.min(Number(searchParams.get('limit') ?? '100'), 200);
   const offset = Number(searchParams.get('offset') ?? '0');
 
   if (!DB_READY) {
-    // 목 데이터 필터링
-    let results = [...PROGRAM_BANK];
-
-    if (themeKey && THEME_KEYS.includes(themeKey as (typeof THEME_KEYS)[number])) {
-      const bankTheme = THEME_KEY_TO_BANK_THEME[themeKey as keyof typeof THEME_KEY_TO_BANK_THEME];
-      results = results.filter((p) => p.theme === bankTheme);
+    let results = getFallbackPrograms();
+    if (functionType && isFunctionType(functionType)) {
+      results = results.filter((p) => p.function_type === functionType);
     }
-    if (category && VALID_CATEGORIES.includes(category as (typeof VALID_CATEGORIES)[number])) {
-      results = results.filter((p) => p.category === category);
+    if (mainTheme && isMainTheme(mainTheme)) {
+      results = results.filter((p) => p.main_theme === mainTheme);
+    }
+    if (groupSize && isGroupSize(groupSize)) {
+      results = results.filter((p) => p.group_size === groupSize);
     }
     if (q) {
-      results = results.filter((p) =>
-        p.title.toLowerCase().includes(q) || p.theme.toLowerCase().includes(q)
-      );
+      results = results.filter((p) => p.title.toLowerCase().includes(q));
     }
-
     const total = results.length;
     const page = results.slice(offset, offset + limit);
     return NextResponse.json({ data: page, total, limit, offset });
   }
 
-  // DB 사용 시 (마이그레이션 후)
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
+  const supabase = getServiceSupabase();
   let query = supabase
     .from('spokedu_pro_programs')
     .select('*', { count: 'exact' })
     .eq('is_published', true)
     .range(offset, offset + limit - 1);
 
-  if (themeKey && THEME_KEYS.includes(themeKey as (typeof THEME_KEYS)[number])) {
-    query = query.eq('theme_key', themeKey);
+  if (functionType && isFunctionType(functionType)) {
+    query = query.eq('function_type', functionType);
   }
-  if (category && VALID_CATEGORIES.includes(category as (typeof VALID_CATEGORIES)[number])) {
-    query = query.eq('category', category);
+  if (mainTheme && isMainTheme(mainTheme)) {
+    query = query.eq('main_theme', mainTheme);
+  }
+  if (groupSize && isGroupSize(groupSize)) {
+    query = query.eq('group_size', groupSize);
   }
   if (q) {
     query = query.ilike('title', `%${q}%`);
@@ -101,12 +114,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase.from('spokedu_pro_programs').insert(body as object).select().single();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -136,12 +144,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from('spokedu_pro_programs')
     .update(body as object)
