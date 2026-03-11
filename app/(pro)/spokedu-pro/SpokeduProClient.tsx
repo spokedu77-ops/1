@@ -44,9 +44,46 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
     if (viewId !== 'library') setLibraryPreset(null);
   }, [viewId]);
 
+  const [programsFromApi, setProgramsFromApi] = useState<Array<{
+    id: number;
+    title: string;
+    video_url?: string | null;
+    function_type?: string | null;
+    main_theme?: string | null;
+    group_size?: string | null;
+    checklist?: string | null;
+    equipment?: string | null;
+    activity_method?: string | null;
+    activity_tip?: string | null;
+  }>>([]);
+  useEffect(() => {
+    fetch('/api/spokedu-pro/programs?limit=200')
+      .then((res) => res.json())
+      .then((json) => {
+        if (Array.isArray(json?.data)) setProgramsFromApi(json.data);
+      })
+      .catch(() => setProgramsFromApi([]));
+  }, []);
+
+  const programDetailsFromApi: Record<string, ProgramDetail> = {};
+  programsFromApi.forEach((row) => {
+    programDetailsFromApi[String(row.id)] = {
+      title: row.title,
+      videoUrl: row.video_url ?? undefined,
+      functionType: row.function_type ?? undefined,
+      mainTheme: row.main_theme ?? undefined,
+      groupSize: row.group_size ?? undefined,
+      checklist: row.checklist ?? undefined,
+      equipment: row.equipment ?? undefined,
+      activityMethod: row.activity_method ?? undefined,
+      activityTip: row.activity_tip ?? undefined,
+    };
+  });
+
   const programDetails = (contentData?.program_details?.value ?? {}) as Record<string, ProgramDetail>;
   const adminProgramDetails = (adminContent?.program_details?.draft_value ?? {}) as Record<string, ProgramDetail>;
-  const programDetailsForDrawer = isEditMode ? adminProgramDetails : programDetails;
+  const contentDetails = isEditMode ? adminProgramDetails : programDetails;
+  const programDetailsForDrawer: Record<string, ProgramDetail> = { ...programDetailsFromApi, ...contentDetails };
   const drawerProgramDetail = drawerProgramId != null ? programDetailsForDrawer[String(drawerProgramId)] ?? null : null;
 
   const handleSaveProgramDetail = useCallback(

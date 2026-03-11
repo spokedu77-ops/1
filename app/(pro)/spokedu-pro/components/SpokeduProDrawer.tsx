@@ -1,22 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, CheckSquare, Box, ListOrdered, Sparkles, Edit2, FileText } from 'lucide-react';
+import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb } from 'lucide-react';
 import type { ProgramDetail } from '../types';
+import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
 
-const MOCK_PROGRAM = {
-  title: '스포키듀 추천 커리큘럼',
-  targetBrain: '운동피질 (대근육 협응)',
-  targetPhysic: '순발력 및 민첩성',
-  tool: '컬러 마커, 스마트 모니터',
-};
-
-const DEFAULT_DESCRIPTION =
-  '복잡한 센서 장비 없이, 체육관 스크린이나 태블릿 화면과 기본 교구만으로 즉시 구현 가능한 스포키듀 핵심 커리큘럼입니다.';
-const DEFAULT_SETUP_GUIDE =
-  "비싼 장비는 필요 없습니다. 체육관에 마커를 깔고, 좌측 메뉴의 '스크린 플레이 실행' 버튼을 눌러 모니터에 띄우면 셋업 끝입니다.";
-
-/** 연간 커리큘럼과 동일: YouTube URL → video id */
 function getYouTubeId(url: string): string | null {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
@@ -28,8 +16,6 @@ export default function SpokeduProDrawer({
   open,
   programId,
   programDetail,
-  role,
-  themeKey,
   isEditMode,
   onSaveProgramDetail,
   onClose,
@@ -50,49 +36,59 @@ export default function SpokeduProDrawer({
   const [editForm, setEditForm] = useState({
     title: '',
     videoUrl: '',
-    targetBrain: '',
-    targetPhysic: '',
-    tool: '',
-    setupGuideText: '',
-    description: '',
+    functionType: '',
+    mainTheme: '',
+    groupSize: '',
+    checklist: '',
+    equipment: '',
+    activityMethod: '',
+    activityTip: '',
   });
 
   const d = programDetail;
   useEffect(() => {
     if (!open || programId == null) return;
     setEditForm({
-      title: d?.title ?? `스포키듀 추천 커리큘럼 #${programId}`,
+      title: d?.title ?? `프로그램 #${programId}`,
       videoUrl: d?.videoUrl ?? '',
-      targetBrain: d?.targetBrain ?? MOCK_PROGRAM.targetBrain,
-      targetPhysic: d?.targetPhysic ?? MOCK_PROGRAM.targetPhysic,
-      tool: d?.tool ?? MOCK_PROGRAM.tool,
-      setupGuideText: d?.setupGuideText ?? DEFAULT_SETUP_GUIDE,
-      description: d?.description ?? DEFAULT_DESCRIPTION,
+      functionType: d?.functionType ?? '',
+      mainTheme: d?.mainTheme ?? '',
+      groupSize: d?.groupSize ?? '',
+      checklist: d?.checklist ?? '',
+      equipment: d?.equipment ?? '',
+      activityMethod: d?.activityMethod ?? '',
+      activityTip: d?.activityTip ?? '',
     });
     setIsEditModalOpen(false);
-  }, [open, programId, d?.title, d?.videoUrl, d?.description, d?.targetBrain, d?.targetPhysic, d?.tool, d?.setupGuideText]);
+  }, [open, programId, d?.title, d?.videoUrl, d?.functionType, d?.mainTheme, d?.groupSize, d?.checklist, d?.equipment, d?.activityMethod, d?.activityTip]);
 
   if (!open) return null;
 
-  const title = d?.title ?? editForm.title ?? `스포키듀 추천 커리큘럼 #${programId ?? ''}`;
+  const title = d?.title ?? editForm.title ?? `프로그램 #${programId ?? ''}`;
   const videoUrl = d?.videoUrl ?? editForm.videoUrl ?? '';
-  const targetBrain = d?.targetBrain ?? editForm.targetBrain ?? MOCK_PROGRAM.targetBrain;
-  const targetPhysic = d?.targetPhysic ?? editForm.targetPhysic ?? MOCK_PROGRAM.targetPhysic;
-  const tool = d?.tool ?? editForm.tool ?? MOCK_PROGRAM.tool;
-  const setupGuideText = d?.setupGuideText ?? editForm.setupGuideText ?? DEFAULT_SETUP_GUIDE;
-  const description = d?.description ?? editForm.description ?? DEFAULT_DESCRIPTION;
+  const functionType = d?.functionType ?? editForm.functionType;
+  const mainTheme = d?.mainTheme ?? editForm.mainTheme;
+  const groupSize = d?.groupSize ?? editForm.groupSize;
+  const checklist = d?.checklist ?? editForm.checklist;
+  const equipment = d?.equipment ?? editForm.equipment;
+  const activityMethod = d?.activityMethod ?? editForm.activityMethod;
+  const activityTip = d?.activityTip ?? editForm.activityTip;
   const videoId = getYouTubeId(videoUrl);
+
+  const tags = [functionType, mainTheme, groupSize].filter(Boolean);
 
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setEditForm({
       title: d?.title ?? '',
       videoUrl: d?.videoUrl ?? '',
-      targetBrain: d?.targetBrain ?? '',
-      targetPhysic: d?.targetPhysic ?? '',
-      tool: d?.tool ?? '',
-      setupGuideText: d?.setupGuideText ?? '',
-      description: d?.description ?? '',
+      functionType: d?.functionType ?? '',
+      mainTheme: d?.mainTheme ?? '',
+      groupSize: d?.groupSize ?? '',
+      checklist: d?.checklist ?? '',
+      equipment: d?.equipment ?? '',
+      activityMethod: d?.activityMethod ?? '',
+      activityTip: d?.activityTip ?? '',
     });
   };
 
@@ -104,11 +100,13 @@ export default function SpokeduProDrawer({
       await onSaveProgramDetail(programId, {
         title: editForm.title.trim() || undefined,
         videoUrl: editForm.videoUrl.trim() || undefined,
-        targetBrain: editForm.targetBrain.trim() || undefined,
-        targetPhysic: editForm.targetPhysic.trim() || undefined,
-        tool: editForm.tool.trim() || undefined,
-        setupGuideText: editForm.setupGuideText.trim() || undefined,
-        description: editForm.description.trim() || undefined,
+        functionType: editForm.functionType.trim() || undefined,
+        mainTheme: editForm.mainTheme.trim() || undefined,
+        groupSize: editForm.groupSize.trim() || undefined,
+        checklist: editForm.checklist.trim() || undefined,
+        equipment: editForm.equipment.trim() || undefined,
+        activityMethod: editForm.activityMethod.trim() || undefined,
+        activityTip: editForm.activityTip.trim() || undefined,
       });
       setIsEditModalOpen(false);
     } finally {
@@ -121,23 +119,24 @@ export default function SpokeduProDrawer({
     setEditForm({
       title: d?.title ?? title,
       videoUrl: d?.videoUrl ?? videoUrl,
-      targetBrain: d?.targetBrain ?? targetBrain,
-      targetPhysic: d?.targetPhysic ?? targetPhysic,
-      tool: d?.tool ?? tool,
-      setupGuideText: d?.setupGuideText ?? setupGuideText,
-      description: d?.description ?? description,
+      functionType: d?.functionType ?? functionType ?? '',
+      mainTheme: d?.mainTheme ?? mainTheme ?? '',
+      groupSize: d?.groupSize ?? groupSize ?? '',
+      checklist: d?.checklist ?? checklist ?? '',
+      equipment: d?.equipment ?? equipment ?? '',
+      activityMethod: d?.activityMethod ?? activityMethod ?? '',
+      activityTip: d?.activityTip ?? activityTip ?? '',
     });
     setIsEditModalOpen(true);
   };
 
-  // ——— 1) 연간 센터 커리큘럼 상세 모달과 동일 구조: 중앙, 다크 패널, 영상 → 스크롤 콘텐츠 ———
   return (
     <>
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-          {/* 영상 영역 (커리큘럼과 동일) */}
-          <div className="relative w-full aspect-video bg-black">
+        <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md" onClick={onClose} />
+        <div className="relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] bg-slate-900 border border-slate-700/80">
+          {/* 비디오 */}
+          <div className="relative w-full aspect-video bg-slate-950">
             {videoId ? (
               <iframe
                 src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
@@ -147,15 +146,18 @@ export default function SpokeduProDrawer({
                 title="프로그램 영상"
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-white">
-                <p className="text-slate-400 text-sm font-bold mb-2">영상이 등록되지 않았습니다.</p>
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
+                <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-3">
+                  <span className="text-3xl">▶</span>
+                </div>
+                <p className="text-sm font-semibold">영상이 등록되지 않았습니다</p>
                 {isEditMode && (
                   <button
                     type="button"
                     onClick={openEditModal}
-                    className="bg-white text-black px-6 py-3 rounded-full font-bold hover:bg-slate-200 transition-colors"
+                    className="mt-4 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-xl transition-colors"
                   >
-                    영상·상세 수정
+                    상세 수정
                   </button>
                 )}
               </div>
@@ -163,7 +165,7 @@ export default function SpokeduProDrawer({
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-all"
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-colors"
               aria-label="닫기"
             >
               <X size={20} />
@@ -172,168 +174,209 @@ export default function SpokeduProDrawer({
               <button
                 type="button"
                 onClick={openEditModal}
-                className="absolute top-4 right-14 bg-black/50 text-white px-4 py-2 rounded-full hover:bg-black/80 transition-all flex items-center gap-2 text-sm font-bold"
+                className="absolute top-4 right-16 px-4 py-2 rounded-xl bg-black/50 hover:bg-black/70 text-white text-sm font-bold flex items-center gap-2 transition-colors"
               >
                 <Edit2 size={16} /> 수정
               </button>
             )}
           </div>
 
-          {/* 하단 스크롤 영역 (커리큘럼과 동일: p-8 space-y-8, bg-[#2C2C2C]) */}
-          <div className="p-8 space-y-8 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
+          {/* 스크롤 콘텐츠 */}
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
             <div>
-              <h2 className="text-2xl font-black mb-2">{title}</h2>
-              <p className="text-slate-400 text-sm font-bold">
-                {(role || themeKey) ? [role, themeKey].filter(Boolean).join(' · ') : '스포키듀 PRO 커리큘럼'}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
-                <div className="flex items-center gap-2 mb-4 text-green-400 font-black text-sm uppercase">
-                  <CheckSquare size={16} /> TARGET BRAIN
+              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight mb-3">{title}</h2>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((t) => (
+                    <span
+                      key={t}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    >
+                      {t}
+                    </span>
+                  ))}
                 </div>
-                <p className="text-slate-200 text-sm font-bold leading-relaxed">
-                  {targetBrain || '등록된 내용이 없습니다.'}
-                </p>
-              </div>
-              <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
-                <div className="flex items-center gap-2 mb-4 text-orange-400 font-black text-sm uppercase">
-                  <Box size={16} /> PHYSICAL
+              )}
+            </div>
+
+            {checklist && (
+              <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
+                <div className="flex items-center gap-2 mb-3 text-amber-400">
+                  <ClipboardList size={18} />
+                  <span className="text-xs font-black uppercase tracking-wider">사전 체크리스트</span>
                 </div>
-                <p className="text-slate-200 text-sm font-bold leading-relaxed">
-                  {targetPhysic || '등록된 내용이 없습니다.'}
-                </p>
-              </div>
-            </div>
+                <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{checklist}</p>
+              </section>
+            )}
 
-            <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
-              <div className="flex items-center gap-2 mb-4 text-blue-400 font-black text-sm uppercase">
-                <ListOrdered size={16} /> 셋업 가이드
-              </div>
-              <div className="space-y-3">
-                <p className="text-slate-200 text-sm font-bold leading-relaxed">
-                  <span className="text-slate-400">준비물: </span>
-                  {tool || '—'}
-                </p>
-                <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap">
-                  {setupGuideText || '등록된 셋업 가이드가 없습니다.'}
-                </p>
-              </div>
-            </div>
+            {equipment && (
+              <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
+                <div className="flex items-center gap-2 mb-3 text-blue-400">
+                  <Package size={18} />
+                  <span className="text-xs font-black uppercase tracking-wider">필요 교구리스트</span>
+                </div>
+                <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{equipment}</p>
+              </section>
+            )}
 
-            <div className="bg-indigo-900/30 p-6 rounded-2xl border border-indigo-500/30 text-left">
-              <div className="flex items-center gap-2 mb-2 text-indigo-400 font-black text-xs uppercase">
-                <Sparkles size={14} /> Expert Tip
-              </div>
-              <p className="text-indigo-100 font-bold text-sm leading-relaxed whitespace-pre-wrap">
-                {description || '등록된 팁이 없습니다.'}
-              </p>
-            </div>
+            {activityMethod && (
+              <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
+                <div className="flex items-center gap-2 mb-3 text-violet-400">
+                  <BookOpen size={18} />
+                  <span className="text-xs font-black uppercase tracking-wider">활동방법</span>
+                </div>
+                <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{activityMethod}</p>
+              </section>
+            )}
+
+            {activityTip && (
+              <section className="rounded-2xl bg-gradient-to-br from-amber-950/40 to-orange-950/30 border border-amber-500/20 p-5">
+                <div className="flex items-center gap-2 mb-3 text-amber-300">
+                  <Lightbulb size={18} />
+                  <span className="text-xs font-black uppercase tracking-wider">활동 팁</span>
+                </div>
+                <p className="text-amber-100/90 text-sm leading-relaxed whitespace-pre-wrap">{activityTip}</p>
+              </section>
+            )}
+
+            {!checklist && !equipment && !activityMethod && !activityTip && (
+              <p className="text-slate-500 text-sm py-4">등록된 상세가 없습니다.</p>
+            )}
 
             {isEditMode && (
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-2">
                 <button
                   type="button"
                   onClick={openEditModal}
-                  className="px-6 py-3 bg-slate-900 hover:bg-indigo-600 text-white font-black rounded-2xl flex items-center gap-2 transition-colors"
+                  className="px-6 py-3 rounded-xl bg-slate-700 hover:bg-emerald-600 text-white font-bold text-sm transition-colors flex items-center gap-2"
                 >
-                  <Edit2 size={18} /> 수정
+                  <Edit2 size={16} /> 수정
                 </button>
               </div>
             )}
           </div>
 
           {!isEditMode && onFabClick && (
-            <div className="absolute bottom-8 right-8 z-10">
+            <div className="absolute bottom-6 right-6 z-10">
               <button
                 type="button"
                 onClick={onFabClick}
-                className="w-14 h-14 bg-slate-900 hover:bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors border border-slate-700"
+                className="w-12 h-12 rounded-full bg-slate-800 hover:bg-emerald-600 text-white shadow-lg flex items-center justify-center transition-colors border border-slate-600"
                 aria-label="추가 기능"
               >
-                <FileText className="w-6 h-6" />
+                <FileText className="w-5 h-5" />
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* ——— 2) 수정 모달: 연간 커리큘럼 isInputModalOpen과 동일 (흰 배경, max-w-lg, label+input) ——— */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEditModal} />
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={closeEditModal} />
           <form
             onSubmit={handleEditSubmit}
-            className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar text-left"
+            className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-slate-900 border border-slate-700 shadow-2xl p-6 md:p-8 space-y-5 text-left"
           >
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black">프로그램 상세 수정</h2>
-              <X className="text-slate-400 cursor-pointer w-6 h-6" onClick={closeEditModal} />
+              <h2 className="text-xl font-black text-white">프로그램 상세 수정</h2>
+              <button type="button" onClick={closeEditModal} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+                <X size={20} />
+              </button>
             </div>
 
-            <div className="space-y-4 font-bold text-left">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">제목</label>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">제목</label>
                 <input
-                  className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-black placeholder:text-slate-500"
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
                   placeholder="프로그램 제목"
                   value={editForm.title}
                   onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">URL (YouTube)</label>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">YouTube URL</label>
                 <input
-                  className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-black placeholder:text-slate-500"
-                  placeholder="유튜브 영상 링크"
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                  placeholder="https://youtube.com/..."
                   value={editForm.videoUrl}
                   onChange={(e) => setEditForm((f) => ({ ...f, videoUrl: e.target.value }))}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">Target Brain</label>
-                <input
-                  className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-black placeholder:text-slate-500"
-                  placeholder="예: 운동피질 (대근육 협응)"
-                  value={editForm.targetBrain}
-                  onChange={(e) => setEditForm((f) => ({ ...f, targetBrain: e.target.value }))}
-                />
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">기능 종류</label>
+                <select
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                  value={editForm.functionType}
+                  onChange={(e) => setEditForm((f) => ({ ...f, functionType: e.target.value }))}
+                >
+                  <option value="">선택</option>
+                  {FUNCTION_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">Physical</label>
-                <input
-                  className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-black placeholder:text-slate-500"
-                  placeholder="예: 순발력 및 민첩성"
-                  value={editForm.targetPhysic}
-                  onChange={(e) => setEditForm((f) => ({ ...f, targetPhysic: e.target.value }))}
-                />
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">메인테마</label>
+                <select
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                  value={editForm.mainTheme}
+                  onChange={(e) => setEditForm((f) => ({ ...f, mainTheme: e.target.value }))}
+                >
+                  <option value="">선택</option>
+                  {MAIN_THEMES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">준비물</label>
-                <input
-                  className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-black placeholder:text-slate-500"
-                  placeholder="예: 컬러 마커, 스마트 모니터"
-                  value={editForm.tool}
-                  onChange={(e) => setEditForm((f) => ({ ...f, tool: e.target.value }))}
-                />
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">인원구성</label>
+                <select
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                  value={editForm.groupSize}
+                  onChange={(e) => setEditForm((f) => ({ ...f, groupSize: e.target.value }))}
+                >
+                  <option value="">선택</option>
+                  {GROUP_SIZES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">셋업 가이드</label>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">사전 체크리스트</label>
                 <textarea
-                  className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm text-black placeholder:text-slate-500"
-                  placeholder="설치·준비 방법 안내"
-                  value={editForm.setupGuideText}
-                  onChange={(e) => setEditForm((f) => ({ ...f, setupGuideText: e.target.value }))}
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none h-24"
+                  placeholder="진행 전 확인할 항목"
+                  value={editForm.checklist}
+                  onChange={(e) => setEditForm((f) => ({ ...f, checklist: e.target.value }))}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">Expert Tip</label>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">필요 교구리스트</label>
                 <textarea
-                  className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-black placeholder:text-slate-500"
-                  placeholder="간단한 팁"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none h-20"
+                  placeholder="준비할 교구"
+                  value={editForm.equipment}
+                  onChange={(e) => setEditForm((f) => ({ ...f, equipment: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">활동방법</label>
+                <textarea
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none h-24"
+                  placeholder="진행 방법"
+                  value={editForm.activityMethod}
+                  onChange={(e) => setEditForm((f) => ({ ...f, activityMethod: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">활동 팁</label>
+                <textarea
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none h-24"
+                  placeholder="활동 시 팁"
+                  value={editForm.activityTip}
+                  onChange={(e) => setEditForm((f) => ({ ...f, activityTip: e.target.value }))}
                 />
               </div>
             </div>
@@ -341,9 +384,9 @@ export default function SpokeduProDrawer({
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all text-center disabled:opacity-50"
+              className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm transition-colors disabled:opacity-50"
             >
-              {saving ? '저장 중…' : '수정 내용 저장'}
+              {saving ? '저장 중…' : '저장'}
             </button>
           </form>
         </div>

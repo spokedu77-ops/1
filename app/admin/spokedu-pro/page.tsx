@@ -14,6 +14,12 @@ export default function AdminSpokeduProPage() {
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex-shrink-0 flex items-center justify-end gap-2 px-4 py-2 bg-slate-900 border-b border-slate-800">
         <Link
+          href="/admin/spokedu-pro/upload"
+          className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-bold hover:bg-slate-600"
+        >
+          프로그램 업로드
+        </Link>
+        <Link
           href="/spokedu-pro"
           target="_blank"
           rel="noopener noreferrer"
