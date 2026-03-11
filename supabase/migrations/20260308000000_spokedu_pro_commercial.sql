@@ -209,53 +209,7 @@ CREATE POLICY "observations_center_members" ON spokedu_pro_observations
     )
   );
 
--- ────────────────────────────────────────────────────────────
--- 8. 클래스 XP (게이미피케이션)
--- ────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS spokedu_pro_class_xp (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  center_id    UUID NOT NULL REFERENCES spokedu_pro_centers(id) ON DELETE CASCADE,
-  total_xp     INT NOT NULL DEFAULT 0,
-  level        INT NOT NULL DEFAULT 1,
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (center_id)
-);
 
-ALTER TABLE spokedu_pro_class_xp ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "xp_center_members" ON spokedu_pro_class_xp
-  FOR SELECT USING (
-    center_id IN (
-      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = auth.uid()
-      UNION
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
-    )
-  );
-
--- ────────────────────────────────────────────────────────────
--- 9. XP 이벤트 로그
--- ────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS spokedu_pro_xp_events (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  center_id   UUID NOT NULL REFERENCES spokedu_pro_centers(id) ON DELETE CASCADE,
-  event_type  TEXT NOT NULL, -- 'class_complete', 'game_play', 'report_gen', 'attendance' 등
-  xp_delta    INT NOT NULL,
-  note        TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_spokedu_pro_xp_events_center ON spokedu_pro_xp_events(center_id);
-
-ALTER TABLE spokedu_pro_xp_events ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "xp_events_read" ON spokedu_pro_xp_events
-  FOR SELECT USING (
-    center_id IN (
-      SELECT center_id FROM spokedu_pro_center_members WHERE user_id = auth.uid()
-      UNION
-      SELECT id FROM spokedu_pro_centers WHERE owner_id = auth.uid()
-    )
-  );
 
 -- ────────────────────────────────────────────────────────────
 -- 10. AI 리포트 이력
