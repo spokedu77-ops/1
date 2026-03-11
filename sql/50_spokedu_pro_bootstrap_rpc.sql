@@ -6,21 +6,22 @@
 -- 실행 조건: 20260308000000_spokedu_pro_commercial.sql 실행 후
 -- ================================================================
 
-CREATE OR REPLACE FUNCTION spokedu_pro_bootstrap_center(
+CREATE OR REPLACE FUNCTION public.spokedu_pro_bootstrap_center(
   p_user_id  UUID,
   p_name     TEXT DEFAULT '내 센터'
 )
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = ''
 AS $$
 DECLARE
-  v_center   spokedu_pro_centers%ROWTYPE;
+  v_center   public.spokedu_pro_centers%ROWTYPE;
   v_sub_id   UUID;
 BEGIN
   -- 1. 이미 센터가 있으면 반환
   SELECT * INTO v_center
-  FROM spokedu_pro_centers
+  FROM public.spokedu_pro_centers
   WHERE owner_id = p_user_id
   LIMIT 1;
 
@@ -33,25 +34,20 @@ BEGIN
   END IF;
 
   -- 2. 센터 생성
-  INSERT INTO spokedu_pro_centers (owner_id, name)
+  INSERT INTO public.spokedu_pro_centers (owner_id, name)
   VALUES (p_user_id, p_name)
   RETURNING * INTO v_center;
 
   -- 3. owner를 member로 등록 (duplicate 무시)
-  INSERT INTO spokedu_pro_center_members (center_id, user_id, role)
+  INSERT INTO public.spokedu_pro_center_members (center_id, user_id, role)
   VALUES (v_center.id, p_user_id, 'owner')
   ON CONFLICT (center_id, user_id) DO NOTHING;
 
   -- 4. 무료 구독 생성
-  INSERT INTO spokedu_pro_subscriptions (center_id, plan, status)
+  INSERT INTO public.spokedu_pro_subscriptions (center_id, plan, status)
   VALUES (v_center.id, 'free', 'active')
   ON CONFLICT (center_id) DO NOTHING
   RETURNING id INTO v_sub_id;
-
-  -- 5. 초기 XP 레코드
-  INSERT INTO spokedu_pro_class_xp (center_id, total_xp, level)
-  VALUES (v_center.id, 0, 1)
-  ON CONFLICT (center_id) DO NOTHING;
 
   RETURN json_build_object(
     'bootstrapped', true,
@@ -62,7 +58,7 @@ END;
 $$;
 
 -- service_role 및 authenticated 사용자가 호출 가능
-GRANT EXECUTE ON FUNCTION spokedu_pro_bootstrap_center(UUID, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION public.spokedu_pro_bootstrap_center(UUID, TEXT) TO service_role;
 -- (anon에는 부여하지 않음)
 
 SELECT 'spokedu_pro_bootstrap_center RPC (50) ready.' AS status;
