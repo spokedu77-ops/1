@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { Send, RotateCcw, User, MapPin, X, ExternalLink, FileText, Maximize2, Search, BookOpen, AlertTriangle } from 'lucide-react';
 import { 
   FeedbackFields,
@@ -142,7 +143,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
       if (error) throw error;
       if (data) setSessions(data as unknown as Session[]);
     } catch (err: unknown) {
-      console.error('데이터 로드 실패:', err);
+      devLogger.error('데이터 로드 실패:', err);
       setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -258,7 +259,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
       
       return { isDuplicate: false };
     } catch (err) {
-      console.error('중복 체크 실패:', err);
+      devLogger.error('중복 체크 실패:', err);
       return { isDuplicate: false };
     }
   };
@@ -583,7 +584,7 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
         const data = await res.json();
         setSessions(Array.isArray(data) ? data : []);
       } catch (err: unknown) {
-        console.error('수업안 로드 실패:', err instanceof Error ? err.message : err);
+        devLogger.error('수업안 로드 실패:', err instanceof Error ? err.message : err);
         setSessions([]);
       } finally {
         setLoading(false);

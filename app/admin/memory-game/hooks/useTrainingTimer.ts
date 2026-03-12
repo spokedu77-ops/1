@@ -7,16 +7,6 @@ import { tts, ttsClear } from '../lib/tts';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
 
-function isSameBasicSignal(a: Record<string, unknown> | null, b: Record<string, unknown> | null): boolean {
-  if (!a || !b || (a.type as string) !== (b.type as string)) return false;
-  const cA = a.content as Record<string, unknown> | undefined;
-  const cB = b.content as Record<string, unknown> | undefined;
-  if (a.type === 'full_color') return (a.bg as string) === (b.bg as string);
-  if (a.type === 'arrow') return (cA?.icon as string) === (cB?.icon as string);
-  if (a.type === 'number') return (cA?.label as string) === (cB?.label as string);
-  return false;
-}
-
 export function useTrainingTimer({
   active,
   speed,
@@ -27,8 +17,6 @@ export function useTrainingTimer({
   mode,
   level,
   audioMode,
-  signalPattern = 'random',
-  prevSignal,
   colors,
   onSignal,
   onFinish,
@@ -42,8 +30,6 @@ export function useTrainingTimer({
   mode: string;
   level: number;
   audioMode: string;
-  signalPattern?: 'random' | 'norepeat' | 'inhibit';
-  prevSignal?: Record<string, unknown> | null;
   colors: ColorItem[];
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: () => void;
@@ -65,40 +51,10 @@ export function useTrainingTimer({
     };
 
     const nextSignalTimeRef = { t: 0 };
-    const dupWindow: string[] = [];
-    const MAX_DUP_RATIO = 0.25;
-    const emitCountRef = { n: 0 };
 
     const emitSignal = (elapsed: number) => {
-      let sig: Record<string, unknown> | null = null;
-      if (mode === 'basic' && signalPattern === 'inhibit' && prevSignal && emitCountRef.n >= 1 && Math.random() < 0.28) {
-        sig = prevSignal;
-      }
-      if (!sig) {
-        let dupTries = 0;
-        while (dupTries < 20) {
-          let cand = generateSignal(mode, level, colors);
-          if (mode === 'basic' && signalPattern === 'norepeat' && prevSignal) {
-            for (let nr = 0; nr < 10; nr++) {
-              if (!cand || !isSameBasicSignal(cand, prevSignal)) break;
-              cand = generateSignal(mode, level, colors);
-            }
-            sig = cand;
-          } else {
-            sig = cand;
-          }
-          if (!sig) break;
-          const key = (sig.bg as string) + ((sig.content as Record<string, unknown>)?.label ?? (sig.content as Record<string, unknown>)?.word ?? '');
-          const recentDups = dupWindow.filter((k) => k === key).length;
-          if (dupWindow.length < 4 || recentDups / dupWindow.length < MAX_DUP_RATIO) break;
-          dupTries++;
-        }
-      }
+      const sig = generateSignal(mode, level, colors);
       if (sig) {
-        emitCountRef.n++;
-        const key = (sig.bg as string) + ((sig.content as Record<string, unknown>)?.label ?? (sig.content as Record<string, unknown>)?.word ?? '');
-        dupWindow.push(key);
-        if (dupWindow.length > 8) dupWindow.shift();
         onSignal(sig);
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
         else {
@@ -144,7 +100,7 @@ export function useTrainingTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, signalPattern, prevSignal, colors, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

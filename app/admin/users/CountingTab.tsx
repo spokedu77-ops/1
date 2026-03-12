@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, User, BookOpen } from 'lucide-react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import MileageDetailModal from '@/app/components/admin/MileageDetailModal';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -55,7 +56,7 @@ export function CountingTab({ supabase }: CountingTabProps) {
       })) as Teacher[];
       setTeachers(teachersWithLogCount);
     } catch (error) {
-      console.error('Fetch error:', error);
+      devLogger.error('Fetch error:', error);
     }
   }, [supabase]);
 

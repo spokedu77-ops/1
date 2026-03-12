@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { CreditCard, Star, CheckCircle2, History, Info } from 'lucide-react';
 
 interface MileageLog {
@@ -68,7 +69,7 @@ export default function TeacherReportPage() {
       const { data: sessionList } = (await res.json()) as { data?: SessionRecord[] };
       setSessions(sessionList || []);
     } catch (error) {
-      console.error(error);
+      devLogger.error(error);
       setFetchError('데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);

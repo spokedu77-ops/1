@@ -1,3 +1,5 @@
+import { devLogger } from '@/app/lib/logging/devLogger';
+
 /**
  * BGM 플레이어 클래스
  * HTMLAudioElement를 래핑하여 BGM 재생을 관리
@@ -38,7 +40,7 @@ export class BgmPlayer {
     // 에러 핸들링 (크래시 방지)
     const errorHandler = (e: Event) => {
       const error = this.audio?.error;
-      console.warn('[BgmPlayer] Audio error:', e, error);
+      devLogger.warn('[BgmPlayer] Audio error:', e, error);
     };
     this.audio.addEventListener('error', errorHandler);
     this.eventHandlers.push({ event: 'error', handler: errorHandler });
@@ -51,7 +53,7 @@ export class BgmPlayer {
    */
   async play(): Promise<void> {
     if (!this.audio || !this.isInitialized) {
-      console.warn('[BgmPlayer] Not initialized');
+      devLogger.warn('[BgmPlayer] Not initialized');
       return;
     }
 
@@ -59,7 +61,7 @@ export class BgmPlayer {
       await this.audio.play();
     } catch (error: unknown) {
       // autoplay blocked 또는 기타 에러
-      console.warn('[BgmPlayer] Play failed (autoplay blocked or error):', error);
+      devLogger.warn('[BgmPlayer] Play failed (autoplay blocked or error):', error);
       // throw하지 않고 조용히 무시
     }
   }

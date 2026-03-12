@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   buildThink150Timeline,
   preloadThinkPack,
@@ -88,9 +89,9 @@ export function ThinkPhaseWrapper({
 
   useEffect(() => {
     if (config.thinkPackByMonthAndWeek && config.month != null) {
-      preloadThinkPackByMonth(config.thinkPackByMonthAndWeek, config.month).catch(console.warn);
+      preloadThinkPackByMonth(config.thinkPackByMonthAndWeek, config.month).catch((e) => devLogger.warn(e));
     } else if (config.thinkPack) {
-      preloadThinkPack(config.thinkPack).catch(console.warn);
+      preloadThinkPack(config.thinkPack).catch((e) => devLogger.warn(e));
     }
   }, [config.thinkPack, config.thinkPackByMonthAndWeek, config.month]);
 

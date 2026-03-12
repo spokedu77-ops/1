@@ -3,6 +3,7 @@
  * Think 150 오디오와 완전 분리. Storage 경로 audio/challenge/bgm/ 사용.
  */
 
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { getPublicUrl } from '../assets/storageClient';
 
 let audio: HTMLAudioElement | null = null;
@@ -124,7 +125,7 @@ export async function startChallengeBGM(
       }, durationMs);
     }
   } catch (err) {
-    console.warn('[ChallengeBGM] Failed to play:', bgmPath, err);
+    devLogger.warn('[ChallengeBGM] Failed to play:', bgmPath, err);
     stopChallengeBGM();
   }
 }

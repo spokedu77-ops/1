@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 
 export async function POST(request: NextRequest) {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (error) {
-      console.error('[storage/upload]', error);
+      devLogger.error('[storage/upload]', error);
       return NextResponse.json(
         { error: `Storage 업로드 실패: ${error.message}` },
         { status: 500 }
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ path });
   } catch (err) {
-    console.error('[storage/upload]', err);
+    devLogger.error('[storage/upload]', err);
     return NextResponse.json(
       { error: '업로드 처리 중 오류가 발생했습니다.' },
       { status: 500 }

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 type DayOption = { label: string; value: number };
 const DAYS: DayOption[] = [
@@ -167,7 +168,7 @@ export default function CreateClassPage() {
       toast.success('수업이 성공적으로 등록되었습니다!');
       router.push('/admin/classes');
     } catch (err: unknown) {
-      console.error(err);
+      devLogger.error(err);
       toast.error('등록 중 에러가 발생했습니다.');
     } finally {
       setLoading(false);

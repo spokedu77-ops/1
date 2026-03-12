@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 /** GET: 최근 1주 세션 + 수업안 + 선생님 (service role → RLS 없이 lesson_plans 포함) */
 export async function GET(request: NextRequest) {
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await query;
     if (error) {
-      console.error('[admin/lesson-plans-sessions] GET error:', error);
+      devLogger.error('[admin/lesson-plans-sessions] GET error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(out);
   } catch (err) {
-    console.error('[admin/lesson-plans-sessions] GET', err);
+    devLogger.error('[admin/lesson-plans-sessions] GET', err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Unknown error' },
       { status: 500 }

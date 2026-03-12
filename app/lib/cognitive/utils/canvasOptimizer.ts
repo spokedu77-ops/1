@@ -1,3 +1,5 @@
+import { devLogger } from '@/app/lib/logging/devLogger';
+
 /**
  * Canvas DrawImage 최적화
  * 시각적 노이즈를 최소화하기 위한 최적화 기법
@@ -40,7 +42,7 @@ export class CanvasOptimizer {
               resolve();
             };
             img.onerror = () => {
-              console.warn(`Failed to load image: ${url}`);
+              devLogger.warn(`Failed to load image: ${url}`);
               loaded++;
               onProgress?.(loaded / total);
               resolve(); // 실패해도 계속 진행

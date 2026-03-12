@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { getCurrentWeekOfMonth } from '@/app/lib/curriculum/weekUtils';
 import {
   PERSONAL_CATEGORIES_ROW1,
@@ -116,7 +117,7 @@ export default function TeacherCurriculumPage() {
       .order('id', { ascending: false });
     
     if (error) {
-      console.error('Error fetching curriculum:', error);
+      devLogger.error('Error fetching curriculum:', error);
       return;
     }
 
@@ -138,7 +139,7 @@ export default function TeacherCurriculumPage() {
    setPersonalLoading(true);
    const { data, error } = await supabase.from('personal_curriculum').select('*').order('id', { ascending: false });
    if (error) {
-     console.error('Error fetching personal curriculum:', error);
+     devLogger.error('Error fetching personal curriculum:', error);
      setPersonalLoading(false);
      return;
    }
@@ -167,7 +168,7 @@ export default function TeacherCurriculumPage() {
  const fetchCenterEquipment = useCallback(async () => {
    if (!supabase) return;
    const { data, error } = await supabase.from('center_equipment').select('*').order('number', { ascending: true });
-   if (error) console.error('Error fetching center equipment:', error);
+   if (error) devLogger.error('Error fetching center equipment:', error);
    else setCenterEquipmentList((data ?? []) as CenterEquipmentItem[]);
  }, [supabase]);
 
@@ -175,7 +176,7 @@ export default function TeacherCurriculumPage() {
    if (!supabase) return;
    setEquipmentGuideLoading(true);
    const { data, error } = await supabase.from('center_equipment_guide').select('*').order('id', { ascending: false });
-   if (error) console.error('Error fetching equipment guide:', error);
+   if (error) devLogger.error('Error fetching equipment guide:', error);
    else setEquipmentGuideItems((data ?? []) as CenterEquipmentGuideItem[]);
    setEquipmentGuideLoading(false);
  }, [supabase]);

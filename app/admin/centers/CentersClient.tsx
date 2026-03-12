@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { getCenters, createCenter, deleteCenter, type GetCentersFilters } from './actions/centers';
 import type { Center, CenterStatus } from '@/app/lib/centers/types';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { Search, Plus, Loader2, X, Trash2 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -58,7 +59,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
       const list = await getCenters(filters);
       setCenters(list);
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
     } finally {
       setIsLoading(false);
     }

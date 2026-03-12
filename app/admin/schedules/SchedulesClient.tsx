@@ -16,6 +16,7 @@ import { useDebouncedValue } from './hooks/useDebouncedValue';
 import { ViewToolbar, type ViewMode, type StatusFilter } from './components/ViewToolbar';
 import { ScheduleTable } from './components/ScheduleTable';
 import { ScheduleDrawer } from './components/ScheduleDrawer';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { Loader2, ChevronLeft, ChevronDown } from 'lucide-react';
 
 const PAGE_SIZE = 50;
@@ -70,7 +71,7 @@ export default function SchedulesClient({ initialSchedules, centers = [], onCent
           setSchedules(list);
         }
       } catch (err) {
-        console.error(err);
+        devLogger.error(err);
       } finally {
         setLoader(false);
       }
@@ -116,7 +117,7 @@ export default function SchedulesClient({ initialSchedules, centers = [], onCent
   ) => {
     const res = await updateScheduleField(id, field, value);
     if (res.error) {
-      console.error(res.error);
+      devLogger.error(res.error);
       return;
     }
     if (res.data) {

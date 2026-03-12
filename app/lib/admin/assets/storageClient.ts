@@ -5,6 +5,7 @@
  */
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { BUCKET_NAME } from '../constants/storage';
 
 /** 모듈 로드 시 서버에서 실행되지 않도록 함수 호출 시점에만 가져옴 (prerender 안전) */
@@ -110,7 +111,7 @@ export async function copyInStorage(sourcePath: string, destPath: string): Promi
     .copy(sourcePath, destPath);
 
   if (error) {
-    console.error('Storage copy error:', error);
+    devLogger.error('Storage copy error:', error);
     throw new Error(`Storage 복사 실패: ${error.message}`);
   }
 }

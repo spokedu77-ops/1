@@ -4,6 +4,7 @@
  */
 import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 export async function POST(request: Request) {
   try {
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ ok: true, message: 'profiles 반영 완료. 해당 강사 로그아웃 후 재로그인 하세요.' });
   } catch (err) {
-    console.error('[admin/teachers/sync-by-email]', err);
+    devLogger.error('[admin/teachers/sync-by-email]', err);
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
   }
 }

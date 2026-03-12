@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   buildThink150Timeline,
   validateThinkPlan,
@@ -46,11 +47,11 @@ export function Think150Player({ config, debug = false }: Think150PlayerProps) {
 
   useEffect(() => {
     if (config.thinkPackByMonthAndWeek && config.month != null) {
-      preloadThinkPackByMonth(config.thinkPackByMonthAndWeek, config.month).catch(console.warn);
+      preloadThinkPackByMonth(config.thinkPackByMonthAndWeek, config.month).catch((e) => devLogger.warn(e));
     } else if (config.thinkPackByWeek) {
-      preloadThinkPackByWeek(config.thinkPackByWeek).catch(console.warn);
+      preloadThinkPackByWeek(config.thinkPackByWeek).catch((e) => devLogger.warn(e));
     } else if (config.thinkPack) {
-      preloadThinkPack(config.thinkPack).catch(console.warn);
+      preloadThinkPack(config.thinkPack).catch((e) => devLogger.warn(e));
     }
   }, [config.thinkPack, config.thinkPackByWeek, config.thinkPackByMonthAndWeek, config.month]);
 

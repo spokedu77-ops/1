@@ -6,8 +6,6 @@ export const FULLSCREEN_PATH_PREFIXES = [
   '/login',
   '/',
   '/report',
-  '/iiwarmup',
-  '/flow-phase',
   '/program',
   '/info',
   '/admin/camera',

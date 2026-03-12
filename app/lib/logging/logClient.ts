@@ -4,6 +4,7 @@
  */
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 function getSupabase() {
   return getSupabaseBrowserClient();
@@ -44,7 +45,7 @@ export function logAdminProductivity(event: AdminProductivityEvent): void {
     .from('admin_productivity_events')
     .insert(event)
     .then(({ error }: { error: { message: string } | null }) => {
-      if (error) console.warn('[logAdminProductivity]', error.message);
+      if (error) devLogger.warn('[logAdminProductivity]', error.message);
     });
 }
 
@@ -56,6 +57,6 @@ export function logSubscriberRuntime(event: SubscriberRuntimeEvent): void {
     .from('subscriber_runtime_events')
     .insert(event)
     .then(({ error }: { error: { message: string } | null }) => {
-      if (error) console.warn('[logSubscriberRuntime]', error.message);
+      if (error) devLogger.warn('[logSubscriberRuntime]', error.message);
     });
 }

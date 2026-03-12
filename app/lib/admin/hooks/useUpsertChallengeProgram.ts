@@ -33,6 +33,21 @@ function payloadToSnapshot(payload: UpsertChallengePayload): ChallengeProgramSna
   };
 }
 
+function applySnapshotToCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  variables: UpsertChallengePayload
+) {
+  const snapshot = payloadToSnapshot(variables);
+  queryClient.setQueryData<ChallengeProgramSnapshot[]>(['challenge-programs'], (old) => {
+    const list = old ?? [];
+    const idx = list.findIndex((p) => p.weekKey === variables.weekKey);
+    if (idx >= 0) {
+      return list.map((p, i) => (i === idx ? snapshot : p));
+    }
+    return [...list, snapshot];
+  });
+}
+
 export function useUpsertChallengeProgram() {
   const queryClient = useQueryClient();
 
@@ -63,16 +78,18 @@ export function useUpsertChallengeProgram() {
       );
       if (error) throw error;
     },
-    onSuccess: (_data, variables) => {
-      const snapshot = payloadToSnapshot(variables);
-      queryClient.setQueryData<ChallengeProgramSnapshot[]>(['challenge-programs'], (old) => {
-        const list = old ?? [];
-        const idx = list.findIndex((p) => p.weekKey === variables.weekKey);
-        if (idx >= 0) {
-          return list.map((p, i) => (i === idx ? snapshot : p));
-        }
-        return [...list, snapshot];
-      });
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ['challenge-programs'] });
+      const previous = queryClient.getQueryData<ChallengeProgramSnapshot[]>(['challenge-programs']);
+      applySnapshotToCache(queryClient, variables);
+      return { previous };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previous != null) {
+        queryClient.setQueryData(['challenge-programs'], context.previous);
+      }
+    },
+    onSuccess: (_data, _variables) => {
       queryClient.invalidateQueries({ queryKey: ['warmup-programs-list'] });
     },
   });

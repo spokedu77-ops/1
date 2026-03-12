@@ -4,6 +4,7 @@
  */
 import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 export async function GET(request: Request) {
   try {
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ content: data?.content ?? '' });
   } catch (err) {
-    console.error('[admin/hq-memos] GET', err);
+    devLogger.error('[admin/hq-memos] GET', err);
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
   }
 }
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('[admin/hq-memos] POST', err);
+    devLogger.error('[admin/hq-memos] POST', err);
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -40,7 +41,7 @@ export default function Sidebar() {
 
   const handleLogout = async () => {
     try { await getSupabaseBrowserClient().auth.signOut(); } 
-    catch (error) { console.error('Logout error:', error); } 
+    catch (error) { devLogger.error('Logout error:', error); } 
     finally { window.location.href = '/login'; }
   };
 

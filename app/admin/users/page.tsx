@@ -9,6 +9,7 @@ import {
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
   Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin, KeyRound
 } from 'lucide-react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { CountingTab } from './CountingTab';
 
 interface DocumentFile {
@@ -71,7 +72,7 @@ export default function UserDashboardPage() {
         .eq('role', 'teacher')
         .order('name');
       if (error) {
-        console.error('[users] fetchUsers error:', error);
+        devLogger.error('[users] fetchUsers error:', error);
         throw error;
       }
       const fetchedUsers = (data as UserData[]).map(u => ({
@@ -87,7 +88,7 @@ export default function UserDashboardPage() {
         if (me) setCurrentUser(me as UserData);
       }
     } catch (err: unknown) {
-      console.error('[users] fetchUsers catch error:', err);
+      devLogger.error('[users] fetchUsers catch error:', err);
     } finally {
       setIsLoading(false);
     }

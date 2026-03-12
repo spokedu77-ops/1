@@ -2,11 +2,16 @@
 
 /**
  * 챌린지 프로그램 목록 조회 (warmup_programs_composite에서 challenge_* 로드)
- * 새로고침 시 저장된 그리드/이미지 복원용
+ * 새로고침 시 저장된 그리드/이미지 복원용.
+ * warmup_programs_composite 조회가 느릴 수 있어, sessionStorage 캐시를 placeholder로 써서 즉시 표시 후 백그라운드에서 재검증.
  */
 
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+
+export const CHALLENGE_PROGRAMS_CACHE_KEY = 'challenge-programs-cache';
+const CACHE_KEY = CHALLENGE_PROGRAMS_CACHE_KEY;
 
 export type ChallengeProgramSnapshot = {
   weekKey: string;
@@ -17,6 +22,19 @@ export type ChallengeProgramSnapshot = {
   /** 1~4단계 그리드 전체 (없으면 grid만 사용) */
   gridsByLevel?: Record<number, string[]>;
 };
+
+function getCachedSnapshot(): ChallengeProgramSnapshot[] | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return undefined;
+    return parsed;
+  } catch {
+    return undefined;
+  }
+}
 
 function parsePhases(phases: unknown): { bpm: number; level: number; grid: string[]; gridsByLevel?: Record<number, string[]> } | null {
   if (!Array.isArray(phases) || phases.length === 0) return null;
@@ -39,6 +57,12 @@ function parsePhases(phases: unknown): { bpm: number; level: number; grid: strin
 }
 
 export function useChallengePrograms() {
+  const [cachedOnClient, setCachedOnClient] = useState<ChallengeProgramSnapshot[] | undefined>(() => getCachedSnapshot());
+  useEffect(() => {
+    const c = getCachedSnapshot();
+    if (c?.length && !cachedOnClient?.length) setCachedOnClient(c);
+  }, [cachedOnClient?.length]);
+
   return useQuery({
     queryKey: ['challenge-programs'],
     queryFn: async (): Promise<ChallengeProgramSnapshot[]> => {
@@ -63,9 +87,16 @@ export function useChallengePrograms() {
           });
         }
       }
+      try {
+        if (typeof window !== 'undefined' && list.length > 0) {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(list));
+        }
+      } catch {
+        /* ignore */
+      }
       return list;
     },
     staleTime: 30 * 1000,
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData) => previousData ?? cachedOnClient,
   });
 }

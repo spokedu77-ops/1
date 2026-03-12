@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { SessionEvent } from '../types';
 import { parseExtraTeachers } from '../lib/sessionUtils';
 import { ADMIN_NAMES } from '../constants/admins';
@@ -121,7 +122,7 @@ export function useClassManagement() {
       await fetchSessions();
       return true;
     } catch (err) {
-      console.error("Mileage Update Error:", err);
+      devLogger.error("Mileage Update Error:", err);
       return false;
     }
   };

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import type { Schedule } from '@/app/lib/schedules/types';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { 
   Calendar, RefreshCw, CheckCircle2, 
   Circle, Clock, FileText, User, Users, Plus, X, Trash2, Save, CalendarDays, ExternalLink
@@ -168,7 +169,7 @@ export default function SpokeduHQDashboard() {
       setVacationRequests(validVacations as IVacationRequest[]);
       setFetchError(null);
     } catch (err) {
-      console.error('Fetch Error:', err);
+      devLogger.error('Fetch Error:', err);
       setFetchError(err instanceof Error ? err.message : '데이터를 불러올 수 없습니다.');
     } finally {
       setLoading(false);
@@ -234,7 +235,7 @@ export default function SpokeduHQDashboard() {
         });
       
       if (error) {
-        console.error('Save error:', error);
+        devLogger.error('Save error:', error);
         toast.error(`저장 실패: ${error.message || JSON.stringify(error)}`);
         setIsSavingNote(false);
         return;

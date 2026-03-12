@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import type { ScheduleLightRow } from '@/app/lib/admin/hooks/useRotationSchedule';
 import type { Audience } from '@/app/lib/admin/constants/thinkTiming';
 
@@ -67,7 +68,7 @@ export function SchedulerSlotCard({
     try {
       await onSave(savePayload(weekKey, month, week, thinkId, programs, true));
     } catch (err) {
-      console.error('Scheduler slot save failed:', err);
+      devLogger.error('Scheduler slot save failed:', err);
     }
   };
 

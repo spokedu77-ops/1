@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { generate48WeekSlots } from '@/app/lib/admin/scheduler/dragAndDrop';
 
 function getMonthsForQuarter(quarter: number): number[] {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
       .in('week_key', weekKeys);
 
     if (error) {
-      console.error('[admin/schedule] GET error:', error);
+      devLogger.error('[admin/schedule] GET error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json(list);
   } catch (err) {
-    console.error('[admin/schedule] GET', err);
+    devLogger.error('[admin/schedule] GET', err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Unknown error' },
       { status: 500 }
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('[admin/schedule] upsert error:', error);
+      devLogger.error('[admin/schedule] upsert error:', error);
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (err) {
-    console.error('[admin/schedule]', err);
+    devLogger.error('[admin/schedule]', err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Unknown error' },
       { status: 500 }

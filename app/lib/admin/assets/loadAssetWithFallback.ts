@@ -1,3 +1,5 @@
+import { devLogger } from '@/app/lib/logging/devLogger';
+
 /**
  * Asset 로딩 실패 시 Fallback 이미지 제공
  */
@@ -24,7 +26,7 @@ export async function loadAssetWithFallback(
     if (!response.ok) throw new Error('Load failed');
     return url;
   } catch (error) {
-    console.warn(`Asset 로딩 실패, Fallback 사용: ${url} → ${fallbackUrl}`);
+    devLogger.warn(`Asset 로딩 실패, Fallback 사용: ${url} → ${fallbackUrl}`);
     return fallbackUrl;
   }
 }

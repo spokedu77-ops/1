@@ -7,6 +7,7 @@
 
 import { useCallback, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { useQueryClient } from '@tanstack/react-query';
 import { calculateFileHash } from '@/app/lib/admin/assets/imageOptimizer';
 import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
@@ -61,7 +62,7 @@ export function useThinkAssets(playThemeId: string | null) {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Think Pack 로드 실패:', error);
+        devLogger.error('Think Pack 로드 실패:', error);
         setObjects({ red: [], blue: [], yellow: [], green: [] });
         return;
       }

@@ -1,0 +1,130 @@
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271271588,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch start","data":{},"timestamp":1773271271589,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271271591,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":98},"timestamp":1773271271686,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":105},"timestamp":1773271271687,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":106},"timestamp":1773271271688,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":182},"timestamp":1773271271773,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":192},"timestamp":1773271271774,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":193},"timestamp":1773271271775,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch start","data":{},"timestamp":1773271281193,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":134009},"timestamp":1773271405591,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":134010},"timestamp":1773271405592,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271405603,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch start","data":{},"timestamp":1773271405604,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":655},"timestamp":1773271406258,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":134678},"timestamp":1773271406260,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":134680},"timestamp":1773271406262,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":135183},"timestamp":1773271406765,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":135185},"timestamp":1773271406767,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271406779,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":146},"timestamp":1773271406925,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":135346},"timestamp":1773271406928,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":135347},"timestamp":1773271406929,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":136617},"timestamp":1773271408199,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":136618},"timestamp":1773271408200,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271408209,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":235},"timestamp":1773271408444,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":136863},"timestamp":1773271408445,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":136863},"timestamp":1773271408445,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch start","data":{},"timestamp":1773271415446,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271428703,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271428706,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch start","data":{},"timestamp":1773271428704,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":198},"timestamp":1773271428901,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":207},"timestamp":1773271428903,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":208},"timestamp":1773271428904,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":366},"timestamp":1773271429072,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":377},"timestamp":1773271429073,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":378},"timestamp":1773271429074,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch done","data":{"durationMs":10833,"count":7},"timestamp":1773271439537,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":10843},"timestamp":1773271439539,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":10844},"timestamp":1773271439540,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:savedPrograms","message":"savedPrograms arrived","data":{"count":7,"timeSinceMount":10857},"timestamp":1773271439553,"hypothesisId":"D"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":11137},"timestamp":1773271439833,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":11138},"timestamp":1773271439834,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271450372,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch start","data":{},"timestamp":1773271450372,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271450374,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":216},"timestamp":1773271450588,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":236},"timestamp":1773271450590,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":236},"timestamp":1773271450590,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":397},"timestamp":1773271450771,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":419},"timestamp":1773271450773,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":420},"timestamp":1773271450774,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch done","data":{"durationMs":10514,"count":7},"timestamp":1773271460886,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":10534},"timestamp":1773271460888,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":10535},"timestamp":1773271460889,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:savedPrograms","message":"savedPrograms arrived","data":{"count":7,"timeSinceMount":10545},"timestamp":1773271460899,"hypothesisId":"D"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":10812},"timestamp":1773271461166,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":10813},"timestamp":1773271461167,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":53121},"timestamp":1773271503475,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":53123},"timestamp":1773271503477,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271503491,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":778},"timestamp":1773271504269,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":53917},"timestamp":1773271504271,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":53918},"timestamp":1773271504272,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271505389,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:savedPrograms","message":"savedPrograms arrived","data":{"count":7,"timeSinceMount":8},"timestamp":1773271505389,"hypothesisId":"D"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":541},"timestamp":1773271505930,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":550},"timestamp":1773271505931,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":551},"timestamp":1773271505932,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":1488},"timestamp":1773271506869,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":1489},"timestamp":1773271506870,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271506884,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":132},"timestamp":1773271507016,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":1636},"timestamp":1773271507017,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":1637},"timestamp":1773271507018,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch start","data":{},"timestamp":1773271540874,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch done","data":{"durationMs":12683,"count":7},"timestamp":1773271553557,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271575579,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch start","data":{},"timestamp":1773271575580,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271575582,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":204},"timestamp":1773271575783,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":267},"timestamp":1773271575785,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":269},"timestamp":1773271575787,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":381},"timestamp":1773271575963,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":449},"timestamp":1773271575967,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":447},"timestamp":1773271575965,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengePrograms.ts:queryFn","message":"challenge-programs fetch start","data":{},"timestamp":1773271585134,"hypothesisId":"A"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":34989},"timestamp":1773271610507,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":34989},"timestamp":1773271610507,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":35010},"timestamp":1773271610528,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":35011},"timestamp":1773271610529,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:savedPrograms","message":"savedPrograms arrived","data":{"count":1,"timeSinceMount":35021},"timestamp":1773271610539,"hypothesisId":"D"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":35031},"timestamp":1773271610549,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":35033},"timestamp":1773271610551,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":35998},"timestamp":1773271611516,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":35999},"timestamp":1773271611517,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":36045},"timestamp":1773271611563,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":36046},"timestamp":1773271611564,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271622448,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:savedPrograms","message":"savedPrograms arrived","data":{"count":1,"timeSinceMount":32},"timestamp":1773271622450,"hypothesisId":"D"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271622459,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:savedPrograms","message":"savedPrograms arrived","data":{"count":1,"timeSinceMount":44},"timestamp":1773271622462,"hypothesisId":"D"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":106},"timestamp":1773271622554,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":137},"timestamp":1773271622555,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":138},"timestamp":1773271622556,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":172},"timestamp":1773271622631,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":215},"timestamp":1773271622633,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":216},"timestamp":1773271622634,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":31995},"timestamp":1773271654413,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":31997},"timestamp":1773271654415,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271654427,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":105},"timestamp":1773271654532,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":32115},"timestamp":1773271654533,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":32116},"timestamp":1773271654534,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":34540},"timestamp":1773271656958,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":34541},"timestamp":1773271656959,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load start","data":{},"timestamp":1773271656970,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"useChallengeBGM.ts:load","message":"BGM load done","data":{"durationMs":82},"timestamp":1773271657052,"hypothesisId":"B"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":34635},"timestamp":1773271657053,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":34636},"timestamp":1773271657054,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":36925},"timestamp":1773271659343,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":36926},"timestamp":1773271659344,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":37053},"timestamp":1773271659471,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":37053},"timestamp":1773271659471,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":38930},"timestamp":1773271661348,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":38931},"timestamp":1773271661349,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":39015},"timestamp":1773271661433,"hypothesisId":"C"}
+{"sessionId":"12ed55","location":"challenge/page.tsx:gameRender","message":"SpokeduRhythmGame rendering","data":{"timeSinceMount":39016},"timestamp":1773271661434,"hypothesisId":"C"}

@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 type ExtraTeacher = { id: string; price?: number };
 
@@ -88,7 +89,7 @@ export async function GET() {
 
     return NextResponse.json({ data: combined });
   } catch (err) {
-    console.error('[teacher/settlement-sessions]', err);
+    devLogger.error('[teacher/settlement-sessions]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

@@ -7,6 +7,7 @@
 
 import { useCallback, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { useQueryClient } from '@tanstack/react-query';
 import { ACTION_KEYS, type ActionKey } from '@/app/lib/admin/constants/physics';
 import type { Slot } from '@/app/lib/admin/assets/imageOptimizer';
@@ -52,7 +53,7 @@ export function usePlayAssets(themeId: string | null) {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Asset Pack 로드 실패:', error);
+        devLogger.error('Asset Pack 로드 실패:', error);
         setAssets({ actions: emptyActions() });
         return;
       }

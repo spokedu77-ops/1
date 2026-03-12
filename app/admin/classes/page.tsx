@@ -18,6 +18,7 @@ const FullCalendar = dynamic(
 );
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import Sidebar from '@/app/components/Sidebar';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { useClassManagement } from './hooks/useClassManagement';
 import SessionEditModal from './components/SessionEditModal';
 import { SessionEvent, TeacherInput, EditFields } from './types';
@@ -135,7 +136,7 @@ export default function ClassManagementPage() {
           if (oneError) {
             // 23505: 이미 로그 있음(유니크), 23503: FK(teacher 없음) — 스킵만 하고 에러 로그 안 찍음
             if (oneError.code !== '23505' && oneError.code !== '23503') {
-              console.error('수업 카운팅 로그 저장 실패:', oneError?.message ?? oneError?.code ?? oneError, oneError);
+              devLogger.error('수업 카운팅 로그 저장 실패:', oneError?.message ?? oneError?.code ?? oneError, oneError);
             }
             continue;
           }
@@ -158,7 +159,7 @@ export default function ClassManagementPage() {
         }
       }
     } catch (error) {
-      console.error('Auto-finish error:', error);
+      devLogger.error('Auto-finish error:', error);
     }
   };
 
@@ -300,11 +301,11 @@ export default function ClassManagementPage() {
             session_title: editFields.title
           }]);
           if (logError) {
-            console.error('마일리지 로그 저장 에러:', logError);
+            devLogger.error('마일리지 로그 저장 에러:', logError);
             toast.error('경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.');
           }
         } catch (e) { 
-          console.error('마일리지 로그 에러:', e); 
+          devLogger.error('마일리지 로그 에러:', e); 
           toast.error('경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.');
         }
 
@@ -321,7 +322,7 @@ export default function ClassManagementPage() {
               session_title: editFields.title
             }]);
           } catch (e) {
-            console.error('보조강사 마일리지 에러:', e);
+            devLogger.error('보조강사 마일리지 에러:', e);
           }
         }
       }
@@ -395,7 +396,7 @@ export default function ClassManagementPage() {
       setIsModalOpen(false); 
       fetchSessions();
     } catch (error) {
-      console.error('Status update error:', error);
+      devLogger.error('Status update error:', error);
       toast.error('상태 변경에 실패했습니다.');
     }
   };
@@ -528,7 +529,7 @@ export default function ClassManagementPage() {
       setIsModalOpen(false);
       fetchSessions();
     } catch (error: unknown) {
-      console.error('회차 축소 에러:', error);
+      devLogger.error('회차 축소 에러:', error);
       const msg = error instanceof Error ? error.message : String(error);
       toast.error('회차 축소에 실패했습니다: ' + msg);
     }
@@ -801,7 +802,7 @@ export default function ClassManagementPage() {
                   </div>
                 );
               } catch (err) {
-                console.warn('eventContent render error', err);
+                devLogger.warn('eventContent render error', err);
                 return <div className="month-event-card opacity-70 border border-slate-200">수업</div>;
               }
             }}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 export interface PlayBgmUploaderProps {
   bgmPath: string | null;
@@ -24,7 +25,7 @@ export function PlayBgmUploader({
       await onUpload(file);
       fileRef.current!.value = '';
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
     }
   };
 
