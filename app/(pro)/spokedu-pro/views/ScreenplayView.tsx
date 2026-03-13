@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { MonitorPlay, PlayCircle, RefreshCw } from 'lucide-react';
 import {
   MODE_ID_TO_META,
+  SCREENPLAY_CATALOG,
   type ScreenplayCatalogItem,
 } from '@/app/lib/spokedu-pro/screenplayCatalog';
 
