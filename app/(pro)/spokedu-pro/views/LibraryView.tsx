@@ -83,13 +83,8 @@ export default function LibraryView({
   const [mainTheme, setMainTheme] = useState<string>('');
   const [groupSize, setGroupSize] = useState<string>('');
   const [search, setSearch] = useState('');
-  const [isReady, setIsReady] = useState(false);
   const [programsFromApi, setProgramsFromApi] = useState<ProgramRow[] | null>(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => setIsReady(true), 80);
-    return () => clearTimeout(t);
-  }, []);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -106,11 +101,12 @@ export default function LibraryView({
         setProgramsFromApi(json.data);
       })
       .catch(() => {
-        if (!cancelled) setProgramsFromApi([]);
+        if (!cancelled) { setProgramsFromApi([]); setFetchError(true); }
       });
     return () => { cancelled = true; };
   }, [functionType, mainTheme, groupSize, search]);
 
+  const isLoading = programsFromApi === null;
   const filteredPrograms = programsFromApi ?? [];
   const clearFilters = () => {
     setFunctionType('');
@@ -215,7 +211,19 @@ export default function LibraryView({
         </div>
       </header>
 
-      {filteredPrograms.length === 0 && isReady && (
+      {isLoading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+          {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+      )}
+
+      {!isLoading && fetchError && (
+        <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+          <p className="text-slate-400 text-sm">프로그램 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.</p>
+        </div>
+      )}
+
+      {!isLoading && !fetchError && filteredPrograms.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
           <span className="text-5xl">🔍</span>
           <p className="text-white font-black text-lg">검색 결과가 없습니다</p>
@@ -225,11 +233,9 @@ export default function LibraryView({
         </div>
       )}
 
-      {filteredPrograms.length > 0 && (
+      {!isLoading && filteredPrograms.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
-          {!isReady
-            ? Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)
-            : filteredPrograms.map((p) => {
+          {filteredPrograms.map((p) => {
                 const detail = programDetails[String(p.id)];
                 const videoUrl = detail?.videoUrl ?? p.video_url;
                 const thumbnailUrl = videoUrl ? getYouTubeThumbnailUrl(videoUrl) : null;
