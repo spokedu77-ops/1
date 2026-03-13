@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw, Sparkles } from 'lucide-react';
+import {
+  Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw,
+  Users, Bot, Mail, ChevronRight, AlertTriangle,
+} from 'lucide-react';
 import { useProContext, type Plan } from '../hooks/useProContext';
 
 // ── 플랜 정의 ───────────────────────────────────────────────────────────────
@@ -21,8 +24,12 @@ const PLANS: PlanDef[] = [
     id: 'free',
     label: 'Free',
     priceKrw: 0,
-    description: '기본 기능을 무제한으로',
-    features: ['로드맵 & 100대 프로그램 열람', '수업 보조도구 (팀 나누기, 술래 정하기)', '원생 등록 최대 10명'],
+    description: '기본 기능을 무료로',
+    features: [
+      '로드맵 & 100대 프로그램 열람',
+      '수업 보조도구 (팀 나누기, 술래 정하기)',
+      '원생 등록 최대 10명',
+    ],
     icon: Building2,
   },
   {
@@ -30,7 +37,12 @@ const PLANS: PlanDef[] = [
     label: 'Basic',
     priceKrw: 49900,
     description: '소규모 센터 최적화',
-    features: ['Free 기능 전체 포함', '원생 등록 최대 50명', 'AI 에듀-에코 리포트 월 20회', '출결·신체 평가 CSV 내보내기'],
+    features: [
+      'Free 기능 전체 포함',
+      '원생 등록 최대 50명',
+      'AI 에듀-에코 리포트 월 20회',
+      '출결·신체 평가 CSV 내보내기',
+    ],
     badge: 'Popular',
     badgeColor: 'bg-blue-500',
     icon: Zap,
@@ -40,12 +52,73 @@ const PLANS: PlanDef[] = [
     label: 'Pro',
     priceKrw: 79900,
     description: '성장하는 센터를 위한 풀 패키지',
-    features: ['Basic 기능 전체 포함', '원생 무제한 등록', 'AI 리포트 무제한', '멀티 강사 계정 (최대 5명)', '우선 지원 채널'],
+    features: [
+      'Basic 기능 전체 포함',
+      '원생 무제한 등록',
+      'AI 리포트 무제한',
+      '우선 지원 채널',
+    ],
     badge: 'Best',
     badgeColor: 'bg-amber-500',
     icon: Crown,
   },
 ];
+
+// ── 사용량 진행 바 ───────────────────────────────────────────────────────────
+function UsageBar({
+  used,
+  limit,
+  label,
+  icon: Icon,
+  colorClass,
+  warningThreshold = 0.8,
+}: {
+  used: number;
+  limit: number | null;
+  label: string;
+  icon: React.ElementType;
+  colorClass: string;
+  warningThreshold?: number;
+}) {
+  const isUnlimited = limit === null;
+  const pct = isUnlimited ? 0 : Math.min((used / limit!) * 100, 100);
+  const isWarning = !isUnlimited && pct >= warningThreshold * 100;
+  const isFull = !isUnlimited && used >= limit!;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-1.5 text-slate-300 font-medium">
+          <Icon className="w-4 h-4 text-slate-400" />
+          {label}
+        </div>
+        <span className={`font-bold tabular-nums ${isFull ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-slate-300'}`}>
+          {isUnlimited ? (
+            <span className="text-emerald-400 text-xs font-bold">무제한</span>
+          ) : (
+            `${used.toLocaleString()} / ${limit!.toLocaleString()}`
+          )}
+        </span>
+      </div>
+      {!isUnlimited && (
+        <div className="h-2 bg-slate-700/60 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              isFull ? 'bg-red-500' : isWarning ? 'bg-amber-500' : colorClass
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
+      {isFull && (
+        <p className="flex items-center gap-1 text-xs text-red-400">
+          <AlertTriangle className="w-3 h-3" />
+          한도 초과 — 업그레이드가 필요합니다
+        </p>
+      )}
+    </div>
+  );
+}
 
 // ── 플랜 카드 ────────────────────────────────────────────────────────────────
 function PlanCard({
@@ -65,49 +138,50 @@ function PlanCard({
 
   return (
     <div
-      className={`relative flex flex-col rounded-2xl border p-6 gap-5 transition-all ${
+      className={`relative flex flex-col rounded-2xl border p-5 gap-4 transition-all ${
         isCurrent
-          ? 'border-blue-500 bg-blue-500/10'
+          ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/20'
           : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
       }`}
     >
       {plan.badge && (
-        <span className={`absolute -top-3 left-6 ${plan.badgeColor} text-white text-xs font-bold px-3 py-1 rounded-full`}>
+        <span className={`absolute -top-3 left-5 ${plan.badgeColor} text-white text-xs font-bold px-3 py-1 rounded-full shadow`}>
           {plan.badge}
         </span>
       )}
-      <div className="flex items-start justify-between">
+
+      <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Icon className={`w-5 h-5 ${isCurrent ? 'text-blue-400' : 'text-slate-400'}`} />
-            <span className="text-lg font-black text-white">{plan.label}</span>
+            <Icon className={`w-4 h-4 ${isCurrent ? 'text-blue-400' : 'text-slate-400'}`} />
+            <span className="text-base font-black text-white">{plan.label}</span>
           </div>
-          <p className="text-sm text-slate-400">{plan.description}</p>
+          <p className="text-xs text-slate-400">{plan.description}</p>
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
           {plan.priceKrw === 0 ? (
-            <span className="text-2xl font-black text-white">무료</span>
+            <span className="text-xl font-black text-white">무료</span>
           ) : (
             <>
-              <span className="text-2xl font-black text-white">₩{plan.priceKrw.toLocaleString()}</span>
-              <span className="text-xs text-slate-500 ml-1">/월</span>
+              <span className="text-xl font-black text-white">₩{plan.priceKrw.toLocaleString()}</span>
+              <span className="text-xs text-slate-500 ml-0.5">/월</span>
             </>
           )}
         </div>
       </div>
 
-      <ul className="space-y-2 flex-1">
+      <ul className="space-y-1.5 flex-1">
         {plan.features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-slate-300">
-            <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+          <li key={f} className="flex items-start gap-1.5 text-sm text-slate-300">
+            <CheckCircle className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
             {f}
           </li>
         ))}
       </ul>
 
       {isCurrent ? (
-        <div className="flex items-center gap-2 justify-center py-2.5 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm font-bold">
-          <CheckCircle className="w-4 h-4" />
+        <div className="flex items-center gap-2 justify-center py-2 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm font-bold">
+          <CheckCircle className="w-3.5 h-3.5" />
           현재 플랜
         </div>
       ) : isUpgrade ? (
@@ -115,13 +189,17 @@ function PlanCard({
           type="button"
           disabled={upgrading}
           onClick={() => onUpgrade(plan.id)}
-          className="flex items-center gap-2 justify-center py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
+          className="flex items-center gap-1.5 justify-center py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
         >
-          {upgrading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {upgrading ? (
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5" />
+          )}
           {plan.label}로 업그레이드
         </button>
       ) : (
-        <div className="h-10" />
+        <div className="h-9" />
       )}
     </div>
   );
@@ -135,15 +213,16 @@ export default function SettingsView() {
   const [bootstrapping, setBootstrapping] = useState(false);
 
   const currentPlan = ctx.entitlement.plan;
+  const { usage } = ctx;
 
   const handleUpgrade = async (plan: Plan) => {
     setUpgrading(true);
     setUpgradeMsg(null);
     try {
-      // TODO: 결제 연동 (Portone / 토스페이먼츠) — Phase 2
-      // 현재는 안내 메시지
-      await new Promise((r) => setTimeout(r, 800));
-      setUpgradeMsg(`${plan === 'basic' ? 'Basic' : 'Pro'} 업그레이드는 곧 결제 시스템이 연결될 예정입니다. 구독 신청을 원하시면 운영팀에 문의해주세요.`);
+      await new Promise((r) => setTimeout(r, 400));
+      setUpgradeMsg(
+        `${plan === 'basic' ? 'Basic' : 'Pro'} 업그레이드 신청을 원하시면 아래 이메일로 문의해 주세요.`
+      );
     } finally {
       setUpgrading(false);
     }
@@ -161,7 +240,11 @@ export default function SettingsView() {
       const data = await res.json();
       if (data.ok) {
         await refresh();
-        setUpgradeMsg(data.bootstrapped ? `센터 "${data.centerName}"가 생성되었습니다.` : '이미 센터가 설정되어 있습니다.');
+        setUpgradeMsg(
+          data.bootstrapped
+            ? `센터 "${data.centerName}"가 생성되었습니다.`
+            : '이미 센터가 설정되어 있습니다.'
+        );
       } else {
         setUpgradeMsg('센터 생성에 실패했습니다: ' + (data.error ?? '알 수 없는 오류'));
       }
@@ -184,26 +267,27 @@ export default function SettingsView() {
   }
 
   return (
-    <section className="px-6 lg:px-12 py-10 pb-32 space-y-10 max-w-4xl mx-auto">
+    <section className="px-4 sm:px-6 lg:px-12 py-10 pb-32 space-y-8 max-w-4xl mx-auto">
+
       {/* 헤더 */}
-      <header className="space-y-3 border-b border-slate-800 pb-8">
+      <header className="space-y-2 border-b border-slate-800 pb-7">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-700/50 text-slate-300 rounded-full text-xs font-bold uppercase tracking-widest">
-          <Settings2 className="w-4 h-4" /> 구독 및 설정
+          <Settings2 className="w-3.5 h-3.5" /> 구독 및 설정
         </div>
-        <h2 className="text-4xl font-black text-white tracking-tight">플랜 & 결제</h2>
-        <p className="text-slate-400 font-medium">
-          현재 플랜을 확인하고 필요에 따라 업그레이드하세요.
-        </p>
+        <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">플랜 & 사용량</h2>
+        <p className="text-slate-400 text-sm">현재 플랜과 사용량을 확인하고 필요에 따라 업그레이드하세요.</p>
       </header>
 
-      {/* 현재 센터 상태 */}
-      <div className="flex flex-wrap gap-4 items-start">
-        <div className="flex-1 min-w-[220px] p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1">
+      {/* 현재 상태 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1.5">
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">현재 센터</p>
           {ctx.activeCenterId ? (
             <>
-              <p className="text-lg font-bold text-white">{ctx.centers[0]?.name ?? '내 센터'}</p>
-              <p className="text-xs text-slate-400">역할: {ctx.role ?? 'owner'}</p>
+              <p className="text-base font-bold text-white">{ctx.centers[0]?.name ?? '내 센터'}</p>
+              <p className="text-xs text-slate-400">
+                역할: <span className="text-slate-300 font-medium">{ctx.role ?? 'owner'}</span>
+              </p>
             </>
           ) : (
             <div className="space-y-3">
@@ -213,9 +297,14 @@ export default function SettingsView() {
                   type="button"
                   onClick={handleBootstrap}
                   disabled={bootstrapping}
-                  className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                  className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 flex items-center gap-1"
                 >
-                  {bootstrapping ? '생성 중...' : '내 센터 자동 생성 →'}
+                  {bootstrapping ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  )}
+                  {bootstrapping ? '생성 중...' : '내 센터 자동 생성'}
                 </button>
               ) : (
                 <p className="text-xs text-slate-500">DB 마이그레이션 후 활성화됩니다.</p>
@@ -224,15 +313,20 @@ export default function SettingsView() {
           )}
         </div>
 
-        <div className="flex-1 min-w-[220px] p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1">
+        <div className="p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1.5">
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">현재 플랜</p>
-          <p className="text-lg font-bold text-white capitalize">{currentPlan}</p>
-          <p className="text-xs text-slate-400">
-            상태:{' '}
-            <span className={ctx.entitlement.status === 'active' ? 'text-emerald-400' : 'text-amber-400'}>
-              {ctx.entitlement.status}
+          <div className="flex items-center gap-2">
+            <span className="text-base font-bold text-white capitalize">{currentPlan}</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                ctx.entitlement.status === 'active'
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-amber-500/20 text-amber-400'
+              }`}
+            >
+              {ctx.entitlement.status === 'active' ? '활성' : ctx.entitlement.status}
             </span>
-          </p>
+          </div>
           {ctx.billing.currentPeriodEndAt && (
             <p className="text-xs text-slate-400">
               갱신일: {new Date(ctx.billing.currentPeriodEndAt).toLocaleDateString('ko-KR')}
@@ -241,41 +335,69 @@ export default function SettingsView() {
         </div>
       </div>
 
+      {/* 사용량 */}
+      <div className="p-5 rounded-2xl bg-slate-800/40 border border-slate-700 space-y-5">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">이번 달 사용량</p>
+        <UsageBar
+          used={usage.studentCount}
+          limit={usage.studentLimit}
+          label="등록 원생"
+          icon={Users}
+          colorClass="bg-blue-500"
+        />
+        <div className="border-t border-slate-700/60" />
+        <UsageBar
+          used={usage.aiReportThisMonth}
+          limit={usage.aiReportMonthlyLimit}
+          label="AI 리포트 (이번 달)"
+          icon={Bot}
+          colorClass="bg-violet-500"
+        />
+      </div>
+
       {/* 업그레이드 메시지 */}
       {upgradeMsg && (
-        <div className="px-5 py-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm">
-          {upgradeMsg}
+        <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm">
+          <Mail className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{upgradeMsg}</span>
         </div>
       )}
 
       {/* 플랜 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {PLANS.map((plan) => (
-          <PlanCard
-            key={plan.id}
-            plan={plan}
-            current={currentPlan}
-            onUpgrade={handleUpgrade}
-            upgrading={upgrading}
-          />
-        ))}
+      <div>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">플랜 비교</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {PLANS.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              current={currentPlan}
+              onUpgrade={handleUpgrade}
+              upgrading={upgrading}
+            />
+          ))}
+        </div>
       </div>
 
       {/* DB 미준비 안내 */}
       {!ctx.dbReady && (
         <div className="px-5 py-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm space-y-1">
           <p className="font-bold">구독 DB 마이그레이션 미적용</p>
-          <p className="text-amber-400/80">
-            Supabase에서 <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">20260308000000_spokedu_pro_commercial.sql</code>을
-            실행하고 <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">SPOKEDU_PRO_DB_READY=true</code> 환경변수를 설정하면 구독 기능이 활성화됩니다.
+          <p className="text-amber-400/80 text-xs leading-relaxed">
+            Supabase에서{' '}
+            <code className="bg-slate-800 px-1.5 py-0.5 rounded">20260308000000_spokedu_pro_commercial.sql</code>
+            을 실행하고{' '}
+            <code className="bg-slate-800 px-1.5 py-0.5 rounded">SPOKEDU_PRO_DB_READY=true</code>
+            {' '}환경변수를 설정하면 구독 기능이 활성화됩니다.
           </p>
         </div>
       )}
 
       {/* 문의 */}
-      <div className="text-center text-sm text-slate-500 pt-4">
-        결제 문의 또는 기업 계약:{' '}
-        <a href="mailto:contact@spokedu.co.kr" className="text-blue-400 hover:underline">
+      <div className="flex items-center justify-center gap-2 text-sm text-slate-500 pt-2">
+        <Mail className="w-4 h-4" />
+        결제·기업 계약 문의:{' '}
+        <a href="mailto:contact@spokedu.co.kr" className="text-blue-400 hover:underline font-medium">
           contact@spokedu.co.kr
         </a>
       </div>

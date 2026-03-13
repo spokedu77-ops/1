@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { getPlanForUser, PLAN_LIMITS, getAiReportUsageThisMonth, incrementAiReportUsage } from '@/app/lib/spokedu-pro/planUtils';
 
 export const maxDuration = 60;
 
@@ -27,7 +28,7 @@ type ReportRequest = {
   additionalGoal?: string;
   tone: 'warm' | 'professional' | 'friendly';
   language: 'korean' | 'english';
-  periodLabel?: string; // e.g. "2026년 3월 1주차"
+  periodLabel?: string;
 };
 
 const PHYSICAL_LABELS: Record<keyof PhysicalFunctions, string> = {
@@ -82,17 +83,49 @@ ${req.additionalGoal ? `[추가 목표]: ${req.additionalGoal}` : ''}
 }
 
 export async function POST(req: NextRequest) {
-  // Auth check
+  // ── 인증 ───────────────────────────────────────────────────────────
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // ── 플랜 & 사용량 병렬 조회 ────────────────────────────────────────
+  const [plan, usageThisMonth] = await Promise.all([
+    getPlanForUser(user.id),
+    getAiReportUsageThisMonth(user.id),
+  ]);
+
+  const monthlyLimit = PLAN_LIMITS[plan].aiReportsPerMonth;
+
+  if (monthlyLimit === 0) {
+    return NextResponse.json(
+      {
+        error: 'plan_restriction',
+        plan,
+        message: 'AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.',
+      },
+      { status: 403 }
+    );
   }
 
+  if (usageThisMonth >= monthlyLimit) {
+    return NextResponse.json(
+      {
+        error: 'monthly_limit_exceeded',
+        plan,
+        limit: monthlyLimit,
+        used: usageThisMonth,
+        message: `이번 달 AI 리포트 한도(${monthlyLimit}회)를 모두 사용했습니다. Pro 플랜으로 업그레이드하세요.`,
+      },
+      { status: 403 }
+    );
+  }
+
+  // ── API key 확인 ───────────────────────────────────────────────────
   if (!GEMINI_API_KEY) {
     return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
   }
 
+  // ── 요청 파싱 ──────────────────────────────────────────────────────
   let body: ReportRequest;
   try {
     body = await req.json();
@@ -104,6 +137,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'student.name is required' }, { status: 400 });
   }
 
+  if ((body.sessionNotes?.length ?? 0) > 2000) {
+    return NextResponse.json({ error: 'sessionNotes too long (max 2000 chars)' }, { status: 400 });
+  }
+
+  // ── Gemini 생성 ────────────────────────────────────────────────────
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
@@ -112,15 +150,17 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
 
-    // Strip markdown code fences if present
     const jsonText = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
 
     let parsed: Record<string, string>;
     try {
       parsed = JSON.parse(jsonText);
     } catch {
-      return NextResponse.json({ error: 'Failed to parse Gemini response', raw: text }, { status: 502 });
+      return NextResponse.json({ error: '리포트 생성 중 오류가 발생했습니다. 다시 시도해주세요.' }, { status: 502 });
     }
+
+    // 사용량 증가 (비동기, 실패해도 응답에 영향 없음)
+    incrementAiReportUsage(user.id).catch(() => {});
 
     return NextResponse.json({
       ok: true,
@@ -130,6 +170,10 @@ export async function POST(req: NextRequest) {
         classGroup: body.student.classGroup,
         period: body.periodLabel,
         generatedAt: new Date().toISOString(),
+      },
+      usage: {
+        used: usageThisMonth + 1,
+        limit: monthlyLimit === Infinity ? null : monthlyLimit,
       },
     });
   } catch (err: unknown) {

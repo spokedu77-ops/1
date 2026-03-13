@@ -80,13 +80,6 @@ export async function POST(req: NextRequest) {
       status: 'active',
     });
 
-    // 6. 초기 class XP 레코드
-    await supabase.from('spokedu_pro_class_xp').insert({
-      center_id: center.id,
-      total_xp: 0,
-      level: 1,
-    });
-
     return NextResponse.json({ ok: true, bootstrapped: true, centerId: center.id, centerName: center.name }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: 'internal', detail: err instanceof Error ? err.message : String(err) }, { status: 500 });

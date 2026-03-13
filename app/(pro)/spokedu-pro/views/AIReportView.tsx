@@ -28,6 +28,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { useStudentStore, PHYSICAL_LABELS, LEVEL_LABELS, type Student } from '../hooks/useStudentStore';
+import { useProContext } from '../hooks/useProContext';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Tone = 'warm' | 'professional' | 'friendly';
@@ -283,6 +284,13 @@ function EmptyState() {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AIReportView() {
   const { students } = useStudentStore();
+  const { ctx } = useProContext();
+
+  const plan = ctx.entitlement.plan;
+  const usage = ctx.usage;
+  const monthlyLimit = usage.aiReportMonthlyLimit;
+  const isBlocked = plan === 'free';
+  const isLimitReached = monthlyLimit !== null && usage.aiReportThisMonth >= monthlyLimit;
 
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [sessionNotes, setSessionNotes] = useState('');
@@ -373,15 +381,15 @@ export default function AIReportView() {
     setError(null);
   }, []);
 
-  const canGenerate = !!selectedStudent && !loading;
+  const canGenerate = !!selectedStudent && !loading && !isBlocked && !isLimitReached;
 
   return (
     <section className="min-h-screen px-4 sm:px-6 lg:px-10 py-8 pb-28">
       <div className="max-w-6xl mx-auto">
 
         {/* ── Page Header ── */}
-        <header className="mb-8">
-          <div className="flex items-center gap-3 mb-1">
+        <header className="mb-6">
+          <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-violet-600/20 border border-violet-500/30 rounded-2xl flex items-center justify-center shrink-0">
               <Bot className="w-5 h-5 text-violet-400" />
             </div>
@@ -392,6 +400,32 @@ export default function AIReportView() {
               <p className="text-slate-500 text-sm mt-0.5">Gemini 기반 학부모 연계 리포트 자동 생성</p>
             </div>
           </div>
+
+          {/* 플랜 제한 배너 */}
+          {isBlocked && (
+            <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sm">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-amber-300 font-semibold">AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.</p>
+                <p className="text-amber-400/70 text-xs mt-0.5">설정 → 플랜 업그레이드 또는 운영팀에 문의해 주세요.</p>
+              </div>
+            </div>
+          )}
+          {!isBlocked && isLimitReached && (
+            <div className="flex items-start gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-300 font-semibold">이번 달 AI 리포트 한도({monthlyLimit}회)를 모두 사용했습니다.</p>
+                <p className="text-red-400/70 text-xs mt-0.5">Pro 플랜 업그레이드 시 무제한으로 사용할 수 있습니다.</p>
+              </div>
+            </div>
+          )}
+          {!isBlocked && !isLimitReached && monthlyLimit !== null && (
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Bot className="w-3.5 h-3.5" />
+              이번 달 사용: <span className="text-slate-300 font-bold">{usage.aiReportThisMonth} / {monthlyLimit}회</span>
+            </div>
+          )}
         </header>
 
         {/* ── Main Layout ── */}

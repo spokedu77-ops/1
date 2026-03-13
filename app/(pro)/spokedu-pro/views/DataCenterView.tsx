@@ -11,6 +11,7 @@ import {
   type PhysicalFunctions,
   type PhysicalLevel,
 } from '../hooks/useStudentStore';
+import { useProContext } from '../hooks/useProContext';
 
 // ── 신체 기능 레벨 버튼 ──────────────────────────────────────────────
 function LevelButton({
@@ -143,6 +144,10 @@ function StudentCard({
 export default function DataCenterView() {
   const { students, loaded, syncing, syncError, addStudent, removeStudent, cycleStatus, markAllPresent, updatePhysical } =
     useStudentStore();
+  const { ctx } = useProContext();
+
+  const studentLimit = ctx.usage.studentLimit;
+  const isAtLimit = studentLimit !== null && students.length >= studentLimit;
 
   const [filterGroup, setFilterGroup] = useState('전체');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -160,6 +165,7 @@ export default function DataCenterView() {
   const handleAdd = () => {
     const trimmed = newName.trim();
     if (!trimmed) { setNameError('이름을 입력해주세요.'); return; }
+    if (isAtLimit) { setNameError(`현재 플랜 한도(${studentLimit}명)에 도달했습니다. 업그레이드가 필요합니다.`); return; }
     if (students.some((s) => s.name === trimmed && s.classGroup === newGroup)) {
       setNameError('동일 반에 같은 이름이 있습니다.'); return;
     }
@@ -247,14 +253,25 @@ export default function DataCenterView() {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowAddForm((v) => !v)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg"
-        >
-          <UserPlus className="w-4 h-4" />
-          원생 등록
-        </button>
+        <div className="flex items-center gap-3">
+          {studentLimit !== null && (
+            <span className="text-xs text-slate-500 tabular-nums">
+              <span className={isAtLimit ? 'text-red-400 font-bold' : 'text-slate-400 font-medium'}>
+                {students.length}
+              </span>
+              /{studentLimit}명
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowAddForm((v) => !v)}
+            disabled={isAtLimit}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors shadow-lg"
+          >
+            <UserPlus className="w-4 h-4" />
+            원생 등록
+          </button>
+        </div>
       </div>
 
       {/* 원생 추가 폼 */}
@@ -352,9 +369,6 @@ export default function DataCenterView() {
         </div>
       )}
 
-      <p className="text-xs text-slate-600 text-center pt-4">
-        현재 브라우저 로컬 저장 상태입니다. DB 연동 후 영구 저장됩니다.
-      </p>
     </section>
   );
 }
