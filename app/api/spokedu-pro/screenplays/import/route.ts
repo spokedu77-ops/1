@@ -1,7 +1,9 @@
 /**
  * POST /api/spokedu-pro/screenplays/import
  * Admin 전용 - CSV/JSON 스크린플레이 일괄 업로드
+ *
  * CSV 헤더: mode_id, title, subtitle, description, sort_order, preset_ref, thumbnail_url
+ * is_published 기본값: false (수동 publish 필요)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
@@ -9,7 +11,9 @@ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
 const ADMIN_EMAILS = (process.env.SPOKEDU_ADMIN_EMAILS ?? '').split(',').map((e) => e.trim()).filter(Boolean);
 
-const VALID_MODE_IDS = ['CHALLENGE', 'FLOW', '반응인지', '순차기억', '스트룹', '이중과제'];
+const VALID_MODE_IDS = [
+  'CHALLENGE', 'FLOW', '반응인지', '순차기억', '스트룹', '이중과제',
+];
 
 type ScreenplayRow = {
   mode_id: string;
@@ -28,6 +32,7 @@ function parseCSV(csv: string): ScreenplayRow[] {
   const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
 
   return lines.slice(1).map((line) => {
+    // CSV 파싱: 따옴표 안의 쉼표 처리
     const values: string[] = [];
     let current = '';
     let inQuotes = false;
@@ -54,6 +59,7 @@ function parseCSV(csv: string): ScreenplayRow[] {
 }
 
 export async function POST(req: NextRequest) {
+  // Admin 인증
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -73,6 +79,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
   } else {
+    // multipart/form-data (CSV 파일)
     try {
       const formData = await req.formData();
       const file = formData.get('file') as File | null;
@@ -84,15 +91,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (rows.length === 0) return NextResponse.json({ error: 'No rows to import' }, { status: 400 });
-  if (rows.length > 200) return NextResponse.json({ error: 'Too many rows (max 200)' }, { status: 400 });
+  if (rows.length === 0) {
+    return NextResponse.json({ error: 'No rows to import' }, { status: 400 });
+  }
+  if (rows.length > 200) {
+    return NextResponse.json({ error: 'Too many rows (max 200)' }, { status: 400 });
+  }
 
+  // 유효성 검사
   const errors: string[] = [];
   rows.forEach((row, i) => {
     if (!row.mode_id) errors.push(`Row ${i + 1}: mode_id 필요`);
     if (!row.title) errors.push(`Row ${i + 1}: title 필요`);
     if (row.mode_id && !VALID_MODE_IDS.includes(row.mode_id)) {
-      errors.push(`Row ${i + 1}: 유효하지 않은 mode_id "${row.mode_id}"`);
+      errors.push(`Row ${i + 1}: 유효하지 않은 mode_id "${row.mode_id}". 허용값: ${VALID_MODE_IDS.join(', ')}`);
     }
   });
 
@@ -100,6 +112,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Validation failed', details: errors.slice(0, 20) }, { status: 422 });
   }
 
+  // DB upsert (mode_id + title 조합으로 중복 방지)
   const supabase = getServiceSupabase();
   const records = rows.map((row, i) => ({
     mode_id: row.mode_id,
@@ -117,12 +130,14 @@ export async function POST(req: NextRequest) {
     .insert(records)
     .select('id');
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({
     ok: true,
     imported: data?.length ?? 0,
     total: rows.length,
-    message: `${data?.length ?? 0}개 스크린플레이가 임포트되었습니다. DB에서 is_published=true로 설정하세요.`,
+    message: `${data?.length ?? 0}개 스크린플레이가 임포트되었습니다. 관리자 패널에서 is_published=true로 설정하세요.`,
   });
 }

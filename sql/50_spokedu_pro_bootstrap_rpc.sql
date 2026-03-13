@@ -48,11 +48,6 @@ BEGIN
   ON CONFLICT (center_id) DO NOTHING
   RETURNING id INTO v_sub_id;
 
-  -- 5. 초기 XP 레코드
-  INSERT INTO spokedu_pro_class_xp (center_id, total_xp, level)
-  VALUES (v_center.id, 0, 1)
-  ON CONFLICT (center_id) DO NOTHING;
-
   RETURN json_build_object(
     'bootstrapped', true,
     'centerId', v_center.id,

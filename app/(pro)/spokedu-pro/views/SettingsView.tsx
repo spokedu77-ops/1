@@ -63,6 +63,7 @@ const PLANS: PlanDef[] = [
   },
 ];
 
+// ── 사용량 진행 바 ───────────────────────────────────────────────────────────
 function UsageBar({
   used,
   limit,
@@ -118,6 +119,7 @@ function UsageBar({
   );
 }
 
+// ── 플랜 카드 ────────────────────────────────────────────────────────────────
 function PlanCard({
   plan,
   current,
@@ -188,7 +190,11 @@ function PlanCard({
           onClick={() => onUpgrade(plan.id)}
           className="flex items-center gap-1.5 justify-center py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
         >
-          {upgrading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          {upgrading ? (
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5" />
+          )}
           {plan.label}로 업그레이드
         </button>
       ) : (
@@ -260,6 +266,8 @@ export default function SettingsView() {
 
   return (
     <section className="px-4 sm:px-6 lg:px-12 py-10 pb-32 space-y-8 max-w-4xl mx-auto">
+
+      {/* 헤더 */}
       <header className="space-y-2 border-b border-slate-800 pb-7">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-700/50 text-slate-300 rounded-full text-xs font-bold uppercase tracking-widest">
           <Settings2 className="w-3.5 h-3.5" /> 구독 및 설정
@@ -268,6 +276,7 @@ export default function SettingsView() {
         <p className="text-slate-400 text-sm">현재 플랜과 사용량을 확인하고 필요에 따라 업그레이드하세요.</p>
       </header>
 
+      {/* 현재 상태 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1.5">
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">현재 센터</p>
@@ -288,7 +297,11 @@ export default function SettingsView() {
                   disabled={bootstrapping}
                   className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 flex items-center gap-1"
                 >
-                  {bootstrapping ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                  {bootstrapping ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  )}
                   {bootstrapping ? '생성 중...' : '내 센터 자동 생성'}
                 </button>
               ) : (
@@ -302,11 +315,13 @@ export default function SettingsView() {
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">현재 플랜</p>
           <div className="flex items-center gap-2">
             <span className="text-base font-bold text-white capitalize">{currentPlan}</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-              ctx.entitlement.status === 'active'
-                ? 'bg-emerald-500/20 text-emerald-400'
-                : 'bg-amber-500/20 text-amber-400'
-            }`}>
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                ctx.entitlement.status === 'active'
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-amber-500/20 text-amber-400'
+              }`}
+            >
               {ctx.entitlement.status === 'active' ? '활성' : ctx.entitlement.status}
             </span>
           </div>
@@ -318,6 +333,7 @@ export default function SettingsView() {
         </div>
       </div>
 
+      {/* 사용량 */}
       <div className="p-5 rounded-2xl bg-slate-800/40 border border-slate-700 space-y-5">
         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">이번 달 사용량</p>
         <UsageBar
@@ -337,6 +353,7 @@ export default function SettingsView() {
         />
       </div>
 
+      {/* 업그레이드 메시지 */}
       {upgradeMsg && (
         <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm">
           <Mail className="w-4 h-4 shrink-0 mt-0.5" />
@@ -344,6 +361,7 @@ export default function SettingsView() {
         </div>
       )}
 
+      {/* 플랜 카드 */}
       <div>
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">플랜 비교</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -372,6 +390,7 @@ export default function SettingsView() {
         </div>
       )}
 
+      {/* 문의 */}
       <div className="flex items-center justify-center gap-2 text-sm text-slate-500 pt-2">
         <Mail className="w-4 h-4" />
         결제·기업 계약 문의:{' '}

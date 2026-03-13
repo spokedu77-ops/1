@@ -1,3 +1,10 @@
+/**
+ * /api/spokedu-pro/screenplays
+ * GET — 스크린플레이 목록 (DB 준비 전엔 hardcoded catalog fallback)
+ *
+ * DB_READY = SPOKEDU_PRO_SCREENPLAYS_DB_READY=true 시 실제 DB 조회.
+ * 미설정 시 screenplayCatalog.ts hardcoded 목록 반환.
+ */
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
@@ -11,7 +18,11 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   if (!DB_READY) {
-    return NextResponse.json({ ok: true, screenplays: SCREENPLAY_CATALOG, source: 'catalog' });
+    return NextResponse.json({
+      ok: true,
+      screenplays: SCREENPLAY_CATALOG,
+      source: 'catalog',
+    });
   }
 
   try {
@@ -24,6 +35,7 @@ export async function GET() {
 
     if (error) throw error;
 
+    // DB 컬럼 → camelCase 변환
     const screenplays = (data ?? []).map((row) => ({
       id: row.id,
       modeId: row.mode_id,
@@ -37,6 +49,11 @@ export async function GET() {
 
     return NextResponse.json({ ok: true, screenplays, source: 'db' });
   } catch {
-    return NextResponse.json({ ok: true, screenplays: SCREENPLAY_CATALOG, source: 'catalog_fallback' });
+    // DB 실패 시 hardcoded fallback
+    return NextResponse.json({
+      ok: true,
+      screenplays: SCREENPLAY_CATALOG,
+      source: 'catalog_fallback',
+    });
   }
 }

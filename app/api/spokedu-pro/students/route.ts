@@ -1,3 +1,10 @@
+/**
+ * /api/spokedu-pro/students
+ * GET  — 현재 사용자의 학생 목록 조회
+ * POST — 학생 추가 (플랜 한도 체크: free≤10, basic≤50, pro=무제한)
+ *
+ * 저장소: spokedu_pro_tenant_content (key='students', owner_id=auth.uid())
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
@@ -88,7 +95,7 @@ export async function POST(req: NextRequest) {
   const serviceSupabase = getServiceSupabase();
   const students = await loadStudents(serviceSupabase, user.id);
 
-  // 플랜 한도 체크
+  // ── 플랜 한도 체크 ──────────────────────────────────────────────────
   const plan = await getPlanForUser(user.id);
   const limit = PLAN_LIMITS[plan].students;
   if (students.length >= limit) {

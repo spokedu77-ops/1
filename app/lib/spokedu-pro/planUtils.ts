@@ -1,6 +1,7 @@
 /**
  * 플랜 유틸리티.
  * 사용자 플랜 조회 + 기능 한도 상수 + AI 리포트 사용량 추적.
+ * tenant_content 저장소를 사용하므로 SPOKEDU_PRO_DB_READY 무관하게 동작.
  */
 
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
@@ -15,11 +16,13 @@ export const PLAN_LIMITS: Record<Plan, { students: number; aiReportsPerMonth: nu
 
 const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
 
+/** 사용자의 현재 활성 플랜 반환. DB_READY=false 또는 조회 실패 시 'free'. */
 export async function getPlanForUser(userId: string): Promise<Plan> {
   if (!DB_READY) return 'free';
   try {
     const supabase = getServiceSupabase();
 
+    // 오너 센터 먼저
     const { data: ownedCenters } = await supabase
       .from('spokedu_pro_centers')
       .select('id')
@@ -28,6 +31,7 @@ export async function getPlanForUser(userId: string): Promise<Plan> {
 
     let centerId: string | undefined = ownedCenters?.[0]?.id;
 
+    // 없으면 멤버 센터
     if (!centerId) {
       const { data: memberRows } = await supabase
         .from('spokedu_pro_center_members')
@@ -53,6 +57,8 @@ export async function getPlanForUser(userId: string): Promise<Plan> {
     return 'free';
   }
 }
+
+// ── AI 리포트 사용량 (tenant_content key='ai_report_usage') ──────────────
 
 function currentMonthKey(): string {
   const now = new Date();
@@ -113,6 +119,6 @@ export async function incrementAiReportUsage(userId: string): Promise<void> {
         { onConflict: 'owner_id,key' }
       );
   } catch {
-    // 사용량 저장 실패는 무시
+    // 사용량 저장 실패는 무시 (리포트 생성 자체는 성공으로 처리)
   }
 }

@@ -83,10 +83,12 @@ ${req.additionalGoal ? `[추가 목표]: ${req.additionalGoal}` : ''}
 }
 
 export async function POST(req: NextRequest) {
+  // ── 인증 ───────────────────────────────────────────────────────────
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // ── 플랜 & 사용량 병렬 조회 ────────────────────────────────────────
   const [plan, usageThisMonth] = await Promise.all([
     getPlanForUser(user.id),
     getAiReportUsageThisMonth(user.id),
@@ -96,7 +98,11 @@ export async function POST(req: NextRequest) {
 
   if (monthlyLimit === 0) {
     return NextResponse.json(
-      { error: 'plan_restriction', plan, message: 'AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.' },
+      {
+        error: 'plan_restriction',
+        plan,
+        message: 'AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.',
+      },
       { status: 403 }
     );
   }
@@ -114,10 +120,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ── API key 확인 ───────────────────────────────────────────────────
   if (!GEMINI_API_KEY) {
     return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
   }
 
+  // ── 요청 파싱 ──────────────────────────────────────────────────────
   let body: ReportRequest;
   try {
     body = await req.json();
@@ -133,6 +141,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'sessionNotes too long (max 2000 chars)' }, { status: 400 });
   }
 
+  // ── Gemini 생성 ────────────────────────────────────────────────────
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
@@ -150,6 +159,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '리포트 생성 중 오류가 발생했습니다. 다시 시도해주세요.' }, { status: 502 });
     }
 
+    // 사용량 증가 (비동기, 실패해도 응답에 영향 없음)
     incrementAiReportUsage(user.id).catch(() => {});
 
     return NextResponse.json({

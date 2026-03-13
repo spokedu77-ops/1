@@ -1,3 +1,9 @@
+/**
+ * 스포키듀 구독 v2 context API.
+ * DB_READY 플래그:
+ *   false — 최소 응답 (free plan) + usage는 tenant_content에서 조회
+ *   true  — spokedu_pro_centers + spokedu_pro_subscriptions 실제 조회
+ */
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
@@ -9,6 +15,7 @@ type Plan = 'free' | 'basic' | 'pro';
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired';
 type CenterRole = 'owner' | 'admin' | 'coach';
 
+/** tenant_content에서 학생 수 조회 */
 async function getStudentCount(userId: string): Promise<number> {
   try {
     const supabase = getServiceSupabase();
@@ -33,6 +40,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // usage는 DB_READY 무관하게 항상 조회
   const [studentCount, aiReportThisMonth] = await Promise.all([
     getStudentCount(user.id),
     getAiReportUsageThisMonth(user.id),
@@ -61,6 +69,7 @@ export async function GET() {
     });
   }
 
+  // ── DB 실제 조회 ────────────────────────────────────────────────────
   try {
     const supabase = getServiceSupabase();
 

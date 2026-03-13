@@ -1,5 +1,10 @@
 'use client';
 
+/**
+ * 스포키듀 구독 컨텍스트 훅.
+ * GET /api/spokedu-pro/context → plan, entitlement, center, usage 정보 캐싱.
+ * dbReady=false 시 무료 플랜으로 fallback.
+ */
 import { useState, useEffect, useCallback } from 'react';
 
 export type Plan = 'free' | 'basic' | 'pro';
@@ -44,6 +49,7 @@ const FREE_CONTEXT: ProContext = {
   dbReady: false,
 };
 
+// 클라이언트 사이드 캐시
 let _cache: ProContext | null = null;
 let _fetching = false;
 let _listeners: Array<() => void> = [];
@@ -104,6 +110,7 @@ export function useProContext() {
     return () => { _listeners = _listeners.filter((l) => l !== fn); };
   }, []);
 
+  /** 구독 정보 갱신 */
   const refresh = useCallback(async () => {
     _cache = null;
     setLoading(true);
