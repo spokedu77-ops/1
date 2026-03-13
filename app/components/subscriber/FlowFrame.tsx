@@ -7,7 +7,7 @@ const FLOW_FAILSAFE_MS = 6 * 60 * 1000;
 
 /**
  * Flow Phase - Next.js Route
- * /flow-phase?weekKey=...
+ * /program/iiwarmup/flow?weekKey=...
  */
 export interface FlowFrameProps {
   weekKey: string;

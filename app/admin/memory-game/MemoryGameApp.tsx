@@ -69,7 +69,6 @@ export default function MemoryGameApp() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [signal, setSignal] = useState<Record<string, unknown> | null>(null);
   const [signalKey, setSignalKey] = useState(0);
-  const [prevSignal, setPrevSignal] = useState<Record<string, unknown> | null>(null);
   const [flashing, setFlashing] = useState(false);
   const prevBgRef = useRef<string | null>(null);
   const [stats, setStats] = useState({ timeLeft: 30, repsLeft: 20, progress: 0 });
@@ -109,10 +108,7 @@ export default function MemoryGameApp() {
       setTimeout(() => setFlashing(false), 80);
     }
     prevBgRef.current = (sig.bg as string) ?? null;
-    setSignal((prev) => {
-      setPrevSignal(prev);
-      return sig;
-    });
+    setSignal(sig);
     setSignalKey((k) => k + 1);
   }, []);
 
@@ -563,11 +559,6 @@ export default function MemoryGameApp() {
               <div style={{ width: '35%', borderRight: '2px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.2rem', padding: '1rem' }}>
                 <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em' }}>TEACHER</div>
                 <div style={{ fontSize: '3rem', fontWeight: 900, color: '#F97316' }}>{displayCount}</div>
-                {prevSignal && (
-                  <div style={{ width: '70%', aspectRatio: 1, borderRadius: '1rem', background: (prevSignal.bg as string) ?? '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
-                    <span style={{ color: '#fff', fontWeight: 900, fontSize: '1.5rem' }}>{(prevSignal.content as { name?: string; word?: string; label?: string })?.name ?? (prevSignal.content as { word?: string })?.word ?? (prevSignal.content as { label?: string })?.label ?? '—'}</span>
-                  </div>
-                )}
               </div>
               <div style={{ flex: 1, position: 'relative' }}>{signal ? <SignalDisplay signal={signal} animKey={signalKey} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '1.5rem', fontWeight: 700 }}>준비하세요</div>}</div>
             </div>

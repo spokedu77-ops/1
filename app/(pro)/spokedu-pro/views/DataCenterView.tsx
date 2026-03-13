@@ -103,7 +103,16 @@ function StudentCard({
             <button type="button" onClick={() => setExpanded((e) => !e)} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors" aria-label="신체 기능 펼치기">
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
-            <button type="button" onClick={() => onRemove(student.id)} className="p-2 rounded-lg bg-slate-700 hover:bg-red-900/40 text-slate-500 hover:text-red-400 transition-colors" aria-label="삭제">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`"${student.name}" 원생을 삭제하시겠습니까?`)) {
+                  onRemove(student.id);
+                }
+              }}
+              className="p-2 rounded-lg bg-slate-700 hover:bg-red-900/40 text-slate-500 hover:text-red-400 transition-colors"
+              aria-label="삭제"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -160,7 +169,7 @@ export default function DataCenterView() {
   const handleAdd = () => {
     const trimmed = newName.trim();
     if (!trimmed) { setNameError('이름을 입력해주세요.'); return; }
-    if (students.some((s) => s.name === trimmed && s.classGroup === newGroup)) {
+    if (students.some((s) => s.name.trim() === trimmed && s.classGroup === newGroup)) {
       setNameError('동일 반에 같은 이름이 있습니다.'); return;
     }
     addStudent(trimmed, newGroup);
@@ -289,7 +298,7 @@ export default function DataCenterView() {
             </button>
             <button
               type="button"
-              onClick={() => { setShowAddForm(false); setNewName(''); setNameError(''); }}
+              onClick={() => { setShowAddForm(false); setNewName(''); setNewGroup(CLASS_GROUPS[0]); setNameError(''); }}
               className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors"
             >
               취소

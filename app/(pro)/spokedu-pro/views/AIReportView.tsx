@@ -362,9 +362,13 @@ export default function AIReportView() {
       '',
       `[스포키듀 AI 리포트 | ${new Date(meta.generatedAt).toLocaleDateString('ko-KR')}]`,
     ].join('\n');
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError('복사 실패 — 수동으로 선택해 복사해주세요.');
+    }
   }, [report, meta]);
 
   const handleReset = useCallback(() => {
@@ -395,7 +399,7 @@ export default function AIReportView() {
         </header>
 
         {/* ── Main Layout ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] lg:grid-cols-[400px_1fr] gap-5">
 
           {/* ── LEFT: Form Panel ── */}
           <div className="space-y-4">

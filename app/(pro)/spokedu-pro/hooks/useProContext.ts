@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * 스포키듀 구독 컨텍스트 훅.
- * GET /api/spokedu-pro/context → plan, entitlement, center 정보 캐싱.
- * dbReady=false 시 무료 플랜으로 fallback.
- */
 import { useState, useEffect, useCallback } from 'react';
 
 export type Plan = 'free' | 'basic' | 'pro';
@@ -15,6 +10,13 @@ export type Entitlement = {
   plan: Plan;
   status: SubscriptionStatus;
   isPro: boolean;
+};
+
+export type ProUsage = {
+  studentCount: number;
+  studentLimit: number | null;         // null = 무제한
+  aiReportThisMonth: number;
+  aiReportMonthlyLimit: number | null; // null = 무제한
 };
 
 export type ProContext = {
@@ -28,6 +30,7 @@ export type ProContext = {
     promoEndAt: string | null;
     currentPeriodEndAt: string | null;
   };
+  usage: ProUsage;
   dbReady: boolean;
 };
 
@@ -37,10 +40,10 @@ const FREE_CONTEXT: ProContext = {
   role: null,
   entitlement: { plan: 'free', status: 'active', isPro: false },
   billing: { priceKrw: 79900, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null },
+  usage: { studentCount: 0, studentLimit: 10, aiReportThisMonth: 0, aiReportMonthlyLimit: 0 },
   dbReady: false,
 };
 
-// 클라이언트 사이드 캐시 (SPA 리렌더 시 재요청 방지)
 let _cache: ProContext | null = null;
 let _fetching = false;
 let _listeners: Array<() => void> = [];
@@ -96,13 +99,11 @@ export function useProContext() {
       setLoading(false);
     });
 
-    // 다른 컴포넌트가 캐시를 갱신할 때 재렌더
     const fn = () => { if (_cache) setCtx(_cache); };
     _listeners.push(fn);
     return () => { _listeners = _listeners.filter((l) => l !== fn); };
   }, []);
 
-  /** 구독 정보 갱신 (bootstrap 후 호출) */
   const refresh = useCallback(async () => {
     _cache = null;
     setLoading(true);

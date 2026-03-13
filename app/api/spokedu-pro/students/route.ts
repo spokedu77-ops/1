@@ -1,14 +1,7 @@
-/**
- * /api/spokedu-pro/students
- * GET  — 현재 사용자의 학생 목록 조회
- * POST — 학생 추가
- *
- * 저장소: spokedu_pro_tenant_content (key='students', owner_id=auth.uid())
- * service_role로만 접근.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { getPlanForUser, PLAN_LIMITS } from '@/app/lib/spokedu-pro/planUtils';
 
 const CONTENT_KEY = 'students';
 
@@ -66,7 +59,6 @@ async function saveStudents(serviceSupabase: ReturnType<typeof getServiceSupabas
     );
 }
 
-// GET /api/spokedu-pro/students
 export async function GET() {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
@@ -78,7 +70,6 @@ export async function GET() {
   return NextResponse.json({ ok: true, students });
 }
 
-// POST /api/spokedu-pro/students
 export async function POST(req: NextRequest) {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
@@ -96,6 +87,22 @@ export async function POST(req: NextRequest) {
 
   const serviceSupabase = getServiceSupabase();
   const students = await loadStudents(serviceSupabase, user.id);
+
+  // 플랜 한도 체크
+  const plan = await getPlanForUser(user.id);
+  const limit = PLAN_LIMITS[plan].students;
+  if (students.length >= limit) {
+    return NextResponse.json(
+      {
+        error: 'student_limit_exceeded',
+        plan,
+        limit,
+        current: students.length,
+        message: `${plan === 'free' ? 'Free 플랜은 최대 10명' : 'Basic 플랜은 최대 50명'}까지 등록할 수 있습니다. 업그레이드하세요.`,
+      },
+      { status: 403 }
+    );
+  }
 
   const now = new Date().toISOString();
   const newStudent: StoredStudent = {

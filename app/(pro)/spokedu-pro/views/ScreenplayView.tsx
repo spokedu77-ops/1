@@ -48,7 +48,7 @@ export default function ScreenplayView({
               tabIndex={0}
               onClick={() => onOpenInteractive(item.modeId)}
               onKeyDown={(e) => e.key === 'Enter' && onOpenInteractive(item.modeId)}
-              className={`media-card bg-gradient-to-br ${meta.gradient} border ${meta.border} p-8 rounded-3xl relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01]`}
+              className={`media-card bg-gradient-to-br ${meta.gradient} border ${meta.border} p-5 sm:p-8 rounded-3xl relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01]`}
             >
               <div className="absolute right-6 top-6 text-[80px] opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all select-none pointer-events-none">
                 {meta.icon}
@@ -58,7 +58,7 @@ export default function ScreenplayView({
                 <span className={`inline-block ${meta.tagColor} text-white px-3 py-1 rounded-lg font-bold text-xs`}>
                   {meta.tag}
                 </span>
-                <h3 className="text-2xl lg:text-3xl font-black text-white">{item.title}</h3>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">{item.title}</h3>
                 {item.subtitle && (
                   <p className="text-slate-300 text-sm font-medium">{item.subtitle}</p>
                 )}

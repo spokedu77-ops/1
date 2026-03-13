@@ -83,8 +83,14 @@ export default function LibraryView({
   const [mainTheme, setMainTheme] = useState<string>('');
   const [groupSize, setGroupSize] = useState<string>('');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [isReady, setIsReady] = useState(false);
   const [programsFromApi, setProgramsFromApi] = useState<ProgramRow[] | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     const t = setTimeout(() => setIsReady(true), 80);
@@ -98,7 +104,7 @@ export default function LibraryView({
     if (functionType) params.set('function_type', functionType);
     if (mainTheme) params.set('main_theme', mainTheme);
     if (groupSize) params.set('group_size', groupSize);
-    if (search.trim()) params.set('q', search.trim());
+    if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
     fetch(`/api/spokedu-pro/programs?${params}`)
       .then((res) => res.json())
       .then((json) => {
@@ -109,7 +115,7 @@ export default function LibraryView({
         if (!cancelled) setProgramsFromApi([]);
       });
     return () => { cancelled = true; };
-  }, [functionType, mainTheme, groupSize, search]);
+  }, [functionType, mainTheme, groupSize, debouncedSearch]);
 
   const filteredPrograms = programsFromApi ?? [];
   const clearFilters = () => {
@@ -121,7 +127,7 @@ export default function LibraryView({
   const hasActiveFilters = functionType !== '' || mainTheme !== '' || groupSize !== '' || search.trim() !== '';
 
   return (
-    <section className="px-8 lg:px-16 py-12 pb-32 space-y-8">
+    <section className="px-4 sm:px-8 lg:px-16 py-12 pb-32 space-y-8">
       <header className="space-y-6">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
