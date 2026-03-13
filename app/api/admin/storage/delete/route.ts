@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 
 export async function POST(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase.storage.from(BUCKET_NAME).remove(toRemove);
 
     if (error) {
-      console.error('[storage/delete]', error);
+      devLogger.error('[storage/delete]', error);
       return NextResponse.json(
         { error: `Storage 삭제 실패: ${error.message}` },
         { status: 500 }
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('[storage/delete]', err);
+    devLogger.error('[storage/delete]', err);
     return NextResponse.json(
       { error: '삭제 처리 중 오류가 발생했습니다.' },
       { status: 500 }

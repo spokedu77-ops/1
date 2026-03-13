@@ -66,7 +66,6 @@ async function saveStudents(serviceSupabase: ReturnType<typeof getServiceSupabas
     );
 }
 
-// GET /api/spokedu-pro/students
 export async function GET() {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
@@ -78,7 +77,6 @@ export async function GET() {
   return NextResponse.json({ ok: true, students });
 }
 
-// POST /api/spokedu-pro/students
 export async function POST(req: NextRequest) {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();

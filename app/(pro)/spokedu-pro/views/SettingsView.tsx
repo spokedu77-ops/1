@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { useProContext, type Plan } from '../hooks/useProContext';
 
-// ── 플랜 정의 ───────────────────────────────────────────────────────────────
 type PlanDef = {
   id: Plan;
   label: string;
@@ -205,7 +204,6 @@ function PlanCard({
   );
 }
 
-// ── 메인 ─────────────────────────────────────────────────────────────────────
 export default function SettingsView() {
   const { ctx, loading, refresh } = useProContext();
   const [upgrading, setUpgrading] = useState(false);
@@ -366,7 +364,7 @@ export default function SettingsView() {
       {/* 플랜 카드 */}
       <div>
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">플랜 비교</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {PLANS.map((plan) => (
             <PlanCard
               key={plan.id}
@@ -379,7 +377,6 @@ export default function SettingsView() {
         </div>
       </div>
 
-      {/* DB 미준비 안내 */}
       {!ctx.dbReady && (
         <div className="px-5 py-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm space-y-1">
           <p className="font-bold">구독 DB 마이그레이션 미적용</p>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DOMPurify from 'isomorphic-dompurify';
 import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package, Receipt, Calendar } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 interface WeeklyBest {
   id: string;
@@ -160,7 +161,7 @@ export default function TeacherMainPage() {
       if (!noticesRes.error) setNotices((noticesRes.data as Notice[]) ?? []);
       if (!weeklyRes.error) setWeeklyBestList((weeklyRes.data as WeeklyBest[]) ?? []);
     } catch (err) {
-      console.error('Fetch error:', err);
+      devLogger.error('Fetch error:', err);
       setNoticeFetchError('공지사항을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -194,7 +195,7 @@ export default function TeacherMainPage() {
       if (error) throw error;
       setTodaySessions((data as TodaySession[]) ?? []);
     } catch (err) {
-      console.error('Today sessions fetch error:', err);
+      devLogger.error('Today sessions fetch error:', err);
       setTodayFetchError('오늘 수업을 불러오지 못했습니다.');
     } finally {
       setTodayLoading(false);

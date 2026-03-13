@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { PLAY_SLOT_KEYS, type PlaySlotKey } from '@/app/lib/admin/assets/storagePaths';
 
 const buttonBase =
@@ -59,7 +60,7 @@ export function PlayImageGridUploader({
     try {
       await onUpload(slotKey, file);
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
     }
   };
 

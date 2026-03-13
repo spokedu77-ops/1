@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import './styles/spokedu-pro.css';
-import { useSpokeduProUI } from './hooks/useSpokeduProUI';
+import { useSpokeduProUI, type ViewId } from './hooks/useSpokeduProUI';
 import { useSpokeduProContent } from './hooks/useSpokeduProContent';
 import { useSpokeduProAdminBlocks } from './hooks/useSpokeduProContent';
 import type { ProgramDetail } from './types';
@@ -20,7 +20,13 @@ import AIReportView from './views/AIReportView';
 import AssistantToolsView from './views/AssistantToolsView';
 import SettingsView from './views/SettingsView';
 
-export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: boolean }) {
+export default function SpokeduProClient({
+  isEditMode = false,
+  onViewChange,
+}: {
+  isEditMode?: boolean;
+  onViewChange?: (viewId: ViewId) => void;
+}) {
   const rootRef = useRef<HTMLDivElement>(null);
   const { viewId, switchView, drawerOpen, closeDrawer, showToast } = useSpokeduProUI('roadmap');
   const [toolkitOpen, setToolkitOpen] = useState(false);
@@ -43,6 +49,10 @@ export default function SpokeduProClient({ isEditMode = false }: { isEditMode?: 
   useEffect(() => {
     if (viewId !== 'library') setLibraryPreset(null);
   }, [viewId]);
+
+  useEffect(() => {
+    onViewChange?.(viewId);
+  }, [viewId, onViewChange]);
 
   const [programsFromApi, setProgramsFromApi] = useState<Array<{
     id: number;

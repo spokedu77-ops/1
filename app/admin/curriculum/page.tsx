@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { useState, useMemo, useEffect } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { getCurrentWeekOfMonth } from '@/app/lib/curriculum/weekUtils';
 import {
   PERSONAL_CATEGORIES_ROW1,
@@ -143,7 +144,7 @@ export default function AdminCurriculumPage() {
       .order('id', { ascending: false });
     
     if (error) {
-      console.error('Error fetching curriculum:', error);
+      devLogger.error('Error fetching curriculum:', error);
     } else if (data) {
       const formattedData = data.map((item: { expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; [key: string]: unknown }) => ({
         ...item,
@@ -168,7 +169,7 @@ export default function AdminCurriculumPage() {
       .select('*')
       .order('id', { ascending: false });
     if (error) {
-      console.error('Error fetching personal curriculum:', error);
+      devLogger.error('Error fetching personal curriculum:', error);
     } else if (data) {
       setPersonalItems(data.map((row: { expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; detail_text?: string; detail_text_2?: string; link_2?: string; [key: string]: unknown }) => ({
         ...row,
@@ -189,7 +190,7 @@ export default function AdminCurriculumPage() {
     const { data, error } = await supabase.from('center_equipment').select('*').order('number', { ascending: true });
     if (error) {
       const err = error as { message?: string; hint?: string };
-      console.error('Error fetching center equipment:', err.message ?? err.hint ?? JSON.stringify(error));
+      devLogger.error('Error fetching center equipment:', err.message ?? err.hint ?? JSON.stringify(error));
     } else {
       setCenterEquipmentList((data ?? []) as CenterEquipmentItem[]);
     }
@@ -199,7 +200,7 @@ export default function AdminCurriculumPage() {
     if (!supabase) return;
     setEquipmentGuideLoading(true);
     const { data, error } = await supabase.from('center_equipment_guide').select('*').order('id', { ascending: false });
-    if (error) console.error('Error fetching equipment guide:', error);
+    if (error) devLogger.error('Error fetching equipment guide:', error);
     else setEquipmentGuideItems((data ?? []) as CenterEquipmentGuideItem[]);
     setEquipmentGuideLoading(false);
   };

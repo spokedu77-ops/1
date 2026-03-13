@@ -119,7 +119,7 @@ export default function AdminScreenplayUploadPage() {
         <input
           id="screenplay-file-input"
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv"
           className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
         />
@@ -132,7 +132,7 @@ export default function AdminScreenplayUploadPage() {
         ) : (
           <div className="space-y-1">
             <p className="text-slate-400 text-sm font-medium">CSV 파일을 드래그하거나 클릭해서 선택</p>
-            <p className="text-slate-600 text-xs">스크린플레이 72개 · .csv / .xlsx</p>
+            <p className="text-slate-600 text-xs">스크린플레이 72개 · .csv</p>
           </div>
         )}
       </div>

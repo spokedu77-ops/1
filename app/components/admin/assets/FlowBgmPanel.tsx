@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { useFlowBGM } from '@/app/lib/admin/hooks/useFlowBGM';
 import { useFlowPano } from '@/app/lib/admin/hooks/useFlowPano';
 
@@ -36,7 +37,7 @@ export function FlowBgmPanel() {
       await uploadBgm(file);
       bgmFileRef.current!.value = '';
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
     }
   };
 
@@ -47,7 +48,7 @@ export function FlowBgmPanel() {
       await uploadPano(file);
       panoFileRef.current!.value = '';
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
     }
   };
 

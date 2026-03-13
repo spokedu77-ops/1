@@ -27,7 +27,6 @@ type Settings = {
   targetReps: number;
   audioMode: string;
   numberRule: string;
-  signalPattern: 'random' | 'norepeat' | 'inhibit';
   intervalMode: boolean;
   intervalWork: number;
   intervalRest: number;
@@ -46,7 +45,6 @@ const defaultSettings: Settings = {
   targetReps: 20,
   audioMode: 'signal',
   numberRule: 'odd_left',
-  signalPattern: 'random',
   intervalMode: false,
   intervalWork: 30,
   intervalRest: 15,
@@ -71,7 +69,6 @@ export default function MemoryGameApp() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [signal, setSignal] = useState<Record<string, unknown> | null>(null);
   const [signalKey, setSignalKey] = useState(0);
-  const [prevSignal, setPrevSignal] = useState<Record<string, unknown> | null>(null);
   const [flashing, setFlashing] = useState(false);
   const prevBgRef = useRef<string | null>(null);
   const [stats, setStats] = useState({ timeLeft: 30, repsLeft: 20, progress: 0 });
@@ -80,6 +77,7 @@ export default function MemoryGameApp() {
   const [displayCount, setDisplayCount] = useState(0);
   const countRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const trainingContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
@@ -110,14 +108,12 @@ export default function MemoryGameApp() {
       setTimeout(() => setFlashing(false), 80);
     }
     prevBgRef.current = (sig.bg as string) ?? null;
-    setSignal((prev) => {
-      setPrevSignal(prev);
-      return sig;
-    });
+    setSignal(sig);
     setSignalKey((k) => k + 1);
   }, []);
 
   const onFinish = useCallback(() => {
+    if (document.fullscreenElement) document.exitFullscreen();
     setIsTraining(false);
     const cfg = { ...settings };
     const count = countRef.current;
@@ -138,8 +134,6 @@ export default function MemoryGameApp() {
     mode: settings.mode,
     level: settings.level,
     audioMode: settings.audioMode,
-    signalPattern: settings.signalPattern,
-    prevSignal: signal,
     colors: COLORS,
     onSignal,
     onFinish,
@@ -181,6 +175,14 @@ export default function MemoryGameApp() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [isTraining]);
 
+  useEffect(() => {
+    if (screen !== 'training') return;
+    const id = requestAnimationFrame(() => {
+      trainingContainerRef.current?.requestFullscreen?.().catch(() => {});
+    });
+    return () => cancelAnimationFrame(id);
+  }, [screen]);
+
   const startSession = useCallback(
     (cfg: Settings = settings) => {
       setSettings(cfg);
@@ -221,6 +223,7 @@ export default function MemoryGameApp() {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    if (document.fullscreenElement) document.exitFullscreen();
     setIsTraining(false);
     setFlashing(false);
     setSignal(null);
@@ -447,23 +450,6 @@ export default function MemoryGameApp() {
                 </div>
               </>
             )}
-            {settings.mode === 'basic' && (
-              <div style={S.sec}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, flexShrink: 0, border: '2px solid #3B82F6' }}>★</div>
-                  <span style={{ fontSize: '0.93rem', fontWeight: 800, color: '#0F172A' }}>신호 패턴</span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {[
-                    { id: 'random', label: '무작위', sub: '기본' },
-                    { id: 'norepeat', label: '연속 금지', sub: '직전과 같으면 재추첨' },
-                    { id: 'inhibit', label: '억제 훈련', sub: '같은 신호 2회 시 움직이지 않기' },
-                  ].map((o) => (
-                    <button key={o.id} type="button" onClick={() => set('signalPattern', o.id)} style={{ padding: '0.6rem 0.9rem', borderRadius: '0.85rem', border: `2px solid ${settings.signalPattern === o.id ? '#3B82F6' : '#E2E8F0'}`, background: settings.signalPattern === o.id ? '#EFF6FF' : '#fff', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}><span style={{ display: 'block' }}>{o.label}</span><span style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 500 }}>{o.sub}</span></button>
-                  ))}
-                </div>
-              </div>
-            )}
             {settings.mode === 'basic' && settings.level === 3 && (
               <div style={S.sec}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
@@ -542,13 +528,10 @@ export default function MemoryGameApp() {
     const dark = !flashing && (bg === '#0F172A' || bg.startsWith('#0') || bg.startsWith('#1'));
     const currentRule = NUMBER_RULES.find((r) => r.id === settings.numberRule);
     return (
-      <div style={{ position: 'fixed', inset: 0, background: bg, overflow: 'hidden', transition: flashing ? 'none' : 'background 0.06s' }}>
+      <div ref={trainingContainerRef} style={{ position: 'fixed', inset: 0, background: bg, overflow: 'hidden', transition: flashing ? 'none' : 'background 0.06s' }}>
         <style>{CSS}</style>
         {settings.mode === 'basic' && settings.level === 3 && currentRule && (
           <div style={{ position: 'absolute', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 20, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', borderRadius: '2rem', padding: '0.5rem 1.2rem', color: 'rgba(255,255,255,0.75)', fontSize: 'clamp(0.72rem,2vw,0.9rem)', fontWeight: 600, whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.12)' }}>📋 규칙: {currentRule.label}</div>
-        )}
-        {settings.mode === 'basic' && settings.signalPattern === 'inhibit' && (
-          <div style={{ position: 'absolute', bottom: settings.level === 3 ? '3.8rem' : '1.5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 20, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', borderRadius: '1.5rem', padding: '0.5rem 1rem', color: 'rgba(255,255,255,0.9)', fontSize: 'clamp(0.7rem,1.8vw,0.85rem)', fontWeight: 600, border: '1px solid rgba(255,255,255,0.15)' }}>🚫 같은 신호 2회 연속 → 움직이지 않기</div>
         )}
         <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
           <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1.2rem', color: '#fff', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -576,11 +559,6 @@ export default function MemoryGameApp() {
               <div style={{ width: '35%', borderRight: '2px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.2rem', padding: '1rem' }}>
                 <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em' }}>TEACHER</div>
                 <div style={{ fontSize: '3rem', fontWeight: 900, color: '#F97316' }}>{displayCount}</div>
-                {prevSignal && (
-                  <div style={{ width: '70%', aspectRatio: 1, borderRadius: '1rem', background: (prevSignal.bg as string) ?? '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
-                    <span style={{ color: '#fff', fontWeight: 900, fontSize: '1.5rem' }}>{(prevSignal.content as { name?: string; word?: string; label?: string })?.name ?? (prevSignal.content as { word?: string })?.word ?? (prevSignal.content as { label?: string })?.label ?? '—'}</span>
-                  </div>
-                )}
               </div>
               <div style={{ flex: 1, position: 'relative' }}>{signal ? <SignalDisplay signal={signal} animKey={signalKey} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '1.5rem', fontWeight: 700 }}>준비하세요</div>}</div>
             </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
 import DOMPurify from 'isomorphic-dompurify';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { Plus, Trash2, X, Pin, ChevronDown, RefreshCw, Edit3, Image as ImageIcon, FileText, Camera, MessageSquare, ChevronRight } from 'lucide-react';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 import { parseTemplateToFields, isFieldValid } from '@/app/lib/feedbackValidation';
@@ -536,7 +537,7 @@ export default function NoticePage() {
         urls.push(data.publicUrl);
       }
     } catch (err) {
-      console.error('이미지 업로드 오류:', err);
+      devLogger.error('이미지 업로드 오류:', err);
       toast.error('이미지 업로드에 실패했습니다.');
     } finally {
       setUploadingImages(false);

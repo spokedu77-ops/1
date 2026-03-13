@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { ADMIN_NAMES, ROLES } from '@/app/lib/constants/admin';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 // ─── 결과 타입 ────────────────────────────────────────────────────────────────
 
@@ -108,7 +109,7 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
     };
   } catch (err) {
-    console.error('[requireAdmin]', err);
+    devLogger.error('[requireAdmin]', err);
     return {
       ok: false,
       response: NextResponse.json({ error: 'Server error' }, { status: 500 }),

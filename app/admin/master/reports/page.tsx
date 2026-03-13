@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import html2canvas from 'html2canvas';
 import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp } from 'lucide-react';
 
@@ -155,7 +156,7 @@ export default function UltimateSettlementPage() {
 
       setReportData(calculatedData);
     } catch (error) {
-      console.error('Data load error:', error);
+      devLogger.error('Data load error:', error);
     } finally {
       setLoading(false);
     }

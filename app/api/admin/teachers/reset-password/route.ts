@@ -5,6 +5,7 @@
  */
 import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 function generatePassword(length = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     const email = data?.user?.email ?? '';
     return NextResponse.json({ ok: true, email, initialPassword: newPassword });
   } catch (err) {
-    console.error('[admin/teachers/reset-password]', err);
+    devLogger.error('[admin/teachers/reset-password]', err);
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
   }
 }

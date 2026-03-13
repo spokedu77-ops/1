@@ -1,5 +1,7 @@
 -- 스포키듀 프로 스크린플레이 테이블 (72개)
+-- 스크린플레이 72개 카탈로그 (mode_id = CHALLENGE, FLOW, 반응인지, 순차기억, 스트룹, 이중과제)
 -- 스크린플레이는 프로그램(144개)과 별개: 인터랙티브 모드 (인지·반응 훈련)
+-- spokedu_pro_set_updated_at() 트리거 함수는 20260308000000_spokedu_pro_commercial.sql 에 정의됨
 
 CREATE TABLE IF NOT EXISTS spokedu_pro_screenplays (
   id            SERIAL PRIMARY KEY,

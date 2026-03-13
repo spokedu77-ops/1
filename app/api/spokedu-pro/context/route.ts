@@ -4,7 +4,6 @@
  *   false — 최소 응답 (free plan) + usage는 tenant_content에서 조회
  *   true  — spokedu_pro_centers + spokedu_pro_subscriptions 실제 조회
  */
-
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';

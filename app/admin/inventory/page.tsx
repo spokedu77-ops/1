@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { 
   Plus, Trash2, X, Package, ChevronDown, 
   UserCircle2, Check, Image as ImageIcon, CheckSquare, ListOrdered, History, ExternalLink, Menu
@@ -51,14 +52,14 @@ export default function AdminInventoryPage() {
   const fetchCatalog = useCallback(async () => {
     if (!supabase) return;
     const { data, error } = await supabase.from('catalog').select('*').order('created_at', { ascending: false });
-    if (error) console.error('[inventory] fetchCatalog error:', error);
+    if (error) devLogger.error('[inventory] fetchCatalog error:', error);
     if (data) setCatalog(data);
   }, [supabase]);
 
   const fetchTeachers = useCallback(async () => {
     if (!supabase) return;
     const { data, error } = await supabase.from('users').select('id, name, role, is_active').eq('is_active', true).order('name');
-    if (error) console.error('[inventory] fetchTeachers error:', error);
+    if (error) devLogger.error('[inventory] fetchTeachers error:', error);
     if (data) setTeachers(data);
   }, [supabase]);
 

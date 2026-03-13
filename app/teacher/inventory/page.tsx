@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { 
   Package, Search, Loader2, 
   Image as ImageIcon, CheckSquare, ListOrdered, Calendar, History, ExternalLink, UserCircle2
@@ -88,7 +89,7 @@ export default function TeacherInventoryPage() {
       if (invData) setInventory(invData as InventoryItem[]);
       if (logData) setLogs(logData as InventoryLog[]);
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
       setFetchError('데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);

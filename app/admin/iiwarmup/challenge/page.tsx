@@ -6,7 +6,7 @@ import { Maximize, Minimize, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
 import { useChallengeBGM } from '@/app/lib/admin/hooks/useChallengeBGM';
-import { useChallengePrograms } from '@/app/lib/admin/hooks/useChallengePrograms';
+import { useChallengePrograms, CHALLENGE_PROGRAMS_CACHE_KEY } from '@/app/lib/admin/hooks/useChallengePrograms';
 import { useDeleteChallengeProgram } from '@/app/lib/admin/hooks/useDeleteChallengeProgram';
 import { useUpsertChallengeProgram } from '@/app/lib/admin/hooks/useUpsertChallengeProgram';
 
@@ -101,6 +101,16 @@ function ChallengePageContent() {
   const bgmFileRef = useRef<HTMLInputElement>(null);
   const { data: savedPrograms = [] } = useChallengePrograms();
 
+  useEffect(() => {
+    if (savedPrograms.length > 0 && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(CHALLENGE_PROGRAMS_CACHE_KEY, JSON.stringify(savedPrograms));
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [savedPrograms]);
+
   const [presets, setPresets] = useState<BeatPreset[]>(() => [...DEFAULT_PRESETS]);
   // presetsRef: weekFromUrl 동기화 Effect가 presets를 의존성으로 가지지 않도록 최신값 유지
   const presetsRef = useRef(presets);
@@ -149,6 +159,7 @@ function ChallengePageContent() {
     });
   }, [savedPrograms]);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const gameContainerRef = useRef<HTMLDivElement>(null);
   const upsertChallenge = useUpsertChallengeProgram();
   const deleteChallenge = useDeleteChallengeProgram();
 
@@ -245,17 +256,18 @@ function ChallengePageContent() {
   }, [weekFromUrl]); // presetsRef는 ref이므로 의존성 불필요
 
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => setIsFullscreen(document.fullscreenElement === gameContainerRef.current);
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
-    if (!document.documentElement) return;
+    const el = gameContainerRef.current;
+    if (!el) return;
     if (document.fullscreenElement) {
       await document.exitFullscreen();
     } else {
-      await document.documentElement.requestFullscreen();
+      await el.requestFullscreen();
     }
   }, []);
 
@@ -364,8 +376,8 @@ function ChallengePageContent() {
         </aside>
 
         <main className="min-h-0 flex flex-col">
-          {/* 실시간 뷰포트: blur/ring/shadow 없음 — 렉 최소화 (docs/IIWARMUP_스튜디오_렉최소화_설계.md) */}
-          <div className="min-h-[320px] flex-1 overflow-hidden bg-neutral-950">
+          {/* 실시간 뷰포트: blur/ring/shadow 없음 — 렉 최소화 (docs/IIWARMUP_스튜디오_렉최소화_설계.md). 전체화면 시 이 영역만 풀스크린. */}
+          <div ref={gameContainerRef} className="min-h-[320px] flex-1 overflow-hidden bg-neutral-950">
             {bgmLoading ? (
               <div className="flex min-h-[200px] items-center justify-center text-neutral-500">BGM 설정 로딩 중…</div>
             ) : (

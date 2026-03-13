@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { defaultTeacherEmail } from '@/app/lib/constants/domain';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 function generatePassword(length = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, email, initialPassword });
   } catch (err) {
-    console.error('[admin/teachers/create]', err);
+    devLogger.error('[admin/teachers/create]', err);
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
   }
 }

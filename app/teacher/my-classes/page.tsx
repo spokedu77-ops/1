@@ -13,6 +13,7 @@ import {
   fieldsToTemplateText
 } from '@/app/lib/feedbackValidation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 interface Session {
   id: string;
@@ -114,7 +115,7 @@ function MyClassesContent() {
       if (error) throw error;
       setSessions(data || []);
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
       setScheduleError('일정을 불러오지 못했습니다.');
     } finally {
       setLoading(false);

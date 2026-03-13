@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { useThink150Pack } from '@/app/lib/admin/hooks/useThink150Pack';
 import { useThinkBGM } from '@/app/lib/admin/hooks/useThinkBGM';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
@@ -39,7 +40,7 @@ export function ThinkAssetPanel({ selectedMonth }: ThinkAssetPanelProps) {
       await uploadBgm(file);
       bgmFileRef.current!.value = '';
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
     }
   };
 
@@ -52,7 +53,7 @@ export function ThinkAssetPanel({ selectedMonth }: ThinkAssetPanelProps) {
       await upload(month, week, 'setA', color, file);
       el.value = '';
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
     }
   };
 

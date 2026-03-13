@@ -3,6 +3,7 @@
  */
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { ACTION_KEYS, ASSET_VARIANTS, type ActionKey } from '@/app/lib/admin/constants/physics';
 import { loadAssetWithFallback } from './loadAssetWithFallback';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
@@ -60,7 +61,7 @@ export async function loadThemeAssets(
     if (error || !data) {
       // Asset Pack이 없을 때는 조용히 fallback 반환 (에러를 던지지 않음)
       // 콘솔에 경고만 표시
-      console.warn(`[loadThemeAssets] Asset Pack을 찾을 수 없습니다: ${themeId}. Fallback assets를 사용합니다.`);
+      devLogger.warn(`[loadThemeAssets] Asset Pack을 찾을 수 없습니다: ${themeId}. Fallback assets를 사용합니다.`);
       // Fallback으로 바로 반환 (4개 이미지 구조)
       const fallbackActions: Record<string, Record<string, string>> = {};
       for (const actionKey of ACTION_KEYS) {
@@ -128,7 +129,7 @@ export async function loadThemeAssets(
       objects
     };
   } catch (error: unknown) {
-    console.error('[loadThemeAssets] 예상치 못한 에러 발생:', error);
+    devLogger.error('[loadThemeAssets] 예상치 못한 에러 발생:', error);
     // Fallback: 빈 매핑 반환 (4개 이미지 구조)
     const fallbackActions: Record<string, Record<string, string>> = {};
     for (const actionKey of ACTION_KEYS) {

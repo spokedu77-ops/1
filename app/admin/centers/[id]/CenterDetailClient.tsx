@@ -8,6 +8,7 @@ import { getCenterWithRelations } from '../actions/center-detail';
 import { updateCenter, deleteCenter } from '../actions/centers';
 import { updateCenterNextActions } from '../actions/next-actions';
 import type { CenterWithRelations, CenterStatus, NextActionItem } from '@/app/lib/centers/types';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   ArrowLeft,
   Building2,
@@ -88,7 +89,7 @@ export function CenterDetailClient({
       const data = await getCenterWithRelations(id);
       setCenter(data);
     } catch (err) {
-      console.error(err);
+      devLogger.error(err);
     } finally {
       setLoading(false);
     }

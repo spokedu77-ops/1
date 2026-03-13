@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
           .list(folder, { limit: 500 });
 
         if (error) {
-          console.warn('[storage/exists] list error:', folder, error.message);
+          devLogger.warn('[storage/exists] list error:', folder, error.message);
           continue;
         }
 
@@ -54,13 +55,13 @@ export async function POST(request: NextRequest) {
           exists[path] = fileNames.has(fileName);
         }
       } catch (err) {
-        console.warn('[storage/exists] folder list failed:', folder, err);
+        devLogger.warn('[storage/exists] folder list failed:', folder, err);
       }
     }
 
     return NextResponse.json({ exists });
   } catch (err) {
-    console.error('[storage/exists] error:', err);
+    devLogger.error('[storage/exists] error:', err);
     return NextResponse.json(
       { error: 'Storage 검증 실패', exists: {} },
       { status: 500 }
