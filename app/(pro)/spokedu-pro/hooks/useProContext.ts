@@ -44,7 +44,7 @@ const FREE_CONTEXT: ProContext = {
   centers: [],
   role: null,
   entitlement: { plan: 'free', status: 'active', isPro: false },
-  billing: { priceKrw: 79900, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null },
+  billing: { priceKrw: 0, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null },
   usage: { studentCount: 0, studentLimit: 10, aiReportThisMonth: 0, aiReportMonthlyLimit: 0 },
   dbReady: false,
 };

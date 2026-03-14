@@ -1,15 +1,12 @@
 /**
  * 스포키듀 구독 v2 context API.
- * DB_READY 플래그:
- *   false — 최소 응답 (free plan) + usage는 tenant_content에서 조회
- *   true  — spokedu_pro_centers + spokedu_pro_subscriptions 실제 조회
+ * spokedu_pro_centers + spokedu_pro_subscriptions 실제 조회.
+ * DB 오류 시 free plan fallback 반환.
  */
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { getAiReportUsageThisMonth, PLAN_LIMITS } from '@/app/lib/spokedu-pro/planUtils';
-
-const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
+import { getAiReportUsageThisMonth, PLAN_LIMITS, PLAN_PRICES_KRW } from '@/app/lib/spokedu-pro/planUtils';
 
 type Plan = 'free' | 'basic' | 'pro';
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired';
@@ -40,34 +37,10 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // usage는 DB_READY 무관하게 항상 조회
   const [studentCount, aiReportThisMonth] = await Promise.all([
     getStudentCount(user.id),
     getAiReportUsageThisMonth(user.id),
   ]);
-
-  if (!DB_READY) {
-    const limits = PLAN_LIMITS['free'];
-    return NextResponse.json({
-      activeCenterId: null as string | null,
-      centers: [] as Array<{ id: string; name: string; role: CenterRole }>,
-      role: null as CenterRole | null,
-      entitlement: { plan: 'free' as Plan, status: 'active' as SubscriptionStatus, isPro: false },
-      billing: {
-        priceKrw: 79900,
-        promoPriceKrw: null as number | null,
-        promoEndAt: null as string | null,
-        currentPeriodEndAt: null as string | null,
-      },
-      usage: {
-        studentCount,
-        studentLimit: limits.students,
-        aiReportThisMonth,
-        aiReportMonthlyLimit: limits.aiReportsPerMonth,
-      },
-      dbReady: false,
-    });
-  }
 
   // ── DB 실제 조회 ────────────────────────────────────────────────────
   try {
@@ -128,7 +101,12 @@ export async function GET() {
       centers,
       role: activeCenter?.role ?? null,
       entitlement: { plan: entitlementPlan, status: entitlementStatus, isPro },
-      billing: { priceKrw: 79900, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt },
+      billing: {
+        priceKrw: PLAN_PRICES_KRW[entitlementPlan],
+        promoPriceKrw: null,
+        promoEndAt: null,
+        currentPeriodEndAt,
+      },
       usage: {
         studentCount,
         studentLimit: limits.students === Infinity ? null : limits.students,
@@ -138,13 +116,19 @@ export async function GET() {
       dbReady: true,
     });
   } catch {
+    const freeLimits = PLAN_LIMITS['free'];
     return NextResponse.json({
       activeCenterId: null,
       centers: [],
       role: null,
       entitlement: { plan: 'free' as Plan, status: 'active' as SubscriptionStatus, isPro: false },
-      billing: { priceKrw: 79900, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null },
-      usage: { studentCount, studentLimit: 10, aiReportThisMonth, aiReportMonthlyLimit: 0 },
+      billing: { priceKrw: PLAN_PRICES_KRW['free'], promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null },
+      usage: {
+        studentCount,
+        studentLimit: freeLimits.students,
+        aiReportThisMonth,
+        aiReportMonthlyLimit: freeLimits.aiReportsPerMonth,
+      },
       dbReady: false,
       error: 'db_error',
     });

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw,
-  Users, Bot, Mail, ChevronRight, AlertTriangle,
+  Users, Bot, Mail, ChevronRight, AlertTriangle, Clock,
 } from 'lucide-react';
 import { useProContext, type Plan } from '../hooks/useProContext';
 
@@ -17,6 +17,28 @@ type PlanDef = {
   badgeColor?: string;
   icon: React.ElementType;
 };
+
+// ── 트라이얼 배너 ─────────────────────────────────────────────────────────────
+function TrialBanner({ trialEndAt }: { trialEndAt: string }) {
+  const msLeft = new Date(trialEndAt).getTime() - Date.now();
+  const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+
+  return (
+    <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-200 text-sm">
+      <Clock className="w-4 h-4 shrink-0 mt-0.5 text-violet-400" />
+      <div>
+        <p className="font-bold text-violet-300">
+          무료 체험 중 — D-{daysLeft}
+        </p>
+        <p className="text-violet-400/80 text-xs mt-0.5">
+          {daysLeft > 0
+            ? `체험 기간이 ${daysLeft}일 남았습니다. 계속 사용하려면 구독을 시작하세요.`
+            : '체험 기간이 종료되었습니다. 구독하여 계속 이용하세요.'}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const PLANS: PlanDef[] = [
   {
@@ -352,6 +374,40 @@ export default function SettingsView() {
           colorClass="bg-violet-500"
         />
       </div>
+
+      {/* 트라이얼 배너 */}
+      {ctx.entitlement.status === 'trialing' && ctx.billing.currentPeriodEndAt && (
+        <TrialBanner trialEndAt={ctx.billing.currentPeriodEndAt} />
+      )}
+
+      {/* 업셀 배너: 학생 한도 80% 이상 */}
+      {usage.studentLimit !== null && usage.studentCount >= Math.floor(usage.studentLimit * 0.8) && currentPlan !== 'pro' && (
+        <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+          <div>
+            <p className="font-bold text-amber-300">원생 한도에 근접했습니다</p>
+            <p className="text-amber-400/80 text-xs mt-0.5">
+              현재 {usage.studentCount}/{usage.studentLimit}명 등록 중.
+              {currentPlan === 'free' ? ' Basic으로 업그레이드하면 50명까지 등록할 수 있습니다.' : ' Pro로 업그레이드하면 무제한 등록할 수 있습니다.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 업셀 배너: AI 리포트 한도 90% 이상 */}
+      {usage.aiReportMonthlyLimit !== null && usage.aiReportMonthlyLimit > 0 &&
+        usage.aiReportThisMonth >= Math.floor(usage.aiReportMonthlyLimit * 0.9) && currentPlan !== 'pro' && (
+        <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-200 text-sm">
+          <Bot className="w-4 h-4 shrink-0 mt-0.5 text-violet-400" />
+          <div>
+            <p className="font-bold text-violet-300">AI 리포트 한도에 근접했습니다</p>
+            <p className="text-violet-400/80 text-xs mt-0.5">
+              이번 달 {usage.aiReportThisMonth}/{usage.aiReportMonthlyLimit}회 사용.
+              Pro 플랜으로 업그레이드하면 무제한으로 생성할 수 있습니다.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 업그레이드 메시지 */}
       {upgradeMsg && (

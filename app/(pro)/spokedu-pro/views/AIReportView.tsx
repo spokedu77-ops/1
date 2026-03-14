@@ -18,6 +18,7 @@ import {
   Home,
   Award,
   RotateCcw,
+  Send,
 } from 'lucide-react';
 import {
   RadarChart,
@@ -182,6 +183,7 @@ function ReportCard({
   meta,
   onCopy,
   onReset,
+  onKakaoShare,
   copied,
   student,
 }: {
@@ -189,6 +191,7 @@ function ReportCard({
   meta: ReportMeta;
   onCopy: () => void;
   onReset: () => void;
+  onKakaoShare: () => void;
   copied: boolean;
   student: Student;
 }) {
@@ -222,6 +225,15 @@ function ReportCard({
             title="다시 작성"
           >
             <RotateCcw className="w-4 h-4 text-slate-400" />
+          </button>
+          <button
+            type="button"
+            onClick={onKakaoShare}
+            className="flex items-center gap-1.5 px-3 py-2 bg-yellow-400/10 hover:bg-yellow-400/20 border border-yellow-400/30 text-yellow-300 rounded-xl text-xs font-bold transition-all"
+            title="카카오톡으로 공유"
+          >
+            <Send className="w-3.5 h-3.5" />
+            카카오 공유
           </button>
           <button
             type="button"
@@ -384,6 +396,39 @@ export default function AIReportView() {
     setMeta(null);
     setError(null);
   }, []);
+
+  const handleKakaoShare = useCallback(async () => {
+    if (!report || !meta) return;
+    const text = [
+      `📋 [스포키듀] ${meta.studentName} 수업 리포트`,
+      ``,
+      `✨ ${report.highlight}`,
+      ``,
+      `📈 성장 포인트: ${report.growth}`,
+      ``,
+      `🏠 가정 활동: ${report.homeActivity}`,
+      ``,
+      `💬 코치 한마디: ${report.coachMessage}`,
+      ``,
+      `🎯 다음 목표: ${report.nextGoal}`,
+    ].join('\n');
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch { /* ignore */ }
+
+    // 카카오톡 앱 딥링크 (모바일) 또는 카카오톡 웹 연결
+    const kakaoUrl = `kakaotalk://send?text=${encodeURIComponent(text)}`;
+    const fallbackUrl = `https://web.kakao.com/`;
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.location.href = kakaoUrl;
+    } else {
+      // 데스크탑: 클립보드에 복사 후 안내
+      alert('리포트가 클립보드에 복사되었습니다.\n카카오톡을 열어 붙여넣기(Ctrl+V)해 주세요.');
+      window.open(fallbackUrl, '_blank');
+    }
+  }, [report, meta]);
 
   const canGenerate = !!selectedStudent && !loading && !isBlocked && !isLimitReached;
 
@@ -633,6 +678,7 @@ export default function AIReportView() {
                 meta={meta}
                 onCopy={handleCopy}
                 onReset={handleReset}
+                onKakaoShare={handleKakaoShare}
                 copied={copied}
                 student={selectedStudent}
               />

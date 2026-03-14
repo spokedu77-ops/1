@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { getPlanForUser, PLAN_LIMITS, getAiReportUsageThisMonth, incrementAiReportUsage } from '@/app/lib/spokedu-pro/planUtils';
 
 export const maxDuration = 60;
@@ -88,11 +89,43 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // ── 플랜 & 사용량 병렬 조회 ────────────────────────────────────────
-  const [plan, usageThisMonth] = await Promise.all([
+  // ── 플랜, 구독 상태, 사용량 병렬 조회 ─────────────────────────────
+  const [plan, usageThisMonth, subscriptionStatus] = await Promise.all([
     getPlanForUser(user.id),
     getAiReportUsageThisMonth(user.id),
+    (async () => {
+      try {
+        const supabase = getServiceSupabase();
+        const { data: ownedCenters } = await supabase
+          .from('spokedu_pro_centers')
+          .select('id')
+          .eq('owner_id', user.id)
+          .limit(1);
+        const centerId = ownedCenters?.[0]?.id;
+        if (!centerId) return null;
+        const { data: sub } = await supabase
+          .from('spokedu_pro_subscriptions')
+          .select('status')
+          .eq('center_id', centerId)
+          .maybeSingle();
+        return sub?.status ?? null;
+      } catch {
+        return null;
+      }
+    })(),
   ]);
+
+  // 구독 만료/연체 상태 차단
+  if (subscriptionStatus === 'past_due' || subscriptionStatus === 'canceled' || subscriptionStatus === 'expired') {
+    return NextResponse.json(
+      {
+        error: 'subscription_inactive',
+        status: subscriptionStatus,
+        message: '구독이 활성 상태가 아닙니다. 결제 정보를 확인해 주세요.',
+      },
+      { status: 403 }
+    );
+  }
 
   const monthlyLimit = PLAN_LIMITS[plan].aiReportsPerMonth;
 

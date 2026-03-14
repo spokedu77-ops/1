@@ -1,7 +1,6 @@
 /**
  * 플랜 유틸리티.
  * 사용자 플랜 조회 + 기능 한도 상수 + AI 리포트 사용량 추적.
- * tenant_content 저장소를 사용하므로 SPOKEDU_PRO_DB_READY 무관하게 동작.
  */
 
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
@@ -14,11 +13,14 @@ export const PLAN_LIMITS: Record<Plan, { students: number; aiReportsPerMonth: nu
   pro:   { students: Infinity, aiReportsPerMonth: Infinity },
 };
 
-const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
+export const PLAN_PRICES_KRW: Record<Plan, number> = {
+  free:  0,
+  basic: 49900,
+  pro:   79900,
+};
 
-/** 사용자의 현재 활성 플랜 반환. DB_READY=false 또는 조회 실패 시 'free'. */
+/** 사용자의 현재 활성 플랜 반환. 조회 실패 시 'free'. */
 export async function getPlanForUser(userId: string): Promise<Plan> {
-  if (!DB_READY) return 'free';
   try {
     const supabase = getServiceSupabase();
 
@@ -89,35 +91,44 @@ export async function incrementAiReportUsage(userId: string): Promise<void> {
     const supabase = getServiceSupabase();
     const monthKey = currentMonthKey();
 
-    const { data } = await supabase
-      .from('spokedu_pro_tenant_content')
-      .select('draft_value, version')
-      .eq('owner_id', userId)
-      .eq('key', 'ai_report_usage')
-      .maybeSingle();
+    // 원자적 증가: RPC로 처리하여 race condition 방지
+    const { error } = await supabase.rpc('increment_ai_report_usage', {
+      p_owner_id: userId,
+      p_month_key: monthKey,
+    });
 
-    const existing = data?.draft_value as UsageValue | null;
-    const months: Record<string, number> = {
-      ...(existing?.months ?? {}),
-      [monthKey]: (existing?.months?.[monthKey] ?? 0) + 1,
-    };
-    const newVersion = (data?.version ?? 0) + 1;
-    const now = new Date().toISOString();
+    if (error) {
+      // RPC 미존재 시 fallback: read-modify-write (단일 요청 환경 대비)
+      const { data } = await supabase
+        .from('spokedu_pro_tenant_content')
+        .select('draft_value, version')
+        .eq('owner_id', userId)
+        .eq('key', 'ai_report_usage')
+        .maybeSingle();
 
-    await supabase
-      .from('spokedu_pro_tenant_content')
-      .upsert(
-        {
-          owner_id: userId,
-          key: 'ai_report_usage',
-          draft_value: { months },
-          published_value: { months },
-          version: newVersion,
-          draft_updated_at: now,
-          published_at: now,
-        },
-        { onConflict: 'owner_id,key' }
-      );
+      const existing = data?.draft_value as UsageValue | null;
+      const months: Record<string, number> = {
+        ...(existing?.months ?? {}),
+        [monthKey]: (existing?.months?.[monthKey] ?? 0) + 1,
+      };
+      const newVersion = (data?.version ?? 0) + 1;
+      const now = new Date().toISOString();
+
+      await supabase
+        .from('spokedu_pro_tenant_content')
+        .upsert(
+          {
+            owner_id: userId,
+            key: 'ai_report_usage',
+            draft_value: { months },
+            published_value: { months },
+            version: newVersion,
+            draft_updated_at: now,
+            published_at: now,
+          },
+          { onConflict: 'owner_id,key' }
+        );
+    }
   } catch {
     // 사용량 저장 실패는 무시 (리포트 생성 자체는 성공으로 처리)
   }

@@ -1,23 +1,18 @@
 /**
  * POST /api/spokedu-pro/context/bootstrap
- * 최초 접속 시 센터 + 무료 구독 자동 생성.
- * SPOKEDU_PRO_DB_READY=true 환경에서만 실제 동작.
+ * 최초 접속 시 센터 + 14일 체험 구독 자동 생성.
  * 이미 센터가 있으면 기존 센터 반환 (idempotent).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
-const DB_READY = process.env.SPOKEDU_PRO_DB_READY === 'true';
+const TRIAL_DAYS = 14;
 
 export async function POST(req: NextRequest) {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  if (!DB_READY) {
-    return NextResponse.json({ ok: true, bootstrapped: false, reason: 'db_not_ready' });
-  }
 
   try {
     const supabase = getServiceSupabase();
@@ -38,10 +33,13 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       if (!sub) {
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
         await supabase.from('spokedu_pro_subscriptions').insert({
           center_id: existing.id,
-          plan: 'free',
-          status: 'active',
+          plan: 'basic',
+          status: 'trialing',
+          trial_end: trialEnd.toISOString(),
         });
       }
 
@@ -73,14 +71,20 @@ export async function POST(req: NextRequest) {
       role: 'owner',
     });
 
-    // 5. 무료 구독 생성
+    // 5. 14일 체험 구독 생성 (basic 플랜으로 체험)
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
     await supabase.from('spokedu_pro_subscriptions').insert({
       center_id: center.id,
-      plan: 'free',
-      status: 'active',
+      plan: 'basic',
+      status: 'trialing',
+      trial_end: trialEnd.toISOString(),
     });
 
-    return NextResponse.json({ ok: true, bootstrapped: true, centerId: center.id, centerName: center.name }, { status: 201 });
+    return NextResponse.json(
+      { ok: true, bootstrapped: true, centerId: center.id, centerName: center.name, trialDays: TRIAL_DAYS },
+      { status: 201 }
+    );
   } catch (err) {
     return NextResponse.json({ error: 'internal', detail: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }

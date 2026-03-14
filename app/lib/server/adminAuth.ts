@@ -93,7 +93,7 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
       u &&
       (isAdminRole(u.role) ||
         u.is_admin === true ||
-        (typeof u.name === 'string' && (ADMIN_NAMES as readonly string[]).includes(u.name)))
+        (typeof u.name === 'string' && ADMIN_NAMES.includes(u.name)))
     ) {
       return { ok: true, userId: uid };
     }
