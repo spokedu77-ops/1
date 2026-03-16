@@ -19,6 +19,9 @@ import DataCenterView from './views/DataCenterView';
 import AIReportView from './views/AIReportView';
 import AssistantToolsView from './views/AssistantToolsView';
 import SettingsView from './views/SettingsView';
+import OnboardingWizard from './components/OnboardingWizard';
+import { SpokeduProErrorBoundary } from './components/SpokeduProErrorBoundary';
+import { useProContext } from './hooks/useProContext';
 
 export default function SpokeduProClient({
   isEditMode = false,
@@ -29,6 +32,12 @@ export default function SpokeduProClient({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const { viewId, switchView, drawerOpen, closeDrawer, showToast } = useSpokeduProUI('roadmap');
+  const { ctx, loading: ctxLoading, refresh } = useProContext();
+  const [onboardingDismissed, setOnboardingDismissed] = useState(
+    () => typeof window !== 'undefined' && !!localStorage.getItem('onboardingDismissed')
+  );
+  const showOnboarding = !ctxLoading && ctx.activeCenterId === null && !onboardingDismissed;
+
   const [toolkitOpen, setToolkitOpen] = useState(false);
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
   const [drawerContext, setDrawerContext] = useState<{ role?: string; themeKey?: string } | null>(null);
@@ -135,6 +144,21 @@ export default function SpokeduProClient({
 
   return (
     <div ref={rootRef} className="spokedu-pro flex flex-col h-full w-full overflow-hidden bg-[#0F172A] text-[#F8FAFC]">
+      {showOnboarding && (
+        <OnboardingWizard
+          onComplete={() => {
+            if (typeof window !== 'undefined') localStorage.setItem('onboardingDismissed', '1');
+            setOnboardingDismissed(true);
+            refresh();
+          }}
+          onDismiss={() => {
+            if (typeof window !== 'undefined') localStorage.setItem('onboardingDismissed', '1');
+            setOnboardingDismissed(true);
+          }}
+          onSwitchView={switchView}
+        />
+      )}
+      <SpokeduProErrorBoundary>
       <div className="flex flex-1 min-h-0">
       <SpokeduProAside
         viewId={viewId}
@@ -159,7 +183,7 @@ export default function SpokeduProClient({
           <AIReportView />
         </div>
         <div className={`view-content ${viewId === 'tools' ? 'active' : ''}`}>
-          <AssistantToolsView />
+          <AssistantToolsView onGoToDataCenter={() => switchView('data-center')} />
         </div>
         <div className={`view-content ${viewId === 'settings' ? 'active' : ''}`}>
           <SettingsView />
@@ -204,6 +228,7 @@ export default function SpokeduProClient({
         onToast={showToast}
       />
       </div>
+      </SpokeduProErrorBoundary>
     </div>
   );
 }

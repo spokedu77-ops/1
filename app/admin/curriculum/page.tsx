@@ -16,9 +16,11 @@ import {
   EQUIPMENT_GUIDE_NUMBERS,
   EQUIPMENT_GUIDE_STEPS,
 } from '@/app/lib/curriculum/constants';
-import { 
-  Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2, 
-  CheckSquare, Box, ListOrdered, Play, AlertCircle, Link2, ArrowLeft
+import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
+import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
+import {
+  Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2,
+  CheckSquare, Box, ListOrdered, Play, AlertCircle, Link2, ArrowLeft, ChevronRight
 } from 'lucide-react';
 
 export type MainCurriculumTab = 'personal' | 'center';
@@ -57,8 +59,6 @@ interface PersonalCurriculumItem {
   equipment?: string[];
   steps?: string[];
   detailText?: string;
-  detailText2?: string;
-  link2?: string;
   [key: string]: unknown;
 }
 
@@ -82,6 +82,17 @@ interface CenterEquipmentGuideItem {
   activity_text?: string | null;
 }
 
+/** Supabase 등 객체 에러의 message를 추출해 [object Object] 대신 읽을 수 있는 문자열 반환 */
+function formatSaveError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err != null && typeof err === 'object' && 'message' in err) {
+    const m = (err as { message?: unknown }).message;
+    if (typeof m === 'string') return m;
+  }
+  if (err != null && typeof err === 'object') return JSON.stringify(err);
+  return String(err);
+}
+
 export default function AdminCurriculumPage() {
   const currentMonth = new Date().getMonth() + 1;
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
@@ -91,6 +102,7 @@ export default function AdminCurriculumPage() {
     const tabs = getSubTabsForCategory(DEFAULT_PERSONAL_CATEGORY);
     return tabs[0] ?? '';
   });
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedWeek, setSelectedWeek] = useState(() => getCurrentWeekOfMonth());
   const [items, setItems] = useState<CurriculumItem[]>([]);
@@ -114,9 +126,10 @@ export default function AdminCurriculumPage() {
     title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '',
   });
   const [is8huiModalOpen, setIs8huiModalOpen] = useState(false);
-  const [editing8huiSlot, setEditing8huiSlot] = useState<number | null>(null);
+  const [is8huiSlotPickerOpen, setIs8huiSlotPickerOpen] = useState(false);
+  const [editing8huiSubTab, setEditing8huiSubTab] = useState<string | null>(null);
   const [editing8huiId, setEditing8huiId] = useState<number | null>(null);
-  const [eightHuiForm, setEightHuiForm] = useState({ title: '', detailText: '', detailText2: '', url: '', link2: '' });
+  const [eightHuiForm, setEightHuiForm] = useState({ title: '', detailText: '', url: '' });
 
   const [centerViewMode, setCenterViewMode] = useState<'center' | 'equipment-guide'>('center');
   const [centerEquipmentList, setCenterEquipmentList] = useState<CenterEquipmentItem[]>([]);
@@ -171,15 +184,13 @@ export default function AdminCurriculumPage() {
     if (error) {
       devLogger.error('Error fetching personal curriculum:', error);
     } else if (data) {
-      setPersonalItems(data.map((row: { expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; detail_text?: string; detail_text_2?: string; link_2?: string; [key: string]: unknown }) => ({
+      setPersonalItems(data.map((row: { expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; detail_text?: string; [key: string]: unknown }) => ({
         ...row,
         expertTip: row.expert_tip,
         checkList: row.check_list,
         equipment: row.equipment,
         steps: row.steps,
-        detailText: row.detail_text,
-        detailText2: row.detail_text_2,
-        link2: row.link_2,
+        detailText: row.detail_text ?? row.expert_tip,
       })));
     }
     setPersonalLoading(false);
@@ -223,6 +234,104 @@ export default function AdminCurriculumPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run when supabase ready
   }, [supabase]);
 
+  // 8회기(기존 1회기~8회기 + 링크2개) -> 16개(1-1~8-2) 자동 생성 (기존 데이터는 보존)
+  useEffect(() => {
+    const migrate8huiToRoutine16 = async () => {
+      if (!supabase) return;
+      try {
+        const { data: existing16, error: e16 } = await supabase
+          .from('personal_curriculum')
+          .select('id, sub_tab')
+          .eq('category', '신체 기능향상 8회기')
+          .in('sub_tab', EIGHTH_SESSION_LABELS as unknown as string[]);
+        if (e16) throw e16;
+        if ((existing16 ?? []).length >= 16) return;
+
+        const legacyLabels = ['1회기', '2회기', '3회기', '4회기', '5회기', '6회기', '7회기', '8회기'];
+        const { data: legacy, error: eLegacy } = await supabase
+          .from('personal_curriculum')
+          .select('*')
+          .eq('category', '신체 기능향상 8회기')
+          .in('sub_tab', legacyLabels);
+        if (eLegacy) throw eLegacy;
+
+        const toInsert: Array<Record<string, unknown>> = [];
+
+        for (const legacyRow of legacy ?? []) {
+          const legacySub = String((legacyRow as { sub_tab?: unknown }).sub_tab ?? '');
+          const sessionNum = legacyLabels.indexOf(legacySub) + 1;
+          if (sessionNum <= 0) continue;
+
+          const url1 = String((legacyRow as { url?: unknown }).url ?? '') || null;
+          const detail1 = String((legacyRow as { detail_text?: unknown }).detail_text ?? '') || null;
+
+          const url2 = String((legacyRow as { link_2?: unknown }).link_2 ?? '') || null;
+          const detail2 = String((legacyRow as { detail_text_2?: unknown }).detail_text_2 ?? '') || null;
+
+          const type1 = (legacyRow as { type?: unknown }).type;
+          const typeValue = typeof type1 === 'string' && type1 ? type1 : 'youtube';
+
+          toInsert.push({
+            category: '신체 기능향상 8회기',
+            sub_tab: `${sessionNum}-1`,
+            title: `${sessionNum}-1`,
+            url: url1,
+            type: typeValue,
+            thumbnail: (legacyRow as { thumbnail?: unknown }).thumbnail ?? null,
+            expert_tip: detail1 || null,
+            check_list: [],
+            equipment: [],
+            steps: [],
+          });
+          toInsert.push({
+            category: '신체 기능향상 8회기',
+            sub_tab: `${sessionNum}-2`,
+            title: `${sessionNum}-2`,
+            url: url2,
+            type: typeValue,
+            thumbnail: null,
+            expert_tip: detail2 || null,
+            check_list: [],
+            equipment: [],
+            steps: [],
+          });
+        }
+
+        // legacy가 없더라도 16개는 만들어 두기(빈 항목)
+        if (toInsert.length === 0) {
+          for (const label of EIGHTH_SESSION_LABELS as unknown as string[]) {
+            toInsert.push({
+              category: '신체 기능향상 8회기',
+              sub_tab: label,
+              title: label,
+              url: null,
+              type: 'youtube',
+              thumbnail: null,
+              expert_tip: null,
+              check_list: [],
+              equipment: [],
+              steps: [],
+            });
+          }
+        }
+
+        // 이미 존재하는 sub_tab은 제외
+        const existingSet = new Set((existing16 ?? []).map((r: { sub_tab?: string }) => r.sub_tab));
+        const uniqueInsert = toInsert.filter((r) => !existingSet.has(String(r.sub_tab)));
+        if (uniqueInsert.length === 0) return;
+
+        const { error: eIns } = await supabase.from('personal_curriculum').insert(uniqueInsert);
+        if (eIns) throw eIns;
+
+        await fetchPersonalItems();
+      } catch (err) {
+        devLogger.error('8hui migrate failed:', err);
+      }
+    };
+    void migrate8huiToRoutine16();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- migrate once when supabase ready
+  }, [supabase]);
+
   const filteredItems = useMemo(() => {
     return items.filter((item: CurriculumItem) => item.month === selectedMonth && item.week === selectedWeek);
   }, [items, selectedMonth, selectedWeek]);
@@ -238,8 +347,6 @@ export default function AdminCurriculumPage() {
       return { label, item };
     });
   }, [personalItems]);
-
-  const currentSubTabs = useMemo(() => getSubTabsForCategory(categoryTab), [categoryTab]);
 
   const currentEquipment = useMemo(() => {
     return centerEquipmentList.find((e) => e.number === selectedEquipmentNumber) ?? null;
@@ -316,8 +423,7 @@ export default function AdminCurriculumPage() {
       await fetchItems();
       closeInputModal();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      toast.error('저장 중 오류 발생: ' + msg);
+      toast.error('저장 중 오류 발생: ' + formatSaveError(err));
     }
   };
 
@@ -383,10 +489,9 @@ export default function AdminCurriculumPage() {
     }
   };
 
-  const handleCategoryChange = (category: string) => {
+  const handleCategorySelect = (category: string, sub: string) => {
     setCategoryTab(category);
-    const tabs = getSubTabsForCategory(category);
-    setSubTab(tabs[0] ?? '');
+    setSubTab(sub);
   };
 
   const handlePersonalSubmit = async (e: React.FormEvent) => {
@@ -425,7 +530,7 @@ export default function AdminCurriculumPage() {
       setPersonalEditingId(null);
       setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
     } catch (err: unknown) {
-      toast.error('저장 중 오류: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error('저장 중 오류: ' + formatSaveError(err));
     }
   };
 
@@ -469,40 +574,35 @@ export default function AdminCurriculumPage() {
     setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
   };
 
-  const open8huiEdit = (slotIndex: number, item: PersonalCurriculumItem | null) => {
-    setEditing8huiSlot(slotIndex + 1);
+  const open8huiEdit = (subTabLabel: string, item: PersonalCurriculumItem | null) => {
+    setEditing8huiSubTab(subTabLabel);
     setEditing8huiId(item?.id ?? null);
     setEightHuiForm({
-      title: item?.title ?? `${slotIndex + 1}회기`,
+      title: item?.title ?? subTabLabel,
       detailText: item?.detailText ?? '',
-      detailText2: item?.detailText2 ?? '',
       url: item?.url ?? '',
-      link2: item?.link2 ?? '',
     });
     setIs8huiModalOpen(true);
   };
 
   const close8huiModal = () => {
     setIs8huiModalOpen(false);
-    setEditing8huiSlot(null);
+    setEditing8huiSubTab(null);
     setEditing8huiId(null);
-    setEightHuiForm({ title: '', detailText: '', detailText2: '', url: '', link2: '' });
+    setEightHuiForm({ title: '', detailText: '', url: '' });
   };
 
   const handle8huiSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase || editing8huiSlot == null) return;
-    const subTabLabel = `${editing8huiSlot}회기`;
+    if (!supabase || editing8huiSubTab == null) return;
+    const subTabLabel = editing8huiSubTab;
     const payload = {
       category: '신체 기능향상 8회기',
       sub_tab: subTabLabel,
       title: eightHuiForm.title,
-      detail_text: eightHuiForm.detailText || null,
-      detail_text_2: eightHuiForm.detailText2 || null,
       url: eightHuiForm.url || null,
-      link_2: eightHuiForm.link2 || null,
       type: 'youtube',
-      expert_tip: null,
+      expert_tip: eightHuiForm.detailText || null,
       check_list: [],
       equipment: [],
       steps: [],
@@ -520,7 +620,7 @@ export default function AdminCurriculumPage() {
       await fetchPersonalItems();
       close8huiModal();
     } catch (err: unknown) {
-      toast.error('저장 중 오류: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error('저장 중 오류: ' + formatSaveError(err));
     }
   };
 
@@ -553,7 +653,7 @@ export default function AdminCurriculumPage() {
       await fetchCenterEquipment();
       closeEquipmentMasterEdit();
     } catch (err: unknown) {
-      toast.error('저장 중 오류: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error('저장 중 오류: ' + formatSaveError(err));
     }
   };
 
@@ -600,7 +700,7 @@ export default function AdminCurriculumPage() {
       await fetchEquipmentGuide();
       closeEquipmentEdit();
     } catch (err: unknown) {
-      toast.error('저장 중 오류: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error('저장 중 오류: ' + formatSaveError(err));
     }
   };
 
@@ -671,89 +771,52 @@ export default function AdminCurriculumPage() {
 
              {mainTab === 'personal' ? (
                <>
-                 {/* 2단 카테고리 탭: 한 영역에서 반응형 줄바꿈 */}
-                 <div className="w-full flex flex-wrap gap-2 bg-white border border-slate-100 p-2.5 sm:p-3 rounded-2xl shadow-sm">
-                   {[...PERSONAL_CATEGORIES_ROW1, ...PERSONAL_CATEGORIES_ROW2].map((cat) => (
-                     <button
-                       key={cat}
-                       type="button"
-                       onClick={() => handleCategoryChange(cat)}
-                       className={`shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap
-                         ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100'}`}
-                     >
-                       {cat}
-                     </button>
-                   ))}
-                 </div>
-                 {/* 3단: 카테고리별 하위 탭 */}
-                 {currentSubTabs.length > 0 && (
-                   <div className="w-full flex flex-wrap gap-1.5">
-                     {currentSubTabs.map((tabLabel) => (
-                       <button
-                         key={tabLabel}
-                         type="button"
-                         onClick={() => setSubTab(tabLabel)}
-                         className={`px-4 py-2 rounded-xl text-sm font-bold transition-all
-                           ${subTab === tabLabel ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-400 border border-slate-100 hover:border-indigo-200'}`}
-                       >
-                         {tabLabel}
-                       </button>
-                     ))}
-                   </div>
-                 )}
+                 <CurriculumCategoryPicker
+                   category={categoryTab}
+                   subTab={subTab}
+                   onSelect={handleCategorySelect}
+                   open={categoryPickerOpen}
+                   onOpenChange={setCategoryPickerOpen}
+                 />
                  {/* 개인 수업 목록 (8회기는 카드 8개 + 전용 모달) */}
                  {personalLoading ? (
                    <div className="flex justify-center py-12">
                      <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
                    </div>
-                 ) : categoryTab === '신체 기능향상 8회기' ? (
-                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                     {eighthSessionSlots.map(({ label, item }, idx) => {
-                       const thumb1 = item?.url ? (getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '') : '';
-                       const thumb2 = item?.link2 ? (getYouTubeId(item.link2) ? `https://img.youtube.com/vi/${getYouTubeId(item.link2)}/hqdefault.jpg` : '') : '';
-                       return (
-                         <div
-                           key={label}
-                           className="group relative cursor-pointer rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 transition-all duration-200"
-                           onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } else open8huiEdit(idx, null); }}
-                         >
-                           <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button type="button" onClick={(e) => { e.stopPropagation(); open8huiEdit(idx, item); }} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-indigo-600 shadow-md"><Edit2 size={16}/></button>
-                             {item && (
-                               <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"><Trash2 size={16}/></button>
-                             )}
-                           </div>
-                           <div className="aspect-[16/9] grid grid-cols-2 gap-0.5 bg-slate-100">
-                             <div className="relative bg-slate-200 flex items-center justify-center min-h-0">
-                               {thumb1 ? (
-                                 <img src={thumb1} alt="" className="w-full h-full object-cover" />
-                               ) : (
-                                 <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
-                                   <Play size={28} className="text-slate-400" />
-                                 </div>
-                               )}
-                               <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-black/60 text-white">1</span>
-                             </div>
-                             <div className="relative bg-slate-200 flex items-center justify-center min-h-0">
-                               {thumb2 ? (
-                                 <img src={thumb2} alt="" className="w-full h-full object-cover" />
-                               ) : (
-                                 <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
-                                   <Play size={28} className="text-slate-400" />
-                                 </div>
-                               )}
-                               <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-black/60 text-white">2</span>
-                             </div>
-                           </div>
-                           <div className="p-4">
-                             <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
-                             <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
-                           </div>
-                         </div>
-                       );
-                     })}
-                   </div>
-                 ) : filteredPersonalItems.length > 0 ? (
+                ) : categoryTab === '신체 기능향상 8회기' ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {eighthSessionSlots.map(({ label, item }) => {
+                      const thumb = item?.url && getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '';
+                      return (
+                        <div
+                          key={label}
+                          className="group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                          onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } else open8huiEdit(label, null); }}
+                        >
+                          <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); open8huiEdit(label, item); }} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-indigo-600 shadow-md"><Edit2 size={16}/></button>
+                            {item && (
+                              <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"><Trash2 size={16}/></button>
+                            )}
+                          </div>
+                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                            {thumb ? (
+                              <img src={thumb} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                <Play size={28} className="text-slate-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
+                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : filteredPersonalItems.length > 0 ? (
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      {filteredPersonalItems.map((item: PersonalCurriculumItem) => (
                        <div key={item.id} className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer" onClick={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}>
@@ -802,11 +865,11 @@ export default function AdminCurriculumPage() {
                      <button type="button" onClick={() => setCenterViewMode('center')} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold text-sm mb-2">
                        <ArrowLeft size={18} /> 커리큘럼으로
                      </button>
-                     <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 w-full">
+                     <div className="w-full grid grid-cols-12 gap-1 sm:gap-2">
                        {EQUIPMENT_GUIDE_NUMBERS.map((num) => (
                          <button key={num} type="button" onClick={() => setSelectedEquipmentNumber(num)}
-                           className={`min-h-[48px] sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all border font-black text-sm sm:text-base touch-manipulation
-                             ${selectedEquipmentNumber === num ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
+                           className={`min-h-[44px] sm:min-h-[48px] rounded-lg sm:rounded-xl flex items-center justify-center transition-all border font-black text-xs sm:text-sm touch-manipulation
+                             ${selectedEquipmentNumber === num ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
                          >
                            {num}번
                          </button>
@@ -874,36 +937,27 @@ export default function AdminCurriculumPage() {
                    </>
                  ) : (
                    <>
-                 {/* 센터 고정 섹션: 교구 가이드라인 클릭 시 전용 뷰 */}
-                 <div className="w-full flex flex-wrap gap-3">
-                   {CENTER_SECTIONS.map((section) => (
-                     <button
-                       key={section.id}
-                       type="button"
-                       onClick={() => section.id === 'sports-equipment-guide' ? setCenterViewMode('equipment-guide') : undefined}
-                       className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left"
-                     >
-                       <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                         <Box size={20} />
-                       </div>
-                       <span className="font-bold text-slate-800">{section.label}</span>
-                     </button>
-                   ))}
-                 </div>
-                 {/* 센터 수업: Admin은 월 제한 없음 (전체 선택 가능) */}
-                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 w-full">
-                   {MONTHS.map((m: number) => (
-                     <button
-                       key={m}
-                       type="button"
-                       onClick={() => setSelectedMonth(m)}
-                       className={`min-h-[48px] sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all border font-black text-sm sm:text-base touch-manipulation
-                         ${selectedMonth === m ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
-                     >
-                       {m}월
-                     </button>
-                   ))}
-                 </div>
+                 {/* 센터 고정 섹션: 교구 가이드라인 진입 카드 */}
+                 <button
+                   type="button"
+                   onClick={() => setCenterViewMode('equipment-guide')}
+                   className="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-slate-50 border border-indigo-100/80 shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.99] transition-all text-left touch-manipulation"
+                 >
+                   <div className="w-14 h-14 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/25">
+                     <Box size={28} strokeWidth={2} />
+                   </div>
+                   <div className="flex-1 min-w-0">
+                     <span className="block font-black text-slate-900 text-base sm:text-lg">{CENTER_SECTIONS[0].label}</span>
+                     <span className="block text-xs sm:text-sm text-slate-500 font-medium mt-0.5">1~12번 교구 · 단계별 활동 보기</span>
+                   </div>
+                   <ChevronRight size={22} className="text-slate-300 shrink-0" />
+                 </button>
+                 <CurriculumMonthWeekPicker
+                   selectedMonth={selectedMonth}
+                   selectedWeek={selectedWeek}
+                   onMonthChange={setSelectedMonth}
+                   onWeekChange={setSelectedWeek}
+                 />
 
                  <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
                      <Sparkles size={120} className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4" />
@@ -914,17 +968,6 @@ export default function AdminCurriculumPage() {
                          <h2 className="text-2xl md:text-3xl font-black mb-2">{currentTheme.title}</h2>
                          <p className="text-indigo-100 font-medium text-sm md:text-base">{currentTheme.desc}</p>
                      </div>
-                 </div>
-
-                 <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
-                     {WEEKS.map((w: number) => (
-                         <button key={w} type="button" onClick={() => setSelectedWeek(w)}
-                             className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all
-                             ${selectedWeek === w ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                         >
-                             {w}주차
-                         </button>
-                     ))}
                  </div>
 
                  <div className="w-full">
@@ -995,9 +1038,48 @@ export default function AdminCurriculumPage() {
         </button>
       )}
       {mainTab === 'personal' && (
-        <button type="button" className="fixed bottom-8 right-8 w-16 h-16 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 shadow-slate-900/40" onClick={openPersonalModal}>
+        <button
+          type="button"
+          className="fixed bottom-8 right-8 w-16 h-16 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 shadow-slate-900/40"
+          onClick={() => {
+            if (categoryTab === '신체 기능향상 8회기') {
+              setIs8huiSlotPickerOpen(true);
+            } else {
+              openPersonalModal();
+            }
+          }}
+        >
           <Plus size={32} />
         </button>
+      )}
+
+      {is8huiSlotPickerOpen && (
+        <div className="fixed inset-0 z-[62] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIs8huiSlotPickerOpen(false)} />
+          <div className="relative bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-black text-slate-900">어떤 회기를 등록/수정할까요?</h3>
+              <button type="button" onClick={() => setIs8huiSlotPickerOpen(false)} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {eighthSessionSlots.map(({ label, item }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    open8huiEdit(label, item);
+                    setIs8huiSlotPickerOpen(false);
+                  }}
+                  className="py-3 px-2 rounded-xl text-sm font-bold border transition-all touch-manipulation bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {isDetailModalOpen && selectedItem && (
@@ -1010,29 +1092,27 @@ export default function AdminCurriculumPage() {
                        <h2 className="text-xl font-black text-white">{selectedItem.title ?? selectedItem.sub_tab}</h2>
                        <button type="button" onClick={() => setIsDetailModalOpen(false)} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
                      </div>
-                     <div className="p-6 space-y-6 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
-                       <section className="space-y-3">
-                         <div className="flex items-center gap-2 text-indigo-400 font-black text-xs uppercase">링크 1 세부내용</div>
+                     <div className="p-6 space-y-4 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
+                       <div className="space-y-2">
+                         <span className="text-xs font-black text-slate-400 uppercase">제목</span>
+                         <p className="text-white font-bold">{selectedItem.title || selectedItem.sub_tab || '—'}</p>
+                       </div>
+                       <div className="space-y-2">
+                         <span className="text-xs font-black text-slate-400 uppercase">세부내용</span>
                          <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
-                           <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText || '등록된 내용이 없습니다.'}</p>
-                           {selectedItem.url?.trim() && (
-                             <a href={selectedItem.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
-                               <Link2 size={16} /> 링크 1 열기
-                             </a>
-                           )}
+                           <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap">{selectedItem.detailText || '등록된 내용이 없습니다.'}</p>
                          </div>
-                       </section>
-                       <section className="space-y-3">
-                         <div className="flex items-center gap-2 text-indigo-400 font-black text-xs uppercase">링크 2 세부내용</div>
-                         <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
-                           <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText2 ?? '등록된 내용이 없습니다.'}</p>
-                           {selectedItem.link2?.trim() ? (
-                             <a href={selectedItem.link2} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
-                               <Link2 size={16} /> 링크 2 열기
-                             </a>
-                           ) : null}
-                         </div>
-                       </section>
+                       </div>
+                       <div className="space-y-2">
+                         <span className="text-xs font-black text-slate-400 uppercase">URL (선택)</span>
+                         {selectedItem.url?.trim() ? (
+                           <a href={selectedItem.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
+                             <Link2 size={16} /> 링크 열기
+                           </a>
+                         ) : (
+                           <p className="text-slate-500 text-sm">등록된 링크가 없습니다.</p>
+                         )}
+                       </div>
                      </div>
                    </>
                  ) : (
@@ -1236,34 +1316,26 @@ export default function AdminCurriculumPage() {
         </div>
       )}
 
-      {is8huiModalOpen && editing8huiSlot != null && (
+      {is8huiModalOpen && editing8huiSubTab != null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={close8huiModal} />
           <form onSubmit={handle8huiSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-black">{editing8huiId ? '8회기 수정' : `${editing8huiSlot}회기 등록`}</h2>
+              <h2 className="text-xl font-black">{editing8huiId ? '루틴 프로그램 수정' : `${editing8huiSubTab} 등록`}</h2>
               <X className="text-slate-400 cursor-pointer" onClick={close8huiModal} />
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400 uppercase">제목</label>
-                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="예: 1회기" value={eightHuiForm.title} onChange={e => setEightHuiForm(f => ({ ...f, title: e.target.value }))} />
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="예: 1-1" value={eightHuiForm.title} onChange={e => setEightHuiForm(f => ({ ...f, title: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">링크 1 세부내용</label>
-                <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="링크 1 관련 설명" value={eightHuiForm.detailText} onChange={e => setEightHuiForm(f => ({ ...f, detailText: e.target.value }))} />
+                <label className="text-xs font-black text-slate-400 uppercase">세부내용</label>
+                <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="관련 설명" value={eightHuiForm.detailText} onChange={e => setEightHuiForm(f => ({ ...f, detailText: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">링크 1 URL (선택)</label>
+                <label className="text-xs font-black text-slate-400 uppercase">URL (선택)</label>
                 <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={eightHuiForm.url} onChange={e => setEightHuiForm(f => ({ ...f, url: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">링크 2 세부내용</label>
-                <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="링크 2 관련 설명" value={eightHuiForm.detailText2} onChange={e => setEightHuiForm(f => ({ ...f, detailText2: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">링크 2 URL (선택)</label>
-                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={eightHuiForm.link2} onChange={e => setEightHuiForm(f => ({ ...f, link2: e.target.value }))} />
               </div>
             </div>
             <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all text-center">저장</button>

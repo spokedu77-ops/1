@@ -108,7 +108,7 @@ export default function ClassManagementPage() {
         .from('sessions')
         .select('id, created_by, title, memo')
         .lt('end_at', now)
-        .in('status', ['opened', null])
+        .or('status.eq.opened,status.is.null')
         .not('status', 'in', '("cancelled","postponed","deleted")');
       
       if (endedSessions && endedSessions.length > 0) {
@@ -130,7 +130,6 @@ export default function ClassManagementPage() {
           }
         }
 
-        const successCountByTeacher: Record<string, number> = {};
         for (const row of countLogs) {
           const { error: oneError } = await supabase.from('session_count_logs').insert(row);
           if (oneError) {
@@ -138,24 +137,7 @@ export default function ClassManagementPage() {
             if (oneError.code !== '23505' && oneError.code !== '23503') {
               devLogger.error('수업 카운팅 로그 저장 실패:', oneError?.message ?? oneError?.code ?? oneError, oneError);
             }
-            continue;
           }
-          const tid = String(row.teacher_id);
-          successCountByTeacher[tid] = (successCountByTeacher[tid] || 0) + 1;
-        }
-
-        // 3. 실제 삽입된 건수만큼만 각 강사 session_count 증가
-        for (const [teacherId, count] of Object.entries(successCountByTeacher)) {
-          if (!teacherId || count <= 0) continue;
-          const { data: user } = await supabase
-            .from('users')
-            .select('session_count')
-            .eq('id', teacherId)
-            .single();
-          await supabase
-            .from('users')
-            .update({ session_count: (user?.session_count || 0) + count })
-            .eq('id', teacherId);
         }
       }
     } catch (error) {
@@ -337,6 +319,16 @@ export default function ClassManagementPage() {
 
   const updateStatus = async (status: string | null) => {
     if (!selectedEvent) return;
+    if (status === 'finished') {
+      const sessionStart = new Date(selectedEvent.start);
+      const today = new Date();
+      sessionStart.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      if (sessionStart > today) {
+        toast.error('수업일이 아직 지나지 않았습니다. 수업일 이후에 완료 처리해 주세요.');
+        return;
+      }
+    }
     try {
       if (status === 'deleted') {
         if (!confirm('영구 삭제하시겠습니까?')) return;
@@ -345,9 +337,10 @@ export default function ClassManagementPage() {
         const prevStatus = selectedEvent.status;
         await supabase.from('sessions').update({ status }).eq('id', selectedEvent.id);
         
-        // finished로 변경되는 경우: 로그 1건 삽입(중복 시 23505만 스킵) 후 session_count 반영
+        // finished로 변경되는 경우: session_count_logs에만 로그 삽입 (session_count는 레거시만 유지, UI에서 logCount와 합산)
+        // created_by가 없어도 모달에서 선택한 강사(editFields.teachers[0])가 있으면 그 강사에게 로그 삽입
         if (status === 'finished' && prevStatus !== 'finished') {
-          const teacherId = selectedEvent.teacherId;
+          const teacherId = selectedEvent.teacherId || editFields.teachers[0]?.id;
           if (teacherId) {
             const { error: logError } = await supabase.from('session_count_logs').insert({
               teacher_id: teacherId,
@@ -356,24 +349,18 @@ export default function ClassManagementPage() {
               count_change: 1,
               reason: '수동 완료',
             });
-            if (logError?.code === '23505') return; // 이미 로그 있음(유니크), 카운트 중복 방지
-            if (logError?.code === '23503') {
+            if (logError?.code === '23505') {
+              // 주강사는 이미 처리됨(자동완료 등). 보조강사만 계속 처리
+            } else if (logError?.code === '23503') {
               toast.error('이 강사는 수업 로그에 기록되지 않습니다. (Auth 미등록)');
               setIsModalOpen(false);
               fetchSessions();
               return;
+            } else if (logError) {
+              return;
             }
-            const { data: user } = await supabase
-              .from('users')
-              .select('session_count')
-              .eq('id', teacherId)
-              .single();
-            await supabase
-              .from('users')
-              .update({ session_count: (user?.session_count || 0) + 1 })
-              .eq('id', teacherId);
 
-            // 보조강사도 동일하게 카운팅
+            // 보조강사도 동일하게 로그만 기록 (session_count 미증가)
             const { extraTeachers } = parseExtraTeachers(selectedEvent.memo || '');
             for (const ex of extraTeachers) {
               if (!ex.id) continue;
@@ -385,10 +372,6 @@ export default function ClassManagementPage() {
                 reason: '수동 완료 (보조)',
               });
               if (exLog?.code === '23505' || exLog?.code === '23503') continue;
-              if (!exLog) {
-                const { data: exUser } = await supabase.from('users').select('session_count').eq('id', ex.id).single();
-                await supabase.from('users').update({ session_count: (exUser?.session_count || 0) + 1 }).eq('id', ex.id);
-              }
             }
           }
         }

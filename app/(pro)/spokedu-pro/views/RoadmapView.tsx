@@ -123,11 +123,7 @@ export default function RoadmapView({
   drawerContext?: { role?: string; themeKey?: string };
   programDetails?: Record<string, ProgramDetail>;
 }) {
-  const { data, loading, error, fetchDashboard } = useSpokeduProDashboard();
-
-  useEffect(() => {
-    fetchDashboard();
-  }, [fetchDashboard]);
+  const { data, weekLabel, loading, error, fetchDashboard } = useSpokeduProDashboard();
 
   useEffect(() => {
     const handler = () => fetchDashboard();
@@ -153,8 +149,13 @@ export default function RoadmapView({
         }}
       >
         <div className="max-w-3xl space-y-3 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600/90 text-white rounded text-xs font-bold uppercase tracking-widest backdrop-blur-md">
-            {weekTheme.badge}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex px-3 py-1 bg-blue-600/90 text-white rounded text-xs font-bold uppercase tracking-widest backdrop-blur-md">
+              {weekTheme.badge}
+            </span>
+            {weekLabel && (
+              <span className="text-slate-400 text-sm font-medium">{weekLabel}</span>
+            )}
           </div>
           <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tighter leading-tight">
             {weekTheme.title}
@@ -166,19 +167,42 @@ export default function RoadmapView({
 
       <div className="px-6 lg:px-12 mt-8 space-y-12">
         {error && (
-          <div className="p-3 bg-red-900/20 border border-red-500/30 rounded-lg text-sm text-red-300">{error}</div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-sm text-red-300">
+            <span className="flex-1">이번 주 추천을 불러오지 못했어요.</span>
+            <button
+              type="button"
+              onClick={() => fetchDashboard()}
+              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors shrink-0"
+            >
+              다시 시도
+            </button>
+          </div>
         )}
-        {loading && (
+        {loading && !data && (
           <div className="text-slate-400 font-medium">대시보드 불러오는 중...</div>
         )}
 
-        {/* Row1: 이번 주 테마 4개 */}
+        {!error && data && dashboard.weekTheme.items.length === 0 && dashboard.row2.items.length === 0 && (
+          <div className="py-12 text-center text-slate-400">
+            <p className="font-medium">이번 주 추천이 아직 없어요.</p>
+            <p className="text-sm mt-1">곧 업데이트될 예정이에요.</p>
+          </div>
+        )}
+
+        {!error && (loading ? !!data : true) && (dashboard.weekTheme.items.length > 0 || dashboard.row2.items.length > 0) && (
+        <>
+        {/* Row1: 이번 주 수업 가이드 (고정) */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <h3 className="text-xl font-bold text-white flex items-center gap-2 truncate">
                 <Zap className="w-5 h-5 text-yellow-400 shrink-0" />
-                <span className="truncate">{weekTheme.title}</span>
+                <span className="truncate">이번 주 수업 가이드</span>
+                {weekLabel && (
+                  <span className="text-slate-400 font-medium text-sm shrink-0 hidden sm:inline">
+                    · {weekLabel}
+                  </span>
+                )}
               </h3>
               <span className="hidden md:inline-block px-2 py-0.5 bg-slate-800 text-slate-400 text-[10px] font-bold rounded border border-slate-700 shrink-0">
                 {THEME_LABELS[weekTheme.themeKey]}
@@ -206,6 +230,9 @@ export default function RoadmapView({
               />
             ))}
           </div>
+          {weekTheme.items.length > 0 && weekTheme.items.length < 4 && (
+            <p className="text-slate-500 text-sm">나머지 추천은 곧 채워질 예정이에요.</p>
+          )}
         </div>
 
         {/* Row2: 선생님 베스트 4개 */}
@@ -237,6 +264,8 @@ export default function RoadmapView({
             ))}
           </div>
         </div>
+        </>
+        )}
       </div>
     </section>
   );

@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import {
   Settings2, CheckCircle, Zap, Crown, Building2, RefreshCw,
-  Users, Bot, Mail, ChevronRight, AlertTriangle,
+  Bot, Mail, ChevronRight, AlertTriangle, LayoutGrid, Timer,
 } from 'lucide-react';
 import { useProContext, type Plan } from '../hooks/useProContext';
 
+// ── 플랜 정의 (PLAN_PRICES는 서버 상수와 반드시 동기화) ─────────────────────
 type PlanDef = {
   id: Plan;
   label: string;
@@ -27,7 +28,8 @@ const PLANS: PlanDef[] = [
     features: [
       '로드맵 & 100대 프로그램 열람',
       '수업 보조도구 (팀 나누기, 술래 정하기)',
-      '원생 등록 최대 10명',
+      '학생 무제한 등록',
+      '반 1개',
     ],
     icon: Building2,
   },
@@ -38,7 +40,8 @@ const PLANS: PlanDef[] = [
     description: '소규모 센터 최적화',
     features: [
       'Free 기능 전체 포함',
-      '원생 등록 최대 50명',
+      '학생 무제한 등록',
+      '반 최대 3개',
       'AI 에듀-에코 리포트 월 20회',
       '출결·신체 평가 CSV 내보내기',
     ],
@@ -53,7 +56,7 @@ const PLANS: PlanDef[] = [
     description: '성장하는 센터를 위한 풀 패키지',
     features: [
       'Basic 기능 전체 포함',
-      '원생 무제한 등록',
+      '반 무제한',
       'AI 리포트 무제한',
       '우선 지원 채널',
     ],
@@ -62,6 +65,23 @@ const PLANS: PlanDef[] = [
     icon: Crown,
   },
 ];
+
+// ── Trial 배너 ───────────────────────────────────────────────────────────────
+function TrialBanner({ trialEndAt }: { trialEndAt: string }) {
+  const daysLeft = Math.max(
+    0,
+    Math.ceil((new Date(trialEndAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  );
+  return (
+    <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-blue-500/10 border border-violet-500/20 text-sm">
+      <Timer className="w-4 h-4 text-violet-400 shrink-0" />
+      <span className="text-violet-300 font-bold">
+        14일 무료 체험 중 · AI 리포트 20회 · D-{daysLeft}
+      </span>
+      <span className="text-slate-400 text-xs ml-auto">체험 종료 후 Free 전환</span>
+    </div>
+  );
+}
 
 // ── 사용량 진행 바 ───────────────────────────────────────────────────────────
 function UsageBar({
@@ -211,6 +231,7 @@ export default function SettingsView() {
   const [bootstrapping, setBootstrapping] = useState(false);
 
   const currentPlan = ctx.entitlement.plan;
+  const isTrialing = ctx.entitlement.status === 'trialing';
   const { usage } = ctx;
 
   const handleUpgrade = async (plan: Plan) => {
@@ -240,7 +261,7 @@ export default function SettingsView() {
         await refresh();
         setUpgradeMsg(
           data.bootstrapped
-            ? `센터 "${data.centerName}"가 생성되었습니다.`
+            ? `센터 "${data.centerName}"가 생성되었습니다. 14일 무료 체험이 시작됩니다.`
             : '이미 센터가 설정되어 있습니다.'
         );
       } else {
@@ -276,6 +297,11 @@ export default function SettingsView() {
         <p className="text-slate-400 text-sm">현재 플랜과 사용량을 확인하고 필요에 따라 업그레이드하세요.</p>
       </header>
 
+      {/* Trial 배너 */}
+      {isTrialing && ctx.billing.currentPeriodEndAt && (
+        <TrialBanner trialEndAt={ctx.billing.currentPeriodEndAt} />
+      )}
+
       {/* 현재 상태 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1.5">
@@ -290,23 +316,19 @@ export default function SettingsView() {
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-slate-400">센터가 설정되지 않았습니다.</p>
-              {ctx.dbReady ? (
-                <button
-                  type="button"
-                  onClick={handleBootstrap}
-                  disabled={bootstrapping}
-                  className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 flex items-center gap-1"
-                >
-                  {bootstrapping ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  )}
-                  {bootstrapping ? '생성 중...' : '내 센터 자동 생성'}
-                </button>
-              ) : (
-                <p className="text-xs text-slate-500">DB 마이그레이션 후 활성화됩니다.</p>
-              )}
+              <button
+                type="button"
+                onClick={handleBootstrap}
+                disabled={bootstrapping}
+                className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 flex items-center gap-1"
+              >
+                {bootstrapping ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5" />
+                )}
+                {bootstrapping ? '생성 중...' : '14일 무료 체험 시작'}
+              </button>
             </div>
           )}
         </div>
@@ -317,17 +339,20 @@ export default function SettingsView() {
             <span className="text-base font-bold text-white capitalize">{currentPlan}</span>
             <span
               className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                ctx.entitlement.status === 'active'
+                isTrialing
+                  ? 'bg-violet-500/20 text-violet-400'
+                  : ctx.entitlement.status === 'active'
                   ? 'bg-emerald-500/20 text-emerald-400'
                   : 'bg-amber-500/20 text-amber-400'
               }`}
             >
-              {ctx.entitlement.status === 'active' ? '활성' : ctx.entitlement.status}
+              {isTrialing ? '체험 중' : ctx.entitlement.status === 'active' ? '활성' : ctx.entitlement.status}
             </span>
           </div>
           {ctx.billing.currentPeriodEndAt && (
             <p className="text-xs text-slate-400">
-              갱신일: {new Date(ctx.billing.currentPeriodEndAt).toLocaleDateString('ko-KR')}
+              {isTrialing ? '체험 종료: ' : '갱신일: '}
+              {new Date(ctx.billing.currentPeriodEndAt).toLocaleDateString('ko-KR')}
             </p>
           )}
         </div>
@@ -337,11 +362,11 @@ export default function SettingsView() {
       <div className="p-5 rounded-2xl bg-slate-800/40 border border-slate-700 space-y-5">
         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">이번 달 사용량</p>
         <UsageBar
-          used={usage.studentCount}
-          limit={usage.studentLimit}
-          label="등록 원생"
-          icon={Users}
-          colorClass="bg-blue-500"
+          used={usage.classCount}
+          limit={usage.classLimit}
+          label="반 수"
+          icon={LayoutGrid}
+          colorClass="bg-emerald-500"
         />
         <div className="border-t border-slate-700/60" />
         <UsageBar
@@ -376,19 +401,6 @@ export default function SettingsView() {
           ))}
         </div>
       </div>
-
-      {!ctx.dbReady && (
-        <div className="px-5 py-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm space-y-1">
-          <p className="font-bold">구독 DB 마이그레이션 미적용</p>
-          <p className="text-amber-400/80 text-xs leading-relaxed">
-            Supabase에서{' '}
-            <code className="bg-slate-800 px-1.5 py-0.5 rounded">20260308000000_spokedu_pro_commercial.sql</code>
-            을 실행하고{' '}
-            <code className="bg-slate-800 px-1.5 py-0.5 rounded">SPOKEDU_PRO_DB_READY=true</code>
-            {' '}환경변수를 설정하면 구독 기능이 활성화됩니다.
-          </p>
-        </div>
-      )}
 
       {/* 문의 */}
       <div className="flex items-center justify-center gap-2 text-sm text-slate-500 pt-2">

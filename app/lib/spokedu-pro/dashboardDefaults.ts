@@ -1,6 +1,9 @@
 /**
  * v4 대시보드 큐레이션 기본값 및 테마 키.
  * center_content(또는 tenant_content) key: dashboard_v4
+ *
+ * 주간 4개 선정 풀: PROGRAM_BANK(테마/role 매핑) + 실제 연동 시 catalog API(/api/spokedu-pro/programs) 참고.
+ * "매주 4개" 후보는 이 풀에서 선정하며, 큐레이션 편집은 동일 풀 내 선택 제한 정책은 docs 참고.
  */
 
 export const THEME_KEYS = [

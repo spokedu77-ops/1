@@ -7,8 +7,6 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getCurrentWeekOfMonth } from '@/app/lib/curriculum/weekUtils';
 import {
-  PERSONAL_CATEGORIES_ROW1,
-  PERSONAL_CATEGORIES_ROW2,
   DEFAULT_PERSONAL_CATEGORY,
   getSubTabsForCategory,
   CENTER_SECTIONS,
@@ -16,10 +14,12 @@ import {
   EQUIPMENT_GUIDE_NUMBERS,
   EQUIPMENT_GUIDE_STEPS,
 } from '@/app/lib/curriculum/constants';
-import { 
-  Instagram, AlertCircle, 
-  Sparkles, X, Calendar, MoreHorizontal, 
-  CheckSquare, Box, ListOrdered, Play, Link2, ArrowLeft
+import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
+import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
+import {
+  Instagram, AlertCircle,
+  Sparkles, X, Calendar, MoreHorizontal,
+  CheckSquare, Box, ListOrdered, Play, Link2, ArrowLeft, ChevronRight
 } from 'lucide-react';
 
 type MainCurriculumTab = 'personal' | 'center';
@@ -28,8 +28,6 @@ const MONTHLY_THEMES: { [key: number]: { title: string; desc: string } } = {
   3: { title: '새로운 시작과 적응', desc: '친구들과 친해지고 규칙을 익히는 시기입니다.' },
 };
 
-const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
-const WEEKS = [1, 2, 3, 4];
 
 export interface CurriculumItem {
   id?: number;
@@ -87,6 +85,7 @@ export default function TeacherCurriculumPage() {
  const [mainTab, setMainTab] = useState<MainCurriculumTab>('personal');
  const [categoryTab, setCategoryTab] = useState<string>(DEFAULT_PERSONAL_CATEGORY);
  const [subTab, setSubTab] = useState<string>(() => getSubTabsForCategory(DEFAULT_PERSONAL_CATEGORY)[0] ?? '');
+ const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
  const [selectedWeek, setSelectedWeek] = useState(() => getCurrentWeekOfMonth());
  const [items, setItems] = useState<CurriculumItem[]>([]);
@@ -149,7 +148,7 @@ export default function TeacherCurriculumPage() {
      checkList: row.check_list,
      equipment: row.equipment,
      steps: row.steps,
-     detailText: row.detail_text,
+     detailText: row.detail_text ?? row.expert_tip,
      detailText2: row.detail_text_2,
      link2: row.link_2,
    })));
@@ -203,8 +202,6 @@ export default function TeacherCurriculumPage() {
    });
  }, [personalItems]);
 
- const currentSubTabs = useMemo(() => getSubTabsForCategory(categoryTab), [categoryTab]);
-
  const filteredEquipmentItems = useMemo(() => {
    return equipmentGuideItems.filter((i) => i.number === selectedEquipmentNumber && i.step === selectedEquipmentStep);
  }, [equipmentGuideItems, selectedEquipmentNumber, selectedEquipmentStep]);
@@ -248,10 +245,9 @@ export default function TeacherCurriculumPage() {
    }
  };
 
- const handleCategoryChange = (category: string) => {
+ const handleCategorySelect = (category: string, sub: string) => {
    setCategoryTab(category);
-   const tabs = getSubTabsForCategory(category);
-   setSubTab(tabs[0] ?? '');
+   setSubTab(sub);
  };
 
  const isPersonalItem = (item: CurriculumItem | PersonalCurriculumItem): item is PersonalCurriculumItem =>
@@ -262,8 +258,6 @@ export default function TeacherCurriculumPage() {
    if (!u || u === '#' || u === 'null' || u === 'undefined' || u.toLowerCase() === 'none') return false;
    return u.startsWith('http://') || u.startsWith('https://');
  };
-
- const isCenterMonthLocked = mainTab === 'center';
 
  return (
    <div className="min-h-screen bg-[#F8FAFC] pb-24 text-slate-900 w-full">
@@ -316,46 +310,22 @@ export default function TeacherCurriculumPage() {
 
             {mainTab === 'personal' ? (
               <>
-                {/* 2단 카테고리 탭: 한 영역에서 반응형 줄바꿈 */}
-                <div className="w-full flex flex-wrap gap-2 bg-white border border-slate-100 p-2.5 sm:p-3 rounded-2xl shadow-sm">
-                  {[...PERSONAL_CATEGORIES_ROW1, ...PERSONAL_CATEGORIES_ROW2].map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => handleCategoryChange(cat)}
-                      className={`shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap
-                        ${categoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100'}`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-                {/* 3단: 카테고리별 하위 탭 */}
-                {currentSubTabs.length > 0 && (
-                  <div className="w-full flex flex-wrap gap-1.5">
-                    {currentSubTabs.map((tabLabel) => (
-                      <button
-                        key={tabLabel}
-                        type="button"
-                        onClick={() => setSubTab(tabLabel)}
-                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all
-                          ${subTab === tabLabel ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-400 border border-slate-100 hover:border-indigo-200'}`}
-                      >
-                        {tabLabel}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <CurriculumCategoryPicker
+                  category={categoryTab}
+                  subTab={subTab}
+                  onSelect={handleCategorySelect}
+                  open={categoryPickerOpen}
+                  onOpenChange={setCategoryPickerOpen}
+                />
                 {/* 개인 수업 목록 (8회기는 카드 8개, 조회 전용) */}
                 {personalLoading ? (
                   <div className="flex justify-center py-12">
                     <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
                   </div>
                 ) : categoryTab === '신체 기능향상 8회기' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {eighthSessionSlots.map(({ label, item }) => {
-                      const thumb1 = item?.url ? (getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '') : '';
-                      const thumb2 = item?.link2 ? (getYouTubeId(item.link2) ? `https://img.youtube.com/vi/${getYouTubeId(item.link2)}/hqdefault.jpg` : '') : '';
+                      const thumb = item?.url && getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '';
                       return (
                         <div
                           key={label}
@@ -365,27 +335,14 @@ export default function TeacherCurriculumPage() {
                           onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } }}
                           onKeyDown={(e) => { if (item && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelectedItem(item); setIsDetailModalOpen(true); } }}
                         >
-                          <div className="aspect-[16/9] grid grid-cols-2 gap-0.5 bg-slate-100">
-                            <div className="relative bg-slate-200 flex items-center justify-center min-h-0">
-                              {thumb1 ? (
-                                <img src={thumb1} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
-                                  <Play size={28} className="text-slate-400" />
-                                </div>
-                              )}
-                              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-black/60 text-white">1</span>
-                            </div>
-                            <div className="relative bg-slate-200 flex items-center justify-center min-h-0">
-                              {thumb2 ? (
-                                <img src={thumb2} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
-                                  <Play size={28} className="text-slate-400" />
-                                </div>
-                              )}
-                              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-black/60 text-white">2</span>
-                            </div>
+                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                            {thumb ? (
+                              <img src={thumb} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                <Play size={28} className="text-slate-400" />
+                              </div>
+                            )}
                           </div>
                           <div className="p-4">
                             <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
@@ -456,11 +413,11 @@ export default function TeacherCurriculumPage() {
                     <button type="button" onClick={() => setCenterViewMode('center')} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold text-sm mb-2">
                       <ArrowLeft size={18} /> 커리큘럼으로
                     </button>
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 w-full">
+                    <div className="w-full grid grid-cols-12 gap-1 sm:gap-2">
                       {EQUIPMENT_GUIDE_NUMBERS.map((num) => (
                         <button key={num} type="button" onClick={() => setSelectedEquipmentNumber(num)}
-                          className={`min-h-[48px] sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all border font-black text-sm sm:text-base
-                            ${selectedEquipmentNumber === num ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
+                          className={`min-h-[44px] sm:min-h-[48px] rounded-lg sm:rounded-xl flex items-center justify-center transition-all border font-black text-xs sm:text-sm touch-manipulation
+                            ${selectedEquipmentNumber === num ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
                         >
                           {num}번
                         </button>
@@ -520,55 +477,29 @@ export default function TeacherCurriculumPage() {
                   </>
                 ) : (
                   <>
-                {/* 센터 고정 섹션: 교구 가이드라인 클릭 시 전용 뷰 */}
-                <div className="w-full flex flex-wrap gap-3">
-                  {CENTER_SECTIONS.map((section) => (
-                    <button
-                      key={section.id}
-                      type="button"
-                      onClick={() => section.id === 'sports-equipment-guide' ? setCenterViewMode('equipment-guide') : undefined}
-                      className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                        <Box size={20} />
-                      </div>
-                      <span className="font-bold text-slate-800">{section.label}</span>
-                    </button>
-                  ))}
-                </div>
-                {/* 센터 수업: 해당 월만 선택 가능 */}
-                <div className="grid grid-cols-6 md:grid-cols-12 gap-2 w-full">
-                  {MONTHS.map((m) => {
-                    const isLocked = isCenterMonthLocked && m !== currentMonth;
-                    const isSelected = selectedMonth === m;
-                    return (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => {
-                          if (isLocked) {
-                            toast.error('이번 달 커리큘럼만 조회 가능합니다.');
-                            return;
-                          }
-                          setSelectedMonth(m);
-                        }}
-                        className={`h-16 rounded-2xl flex items-center justify-center transition-all border font-black relative
-                          ${isSelected ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105' : 
-                            isLocked ? 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed' : 
-                            'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
-                      >
-                        {isLocked && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-slate-100/80 rounded-2xl">
-                            <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                        )}
-                        <span className={isLocked ? 'opacity-0' : ''}>{m}월</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                {/* 센터 고정 섹션: 교구 가이드라인 진입 카드 */}
+                <button
+                  type="button"
+                  onClick={() => setCenterViewMode('equipment-guide')}
+                  className="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-slate-50 border border-indigo-100/80 shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.99] transition-all text-left touch-manipulation"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/25">
+                    <Box size={28} strokeWidth={2} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="block font-black text-slate-900 text-base sm:text-lg">{CENTER_SECTIONS[0].label}</span>
+                    <span className="block text-xs sm:text-sm text-slate-500 font-medium mt-0.5">1~12번 교구 · 단계별 활동 보기</span>
+                  </div>
+                  <ChevronRight size={22} className="text-slate-300 shrink-0" />
+                </button>
+                <CurriculumMonthWeekPicker
+                  selectedMonth={selectedMonth}
+                  selectedWeek={selectedWeek}
+                  onMonthChange={setSelectedMonth}
+                  onWeekChange={setSelectedWeek}
+                  teacherMode
+                  currentMonth={currentMonth}
+                />
 
                 {/* 배너 */}
                 <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
@@ -580,18 +511,6 @@ export default function TeacherCurriculumPage() {
                     <h2 className="text-2xl md:text-3xl font-black mb-2">{currentTheme.title}</h2>
                     <p className="text-indigo-100 font-medium text-sm md:text-base">{currentTheme.desc}</p>
                   </div>
-                </div>
-
-                {/* 주차 선택 */}
-                <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
-                  {WEEKS.map((w) => (
-                    <button key={w} type="button" onClick={() => setSelectedWeek(w)}
-                      className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all
-                        ${selectedWeek === w ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                      {w}주차
-                    </button>
-                  ))}
                 </div>
 
                 {/* 리스트 (조회 전용) */}
@@ -670,29 +589,15 @@ export default function TeacherCurriculumPage() {
                       <h2 className="text-xl font-black text-white">{selectedItem.title ?? selectedItem.sub_tab}</h2>
                       <button type="button" onClick={() => setIsDetailModalOpen(false)} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
                     </div>
-                    <div className="p-6 space-y-6 overflow-y-auto bg-[#2C2C2C] text-white">
-                      <section className="space-y-3">
-                        <div className="flex items-center gap-2 text-indigo-400 font-black text-xs uppercase">링크 1 세부내용</div>
-                        <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
-                          <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText || '등록된 내용이 없습니다.'}</p>
-                          {selectedItem.url?.trim() && (
-                            <a href={selectedItem.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
-                              <Link2 size={16} /> 링크 1 열기
-                            </a>
-                          )}
-                        </div>
-                      </section>
-                      <section className="space-y-3">
-                        <div className="flex items-center gap-2 text-indigo-400 font-black text-xs uppercase">링크 2 세부내용</div>
-                        <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
-                          <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText2 ?? '등록된 내용이 없습니다.'}</p>
-                          {selectedItem.link2?.trim() ? (
-                            <a href={selectedItem.link2} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
-                              <Link2 size={16} /> 링크 2 열기
-                            </a>
-                          ) : null}
-                        </div>
-                      </section>
+                    <div className="p-6 space-y-4 overflow-y-auto bg-[#2C2C2C] text-white">
+                      <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
+                        <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText || '등록된 내용이 없습니다.'}</p>
+                        {selectedItem.url?.trim() ? (
+                          <a href={selectedItem.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
+                            <Link2 size={16} /> 링크 열기
+                          </a>
+                        ) : null}
+                      </div>
                     </div>
                   </>
                 ) : (

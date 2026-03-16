@@ -12,6 +12,7 @@ import {
   fieldsToTemplateText,
   getSessionDisplayStatus
 } from '@/app/lib/feedbackValidation';
+import { parseExtraTeachers } from '@/app/admin/classes/lib/sessionUtils';
 
 interface Session {
   id: string;
@@ -24,6 +25,7 @@ interface Session {
   file_url: string[];
   session_type: 'regular_center' | 'regular_private' | 'one_day';
   created_by: string;
+  memo?: string | null;
   feedback_fields?: FeedbackFields;
   users?: { id: string; name: string };
   lesson_plans?: { content?: string }[];
@@ -130,7 +132,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
       
       let query = supabase
         .from('sessions')
-        .select('id, title, start_at, end_at, status, students_text, photo_url, file_url, session_type, created_by, feedback_fields, users:created_by(id, name)')
+        .select('id, title, start_at, end_at, status, students_text, photo_url, file_url, session_type, created_by, memo, feedback_fields, users:created_by(id, name)')
         .gte('start_at', startOfDay.toISOString())
         .lte('start_at', endOfDay.toISOString())
         .order('start_at', { ascending: true });
@@ -206,8 +208,41 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
     
     setBulkActionLoading(true);
     try {
-      const { error } = await supabase.from('sessions').update({ status: 'verified', updated_at: new Date().toISOString() }).in('id', Array.from(selectedSessions));
+      const ids = Array.from(selectedSessions);
+      const { error } = await supabase.from('sessions').update({ status: 'verified', updated_at: new Date().toISOString() }).in('id', ids);
       if (error) throw error;
+
+      // 수업 카운팅: 일괄 검수 승인 시 session_count_logs 반영
+      const toCount = sessions.filter((s) => ids.includes(s.id));
+      for (const session of toCount) {
+        if (session.created_by && String(session.created_by).trim()) {
+          await supabase.from('session_count_logs').insert({
+            teacher_id: session.created_by,
+            session_id: session.id,
+            session_title: session.title ?? null,
+            count_change: 1,
+            reason: '검수 완료',
+          }).then(({ error: logErr }) => {
+            if (logErr && logErr.code !== '23505' && logErr.code !== '23503') devLogger.error('수업 카운팅 로그 저장 실패:', logErr);
+          });
+        }
+        if (session.memo?.includes('EXTRA_TEACHERS:')) {
+          const { extraTeachers } = parseExtraTeachers(session.memo);
+          for (const ex of extraTeachers) {
+            if (!ex.id) continue;
+            await supabase.from('session_count_logs').insert({
+              teacher_id: ex.id,
+              session_id: session.id,
+              session_title: session.title ?? null,
+              count_change: 1,
+              reason: '검수 완료 (보조)',
+            }).then(({ error: exLog }) => {
+              if (exLog && exLog.code !== '23505' && exLog.code !== '23503') devLogger.error('수업 카운팅 로그(보조) 저장 실패:', exLog);
+            });
+          }
+        }
+      }
+
       toast.success(`${selectedSessions.size}개의 리포트가 승인되었습니다.`);
       clearSelection();
       fetchListData();
@@ -280,6 +315,16 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
 
   const handleSave = async (newStatus = 'verified') => {
     if (!supabase || !selectedEvent) return;
+    if (newStatus === 'verified') {
+      const sessionStart = new Date(selectedEvent.start_at);
+      const today = new Date();
+      sessionStart.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      if (sessionStart > today) {
+        toast.error('수업일이 아직 지나지 않았습니다. 수업일 이후에 검수 승인해 주세요.');
+        return;
+      }
+    }
     try {
       const updatedText = fieldsToTemplateText(feedbackFields);
       const updateData: Record<string, unknown> = { 
@@ -292,6 +337,40 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
       };
       const { error } = await supabase.from('sessions').update(updateData).eq('id', selectedEvent.id);
       if (error) throw error;
+
+      // 수업 카운팅: finished/verified 시 session_count_logs에 반영 (이미 있으면 23505 스킵)
+      if (newStatus === 'finished' || newStatus === 'verified') {
+        const reason = newStatus === 'verified' ? '검수 완료' : '작성 완료';
+        if (selectedEvent.created_by && String(selectedEvent.created_by).trim()) {
+          const { error: logErr } = await supabase.from('session_count_logs').insert({
+            teacher_id: selectedEvent.created_by,
+            session_id: selectedEvent.id,
+            session_title: selectedEvent.title ?? null,
+            count_change: 1,
+            reason,
+          });
+          if (logErr && logErr.code !== '23505' && logErr.code !== '23503') {
+            devLogger.error('수업 카운팅 로그 저장 실패:', logErr);
+          }
+        }
+        if (selectedEvent.memo?.includes('EXTRA_TEACHERS:')) {
+          const { extraTeachers } = parseExtraTeachers(selectedEvent.memo);
+          for (const ex of extraTeachers) {
+            if (!ex.id) continue;
+            const { error: exLog } = await supabase.from('session_count_logs').insert({
+              teacher_id: ex.id,
+              session_id: selectedEvent.id,
+              session_title: selectedEvent.title ?? null,
+              count_change: 1,
+              reason: `${reason} (보조)`,
+            });
+            if (exLog && exLog.code !== '23505' && exLog.code !== '23503') {
+              devLogger.error('수업 카운팅 로그(보조) 저장 실패:', exLog);
+            }
+          }
+        }
+      }
+
       toast.success(newStatus === 'verified' ? '검수 승인 완료!' : '수정 요청 완료!');
       setIsModalOpen(false);
       fetchListData();

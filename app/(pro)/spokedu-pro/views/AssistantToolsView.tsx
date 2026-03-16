@@ -7,7 +7,7 @@ import { useStudentStore, balanceTeams, type Student } from '../hooks/useStudent
 type TabId = 'stopwatch' | 'scoreboard' | 'picker' | 'teams';
 
 // ── 술래 정하기 탭 ───────────────────────────────────────────────────
-function PickerTab({ presentStudents }: { presentStudents: Student[] }) {
+function PickerTab({ presentStudents, onGoToDataCenter }: { presentStudents: Student[]; onGoToDataCenter?: () => void }) {
   const [picked, setPicked] = useState<Student | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [display, setDisplay] = useState('');
@@ -107,7 +107,7 @@ function PickerTab({ presentStudents }: { presentStudents: Student[] }) {
 }
 
 // ── 팀 나누기 탭 ─────────────────────────────────────────────────────
-function TeamsTab({ presentStudents }: { presentStudents: Student[] }) {
+function TeamsTab({ presentStudents, onGoToDataCenter }: { presentStudents: Student[]; onGoToDataCenter?: () => void }) {
   const [teams, setTeams] = useState<{ teamA: Student[]; teamB: Student[] } | null>(null);
   const [teamNames, setTeamNames] = useState({ a: 'A팀', b: 'B팀' });
 
@@ -131,6 +131,15 @@ function TeamsTab({ presentStudents }: { presentStudents: Student[] }) {
         <p className="text-slate-400 text-sm max-w-xs">
           원생 관리 탭에서 원생을 등록하고 출석 처리를 먼저 해주세요.
         </p>
+        {onGoToDataCenter && (
+          <button
+            type="button"
+            onClick={onGoToDataCenter}
+            className="mt-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-colors"
+          >
+            원생 관리에서 출석 처리하기
+          </button>
+        )}
       </div>
     );
   }
@@ -244,7 +253,7 @@ function TeamsTab({ presentStudents }: { presentStudents: Student[] }) {
 }
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────────────
-export default function AssistantToolsView() {
+export default function AssistantToolsView({ onGoToDataCenter }: { onGoToDataCenter?: () => void } = {}) {
   const [tab, setTab] = useState<TabId>('stopwatch');
   const [stopwatchRunning, setStopwatchRunning] = useState(false);
   const [stopwatchMs, setStopwatchMs] = useState(0);
@@ -378,8 +387,8 @@ export default function AssistantToolsView() {
           </div>
         )}
 
-        {tab === 'picker' && <PickerTab presentStudents={presentStudents} />}
-        {tab === 'teams' && <TeamsTab presentStudents={presentStudents} />}
+        {tab === 'picker' && <PickerTab presentStudents={presentStudents} onGoToDataCenter={onGoToDataCenter} />}
+        {tab === 'teams' && <TeamsTab presentStudents={presentStudents} onGoToDataCenter={onGoToDataCenter} />}
       </div>
     </section>
   );

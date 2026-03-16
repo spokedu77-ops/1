@@ -33,6 +33,25 @@ interface SessionCountLog {
   count_change: number;
   reason: string;
   created_at: string;
+  sessions?: { start_at: string } | null;
+}
+
+/** 회차 숫자(1/2, 4/5, 7/10 등) 제거하고 한글 제목만 반환 */
+function titleWithoutRound(title: string | null | undefined): string {
+  if (!title || !title.trim()) return '';
+  return title
+    .replace(/^\s*\d+\/\d+\s*/, '')       // 앞의 "7/10 " 제거
+    .replace(/\s*[-_]?\s*\d+회차\s*$/i, '')
+    .replace(/\s+\d+회\s*$/i, '')
+    .replace(/\s+\d+회차\s*$/i, '')
+    .trim();
+}
+
+/** 수업 이름(한글만) + 수업 날짜 괄호 표기 */
+function formatSessionWithDate(title: string | null | undefined, dateIso: string): string {
+  const dateStr = new Date(dateIso).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const clean = titleWithoutRound(title);
+  return clean ? `${clean} (${dateStr})` : dateStr;
 }
 
 const PENALTY_OPTIONS = [
@@ -93,7 +112,9 @@ function SessionCountByMonth({ logs }: { logs: SessionCountLog[] }) {
                       <span className="text-[10px] font-black text-slate-400 shrink-0">
                         {new Date(log.created_at).toLocaleDateString('ko', { month: 'numeric', day: 'numeric' })}
                       </span>
-                      <span className="text-[11px] font-bold text-slate-700 truncate">{log.session_title}</span>
+                      <span className="text-[11px] font-bold text-slate-700 truncate">
+                        {formatSessionWithDate(log.session_title, log.sessions?.start_at ?? log.created_at)}
+                      </span>
                     </div>
                     <span className="text-[10px] font-black text-emerald-500 shrink-0 ml-2">+{log.count_change}</span>
                   </div>
@@ -128,7 +149,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
 
     const { data: cData } = await supabase
       .from('session_count_logs')
-      .select('*')
+      .select('*, sessions(start_at)')
       .eq('teacher_id', teacher.id)
       .order('created_at', { ascending: false });
     if (cData) setTeacherCountLogs(cData as SessionCountLog[]);
@@ -196,12 +217,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
       await supabase.from('users').update({ points: currentPoints - logToDelete.amount }).eq('id', teacher.id);
       const { error } = await supabase.from('mileage_logs').delete().eq('id', logId);
       if (error) throw error;
-      await supabase.from('mileage_logs').insert([{
-        teacher_id: teacher.id,
-        amount: -logToDelete.amount,
-        reason: `[취소] ${logToDelete.reason}`,
-        session_title: logToDelete.session_title
-      }]);
+      // [취소] 로그는 남기지 않음 (운영진 조치)
       setTeacherLogs(prev => prev.filter(l => l.id !== logId));
       onSaved?.();
       toast.success('마일리지가 복구되었습니다.');
@@ -243,12 +259,9 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
       const { data: user } = await supabase.from('users').select('points').eq('id', teacher.id).single();
       const currentPoints = user?.points ?? 0;
       await supabase.from('users').update({ points: currentPoints - lastPenaltyLog.amount }).eq('id', teacher.id);
-      await supabase.from('mileage_logs').insert([{
-        teacher_id: teacher.id,
-        amount: -lastPenaltyLog.amount,
-        reason: `[취소] ${lastPenaltyLog.reason}`,
-        session_title: lastPenaltyLog.session_title
-      }]);
+      const { error } = await supabase.from('mileage_logs').delete().eq('id', lastPenaltyLog.id);
+      if (error) throw error;
+      // [취소] 로그는 남기지 않음 (운영진 조치)
       setLastPenaltyLog(null);
       toast.success('Penalty가 취소되었습니다.');
       onSaved?.();
@@ -384,8 +397,10 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
             </div>
 
             {modalTab === 'mileage' && (
-              teacherLogs.length > 0 ? (
-                teacherLogs.map((log) => (
+              (() => {
+                const visibleLogs = teacherLogs.filter((log) => !log.reason?.includes('[취소]'));
+                return visibleLogs.length > 0 ? (
+                visibleLogs.map((log) => (
                   <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 bg-white shadow-sm hover:border-blue-100 transition-all">
                     <div className="flex items-center gap-4 sm:gap-6">
                       <div className={`text-sm font-black w-20 sm:w-24 ${log.amount >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
@@ -393,7 +408,9 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
                       </div>
                       <div className="hidden xs:block h-6 w-[1px] bg-slate-100"></div>
                       <div>
-                        <p className="text-[11px] font-black text-slate-800 leading-tight">{log.session_title}</p>
+                        <p className="text-[11px] font-black text-slate-800 leading-tight">
+                          {formatSessionWithDate(log.session_title, log.created_at)}
+                        </p>
                         <p className="text-[9px] font-bold text-slate-400 mt-0.5">{cleanReason(log.reason)}</p>
                       </div>
                     </div>
@@ -407,7 +424,8 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
                 ))
               ) : (
                 <div className="py-16 text-center text-slate-200 font-black italic text-sm tracking-tighter uppercase">No mileage logs found</div>
-              )
+              );
+              })()
             )}
 
             {modalTab === 'sessions' && (
