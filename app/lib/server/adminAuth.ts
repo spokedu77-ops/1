@@ -13,7 +13,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { ADMIN_NAMES, ROLES } from '@/app/lib/constants/admin';
+import { ADMIN_NAMES, ROLES, getAdminEmails } from '@/app/lib/constants/admin';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
 // ─── 결과 타입 ────────────────────────────────────────────────────────────────
@@ -73,6 +73,13 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
     }
 
     const uid = user.id;
+    const userEmail = user.email?.toLowerCase() ?? '';
+
+    // 1) 환경변수 ADMIN_EMAILS 에 포함된 이메일이면 즉시 허용
+    const adminEmails = getAdminEmails();
+    if (adminEmails.length > 0 && userEmail && adminEmails.includes(userEmail)) {
+      return { ok: true, userId: uid };
+    }
 
     // users / profiles 병렬 요청 (fallback 시 두 번째 왕복 제거, 판별 기준 동일)
     const usersPromise = serverSupabase

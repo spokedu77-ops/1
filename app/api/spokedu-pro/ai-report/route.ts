@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { getPlanForUser, PLAN_LIMITS, getAiReportUsageThisMonth, incrementAiReportUsage } from '@/app/lib/spokedu-pro/planUtils';
 
 export const maxDuration = 60;
@@ -18,6 +19,7 @@ type PhysicalFunctions = {
 
 type ReportRequest = {
   student: {
+    id?: string; // tenant 학생 id (spokedu_pro_ai_reports 저장 시 매핑용)
     name: string;
     classGroup: string;
     physical: PhysicalFunctions;
@@ -82,17 +84,183 @@ ${req.additionalGoal ? `[추가 목표]: ${req.additionalGoal}` : ''}
 }`;
 }
 
+/** 사용자가 접근 가능한 center_id 1개 반환 (소유 우선, 없으면 멤버십) */
+async function getActiveCenterId(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  userId: string
+): Promise<string | null> {
+  const { data: owned } = await supabase
+    .from('spokedu_pro_centers')
+    .select('id')
+    .eq('owner_id', userId)
+    .limit(1)
+    .maybeSingle();
+  if (owned?.id) return owned.id;
+  const { data: member } = await supabase
+    .from('spokedu_pro_center_members')
+    .select('center_id')
+    .eq('user_id', userId)
+    .limit(1)
+    .maybeSingle();
+  return member?.center_id ?? null;
+}
+
+/** center_id + tenant_student_id에 해당하는 spokedu_pro_students id 반환 (없으면 INSERT 후 반환) */
+async function ensureStudentRow(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  centerId: string,
+  tenantStudentId: string,
+  { name, classGroup }: { name: string; classGroup: string }
+): Promise<string | null> {
+  const { data: existing } = await supabase
+    .from('spokedu_pro_students')
+    .select('id')
+    .eq('center_id', centerId)
+    .eq('tenant_student_id', tenantStudentId)
+    .maybeSingle();
+  if (existing?.id) return existing.id;
+  const now = new Date().toISOString();
+  const dateOnly = now.slice(0, 10);
+  const { data: inserted, error } = await supabase
+    .from('spokedu_pro_students')
+    .insert({
+      center_id: centerId,
+      tenant_student_id: tenantStudentId,
+      name,
+      class_group: classGroup,
+      enrolled_at: dateOnly,
+      status: 'active',
+    })
+    .select('id')
+    .single();
+  if (error || !inserted?.id) return null;
+  return inserted.id;
+}
+
+const BADGES_KEY = 'badges';
+const MAX_BADGES = 50;
+
+type Badge = {
+  id: string;
+  studentName: string;
+  classGroup: string;
+  strengthSummary: string;
+  growthTag: string;
+  period: string;
+  generatedAt: string;
+};
+
+async function saveBadge(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  userId: string,
+  badge: Badge
+): Promise<void> {
+  const { data } = await supabase
+    .from('spokedu_pro_tenant_content')
+    .select('draft_value')
+    .eq('owner_id', userId)
+    .eq('key', BADGES_KEY)
+    .maybeSingle();
+
+  const existing = (data?.draft_value as { badges?: Badge[] })?.badges ?? [];
+  const next = [badge, ...existing].slice(0, MAX_BADGES);
+  const now = new Date().toISOString();
+
+  await supabase
+    .from('spokedu_pro_tenant_content')
+    .upsert(
+      {
+        owner_id: userId,
+        key: BADGES_KEY,
+        draft_value: { badges: next },
+        published_value: { badges: next },
+        draft_updated_at: now,
+        published_at: now,
+      },
+      { onConflict: 'owner_id,key' }
+    );
+}
+
+/** GET /api/spokedu-pro/ai-report?studentId=xxx — 해당 학생(tenant id)의 과거 리포트 목록 */
+export async function GET(req: NextRequest) {
+  const serverSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await serverSupabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const url = new URL(req.url);
+  const studentId = url.searchParams.get('studentId'); // tenant 학생 id
+  const serviceSupabase = getServiceSupabase();
+  const centerId = await getActiveCenterId(serviceSupabase, user.id);
+  if (!centerId) return NextResponse.json({ ok: true, reports: [] });
+
+  if (!studentId) {
+    return NextResponse.json({ ok: true, reports: [] });
+  }
+
+  const { data: studentRow } = await serviceSupabase
+    .from('spokedu_pro_students')
+    .select('id')
+    .eq('center_id', centerId)
+    .eq('tenant_student_id', studentId)
+    .maybeSingle();
+  if (!studentRow?.id) return NextResponse.json({ ok: true, reports: [] });
+
+  const { data: rows } = await serviceSupabase
+    .from('spokedu_pro_ai_reports')
+    .select('id, goal, content, created_at')
+    .eq('student_id', studentRow.id)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  const reports = (rows ?? []).map((r) => ({
+    id: r.id,
+    goal: r.goal,
+    content: r.content,
+    created_at: r.created_at,
+  }));
+
+  return NextResponse.json({ ok: true, reports });
+}
+
 export async function POST(req: NextRequest) {
   // ── 인증 ───────────────────────────────────────────────────────────
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // ── 플랜 & 사용량 병렬 조회 ────────────────────────────────────────
+  // ── 플랜 & 사용량 병렬 조회 + 구독 status 명시 검증 ─────────────────
+  const serviceSupabase = getServiceSupabase();
+
   const [plan, usageThisMonth] = await Promise.all([
     getPlanForUser(user.id),
     getAiReportUsageThisMonth(user.id),
   ]);
+
+  // 구독 status 이중 체크: past_due/expired/canceled 상태면 차단
+  const { data: subRow } = await serviceSupabase
+    .from('spokedu_pro_subscriptions')
+    .select('status')
+    .in(
+      'center_id',
+      (await serviceSupabase
+        .from('spokedu_pro_centers')
+        .select('id')
+        .eq('owner_id', user.id)
+        .limit(1)
+      ).data?.map((r: { id: string }) => r.id) ?? []
+    )
+    .maybeSingle();
+
+  if (subRow && subRow.status !== 'active' && subRow.status !== 'trialing') {
+    return NextResponse.json(
+      {
+        error: 'subscription_inactive',
+        status: subRow.status,
+        message: '구독이 만료되었거나 일시 정지 상태입니다. 플랜을 확인해 주세요.',
+      },
+      { status: 403 }
+    );
+  }
 
   const monthlyLimit = PLAN_LIMITS[plan].aiReportsPerMonth;
 
@@ -162,6 +330,54 @@ export async function POST(req: NextRequest) {
     // 사용량 증가 (비동기, 실패해도 응답에 영향 없음)
     incrementAiReportUsage(user.id).catch(() => {});
 
+    // 성취 뱃지 저장 (비동기, 실패해도 응답에 영향 없음)
+    const strengthSummary = parsed.strengthSummary ?? '';
+    const growthTag = parsed.growthTag ?? '';
+    if (strengthSummary || growthTag) {
+      saveBadge(serviceSupabase, user.id, {
+        id: crypto.randomUUID(),
+        studentName: body.student.name,
+        classGroup: body.student.classGroup ?? '',
+        strengthSummary,
+        growthTag,
+        period: body.periodLabel ?? '이번 수업',
+        generatedAt: new Date().toISOString(),
+      }).catch(() => {});
+    }
+
+    // spokedu_pro_ai_reports 저장 (center_id + tenant_student_id 있으면). 실패해도 응답은 200, savedToHistory로 안내.
+    let savedToHistory = false;
+    const tenantStudentId = body.student.id;
+    const centerId = await getActiveCenterId(serviceSupabase, user.id);
+    if (centerId && tenantStudentId) {
+      try {
+        const studentId = await ensureStudentRow(serviceSupabase, centerId, tenantStudentId, {
+          name: body.student.name,
+          classGroup: body.student.classGroup ?? '',
+        });
+        if (studentId) {
+          const meta = {
+            studentName: body.student.name,
+            classGroup: body.student.classGroup,
+            periodLabel: body.periodLabel,
+            generatedAt: new Date().toISOString(),
+          };
+          const content = JSON.stringify({ report: parsed, meta });
+          const { error: insertErr } = await serviceSupabase.from('spokedu_pro_ai_reports').insert({
+            student_id: studentId,
+            center_id: centerId,
+            goal: body.periodLabel ?? null,
+            content,
+            created_by: user.id,
+          });
+          if (!insertErr) savedToHistory = true;
+          else console.error('[spokedu-pro ai-report] save report failed:', insertErr.message);
+        }
+      } catch (e) {
+        console.error('[spokedu-pro ai-report] save report error:', e);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       report: parsed,
@@ -175,6 +391,7 @@ export async function POST(req: NextRequest) {
         used: usageThisMonth + 1,
         limit: monthlyLimit === Infinity ? null : monthlyLimit,
       },
+      savedToHistory,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';

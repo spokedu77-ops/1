@@ -1,19 +1,242 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Users, UserPlus, X, ChevronDown, ChevronUp, CheckCircle, Clock, XCircle, RefreshCw, AlertCircle, CloudOff } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import Script from 'next/script';
+import {
+  Users, UserPlus, X, ChevronDown, ChevronUp, CheckCircle, Clock, XCircle,
+  RefreshCw, AlertCircle, CloudOff, Plus, Pencil, Trash2, Zap, Crown, Award, Share2,
+} from 'lucide-react';
 import {
   useStudentStore,
-  CLASS_GROUPS,
   PHYSICAL_LABELS,
   LEVEL_LABELS,
   type Student,
   type PhysicalFunctions,
   type PhysicalLevel,
 } from '../hooks/useStudentStore';
+import { useClassStore, type ClassGroup } from '../hooks/useClassStore';
+import { useBadgeStore, type Badge } from '../hooks/useBadgeStore';
 import { useProContext } from '../hooks/useProContext';
 
-// ── 신체 기능 레벨 버튼 ──────────────────────────────────────────────
+declare global {
+  interface Window {
+    Kakao?: {
+      isInitialized: () => boolean;
+      init: (key: string) => void;
+      Share: {
+        sendDefault: (options: { objectType: string; text: string; link: { mobileWebUrl: string; webUrl: string } }) => void;
+      };
+    };
+  }
+}
+
+function makeBadgeTitle(strengthSummary: string): string {
+  return strengthSummary ? `이번 달의 ${strengthSummary}` : '성취 뱃지';
+}
+
+// ── 업셀 팝업 ────────────────────────────────────────────────────────────────
+function ClassLimitModal({
+  plan,
+  limit,
+  onClose,
+}: {
+  plan: string;
+  limit: number;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-7 max-w-sm w-full space-y-5 shadow-2xl">
+        <div className="flex items-center gap-3">
+          {plan === 'free' ? (
+            <Zap className="w-6 h-6 text-blue-400 shrink-0" />
+          ) : (
+            <Crown className="w-6 h-6 text-amber-400 shrink-0" />
+          )}
+          <h3 className="text-lg font-black text-white">
+            {plan === 'free' ? 'Basic으로 업그레이드' : 'Pro로 업그레이드'}
+          </h3>
+        </div>
+        <p className="text-slate-300 text-sm leading-relaxed">
+          현재 플랜은 반을 <span className="text-white font-bold">{limit}개</span>까지만
+          만들 수 있습니다.
+          <br />
+          {plan === 'free'
+            ? 'Basic 플랜으로 업그레이드하면 반 3개까지 관리할 수 있어요.'
+            : 'Pro 플랜으로 업그레이드하면 반 개수 제한 없이 관리할 수 있어요.'}
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm font-bold hover:border-slate-500 transition-colors"
+          >
+            닫기
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-colors"
+          >
+            설정에서 업그레이드
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 반 관리 패널 ──────────────────────────────────────────────────────────────
+function ClassManagerPanel({
+  classes,
+  classLimit,
+  studentsByClass,
+  onCreateClass,
+  onRenameClass,
+  onDeleteClass,
+}: {
+  classes: ClassGroup[];
+  classLimit: number | null;
+  studentsByClass: Record<string, number>;
+  onCreateClass: (name: string) => void;
+  onRenameClass: (id: string, name: string) => void;
+  onDeleteClass: (id: string) => void;
+}) {
+  const [newName, setNewName] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [nameError, setNameError] = useState('');
+
+  const isAtLimit = classLimit !== null && classes.length >= classLimit;
+
+  const handleCreate = () => {
+    const trimmed = newName.trim();
+    if (!trimmed) { setNameError('반 이름을 입력해주세요.'); return; }
+    if (classes.some((c) => c.name === trimmed)) { setNameError('이미 같은 이름의 반이 있습니다.'); return; }
+    setNameError('');
+    onCreateClass(trimmed);
+    setNewName('');
+  };
+
+  const handleRenameSubmit = (id: string) => {
+    const trimmed = editName.trim();
+    if (!trimmed) return;
+    if (classes.some((c) => c.name === trimmed && c.id !== id)) {
+      setNameError('이미 같은 이름의 반이 있습니다.');
+      return;
+    }
+    setNameError('');
+    onRenameClass(id, trimmed);
+    setEditingId(null);
+  };
+
+  return (
+    <div className="p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">반 관리</p>
+        {classLimit !== null && (
+          <span className="text-xs text-slate-500 tabular-nums">
+            <span className={isAtLimit ? 'text-amber-400 font-bold' : 'text-slate-400'}>
+              {classes.length}
+            </span>
+            /{classLimit}개
+          </span>
+        )}
+      </div>
+
+      {/* 반 목록 */}
+      {classes.length === 0 ? (
+        <p className="text-sm text-slate-500 py-2">등록된 반이 없습니다. 첫 반을 만들어 보세요.</p>
+      ) : (
+        <ul className="space-y-2">
+          {classes.map((c) => (
+            <li key={c.id} className="flex items-center gap-2 bg-slate-700/40 rounded-xl px-4 py-2.5">
+              {editingId === c.id ? (
+                <form
+                  className="flex flex-1 items-center gap-2"
+                  onSubmit={(e) => { e.preventDefault(); handleRenameSubmit(c.id); }}
+                >
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => { setEditName(e.target.value); setNameError(''); }}
+                    autoFocus
+                    className="flex-1 bg-slate-900 border border-blue-500 rounded-lg px-3 py-1 text-sm text-white focus:outline-none"
+                  />
+                  <button type="submit" className="text-xs font-bold text-blue-400 hover:text-blue-300">저장</button>
+                  <button type="button" onClick={() => { setEditingId(null); setNameError(''); }} className="text-xs text-slate-500 hover:text-slate-300">취소</button>
+                </form>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm font-bold text-white">{c.name}</span>
+                  <span className="text-xs text-slate-500 tabular-nums">{studentsByClass[c.name] ?? 0}명</span>
+                  <button
+                    type="button"
+                    onClick={() => { setEditingId(c.id); setEditName(c.name); setNameError(''); }}
+                    className="p-1.5 rounded-lg hover:bg-slate-600 text-slate-400 hover:text-white transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`"${c.name}" 반을 삭제하시겠습니까?\n해당 반의 학생은 '미분류'로 이동됩니다.`)) {
+                        onDeleteClass(c.id);
+                      }
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-red-900/40 text-slate-500 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {nameError && (
+        <p className="text-xs text-red-400">{nameError}</p>
+      )}
+
+      {/* 새 반 추가 */}
+      <div className="flex gap-2 pt-1">
+        <input
+          type="text"
+          placeholder="새 반 이름"
+          value={newName}
+          onChange={(e) => { setNewName(e.target.value); setNameError(''); }}
+          onKeyDown={(e) => e.key === 'Enter' && !isAtLimit && handleCreate()}
+          disabled={isAtLimit}
+          className="flex-1 bg-slate-900 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 placeholder:text-slate-600 disabled:opacity-40"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            if (isAtLimit) {
+              onCreateClass('__limit__');
+              return;
+            }
+            handleCreate();
+          }}
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          반 추가
+        </button>
+      </div>
+
+      {isAtLimit && (
+        <p className="text-xs text-amber-400 flex items-center gap-1">
+          <AlertCircle className="w-3.5 h-3.5" />
+          플랜 한도에 도달했습니다. 업그레이드하면 더 많은 반을 만들 수 있어요.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── 신체 기능 레벨 버튼 ──────────────────────────────────────────────────────
 function LevelButton({
   value,
   current,
@@ -46,7 +269,7 @@ function LevelButton({
   );
 }
 
-// ── 원생 카드 ────────────────────────────────────────────────────────
+// ── 원생 카드 ────────────────────────────────────────────────────────────────
 function StudentCard({
   student,
   onCycleStatus,
@@ -81,7 +304,7 @@ function StudentCard({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-black text-base truncate">{student.name}</p>
-            <p className="text-slate-400 text-xs font-medium">{student.classGroup}</p>
+            <p className="text-slate-400 text-xs font-medium">{student.classGroup || '미분류'}</p>
           </div>
           <div className="hidden sm:flex items-center gap-2 w-28 shrink-0">
             <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden min-w-0">
@@ -101,7 +324,12 @@ function StudentCard({
               <StatusIcon className="w-3.5 h-3.5" />
               {cfg.label}
             </button>
-            <button type="button" onClick={() => setExpanded((e) => !e)} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors" aria-label="신체 기능 펼치기">
+            <button
+              type="button"
+              onClick={() => setExpanded((e) => !e)}
+              className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"
+              aria-label="신체 기능 펼치기"
+            >
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
             <button
@@ -125,7 +353,6 @@ function StudentCard({
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
             신체 기능 평가 — 팀 나누기·술래 정하기에 활용됩니다
           </p>
-          {/* 768px 미만은 1열만 사용해 가로 overflow 제거 — 오른쪽 버튼이 터치를 받지 못하는 현상 방지 */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {(Object.keys(PHYSICAL_LABELS) as (keyof PhysicalFunctions)[]).map((key) => (
               <div key={key} className="flex items-center justify-between gap-2 min-w-[180px]">
@@ -149,42 +376,89 @@ function StudentCard({
   );
 }
 
-// ── 메인 컴포넌트 ────────────────────────────────────────────────────
+// ── 메인 컴포넌트 ────────────────────────────────────────────────────────────
 export default function DataCenterView() {
-  const { students, loaded, syncing, syncError, addStudent, removeStudent, cycleStatus, markAllPresent, updatePhysical } =
+  const { students, loaded: studentsLoaded, syncing, syncError, refetch, addStudent, removeStudent, cycleStatus, markAllPresent, updatePhysical } =
     useStudentStore();
+  const { classes, loaded: classesLoaded, createClass, renameClass, deleteClass } = useClassStore();
+  const { badges, loaded: badgesLoaded } = useBadgeStore();
   const { ctx } = useProContext();
 
-  const studentLimit = ctx.usage.studentLimit;
-  const isAtLimit = studentLimit !== null && students.length >= studentLimit;
-
+  const classLimit = ctx.usage.classLimit ?? null;
   const [filterGroup, setFilterGroup] = useState('전체');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newGroup, setNewGroup] = useState(CLASS_GROUPS[0]);
+  const [newGroup, setNewGroup] = useState('');
   const [nameError, setNameError] = useState('');
+  const [showClassManager, setShowClassManager] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<{ plan: string; limit: number } | null>(null);
 
   const filteredStudents = useMemo(
     () => (filterGroup === '전체' ? students : students.filter((s) => s.classGroup === filterGroup)),
     [students, filterGroup]
   );
 
+  const studentsByClass = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const s of students) {
+      map[s.classGroup] = (map[s.classGroup] ?? 0) + 1;
+    }
+    return map;
+  }, [students]);
+
   const presentCount = filteredStudents.filter((s) => s.status === 'present').length;
 
   const handleAdd = () => {
     const trimmed = newName.trim();
     if (!trimmed) { setNameError('이름을 입력해주세요.'); return; }
-    if (isAtLimit) { setNameError(`현재 플랜 한도(${studentLimit}명)에 도달했습니다. 업그레이드가 필요합니다.`); return; }
-    if (students.some((s) => s.name.trim() === trimmed && s.classGroup === newGroup)) {
-      setNameError('동일 반에 같은 이름이 있습니다.'); return;
-    }
-    addStudent(trimmed, newGroup);
+    addStudent(trimmed, newGroup || '미분류');
     setNewName('');
     setNameError('');
     setShowAddForm(false);
   };
 
-  if (!loaded) {
+  const handleCreateClass = useCallback(async (name: string) => {
+    if (name === '__limit__') {
+      setLimitInfo({ plan: ctx.entitlement.plan, limit: classLimit ?? 0 });
+      setShowLimitModal(true);
+      return;
+    }
+    const result = await createClass(name);
+    if ('error' in result && result.error === 'class_limit_exceeded') {
+      const err = result as { plan: string; limit: number };
+      setLimitInfo({ plan: err.plan, limit: err.limit });
+      setShowLimitModal(true);
+    } else if ('id' in result && newGroup === '') {
+      setNewGroup(result.name);
+    }
+  }, [createClass, classLimit, ctx.entitlement.plan, newGroup]);
+
+  const handleRenameClass = useCallback(async (id: string, name: string) => {
+    await renameClass(id, name);
+  }, [renameClass]);
+
+  const handleDeleteClass = useCallback(async (id: string) => {
+    const targetName = classes.find((c) => c.id === id)?.name;
+    await deleteClass(id);
+    if (filterGroup !== '전체' && targetName && filterGroup === targetName) {
+      setFilterGroup('전체');
+    }
+  }, [deleteClass, filterGroup, classes]);
+
+  const handleBadgeKakaoShare = useCallback((badge: Badge) => {
+    if (!window.Kakao?.isInitialized()) return;
+    const title = makeBadgeTitle(badge.strengthSummary);
+    window.Kakao.Share.sendDefault({
+      objectType: 'text',
+      text: `${badge.studentName} · ${title}\n${badge.growthTag}\n\n- 스포키듀 성취 뱃지`,
+      link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+    });
+  }, []);
+
+  const isLoaded = studentsLoaded && classesLoaded;
+
+  if (!isLoaded) {
     return (
       <section className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="flex items-center gap-2 text-slate-500 text-sm">
@@ -197,22 +471,74 @@ export default function DataCenterView() {
 
   return (
     <section className="px-6 lg:px-12 py-10 pb-32 space-y-8 max-w-5xl mx-auto">
+      <Script
+        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+        onLoad={() => {
+          const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+          if (key && window.Kakao && !window.Kakao.isInitialized()) window.Kakao.init(key);
+        }}
+      />
+
+      {/* 업셀 팝업 */}
+      {showLimitModal && limitInfo && (
+        <ClassLimitModal
+          plan={limitInfo.plan}
+          limit={limitInfo.limit}
+          onClose={() => setShowLimitModal(false)}
+        />
+      )}
+
       {/* 헤더 */}
       <header className="space-y-3 border-b border-slate-800 pb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-widest">
           <Users className="w-4 h-4" /> 원생 관리 및 평가
         </div>
-        <h2 className="text-4xl font-black text-white tracking-tight">출석부 & 신체 기능 평가</h2>
-        <p className="text-slate-400 font-medium">
-          출결을 관리하고 신체 기능을 평가하세요. 평가 데이터는 수업 보조도구의 술래 정하기·팀 나누기에 자동 활용됩니다.
-        </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="space-y-1">
+            <h2 className="text-4xl font-black text-white tracking-tight">출석부 & 신체 기능 평가</h2>
+            <p className="text-slate-400 font-medium">
+              출결을 관리하고 신체 기능을 평가하세요. 평가 데이터는 수업 보조도구의 술래 정하기·팀 나누기에 자동 활용됩니다.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowClassManager((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-bold rounded-xl transition-colors shrink-0"
+          >
+            <Pencil className="w-4 h-4" />
+            반 관리
+          </button>
+        </div>
       </header>
+
+      {/* 반 관리 패널 (토글) */}
+      {showClassManager && (
+        <ClassManagerPanel
+          classes={classes}
+          classLimit={classLimit}
+          studentsByClass={studentsByClass}
+          onCreateClass={handleCreateClass}
+          onRenameClass={handleRenameClass}
+          onDeleteClass={handleDeleteClass}
+        />
+      )}
 
       {/* 동기화 상태 배너 */}
       {syncError && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 text-sm">
-          <CloudOff className="w-4 h-4 shrink-0" />
-          <span>서버 연결 실패 — 로컬 캐시로 표시 중. 변경사항은 연결 복구 시 저장됩니다.</span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 text-sm">
+          <div className="flex items-center gap-2 flex-1">
+            <CloudOff className="w-4 h-4 shrink-0" />
+            <span>서버 연결 실패 — 로컬 캐시로 표시 중. 변경사항은 연결 복구 시 저장됩니다.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition-colors shrink-0"
+          >
+            다시 시도
+          </button>
         </div>
       )}
       {syncing && !syncError && (
@@ -237,9 +563,12 @@ export default function DataCenterView() {
             className="bg-slate-800 border border-slate-700 text-white text-sm font-medium rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500"
           >
             <option value="전체">전체 반</option>
-            {CLASS_GROUPS.map((g) => (
-              <option key={g} value={g}>{g}</option>
+            {classes.map((g) => (
+              <option key={g.id} value={g.name}>{g.name}</option>
             ))}
+            {students.some((s) => !classes.some((c) => c.name === s.classGroup)) && (
+              <option value="미분류">미분류</option>
+            )}
           </select>
 
           {filteredStudents.length > 0 && (
@@ -262,25 +591,14 @@ export default function DataCenterView() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          {studentLimit !== null && (
-            <span className="text-xs text-slate-500 tabular-nums">
-              <span className={isAtLimit ? 'text-red-400 font-bold' : 'text-slate-400 font-medium'}>
-                {students.length}
-              </span>
-              /{studentLimit}명
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => setShowAddForm((v) => !v)}
-            disabled={isAtLimit}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors shadow-lg"
-          >
-            <UserPlus className="w-4 h-4" />
-            원생 등록
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowAddForm((v) => !v)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg"
+        >
+          <UserPlus className="w-4 h-4" />
+          원생 등록
+        </button>
       </div>
 
       {/* 원생 추가 폼 */}
@@ -302,8 +620,9 @@ export default function DataCenterView() {
               onChange={(e) => setNewGroup(e.target.value)}
               className="bg-slate-900 border border-slate-600 text-white text-sm font-medium rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500"
             >
-              {CLASS_GROUPS.map((g) => (
-                <option key={g} value={g}>{g}</option>
+              <option value="">미분류</option>
+              {classes.map((g) => (
+                <option key={g.id} value={g.name}>{g.name}</option>
               ))}
             </select>
             <button
@@ -315,13 +634,27 @@ export default function DataCenterView() {
             </button>
             <button
               type="button"
-              onClick={() => { setShowAddForm(false); setNewName(''); setNewGroup(CLASS_GROUPS[0]); setNameError(''); }}
+              onClick={() => { setShowAddForm(false); setNewName(''); setNewGroup(''); setNameError(''); }}
               className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors"
             >
               취소
             </button>
           </div>
           {nameError && <p className="text-red-400 text-sm font-medium">{nameError}</p>}
+
+          {classes.length === 0 && (
+            <p className="text-xs text-slate-500 flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5" />
+              반을 먼저 만들면 학생을 반별로 관리할 수 있어요.{' '}
+              <button
+                type="button"
+                onClick={() => setShowClassManager(true)}
+                className="text-blue-400 underline underline-offset-2"
+              >
+                반 관리 열기
+              </button>
+            </p>
+          )}
         </div>
       )}
 
@@ -348,7 +681,9 @@ export default function DataCenterView() {
             <Users className="w-9 h-9 text-slate-600" />
           </div>
           <div className="space-y-2">
-            <p className="text-white font-black text-xl">등록된 원생이 없습니다</p>
+            <p className="text-white font-black text-xl">
+              {filterGroup === '전체' ? '등록된 원생이 없습니다' : `${filterGroup}에 원생이 없습니다`}
+            </p>
             <p className="text-slate-400 text-sm max-w-xs mx-auto">
               원생을 등록하면 출결 관리, 신체 기능 평가, 술래 정하기, 팀 나누기를 사용할 수 있습니다.
             </p>
@@ -378,6 +713,48 @@ export default function DataCenterView() {
         </div>
       )}
 
+      {/* 성취 뱃지 섹션 */}
+      {badgesLoaded && badges.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-amber-400" />
+            <h3 className="text-lg font-black text-white">이달의 성취 뱃지</h3>
+          </div>
+          <p className="text-slate-400 text-sm">AI 리포트에서 도출된 강점·성장 태그로 만든 뱃지예요.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {badges.map((badge) => (
+              <div
+                key={badge.id}
+                className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex flex-col gap-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-white font-bold truncate">{badge.studentName}</p>
+                    <p className="text-slate-500 text-xs">{badge.classGroup || '미분류'}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleBadgeKakaoShare(badge)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-300 rounded-lg text-xs font-bold shrink-0"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    공유
+                  </button>
+                </div>
+                <p className="text-amber-400 font-bold text-sm">{makeBadgeTitle(badge.strengthSummary)}</p>
+                {badge.growthTag && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium rounded-full w-fit">
+                    {badge.growthTag}
+                  </span>
+                )}
+                <p className="text-slate-500 text-xs mt-auto">
+                  {new Date(badge.generatedAt).toLocaleDateString('ko-KR')} · {badge.period}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

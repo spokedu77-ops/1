@@ -14,6 +14,7 @@ import {
 } from '@/app/lib/feedbackValidation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { parseExtraTeachers } from '@/app/admin/classes/lib/sessionUtils';
 
 interface Session {
   id: string;
@@ -21,6 +22,8 @@ interface Session {
   start_at: string;
   session_type: string;
   status: string;
+  created_by?: string | null;
+  memo?: string | null;
   group_id?: string | null;
   students_text?: string;
   photo_url?: string[];
@@ -142,6 +145,14 @@ function MyClassesContent() {
 
   const handleCompleteSession = async () => {
     if (!supabase || !selectedEvent || uploading) return;
+
+    const sessionStart = new Date(selectedEvent.start_at);
+    const today = new Date();
+    sessionStart.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    if (sessionStart > today) {
+      return toast.error('수업일이 아직 지나지 않았습니다. 수업일 이후에 완료 처리해 주세요.');
+    }
     
     // 센터 수업: 파일만 체크
     if (selectedEvent.session_type === 'regular_center') {
@@ -181,6 +192,38 @@ function MyClassesContent() {
         .eq('id', selectedEvent.id);
 
       if (error) throw error;
+
+      // 수업 카운팅: 피드백 저장(finished) 시 session_count_logs 반영
+      const teacherId = selectedEvent.created_by;
+      if (teacherId && String(teacherId).trim()) {
+        const { error: logErr } = await supabase.from('session_count_logs').insert({
+          teacher_id: teacherId,
+          session_id: selectedEvent.id,
+          session_title: selectedEvent.title ?? null,
+          count_change: 1,
+          reason: '수업 완료',
+        });
+        if (logErr && logErr.code !== '23505' && logErr.code !== '23503') {
+          devLogger.error('수업 카운팅 로그 저장 실패:', logErr);
+        }
+      }
+      if (selectedEvent.memo?.includes('EXTRA_TEACHERS:')) {
+        const { extraTeachers } = parseExtraTeachers(selectedEvent.memo);
+        for (const ex of extraTeachers) {
+          if (!ex.id) continue;
+          const { error: exLog } = await supabase.from('session_count_logs').insert({
+            teacher_id: ex.id,
+            session_id: selectedEvent.id,
+            session_title: selectedEvent.title ?? null,
+            count_change: 1,
+            reason: '수업 완료 (보조)',
+          });
+          if (exLog && exLog.code !== '23505' && exLog.code !== '23503') {
+            devLogger.error('수업 카운팅 로그(보조) 저장 실패:', exLog);
+          }
+        }
+      }
+
       toast.success('성공적으로 저장되었습니다.');
       setIsModalOpen(false);
       getMySchedule();

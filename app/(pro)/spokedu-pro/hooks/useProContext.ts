@@ -3,7 +3,6 @@
 /**
  * 스포키듀 구독 컨텍스트 훅.
  * GET /api/spokedu-pro/context → plan, entitlement, center, usage 정보 캐싱.
- * dbReady=false 시 무료 플랜으로 fallback.
  */
 import { useState, useEffect, useCallback } from 'react';
 
@@ -19,9 +18,10 @@ export type Entitlement = {
 
 export type ProUsage = {
   studentCount: number;
-  studentLimit: number | null;         // null = 무제한
   aiReportThisMonth: number;
   aiReportMonthlyLimit: number | null; // null = 무제한
+  classCount: number;
+  classLimit: number | null;           // null = 무제한
 };
 
 export type ProContext = {
@@ -44,8 +44,14 @@ const FREE_CONTEXT: ProContext = {
   centers: [],
   role: null,
   entitlement: { plan: 'free', status: 'active', isPro: false },
-  billing: { priceKrw: 79900, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null },
-  usage: { studentCount: 0, studentLimit: 10, aiReportThisMonth: 0, aiReportMonthlyLimit: 0 },
+  billing: { priceKrw: 0, promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null },
+  usage: {
+    studentCount: 0,
+    aiReportThisMonth: 0,
+    aiReportMonthlyLimit: 0,
+    classCount: 0,
+    classLimit: 1,
+  },
   dbReady: false,
 };
 

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import html2canvas from 'html2canvas';
-import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp } from 'lucide-react';
+import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp, FileText } from 'lucide-react';
 
 type TeacherRow = { id: string; name: string };
 type ExtraTeacher = { id: string; price?: number };
@@ -53,6 +53,9 @@ export default function UltimateSettlementPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [period, setPeriod] = useState(now.getDate() >= 16 ? 'second' : 'first');
+  const [taxSummaryOpen, setTaxSummaryOpen] = useState(false);
+  const [taxSummaryData, setTaxSummaryData] = useState<{ id: string; name: string; grossTotal: number; is_active?: boolean }[]>([]);
+  const [taxSummaryLoading, setTaxSummaryLoading] = useState(false);
 
   useEffect(() => {
     const checkMaster = async () => {
@@ -71,9 +74,22 @@ export default function UltimateSettlementPage() {
     if (!supabase || !isAdmin) return; 
     setLoading(true);
     try {
+      const now = new Date();
       const lastDay = new Date(year, month, 0).getDate();
-      const startDate = `${year}-${String(month).padStart(2, '0')}-${period === 'first' ? '01' : '16'}`;
-      const endDate = `${year}-${String(month).padStart(2, '0')}-${period === 'first' ? '15' : lastDay}`;
+      const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+      const todayDay = now.getDate();
+
+      let startDay = period === 'first' ? 1 : 16;
+      let endDay = period === 'first' ? 15 : lastDay;
+      if (isCurrentMonth) {
+        if (period === 'second' && todayDay < 16) {
+          endDay = 15;
+        } else {
+          endDay = Math.min(endDay, todayDay);
+        }
+      }
+      const startDate = `${year}-${String(month).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
       const { data: teachers } = await supabase
         .from('users')
@@ -164,6 +180,68 @@ export default function UltimateSettlementPage() {
 
   useEffect(() => { fetchReport(); }, [fetchReport]);
 
+  /** 세금 계산용: 선택한 연·월 한 달 전체(1일~말일) 기준 선생님별 세전 총액 */
+  const fetchTaxSummary = useCallback(async () => {
+    if (!supabase || !isAdmin) return;
+    setTaxSummaryLoading(true);
+    setTaxSummaryOpen(true);
+    try {
+      const lastDay = new Date(year, month, 0).getDate();
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+      const { data: teachers } = await supabase
+        .from('users')
+        .select('id, name, is_active')
+        .eq('role', 'teacher');
+
+      const { data: sessions } = await supabase
+        .from('sessions')
+        .select('id, created_by, price, students_text, memo')
+        .in('status', ['finished', 'verified'])
+        .gte('start_at', `${startDate}T00:00:00`)
+        .lte('start_at', `${endDate}T23:59:59`);
+
+      const { data: dbAdjs } = await supabase
+        .from('settlements')
+        .select('*')
+        .eq('year', year)
+        .eq('month', month);
+
+      const sessionsList = sessions || [];
+      const calculated = (teachers || []).map((teacher: TeacherRow & { is_active?: boolean }) => {
+        const teacherSessions = sessionsList.filter((s: SessionRow) => {
+          const isMain = String(s.created_by) === String(teacher.id);
+          const extras = getExtraTeachersFromSession(s);
+          const isExtra = extras.some((ex) => String(ex.id) === String(teacher.id));
+          return isMain || isExtra;
+        });
+        const sessionsTotal = teacherSessions.reduce((acc: number, cur: SessionRow) => {
+          const rawPrice = Number(cur.price) || 0;
+          const extras = getExtraTeachersFromSession(cur);
+          const extrasSum = extras.reduce((eSum: number, ex: ExtraTeacher) => eSum + (Number(ex?.price) || 0), 0);
+          const isMain = String(cur.created_by) === String(teacher.id);
+          if (isMain) {
+            if (extras.length > 0 && rawPrice >= extrasSum) return acc + (rawPrice - extrasSum);
+            return acc + rawPrice;
+          }
+          const ex = extras.find((e) => String(e.id) === String(teacher.id));
+          return acc + (Number(ex?.price) || 0);
+        }, 0);
+        const teacherAdjs = (dbAdjs?.filter((a: SettlementRow) => a.teacher_id === teacher.id) || []) as SettlementRow[];
+        const adjTotal = teacherAdjs.reduce((acc: number, cur: { amount?: number }) => acc + (Number(cur.amount) ?? 0), 0);
+        const grossTotal = sessionsTotal + adjTotal;
+        return { id: teacher.id, name: teacher.name || 'Unknown', grossTotal, is_active: teacher.is_active ?? true };
+      });
+      setTaxSummaryData(calculated.sort((a, b) => b.grossTotal - a.grossTotal || a.name.localeCompare(b.name, 'ko')));
+    } catch (e) {
+      devLogger.error('Tax summary error:', e);
+      toast.error('세금 계산용 데이터 조회 실패');
+    } finally {
+      setTaxSummaryLoading(false);
+    }
+  }, [supabase, isAdmin, year, month]);
+
   // 대시보드 합계: Total Gross = 세션 수업료 + 기타정산 (단일 기준). Net/Tax는 여기서 파생해 상단 카드가 항상 일치하도록 함
   const totalGrossFromSessions = sessionFeesTotal + totalAdjAmount;
   const derivedTax = Math.floor(totalGrossFromSessions * 0.033);
@@ -228,7 +306,17 @@ export default function UltimateSettlementPage() {
           <p className="text-indigo-600 font-bold text-[10px] uppercase tracking-[0.3em]">Master Settlement Dashboard</p>
         </div>
         
-        <div className="flex bg-white p-2 rounded-3xl shadow-sm border border-slate-100 gap-2 items-center">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={fetchTaxSummary}
+            disabled={taxSummaryLoading}
+            className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-2xl text-xs font-black uppercase tracking-wide transition-all shadow-sm border border-amber-600/30"
+          >
+            <FileText size={14} />
+            {taxSummaryLoading ? '조회 중…' : '세금 계산용 (월별 세전)'}
+          </button>
+          <div className="flex bg-white p-2 rounded-3xl shadow-sm border border-slate-100 gap-2 items-center">
           <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="p-2 text-slate-400 outline-none bg-transparent cursor-pointer text-xs font-black uppercase">
             {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}Y</option>)}
           </select>
@@ -241,7 +329,45 @@ export default function UltimateSettlementPage() {
             <button onClick={() => setPeriod('second')} className={`px-5 py-2 rounded-xl text-[10px] font-black transition-all ${period === 'second' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>16-말일</button>
           </div>
         </div>
+        </div>
       </div>
+
+      {/* 세금 계산용: 선생님별 해당 월 세전 총액 */}
+      {taxSummaryOpen && (
+        <section className="mb-10 bg-amber-50/80 border border-amber-200/60 rounded-[28px] p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-sm font-black text-amber-900 uppercase tracking-wide flex items-center gap-2">
+              <FileText size={16} /> {year}년 {month}월 세금 계산용 — 선생님별 세전 총액 (한 달 전체)
+            </h2>
+            <button type="button" onClick={() => setTaxSummaryOpen(false)} className="text-amber-600 hover:text-amber-800 text-xs font-black">닫기</button>
+          </div>
+          {taxSummaryLoading ? (
+            <p className="text-amber-700 text-xs font-bold">불러오는 중…</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-amber-200/60">
+                    <th className="py-3 px-2 text-[10px] font-black text-amber-800 uppercase tracking-wider">선생님</th>
+                    <th className="py-3 px-2 text-[10px] font-black text-amber-800 uppercase tracking-wider text-right">세전 총액 (원)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {taxSummaryData.map((row) => (
+                    <tr key={row.id} className="border-b border-amber-100/60 last:border-0">
+                      <td className="py-2.5 px-2 text-sm font-bold text-slate-800">
+                        {row.name}
+                        {row.is_active === false && <span className="ml-1.5 text-[10px] font-bold text-slate-400">(종료)</span>}
+                      </td>
+                      <td className="py-2.5 px-2 text-sm font-black text-slate-900 text-right">{(row.grossTotal || 0).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* [ Image of Monthly Settlement Summary Dashboard ] */}
       {/* 1. 월별 정산 총합 대시보드 (Total Summary) */}

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb, Play, ListChecks } from 'lucide-react';
 import type { ProgramDetail } from '../types';
 import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
 
@@ -31,6 +31,7 @@ export default function SpokeduProDrawer({
   onClose: () => void;
   onFabClick?: () => void;
 }) {
+  const checklistSectionRef = useRef<HTMLElement | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -197,10 +198,34 @@ export default function SpokeduProDrawer({
                   ))}
                 </div>
               )}
+              {/* 수업에서 바로 쓰는 액션 */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                {videoUrl && (
+                  <a
+                    href={videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-colors"
+                  >
+                    <Play className="w-4 h-4" />
+                    영상 보기
+                  </a>
+                )}
+                {checklist && (
+                  <button
+                    type="button"
+                    onClick={() => checklistSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold transition-colors"
+                  >
+                    <ListChecks className="w-4 h-4" />
+                    체크리스트 보기
+                  </button>
+                )}
+              </div>
             </div>
 
             {checklist && (
-              <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
+              <section ref={checklistSectionRef} className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
                 <div className="flex items-center gap-2 mb-3 text-amber-400">
                   <ClipboardList size={18} />
                   <span className="text-xs font-black uppercase tracking-wider">사전 체크리스트</span>

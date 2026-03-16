@@ -21,12 +21,13 @@ interface SessionRecord {
   status: string;
 }
 
-/** 정산 내역에는 수업 이름만 표시 (앞의 3/7 회차 표기·끝의 N회차 제거) */
+/** 회차 숫자 제거하고 한글 제목만 표시 (1/2, 4/5, 7/10 등은 틀리는 경우가 많아 제외) */
 function displayTitle(title: string | undefined): string {
   if (!title) return '';
   return title
-    .replace(/^\s*\d+\/\d+\s*/, '')   // 앞의 "3/7 " 제거
-    .replace(/\s*-?\s*\d+회차\s*$/i, '')
+    .replace(/^\s*\d+\/\d+\s*/, '')
+    .replace(/\s*[-_]?\s*\d+회차\s*$/i, '')
+    .replace(/\s+\d+회\s*$/i, '')
     .replace(/\s+\d+회차\s*$/i, '')
     .trim() || title;
 }
@@ -135,11 +136,17 @@ export default function TeacherReportPage() {
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mileage Log</h3>
           </div>
           <div className="bg-white rounded-[28px] border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
-            {mileageLogs.length > 0 ? (
-              mileageLogs.slice(0, 10).map((log) => (
+            {(() => {
+              const visible = mileageLogs.filter((log) => !log.reason?.includes('[취소]'));
+              return visible.length > 0 ? (
+              visible.slice(0, 10).map((log) => (
                 <div key={log.id} className="p-4 flex justify-between items-center">
                   <div className="flex-1 min-w-0 pr-4">
-                    <p className="text-[12px] font-black text-slate-800 truncate">{log.session_title}</p>
+                    <p className="text-[12px] font-black text-slate-800 truncate">
+                      {displayTitle(log.session_title)
+                        ? `${displayTitle(log.session_title)} (${new Date(log.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })})`
+                        : new Date(log.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                    </p>
                     <p className="text-[9px] font-bold text-slate-400 mt-0.5">{cleanReason(log.reason)}</p>
                   </div>
                   <div className="text-right">
@@ -152,7 +159,8 @@ export default function TeacherReportPage() {
               ))
             ) : (
               <div className="py-12 text-center text-slate-200 text-[10px] font-black italic uppercase">No Data</div>
-            )}
+            );
+            })()}
           </div>
         </div>
       </section>

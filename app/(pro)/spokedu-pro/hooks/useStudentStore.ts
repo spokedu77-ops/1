@@ -37,38 +37,102 @@ export const LEVEL_LABELS: Record<PhysicalLevel, string> = {
   3: '상',
 };
 
-export const CLASS_GROUPS = ['유치부 인지반', '초등 기초반', '초등 심화반', '중등반'];
+/** @deprecated CLASS_GROUPS는 고정 상수에서 동적 반 목록(useClassStore)으로 교체됨. */
+export const CLASS_GROUPS: string[] = [];
 
-// ── localStorage (offline cache) ───────────────────────────────────────────
-const LS_STUDENTS = 'spokedu-pro:students:v2';
-const LS_ATTENDANCE = (date: string) => `spokedu-pro:attendance:${date}`;
+// ── Legacy keys for one-time migration (LS → API) ─────────────────────────
+const LEGACY_STUDENT_KEYS = ['spokedu-pro:students:v2', 'spokedu-pro:students:v1', 'spokedu-pro:students'];
+const ATTENDANCE_MIGRATED_KEY = 'spokedu-pro:attendance:migrated';
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function lsGetStudents(): Omit<Student, 'status'>[] {
+/** 첫 로그인 시 localStorage에 있던 학생 데이터를 API로 올리고, 전부 성공 시에만 LS 삭제 (유실 방지) */
+async function migrateStudentsFromLS(): Promise<void> {
+  let toMigrate: Omit<Student, 'status'>[] = [];
+  for (const key of LEGACY_STUDENT_KEYS) {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          toMigrate = parsed;
+          break;
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  if (toMigrate.length === 0) return;
+
+  let allOk = true;
+  for (const s of toMigrate) {
+    try {
+      const res = await fetch('/api/spokedu-pro/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: s.name?.trim() || '이름없음',
+          classGroup: s.classGroup ?? '미분류',
+          physical: s.physical,
+          note: s.note,
+        }),
+      });
+      if (!res.ok) allOk = false;
+    } catch {
+      allOk = false;
+    }
+  }
+  if (!allOk) return;
+  for (const key of LEGACY_STUDENT_KEYS) {
+    try {
+      localStorage.removeItem(key);
+    } catch { /* ignore */ }
+  }
+}
+
+/** localStorage에 있는 출결 키들을 API로 올리고, 성공한 항목만 LS 삭제·전부 성공 시에만 migrated 플래그 (유실 방지) */
+async function migrateAttendanceFromLS(): Promise<void> {
+  if (typeof localStorage === 'undefined') return;
   try {
-    const raw = localStorage.getItem(LS_STUDENTS);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  return [];
-}
+    if (localStorage.getItem(ATTENDANCE_MIGRATED_KEY) === '1') return;
+  } catch {
+    return;
+  }
 
-function lsSaveStudents(students: Omit<Student, 'status'>[]): void {
-  try { localStorage.setItem(LS_STUDENTS, JSON.stringify(students)); } catch { /* ignore */ }
-}
+  const prefix = 'spokedu-pro:attendance:';
+  const keysToMigrate: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(prefix) && key !== ATTENDANCE_MIGRATED_KEY) keysToMigrate.push(key);
+  }
 
-function lsGetAttendance(date: string): Record<string, AttendanceStatus> {
+  let allOk = true;
+  for (const key of keysToMigrate) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const records = JSON.parse(raw) as Record<string, AttendanceStatus>;
+      const date = key.slice(prefix.length);
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+      const res = await fetch('/api/spokedu-pro/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, records }),
+      });
+      if (res.ok) {
+        localStorage.removeItem(key);
+      } else {
+        allOk = false;
+      }
+    } catch {
+      allOk = false;
+    }
+  }
+  if (!allOk) return;
   try {
-    const raw = localStorage.getItem(LS_ATTENDANCE(date));
-    if (raw) return JSON.parse(raw);
+    localStorage.setItem(ATTENDANCE_MIGRATED_KEY, '1');
   } catch { /* ignore */ }
-  return {};
-}
-
-function lsSaveAttendance(date: string, records: Record<string, AttendanceStatus>): void {
-  try { localStorage.setItem(LS_ATTENDANCE(date), JSON.stringify(records)); } catch { /* ignore */ }
 }
 
 // ── API helpers ────────────────────────────────────────────────────────────
@@ -149,26 +213,24 @@ export function balanceTeams(students: Student[]): { teamA: Student[]; teamB: St
 export function useStudentStore() {
   const today = todayISO();
 
-  // SSR/클라이언트 첫 페인트 일치를 위해 빈 값으로 초기화. localStorage는 useEffect에서 복원.
   const [rawStudents, setRawStudents] = useState<Omit<Student, 'status'>[]>([]);
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
   const [loaded, setLoaded] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  // 최신 attendance를 ref로 유지 (비동기 콜백 내 클로저 문제 방지)
   const attendanceRef = useRef(attendance);
   attendanceRef.current = attendance;
 
-  // ── 초기 로드: localStorage 복원 후 API에서 최신 데이터 가져오기 ─────────
+  // ── 초기 로드: 마이그레이션(1회) 후 API에서만 로드 ─────────────────────────
   useEffect(() => {
-    setRawStudents(lsGetStudents());
-    setAttendance(lsGetAttendance(today));
-
     let cancelled = false;
     (async () => {
       setSyncing(true);
       try {
+        await migrateStudentsFromLS();
+        await migrateAttendanceFromLS();
+        if (cancelled) return;
         const [students, att] = await Promise.all([
           apiFetchStudents(),
           apiFetchAttendance(today),
@@ -176,8 +238,6 @@ export function useStudentStore() {
         if (cancelled) return;
         setRawStudents(students);
         setAttendance(att);
-        lsSaveStudents(students);
-        lsSaveAttendance(today, att);
         setSyncError(null);
       } catch (err) {
         if (cancelled) return;
@@ -187,47 +247,28 @@ export function useStudentStore() {
       }
     })();
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [today]);
 
   const students: Student[] = mergeStudentsWithAttendance(rawStudents, attendance);
 
   // ── Mutations ─────────────────────────────────────────────────────────
   const addStudent = useCallback(async (name: string, classGroup: string): Promise<void> => {
-    // Optimistic
     const tempId = crypto.randomUUID();
     const tempStudent: Omit<Student, 'status'> = {
       id: tempId, name: name.trim(), classGroup, physical: { ...DEFAULT_PHYSICAL },
     };
-    setRawStudents((prev) => {
-      const next = [...prev, tempStudent];
-      lsSaveStudents(next);
-      return next;
-    });
+    setRawStudents((prev) => [...prev, tempStudent]);
 
     try {
       const created = await apiAddStudent(name, classGroup);
-      setRawStudents((prev) => {
-        const next = prev.map((s) => s.id === tempId ? created : s);
-        lsSaveStudents(next);
-        return next;
-      });
+      setRawStudents((prev) => prev.map((s) => s.id === tempId ? created : s));
     } catch {
-      // Rollback
-      setRawStudents((prev) => {
-        const next = prev.filter((s) => s.id !== tempId);
-        lsSaveStudents(next);
-        return next;
-      });
+      setRawStudents((prev) => prev.filter((s) => s.id !== tempId));
     }
   }, []);
 
   const removeStudent = useCallback(async (id: string): Promise<void> => {
-    setRawStudents((prev) => {
-      const next = prev.filter((s) => s.id !== id);
-      lsSaveStudents(next);
-      return next;
-    });
+    setRawStudents((prev) => prev.filter((s) => s.id !== id));
     try {
       await apiRemoveStudent(id);
     } catch {
@@ -240,8 +281,6 @@ export function useStudentStore() {
     setAttendance((prev) => {
       const current = prev[id] ?? 'present';
       const next = { ...prev, [id]: order[(order.indexOf(current) + 1) % order.length] };
-      lsSaveAttendance(today, next);
-      // Persist to API (fire & forget)
       apiSaveAttendance(today, next).catch(() => { /* ignore */ });
       return next;
     });
@@ -251,31 +290,45 @@ export function useStudentStore() {
     setAttendance((prev) => {
       const next = { ...prev };
       ids.forEach((id) => { next[id] = 'present'; });
-      lsSaveAttendance(today, next);
       apiSaveAttendance(today, next).catch(() => { /* ignore */ });
       return next;
     });
   }, [today]);
 
   const updatePhysical = useCallback(async (id: string, key: keyof PhysicalFunctions, value: PhysicalLevel): Promise<void> => {
-    setRawStudents((prev) => {
-      const next = prev.map((s) =>
+    setRawStudents((prev) =>
+      prev.map((s) =>
         s.id === id ? { ...s, physical: { ...s.physical, [key]: value } } : s
-      );
-      lsSaveStudents(next);
-      return next;
-    });
-    // Persist to API
+      )
+    );
     await apiUpdatePhysical(id, { [key]: value }).catch(() => { /* best-effort */ });
   }, []);
 
   const presentStudents = students.filter((s) => s.status === 'present');
+
+  const refetch = useCallback(async () => {
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      const [list, att] = await Promise.all([
+        apiFetchStudents(),
+        apiFetchAttendance(today),
+      ]);
+      setRawStudents(list);
+      setAttendance(att);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : 'sync failed');
+    } finally {
+      setSyncing(false);
+    }
+  }, [today]);
 
   return {
     students,
     loaded,
     syncing,
     syncError,
+    refetch,
     addStudent,
     removeStudent,
     cycleStatus,
