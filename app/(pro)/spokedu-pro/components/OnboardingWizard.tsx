@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Building2, UserPlus, Sparkles, ChevronRight, Loader2 } from 'lucide-react';
 import { useProContext } from '../hooks/useProContext';
+import type { ViewId } from '../hooks/useSpokeduProUI';
 
 type Step = 1 | 2 | 3;
 
@@ -13,7 +14,7 @@ export default function OnboardingWizard({
 }: {
   onComplete: () => void;
   onDismiss: () => void;
-  onSwitchView: (viewId: string) => void;
+  onSwitchView: (viewId: ViewId) => void;
 }) {
   const { refresh } = useProContext();
   const [step, setStep] = useState<Step>(1);

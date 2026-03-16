@@ -216,29 +216,39 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
       const toCount = sessions.filter((s) => ids.includes(s.id));
       for (const session of toCount) {
         if (session.created_by && String(session.created_by).trim()) {
-          await supabase.from('session_count_logs').insert({
-            teacher_id: session.created_by,
-            session_id: session.id,
-            session_title: session.title ?? null,
-            count_change: 1,
-            reason: '검수 완료',
-          }).then(({ error: logErr }) => {
-            if (logErr && logErr.code !== '23505' && logErr.code !== '23503') devLogger.error('수업 카운팅 로그 저장 실패:', logErr);
-          });
+          await supabase
+            .from('session_count_logs')
+            .insert({
+              teacher_id: session.created_by,
+              session_id: session.id,
+              session_title: session.title ?? null,
+              count_change: 1,
+              reason: '검수 완료',
+            })
+            .then(({ error: logErr }: { error: { code?: string } | null }) => {
+              if (logErr && logErr.code !== '23505' && logErr.code !== '23503') {
+                devLogger.error('수업 카운팅 로그 저장 실패:', logErr);
+              }
+            });
         }
         if (session.memo?.includes('EXTRA_TEACHERS:')) {
           const { extraTeachers } = parseExtraTeachers(session.memo);
           for (const ex of extraTeachers) {
             if (!ex.id) continue;
-            await supabase.from('session_count_logs').insert({
-              teacher_id: ex.id,
-              session_id: session.id,
-              session_title: session.title ?? null,
-              count_change: 1,
-              reason: '검수 완료 (보조)',
-            }).then(({ error: exLog }) => {
-              if (exLog && exLog.code !== '23505' && exLog.code !== '23503') devLogger.error('수업 카운팅 로그(보조) 저장 실패:', exLog);
-            });
+            await supabase
+              .from('session_count_logs')
+              .insert({
+                teacher_id: ex.id,
+                session_id: session.id,
+                session_title: session.title ?? null,
+                count_change: 1,
+                reason: '검수 완료 (보조)',
+              })
+              .then(({ error: exLog }: { error: { code?: string } | null }) => {
+                if (exLog && exLog.code !== '23505' && exLog.code !== '23503') {
+                  devLogger.error('수업 카운팅 로그(보조) 저장 실패:', exLog);
+                }
+              });
           }
         }
       }

@@ -233,7 +233,12 @@ export default function UltimateSettlementPage() {
         const grossTotal = sessionsTotal + adjTotal;
         return { id: teacher.id, name: teacher.name || 'Unknown', grossTotal, is_active: teacher.is_active ?? true };
       });
-      setTaxSummaryData(calculated.sort((a, b) => b.grossTotal - a.grossTotal || a.name.localeCompare(b.name, 'ko')));
+      setTaxSummaryData(
+        calculated.sort(
+          (a: { grossTotal: number; name: string }, b: { grossTotal: number; name: string }) =>
+            b.grossTotal - a.grossTotal || a.name.localeCompare(b.name, 'ko')
+        )
+      );
     } catch (e) {
       devLogger.error('Tax summary error:', e);
       toast.error('세금 계산용 데이터 조회 실패');
