@@ -50,6 +50,7 @@ export default function Sidebar() {
       group: "대시보드",
       items: [
         { name: "대시보드", href: "/admin", icon: LayoutDashboard },
+        { name: "노트", href: "/admin/note", icon: ClipboardList },
       ]
     },
     {

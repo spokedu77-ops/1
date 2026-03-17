@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import type { EditableSession } from '../types';
 
 type DayOption = { label: string; value: number };
 const DAYS: DayOption[] = [
@@ -23,6 +24,7 @@ export default function CreateClassPage() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [loading, setLoading] = useState(false);
   const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
+  const [step, setStep] = useState<1 | 2>(1);
 
   const [form, setForm] = useState({
     title: '',
@@ -37,6 +39,8 @@ export default function CreateClassPage() {
     sessionCount: 4,
     roundWeight: 1, // 1=기본, 1.5=90분 회차 표시용
   });
+
+  const [editableSessions, setEditableSessions] = useState<EditableSession[]>([]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -120,45 +124,86 @@ export default function CreateClassPage() {
     return sessions;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) return;
+  const initializeEditableSessions = () => {
+    const dates = buildDates();
+    const totalRounds = dates.length;
+    const next: EditableSession[] = dates.map((startDateTime, index) => {
+      const endDateTime = new Date(startDateTime);
+      endDateTime.setMinutes(endDateTime.getMinutes() + Number(form.durationMinutes));
+      return {
+        roundIndex: index + 1,
+        startAt: startDateTime,
+        endAt: endDateTime,
+        teacherId: form.teacherId,
+        price: Number(form.price) || 0,
+      };
+    });
+    setEditableSessions(next);
+  };
+
+  const goToStep2 = () => {
     if (!form.title || !form.teacherId) return toast.error('수업명과 강사를 확인해주세요!');
     if (form.type !== 'one_day' && form.weeklyFrequency > 1 && form.daysOfWeek.length < form.weeklyFrequency) {
       return toast.error('주간 횟수만큼 요일을 선택해주세요.');
     }
+    initializeEditableSessions();
+    setStep(2);
+  };
+
+  const applyFirstRowToAll = () => {
+    if (!editableSessions.length) return;
+    const first = editableSessions[0];
+    const updated = editableSessions.map((s, idx) => {
+      if (idx === 0) return s;
+      const start = new Date(s.startAt);
+      start.setHours(first.startAt.getHours(), first.startAt.getMinutes(), 0, 0);
+      const end = new Date(start);
+      const diffMinutes = (first.endAt.getTime() - first.startAt.getTime()) / (1000 * 60);
+      end.setMinutes(end.getMinutes() + diffMinutes);
+      return {
+        ...s,
+        teacherId: first.teacherId,
+        price: first.price,
+        startAt: start,
+        endAt: end,
+      };
+    });
+    setEditableSessions(updated);
+  };
+
+  const handleFinalSubmit = async () => {
+    if (!supabase) return;
+    if (!editableSessions.length) return toast.error('회차가 없습니다. 회차를 먼저 생성해주세요.');
 
     setLoading(true);
     try {
-      const sessionsToInsert: Record<string, unknown>[] = [];
       const commonGroupId = crypto.randomUUID();
-      const dates = buildDates();
-      const totalRounds = dates.length;
+      const sorted = [...editableSessions].sort((a, b) => a.roundIndex - b.roundIndex);
+      const totalRounds = sorted.length;
+      const sessionsToInsert: Record<string, unknown>[] = [];
 
-      dates.forEach((startDateTime, index) => {
-        const endDateTime = new Date(startDateTime);
-        endDateTime.setMinutes(endDateTime.getMinutes() + Number(form.durationMinutes));
-
-        const roundIndex = index + 1;
-        const roundDisplay = form.type === 'one_day'
-          ? `1/1`
-          : (form.roundWeight === 1
-            ? `${roundIndex}/${totalRounds}`
-            : `${(roundIndex * form.roundWeight).toFixed(1)}/${(totalRounds * form.roundWeight).toFixed(1)}`);
+      sorted.forEach((session, idx) => {
+        const roundIndex = idx + 1;
+        const isOneDay = form.type === 'one_day';
+        const roundDisplay = isOneDay
+          ? '1/1'
+          : form.roundWeight === 1
+          ? `${roundIndex}/${totalRounds}`
+          : `${(roundIndex * form.roundWeight).toFixed(1)}/${(totalRounds * form.roundWeight).toFixed(1)}`;
 
         sessionsToInsert.push({
           title: form.title,
           session_type: form.type,
-          start_at: startDateTime.toISOString(),
-          end_at: endDateTime.toISOString(),
+          start_at: session.startAt.toISOString(),
+          end_at: session.endAt.toISOString(),
           status: 'opened',
           group_id: commonGroupId,
           sequence_number: roundIndex,
           round_index: roundIndex,
           round_total: totalRounds,
           round_display: roundDisplay,
-          price: Number(form.price) || 0,
-          created_by: form.teacherId,
+          price: Number(session.price) || 0,
+          created_by: session.teacherId || form.teacherId,
         });
       });
 
@@ -198,7 +243,7 @@ export default function CreateClassPage() {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-10 space-y-8">
+          <form onSubmit={(e) => e.preventDefault()} className="p-10 space-y-8">
             <div className="grid grid-cols-3 gap-4">
               {[
                 { id: 'regular_private', label: '과외 수업', icon: '🏠' },
@@ -358,15 +403,212 @@ export default function CreateClassPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-6 rounded-[32px] text-xl font-black transition-all shadow-lg ${
-                loading ? 'bg-gray-200 text-gray-400' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]'
-              }`}
-            >
-              {loading ? '등록 중...' : '🚀 수업 등록하기'}
-            </button>
+            {step === 1 && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={goToStep2}
+                className={`w-full py-6 rounded-[32px] text-xl font-black transition-all shadow-lg ${
+                  loading ? 'bg-gray-200 text-gray-400' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]'
+                }`}
+              >
+                {loading ? '계산 중...' : '➡ 회차 설정으로'}
+              </button>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-lg font-black text-slate-900">회차별 설정</h2>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="px-3 py-2 rounded-full text-xs font-bold bg-gray-100 text-gray-600"
+                      onClick={() => {
+                        setStep(1);
+                      }}
+                    >
+                      ◀ 기본 설정 수정
+                    </button>
+                    <button
+                      type="button"
+                      className="px-3 py-2 rounded-full text-xs font-bold bg-blue-50 text-blue-600"
+                      onClick={applyFirstRowToAll}
+                      disabled={!editableSessions.length}
+                    >
+                      전체 동일하게 적용
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-slate-50 text-xs font-bold text-slate-500">
+                      <tr>
+                        <th className="px-3 py-2 text-left">회차</th>
+                        <th className="px-3 py-2 text-left">날짜</th>
+                        <th className="px-3 py-2 text-left">시간</th>
+                        <th className="px-3 py-2 text-left">선생님</th>
+                        <th className="px-3 py-2 text-right">금액</th>
+                        <th className="px-3 py-2 text-center">삭제</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {editableSessions.map((s, idx) => {
+                        const startDateStr = s.startAt.toISOString().split('T')[0];
+                        const timeStr = s.startAt.toTimeString().slice(0, 5);
+                        return (
+                          <tr key={idx} className="border-t border-slate-100">
+                            <td className="px-3 py-2 font-bold text-slate-700">
+                              {s.roundIndex}/{editableSessions.length}
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="date"
+                                className="bg-transparent border rounded-lg px-2 py-1 text-xs"
+                                value={startDateStr}
+                                onChange={(e) => {
+                                  const next = [...editableSessions];
+                                  const d = new Date(next[idx].startAt);
+                                  const [y, m, dStr] = e.target.value.split('-').map(Number);
+                                  d.setFullYear(y, m - 1, dStr);
+                                  const duration =
+                                    (next[idx].endAt.getTime() - next[idx].startAt.getTime()) /
+                                    (1000 * 60);
+                                  const end = new Date(d);
+                                  end.setMinutes(end.getMinutes() + duration);
+                                  next[idx] = { ...next[idx], startAt: d, endAt: end };
+                                  setEditableSessions(next);
+                                }}
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="time"
+                                className="bg-transparent border rounded-lg px-2 py-1 text-xs"
+                                value={timeStr}
+                                onChange={(e) => {
+                                  const next = [...editableSessions];
+                                  const [hh, mm] = e.target.value.split(':').map(Number);
+                                  const d = new Date(next[idx].startAt);
+                                  d.setHours(hh, mm, 0, 0);
+                                  const duration =
+                                    (next[idx].endAt.getTime() - next[idx].startAt.getTime()) /
+                                    (1000 * 60);
+                                  const end = new Date(d);
+                                  end.setMinutes(end.getMinutes() + duration);
+                                  next[idx] = { ...next[idx], startAt: d, endAt: end };
+                                  setEditableSessions(next);
+                                }}
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <select
+                                className="bg-transparent border rounded-lg px-2 py-1 text-xs"
+                                value={s.teacherId}
+                                onChange={(e) => {
+                                  const next = [...editableSessions];
+                                  next[idx] = { ...next[idx], teacherId: e.target.value };
+                                  setEditableSessions(next);
+                                }}
+                              >
+                                <option value="">기본 강사</option>
+                                {teachers.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.name} T
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <input
+                                type="number"
+                                className="w-24 bg-transparent border rounded-lg px-2 py-1 text-xs text-right"
+                                value={s.price}
+                                onChange={(e) => {
+                                  const next = [...editableSessions];
+                                  next[idx] = {
+                                    ...next[idx],
+                                    price: Number(e.target.value) || 0,
+                                  };
+                                  setEditableSessions(next);
+                                }}
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <button
+                                type="button"
+                                className="text-xs text-red-500"
+                                onClick={() => {
+                                  const next = editableSessions.filter((_, i) => i !== idx);
+                                  const reindexed = next.map((item, i2) => ({
+                                    ...item,
+                                    roundIndex: i2 + 1,
+                                  }));
+                                  setEditableSessions(reindexed);
+                                }}
+                              >
+                                ×
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <button
+                    type="button"
+                    className="px-4 py-3 rounded-full text-sm font-bold bg-gray-100 text-gray-700"
+                    onClick={() => {
+                      const nextIndex = editableSessions.length + 1;
+                      const last =
+                        editableSessions[editableSessions.length - 1] ??
+                        ({
+                          roundIndex: 0,
+                          startAt: new Date(`${form.startDate}T${form.startTime}`),
+                          endAt: new Date(`${form.startDate}T${form.startTime}`),
+                          teacherId: form.teacherId,
+                          price: Number(form.price) || 0,
+                        } as EditableSession);
+                      const start = new Date(last.startAt);
+                      start.setDate(start.getDate() + 7);
+                      const duration =
+                        (last.endAt.getTime() - last.startAt.getTime()) / (1000 * 60);
+                      const end = new Date(start);
+                      end.setMinutes(end.getMinutes() + duration);
+                      setEditableSessions([
+                        ...editableSessions,
+                        {
+                          roundIndex: nextIndex,
+                          startAt: start,
+                          endAt: end,
+                          teacherId: last.teacherId,
+                          price: last.price,
+                        },
+                      ]);
+                    }}
+                  >
+                    + 회차 추가
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={handleFinalSubmit}
+                    className={`px-6 py-3 rounded-full text-sm font-black transition-all shadow-lg ${
+                      loading
+                        ? 'bg-gray-200 text-gray-400'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]'
+                    }`}
+                  >
+                    {loading ? '등록 중...' : '🚀 수업 개설'}
+                  </button>
+                </div>
+              </div>
+            )}
           </form>
         </div>
       </div>

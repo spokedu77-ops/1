@@ -63,3 +63,23 @@ export interface ModalProps {
   onShrinkGroup?: () => void;
   onCloneGroup?: () => void;
 }
+
+// 수업 목록/상세 뷰에서 사용하는 그룹 단위 타입
+export interface ClassGroup {
+  groupId: string;
+  title: string;
+  roundTotal: number;
+  completedCount: number;
+  firstClassAt: string;
+  lastClassAt: string;
+  teacherIds: string[];
+}
+
+// 2-step 개설 및 회차 편집 테이블에서 사용하는 편집용 회차 타입
+export interface EditableSession {
+  roundIndex: number;
+  startAt: Date;
+  endAt: Date;
+  teacherId: string;
+  price: number;
+}
