@@ -33,12 +33,19 @@ function payloadToSnapshot(payload: UpsertChallengePayload): ChallengeProgramSna
   };
 }
 
+function getYearQueryKey(weekKey: string): unknown[] {
+  const m = weekKey.match(/^(\d{4})/);
+  const year = m ? Number(m[1]) : null;
+  return ['challenge-programs', year];
+}
+
 function applySnapshotToCache(
   queryClient: ReturnType<typeof useQueryClient>,
   variables: UpsertChallengePayload
 ) {
   const snapshot = payloadToSnapshot(variables);
-  queryClient.setQueryData<ChallengeProgramSnapshot[]>(['challenge-programs'], (old) => {
+  const queryKey = getYearQueryKey(variables.weekKey);
+  queryClient.setQueryData<ChallengeProgramSnapshot[]>(queryKey, (old) => {
     const list = old ?? [];
     const idx = list.findIndex((p) => p.weekKey === variables.weekKey);
     if (idx >= 0) {
@@ -79,14 +86,15 @@ export function useUpsertChallengeProgram() {
       if (error) throw error;
     },
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: ['challenge-programs'] });
-      const previous = queryClient.getQueryData<ChallengeProgramSnapshot[]>(['challenge-programs']);
+      const queryKey = getYearQueryKey(variables.weekKey);
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<ChallengeProgramSnapshot[]>(queryKey);
       applySnapshotToCache(queryClient, variables);
-      return { previous };
+      return { previous, queryKey };
     },
     onError: (_err, _variables, context) => {
-      if (context?.previous != null) {
-        queryClient.setQueryData(['challenge-programs'], context.previous);
+      if (context?.previous !== undefined && context?.queryKey) {
+        queryClient.setQueryData(context.queryKey, context.previous);
       }
     },
     onSuccess: (_data, _variables) => {

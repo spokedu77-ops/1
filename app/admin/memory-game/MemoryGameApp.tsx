@@ -14,6 +14,7 @@ import { Sparkline } from './components/Sparkline';
 import { SpeedSelector } from './components/SpeedSelector';
 import { SignalDisplay } from './components/SignalDisplay';
 import { MemoryGame } from './components/MemoryGame';
+import { MemoryGameLevel4 } from './components/MemoryGameLevel4';
 import { CSS, S } from './styles';
 
 type Screen = 'home' | 'setup' | 'guide' | 'history' | 'students' | 'training' | 'memory' | 'result';
@@ -183,6 +184,14 @@ export default function MemoryGameApp() {
     return () => cancelAnimationFrame(id);
   }, [screen]);
 
+  useEffect(() => {
+    if (screen !== 'memory') return;
+    const id = requestAnimationFrame(() => {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    });
+    return () => cancelAnimationFrame(id);
+  }, [screen]);
+
   const startSession = useCallback(
     (cfg: Settings = settings) => {
       setSettings(cfg);
@@ -296,7 +305,7 @@ export default function MemoryGameApp() {
                     <div style={{ fontSize: 'clamp(1rem,2.5vw,1.2rem)', marginBottom: '0.25rem' }}>{m.icon}</div>
                     <div style={{ fontSize: 'clamp(0.72rem,1.8vw,0.82rem)', fontWeight: 800, color: active ? m.accent : 'rgba(255,255,255,0.8)', lineHeight: 1.2 }}>{m.title}</div>
                     <div style={{ fontSize: 'clamp(0.58rem,1.4vw,0.65rem)', color: 'rgba(255,255,255,0.28)', marginTop: '0.12rem', fontWeight: 500 }}>{m.en}</div>
-                    <div style={{ fontSize: 'clamp(0.55rem,1.3vw,0.62rem)', color: 'rgba(255,255,255,0.2)', marginTop: '0.2rem', fontWeight: 600 }}>3단계</div>
+                    <div style={{ fontSize: 'clamp(0.55rem,1.3vw,0.62rem)', color: 'rgba(255,255,255,0.2)', marginTop: '0.2rem', fontWeight: 600 }}>{m.id === 'spatial' ? `${m.levels.length}번` : `${m.levels.length}단계`}</div>
                   </button>
                 );
               })}
@@ -345,7 +354,7 @@ export default function MemoryGameApp() {
             {[
               { icon: '⚡', title: '반응 인지', tag: '키우는 능력: 순발력 · 색·방향·숫자 지각', steps: ['단계 1: 색깔 보고 달리기 — 화면 전체 색으로 해당 콘 달려가기', '단계 2: 화살표 보고 이동 — ↑앞/↓뒤/←→옆 방향으로 이동', '단계 3: 숫자 보고 판단 — 선생님이 규칙 지정 (홀수 왼쪽, 짝수 오른쪽 등)'], tip: '처음엔 단계 1부터. 익숙해지면 신호 간격을 줄여 난이도를 높입니다.', accent: '#3B82F6' },
               { icon: '🧠', title: '스트룹 과제', tag: '키우는 능력: 억제 제어 · 인지 유연성', steps: ['단계 1: 글자 색깔 맞히기 — "파란색 빨강"이 나오면 "파랑"이라 말하기', '단계 2: 배경색 함정 — 배경·글자·내용 모두 다른 색. 글자 색만 말하기', '단계 3: 역스트룹 — 색은 무시하고 글자 내용을 그대로 말하기'], tip: '음성 힌트를 켜면 단계 1·2에서 정답 색 이름을 소리로 알려줍니다.', accent: '#A855F7' },
-              { icon: '🎨', title: '순차 기억', tag: '키우는 능력: 작업기억 · 순서 재생 · 집중력', steps: ['단계 1: 3가지 색 기억 — 색이 1초씩 3번 나온 뒤 순서대로 말하기', '단계 2: 5가지 색 기억 — 색이 1초씩 5번 나온 뒤 순서대로 말하기', '단계 3: 10가지 색 기억 — 4색이 무작위 10번, 선생님이 정답 공개'], tip: '색이 모두 나온 뒤 학생이 먼저 말하게 하고, 선생님이 버튼을 눌러 정답을 확인하세요.', accent: '#22C55E' },
+              { icon: '🎨', title: '순차 기억', tag: '키우는 능력: 작업기억 · 순서 재생 · 집중력', steps: ['1번: 3가지 색 기억 — 색이 1초씩 3번 나온 뒤 순서대로 말하기', '2번: 5가지 색 기억 — 색이 1초씩 5번 나온 뒤 순서대로 말하기', '3번: 10가지 색 기억 — 4색이 무작위 10번, 선생님이 정답 공개', '4번: 색깔-번호 기억 — 색 배경에 번호 1~10이 하나씩 등장, 이후 5문제 Q&A'], tip: '4번은 번호별 색깔을 묻는 Q&A 방식입니다. 학생이 먼저 답하면 선생님이 정답 버튼을 눌러 확인하세요.', accent: '#22C55E' },
               { icon: '🔀', title: '이중 과제', tag: '키우는 능력: 분산 주의 · 복합 실행력', steps: ['단계 1: 색깔 + 숫자 — 해당 색 콘으로 달린 뒤 숫자만큼 터치', '단계 2: 색깔 + 동작 — 해당 색 콘 위치에서 화면 동작 수행', '단계 3: 스트룹 + 동작 — 글자 색으로 판단해 이동 후 동작 수행'], tip: '단계 3은 가장 어렵습니다. 단계 1·2를 충분히 익힌 뒤 도전하세요.', accent: '#F97316' },
             ].map((block) => (
               <div key={block.title} style={{ marginBottom: '1.5rem' }}>
@@ -403,7 +412,7 @@ export default function MemoryGameApp() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                 {M.levels.map((lv) => (
                   <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : '#E2E8F0'}`, background: settings.level === lv.id ? `${M.accent}08` : '#fff', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
-                    <div style={{ width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.72rem', color: '#fff', background: settings.level === lv.id ? M.accent : '#CBD5E1', flexShrink: 0, marginTop: '0.05rem' }}>단계 {lv.id}</div>
+                    <div style={{ width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.72rem', color: '#fff', background: settings.level === lv.id ? M.accent : '#CBD5E1', flexShrink: 0, marginTop: '0.05rem' }}>{M.id === 'spatial' ? lv.name : `단계 ${lv.id}`}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#1E293B' }}>{lv.name}</span>
@@ -518,10 +527,20 @@ export default function MemoryGameApp() {
   }
 
   // ── MEMORY / TRAINING / RESULT ──
-  if (screen === 'memory')
+  const handleMemoryComplete = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    pushRecord({ ...settings }, MEMORY_ROUNDS, selectedStudentId);
+    setResult({ count: MEMORY_ROUNDS, cfg: { ...settings } });
+    setScreen('result');
+  };
+
+  if (screen === 'memory') {
+    if (settings.level === 4)
+      return <MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} />;
     return (
-      <MemoryGame level={settings.level} onExit={stop} onComplete={() => { pushRecord({ ...settings }, MEMORY_ROUNDS, selectedStudentId); setResult({ count: MEMORY_ROUNDS, cfg: { ...settings } }); setScreen('result'); }} />
+      <MemoryGame level={settings.level} onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} />
     );
+  }
 
   if (screen === 'training') {
     const bg = flashing ? '#ffffff' : (signal?.bg as string) ?? '#0F172A';
@@ -590,7 +609,7 @@ export default function MemoryGameApp() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <span style={{ fontSize: '1.1rem' }}>{mo?.icon}</span>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>{mo?.title} · 단계 {cfg.level}</span>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>{mo?.title} · {cfg.mode === 'spatial' ? `${cfg.level}번` : `단계 ${cfg.level}`}</span>
               </div>
               {student && <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><div style={{ width: 20, height: 20, borderRadius: '50%', background: student.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900, color: '#fff' }}>{student.name[0]}</div><span style={{ fontSize: '0.78rem', fontWeight: 700, color: student.color }}>{student.name}</span></div>}
             </div>

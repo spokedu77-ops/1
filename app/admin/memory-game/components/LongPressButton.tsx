@@ -8,9 +8,11 @@ export function LongPressButton({ onTrigger, label }: { onTrigger: () => void; l
   const [progress, setProgress] = useState(0);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
+  const triggeredRef = useRef(false);
 
   const start = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
+    triggeredRef.current = false;
     startRef.current = performance.now();
     const tick = () => {
       const elapsed = performance.now() - startRef.current;
@@ -20,7 +22,10 @@ export function LongPressButton({ onTrigger, label }: { onTrigger: () => void; l
         rafRef.current = requestAnimationFrame(tick);
       } else {
         setProgress(0);
-        onTrigger();
+        if (!triggeredRef.current) {
+          triggeredRef.current = true;
+          onTrigger();
+        }
       }
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -29,16 +34,25 @@ export function LongPressButton({ onTrigger, label }: { onTrigger: () => void; l
   const cancel = () => {
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     setProgress(0);
+    if (!triggeredRef.current) {
+      triggeredRef.current = true;
+      onTrigger();
+    }
+  };
+
+  const cancelOnly = () => {
+    if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    setProgress(0);
   };
 
   return (
     <button
       onMouseDown={start}
       onMouseUp={cancel}
-      onMouseLeave={cancel}
+      onMouseLeave={cancelOnly}
       onTouchStart={start}
       onTouchEnd={cancel}
-      onTouchCancel={cancel}
+      onTouchCancel={cancelOnly}
       style={{
         position: 'relative',
         overflow: 'hidden',

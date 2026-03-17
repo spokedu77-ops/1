@@ -99,7 +99,13 @@ function ChallengePageContent() {
     select: selectBgm,
   } = useChallengeBGM();
   const bgmFileRef = useRef<HTMLInputElement>(null);
-  const { data: savedPrograms = [] } = useChallengePrograms();
+  const activeYear = useMemo(() => {
+    const wk = weekFromUrl;
+    if (!wk) return new Date().getFullYear();
+    const m = wk.match(/^(\d{4})-\d{2}-W[1-4]$/);
+    return m ? Number(m[1]) : new Date().getFullYear();
+  }, [weekFromUrl]);
+  const { data: savedPrograms = [] } = useChallengePrograms({ year: activeYear });
 
   useEffect(() => {
     if (savedPrograms.length > 0 && typeof window !== 'undefined') {
@@ -378,21 +384,17 @@ function ChallengePageContent() {
         <main className="min-h-0 flex flex-col">
           {/* 실시간 뷰포트: blur/ring/shadow 없음 — 렉 최소화 (docs/IIWARMUP_스튜디오_렉최소화_설계.md). 전체화면 시 이 영역만 풀스크린. */}
           <div ref={gameContainerRef} className="min-h-[320px] flex-1 overflow-hidden bg-neutral-950">
-            {bgmLoading ? (
-              <div className="flex min-h-[200px] items-center justify-center text-neutral-500">BGM 설정 로딩 중…</div>
-            ) : (
-              <SpokeduRhythmGame
-                allowEdit={true}
-                soundOn={soundOn}
-                bgmPath={bgmPath || undefined}
-                bgmSourceBpm={sourceBpm ?? undefined}
-                initialBpm={preset.bpm}
-                initialLevel={1}
-                initialGrid={preset.grid}
-                initialLevelData={preset.gridsByLevel}
-                onPresetChange={handlePresetChange}
-              />
-            )}
+            <SpokeduRhythmGame
+              allowEdit={true}
+              soundOn={soundOn}
+              bgmPath={bgmPath || undefined}
+              bgmSourceBpm={sourceBpm ?? undefined}
+              initialBpm={preset.bpm}
+              initialLevel={1}
+              initialGrid={preset.grid}
+              initialLevelData={preset.gridsByLevel}
+              onPresetChange={handlePresetChange}
+            />
           </div>
         </main>
       </div>

@@ -5,7 +5,11 @@
 import { COLORS, ARROWS, NUMBERS, ACTIONS } from '../constants';
 
 type ColorItem = (typeof COLORS)[number];
+export type { ColorItem };
 
+export type Level4Item = { num: number; color: ColorItem };
+
+/** 레벨 1·2용: 전체 중복 횟수 기반 제한 (기존 로직 유지) */
 function generateWithMaxDup(
   pool: ColorItem[],
   count: number,
@@ -33,14 +37,64 @@ function generateWithMaxDup(
 
     if (dupCount <= maxDups) return result;
   }
-  return Array.from({ length: count }, (_, i) => pool[i % pool.length]);
+  return Array.from({ length: count }, (_, i) => pool[i % pool.length]!);
+}
+
+/**
+ * 레벨 3·4용: 색깔별 최대 등장 횟수(maxPerColor) 제한 + 인접 중복 금지.
+ * 완전 랜덤 배열로 패턴이 보이지 않도록 greedy + retry.
+ */
+function generateColorsWithPerMax(
+  pool: ColorItem[],
+  count: number,
+  maxPerColor: number
+): ColorItem[] {
+  for (let attempt = 0; attempt < 500; attempt++) {
+    const result: ColorItem[] = [];
+    const freq = new Map<string, number>();
+    let ok = true;
+
+    for (let i = 0; i < count; i++) {
+      const prevId = result[i - 1]?.id ?? null;
+      const available = pool.filter(
+        (c) => c.id !== prevId && (freq.get(c.id) ?? 0) < maxPerColor
+      );
+      if (available.length === 0) { ok = false; break; }
+      const pick = available[Math.floor(Math.random() * available.length)]!;
+      result.push(pick);
+      freq.set(pick.id, (freq.get(pick.id) ?? 0) + 1);
+    }
+
+    if (ok && result.length === count) return result;
+  }
+  // 폴백: 라운드로빈
+  return Array.from({ length: count }, (_, i) => pool[i % pool.length]!);
+}
+
+function fisherYates<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return a;
 }
 
 export function generateMemoryPattern(level: number, colors: ColorItem[] = COLORS): ColorItem[] {
   if (level === 1) return generateWithMaxDup(colors, 3);
   if (level === 2) return generateWithMaxDup(colors, 5);
-  if (level === 3) return generateWithMaxDup(colors, 10);
+  if (level === 3) return generateColorsWithPerMax(colors, 10, 3);
   return [];
+}
+
+/**
+ * 레벨 4 패턴 생성:
+ * - 10개의 아이템, 각각 색깔(최대 3회 중복) + 번호(1~10, 셔플된 순서)
+ */
+export function generateLevel4Pattern(colors: ColorItem[] = COLORS): Level4Item[] {
+  const colorSeq = generateColorsWithPerMax(colors, 10, 3);
+  const nums = fisherYates([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  return nums.map((num, i) => ({ num, color: colorSeq[i]! }));
 }
 
 const r = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];

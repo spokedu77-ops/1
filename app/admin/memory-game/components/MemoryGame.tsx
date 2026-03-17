@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { MEMORY_ROUNDS } from '../constants';
 import { generateMemoryPattern } from '../lib/signals';
+import { playBeep } from '../lib/audio';
 import { LongPressButton } from './LongPressButton';
 import { CSS } from '../styles';
 
@@ -15,10 +16,12 @@ export function MemoryGame({
   level,
   onExit,
   onComplete,
+  audioMode,
 }: {
   level: number;
   onExit: () => void;
   onComplete: (patterns: ColorItem[][]) => void;
+  audioMode: string;
 }) {
   const [patterns] = useState<ColorItem[][]>(() => Array.from({ length: TOTAL }, () => generateMemoryPattern(level)));
   const [round, setRound] = useState(0);
@@ -51,16 +54,18 @@ export function MemoryGame({
       setColorIdx(-1);
       timerRef.current = setTimeout(() => {
         setMemFlash(false);
+        if (audioMode === 'beep') playBeep('mid');
         setColorIdx(idx);
         setPhase('showing');
         timerRef.current = setTimeout(() => runSequence(pattern, idx + 1), COLOR_SHOW_MS);
       }, 90);
     } else {
+      if (audioMode === 'beep') playBeep('mid');
       setColorIdx(idx);
       setPhase('showing');
       timerRef.current = setTimeout(() => runSequence(pattern, idx + 1), COLOR_SHOW_MS);
     }
-  }, []);
+  }, [audioMode]);
 
   const startRound = useCallback(
     (r: number) => {
@@ -141,7 +146,7 @@ export function MemoryGame({
         <span style={{ color: '#86EFAC' }}>🎨</span>
         <span>{round + 1} / {TOTAL}</span>
         <span style={{ opacity: 0.35, margin: '0 0.1rem' }}>|</span>
-        <span style={{ color: '#FCD34D' }}>단계 {level}</span>
+        <span style={{ color: '#FCD34D' }}>{level}번</span>
         <span style={{ opacity: 0.35, margin: '0 0.1rem' }}>|</span>
         <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{level === 1 ? '3항' : level === 2 ? '5항' : '10항'}</span>
       </div>
@@ -180,7 +185,7 @@ export function MemoryGame({
 
   if (phase === 'idle')
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden' }}>
+      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         {progressBar}
@@ -197,7 +202,7 @@ export function MemoryGame({
 
   if (phase === 'showing')
     return (
-      <div style={{ position: 'fixed', inset: 0, background: bgColor, overflow: 'hidden', transition: memFlash ? 'none' : 'background 0.05s' }}>
+      <div style={{ position: 'fixed', inset: 0, background: bgColor, overflow: 'hidden', zIndex: 300, transition: memFlash ? 'none' : 'background 0.05s' }}>
         <style>{CSS}</style>
         {hud}
         {dotIndicator}
@@ -218,7 +223,7 @@ export function MemoryGame({
 
   if (phase === 'waiting')
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden' }}>
+      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         {progressBar}
@@ -228,7 +233,7 @@ export function MemoryGame({
             <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500, lineHeight: 1.6 }}>학생이 순서를 말한 뒤<br />버튼을 눌러 정답을 확인하세요</div>
           </div>
           <LongPressButton onTrigger={handleAction} label="정답 공개" />
-          <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.2)' }}>길게 누르기 · 스페이스바 · 엔터</div>
+          <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.2)' }}>클릭 · 스페이스바 · 엔터</div>
         </div>
       </div>
     );
@@ -240,7 +245,7 @@ export function MemoryGame({
     const nextBg = isLast && level === 3 ? '#A855F7' : isLast ? '#22C55E' : '#F97316';
     const nextShadow = isLast && level === 3 ? '0 8px 28px rgba(168,85,247,0.4)' : isLast ? '0 8px 28px rgba(34,197,94,0.4)' : '0 8px 28px rgba(249,115,22,0.35)';
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden' }}>
+      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         {progressBar}
@@ -269,7 +274,7 @@ export function MemoryGame({
   if (phase === 'summary') {
     if (!summaryReady)
       return (
-        <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
           <style>{CSS}</style>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem' }}>
             <div style={{ fontSize: '4rem' }}>🎯</div>
@@ -284,14 +289,14 @@ export function MemoryGame({
       );
 
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'auto' }}>
+      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'auto', zIndex: 300 }}>
         <style>{CSS}</style>
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem 1.25rem 5rem' }}>
           <div style={{ width: '100%', maxWidth: 560 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div>
                 <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📋 <span>전체 정답 목록</span></div>
-                <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.25rem', fontWeight: 500 }}>단계 3 · {TOTAL}번 진행 · 4가지 색</div>
+                <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.25rem', fontWeight: 500 }}>3번 · {TOTAL}번 진행 · 4가지 색</div>
               </div>
               <button onClick={onExit} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.75rem', padding: '0.5rem 0.9rem', color: '#fff', fontSize: '0.88rem', cursor: 'pointer', fontWeight: 700, fontFamily: 'inherit' }}>🏠 처음으로</button>
             </div>
@@ -326,7 +331,7 @@ export function MemoryGame({
 
   if (phase === 'done')
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden' }}>
+      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem' }}>
           <div style={{ fontSize: '4rem' }}>🎉</div>

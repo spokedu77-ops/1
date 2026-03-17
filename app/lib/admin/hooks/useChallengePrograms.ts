@@ -23,6 +23,15 @@ export type ChallengeProgramSnapshot = {
   gridsByLevel?: Record<number, string[]>;
 };
 
+function makeWeekKeyRange(year: number): { start: string; end: string } {
+  // week_id 포맷: YYYY-MM-W[1-4] (month는 0 padding)
+  // 문자열 비교가 안전하도록 start/end 모두 동일 포맷 유지.
+  return {
+    start: `${year}-01-W1`,
+    end: `${year}-12-W4`,
+  };
+}
+
 function getCachedSnapshot(): ChallengeProgramSnapshot[] | undefined {
   if (typeof window === 'undefined') return undefined;
   try {
@@ -56,7 +65,8 @@ function parsePhases(phases: unknown): { bpm: number; level: number; grid: strin
   return { bpm, level, grid, gridsByLevel };
 }
 
-export function useChallengePrograms() {
+export function useChallengePrograms(params?: { year?: number }) {
+  const year = params?.year;
   const [cachedOnClient, setCachedOnClient] = useState<ChallengeProgramSnapshot[] | undefined>(() => getCachedSnapshot());
   useEffect(() => {
     const c = getCachedSnapshot();
@@ -64,13 +74,21 @@ export function useChallengePrograms() {
   }, [cachedOnClient?.length]);
 
   return useQuery({
-    queryKey: ['challenge-programs'],
+    queryKey: ['challenge-programs', year ?? null],
     queryFn: async (): Promise<ChallengeProgramSnapshot[]> => {
       const supabase = getSupabaseBrowserClient();
-      const { data, error } = await supabase
+      const range = typeof year === 'number' ? makeWeekKeyRange(year) : null;
+      let q = supabase
         .from('warmup_programs_composite')
         .select('id, week_id, title, phases')
         .like('id', 'challenge_%');
+
+      // 범위 축소: 현재 편집 중인 연도만 가져오도록 제한 (데이터 누적 시 속도 차이가 큼)
+      if (range) {
+        q = q.gte('week_id', range.start).lte('week_id', range.end);
+      }
+
+      const { data, error } = await q;
       if (error) throw error;
       const list: ChallengeProgramSnapshot[] = [];
       for (const row of data ?? []) {
@@ -87,6 +105,8 @@ export function useChallengePrograms() {
           });
         }
       }
+      // 정렬: 드롭다운/머지 시 예측 가능하게
+      list.sort((a, b) => a.weekKey.localeCompare(b.weekKey));
       try {
         if (typeof window !== 'undefined' && list.length > 0) {
           localStorage.setItem(CACHE_KEY, JSON.stringify(list));

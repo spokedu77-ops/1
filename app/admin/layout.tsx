@@ -13,6 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkSlow, setCheckSlow] = useState(false);
   const isFullscreenRoute = pathname != null && pathname.startsWith('/admin/spokedu-pro');
+  const isGameRoute = pathname != null && pathname.startsWith('/admin/memory-game');
 
   useEffect(() => {
     const slowTimer = setTimeout(() => setCheckSlow(true), SLOW_CHECK_MS);
@@ -65,6 +66,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       className={
         isFullscreenRoute
           ? 'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0F172A] text-gray-900'
+          : isGameRoute
+          ? 'flex-1 min-h-screen text-gray-900'
           : 'flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900'
       }
     >
