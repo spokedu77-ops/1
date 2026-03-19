@@ -20,7 +20,7 @@ import {
   User,
   Medal,
   Sparkles,
-  CalendarDays,
+  Building2,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -56,7 +56,7 @@ export default function Sidebar() {
     {
       group: "운영",
       items: [
-        { name: "일정 & 센터", href: "/admin/schedules", icon: CalendarDays },
+        { name: "센터 관리", href: "/admin/centers", icon: Building2 },
         { name: "공지", href: "/admin/notice", icon: ClipboardList },
         { name: "안내 페이지", href: "/admin/info-pages", icon: BookOpen },
       ]

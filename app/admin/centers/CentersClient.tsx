@@ -4,10 +4,10 @@ import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { getCenters, createCenter, deleteCenter, type GetCentersFilters } from './actions/centers';
+import { getCenters, createCenter, updateCenter, deleteCenter, type GetCentersFilters } from './actions/centers';
 import type { Center, CenterStatus } from '@/app/lib/centers/types';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { Search, Plus, Loader2, X, Trash2 } from 'lucide-react';
+import { Search, Plus, Loader2, X, Trash2, ChevronRight } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: '', label: '전체' },
@@ -15,6 +15,22 @@ const STATUS_OPTIONS = [
   { value: 'paused', label: '일시중지' },
   { value: 'ended', label: '종료' },
 ] as const;
+
+const STATUS_LABELS: Record<CenterStatus, string> = {
+  active: '활성',
+  paused: '일시중지',
+  ended: '종료',
+};
+
+const STATUS_STYLES: Record<CenterStatus, string> = {
+  active: 'bg-indigo-100 text-indigo-800',
+  paused: 'bg-amber-100 text-amber-800',
+  ended: 'bg-slate-100 text-slate-600',
+};
+
+const DAY_LABELS: Record<string, string> = {
+  mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일',
+};
 
 interface CentersClientProps {
   initialCenters: Center[];
@@ -33,15 +49,11 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
     region_tag: string;
     address: string;
     status: CenterStatus;
-  }>({
-    name: '',
-    region_tag: '',
-    address: '',
-    status: 'active',
-  });
+  }>({ name: '', region_tag: '', address: '', status: 'active' });
   const [createError, setCreateError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const isInitialMount = useRef(true);
 
   useEffect(() => {
@@ -73,6 +85,21 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
     loadCenters();
   }, [loadCenters]);
 
+  const handleStatusChange = async (c: Center, newStatus: CenterStatus) => {
+    if (newStatus === c.status) return;
+    setUpdatingStatusId(c.id);
+    try {
+      const result = await updateCenter(c.id, { status: newStatus });
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        setCenters((prev) => prev.map((x) => x.id === c.id ? { ...x, status: newStatus } : x));
+      }
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateError('');
@@ -101,12 +128,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
   };
 
   const handleDelete = async (c: Center) => {
-    if (
-      !confirm(
-        `"${c.name}" 센터를 삭제할까요? 관련 프로그램·재무·로그·파일 등이 모두 삭제되며 되돌릴 수 없습니다.`
-      )
-    )
-      return;
+    if (!confirm(`"${c.name}" 센터를 삭제할까요? 되돌릴 수 없습니다.`)) return;
     setDeletingId(c.id);
     try {
       const result = await deleteCenter(c.id);
@@ -149,9 +171,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
             className="rounded-full border border-slate-200 px-3.5 py-2 text-sm bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
           >
             {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
+              <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
           <input
@@ -163,90 +183,190 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
           />
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+        {/* 모바일: 카드 뷰 */}
+        <div className="block sm:hidden space-y-3">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
           ) : centers.length === 0 ? (
-            <div className="py-12 text-center text-slate-500">
+            <div className="py-12 text-center text-slate-500 rounded-xl border border-slate-200 bg-white">
               조건에 맞는 센터가 없습니다.
             </div>
+          ) : (
+            centers.map((c) => {
+              const pendingCount = (c.next_actions ?? []).filter((a) => !a.done).length;
+              const schedule = (c.weekly_schedule ?? []);
+              return (
+                <div key={c.id} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <Link
+                      href={`/admin/centers/${c.id}`}
+                      className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline text-base leading-tight"
+                    >
+                      {c.name}
+                    </Link>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {pendingCount > 0 && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                          ✓ {pendingCount}
+                        </span>
+                      )}
+                      <Link href={`/admin/centers/${c.id}`} className="text-slate-400 hover:text-indigo-600">
+                        <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    {c.region_tag && (
+                      <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{c.region_tag}</span>
+                    )}
+                    <select
+                      value={c.status}
+                      onChange={(e) => handleStatusChange(c, e.target.value as CenterStatus)}
+                      disabled={updatingStatusId === c.id}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium border-0 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer disabled:opacity-50 ${STATUS_STYLES[c.status]}`}
+                    >
+                      <option value="active">활성</option>
+                      <option value="paused">일시중지</option>
+                      <option value="ended">종료</option>
+                    </select>
+                    {c.main_teacher_name && (
+                      <span className="text-xs text-slate-600 font-medium">{c.main_teacher_name} T</span>
+                    )}
+                  </div>
+                  {c.contact_name && (
+                    <p className="text-xs text-slate-500 mb-1">
+                      {c.contact_name}{c.contact_role ? ` (${c.contact_role})` : ''}{c.contact_phone ? ` · ${c.contact_phone}` : ''}
+                    </p>
+                  )}
+                  {schedule.length > 0 && (
+                    <p className="text-xs text-slate-500 mb-1">
+                      {schedule.slice(0, 2).map((s) => `${DAY_LABELS[s.day] ?? s.day} ${s.start}~${s.end}`).join(' / ')}
+                      {schedule.length > 2 ? ` +${schedule.length - 2}` : ''}
+                    </p>
+                  )}
+                  {c.highlights && (
+                    <p className="text-xs text-slate-400 line-clamp-1">{c.highlights}</p>
+                  )}
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(c)}
+                      disabled={deletingId === c.id}
+                      className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                      {deletingId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* 데스크탑: 테이블 뷰 */}
+        <div className="hidden sm:block rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+            </div>
+          ) : centers.length === 0 ? (
+            <div className="py-12 text-center text-slate-500">조건에 맞는 센터가 없습니다.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-100">
                 <thead className="bg-white border-b border-slate-200 sticky top-0 z-10">
                   <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      센터명
-                    </th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      지역
-                    </th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      상태
-                    </th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 tabular-nums">
-                      계약 종료
-                    </th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      담당자
-                    </th>
-                    <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-24">
-                      동작
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">센터명</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">지역</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">상태</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">메인 강사</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">담당자</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">시간표</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">액션</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">삭제</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {centers.map((c) => (
-                    <tr key={c.id} className="border-l-2 border-l-transparent hover:bg-indigo-50/40 hover:border-l-indigo-500 transition-colors cursor-pointer">
-                      <td className="px-5 py-3">
-                        <Link
-                          href={`/admin/centers/${c.id}`}
-                          className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
-                        >
-                          {c.name}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3 text-sm text-slate-600">
-                        {c.region_tag ?? '-'}
-                      </td>
-                      <td className="px-5 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            c.status === 'active'
-                              ? 'bg-indigo-100 text-indigo-800'
-                              : c.status === 'paused'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {STATUS_OPTIONS.find((o) => o.value === c.status)?.label ?? c.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-sm text-slate-600 tabular-nums">
-                        {c.contract_end ?? '-'}
-                      </td>
-                      <td className="px-5 py-3 text-sm text-slate-600">
-                        {c.contact_name ?? '-'}
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(c)}
-                          disabled={deletingId === c.id}
-                          className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors cursor-pointer"
-                          title="삭제"
-                        >
-                          {deletingId === c.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
+                  {centers.map((c) => {
+                    const pendingCount = (c.next_actions ?? []).filter((a) => !a.done).length;
+                    const schedule = (c.weekly_schedule ?? []);
+                    return (
+                      <tr
+                        key={c.id}
+                        className="border-l-2 border-l-transparent hover:bg-indigo-50/40 hover:border-l-indigo-500 transition-colors"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-0.5">
+                            <Link
+                              href={`/admin/centers/${c.id}`}
+                              className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
+                            >
+                              {c.name}
+                            </Link>
+                            {c.highlights && (
+                              <p className="text-xs text-slate-400 line-clamp-1 max-w-[240px]">{c.highlights}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{c.region_tag ?? '-'}</td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={c.status}
+                            onChange={(e) => handleStatusChange(c, e.target.value as CenterStatus)}
+                            disabled={updatingStatusId === c.id}
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium border-0 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer disabled:opacity-50 ${STATUS_STYLES[c.status]}`}
+                          >
+                            <option value="active">{STATUS_LABELS.active}</option>
+                            <option value="paused">{STATUS_LABELS.paused}</option>
+                            <option value="ended">{STATUS_LABELS.ended}</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700 font-medium">
+                          {c.main_teacher_name ? `${c.main_teacher_name} T` : <span className="text-slate-300">-</span>}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          <div className="flex flex-col gap-0.5">
+                            <span>{c.contact_name ?? '-'}</span>
+                            {c.contact_phone && <span className="text-xs text-slate-400">{c.contact_phone}</span>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-500">
+                          {schedule.length === 0 ? '-' : (
+                            <span>
+                              {schedule.slice(0, 2).map((s) => `${DAY_LABELS[s.day] ?? s.day} ${s.start}`).join(' / ')}
+                              {schedule.length > 2 ? ` +${schedule.length - 2}` : ''}
+                            </span>
                           )}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-3">
+                          {pendingCount > 0 ? (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                              ✓ {pendingCount}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-300">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(c)}
+                            disabled={deletingId === c.id}
+                            className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors cursor-pointer"
+                            title="삭제"
+                          >
+                            {deletingId === c.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -303,9 +423,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">상태</label>
                 <select
                   value={createForm.status}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, status: e.target.value as CenterStatus }))
-                  }
+                  onChange={(e) => setCreateForm((f) => ({ ...f, status: e.target.value as CenterStatus }))}
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                 >
                   <option value="active">활성</option>

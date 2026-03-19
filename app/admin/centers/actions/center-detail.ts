@@ -1,33 +1,22 @@
 'use server';
 
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import type { CenterWithRelations, Center, CenterFinanceTerms, Program, CenterLog, CenterFile } from '@/app/lib/centers/types';
+import type { Center } from '@/app/lib/centers/types';
 
-export async function getCenterWithRelations(id: string): Promise<CenterWithRelations | null> {
+export async function getCenterById(id: string): Promise<Center | null> {
   const supabase = await createServerSupabaseClient();
-
-  const { data: center, error: centerError } = await supabase
+  const { data, error } = await supabase
     .from('centers')
-    .select('*')
+    .select('*, main_teacher:main_teacher_id(id, name)')
     .eq('id', id)
     .single();
-  if (centerError || !center) {
-    if (centerError?.code === 'PGRST116') return null;
-    throw centerError;
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw error;
   }
-
-  const [financeRes, programsRes, logsRes, filesRes] = await Promise.all([
-    supabase.from('center_finance_terms').select('*').eq('center_id', id).maybeSingle(),
-    supabase.from('programs').select('*').eq('center_id', id).order('start_date', { ascending: false }),
-    supabase.from('center_logs').select('*').eq('center_id', id).order('log_date', { ascending: false }),
-    supabase.from('center_files').select('*').eq('center_id', id).order('created_at', { ascending: false }),
-  ]);
-
+  const { main_teacher, ...row } = data as Center & { main_teacher?: { id: string; name: string } | null };
   return {
-    ...(center as Center),
-    finance_terms: (financeRes.data as CenterFinanceTerms | null) ?? null,
-    programs: (programsRes.data ?? []) as Program[],
-    logs: (logsRes.data ?? []) as CenterLog[],
-    files: (filesRes.data ?? []) as CenterFile[],
+    ...row,
+    main_teacher_name: main_teacher?.name ?? null,
   };
 }

@@ -19,6 +19,7 @@ export interface CurriculumCategoryPickerProps {
 
 const ALL_CATEGORIES = [...PERSONAL_CATEGORIES_ROW1, ...PERSONAL_CATEGORIES_ROW2];
 const EIGHTH_SESSION_CATEGORY = '신체 기능향상 8회기';
+const YUA_CATEGORY = '유아체육';
 
 function getCategoryDisplayName(category: string) {
   if (category === EIGHTH_SESSION_CATEGORY) return '첫 8회기 루틴 프로그램';
@@ -94,8 +95,10 @@ export default function CurriculumCategoryPicker({
             <div className="flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)] sm:pb-6 px-4 sm:px-6">
               {ALL_CATEGORIES.map((cat) => {
                 const is8hui = cat === EIGHTH_SESSION_CATEGORY;
+                const isYua = cat === YUA_CATEGORY;
                 const subTabs = getSubTabsForCategory(cat);
                 const isActiveCategory = cat === category;
+                if (!is8hui && !isYua && subTabs.length === 0) return null;
                 return (
                   <div key={cat} className="border-b border-slate-100 last:border-b-0">
                     {is8hui ? (
@@ -109,28 +112,41 @@ export default function CurriculumCategoryPicker({
                       </button>
                     ) : (
                       <>
-                        <div className="py-2.5 sm:py-3 bg-slate-50 -mx-4 sm:-mx-6 px-4 sm:px-6 text-xs font-black text-slate-500 uppercase tracking-wide sticky top-0">
-                          {getCategoryDisplayName(cat)}
-                        </div>
-                        <div className="py-3 flex flex-wrap gap-2 sm:gap-2.5">
-                          {subTabs.map((sub) => {
-                            const isSelected = isActiveCategory && sub === subTab;
-                            return (
-                              <button
-                                key={sub}
-                                type="button"
-                                onClick={() => handleSelect(cat, sub)}
-                                className={`px-3 py-2.5 sm:py-2 rounded-xl text-sm font-bold transition-all touch-manipulation
-                                  ${isSelected
-                                    ? 'bg-slate-900 text-white shadow-md'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                                  }`}
-                              >
-                                {sub}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        {isYua ? (
+                          <button
+                            type="button"
+                            onClick={() => handleSelect(cat, subTabs[0] ?? '')}
+                            className={`w-full py-3 px-4 sm:px-6 text-left rounded-xl text-sm font-bold transition-all touch-manipulation
+                              ${isActiveCategory ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'}`}
+                          >
+                            {getCategoryDisplayName(cat)}
+                          </button>
+                        ) : (
+                          <>
+                            <div className="py-2.5 sm:py-3 bg-slate-50 -mx-4 sm:-mx-6 px-4 sm:px-6 text-xs font-black text-slate-500 uppercase tracking-wide sticky top-0">
+                              {getCategoryDisplayName(cat)}
+                            </div>
+                            <div className="py-3 flex flex-wrap gap-2 sm:gap-2.5">
+                              {subTabs.map((sub) => {
+                                const isSelected = isActiveCategory && sub === subTab;
+                                return (
+                                  <button
+                                    key={sub}
+                                    type="button"
+                                    onClick={() => handleSelect(cat, sub)}
+                                    className={`px-3 py-2.5 sm:py-2 rounded-xl text-sm font-bold transition-all touch-manipulation
+                                      ${isSelected
+                                        ? 'bg-slate-900 text-white shadow-md'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                                      }`}
+                                  >
+                                    {sub}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
                       </>
                     )}
                   </div>

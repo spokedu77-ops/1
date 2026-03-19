@@ -1,80 +1,190 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import type { Schedule } from '@/app/lib/schedules/types';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { 
-  Calendar, RefreshCw, CheckCircle2, 
-  Circle, Clock, FileText, User, Users, Plus, X, Trash2, Save, CalendarDays, ExternalLink
-} from 'lucide-react';
+import { Calendar, RefreshCw, FileText, ExternalLink, Star, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 // --- Interfaces ---
-interface ITask {
-  id: string;
-  title: string;
-  assignee: string;
-  status: 'To Do' | 'In Progress' | 'Done';
-  tag: string;
-  description: string;
-}
-
 interface IClassSession {
   id: string;
-  startAt?: string;
+  startAt: string;
+  endAt: string;
   time: string;
   endTime: string;
   title: string;
   teacher: string;
-  isFinished: boolean;
   isPostponed?: boolean;
   isCancelled?: boolean;
   status?: string;
   roundDisplay?: string;
 }
 
-interface IVacationRequest {
+interface NoteDocument {
   id: string;
-  name: string;
-  vacation: string;
+  title: string;
+  is_favorite: boolean;
+  updated_at: string;
 }
 
-// --- Constants ---
-const BOARDS = [
-  { id: 'Common', name: '공통 운영', icon: Users, accent: 'border-slate-400', hasMemo: false },
-  { id: '최지훈', name: '최지훈', icon: User, accent: 'border-indigo-500', hasMemo: true },
-  { id: '김윤기', name: '김윤기', icon: User, accent: 'border-blue-500', hasMemo: true },
-  { id: '김구민', name: '김구민', icon: User, accent: 'border-emerald-500', hasMemo: true },
-];
+interface PostponeNotice {
+  id: string;
+  notice_date: string;
+  memo: string | null;
+  teacher_name: string;
+}
+
+interface Teacher {
+  id: string;
+  name: string;
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 
+// --- 인라인 미니 캘린더 ---
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+function MiniCalendar({
+  selectedDate,
+  onSelect,
+}: {
+  selectedDate: string;
+  onSelect: (date: string) => void;
+}) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [viewDate, setViewDate] = useState<Date>(() => {
+    if (selectedDate) {
+      const d = new Date(selectedDate + 'T00:00:00');
+      return new Date(d.getFullYear(), d.getMonth(), 1);
+    }
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+  const toDateStr = (d: number) => {
+    const mm = String(month + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return `${year}-${mm}-${dd}`;
+  };
+
+  return (
+    <div className="select-none">
+      <div className="flex items-center justify-between mb-2">
+        <button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-slate-100 cursor-pointer">
+          <ChevronLeft className="h-4 w-4 text-slate-500" />
+        </button>
+        <span className="text-sm font-semibold text-slate-700">
+          {year}년 {month + 1}월
+        </span>
+        <button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-slate-100 cursor-pointer">
+          <ChevronRight className="h-4 w-4 text-slate-500" />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 mb-1">
+        {WEEKDAYS.map((w, i) => (
+          <div
+            key={w}
+            className={`text-center text-[10px] font-bold py-0.5 ${i === 0 ? 'text-rose-400' : i === 6 ? 'text-blue-400' : 'text-slate-400'}`}
+          >
+            {w}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-0.5">
+        {cells.map((d, i) => {
+          if (d === null) return <div key={`e-${i}`} />;
+          const dateStr = toDateStr(d);
+          const isSelected = dateStr === selectedDate;
+          const isToday = dateStr === today.toISOString().split('T')[0];
+          const isPast = new Date(dateStr + 'T00:00:00') < today;
+          const dayOfWeek = (firstDay + d - 1) % 7;
+          return (
+            <button
+              key={dateStr}
+              type="button"
+              onClick={() => !isPast && onSelect(dateStr)}
+              disabled={isPast}
+              className={`text-center text-xs py-1.5 rounded-lg font-medium transition-colors cursor-pointer
+                ${isSelected ? 'bg-indigo-600 text-white' : ''}
+                ${!isSelected && isToday ? 'bg-indigo-50 text-indigo-700 font-bold' : ''}
+                ${!isSelected && !isToday && !isPast ? (dayOfWeek === 0 ? 'text-rose-500 hover:bg-rose-50' : dayOfWeek === 6 ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-700 hover:bg-slate-100') : ''}
+                ${isPast ? 'text-slate-200 cursor-not-allowed' : ''}
+              `}
+            >
+              {d}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// --- 메인 대시보드 ---
 export default function SpokeduHQDashboard() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [todayClasses, setTodayClasses] = useState<IClassSession[]>([]);
-  const [tasks, setTasks] = useState<ITask[]>([]);
-  const [vacationRequests, setVacationRequests] = useState<IVacationRequest[]>([]);
-  const [scheduleSummary, setScheduleSummary] = useState<Schedule[]>([]);
+  const [recentNotes, setRecentNotes] = useState<NoteDocument[]>([]);
+  const [notesLoading, setNotesLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  
-  // Modals
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
-  
-  // State for Daily Note
-  const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
-  const [noteContent, setNoteContent] = useState('');
-  const [isSavingNote, setIsSavingNote] = useState(false);
 
-  // State for Task Form
-  const [editingTask, setEditingTask] = useState<ITask | null>(null);
-  const [taskForm, setTaskForm] = useState<Omit<ITask, 'id'>>({ 
-    title: '', assignee: 'Common', status: 'To Do', tag: 'General', description: '' 
-  });
-  const [vacationExpanded, setVacationExpanded] = useState(true); // 연기 알림 펼침 상태
+  // 수업 연기 알림
+  const [postponeNotices, setPostponeNotices] = useState<PostponeNotice[]>([]);
+  const [postponeLoading, setPostponeLoading] = useState(true);
+  const [isPostponeModalOpen, setIsPostponeModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [noticeMemo, setNoticeMemo] = useState('');
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [isSubmittingNotice, setIsSubmittingNotice] = useState(false);
+  const [noticeError, setNoticeError] = useState('');
+  const [deletingNoticeId, setDeletingNoticeId] = useState<string | null>(null);
+
+  const fetchRecentNotes = useCallback(async () => {
+    setNotesLoading(true);
+    try {
+      const res = await fetch('/api/admin/note/documents');
+      if (!res.ok) return;
+      const json = await res.json();
+      const docs: NoteDocument[] = (json.documents ?? []).slice(0, 6);
+      setRecentNotes(docs);
+    } catch (err) {
+      devLogger.error('Notes fetch error:', err);
+    } finally {
+      setNotesLoading(false);
+    }
+  }, []);
+
+  const fetchPostponeNotices = useCallback(async () => {
+    setPostponeLoading(true);
+    try {
+      const res = await fetch('/api/admin/postpone-notices');
+      if (!res.ok) return;
+      const json = await res.json();
+      setPostponeNotices(json.notices ?? []);
+    } catch (err) {
+      devLogger.error('Postpone notices fetch error:', err);
+    } finally {
+      setPostponeLoading(false);
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!supabaseUrl || !supabase) return;
@@ -82,49 +192,16 @@ export default function SpokeduHQDashboard() {
     setFetchError(null);
     try {
       const now = new Date();
-      const todayStr = now.toISOString().split('T')[0].replace(/-/g, '');
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
 
-      const [classesRes, tasksRes, usersRes, schedulesRes] = await Promise.all([
-        supabase
-          .from('sessions')
-          .select('*, users:created_by(id, name)')
-          .gte('start_at', startOfDay)
-          .lte('start_at', endOfDay)
-          .order('start_at', { ascending: true }),
-        supabase.from('todos').select('*').order('created_at', { ascending: false }).limit(200),
-        supabase
-          .from('users')
-          .select('id, name, vacation')
-          .eq('is_active', true)
-          .not('vacation', 'is', null)
-          .neq('vacation', ''),
-        supabase
-          .from('schedules')
-          .select('*')
-          .order('start_date', { ascending: true, nullsFirst: false })
-          .order('updated_at', { ascending: false })
-          .limit(30),
-      ]);
-      const mapped: Schedule[] = (schedulesRes.data ?? []).map((row: Schedule) => ({
-        ...row,
-        checklist: Array.isArray(row.checklist) ? row.checklist : [],
-      }));
-      // 4회기 미만만 표시 (회차 없는 것 제외), 종료 수업 제외: 1 <= sessions_count < 4, status !== 'done'
-      const recentSchedules: Schedule[] = mapped
-        .filter((s) => {
-          const count = s.sessions_count;
-          return (
-            s.status !== 'done' &&
-            count != null &&
-            count >= 1 &&
-            count < 4
-          );
-        })
-        .slice(0, 7);
+      const classesRes = await supabase
+        .from('sessions')
+        .select('*, users:created_by(id, name)')
+        .gte('start_at', startOfDay)
+        .lte('start_at', endOfDay)
+        .order('start_at', { ascending: true });
 
-      // Class Sessions: 시간 순서 유지 (start_at 오름차순), 연기/취소는 뒤로
       const rawClasses = classesRes.data || [];
       const formattedClasses = rawClasses
         .map((c: { id: string; start_at: string; end_at: string; title?: string; status?: string; round_display?: string; round_index?: number; round_total?: number; users?: { name?: string } }) => {
@@ -135,38 +212,27 @@ export default function SpokeduHQDashboard() {
           return {
             id: c.id,
             startAt: c.start_at,
+            endAt: c.end_at,
             time: new Date(c.start_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
             endTime: endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
             title: c.title || '제목 없음',
             teacher: c.users?.name || '미정',
-            isFinished: now > endTime && c.status === 'finished',
-            isPostponed: isPostponed,
-            isCancelled: isCancelled,
+            isPostponed,
+            isCancelled,
             status: c.status,
-            roundDisplay
+            roundDisplay,
           };
         })
-        .sort((a: { startAt?: string; isPostponed?: boolean; isCancelled?: boolean; isFinished?: boolean }, b: { startAt?: string; isPostponed?: boolean; isCancelled?: boolean; isFinished?: boolean }) => {
-          const timeA = new Date(a.startAt ?? 0).getTime();
-          const timeB = new Date(b.startAt ?? 0).getTime();
+        .sort((a: IClassSession, b: IClassSession) => {
+          const timeA = new Date(a.startAt).getTime();
+          const timeB = new Date(b.startAt).getTime();
           if (timeA !== timeB) return timeA - timeB;
           if (a.isPostponed || a.isCancelled) return 1;
           if (b.isPostponed || b.isCancelled) return -1;
-          if (a.isFinished && !b.isFinished) return 1;
-          if (!a.isFinished && b.isFinished) return -1;
           return 0;
         });
 
       setTodayClasses(formattedClasses);
-      setTasks(tasksRes.data as ITask[] || []);
-      setScheduleSummary(recentSchedules);
-      
-      // Vacation Filtering (오늘 이전 데이터 자동 제외)
-      const validVacations = (usersRes.data || []).filter((v: { vacation?: string }) => {
-        const dateMatch = v.vacation?.match(/\d{8}/);
-        return dateMatch ? dateMatch[0] >= todayStr : true;
-      });
-      setVacationRequests(validVacations as IVacationRequest[]);
       setFetchError(null);
     } catch (err) {
       devLogger.error('Fetch Error:', err);
@@ -176,108 +242,109 @@ export default function SpokeduHQDashboard() {
     }
   }, [supabase]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+    fetchRecentNotes();
+    fetchPostponeNotices();
+  }, [fetchData, fetchRecentNotes, fetchPostponeNotices]);
 
-  // 수업 연기 알림: 날짜순 정렬(가까운 날짜 먼저), D-day 표시
-  const sortedVacations = useMemo(() => {
-    return [...vacationRequests].sort((a, b) => {
-      const matchA = a.vacation?.match(/(\d{8})/);
-      const matchB = b.vacation?.match(/(\d{8})/);
-      const dateA = matchA ? matchA[1] : '';
-      const dateB = matchB ? matchB[1] : '';
-      return dateA.localeCompare(dateB);
-    });
-  }, [vacationRequests]);
-
-  const getVacationLabel = (dateStr: string) => {
-    if (!dateStr || dateStr.length < 8) return dateStr;
-    const y = parseInt(dateStr.slice(0, 4), 10);
-    const m = parseInt(dateStr.slice(4, 6), 10);
-    const d = parseInt(dateStr.slice(6, 8), 10);
-    const date = new Date(y, m - 1, d);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-    const diff = Math.floor((date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-    if (diff === 0) return '오늘';
-    if (diff === 1) return '내일';
-    if (diff > 0 && diff <= 7) return `D-${diff}`;
-    return `${y}년 ${m}월 ${d}일`;
+  const openPostponeModal = async () => {
+    setSelectedDate('');
+    setSelectedTeacherId('');
+    setNoticeMemo('');
+    setNoticeError('');
+    setIsPostponeModalOpen(true);
+    if (teachers.length === 0) {
+      try {
+        const res = await fetch('/api/admin/postpone-notices/teachers');
+        if (res.ok) {
+          const json = await res.json();
+          setTeachers(json.teachers ?? []);
+        }
+      } catch (err) {
+        devLogger.error('Teachers fetch error:', err);
+      }
+    }
   };
 
-  const openNoteModal = async (boardId: string) => {
-    if (!supabase) return;
-    setSelectedBoard(boardId);
-    setNoteContent('로딩 중...');
-    setIsNoteModalOpen(true);
-    
-    const { data, error } = await supabase.from('memos').select('content').eq('assignee', boardId).single();
-    if (error) {
-      setNoteContent('메모를 불러올 수 없습니다. 다시 시도해 주세요.');
+  const handlePostponeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNoticeError('');
+    if (!selectedDate) {
+      setNoticeError('날짜를 선택해주세요.');
       return;
     }
-    setNoteContent(data?.content || '');
-  };
-
-  const handleSaveNote = async () => {
-    if (!selectedBoard || !supabase) return;
-    setIsSavingNote(true);
-    
+    if (!selectedTeacherId) {
+      setNoticeError('강사를 선택해주세요.');
+      return;
+    }
+    setIsSubmittingNotice(true);
     try {
-      const { error } = await supabase
-        .from('memos')
-        .upsert({ 
-          assignee: selectedBoard, 
-          content: noteContent,
-          updated_at: new Date().toISOString()
-        }, { 
-          onConflict: 'assignee' 
-        });
-      
-      if (error) {
-        devLogger.error('Save error:', error);
-        toast.error(`저장 실패: ${error.message || JSON.stringify(error)}`);
-        setIsSavingNote(false);
+      const res = await fetch('/api/admin/postpone-notices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teacher_id: selectedTeacherId,
+          notice_date: selectedDate,
+          memo: noticeMemo.trim() || null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setNoticeError(json.error ?? '저장에 실패했습니다.');
         return;
       }
-      
-      toast.success('저장되었습니다!');
-      setIsSavingNote(false);
-      setIsNoteModalOpen(false);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '알 수 없는 오류';
-      toast.error(`저장 실패: ${msg}`);
-      setIsSavingNote(false);
+      setPostponeNotices((prev) => [...prev, json.notice].sort((a, b) => a.notice_date.localeCompare(b.notice_date)));
+      setIsPostponeModalOpen(false);
+    } catch (err) {
+      devLogger.error(err);
+      setNoticeError('네트워크 오류가 발생했습니다.');
+    } finally {
+      setIsSubmittingNotice(false);
     }
   };
 
-  const toggleStatus = async (task: ITask, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!supabase) return;
-    const nextStatusMap: Record<string, ITask['status']> = { 'To Do': 'In Progress', 'In Progress': 'Done', 'Done': 'To Do' };
-    await supabase.from('todos').update({ status: nextStatusMap[task.status] }).eq('id', task.id);
-    fetchData();
+  const handleDeleteNotice = async (id: string) => {
+    setDeletingNoticeId(id);
+    try {
+      await fetch(`/api/admin/postpone-notices/${id}`, { method: 'DELETE' });
+      setPostponeNotices((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      devLogger.error(err);
+    } finally {
+      setDeletingNoticeId(null);
+    }
   };
 
-  const handleSaveTask = async () => {
-    if (!taskForm.title || !supabase) return;
-    const payload = {
-      title: taskForm.title,
-      assignee: taskForm.assignee,
-      status: taskForm.status,
-      tag: taskForm.tag,
-      description: taskForm.description,
-    };
-    const { error } = editingTask
-      ? await supabase.from('todos').update(payload).eq('id', editingTask.id)
-      : await supabase.from('todos').insert([payload]);
-    if (error) {
-      toast.error(`저장 실패: ${error.message}`);
-      return;
-    }
-    toast.success(editingTask ? '수정되었습니다.' : '등록되었습니다.');
-    setIsTaskModalOpen(false);
-    fetchData();
+  const getNoticeDateDisplay = (dateStr: string) => {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+  };
+
+  const isNoticeUrgent = (dateStr: string) => {
+    const date = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.floor((date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+    return diff <= 1;
+  };
+
+  const formatNoteDate = (iso: string) => {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return '방금';
+    if (diffMin < 60) return `${diffMin}분 전`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH}시간 전`;
+    return d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+  };
+
+  const isClassFinished = (cls: IClassSession) => {
+    if (cls.isPostponed || cls.isCancelled) return false;
+    if (cls.status === 'finished') return true;
+    return new Date() > new Date(cls.endAt);
   };
 
   if (loading && !fetchError) {
@@ -309,8 +376,8 @@ export default function SpokeduHQDashboard() {
   return (
     <div className="min-h-screen bg-white px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:p-6 md:p-8 sm:pt-6 flex flex-col items-center">
       <div className="w-full max-w-6xl space-y-4 sm:space-y-8 md:space-y-12 min-w-0">
-        
-        {/* Header - 모바일에서 세로 배치, 터치 영역 확보 */}
+
+        {/* Header */}
         <header className="flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 pb-3 sm:pb-8 border-slate-900">
           <div>
             <h1 className="text-2xl sm:text-4xl font-black italic tracking-tighter text-slate-900 uppercase leading-none mb-1">
@@ -326,334 +393,274 @@ export default function SpokeduHQDashboard() {
             </div>
           </div>
           <div className="flex gap-2 sm:gap-3">
-            <button 
-              onClick={fetchData} 
+            <button
+              onClick={() => { fetchData(); fetchRecentNotes(); fetchPostponeNotices(); }}
               className="min-h-[44px] min-w-[44px] p-3 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all cursor-pointer group touch-manipulation flex items-center justify-center"
               aria-label="새로고침"
             >
               <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" aria-hidden />
             </button>
-            <button 
-              onClick={() => { 
-                setEditingTask(null); 
-                setTaskForm({ title: '', assignee: 'Common', status: 'To Do', tag: 'General', description: '' }); 
-                setIsTaskModalOpen(true); 
-              }} 
-              className="min-h-[44px] px-4 sm:px-6 py-3 bg-gradient-to-r from-slate-900 to-slate-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:shadow-lg transition-all cursor-pointer flex items-center gap-2 touch-manipulation"
-            >
-              <Plus size={16} />
-              New Task
-            </button>
           </div>
         </header>
 
-        {/* 1. Today's Sessions */}
-        <section className="w-full min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-4">
-            <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-slate-400 shrink-0" />
-              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today Session Summary</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
-                완료 {todayClasses.filter(c => c.isFinished).length} / 
-                진행중 {todayClasses.filter(c => !c.isFinished && !c.isPostponed && !c.isCancelled).length} / 
-                연기 {todayClasses.filter(c => c.isPostponed).length}
-              </span>
-            </div>
-          </div>
-          <div className="border-t border-slate-50 divide-y divide-slate-50 overflow-x-auto">
-            {todayClasses.length > 0 ? todayClasses.map((cls) => (
-              <div key={cls.id} className={`py-3 flex flex-wrap items-center justify-between gap-2 min-w-0 ${
-                cls.isFinished ? 'opacity-20 grayscale' : 
-                cls.isPostponed ? 'bg-purple-50 border-l-4 border-purple-400 pl-3' :
-                cls.isCancelled ? 'bg-red-50 border-l-4 border-red-400 pl-3 line-through' : ''
-              }`}>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                  <span className="text-[11px] font-bold tabular-nums text-slate-400 w-20 sm:w-24 shrink-0">{cls.time} - {cls.endTime}</span>
-                  {cls.roundDisplay && (
-                    <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded uppercase shrink-0">{cls.roundDisplay}</span>
-                  )}
-                  <span className="text-[12px] font-bold text-slate-800 truncate min-w-0">{(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</span>
-                  {cls.isPostponed && (
-                    <span className="text-[8px] font-black text-purple-600 bg-purple-100 px-2 py-1 rounded uppercase">연기됨</span>
-                  )}
-                  {cls.isCancelled && (
-                    <span className="text-[8px] font-black text-red-600 bg-red-100 px-2 py-1 rounded uppercase">취소됨</span>
-                  )}
-                </div>
-                <span className="text-[9px] font-black text-slate-300 uppercase tracking-tighter shrink-0">{cls.teacher}</span>
-              </div>
-            )) : <p className="py-4 text-[11px] text-slate-300 italic">No classes scheduled.</p>}
-          </div>
-        </section>
+        {/* 1+3. Today Sessions / 수업 연기 알림 — 데스크탑 2열, 모바일 세로 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 w-full min-w-0">
 
-        {/* 2. 일정 요약 - PC에서 테이블 폭 충분히 활용 */}
+          {/* 1. Today's Sessions */}
+          <section className="min-w-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-slate-400 shrink-0" />
+                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today Session Summary</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
+                  완료 {todayClasses.filter(c => isClassFinished(c)).length} /
+                  진행중 {todayClasses.filter(c => !isClassFinished(c) && !c.isPostponed && !c.isCancelled).length} /
+                  연기 {todayClasses.filter(c => c.isPostponed).length}
+                </span>
+              </div>
+            </div>
+            <div className="border-t border-slate-50 divide-y divide-slate-50 overflow-x-auto">
+              {todayClasses.length > 0 ? todayClasses.map((cls) => (
+                <div key={cls.id} className={`py-3 flex flex-wrap items-center justify-between gap-2 min-w-0 ${
+                  isClassFinished(cls) ? 'opacity-20 grayscale' :
+                  cls.isPostponed ? 'bg-purple-50 border-l-4 border-purple-400 pl-3' :
+                  cls.isCancelled ? 'bg-red-50 border-l-4 border-red-400 pl-3 line-through' : ''
+                }`}>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                    <span className="text-[11px] font-bold tabular-nums text-slate-400 w-20 sm:w-24 shrink-0">{cls.time} - {cls.endTime}</span>
+                    {cls.roundDisplay && (
+                      <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded uppercase shrink-0">{cls.roundDisplay}</span>
+                    )}
+                    <span className="text-[12px] font-bold text-slate-800 truncate min-w-0">{(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</span>
+                    {cls.isPostponed && (
+                      <span className="text-[8px] font-black text-purple-600 bg-purple-100 px-2 py-1 rounded uppercase">연기됨</span>
+                    )}
+                    {cls.isCancelled && (
+                      <span className="text-[8px] font-black text-red-600 bg-red-100 px-2 py-1 rounded uppercase">취소됨</span>
+                    )}
+                  </div>
+                  <span className="text-[9px] font-black text-slate-300 uppercase tracking-tighter shrink-0">{cls.teacher}</span>
+                </div>
+              )) : <p className="py-4 text-[11px] text-slate-300 italic">No classes scheduled.</p>}
+            </div>
+          </section>
+
+          {/* 3. 수업 연기 알림 */}
+          <section className="min-w-0">
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
+              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">수업 연기 알림</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-400">{postponeNotices.length}건</span>
+                <button
+                  type="button"
+                  onClick={openPostponeModal}
+                  className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition-colors cursor-pointer"
+                >
+                  <Plus className="h-3 w-3" />
+                  등록
+                </button>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              {postponeLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
+                </div>
+              ) : postponeNotices.length === 0 ? (
+                <p className="py-4 text-center text-[11px] text-slate-400 italic">연기 알림 없음</p>
+              ) : (
+                <div className="space-y-2">
+                  {postponeNotices.map((n) => {
+                    const dateDisplay = getNoticeDateDisplay(n.notice_date);
+                    const urgent = isNoticeUrgent(n.notice_date);
+                    return (
+                      <div key={n.id} className="px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-bold text-slate-800 truncate min-w-0">{n.teacher_name}</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                urgent ? 'bg-rose-200 text-rose-800' : 'bg-rose-50 text-rose-600'
+                              }`}
+                            >
+                              {dateDisplay}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteNotice(n.id)}
+                              disabled={deletingNoticeId === n.id}
+                              className="rounded p-0.5 text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 cursor-pointer"
+                            >
+                              {deletingNoticeId === n.id
+                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                : <X className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        {n.memo && (
+                          <p className="text-[11px] text-slate-500 mt-0.5 truncate">{n.memo}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+
+        </div>{/* end 2열 그리드 */}
+
+        {/* 2. 최근 노트 위젯 */}
         <section className="w-full min-w-0">
           <div className="flex items-center justify-between mb-2 sm:mb-4">
             <div className="flex items-center gap-2">
-              <CalendarDays size={14} className="text-slate-400" />
-              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">일정</h2>
+              <FileText size={14} className="text-slate-400" />
+              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">최근 노트</h2>
             </div>
             <Link
-              href="/admin/schedules"
+              href="/admin/note"
               className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
             >
-              전체 보기
+              노트 전체 보기
               <ExternalLink size={12} />
             </Link>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden -mx-1 sm:mx-0">
-            <div className="overflow-x-auto overflow-y-visible">
-              <table className="w-full divide-y divide-slate-200 text-sm" style={{ minWidth: 320 }}>
-                <thead className="bg-slate-50 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase sm:min-w-[200px]">제목</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">담당</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">기간</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-medium text-slate-500 uppercase">상태</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {scheduleSummary.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-3 py-4 text-center text-slate-400 text-[11px]">
-                        일정이 없습니다.
-                      </td>
-                    </tr>
-                  ) : (
-                    scheduleSummary.map((s) => (
-                      <tr key={s.id} className="hover:bg-slate-50">
-                        <td className="px-3 py-2 font-medium text-slate-800 truncate max-w-[140px] sm:max-w-[280px] md:max-w-[360px]" title={s.title ?? undefined}>{s.title}</td>
-                        <td className="px-3 py-2 text-slate-600">{s.assignee ?? '-'}</td>
-                        <td className="px-3 py-2 text-slate-600 whitespace-nowrap">
-                          {s.start_date && s.end_date ? `${s.start_date} ~ ${s.end_date}` : s.start_date ?? s.end_date ?? '-'}
-                        </td>
-                        <td className="px-3 py-2">
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-medium ${
-                            s.status === 'done'
-                              ? 'bg-slate-100 text-slate-600'
-                              : s.status === 'scheduled'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-green-100 text-green-800'
-                          }`}>
-                            {s.status === 'done' ? '종료' : s.status === 'scheduled' ? '진행 예정' : '진행중'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. 업무 노트 갤러리 (2열 카드) */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">업무 노트</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            {/* 공통 공지 카드 */}
-            <div className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all">
-              <div className="flex items-center gap-2 border-b-4 border-slate-400 pb-3 mb-4">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200">
-                  <Users size={18} className="text-slate-900" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900 uppercase">공통 공지</h3>
-                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
-                    {tasks.filter((t) => t.assignee === 'Common' && t.status !== 'Done').length} Active Tasks · 수업 연기 알림
-                  </p>
-                </div>
+          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+            {notesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
               </div>
-              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
-                {tasks.filter((t) => t.assignee === 'Common').map((task) => (
-                  <div
-                    key={task.id}
-                    onClick={() => { setEditingTask(task); setTaskForm({ ...task }); setIsTaskModalOpen(true); }}
-                    className={`py-3 px-3 flex items-start gap-3 rounded-xl border border-slate-100 hover:border-slate-200 cursor-pointer transition-all ${
-                      task.status === 'Done' ? 'opacity-60' : ''
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); toggleStatus(task, e); }}
-                      className="shrink-0 mt-0.5"
-                    >
-                      {task.status === 'Done' ? (
-                        <CheckCircle2 size={18} className="text-emerald-500" />
-                      ) : task.status === 'In Progress' ? (
-                        <Clock size={18} className="text-blue-500" />
-                      ) : (
-                        <Circle size={18} className="text-slate-300" />
-                      )}
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-slate-800 truncate">{task.title}</p>
-                      {task.description && (
-                        <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{task.description}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {sortedVacations.length > 0 && (
-                  <>
-                    <div className={`pt-2 ${tasks.filter((t) => t.assignee === 'Common').length > 0 ? 'border-t border-slate-100 mt-2' : ''}`}>
-                        <button
-                          type="button"
-                          onClick={() => setVacationExpanded(!vacationExpanded)}
-                          className="flex items-center gap-2 w-full text-left cursor-pointer"
-                        >
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                            수업 연기 알림 {sortedVacations.length}건
-                          </p>
-                          <span className="text-slate-300 text-xs">{vacationExpanded ? '접기' : '펼치기'}</span>
-                        </button>
-                    </div>
-                    {vacationExpanded && sortedVacations.map((v) => {
-                      const dateMatch = v.vacation?.match(/(\d{8})/);
-                      const dateStr = dateMatch ? dateMatch[0] : '';
-                      const label = getVacationLabel(dateStr);
-                      return (
-                        <div key={v.id} className="px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-bold text-slate-800 truncate min-w-0">{v.name}</span>
-                            <span className={`text-[10px] font-bold shrink-0 px-2 py-0.5 rounded ${
-                              label === '오늘' || label === '내일' ? 'bg-rose-200 text-rose-800' : 'bg-rose-50 text-rose-600'
-                            }`}>{label}</span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5 truncate">{v.vacation}</p>
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
-                {tasks.filter((t) => t.assignee === 'Common').length === 0 && vacationRequests.length === 0 && (
-                  <p className="py-4 text-center text-[11px] text-slate-400 italic">공통 업무·연기 알림 없음</p>
-                )}
+            ) : recentNotes.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-[11px] text-slate-400 italic">노트가 없습니다.</p>
+                <Link
+                  href="/admin/note"
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700"
+                >
+                  <Plus size={12} />
+                  첫 노트 작성하기
+                </Link>
               </div>
-            </div>
-
-            {/* 담당자별 업무 노트 카드 */}
-            {BOARDS.filter((b) => b.id !== 'Common').map((board) => (
-              <div key={board.id} className={`rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all ${board.accent}`}>
-                <div className={`flex items-center gap-2 border-b-4 ${board.accent} pb-3 mb-4`}>
-                  <div className={`p-2 rounded-xl bg-gradient-to-br ${
-                    board.id === '최지훈' ? 'from-indigo-100 to-indigo-200' :
-                    board.id === '김윤기' ? 'from-blue-100 to-blue-200' :
-                    'from-emerald-100 to-emerald-200'
-                  }`}>
-                    <board.icon size={18} className="text-slate-900" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-slate-900 uppercase">{board.name} 업무 노트</h3>
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
-                      {tasks.filter((t) => t.assignee === board.id && t.status !== 'Done').length} Active Tasks
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
-                  {board.hasMemo && (
-                    <div
-                      onClick={() => openNoteModal(board.id)}
-                      className="py-3 px-3 rounded-xl flex items-center gap-3 hover:bg-slate-900 hover:text-white transition-all cursor-pointer group border border-dashed border-slate-200"
+            ) : (
+              <ul className="divide-y divide-slate-50">
+                {recentNotes.map((note) => (
+                  <li key={note.id}>
+                    <Link
+                      href={`/admin/note?id=${note.id}`}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors group"
                     >
-                      <FileText size={16} className="text-slate-400 group-hover:text-white" />
-                      <span className="text-sm font-bold">Daily Work Note</span>
-                    </div>
-                  )}
-                  {tasks.filter((t) => t.assignee === board.id).map((task) => (
-                    <div
-                      key={task.id}
-                      onClick={() => { setEditingTask(task); setTaskForm({ ...task }); setIsTaskModalOpen(true); }}
-                      className={`py-3 px-3 flex items-start gap-3 rounded-xl border border-slate-100 hover:border-slate-200 cursor-pointer transition-all ${
-                        task.status === 'Done' ? 'opacity-60' : ''
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); toggleStatus(task, e); }}
-                        className="shrink-0 mt-0.5"
-                      >
-                        {task.status === 'Done' ? (
-                          <CheckCircle2 size={18} className="text-emerald-500" />
-                        ) : task.status === 'In Progress' ? (
-                          <Clock size={18} className="text-blue-500" />
+                      <div className="shrink-0">
+                        {note.is_favorite ? (
+                          <Star size={14} className="text-amber-400 fill-amber-400" />
                         ) : (
-                          <Circle size={18} className="text-slate-300" />
-                        )}
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-slate-800 truncate">{task.title}</p>
-                        {task.description && (
-                          <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{task.description}</p>
+                          <FileText size={14} className="text-slate-300 group-hover:text-slate-400" />
                         )}
                       </div>
-                    </div>
-                  ))}
-                  {tasks.filter((t) => t.assignee === board.id).length === 0 && !board.hasMemo && (
-                    <p className="py-4 text-center text-[11px] text-slate-400 italic">No tasks</p>
-                  )}
-                </div>
-              </div>
-            ))}
+                      <span className="flex-1 text-sm font-medium text-slate-700 truncate group-hover:text-slate-900">
+                        {note.title || 'Untitled'}
+                      </span>
+                      <span className="shrink-0 text-[10px] text-slate-400 tabular-nums">
+                        {formatNoteDate(note.updated_at)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 
       </div>
 
-      {/* Daily Note Modal - 모바일에서 하단 시트 형태 */}
-      {isNoteModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="bg-[#FFFDE7] rounded-t-[32px] sm:rounded-[40px] w-full max-w-2xl max-h-[90vh] sm:h-[70vh] flex flex-col p-6 sm:p-10 shadow-2xl relative border-8 border-white overflow-hidden">
-            <button onClick={() => setIsNoteModalOpen(false)} className="absolute top-4 right-4 sm:top-8 sm:right-8 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-slate-900 text-3xl font-light cursor-pointer touch-manipulation">×</button>
-            <div className="mb-6">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-yellow-600 mb-2">Daily Note Pad</h3>
-              <h2 className="text-2xl font-black text-slate-900">{selectedBoard} 업무 메모</h2>
-            </div>
-            <textarea 
-              autoFocus
-              value={noteContent}
-              onChange={(e) => setNoteContent(e.target.value)}
-              className="flex-1 w-full bg-transparent border-none outline-none resize-none text-[15px] font-medium leading-relaxed text-slate-700 custom-scrollbar"
-              placeholder="상세 업무 내용을 자유롭게 기록하세요..."
-            />
-            <div className="mt-6 flex justify-end">
-              <button onClick={handleSaveNote} className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[11px] font-black hover:bg-yellow-600 transition-all shadow-xl cursor-pointer">
-                {isSavingNote ? <RefreshCw className="animate-spin w-4 h-4"/> : <Save size={16}/>}
-                SAVE & CLOSE
+      {/* 수업 연기 알림 등록 모달 */}
+      {isPostponeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h2 className="text-base font-semibold text-slate-900">수업 연기 알림 등록</h2>
+              <button
+                type="button"
+                onClick={() => setIsPostponeModalOpen(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
               </button>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Task Editor Modal - 모바일 하단 시트 */}
-      {isTaskModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-[2px]">
-          <div className="bg-white rounded-t-[32px] sm:rounded-[32px] w-full max-w-md max-h-[90vh] overflow-y-auto p-6 sm:p-10 shadow-2xl relative animate-in zoom-in duration-150">
-            <button onClick={() => setIsTaskModalOpen(false)} className="absolute top-4 right-4 sm:top-8 sm:right-8 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-300 hover:text-slate-900 cursor-pointer touch-manipulation"><X size={20}/></button>
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-8">{editingTask ? 'Edit Task' : 'Register Task'}</h3>
-            <div className="space-y-5">
-              <input autoFocus type="text" placeholder="Title" value={taskForm.title} onChange={e => setTaskForm({...taskForm, title: e.target.value})} className="w-full min-h-[48px] px-5 py-4 bg-slate-50 rounded-2xl text-base sm:text-sm font-bold border-none outline-none focus:ring-2 focus:ring-slate-100 touch-manipulation" />
-              <div className="grid grid-cols-2 gap-4">
-                <select value={taskForm.assignee} onChange={e => setTaskForm({...taskForm, assignee: e.target.value})} className="min-h-[48px] px-5 py-4 bg-slate-50 rounded-2xl text-[11px] font-black border-none outline-none touch-manipulation">
-                  {BOARDS.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-                <select value={taskForm.tag} onChange={e => setTaskForm({...taskForm, tag: e.target.value})} className="min-h-[48px] px-5 py-4 bg-slate-50 rounded-2xl text-[11px] font-black border-none outline-none touch-manipulation">
-                  {['General', 'Finance', 'Meeting', 'CS', 'Ops', 'Class'].map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <textarea placeholder="Description" value={taskForm.description} onChange={e => setTaskForm({...taskForm, description: e.target.value})} className="w-full min-h-[140px] px-5 py-4 bg-slate-50 rounded-2xl text-base sm:text-[11px] font-bold border-none outline-none resize-none touch-manipulation" />
-              <div className="flex gap-2 pt-2">
-                {editingTask && (
-                  <button onClick={async () => { if(supabase && confirm('Delete?')) { await supabase.from('todos').delete().eq('id', editingTask.id); setIsTaskModalOpen(false); fetchData(); } }} className="p-4 text-red-400 hover:bg-red-50 rounded-2xl transition-all cursor-pointer"><Trash2 size={24}/></button>
+            <form onSubmit={handlePostponeSubmit} className="px-5 py-4 space-y-4">
+              {noticeError && (
+                <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{noticeError}</p>
+              )}
+
+              {/* 캘린더 */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  연기 날짜 선택
+                </label>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <MiniCalendar
+                    selectedDate={selectedDate}
+                    onSelect={setSelectedDate}
+                  />
+                </div>
+                {selectedDate && (
+                  <p className="mt-1.5 text-xs text-indigo-600 font-medium text-center">
+                    선택: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
+                  </p>
                 )}
-                <button onClick={handleSaveTask} className="flex-1 min-h-[48px] bg-slate-900 text-white text-[11px] font-black py-5 rounded-2xl hover:bg-indigo-600 shadow-xl transition-all cursor-pointer touch-manipulation">SUBMIT HQ</button>
               </div>
-            </div>
+
+              {/* 강사 선택 */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                  강사 선택
+                </label>
+                <select
+                  value={selectedTeacherId}
+                  onChange={(e) => setSelectedTeacherId(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
+                >
+                  <option value="">강사를 선택하세요</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 메모 */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                  메모 (선택)
+                </label>
+                <textarea
+                  value={noticeMemo}
+                  onChange={(e) => setNoticeMemo(e.target.value)}
+                  placeholder="사유 또는 추가 내용"
+                  rows={2}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsPostponeModalOpen(false)}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingNotice}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmittingNotice && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  등록
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

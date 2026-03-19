@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
-  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, AlertCircle, FileCheck, MapPin, KeyRound
+  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, FileCheck, MapPin, KeyRound
 } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { CountingTab } from './CountingTab';
@@ -26,7 +26,6 @@ interface UserData {
   organization: string | null;
   departure_location?: string | null;
   schedule?: string | null;
-  vacation?: string | null;
   documents: DocumentFile[] | null;
   is_active: boolean;
   ending_soon?: boolean;
@@ -109,7 +108,6 @@ export default function UserDashboardPage() {
           organization: editForm.organization,
           departure_location: editForm.departure_location,
           schedule: editForm.schedule,
-          vacation: editForm.vacation,
           ending_soon: editForm.ending_soon
         })
         .eq('id', userId);
@@ -365,7 +363,6 @@ export default function UserDashboardPage() {
                 <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="연락처" value={editForm.phone || ''} onChange={e => setEditForm(prev => ({...prev, phone: e.target.value}))} />
                 <input className="w-full px-3 py-2 text-xs border rounded-xl" placeholder="출발장소" value={editForm.departure_location || ''} onChange={e => setEditForm(prev => ({...prev, departure_location: e.target.value}))} />
                 <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="수업 스케줄 (쉼표로 구분: 월 15-18, 화 16-19)" value={editForm.schedule || ''} onChange={e => setEditForm(prev => ({...prev, schedule: e.target.value}))} />
-                <textarea className="w-full px-3 py-2 text-xs border rounded-xl h-20" placeholder="연기 요청 (쉼표로 구분: 1.23 화요일, 1.30 금요일)" value={editForm.vacation || ''} onChange={e => setEditForm(prev => ({...prev, vacation: e.target.value}))} />
                 {user.is_active && (
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={editForm.ending_soon ?? false} onChange={e => setEditForm(prev => ({ ...prev, ending_soon: e.target.checked }))} className="rounded border-slate-300 text-amber-500 focus:ring-amber-500" />
@@ -415,22 +412,8 @@ export default function UserDashboardPage() {
                       ) : <span className="text-[10px] text-slate-300 italic">등록된 스케줄 없음</span>}
                     </div>
                   </div>
-                  
-                  {/* 연기 요청 */}
-                  <div className="space-y-2 bg-rose-50/50 p-3 rounded-2xl border border-rose-100/50">
-                    <div className="flex items-center text-[11px] font-bold text-rose-400 mb-1">
-                      <AlertCircle className="w-3.5 h-3.5 mr-3" /> 연기 요청
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 pl-7">
-                      {(user.vacation || '').split(',').filter(v => v.trim()).length > 0 ? (
-                        (user.vacation || '').split(',').map((v, i) => (
-                          <span key={i} className="px-2 py-1 bg-white text-rose-600 rounded-md text-[10px] font-black border border-rose-200 shadow-sm">
-                            {v.trim()}
-                          </span>
-                        ))
-                      ) : <span className="text-[10px] text-slate-300 italic">없음</span>}
-                    </div>
-                  </div>
+
+                  {/* 연기 요청(vacation)은 대시보드의 postpone_notices로 대체 */}
                 </div>
               </div>
             )}

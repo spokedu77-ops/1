@@ -77,7 +77,6 @@ export async function POST(request: Request) {
         organization: source.organization ?? null,
         departure_location: source.departure_location ?? null,
         schedule: source.schedule ?? null,
-        vacation: source.vacation ?? null,
         created_at: source.created_at ?? new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };

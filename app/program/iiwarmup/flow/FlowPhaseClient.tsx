@@ -8,33 +8,15 @@ import { useFlowPano } from '@/app/lib/admin/hooks/useFlowPano';
 
 function FlowPhaseContent() {
   const searchParams = useSearchParams();
-  const weekKey = searchParams.get('weekKey');
-  const hasWeekKey = !!weekKey;
   const monthParam = searchParams.get('month');
   const n = monthParam != null ? Number(monthParam) : NaN;
   const previewMonth = Number.isFinite(n) && n >= 1 && n <= 12 ? n : new Date().getMonth() + 1;
-  const { selected: adminBgm, loading: adminBgmLoading } = useFlowBGM(hasWeekKey ? undefined : previewMonth);
-  const { selected: adminPano, loading: adminPanoLoading } = useFlowPano(hasWeekKey ? undefined : previewMonth);
+  const { selected: adminBgm, loading: adminBgmLoading } = useFlowBGM(previewMonth);
+  const { selected: adminPano, loading: adminPanoLoading } = useFlowPano(previewMonth);
 
-  const [scheduleFlow, setScheduleFlow] = useState<{ flowBgmPath: string | null; flowPanoPath: string | null } | null>(null);
-  useEffect(() => {
-    if (!weekKey) return;
-    fetch(`/api/schedule/${encodeURIComponent(weekKey)}`)
-      .then((r) => r.ok ? r.json() : { flowBgmPath: null, flowPanoPath: null })
-      .then((data: { flowBgmPath?: string | null; flowPanoPath?: string | null }) =>
-        setScheduleFlow({
-          flowBgmPath: data.flowBgmPath ?? null,
-          flowPanoPath: data.flowPanoPath ?? null,
-        })
-      )
-      .catch(() => setScheduleFlow({ flowBgmPath: null, flowPanoPath: null }));
-  }, [weekKey]);
-
-  const bgmPath = hasWeekKey ? (scheduleFlow?.flowBgmPath ?? undefined) : (adminBgm || undefined);
-  const panoPath = hasWeekKey ? (scheduleFlow?.flowPanoPath ?? undefined) : (adminPano || undefined);
-  const flowAssetsReady = hasWeekKey
-    ? scheduleFlow !== null
-    : !adminBgmLoading && !adminPanoLoading;
+  const bgmPath = adminBgm || undefined;
+  const panoPath = adminPano || undefined;
+  const flowAssetsReady = !adminBgmLoading && !adminPanoLoading;
 
   const isAdminMode = searchParams.get('admin') === 'true';
   const showLevelSelector = searchParams.get('showLevelSelector') === '1';

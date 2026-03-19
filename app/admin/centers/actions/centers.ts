@@ -2,7 +2,7 @@
 
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { createCenterSchema } from '@/app/lib/centers/schemas';
-import type { Center } from '@/app/lib/centers/types';
+import type { Center, TeacherOption } from '@/app/lib/centers/types';
 
 export type GetCentersFilters = {
   search?: string;
@@ -12,7 +12,10 @@ export type GetCentersFilters = {
 
 export async function getCenters(filters: GetCentersFilters = {}): Promise<Center[]> {
   const supabase = await createServerSupabaseClient();
-  let q = supabase.from('centers').select('*').order('name');
+  let q = supabase
+    .from('centers')
+    .select('*, main_teacher:main_teacher_id(id, name)')
+    .order('name');
 
   if (filters.status) {
     q = q.eq('status', filters.status);
@@ -27,17 +30,44 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
 
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []) as Center[];
+
+  return ((data ?? []) as (Center & { main_teacher?: { id: string; name: string } | null })[]).map(
+    ({ main_teacher, ...row }) => ({
+      ...row,
+      main_teacher_name: main_teacher?.name ?? null,
+    })
+  );
 }
 
 export async function getCenterById(id: string): Promise<Center | null> {
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.from('centers').select('*').eq('id', id).single();
+  const { data, error } = await supabase
+    .from('centers')
+    .select('*, main_teacher:main_teacher_id(id, name)')
+    .eq('id', id)
+    .single();
   if (error) {
     if (error.code === 'PGRST116') return null;
     throw error;
   }
-  return data as Center;
+  const { main_teacher, ...row } = data as Center & { main_teacher?: { id: string; name: string } | null };
+  return {
+    ...row,
+    main_teacher_name: main_teacher?.name ?? null,
+  };
+}
+
+/** 활동 중인 강사 목록 조회 (강사 선택 select용) */
+export async function getActiveTeachers(): Promise<TeacherOption[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, name')
+    .eq('is_active', true)
+    .in('role', ['teacher', 'admin'])
+    .order('name');
+  if (error) throw error;
+  return (data ?? []) as TeacherOption[];
 }
 
 export async function createCenter(input: unknown): Promise<{ data?: Center; error?: string }> {
@@ -59,6 +89,8 @@ export async function createCenter(input: unknown): Promise<{ data?: Center; err
       status: parsed.data.status,
       contract_start: parsed.data.contract_start ?? null,
       contract_end: parsed.data.contract_end ?? null,
+      session_fee: parsed.data.session_fee ?? null,
+      main_teacher_id: parsed.data.main_teacher_id ?? null,
       weekly_schedule: parsed.data.weekly_schedule ?? [],
       instructors_default: parsed.data.instructors_default ?? { main: null, sub: null, backup: [] },
       highlights: parsed.data.highlights ?? null,
@@ -90,6 +122,8 @@ export async function updateCenter(
   if (parsed.data.status !== undefined) payload.status = parsed.data.status;
   if (parsed.data.contract_start !== undefined) payload.contract_start = parsed.data.contract_start;
   if (parsed.data.contract_end !== undefined) payload.contract_end = parsed.data.contract_end;
+  if (parsed.data.session_fee !== undefined) payload.session_fee = parsed.data.session_fee;
+  if (parsed.data.main_teacher_id !== undefined) payload.main_teacher_id = parsed.data.main_teacher_id;
   if (parsed.data.weekly_schedule !== undefined) payload.weekly_schedule = parsed.data.weekly_schedule;
   if (parsed.data.instructors_default !== undefined) payload.instructors_default = parsed.data.instructors_default;
   if (parsed.data.highlights !== undefined) payload.highlights = parsed.data.highlights;

@@ -1,12 +1,10 @@
 /**
- * 센터 정보 MVP 타입
+ * 센터 관리 핵심 타입 (압축 리뉴얼)
  */
 
 export type CenterStatus = 'active' | 'paused' | 'ended';
-export type ProgramStatus = 'active' | 'done';
-export type CenterLogType = 'request' | 'issue' | 'result' | 'note';
 
-/** 주간 시간표 1행 */
+/** 주간 시간표 1행 (centers.weekly_schedule jsonb) */
 export interface WeeklyScheduleSlot {
   day: string;
   start: string;
@@ -15,28 +13,25 @@ export interface WeeklyScheduleSlot {
   note: string;
 }
 
-/** 강사 기본배정 (jsonb) */
+/** 강사 기본배정 (centers.instructors_default jsonb) */
 export interface InstructorsDefault {
   main: string | null;
   sub: string | null;
   backup: string[];
 }
 
-/** next_actions 1항목 */
+/** next_actions 1항목 (centers.next_actions jsonb) */
 export interface NextActionItem {
   id: string;
   text: string;
   done: boolean;
 }
 
-/** programs.instructors (jsonb) */
-export interface ProgramInstructors {
-  main?: string | null;
-  sub?: string | null;
+/** 강사 선택 목록 항목 */
+export interface TeacherOption {
+  id: string;
+  name: string;
 }
-
-/** center_finance_terms.doc_checklist (jsonb) */
-export type DocChecklistItem = string;
 
 export interface Center {
   id: string;
@@ -50,65 +45,14 @@ export interface Center {
   status: CenterStatus;
   contract_start: string | null;
   contract_end: string | null;
+  session_fee: number | null;
+  main_teacher_id: string | null;
   weekly_schedule: WeeklyScheduleSlot[];
   instructors_default: InstructorsDefault;
   highlights: string | null;
   next_actions: NextActionItem[];
   created_at: string;
   updated_at: string;
-}
-
-export interface CenterFinanceTerms {
-  id: string;
-  center_id: string;
-  unit_price: number | null;
-  payment_day: string | null;
-  invoice_required: boolean;
-  doc_checklist: DocChecklistItem[];
-  special_terms: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Program {
-  id: string;
-  center_id: string;
-  name: string;
-  term: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  sessions_count: number | null;
-  instructors: ProgramInstructors;
-  note: string | null;
-  status: ProgramStatus;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CenterLog {
-  id: string;
-  center_id: string;
-  log_date: string;
-  type: CenterLogType;
-  content: string;
-  next_action: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CenterFile {
-  id: string;
-  center_id: string;
-  title: string;
-  url: string;
-  category: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CenterWithRelations extends Center {
-  finance_terms: CenterFinanceTerms | null;
-  programs: Program[];
-  logs: CenterLog[];
-  files: CenterFile[];
+  /** 조인 결과: getCenters/getCenterById 에서만 채워짐 */
+  main_teacher_name?: string | null;
 }

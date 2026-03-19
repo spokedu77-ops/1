@@ -9,7 +9,6 @@ import { getCurrentWeekOfMonth } from '@/app/lib/curriculum/weekUtils';
 import {
   PERSONAL_CATEGORIES_ROW1,
   PERSONAL_CATEGORIES_ROW2,
-  DEFAULT_PERSONAL_CATEGORY,
   getSubTabsForCategory,
   CENTER_SECTIONS,
   EIGHTH_SESSION_LABELS,
@@ -97,9 +96,9 @@ export default function AdminCurriculumPage() {
   const currentMonth = new Date().getMonth() + 1;
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [mainTab, setMainTab] = useState<MainCurriculumTab>('personal');
-  const [categoryTab, setCategoryTab] = useState<string>(DEFAULT_PERSONAL_CATEGORY);
+  const [categoryTab, setCategoryTab] = useState<string>('신체 기능향상 8회기');
   const [subTab, setSubTab] = useState<string>(() => {
-    const tabs = getSubTabsForCategory(DEFAULT_PERSONAL_CATEGORY);
+    const tabs = getSubTabsForCategory('신체 기능향상 8회기');
     return tabs[0] ?? '';
   });
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
@@ -121,8 +120,8 @@ export default function AdminCurriculumPage() {
     expertTip: '', checkListText: '', equipmentText: '', stepsText: '' 
   });
   const [personalPost, setPersonalPost] = useState({
-    category: DEFAULT_PERSONAL_CATEGORY,
-    sub_tab: '',
+    category: '신체 기능향상 8회기',
+    sub_tab: '1-1',
     title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '',
   });
   const [is8huiModalOpen, setIs8huiModalOpen] = useState(false);
@@ -348,6 +347,15 @@ export default function AdminCurriculumPage() {
     });
   }, [personalItems]);
 
+  /** 유아체육: 1차시~6차시 슬롯별 아이템 */
+  const yuaSessionSlots = useMemo(() => {
+    const labels = getSubTabsForCategory('유아체육');
+    return labels.map((label) => {
+      const item = personalItems.find((p: PersonalCurriculumItem) => p.category === '유아체육' && p.sub_tab === label) ?? null;
+      return { label, item };
+    });
+  }, [personalItems]);
+
   const currentEquipment = useMemo(() => {
     return centerEquipmentList.find((e) => e.number === selectedEquipmentNumber) ?? null;
   }, [centerEquipmentList, selectedEquipmentNumber]);
@@ -366,6 +374,12 @@ export default function AdminCurriculumPage() {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const hasValidUrl = (url?: string) => {
+    const u = url?.trim();
+    if (!u || u === '#' || u === 'null' || u === 'undefined' || u.toLowerCase() === 'none') return false;
+    return u.startsWith('http://') || u.startsWith('https://');
   };
 
   const getSafeThumbnailUrl = (item: { url?: string; thumbnail?: string }) => {
@@ -497,8 +511,10 @@ export default function AdminCurriculumPage() {
   const handlePersonalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) return;
-    const checkList = personalPost.checkListText.split('\n').filter((t: string) => t.trim() !== '');
-    const equipment = personalPost.equipmentText.split('\n').filter((t: string) => t.trim() !== '');
+    // 개인 수업 등록/수정 모달에서는 체크리스트/Equipment을 더 이상 편집하지 않음
+    // 저장 시 기존 값을 항상 비워 정책/요구사항에 맞게 제거합니다.
+    const checkList: string[] = [];
+    const equipment: string[] = [];
     const steps = personalPost.stepsText.split('\n').filter((t: string) => t.trim() !== '');
     const videoId = getYouTubeId(personalPost.url);
     const isInsta = personalPost.url.includes('instagram.com');
@@ -536,6 +552,21 @@ export default function AdminCurriculumPage() {
 
   const openPersonalModal = () => {
     setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+    setPersonalEditingId(null);
+    setIsPersonalModalOpen(true);
+  };
+
+  const openPersonalModalForSubTab = (targetSubTab: string) => {
+    setPersonalPost({
+      category: '유아체육',
+      sub_tab: targetSubTab,
+      title: '',
+      url: '',
+      expertTip: '',
+      checkListText: '',
+      equipmentText: '',
+      stepsText: '',
+    });
     setPersonalEditingId(null);
     setIsPersonalModalOpen(true);
   };
@@ -816,42 +847,144 @@ export default function AdminCurriculumPage() {
                       );
                     })}
                   </div>
-                ) : filteredPersonalItems.length > 0 ? (
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                ) : categoryTab !== '유아체육' && filteredPersonalItems.length > 0 ? (
+                   <div className="w-full space-y-3">
                      {filteredPersonalItems.map((item: PersonalCurriculumItem) => (
-                       <div key={item.id} className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer" onClick={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}>
+                       <div
+                         key={item.id}
+                         className="group bg-white rounded-[28px] border border-slate-100 p-4 hover:shadow-sm transition-all relative cursor-pointer"
+                         onClick={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}
+                       >
                          <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                            <button type="button" onClick={(e) => openPersonalEdit(item, e)} className="p-2 bg-white/90 backdrop-blur rounded-full text-slate-600 hover:text-indigo-600 shadow-sm"><Edit2 size={16}/></button>
                            <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/90 backdrop-blur rounded-full text-slate-600 hover:text-red-600 shadow-sm"><Trash2 size={16}/></button>
                          </div>
-                         <div className="relative aspect-video bg-slate-100">
-                           {item.type === 'instagram' ? (
-                             <div className="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex flex-col items-center justify-center text-white p-6">
-                               <Instagram size={48} className="mb-2 opacity-80" />
-                               <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram</span>
+                         <div className="flex items-start justify-between gap-4">
+                           <div className="min-w-0 flex-1">
+                             <div className="flex items-center gap-2 mb-2">
+                               <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${ (item.type ?? 'youtube') === 'youtube' ? 'bg-red-600' : 'bg-purple-600' }`}>
+                                 {item.type ?? 'youtube'}
+                               </span>
+                               <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
                              </div>
-                           ) : (
-                             <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
-                           )}
-                           <div className="absolute top-4 left-4">
-                             <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type ?? 'youtube'}</span>
-                           </div>
-                           <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
-                             <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                               <Play size={20} className="fill-slate-900 text-slate-900 ml-1"/>
+                             <div className="bg-slate-50 p-3 rounded-2xl flex gap-2 items-start">
+                               <AlertCircle size={14} className="text-slate-400 mt-1 flex-shrink-0" />
+                               <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-2">{item.expertTip}</p>
                              </div>
                            </div>
-                         </div>
-                         <div className="p-6 space-y-3">
-                           <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
-                           <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
-                             <AlertCircle size={14} className="text-slate-400 mt-1 flex-shrink-0" />
-                             <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-3">{item.expertTip}</p>
+                           <div className="shrink-0 mt-1">
+                             {item.type === 'instagram' ? (
+                               <Instagram size={20} className="text-purple-600" />
+                             ) : (
+                               <Play size={20} className="text-red-600" />
+                             )}
                            </div>
                          </div>
                        </div>
                      ))}
                    </div>
+                ) : categoryTab === '유아체육' ? (
+                  <div className="w-full space-y-3">
+                    <details open className="w-full">
+                      <summary className="w-full flex items-center justify-between gap-3 bg-white border border-slate-100 rounded-2xl px-4 py-4 cursor-pointer hover:shadow-sm transition-shadow">
+                        <div className="min-w-0">
+                          <h3 className="font-black text-slate-900 text-sm sm:text-base truncate">유아체육</h3>
+                          <p className="text-xs font-bold text-slate-500">1~6차시 카드 보기</p>
+                        </div>
+                        <ChevronRight size={20} className="text-slate-300 shrink-0" />
+                      </summary>
+                      <div className="mt-3 space-y-2">
+                        {yuaSessionSlots.map(({ label, item }) => {
+                          return (
+                            <div
+                              key={label}
+                              role="button"
+                              tabIndex={0}
+                              className={`w-full bg-white border border-slate-100 rounded-2xl px-4 py-3 flex items-start justify-between gap-4 transition-all cursor-pointer hover:shadow-sm ${
+                                item ? '' : 'opacity-70'
+                              }`}
+                              onClick={() => {
+                                if (item) {
+                                  setSelectedItem(item);
+                                  setIsDetailModalOpen(true);
+                                } else {
+                                  openPersonalModalForSubTab(label);
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  if (item) {
+                                    setSelectedItem(item);
+                                    setIsDetailModalOpen(true);
+                                  } else {
+                                    openPersonalModalForSubTab(label);
+                                  }
+                                }
+                              }}
+                            >
+                              <div className="min-w-0">
+                                <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">
+                                  {label}
+                                </span>
+                                <div className="font-black text-slate-900 text-sm line-clamp-1">{item?.title ?? label}</div>
+                                <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-2">
+                                  {item?.expertTip || (item ? '등록된 팁이 없습니다.' : '등록된 내용이 없습니다.')}
+                                </p>
+                              </div>
+                              <div className="shrink-0 mt-0.5">
+                                {item ? (
+                                  hasValidUrl(item.url) ? (
+                                    <span
+                                      className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}
+                                    >
+                                      {item.type ?? 'youtube'}
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-1 rounded text-[10px] font-black text-slate-400 uppercase bg-slate-100">
+                                      URL 없음
+                                    </span>
+                                  )
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="p-2 rounded-full bg-slate-900 text-white hover:bg-indigo-600 transition-all"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openPersonalModalForSubTab(label);
+                                    }}
+                                    aria-label={`${label} 등록`}
+                                  >
+                                    <Plus size={16} />
+                                  </button>
+                                )}
+                              </div>
+                              {item && (
+                                <div className="flex gap-2 ml-3 pl-3 border-l border-slate-100">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => openPersonalEdit(item, e)}
+                                    className="p-2 rounded-full bg-white/90 hover:bg-white text-slate-600 hover:text-indigo-600 transition-colors"
+                                    aria-label={`${label} 수정`}
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => deletePersonalItem(item.id, e)}
+                                    className="p-2 rounded-full bg-white/90 hover:bg-white text-slate-600 hover:text-red-600 transition-colors"
+                                    aria-label={`${label} 삭제`}
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  </div>
                  ) : (
                    <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
                      {categoryTab} · {subTab}에 등록된 커리큘럼이 없습니다. 추가 버튼으로 등록하세요.
@@ -1117,22 +1250,36 @@ export default function AdminCurriculumPage() {
                    </>
                  ) : (
                    <>
-                 <div className="relative w-full aspect-video bg-black">
-                     {selectedItem.type === 'youtube' && getYouTubeId(selectedItem.url ?? '') ? (
-                         <iframe 
-                             src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url ?? '')}?autoplay=1`} 
-                             className="w-full h-full" 
-                             allow="autoplay; encrypted-media" 
-                             allowFullScreen 
-                         />
-                     ) : (
-                         <div className="w-full h-full flex flex-col items-center justify-center text-white">
-                             <Instagram size={64} className="mb-4" />
-                             <a href={selectedItem.url ?? '#'} target="_blank" rel="noopener noreferrer" className="bg-white text-black px-6 py-3 rounded-full font-bold">인스타그램에서 보기</a>
-                         </div>
-                     )}
-                     <button onClick={() => setIsDetailModalOpen(false)} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-all"><X size={20}/></button>
-                 </div>
+                {hasValidUrl(selectedItem.url as string | undefined) && (
+                  <div className="relative w-full aspect-video bg-black">
+                    {selectedItem.type === 'youtube' && getYouTubeId(selectedItem.url ?? '') ? (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url ?? '')}?autoplay=1`}
+                        className="w-full h-full"
+                        allow="autoplay; encrypted-media"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-white">
+                        <Instagram size={64} className="mb-4" />
+                        <a
+                          href={selectedItem.url ?? '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-white text-black px-6 py-3 rounded-full font-bold"
+                        >
+                          인스타그램에서 보기
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-all"
+                >
+                  <X size={20} />
+                </button>
                  
                  <div className="p-8 space-y-8 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
                      <div>
@@ -1141,44 +1288,49 @@ export default function AdminCurriculumPage() {
                            {isPersonalItem(selectedItem) ? `${selectedItem.category} · ${selectedItem.sub_tab}` : `${selectedItem.month}월 ${selectedItem.week}주차`} 커리큘럼
                          </p>
                      </div>
-                     
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
-                             <div className="flex items-center gap-2 mb-4 text-green-400 font-black text-sm uppercase">
-                                 <CheckSquare size={16} /> 사전 체크리스트
-                             </div>
-                             <ul className="space-y-3">
-                                 {selectedItem.checkList && selectedItem.checkList.length > 0 ? selectedItem.checkList.map((check: string, i: number) => (
-                                     <li key={i} className="flex gap-3 items-start text-sm font-bold text-slate-200">
-                                         <input type="checkbox" className="mt-1 w-4 h-4 rounded border-slate-500 accent-green-500 bg-transparent" readOnly checked />
-                                         <span className="leading-relaxed">{check}</span>
-                                     </li>
-                                 )) : <li className="text-slate-500 text-sm">등록된 체크리스트가 없습니다.</li>}
-                             </ul>
-                         </div>
-                         <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
-                             <div className="flex items-center gap-2 mb-4 text-orange-400 font-black text-sm uppercase">
-                                 <Box size={16} /> 필요 교구 List
-                             </div>
-                             <ul className="space-y-3">
-                                 {selectedItem.equipment && selectedItem.equipment.length > 0 ? selectedItem.equipment.map((eq: string, i: number) => (
-                                     <li key={i} className="flex gap-3 items-start text-sm font-bold text-slate-200">
-                                         <span className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0" />
-                                         <span className="leading-relaxed">{eq}</span>
-                                     </li>
-                                 )) : <li className="text-slate-500 text-sm">등록된 교구가 없습니다.</li>}
-                             </ul>
-                         </div>
-                     </div>
+                    {!isPersonalItem(selectedItem) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
+                              <div className="flex items-center gap-2 mb-4 text-green-400 font-black text-sm uppercase">
+                                  <CheckSquare size={16} /> 사전 체크리스트
+                              </div>
+                              <ul className="space-y-3">
+                                  {selectedItem.checkList && selectedItem.checkList.length > 0 ? selectedItem.checkList.map((check: string, i: number) => (
+                                      <li key={i} className="flex gap-3 items-start text-sm font-bold text-slate-200">
+                                          <input type="checkbox" className="mt-1 w-4 h-4 rounded border-slate-500 accent-green-500 bg-transparent" readOnly checked />
+                                          <span className="leading-relaxed">{check}</span>
+                                      </li>
+                                  )) : <li className="text-slate-500 text-sm">등록된 체크리스트가 없습니다.</li>}
+                              </ul>
+                          </div>
+                          <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
+                              <div className="flex items-center gap-2 mb-4 text-orange-400 font-black text-sm uppercase">
+                                  <Box size={16} /> 필요 교구 List
+                              </div>
+                              <ul className="space-y-3">
+                                  {selectedItem.equipment && selectedItem.equipment.length > 0 ? selectedItem.equipment.map((eq: string, i: number) => (
+                                      <li key={i} className="flex gap-3 items-start text-sm font-bold text-slate-200">
+                                          <span className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0" />
+                                          <span className="leading-relaxed">{eq}</span>
+                                      </li>
+                                  )) : <li className="text-slate-500 text-sm">등록된 교구가 없습니다.</li>}
+                              </ul>
+                          </div>
+                      </div>
+                    )}
 
                      <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
                          <div className="flex items-center gap-2 mb-4 text-blue-400 font-black text-sm uppercase">
                              <ListOrdered size={16} /> 활동 방법
                          </div>
                          <ol className="space-y-4 text-left">
-                              {selectedItem.steps && selectedItem.steps.length > 0 ? selectedItem.steps.map((step: string, i: number) => (
+                             {selectedItem.steps && selectedItem.steps.length > 0 ? selectedItem.steps.map((step: string, i: number) => (
                                   <li key={i} className="flex gap-4 items-start text-left">
-                                      <span className="w-6 h-6 bg-slate-700 text-slate-300 rounded flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">{i+1}</span>
+                                      {isPersonalItem(selectedItem) && selectedItem.category === '유아체육' ? null : (
+                                        <span className="w-6 h-6 bg-slate-700 text-slate-300 rounded flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">
+                                          {i+1}
+                                        </span>
+                                      )}
                                       <p className="text-sm font-bold text-slate-200 leading-relaxed text-left">{step}</p>
                                   </li>
                               )) : <li className="text-slate-500 text-sm">등록된 활동 방법이 없습니다.</li>}
@@ -1292,15 +1444,7 @@ export default function AdminCurriculumPage() {
               </div>
               <div className="space-y-2 text-left">
                 <label className="text-xs font-black text-slate-400 uppercase text-left">URL (YouTube / Shorts)</label>
-                <input required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="유튜브 영상 또는 쇼츠 링크" value={personalPost.url} onChange={e => setPersonalPost({ ...personalPost, url: e.target.value })} />
-              </div>
-              <div className="space-y-2 text-left">
-                <label className="text-xs font-black text-slate-400 uppercase text-left">Checklist (엔터로 구분)</label>
-                <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="예: 2인 1조 구성" value={personalPost.checkListText} onChange={e => setPersonalPost({ ...personalPost, checkListText: e.target.value })} />
-              </div>
-              <div className="space-y-2 text-left">
-                <label className="text-xs font-black text-slate-400 uppercase text-left">Equipment (엔터로 구분)</label>
-                <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="예: 후프 2개" value={personalPost.equipmentText} onChange={e => setPersonalPost({ ...personalPost, equipmentText: e.target.value })} />
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="유튜브 영상 또는 쇼츠 링크 (선택)" value={personalPost.url} onChange={e => setPersonalPost({ ...personalPost, url: e.target.value })} />
               </div>
               <div className="space-y-2 text-left">
                 <label className="text-xs font-black text-slate-400 uppercase text-left">Activity Steps (엔터로 구분)</label>

@@ -6,7 +6,7 @@ export default function ScreenPlayAdminOverviewPage() {
       <section>
         <h2 className="text-lg font-extrabold">스크린 플레이</h2>
         <p className="mt-1 text-sm text-neutral-400">
-          띵크 → 챌린지 → 플로우 3단계 + 메모리 게임 · 카메라 앱 + 에셋 · 스케줄러
+          띵크 → 챌린지 → 플로우 3단계 + 메모리 게임 · 카메라 앱 + 에셋
         </p>
       </section>
 
@@ -72,19 +72,6 @@ export default function ScreenPlayAdminOverviewPage() {
           <h3 className="text-base font-extrabold">AssetHub</h3>
           <p className="mt-2 text-sm text-neutral-400">
             Think / Flow 에셋 업로드·관리 (챌린지는 스튜디오에서 직접)
-          </p>
-          <span className="mt-3 inline-block text-sm font-medium text-blue-400">
-            진입 →
-          </span>
-        </Link>
-
-        <Link
-          href="/admin/iiwarmup/scheduler"
-          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
-        >
-          <h3 className="text-base font-extrabold">Scheduler</h3>
-          <p className="mt-2 text-sm text-neutral-400">
-            주차별 워밍업 배정 · 공개/미공개
           </p>
           <span className="mt-3 inline-block text-sm font-medium text-blue-400">
             진입 →
