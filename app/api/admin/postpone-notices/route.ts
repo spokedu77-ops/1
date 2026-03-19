@@ -54,7 +54,6 @@ export async function GET(request: Request) {
     memo: row.memo,
     teacher_name: resolveTeacherName(row.teacher),
   }));
-
   return NextResponse.json({
     notices,
     total: count ?? 0,

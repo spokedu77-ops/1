@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { toggleInlineMark, parseInlineMarkupToHtml, type InlineMark } from '@/app/lib/note/inlineMarkup';
+import { toggleInlineMark, type InlineMark } from '@/app/lib/note/inlineMarkup';
 import {
   Plus,
   FileText,
@@ -106,18 +106,6 @@ function relativeTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 
-const MarkupPreview = React.memo(function MarkupPreview({
-  text,
-  className,
-}: {
-  text: string;
-  className: string;
-}) {
-  const html = useMemo(() => parseInlineMarkupToHtml(text), [text]);
-  return (
-    <span className={className} dangerouslySetInnerHTML={{ __html: html }} />
-  );
-});
 
 /* ─── DocItem ────────────────────────────────────────────────────────────── */
 function DocItem({
@@ -257,10 +245,15 @@ function BlockContent({
 }) {
   const textRef = useRef<HTMLTextAreaElement>(null);
   const [showSlash, setShowSlash] = useState(false);
-  const [isEditing, setIsEditing] = useState(true);
+  const [hasSelection, setHasSelection] = useState(false);
 
   const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
   const supportsFormatting = ['text', 'todo', 'heading', 'callout', 'toggle'].includes(block.type);
+
+  const handleSelectionChange = () => {
+    const el = textRef.current;
+    setHasSelection(!!el && el.selectionStart !== el.selectionEnd);
+  };
 
   const applyMark = (mark: InlineMark) => {
     if (!textRef.current) return;
@@ -328,22 +321,22 @@ function BlockContent({
   };
 
   const renderFormatToolbar = () => {
-    if (!supportsFormatting || !isEditing || block.type === 'image' || block.type === 'divider') return null;
+    if (!supportsFormatting || !hasSelection) return null;
     const buttons: { mark: InlineMark; label: string; icon: React.ElementType }[] = [
-      { mark: 'bold', label: '굵게', icon: Bold },
-      { mark: 'italic', label: '기울임', icon: Italic },
-      { mark: 'underline', label: '밑줄', icon: UnderlineIcon },
-      { mark: 'strike', label: '취소선', icon: Strikethrough },
-      { mark: 'code', label: '코드', icon: Code2 },
+      { mark: 'bold', label: '굵게 (Ctrl+B)', icon: Bold },
+      { mark: 'italic', label: '기울임 (Ctrl+I)', icon: Italic },
+      { mark: 'underline', label: '밑줄 (Ctrl+U)', icon: UnderlineIcon },
+      { mark: 'strike', label: '취소선 (Ctrl+Shift+X)', icon: Strikethrough },
+      { mark: 'code', label: '코드 (Ctrl+`)', icon: Code2 },
     ];
     return (
-      <div className="mb-1 flex flex-wrap items-center gap-1 rounded-md border border-slate-200 bg-white px-1.5 py-1 shadow-sm">
+      <div className="absolute -top-10 left-0 z-30 flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white px-1.5 py-1.5 shadow-lg">
         {buttons.map(({ mark, label, icon: Icon }) => (
           <button
             key={mark}
             type="button"
             title={label}
-            className="rounded px-1.5 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded px-1.5 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => applyMark(mark)}
           >
@@ -354,21 +347,6 @@ function BlockContent({
     );
   };
 
-  const renderTextPreview = (text: string, className: string) => {
-    if (isEditing || !text.trim()) return null;
-    return (
-      <button
-        type="button"
-        className={`w-full rounded-md px-1 text-left ${className}`}
-        onClick={() => {
-          setIsEditing(true);
-          requestAnimationFrame(() => textRef.current?.focus());
-        }}
-      >
-        <MarkupPreview text={text} className={className} />
-      </button>
-    );
-  };
 
   if (block.type === 'divider') {
     return (
@@ -397,20 +375,17 @@ function BlockContent({
         </button>
         <div className="relative flex-1">
           {renderFormatToolbar()}
-          {renderTextPreview(text, checked ? 'text-slate-400 line-through' : 'text-slate-800')}
-          {(isEditing || !text.trim()) && (
-            <textarea ref={textRef} rows={1}
-              className={`w-full resize-none bg-transparent text-[15px] leading-7 outline-none placeholder:text-slate-300 ${
-                checked ? 'text-slate-400 line-through' : 'text-slate-800'
-              }`}
-              placeholder="할 일을 입력하세요"
-              value={text}
-              onChange={(e) => handleChange(e)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => setIsEditing(true)}
-              onBlur={() => setIsEditing(false)}
-            />
-          )}
+          <textarea ref={textRef} rows={1}
+            className={`w-full resize-none bg-transparent text-[15px] leading-7 outline-none placeholder:text-slate-300 ${
+              checked ? 'text-slate-400 line-through' : 'text-slate-800'
+            }`}
+            placeholder="할 일을 입력하세요"
+            value={text}
+            onChange={(e) => handleChange(e)}
+            onKeyDown={handleKeyDown}
+            onSelect={handleSelectionChange}
+            onBlur={() => setHasSelection(false)}
+          />
           {showSlash && (
             <SlashMenu
               onSelect={(type) => { onChangeType(type); }}
@@ -432,18 +407,15 @@ function BlockContent({
       <div className="flex items-start gap-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
         <div className="relative flex-1">
           {renderFormatToolbar()}
-          {renderTextPreview(text, 'text-2xl font-bold leading-tight text-slate-900')}
-          {(isEditing || !text.trim()) && (
-            <textarea ref={textRef} rows={1}
-              className="w-full resize-none bg-transparent text-2xl font-bold leading-tight text-slate-900 outline-none placeholder:text-slate-300"
-              placeholder="제목"
-              value={text}
-              onChange={(e) => handleChange(e)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => setIsEditing(true)}
-              onBlur={() => setIsEditing(false)}
-            />
-          )}
+          <textarea ref={textRef} rows={1}
+            className="w-full resize-none bg-transparent text-2xl font-bold leading-tight text-slate-900 outline-none placeholder:text-slate-300"
+            placeholder="제목"
+            value={text}
+            onChange={(e) => handleChange(e)}
+            onKeyDown={handleKeyDown}
+            onSelect={handleSelectionChange}
+            onBlur={() => setHasSelection(false)}
+          />
           {showSlash && (
             <SlashMenu
               onSelect={(type) => { onChangeType(type); }}
@@ -489,30 +461,34 @@ function BlockContent({
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     const icon = typeof block.content?.icon === 'string' && block.content.icon.trim() ? block.content.icon : '💡';
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
+      <div className="relative rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
         <div className="mb-1 flex items-center gap-2">
           <input
             value={icon}
             onChange={(e) => onUpdate({ ...block.content, icon: e.target.value.slice(0, 2) })}
             className="w-10 rounded border border-amber-200 bg-white px-1 text-center text-sm"
           />
-          <span className="text-xs font-semibold text-amber-700">콜아웃</span>
+          <span className="flex-1 text-xs font-semibold text-amber-700">콜아웃</span>
+          <button
+            type="button"
+            className="shrink-0 rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-rose-400"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
         </div>
         {renderFormatToolbar()}
-        {renderTextPreview(text, 'text-slate-800')}
-        {(isEditing || !text.trim()) && (
-          <textarea
-            ref={textRef}
-            rows={1}
-            className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
-            placeholder="강조 메시지를 입력하세요"
-            value={text}
-            onChange={(e) => handleChange(e)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setIsEditing(true)}
-            onBlur={() => setIsEditing(false)}
-          />
-        )}
+        <textarea
+          ref={textRef}
+          rows={1}
+          className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
+          placeholder="강조 메시지를 입력하세요"
+          value={text}
+          onChange={(e) => handleChange(e)}
+          onKeyDown={handleKeyDown}
+          onSelect={handleSelectionChange}
+          onBlur={() => setHasSelection(false)}
+        />
       </div>
     );
   }
@@ -521,7 +497,7 @@ function BlockContent({
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     const collapsed = !!block.content?.collapsed;
     return (
-      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
+      <div className="relative rounded-lg border border-slate-200 bg-white px-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
         <div className="mb-1 flex items-center gap-2">
           <button
             type="button"
@@ -530,25 +506,29 @@ function BlockContent({
           >
             <ChevronDown className="h-4 w-4 text-slate-500" />
           </button>
-          <span className="text-xs font-semibold text-slate-500">토글</span>
+          <span className="flex-1 text-xs font-semibold text-slate-500">토글</span>
+          <button
+            type="button"
+            className="shrink-0 rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-rose-400"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
         </div>
         {!collapsed && (
           <>
             {renderFormatToolbar()}
-            {renderTextPreview(text, 'text-slate-800')}
-            {(isEditing || !text.trim()) && (
-              <textarea
-                ref={textRef}
-                rows={1}
-                className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
-                placeholder="토글 내용을 입력하세요"
-                value={text}
-                onChange={(e) => handleChange(e)}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setIsEditing(true)}
-                onBlur={() => setIsEditing(false)}
-              />
-            )}
+            <textarea
+              ref={textRef}
+              rows={1}
+              className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
+              placeholder="토글 내용을 입력하세요"
+              value={text}
+              onChange={(e) => handleChange(e)}
+              onKeyDown={handleKeyDown}
+              onSelect={handleSelectionChange}
+              onBlur={() => setHasSelection(false)}
+            />
           </>
         )}
       </div>
@@ -561,18 +541,15 @@ function BlockContent({
     <div className="flex items-start gap-3 py-1" style={{ marginLeft: `${blockDepth * 20}px` }}>
       <div className="relative flex-1">
         {renderFormatToolbar()}
-        {renderTextPreview(text, 'text-slate-800')}
-        {(isEditing || !text.trim()) && (
-          <textarea ref={textRef} rows={1}
-            className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-300"
-            placeholder="내용을 입력하세요… (/ 로 블록 타입 변경)"
-            value={text}
-            onChange={(e) => handleChange(e)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setIsEditing(true)}
-            onBlur={() => setIsEditing(false)}
-          />
-        )}
+        <textarea ref={textRef} rows={1}
+          className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-300"
+          placeholder="내용을 입력하세요… (/ 로 블록 타입 변경)"
+          value={text}
+          onChange={(e) => handleChange(e)}
+          onKeyDown={handleKeyDown}
+          onSelect={handleSelectionChange}
+          onBlur={() => setHasSelection(false)}
+        />
         {showSlash && (
           <SlashMenu
             onSelect={(type) => { onChangeType(type); }}
@@ -1082,7 +1059,7 @@ export default function AdminNotePage() {
             </span>
           )}
           <button
-            type="button" onClick={handleCreateDocument} disabled={loadingState === 'loading'}
+            type="button" onClick={() => handleCreateDocument(null)} disabled={loadingState === 'loading'}
             className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-blue-700 disabled:opacity-50"
           >
             {loadingState === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
@@ -1092,7 +1069,7 @@ export default function AdminNotePage() {
 
         {/* 모바일 새 노트 */}
         <button
-          type="button" onClick={handleCreateDocument} disabled={loadingState === 'loading'}
+          type="button" onClick={() => handleCreateDocument(null)} disabled={loadingState === 'loading'}
           className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-[12px] font-semibold text-white hover:bg-blue-700 disabled:opacity-50 md:hidden"
         >
           <Plus className="h-3.5 w-3.5" />새 노트
@@ -1220,7 +1197,7 @@ export default function AdminNotePage() {
                 <FileText className="h-8 w-8 text-slate-300" />
               </div>
               <p className="text-[14px] font-semibold text-slate-500">노트를 선택하거나 새로 만드세요</p>
-              <button type="button" onClick={handleCreateDocument}
+              <button type="button" onClick={() => handleCreateDocument(null)}
                 className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-blue-700"
               ><Plus className="h-4 w-4" />새 노트 만들기</button>
             </div>
@@ -1236,7 +1213,7 @@ export default function AdminNotePage() {
                 <textarea
                   ref={titleInputRef}
                   rows={1}
-                  className="mb-2 w-full resize-none bg-transparent text-[32px] font-extrabold leading-tight text-slate-900 outline-none placeholder:text-slate-300 md:text-[40px]"
+                  className="mb-2 w-full resize-none overflow-hidden bg-transparent text-[32px] font-extrabold leading-tight text-slate-900 outline-none placeholder:text-slate-300 md:text-[40px]"
                   placeholder="제목 없음"
                   value={activeDocument.title === '제목 없음' ? '' : activeDocument.title}
                   onChange={(e) => handleRenameDocument(activeDocument.id, e.target.value || '제목 없음')}
