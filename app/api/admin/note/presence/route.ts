@@ -10,6 +10,14 @@ type NoteCollaborator = {
   last_cursor: unknown;
 };
 
+async function fetchCollaborators(supabase: ReturnType<typeof getServiceSupabase>, documentId: string) {
+  return supabase
+    .from('note_collaborators')
+    .select('id, document_id, user_id, last_active_at, last_cursor')
+    .eq('document_id', documentId)
+    .order('last_active_at', { ascending: false });
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAdmin();
@@ -22,11 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = getServiceSupabase();
-    const { data, error } = await supabase
-      .from('note_collaborators')
-      .select('id, document_id, user_id, last_active_at, last_cursor')
-      .eq('document_id', documentId)
-      .order('last_active_at', { ascending: false });
+    const { data, error } = await fetchCollaborators(supabase, documentId);
 
     if (error) {
       devLogger.error('[admin/note/presence] GET error', error);
@@ -78,7 +82,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ collaborator: data as NoteCollaborator });
+    const { data: collaborators, error: collaboratorsError } = await fetchCollaborators(supabase, documentId);
+    if (collaboratorsError) {
+      devLogger.error('[admin/note/presence] POST collaborators fetch error', collaboratorsError);
+      return NextResponse.json({ error: collaboratorsError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      collaborator: data as NoteCollaborator,
+      collaborators: (collaborators ?? []) as NoteCollaborator[],
+    });
   } catch (err) {
     devLogger.error('[admin/note/presence] POST exception', err);
     return NextResponse.json(

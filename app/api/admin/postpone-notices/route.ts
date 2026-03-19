@@ -9,18 +9,37 @@ function resolveTeacherName(teacher: TeacherJoin): string {
   return teacher.name;
 }
 
-export async function GET() {
+function parsePositiveInt(value: string | null, fallback: number, max: number): number {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+}
+
+function parseOffset(value: string | null): number {
+  if (!value) return 0;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
+export async function GET(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
+
+  const { searchParams } = new URL(request.url);
+  const limit = parsePositiveInt(searchParams.get('limit'), 50, 200);
+  const offset = parseOffset(searchParams.get('offset'));
 
   const supabase = getServiceSupabase();
   const today = new Date().toISOString().split('T')[0];
 
-  const { data, error } = await supabase
+  const { data, count, error } = await supabase
     .from('postpone_notices')
-    .select('id, notice_date, memo, teacher:teacher_id(id, name)')
+    .select('id, notice_date, memo, teacher:teacher_id(id, name)', { count: 'exact' })
     .gte('notice_date', today)
-    .order('notice_date', { ascending: true });
+    .order('notice_date', { ascending: true })
+    .range(offset, offset + limit - 1);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -36,7 +55,12 @@ export async function GET() {
     teacher_name: resolveTeacherName(row.teacher),
   }));
 
-  return NextResponse.json({ notices });
+  return NextResponse.json({
+    notices,
+    total: count ?? 0,
+    limit,
+    offset,
+  });
 }
 
 export async function POST(request: Request) {

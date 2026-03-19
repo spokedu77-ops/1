@@ -12,6 +12,20 @@ type NoteBlock = {
   updated_at: string;
 };
 
+function parsePositiveInt(value: string | null, fallback: number, max: number): number {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+}
+
+function parseOffset(value: string | null): number {
+  if (!value) return 0;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAdmin();
@@ -19,6 +33,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
+    const limit = parsePositiveInt(searchParams.get('limit'), 300, 1000);
+    const offset = parseOffset(searchParams.get('offset'));
     if (!documentId) {
       return NextResponse.json({ error: 'documentId required' }, { status: 400 });
     }
@@ -28,14 +44,19 @@ export async function GET(request: NextRequest) {
       .from('note_blocks')
       .select('id, document_id, type, order_index, content, created_at, updated_at')
       .eq('document_id', documentId)
-      .order('order_index', { ascending: true });
+      .order('order_index', { ascending: true })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       devLogger.error('[admin/note/blocks] GET error', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ blocks: (data ?? []) as NoteBlock[] });
+    return NextResponse.json({
+      blocks: (data ?? []) as NoteBlock[],
+      limit,
+      offset,
+    });
   } catch (err) {
     devLogger.error('[admin/note/blocks] GET exception', err);
     return NextResponse.json(

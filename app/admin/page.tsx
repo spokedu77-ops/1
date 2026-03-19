@@ -147,6 +147,7 @@ export default function SpokeduHQDashboard() {
 
   // 수업 연기 알림
   const [postponeNotices, setPostponeNotices] = useState<PostponeNotice[]>([]);
+  const [postponeTotal, setPostponeTotal] = useState(0);
   const [postponeLoading, setPostponeLoading] = useState(true);
   const [isPostponeModalOpen, setIsPostponeModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
@@ -160,10 +161,10 @@ export default function SpokeduHQDashboard() {
   const fetchRecentNotes = useCallback(async () => {
     setNotesLoading(true);
     try {
-      const res = await fetch('/api/admin/note/documents');
+      const res = await fetch('/api/admin/note/documents?limit=6&offset=0');
       if (!res.ok) return;
       const json = await res.json();
-      const docs: NoteDocument[] = (json.documents ?? []).slice(0, 6);
+      const docs: NoteDocument[] = json.documents ?? [];
       setRecentNotes(docs);
     } catch (err) {
       devLogger.error('Notes fetch error:', err);
@@ -175,10 +176,12 @@ export default function SpokeduHQDashboard() {
   const fetchPostponeNotices = useCallback(async () => {
     setPostponeLoading(true);
     try {
-      const res = await fetch('/api/admin/postpone-notices');
+      const res = await fetch('/api/admin/postpone-notices?limit=10&offset=0');
       if (!res.ok) return;
       const json = await res.json();
-      setPostponeNotices(json.notices ?? []);
+      const notices: PostponeNotice[] = json.notices ?? [];
+      setPostponeNotices(notices);
+      setPostponeTotal(typeof json.total === 'number' ? json.total : notices.length);
     } catch (err) {
       devLogger.error('Postpone notices fetch error:', err);
     } finally {
@@ -294,7 +297,12 @@ export default function SpokeduHQDashboard() {
         setNoticeError(json.error ?? '저장에 실패했습니다.');
         return;
       }
-      setPostponeNotices((prev) => [...prev, json.notice].sort((a, b) => a.notice_date.localeCompare(b.notice_date)));
+      setPostponeNotices((prev) =>
+        [...prev, json.notice]
+          .sort((a, b) => a.notice_date.localeCompare(b.notice_date))
+          .slice(0, 10)
+      );
+      setPostponeTotal((prev) => prev + 1);
       setIsPostponeModalOpen(false);
     } catch (err) {
       devLogger.error(err);
@@ -309,6 +317,7 @@ export default function SpokeduHQDashboard() {
     try {
       await fetch(`/api/admin/postpone-notices/${id}`, { method: 'DELETE' });
       setPostponeNotices((prev) => prev.filter((n) => n.id !== id));
+      setPostponeTotal((prev) => Math.max(prev - 1, 0));
     } catch (err) {
       devLogger.error(err);
     } finally {
@@ -452,7 +461,7 @@ export default function SpokeduHQDashboard() {
             <div className="flex items-center justify-between mb-2 sm:mb-4">
               <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">수업 연기 알림</h2>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-400">{postponeNotices.length}건</span>
+                <span className="text-[10px] text-slate-400">{postponeTotal}건</span>
                 <button
                   type="button"
                   onClick={openPostponeModal}

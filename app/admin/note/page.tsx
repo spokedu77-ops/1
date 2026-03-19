@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { toggleInlineMark, parseInlineMarkupToHtml, type InlineMark } from '@/app/lib/note/inlineMarkup';
 import {
   Plus,
   FileText,
@@ -27,6 +28,13 @@ import {
   Clock,
   Slash,
   GripVertical,
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Strikethrough,
+  Code2,
+  ChevronDown,
+  MessageSquareQuote,
 } from 'lucide-react';
 
 import {
@@ -54,6 +62,8 @@ type NoteDocument = {
   title: string;
   is_archived: boolean;
   is_favorite: boolean;
+  parent_id: string | null;
+  slug: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -77,6 +87,8 @@ const BLOCK_TYPES: { type: NoteBlock['type']; label: string; icon: React.Element
   { type: 'heading',  label: '제목',      icon: Type,        desc: '큰 제목 블록' },
   { type: 'text',     label: '텍스트',    icon: FileText,    desc: '일반 텍스트' },
   { type: 'todo',     label: '체크리스트', icon: CheckSquare, desc: '할 일 목록' },
+  { type: 'toggle',   label: '토글',      icon: ChevronDown, desc: '접고 펼치는 섹션' },
+  { type: 'callout',  label: '콜아웃',    icon: MessageSquareQuote, desc: '강조 메시지' },
   { type: 'divider',  label: '구분선',    icon: Minus,       desc: '가로 구분선' },
   { type: 'image',    label: '이미지',    icon: ImageIcon,   desc: 'URL로 이미지 삽입' },
 ];
@@ -94,21 +106,37 @@ function relativeTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 
+const MarkupPreview = React.memo(function MarkupPreview({
+  text,
+  className,
+}: {
+  text: string;
+  className: string;
+}) {
+  const html = useMemo(() => parseInlineMarkupToHtml(text), [text]);
+  return (
+    <span className={className} dangerouslySetInnerHTML={{ __html: html }} />
+  );
+});
+
 /* ─── DocItem ────────────────────────────────────────────────────────────── */
 function DocItem({
-  doc, isActive, onSelect, onFavorite, onDelete, onRename,
+  doc, isActive, onSelect, onFavorite, onDelete, onRename, indentLevel = 0, onCreateChild,
 }: {
   doc: NoteDocument; isActive: boolean;
   onSelect: () => void;
   onFavorite: (e: React.MouseEvent) => void;
   onDelete: (e: React.MouseEvent) => void;
   onRename: (title: string) => void;
+  indentLevel?: number;
+  onCreateChild?: (e: React.MouseEvent) => void;
 }) {
   return (
     <div
       role="button" tabIndex={0}
       onClick={onSelect}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
+      style={{ marginLeft: `${Math.min(indentLevel, 6) * 14}px` }}
       className={`group relative flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
         isActive ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-white hover:shadow-sm'
       }`}
@@ -143,6 +171,18 @@ function DocItem({
         >
           <Star className={`h-3.5 w-3.5 ${doc.is_favorite ? 'fill-current' : ''}`} />
         </button>
+        {onCreateChild && (
+          <button
+            type="button"
+            title="하위 문서 추가"
+            className={`rounded p-1 transition-colors ${
+              isActive ? 'text-blue-200 hover:text-white' : 'text-slate-400 hover:text-blue-500'
+            }`}
+            onClick={onCreateChild}
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button type="button" title="삭제"
           className={`rounded p-1 transition-colors ${
             isActive ? 'text-blue-200 hover:text-rose-300' : 'text-slate-400 hover:text-rose-500'
@@ -217,6 +257,24 @@ function BlockContent({
 }) {
   const textRef = useRef<HTMLTextAreaElement>(null);
   const [showSlash, setShowSlash] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
+
+  const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
+  const supportsFormatting = ['text', 'todo', 'heading', 'callout', 'toggle'].includes(block.type);
+
+  const applyMark = (mark: InlineMark) => {
+    if (!textRef.current) return;
+    const start = textRef.current.selectionStart ?? 0;
+    const end = textRef.current.selectionEnd ?? 0;
+    const currentText = typeof block.content?.text === 'string' ? block.content.text : '';
+    const result = toggleInlineMark(currentText, mark, start, end);
+    onUpdate({ ...block.content, text: result.text });
+    requestAnimationFrame(() => {
+      if (!textRef.current) return;
+      textRef.current.focus();
+      textRef.current.setSelectionRange(result.selectionStart, result.selectionEnd);
+    });
+  };
 
   const autoResize = useCallback(() => {
     const el = textRef.current;
@@ -229,7 +287,29 @@ function BlockContent({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Escape') { setShowSlash(false); return; }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const nextDepth = e.shiftKey ? Math.max(0, blockDepth - 1) : Math.min(6, blockDepth + 1);
+      onUpdate({ ...block.content, depth: nextDepth });
+      return;
+    }
+    const lower = e.key.toLowerCase();
+    if ((e.metaKey || e.ctrlKey) && supportsFormatting) {
+      if (lower === 'b') { e.preventDefault(); applyMark('bold'); return; }
+      if (lower === 'i') { e.preventDefault(); applyMark('italic'); return; }
+      if (lower === 'u') { e.preventDefault(); applyMark('underline'); return; }
+      if (lower === '`') { e.preventDefault(); applyMark('code'); return; }
+      if (e.shiftKey && lower === 'x') { e.preventDefault(); applyMark('strike'); return; }
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      setShowSlash(false);
+      onEnter();
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
+      // 체크리스트(todo)는 Enter 기본 동작(줄바꿈)을 사용
+      if (block.type === 'todo') return;
       e.preventDefault();
       setShowSlash(false);
       onEnter();
@@ -245,6 +325,49 @@ function BlockContent({
     setShowSlash(false);
     onUpdate({ ...block.content, [field]: val });
     autoResize();
+  };
+
+  const renderFormatToolbar = () => {
+    if (!supportsFormatting || !isEditing || block.type === 'image' || block.type === 'divider') return null;
+    const buttons: { mark: InlineMark; label: string; icon: React.ElementType }[] = [
+      { mark: 'bold', label: '굵게', icon: Bold },
+      { mark: 'italic', label: '기울임', icon: Italic },
+      { mark: 'underline', label: '밑줄', icon: UnderlineIcon },
+      { mark: 'strike', label: '취소선', icon: Strikethrough },
+      { mark: 'code', label: '코드', icon: Code2 },
+    ];
+    return (
+      <div className="mb-1 flex flex-wrap items-center gap-1 rounded-md border border-slate-200 bg-white px-1.5 py-1 shadow-sm">
+        {buttons.map(({ mark, label, icon: Icon }) => (
+          <button
+            key={mark}
+            type="button"
+            title={label}
+            className="rounded px-1.5 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyMark(mark)}
+          >
+            <Icon className="h-3.5 w-3.5" />
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  const renderTextPreview = (text: string, className: string) => {
+    if (isEditing || !text.trim()) return null;
+    return (
+      <button
+        type="button"
+        className={`w-full rounded-md px-1 text-left ${className}`}
+        onClick={() => {
+          setIsEditing(true);
+          requestAnimationFrame(() => textRef.current?.focus());
+        }}
+      >
+        <MarkupPreview text={text} className={className} />
+      </button>
+    );
   };
 
   if (block.type === 'divider') {
@@ -263,7 +386,7 @@ function BlockContent({
     const checked = !!block.content?.checked;
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div className="flex items-start gap-3 py-1">
+      <div className="flex items-start gap-3 py-1" style={{ marginLeft: `${blockDepth * 20}px` }}>
         <button type="button"
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
             checked ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 bg-white hover:border-blue-400'
@@ -273,15 +396,21 @@ function BlockContent({
           {checked && <Check className="h-3 w-3" />}
         </button>
         <div className="relative flex-1">
-          <textarea ref={textRef} rows={1}
-            className={`w-full resize-none bg-transparent text-[15px] leading-7 outline-none placeholder:text-slate-300 ${
-              checked ? 'text-slate-400 line-through' : 'text-slate-800'
-            }`}
-            placeholder="할 일을 입력하세요"
-            value={text}
-            onChange={(e) => handleChange(e)}
-            onKeyDown={handleKeyDown}
-          />
+          {renderFormatToolbar()}
+          {renderTextPreview(text, checked ? 'text-slate-400 line-through' : 'text-slate-800')}
+          {(isEditing || !text.trim()) && (
+            <textarea ref={textRef} rows={1}
+              className={`w-full resize-none bg-transparent text-[15px] leading-7 outline-none placeholder:text-slate-300 ${
+                checked ? 'text-slate-400 line-through' : 'text-slate-800'
+              }`}
+              placeholder="할 일을 입력하세요"
+              value={text}
+              onChange={(e) => handleChange(e)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsEditing(true)}
+              onBlur={() => setIsEditing(false)}
+            />
+          )}
           {showSlash && (
             <SlashMenu
               onSelect={(type) => { onChangeType(type); }}
@@ -300,15 +429,21 @@ function BlockContent({
   if (block.type === 'heading') {
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div className="flex items-start gap-3 py-2">
+      <div className="flex items-start gap-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
         <div className="relative flex-1">
-          <textarea ref={textRef} rows={1}
-            className="w-full resize-none bg-transparent text-2xl font-bold leading-tight text-slate-900 outline-none placeholder:text-slate-300"
-            placeholder="제목"
-            value={text}
-            onChange={(e) => handleChange(e)}
-            onKeyDown={handleKeyDown}
-          />
+          {renderFormatToolbar()}
+          {renderTextPreview(text, 'text-2xl font-bold leading-tight text-slate-900')}
+          {(isEditing || !text.trim()) && (
+            <textarea ref={textRef} rows={1}
+              className="w-full resize-none bg-transparent text-2xl font-bold leading-tight text-slate-900 outline-none placeholder:text-slate-300"
+              placeholder="제목"
+              value={text}
+              onChange={(e) => handleChange(e)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsEditing(true)}
+              onBlur={() => setIsEditing(false)}
+            />
+          )}
           {showSlash && (
             <SlashMenu
               onSelect={(type) => { onChangeType(type); }}
@@ -350,18 +485,94 @@ function BlockContent({
     );
   }
 
+  if (block.type === 'callout') {
+    const text = typeof block.content?.text === 'string' ? block.content.text : '';
+    const icon = typeof block.content?.icon === 'string' && block.content.icon.trim() ? block.content.icon : '💡';
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
+        <div className="mb-1 flex items-center gap-2">
+          <input
+            value={icon}
+            onChange={(e) => onUpdate({ ...block.content, icon: e.target.value.slice(0, 2) })}
+            className="w-10 rounded border border-amber-200 bg-white px-1 text-center text-sm"
+          />
+          <span className="text-xs font-semibold text-amber-700">콜아웃</span>
+        </div>
+        {renderFormatToolbar()}
+        {renderTextPreview(text, 'text-slate-800')}
+        {(isEditing || !text.trim()) && (
+          <textarea
+            ref={textRef}
+            rows={1}
+            className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
+            placeholder="강조 메시지를 입력하세요"
+            value={text}
+            onChange={(e) => handleChange(e)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsEditing(true)}
+            onBlur={() => setIsEditing(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (block.type === 'toggle') {
+    const text = typeof block.content?.text === 'string' ? block.content.text : '';
+    const collapsed = !!block.content?.collapsed;
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
+        <div className="mb-1 flex items-center gap-2">
+          <button
+            type="button"
+            className={`transition-transform ${collapsed ? '-rotate-90' : ''}`}
+            onClick={() => onUpdate({ ...block.content, collapsed: !collapsed })}
+          >
+            <ChevronDown className="h-4 w-4 text-slate-500" />
+          </button>
+          <span className="text-xs font-semibold text-slate-500">토글</span>
+        </div>
+        {!collapsed && (
+          <>
+            {renderFormatToolbar()}
+            {renderTextPreview(text, 'text-slate-800')}
+            {(isEditing || !text.trim()) && (
+              <textarea
+                ref={textRef}
+                rows={1}
+                className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
+                placeholder="토글 내용을 입력하세요"
+                value={text}
+                onChange={(e) => handleChange(e)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => setIsEditing(true)}
+                onBlur={() => setIsEditing(false)}
+              />
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
   // text (default)
   const text = typeof block.content?.text === 'string' ? block.content.text : '';
   return (
-    <div className="flex items-start gap-3 py-1">
+    <div className="flex items-start gap-3 py-1" style={{ marginLeft: `${blockDepth * 20}px` }}>
       <div className="relative flex-1">
-        <textarea ref={textRef} rows={1}
-          className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-300"
-          placeholder="내용을 입력하세요… (/ 로 블록 타입 변경)"
-          value={text}
-          onChange={(e) => handleChange(e)}
-          onKeyDown={handleKeyDown}
-        />
+        {renderFormatToolbar()}
+        {renderTextPreview(text, 'text-slate-800')}
+        {(isEditing || !text.trim()) && (
+          <textarea ref={textRef} rows={1}
+            className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-300"
+            placeholder="내용을 입력하세요… (/ 로 블록 타입 변경)"
+            value={text}
+            onChange={(e) => handleChange(e)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsEditing(true)}
+            onBlur={() => setIsEditing(false)}
+          />
+        )}
         {showSlash && (
           <SlashMenu
             onSelect={(type) => { onChangeType(type); }}
@@ -477,6 +688,7 @@ export default function AdminNotePage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [collaborators, setCollaborators] = useState<NoteCollaborator[]>([]);
+  const [backlinks, setBacklinks] = useState<NoteDocument[]>([]);
   const [mobileTab, setMobileTab] = useState<'list' | 'editor'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('recent');
@@ -512,6 +724,21 @@ export default function AdminNotePage() {
 
   const favoriteDocuments = useMemo(() => filteredDocuments.filter((d) => d.is_favorite), [filteredDocuments]);
   const otherDocuments = useMemo(() => filteredDocuments.filter((d) => !d.is_favorite), [filteredDocuments]);
+  const docMap = useMemo(() => new Map(filteredDocuments.map((d) => [d.id, d])), [filteredDocuments]);
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string, NoteDocument[]>();
+    for (const doc of otherDocuments) {
+      if (!doc.parent_id) continue;
+      const list = map.get(doc.parent_id) ?? [];
+      list.push(doc);
+      map.set(doc.parent_id, list);
+    }
+    return map;
+  }, [otherDocuments]);
+  const rootDocuments = useMemo(
+    () => otherDocuments.filter((d) => !d.parent_id || !docMap.has(d.parent_id)),
+    [otherDocuments, docMap],
+  );
 
   /* close sort menu on outside click */
   useEffect(() => {
@@ -585,27 +812,18 @@ export default function AdminNotePage() {
 
     const run = async () => {
       try {
-        await fetch('/api/admin/note/presence', {
+        const res = await fetch('/api/admin/note/presence', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ documentId: docId }),
         });
-      } catch (e) {
-        devLogger.error('[Note] presence POST', e);
-      }
-
-      try {
-        const res = await fetch(
-          `/api/admin/note/presence?documentId=${encodeURIComponent(docId)}`,
-          { credentials: 'include' },
-        );
         if (!res.ok || !alive) return;
-        const json = (await res.json()) as { collaborators: NoteCollaborator[] };
+        const json = (await res.json()) as { collaborators?: NoteCollaborator[] };
         if (!alive) return;
         setCollaborators(json.collaborators ?? []);
       } catch (e) {
-        devLogger.error('[Note] presence GET', e);
+        devLogger.error('[Note] presence POST', e);
       }
     };
 
@@ -613,6 +831,31 @@ export default function AdminNotePage() {
     return () => {
       alive = false;
     };
+  }, [selectedId]);
+
+  /* backlinks: 선택 문서 기준으로 지연 조회 */
+  useEffect(() => {
+    const docId = selectedId;
+    if (!docId) {
+      setBacklinks([]);
+      return;
+    }
+    let alive = true;
+    const run = async () => {
+      try {
+        const res = await fetch(`/api/admin/note/documents?backlinksFor=${encodeURIComponent(docId)}&limit=50`, {
+          credentials: 'include',
+        });
+        if (!res.ok || !alive) return;
+        const json = (await res.json()) as { backlinks?: NoteDocument[] };
+        if (!alive) return;
+        setBacklinks(json.backlinks ?? []);
+      } catch (e) {
+        devLogger.error('[Note] backlinks', e);
+      }
+    };
+    run();
+    return () => { alive = false; };
   }, [selectedId]);
 
   /* save helper */
@@ -660,10 +903,15 @@ export default function AdminNotePage() {
     router.replace(`/admin/note?id=${encodeURIComponent(doc.id)}`);
   };
 
-  const handleCreateDocument = async () => {
+  const handleCreateDocument = async (parentId: string | null = null) => {
     try {
       setLoadingState('loading'); setError(null);
-      const res = await fetch('/api/admin/note/documents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ title: '제목 없음' }) });
+      const res = await fetch('/api/admin/note/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ title: '제목 없음', parent_id: parentId }),
+      });
       if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '문서 생성 실패'); }
       const json = (await res.json()) as { document: NoteDocument };
       const newDoc = json.document;
@@ -714,8 +962,10 @@ export default function AdminNotePage() {
       const defaultContent =
         type === 'heading' ? { text: '' }
         : type === 'todo' ? { text: '', checked: false }
+        : type === 'toggle' ? { text: '', collapsed: false, depth: 0 }
+        : type === 'callout' ? { text: '', icon: '💡', depth: 0 }
         : type === 'divider' ? {}
-        : { text: '' };
+        : { text: '', depth: 0 };
       const res = await fetch('/api/admin/note/blocks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ documentId: selectedId, type, content: defaultContent }) });
       if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 추가 실패'); }
       const json = (await res.json()) as { block: NoteBlock };
@@ -742,8 +992,10 @@ export default function AdminNotePage() {
     const defaultContent =
       type === 'heading' ? { text: '' }
       : type === 'todo' ? { text: '', checked: false }
+      : type === 'toggle' ? { text: '', collapsed: false, depth: 0 }
+      : type === 'callout' ? { text: '', icon: '💡', depth: 0 }
       : type === 'divider' ? {}
-      : { text: '' };
+      : { text: '', depth: 0 };
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, type, content: defaultContent } : b)));
     try {
       await fetch('/api/admin/note/blocks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: block.id, type, content: defaultContent }) });
@@ -759,6 +1011,29 @@ export default function AdminNotePage() {
       if (!res.ok) throw new Error('삭제 실패');
     } catch (e) { devLogger.error('[Note] deleteBlock', e); setBlocks(prev); setError('블록 삭제 실패'); }
   }, [blocks]);
+
+  const renderDocumentTree = (doc: NoteDocument, depth = 0): React.ReactNode => {
+    const children = childrenByParent.get(doc.id) ?? [];
+    return (
+      <div key={doc.id} className="space-y-1">
+        <DocItem
+          doc={doc}
+          isActive={doc.id === selectedId}
+          indentLevel={depth}
+          onSelect={() => handleSelectDocument(doc)}
+          onFavorite={(e) => handleToggleFavorite(e, doc)}
+          onDelete={(e) => handleDeleteDocument(e, doc)}
+          onRename={(t) => handleRenameDocument(doc.id, t)}
+          onCreateChild={(e) => { e.stopPropagation(); handleCreateDocument(doc.id); }}
+        />
+        {children.length > 0 && (
+          <div className="space-y-1">
+            {children.map((child) => renderDocumentTree(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   /* ── render ── */
   return (
@@ -913,14 +1188,7 @@ export default function AdminNotePage() {
                     {favoriteDocuments.length > 0 && (
                       <p className="mb-1.5 px-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">전체 · {otherDocuments.length}</p>
                     )}
-                    {otherDocuments.map((doc) => (
-                      <DocItem key={doc.id} doc={doc} isActive={doc.id === selectedId}
-                        onSelect={() => handleSelectDocument(doc)}
-                        onFavorite={(e) => handleToggleFavorite(e, doc)}
-                        onDelete={(e) => handleDeleteDocument(e, doc)}
-                        onRename={(t) => handleRenameDocument(doc.id, t)}
-                      />
-                    ))}
+                    {rootDocuments.map((doc) => renderDocumentTree(doc))}
                   </div>
                 )}
               </>
@@ -985,6 +1253,23 @@ export default function AdminNotePage() {
                     <span>빈 블록에서 / 입력 · 왼쪽 점을 드래그하여 순서 변경</span>
                   </span>
                 </div>
+                {backlinks.length > 0 && (
+                  <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
+                    <p className="mb-2 text-[12px] font-semibold text-blue-700">백링크 {backlinks.length}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {backlinks.map((doc) => (
+                        <button
+                          key={doc.id}
+                          type="button"
+                          className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-blue-700 shadow-sm hover:bg-blue-100"
+                          onClick={() => handleSelectDocument(doc)}
+                        >
+                          {doc.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* 빈 문서 */}
                 {blocks.length === 0 && (

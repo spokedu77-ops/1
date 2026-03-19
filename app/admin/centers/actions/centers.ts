@@ -14,7 +14,23 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
   const supabase = await createServerSupabaseClient();
   let q = supabase
     .from('centers')
-    .select('*, main_teacher:main_teacher_id(id, name)')
+    .select(
+      `
+        id,
+        name,
+        region_tag,
+        contact_name,
+        contact_phone,
+        contact_role,
+        status,
+        weekly_schedule,
+        highlights,
+        next_actions,
+        created_at,
+        updated_at,
+        main_teacher:main_teacher_id(id, name)
+      `
+    )
     .order('name');
 
   if (filters.status) {

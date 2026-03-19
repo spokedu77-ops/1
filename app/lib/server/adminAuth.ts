@@ -22,6 +22,9 @@ export type AdminAuthOk = { ok: true; userId: string };
 export type AdminAuthFail = { ok: false; response: NextResponse };
 export type AdminAuthResult = AdminAuthOk | AdminAuthFail;
 
+const ADMIN_AUTH_CACHE_TTL_MS = 30_000;
+const adminDecisionCache = new Map<string, { isAdmin: boolean; expiresAt: number }>();
+
 // ─── Service Role 클라이언트 (RLS 우회) ───────────────────────────────────────
 
 /**
@@ -74,10 +77,23 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
 
     const uid = user.id;
     const userEmail = user.email?.toLowerCase() ?? '';
+    const now = Date.now();
+
+    const cached = adminDecisionCache.get(uid);
+    if (cached && cached.expiresAt > now) {
+      if (cached.isAdmin) {
+        return { ok: true, userId: uid };
+      }
+      return {
+        ok: false,
+        response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+      };
+    }
 
     // 1) 환경변수 ADMIN_EMAILS 에 포함된 이메일이면 즉시 허용
     const adminEmails = getAdminEmails();
     if (adminEmails.length > 0 && userEmail && adminEmails.includes(userEmail)) {
+      adminDecisionCache.set(uid, { isAdmin: true, expiresAt: now + ADMIN_AUTH_CACHE_TTL_MS });
       return { ok: true, userId: uid };
     }
 
@@ -102,14 +118,18 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
         u.is_admin === true ||
         (typeof u.name === 'string' && (ADMIN_NAMES as readonly string[]).includes(u.name)))
     ) {
+      adminDecisionCache.set(uid, { isAdmin: true, expiresAt: now + ADMIN_AUTH_CACHE_TTL_MS });
       return { ok: true, userId: uid };
     }
 
     const { data: profileRow } = await profilesPromise;
     const p = profileRow as { role?: string } | null;
     if (p && isAdminRole(p.role)) {
+      adminDecisionCache.set(uid, { isAdmin: true, expiresAt: now + ADMIN_AUTH_CACHE_TTL_MS });
       return { ok: true, userId: uid };
     }
+
+    adminDecisionCache.set(uid, { isAdmin: false, expiresAt: now + ADMIN_AUTH_CACHE_TTL_MS });
 
     return {
       ok: false,
