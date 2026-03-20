@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { toggleInlineMark, type InlineMark } from '@/app/lib/note/inlineMarkup';
+import { parseInlineMarkupToHtml, toggleInlineMark, type InlineMark } from '@/app/lib/note/inlineMarkup';
 import {
   Plus,
   FileText,
@@ -246,6 +246,7 @@ function BlockContent({
   const textRef = useRef<HTMLTextAreaElement>(null);
   const [showSlash, setShowSlash] = useState(false);
   const [hasSelection, setHasSelection] = useState(false);
+  const [renderMode, setRenderMode] = useState<'formatted' | 'editing'>('formatted');
 
   const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
   const supportsFormatting = ['text', 'todo', 'heading', 'callout', 'toggle'].includes(block.type);
@@ -261,6 +262,7 @@ function BlockContent({
     const end = textRef.current.selectionEnd ?? 0;
     const currentText = typeof block.content?.text === 'string' ? block.content.text : '';
     const result = toggleInlineMark(currentText, mark, start, end);
+    setRenderMode('formatted');
     onUpdate({ ...block.content, text: result.text });
     requestAnimationFrame(() => {
       if (!textRef.current) return;
@@ -294,23 +296,17 @@ function BlockContent({
       if (lower === '`') { e.preventDefault(); applyMark('code'); return; }
       if (e.shiftKey && lower === 'x') { e.preventDefault(); applyMark('strike'); return; }
     }
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    if (e.key === 'Enter' && (e.shiftKey || e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       setShowSlash(false);
       onEnter();
       return;
     }
-    if (e.key === 'Enter' && !e.shiftKey) {
-      // 체크리스트(todo)는 Enter 기본 동작(줄바꿈)을 사용
-      if (block.type === 'todo') return;
-      e.preventDefault();
-      setShowSlash(false);
-      onEnter();
-    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>, field = 'text') => {
     const val = e.target.value;
+    if (field === 'text') setRenderMode('editing');
     if (field === 'text' && val === '/' && (block.content?.text ?? '') === '') {
       setShowSlash(true);
       return;
@@ -347,6 +343,71 @@ function BlockContent({
     );
   };
 
+  const renderFormattedTextarea = ({
+    text,
+    placeholder,
+    textClassName,
+    placeholderClassName = 'text-slate-300',
+  }: {
+    text: string;
+    placeholder: string;
+    textClassName: string;
+    placeholderClassName?: string;
+  }) => {
+    const hasText = text.length > 0;
+    const formattedMode = renderMode === 'formatted';
+
+    if (!formattedMode) {
+      return (
+        <textarea
+          ref={textRef}
+          rows={1}
+          className={`w-full resize-none overflow-hidden bg-transparent ${textClassName} caret-slate-800 selection:bg-blue-200/60 selection:text-slate-900 outline-none placeholder:text-slate-400`}
+          placeholder={placeholder}
+          value={text}
+          onChange={(e) => handleChange(e)}
+          onKeyDown={handleKeyDown}
+          onSelect={handleSelectionChange}
+          onFocus={() => setRenderMode('editing')}
+          onBlur={() => {
+            setHasSelection(false);
+            setRenderMode('formatted');
+          }}
+        />
+      );
+    }
+
+    return (
+      <div className="relative">
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 whitespace-pre-wrap break-words ${textClassName}`}
+        >
+          {hasText ? (
+            <span dangerouslySetInnerHTML={{ __html: parseInlineMarkupToHtml(text) }} />
+          ) : (
+            <span className={placeholderClassName}>{placeholder}</span>
+          )}
+        </div>
+        <textarea
+          ref={textRef}
+          rows={1}
+          className={`relative w-full resize-none overflow-hidden bg-transparent ${textClassName} text-transparent caret-slate-800 selection:bg-blue-200/60 selection:text-slate-900 outline-none placeholder:transparent`}
+          placeholder={placeholder}
+          value={text}
+          onChange={(e) => handleChange(e)}
+          onKeyDown={handleKeyDown}
+          onSelect={handleSelectionChange}
+          onFocus={() => setRenderMode('formatted')}
+          onBlur={() => {
+            setHasSelection(false);
+            setRenderMode('formatted');
+          }}
+        />
+      </div>
+    );
+  };
+
 
   if (block.type === 'divider') {
     return (
@@ -375,17 +436,11 @@ function BlockContent({
         </button>
         <div className="relative flex-1">
           {renderFormatToolbar()}
-          <textarea ref={textRef} rows={1}
-            className={`w-full resize-none bg-transparent text-[15px] leading-7 outline-none placeholder:text-slate-300 ${
-              checked ? 'text-slate-400 line-through' : 'text-slate-800'
-            }`}
-            placeholder="할 일을 입력하세요"
-            value={text}
-            onChange={(e) => handleChange(e)}
-            onKeyDown={handleKeyDown}
-            onSelect={handleSelectionChange}
-            onBlur={() => setHasSelection(false)}
-          />
+          {renderFormattedTextarea({
+            text,
+            placeholder: '할 일을 입력하세요',
+            textClassName: `text-[15px] leading-7 ${checked ? 'text-slate-400 line-through' : 'text-slate-800'}`,
+          })}
           {showSlash && (
             <SlashMenu
               onSelect={(type) => { onChangeType(type); }}
@@ -407,15 +462,11 @@ function BlockContent({
       <div className="flex items-start gap-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
         <div className="relative flex-1">
           {renderFormatToolbar()}
-          <textarea ref={textRef} rows={1}
-            className="w-full resize-none bg-transparent text-2xl font-bold leading-tight text-slate-900 outline-none placeholder:text-slate-300"
-            placeholder="제목"
-            value={text}
-            onChange={(e) => handleChange(e)}
-            onKeyDown={handleKeyDown}
-            onSelect={handleSelectionChange}
-            onBlur={() => setHasSelection(false)}
-          />
+          {renderFormattedTextarea({
+            text,
+            placeholder: '제목',
+            textClassName: 'text-2xl font-bold leading-tight text-slate-900',
+          })}
           {showSlash && (
             <SlashMenu
               onSelect={(type) => { onChangeType(type); }}
@@ -478,17 +529,12 @@ function BlockContent({
           </button>
         </div>
         {renderFormatToolbar()}
-        <textarea
-          ref={textRef}
-          rows={1}
-          className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
-          placeholder="강조 메시지를 입력하세요"
-          value={text}
-          onChange={(e) => handleChange(e)}
-          onKeyDown={handleKeyDown}
-          onSelect={handleSelectionChange}
-          onBlur={() => setHasSelection(false)}
-        />
+        {renderFormattedTextarea({
+          text,
+          placeholder: '강조 메시지를 입력하세요',
+          textClassName: 'text-[15px] leading-7 text-slate-800',
+          placeholderClassName: 'text-slate-400',
+        })}
       </div>
     );
   }
@@ -518,17 +564,12 @@ function BlockContent({
         {!collapsed && (
           <>
             {renderFormatToolbar()}
-            <textarea
-              ref={textRef}
-              rows={1}
-              className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
-              placeholder="토글 내용을 입력하세요"
-              value={text}
-              onChange={(e) => handleChange(e)}
-              onKeyDown={handleKeyDown}
-              onSelect={handleSelectionChange}
-              onBlur={() => setHasSelection(false)}
-            />
+            {renderFormattedTextarea({
+              text,
+              placeholder: '토글 내용을 입력하세요',
+              textClassName: 'text-[15px] leading-7 text-slate-800',
+              placeholderClassName: 'text-slate-400',
+            })}
           </>
         )}
       </div>
@@ -541,15 +582,11 @@ function BlockContent({
     <div className="flex items-start gap-3 py-1" style={{ marginLeft: `${blockDepth * 20}px` }}>
       <div className="relative flex-1">
         {renderFormatToolbar()}
-        <textarea ref={textRef} rows={1}
-          className="w-full resize-none bg-transparent text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-300"
-          placeholder="내용을 입력하세요… (/ 로 블록 타입 변경)"
-          value={text}
-          onChange={(e) => handleChange(e)}
-          onKeyDown={handleKeyDown}
-          onSelect={handleSelectionChange}
-          onBlur={() => setHasSelection(false)}
-        />
+        {renderFormattedTextarea({
+          text,
+          placeholder: '내용을 입력하세요… (/ 로 블록 타입 변경)',
+          textClassName: 'text-[15px] leading-7 text-slate-800',
+        })}
         {showSlash && (
           <SlashMenu
             onSelect={(type) => { onChangeType(type); }}

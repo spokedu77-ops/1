@@ -15,6 +15,7 @@ import { SpeedSelector } from './components/SpeedSelector';
 import { SignalDisplay } from './components/SignalDisplay';
 import { MemoryGame } from './components/MemoryGame';
 import { MemoryGameLevel4 } from './components/MemoryGameLevel4';
+import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
 import { CSS, S } from './styles';
 
 type Screen = 'home' | 'setup' | 'guide' | 'history' | 'students' | 'training' | 'memory' | 'result';
@@ -354,7 +355,7 @@ export default function MemoryGameApp() {
             {[
               { icon: '⚡', title: '반응 인지', tag: '키우는 능력: 순발력 · 색·방향·숫자 지각', steps: ['단계 1: 색깔 보고 달리기 — 화면 전체 색으로 해당 콘 달려가기', '단계 2: 화살표 보고 이동 — ↑앞/↓뒤/←→옆 방향으로 이동', '단계 3: 숫자 보고 판단 — 선생님이 규칙 지정 (홀수 왼쪽, 짝수 오른쪽 등)'], tip: '처음엔 단계 1부터. 익숙해지면 신호 간격을 줄여 난이도를 높입니다.', accent: '#3B82F6' },
               { icon: '🧠', title: '스트룹 과제', tag: '키우는 능력: 억제 제어 · 인지 유연성', steps: ['단계 1: 글자 색깔 맞히기 — "파란색 빨강"이 나오면 "파랑"이라 말하기', '단계 2: 배경색 함정 — 배경·글자·내용 모두 다른 색. 글자 색만 말하기', '단계 3: 역스트룹 — 색은 무시하고 글자 내용을 그대로 말하기'], tip: '음성 힌트를 켜면 단계 1·2에서 정답 색 이름을 소리로 알려줍니다.', accent: '#A855F7' },
-              { icon: '🎨', title: '순차 기억', tag: '키우는 능력: 작업기억 · 순서 재생 · 집중력', steps: ['1번: 3가지 색 기억 — 색이 1초씩 3번 나온 뒤 순서대로 말하기', '2번: 5가지 색 기억 — 색이 1초씩 5번 나온 뒤 순서대로 말하기', '3번: 10가지 색 기억 — 4색이 무작위 10번, 선생님이 정답 공개', '4번: 색깔-번호 기억 — 색 배경에 번호 1~10이 하나씩 등장, 이후 5문제 Q&A'], tip: '4번은 번호별 색깔을 묻는 Q&A 방식입니다. 학생이 먼저 답하면 선생님이 정답 버튼을 눌러 확인하세요.', accent: '#22C55E' },
+              { icon: '🎨', title: '순차 기억', tag: '키우는 능력: 작업기억 · 순서 재생 · 집중력', steps: ['1번: 3가지 색 기억 — 색이 1초씩 3번 나온 뒤 순서대로 말하기', '2번: 5가지 색 기억 — 색이 1초씩 5번 나온 뒤 순서대로 말하기', '3번: 10가지 색 기억 — 4색이 무작위 10번, 선생님이 정답 공개', '4번: 색깔-번호 기억 — 색 배경에 번호 1~10이 하나씩 등장, 이후 5문제 Q&A', '5번: 색깔-번호 전체 공개 — 4번과 동일하게 진행 후, 10개 전체 정답을 한 화면에 공개'], tip: '4번은 Q&A 방식, 5번은 전체 정답을 한 번에 보여주는 방식입니다.', accent: '#22C55E' },
               { icon: '🔀', title: '이중 과제', tag: '키우는 능력: 분산 주의 · 복합 실행력', steps: ['단계 1: 색깔 + 숫자 — 해당 색 콘으로 달린 뒤 숫자만큼 터치', '단계 2: 색깔 + 동작 — 해당 색 콘 위치에서 화면 동작 수행', '단계 3: 스트룹 + 동작 — 글자 색으로 판단해 이동 후 동작 수행'], tip: '단계 3은 가장 어렵습니다. 단계 1·2를 충분히 익힌 뒤 도전하세요.', accent: '#F97316' },
             ].map((block) => (
               <div key={block.title} style={{ marginBottom: '1.5rem' }}>
@@ -537,6 +538,8 @@ export default function MemoryGameApp() {
   if (screen === 'memory') {
     if (settings.level === 4)
       return <MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} />;
+    if (settings.level === 5)
+      return <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} />;
     return (
       <MemoryGame level={settings.level} onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} />
     );

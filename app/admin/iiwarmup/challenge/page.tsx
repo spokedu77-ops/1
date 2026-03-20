@@ -5,6 +5,7 @@ import { Maximize, Minimize, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
 import { useChallengeBGM } from '@/app/lib/admin/hooks/useChallengeBGM';
+import { getAllOverrides, putOverride, type TemplateOverrideEntry } from '@/app/lib/admin/assets/templateOverrideStore';
 
 export type ChallengeTemplate = {
   id: string;
@@ -16,12 +17,7 @@ export type ChallengeTemplate = {
   notes?: string;
 };
 
-type ChallengeTemplateOverride = {
-  bpm: number;
-  level: number;
-  grid: string[];
-  gridsByLevel?: Record<number, string[]>;
-};
+type ChallengeTemplateOverride = TemplateOverrideEntry;
 
 /** 1단계 룰: 앞/뒤만 8칸 (2~5라운드는 이 구성을 셔플) */
 const DEFAULT_GRID_LEVEL1 = ['앞', '뒤', '앞', '뒤', '앞', '뒤', '앞', '뒤'];
@@ -39,44 +35,6 @@ const TEMPLATES_12: ChallengeTemplate[] = Array.from({ length: TEMPLATE_COUNT },
   };
 });
 
-const TEMPLATE_OVERRIDE_KEY = 'iiwarmup_challenge_templates_v1';
-
-function readTemplateOverrides(): Record<string, ChallengeTemplateOverride> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = localStorage.getItem(TEMPLATE_OVERRIDE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object') return {};
-    const obj = parsed as Record<string, unknown>;
-    const out: Record<string, ChallengeTemplateOverride> = {};
-    for (const [k, v] of Object.entries(obj)) {
-      if (!v || typeof v !== 'object') continue;
-      const vv = v as Partial<ChallengeTemplateOverride>;
-      if (typeof vv.bpm !== 'number') continue;
-      if (typeof vv.level !== 'number') continue;
-      if (!Array.isArray(vv.grid)) continue;
-      out[k] = {
-        bpm: vv.bpm,
-        level: vv.level,
-        grid: vv.grid as string[],
-        ...(vv.gridsByLevel && { gridsByLevel: vv.gridsByLevel as Record<number, string[]> }),
-      };
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
-
-function writeTemplateOverrides(next: Record<string, ChallengeTemplateOverride>) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(TEMPLATE_OVERRIDE_KEY, JSON.stringify(next));
-  } catch {
-    // localStorage 용량 초과 등은 조용히 무시 (UI는 현재 상태 유지)
-  }
-}
 
 function TemplateSelector({
   templates,
@@ -123,17 +81,33 @@ function ChallengePageContent() {
   const bgmFileRef = useRef<HTMLInputElement>(null);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(TEMPLATES_12[0]?.id ?? 'tpl_1');
-  const [overrides, setOverrides] = useState<Record<string, ChallengeTemplateOverride>>(() => readTemplateOverrides());
+  const [overrides, setOverrides] = useState<Record<string, ChallengeTemplateOverride>>({});
+  const [overridesLoaded, setOverridesLoaded] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const gameContainerRef = useRef<HTMLDivElement>(null);
+
+  // IndexedDB에서 저장된 오버라이드 전체 로드 (마운트 시 1회)
+  useEffect(() => {
+    getAllOverrides()
+      .then((data) => {
+        setOverrides(data);
+      })
+      .catch(() => {
+        // IndexedDB 읽기 실패 시 빈 오버라이드로 진행 (기본값 사용)
+      })
+      .finally(() => {
+        setOverridesLoaded(true);
+      });
+  }, []);
+
   const selectedTemplate = useMemo(() => {
     const base = TEMPLATES_12.find((t) => t.id === selectedTemplateId) ?? TEMPLATES_12[0]!;
     const override = overrides[selectedTemplateId];
     if (!override) return base;
     return { ...base, ...override };
-  }, [selectedTemplateId]);
+  }, [selectedTemplateId, overrides]);
 
   const playbackRateLabel =
     typeof sourceBpm === 'number' && sourceBpm > 0 && selectedTemplate?.bpm > 0
@@ -142,20 +116,20 @@ function ChallengePageContent() {
 
   const handleTemplatePresetChange = useCallback(
     (data: { bpm: number; level: number; grid: string[]; gridsByLevel?: Record<number, string[]> }) => {
-      setOverrides((prev) => {
-        const next = {
-          ...prev,
-          [selectedTemplateId]: {
-            bpm: data.bpm,
-            level: data.level,
-            grid: data.grid,
-            ...(data.gridsByLevel && { gridsByLevel: data.gridsByLevel }),
-          },
-        };
-        writeTemplateOverrides(next);
-        toast.success('픽스 저장 완료');
-        return next;
-      });
+      const override: ChallengeTemplateOverride = {
+        bpm: data.bpm,
+        level: data.level,
+        grid: data.grid,
+        ...(data.gridsByLevel && { gridsByLevel: data.gridsByLevel }),
+      };
+
+      // 즉시 React 상태 반영 (낙관적 업데이트)
+      setOverrides((prev) => ({ ...prev, [selectedTemplateId]: override }));
+
+      // IndexedDB에 비동기 저장 — 성공/실패 모두 토스트로 안내
+      putOverride(selectedTemplateId, override)
+        .then(() => toast.success('픽스 저장 완료'))
+        .catch(() => toast.error('저장 실패 — 브라우저 저장소를 확인해주세요'));
     },
     [selectedTemplateId]
   );
@@ -277,19 +251,26 @@ function ChallengePageContent() {
         </aside>
 
         <main className="min-h-0 flex flex-col">
-          {/* 실시간 뷰포트: blur/ring/shadow 없음 — 렉 최소화 (docs/IIWARMUP_스튜디오_렉최소화_설계.md). 전체화면 시 이 영역만 풀스크린. */}
+          {/* 실시간 뷰포트: blur/ring/shadow 없음 — 렉 최소화. 전체화면 시 이 영역만 풀스크린. */}
           <div ref={gameContainerRef} className="min-h-[320px] flex-1 overflow-hidden bg-neutral-950">
-            <SpokeduRhythmGame
-              allowEdit={true}
-              soundOn={soundOn}
-              bgmPath={bgmPath || undefined}
-              bgmSourceBpm={sourceBpm ?? undefined}
-              initialBpm={selectedTemplate.bpm}
-              initialLevel={selectedTemplate.level}
-              initialGrid={selectedTemplate.grid}
-              initialLevelData={selectedTemplate.gridsByLevel}
-              onPresetChange={handleTemplatePresetChange}
-            />
+            {!overridesLoaded ? (
+              <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-neutral-500">
+                저장된 설정 불러오는 중…
+              </div>
+            ) : (
+              <SpokeduRhythmGame
+                key={selectedTemplateId}
+                allowEdit={true}
+                soundOn={soundOn}
+                bgmPath={bgmPath || undefined}
+                bgmSourceBpm={sourceBpm ?? undefined}
+                initialBpm={selectedTemplate.bpm}
+                initialLevel={selectedTemplate.level}
+                initialGrid={selectedTemplate.grid}
+                initialLevelData={selectedTemplate.gridsByLevel}
+                onPresetChange={handleTemplatePresetChange}
+              />
+            )}
           </div>
         </main>
       </div>

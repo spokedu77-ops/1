@@ -75,6 +75,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 2, name: '2번', enName: '5항 기억', desc: '색깔 5개가 1초씩 나온 뒤 순서대로 말합니다.' },
       { id: 3, name: '3번', enName: '10항 기억', desc: '색깔이 무작위 10번 나옵니다. 기억한 뒤 선생님이 정답 공개.' },
       { id: 4, name: '4번', enName: '색깔-번호 기억', desc: '색깔 배경에 번호(1~10)가 하나씩 나옵니다. 10번 모두 본 뒤, 번호별 색깔을 맞혀보세요.' },
+      { id: 5, name: '5번', enName: '색깔-번호 전체 공개', desc: '색깔 배경에 번호(1~10)가 하나씩 나옵니다. 10번 모두 본 뒤, 전체 정답을 한 화면에 공개합니다.' },
     ],
   },
   dual: {

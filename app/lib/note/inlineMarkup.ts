@@ -37,6 +37,22 @@ export function toggleInlineMark(
     return { text: inserted, selectionStart: caret, selectionEnd: caret };
   }
 
+  const hasOuterWrapped =
+    start >= token.open.length &&
+    end + token.close.length <= source.length &&
+    source.slice(start - token.open.length, start) === token.open &&
+    source.slice(end, end + token.close.length) === token.close;
+  if (hasOuterWrapped) {
+    const nextText =
+      `${source.slice(0, start - token.open.length)}${source.slice(start, end)}${source.slice(end + token.close.length)}`;
+    const nextStart = start - token.open.length;
+    return {
+      text: nextText,
+      selectionStart: nextStart,
+      selectionEnd: nextStart + (end - start),
+    };
+  }
+
   const selected = source.slice(start, end);
   const hasWrapped = selected.startsWith(token.open) && selected.endsWith(token.close);
   if (hasWrapped && selected.length >= token.open.length + token.close.length) {

@@ -752,7 +752,7 @@ export class FlowEngine {
     }
 
     const group = new THREE.Group();
-    const laneColors = [0xe53935, 0x43a047, 0xfdd835];
+    const laneColors = [0xfdd835, 0x43a047, 0xe53935];
     const randLane = isFirst ? 1 : Math.floor(Math.random() * 3);
     const bridgeColor = laneColors[randLane];
 
