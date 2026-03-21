@@ -8,7 +8,7 @@ import { CSS } from '../styles';
 const TOTAL = 10;
 const SHOW_MS = 1000;
 
-type L5Phase = 'idle' | 'showing' | 'reveal' | 'done';
+type L5Phase = 'idle' | 'showing' | 'awaitReveal' | 'reveal' | 'done';
 
 export function MemoryGameLevel5({
   onExit,
@@ -38,7 +38,7 @@ export function MemoryGameLevel5({
   const runSequence = useCallback((idx: number) => {
     if (idx >= TOTAL) {
       prevColorRef.current = null;
-      setPhase('reveal');
+      setPhase('awaitReveal');
       return;
     }
 
@@ -71,7 +71,9 @@ export function MemoryGameLevel5({
 
   const handleAction = useCallback(() => {
     const p = phaseRef.current;
-    if (p === 'reveal') {
+    if (p === 'awaitReveal') {
+      setPhase('reveal');
+    } else if (p === 'reveal') {
       setPhase('done');
     } else if (p === 'done') {
       onComplete();
@@ -80,9 +82,18 @@ export function MemoryGameLevel5({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.code === 'Enter') {
+      const p = phaseRef.current;
+      if (p === 'awaitReveal') {
+        if (e.code !== 'Space') return;
         e.preventDefault();
         handleAction();
+        return;
+      }
+      if (p === 'reveal' || p === 'done') {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          handleAction();
+        }
       }
     };
     window.addEventListener('keydown', handler);
@@ -107,7 +118,16 @@ export function MemoryGameLevel5({
         )}
         <span style={{ color: '#FCD34D' }}>5번</span>
       </div>
-      <button onClick={onExit} style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onExit();
+        }}
+        style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}
+      >
+        ✕
+      </button>
     </div>
   );
 
@@ -157,6 +177,56 @@ export function MemoryGameLevel5({
             </div>
           </>
         )}
+      </div>
+    );
+  }
+
+  // ── awaitReveal (정답 수동 공개 대기) ──
+  if (phase === 'awaitReveal') {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label="정답 공개"
+        onClick={handleAction}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: '#0F172A',
+          overflow: 'hidden',
+          zIndex: 300,
+          cursor: 'pointer',
+          outline: 'none',
+        }}
+      >
+        <style>{CSS}</style>
+        {hud}
+        {progressBar}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1.25rem',
+            padding: '5rem 1.5rem',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ fontSize: '2.5rem', opacity: 0.9 }}>👆</div>
+          <div style={{ fontSize: 'clamp(1.25rem,4vw,1.75rem)', fontWeight: 900, color: '#fff', textAlign: 'center', lineHeight: 1.45 }}>
+            정답을 보려면
+            <br />
+            <span style={{ color: '#86EFAC' }}>스페이스바</span>를 누르거나
+            <br />
+            화면을 누르세요
+          </div>
+          <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
+            10번 모두 표시되었습니다
+          </div>
+        </div>
       </div>
     );
   }
@@ -211,7 +281,11 @@ export function MemoryGameLevel5({
             })}
           </div>
           <button
-            onClick={handleAction}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAction();
+            }}
             style={{ background: '#22C55E', color: '#fff', border: 'none', borderRadius: '1.25rem', padding: '1rem 2.8rem', fontSize: 'clamp(1rem,3vw,1.2rem)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 28px rgba(34,197,94,0.4)' }}
           >
             🎉 완료
@@ -233,7 +307,7 @@ export function MemoryGameLevel5({
           <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: 1.7 }}>
             색깔-번호 기억 훈련 완료!
           </div>
-          <button onClick={handleAction} style={{ background: '#22C55E', color: '#fff', border: 'none', borderRadius: '1.25rem', padding: '1.2rem 3rem', fontSize: '1.2rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 32px rgba(34,197,94,0.4)' }}>
+          <button type="button" onClick={handleAction} style={{ background: '#22C55E', color: '#fff', border: 'none', borderRadius: '1.25rem', padding: '1.2rem 3rem', fontSize: '1.2rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 32px rgba(34,197,94,0.4)' }}>
             결과 보기
           </button>
         </div>
