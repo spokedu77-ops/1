@@ -1,8 +1,13 @@
 'use client';
 
-import { useState, useMemo, memo, useEffect } from 'react';
+import { useState, useMemo, memo, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
+import {
+  THEME_KEYS,
+  THEME_KEY_TO_BANK_THEME,
+  type ThemeKey,
+} from '@/app/lib/spokedu-pro/dashboardDefaults';
 import { getYouTubeThumbnailUrl } from '../utils/youtube';
 import type { ProgramDetail } from '../types';
 
@@ -97,6 +102,18 @@ export default function LibraryView({
     const t = setTimeout(() => setIsReady(true), 80);
     return () => clearTimeout(t);
   }, []);
+
+  const prevPresetRef = useRef(initialPreset);
+  useEffect(() => {
+    const tk = initialPreset?.themeKey;
+    if (tk && (THEME_KEYS as readonly string[]).includes(tk)) {
+      const bank = THEME_KEY_TO_BANK_THEME[tk as ThemeKey];
+      if (bank) setMainTheme(bank);
+    } else if (prevPresetRef.current?.themeKey && !tk) {
+      setMainTheme('');
+    }
+    prevPresetRef.current = initialPreset;
+  }, [initialPreset]);
 
   useEffect(() => {
     let cancelled = false;

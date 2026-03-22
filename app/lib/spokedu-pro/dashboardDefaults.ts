@@ -109,6 +109,16 @@ export const THEME_KEY_TO_BANK_THEME: Record<ThemeKey, string> = {
   'variant-sports': '변형스포츠',
 };
 
+/** 사이드바 라이브러리: 펑셔널 · 스포무브만 (나머지 테마는 라이브러리 화면 필터) */
+export const LIBRARY_SIDEBAR_ITEMS: { themeKey: ThemeKey; label: string }[] = [
+  { themeKey: 'co-op', label: '펑셔널 무브 (놀이체육)' },
+  { themeKey: 'cognitive', label: '스포무브 (브레인체육)' },
+];
+
+/** 대시보드 추천 Row1(위 4칸) / Row2(아래 4칸) 묶음명 — 구독자 RoadmapView 고정 표시용 */
+export const DASHBOARD_ROW1_GROUP_LABEL = '펑셔널 무브 (놀이체육)';
+export const DASHBOARD_ROW2_GROUP_LABEL = '스포무브 (브레인체육)';
+
 export interface ProgramBankItem {
   id: number;
   title: string;

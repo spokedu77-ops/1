@@ -1,14 +1,14 @@
 /**
  * /api/spokedu-pro/classes
  * GET  — 현재 사용자의 반 목록 조회
- * POST — 반 추가 (플랜별 max_classes 한도 체크)
+ * POST — 반 추가 (플랜별 max_classes 한도 체크, 플랫폼 관리자는 한도 없음)
  *
  * 저장소: spokedu_pro_tenant_content (key='classes', owner_id=auth.uid())
  * 데이터 구조: { classes: ClassGroup[] }
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
 import { getPlanForUser, PLAN_LIMITS } from '@/app/lib/spokedu-pro/planUtils';
 
 const CONTENT_KEY = 'classes';
@@ -81,9 +81,10 @@ export async function POST(req: NextRequest) {
   if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 });
 
   const serviceSupabase = getServiceSupabase();
-  const [classes, plan] = await Promise.all([
+  const [classes, plan, bypassClassLimit] = await Promise.all([
     loadClasses(serviceSupabase, user.id),
     getPlanForUser(user.id),
+    isPlatformAdminUser(user, serverSupabase),
   ]);
 
   // 중복 이름 체크
@@ -91,9 +92,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'duplicate_name', message: '이미 같은 이름의 반이 있습니다.' }, { status: 409 });
   }
 
-  // 플랜 한도 체크
+  // 플랜 한도 체크 (플랫폼 관리자는 예외)
   const maxClasses = PLAN_LIMITS[plan].maxClasses;
-  if (maxClasses !== null && classes.length >= maxClasses) {
+  if (!bypassClassLimit && maxClasses !== null && classes.length >= maxClasses) {
     return NextResponse.json(
       {
         error: 'class_limit_exceeded',

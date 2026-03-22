@@ -7,7 +7,8 @@ import {
   DEFAULT_DASHBOARD_V4,
   getProgramTitle,
   PROGRAM_BANK,
-  THEME_LABELS,
+  DASHBOARD_ROW1_GROUP_LABEL,
+  DASHBOARD_ROW2_GROUP_LABEL,
   type ThemeKey,
 } from '@/app/lib/spokedu-pro/dashboardDefaults';
 import { getYouTubeThumbnailUrl } from '../utils/youtube';
@@ -205,13 +206,13 @@ export default function RoadmapView({
                 )}
               </h3>
               <span className="hidden md:inline-block px-2 py-0.5 bg-slate-800 text-slate-400 text-[10px] font-bold rounded border border-slate-700 shrink-0">
-                {THEME_LABELS[weekTheme.themeKey]}
+                {DASHBOARD_ROW1_GROUP_LABEL}
               </span>
             </div>
             {onGoToLibrary && (
               <button
                 type="button"
-                onClick={() => onGoToLibrary(weekTheme.themeKey)}
+                onClick={() => onGoToLibrary('co-op')}
                 className="text-sm font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer shrink-0"
               >
                 전체보기 <ChevronRight className="w-4 h-4" />
@@ -226,7 +227,7 @@ export default function RoadmapView({
                 role={item.role}
                 tag2={item.tag2 ?? []}
                 programDetail={programDetails[String(item.programId)] ?? null}
-                onClick={() => openWithContext(item.programId, item.role, weekTheme.themeKey)}
+                onClick={() => openWithContext(item.programId, item.role, 'co-op')}
               />
             ))}
           </div>
@@ -235,17 +236,17 @@ export default function RoadmapView({
           )}
         </div>
 
-        {/* Row2: 선생님 베스트 4개 */}
+        {/* Row2: 스포무브 (브레인체육) 4칸 */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-xl font-bold text-white flex items-center gap-2 min-w-0 truncate">
               <Star className="w-5 h-5 text-orange-400 shrink-0" />
-              <span className="truncate">{row2.title}</span>
+              <span className="truncate">{DASHBOARD_ROW2_GROUP_LABEL}</span>
             </h3>
             {onGoToLibrary && (
               <button
                 type="button"
-                onClick={() => onGoToLibrary(undefined, row2.preset)}
+                onClick={() => onGoToLibrary('cognitive')}
                 className="text-sm font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer shrink-0"
               >
                 전체보기 <ChevronRight className="w-4 h-4" />
@@ -259,7 +260,7 @@ export default function RoadmapView({
                 programId={item.programId}
                 tag2={item.tag2 ?? []}
                 programDetail={programDetails[String(item.programId)] ?? null}
-                onClick={() => onOpenDetail(item.programId, { themeKey: row2.preset })}
+                onClick={() => onOpenDetail(item.programId, { themeKey: 'cognitive' })}
               />
             ))}
           </div>

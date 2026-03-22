@@ -11,9 +11,8 @@ import SpokeduProAside from './components/SpokeduProAside';
 import SpokeduProToolkit from './components/SpokeduProToolkit';
 import SpokeduProDrawer from './components/SpokeduProDrawer';
 import DashboardCurationEditor from './components/DashboardCurationEditor';
-import SpokeduProInteractiveScreen from './components/SpokeduProInteractiveScreen';
-import ScreenplayView from './views/ScreenplayView';
 import RoadmapView from './views/RoadmapView';
+import type { ThemeKey } from '@/app/lib/spokedu-pro/dashboardDefaults';
 import LibraryView from './views/LibraryView';
 import DataCenterView from './views/DataCenterView';
 import AIReportView from './views/AIReportView';
@@ -31,7 +30,7 @@ export default function SpokeduProClient({
   onViewChange?: (viewId: ViewId) => void;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const { viewId, switchView, drawerOpen, closeDrawer, showToast } = useSpokeduProUI('roadmap');
+  const { viewId, switchView } = useSpokeduProUI('roadmap');
   const { ctx, loading: ctxLoading, refresh } = useProContext();
   const [onboardingDismissed, setOnboardingDismissed] = useState(
     () => typeof window !== 'undefined' && !!localStorage.getItem('onboardingDismissed')
@@ -41,7 +40,6 @@ export default function SpokeduProClient({
   const [toolkitOpen, setToolkitOpen] = useState(false);
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
   const [drawerContext, setDrawerContext] = useState<{ role?: string; themeKey?: string } | null>(null);
-  const [interactiveMode, setInteractiveMode] = useState<string | null>(null);
   const [libraryPreset, setLibraryPreset] = useState<{ themeKey?: string; preset?: string } | null>(null);
   const [showCurationDrawer, setShowCurationDrawer] = useState(false);
 
@@ -138,9 +136,17 @@ export default function SpokeduProClient({
     },
     [switchView]
   );
-  const openInteractive = useCallback((mode: string) => {
-    setInteractiveMode(mode);
-  }, []);
+  const openLibraryAll = useCallback(() => {
+    setLibraryPreset(null);
+    switchView('library');
+  }, [switchView]);
+  const goToLibraryTheme = useCallback(
+    (themeKey: ThemeKey) => {
+      setLibraryPreset({ themeKey });
+      switchView('library');
+    },
+    [switchView]
+  );
 
   return (
     <div ref={rootRef} className="spokedu-pro flex flex-col h-full w-full overflow-hidden bg-[#0F172A] text-[#F8FAFC]">
@@ -163,13 +169,13 @@ export default function SpokeduProClient({
       <SpokeduProAside
         viewId={viewId}
         onSwitchView={switchView}
+        onOpenLibraryAll={openLibraryAll}
+        onGoToLibraryTheme={goToLibraryTheme}
+        libraryActiveThemeKey={libraryPreset?.themeKey ?? null}
         isEditMode={isEditMode}
         onOpenCurationDrawer={isEditMode ? () => setShowCurationDrawer(true) : undefined}
       />
       <main className="flex-1 w-full max-w-full min-w-0 h-full overflow-y-auto overflow-x-hidden custom-scroll relative bg-[#0F172A] z-0 min-h-0 pr-0 mr-0">
-        <div className={`view-content ${viewId === 'screenplay' ? 'active' : ''}`}>
-          <ScreenplayView onOpenInteractive={openInteractive} onToast={showToast} />
-        </div>
         <div className={`view-content ${viewId === 'roadmap' ? 'active' : ''}`}>
           <RoadmapView onOpenDetail={openDrawer} onGoToLibrary={goToLibrary} programDetails={programDetailsForDrawer} />
         </div>
@@ -177,7 +183,7 @@ export default function SpokeduProClient({
           <LibraryView onOpenDetail={openDrawer} initialPreset={libraryPreset} programDetails={programDetailsForDrawer} />
         </div>
         <div className={`view-content ${viewId === 'data-center' ? 'active' : ''}`}>
-          <DataCenterView />
+          <DataCenterView onOpenSettings={() => switchView('settings')} />
         </div>
         <div className={`view-content ${viewId === 'ai' ? 'active' : ''}`}>
           <AIReportView />
@@ -205,7 +211,6 @@ export default function SpokeduProClient({
         isEditMode={isEditMode}
         onSaveProgramDetail={isEditMode ? handleSaveProgramDetail : undefined}
         onClose={closeProgramDrawer}
-        onFabClick={() => showToast('기능 연결 예정')}
       />
 
       {showCurationDrawer && (
@@ -221,12 +226,6 @@ export default function SpokeduProClient({
         </>
       )}
 
-      <SpokeduProInteractiveScreen
-        mode={interactiveMode ?? '대기중'}
-        open={interactiveMode !== null}
-        onClose={() => setInteractiveMode(null)}
-        onToast={showToast}
-      />
       </div>
       </SpokeduProErrorBoundary>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import Script from 'next/script';
 import {
   Users, UserPlus, X, ChevronDown, ChevronUp, CheckCircle, Clock, XCircle,
@@ -13,10 +13,24 @@ import {
   type Student,
   type PhysicalFunctions,
   type PhysicalLevel,
+  type AttendanceStatus,
 } from '../hooks/useStudentStore';
 import { useClassStore, type ClassGroup } from '../hooks/useClassStore';
 import { useBadgeStore, type Badge } from '../hooks/useBadgeStore';
 import { useProContext } from '../hooks/useProContext';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+} from 'recharts';
 
 declare global {
   interface Window {
@@ -39,10 +53,12 @@ function ClassLimitModal({
   plan,
   limit,
   onClose,
+  onGoToSettings,
 }: {
   plan: string;
   limit: number;
   onClose: () => void;
+  onGoToSettings: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -75,7 +91,10 @@ function ClassLimitModal({
           </button>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              onGoToSettings();
+              onClose();
+            }}
             className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-colors"
           >
             설정에서 업그레이드
@@ -377,7 +396,7 @@ function StudentCard({
 }
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────────────────────
-export default function DataCenterView() {
+export default function DataCenterView({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const { students, loaded: studentsLoaded, syncing, syncError, refetch, addStudent, removeStudent, cycleStatus, markAllPresent, updatePhysical } =
     useStudentStore();
   const { classes, loaded: classesLoaded, createClass, renameClass, deleteClass } = useClassStore();
@@ -393,6 +412,27 @@ export default function DataCenterView() {
   const [showClassManager, setShowClassManager] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitInfo, setLimitInfo] = useState<{ plan: string; limit: number } | null>(null);
+  const [attendanceRange, setAttendanceRange] = useState<
+    { date: string; records: Record<string, AttendanceStatus> }[]
+  >([]);
+  const [attendanceRangeError, setAttendanceRangeError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/spokedu-pro/attendance/range?days=30')
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled || !json?.ok || !Array.isArray(json.days)) return;
+        setAttendanceRange(json.days);
+        setAttendanceRangeError(false);
+      })
+      .catch(() => {
+        if (!cancelled) setAttendanceRangeError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredStudents = useMemo(
     () => (filterGroup === '전체' ? students : students.filter((s) => s.classGroup === filterGroup)),
@@ -408,6 +448,37 @@ export default function DataCenterView() {
   }, [students]);
 
   const presentCount = filteredStudents.filter((s) => s.status === 'present').length;
+
+  const attendanceChartPoints = useMemo(() => {
+    if (attendanceRange.length === 0) return [];
+    const idSet = new Set(filteredStudents.map((s) => s.id));
+    const total = filteredStudents.length;
+    return attendanceRange.map(({ date, records }) => {
+      let attended = 0;
+      for (const [sid, st] of Object.entries(records)) {
+        if (!idSet.has(sid)) continue;
+        if (st === 'present' || st === 'late') attended += 1;
+      }
+      const rate = total > 0 ? Math.round((attended / total) * 100) : 0;
+      return {
+        dateShort: `${date.slice(5).replace('-', '/')}`,
+        date,
+        rate,
+        attended,
+        total,
+      };
+    });
+  }, [attendanceRange, filteredStudents]);
+
+  const classRadarData = useMemo(() => {
+    if (filteredStudents.length === 0) return [];
+    const keys = Object.keys(PHYSICAL_LABELS) as (keyof PhysicalFunctions)[];
+    return keys.map((k) => {
+      const sum = filteredStudents.reduce((acc, s) => acc + s.physical[k], 0);
+      const avg = sum / filteredStudents.length;
+      return { subject: PHYSICAL_LABELS[k], value: avg * 33.3 };
+    });
+  }, [filteredStudents]);
 
   const handleAdd = () => {
     const trimmed = newName.trim();
@@ -487,6 +558,7 @@ export default function DataCenterView() {
           plan={limitInfo.plan}
           limit={limitInfo.limit}
           onClose={() => setShowLimitModal(false)}
+          onGoToSettings={onOpenSettings ?? (() => {})}
         />
       )}
 
@@ -551,6 +623,90 @@ export default function DataCenterView() {
         <div className="flex items-center gap-1.5 text-xs text-emerald-500/70">
           <AlertCircle className="w-3 h-3" />
           <span>데이터가 서버에 안전하게 저장됩니다.</span>
+        </div>
+      )}
+
+      {/* 월간 출석 추이 · 반 평균 신체 레이더 */}
+      {(attendanceChartPoints.length > 0 || classRadarData.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="rounded-2xl bg-slate-800/40 border border-slate-700 p-5 space-y-3">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">최근 30일 출석률</p>
+              <p className="text-sm text-slate-400 mt-1">
+                선택한 반 기준 · 일별 출석·지각 비율(결석 제외)
+              </p>
+            </div>
+            {attendanceRangeError ? (
+              <p className="text-sm text-amber-400">출석 기록을 불러오지 못했습니다.</p>
+            ) : attendanceChartPoints.length === 0 ? (
+              <p className="text-sm text-slate-500">표시할 데이터가 없습니다.</p>
+            ) : (
+              <div className="h-[220px] w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={attendanceChartPoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(148,163,184,0.15)" strokeDasharray="3 3" />
+                    <XAxis dataKey="dateShort" tick={{ fill: '#94a3b8', fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 10 }} width={32} unit="%" />
+                    <Tooltip
+                      contentStyle={{
+                        background: '#0f172a',
+                        border: '1px solid rgba(52,211,153,0.3)',
+                        borderRadius: 12,
+                      }}
+                      labelFormatter={(_, payload) => {
+                        const p = payload?.[0]?.payload as { date?: string } | undefined;
+                        return p?.date ?? '';
+                      }}
+                      formatter={(value) => [`${value ?? 0}%`, '출석률']}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="rate"
+                      stroke="#34d399"
+                      strokeWidth={2}
+                      dot={false}
+                      name="출석률"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-slate-800/40 border border-slate-700 p-5 space-y-3">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">반 평균 신체 기능</p>
+              <p className="text-sm text-slate-400 mt-1">필터에 맞는 원생 평균 (1~3단계 환산)</p>
+            </div>
+            {classRadarData.length === 0 ? (
+              <p className="text-sm text-slate-500">원생을 등록하면 레이더가 표시됩니다.</p>
+            ) : (
+              <div className="h-[220px] w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={classRadarData} cx="50%" cy="50%" outerRadius="78%">
+                    <PolarGrid stroke="rgba(148,163,184,0.2)" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} />
+                    <Radar
+                      name="평균"
+                      dataKey="value"
+                      stroke="#8b5cf6"
+                      fill="#8b5cf6"
+                      fillOpacity={0.25}
+                      strokeWidth={2}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: '#1e1b4b',
+                        border: '1px solid rgba(139,92,246,0.3)',
+                        borderRadius: 10,
+                      }}
+                      formatter={(v) => [`${((Number(v) || 0) / 33.3).toFixed(1)} / 3`, '평균 단계']}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

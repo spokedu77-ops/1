@@ -5,7 +5,7 @@
  */
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
 import { getAiReportUsageThisMonth, PLAN_LIMITS, PLAN_PRICES } from '@/app/lib/spokedu-pro/planUtils';
 
 type Plan = 'free' | 'basic' | 'pro';
@@ -54,10 +54,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const [studentCount, aiReportThisMonth, classCount] = await Promise.all([
+  const [studentCount, aiReportThisMonth, classCount, isPlatformAdmin] = await Promise.all([
     getStudentCount(user.id),
     getAiReportUsageThisMonth(user.id),
     getClassCount(user.id),
+    isPlatformAdminUser(user, serverSupabase),
   ]);
 
   try {
@@ -129,7 +130,7 @@ export async function GET() {
         aiReportThisMonth,
         aiReportMonthlyLimit: limits.aiReportsPerMonth === Infinity ? null : limits.aiReportsPerMonth,
         classCount,
-        classLimit: limits.maxClasses,
+        classLimit: isPlatformAdmin ? null : limits.maxClasses,
       },
       dbReady: true,
     });
@@ -146,7 +147,7 @@ export async function GET() {
         aiReportThisMonth,
         aiReportMonthlyLimit: limits.aiReportsPerMonth,
         classCount,
-        classLimit: limits.maxClasses,
+        classLimit: isPlatformAdmin ? null : limits.maxClasses,
       },
       dbReady: false,
       error: 'db_error',

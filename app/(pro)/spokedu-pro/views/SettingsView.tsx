@@ -297,6 +297,17 @@ export default function SettingsView() {
         <p className="text-slate-400 text-sm">현재 플랜과 사용량을 확인하고 필요에 따라 업그레이드하세요.</p>
       </header>
 
+      <div className="rounded-2xl border border-blue-500/25 bg-blue-500/10 px-5 py-4 text-sm text-slate-200 leading-relaxed">
+        <p className="font-bold text-blue-200 mb-1">결제 안내</p>
+        <p className="text-slate-300">
+          온라인 결제(카드·정기결제)는 곧 연동될 예정입니다. 지금은 플랜 업그레이드·견적 문의를{' '}
+          <a href="mailto:contact@spokedu.co.kr" className="text-blue-400 font-bold underline underline-offset-2">
+            이메일
+          </a>
+          로 보내 주시면 안내드릴게요.
+        </p>
+      </div>
+
       {/* Trial 배너 */}
       {isTrialing && ctx.billing.currentPeriodEndAt && (
         <TrialBanner trialEndAt={ctx.billing.currentPeriodEndAt} />
