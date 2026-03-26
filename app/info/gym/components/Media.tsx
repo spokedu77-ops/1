@@ -10,7 +10,6 @@ function scrollToId(id: string) {
 export default function Media() {
   const [index, setIndex] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
-  const slide = SLIDES_DATA[index] ?? SLIDES_DATA[0];
 
   const go = useCallback((delta: number) => {
     setIndex((i) => {
@@ -41,12 +40,12 @@ export default function Media() {
     <section id="media" className="gym-section" aria-labelledby="mediaHeading">
       <div className="gym-container">
         <div className="gym-section-head">
-          <div className="gym-kicker">Media</div>
+          <div className="gym-kicker">사진/수업 영상</div>
           <h2 id="mediaHeading" className="gym-section-title">
-            사진/영상
+            클래스 현장 분위기를 먼저 확인해 보세요
           </h2>
           <p className="gym-section-desc">
-            공간·수업 구조·멀티스포츠·분기 운영·리포트·코칭을 한 번에 보여주는 구성입니다.
+            MOVE CORE CLUB, CUSTOMIZING LAB, Adaptive Move Class의 실제 수업 장면을 슬라이드로 확인할 수 있습니다.
           </p>
         </div>
         <div
@@ -100,7 +99,21 @@ export default function Media() {
                 }}
               >
                 {s.src ? (
-                  <img src={s.src} alt={s.heading} style={{ width: '100%', height: 380, objectFit: 'cover', display: 'block' }} />
+                  <img
+                    src={s.src}
+                    alt={s.heading}
+                    loading={i === index ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchPriority={i === index ? 'high' : undefined}
+                    sizes="(max-width: 720px) 100vw, 720px"
+                    style={{
+                      width: '100%',
+                      height: 380,
+                      objectFit: 'contain',
+                      display: 'block',
+                      background: 'rgba(255,255,255,.02)',
+                    }}
+                  />
                 ) : (
                   <div
                     style={{
