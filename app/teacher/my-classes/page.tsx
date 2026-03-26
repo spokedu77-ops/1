@@ -154,14 +154,18 @@ function MyClassesContent() {
       return toast.error('수업일이 아직 지나지 않았습니다. 수업일 이후에 완료 처리해 주세요.');
     }
     
-    // 센터 수업: 파일만 체크
-    if (selectedEvent.session_type === 'regular_center') {
+    // 센터 수업: 파일만 체크 (regular_center, one_day_center)
+    const isCenterType =
+      selectedEvent.session_type === 'regular_center' ||
+      selectedEvent.session_type === 'one_day_center';
+
+    if (isCenterType) {
       if (fileUrls.length === 0) {
         return toast.error('파일을 최소 1개 업로드해주세요.');
       }
     } else {
       // 개인 수업: 필수 필드 체크
-      const requiredFields = ['main_activity', 'strengths', 'next_goals'];
+      const requiredFields = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'] as const;
       const missingFields = requiredFields.filter(
         field => !feedbackFields[field as keyof FeedbackFields] || 
                  feedbackFields[field as keyof FeedbackFields]!.trim().length < 5
@@ -171,7 +175,9 @@ function MyClassesContent() {
         const fieldNames: Record<string, string> = {
           main_activity: '오늘 수업의 주요 활동',
           strengths: '강점 및 긍정적인 부분',
-          next_goals: '다음 수업 목표 및 계획'
+          improvements: '개선이 필요한 부분 및 피드백',
+          next_goals: '다음 수업 목표 및 계획',
+          condition_notes: '특이사항 및 시작/종료 시간'
         };
         const missingFieldNames = missingFields.map(f => fieldNames[f]).join(', ');
         return toast.error(`다음 필드를 작성해주세요: ${missingFieldNames}`);
@@ -417,7 +423,17 @@ function MyClassesContent() {
               
               // 간소화된 상태 판별
               const feedbackFields = session.feedback_fields || parseTemplateToFields(session.students_text || '');
-              const hasContent = feedbackFields.main_activity || feedbackFields.strengths || feedbackFields.next_goals;
+              const isValid = (v?: string) => !!v && v.trim().length > 5;
+              const isCenterType =
+                session.session_type === 'regular_center' ||
+                session.session_type === 'one_day_center';
+              const hasContent = isCenterType
+                ? (Array.isArray(session.file_url) ? session.file_url.length > 0 : false)
+                : isValid(feedbackFields.main_activity) &&
+                  isValid(feedbackFields.strengths) &&
+                  isValid(feedbackFields.improvements) &&
+                  isValid(feedbackFields.next_goals) &&
+                  isValid(feedbackFields.condition_notes);
               
               const isVerified = session.status === 'verified';
               const isActuallyDone = hasContent;
@@ -438,7 +454,7 @@ function MyClassesContent() {
                     </div>
                     <div className="text-left">
                       <div className="flex gap-2 mb-1">
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${session.session_type === 'regular_center' ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>{session.session_type === 'regular_center' ? 'Center' : 'Visit'}</span>
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${isCenterType ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>{isCenterType ? 'Center' : 'Visit'}</span>
                       </div>
                       <h3 className="text-base md:text-lg font-black text-slate-800 tracking-tight line-clamp-1">{session.title || 'Untitled'}</h3>
                     </div>
@@ -483,7 +499,7 @@ function MyClassesContent() {
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 text-left bg-slate-50/30">
               {/* 센터 수업: 파일 업로드만 */}
-              {selectedEvent.session_type === 'regular_center' ? (
+              {(selectedEvent.session_type === 'regular_center' || selectedEvent.session_type === 'one_day_center') ? (
                 <div className="space-y-6">
                   <div className="space-y-4 p-6 bg-blue-50/50 rounded-[32px] border border-blue-100">
                     <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest">
@@ -549,7 +565,7 @@ function MyClassesContent() {
 
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">
-                    ✅ 개선이 필요한 부분 및 피드백 (선택)
+                    ✅ 개선이 필요한 부분 및 피드백 *
                   </label>
                   <textarea 
                     className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
@@ -573,7 +589,7 @@ function MyClassesContent() {
 
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1 mb-2">
-                    ✅ 특이사항 및 시작/종료 시간 (선택)
+                    ✅ 특이사항 및 시작/종료 시간 *
                   </label>
                   <textarea 
                     className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"

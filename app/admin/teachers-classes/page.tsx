@@ -23,7 +23,7 @@ interface Session {
   students_text: string;
   photo_url: string[];
   file_url: string[];
-  session_type: 'regular_center' | 'regular_private' | 'one_day';
+  session_type: 'regular_center' | 'regular_private' | 'one_day' | 'one_day_center' | 'one_day_private';
   created_by: string;
   memo?: string | null;
   feedback_fields?: FeedbackFields;
@@ -97,6 +97,34 @@ export default function MasterQCPage() {
 
 // 피드백 검수 탭
 function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: ReturnType<typeof getSupabaseBrowserClient> | null }) {
+  const getSessionTypeLabel = (sessionType: Session['session_type']): string => {
+    switch (sessionType) {
+      case 'regular_center':
+      case 'one_day_center':
+        return '센터';
+      case 'one_day':
+        return '원데이';
+      case 'one_day_private':
+      case 'regular_private':
+      default:
+        return '개인';
+    }
+  };
+
+  const getSessionTypeBadgeLabel = (sessionType: Session['session_type']): string => {
+    switch (sessionType) {
+      case 'regular_center':
+      case 'one_day_center':
+        return '센터 수업';
+      case 'one_day':
+        return '원데이 수업';
+      case 'one_day_private':
+      case 'regular_private':
+      default:
+        return '개인 수업';
+    }
+  };
+
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedCoachId, setSelectedCoachId] = useState('all');
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -196,7 +224,9 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
   };
 
   const selectAll = () => {
-    const allDone = filteredAndSearchedSessions.filter(s => getSessionStatus(s) === 'done').map(s => s.id);
+    const allDone = filteredAndSearchedSessions
+      .filter((s) => getSessionStatus(s) === 'done' && s.status !== 'postponed' && s.status !== 'cancelled')
+      .map(s => s.id);
     setSelectedSessions(new Set(allDone));
   };
 
@@ -463,12 +493,32 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredAndSearchedSessions.map((s) => {
             const sessionStatus = getSessionStatus(s);
+            const rawStatus = s.status;
             const isSelected = selectedSessions.has(s.id);
-            const canSelect = sessionStatus === 'done';
+            const canSelect =
+              sessionStatus === 'done' &&
+              rawStatus !== 'postponed' &&
+              rawStatus !== 'cancelled';
             const isVerified = sessionStatus === 'verified';
             const isDone = sessionStatus === 'done';
             const time = new Date(s.start_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
             const coachName = s.users?.name || coaches.find(c => c.id === s.created_by)?.name || '강사';
+
+            const cardBadge = (() => {
+              if (rawStatus === 'postponed') {
+                return { text: '연기', className: 'bg-purple-100 text-purple-700' };
+              }
+              if (rawStatus === 'cancelled') {
+                return { text: '취소', className: 'bg-rose-100 text-rose-700' };
+              }
+              if (isVerified) {
+                return { text: 'DONE', className: 'bg-blue-600 text-white' };
+              }
+              if (isDone) {
+                return { text: 'READY', className: 'bg-emerald-500 text-white' };
+              }
+              return { text: 'EMPTY', className: 'bg-slate-100 text-slate-400' };
+            })();
 
             return (
               <div key={s.id} className="relative">
@@ -480,8 +530,8 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                 <div className={`bg-white rounded-2xl p-4 shadow-sm border-2 ${isSelected ? 'border-blue-500' : 'border-slate-200'} flex flex-col hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer`} onClick={() => openEditModal(s)}>
                   <div className="flex justify-between items-start mb-3">
                     <span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg text-[10px] font-bold">{time}</span>
-                    <span className={`text-[9px] font-bold px-2 py-1 rounded-lg uppercase ${isVerified ? 'bg-blue-600 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                      {isVerified ? 'DONE' : isDone ? 'READY' : 'EMPTY'}
+                    <span className={`text-[9px] font-bold px-2 py-1 rounded-lg uppercase ${cardBadge.className}`}>
+                      {cardBadge.text}
                     </span>
                   </div>
                   <h3 className="text-base font-bold text-slate-900 mb-2 line-clamp-2 text-left leading-tight">{s.title}</h3>
@@ -490,7 +540,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                       <User size={12} /> {coachName}
                     </div>
                     <div className="flex items-center gap-1 text-slate-400 text-[10px]">
-                      <MapPin size={10} /> {s.session_type === 'regular_center' ? '센터' : '개인'}
+                      <MapPin size={10} /> {getSessionTypeLabel(s.session_type)}
                     </div>
                   </div>
                   <div className="mt-auto flex gap-2">
@@ -540,9 +590,19 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
 
             <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/30">
               <div className="flex gap-2">
-                <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${selectedEvent.session_type === 'regular_center' ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>
-                  {selectedEvent.session_type === 'regular_center' ? '센터 수업' : '개인 수업'}
+                <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${(selectedEvent.session_type === 'regular_center' || selectedEvent.session_type === 'one_day_center') ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>
+                  {getSessionTypeBadgeLabel(selectedEvent.session_type)}
                 </span>
+                {selectedEvent.status === 'postponed' && (
+                  <span className="text-[9px] font-black px-3 py-1.5 rounded-full uppercase bg-purple-100 text-purple-700">
+                    연기
+                  </span>
+                )}
+                {selectedEvent.status === 'cancelled' && (
+                  <span className="text-[9px] font-black px-3 py-1.5 rounded-full uppercase bg-rose-100 text-rose-700">
+                    취소
+                  </span>
+                )}
               </div>
 
               {/* 중복 경고 */}
@@ -562,8 +622,12 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                 </div>
               )}
 
-              {selectedEvent.session_type === 'regular_center' && (
-                <div className="bg-white p-5 rounded-[24px] border border-indigo-100 space-y-3">
+              {(() => {
+                  const centerCondition =
+                    selectedEvent.session_type === 'regular_center' ||
+                    selectedEvent.session_type === 'one_day_center';
+                  return centerCondition ? (
+                    <div className="bg-white p-5 rounded-[24px] border border-indigo-100 space-y-3">
                   <p className="text-[10px] font-black text-indigo-400 uppercase">파일</p>
                   {fileUrls.length > 0 ? fileUrls.map((url, i) => (
                     <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl hover:bg-indigo-100 cursor-pointer">
@@ -572,10 +636,15 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                       <ExternalLink size={14} className="ml-auto text-indigo-300" />
                     </a>
                   )) : <p className="text-slate-400 text-sm py-4 text-center">업로드된 파일이 없습니다</p>}
-                </div>
-              )}
+                    </div>
+                  ) : null;
+                })()}
 
-              {selectedEvent.session_type !== 'regular_center' && (
+              {(() => {
+                const centerCondition =
+                  selectedEvent.session_type === 'regular_center' ||
+                  selectedEvent.session_type === 'one_day_center';
+                return !centerCondition ? (
                 <div className="space-y-3">
                   <p className="text-[10px] font-black text-slate-400 uppercase">사진</p>
                   {photoUrls.length > 0 ? (
@@ -589,9 +658,14 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                     </div>
                   ) : <p className="text-slate-400 text-sm py-4 text-center bg-white rounded-2xl border">업로드된 사진이 없습니다</p>}
                 </div>
-              )}
+                ) : null;
+              })()}
 
-              {selectedEvent.session_type === 'regular_center' ? (
+              {(() => {
+                const centerCondition =
+                  selectedEvent.session_type === 'regular_center' ||
+                  selectedEvent.session_type === 'one_day_center';
+                return centerCondition ? (
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-slate-400 uppercase block ml-1">메모</label>
                   <textarea 
@@ -601,7 +675,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                     placeholder="센터 수업 메모를 작성하세요..."
                   />
                 </div>
-              ) : (
+                ) : (
                 <div className="space-y-4">
                   <p className="text-[10px] font-black text-slate-400 uppercase ml-1">피드백 내용</p>
                   {[
@@ -622,7 +696,8 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                     </div>
                   ))}
                 </div>
-              )}
+                );
+              })()}
             </div>
 
             <div className="p-8 border-t flex gap-4 shrink-0">

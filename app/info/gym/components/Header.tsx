@@ -4,27 +4,26 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { GYM_CONFIG } from '../data/config';
 
 const NAV_LINKS = [
-  { href: '#intro', label: '소개' },
-  { href: '#target', label: '수업 대상' },
-  { href: '#curriculum', label: '커리큘럼' },
-  { href: '#instructors', label: '선생님 소개' },
+  { href: '#lab-intro', label: 'LAB 소개' },
   { href: '#media', label: '사진/영상' },
-  { href: '#schedule', label: '시간표' },
-  { href: '#pricing', label: '가격 안내' },
+  { href: '#target', label: '대상/연령' },
+  { href: '#curriculum', label: '12주 커리큘럼' },
+  { href: '#instructors', label: '강사진' },
+  { href: '#weekly-ops', label: '주간 운영 구조' },
   { href: '#report', label: '성장 리포트' },
-  { href: '#reviews', label: '수업 후기' },
+  { href: '#reviews', label: '후기' },
   { href: '#faq', label: 'FAQ' },
+  { href: '#schedule', label: '시간표' },
+  { href: '#pricing', label: '가격' },
   { href: '#location', label: '오시는 길' },
-  { href: '#parking', label: '주차' },
-  { href: '#contact', label: '예약 및 문의' },
+  { href: '#contact', label: '체험/상담' },
 ] as const;
 
 /** 데스크톱용 3~4개 항으로 묶음 */
 const NAV_GROUPS = [
-  { key: 'about', label: '수업 안내', ids: ['intro', 'target', 'curriculum', 'instructors', 'media'] as const },
-  { key: 'schedule', label: '일정·가격', ids: ['schedule', 'pricing'] as const },
-  { key: 'info', label: '후기·안내', ids: ['report', 'reviews', 'faq', 'location', 'parking'] as const },
-  { key: 'contact', label: '문의', ids: ['contact'] as const },
+  { key: 'about', label: 'LAB 안내', ids: ['lab-intro', 'media', 'target', 'curriculum', 'instructors'] as const },
+  { key: 'ops', label: '운영 구조', ids: ['weekly-ops', 'report', 'reviews'] as const },
+  { key: 'info', label: '안내 정보', ids: ['faq', 'schedule', 'pricing', 'location'] as const },
 ] as const;
 
 function scrollToId(id: string) {
@@ -60,12 +59,6 @@ export default function Header() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const navMenuRef = useRef<HTMLDivElement>(null);
-
-  const openKakao = useCallback(() => {
-    if (typeof window !== 'undefined' && GYM_CONFIG.kakao.webUrl) {
-      window.open(GYM_CONFIG.kakao.webUrl, '_blank', 'noopener,noreferrer');
-    }
-  }, []);
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
@@ -127,12 +120,6 @@ export default function Header() {
             </div>
 
             <div className="gym-nav-cta">
-              <button type="button" className="gym-btn" onClick={() => scrollToId('pricing')}>
-                수강료 보기
-              </button>
-              <button type="button" className="gym-btn" onClick={openKakao}>
-                카카오 상담
-              </button>
               <button type="button" className="gym-btn primary" onClick={() => scrollToId('contact')}>
                 상담 신청
               </button>

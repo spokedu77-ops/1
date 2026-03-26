@@ -8,12 +8,14 @@ import {
   Wrench,
   Settings2,
   CreditCard,
+  CalendarDays,
 } from 'lucide-react';
 import type { ViewId } from '../hooks/useSpokeduProUI';
 import { LIBRARY_SIDEBAR_ITEMS, type ThemeKey } from '@/app/lib/spokedu-pro/dashboardDefaults';
 
 const MAIN_NAV: { id: ViewId; label: string; icon: React.ElementType; group?: string; iconClass?: string }[] = [
   { id: 'roadmap', label: '대시보드', icon: LayoutDashboard, group: '대시보드' },
+  { id: 'lesson-plan', label: '수업 계획', icon: CalendarDays, group: '수업 준비', iconClass: 'text-sky-400' },
   { id: 'data-center', label: '원생 관리 및 평가', icon: ClipboardCheck, group: '데이터 및 운영', iconClass: 'text-emerald-400' },
   { id: 'ai', label: '에듀-에코 리포트', icon: Bot, group: '데이터 및 운영', iconClass: 'text-purple-400' },
   { id: 'tools', label: '수업 보조도구', icon: Wrench, group: '수업 보조도구', iconClass: 'text-amber-400' },
@@ -22,6 +24,7 @@ const MAIN_NAV: { id: ViewId; label: string; icon: React.ElementType; group?: st
 
 const MOBILE_TABS: { id: ViewId; label: string; icon: React.ElementType; iconClass?: string }[] = [
   { id: 'roadmap', label: '대시보드', icon: LayoutDashboard },
+  { id: 'lesson-plan', label: '계획', icon: CalendarDays, iconClass: 'text-sky-400' },
   { id: 'library', label: '라이브러리', icon: Grid, iconClass: 'text-emerald-400' },
   { id: 'data-center', label: '원생', icon: ClipboardCheck, iconClass: 'text-emerald-400' },
   { id: 'ai', label: '리포트', icon: Bot, iconClass: 'text-purple-400' },
@@ -132,7 +135,7 @@ export default function SpokeduProAside({
               </button>
             </div>
 
-            {/* 나머지 메인 네비 */}
+            {/* 나머지 메인 네비 (수업 계획·원생·리포트 등) */}
             {MAIN_NAV.filter((x) => x.id !== 'roadmap').map(({ id, label, icon: Icon, group, iconClass }) => {
               const showGroup = group && group !== lastGroup;
               if (showGroup) lastGroup = group || '';
@@ -199,7 +202,11 @@ export default function SpokeduProAside({
           <button
             key={id}
             type="button"
-            onClick={() => (id === 'library' ? onOpenLibraryAll() : onSwitchView(id))}
+            onClick={() =>
+              id === 'library'
+                ? onOpenLibraryAll()
+                : onSwitchView(id)
+            }
             aria-label={label}
             aria-current={viewId === id ? 'page' : undefined}
             className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${

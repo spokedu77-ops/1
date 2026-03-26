@@ -3,11 +3,13 @@ import GymLandingClient from './components/GymLandingClient';
 import './styles/gym-landing.css';
 
 export const metadata: Metadata = {
-  title: 'SPOKEDU | 체육관 수업 안내',
-  description: '50분 정규수업 · 12주 커리큘럼 · 소그룹 레벨링 · 성장 리포트',
+  title: 'SPOKEDU LAB | MOVE CORE 아동청소년 체육교육',
+  description:
+    'MOVE CORE 중심의 아동청소년 체육교육 LAB. 성장·보완·적용 흐름으로 움직임을 설계합니다.',
   openGraph: {
-    title: 'SPOKEDU LAB | 놀이 기반 멀티스포츠',
-    description: '50분 수업 · 12주 커리큘럼 · 소그룹 레벨링 · 성장 리포트',
+    title: 'SPOKEDU LAB | 움직임을 배우는 체육관',
+    description:
+      '집중·반응, 몸의 기본, 게임·스포츠 적용까지. 아이의 움직임을 세 축으로 설계하는 아동청소년 체육교육 공간.',
   },
 };
 

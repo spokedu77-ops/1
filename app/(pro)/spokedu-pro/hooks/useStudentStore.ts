@@ -281,7 +281,31 @@ export function useStudentStore() {
     setAttendance((prev) => {
       const current = prev[id] ?? 'present';
       const next = { ...prev, [id]: order[(order.indexOf(current) + 1) % order.length] };
-      apiSaveAttendance(today, next).catch(() => { /* ignore */ });
+      apiSaveAttendance(today, next)
+        .then(() => {
+          try {
+            window.dispatchEvent(new Event('spokedu-pro-attendance-updated'));
+          } catch {
+            /* ignore */
+          }
+        })
+        .catch(() => { /* ignore */ });
+      return next;
+    });
+  }, [today]);
+
+  const setAttendanceStatus = useCallback((id: string, status: AttendanceStatus): void => {
+    setAttendance((prev) => {
+      const next = { ...prev, [id]: status };
+      apiSaveAttendance(today, next)
+        .then(() => {
+          try {
+            window.dispatchEvent(new Event('spokedu-pro-attendance-updated'));
+          } catch {
+            /* ignore */
+          }
+        })
+        .catch(() => { /* ignore */ });
       return next;
     });
   }, [today]);
@@ -290,7 +314,15 @@ export function useStudentStore() {
     setAttendance((prev) => {
       const next = { ...prev };
       ids.forEach((id) => { next[id] = 'present'; });
-      apiSaveAttendance(today, next).catch(() => { /* ignore */ });
+      apiSaveAttendance(today, next)
+        .then(() => {
+          try {
+            window.dispatchEvent(new Event('spokedu-pro-attendance-updated'));
+          } catch {
+            /* ignore */
+          }
+        })
+        .catch(() => { /* ignore */ });
       return next;
     });
   }, [today]);
@@ -323,6 +355,21 @@ export function useStudentStore() {
     }
   }, [today]);
 
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const onRemoteAttendance = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => {
+        refetch();
+      }, 250);
+    };
+    window.addEventListener('spokedu-pro-attendance-updated', onRemoteAttendance);
+    return () => {
+      window.removeEventListener('spokedu-pro-attendance-updated', onRemoteAttendance);
+      if (t) clearTimeout(t);
+    };
+  }, [refetch]);
+
   return {
     students,
     loaded,
@@ -332,6 +379,7 @@ export function useStudentStore() {
     addStudent,
     removeStudent,
     cycleStatus,
+    setAttendanceStatus,
     markAllPresent,
     updatePhysical,
     presentStudents,

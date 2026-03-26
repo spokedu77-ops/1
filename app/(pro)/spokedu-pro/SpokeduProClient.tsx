@@ -18,9 +18,12 @@ import DataCenterView from './views/DataCenterView';
 import AIReportView from './views/AIReportView';
 import AssistantToolsView from './views/AssistantToolsView';
 import SettingsView from './views/SettingsView';
+import LessonPlanView from './views/LessonPlanView';
 import OnboardingWizard from './components/OnboardingWizard';
+import PostClassModal from './components/PostClassModal';
 import { SpokeduProErrorBoundary } from './components/SpokeduProErrorBoundary';
 import { useProContext } from './hooks/useProContext';
+import { setTodayClassPhase } from './utils/todayClassStorage';
 
 export default function SpokeduProClient({
   isEditMode = false,
@@ -42,6 +45,9 @@ export default function SpokeduProClient({
   const [drawerContext, setDrawerContext] = useState<{ role?: string; themeKey?: string } | null>(null);
   const [libraryPreset, setLibraryPreset] = useState<{ themeKey?: string; preset?: string } | null>(null);
   const [showCurationDrawer, setShowCurationDrawer] = useState(false);
+  const [postClassGroup, setPostClassGroup] = useState<string | null>(null);
+  const [aiInitialStudentId, setAiInitialStudentId] = useState<string | null>(null);
+  const [toolsFocusToken, setToolsFocusToken] = useState(0);
 
   const { data: contentData, fetchContent } = useSpokeduProContent('catalog', ['program_details']);
   const { content: adminContent, fetchBlocks, saveContentDraft } = useSpokeduProAdminBlocks();
@@ -177,7 +183,21 @@ export default function SpokeduProClient({
       />
       <main className="flex-1 w-full max-w-full min-w-0 h-full overflow-y-auto overflow-x-hidden custom-scroll relative bg-[#0F172A] z-0 min-h-0 pr-0 mr-0">
         <div className={`view-content ${viewId === 'roadmap' ? 'active' : ''}`}>
-          <RoadmapView onOpenDetail={openDrawer} onGoToLibrary={goToLibrary} programDetails={programDetailsForDrawer} />
+          <RoadmapView
+            onOpenDetail={openDrawer}
+            onGoToLibrary={goToLibrary}
+            programDetails={programDetailsForDrawer}
+            onStartTodayClass={() => {
+              setToolsFocusToken((t) => t + 1);
+              switchView('tools');
+            }}
+            onOpenPostClass={(name) => setPostClassGroup(name)}
+            onGoToAIReportFromToday={() => switchView('ai')}
+            onAddClassFromToday={() => switchView('data-center')}
+          />
+        </div>
+        <div className={`view-content ${viewId === 'lesson-plan' ? 'active' : ''}`}>
+          <LessonPlanView programDetails={programDetailsForDrawer} />
         </div>
         <div className={`view-content ${viewId === 'library' ? 'active' : ''}`}>
           <LibraryView onOpenDetail={openDrawer} initialPreset={libraryPreset} programDetails={programDetailsForDrawer} />
@@ -186,10 +206,16 @@ export default function SpokeduProClient({
           <DataCenterView onOpenSettings={() => switchView('settings')} />
         </div>
         <div className={`view-content ${viewId === 'ai' ? 'active' : ''}`}>
-          <AIReportView />
+          <AIReportView
+            initialStudentId={aiInitialStudentId}
+            onConsumeInitialStudent={() => setAiInitialStudentId(null)}
+          />
         </div>
         <div className={`view-content ${viewId === 'tools' ? 'active' : ''}`}>
-          <AssistantToolsView onGoToDataCenter={() => switchView('data-center')} />
+          <AssistantToolsView
+            focusStopwatchToken={toolsFocusToken}
+            onGoToDataCenter={() => switchView('data-center')}
+          />
         </div>
         <div className={`view-content ${viewId === 'settings' ? 'active' : ''}`}>
           <SettingsView />
@@ -211,6 +237,22 @@ export default function SpokeduProClient({
         isEditMode={isEditMode}
         onSaveProgramDetail={isEditMode ? handleSaveProgramDetail : undefined}
         onClose={closeProgramDrawer}
+      />
+
+      <PostClassModal
+        open={postClassGroup !== null}
+        classGroupName={postClassGroup ?? ''}
+        onClose={() => setPostClassGroup(null)}
+        onGoToAI={(id) => {
+          setTodayClassPhase('done');
+          setAiInitialStudentId(id);
+          setPostClassGroup(null);
+          switchView('ai');
+        }}
+        onDoneLater={() => {
+          setTodayClassPhase('done');
+          setPostClassGroup(null);
+        }}
       />
 
       {showCurationDrawer && (

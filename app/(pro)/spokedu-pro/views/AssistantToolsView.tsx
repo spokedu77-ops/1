@@ -253,7 +253,14 @@ function TeamsTab({ presentStudents, onGoToDataCenter }: { presentStudents: Stud
 }
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────────────
-export default function AssistantToolsView({ onGoToDataCenter }: { onGoToDataCenter?: () => void } = {}) {
+export default function AssistantToolsView({
+  onGoToDataCenter,
+  focusStopwatchToken = 0,
+}: {
+  onGoToDataCenter?: () => void;
+  /** 값이 바뀔 때마다 스톱워치 탭으로 포커스 (대시보드「수업 시작」등). */
+  focusStopwatchToken?: number;
+} = {}) {
   const [tab, setTab] = useState<TabId>('stopwatch');
   const [stopwatchRunning, setStopwatchRunning] = useState(false);
   const [stopwatchMs, setStopwatchMs] = useState(0);
@@ -261,6 +268,10 @@ export default function AssistantToolsView({ onGoToDataCenter }: { onGoToDataCen
   const [scoreBlue, setScoreBlue] = useState(0);
 
   const { presentStudents } = useStudentStore();
+
+  useEffect(() => {
+    if (focusStopwatchToken > 0) setTab('stopwatch');
+  }, [focusStopwatchToken]);
 
   useEffect(() => {
     if (!stopwatchRunning) return;

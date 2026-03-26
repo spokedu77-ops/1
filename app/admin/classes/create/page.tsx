@@ -29,6 +29,7 @@ export default function CreateClassPage() {
   const [form, setForm] = useState({
     title: '',
     type: 'regular_private',
+    oneDayPlacement: 'private' as 'center' | 'private',
     teacherId: '',
     startDate: new Date().toISOString().split('T')[0],
     startTime: '10:00',
@@ -61,6 +62,8 @@ export default function CreateClassPage() {
         return {
           ...prev,
           type: value,
+          // 원데이는 기본적으로 레거시(개인)와 동일한 동작을 하도록 private 기본값
+          oneDayPlacement: 'private',
           weeklyFrequency: 1,
           sessionCount: 1,
           roundWeight: 1,
@@ -185,6 +188,11 @@ export default function CreateClassPage() {
       sorted.forEach((session, idx) => {
         const roundIndex = idx + 1;
         const isOneDay = form.type === 'one_day';
+        const sessionType = isOneDay
+          ? form.oneDayPlacement === 'center'
+            ? 'one_day_center'
+            : 'one_day_private'
+          : form.type;
         const roundDisplay = isOneDay
           ? '1/1'
           : form.roundWeight === 1
@@ -193,7 +201,7 @@ export default function CreateClassPage() {
 
         sessionsToInsert.push({
           title: form.title,
-          session_type: form.type,
+          session_type: sessionType,
           start_at: session.startAt.toISOString(),
           end_at: session.endAt.toISOString(),
           status: 'opened',
@@ -272,6 +280,41 @@ export default function CreateClassPage() {
                 value={form.title}
                 onChange={(e) => handleChange('title', e.target.value)}
               />
+
+              {form.type === 'one_day' && (
+                <div className="bg-slate-900 rounded-[32px] p-6 shadow-2xl space-y-4 border border-slate-800">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white font-black italic tracking-widest uppercase text-xs">One-day type</span>
+                    <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">
+                      총 1회
+                    </span>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleChange('oneDayPlacement', 'center')}
+                      className={`flex-1 py-4 rounded-2xl font-black text-sm transition-all border-2 ${
+                        form.oneDayPlacement === 'center'
+                          ? 'bg-blue-600 text-white border-blue-500 ring-4 ring-blue-100/50'
+                          : 'bg-slate-800 text-white/70 border-slate-700 hover:bg-slate-700'
+                      }`}
+                    >
+                      센터
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('oneDayPlacement', 'private')}
+                      className={`flex-1 py-4 rounded-2xl font-black text-sm transition-all border-2 ${
+                        form.oneDayPlacement === 'private'
+                          ? 'bg-emerald-600 text-white border-emerald-500 ring-4 ring-emerald-100/50'
+                          : 'bg-slate-800 text-white/70 border-slate-700 hover:bg-slate-700'
+                      }`}
+                    >
+                      개인
+                    </button>
+                  </div>
+                </div>
+              )}
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-2xl p-4 shadow-inner">

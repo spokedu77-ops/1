@@ -35,7 +35,13 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('sessions')
       .select('*, lesson_plans(id, session_id, content), users!created_by(id, name)')
-      .in('session_type', ['one_day', 'regular_private', 'regular_center'])
+      .in('session_type', [
+        'one_day',
+        'one_day_center',
+        'one_day_private',
+        'regular_private',
+        'regular_center',
+      ])
       .gte('start_at', start.toISOString())
       .lte('start_at', end.toISOString())
       .order('start_at', { ascending: false });

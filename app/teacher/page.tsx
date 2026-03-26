@@ -288,7 +288,7 @@ export default function TeacherMainPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
-                      {s.session_type === 'regular_center' ? '센터' : '방문'}
+                      {(s.session_type === 'regular_center' || s.session_type === 'one_day_center') ? '센터' : '방문'}
                     </span>
                     <p className="text-sm font-black text-slate-800 truncate mt-1">{s.title || '제목 없음'}</p>
                   </div>

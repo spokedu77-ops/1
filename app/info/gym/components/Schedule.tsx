@@ -1,9 +1,5 @@
 'use client';
 
-function scrollToId(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-}
-
 /** 09:00 ~ 19:00 (1시간 단위), 20:00은 19시 블록 끝 */
 const TIME_LABELS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'] as const;
 const DAYS = ['월', '화', '수', '목', '금', '토'] as const;
@@ -21,17 +17,14 @@ export default function Schedule() {
       <div className="gym-container">
         <div className="gym-section-head" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16 }}>
           <div>
-            <div className="gym-kicker">Schedule</div>
+            <div className="gym-kicker">운영 시간표</div>
             <h2 id="scheduleHeading" className="gym-section-title">
               시간표 (운영시간)
             </h2>
             <p className="gym-section-desc">
-              평일 13:00–20:00, 토요일 09:00–20:00 운영합니다. 선호 시간/연령을 접수하면 운영팀이 연락드려 반 편성 및 확정을 안내합니다.
+              평일 정규 클래스와 토요일 운영 시간표입니다. 일요일 원데이/특강은 별도 공지 후 운영됩니다.
             </p>
           </div>
-          <button type="button" className="gym-btn primary" onClick={() => scrollToId('contact')}>
-            선호 시간 남기기
-          </button>
         </div>
         <div
           className="gym-schedule-grid-wrap"
@@ -93,9 +86,6 @@ export default function Schedule() {
               ))}
             </tbody>
           </table>
-          <p style={{ margin: 0, padding: '12px 16px', fontSize: 'var(--gym-fs-xs)', color: 'var(--gym-muted2)', borderTop: '1px solid rgba(255,255,255,.08)' }}>
-            * 채워진 칸(운영)은 수업 가능 시간대입니다. 평일 13:00 시작, 토요일 09:00 시작. 일요일·공휴일 휴무.
-          </p>
         </div>
       </div>
     </section>

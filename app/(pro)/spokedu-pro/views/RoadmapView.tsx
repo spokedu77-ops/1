@@ -13,6 +13,8 @@ import {
 } from '@/app/lib/spokedu-pro/dashboardDefaults';
 import { getYouTubeThumbnailUrl } from '../utils/youtube';
 import type { ProgramDetail } from '../types';
+import TodayClassCard from './roadmap/TodayClassCard';
+import { setTodayClassPhase } from '../utils/todayClassStorage';
 
 function ProgramCardRow1({
   programId,
@@ -118,11 +120,19 @@ export default function RoadmapView({
   onGoToLibrary,
   drawerContext,
   programDetails = {},
+  onStartTodayClass,
+  onOpenPostClass,
+  onGoToAIReportFromToday,
+  onAddClassFromToday,
 }: {
   onOpenDetail: (id: number, context?: { role?: string; themeKey?: string }) => void;
   onGoToLibrary?: (themeKey?: ThemeKey, preset?: string) => void;
   drawerContext?: { role?: string; themeKey?: string };
   programDetails?: Record<string, ProgramDetail>;
+  onStartTodayClass?: () => void;
+  onOpenPostClass?: (className: string) => void;
+  onGoToAIReportFromToday?: () => void;
+  onAddClassFromToday?: () => void;
 }) {
   const { data, weekLabel, loading, error, fetchDashboard } = useSpokeduProDashboard();
 
@@ -141,6 +151,21 @@ export default function RoadmapView({
 
   return (
     <section className="pb-32 pt-0 mt-0">
+      {(onStartTodayClass && onOpenPostClass && onGoToAIReportFromToday && onAddClassFromToday && onGoToLibrary) && (
+        <div className="px-6 lg:px-12 pt-6 lg:pt-8 pb-2">
+          <div className="w-full lg:w-2/3 lg:max-w-3xl">
+            <TodayClassCard
+              weekThemeKey={dashboard.weekTheme.themeKey}
+              onGoToLibrary={(tk) => onGoToLibrary(tk)}
+              onStartClass={onStartTodayClass}
+              onOpenPostClass={onOpenPostClass}
+              onGoToAIReport={onGoToAIReportFromToday}
+              onAddClass={onAddClassFromToday}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Hero: 테마 1개(4개 묶음) 설명 — 다른 페이지와 동일한 좌/상단 여백만 사용 */}
       <div
         className="relative w-full min-h-[140px] py-10 bg-slate-900 flex items-end px-6 lg:px-12"
@@ -163,6 +188,34 @@ export default function RoadmapView({
           </h2>
           <p className="text-slate-300 font-medium leading-relaxed">{weekTheme.subtitle}</p>
           <p className="text-slate-500 text-sm">50분 전체 수업이 아니라, 웜업/리드업/놀이체육 파이를 책임집니다.</p>
+          {weekTheme.ctaPrimary && onGoToLibrary && (
+            <div className="flex flex-wrap gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setTodayClassPhase('ready');
+                  onGoToLibrary(weekTheme.themeKey);
+                }}
+                className="px-6 py-3 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 transition-colors"
+              >
+                {weekTheme.ctaPrimary.label}
+              </button>
+              {weekTheme.ctaSecondary && weekTheme.items[0] && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onOpenDetail(weekTheme.items[0].programId, {
+                      role: weekTheme.items[0].role,
+                      themeKey: weekTheme.themeKey,
+                    })
+                  }
+                  className="px-6 py-3 rounded-xl font-bold border border-slate-500 text-slate-200 hover:bg-slate-800/80 transition-colors"
+                >
+                  {weekTheme.ctaSecondary.label}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

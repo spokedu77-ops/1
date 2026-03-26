@@ -2,7 +2,14 @@
 
 import { useCallback, useState } from 'react';
 
-export type ViewId = 'roadmap' | 'library' | 'data-center' | 'ai' | 'tools' | 'settings';
+export type ViewId =
+  | 'roadmap'
+  | 'lesson-plan'
+  | 'library'
+  | 'data-center'
+  | 'ai'
+  | 'tools'
+  | 'settings';
 
 /**
  * UI 상태: 현재 뷰, 드로어 열림, 토스트 등.

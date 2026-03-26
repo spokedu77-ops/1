@@ -51,22 +51,7 @@ export default function CameraAppPage() {
         src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js"
         strategy="afterInteractive"
         crossOrigin="anonymous"
-        onLoad={() => {
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/02be4f1f-b8d1-4072-ab62-6634be097f6f', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7b5c8a' },
-            body: JSON.stringify({
-              sessionId: '7b5c8a',
-              location: 'camera/page.tsx:Script.onLoad',
-              message: 'vision_bundle.js script onLoad fired',
-              data: typeof window !== 'undefined' ? { hasFR: !!window.FilesetResolver, hasPLA: !!window.PoseLandmarker } : {},
-              timestamp: Date.now(),
-              hypothesisId: 'H3-H4',
-            }),
-          }).catch(() => {});
-          // #endregion
-        }}
+        onLoad={() => {}}
       />
       <div className="min-h-screen h-screen w-full overflow-hidden">
         <CameraErrorBoundary>

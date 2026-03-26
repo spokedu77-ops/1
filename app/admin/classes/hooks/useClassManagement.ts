@@ -79,7 +79,7 @@ export function useClassManagement() {
           memo: s.memo || '',
           isAdmin: ADMIN_NAMES.some(admin => displayTeacher.includes(admin)),
           roundInfo: roundStr,
-          themeColor: (s.session_type === 'regular_center' ? '#2563EB' : '#10B981'),
+          themeColor: (s.session_type === 'regular_center' || s.session_type === 'one_day_center' ? '#2563EB' : '#10B981'),
           mileageAction: s.mileage_option || '',
           roundIndex: s.round_index ?? undefined,
           roundTotal: s.round_total ?? undefined,

@@ -1,7 +1,7 @@
 // ===================================================================
 // 피드백 검증 로직 - 간소화 버전
 // ===================================================================
-// 필수: 3개 필드만, 사진은 선택사항
+// 필수: 5개 전항목, 사진은 선택사항
 // ===================================================================
 
 export interface FeedbackFields {
@@ -25,8 +25,8 @@ export interface SessionWithFeedback {
   photo_url?: string[];
   file_url?: string[];
   status?: string;
-  /** 센터 수업은 파일만 올려도 작성완료(done)로 간주 */
-  session_type?: 'regular_center' | 'regular_private' | 'one_day';
+  /** 센터 수업(regular_center, one_day_center)은 파일만 올려도 작성완료(done)로 간주 */
+  session_type?: 'regular_center' | 'regular_private' | 'one_day' | 'one_day_center' | 'one_day_private';
 }
 
 /**
@@ -44,7 +44,13 @@ export function calculateCompletionStatus(
   photoUrls: string[] = [],
   requiredPhotos: number = 0  // 사진은 선택사항
 ): CompletionStatus {
-  const requiredFields = ['main_activity', 'strengths', 'next_goals'];
+  const requiredFields = [
+    'main_activity',
+    'strengths',
+    'improvements',
+    'next_goals',
+    'condition_notes',
+  ];
   
   const completedFields = requiredFields.filter(field => 
     isFieldValid(feedbackFields[field as keyof FeedbackFields])
@@ -82,7 +88,9 @@ export function validateSessionCompletion(
     const fieldNames = {
       main_activity: '오늘 수업의 주요 활동',
       strengths: '강점 및 긍정적인 부분',
-      next_goals: '다음 수업 목표 및 계획'
+      improvements: '개선이 필요한 부분 및 피드백',
+      next_goals: '다음 수업 목표 및 계획',
+      condition_notes: '특이사항 및 시작/종료 시간',
     };
     
     const missingFieldNames = missingFields.map(
@@ -185,10 +193,20 @@ export function getSessionDisplayStatus(session: SessionWithFeedback): 'empty' |
   if (session.status === 'verified') return 'verified';
 
   const fileUrls = session.file_url ?? [];
-  if (session.session_type === 'regular_center' && fileUrls.length > 0) return 'done';
+  const isCenterCondition =
+    session.session_type === 'regular_center' || session.session_type === 'one_day_center';
+  if (isCenterCondition && fileUrls.length > 0) return 'done';
 
   const feedbackFields = session.feedback_fields || {};
-  const hasContent = feedbackFields.main_activity || feedbackFields.strengths || feedbackFields.next_goals;
+  const requiredFields: Array<keyof FeedbackFields> = [
+    'main_activity',
+    'strengths',
+    'improvements',
+    'next_goals',
+    'condition_notes',
+  ];
+
+  const hasContent = requiredFields.every(field => isFieldValid(feedbackFields[field]));
 
   return hasContent ? 'done' : 'empty';
 }

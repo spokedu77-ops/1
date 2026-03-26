@@ -396,9 +396,27 @@ function StudentCard({
 }
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────────────────────
-export default function DataCenterView({ onOpenSettings }: { onOpenSettings?: () => void }) {
-  const { students, loaded: studentsLoaded, syncing, syncError, refetch, addStudent, removeStudent, cycleStatus, markAllPresent, updatePhysical } =
-    useStudentStore();
+export default function DataCenterView({
+  onOpenSettings,
+  attendanceInlineClassGroup = null,
+}: {
+  onOpenSettings?: () => void;
+  /** 설정 시 전체 페이지 대신 해당 반 출결만 컴팩트하게 표시 (임베드·모달용). */
+  attendanceInlineClassGroup?: string | null;
+}) {
+  const {
+    students,
+    loaded: studentsLoaded,
+    syncing,
+    syncError,
+    refetch,
+    addStudent,
+    removeStudent,
+    cycleStatus,
+    setAttendanceStatus,
+    markAllPresent,
+    updatePhysical,
+  } = useStudentStore();
   const { classes, loaded: classesLoaded, createClass, renameClass, deleteClass } = useClassStore();
   const { badges, loaded: badgesLoaded } = useBadgeStore();
   const { ctx } = useProContext();
@@ -536,6 +554,69 @@ export default function DataCenterView({ onOpenSettings }: { onOpenSettings?: ()
           <RefreshCw className="w-4 h-4 animate-spin" />
           <span>데이터 불러오는 중...</span>
         </div>
+      </section>
+    );
+  }
+
+  if (attendanceInlineClassGroup != null && attendanceInlineClassGroup !== '') {
+    const list = students.filter((s) => s.classGroup === attendanceInlineClassGroup);
+    return (
+      <section className="px-4 py-4 space-y-3 rounded-2xl border border-slate-700 bg-slate-900/50">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+          출결 · {attendanceInlineClassGroup}
+        </p>
+        {list.length === 0 ? (
+          <p className="text-sm text-slate-500">이 반에 등록된 원생이 없습니다.</p>
+        ) : (
+          <ul className="space-y-2">
+            {list.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between gap-2 bg-slate-800/80 border border-slate-600 rounded-xl px-3 py-2"
+              >
+                <span className="text-white font-bold text-sm truncate">{s.name}</span>
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceStatus(s.id, 'present')}
+                    className={`p-2 rounded-lg border transition-colors ${
+                      s.status === 'present'
+                        ? 'bg-emerald-500/30 border-emerald-500 text-emerald-400'
+                        : 'border-slate-600 text-slate-500 hover:border-emerald-500/50'
+                    }`}
+                    aria-label="출석"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceStatus(s.id, 'late')}
+                    className={`p-2 rounded-lg border transition-colors ${
+                      s.status === 'late'
+                        ? 'bg-amber-500/30 border-amber-500 text-amber-400'
+                        : 'border-slate-600 text-slate-500 hover:border-amber-500/50'
+                    }`}
+                    aria-label="지각"
+                  >
+                    <Clock className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceStatus(s.id, 'absent')}
+                    className={`p-2 rounded-lg border transition-colors ${
+                      s.status === 'absent'
+                        ? 'bg-red-500/30 border-red-500 text-red-400'
+                        : 'border-slate-600 text-slate-500 hover:border-red-500/50'
+                    }`}
+                    aria-label="결석"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     );
   }

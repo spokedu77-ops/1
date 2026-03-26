@@ -24,7 +24,13 @@ declare global {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function AIReportView() {
+export default function AIReportView({
+  initialStudentId = null,
+  onConsumeInitialStudent,
+}: {
+  initialStudentId?: string | null;
+  onConsumeInitialStudent?: () => void;
+} = {}) {
   const { students } = useStudentStore();
   const { ctx } = useProContext();
 
@@ -59,6 +65,13 @@ export default function AIReportView() {
   const [viewingMeta, setViewingMeta] = useState<ReportMeta | null>(null);
 
   const reportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!initialStudentId) return;
+    setSelectedStudentId(initialStudentId);
+    setTab('create');
+    onConsumeInitialStudent?.();
+  }, [initialStudentId, onConsumeInitialStudent]);
 
   // 이전 리포트 선택 시 파싱해 viewing 설정
   useEffect(() => {

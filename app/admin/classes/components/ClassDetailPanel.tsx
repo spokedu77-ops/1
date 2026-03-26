@@ -24,6 +24,7 @@ interface SessionRow {
   price: number;
   round_index: number | null;
   round_total: number | null;
+  sequence_number?: number | null;
 }
 
 export default function ClassDetailPanel({
@@ -37,6 +38,7 @@ export default function ClassDetailPanel({
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [extendCount, setExtendCount] = useState(1);
+  const [reindexing, setReindexing] = useState(false);
 
   const loadSessions = useCallback(async () => {
     if (!supabase || !groupId) return;
@@ -45,7 +47,7 @@ export default function ClassDetailPanel({
       const { data, error } = await supabase
         .from('sessions')
         .select(
-          'id, title, start_at, end_at, status, created_by, price, round_index, round_total'
+          'id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number'
         )
         .eq('group_id', groupId)
         .order('start_at', { ascending: true });
@@ -121,6 +123,41 @@ export default function ClassDetailPanel({
     });
   };
 
+  const handleReindexRounds = async () => {
+    if (!supabase || !groupId) return;
+    if (sessions.length <= 1) return;
+    if (!confirm('현재 날짜 순서(start_at) 기준으로 회차 번호를 1..N으로 재정렬할까요?')) return;
+
+    setReindexing(true);
+    try {
+      const sorted = [...sessions].sort(
+        (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+      );
+      const total = sorted.length;
+
+      // group 단위로 round_total을 통일하고, start_at 순서대로 round_index를 부여
+      await Promise.all(
+        sorted.map((row, i) => {
+          return supabase
+            .from('sessions')
+            .update({
+              round_index: i + 1,
+              round_total: total,
+              sequence_number: i + 1,
+            })
+            .eq('id', row.id);
+        })
+      );
+
+      onChanged?.();
+      loadSessions();
+    } catch (err) {
+      devLogger.error(err);
+    } finally {
+      setReindexing(false);
+    }
+  };
+
   const visible = !!groupId;
   const title = sessions[0]?.title || '수업 상세';
 
@@ -166,6 +203,18 @@ export default function ClassDetailPanel({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-black text-slate-800">회차 목록</h3>
+                <button
+                  type="button"
+                  onClick={handleReindexRounds}
+                  disabled={reindexing || sessions.length <= 1}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-black border transition ${
+                    reindexing || sessions.length <= 1
+                      ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {reindexing ? '정렬 중...' : '회차 재정렬'}
+                </button>
               </div>
               <div className="overflow-x-auto rounded-2xl border border-slate-100">
                 <table className="min-w-full text-xs">
@@ -183,6 +232,7 @@ export default function ClassDetailPanel({
                     {sessions.map((s, idx) => {
                       const start = new Date(s.start_at);
                       const end = new Date(s.end_at);
+                      const nowMs = Date.now();
                       const dateStr = start.toISOString().split('T')[0];
                       const timeStr = start.toTimeString().slice(0, 5);
                       const statusLabel =
@@ -192,11 +242,15 @@ export default function ClassDetailPanel({
                           ? '취소'
                           : s.status === 'postponed'
                           ? '연기'
-                          : '예정';
+                          : nowMs < start.getTime()
+                          ? '예정'
+                          : nowMs < end.getTime()
+                          ? '진행중'
+                          : '시간경과';
                       return (
                         <tr key={s.id} className="border-t border-slate-100">
                           <td className="px-3 py-2 font-bold text-slate-700">
-                            {s.round_index}/{s.round_total}
+                            {(s.round_index ?? idx + 1)}/{s.round_total ?? sessions.length}
                           </td>
                           <td className="px-3 py-2">
                             <input
@@ -245,18 +299,34 @@ export default function ClassDetailPanel({
                             />
                           </td>
                           <td className="px-3 py-2 text-center">
-                            <span className="inline-flex px-2 py-1 rounded-full bg-slate-100 text-[10px] font-bold text-slate-700">
+                            <span
+                              className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold ${
+                                statusLabel === '취소'
+                                  ? 'bg-rose-50 text-rose-700'
+                                  : statusLabel === '연기'
+                                  ? 'bg-purple-50 text-purple-700'
+                                  : statusLabel === '완료'
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : statusLabel === '시간경과'
+                                  ? 'bg-amber-50 text-amber-800'
+                                  : statusLabel === '진행중'
+                                  ? 'bg-blue-50 text-blue-700'
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
                               {statusLabel}
                             </span>
                           </td>
                           <td className="px-3 py-2 text-center">
-                            <button
-                              type="button"
-                              className="px-2 py-1 text-[10px] font-bold rounded-full bg-violet-50 text-violet-600 mr-1"
-                              onClick={() => handlePostpone(s.id)}
-                            >
-                              연기
-                            </button>
+                            <div className="inline-flex items-center justify-center whitespace-nowrap min-w-[56px]">
+                              <button
+                                type="button"
+                                className="inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-[10px] font-black rounded-full bg-violet-50 text-violet-600 hover:bg-violet-100"
+                                onClick={() => handlePostpone(s.id)}
+                              >
+                                연기
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

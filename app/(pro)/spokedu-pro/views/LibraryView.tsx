@@ -77,12 +77,18 @@ function SkeletonCard() {
 
 export default function LibraryView({
   onOpenDetail,
+  onSelectProgram,
   initialPreset = null,
   programDetails = {},
+  compact = false,
 }: {
   onOpenDetail: (id: number, context?: { role?: string; themeKey?: string }) => void;
+  /** 설정 시 카드 클릭으로 프로그램 선택(드로어 대신). */
+  onSelectProgram?: (id: number) => void;
   initialPreset?: { themeKey?: string; preset?: string } | null;
   programDetails?: Record<string, ProgramDetail>;
+  /** 슬라이드 패널 등 좁은 영역용(헤더·필터 일부 축소). */
+  compact?: boolean;
 }) {
   const [functionType, setFunctionType] = useState<string>('');
   const [mainTheme, setMainTheme] = useState<string>('');
@@ -146,16 +152,19 @@ export default function LibraryView({
   };
   const hasActiveFilters = functionType !== '' || mainTheme !== '' || groupSize !== '' || search.trim() !== '';
 
+  const selectionMode = typeof onSelectProgram === 'function';
+
   return (
-    <section className="px-4 sm:px-8 lg:px-16 py-12 pb-32 space-y-8">
-      <header className="space-y-6">
+    <section className={compact ? 'px-3 py-4 pb-8 space-y-4' : 'px-4 sm:px-8 lg:px-16 py-12 pb-32 space-y-8'}>
+      <header className={compact ? 'space-y-3' : 'space-y-6'}>
         <div className="flex items-end justify-between flex-wrap gap-3">
-          <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-            프로그램 뱅크
+          <h2 className={compact ? 'text-xl font-black text-white tracking-tight' : 'text-3xl md:text-4xl font-black text-white tracking-tight'}>
+            {selectionMode ? '프로그램 선택' : '프로그램 뱅크'}
           </h2>
           <span className="text-slate-400 text-sm font-medium">{filteredPrograms.length}개</span>
         </div>
 
+        {!compact && (
         <div className="flex flex-wrap gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">기능</span>
           {FUNCTION_TYPES.map((t) => (
@@ -173,6 +182,8 @@ export default function LibraryView({
             </button>
           ))}
         </div>
+        )}
+        {!compact && (
         <div className="flex flex-wrap gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">테마</span>
           {MAIN_THEMES.map((t) => (
@@ -190,6 +201,8 @@ export default function LibraryView({
             </button>
           ))}
         </div>
+        )}
+        {!compact && (
         <div className="flex flex-wrap gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">인원</span>
           {GROUP_SIZES.map((t) => (
@@ -207,6 +220,7 @@ export default function LibraryView({
             </button>
           ))}
         </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">
@@ -242,7 +256,13 @@ export default function LibraryView({
       </header>
 
       {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+        <div
+          className={
+            compact
+              ? 'grid grid-cols-2 gap-3'
+              : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6'
+          }
+        >
           {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       )}
@@ -264,7 +284,13 @@ export default function LibraryView({
       )}
 
       {!isLoading && filteredPrograms.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+        <div
+          className={
+            compact
+              ? 'grid grid-cols-2 gap-3'
+              : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6'
+          }
+        >
           {filteredPrograms.map((p) => {
                 const detail = programDetails[String(p.id)];
                 const videoUrl = detail?.videoUrl ?? p.video_url;
@@ -276,7 +302,9 @@ export default function LibraryView({
                     title={detail?.title ?? p.title}
                     tags={tags}
                     thumbnailUrl={thumbnailUrl}
-                    onClick={() => onOpenDetail(p.id, undefined)}
+                    onClick={() =>
+                      selectionMode ? onSelectProgram!(p.id) : onOpenDetail(p.id, undefined)
+                    }
                   />
                 );
               })}

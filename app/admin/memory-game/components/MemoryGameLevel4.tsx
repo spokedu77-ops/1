@@ -7,7 +7,6 @@ import { CSS } from '../styles';
 
 const TOTAL = 10;
 const QA_COUNT = 5;
-const SHOW_MS = 1000;
 
 type L4Phase = 'idle' | 'showing' | 'qa_ready' | 'qa_question' | 'qa_answer' | 'done';
 
@@ -15,10 +14,12 @@ export function MemoryGameLevel4({
   onExit,
   onComplete,
   audioMode,
+  speedSec,
 }: {
   onExit: () => void;
   onComplete: () => void;
   audioMode: string;
+  speedSec: number;
 }) {
   const [items] = useState<Level4Item[]>(() => generateLevel4Pattern());
   const [showIdx, setShowIdx] = useState(-1);
@@ -39,6 +40,8 @@ export function MemoryGameLevel4({
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = null;
   };
+
+  const showMs = Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
 
   const runSequence = useCallback((idx: number) => {
     if (idx >= TOTAL) {
@@ -65,15 +68,15 @@ export function MemoryGameLevel4({
         if (audioMode === 'beep') playBeep('blip');
         setShowIdx(idx);
         setPhase('showing');
-        timerRef.current = setTimeout(() => runSequence(idx + 1), SHOW_MS);
+        timerRef.current = setTimeout(() => runSequence(idx + 1), showMs);
       }, 100);
     } else {
       if (audioMode === 'beep') playBeep('blip');
       setShowIdx(idx);
       setPhase('showing');
-      timerRef.current = setTimeout(() => runSequence(idx + 1), SHOW_MS);
+      timerRef.current = setTimeout(() => runSequence(idx + 1), showMs);
     }
-  }, [items, audioMode]);
+  }, [items, audioMode, showMs]);
 
   useEffect(() => {
     timerRef.current = setTimeout(() => runSequence(0), 600);
@@ -221,7 +224,7 @@ export function MemoryGameLevel4({
               질문 {qaIdx + 1} / {QA_COUNT}
             </div>
             <div style={{ fontSize: 'clamp(1.5rem,5vw,2.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.35 }}>
-              <span style={{ color: '#FCD34D', fontSize: 'clamp(2rem,6vw,3.5rem)' }}>{currentQA.num}번</span>에는<br />무슨 색깔이었나요?
+              <span style={{ color: '#FCD34D', fontSize: 'clamp(2rem,6vw,3.5rem)' }}>숫자 {currentQA.num}</span>은<br />무슨 색깔이었을까요?
             </div>
             <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.3)', marginTop: '1rem', fontWeight: 500 }}>
               학생이 먼저 말하면 정답을 확인하세요

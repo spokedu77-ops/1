@@ -36,7 +36,7 @@ export default function Curriculum() {
               gap: 8,
             }}
           >
-            {CURRICULUM_WEEKS.map(({ week, title, subtitle }) => (
+            {CURRICULUM_WEEKS.map(({ week, title, subtitle, phase }) => (
               <div
                 key={week}
                 role="listitem"
@@ -52,11 +52,18 @@ export default function Curriculum() {
                 }}
               >
                 <small style={{ color: 'var(--gym-muted2)', fontSize: 11 }}>W{week}</small>
+                <span style={{ fontSize: 10, color: 'var(--gym-accent)', border: '1px solid var(--gym-line)', borderRadius: 999, padding: '2px 6px', width: 'fit-content' }}>
+                  {phase}
+                </span>
                 <b style={{ fontSize: 12, lineHeight: 1.25 }}>{title}</b>
                 <i style={{ fontStyle: 'normal', fontSize: 11, color: 'rgba(234,240,255,.86)', opacity: 0.92 }}>{subtitle}</i>
               </div>
             ))}
           </div>
+        </div>
+        <div className="gym-card" style={{ marginTop: 12 }}>
+          <h3>12주 후 기대 변화</h3>
+          <p>수업 참여의 안정성, 규칙 전환 반응, 게임/스포츠 적용력이 정리된 상태에서 다음 분기 목표를 시작합니다.</p>
         </div>
       </div>
     </section>

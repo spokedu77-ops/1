@@ -10,18 +10,19 @@ import { CSS } from '../styles';
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
 
 const TOTAL = MEMORY_ROUNDS;
-const COLOR_SHOW_MS = 1000;
 
 export function MemoryGame({
   level,
   onExit,
   onComplete,
   audioMode,
+  speedSec,
 }: {
   level: number;
   onExit: () => void;
   onComplete: (patterns: ColorItem[][]) => void;
   audioMode: string;
+  speedSec: number;
 }) {
   const [patterns] = useState<ColorItem[][]>(() => Array.from({ length: TOTAL }, () => generateMemoryPattern(level)));
   const [round, setRound] = useState(0);
@@ -31,6 +32,8 @@ export function MemoryGame({
   const [summaryReady, setSummaryReady] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevMemBgRef = useRef<string | null>(null);
+
+  const colorShowMs = Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
 
   const clear = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -57,15 +60,15 @@ export function MemoryGame({
         if (audioMode === 'beep') playBeep('mid');
         setColorIdx(idx);
         setPhase('showing');
-        timerRef.current = setTimeout(() => runSequence(pattern, idx + 1), COLOR_SHOW_MS);
+        timerRef.current = setTimeout(() => runSequence(pattern, idx + 1), colorShowMs);
       }, 90);
     } else {
       if (audioMode === 'beep') playBeep('mid');
       setColorIdx(idx);
       setPhase('showing');
-      timerRef.current = setTimeout(() => runSequence(pattern, idx + 1), COLOR_SHOW_MS);
+      timerRef.current = setTimeout(() => runSequence(pattern, idx + 1), colorShowMs);
     }
-  }, [audioMode]);
+  }, [audioMode, colorShowMs]);
 
   const startRound = useCallback(
     (r: number) => {

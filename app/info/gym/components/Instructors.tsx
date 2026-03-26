@@ -9,35 +9,37 @@ export default function Instructors() {
         <div className="gym-section-head">
           <div className="gym-kicker">선생님 소개</div>
           <h2 id="instructorsHeading" className="gym-section-title">
-            검증된 체육교육 전문가 그룹
+            강사진 소개
           </h2>
           <p className="gym-section-desc">
-            연세대학교 체육교육 전공진의 엄격한 기준을 통과한 전문 강사진이 함께합니다.
+            강사 사진과 프로필을 분리하지 않고, 수업 철학과 운영 경험을 한 섹션에서 확인할 수 있게 구성했습니다.
           </p>
         </div>
         <div className="gym-grid-3">
           {INSTRUCTORS.map((inst) => (
-            <div key={inst.id} className="gym-card" style={{ padding: 20 }}>
+            <article key={inst.id} className="gym-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div
+                style={{
+                  aspectRatio: '4 / 3',
+                  background: 'linear-gradient(135deg, rgba(200,243,74,.18), rgba(139,233,255,.18))',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: 'rgba(234,240,255,.75)',
+                }}
+              >
+                <span style={{ fontSize: 30, color: 'rgba(234,240,255,.45)' }}>{inst.name.charAt(0)}</span>
+                <span>수업 리더</span>
+              </div>
+              <div style={{ padding: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--gym-accent), var(--gym-accent2))',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: 'var(--gym-bg)',
-                  }}
-                >
-                  {inst.name.charAt(0)}
-                </div>
                 <div>
                   <h4 style={{ margin: 0, fontSize: 16 }}>{inst.name}</h4>
-                  <span style={{ fontSize: 12, color: 'var(--gym-muted2)' }}>{inst.tag}</span>
+                    <span style={{ fontSize: 12, color: 'var(--gym-muted2)' }}>{inst.tag} · {inst.yearsExp}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
@@ -57,8 +59,12 @@ export default function Instructors() {
                   </span>
                 ))}
               </div>
-              <p style={{ margin: 0, fontSize: 14, color: 'var(--gym-muted)', lineHeight: 1.5 }}>{inst.desc}</p>
-            </div>
+                <p style={{ margin: '0 0 8px', fontSize: 14, color: 'var(--gym-text)', lineHeight: 1.5 }}>
+                  {inst.philosophy}
+                </p>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--gym-muted)', lineHeight: 1.5 }}>{inst.desc}</p>
+              </div>
+            </article>
           ))}
         </div>
       </div>

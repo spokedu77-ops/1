@@ -28,7 +28,9 @@ import { MILEAGE_ACTIONS } from './constants/mileage';
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   regular_private: { bg: '#ECFDF5', border: '#10B981', text: '#065F46' },
   regular_center: { bg: '#EFF6FF', border: '#2563EB', text: '#1E3A8A' },
+  one_day_center: { bg: '#EFF6FF', border: '#2563EB', text: '#1E3A8A' },
   one_day: { bg: '#FFF7ED', border: '#FB923C', text: '#9A3412' },
+  one_day_private: { bg: '#ECFDF5', border: '#10B981', text: '#065F46' },
 };
 
 const STATUS_COLORS = {

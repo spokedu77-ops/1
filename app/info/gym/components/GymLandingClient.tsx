@@ -1,21 +1,22 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Header from './Header';
 import Hero from './Hero';
+import TrustAssetsBar from './TrustAssetsBar';
 import Intro from './Intro';
+import Media from './Media';
 import TargetAudience from './TargetAudience';
 import Curriculum from './Curriculum';
 import Instructors from './Instructors';
-import InstructorPhotos from './InstructorPhotos';
-import Media from './Media';
-import Schedule from './Schedule';
-import Pricing from './Pricing';
+import WeeklyStructure from './WeeklyStructure';
 import Report from './Report';
 import Reviews from './Reviews';
+import Schedule from './Schedule';
+import Pricing from './Pricing';
+import ContactForm from './ContactForm';
 import FAQ from './FAQ';
 import Location from './Location';
-import Parking from './Parking';
-import ContactForm from './ContactForm';
 import Footer from './Footer';
 import { GYM_CONFIG } from '../data/config';
 
@@ -24,30 +25,47 @@ function scrollToId(id: string) {
 }
 
 export default function GymLandingClient() {
+  const [showMobileCta, setShowMobileCta] = useState(false);
+
+  useEffect(() => {
+    const hero = document.querySelector('.gym-hero');
+    if (!hero) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowMobileCta(!entry.isIntersecting);
+      },
+      { threshold: 0.2 }
+    );
+
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="gym-landing">
       <Header />
       <main id="top">
         <Hero />
+        <TrustAssetsBar />
         <Intro />
+        <Media />
         <TargetAudience />
         <Curriculum />
         <Instructors />
-        <InstructorPhotos />
-        <Media />
+        <Reviews />
+        <WeeklyStructure />
+        <Report />
+        <ContactForm />
+        <FAQ />
         <Schedule />
         <Pricing />
-        <Report />
-        <Reviews />
-        <FAQ />
         <Location />
-        <Parking />
-        <ContactForm />
+        <Footer />
       </main>
-      <Footer />
 
       {/* CTA bar (mobile) */}
-      <div className="gym-cta-bar" aria-label="빠른 문의">
+      <div className={`gym-cta-bar ${showMobileCta ? 'show' : ''}`} aria-label="빠른 문의">
         <a className="gym-btn ghost" href={`tel:${GYM_CONFIG.phoneParts.join('')}`} aria-label="전화 문의">
           전화
         </a>
@@ -55,7 +73,7 @@ export default function GymLandingClient() {
           카카오
         </button>
         <button type="button" className="gym-btn primary" onClick={() => scrollToId('contact')}>
-          상담 신청
+          체험 수업 신청
         </button>
       </div>
     </div>

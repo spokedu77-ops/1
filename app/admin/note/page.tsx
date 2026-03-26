@@ -70,7 +70,7 @@ type NoteDocument = {
 type NoteBlock = {
   id: string;
   document_id: string;
-  type: 'heading' | 'text' | 'todo' | 'divider' | 'image' | string;
+  type: 'heading' | 'text' | 'todo' | 'divider' | 'image' | 'toggle' | 'callout' | 'page' | string;
   order_index: number;
   content: any;
   created_at: string;
@@ -87,6 +87,7 @@ const BLOCK_TYPES: { type: NoteBlock['type']; label: string; icon: React.Element
   { type: 'heading',  label: '제목',      icon: Type,        desc: '큰 제목 블록' },
   { type: 'text',     label: '텍스트',    icon: FileText,    desc: '일반 텍스트' },
   { type: 'todo',     label: '체크리스트', icon: CheckSquare, desc: '할 일 목록' },
+  { type: 'page',     label: '문서',      icon: FileText,    desc: '클릭하면 열리는 문서 링크' },
   { type: 'toggle',   label: '토글',      icon: ChevronDown, desc: '접고 펼치는 섹션' },
   { type: 'callout',  label: '콜아웃',    icon: MessageSquareQuote, desc: '강조 메시지' },
   { type: 'divider',  label: '구분선',    icon: Minus,       desc: '가로 구분선' },
@@ -234,6 +235,9 @@ function BlockContent({
   onDelete,
   onChangeType,
   onEnter,
+  onOpenDocument,
+  onShowFormatToolbar,
+  onHideFormatToolbar,
   isDragging,
 }: {
   block: NoteBlock;
@@ -241,6 +245,9 @@ function BlockContent({
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
+  onOpenDocument?: (documentId: string) => void;
+  onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
+  onHideFormatToolbar?: () => void;
   isDragging?: boolean;
 }) {
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -251,12 +258,71 @@ function BlockContent({
   const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
   const supportsFormatting = ['text', 'todo', 'heading', 'callout', 'toggle'].includes(block.type);
 
-  const handleSelectionChange = () => {
+  const INDENT = '  '; // 2 spaces
+
+  const applyIndent = (direction: 'in' | 'out') => {
     const el = textRef.current;
-    setHasSelection(!!el && el.selectionStart !== el.selectionEnd);
+    if (!el) return;
+    const currentText = typeof block.content?.text === 'string' ? block.content.text : '';
+    const rawStart = el.selectionStart ?? 0;
+    const rawEnd = el.selectionEnd ?? 0;
+    const start = Math.min(rawStart, rawEnd);
+    const end = Math.max(rawStart, rawEnd);
+
+    // 선택 영역이 포함된 라인들 기준으로 들여쓰기/내어쓰기
+    const lineStart = currentText.lastIndexOf('\n', start - 1) + 1; // -1이면 0
+    const lineEndBase = currentText.indexOf('\n', end);
+    const lineEnd = lineEndBase === -1 ? currentText.length : lineEndBase;
+    const selectedChunk = currentText.slice(lineStart, lineEnd);
+    const lines: string[] = selectedChunk.split('\n');
+
+    let deltaStart = 0;
+    let deltaEnd = 0;
+
+    const nextLines = lines.map((line: string, idx: number) => {
+      if (direction === 'in') {
+        if (idx === 0) deltaStart += INDENT.length;
+        deltaEnd += INDENT.length;
+        return `${INDENT}${line}`;
+      }
+      // out
+      if (line.startsWith(INDENT)) {
+        if (idx === 0) deltaStart -= INDENT.length;
+        deltaEnd -= INDENT.length;
+        return line.slice(INDENT.length);
+      }
+      if (line.startsWith('\t')) {
+        if (idx === 0) deltaStart -= 1;
+        deltaEnd -= 1;
+        return line.slice(1);
+      }
+      return line;
+    });
+
+    const replaced = nextLines.join('\n');
+    const nextText = `${currentText.slice(0, lineStart)}${replaced}${currentText.slice(lineEnd)}`;
+
+    onUpdate({ ...block.content, text: nextText });
+    requestAnimationFrame(() => {
+      const nextEl = textRef.current;
+      if (!nextEl) return;
+      const nextSelStart = Math.max(0, start + deltaStart);
+      const nextSelEnd = Math.max(nextSelStart, end + deltaEnd);
+      nextEl.focus();
+      nextEl.setSelectionRange(nextSelStart, nextSelEnd);
+    });
   };
 
-  const applyMark = (mark: InlineMark) => {
+  const handleSelectionChange = () => {
+    const el = textRef.current;
+    const selected = !!el && el.selectionStart !== el.selectionEnd;
+    setHasSelection(selected);
+    if (!supportsFormatting) return;
+    if (selected) onShowFormatToolbar?.(applyMark);
+    else onHideFormatToolbar?.();
+  };
+
+  const applyMark = useCallback((mark: InlineMark) => {
     if (!textRef.current) return;
     const start = textRef.current.selectionStart ?? 0;
     const end = textRef.current.selectionEnd ?? 0;
@@ -265,11 +331,12 @@ function BlockContent({
     setRenderMode('formatted');
     onUpdate({ ...block.content, text: result.text });
     requestAnimationFrame(() => {
-      if (!textRef.current) return;
-      textRef.current.focus();
-      textRef.current.setSelectionRange(result.selectionStart, result.selectionEnd);
+      // 서식 적용 후 강제 focus 재진입을 막아 raw 토큰(**, __ 등)이 즉시 보이는 현상을 방지
+      setHasSelection(false);
+      onHideFormatToolbar?.();
     });
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [block.content, onHideFormatToolbar, onUpdate]);
 
   const autoResize = useCallback(() => {
     const el = textRef.current;
@@ -284,8 +351,8 @@ function BlockContent({
     if (e.key === 'Escape') { setShowSlash(false); return; }
     if (e.key === 'Tab') {
       e.preventDefault();
-      const nextDepth = e.shiftKey ? Math.max(0, blockDepth - 1) : Math.min(6, blockDepth + 1);
-      onUpdate({ ...block.content, depth: nextDepth });
+      // Tab은 블록 depth가 아니라, 블록 내부 텍스트 들여쓰기/내어쓰기
+      applyIndent(e.shiftKey ? 'out' : 'in');
       return;
     }
     const lower = e.key.toLowerCase();
@@ -316,72 +383,32 @@ function BlockContent({
     autoResize();
   };
 
-  const renderFormatToolbar = () => {
-    if (!supportsFormatting || !hasSelection) return null;
-    const buttons: { mark: InlineMark; label: string; icon: React.ElementType }[] = [
-      { mark: 'bold', label: '굵게 (Ctrl+B)', icon: Bold },
-      { mark: 'italic', label: '기울임 (Ctrl+I)', icon: Italic },
-      { mark: 'underline', label: '밑줄 (Ctrl+U)', icon: UnderlineIcon },
-      { mark: 'strike', label: '취소선 (Ctrl+Shift+X)', icon: Strikethrough },
-      { mark: 'code', label: '코드 (Ctrl+`)', icon: Code2 },
-    ];
-    return (
-      <div className="absolute -top-10 left-0 z-30 flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white px-1.5 py-1.5 shadow-lg">
-        {buttons.map(({ mark, label, icon: Icon }) => (
-          <button
-            key={mark}
-            type="button"
-            title={label}
-            className="rounded px-1.5 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => applyMark(mark)}
-          >
-            <Icon className="h-3.5 w-3.5" />
-          </button>
-        ))}
-      </div>
-    );
-  };
+  const renderFormatToolbar = () => null;
 
   const renderFormattedTextarea = ({
     text,
     placeholder,
     textClassName,
     placeholderClassName = 'text-slate-300',
+    field = 'text',
   }: {
     text: string;
     placeholder: string;
     textClassName: string;
     placeholderClassName?: string;
+    field?: 'text' | 'body';
   }) => {
     const hasText = text.length > 0;
-    const formattedMode = renderMode === 'formatted';
-
-    if (!formattedMode) {
-      return (
-        <textarea
-          ref={textRef}
-          rows={1}
-          className={`w-full resize-none overflow-hidden bg-transparent ${textClassName} caret-slate-800 selection:bg-blue-200/60 selection:text-slate-900 outline-none placeholder:text-slate-400`}
-          placeholder={placeholder}
-          value={text}
-          onChange={(e) => handleChange(e)}
-          onKeyDown={handleKeyDown}
-          onSelect={handleSelectionChange}
-          onFocus={() => setRenderMode('editing')}
-          onBlur={() => {
-            setHasSelection(false);
-            setRenderMode('formatted');
-          }}
-        />
-      );
-    }
+    const formattedMode = true; // 항상 서식 렌더 유지 (WYSIWYG에 가깝게)
 
     return (
       <div className="relative">
+        {/* formatted preview layer (same textarea DOM 유지) */}
         <div
           aria-hidden
-          className={`pointer-events-none absolute inset-0 whitespace-pre-wrap break-words ${textClassName}`}
+          className={`pointer-events-none absolute inset-0 whitespace-pre-wrap break-words ${textClassName} ${
+            formattedMode ? 'opacity-100' : 'opacity-0'
+          }`}
         >
           {hasText ? (
             <span dangerouslySetInnerHTML={{ __html: parseInlineMarkupToHtml(text) }} />
@@ -392,15 +419,20 @@ function BlockContent({
         <textarea
           ref={textRef}
           rows={1}
-          className={`relative w-full resize-none overflow-hidden bg-transparent ${textClassName} text-transparent caret-slate-800 selection:bg-blue-200/60 selection:text-slate-900 outline-none placeholder:transparent`}
+          className={`relative w-full resize-none overflow-hidden bg-transparent ${textClassName} text-transparent caret-slate-800 selection:bg-blue-200/60 selection:text-transparent outline-none placeholder:transparent`}
+          style={{ WebkitTextFillColor: 'transparent' }}
           placeholder={placeholder}
           value={text}
-          onChange={(e) => handleChange(e)}
+          onChange={(e) => handleChange(e, field)}
           onKeyDown={handleKeyDown}
           onSelect={handleSelectionChange}
-          onFocus={() => setRenderMode('formatted')}
+          onFocus={() => {
+            setRenderMode('editing');
+            requestAnimationFrame(() => autoResize());
+          }}
           onBlur={() => {
             setHasSelection(false);
+            onHideFormatToolbar?.();
             setRenderMode('formatted');
           }}
         />
@@ -508,6 +540,44 @@ function BlockContent({
     );
   }
 
+  if (block.type === 'page') {
+    const pageId = typeof block.content?.page_document_id === 'string' ? block.content.page_document_id : '';
+    const title =
+      (typeof block.content?.title === 'string' && block.content.title.trim())
+        ? block.content.title
+        : '문서';
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        className="w-full cursor-pointer select-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50/50 hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        onClick={() => { if (pageId) onOpenDocument?.(pageId); }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (pageId) onOpenDocument?.(pageId);
+          }
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <FileText className="h-4 w-4 shrink-0 text-blue-600" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14px] font-semibold text-slate-800">{title}</p>
+            <p className="mt-0.5 text-[11px] text-slate-400">클릭하여 문서 열기</p>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 rounded p-1 text-slate-300 hover:text-rose-400"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            title="블록 삭제"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (block.type === 'callout') {
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     const icon = typeof block.content?.icon === 'string' && block.content.icon.trim() ? block.content.icon : '💡';
@@ -540,7 +610,10 @@ function BlockContent({
   }
 
   if (block.type === 'toggle') {
-    const text = typeof block.content?.text === 'string' ? block.content.text : '';
+    const title = typeof block.content?.title === 'string'
+      ? block.content.title
+      : (typeof block.content?.text === 'string' ? block.content.text : '');
+    const body = typeof block.content?.body === 'string' ? block.content.body : '';
     const collapsed = !!block.content?.collapsed;
     return (
       <div className="relative rounded-lg border border-slate-200 bg-white px-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
@@ -552,7 +625,12 @@ function BlockContent({
           >
             <ChevronDown className="h-4 w-4 text-slate-500" />
           </button>
-          <span className="flex-1 text-xs font-semibold text-slate-500">토글</span>
+          <input
+            value={title}
+            onChange={(e) => onUpdate({ ...block.content, title: e.target.value, body, collapsed })}
+            className="flex-1 bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+            placeholder="토글 제목"
+          />
           <button
             type="button"
             className="shrink-0 rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-rose-400"
@@ -565,10 +643,11 @@ function BlockContent({
           <>
             {renderFormatToolbar()}
             {renderFormattedTextarea({
-              text,
-              placeholder: '토글 내용을 입력하세요',
+              text: body,
+              placeholder: '토글 본문을 입력하세요',
               textClassName: 'text-[15px] leading-7 text-slate-800',
               placeholderClassName: 'text-slate-400',
+              field: 'body',
             })}
           </>
         )}
@@ -609,12 +688,18 @@ function SortableBlockRow({
   onDelete,
   onChangeType,
   onEnter,
+  onOpenDocument,
+  onShowFormatToolbar,
+  onHideFormatToolbar,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
+  onOpenDocument?: (documentId: string) => void;
+  onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
+  onHideFormatToolbar?: () => void;
 }) {
   const {
     attributes,
@@ -659,6 +744,9 @@ function SortableBlockRow({
           onDelete={onDelete}
           onChangeType={onChangeType}
           onEnter={onEnter}
+          onOpenDocument={onOpenDocument}
+          onShowFormatToolbar={onShowFormatToolbar}
+          onHideFormatToolbar={onHideFormatToolbar}
           isDragging={isDragging}
         />
       </div>
@@ -708,11 +796,13 @@ export default function AdminNotePage() {
   const [sortKey, setSortKey] = useState<SortKey>('recent');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const [formatToolbar, setFormatToolbar] = useState<{ applyMark: (mark: InlineMark) => void } | null>(null);
 
   const saveTimersRef = useRef<Record<string, number | undefined>>({});
   const savedTimerRef = useRef<number | undefined>(undefined);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
+  const blocksRef = useRef<NoteBlock[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -813,6 +903,10 @@ export default function AdminNotePage() {
     };
     load();
   }, [selectedId]);
+
+  useEffect(() => {
+    blocksRef.current = blocks;
+  }, [blocks]);
 
   /* presence: 문서 선택 시 1회만 호출 */
   useEffect(() => {
@@ -917,6 +1011,20 @@ export default function AdminNotePage() {
     router.replace(`/admin/note?id=${encodeURIComponent(doc.id)}`);
   };
 
+  const handleOpenDocumentById = useCallback((documentId: string) => {
+    setSelectedId(documentId);
+    setMobileTab('editor');
+    router.replace(`/admin/note?id=${encodeURIComponent(documentId)}`);
+  }, [router]);
+
+  const showFormatToolbar = useCallback((applyMark: (mark: InlineMark) => void) => {
+    setFormatToolbar({ applyMark });
+  }, []);
+
+  const hideFormatToolbar = useCallback(() => {
+    setFormatToolbar(null);
+  }, []);
+
   const handleCreateDocument = async (parentId: string | null = null) => {
     try {
       setLoadingState('loading'); setError(null);
@@ -939,11 +1047,29 @@ export default function AdminNotePage() {
   const handleRenameDocument = (docId: string, title: string) => {
     const safeTitle = title.trim() || '제목 없음';
     setDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, title } : d)));
+    setBlocks((prev) =>
+      prev.map((b) => (
+        b.type === 'page' && b.content?.page_document_id === docId
+          ? { ...b, content: { ...b.content, title: safeTitle } }
+          : b
+      )),
+    );
     const timers = saveTimersRef.current;
     if (timers[`doc_${docId}`]) clearTimeout(timers[`doc_${docId}`]);
     timers[`doc_${docId}`] = window.setTimeout(async () => {
       try {
         await fetch('/api/admin/note/documents', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: docId, title: safeTitle }) });
+        const linkedPageBlocks = blocksRef.current.filter((b) => b.type === 'page' && b.content?.page_document_id === docId);
+        await Promise.all(
+          linkedPageBlocks.map((b) =>
+            fetch('/api/admin/note/blocks', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ id: b.id, content: { ...(b.content ?? {}), title: safeTitle } }),
+            }),
+          ),
+        );
         triggerSave();
       } catch (e) { devLogger.error('[Note] renameDoc', e); }
     }, 600);
@@ -973,12 +1099,47 @@ export default function AdminNotePage() {
     if (!selectedId) return;
     try {
       setLoadingState('saving');
+      if (type === 'page') {
+        const createDocRes = await fetch('/api/admin/note/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: '새 문서',
+            parent_id: selectedId, // 현재 문서의 하위 문서로 생성
+          }),
+        });
+        if (!createDocRes.ok) {
+          const j = await createDocRes.json().catch(() => null);
+          throw new Error(j?.error || '문서 생성 실패');
+        }
+        const created = (await createDocRes.json()) as { document: NoteDocument };
+        const newDoc = created.document;
+        setDocuments((prev) => [newDoc, ...prev]);
+
+        const pageBlockContent = { page_document_id: newDoc.id, title: newDoc.title };
+        const res = await fetch('/api/admin/note/blocks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ documentId: selectedId, type: 'page', content: pageBlockContent }),
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => null);
+          throw new Error(j?.error || '문서 블록 추가 실패');
+        }
+        const json = (await res.json()) as { block: NoteBlock };
+        setBlocks((prev) => [...prev, json.block]);
+        triggerSave();
+        return;
+      }
       const defaultContent =
         type === 'heading' ? { text: '' }
         : type === 'todo' ? { text: '', checked: false }
-        : type === 'toggle' ? { text: '', collapsed: false, depth: 0 }
+        : type === 'toggle' ? { title: '', body: '', collapsed: false, depth: 0 }
         : type === 'callout' ? { text: '', icon: '💡', depth: 0 }
         : type === 'divider' ? {}
+        : type === 'page' ? { page_document_id: '', title: '문서' }
         : { text: '', depth: 0 };
       const res = await fetch('/api/admin/note/blocks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ documentId: selectedId, type, content: defaultContent }) });
       if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 추가 실패'); }
@@ -1006,9 +1167,10 @@ export default function AdminNotePage() {
     const defaultContent =
       type === 'heading' ? { text: '' }
       : type === 'todo' ? { text: '', checked: false }
-      : type === 'toggle' ? { text: '', collapsed: false, depth: 0 }
+      : type === 'toggle' ? { title: '', body: '', collapsed: false, depth: 0 }
       : type === 'callout' ? { text: '', icon: '💡', depth: 0 }
       : type === 'divider' ? {}
+      : type === 'page' ? { page_document_id: '', title: '문서' }
       : { text: '', depth: 0 };
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, type, content: defaultContent } : b)));
     try {
@@ -1244,6 +1406,44 @@ export default function AdminNotePage() {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto">
+              <div className="sticky top-0 z-40 border-b border-slate-100 bg-white/90 backdrop-blur">
+                <div className="mx-auto flex max-w-3xl items-center gap-1 px-4 py-2 md:px-16">
+                  {formatToolbar ? (
+                    <>
+                      {([
+                        { mark: 'bold' as const, label: '굵게 (Ctrl+B)', icon: Bold },
+                        { mark: 'italic' as const, label: '기울임 (Ctrl+I)', icon: Italic },
+                        { mark: 'underline' as const, label: '밑줄 (Ctrl+U)', icon: UnderlineIcon },
+                        { mark: 'strike' as const, label: '취소선 (Ctrl+Shift+X)', icon: Strikethrough },
+                        { mark: 'code' as const, label: '코드 (Ctrl+`)', icon: Code2 },
+                      ] as const).map(({ mark, label, icon: Icon }) => (
+                        <button
+                          key={mark}
+                          type="button"
+                          title={label}
+                          className="rounded-lg px-2 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => formatToolbar.applyMark(mark)}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </button>
+                      ))}
+                      <span className="ml-2 text-[11px] font-medium text-slate-400">선택 영역 서식</span>
+                    </>
+                  ) : (
+                    <span className="text-[11px] font-medium text-slate-400">텍스트를 드래그하면 서식 툴바가 여기에 표시됩니다</span>
+                  )}
+                </div>
+                <div className="mx-auto flex max-w-3xl flex-wrap gap-2 px-4 pb-2 md:px-16">
+                  {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
+                    <button key={type} type="button" onClick={() => handleAddBlock(type)}
+                      className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-medium text-slate-600 shadow-sm transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 hover:shadow"
+                    >
+                      <Icon className="h-3.5 w-3.5" />{label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="mx-auto max-w-3xl px-4 py-10 md:px-16">
 
                 {/* 문서 큰 제목 */}
@@ -1313,6 +1513,9 @@ export default function AdminNotePage() {
                           onDelete={() => handleDeleteBlock(block)}
                           onChangeType={(type) => handleChangeBlockType(block, type)}
                           onEnter={() => handleAddBlock('text')}
+                          onOpenDocument={handleOpenDocumentById}
+                          onShowFormatToolbar={showFormatToolbar}
+                          onHideFormatToolbar={hideFormatToolbar}
                         />
                       ))}
                     </div>
@@ -1323,17 +1526,6 @@ export default function AdminNotePage() {
                     {activeBlock ? <DragPreview block={activeBlock} /> : null}
                   </DragOverlay>
                 </DndContext>
-
-                {/* 블록 추가 버튼 */}
-                <div className="mt-8 flex flex-wrap gap-2">
-                  {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
-                    <button key={type} type="button" onClick={() => handleAddBlock(type)}
-                      className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-medium text-slate-600 shadow-sm transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 hover:shadow"
-                    >
-                      <Icon className="h-3.5 w-3.5" />{label}
-                    </button>
-                  ))}
-                </div>
 
               </div>
             </div>

@@ -51,6 +51,7 @@ export default function Sidebar() {
       items: [
         { name: "대시보드", href: "/admin", icon: LayoutDashboard },
         { name: "노트", href: "/admin/note", icon: ClipboardList },
+        { name: "MOVE 리포트", href: "/admin/move-report", icon: ClipboardList },
       ]
     },
     {

@@ -753,6 +753,37 @@ export default function AdminCurriculumPage() {
     return 'category' in item && 'sub_tab' in item;
   };
 
+  type YuaThemePart = {
+    title: string;
+    details: string[];
+  };
+
+  const parseYuaThemeParts = (steps?: string[]): YuaThemePart[] => {
+    if (!steps || steps.length === 0) return [];
+    const parts: YuaThemePart[] = [];
+    let currentPart: YuaThemePart | null = null;
+
+    for (const raw of steps) {
+      const line = raw.trim();
+      if (!line) continue;
+
+      const isDetailLine = line.startsWith('-') || line.startsWith(':');
+      if (!isDetailLine) {
+        currentPart = { title: line, details: [] };
+        parts.push(currentPart);
+        continue;
+      }
+
+      if (!currentPart) {
+        currentPart = { title: '세부 내용', details: [] };
+        parts.push(currentPart);
+      }
+      currentPart.details.push(line.replace(/^[-:]\s*/, '').trim());
+    }
+
+    return parts.filter((part) => part.title || part.details.length > 0);
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-[calc(6rem+env(safe-area-inset-bottom,0px))] text-slate-900 w-full">
       <style>{`
@@ -927,37 +958,9 @@ export default function AdminCurriculumPage() {
                                 <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">
                                   {label}
                                 </span>
-                                <div className="font-black text-slate-900 text-sm line-clamp-1">{item?.title ?? label}</div>
-                                <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-2">
-                                  {item?.expertTip || (item ? '등록된 팁이 없습니다.' : '등록된 내용이 없습니다.')}
-                                </p>
-                              </div>
-                              <div className="shrink-0 mt-0.5">
-                                {item ? (
-                                  hasValidUrl(item.url) ? (
-                                    <span
-                                      className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}
-                                    >
-                                      {item.type ?? 'youtube'}
-                                    </span>
-                                  ) : (
-                                    <span className="px-2 py-1 rounded text-[10px] font-black text-slate-400 uppercase bg-slate-100">
-                                      URL 없음
-                                    </span>
-                                  )
-                                ) : (
-                                  <button
-                                    type="button"
-                                    className="p-2 rounded-full bg-slate-900 text-white hover:bg-indigo-600 transition-all"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openPersonalModalForSubTab(label);
-                                    }}
-                                    aria-label={`${label} 등록`}
-                                  >
-                                    <Plus size={16} />
-                                  </button>
-                                )}
+                                {item?.title ? (
+                                  <div className="font-black text-slate-900 text-sm line-clamp-1">{item.title}</div>
+                                ) : null}
                               </div>
                               {item && (
                                 <div className="flex gap-2 ml-3 pl-3 border-l border-slate-100">
@@ -1288,6 +1291,35 @@ export default function AdminCurriculumPage() {
                            {isPersonalItem(selectedItem) ? `${selectedItem.category} · ${selectedItem.sub_tab}` : `${selectedItem.month}월 ${selectedItem.week}주차`} 커리큘럼
                          </p>
                      </div>
+                    {isPersonalItem(selectedItem) && selectedItem.category === '유아체육' ? (
+                      <>
+                        <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left space-y-2">
+                          <div className="text-xs font-black text-slate-400 uppercase">테마 제목</div>
+                          <p className="text-white font-bold">{selectedItem.title || selectedItem.sub_tab || '—'}</p>
+                        </div>
+                        {parseYuaThemeParts(selectedItem.steps).length > 0 ? (
+                          <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
+                            <div className="text-xs font-black text-slate-400 uppercase mb-3">테마 내용</div>
+                            <div className="space-y-3">
+                              {parseYuaThemeParts(selectedItem.steps).map((part, i) => (
+                                <section key={`${part.title}-${i}`} className="space-y-2 rounded-2xl border border-slate-600/80 bg-[#323232] p-4">
+                                  <h4 className="text-sm font-black text-white">{part.title}</h4>
+                                  {part.details.length > 0 ? (
+                                    <ul className="space-y-2">
+                                      {part.details.map((detail, j) => (
+                                        <li key={`${detail}-${j}`} className="text-sm font-bold text-slate-200 leading-relaxed">
+                                          - {detail}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : null}
+                                </section>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
                     {!isPersonalItem(selectedItem) && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
@@ -1319,32 +1351,34 @@ export default function AdminCurriculumPage() {
                       </div>
                     )}
 
-                     <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
-                         <div className="flex items-center gap-2 mb-4 text-blue-400 font-black text-sm uppercase">
-                             <ListOrdered size={16} /> 활동 방법
-                         </div>
-                         <ol className="space-y-4 text-left">
-                             {selectedItem.steps && selectedItem.steps.length > 0 ? selectedItem.steps.map((step: string, i: number) => (
-                                  <li key={i} className="flex gap-4 items-start text-left">
-                                      {isPersonalItem(selectedItem) && selectedItem.category === '유아체육' ? null : (
-                                        <span className="w-6 h-6 bg-slate-700 text-slate-300 rounded flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">
-                                          {i+1}
-                                        </span>
-                                      )}
-                                      <p className="text-sm font-bold text-slate-200 leading-relaxed text-left">{step}</p>
-                                  </li>
-                              )) : <li className="text-slate-500 text-sm">등록된 활동 방법이 없습니다.</li>}
-                         </ol>
-                     </div>
+                    {!(isPersonalItem(selectedItem) && selectedItem.category === '유아체육') ? (
+                      <>
+                        <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
+                            <div className="flex items-center gap-2 mb-4 text-blue-400 font-black text-sm uppercase">
+                                <ListOrdered size={16} /> 활동 방법
+                            </div>
+                            <ol className="space-y-4 text-left">
+                                {selectedItem.steps && selectedItem.steps.length > 0 ? selectedItem.steps.map((step: string, i: number) => (
+                                     <li key={i} className="flex gap-4 items-start text-left">
+                                         <span className="w-6 h-6 bg-slate-700 text-slate-300 rounded flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">
+                                           {i+1}
+                                         </span>
+                                         <p className="text-sm font-bold text-slate-200 leading-relaxed text-left">{step}</p>
+                                     </li>
+                                 )) : <li className="text-slate-500 text-sm">등록된 활동 방법이 없습니다.</li>}
+                            </ol>
+                        </div>
 
-                     <div className="bg-indigo-900/30 p-6 rounded-2xl border border-indigo-500/30 text-left">
-                         <div className="flex items-center gap-2 mb-2 text-indigo-400 font-black text-xs uppercase text-left">
-                             <Sparkles size={14} /> Expert Tip
-                         </div>
-                         <p className="text-indigo-100 font-bold text-sm leading-relaxed whitespace-pre-wrap text-left">
-                             {selectedItem.expertTip || "등록된 팁이 없습니다."}
-                         </p>
-                     </div>
+                        <div className="bg-indigo-900/30 p-6 rounded-2xl border border-indigo-500/30 text-left">
+                            <div className="flex items-center gap-2 mb-2 text-indigo-400 font-black text-xs uppercase text-left">
+                                <Sparkles size={14} /> Expert Tip
+                            </div>
+                            <p className="text-indigo-100 font-bold text-sm leading-relaxed whitespace-pre-wrap text-left">
+                                {selectedItem.expertTip || "등록된 팁이 없습니다."}
+                            </p>
+                        </div>
+                      </>
+                    ) : null}
                  </div>
                    </>
                  )}

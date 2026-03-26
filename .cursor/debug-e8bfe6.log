@@ -1,0 +1,2 @@
+{"sessionId":"e8bfe6","runId":"pre-fix-2","hypothesisId":"H1","location":"app/spokedu-move/page.tsx:48","message":"browser client initialized","data":{"pathname":"/spokedu-move","hasSupabaseEnv":true},"timestamp":1774360193577}
+{"sessionId":"e8bfe6","runId":"pre-fix-2","hypothesisId":"H4","location":"app/spokedu-move/page.tsx:84","message":"oauth callback snapshot","data":{"search":"","hash":""},"timestamp":1774360193592}

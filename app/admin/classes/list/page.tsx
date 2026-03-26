@@ -1,12 +1,31 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/app/components/Sidebar';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import type { ClassGroup } from '../types';
 import ClassDetailPanel from '../components/ClassDetailPanel';
+
+function getCleanClassTitle(title: string): string {
+  const original = title ?? '';
+  const cleaned = original
+    // 1/1, 3/6 같은 분수 회차 제거 (앞/뒤/중간 어디든)
+    .replace(/\b\d+\s*\/\s*\d+\b/g, ' ')
+    // 6회차, 6회, 6차 제거 (앞/뒤/중간 어디든)
+    .replace(/\b\d+\s*(회차|회|차)\b/g, ' ')
+    // 구분자/공백 정리
+    .replace(/[|_]/g, ' ')
+    .replace(/\s*-\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return cleaned || original.trim();
+}
+
+type TimeFilter = 'upcoming' | 'ongoing' | 'completed';
+type TimeStatus = 'upcoming' | 'ongoing' | 'completed';
 
 export default function ClassListPage() {
   const [supabase] = useState(() =>
@@ -16,6 +35,7 @@ export default function ClassListPage() {
   const [teacherMap, setTeacherMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
 
   const fetchGroups = useCallback(async () => {
     if (!supabase) return;
@@ -91,6 +111,28 @@ export default function ClassListPage() {
     fetchGroups();
   }, [fetchGroups]);
 
+  const nowMs = Date.now();
+  const getTimeStatus = useCallback(
+    (g: ClassGroup): TimeStatus => {
+      const firstMs = new Date(g.firstClassAt).getTime();
+      const lastMs = new Date(g.lastClassAt).getTime();
+      if (Number.isFinite(firstMs) && nowMs < firstMs) return 'upcoming';
+      if (Number.isFinite(lastMs) && nowMs > lastMs) return 'completed';
+      return 'ongoing';
+    },
+    [nowMs]
+  );
+
+  const visibleGroups = useMemo(() => {
+    return groups.filter((g) => getTimeStatus(g) === timeFilter);
+  }, [groups, timeFilter, getTimeStatus]);
+
+  const filterCounts = useMemo(() => {
+    const counts: Record<TimeStatus, number> = { upcoming: 0, ongoing: 0, completed: 0 };
+    for (const g of groups) counts[getTimeStatus(g)] += 1;
+    return counts;
+  }, [groups, getTimeStatus]);
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
@@ -110,11 +152,43 @@ export default function ClassListPage() {
           </Link>
         </div>
 
+        <div className="mb-4">
+          <div className="inline-flex gap-2 bg-white p-1 rounded-2xl shadow-sm border border-slate-100">
+            <button
+              type="button"
+              onClick={() => setTimeFilter('upcoming')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                timeFilter === 'upcoming' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              예정 ({filterCounts.upcoming})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeFilter('ongoing')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                timeFilter === 'ongoing' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              진행중 ({filterCounts.ongoing})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeFilter('completed')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                timeFilter === 'completed' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              완료 ({filterCounts.completed})
+            </button>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">
             불러오는 중...
           </div>
-        ) : groups.length === 0 ? (
+        ) : visibleGroups.length === 0 ? (
           <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">
             표시할 수업이 없습니다.
           </div>
@@ -132,7 +206,7 @@ export default function ClassListPage() {
                 </tr>
               </thead>
               <tbody>
-                {groups.map((g) => {
+                {visibleGroups.map((g) => {
                   const firstDate = new Date(g.firstClassAt).toLocaleDateString('ko-KR', {
                     year: 'numeric',
                     month: '2-digit',
@@ -152,7 +226,7 @@ export default function ClassListPage() {
 
                   return (
                     <tr key={g.groupId} className="border-t border-slate-100 hover:bg-slate-50/50">
-                      <td className="px-4 py-3 font-bold text-slate-800">{g.title}</td>
+                      <td className="px-4 py-3 font-bold text-slate-800">{getCleanClassTitle(g.title)}</td>
                       <td className="px-4 py-3 text-slate-600">{teacherNames}</td>
                       <td className="px-4 py-3 text-slate-600">{progress} 완료</td>
                       <td className="px-4 py-3 text-slate-600">{firstDate}</td>

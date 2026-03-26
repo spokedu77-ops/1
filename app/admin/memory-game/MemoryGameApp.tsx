@@ -33,7 +33,6 @@ type Settings = {
   intervalWork: number;
   intervalRest: number;
   intervalSets: number;
-  splitMode: boolean;
   warmup: number;
   accel: boolean;
 };
@@ -45,13 +44,13 @@ const defaultSettings: Settings = {
   timeMode: 'time',
   duration: 60,
   targetReps: 20,
-  audioMode: 'signal',
+  // 음성은 스트룹에서만 허용 → 기본은 off
+  audioMode: 'off',
   numberRule: 'odd_left',
   intervalMode: false,
   intervalWork: 30,
   intervalRest: 15,
   intervalSets: 4,
-  splitMode: false,
   warmup: 3,
   accel: false,
 };
@@ -195,6 +194,12 @@ export default function MemoryGameApp() {
 
   const startSession = useCallback(
     (cfg: Settings = settings) => {
+      // 분량 선택은 횟수만 노출/사용 → 안전하게 reps로 고정
+      if (cfg.timeMode !== 'reps') cfg = { ...cfg, timeMode: 'reps' };
+      // 인터벌 세트는 4로 고정
+      if (cfg.intervalSets !== 4) cfg = { ...cfg, intervalSets: 4 };
+      // 음성은 스트룹에서만 허용 (그 외 모드는 강제 off)
+      if (cfg.mode !== 'stroop' && cfg.audioMode !== 'off') cfg = { ...cfg, audioMode: 'off' };
       setSettings(cfg);
       countRef.current = 0;
       setDisplayCount(0);
@@ -353,10 +358,66 @@ export default function MemoryGameApp() {
               <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.8 }}>체육관 바닥 네 방향에 <strong style={{ color: '#fff' }}>빨강 / 파랑 / 초록 / 노랑</strong> 콘을 하나씩 놓아주세요.<br />화면 신호가 나오면 해당 콘으로 달려가 터치하고 제자리로 돌아옵니다.</div>
             </div>
             {[
-              { icon: '⚡', title: '반응 인지', tag: '키우는 능력: 순발력 · 색·방향·숫자 지각', steps: ['단계 1: 색깔 보고 달리기 — 화면 전체 색으로 해당 콘 달려가기', '단계 2: 화살표 보고 이동 — ↑앞/↓뒤/←→옆 방향으로 이동', '단계 3: 숫자 보고 판단 — 선생님이 규칙 지정 (홀수 왼쪽, 짝수 오른쪽 등)'], tip: '처음엔 단계 1부터. 익숙해지면 신호 간격을 줄여 난이도를 높입니다.', accent: '#3B82F6' },
-              { icon: '🧠', title: '스트룹 과제', tag: '키우는 능력: 억제 제어 · 인지 유연성', steps: ['단계 1: 글자 색깔 맞히기 — "파란색 빨강"이 나오면 "파랑"이라 말하기', '단계 2: 배경색 함정 — 배경·글자·내용 모두 다른 색. 글자 색만 말하기', '단계 3: 역스트룹 — 색은 무시하고 글자 내용을 그대로 말하기'], tip: '음성 힌트를 켜면 단계 1·2에서 정답 색 이름을 소리로 알려줍니다.', accent: '#A855F7' },
-              { icon: '🎨', title: '순차 기억', tag: '키우는 능력: 작업기억 · 순서 재생 · 집중력', steps: ['1번: 3가지 색 기억 — 색이 1초씩 3번 나온 뒤 순서대로 말하기', '2번: 5가지 색 기억 — 색이 1초씩 5번 나온 뒤 순서대로 말하기', '3번: 10가지 색 기억 — 4색이 무작위 10번, 선생님이 정답 공개', '4번: 색깔-번호 기억 — 색 배경에 번호 1~10이 하나씩 등장, 이후 5문제 Q&A', '5번: 색깔-번호 전체 공개 — 4번과 동일하게 진행 후, 10개 전체 정답을 한 화면에 공개'], tip: '4번은 Q&A 방식, 5번은 전체 정답을 한 번에 보여주는 방식입니다.', accent: '#22C55E' },
-              { icon: '🔀', title: '이중 과제', tag: '키우는 능력: 분산 주의 · 복합 실행력', steps: ['단계 1: 색깔 + 숫자 — 해당 색 콘으로 달린 뒤 숫자만큼 터치', '단계 2: 색깔 + 동작 — 해당 색 콘 위치에서 화면 동작 수행', '단계 3: 스트룹 + 동작 — 글자 색으로 판단해 이동 후 동작 수행'], tip: '단계 3은 가장 어렵습니다. 단계 1·2를 충분히 익힌 뒤 도전하세요.', accent: '#F97316' },
+              {
+                icon: '⚡',
+                title: '반응 인지',
+                tag: '키우는 능력: 순발력 · 지각(색/방향/수) · 반응-실행 연결',
+                steps: [
+                  '준비물/세팅: 빨강·파랑·초록·노랑 콘을 4방향(앞/뒤/좌/우)으로 배치. 초보는 거리 2~3m, 익숙하면 4~6m.',
+                  '진행 기본 룰: 신호가 나오면 즉시 해당 콘으로 이동 → 터치(또는 발로 라인 밟기) → 출발점 복귀.',
+                  '단계 1(색): 화면 전체 색 = 이동할 콘. 코칭: “색 먼저 보고, 한 박자 빠르게 출발!”',
+                  '단계 2(방향): ↑/↓/←/→ 방향 이동. 코칭: “몸은 먼저, 눈은 다음 신호로.”',
+                  '단계 3(수 판단): 숫자를 규칙으로 판단(예: 홀수 왼쪽/짝수 오른쪽). 코칭: “판단은 짧게, 움직임은 크게.”',
+                  '난이도 조절: 신호 속도(초)를 낮추면 난이도↑. 분량은 횟수(10/20/30/40회)로 운영.',
+                ],
+                tip: '스트룹을 제외한 모드에서는 음성/비프가 나오지 않습니다. 코칭은 선생님 구두로 진행하세요.',
+                accent: '#3B82F6',
+              },
+              {
+                icon: '🧠',
+                title: '스트룹 과제',
+                tag: '키우는 능력: 억제 제어 · 인지 유연성 · 오류 교정',
+                steps: [
+                  '목표: “자동 반응(글자 읽기)”을 억제하고 “정답 규칙(색/내용)”에 맞춰 응답하기.',
+                  '단계 1(색 명명): 글자 내용은 무시하고 글자 색을 말하기. 예: “파란색 빨강” → “파랑”.',
+                  '단계 2(배경 간섭): 배경색까지 섞여 방해. 규칙은 동일(글자 색만). 초반엔 속도 느리게.',
+                  '단계 3(역 스트룹): 색은 무시하고 글자 내용을 그대로 말하기(가장 흔히 헷갈림).',
+                  '운영 팁: 실수했을 때 즉시 정답을 말하게 하고 다음 신호로 넘어가기(멈추지 않기).',
+                  '음성: 이 모드에서만 음성/비프 설정이 유효합니다(다른 모드는 강제 OFF).',
+                ],
+                tip: '음성 힌트(켜기)는 스트룹 단계 1·2에서만 정답 색 이름을 읽어줍니다. 단계 3에서는 힌트가 나오지 않는 것이 정상입니다.',
+                accent: '#A855F7',
+              },
+              {
+                icon: '🎨',
+                title: '순차 기억',
+                tag: '키우는 능력: 작업기억 · 순서 재생 · 집중 유지',
+                steps: [
+                  '진행 방식: 화면에 색(및 번호)이 순서대로 제시 → 학생이 순서대로 말하기 → 선생님이 정답 공개.',
+                  '속도: 설정의 “신호 속도(초)”가 색/번호가 바뀌는 실제 템포입니다(예: 4.0초면 4초마다 다음 카드).',
+                  '1번(3항): 3개를 기억해 순서대로 말하기. 초보 워밍업용.',
+                  '2번(5항): 5개를 기억해 순서대로 말하기. 집중 유지 훈련.',
+                  '3번(10항): 10개를 본 뒤 전체 정답 목록으로 확인(반복 학습용).',
+                  '4번(색-번호 Q&A): 1~10을 모두 본 뒤 5개 질문. 질문 문구는 “숫자 N은 무슨 색깔이었을까요?”로 통일.',
+                  '5번(색-번호 전체 공개): 10개를 모두 본 뒤 번호별 정답을 한 화면에 공개.',
+                ],
+                tip: '순차기억은 “정답 맞히기”보다 “기억 전략”을 코칭하는 게 핵심입니다(예: 소리내어 묶기, 3개 단위 청킹).',
+                accent: '#22C55E',
+              },
+              {
+                icon: '🔀',
+                title: '이중 과제',
+                tag: '키우는 능력: 분산 주의 · 복합 실행 · 전환 능력',
+                steps: [
+                  '목표: 두 정보를 동시에 처리(예: 색+숫자)하고 행동으로 옮기기.',
+                  '단계 1(색+숫자): 해당 색 콘으로 이동 후, 숫자만큼 터치/점프/박수 등 반복 동작 수행.',
+                  '단계 2(색+동작): 해당 색 콘 위치에서 화면 동작 수행(점프/스쿼트 등).',
+                  '단계 3(스트룹+동작): 스트룹 규칙으로 판단해 이동한 뒤 동작 수행(난이도 최고).',
+                  '난이도 조절: 속도↓(빠르게), 분량↑(횟수), 그리고 동작 복잡도↑ 순서로 올리기.',
+                ],
+                tip: '실수 교정은 “규칙을 다시 말하게 하기 → 바로 다음 신호”가 가장 좋습니다. 멈춰서 길게 설명하면 훈련 효과가 떨어집니다.',
+                accent: '#F97316',
+              },
             ].map((block) => (
               <div key={block.title} style={{ marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -372,6 +433,14 @@ export default function MemoryGameApp() {
                 <div style={{ fontSize: '0.78rem', color: '#64748B', fontStyle: 'italic', lineHeight: 1.5 }}>팁: {block.tip}</div>
               </div>
             ))}
+            <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '1rem', padding: '0.9rem 1.1rem', marginTop: '0.5rem', color: '#9A3412' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.08em', marginBottom: '0.35rem' }}>고급 설정 요약</div>
+              <div style={{ fontSize: '0.82rem', lineHeight: 1.65, fontWeight: 600 }}>
+                - 인터벌 모드(Tabata)는 <strong>4세트 고정</strong>입니다(Work/Rest는 설정값 사용).<br />
+                - 점진 가속(accel)은 인터벌이 아닌 일반 모드에서만 적용되며, 진행률에 따라 신호 간격이 선형으로 빨라져 마지막엔 <strong>60%</strong>까지 단축됩니다.<br />
+                - 음성/비프는 <strong>스트룹에서만</strong> 사용 가능합니다.
+              </div>
+            </div>
             <button type="button" style={{ ...S.btn, ...S.bDark, marginTop: '0.5rem' }} onClick={() => setScreen('home')}>🏠 처음으로</button>
           </div>
         </div>
@@ -399,7 +468,22 @@ export default function MemoryGameApp() {
               {stepNum(1, '어떤 훈련을 할까요?')}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
                 {Object.values(MODES).map((m) => (
-                  <button key={m.id} type="button" onClick={() => setSettings((s) => ({ ...s, mode: m.id, level: 1 }))} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '0.85rem 0.95rem', borderRadius: '1rem', border: `2px solid ${settings.mode === m.id ? m.accent : '#E2E8F0'}`, background: settings.mode === m.id ? `${m.accent}10` : '#FAFAFA', cursor: 'pointer', gap: '0.15rem', fontFamily: 'inherit', transition: 'all 0.13s' }}>
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      setSettings((s) => ({
+                        ...s,
+                        mode: m.id,
+                        level: 1,
+                        // 스트룹 외 모드는 음성 강제 off
+                        audioMode: m.id === 'stroop' ? s.audioMode : 'off',
+                        // 인터벌 세트는 4로 고정
+                        intervalSets: 4,
+                      }));
+                    }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '0.85rem 0.95rem', borderRadius: '1rem', border: `2px solid ${settings.mode === m.id ? m.accent : '#E2E8F0'}`, background: settings.mode === m.id ? `${m.accent}10` : '#FAFAFA', cursor: 'pointer', gap: '0.15rem', fontFamily: 'inherit', transition: 'all 0.13s' }}
+                  >
                     <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{m.icon}</span>
                     <span style={{ fontWeight: 800, fontSize: '0.84rem', color: settings.mode === m.id ? m.accent : '#334155', marginTop: '0.3rem', lineHeight: 1.2 }}>{m.title}</span>
                     <span style={{ fontSize: '0.61rem', color: '#94A3B8', fontWeight: 500 }}>{m.en}</span>
@@ -425,40 +509,44 @@ export default function MemoryGameApp() {
                 ))}
               </div>
             </div>
+            {/* 3. 신호 속도: 프리셋 제거, 직접 조절만 */}
+            <div style={S.sec}>
+              {stepNum(3, '신호 속도를 정하세요')}
+              <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} showPresets={false} />
+            </div>
+
+            {/* 4. 분량 선택: 횟수만 (spatial은 분량 선택 숨김) */}
             {settings.mode !== 'spatial' && (
-              <>
-                <div style={S.sec}>
-                  {stepNum(3, '신호 속도를 정하세요')}
-                  <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} />
+              <div style={S.sec}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>4</div>
+                  <span style={{ fontSize: '0.93rem', fontWeight: 800, color: '#0F172A' }}>분량을 선택하세요</span>
                 </div>
-                <div style={S.sec}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>4</div>
-                    <span style={{ fontSize: '0.93rem', fontWeight: 800, color: '#0F172A' }}>분량을 선택하세요</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    {[
-                      { id: 'time', label: '시간', sub: '초 단위' },
-                      { id: 'reps', label: '횟수', sub: '신호 횟수' },
-                    ].map((o) => (
-                      <button key={o.id} type="button" onClick={() => set('timeMode', o.id)} style={{ flex: 1, padding: '0.75rem', borderRadius: '0.85rem', border: `2px solid ${settings.timeMode === o.id ? '#F97316' : '#E2E8F0'}`, background: settings.timeMode === o.id ? '#FFF7ED' : '#fff', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{o.label}<span style={{ display: 'block', fontSize: '0.7rem', color: '#64748B', fontWeight: 500 }}>{o.sub}</span></button>
-                    ))}
-                  </div>
-                  {settings.timeMode === 'time' ? (
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {[30, 60, 90, 120].map((sec) => (
-                        <button key={sec} type="button" onClick={() => set('duration', sec)} style={{ padding: '0.6rem 1rem', borderRadius: '0.75rem', border: `2px solid ${settings.duration === sec ? '#F97316' : '#E2E8F0'}`, background: settings.duration === sec ? '#FFF7ED' : '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{sec}초</button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {[10, 20, 30, 40].map((n) => (
-                        <button key={n} type="button" onClick={() => set('targetReps', n)} style={{ padding: '0.6rem 1rem', borderRadius: '0.75rem', border: `2px solid ${settings.targetReps === n ? '#F97316' : '#E2E8F0'}`, background: settings.targetReps === n ? '#FFF7ED' : '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{n}회</button>
-                      ))}
-                    </div>
-                  )}
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {[10, 20, 30, 40].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => {
+                        // UI는 횟수만 노출 → timeMode는 reps로 고정
+                        if (settings.timeMode !== 'reps') set('timeMode', 'reps');
+                        set('targetReps', n);
+                      }}
+                      style={{
+                        padding: '0.6rem 1rem',
+                        borderRadius: '0.75rem',
+                        border: `2px solid ${settings.targetReps === n ? '#F97316' : '#E2E8F0'}`,
+                        background: settings.targetReps === n ? '#FFF7ED' : '#fff',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit'
+                      }}
+                    >
+                      {n}회
+                    </button>
+                  ))}
                 </div>
-              </>
+              </div>
             )}
             {settings.mode === 'basic' && settings.level === 3 && (
               <div style={S.sec}>
@@ -508,12 +596,13 @@ export default function MemoryGameApp() {
                     <button type="button" onClick={() => set('intervalMode', !settings.intervalMode)} style={{ padding: '0.5rem 0.9rem', borderRadius: '0.6rem', border: `2px solid ${settings.intervalMode ? '#22C55E' : '#E2E8F0'}`, background: settings.intervalMode ? '#F0FDF4' : '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit' }}>{settings.intervalMode ? '켜짐' : '끔'}</button>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', marginBottom: '0.35rem' }}>분할 화면 모드</div>
-                    <button type="button" onClick={() => set('splitMode', !settings.splitMode)} style={{ padding: '0.5rem 0.9rem', borderRadius: '0.6rem', border: `2px solid ${settings.splitMode ? '#22C55E' : '#E2E8F0'}`, background: settings.splitMode ? '#F0FDF4' : '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit' }}>{settings.splitMode ? '켜짐' : '끔'}</button>
-                  </div>
-                  <div>
                     <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', marginBottom: '0.35rem' }}>점진 가속 (accel)</div>
                     <button type="button" onClick={() => set('accel', !settings.accel)} style={{ padding: '0.5rem 0.9rem', borderRadius: '0.6rem', border: `2px solid ${settings.accel ? '#22C55E' : '#E2E8F0'}`, background: settings.accel ? '#F0FDF4' : '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit' }}>{settings.accel ? '켜짐' : '끔'}</button>
+                    <p style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '0.35rem', lineHeight: 1.5 }}>
+                      세션 진행률에 따라 신호 간격이 선형으로 빨라집니다. 마지막에는 설정 속도의 <strong>60%</strong>까지 단축됩니다 (예: 4.0초 → 2.4초).
+                      <br />
+                      인터벌 모드에서는 적용되지 않습니다.
+                    </p>
                   </div>
                 </div>
               )}
@@ -537,11 +626,11 @@ export default function MemoryGameApp() {
 
   if (screen === 'memory') {
     if (settings.level === 4)
-      return <MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} />;
+      return <MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} />;
     if (settings.level === 5)
-      return <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} />;
+      return <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} />;
     return (
-      <MemoryGame level={settings.level} onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} />
+      <MemoryGame level={settings.level} onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} />
     );
   }
 
@@ -576,15 +665,7 @@ export default function MemoryGameApp() {
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0 }}>
-          {countdown !== null ? null : settings.splitMode ? (
-            <div style={{ display: 'flex', height: '100%' }}>
-              <div style={{ width: '35%', borderRight: '2px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.2rem', padding: '1rem' }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em' }}>TEACHER</div>
-                <div style={{ fontSize: '3rem', fontWeight: 900, color: '#F97316' }}>{displayCount}</div>
-              </div>
-              <div style={{ flex: 1, position: 'relative' }}>{signal ? <SignalDisplay signal={signal} animKey={signalKey} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '1.5rem', fontWeight: 700 }}>준비하세요</div>}</div>
-            </div>
-          ) : signal ? <SignalDisplay signal={signal} animKey={signalKey} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569', fontSize: '2rem', fontWeight: 700 }}>준비하세요</div>}
+          {countdown !== null ? null : signal ? <SignalDisplay signal={signal} animKey={signalKey} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569', fontSize: '2rem', fontWeight: 700 }}>준비하세요</div>}
         </div>
       </div>
     );

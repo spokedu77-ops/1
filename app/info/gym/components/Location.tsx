@@ -13,6 +13,7 @@ export default function Location() {
   const { address, hours } = GYM_CONFIG.center;
   const tel = GYM_CONFIG.phoneParts.join('');
   const mapUrl = getKakaoMapSearchUrl(address);
+  const kakaoPathUrl = GYM_CONFIG.kakao.deepLink || mapUrl;
 
   return (
     <section id="location" className="gym-section" aria-labelledby="locationHeading">
@@ -31,6 +32,8 @@ export default function Location() {
             <strong>주소</strong> {address}
             <br />
             <strong>운영시간</strong> {hours}
+            <br />
+            <strong>주차</strong> 센터 건물 지상 주차장 이용 가능
             <br />
             <a href={`tel:${tel}`} style={{ color: 'var(--gym-accent)' }}>
               전화 문의: {TEL_DISPLAY}
@@ -57,15 +60,26 @@ export default function Location() {
             <p style={{ margin: 0 }}>
               지도를 보려면 아래 버튼을 누르면 <strong style={{ color: 'var(--gym-muted)' }}>카카오맵</strong>에서 해당 주소로 이동합니다.
             </p>
-            <a
-              href={mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="gym-btn primary"
-              style={{ display: 'inline-flex' }}
-            >
-              카카오맵에서 위치 보기
-            </a>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <a
+                href={mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="gym-btn primary"
+                style={{ display: 'inline-flex' }}
+              >
+                카카오맵 보기
+              </a>
+              <a
+                href={kakaoPathUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="gym-btn"
+                style={{ display: 'inline-flex' }}
+              >
+                길찾기 열기
+              </a>
+            </div>
           </div>
         </div>
       </div>

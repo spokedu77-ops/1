@@ -13,6 +13,7 @@ export const FULLSCREEN_PATH_PREFIXES = [
   '/spokedu-pro',
   '/admin/spokedu-pro',
   '/teacher',
+  '/move-report',
 ] as const;
 
 export function isFullscreenPath(pathname: string): boolean {

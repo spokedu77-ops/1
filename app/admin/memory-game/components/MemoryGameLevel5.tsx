@@ -6,7 +6,6 @@ import { playBeep } from '../lib/audio';
 import { CSS } from '../styles';
 
 const TOTAL = 10;
-const SHOW_MS = 1000;
 
 type L5Phase = 'idle' | 'showing' | 'awaitReveal' | 'reveal' | 'done';
 
@@ -14,10 +13,12 @@ export function MemoryGameLevel5({
   onExit,
   onComplete,
   audioMode,
+  speedSec,
 }: {
   onExit: () => void;
   onComplete: () => void;
   audioMode: string;
+  speedSec: number;
 }) {
   const [items] = useState<Level4Item[]>(() => generateLevel4Pattern());
   const [showIdx, setShowIdx] = useState(-1);
@@ -34,6 +35,8 @@ export function MemoryGameLevel5({
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = null;
   };
+
+  const showMs = Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
 
   const runSequence = useCallback((idx: number) => {
     if (idx >= TOTAL) {
@@ -54,15 +57,15 @@ export function MemoryGameLevel5({
         if (audioMode === 'beep') playBeep('blip');
         setShowIdx(idx);
         setPhase('showing');
-        timerRef.current = setTimeout(() => runSequence(idx + 1), SHOW_MS);
+        timerRef.current = setTimeout(() => runSequence(idx + 1), showMs);
       }, 100);
     } else {
       if (audioMode === 'beep') playBeep('blip');
       setShowIdx(idx);
       setPhase('showing');
-      timerRef.current = setTimeout(() => runSequence(idx + 1), SHOW_MS);
+      timerRef.current = setTimeout(() => runSequence(idx + 1), showMs);
     }
-  }, [items, audioMode]);
+  }, [items, audioMode, showMs]);
 
   useEffect(() => {
     timerRef.current = setTimeout(() => runSequence(0), 600);

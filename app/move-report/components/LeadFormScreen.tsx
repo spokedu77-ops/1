@@ -1,0 +1,211 @@
+'use client';
+
+import { useState } from 'react';
+
+interface Props {
+  onSubmit: (phone: string) => Promise<void>;
+  onSkip: () => void;
+}
+
+/** 원본 HTML 리드폼 (결과 전) + API 연동 */
+export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
+  const [phone, setPhone] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const digits = phone.replace(/\D/g, '');
+  const active = digits.length >= 10 && consent;
+
+  const handleSubmit = async () => {
+    if (!active) return;
+    setLoading(true);
+    try {
+      await onSubmit(phone);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#0D0D0D',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+      }}
+    >
+      <div style={{ maxWidth: 380, width: '100%' }}>
+        <div className="anim-rise" style={{ textAlign: 'center', marginBottom: '6px' }}>
+          <span style={{ fontSize: '11px', color: '#666', fontWeight: 500 }}>
+            결과는 바로 확인할 수 있고, 원하시면 아래에 전화번호를 남겨 저장할 수 있어요.
+          </span>
+        </div>
+
+        <div className="anim-rise" style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div style={{ fontSize: '44px', marginBottom: '12px', animation: 'floatY 3s ease-in-out infinite' }}>✨</div>
+          <h2
+            style={{
+              fontFamily: 'Black Han Sans,sans-serif',
+              fontSize: '26px',
+              color: '#fff',
+              marginBottom: '10px',
+              lineHeight: 1.25,
+              wordBreak: 'keep-all',
+            }}
+          >
+            결과 확인 전에,
+            <br />
+            전화번호로 저장해드릴게요
+          </h2>
+          <p style={{ fontSize: '14px', color: '#CCCCCC', lineHeight: 1.65, wordBreak: 'keep-all' }}>
+            지금 나온 우리 아이 결과를 저장하고,
+            <br />
+            유형별 활동 팁을 함께 안내받을 수 있어요.
+          </p>
+        </div>
+
+        <div
+          className="anim-rise d1"
+          style={{ background: '#161616', border: '1px solid #222', borderRadius: '14px', padding: '14px', marginBottom: '20px' }}
+        >
+          {(
+            [
+              { i: '📋', t: '우리 아이 결과 카드', d: '저장해두고 가족과 공유하기 좋아요' },
+              { i: '🎯', t: '유형별 집콕 활동 팁 3가지', d: '집에서도 가볍게 따라해볼 수 있어요' },
+              { i: '💡', t: '부모 피드백 한 줄 가이드', d: '우리 아이에게 잘 맞는 반응 방식을 알려드려요' },
+            ] as const
+          ).map((b, i) => (
+            <div
+              key={b.t}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                padding: '10px 0',
+                borderBottom: i < 2 ? '1px solid #222' : 'none',
+              }}
+            >
+              <span style={{ fontSize: '18px', flexShrink: 0, lineHeight: '22px' }}>{b.i}</span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#DDDDDD', marginBottom: '2px' }}>{b.t}</div>
+                <div style={{ fontSize: '11px', color: '#888', lineHeight: 1.4 }}>{b.d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="anim-rise d2" style={{ marginBottom: '8px' }}>
+          <label
+            style={{ display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '.04em', color: '#AAAAAA', marginBottom: '8px' }}
+          >
+            전화번호
+          </label>
+          <input
+            className="sp-input"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="010-0000-0000"
+            autoComplete="tel"
+            inputMode="tel"
+          />
+        </div>
+
+        <div className="anim-rise d2" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '20px' }}>
+          <button
+            type="button"
+            aria-pressed={consent}
+            onClick={() => setConsent((c) => !c)}
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '6px',
+              flexShrink: 0,
+              marginTop: '1px',
+              cursor: 'pointer',
+              background: consent ? '#FF4B1F' : '#1E1E1E',
+              border: `1.5px solid ${consent ? '#FF4B1F' : '#333'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all .2s',
+            }}
+          >
+            {consent ? <i className="fa-solid fa-check" style={{ fontSize: '10px', color: '#fff' }} /> : null}
+          </button>
+          <button
+            type="button"
+            onClick={() => setConsent((c) => !c)}
+            style={{
+              fontSize: '12px',
+              color: '#AAAAAA',
+              lineHeight: 1.5,
+              cursor: 'pointer',
+              fontWeight: 500,
+              textAlign: 'left',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+            }}
+          >
+            [필수] 결과 저장 및 스포키듀 체육교육 정보 안내를 위한 개인정보 수집·이용에 동의합니다.
+          </button>
+        </div>
+
+        <div className="anim-rise d3">
+          <button
+            type="button"
+            onClick={() => void handleSubmit()}
+            disabled={!active || loading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '17px',
+              borderRadius: '14px',
+              background: active && !loading ? '#FEE500' : '#2A2A2A',
+              color: active && !loading ? '#3C1E1E' : '#555',
+              fontWeight: 800,
+              fontSize: '16px',
+              border: 'none',
+              cursor: active && !loading ? 'pointer' : 'default',
+              outline: 'none',
+              fontFamily: 'Noto Sans KR,sans-serif',
+              boxShadow: active && !loading ? '0 4px 24px rgba(254,229,0,.4)' : 'none',
+              transition: 'all .25s',
+              marginBottom: '12px',
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>💬</span>
+            {loading ? '저장 중…' : '전화번호로 결과 저장하기'}
+          </button>
+          <button
+            type="button"
+            onClick={onSkip}
+            disabled={loading}
+            style={{
+              display: 'block',
+              width: '100%',
+              textAlign: 'center',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '13px',
+              color: '#777',
+              fontWeight: 500,
+              padding: '10px',
+              fontFamily: 'Noto Sans KR,sans-serif',
+              letterSpacing: '-.01em',
+            }}
+          >
+            먼저 웹에서 결과 볼게요
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
