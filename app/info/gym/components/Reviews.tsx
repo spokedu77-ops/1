@@ -17,17 +17,28 @@ export default function Reviews() {
         </div>
         <div className="gym-grid-3">
           {REVIEWS.map((r) => (
-            <div key={r.id} className="gym-card" style={{ padding: 20 }}>
-              <div style={{ marginBottom: 10, color: 'var(--gym-warn)', fontSize: 14 }}>★★★★★</div>
-              <p style={{ margin: '0 0 14px', fontSize: 14, lineHeight: 1.6, color: 'var(--gym-text)' }}>{r.text}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                  {r.avatar}
+            <div key={r.id} className="gym-card gym-review-card">
+              <div className="gym-review-meta">
+                <span className="gym-review-badge">{r.ageBadge}</span>
+                <span className="gym-review-badge">{r.periodBadge}</span>
+              </div>
+
+              <p className="gym-review-lead">{r.text}</p>
+
+              <div className="gym-review-compare" aria-label="수강 전/후 변화">
+                <div className="gym-review-before">
+                  <div className="gym-review-label">수강 전</div>
+                  <div className="gym-review-value">{r.before}</div>
                 </div>
-                <div>
-                  <strong style={{ fontSize: 13 }}>{r.who}</strong>
-                  <span style={{ display: 'block', fontSize: 12, color: 'var(--gym-muted2)' }}>{r.course}</span>
+                <div className="gym-review-after">
+                  <div className="gym-review-label">수강 후</div>
+                  <div className="gym-review-value">{r.after}</div>
                 </div>
+              </div>
+
+              <div className="gym-review-footer">
+                <strong className="gym-review-who">{r.who}</strong>
+                <span className="gym-review-course">{r.course}</span>
               </div>
             </div>
           ))}
