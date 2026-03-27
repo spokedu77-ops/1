@@ -2,6 +2,9 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { COLORS, MODES, MEMORY_ROUNDS, NUMBER_RULES } from './constants';
+import { useFlowBGM } from '@/app/lib/admin/hooks/useFlowBGM';
+import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
+import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { useStudents } from './hooks/useStudents';
 import { useHistory } from './hooks/useHistory';
 import { useIntervalTimer } from './hooks/useIntervalTimer';
@@ -17,6 +20,7 @@ import { MemoryGame } from './components/MemoryGame';
 import { MemoryGameLevel4 } from './components/MemoryGameLevel4';
 import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
 import { CSS, S } from './styles';
+import type { DupStats } from './lib/signals';
 
 type Screen = 'home' | 'setup' | 'guide' | 'history' | 'students' | 'training' | 'memory' | 'flow' | 'result';
 
@@ -73,13 +77,23 @@ export default function MemoryGameApp() {
   const [flashing, setFlashing] = useState(false);
   const prevBgRef = useRef<string | null>(null);
   const [stats, setStats] = useState({ timeLeft: 30, repsLeft: 20, progress: 0 });
-  const [result, setResult] = useState<{ count: number; cfg: Settings; nbackScore?: { hits: number; misses: number; falseAlarms: number; accuracy: number; level: number }; battleResult?: unknown } | null>(null);
+  const [result, setResult] = useState<{
+    count: number;
+    cfg: Settings;
+    dupStats?: DupStats | null;
+    nbackScore?: { hits: number; misses: number; falseAlarms: number; accuracy: number; level: number };
+    battleResult?: unknown;
+  } | null>(null);
   const [sessionMemo, setSessionMemo] = useState('');
   const [displayCount, setDisplayCount] = useState(0);
   const countRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trainingContainerRef = useRef<HTMLDivElement>(null);
   const flowCompleteGuardRef = useRef(false);
+  const bgmPlayerRef = useRef<BgmPlayer | null>(null);
+
+  const month = new Date().getMonth() + 1;
+  const { list: flowBgmList } = useFlowBGM(month);
 
   useEffect(() => {
     if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
@@ -114,13 +128,13 @@ export default function MemoryGameApp() {
     setSignalKey((k) => k + 1);
   }, []);
 
-  const onFinish = useCallback(() => {
+  const onFinish = useCallback((dupStats?: DupStats | null) => {
     if (document.fullscreenElement) document.exitFullscreen();
     setIsTraining(false);
     const cfg = { ...settings };
     const count = countRef.current;
     pushRecord(cfg, count, selectedStudentId);
-    setResult({ count, cfg });
+    setResult({ count, cfg, dupStats: cfg.mode === 'basic' ? dupStats ?? undefined : undefined });
     setSessionMemo('');
     setScreen('result');
     if (cfg.audioMode !== 'off') setTimeout(() => tts('훈련 완료! 수고했어요!', true), 300);
@@ -178,6 +192,12 @@ export default function MemoryGameApp() {
   }, [isTraining]);
 
   useEffect(() => {
+    // 훈련/메모리 화면 이탈 시 BGM 정지 (요청: 시작 클릭 시만 재생, 훈련/메모리에서만 유지)
+    if (screen === 'training' || screen === 'memory') return;
+    bgmPlayerRef.current?.fadeOut(220);
+  }, [screen]);
+
+  useEffect(() => {
     if (screen !== 'training') return;
     const id = requestAnimationFrame(() => {
       trainingContainerRef.current?.requestFullscreen?.().catch(() => {});
@@ -208,6 +228,21 @@ export default function MemoryGameApp() {
       setFlashing(false);
       prevBgRef.current = null;
 
+      const shouldPlayBgm = cfg.mode === 'basic' || cfg.mode === 'spatial' || cfg.mode === 'dual';
+      if (shouldPlayBgm && flowBgmList.length > 0) {
+        const pick = flowBgmList[Math.floor(Math.random() * flowBgmList.length)]!;
+        try {
+          const url = getPublicUrl(pick);
+          if (!bgmPlayerRef.current) bgmPlayerRef.current = new BgmPlayer();
+          bgmPlayerRef.current.init(url, 0.275).then(() => {
+            bgmPlayerRef.current?.play();
+            bgmPlayerRef.current?.fadeIn(180);
+          });
+        } catch {
+          // ignore
+        }
+      }
+
       if (cfg.mode === 'spatial') {
         setScreen('memory');
       } else if (cfg.mode === 'flow') {
@@ -234,7 +269,7 @@ export default function MemoryGameApp() {
         }, 900);
       }
     },
-    [settings]
+    [settings, flowBgmList]
   );
 
   const stop = useCallback(() => {
@@ -246,6 +281,7 @@ export default function MemoryGameApp() {
     setIsTraining(false);
     setFlashing(false);
     setSignal(null);
+    bgmPlayerRef.current?.fadeOut(220);
     setScreen('home');
   }, []);
 
@@ -286,7 +322,7 @@ export default function MemoryGameApp() {
         <div style={{ position: 'absolute', bottom: '-15%', right: '-15%', width: '55vw', height: '55vw', maxWidth: 600, maxHeight: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 'clamp(1.8rem,5vw,3rem) clamp(1.5rem,5vw,3rem)', maxWidth: 520, margin: '0 auto', width: '100%', gap: '1.8rem', boxSizing: 'border-box' }}>
           {isOffline && (
-            <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.75rem', padding: '0.55rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.78rem', fontWeight: 700, color: '#FCA5A5' }}>
+            <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.75rem', padding: '0.55rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.96rem', fontWeight: 700, color: '#FCA5A5' }}>
               <span>📵</span>
               <span>오프라인 상태입니다 — 저장된 데이터로 훈련은 계속 가능합니다</span>
             </div>
@@ -297,7 +333,7 @@ export default function MemoryGameApp() {
               <div style={{ fontSize: 'clamp(1.5rem,4.5vw,2rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>SPOKEDU</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <button type="button" onClick={() => setShowStudentModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.4rem 0.65rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
+              <button type="button" onClick={() => setShowStudentModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.4rem 0.65rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.82rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
                 {(() => {
                   const s = students.find((st) => st.id === selectedStudentId);
                   if (s) return <><div style={{ width: 18, height: 18, borderRadius: '50%', background: s.color }} /><span>{s.name}</span></>;
@@ -320,7 +356,7 @@ export default function MemoryGameApp() {
               몸이 움직이면<br />
               <span style={{ color: '#F97316' }}>뇌가 깨어납니다</span>
             </h1>
-            <p style={{ fontSize: 'clamp(0.85rem,2.2vw,0.97rem)', color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, fontWeight: 400 }}>신체 활동과 인지 훈련을 통합한<br />교육 기반 퍼포먼스 트레이닝 도구</p>
+            <p style={{ fontSize: 'clamp(0.92rem,2.2vw,1.05rem)', color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, fontWeight: 400 }}>신체 활동과 인지 훈련을 통합한<br />교육 기반 퍼포먼스 트레이닝 도구</p>
             <div className="home-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
               {Object.values(MODES).map((m) => {
                 const rgbMap: Record<string, string> = { '#3B82F6': '59,130,246', '#A855F7': '168,85,247', '#22C55E': '34,197,94', '#F97316': '249,115,22' };
@@ -382,7 +418,7 @@ export default function MemoryGameApp() {
             <h2 style={S.ctitle}>📖 훈련 가이드</h2>
             <p style={S.csub}>어떤 훈련인지, 어떻게 진행하는지 확인하세요.</p>
             <div style={{ background: '#0F172A', borderRadius: '1rem', padding: '1.1rem 1.3rem', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#F97316', letterSpacing: '0.1em', marginBottom: '0.4rem' }}>수업 준비 (고정)</div>
+              <div style={{ fontSize: '0.96rem', fontWeight: 700, color: '#F97316', letterSpacing: '0.1em', marginBottom: '0.4rem' }}>수업 준비 (고정)</div>
               <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.8 }}>체육관 바닥 네 방향에 <strong style={{ color: '#fff' }}>빨강 / 파랑 / 초록 / 노랑</strong> 콘을 하나씩 놓아주세요.<br />화면 신호가 나오면 해당 콘으로 달려가 터치하고 제자리로 돌아옵니다.</div>
             </div>
             {[
@@ -453,18 +489,18 @@ export default function MemoryGameApp() {
                   <span style={{ fontSize: '1.2rem' }}>{block.icon}</span>
                   <span style={{ fontSize: '1rem', fontWeight: 800, color: block.accent }}>{block.title}</span>
                 </div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', marginBottom: '0.5rem', letterSpacing: '0.02em' }}>{block.tag}</div>
-                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '0.85rem', padding: '0.85rem 1rem', marginBottom: '0.5rem', fontSize: '0.82rem', color: '#475569', lineHeight: 1.75 }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#64748B', marginBottom: '0.5rem', letterSpacing: '0.02em' }}>{block.tag}</div>
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '0.85rem', padding: '0.85rem 1rem', marginBottom: '0.5rem', fontSize: '0.92rem', color: '#475569', lineHeight: 1.75 }}>
                   {block.steps.map((s, i) => (
                     <div key={i} style={{ marginBottom: i < block.steps.length - 1 ? '0.4rem' : 0 }}>{s}</div>
                   ))}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#64748B', fontStyle: 'italic', lineHeight: 1.5 }}>팁: {block.tip}</div>
+                <div style={{ fontSize: '0.96rem', color: '#64748B', fontStyle: 'italic', lineHeight: 1.5 }}>팁: {block.tip}</div>
               </div>
             ))}
             <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '1rem', padding: '0.9rem 1.1rem', marginTop: '0.5rem', color: '#9A3412' }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.08em', marginBottom: '0.35rem' }}>고급 설정 요약</div>
-              <div style={{ fontSize: '0.82rem', lineHeight: 1.65, fontWeight: 600 }}>
+              <div style={{ fontSize: '0.96rem', fontWeight: 900, letterSpacing: '0.08em', marginBottom: '0.35rem' }}>고급 설정 요약</div>
+              <div style={{ fontSize: '0.92rem', lineHeight: 1.65, fontWeight: 600 }}>
                 - 인터벌 모드(Tabata)는 <strong>4세트 고정</strong>입니다(Work/Rest는 설정값 사용).<br />
                 - 점진 가속(accel)은 인터벌이 아닌 일반 모드에서만 적용되며, 진행률에 따라 신호 간격이 선형으로 빨라져 마지막엔 <strong>60%</strong>까지 단축됩니다.<br />
                 - 음성/비프는 <strong>스트룹에서만</strong> 사용 가능합니다.
@@ -481,8 +517,8 @@ export default function MemoryGameApp() {
   if (screen === 'setup') {
     const stepNum = (n: number, label: string) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>{n}</div>
-        <span style={{ fontSize: '0.93rem', fontWeight: 800, color: '#0F172A' }}>{label}</span>
+        <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>{n}</div>
+        <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>{label}</span>
       </div>
     );
     return (
@@ -515,24 +551,24 @@ export default function MemoryGameApp() {
                   >
                     <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{m.icon}</span>
                     <span style={{ fontWeight: 800, fontSize: '0.84rem', color: settings.mode === m.id ? m.accent : '#334155', marginTop: '0.3rem', lineHeight: 1.2 }}>{m.title}</span>
-                    <span style={{ fontSize: '0.61rem', color: '#94A3B8', fontWeight: 500 }}>{m.en}</span>
+                    <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 500 }}>{m.en}</span>
                   </button>
                 ))}
               </div>
             </div>
             <div style={S.sec}>
               {stepNum(2, '난이도를 선택하세요')}
-              <p style={{ fontSize: '0.82rem', color: '#64748B', marginBottom: '0.7rem', lineHeight: 1.55 }}>{M.desc}</p>
+              <p style={{ fontSize: '0.92rem', color: '#64748B', marginBottom: '0.7rem', lineHeight: 1.55 }}>{M.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                 {M.levels.map((lv) => (
                   <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : '#E2E8F0'}`, background: settings.level === lv.id ? `${M.accent}08` : '#fff', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
-                    <div style={{ width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.72rem', color: '#fff', background: settings.level === lv.id ? M.accent : '#CBD5E1', flexShrink: 0, marginTop: '0.05rem' }}>{M.id === 'spatial' ? lv.name : `단계 ${lv.id}`}</div>
+                    <div style={{ width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: '#fff', background: settings.level === lv.id ? M.accent : '#CBD5E1', flexShrink: 0, marginTop: '0.05rem' }}>{M.id === 'spatial' ? lv.name : `단계 ${lv.id}`}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#1E293B' }}>{lv.name}</span>
-                        <span style={{ fontSize: '0.63rem', color: '#94A3B8', fontWeight: 500 }}>{lv.enName}</span>
+                        <span style={{ fontWeight: 800, fontSize: '0.96rem', color: '#1E293B' }}>{lv.name}</span>
+                        <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 500 }}>{lv.enName}</span>
                       </div>
-                      <div style={{ fontSize: '0.77rem', color: '#64748B', lineHeight: 1.55 }}>{lv.desc}</div>
+                      <div style={{ fontSize: '0.86rem', color: '#64748B', lineHeight: 1.55 }}>{lv.desc}</div>
                     </div>
                   </button>
                 ))}
@@ -550,8 +586,8 @@ export default function MemoryGameApp() {
                 {settings.mode !== 'spatial' && (
                   <div style={S.sec}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>4</div>
-                      <span style={{ fontSize: '0.93rem', fontWeight: 800, color: '#0F172A' }}>분량을 선택하세요</span>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>4</div>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>분량을 선택하세요</span>
                     </div>
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                       {[10, 20, 30, 40].map((n) => (
@@ -582,12 +618,12 @@ export default function MemoryGameApp() {
                 {settings.mode === 'basic' && settings.level === 4 && (
                   <div style={S.sec}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, flexShrink: 0, border: '2px solid #3B82F6' }}>5</div>
-                      <span style={{ fontSize: '0.93rem', fontWeight: 800, color: '#0F172A' }}>판단 규칙을 정하세요</span>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #3B82F6' }}>5</div>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>판단 규칙을 정하세요</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       {NUMBER_RULES.map((rule) => (
-                        <button key={rule.id} type="button" onClick={() => set('numberRule', rule.id)} style={{ padding: '0.7rem 1rem', borderRadius: '0.85rem', border: `2px solid ${settings.numberRule === rule.id ? '#3B82F6' : '#E2E8F0'}`, background: settings.numberRule === rule.id ? '#EFF6FF' : '#fff', color: settings.numberRule === rule.id ? '#1D4ED8' : '#475569', fontWeight: settings.numberRule === rule.id ? 700 : 500, fontSize: '0.83rem', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.12s' }}>{settings.numberRule === rule.id ? '✓ ' : ''}{rule.label}</button>
+                        <button key={rule.id} type="button" onClick={() => set('numberRule', rule.id)} style={{ padding: '0.7rem 1rem', borderRadius: '0.85rem', border: `2px solid ${settings.numberRule === rule.id ? '#3B82F6' : '#E2E8F0'}`, background: settings.numberRule === rule.id ? '#EFF6FF' : '#fff', color: settings.numberRule === rule.id ? '#1D4ED8' : '#475569', fontWeight: settings.numberRule === rule.id ? 700 : 500, fontSize: '0.91rem', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.12s' }}>{settings.numberRule === rule.id ? '✓ ' : ''}{rule.label}</button>
                       ))}
                     </div>
                   </div>
@@ -595,41 +631,41 @@ export default function MemoryGameApp() {
                 {settings.mode === 'stroop' && (
                   <div style={S.sec}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-                      <span style={{ fontSize: '0.93rem', fontWeight: 800, color: '#0F172A' }}>스트룹 힌트</span>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>스트룹 힌트</span>
                     </div>
-                    <p style={{ fontSize: '0.78rem', color: '#64748B', marginBottom: '0.6rem', lineHeight: 1.5 }}>스트룹 단계 1·2에서만 정답 색 이름을 읽어줍니다</p>
+                    <p style={{ fontSize: '0.96rem', color: '#64748B', marginBottom: '0.6rem', lineHeight: 1.5 }}>스트룹 단계 1·2에서만 정답 색 이름을 읽어줍니다</p>
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                       {[
                         { id: 'off', label: '끔' },
                         { id: 'beep', label: '비프만' },
                         { id: 'signal', label: '켜기' },
                       ].map((o) => (
-                        <button key={o.id} type="button" onClick={() => set('audioMode', o.id)} style={{ padding: '0.55rem 0.9rem', borderRadius: '0.75rem', border: `2px solid ${settings.audioMode === o.id ? '#A855F7' : '#E2E8F0'}`, background: settings.audioMode === o.id ? '#F5F3FF' : '#fff', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{o.label}</button>
+                        <button key={o.id} type="button" onClick={() => set('audioMode', o.id)} style={{ padding: '0.55rem 0.9rem', borderRadius: '0.75rem', border: `2px solid ${settings.audioMode === o.id ? '#A855F7' : '#E2E8F0'}`, background: settings.audioMode === o.id ? '#F5F3FF' : '#fff', fontSize: '0.96rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{o.label}</button>
                       ))}
                     </div>
                   </div>
                 )}
                 <div style={S.sec}>
-                  <button type="button" onClick={() => setAdvancedOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.65rem 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.88rem', fontWeight: 700, color: '#64748B' }}>
+                  <button type="button" onClick={() => setAdvancedOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.65rem 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.96rem', fontWeight: 700, color: '#64748B' }}>
                     <span>{advancedOpen ? '▼' : '▶'}</span>
                     <span>고급 설정</span>
                   </button>
                   {advancedOpen && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #E2E8F0' }}>
                       <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', marginBottom: '0.35rem' }}>워밍업 카운트다운 (초)</div>
+                        <div style={{ fontSize: '0.96rem', fontWeight: 700, color: '#64748B', marginBottom: '0.35rem' }}>워밍업 카운트다운 (초)</div>
                         <div style={{ display: 'flex', gap: '0.4rem' }}>{[0, 3, 5].map((n) => (
-                          <button key={n} type="button" onClick={() => set('warmup', n)} style={{ padding: '0.5rem 0.8rem', borderRadius: '0.6rem', border: `2px solid ${settings.warmup === n ? '#0F172A' : '#E2E8F0'}`, background: settings.warmup === n ? '#0F172A' : '#fff', color: settings.warmup === n ? '#fff' : '#475569', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit' }}>{n === 0 ? '없음' : `${n}초`}</button>
+                          <button key={n} type="button" onClick={() => set('warmup', n)} style={{ padding: '0.5rem 0.8rem', borderRadius: '0.6rem', border: `2px solid ${settings.warmup === n ? '#0F172A' : '#E2E8F0'}`, background: settings.warmup === n ? '#0F172A' : '#fff', color: settings.warmup === n ? '#fff' : '#475569', fontWeight: 600, fontSize: '0.96rem', cursor: 'pointer', fontFamily: 'inherit' }}>{n === 0 ? '없음' : `${n}초`}</button>
                         ))}</div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', marginBottom: '0.35rem' }}>인터벌 모드 (Tabata)</div>
-                        <button type="button" onClick={() => set('intervalMode', !settings.intervalMode)} style={{ padding: '0.5rem 0.9rem', borderRadius: '0.6rem', border: `2px solid ${settings.intervalMode ? '#22C55E' : '#E2E8F0'}`, background: settings.intervalMode ? '#F0FDF4' : '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit' }}>{settings.intervalMode ? '켜짐' : '끔'}</button>
+                        <div style={{ fontSize: '0.96rem', fontWeight: 700, color: '#64748B', marginBottom: '0.35rem' }}>인터벌 모드 (Tabata)</div>
+                        <button type="button" onClick={() => set('intervalMode', !settings.intervalMode)} style={{ padding: '0.5rem 0.9rem', borderRadius: '0.6rem', border: `2px solid ${settings.intervalMode ? '#22C55E' : '#E2E8F0'}`, background: settings.intervalMode ? '#F0FDF4' : '#fff', fontWeight: 600, fontSize: '0.96rem', cursor: 'pointer', fontFamily: 'inherit' }}>{settings.intervalMode ? '켜짐' : '끔'}</button>
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', marginBottom: '0.35rem' }}>점진 가속 (accel)</div>
-                        <button type="button" onClick={() => set('accel', !settings.accel)} style={{ padding: '0.5rem 0.9rem', borderRadius: '0.6rem', border: `2px solid ${settings.accel ? '#22C55E' : '#E2E8F0'}`, background: settings.accel ? '#F0FDF4' : '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit' }}>{settings.accel ? '켜짐' : '끔'}</button>
-                        <p style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '0.35rem', lineHeight: 1.5 }}>
+                        <div style={{ fontSize: '0.96rem', fontWeight: 700, color: '#64748B', marginBottom: '0.35rem' }}>점진 가속 (accel)</div>
+                        <button type="button" onClick={() => set('accel', !settings.accel)} style={{ padding: '0.5rem 0.9rem', borderRadius: '0.6rem', border: `2px solid ${settings.accel ? '#22C55E' : '#E2E8F0'}`, background: settings.accel ? '#F0FDF4' : '#fff', fontWeight: 600, fontSize: '0.96rem', cursor: 'pointer', fontFamily: 'inherit' }}>{settings.accel ? '켜짐' : '끔'}</button>
+                        <p style={{ fontSize: '0.82rem', color: '#94A3B8', marginTop: '0.35rem', lineHeight: 1.5 }}>
                           세션 진행률에 따라 신호 간격이 선형으로 빨라집니다. 마지막에는 설정 속도의 <strong>60%</strong>까지 단축됩니다 (예: 4.0초 → 2.4초).
                           <br />
                           인터벌 모드에서는 적용되지 않습니다.
@@ -679,7 +715,7 @@ export default function MemoryGameApp() {
         </div>
         <iframe
           src="/program/iiwarmup/flow?autoStart=1&memoryPreset=shortFlow5"
-          title="Memory FLOW Program"
+          title="SPOMOVE FLOW Program"
           style={{ width: '100%', height: '100%', border: 0 }}
           allow="autoplay"
         />
@@ -725,7 +761,7 @@ export default function MemoryGameApp() {
   }
 
   if (screen === 'result' && result) {
-    const { count, cfg } = result;
+    const { count, cfg, dupStats } = result;
     const mo = MODES[cfg.mode];
     const isMem = cfg.mode === 'spatial' || cfg.mode === 'flow';
     const totalSec = isMem ? MEMORY_ROUNDS * 5 : cfg.timeMode === 'time' ? (cfg.duration ?? 0) : (cfg.targetReps ?? 0) * (cfg.speed ?? 1);
@@ -746,18 +782,44 @@ export default function MemoryGameApp() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <span style={{ fontSize: '1.1rem' }}>{mo?.icon}</span>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>{mo?.title} · {cfg.mode === 'spatial' ? `${cfg.level}번` : cfg.mode === 'flow' ? `${cfg.level}프로그램` : `단계 ${cfg.level}`}</span>
+                <span style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text-muted)' }}>{mo?.title} · {cfg.mode === 'spatial' ? `${cfg.level}번` : cfg.mode === 'flow' ? `${cfg.level}프로그램` : `단계 ${cfg.level}`}</span>
               </div>
-              {student && <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><div style={{ width: 20, height: 20, borderRadius: '50%', background: student.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900, color: '#fff' }}>{student.name[0]}</div><span style={{ fontSize: '0.78rem', fontWeight: 700, color: student.color }}>{student.name}</span></div>}
+              {student && <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><div style={{ width: 20, height: 20, borderRadius: '50%', background: student.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 900, color: '#fff' }}>{student.name[0]}</div><span style={{ fontSize: '0.96rem', fontWeight: 700, color: student.color }}>{student.name}</span></div>}
             </div>
             <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
               <div style={{ fontSize: 'clamp(5rem,20vw,7rem)', fontWeight: 900, lineHeight: 1, color: mainColor, letterSpacing: '-0.03em' }}>{mainVal}</div>
               <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-muted)', marginTop: '0.2rem' }}>{mainLabel}</div>
             </div>
+            {cfg.mode === 'basic' && dupStats && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  marginBottom: '1rem',
+                  padding: '0.65rem 0.9rem',
+                  background: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '0.75rem',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  color: '#475569',
+                  lineHeight: 1.5,
+                }}
+              >
+                전환 중복{' '}
+                {dupStats.tripleViolation ? (
+                  <span style={{ color: '#94A3B8' }}>0%</span>
+                ) : (
+                  <span style={{ color: '#64748B' }}>{Math.round(dupStats.dupRatio * 100)}%</span>
+                )}
+                <span style={{ opacity: 0.45, margin: '0 0.35rem' }}>·</span>
+                최대 연속 동일{' '}
+                <span style={{ color: '#64748B' }}>{dupStats.displayMaxConsecutive}회</span>
+              </div>
+            )}
             {spmDiff != null && (
               <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
                 <span style={{ fontSize: '0.9rem', fontWeight: 700, color: spmDiff > 0 ? '#22C55E' : spmDiff < 0 ? '#EF4444' : '#94A3B8' }}>{spmDiff > 0 ? `▲ +${spmDiff}` : spmDiff < 0 ? `▼ ${spmDiff}` : '→ 동일'} SPM</span>
-                <span style={{ fontSize: '0.78rem', color: '#94A3B8', marginLeft: '0.4rem' }}>전 회차 대비</span>
+                <span style={{ fontSize: '0.96rem', color: '#94A3B8', marginLeft: '0.4rem' }}>전 회차 대비</span>
               </div>
             )}
             {recentSpm.length >= 2 && (

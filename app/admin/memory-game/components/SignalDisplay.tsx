@@ -36,36 +36,74 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'basic_variant_color') {
     const panels = ((content?.panels as Array<{ slide?: { imageUrl?: string; color?: { name?: string; text?: string } } | null } | null>) ?? []);
     return (
-      <div key={animKey} className="signal-blink" style={{ ...C, gap: '1rem', padding: '0 1.5rem' }}>
-        {[0, 1, 2].map((idx) => {
-          const item = panels[idx] as { slide?: { imageUrl?: string; color?: { name?: string; text?: string } } } | null | undefined;
-          const slide = item?.slide;
-          return (
-            <div
-              key={idx}
-              style={{
-                flex: 1,
-                height: 'clamp(240px,48vh,520px)',
-                borderRadius: '1.35rem',
-                border: slide ? '2px solid rgba(0,0,0,0.08)' : '2px dashed rgba(0,0,0,0.12)',
-                background: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: slide ? '0 10px 30px rgba(0,0,0,0.08)' : 'none',
-                backgroundImage: slide?.imageUrl ? `url('${slide.imageUrl}')` : 'none',
-                backgroundSize: 'contain',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                overflow: 'hidden',
-              }}
-            >
-              {!slide && (
-                <div style={{ fontSize: 'clamp(24px,3vw,34px)', fontWeight: 800, color: 'rgba(0,0,0,0.2)' }}>대기</div>
-              )}
-            </div>
-          );
-        })}
+      <div
+        key={animKey}
+        style={{
+          ...C,
+          background: '#0F172A',
+          padding: 'clamp(0.5rem, 2vw, 1rem)',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 8,
+            width: '100%',
+            maxWidth: 'min(92vw, 960px)',
+            height: 'min(72vh, 560px)',
+            maxHeight: 'min(72vh, 560px)',
+            margin: '0 auto',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {[0, 1].map((idx) => {
+            const item = panels[idx] as { slide?: { imageUrl?: string; color?: { name?: string; text?: string } } } | null | undefined;
+            const slide = item?.slide;
+            return (
+              <div
+                key={idx}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  height: '100%',
+                  borderRadius: 0,
+                  border: 'none',
+                  background: '#000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: 'none',
+                  overflow: 'hidden',
+                  transform: 'translateZ(0)',
+                }}
+              >
+                {slide?.imageUrl && (
+                  <img
+                    src={slide.imageUrl}
+                    alt=""
+                    draggable={false}
+                    loading="eager"
+                    decoding="async"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      width: 'auto',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      objectPosition: 'center',
+                      userSelect: 'none',
+                      pointerEvents: 'none',
+                      transform: 'translateZ(0)',
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

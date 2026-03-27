@@ -1,5 +1,5 @@
 /**
- * SPOKEDU 메모리게임 — 상수 정의
+ * SPOKEDU SPOMOVE — 상수 정의
  */
 
 export const COLORS = [
@@ -92,7 +92,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   flow: {
     id: 'flow', title: '플로우', en: 'Flow Mode', icon: '🌌', accent: '#06B6D4',
     tag: '몰입 러닝 · 반응 전환',
-    desc: '우주 러닝 FLOW를 메모리게임에서 바로 실행합니다.',
+    desc: '우주 러닝 FLOW를 SPOMOVE에서 바로 실행합니다.',
     levels: [
       { id: 1, name: 'FLOW 프로그램', enName: 'Flow Program', desc: '시작-레벨-휴식을 포함한 FLOW 전체 시퀀스를 진행합니다.' },
     ],

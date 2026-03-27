@@ -120,7 +120,7 @@ const triple = <T>(arr: T[]) => {
 };
 
 type FruitSlide = { imageUrl: string; color: ColorItem };
-type VariantPanel = { slide: FruitSlide } | null;
+type VariantPanel = { slide: FruitSlide };
 
 const FRUIT_SLIDES: FruitSlide[] = [
   { imageUrl: 'https://i.postimg.cc/vgZrtFz0/APPLE(RED).jpg', color: COLORS.find((c) => c.id === 'red') ?? COLORS[0]! },
@@ -133,34 +133,19 @@ const FRUIT_SLIDES: FruitSlide[] = [
 ];
 
 function buildVariantPanels(): VariantPanel[] {
-  // 패턴 A: 3패널 모두 같은 색
+  // 패턴 A: 2패널 모두 같은 이미지
   const patternA = (): VariantPanel[] => {
     const s = r(FRUIT_SLIDES);
-    return [{ slide: s }, { slide: s }, { slide: s }];
+    return [{ slide: s }, { slide: s }];
   };
 
-  // 패턴 B: 1~2패널만 같은 색 노출 (나머지는 빈 패널)
+  // 패턴 B: 2패널에 서로 다른 이미지 표시
   const patternB = (): VariantPanel[] => {
-    const s = r(FRUIT_SLIDES);
-    const visibleCount = Math.floor(Math.random() * 2) + 1; // 1 or 2
-    const idxs = [0, 1, 2].sort(() => Math.random() - 0.5).slice(0, visibleCount);
-    return [0, 1, 2].map((idx) => (idxs.includes(idx) ? { slide: s } : null));
-  };
-
-  // 패턴 C: 2패널에 서로 다른 색 표시
-  const patternC = (): VariantPanel[] => {
     const [s1, s2] = pair(FRUIT_SLIDES);
-    const idxs = [0, 1, 2].sort(() => Math.random() - 0.5).slice(0, 2);
-    const panels: VariantPanel[] = [null, null, null];
-    panels[idxs[0]!] = { slide: s1 };
-    panels[idxs[1]!] = { slide: s2 };
-    return panels;
+    return [{ slide: s1 }, { slide: s2 }];
   };
 
-  const mode = Math.floor(Math.random() * 3);
-  if (mode === 0) return patternA();
-  if (mode === 1) return patternB();
-  return patternC();
+  return Math.random() < 0.5 ? patternA() : patternB();
 }
 
 export function generateSignal(
@@ -177,7 +162,7 @@ export function generateSignal(
     }
     if (level === 2) {
       const panels = buildVariantPanels();
-      return { type: 'basic_variant_color', bg: '#ffffff', content: { panels }, voice: null };
+      return { type: 'basic_variant_color', bg: '#000000', content: { panels }, voice: null };
     }
     if (level === 3) {
       const a = r(ARROWS);
@@ -233,4 +218,107 @@ export function generateSignal(
   }
 
   return null;
+}
+
+/** 반응 인지(basic) 세션 통계: 전환 중복 비율·연속 동일 신호 */
+export type DupStats = {
+  dupTransitionCount: number;
+  transitionCount: number;
+  dupRatio: number;
+  maxConsecutiveSame: number;
+  /** 연속 3회 이상이면 0 (표시 규칙) */
+  displayMaxConsecutive: number;
+  /** 방어 실패로 3연속이 발생한 경우 */
+  tripleViolation: boolean;
+};
+
+export function signalFingerprint(sig: Record<string, unknown>): string {
+  const t = sig.type as string;
+  if (t === 'full_color') return `fc:${String(sig.bg ?? '')}`;
+  if (t === 'basic_variant_color') {
+    const panels =
+      ((sig.content as { panels?: Array<{ slide?: { imageUrl?: string } }> })?.panels) ?? [];
+    return `bvc:${panels.map((p) => p?.slide?.imageUrl ?? '').join('|')}`;
+  }
+  if (t === 'arrow') {
+    const c = sig.content as { id?: string };
+    return `ar:${c?.id ?? ''}`;
+  }
+  if (t === 'number') {
+    const c = sig.content as { label?: string };
+    return `nm:${c?.label ?? ''}`;
+  }
+  return `raw:${t}`;
+}
+
+/**
+ * basic 모드: 연속 3동일 금지, 전환 중복 비율 &lt; 20% (엄격).
+ */
+export function createBasicSignalGenerator(level: number, colors: ColorItem[]) {
+  let prev1: string | null = null;
+  let prev2: string | null = null;
+  let dupTrans = 0;
+  let emitted = 0;
+  let seqStreak = 0;
+  let maxStreak = 0;
+  let tripleViolation = false;
+
+  const acceptSignal = (sig: Record<string, unknown>, fp: string) => {
+    const wouldDup = prev1 !== null && fp === prev1;
+    if (wouldDup) dupTrans++;
+    if (emitted === 0) seqStreak = 1;
+    else if (fp === prev1) seqStreak++;
+    else seqStreak = 1;
+    maxStreak = Math.max(maxStreak, seqStreak);
+    if (seqStreak >= 3) tripleViolation = true;
+    prev2 = prev1;
+    prev1 = fp;
+    emitted++;
+    return sig;
+  };
+
+  const tryEmit = (): Record<string, unknown> | null => {
+    const emittedBefore = emitted;
+    for (let attempt = 0; attempt < 120; attempt++) {
+      const sig = generateSignal('basic', level, colors);
+      if (!sig) continue;
+      const fp = signalFingerprint(sig);
+      if (prev1 !== null && prev2 !== null && fp === prev1 && fp === prev2) continue;
+      const wouldDup = prev1 !== null && fp === prev1;
+      if (wouldDup && emittedBefore >= 1) {
+        const transitionsAfter = emittedBefore;
+        const newDup = dupTrans + 1;
+        if (!(newDup / transitionsAfter < 0.2)) continue;
+      }
+      return acceptSignal(sig, fp);
+    }
+    for (let attempt = 0; attempt < 80; attempt++) {
+      const sig = generateSignal('basic', level, colors);
+      if (!sig) continue;
+      const fp = signalFingerprint(sig);
+      if (prev1 !== null && prev2 !== null && fp === prev1 && fp === prev2) continue;
+      if (prev1 !== null && fp === prev1) continue;
+      return acceptSignal(sig, fp);
+    }
+    const sig = generateSignal('basic', level, colors);
+    if (!sig) return null;
+    const fp = signalFingerprint(sig);
+    return acceptSignal(sig, fp);
+  };
+
+  return {
+    next: tryEmit,
+    getStats(): DupStats {
+      const transitionCount = Math.max(0, emitted - 1);
+      const dupRatio = transitionCount > 0 ? dupTrans / transitionCount : 0;
+      return {
+        dupTransitionCount: dupTrans,
+        transitionCount,
+        dupRatio,
+        maxConsecutiveSame: maxStreak,
+        displayMaxConsecutive: maxStreak >= 3 ? 0 : maxStreak,
+        tripleViolation,
+      };
+    },
+  };
 }

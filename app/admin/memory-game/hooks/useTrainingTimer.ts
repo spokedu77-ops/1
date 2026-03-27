@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { generateSignal } from '../lib/signals';
+import { generateSignal, createBasicSignalGenerator, type DupStats } from '../lib/signals';
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
 
@@ -32,14 +32,16 @@ export function useTrainingTimer({
   audioMode: string;
   colors: ColorItem[];
   onSignal: (sig: Record<string, unknown>) => void;
-  onFinish: () => void;
+  onFinish: (dupStats?: DupStats | null) => void;
 }) {
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const idxRef = useRef(-1);
+  const genRef = useRef<ReturnType<typeof createBasicSignalGenerator> | null>(null);
 
   useEffect(() => {
     if (!active) return;
+    genRef.current = mode === 'basic' ? createBasicSignalGenerator(level, colors) : null;
     startRef.current = performance.now();
     idxRef.current = -1;
     const totalMs = timeMode === 'time' ? duration * 1000 : targetReps * speed * 1000;
@@ -52,8 +54,15 @@ export function useTrainingTimer({
 
     const nextSignalTimeRef = { t: 0 };
 
+    const finish = () => {
+      ttsClear();
+      const dup = mode === 'basic' ? genRef.current?.getStats() ?? null : null;
+      onFinish(dup);
+    };
+
     const emitSignal = (elapsed: number) => {
-      const sig = generateSignal(mode, level, colors);
+      const sig =
+        mode === 'basic' ? genRef.current?.next() ?? null : generateSignal(mode, level, colors);
       if (sig) {
         onSignal(sig);
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
@@ -69,8 +78,7 @@ export function useTrainingTimer({
       const tick = (now: number) => {
         const elapsed = now - startRef.current;
         if (elapsed >= totalMs) {
-          ttsClear();
-          onFinish();
+          finish();
           return;
         }
         const i = Math.floor(elapsed / (speed * 1000));
@@ -86,8 +94,7 @@ export function useTrainingTimer({
       const tick = (now: number) => {
         const elapsed = now - startRef.current;
         if (elapsed >= totalMs) {
-          ttsClear();
-          onFinish();
+          finish();
           return;
         }
         if (elapsed >= nextSignalTimeRef.t) emitSignal(elapsed);

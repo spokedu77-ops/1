@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { generateSignal } from '../lib/signals';
+import { generateSignal, createBasicSignalGenerator, type DupStats } from '../lib/signals';
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
 
@@ -30,9 +30,10 @@ export function useIntervalTimer({
   audioMode: string;
   colors: ColorItem[];
   onSignal: (sig: Record<string, unknown>) => void;
-  onFinish: () => void;
+  onFinish: (dupStats?: DupStats | null) => void;
 }) {
   const rafRef = useRef<number | null>(null);
+  const genRef = useRef<ReturnType<typeof createBasicSignalGenerator> | null>(null);
   const startRef = useRef<number>(0);
   const phaseRef = useRef<'work' | 'rest'>('work');
   const setRef = useRef(0);
@@ -48,6 +49,7 @@ export function useIntervalTimer({
       setIntervalLeft(workSec);
       return;
     }
+    genRef.current = mode === 'basic' ? createBasicSignalGenerator(level, colors) : null;
     startRef.current = performance.now();
     phaseRef.current = 'work';
     setRef.current = 0;
@@ -70,7 +72,8 @@ export function useIntervalTimer({
 
       if (currentSet > sets) {
         ttsClear();
-        onFinish();
+        const dup = mode === 'basic' ? genRef.current?.getStats() ?? null : null;
+        onFinish(dup);
         return;
       }
 
@@ -90,7 +93,8 @@ export function useIntervalTimer({
         const sigIdx = Math.floor(timeInPhase / speed);
         if (sigIdx > lastSignalRef.current) {
           lastSignalRef.current = sigIdx;
-          const sig = generateSignal(mode, level, colors);
+          const sig =
+            mode === 'basic' ? genRef.current?.next() ?? null : generateSignal(mode, level, colors);
           if (sig) {
             onSignal(sig);
             if (audioMode === 'beep') {

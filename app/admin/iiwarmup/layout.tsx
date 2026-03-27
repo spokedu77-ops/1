@@ -12,7 +12,7 @@ export default function ScreenPlayAdminLayout({
           <div>
             <h1 className="text-2xl font-black tracking-tight">스크린 플레이</h1>
             <p className="text-sm text-neutral-400">
-              띵크 → 챌린지 → 플로우 + 메모리 게임 · 카메라 앱 + 에셋
+              띵크 → 챌린지 → 플로우 + SPOMOVE · 카메라 앱 + 에셋
             </p>
           </div>
 
@@ -51,7 +51,7 @@ export default function ScreenPlayAdminLayout({
               className="rounded-lg bg-neutral-800 px-3 py-2 hover:bg-neutral-700"
               href="/admin/memory-game"
             >
-              메모리 게임
+              SPOMOVE
             </Link>
             <Link
               className="rounded-lg bg-neutral-800 px-3 py-2 hover:bg-neutral-700"

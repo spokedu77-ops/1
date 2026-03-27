@@ -152,7 +152,7 @@ export default function Sidebar() {
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const disabled = 'disabled' in item && item.disabled;
-                  // 해시 링크도 활성화 상태로 인식. 스크린 플레이: iiWarmup·메모리게임·카메라 앱 경로에서 모두 활성
+                  // 해시 링크도 활성화 상태로 인식. 스크린 플레이: iiWarmup·SPOMOVE·카메라 앱 경로에서 모두 활성
                   const isScreenPlay = item.href === '/admin/iiwarmup';
                   const isActive = !disabled && (
                     pathname === item.href ||
