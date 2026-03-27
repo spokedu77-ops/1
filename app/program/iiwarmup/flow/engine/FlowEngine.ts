@@ -169,7 +169,7 @@ export class FlowEngine {
   private levelTime = 0;
   private currentLevelIndex = 0;
 
-  private durations = DURATIONS;
+  private durations: readonly number[] = DURATIONS;
   private readonly displayLevels = DISPLAY_LEVELS;
 
   private readonly baseSpeed = BASE_SPEED;
