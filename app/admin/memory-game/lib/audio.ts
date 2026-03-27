@@ -55,6 +55,7 @@ export function getBeepForSignal(sig: { type?: string } | null): BeepType | null
   if (!sig) return null;
   const { type } = sig;
   if (type === 'full_color') return 'mid';
+  if (type === 'basic_variant_color') return 'mid';
   if (type === 'arrow') return 'high';
   if (type === 'number') return 'blip';
   if (type === 'stroop') return 'chord';

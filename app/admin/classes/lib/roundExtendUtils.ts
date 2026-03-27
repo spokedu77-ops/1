@@ -1,5 +1,32 @@
 import { toast } from 'sonner';
 
+function formatErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === 'object') {
+    const e = err as {
+      message?: unknown;
+      details?: unknown;
+      hint?: unknown;
+      code?: unknown;
+    };
+
+    if (typeof e.message === 'string' && e.message.trim()) return e.message;
+
+    const parts: string[] = [];
+    if (typeof e.code === 'string' && e.code.trim()) parts.push(`[${e.code}]`);
+    if (typeof e.details === 'string' && e.details.trim()) parts.push(e.details);
+    if (typeof e.hint === 'string' && e.hint.trim()) parts.push(`hint: ${e.hint}`);
+    if (parts.length > 0) return parts.join(' ');
+
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return String(err);
+    }
+  }
+  return String(err);
+}
+
 // 그룹 수업 회차 확장 유틸
 export async function extendClass(
   supabase: any,
@@ -41,6 +68,28 @@ export async function extendClass(
       (new Date(last.end_at).getTime() - new Date(last.start_at).getTime()) / (1000 * 60);
 
     const newSessions = [];
+    const {
+      id: _id,
+      created_at: _createdAt,
+      updated_at: _updatedAt,
+      start_at: _startAt,
+      end_at: _endAt,
+      status: _status,
+      round_index: _roundIndex,
+      round_total: _roundTotal,
+      round_display: _roundDisplay,
+      ...insertBase
+    } = last;
+    void _id;
+    void _createdAt;
+    void _updatedAt;
+    void _startAt;
+    void _endAt;
+    void _status;
+    void _roundIndex;
+    void _roundTotal;
+    void _roundDisplay;
+
     for (let i = 1; i <= addCount; i++) {
       const start = new Date(lastStart);
       start.setDate(start.getDate() + dayInterval * i);
@@ -51,9 +100,7 @@ export async function extendClass(
       const roundDisplay = `${roundIndex}/${newTotal}`;
 
       newSessions.push({
-        ...last,
-        id: undefined,
-        created_at: undefined,
+        ...insertBase,
         start_at: start.toISOString(),
         end_at: end.toISOString(),
         status: 'opened',
@@ -82,8 +129,7 @@ export async function extendClass(
     toast.success('회차가 성공적으로 확장되었습니다.');
     options?.onAfter?.();
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    toast.error('회차 확장에 실패했습니다: ' + msg);
+    toast.error('회차 확장에 실패했습니다: ' + formatErrorMessage(error));
   }
 }
 

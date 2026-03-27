@@ -27,6 +27,7 @@ export function HistoryScreen({
     { id: 'stroop', label: '스트룹' },
     { id: 'spatial', label: '순차 기억' },
     { id: 'dual', label: '이중 과제' },
+    { id: 'flow', label: '플로우' },
   ];
 
   const filtered = records
@@ -45,10 +46,10 @@ export function HistoryScreen({
     return `${mm}/${dd} ${hh}:${min}`;
   };
 
-  const modeAccent: Record<string, string> = { basic: '#3B82F6', stroop: '#A855F7', spatial: '#22C55E', dual: '#F97316', nback: '#06B6D4', team: '#F43F5E' };
+  const modeAccent: Record<string, string> = { basic: '#3B82F6', stroop: '#A855F7', spatial: '#22C55E', dual: '#F97316', flow: '#06B6D4', nback: '#06B6D4', team: '#F43F5E' };
 
   const exportCSV = () => {
-    const modeLabel: Record<string, string> = { basic: '반응인지', stroop: '스트룹', spatial: '순차기억', dual: '이중과제', nback: 'N-Back', team: '팀대결' };
+    const modeLabel: Record<string, string> = { basic: '반응인지', stroop: '스트룹', spatial: '순차기억', dual: '이중과제', flow: '플로우', nback: 'N-Back', team: '팀대결' };
     const header = ['날짜', '학생', '모드', '단계', '신호횟수', 'SPM', '속도(초)', '시간모드', '설정시간(초)'].join(',');
     const rows = [...filtered].reverse().map((r) => {
       const student = students.find((s) => s.id === r.studentId);
@@ -101,7 +102,7 @@ export function HistoryScreen({
       modeCounts[r.mode] = (modeCounts[r.mode] || 0) + 1;
     });
     const topMode = Object.entries(modeCounts).sort((a, b) => b[1] - a[1])[0];
-    const modeLabel: Record<string, string> = { basic: '반응 인지', stroop: '스트룹', spatial: '순차 기억', dual: '이중 과제', nback: 'N-Back', team: '팀 대결' };
+    const modeLabel: Record<string, string> = { basic: '반응 인지', stroop: '스트룹', spatial: '순차 기억', dual: '이중 과제', flow: '플로우', nback: 'N-Back', team: '팀 대결' };
     return { days, topMode: topMode ? { name: modeLabel[topMode[0]] ?? topMode[0], count: topMode[1] } : null, total: weekRecords.length };
   })();
 

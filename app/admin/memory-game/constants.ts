@@ -52,8 +52,9 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     desc: '화면 신호를 보는 순간, 판단하고 즉시 움직입니다.',
     levels: [
       { id: 1, name: '색 지각', enName: 'Color Perception', desc: '화면 전체가 바뀌는 색깔을 보고 해당 콘으로 즉시 달립니다.' },
-      { id: 2, name: '공간 방향 지각', enName: 'Spatial Orientation', desc: '화살표 방향을 보고 해당 방향으로 즉시 이동합니다.' },
-      { id: 3, name: '조건부 수 판단', enName: 'Conditional Number', desc: '숫자를 보고 선생님이 정한 규칙대로 행동합니다.' },
+      { id: 2, name: '변형 색지각', enName: 'Variant Color Perception', desc: '3패널에 나타나는 색깔 패턴을 보고 해당 색 콘으로 즉시 이동합니다.' },
+      { id: 3, name: '공간 방향 지각', enName: 'Spatial Orientation', desc: '화살표 방향을 보고 해당 방향으로 즉시 이동합니다.' },
+      { id: 4, name: '조건부 수 판단', enName: 'Conditional Number', desc: '숫자를 보고 선생님이 정한 규칙대로 행동합니다.' },
     ],
   },
   stroop: {
@@ -83,9 +84,17 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     tag: '분산 주의 · 복합 실행',
     desc: '두 가지 정보를 동시에 처리해 하나의 통합된 행동을 수행합니다.',
     levels: [
-      { id: 1, name: '색-수 통합', enName: 'Color-Number Integration', desc: '해당 색 콘으로 달린 뒤, 화면 숫자만큼 콘을 터치합니다.' },
+      { id: 1, name: '색깔 숫자 통합', enName: 'Color-Number Integration', desc: '해당 색 콘으로 달린 뒤, 화면 숫자만큼 콘을 터치합니다.' },
       { id: 2, name: '색-동작 통합', enName: 'Color-Action Integration', desc: '해당 색 콘 위치에서 화면에 나오는 동작을 수행합니다.' },
       { id: 3, name: '스트룹-동작 통합', enName: 'Stroop-Action Integration', desc: '스트룹 과제로 색을 판단해 이동하고, 동작까지 수행합니다.' },
+    ],
+  },
+  flow: {
+    id: 'flow', title: '플로우', en: 'Flow Mode', icon: '🌌', accent: '#06B6D4',
+    tag: '몰입 러닝 · 반응 전환',
+    desc: '우주 러닝 FLOW를 메모리게임에서 바로 실행합니다.',
+    levels: [
+      { id: 1, name: 'FLOW 프로그램', enName: 'Flow Program', desc: '시작-레벨-휴식을 포함한 FLOW 전체 시퀀스를 진행합니다.' },
     ],
   },
 };

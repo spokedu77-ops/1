@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { FlowEngine, type FlowDomRefs } from './engine/FlowEngine';
+import { FlowEngine, type FlowDomRefs, type FlowTimingOverrides } from './engine/FlowEngine';
 import { useFlowBGM } from '@/app/lib/admin/hooks/useFlowBGM';
 import { useFlowPano } from '@/app/lib/admin/hooks/useFlowPano';
 
@@ -21,6 +21,21 @@ function FlowPhaseContent() {
   const isAdminMode = searchParams.get('admin') === 'true';
   const showLevelSelector = searchParams.get('showLevelSelector') === '1';
   const autoStart = searchParams.get('autoStart') === '1' || searchParams.get('autoStart') === 'true';
+  const memoryPreset = searchParams.get('memoryPreset');
+  const timingOverrides: FlowTimingOverrides | undefined = memoryPreset === 'shortFlow5'
+    ? {
+        welcomeDurationMs: 5000,
+        lv1GuideDurationMs: 5000,
+        durations: [10, 15, 10, 30, 10, 30, 30, 15],
+        introCountdownSec: 5,
+        introCountdownDelayMs: 0,
+        startAfterCountdownDelayMs: 0,
+        interLevelCountdownSec: 10,
+        restResumeDelayMs: 0,
+        endingAutoCloseSec: 15,
+        skipRestPhases: true,
+      }
+    : undefined;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<FlowEngine | null>(null);
@@ -66,8 +81,8 @@ function FlowPhaseContent() {
   domRefsRef.current = domRefs;
 
   const handleStart = useCallback(async () => {
-    await engineRef.current?.startGame(bgmPath || undefined, panoPath || undefined);
-  }, [bgmPath, panoPath]);
+    await engineRef.current?.startGame(bgmPath || undefined, panoPath || undefined, { timingOverrides });
+  }, [bgmPath, panoPath, timingOverrides]);
 
   const handleLevelChange = useCallback((level: number) => {
     setSelectedLevel(level);
@@ -102,10 +117,11 @@ function FlowPhaseContent() {
       engineRef.current?.startGame(bgmPath || undefined, panoPath || undefined, {
         deferAudio: false,
         onAudioBlocked: () => setShowTapForAudio(true),
+        timingOverrides,
       });
     }, 400);
     return () => clearTimeout(t);
-  }, [autoStart, engineReady, flowAssetsReady, bgmPath, panoPath]);
+  }, [autoStart, engineReady, flowAssetsReady, bgmPath, panoPath, timingOverrides]);
 
   return (
     <main

@@ -61,30 +61,82 @@ function TeacherWeeklyBestCard({
   onToggle: () => void;
   supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
 }) {
-  const [detailLesson, setDetailLesson] = useState<string | null>(null);
-  const [detailFeedback, setDetailFeedback] = useState<string | null>(null);
+  const [detailLesson, setDetailLesson] = useState<string | null | undefined>(undefined);
+  const [detailFeedback, setDetailFeedback] = useState<string | null | undefined>(undefined);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supabase || !isExpanded) return;
     if (!row.lesson_plan_session_id && !row.feedback_session_id) return;
     (async () => {
-      const [lpRes, fbRes] = await Promise.all([
-        row.lesson_plan_session_id ? supabase.from('lesson_plans').select('content').eq('session_id', row.lesson_plan_session_id).maybeSingle() : Promise.resolve({ data: null }),
-        row.feedback_session_id ? supabase.from('sessions').select('feedback_fields, students_text').eq('id', row.feedback_session_id).maybeSingle() : Promise.resolve({ data: null }),
-      ]);
-      setDetailLesson(lpRes.data?.content ?? null);
-      const fb = fbRes.data as { feedback_fields?: { main_activity?: string; strengths?: string; next_goals?: string; improvements?: string; condition_notes?: string }; students_text?: string } | null;
-      if (fb?.students_text) setDetailFeedback(fb.students_text);
-      else if (fb?.feedback_fields) {
-        const f = fb.feedback_fields;
-        const parts: string[] = [];
-        if (f.main_activity) parts.push(`✅ 주요 활동\n${f.main_activity}`);
-        if (f.strengths) parts.push(`✅ 강점\n${f.strengths}`);
-        if (f.improvements) parts.push(`✅ 개선점\n${f.improvements}`);
-        if (f.next_goals) parts.push(`✅ 다음 목표\n${f.next_goals}`);
-        if (f.condition_notes) parts.push(`✅ 특이사항 및 시작/종료 시간\n${f.condition_notes}`);
-        setDetailFeedback(parts.join('\n\n'));
-      } else setDetailFeedback(null);
+      setDetailError(null);
+      setDetailLesson(row.lesson_plan_session_id ? undefined : null);
+      setDetailFeedback(row.feedback_session_id ? undefined : null);
+
+      try {
+        const res = await fetch('/api/teacher/weekly-best-detail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lessonPlanSessionId: row.lesson_plan_session_id,
+            feedbackSessionId: row.feedback_session_id,
+          }),
+        });
+
+        if (!res.ok) {
+          setDetailError(res.status === 401 ? '로그인이 필요합니다.' : '불러오지 못했습니다.');
+          setDetailLesson(null);
+          setDetailFeedback(null);
+          return;
+        }
+
+        const json = (await res.json().catch(() => null)) as
+          | {
+              lessonPlanContent?: string | null;
+              feedback?: {
+                feedback_fields?: {
+                  main_activity?: string;
+                  strengths?: string;
+                  next_goals?: string;
+                  improvements?: string;
+                  condition_notes?: string;
+                };
+                students_text?: string;
+              } | null;
+            }
+          | null;
+
+        setDetailLesson(json?.lessonPlanContent ?? null);
+        const fb = (json?.feedback ?? null) as
+          | {
+              feedback_fields?: {
+                main_activity?: string;
+                strengths?: string;
+                next_goals?: string;
+                improvements?: string;
+                condition_notes?: string;
+              };
+              students_text?: string;
+            }
+          | null;
+
+        if (fb?.students_text) setDetailFeedback(fb.students_text);
+        else if (fb?.feedback_fields) {
+          const f = fb.feedback_fields;
+          const parts: string[] = [];
+          if (f.main_activity) parts.push(`✅ 주요 활동\n${f.main_activity}`);
+          if (f.strengths) parts.push(`✅ 강점\n${f.strengths}`);
+          if (f.improvements) parts.push(`✅ 개선점\n${f.improvements}`);
+          if (f.next_goals) parts.push(`✅ 다음 목표\n${f.next_goals}`);
+          if (f.condition_notes) parts.push(`✅ 특이사항 및 시작/종료 시간\n${f.condition_notes}`);
+          setDetailFeedback(parts.join('\n\n'));
+        } else setDetailFeedback(null);
+      } catch (err) {
+        devLogger.error('[teacher weekly-best detail fetch]', err);
+        setDetailError('네트워크 오류로 불러오지 못했습니다.');
+        setDetailLesson(null);
+        setDetailFeedback(null);
+      }
     })();
   }, [supabase, isExpanded, row.id, row.lesson_plan_session_id, row.feedback_session_id]);
 
@@ -114,7 +166,13 @@ function TeacherWeeklyBestCard({
           )}
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 지도안</h4>
-            <div className="text-[14px] text-slate-600 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border border-slate-100 min-h-[60px]">{row.lesson_plan_session_id ? (detailLesson ?? '로딩 중...') : '— 없음'}</div>
+            <div className="text-[14px] text-slate-600 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border border-slate-100 min-h-[60px]">
+              {detailError
+                ? detailError
+                : row.lesson_plan_session_id
+                  ? (detailLesson === undefined ? '로딩 중...' : (detailLesson ?? '— 없음'))
+                  : '— 없음'}
+            </div>
           </section>
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 포토</h4>
@@ -128,7 +186,13 @@ function TeacherWeeklyBestCard({
           </section>
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 피드백</h4>
-            <div className="text-[14px] text-slate-600 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border border-slate-100 min-h-[60px]">{row.feedback_session_id ? (detailFeedback ?? '로딩 중...') : '— 없음'}</div>
+            <div className="text-[14px] text-slate-600 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border border-slate-100 min-h-[60px]">
+              {detailError
+                ? detailError
+                : row.feedback_session_id
+                  ? (detailFeedback === undefined ? '로딩 중...' : (detailFeedback ?? '— 없음'))
+                  : '— 없음'}
+            </div>
           </section>
         </div>
       )}

@@ -119,6 +119,50 @@ const triple = <T>(arr: T[]) => {
   return [arr[ai], arr[bi], arr[ci]];
 };
 
+type FruitSlide = { imageUrl: string; color: ColorItem };
+type VariantPanel = { slide: FruitSlide } | null;
+
+const FRUIT_SLIDES: FruitSlide[] = [
+  { imageUrl: 'https://i.postimg.cc/vgZrtFz0/APPLE(RED).jpg', color: COLORS.find((c) => c.id === 'red') ?? COLORS[0]! },
+  { imageUrl: 'https://i.postimg.cc/yg8my4Pf/BLUBERRY(BLUE).jpg', color: COLORS.find((c) => c.id === 'blue') ?? COLORS[1]! },
+  { imageUrl: 'https://i.postimg.cc/qhvsxVLj/BANANA(YELLOW).jpg', color: COLORS.find((c) => c.id === 'yellow') ?? COLORS[3]! },
+  { imageUrl: 'https://i.postimg.cc/dkV2jPBj/KIWI(GREEN).jpg', color: COLORS.find((c) => c.id === 'green') ?? COLORS[2]! },
+  { imageUrl: 'https://i.postimg.cc/QB0VTLwK/KOREANMELON(YELLOW).png', color: COLORS.find((c) => c.id === 'yellow') ?? COLORS[3]! },
+  { imageUrl: 'https://i.postimg.cc/FfD1Lt8y/MELON(GREEN).jpg', color: COLORS.find((c) => c.id === 'green') ?? COLORS[2]! },
+  { imageUrl: 'https://i.postimg.cc/Z9V0dk2P/STRAWBERRY(RED).jpg', color: COLORS.find((c) => c.id === 'red') ?? COLORS[0]! },
+];
+
+function buildVariantPanels(): VariantPanel[] {
+  // 패턴 A: 3패널 모두 같은 색
+  const patternA = (): VariantPanel[] => {
+    const s = r(FRUIT_SLIDES);
+    return [{ slide: s }, { slide: s }, { slide: s }];
+  };
+
+  // 패턴 B: 1~2패널만 같은 색 노출 (나머지는 빈 패널)
+  const patternB = (): VariantPanel[] => {
+    const s = r(FRUIT_SLIDES);
+    const visibleCount = Math.floor(Math.random() * 2) + 1; // 1 or 2
+    const idxs = [0, 1, 2].sort(() => Math.random() - 0.5).slice(0, visibleCount);
+    return [0, 1, 2].map((idx) => (idxs.includes(idx) ? { slide: s } : null));
+  };
+
+  // 패턴 C: 2패널에 서로 다른 색 표시
+  const patternC = (): VariantPanel[] => {
+    const [s1, s2] = pair(FRUIT_SLIDES);
+    const idxs = [0, 1, 2].sort(() => Math.random() - 0.5).slice(0, 2);
+    const panels: VariantPanel[] = [null, null, null];
+    panels[idxs[0]!] = { slide: s1 };
+    panels[idxs[1]!] = { slide: s2 };
+    return panels;
+  };
+
+  const mode = Math.floor(Math.random() * 3);
+  if (mode === 0) return patternA();
+  if (mode === 1) return patternB();
+  return patternC();
+}
+
 export function generateSignal(
   mode: string,
   level: number,
@@ -132,10 +176,14 @@ export function generateSignal(
       return { type: 'full_color', bg: c.bg, content: { symbol: c.symbol, name: c.name, textColor: c.text }, voice: null };
     }
     if (level === 2) {
+      const panels = buildVariantPanels();
+      return { type: 'basic_variant_color', bg: '#ffffff', content: { panels }, voice: null };
+    }
+    if (level === 3) {
       const a = r(ARROWS);
       return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
     }
-    if (level === 3) {
+    if (level === 4) {
       const n = r(NUMBERS);
       return { type: 'number', bg: '#0F172A', content: n, voice: null };
     }

@@ -33,6 +33,43 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       </div>
     );
 
+  if (type === 'basic_variant_color') {
+    const panels = ((content?.panels as Array<{ slide?: { imageUrl?: string; color?: { name?: string; text?: string } } | null } | null>) ?? []);
+    return (
+      <div key={animKey} className="signal-blink" style={{ ...C, gap: '1rem', padding: '0 1.5rem' }}>
+        {[0, 1, 2].map((idx) => {
+          const item = panels[idx] as { slide?: { imageUrl?: string; color?: { name?: string; text?: string } } } | null | undefined;
+          const slide = item?.slide;
+          return (
+            <div
+              key={idx}
+              style={{
+                flex: 1,
+                height: 'clamp(240px,48vh,520px)',
+                borderRadius: '1.35rem',
+                border: slide ? '2px solid rgba(0,0,0,0.08)' : '2px dashed rgba(0,0,0,0.12)',
+                background: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: slide ? '0 10px 30px rgba(0,0,0,0.08)' : 'none',
+                backgroundImage: slide?.imageUrl ? `url('${slide.imageUrl}')` : 'none',
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                overflow: 'hidden',
+              }}
+            >
+              {!slide && (
+                <div style={{ fontSize: 'clamp(24px,3vw,34px)', fontWeight: 800, color: 'rgba(0,0,0,0.2)' }}>대기</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   if (type === 'number')
     return (
       <div key={animKey} className="signal-blink" style={C}>

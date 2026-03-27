@@ -78,6 +78,19 @@ import {
 import type { FlowDomRefs } from './FlowTypes';
 export type { FlowDomRefs };
 
+export type FlowTimingOverrides = {
+  welcomeDurationMs?: number;
+  lv1GuideDurationMs?: number;
+  durations?: readonly number[];
+  introCountdownSec?: number;
+  introCountdownDelayMs?: number;
+  startAfterCountdownDelayMs?: number;
+  interLevelCountdownSec?: number;
+  restResumeDelayMs?: number;
+  endingAutoCloseSec?: number;
+  skipRestPhases?: boolean;
+};
+
 /** 파노라마 전방 180°만 선명히 표시, 뒤쪽은 우주 검정. 2K도 덜 뭉개지게 */
 const PANO_VERTEX = `
   varying vec3 vViewDirection;
@@ -156,7 +169,7 @@ export class FlowEngine {
   private levelTime = 0;
   private currentLevelIndex = 0;
 
-  private readonly durations = DURATIONS;
+  private durations = DURATIONS;
   private readonly displayLevels = DISPLAY_LEVELS;
 
   private readonly baseSpeed = BASE_SPEED;
@@ -189,8 +202,15 @@ export class FlowEngine {
   private currentFov = 60;
   private targetFov = 60;
   private readonly PAD_TRIGGER_RATIO = PAD_TRIGGER_RATIO;
-  private readonly WELCOME_DURATION = WELCOME_DURATION;
-  private readonly LV1_GUIDE_DURATION = LV1_GUIDE_DURATION;
+  private WELCOME_DURATION = WELCOME_DURATION;
+  private LV1_GUIDE_DURATION = LV1_GUIDE_DURATION;
+  private INTRO_COUNTDOWN_SEC = 15;
+  private INTRO_COUNTDOWN_DELAY_MS = 2000;
+  private START_AFTER_COUNTDOWN_DELAY_MS = 500;
+  private INTER_LEVEL_COUNTDOWN_SEC = 3;
+  private REST_RESUME_DELAY_MS = 2000;
+  private ENDING_AUTO_CLOSE_SEC = 15;
+  private SKIP_REST_PHASES = false;
 
   private jumpProgress = 0;
   private jumpStartTime = 0;
@@ -1170,9 +1190,53 @@ export class FlowEngine {
           this.movementActive = true;
           this.levelTime = 0;
           if (ins) ins.classList.add('fade-out');
-        });
-      }, 2000);
+        }, this.INTER_LEVEL_COUNTDOWN_SEC);
+      }, this.REST_RESUME_DELAY_MS);
     }, restDurationSec * 1000);
+  }
+
+  private triggerGuideTransitionAfterRest(): void {
+    this.isResting = true;
+    this.movementActive = false;
+
+    const ins = getRefEl(this.domRefs.introScreen);
+    const txt = getRefEl(this.domRefs.introTitle);
+    const btn = getRefEl(this.domRefs.startBtn);
+    if (btn) btn.style.display = 'none';
+    if (ins) ins.classList.remove('hidden', 'fade-out');
+
+    while (this.displayLevels[this.currentLevelIndex + 1] === 0 && this.currentLevelIndex < this.durations.length - 1) {
+      this.currentLevelIndex++;
+    }
+    if (this.currentLevelIndex < this.durations.length - 1) {
+      this.currentLevelIndex++;
+    }
+
+    const nextLevel = this.getCurrentLevelNum();
+    const levelNumEl = getRefEl(this.domRefs.levelNum);
+    if (levelNumEl) levelNumEl.innerText = String(nextLevel);
+    setLevelTag(this.domRefs, nextLevel);
+
+    if (nextLevel === 3) this.obstacleManager.setGoldBudget(3 + Math.floor(Math.random() * 2));
+    if (typeof window !== 'undefined') {
+      showLevelBadge(this.domRefs, nextLevel, 500);
+      window.dispatchEvent(new CustomEvent('flow-event', { detail: { type: 'level', level: nextLevel } }));
+    }
+
+    if (txt) {
+      txt.style.fontSize = '3rem';
+      if (nextLevel === 3) txt.innerHTML = PHRASES.lv3Intro;
+      else if (nextLevel === 4) txt.innerHTML = PHRASES.lv4Intro;
+      else if (nextLevel === 5) txt.innerHTML = PHRASES.lv5Intro;
+      else txt.innerHTML = `<span style="color:#93c5fd;">LEVEL ${nextLevel}</span>`;
+    }
+
+    this.doCountdownStart(() => {
+      this.isResting = false;
+      this.movementActive = true;
+      this.levelTime = 0;
+      if (ins) ins.classList.add('fade-out');
+    }, this.INTER_LEVEL_COUNTDOWN_SEC);
   }
 
   private triggerEnding(): void {
@@ -1199,12 +1263,11 @@ export class FlowEngine {
       txt.innerHTML = PHRASES.ending;
     }
 
-    const ENDING_AUTO_CLOSE_SEC = 15;
     this.registerTimeout(() => {
       if (typeof window !== 'undefined' && window.parent !== window) {
         window.parent.postMessage({ type: 'flow-ended' }, window.location.origin);
       }
-    }, ENDING_AUTO_CLOSE_SEC * 1000);
+    }, this.ENDING_AUTO_CLOSE_SEC * 1000);
   }
 
   private onVisibilityChange(): void {
@@ -1226,13 +1289,18 @@ export class FlowEngine {
     }
   }
 
-  private doCountdownStart(onDone: () => void): void {
+  private doCountdownStart(onDone: () => void, countdownSec = 3): void {
     const cdOverlay = getRefEl(this.domRefs.countdownOverlay);
     if (!cdOverlay) return;
 
     this.clearCountdown();
+    if (countdownSec <= 0) {
+      cdOverlay.classList.add('hidden');
+      onDone?.();
+      return;
+    }
     cdOverlay.classList.remove('hidden');
-    let count = 3;
+    let count = countdownSec;
     cdOverlay.innerText = String(count);
 
     this.countdownTimer = setInterval(() => {
@@ -1276,14 +1344,14 @@ export class FlowEngine {
 
     this.clearScheduledTimeouts();
     this.clearCountdown();
-    // 인트로 문구만 먼저 2초 노출 후 카운트다운 표시 (겹침 방지)
-    const COUNTDOWN_DELAY_MS = 2000;
+    // 인트로 문구 노출 후 카운트다운 표시
+    const COUNTDOWN_DELAY_MS = this.INTRO_COUNTDOWN_DELAY_MS;
     this.registerTimeout(() => {
       if (cdOverlay) {
         cdOverlay.classList.remove('hidden');
-        cdOverlay.innerText = '15';
+        cdOverlay.innerText = String(this.INTRO_COUNTDOWN_SEC);
       }
-      let count = 15;
+      let count = this.INTRO_COUNTDOWN_SEC;
       this.introCountdownTimer = setInterval(() => {
         count--;
         if (count > 0 && cdOverlay) cdOverlay.innerText = String(count);
@@ -1301,7 +1369,7 @@ export class FlowEngine {
             this.levelTime = 0;
             if (ins) ins.classList.add('fade-out');
             showInstruction(this.domRefs, 'JUMP!', 'text-yellow-400', 700);
-          }, 500);
+          }, this.START_AFTER_COUNTDOWN_DELAY_MS);
         }
       }, 1000);
     }, COUNTDOWN_DELAY_MS);
@@ -1318,11 +1386,23 @@ export class FlowEngine {
   async startGame(
     bgmStoragePath?: string,
     panoStoragePath?: string,
-    options?: { deferAudio?: boolean; onAudioBlocked?: () => void }
+    options?: { deferAudio?: boolean; onAudioBlocked?: () => void; timingOverrides?: FlowTimingOverrides }
   ): Promise<void> {
     this.clearScheduledTimeouts();
     this.clearCountdown();
     this.audioDeferred = false;
+
+    const timing = options?.timingOverrides;
+    this.durations = timing?.durations && timing.durations.length > 0 ? timing.durations : DURATIONS;
+    this.WELCOME_DURATION = timing?.welcomeDurationMs ?? WELCOME_DURATION;
+    this.LV1_GUIDE_DURATION = timing?.lv1GuideDurationMs ?? LV1_GUIDE_DURATION;
+    this.INTRO_COUNTDOWN_SEC = Math.max(0, Math.floor(timing?.introCountdownSec ?? 15));
+    this.INTRO_COUNTDOWN_DELAY_MS = Math.max(0, Math.floor(timing?.introCountdownDelayMs ?? 2000));
+    this.START_AFTER_COUNTDOWN_DELAY_MS = Math.max(0, Math.floor(timing?.startAfterCountdownDelayMs ?? 500));
+    this.INTER_LEVEL_COUNTDOWN_SEC = Math.max(0, Math.floor(timing?.interLevelCountdownSec ?? 3));
+    this.REST_RESUME_DELAY_MS = Math.max(0, Math.floor(timing?.restResumeDelayMs ?? 2000));
+    this.ENDING_AUTO_CLOSE_SEC = Math.max(0, Math.floor(timing?.endingAutoCloseSec ?? 15));
+    this.SKIP_REST_PHASES = !!timing?.skipRestPhases;
 
     this.panoStoragePath = panoStoragePath ?? null;
 
@@ -1479,9 +1559,12 @@ export class FlowEngine {
     const currentDuration = this.durations[this.currentLevelIndex];
     if (!inHitStop && this.movementActive && this.levelTime > currentDuration) {
       if (this.displayLevels[this.currentLevelIndex + 1] === 0) {
-        this.currentLevelIndex++;
         this.levelTime = 0;
-        this.triggerRest();
+        if (this.SKIP_REST_PHASES) this.triggerGuideTransitionAfterRest();
+        else {
+          this.currentLevelIndex++;
+          this.triggerRest();
+        }
       } else if (this.displayLevels[this.currentLevelIndex + 1] === -1) {
         this.currentLevelIndex++;
         this.triggerEnding();
