@@ -63,7 +63,7 @@ export function getBeepForSignal(sig: { type?: string } | null): BeepType | null
   return 'mid';
 }
 
-/** 스트룹 모드 단계 1·2에서만 정답 색 이름을 읽어줌. 그 외 모드/단계/비프모드에서는 null. */
+/** 스트룹 모드 단계 2·3에서만 정답 색 이름을 읽어줌(역 스트룹 1단계는 힌트 없음). 그 외는 null. */
 export function getSignalVoice(
   sig: Record<string, unknown> | null,
   mode: string,
@@ -72,7 +72,7 @@ export function getSignalVoice(
 ): string | null {
   if (!sig || audioMode === 'off' || audioMode === 'beep') return null;
   if (mode !== 'stroop') return null;
-  if (level === 3) return null;
+  if (level === 1) return null;
   const type = sig.type as string;
   const voice = sig.voice as string | undefined;
   if (type === 'stroop') return voice ?? null;

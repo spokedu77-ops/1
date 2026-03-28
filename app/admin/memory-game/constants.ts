@@ -52,7 +52,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     desc: '화면 신호를 보는 순간, 판단하고 즉시 움직입니다.',
     levels: [
       { id: 1, name: '색 지각', enName: 'Color Perception', desc: '화면 전체가 바뀌는 색깔을 보고 해당 콘으로 즉시 달립니다.' },
-      { id: 2, name: '변형 색지각', enName: 'Variant Color Perception', desc: '3패널에 나타나는 색깔 패턴을 보고 해당 색 콘으로 즉시 이동합니다.' },
+      { id: 2, name: '변형 색지각', enName: 'Variant Color Perception', desc: '좌·우에 같은 과일이 나타납니다. 해당 색 콘으로 즉시 이동합니다. 연속으로 같은 과일은 나오지 않습니다.' },
       { id: 3, name: '공간 방향 지각', enName: 'Spatial Orientation', desc: '화살표 방향을 보고 해당 방향으로 즉시 이동합니다.' },
       { id: 4, name: '조건부 수 판단', enName: 'Conditional Number', desc: '숫자를 보고 선생님이 정한 규칙대로 행동합니다.' },
     ],
@@ -62,9 +62,9 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     tag: '억제 제어 · 인지 유연성',
     desc: '글자와 색깔이 서로 충돌합니다. 뇌의 자동 반응을 억제하고 올바르게 판단하세요.',
     levels: [
-      { id: 1, name: '색 명명', enName: 'Color Naming', desc: '"빨강"이 파란색으로 칠해져 있다면 → "파랑"이라고 말합니다. 글자에 칠해진 색이 무엇인지를 말하세요.' },
-      { id: 2, name: '배경 간섭', enName: 'Background Interference', desc: '배경색이 추가되어 방해합니다. 글자에 칠해진 색만 말하세요.' },
-      { id: 3, name: '역 스트룹', enName: 'Reverse Stroop', desc: '이번엔 반대! 칠해진 색은 무시하고 글자에 쓰인 내용을 그대로 말합니다.' },
+      { id: 1, name: '역 스트룹', enName: 'Reverse Stroop', desc: '칠해진 색은 무시하고 글자에 쓰인 내용을 그대로 말합니다.' },
+      { id: 2, name: '색 명명', enName: 'Color Naming', desc: '"빨강"이 파란색으로 칠해져 있다면 → "파랑"이라고 말합니다. 글자에 칠해진 색이 무엇인지를 말하세요.' },
+      { id: 3, name: '배경 간섭', enName: 'Background Interference', desc: '배경색이 추가되어 방해합니다. 글자에 칠해진 색만 말하세요.' },
     ],
   },
   spatial: {

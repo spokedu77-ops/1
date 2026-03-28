@@ -132,26 +132,27 @@ const FRUIT_SLIDES: FruitSlide[] = [
   { imageUrl: 'https://i.postimg.cc/Z9V0dk2P/STRAWBERRY(RED).jpg', color: COLORS.find((c) => c.id === 'red') ?? COLORS[0]! },
 ];
 
-function buildVariantPanels(): VariantPanel[] {
-  // 패턴 A: 2패널 모두 같은 이미지
-  const patternA = (): VariantPanel[] => {
-    const s = r(FRUIT_SLIDES);
-    return [{ slide: s }, { slide: s }];
-  };
-
-  // 패턴 B: 2패널에 서로 다른 이미지 표시
-  const patternB = (): VariantPanel[] => {
-    const [s1, s2] = pair(FRUIT_SLIDES);
-    return [{ slide: s1 }, { slide: s2 }];
-  };
-
-  return Math.random() < 0.5 ? patternA() : patternB();
+/** 좌·우 동일 과일. 직전 신호와 같은 과일은 제외(연속 딸기/딸기 금지). */
+function buildVariantPanels(excludeImageUrl: string | null = null): VariantPanel[] {
+  let pool = FRUIT_SLIDES;
+  if (excludeImageUrl) {
+    const filtered = FRUIT_SLIDES.filter((s) => s.imageUrl !== excludeImageUrl);
+    if (filtered.length > 0) pool = filtered;
+  }
+  const s = r(pool);
+  return [{ slide: s }, { slide: s }];
 }
+
+export type GenerateSignalOptions = {
+  /** 변형 색지각: 직전에 쓴 과일 이미지 URL — 연속 동일 과일 방지 */
+  excludeVariantImageUrl?: string | null;
+};
 
 export function generateSignal(
   mode: string,
   level: number,
-  colors: ColorItem[] = COLORS
+  colors: ColorItem[] = COLORS,
+  opts?: GenerateSignalOptions
 ): Record<string, unknown> | null {
   const activeColors = colors.length >= 2 ? colors : COLORS;
 
@@ -161,7 +162,7 @@ export function generateSignal(
       return { type: 'full_color', bg: c.bg, content: { symbol: c.symbol, name: c.name, textColor: c.text }, voice: null };
     }
     if (level === 2) {
-      const panels = buildVariantPanels();
+      const panels = buildVariantPanels(opts?.excludeVariantImageUrl ?? null);
       return { type: 'basic_variant_color', bg: '#000000', content: { panels }, voice: null };
     }
     if (level === 3) {
@@ -178,9 +179,13 @@ export function generateSignal(
     const stroopPool = activeColors.map((c) => ({ name: c.name, hex: c.bg }));
     if (level === 1) {
       const [w, tc] = pair(stroopPool);
-      return { type: 'stroop', bg: '#0F172A', content: { word: w.name, textHex: tc.hex }, voice: tc.name };
+      return { type: 'stroop', bg: '#0F172A', content: { word: w.name, textHex: tc.hex }, voice: w.name };
     }
     if (level === 2) {
+      const [w, tc] = pair(stroopPool);
+      return { type: 'stroop', bg: '#0F172A', content: { word: w.name, textHex: tc.hex }, voice: tc.name };
+    }
+    if (level === 3) {
       // 글자색(textHex), 배경색(bg), 글자 내용(word)이 가리키는 색 — 세 값이 모두 달라야 함
       for (let retry = 0; retry < 25; retry++) {
         const [w, tc, bg] = triple(stroopPool);
@@ -193,10 +198,6 @@ export function generateSignal(
       }
       const [w, tc, bg] = triple(stroopPool);
       return { type: 'stroop', bg: bg.hex, content: { word: w.name, textHex: tc.hex }, voice: tc.name };
-    }
-    if (level === 3) {
-      const [w, tc] = pair(stroopPool);
-      return { type: 'stroop', bg: '#0F172A', content: { word: w.name, textHex: tc.hex }, voice: w.name };
     }
   }
 
@@ -262,6 +263,11 @@ export function createBasicSignalGenerator(level: number, colors: ColorItem[]) {
   let seqStreak = 0;
   let maxStreak = 0;
   let tripleViolation = false;
+  /** 변형 색지각 직전 과일 이미지 URL — 연속 동일 과일 금지 */
+  let lastVariantImageUrl: string | null = null;
+
+  const genOpts = (): GenerateSignalOptions | undefined =>
+    level === 2 ? { excludeVariantImageUrl: lastVariantImageUrl } : undefined;
 
   const acceptSignal = (sig: Record<string, unknown>, fp: string) => {
     const wouldDup = prev1 !== null && fp === prev1;
@@ -274,13 +280,17 @@ export function createBasicSignalGenerator(level: number, colors: ColorItem[]) {
     prev2 = prev1;
     prev1 = fp;
     emitted++;
+    if ((sig.type as string) === 'basic_variant_color') {
+      const panels = ((sig.content as { panels?: Array<{ slide?: { imageUrl?: string } }> })?.panels) ?? [];
+      lastVariantImageUrl = panels[0]?.slide?.imageUrl ?? null;
+    }
     return sig;
   };
 
   const tryEmit = (): Record<string, unknown> | null => {
     const emittedBefore = emitted;
     for (let attempt = 0; attempt < 120; attempt++) {
-      const sig = generateSignal('basic', level, colors);
+      const sig = generateSignal('basic', level, colors, genOpts());
       if (!sig) continue;
       const fp = signalFingerprint(sig);
       if (prev1 !== null && prev2 !== null && fp === prev1 && fp === prev2) continue;
@@ -293,14 +303,14 @@ export function createBasicSignalGenerator(level: number, colors: ColorItem[]) {
       return acceptSignal(sig, fp);
     }
     for (let attempt = 0; attempt < 80; attempt++) {
-      const sig = generateSignal('basic', level, colors);
+      const sig = generateSignal('basic', level, colors, genOpts());
       if (!sig) continue;
       const fp = signalFingerprint(sig);
       if (prev1 !== null && prev2 !== null && fp === prev1 && fp === prev2) continue;
       if (prev1 !== null && fp === prev1) continue;
       return acceptSignal(sig, fp);
     }
-    const sig = generateSignal('basic', level, colors);
+    const sig = generateSignal('basic', level, colors, genOpts());
     if (!sig) return null;
     const fp = signalFingerprint(sig);
     return acceptSignal(sig, fp);
