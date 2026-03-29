@@ -77,10 +77,8 @@ function TeacherWeeklyBestCard({
         const res = await fetch('/api/teacher/weekly-best-detail', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lessonPlanSessionId: row.lesson_plan_session_id,
-            feedbackSessionId: row.feedback_session_id,
-          }),
+          credentials: 'include',
+          body: JSON.stringify({ weeklyBestId: row.id }),
         });
 
         if (!res.ok) {

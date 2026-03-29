@@ -59,6 +59,7 @@ export default function MoveReportClient() {
             profileKey: result.key,
             profileTitle: result.profile.char,
             consent: true,
+            surveyResponses: resps,
           }),
         });
         const data = (await res.json()) as { ok?: boolean; error?: string };
@@ -75,7 +76,7 @@ export default function MoveReportClient() {
         return false;
       }
     },
-    [age, flash, name, result]
+    [age, flash, name, resps, result]
   );
 
   const handleShare = useCallback(async () => {

@@ -110,15 +110,12 @@ export default function UltimateSettlementPage() {
         .select('*')
         .eq('year', year).eq('month', month).eq('period', period);
 
-      // 수업료 총합: 세션당 1회만 합산. 보조가 있을 때 session.price가 총액이면 총액만 사용, 주강사만 있으면 price+extras
+      // 수업료 총합(지급액): 세션의 price는 주강사 지급액, EXTRA_TEACHERS 각 price는 보조 지급액 → 세션별 주+보조 합산
       const sessionsList = sessions || [];
       const rawSessionFees = sessionsList.reduce((sum: number, s: SessionRow) => {
         const rawPrice = Number(s.price) || 0;
         const extras = getExtraTeachersFromSession(s);
         const extrasSum = extras.reduce((eSum: number, ex: ExtraTeacher) => eSum + (Number(ex?.price) || 0), 0);
-        if (extras.length > 0 && rawPrice >= extrasSum) {
-          return sum + rawPrice;
-        }
         return sum + rawPrice + extrasSum;
       }, 0);
       const rawAdjTotal = (dbAdjs || []).reduce((acc: number, cur: { amount?: number }) => acc + (Number(cur?.amount) ?? 0), 0);
@@ -136,10 +133,8 @@ export default function UltimateSettlementPage() {
         const sessionsTotal = teacherSessions.reduce((acc: number, cur: SessionRow) => {
           const rawPrice = Number(cur.price) || 0;
           const extras = getExtraTeachersFromSession(cur);
-          const extrasSum = extras.reduce((eSum: number, ex: ExtraTeacher) => eSum + (Number(ex?.price) || 0), 0);
           const isMain = String(cur.created_by) === String(teacher.id);
           if (isMain) {
-            if (extras.length > 0 && rawPrice >= extrasSum) return acc + (rawPrice - extrasSum);
             return acc + rawPrice;
           }
           const ex = extras.find((e) => String(e.id) === String(teacher.id));
@@ -219,10 +214,8 @@ export default function UltimateSettlementPage() {
         const sessionsTotal = teacherSessions.reduce((acc: number, cur: SessionRow) => {
           const rawPrice = Number(cur.price) || 0;
           const extras = getExtraTeachersFromSession(cur);
-          const extrasSum = extras.reduce((eSum: number, ex: ExtraTeacher) => eSum + (Number(ex?.price) || 0), 0);
           const isMain = String(cur.created_by) === String(teacher.id);
           if (isMain) {
-            if (extras.length > 0 && rawPrice >= extrasSum) return acc + (rawPrice - extrasSum);
             return acc + rawPrice;
           }
           const ex = extras.find((e) => String(e.id) === String(teacher.id));
@@ -460,11 +453,10 @@ export default function UltimateSettlementPage() {
                   {teacher.details.map((s: SessionRow) => {
                     const rawPrice = Number(s.price) || 0;
                     const extras = getExtraTeachersFromSession(s);
-                    const extrasSum = extras.reduce((e: number, ex: ExtraTeacher) => e + (Number(ex?.price) || 0), 0);
                     const isMain = String(s.created_by) === String(teacher.id);
                     let fee = 0;
                     if (isMain) {
-                      fee = extras.length > 0 && rawPrice >= extrasSum ? rawPrice - extrasSum : rawPrice;
+                      fee = rawPrice;
                     } else {
                       fee = Number(extras.find((ex) => String(ex.id) === String(teacher.id))?.price) || 0;
                     }
