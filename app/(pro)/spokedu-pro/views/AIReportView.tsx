@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import Script from 'next/script';
 import { Bot, Sparkles, User, Loader2, AlertCircle, History, ChevronDown } from 'lucide-react';
 import { useStudentStore, type Student } from '../hooks/useStudentStore';
 import { useProContext } from '../hooks/useProContext';
@@ -10,18 +9,6 @@ import type { ReportData, ReportMeta, HistoryReportItem, Tone } from './ai-repor
 import AIReportForm from './ai-report/AIReportForm';
 import ReportHistoryPanel from './ai-report/ReportHistoryPanel';
 import { ReportCard, EmptyState } from './ai-report/ReportPreview';
-
-declare global {
-  interface Window {
-    Kakao?: {
-      isInitialized: () => boolean;
-      init: (key: string) => void;
-      Share: {
-        sendDefault: (options: { objectType: string; text: string; link: { mobileWebUrl: string; webUrl: string } }) => void;
-      };
-    };
-  }
-}
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AIReportView({
@@ -227,27 +214,24 @@ export default function AIReportView({
   const handleKakaoShare = useCallback(() => {
     const sourceReport = tab === 'history' ? viewingReport : report;
     const sourceMeta = tab === 'history' ? viewingMeta : meta;
-    if (!sourceReport || !sourceMeta || !window.Kakao?.isInitialized()) return;
-    window.Kakao.Share.sendDefault({
-      objectType: 'text',
-      text: `${sourceMeta.studentName} 수업 리포트\n\n${sourceReport.highlight}\n\n- 스포키듀 AI 리포트`,
-      link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
-    });
-  }, [tab, report, meta, viewingReport, viewingMeta]);
+    if (!sourceReport || !sourceMeta) return;
+
+    const text = `${sourceMeta.studentName} 수업 리포트\n\n${sourceReport.highlight}\n\n- 스포키듀 AI 리포트`;
+
+    // 카카오 SDK를 제거했으므로, 버튼 동작은 동일 텍스트를 클립보드에 복사하는 것으로 대체합니다.
+    void (async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        setError('복사 실패 — 수동으로 선택해 복사해주세요.');
+      }
+    })();
+  }, [tab, report, meta, viewingReport, viewingMeta, setError]);
 
   const canGenerate = !!selectedStudent && !loading && !isBlocked && !isLimitReached;
 
   return (
     <section className="min-h-screen px-4 sm:px-6 lg:px-10 py-8 pb-28">
-      <Script
-        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
-        crossOrigin="anonymous"
-        strategy="afterInteractive"
-        onLoad={() => {
-          const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-          if (key && window.Kakao && !window.Kakao.isInitialized()) window.Kakao.init(key);
-        }}
-      />
       <div className="max-w-6xl mx-auto">
 
         {/* ── Page Header ── */}

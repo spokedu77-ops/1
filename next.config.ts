@@ -7,11 +7,6 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: false },
   // 빌드 시 webpack 사용 (PWA 플러그인 호환, turbopack 명시적 비활성화)
   turbopack: {},
-  // Kakao JS SDK: .env.local에 NEXT_PUBLIC_ 없이 KAKAO_JS_KEY만 둘 수 있게 매핑 (값은 동일 JavaScript 키)
-  env: {
-    NEXT_PUBLIC_KAKAO_JS_KEY:
-      process.env.NEXT_PUBLIC_KAKAO_JS_KEY ?? process.env.KAKAO_JS_KEY ?? "",
-  },
   async redirects() {
     return [
       { source: "/admin/iiwarmup/play", destination: "/admin/iiwarmup", permanent: true },

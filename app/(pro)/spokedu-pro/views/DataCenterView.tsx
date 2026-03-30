@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import Script from 'next/script';
 import {
   Users, UserPlus, X, ChevronDown, ChevronUp, CheckCircle, Clock, XCircle,
   RefreshCw, AlertCircle, CloudOff, Plus, Pencil, Trash2, Zap, Crown, Award, Share2,
@@ -31,18 +30,6 @@ import {
   PolarGrid,
   PolarAngleAxis,
 } from 'recharts';
-
-declare global {
-  interface Window {
-    Kakao?: {
-      isInitialized: () => boolean;
-      init: (key: string) => void;
-      Share: {
-        sendDefault: (options: { objectType: string; text: string; link: { mobileWebUrl: string; webUrl: string } }) => void;
-      };
-    };
-  }
-}
 
 function makeBadgeTitle(strengthSummary: string): string {
   return strengthSummary ? `이번 달의 ${strengthSummary}` : '성취 뱃지';
@@ -536,13 +523,11 @@ export default function DataCenterView({
   }, [deleteClass, filterGroup, classes]);
 
   const handleBadgeKakaoShare = useCallback((badge: Badge) => {
-    if (!window.Kakao?.isInitialized()) return;
     const title = makeBadgeTitle(badge.strengthSummary);
-    window.Kakao.Share.sendDefault({
-      objectType: 'text',
-      text: `${badge.studentName} · ${title}\n${badge.growthTag}\n\n- 스포키듀 성취 뱃지`,
-      link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
-    });
+    const text = `${badge.studentName} · ${title}\n${badge.growthTag}\n\n- 스포키듀 성취 뱃지`;
+
+    // 카카오 SDK 제거에 따라 공유는 동일 텍스트 클립보드 복사로 대체합니다.
+    void navigator.clipboard.writeText(text).catch(() => {});
   }, []);
 
   const isLoaded = studentsLoaded && classesLoaded;
@@ -623,16 +608,6 @@ export default function DataCenterView({
 
   return (
     <section className="px-6 lg:px-12 py-10 pb-32 space-y-8 max-w-5xl mx-auto">
-      <Script
-        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
-        crossOrigin="anonymous"
-        strategy="afterInteractive"
-        onLoad={() => {
-          const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-          if (key && window.Kakao && !window.Kakao.isInitialized()) window.Kakao.init(key);
-        }}
-      />
-
       {/* 업셀 팝업 */}
       {showLimitModal && limitInfo && (
         <ClassLimitModal
