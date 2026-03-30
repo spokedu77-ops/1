@@ -1,6 +1,34 @@
 'use client';
 
+import Script from 'next/script';
 import { toast } from 'sonner';
+
+declare global {
+  interface Window {
+    Kakao?: {
+      isInitialized: () => boolean;
+      init: (key: string) => void;
+      Share: {
+        sendDefault: (options: {
+          objectType: string;
+          text?: string;
+          content?: {
+            title: string;
+            description: string;
+            imageUrl?: string;
+            link: { mobileWebUrl: string; webUrl: string };
+          };
+          link?: { mobileWebUrl: string; webUrl: string };
+          buttons?: { title: string; link: { mobileWebUrl: string; webUrl: string } }[];
+        }) => void;
+      };
+      Channel?: {
+        followChannel: (options: { channelPublicId: string }) => Promise<{ result?: string }>;
+        chat: (options: { channelPublicId: string }) => Promise<unknown>;
+      };
+    };
+  }
+}
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -36,6 +64,101 @@ interface Coach {
   name: string;
 }
 
+const KAKAO_SDK_URL = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+
+let kakaoSdkLoadPromise: Promise<void> | null = null;
+
+function ensureKakaoSdk(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('ssr'));
+  if (window.Kakao) return Promise.resolve();
+  if (kakaoSdkLoadPromise) return kakaoSdkLoadPromise;
+
+  kakaoSdkLoadPromise = new Promise((resolve, reject) => {
+    let settled = false;
+    const succeed = () => {
+      if (settled) return;
+      if (window.Kakao) {
+        settled = true;
+        resolve();
+      }
+    };
+    const fail = (err: Error) => {
+      if (settled) return;
+      settled = true;
+      kakaoSdkLoadPromise = null;
+      reject(err);
+    };
+
+    const existing = Array.from(document.scripts).find(
+      (s) => s.src.includes('kakao_js_sdk') && s.src.includes('kakao.min'),
+    );
+
+    if (existing) {
+      existing.addEventListener('load', () => succeed());
+      existing.addEventListener('error', () => fail(new Error('Kakao script failed')));
+      let frames = 0;
+      const maxFrames = 600;
+      const tick = () => {
+        if (window.Kakao) {
+          succeed();
+          return;
+        }
+        if (frames++ >= maxFrames) {
+          fail(new Error('Kakao SDK timeout'));
+          return;
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    const el = document.createElement('script');
+    el.src = KAKAO_SDK_URL;
+    el.crossOrigin = 'anonymous';
+    el.async = true;
+    el.onload = () => {
+      if (window.Kakao) succeed();
+      else fail(new Error('Kakao global missing after load'));
+    };
+    el.onerror = () => fail(new Error('Kakao script failed'));
+    document.head.appendChild(el);
+  });
+
+  return kakaoSdkLoadPromise;
+}
+
+/** 스포키듀 카카오채널 1:1 채팅 — 공유 카드 '채널 열기' 버튼용 */
+const DEFAULT_KAKAO_CHANNEL_CHAT_URL = 'https://pf.kakao.com/_VGWxeb/chat';
+
+/** 학부모 1:1 답장·채널 업무는 채널(파트너센터) 소관 — 웹 버튼과 역할이 다름 */
+const KAKAO_CHANNEL_PARTNER_CENTER = 'https://center-pf.kakao.com/';
+
+/** pf.kakao.com/_VGWxeb → 프로필 ID (앱-채널 콘솔 연결 후 followChannel 대상) */
+const DEFAULT_KAKAO_CHANNEL_PUBLIC_ID = '_VGWxeb';
+
+function getKakaoChannelPublicId(): string {
+  const id = process.env.NEXT_PUBLIC_KAKAO_CHANNEL_PUBLIC_ID?.trim();
+  if (id) return id;
+  return DEFAULT_KAKAO_CHANNEL_PUBLIC_ID;
+}
+
+function normalizeSiteBase(url: string): string {
+  return url.trim().replace(/\/$/, '');
+}
+
+/** 카카오톡 메시지 링크는 이 호스트가 카카오 콘솔(제품 링크 관리·JS SDK 도메인)에 등록돼 있어야 열림 */
+function getKakaoShareOrigin(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (fromEnv) return normalizeSiteBase(fromEnv);
+  if (typeof window !== 'undefined') return window.location.origin;
+  return '';
+}
+
+function isLikelyBlockedKakaoHost(host: string): boolean {
+  return host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
+}
+
 export default function MasterQCPage() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [activeTab, setActiveTab] = useState<'feedback' | 'lessonplan'>('feedback');
@@ -52,6 +175,15 @@ export default function MasterQCPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-12 text-left">
+      <Script
+        src={KAKAO_SDK_URL}
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+        onLoad={() => {
+          const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+          if (key && window.Kakao && !window.Kakao.isInitialized()) window.Kakao.init(key);
+        }}
+      />
       <div className="max-w-6xl mx-auto">
         <header className="mb-8 flex flex-col md:flex-row justify-between items-end gap-6">
           <div>
@@ -293,6 +425,187 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
     }
   };
 
+  /**
+   * 카카오톡 공유 → 목록에서 학부모·채널 대화 등 보낼 채팅 선택 (웹에서 특정 상대만 지정 불가)
+   */
+  const handleKakaoShare = useCallback((s: Session) => {
+    void (async () => {
+      const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+      if (!key) {
+        toast.error('카카오 앱 키(NEXT_PUBLIC_KAKAO_JS_KEY)가 설정되지 않았습니다.');
+        return;
+      }
+      try {
+        await ensureKakaoSdk();
+      } catch {
+        toast.error('카카오 SDK를 불러오지 못했습니다.');
+        return;
+      }
+      if (window.Kakao && !window.Kakao.isInitialized()) {
+        window.Kakao.init(key);
+      }
+      if (!window.Kakao?.isInitialized()) {
+        toast.error('카카오 SDK 초기화에 실패했습니다.');
+        return;
+      }
+      const shareOrigin = getKakaoShareOrigin();
+      if (!shareOrigin) {
+        toast.error('공유용 사이트 주소를 알 수 없습니다.');
+        return;
+      }
+      let reportHost = '';
+      try {
+        reportHost = new URL(shareOrigin).hostname;
+      } catch {
+        toast.error('NEXT_PUBLIC_SITE_URL 형식이 올바르지 않습니다. (예: https://your-domain.com)');
+        return;
+      }
+      if (isLikelyBlockedKakaoHost(reportHost)) {
+        toast.warning(
+          'localhost 등은 카카오톡에서 링크가 막힐 수 있습니다. NEXT_PUBLIC_SITE_URL과 콘솔 웹 도메인을 확인하세요.',
+          { id: 'kakao-share-domain', duration: 9000 },
+        );
+      }
+      const reportUrl = `${shareOrigin}/report/${s.id}`;
+      const dateStr = s.start_at
+        ? new Date(s.start_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+        : '';
+      const channelUrl =
+        process.env.NEXT_PUBLIC_KAKAO_CHANNEL_CHAT_URL?.trim() || DEFAULT_KAKAO_CHANNEL_CHAT_URL;
+      const imageUrl =
+        'https://mud-kage.kakao.com/dn/NTmhS/btqfEUdFAUf/FjKzkNnnoefk8ZdZT8VJKK/openchat2.png';
+      const linkBlock = { mobileWebUrl: reportUrl, webUrl: reportUrl };
+      const ch = { mobileWebUrl: channelUrl, webUrl: channelUrl };
+      toast.message(
+        '「내 카톡 전달」은 관리자 개인 카카오로 보냅니다. 목록에서 학부모와의 대화를 고르세요. 스포키듀 채널(운영) 방을 고르면 운영 쪽으로만 갑니다.',
+        { duration: 6500 },
+      );
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: `${s.users?.name ?? '선생님'} 선생님 · ${dateStr || '수업'} 리포트`,
+          description: `${reportUrl}\n\n(채널 공식 발송 아님) 다음 화면에서 학부모와의 채팅을 선택하세요.`,
+          imageUrl,
+          link: linkBlock,
+        },
+        buttons: [
+          { title: '리포트 열기', link: linkBlock },
+          { title: '채널 홈', link: ch },
+        ],
+      });
+    })();
+  }, []);
+
+  /** 채널과 '나'의 1:1만 열림 — 수신자(엄마) 선택은 불가. 링크 복사 후 붙여넣기용 */
+  const handleChannelChatSendReport = useCallback((s: Session) => {
+    void (async () => {
+      const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+      if (!key) {
+        toast.error('카카오 앱 키(NEXT_PUBLIC_KAKAO_JS_KEY)가 설정되지 않았습니다.');
+        return;
+      }
+      try {
+        await ensureKakaoSdk();
+      } catch {
+        toast.error('카카오 SDK를 불러오지 못했습니다.');
+        return;
+      }
+      if (window.Kakao && !window.Kakao.isInitialized()) {
+        window.Kakao.init(key);
+      }
+      if (!window.Kakao?.isInitialized()) {
+        toast.error('카카오 SDK 초기화에 실패했습니다.');
+        return;
+      }
+      const shareOrigin = getKakaoShareOrigin();
+      if (!shareOrigin) {
+        toast.error('공유용 사이트 주소를 알 수 없습니다.');
+        return;
+      }
+      let reportHost = '';
+      try {
+        reportHost = new URL(shareOrigin).hostname;
+      } catch {
+        toast.error('NEXT_PUBLIC_SITE_URL 형식이 올바르지 않습니다. (예: https://your-domain.com)');
+        return;
+      }
+      if (isLikelyBlockedKakaoHost(reportHost)) {
+        toast.warning(
+          'localhost 등은 링크·채널 연동이 막힐 수 있습니다. NEXT_PUBLIC_SITE_URL에 배포 도메인을 넣고 카카오 콘솔에 등록하세요.',
+          { id: 'kakao-share-domain', duration: 9000 },
+        );
+      }
+      const reportUrl = `${shareOrigin}/report/${s.id}`;
+      try {
+        await navigator.clipboard.writeText(reportUrl);
+      } catch {
+        toast.error('리포트 링크 복사에 실패했습니다.');
+        return;
+      }
+      const channelPublicId = getKakaoChannelPublicId();
+      const channelApi = window.Kakao.Channel;
+      if (!channelApi?.chat) {
+        toast.error('채널 채팅 API를 사용할 수 없습니다. SDK 버전을 확인하세요.');
+        return;
+      }
+      try {
+        await channelApi.chat({ channelPublicId });
+        toast.success('리포트 링크를 복사했습니다. 열리는 채널 1:1 채팅에 붙여넣기 하세요.');
+      } catch (err: unknown) {
+        devLogger.error('Channel.chat 실패:', err);
+        const msg =
+          err && typeof err === 'object' && 'message' in err
+            ? String((err as { message: unknown }).message)
+            : '채널 채팅 연결에 실패했습니다. 디벨로퍼스에서 앱·채널 연결을 확인하세요.';
+        toast.error(msg);
+      }
+    })();
+  }, []);
+
+  const handleKakaoFollowChannel = useCallback(() => {
+    void (async () => {
+      const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+      if (!key) {
+        toast.error('카카오 앱 키(NEXT_PUBLIC_KAKAO_JS_KEY)가 설정되지 않았습니다.');
+        return;
+      }
+      try {
+        await ensureKakaoSdk();
+      } catch {
+        toast.error('카카오 SDK를 불러오지 못했습니다.');
+        return;
+      }
+      if (window.Kakao && !window.Kakao.isInitialized()) {
+        window.Kakao.init(key);
+      }
+      if (!window.Kakao?.isInitialized()) {
+        toast.error('카카오 SDK 초기화에 실패했습니다.');
+        return;
+      }
+      const channelPublicId = getKakaoChannelPublicId();
+      const channelApi = window.Kakao.Channel;
+      if (!channelApi?.followChannel) {
+        toast.error('채널 API를 사용할 수 없습니다. SDK 버전을 확인하세요.');
+        return;
+      }
+      try {
+        const res = await channelApi.followChannel({ channelPublicId });
+        if (res?.result === 'success') {
+          toast.success('채널 친구 추가가 완료되었습니다.');
+        } else {
+          toast.success('채널 추가 요청이 처리되었습니다.');
+        }
+      } catch (err: unknown) {
+        devLogger.error('followChannel 실패:', err);
+        const msg =
+          err && typeof err === 'object' && 'message' in err
+            ? String((err as { message: unknown }).message)
+            : '채널 추가에 실패했습니다. 앱과 채널이 콘솔에서 연결됐는지 확인하세요.';
+        toast.error(msg);
+      }
+    })();
+  }, []);
+
   const calculateSimilarity = (text1: string, text2: string): number => {
     const words1 = text1.split(/\s+/).filter(w => w.length > 1);
     const words2 = text2.split(/\s+/).filter(w => w.length > 1);
@@ -428,12 +741,40 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-3 rounded-3xl shadow-sm border border-slate-200 mb-8">
-        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer" />
-        <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer">
-          <option value="all">전체 강사</option>
-          {coaches.map(c => <option key={c.id} value={c.id}>{c.name} 선생님</option>)}
-        </select>
+      <div className="mb-8 space-y-2">
+        <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-3 rounded-3xl shadow-sm border border-slate-200 items-center">
+          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer" />
+          <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer">
+            <option value="all">전체 강사</option>
+            {coaches.map(c => <option key={c.id} value={c.id}>{c.name} 선생님</option>)}
+          </select>
+          <button
+            type="button"
+            title="아직 채널 친구가 아닌 경우에만. 앱·채널 디벨로퍼스 연결 필요."
+            onClick={handleKakaoFollowChannel}
+            className="shrink-0 px-3 py-2 rounded-xl text-[11px] font-bold border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+          >
+            채널 미추가 유도
+          </button>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-[11px] text-slate-600 leading-relaxed space-y-2">
+          <p>
+            디벨로퍼스 <strong className="text-slate-800">앱</strong>은 스포키듀 <strong className="text-slate-800">비즈니스 채널</strong>에 연결된 애플리케이션입니다.
+            학부모와의 <strong className="text-slate-800">채널 대화·공식 답장</strong>은 카카오 <strong className="text-slate-800">채널(파트너센터·매니저)</strong> 소관이며, 이 페이지 버튼으로 대체되지 않습니다.
+          </p>
+          <p>
+            <strong className="text-slate-800">「내 카톡 전달」</strong>은 <strong className="text-slate-800">관리자 개인 카카오톡</strong>으로 리포트 카드를 넘기는 보조입니다.
+            전송 목록에서 <strong className="text-slate-800">학부모와의 대화</strong>를 고르세요. <strong className="text-slate-800">스포키듀 채널(운영) 방</strong>을 고르면 메시지가 운영 계정 쪽으로만 갑니다.
+          </p>
+          <a
+            href={KAKAO_CHANNEL_PARTNER_CENTER}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-bold text-indigo-600 hover:underline"
+          >
+            <ExternalLink size={12} /> 채널 파트너센터 (학부모 1:1·채널 업무)
+          </a>
+        </div>
       </div>
 
       {error && (
@@ -543,7 +884,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                       <MapPin size={10} /> {getSessionTypeLabel(s.session_type)}
                     </div>
                   </div>
-                  <div className="mt-auto flex gap-2">
+                  <div className="mt-auto flex flex-wrap gap-2 items-center">
                     <button 
                       onClick={(e) => { 
                         e.stopPropagation();
@@ -555,7 +896,31 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
                     >
                       <Send size={14} />
                     </button>
-                    <button className="flex-1 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 transition-colors">검수</button>
+                    <button
+                      type="button"
+                      title="관리자 개인 카카오로 전달. 목록에서 학부모 대화를 선택 (채널 공식 발송 아님)"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isVerified) return toast.error('검수 완료된 리포트만 전송할 수 있습니다.');
+                        handleKakaoShare(s);
+                      }}
+                      className={`shrink-0 min-w-[4.5rem] px-1.5 py-2 rounded-xl text-[10px] font-bold leading-tight ${isVerified ? 'bg-yellow-400 hover:bg-yellow-500 text-yellow-900' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}
+                    >
+                      내 카톡 전달
+                    </button>
+                    <button
+                      type="button"
+                      title="채널·나 1:1만 열림 (엄마 선택 불가). 공식 채널 답장은 파트너센터"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isVerified) return toast.error('검수 완료된 리포트만 사용할 수 있습니다.');
+                        handleChannelChatSendReport(s);
+                      }}
+                      className={`shrink-0 px-2 py-2 rounded-xl text-[10px] font-bold border ${isVerified ? 'border-slate-300 text-slate-600 hover:bg-slate-50' : 'border-slate-100 text-slate-300 cursor-not-allowed'}`}
+                    >
+                      1:1
+                    </button>
+                    <button className="flex-1 min-w-[4rem] py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 transition-colors">검수</button>
                   </div>
                 </div>
               </div>
@@ -578,14 +943,36 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
       {isModalOpen && selectedEvent && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[999] flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
           <div className="bg-white w-full max-w-3xl rounded-[48px] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="p-8 border-b flex justify-between items-center shrink-0">
-              <div>
+            <div className="p-8 border-b flex justify-between items-start gap-4 shrink-0">
+              <div className="min-w-0 flex-1">
                 <h2 className="text-2xl font-black text-slate-900">{selectedEvent.title}</h2>
-                <button onClick={() => window.open(`/report/${selectedEvent.id}`, '_blank')} className="text-indigo-500 text-xs font-bold flex items-center gap-1 mt-1 hover:underline cursor-pointer">
-                  <ExternalLink size={12} /> 미리보기
-                </button>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <button type="button" onClick={() => window.open(`/report/${selectedEvent.id}`, '_blank')} className="text-indigo-500 text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer">
+                    <ExternalLink size={12} /> 미리보기
+                  </button>
+                  {selectedEvent.status === 'verified' && (
+                    <>
+                      <button
+                        type="button"
+                        title="관리자 개인 카카오. 채널 공식 발송 아님"
+                        onClick={() => handleKakaoShare(selectedEvent)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
+                      >
+                        내 카톡 전달
+                      </button>
+                      <button
+                        type="button"
+                        title="채널·나 1:1. 공식 답장은 파트너센터"
+                        onClick={() => handleChannelChatSendReport(selectedEvent)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+                      >
+                        1:1
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-300 hover:text-slate-900 cursor-pointer"><X size={32} /></button>
+              <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-300 hover:text-slate-900 cursor-pointer shrink-0"><X size={32} /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/30">

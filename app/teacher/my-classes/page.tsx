@@ -83,15 +83,33 @@ function MyClassesContent() {
   };
 
   const getWeekRange = (date: Date) => {
-    const tempDate = new Date(date);
-    const day = tempDate.getDay();
-    const diff = tempDate.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(tempDate);
-    monday.setDate(diff);
-    monday.setHours(0, 0, 0, 0);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
+    // 사용자 로컬 타임존 기준으로 주간을 계산하면,
+    // start_at 경계(특히 자정 근처)에서 특정 세션만 "다른 주에 남는" 문제가 생길 수 있습니다.
+    // 따라서 'KST 달력' 기준으로 주간 범위를 계산하고, 결과는 DB 쿼리용 UTC ISO로 변환합니다.
+    const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+    // 1) 입력 date를 "UTC millis"로 정규화 후, KST로 치환해서 KST 달력 값을 얻습니다.
+    const utcMillis = date.getTime() + date.getTimezoneOffset() * 60 * 1000;
+    const kstMillis = utcMillis + KST_OFFSET_MS;
+    const kstDate = new Date(kstMillis);
+
+    const year = kstDate.getUTCFullYear();
+    const month = kstDate.getUTCMonth();
+    const dayOfMonth = kstDate.getUTCDate();
+    const dayOfWeek = kstDate.getUTCDay(); // 0(Sun) ~ 6(Sat)
+
+    // KST 달력 기준 월요일 날짜(일~월 보정 포함)
+    const mondayDayOfMonth = dayOfMonth - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+
+    // KST 자정(00:00 KST)은 UTC로는 -9시간입니다.
+    const mondayUtcMillis = Date.UTC(year, month, mondayDayOfMonth) - KST_OFFSET_MS;
+    const sundayUtcMillis =
+      Date.UTC(year, month, mondayDayOfMonth + 6) - KST_OFFSET_MS +
+      (23 * 60 * 60 * 1000 + 59 * 60 * 1000 + 59 * 1000 + 999);
+
+    const monday = new Date(mondayUtcMillis);
+    const sunday = new Date(sundayUtcMillis);
+
     return { monday, sunday };
   };
 
@@ -105,6 +123,7 @@ function MyClassesContent() {
       const userData = { user: session.user };
 
       const { monday, sunday } = getWeekRange(new Date(currentDate));
+
       const { data, error } = await supabase
         .from('sessions')
         .select('*')
@@ -125,17 +144,48 @@ function MyClassesContent() {
 
   useEffect(() => { getMySchedule(); }, [getMySchedule]);
 
+  // 주간을 이동하면(이번주/지난주 데이터가 바뀌면) 모달의 선택값/입력값이
+  // 이전 주 세션 기준으로 남아 혼동되는 케이스가 있습니다.
+  // 특정 계정에서만 체감될 수 있지만, 상태 초기화로 방지합니다.
+  useEffect(() => {
+    if (uploading) return;
+
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+    setFeedbackFields({});
+    setPhotoUrls([]);
+    setFileUrls([]);
+
+    setIsLessonPlanModalOpen(false);
+    setLessonPlanContent('');
+    setCurrentSessionLessonPlanId(null);
+    setPreviousPlans([]);
+    setPreviousPlansExpandedId(null);
+  }, [currentDate]);
+
   const handleItemClick = (session: Session) => {
+    const feedbackFieldsKeyCount = session.feedback_fields ? Object.keys(session.feedback_fields).length : 0;
+    const nextFeedbackFields: FeedbackFields =
+      session.feedback_fields && feedbackFieldsKeyCount > 0
+        ? session.feedback_fields
+        : session.students_text
+          ? parseTemplateToFields(session.students_text)
+          : {};
     setSelectedEvent(session);
-    
-    if (session.feedback_fields && Object.keys(session.feedback_fields).length > 0) {
-      setFeedbackFields(session.feedback_fields);
-    } else if (session.students_text) {
-      setFeedbackFields(parseTemplateToFields(session.students_text));
-    } else {
+
+    const isCompleted = session.status === 'finished' || session.status === 'verified';
+    // opened 세션(아직 작성 전)에 복제/생성 과정에서 students_text/첨부가 섞여 들어오면
+    // 교사 화면에서 "이미 작성된 것처럼" 보일 수 있습니다.
+    // 그래서 finished/verified일 때만 기존 피드백을 보여주고, 그 외에는 입력을 비웁니다.
+    if (!isCompleted) {
       setFeedbackFields({});
+      setPhotoUrls([]);
+      setFileUrls([]);
+      setIsModalOpen(true);
+      return;
     }
-    
+
+    setFeedbackFields(nextFeedbackFields);
     setPhotoUrls(Array.isArray(session.photo_url) ? session.photo_url : []);
     setFileUrls(Array.isArray(session.file_url) ? session.file_url : []);
     setIsModalOpen(true);
@@ -148,6 +198,7 @@ function MyClassesContent() {
     const today = new Date();
     sessionStart.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
+
     if (sessionStart > today) {
       return toast.error('수업일이 아직 지나지 않았습니다. 수업일 이후에 완료 처리해 주세요.');
     }
@@ -201,6 +252,7 @@ function MyClassesContent() {
       }
 
       toast.success('성공적으로 저장되었습니다.');
+
       setIsModalOpen(false);
       getMySchedule();
     } catch (err: unknown) {

@@ -50,6 +50,7 @@ export async function extendClass(
     }
 
     const last = sessions[sessions.length - 1];
+
     const lastStart = new Date(last.start_at);
     const first = sessions[0];
     const second = sessions[1];
@@ -101,6 +102,12 @@ export async function extendClass(
 
       newSessions.push({
         ...insertBase,
+        // 다음 회차(opened) 생성 시 이전 회차의 피드백이 그대로 이어붙지 않도록 초기화합니다.
+        // (students_text / feedback_fields / 첨부파일이 복사되면 teacher 화면에서 "계속 복사된 것처럼" 보입니다.)
+        students_text: null,
+        feedback_fields: {},
+        photo_url: [],
+        file_url: [],
         start_at: start.toISOString(),
         end_at: end.toISOString(),
         status: 'opened',
