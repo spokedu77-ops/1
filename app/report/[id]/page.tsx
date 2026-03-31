@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { X, Maximize2 } from 'lucide-react';
-import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 interface ReportSession {
   start_at: string;
@@ -86,33 +85,55 @@ function FeedbackCard({
 
 export default function PremiumParentReport() {
   const params = useParams();
-  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [session, setSession] = useState<ReportSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<'not_found' | 'not_available' | 'network' | null>(null);
   
   // 이미지 확대를 위한 상태
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!supabase) return;
     if (!params?.id) {
       setLoading(false);
+      setLoadError('not_found');
       return;
     }
+    const id = String(params.id);
+    setLoadError(null);
+
     const fetchSession = async () => {
       try {
-        const { data } = await supabase
-          .from('sessions')
-          .select('*, users(name)')
-          .eq('id', params.id)
-          .single();
-        if (data) setSession(data as ReportSession);
+        const res = await fetch(`/api/public/session-report/${encodeURIComponent(id)}`, {
+          cache: 'no-store',
+        });
+        const payload = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          session?: ReportSession;
+        };
+
+        if (!res.ok) {
+          setSession(null);
+          if (res.status === 404 && payload.error === 'not_available') {
+            setLoadError('not_available');
+          } else if (res.status === 404) {
+            setLoadError('not_found');
+          } else {
+            setLoadError('network');
+          }
+          return;
+        }
+
+        if (payload.session) setSession(payload.session as ReportSession);
+        else setLoadError('not_found');
+      } catch {
+        setSession(null);
+        setLoadError('network');
       } finally {
         setLoading(false);
       }
     };
     fetchSession();
-  }, [supabase, params?.id]);
+  }, [params?.id]);
 
   useEffect(() => {
     if (!selectedImg) return;
@@ -124,7 +145,19 @@ export default function PremiumParentReport() {
   }, [selectedImg]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-300 animate-pulse uppercase tracking-widest">SPOKEDU REPORT LOADING...</div>;
-  if (!session) return <div className="min-h-screen flex items-center justify-center font-black text-slate-300">리포트를 찾을 수 없습니다.</div>;
+  if (!session) {
+    const msg =
+      loadError === 'not_available'
+        ? '아직 공개되지 않은 리포트입니다.\n선생님 작성 완료 이후 또는 검수 완료 후 다시 링크를 확인해 주세요.'
+        : loadError === 'network'
+          ? '리포트를 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.'
+          : '리포트를 찾을 수 없습니다.\n링크가 올바른지 확인해 주세요.';
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-6">
+        <p className="text-center text-slate-500 font-bold text-sm leading-relaxed whitespace-pre-line">{msg}</p>
+      </div>
+    );
+  }
 
   const feedback = session.feedback_fields ?? null;
   const hasAnyFeedback = [
