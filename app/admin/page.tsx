@@ -385,7 +385,7 @@ export default function SpokeduHQDashboard() {
           </div>
           <div className="flex gap-2 sm:gap-3">
             <button
-              onClick={() => { fetchData(); fetchRecentNotes(); fetchPostponeNotices(); }}
+              onClick={() => { fetchData(); fetchPostponeNotices(); }}
               className="min-h-[44px] min-w-[44px] p-3 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all cursor-pointer group touch-manipulation flex items-center justify-center"
               aria-label="새로고침"
             >

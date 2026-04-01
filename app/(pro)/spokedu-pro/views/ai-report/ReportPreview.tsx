@@ -21,6 +21,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import { useEffect, useState } from 'react';
 import { useStudentStore, PHYSICAL_LABELS, LEVEL_LABELS, type Student } from '../../hooks/useStudentStore';
 import type { ReportData, ReportMeta, ColorKey } from './types';
 
@@ -36,32 +37,40 @@ function buildRadarData(student: Student) {
 
 function RadarChartCard({ student }: { student: Student }) {
   const data = buildRadarData(student);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    setReady(true);
+  }, []);
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
       <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">신체 기능 프로파일</p>
-      <ResponsiveContainer width="100%" height={180}>
-        <RadarChart data={data} cx="50%" cy="50%" outerRadius={65}>
-          <PolarGrid stroke="rgba(255,255,255,0.1)" />
-          <PolarAngleAxis
-            dataKey="subject"
-            tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
-          />
-          <Radar
-            name="신체기능"
-            dataKey="value"
-            stroke="#8b5cf6"
-            fill="#8b5cf6"
-            fillOpacity={0.25}
-            strokeWidth={2}
-          />
-          <Tooltip
-            contentStyle={{ background: '#1e1b4b', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 10 }}
-            formatter={(_value: unknown, _name: unknown, props: { payload?: { subject: string; level: string } }) =>
-              [props.payload?.level ?? '', props.payload?.subject ?? ''] as [string, string]
-            }
-          />
-        </RadarChart>
-      </ResponsiveContainer>
+      {ready ? (
+        <ResponsiveContainer width="100%" height={180}>
+          <RadarChart data={data} cx="50%" cy="50%" outerRadius={65}>
+            <PolarGrid stroke="rgba(255,255,255,0.1)" />
+            <PolarAngleAxis
+              dataKey="subject"
+              tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
+            />
+            <Radar
+              name="신체기능"
+              dataKey="value"
+              stroke="#8b5cf6"
+              fill="#8b5cf6"
+              fillOpacity={0.25}
+              strokeWidth={2}
+            />
+            <Tooltip
+              contentStyle={{ background: '#1e1b4b', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 10 }}
+              formatter={(_value: unknown, _name: unknown, props: { payload?: { subject: string; level: string } }) =>
+                [props.payload?.level ?? '', props.payload?.subject ?? ''] as [string, string]
+              }
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="h-[180px] w-full rounded-xl bg-white/5 border border-white/10" />
+      )}
     </div>
   );
 }

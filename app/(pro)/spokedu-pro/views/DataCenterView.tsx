@@ -421,6 +421,13 @@ export default function DataCenterView({
     { date: string; records: Record<string, AttendanceStatus> }[]
   >([]);
   const [attendanceRangeError, setAttendanceRangeError] = useState(false);
+  const [chartsReady, setChartsReady] = useState(false);
+
+  // Recharts ResponsiveContainer는 SSG/SSR에서 컨테이너 크기를 못 얻어 경고가 날 수 있어,
+  // 클라이언트 마운트 이후에만 차트를 렌더합니다.
+  useEffect(() => {
+    setChartsReady(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -696,6 +703,8 @@ export default function DataCenterView({
               <p className="text-sm text-amber-400">출석 기록을 불러오지 못했습니다.</p>
             ) : attendanceChartPoints.length === 0 ? (
               <p className="text-sm text-slate-500">표시할 데이터가 없습니다.</p>
+            ) : !chartsReady ? (
+              <div className="h-[220px] w-full min-w-0 rounded-xl bg-slate-900/30 border border-slate-700" />
             ) : (
               <div className="h-[220px] w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
@@ -736,6 +745,8 @@ export default function DataCenterView({
             </div>
             {classRadarData.length === 0 ? (
               <p className="text-sm text-slate-500">원생을 등록하면 레이더가 표시됩니다.</p>
+            ) : !chartsReady ? (
+              <div className="h-[220px] w-full min-w-0 rounded-xl bg-slate-900/30 border border-slate-700" />
             ) : (
               <div className="h-[220px] w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
