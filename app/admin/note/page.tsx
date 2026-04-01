@@ -43,6 +43,7 @@ import {
   PointerSensor,
   TouchSensor,
   closestCenter,
+  useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -66,6 +67,8 @@ type NoteDocument = {
   slug: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 };
 type NoteBlock = {
   id: string;
@@ -110,38 +113,43 @@ function relativeTime(dateStr: string): string {
 
 /* ─── DocItem ────────────────────────────────────────────────────────────── */
 function DocItem({
-  doc, isActive, onSelect, onFavorite, onDelete, onRename, indentLevel = 0, onCreateChild,
+  doc, isActive, onSelect, onFavorite, onDelete, indentLevel = 0, onCreateChild,
 }: {
   doc: NoteDocument; isActive: boolean;
   onSelect: () => void;
   onFavorite: (e: React.MouseEvent) => void;
   onDelete: (e: React.MouseEvent) => void;
-  onRename: (title: string) => void;
   indentLevel?: number;
   onCreateChild?: (e: React.MouseEvent) => void;
 }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `doc:${doc.id}`,
+    data: { type: 'document', documentId: doc.id },
+  });
+
   return (
     <div
+      ref={setNodeRef}
       role="button" tabIndex={0}
       onClick={onSelect}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
       style={{ marginLeft: `${Math.min(indentLevel, 6) * 14}px` }}
       className={`group relative flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
         isActive ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-white hover:shadow-sm'
-      }`}
+      } ${isOver ? 'ring-2 ring-blue-300' : ''}`}
     >
       <FileText className={`h-4 w-4 shrink-0 ${
         isActive ? 'text-blue-200' : doc.is_favorite ? 'text-amber-400' : 'text-slate-400'
       }`} />
       <div className="min-w-0 flex-1">
-        <input
-          className={`w-full truncate bg-transparent text-[13px] font-medium outline-none ${
-            isActive ? 'text-white placeholder:text-blue-200' : 'text-slate-800'
+        <p
+          className={`w-full truncate text-[13px] font-medium ${
+            isActive ? 'text-white' : 'text-slate-800'
           }`}
-          value={doc.title}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => onRename(e.target.value)}
-        />
+          title={doc.title}
+        >
+          {doc.title}
+        </p>
         <p className={`text-[11px] ${isActive ? 'text-blue-200' : 'text-slate-400'}`}>
           {relativeTime(doc.updated_at)}
         </p>
@@ -345,7 +353,10 @@ function BlockContent({
     el.style.height = `${el.scrollHeight}px`;
   }, []);
 
-  useEffect(() => { autoResize(); }, [block.content?.text, autoResize]);
+  useEffect(() => {
+    // 토글의 body 렌더/확장 직후에도 높이가 즉시 맞춰지도록 다음 프레임에서 재계산
+    requestAnimationFrame(() => autoResize());
+  }, [block.content?.text, block.content?.body, block.content?.collapsed, autoResize]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Escape') { setShowSlash(false); return; }
@@ -797,6 +808,7 @@ export default function AdminNotePage() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [formatToolbar, setFormatToolbar] = useState<{ applyMark: (mark: InlineMark) => void } | null>(null);
+  const [docTab, setDocTab] = useState<'active' | 'trash'>('active');
 
   const saveTimersRef = useRef<Record<string, number | undefined>>({});
   const savedTimerRef = useRef<number | undefined>(undefined);
@@ -823,11 +835,20 @@ export default function AdminNotePage() {
     const q = searchQuery.trim().toLowerCase();
     let list = q ? documents.filter((d) => d.title.toLowerCase().includes(q)) : documents;
     if (sortKey === 'title') return [...list].sort((a, b) => a.title.localeCompare(b.title, 'ko'));
+    if (docTab === 'trash') {
+      return [...list].sort((a, b) => new Date(b.deleted_at ?? b.updated_at).getTime() - new Date(a.deleted_at ?? a.updated_at).getTime());
+    }
     return [...list].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   }, [documents, searchQuery, sortKey]);
 
-  const favoriteDocuments = useMemo(() => filteredDocuments.filter((d) => d.is_favorite), [filteredDocuments]);
-  const otherDocuments = useMemo(() => filteredDocuments.filter((d) => !d.is_favorite), [filteredDocuments]);
+  const favoriteDocuments = useMemo(
+    () => (docTab === 'trash' ? [] : filteredDocuments.filter((d) => d.is_favorite)),
+    [docTab, filteredDocuments],
+  );
+  const otherDocuments = useMemo(
+    () => (docTab === 'trash' ? filteredDocuments : filteredDocuments.filter((d) => !d.is_favorite)),
+    [docTab, filteredDocuments],
+  );
   const docMap = useMemo(() => new Map(filteredDocuments.map((d) => [d.id, d])), [filteredDocuments]);
   const childrenByParent = useMemo(() => {
     const map = new Map<string, NoteDocument[]>();
@@ -872,11 +893,14 @@ export default function AdminNotePage() {
     const load = async () => {
       try {
         setLoadingDocuments(true); setError(null);
-        const res = await fetch('/api/admin/note/documents', { credentials: 'include' });
+        const res = await fetch(
+          docTab === 'trash' ? '/api/admin/note/trash' : '/api/admin/note/documents',
+          { credentials: 'include' },
+        );
         if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '문서 목록을 불러오지 못했습니다.'); }
         const json = (await res.json()) as { documents: NoteDocument[] };
         setDocuments(json.documents ?? []);
-        if (!selectedId && json.documents?.length > 0) {
+        if (docTab === 'active' && !selectedId && json.documents?.length > 0) {
           const first = json.documents[0];
           setSelectedId(first.id);
           router.replace(`/admin/note?id=${encodeURIComponent(first.id)}`);
@@ -886,7 +910,7 @@ export default function AdminNotePage() {
     };
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [docTab]);
 
   /* load blocks */
   useEffect(() => {
@@ -983,6 +1007,55 @@ export default function AdminNotePage() {
     setActiveBlockId(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+
+    // Drop target is a document (sidebar DocItem)
+    const overId = String(over.id);
+    if (overId.startsWith('doc:')) {
+      const targetDocumentId = overId.slice('doc:'.length);
+      const movingBlock = blocksRef.current.find((b) => b.id === String(active.id));
+      if (!movingBlock) return;
+
+      // If dropping onto current document: move block to top of this document
+      if (targetDocumentId === selectedId) {
+        setBlocks((prev) => {
+          const idx = prev.findIndex((b) => b.id === movingBlock.id);
+          if (idx < 0) return prev;
+          const next = [prev[idx], ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+          const orders = next.map((b, i) => ({ id: b.id, order_index: i }));
+          fetch('/api/admin/note/blocks', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ orders }),
+          })
+            .then(() => triggerSave())
+            .catch((e) => devLogger.error('[Note] reorder(top)', e));
+          return next.map((b, i) => ({ ...b, order_index: i }));
+        });
+        return;
+      }
+
+      // Move across documents (server will compute target min-1 order_index)
+      try {
+        const res = await fetch('/api/admin/note/blocks', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ id: movingBlock.id, document_id: targetDocumentId }),
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => null);
+          throw new Error(j?.error || '블록 이동 실패');
+        }
+        // Remove from current document view
+        setBlocks((prev) => prev.filter((b) => b.id !== movingBlock.id));
+        triggerSave();
+      } catch (e) {
+        devLogger.error('[Note] moveBlockToDoc', e);
+        setError(e instanceof Error ? e.message : '블록 이동 실패');
+      }
+      return;
+    }
 
     setBlocks((prev) => {
       const oldIndex = prev.findIndex((b) => b.id === active.id);
@@ -1085,7 +1158,7 @@ export default function AdminNotePage() {
 
   const handleDeleteDocument = async (e: React.MouseEvent, doc: NoteDocument) => {
     e.stopPropagation();
-    if (!window.confirm(`"${doc.title}" 문서를 삭제할까요?`)) return;
+    if (!window.confirm(`"${doc.title}" 문서를 휴지통으로 이동할까요?`)) return;
     const prev = documents;
     setDocuments((p) => p.filter((d) => d.id !== doc.id));
     if (selectedId === doc.id) { setSelectedId(null); router.replace('/admin/note'); }
@@ -1094,6 +1167,59 @@ export default function AdminNotePage() {
       if (!res.ok) throw new Error('삭제 실패');
     } catch (e) { devLogger.error('[Note] deleteDoc', e); setDocuments(prev); setError('문서 삭제 실패'); }
   };
+
+  const handleRestoreDocument = useCallback(async (doc: NoteDocument) => {
+    try {
+      setLoadingState('saving');
+      const res = await fetch('/api/admin/note/trash/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: doc.id }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '복구 실패');
+      }
+      // 휴지통 목록에서 제거
+      setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] restoreDoc', e);
+      setError(e instanceof Error ? e.message : '복구 실패');
+    } finally {
+      setLoadingState('idle');
+    }
+  }, [triggerSave]);
+
+  const handlePurgeDocument = useCallback(async (doc: NoteDocument) => {
+    const deletedAt = doc.deleted_at ? new Date(doc.deleted_at).getTime() : null;
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const eligible = deletedAt ? (Date.now() - deletedAt >= sevenDaysMs) : false;
+    if (!eligible) {
+      setError('삭제 후 7일이 지난 문서만 영구삭제할 수 있습니다.');
+      return;
+    }
+    if (!window.confirm(`"${doc.title}" 문서를 영구삭제할까요? (복구 불가)`)) return;
+    try {
+      setLoadingState('saving');
+      const res = await fetch(`/api/admin/note/trash/purge?id=${encodeURIComponent(doc.id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '영구삭제 실패');
+      }
+      setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] purgeDoc', e);
+      setError(e instanceof Error ? e.message : '영구삭제 실패');
+    } finally {
+      setLoadingState('idle');
+    }
+  }, [triggerSave]);
 
   const handleAddBlock = useCallback(async (type: NoteBlock['type']) => {
     if (!selectedId) return;
@@ -1129,7 +1255,7 @@ export default function AdminNotePage() {
           throw new Error(j?.error || '문서 블록 추가 실패');
         }
         const json = (await res.json()) as { block: NoteBlock };
-        setBlocks((prev) => [...prev, json.block]);
+        setBlocks((prev) => [json.block, ...prev]);
         triggerSave();
         return;
       }
@@ -1144,7 +1270,7 @@ export default function AdminNotePage() {
       const res = await fetch('/api/admin/note/blocks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ documentId: selectedId, type, content: defaultContent }) });
       if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 추가 실패'); }
       const json = (await res.json()) as { block: NoteBlock };
-      setBlocks((prev) => [...prev, json.block]);
+      setBlocks((prev) => [json.block, ...prev]);
       triggerSave();
     } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
   }, [selectedId, triggerSave]);
@@ -1199,7 +1325,6 @@ export default function AdminNotePage() {
           onSelect={() => handleSelectDocument(doc)}
           onFavorite={(e) => handleToggleFavorite(e, doc)}
           onDelete={(e) => handleDeleteDocument(e, doc)}
-          onRename={(t) => handleRenameDocument(doc.id, t)}
           onCreateChild={(e) => { e.stopPropagation(); handleCreateDocument(doc.id); }}
         />
         {children.length > 0 && (
@@ -1284,12 +1409,47 @@ export default function AdminNotePage() {
       )}
 
       {/* ── 콘텐츠 ── */}
-      <div className="flex min-h-0 flex-1">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex min-h-0 flex-1">
 
-        {/* ── 사이드바 ── */}
-        <div className={`flex flex-col border-r border-slate-100 bg-slate-50 ${
-          mobileTab === 'list' ? 'flex w-full' : 'hidden'
-        } md:flex md:w-[260px] md:shrink-0`}>
+          {/* ── 사이드바 ── */}
+          <div className={`flex flex-col border-r border-slate-100 bg-slate-50 ${
+            mobileTab === 'list' ? 'flex w-full' : 'hidden'
+          } md:flex md:w-[260px] md:shrink-0`}>
+
+          {/* 탭: 전체/휴지통 */}
+          <div className="shrink-0 px-3 pt-3">
+            <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
+              <button
+                type="button"
+                className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                  docTab === 'active' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+                onClick={() => { setDocTab('active'); setSelectedId(null); setBlocks([]); setMobileTab('list'); }}
+              >
+                전체
+              </button>
+              <button
+                type="button"
+                className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                  docTab === 'trash' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+                onClick={() => { setDocTab('trash'); setSelectedId(null); setBlocks([]); setMobileTab('list'); }}
+              >
+                휴지통
+              </button>
+            </div>
+            {docTab === 'trash' && (
+              <p className="mt-2 px-1 text-[11px] font-medium text-slate-400">
+                휴지통 문서는 7일 후 영구삭제할 수 있습니다.
+              </p>
+            )}
+          </div>
 
           {/* 검색 + 정렬 */}
           <div className="shrink-0 space-y-2 px-3 py-3">
@@ -1341,8 +1501,8 @@ export default function AdminNotePage() {
             ) : filteredDocuments.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-[13px] text-slate-400">
                 <FileText className="h-10 w-10 text-slate-200" />
-                {searchQuery ? '검색 결과 없음' : '아직 노트가 없습니다'}
-                {!searchQuery && <span className="text-[12px]">&quot;새 노트&quot;로 시작하세요.</span>}
+                {searchQuery ? '검색 결과 없음' : (docTab === 'trash' ? '휴지통이 비어 있습니다' : '아직 노트가 없습니다')}
+                {!searchQuery && docTab === 'active' && <span className="text-[12px]">&quot;새 노트&quot;로 시작하세요.</span>}
               </div>
             ) : (
               <>
@@ -1354,7 +1514,6 @@ export default function AdminNotePage() {
                         onSelect={() => handleSelectDocument(doc)}
                         onFavorite={(e) => handleToggleFavorite(e, doc)}
                         onDelete={(e) => handleDeleteDocument(e, doc)}
-                        onRename={(t) => handleRenameDocument(doc.id, t)}
                       />
                     ))}
                   </div>
@@ -1364,18 +1523,62 @@ export default function AdminNotePage() {
                     {favoriteDocuments.length > 0 && (
                       <p className="mb-1.5 px-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">전체 · {otherDocuments.length}</p>
                     )}
-                    {rootDocuments.map((doc) => renderDocumentTree(doc))}
+                    {docTab === 'trash' ? (
+                      <div className="space-y-1">
+                        {otherDocuments.map((doc) => {
+                          const deletedAt = doc.deleted_at ? new Date(doc.deleted_at).getTime() : null;
+                          const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+                          const eligible = deletedAt ? (Date.now() - deletedAt >= sevenDaysMs) : false;
+                          const daysAgo = deletedAt ? Math.floor((Date.now() - deletedAt) / (24 * 60 * 60 * 1000)) : null;
+                          return (
+                            <div key={doc.id} className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                              <div className="flex items-start gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-[13px] font-semibold text-slate-800">{doc.title}</p>
+                                  <p className="mt-0.5 text-[11px] text-slate-400">
+                                    {daysAgo != null ? `삭제 ${daysAgo}일 전` : '삭제됨'}
+                                  </p>
+                                </div>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <button
+                                    type="button"
+                                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                                    onClick={() => handleRestoreDocument(doc)}
+                                  >
+                                    복구
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${
+                                      eligible
+                                        ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                                        : 'border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed'
+                                    }`}
+                                    onClick={() => eligible && handlePurgeDocument(doc)}
+                                    title={eligible ? '영구삭제' : '삭제 후 7일이 지나야 영구삭제할 수 있습니다.'}
+                                  >
+                                    영구삭제
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      rootDocuments.map((doc) => renderDocumentTree(doc))
+                    )}
                   </div>
                 )}
               </>
             )}
           </div>
-        </div>
+          </div>
 
-        {/* ── 에디터 ── */}
-        <div className={`flex flex-1 flex-col overflow-hidden ${
-          mobileTab === 'editor' ? 'flex' : 'hidden'
-        } md:flex`}>
+          {/* ── 에디터 ── */}
+          <div className={`flex flex-1 flex-col overflow-hidden ${
+            mobileTab === 'editor' ? 'flex' : 'hidden'
+          } md:flex`}>
           {/* 모바일 상단 바 */}
           {activeDocument && (
             <div className="flex shrink-0 items-center gap-2 border-b border-slate-100 bg-white px-3 py-2 md:hidden">
@@ -1494,44 +1697,38 @@ export default function AdminNotePage() {
                 )}
 
                 {/* 블록 목록 (DnD) */}
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
+                <SortableContext
+                  items={blocks.map((b) => b.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  <SortableContext
-                    items={blocks.map((b) => b.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-0.5">
-                      {blocks.map((block) => (
-                        <SortableBlockRow
-                          key={block.id}
-                          block={block}
-                          onUpdate={(content) => handleUpdateBlock(block, content)}
-                          onDelete={() => handleDeleteBlock(block)}
-                          onChangeType={(type) => handleChangeBlockType(block, type)}
-                          onEnter={() => handleAddBlock('text')}
-                          onOpenDocument={handleOpenDocumentById}
-                          onShowFormatToolbar={showFormatToolbar}
-                          onHideFormatToolbar={hideFormatToolbar}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-
-                  {/* 드래그 중 미리보기 */}
-                  <DragOverlay dropAnimation={{ duration: 160, easing: 'ease' }}>
-                    {activeBlock ? <DragPreview block={activeBlock} /> : null}
-                  </DragOverlay>
-                </DndContext>
+                  <div className="space-y-0.5">
+                    {blocks.map((block) => (
+                      <SortableBlockRow
+                        key={block.id}
+                        block={block}
+                        onUpdate={(content) => handleUpdateBlock(block, content)}
+                        onDelete={() => handleDeleteBlock(block)}
+                        onChangeType={(type) => handleChangeBlockType(block, type)}
+                        onEnter={() => handleAddBlock('text')}
+                        onOpenDocument={handleOpenDocumentById}
+                        onShowFormatToolbar={showFormatToolbar}
+                        onHideFormatToolbar={hideFormatToolbar}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
 
               </div>
             </div>
           )}
+          </div>
         </div>
-      </div>
+
+        {/* 드래그 중 미리보기 (사이드바 드롭 포함) */}
+        <DragOverlay dropAnimation={{ duration: 160, easing: 'ease' }}>
+          {activeBlock ? <DragPreview block={activeBlock} /> : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }

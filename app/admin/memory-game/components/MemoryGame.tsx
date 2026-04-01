@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { MEMORY_ROUNDS } from '../constants';
 import { generateMemoryPattern } from '../lib/signals';
 import { playBeep } from '../lib/audio';
@@ -17,12 +17,14 @@ export function MemoryGame({
   onComplete,
   audioMode,
   speedSec,
+  startDelayMs = 500,
 }: {
   level: number;
   onExit: () => void;
   onComplete: (patterns: ColorItem[][]) => void;
   audioMode: string;
   speedSec: number;
+  startDelayMs?: number;
 }) {
   const [patterns] = useState<ColorItem[][]>(() => Array.from({ length: TOTAL }, () => generateMemoryPattern(level)));
   const [round, setRound] = useState(0);
@@ -80,15 +82,28 @@ export function MemoryGame({
       setColorIdx(-1);
       setMemFlash(false);
       prevMemBgRef.current = null;
-      timerRef.current = setTimeout(() => runSequence(pattern, 0), 500);
+      const delay = Math.max(0, startDelayMs);
+      if (delay === 0) {
+        runSequence(pattern, 0);
+      } else {
+        timerRef.current = setTimeout(() => runSequence(pattern, 0), delay);
+      }
     },
-    [patterns, runSequence]
+    [patterns, runSequence, startDelayMs]
   );
 
-  useEffect(() => {
+  // 초기 렌더에서 '준비' 화면 깜빡임을 막기 위해, startDelayMs=0이면 paint 이전에 시작
+  useLayoutEffect(() => {
+    if (startDelayMs !== 0) return;
     startRound(0);
     return clear;
-  }, [startRound]);
+  }, [startRound, startDelayMs]);
+
+  useEffect(() => {
+    if (startDelayMs === 0) return;
+    startRound(0);
+    return clear;
+  }, [startRound, startDelayMs]);
 
   const phaseRef = useRef(phase);
   useEffect(() => {

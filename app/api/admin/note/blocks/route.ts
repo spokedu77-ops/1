@@ -82,21 +82,22 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceSupabase();
 
-    // 현재 문서의 최대 order_index 계산 (없으면 0부터 시작)
-    const { data: maxRow, error: maxError } = await supabase
+    // 현재 문서의 최소 order_index 계산 (없으면 0부터 시작)
+    // 새 블록을 "최상단"에 추가하기 위해 min - 1 값을 사용합니다.
+    const { data: minRow, error: minError } = await supabase
       .from('note_blocks')
       .select('order_index')
       .eq('document_id', documentId)
-      .order('order_index', { ascending: false })
+      .order('order_index', { ascending: true })
       .limit(1)
       .maybeSingle();
 
-    if (maxError) {
-      devLogger.error('[admin/note/blocks] POST max order error', maxError);
-      return NextResponse.json({ error: maxError.message }, { status: 500 });
+    if (minError) {
+      devLogger.error('[admin/note/blocks] POST min order error', minError);
+      return NextResponse.json({ error: minError.message }, { status: 500 });
     }
 
-    const nextOrderIndex = typeof maxRow?.order_index === 'number' ? maxRow.order_index + 1 : 0;
+    const nextOrderIndex = typeof minRow?.order_index === 'number' ? minRow.order_index - 1 : 0;
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
@@ -141,6 +142,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updates: Record<string, unknown> = {};
+    const nextDocumentId = typeof body.document_id === 'string' ? body.document_id : null;
     if (typeof body.type === 'string') {
       updates.type = body.type;
     }
@@ -151,11 +153,31 @@ export async function PATCH(request: NextRequest) {
       updates.order_index = body.order_index;
     }
 
+    const supabase = getServiceSupabase();
+    // 문서 이동 요청인 경우: 대상 문서 최상단(min-1)으로 들어가게 order_index를 서버에서 계산
+    if (nextDocumentId) {
+      const { data: minRow, error: minError } = await supabase
+        .from('note_blocks')
+        .select('order_index')
+        .eq('document_id', nextDocumentId)
+        .order('order_index', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (minError) {
+        devLogger.error('[admin/note/blocks] PATCH min order error', minError);
+        return NextResponse.json({ error: minError.message }, { status: 500 });
+      }
+
+      updates.document_id = nextDocumentId;
+      if (updates.order_index === undefined) {
+        updates.order_index = typeof minRow?.order_index === 'number' ? minRow.order_index - 1 : 0;
+      }
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'No updatable fields' }, { status: 400 });
     }
 
-    const supabase = getServiceSupabase();
     const now = new Date().toISOString();
 
     const { data, error } = await supabase

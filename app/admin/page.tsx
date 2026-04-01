@@ -140,8 +140,6 @@ function MiniCalendar({
 export default function SpokeduHQDashboard() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [todayClasses, setTodayClasses] = useState<IClassSession[]>([]);
-  const [recentNotes, setRecentNotes] = useState<NoteDocument[]>([]);
-  const [notesLoading, setNotesLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -157,21 +155,6 @@ export default function SpokeduHQDashboard() {
   const [isSubmittingNotice, setIsSubmittingNotice] = useState(false);
   const [noticeError, setNoticeError] = useState('');
   const [deletingNoticeId, setDeletingNoticeId] = useState<string | null>(null);
-
-  const fetchRecentNotes = useCallback(async () => {
-    setNotesLoading(true);
-    try {
-      const res = await fetch('/api/admin/note/documents?limit=6&offset=0');
-      if (!res.ok) return;
-      const json = await res.json();
-      const docs: NoteDocument[] = json.documents ?? [];
-      setRecentNotes(docs);
-    } catch (err) {
-      devLogger.error('Notes fetch error:', err);
-    } finally {
-      setNotesLoading(false);
-    }
-  }, []);
 
   const fetchPostponeNotices = useCallback(async () => {
     setPostponeLoading(true);
@@ -247,9 +230,8 @@ export default function SpokeduHQDashboard() {
 
   useEffect(() => {
     fetchData();
-    fetchRecentNotes();
     fetchPostponeNotices();
-  }, [fetchData, fetchRecentNotes, fetchPostponeNotices]);
+  }, [fetchData, fetchPostponeNotices]);
 
   const openPostponeModal = async () => {
     setSelectedDate('');
@@ -520,66 +502,6 @@ export default function SpokeduHQDashboard() {
           </section>
 
         </div>{/* end 2열 그리드 */}
-
-        {/* 2. 최근 노트 위젯 */}
-        <section className="w-full min-w-0">
-          <div className="flex items-center justify-between mb-2 sm:mb-4">
-            <div className="flex items-center gap-2">
-              <FileText size={14} className="text-slate-400" />
-              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">최근 노트</h2>
-            </div>
-            <Link
-              href="/admin/note"
-              className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
-            >
-              노트 전체 보기
-              <ExternalLink size={12} />
-            </Link>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-            {notesLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
-              </div>
-            ) : recentNotes.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="text-[11px] text-slate-400 italic">노트가 없습니다.</p>
-                <Link
-                  href="/admin/note"
-                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700"
-                >
-                  <Plus size={12} />
-                  첫 노트 작성하기
-                </Link>
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-50">
-                {recentNotes.map((note) => (
-                  <li key={note.id}>
-                    <Link
-                      href={`/admin/note?id=${note.id}`}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors group"
-                    >
-                      <div className="shrink-0">
-                        {note.is_favorite ? (
-                          <Star size={14} className="text-amber-400 fill-amber-400" />
-                        ) : (
-                          <FileText size={14} className="text-slate-300 group-hover:text-slate-400" />
-                        )}
-                      </div>
-                      <span className="flex-1 text-sm font-medium text-slate-700 truncate group-hover:text-slate-900">
-                        {note.title || 'Untitled'}
-                      </span>
-                      <span className="shrink-0 text-[10px] text-slate-400 tabular-nums">
-                        {formatNoteDate(note.updated_at)}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
 
       </div>
 

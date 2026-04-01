@@ -105,9 +105,6 @@ export const STUDENT_COLORS = [
   '#EF4444', '#FACC15', '#06B6D4', '#EC4899',
 ];
 
-export const HISTORY_KEY = 'spokedu_history_v1';
-export const MAX_HISTORY = 200;
-
 export const SPEED_PRESETS = [
   { label: '미취학', sub: '5~7세', value: 5.0, emoji: '🐥', color: '#F59E0B' },
   { label: '초등 저학년', sub: '8~10세', value: 4.0, emoji: '🌱', color: '#10B981' },

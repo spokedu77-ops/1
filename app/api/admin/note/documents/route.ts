@@ -103,6 +103,9 @@ export async function GET(request: NextRequest) {
       .order('updated_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
+    // 기본 목록에서는 휴지통(삭제) 문서를 제외합니다.
+    query.is('deleted_at', null);
+
     if (!includeArchived) {
       query.eq('is_archived', false);
     }
@@ -252,14 +255,24 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabase = getServiceSupabase();
-    const { error } = await supabase.from('note_documents').delete().eq('id', id);
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from('note_documents')
+      .update({
+        deleted_at: now,
+        deleted_by: auth.userId,
+        updated_at: now,
+        updated_by: auth.userId,
+      })
+      .eq('id', id)
+      .is('deleted_at', null);
 
     if (error) {
       devLogger.error('[admin/note/documents] DELETE error', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, softDeleted: true });
   } catch (err) {
     devLogger.error('[admin/note/documents] DELETE exception', err);
     return NextResponse.json(

@@ -27,10 +27,16 @@ export const CSS = `
   :root {
     --bg: #F1F5F9; --card: #ffffff; --border: #E2E8F0;
     --text: #1E293B; --text-muted: #64748B;
+    --subtle-bg: #F8FAFC;
+    --range-track: #CBD5E1;
+    --range-tick: #94A3B8;
   }
   [data-theme="dark"] {
     --bg: #0F172A; --card: #1E293B; --border: #334155;
     --text: #F1F5F9; --text-muted: #94A3B8;
+    --subtle-bg: rgba(255,255,255,0.06);
+    --range-track: rgba(255,255,255,0.22);
+    --range-tick: rgba(255,255,255,0.45);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { overscroll-behavior: none; }
@@ -65,7 +71,7 @@ export const CSS = `
   }
   .countdown-pop { animation: countdownPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 
-  input[type=range] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 4px; background: #CBD5E1; outline: none; cursor: pointer; }
+  input[type=range] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 4px; background: var(--range-track); outline: none; cursor: pointer; }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #F97316; cursor: pointer; box-shadow: 0 2px 8px rgba(249,115,22,0.35); }
   input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #F97316; cursor: pointer; border: none; }
 

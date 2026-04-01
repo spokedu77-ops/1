@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { generateLevel4Pattern, Level4Item } from '../lib/signals';
 import { playBeep } from '../lib/audio';
 import { CSS } from '../styles';
@@ -14,11 +14,13 @@ export function MemoryGameLevel5({
   onComplete,
   audioMode,
   speedSec,
+  startDelayMs = 600,
 }: {
   onExit: () => void;
   onComplete: () => void;
   audioMode: string;
   speedSec: number;
+  startDelayMs?: number;
 }) {
   const [items] = useState<Level4Item[]>(() => generateLevel4Pattern());
   const [showIdx, setShowIdx] = useState(-1);
@@ -67,10 +69,17 @@ export function MemoryGameLevel5({
     }
   }, [items, audioMode, showMs]);
 
-  useEffect(() => {
-    timerRef.current = setTimeout(() => runSequence(0), 600);
+  useLayoutEffect(() => {
+    if (startDelayMs !== 0) return;
+    runSequence(0);
     return clear;
-  }, [runSequence]);
+  }, [runSequence, startDelayMs]);
+
+  useEffect(() => {
+    if (startDelayMs === 0) return;
+    timerRef.current = setTimeout(() => runSequence(0), Math.max(0, startDelayMs));
+    return clear;
+  }, [runSequence, startDelayMs]);
 
   const handleAction = useCallback(() => {
     const p = phaseRef.current;

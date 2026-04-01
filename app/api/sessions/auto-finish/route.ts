@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { parseExtraTeachers } from '@/app/admin/classes/lib/sessionUtils';
 
 export async function POST() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
   const supabase = getServiceSupabase();
   const now = new Date().toISOString();
 

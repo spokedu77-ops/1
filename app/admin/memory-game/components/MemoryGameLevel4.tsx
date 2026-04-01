@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { generateLevel4Pattern, Level4Item } from '../lib/signals';
 import { playBeep } from '../lib/audio';
 import { CSS } from '../styles';
@@ -15,11 +15,13 @@ export function MemoryGameLevel4({
   onComplete,
   audioMode,
   speedSec,
+  startDelayMs = 600,
 }: {
   onExit: () => void;
   onComplete: () => void;
   audioMode: string;
   speedSec: number;
+  startDelayMs?: number;
 }) {
   const [items] = useState<Level4Item[]>(() => generateLevel4Pattern());
   const [showIdx, setShowIdx] = useState(-1);
@@ -47,9 +49,13 @@ export function MemoryGameLevel4({
     if (idx >= TOTAL) {
       prevColorRef.current = null;
       // 10개 중 5개 랜덤 선택 (인덱스 셔플)
-      const shuffled = Array.from({ length: TOTAL }, (_, i) => i)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, QA_COUNT);
+      // 주의: sort(() => Math.random() - 0.5)는 편향이 있을 수 있어 Fisher–Yates로 셔플
+      const indices = Array.from({ length: TOTAL }, (_, i) => i);
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j]!, indices[i]!];
+      }
+      const shuffled = indices.slice(0, QA_COUNT);
       setQaItems(shuffled.map((i) => items[i]!));
       setQaIdx(0);
       setPhase('qa_ready');
@@ -78,10 +84,17 @@ export function MemoryGameLevel4({
     }
   }, [items, audioMode, showMs]);
 
-  useEffect(() => {
-    timerRef.current = setTimeout(() => runSequence(0), 600);
+  useLayoutEffect(() => {
+    if (startDelayMs !== 0) return;
+    runSequence(0);
     return clear;
-  }, [runSequence]);
+  }, [runSequence, startDelayMs]);
+
+  useEffect(() => {
+    if (startDelayMs === 0) return;
+    timerRef.current = setTimeout(() => runSequence(0), Math.max(0, startDelayMs));
+    return clear;
+  }, [runSequence, startDelayMs]);
 
   const handleAction = useCallback(() => {
     const p = phaseRef.current;

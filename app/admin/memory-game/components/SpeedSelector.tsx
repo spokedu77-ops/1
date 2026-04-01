@@ -78,9 +78,9 @@ export function SpeedSelector({
           </div>
         </div>
       )}
-      <div style={{ background: '#F8FAFC', borderRadius: '0.85rem', padding: '0.75rem 1rem', border: '1px solid #E2E8F0' }}>
+      <div style={{ background: 'var(--subtle-bg)', borderRadius: '0.85rem', padding: '0.75rem 1rem', border: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B' }}>직접 조절</span>
+          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>직접 조절</span>
           <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#F97316' }}>{value.toFixed(1)}초</span>
         </div>
         <input
@@ -92,7 +92,7 @@ export function SpeedSelector({
           onChange={(e) => onChange(parseFloat(e.target.value))}
           style={{ width: '100%', accentColor: '#F97316' }}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#CBD5E1', fontWeight: 600, marginTop: '0.35rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--range-tick)', fontWeight: 600, marginTop: '0.35rem' }}>
           <span>← 빠름 (1초)</span>
           <span>느림 (6초) →</span>
         </div>

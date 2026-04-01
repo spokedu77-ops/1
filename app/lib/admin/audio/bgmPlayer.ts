@@ -19,7 +19,7 @@ export class BgmPlayer {
    * BGM 초기화 (재생하지 않음)
    * 사용자 제스처에서 play()를 호출해야 재생됨
    */
-  async init(srcUrl: string, volume = 0.65): Promise<void> {
+  init(srcUrl: string, volume = 0.65): void {
     // 기존 재생 중이면 반드시 stop() 후 교체
     if (this.audio && this.isInitialized) {
       this.stop();
@@ -36,6 +36,12 @@ export class BgmPlayer {
     this.audio.volume = volume;
     this.targetVolume = volume;
     this.isInitialized = true;
+    try {
+      // 일부 브라우저에서 src 변경 후 명시적 load가 안정적
+      this.audio.load();
+    } catch {
+      // ignore
+    }
     
     // 에러 핸들링 (크래시 방지)
     const errorHandler = (e: Event) => {

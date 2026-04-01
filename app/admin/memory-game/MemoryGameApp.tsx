@@ -6,13 +6,11 @@ import { useFlowBGM } from '@/app/lib/admin/hooks/useFlowBGM';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { useStudents } from './hooks/useStudents';
-import { useHistory } from './hooks/useHistory';
 import { useIntervalTimer } from './hooks/useIntervalTimer';
 import { useTrainingTimer } from './hooks/useTrainingTimer';
 import { tts } from './lib/tts';
 import { StudentModal } from './components/StudentModal';
 import { StudentManageScreen } from './components/StudentManageScreen';
-import { HistoryScreen } from './components/HistoryScreen';
 import { Sparkline } from './components/Sparkline';
 import { SpeedSelector } from './components/SpeedSelector';
 import { SignalDisplay } from './components/SignalDisplay';
@@ -22,7 +20,7 @@ import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
 import { CSS, S } from './styles';
 import type { DupStats } from './lib/signals';
 
-type Screen = 'home' | 'setup' | 'guide' | 'history' | 'students' | 'training' | 'memory' | 'flow' | 'result';
+type Screen = 'home' | 'setup' | 'guide' | 'students' | 'training' | 'memory' | 'flow' | 'result';
 
 type Settings = {
   mode: string;
@@ -62,7 +60,6 @@ const defaultSettings: Settings = {
 export default function MemoryGameApp() {
   const [screen, setScreen] = useState<Screen>('home');
   const [settings, setSettings] = useState<Settings>(defaultSettings);
-  const { records, push: pushRecord, clear: clearHistory } = useHistory();
   const { students, add: addStudent, remove: removeStudent, rename: renameStudent } = useStudents();
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -93,7 +90,8 @@ export default function MemoryGameApp() {
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
 
   const month = new Date().getMonth() + 1;
-  const { list: flowBgmList } = useFlowBGM(month);
+  const { list: flowBgmList, selected: flowBgmSelected, loading: flowBgmLoading } = useFlowBGM(month);
+  const pendingBgmStartRef = useRef<null | { mode: string }>(null);
 
   useEffect(() => {
     if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
@@ -133,12 +131,11 @@ export default function MemoryGameApp() {
     setIsTraining(false);
     const cfg = { ...settings };
     const count = countRef.current;
-    pushRecord(cfg, count, selectedStudentId);
     setResult({ count, cfg, dupStats: cfg.mode === 'basic' ? dupStats ?? undefined : undefined });
     setSessionMemo('');
     setScreen('result');
     if (cfg.audioMode !== 'off') setTimeout(() => tts('훈련 완료! 수고했어요!', true), 300);
-  }, [settings, pushRecord, selectedStudentId]);
+  }, [settings, selectedStudentId]);
 
   const { getProgress } = useTrainingTimer({
     active: isTraining && !settings.intervalMode,
@@ -193,7 +190,7 @@ export default function MemoryGameApp() {
 
   useEffect(() => {
     // 훈련/메모리 화면 이탈 시 BGM 정지 (요청: 시작 클릭 시만 재생, 훈련/메모리에서만 유지)
-    if (screen === 'training' || screen === 'memory') return;
+    if (screen === 'training' || screen === 'memory' || screen === 'flow') return;
     bgmPlayerRef.current?.fadeOut(220);
   }, [screen]);
 
@@ -227,40 +224,78 @@ export default function MemoryGameApp() {
       setSignal(null);
       setFlashing(false);
       prevBgRef.current = null;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
 
-      const shouldPlayBgm = cfg.mode === 'basic' || cfg.mode === 'spatial' || cfg.mode === 'dual';
-      if (shouldPlayBgm && flowBgmList.length > 0) {
-        const pick = flowBgmList[Math.floor(Math.random() * flowBgmList.length)]!;
+      const playBgm = (path: string) => {
         try {
-          const url = getPublicUrl(pick);
+          const url = getPublicUrl(path);
           if (!bgmPlayerRef.current) bgmPlayerRef.current = new BgmPlayer();
-          bgmPlayerRef.current.init(url, 0.275).then(() => {
-            bgmPlayerRef.current?.play();
-            bgmPlayerRef.current?.fadeIn(180);
-          });
+          // 사용자 클릭(제스처) 컨텍스트에서 play까지 최대한 이어지게 동기적으로 호출
+          bgmPlayerRef.current.init(url, 0.275);
+          void bgmPlayerRef.current.play();
+          bgmPlayerRef.current.fadeIn(180);
         } catch {
           // ignore
         }
+      };
+
+      // BGM 정책:
+      // - flow: selected만 재생
+      // - basic/spatial/dual: list 랜덤 재생
+      // - stroop: BGM 없음
+      const bgmMode = cfg.mode;
+      const shouldTryBgm = bgmMode === 'flow' || bgmMode === 'basic' || bgmMode === 'spatial' || bgmMode === 'dual';
+      if (shouldTryBgm) {
+        if (flowBgmList.length === 0) {
+          // 리스트 로딩 전이면, 로딩 완료 시 한 번 더 시도
+          if (flowBgmLoading) pendingBgmStartRef.current = { mode: bgmMode };
+        } else if (bgmMode === 'flow') {
+          if (flowBgmSelected && flowBgmList.includes(flowBgmSelected)) {
+            playBgm(flowBgmSelected);
+          }
+        } else {
+          const pick = flowBgmList[Math.floor(Math.random() * flowBgmList.length)]!;
+          playBgm(pick);
+        }
       }
 
-      if (cfg.mode === 'spatial') {
-        setScreen('memory');
-      } else if (cfg.mode === 'flow') {
+      const warmupSec = Math.max(0, cfg.warmup ?? 0);
+
+      if (cfg.mode === 'flow') {
         flowCompleteGuardRef.current = false;
         setScreen('flow');
+        setCountdown(null);
       } else {
-        setScreen('training');
-        setCountdown(cfg.warmup);
-        let c = cfg.warmup;
-        if (cfg.audioMode !== 'off') tts(cfg.warmup === 3 ? '셋' : String(cfg.warmup), true);
+        // spatial(순차기억)도 warmup 카운트다운 적용
+        const nextScreen: Screen = cfg.mode === 'spatial' ? 'memory' : 'training';
+        setScreen(nextScreen);
+        setIsTraining(false);
+
+        if (warmupSec <= 0) {
+          setCountdown(null);
+          if (nextScreen === 'training') {
+            setIsTraining(true);
+            if (cfg.audioMode !== 'off') tts('시작!', true);
+          }
+          return;
+        }
+
+        setCountdown(warmupSec);
+        let c = warmupSec;
+        if (cfg.audioMode !== 'off') tts(warmupSec === 3 ? '셋' : String(warmupSec), true);
         timerRef.current = setInterval(() => {
           c--;
           if (c <= 0) {
             if (timerRef.current) clearInterval(timerRef.current);
             timerRef.current = null;
             setCountdown(null);
-            setIsTraining(true);
-            if (cfg.audioMode !== 'off') tts('시작!', true);
+            if (nextScreen === 'training') {
+              setIsTraining(true);
+              if (cfg.audioMode !== 'off') tts('시작!', true);
+            }
           } else {
             setCountdown(c);
             const voices = ['하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
@@ -269,8 +304,33 @@ export default function MemoryGameApp() {
         }, 900);
       }
     },
-    [settings, flowBgmList]
+    [settings, flowBgmList, flowBgmSelected, flowBgmLoading]
   );
+
+  useEffect(() => {
+    const pending = pendingBgmStartRef.current;
+    if (!pending?.mode) return;
+    if (flowBgmLoading) return;
+    pendingBgmStartRef.current = null;
+    if (flowBgmList.length === 0) return;
+    if (!(screen === 'training' || screen === 'memory' || screen === 'flow')) return;
+
+    const mode = pending.mode;
+    const pick =
+      mode === 'flow'
+        ? (flowBgmSelected && flowBgmList.includes(flowBgmSelected) ? flowBgmSelected : null)
+        : flowBgmList[Math.floor(Math.random() * flowBgmList.length)]!;
+    if (!pick) return;
+    try {
+      const url = getPublicUrl(pick);
+      if (!bgmPlayerRef.current) bgmPlayerRef.current = new BgmPlayer();
+      bgmPlayerRef.current.init(url, 0.275);
+      void bgmPlayerRef.current.play();
+      bgmPlayerRef.current.fadeIn(180);
+    } catch {
+      // ignore
+    }
+  }, [flowBgmLoading, flowBgmList, flowBgmSelected, screen]);
 
   const stop = useCallback(() => {
     if (timerRef.current) {
@@ -291,10 +351,9 @@ export default function MemoryGameApp() {
     if (document.fullscreenElement) document.exitFullscreen();
     const cfg = { ...settings, mode: 'flow', level: 1 };
     const completedStages = 5;
-    pushRecord(cfg, completedStages, selectedStudentId);
     setResult({ count: completedStages, cfg });
     setScreen('result');
-  }, [settings, pushRecord, selectedStudentId]);
+  }, [settings, selectedStudentId]);
 
   useEffect(() => {
     if (screen !== 'flow') return;
@@ -383,7 +442,6 @@ export default function MemoryGameApp() {
           </div>
           <div className="home-fadein-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-              <button type="button" onClick={() => setScreen('history')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.85rem', padding: 'clamp(0.7rem,2vw,0.9rem)', fontSize: 'clamp(0.78rem,2vw,0.86rem)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', position: 'relative' }}>📊 기록{records.length > 0 && <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#F97316', display: 'block' }} />}</button>
               <button type="button" onClick={() => setScreen('guide')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.85rem', padding: 'clamp(0.7rem,2vw,0.9rem)', fontSize: 'clamp(0.78rem,2vw,0.86rem)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>📖 가이드</button>
             </div>
             <div className="home-fadein-3" style={{ textAlign: 'center' }}>
@@ -406,7 +464,6 @@ export default function MemoryGameApp() {
 
   // ── STUDENTS / HISTORY / GUIDE (delegate to components) ──
   if (screen === 'students') return <StudentManageScreen students={students} onAdd={addStudent} onRemove={removeStudent} onRename={renameStudent} onBack={() => setScreen('home')} />;
-  if (screen === 'history') return <HistoryScreen records={records} students={students} onBack={() => setScreen('home')} onClear={clearHistory} />;
 
   if (screen === 'guide') {
     return (
@@ -562,7 +619,7 @@ export default function MemoryGameApp() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                 {M.levels.map((lv) => (
                   <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : '#E2E8F0'}`, background: settings.level === lv.id ? `${M.accent}08` : '#fff', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
-                    <div style={{ width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: '#fff', background: settings.level === lv.id ? M.accent : '#CBD5E1', flexShrink: 0, marginTop: '0.05rem' }}>{M.id === 'spatial' ? lv.name : `단계 ${lv.id}`}</div>
+                    <div style={{ width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : '1px solid var(--border)', flexShrink: 0, marginTop: '0.05rem' }}>{M.id === 'spatial' ? lv.name : `단계 ${lv.id}`}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, fontSize: '0.96rem', color: '#1E293B' }}>{lv.name}</span>
@@ -688,18 +745,25 @@ export default function MemoryGameApp() {
   // ── MEMORY / TRAINING / RESULT ──
   const handleMemoryComplete = () => {
     if (document.fullscreenElement) document.exitFullscreen();
-    pushRecord({ ...settings }, MEMORY_ROUNDS, selectedStudentId);
     setResult({ count: MEMORY_ROUNDS, cfg: { ...settings } });
     setScreen('result');
   };
 
   if (screen === 'memory') {
+    if (countdown !== null) {
+      return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400 }}>
+          <style>{CSS}</style>
+          <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
+        </div>
+      );
+    }
     if (settings.level === 4)
-      return <MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} />;
+      return <MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />;
     if (settings.level === 5)
-      return <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} />;
+      return <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />;
     return (
-      <MemoryGame level={settings.level} onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} />
+      <MemoryGame level={settings.level} onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />
     );
   }
 
@@ -766,10 +830,6 @@ export default function MemoryGameApp() {
     const isMem = cfg.mode === 'spatial' || cfg.mode === 'flow';
     const totalSec = isMem ? MEMORY_ROUNDS * 5 : cfg.timeMode === 'time' ? (cfg.duration ?? 0) : (cfg.targetReps ?? 0) * (cfg.speed ?? 1);
     const spm = !isMem && totalSec > 0 ? Math.round((count / totalSec) * 60) : null;
-    const prevRecords = records.filter((r) => r.mode === cfg.mode && r.level === cfg.level && r.spm != null).slice(-9, -1);
-    const prevSpm = prevRecords.length ? prevRecords[prevRecords.length - 1]!.spm! : null;
-    const spmDiff = spm != null && prevSpm != null ? spm - prevSpm : null;
-    const recentSpm = records.filter((r) => r.mode === cfg.mode && r.level === cfg.level && r.spm != null).slice(-8).map((r) => r.spm!);
     const mainVal = spm != null ? `${spm}` : `${count}`;
     const mainLabel = spm != null ? 'SPM' : '회';
     const mainColor = mo?.accent ?? '#F97316';
@@ -816,21 +876,8 @@ export default function MemoryGameApp() {
                 <span style={{ color: '#64748B' }}>{dupStats.displayMaxConsecutive}회</span>
               </div>
             )}
-            {spmDiff != null && (
-              <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: spmDiff > 0 ? '#22C55E' : spmDiff < 0 ? '#EF4444' : '#94A3B8' }}>{spmDiff > 0 ? `▲ +${spmDiff}` : spmDiff < 0 ? `▼ ${spmDiff}` : '→ 동일'} SPM</span>
-                <span style={{ fontSize: '0.96rem', color: '#94A3B8', marginLeft: '0.4rem' }}>전 회차 대비</span>
-              </div>
-            )}
-            {recentSpm.length >= 2 && (
-              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '1rem', padding: '0.85rem 1rem', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', marginBottom: '0.4rem' }}><span>최근 {recentSpm.length}회 추세</span><span style={{ color: '#F97316' }}>최고 {Math.max(...recentSpm)} SPM</span></div>
-                <Sparkline data={recentSpm} color="#F97316" height={40} width={260} />
-              </div>
-            )}
             <div style={{ display: 'flex', gap: '0.6rem' }}>
               <button type="button" style={{ ...S.btn, ...S.bSecondary, flex: 1 }} onClick={() => setScreen('home')}>🏠 홈</button>
-              <button type="button" style={{ ...S.btn, ...S.bSecondary, flex: 1 }} onClick={() => setScreen('history')}>📊 기록</button>
               <button type="button" style={{ ...S.btn, ...S.bPrimary, flex: 2 }} onClick={() => startSession(cfg)}>▶ 다시</button>
             </div>
           </div>
