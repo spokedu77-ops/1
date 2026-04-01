@@ -1,8 +1,9 @@
 "use client";
 
 import { toast } from 'sonner';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -10,6 +11,8 @@ import type { ClassGroup, EditableSession } from '../../classes/types';
 import ClassDetailPanelV2 from '../components/ClassDetailPanelV2';
 import { GROUP_ALIAS_RULES } from '../lib/groupAliases';
 import ClassAliasViewerPanel from '../components/ClassAliasViewerPanel';
+import ClassBundlePanelV2 from '../components/ClassBundlePanelV2';
+import { getCleanClassTitle } from '../lib/v2BundleResolve';
 
 type DayOption = { label: string; value: number };
 const DAYS: DayOption[] = [
@@ -21,22 +24,6 @@ const DAYS: DayOption[] = [
   { label: '금', value: 5 },
   { label: '토', value: 6 },
 ];
-
-function getCleanClassTitle(title: string): string {
-  const original = title ?? '';
-  const cleaned = original
-    // 1/1, 3/6 같은 분수 회차 제거 (앞/뒤/중간 어디든)
-    .replace(/\b\d+\s*\/\s*\d+\b/g, ' ')
-    // 6회차, 6회, 6차 제거 (앞/뒤/중간 어디든)
-    .replace(/\b\d+\s*(회차|회|차)\b/g, ' ')
-    // 구분자/공백 정리
-    .replace(/[|_]/g, ' ')
-    .replace(/\s*-\s*/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  return cleaned || original.trim();
-}
 
 type TimeFilter = 'upcoming' | 'ongoing';
 type TimeStatus = 'upcoming' | 'ongoing' | 'completed';
@@ -52,7 +39,14 @@ type AliasRow = {
   groupIds: string[];
 };
 
+type BundleSelection = {
+  bundleTitle: string;
+  groupIds: string[];
+};
+
 export default function ClassListPageV2() {
+  const router = useRouter();
+  const focusAppliedRef = useRef(false);
   const [supabase] = useState(() =>
     typeof window !== 'undefined' ? getSupabaseBrowserClient() : null
   );
@@ -62,7 +56,9 @@ export default function ClassListPageV2() {
   const [loading, setLoading] = useState(true);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedAlias, setSelectedAlias] = useState<AliasRow | null>(null);
+  const [selectedBundle, setSelectedBundle] = useState<BundleSelection | null>(null);
   const [aliasGroupIdsByTitle, setAliasGroupIdsByTitle] = useState<Record<string, string[]>>({});
+  const [bundleGroupIdsByKey, setBundleGroupIdsByKey] = useState<Record<string, string[]>>({});
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -94,7 +90,7 @@ export default function ClassListPageV2() {
         supabase
           .from('sessions')
           .select('group_id, title, start_at, end_at, status, created_by, round_total, round_index')
-          .not('status', 'in', '("deleted","cancelled","postponed")'),
+          .not('status', 'in', '("deleted")'),
         supabase.from('users').select('id, name').eq('is_active', true),
       ]);
 
@@ -114,6 +110,20 @@ export default function ClassListPageV2() {
         setGroups([]);
         return;
       }
+
+      // ✅ 사이클 토글용 번들 키: 정제 수업명 기준으로 group_id 목록 생성(완료 포함)
+      // (리스트에는 완료를 숨기지만, 모달에서는 토글로 볼 수 있어야 함)
+      const bundleMap = new Map<string, Set<string>>();
+      for (const row of data as any[]) {
+        if (!row.group_id) continue;
+        const key = getCleanClassTitle(String(row.title || ''));
+        if (!key) continue;
+        if (!bundleMap.has(key)) bundleMap.set(key, new Set<string>());
+        bundleMap.get(key)!.add(String(row.group_id));
+      }
+      const nextBundle: Record<string, string[]> = {};
+      for (const [k, set] of bundleMap.entries()) nextBundle[k] = Array.from(set);
+      setBundleGroupIdsByKey(nextBundle);
 
       const now = Date.now();
       const byGroup = new Map<
@@ -291,6 +301,36 @@ export default function ClassListPageV2() {
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
+
+  useEffect(() => {
+    if (focusAppliedRef.current || loading) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const focusGroupId = params.get('focusGroupId');
+    if (!focusGroupId) {
+      focusAppliedRef.current = true;
+      return;
+    }
+    let handled = false;
+    for (const [aliasTitle, ids] of Object.entries(aliasGroupIdsByTitle)) {
+      if (ids.includes(focusGroupId)) {
+        setSelectedBundle({ bundleTitle: aliasTitle, groupIds: ids });
+        handled = true;
+        break;
+      }
+    }
+    if (!handled) {
+      for (const [key, ids] of Object.entries(bundleGroupIdsByKey)) {
+        if (ids.includes(focusGroupId)) {
+          setSelectedBundle({ bundleTitle: key, groupIds: ids });
+          handled = true;
+          break;
+        }
+      }
+    }
+    focusAppliedRef.current = true;
+    router.replace('/admin/classes-v2/list', { scroll: false });
+  }, [loading, aliasGroupIdsByTitle, bundleGroupIdsByKey, router]);
 
   const runAutoFinish = useCallback(async () => {
     if (autoFinishRunning) return;
@@ -1073,11 +1113,15 @@ export default function ClassListPageV2() {
                             if (aliasRule) {
                               const groupIds = aliasGroupIdsByTitle[aliasRule.aliasTitle] || [];
                               if (groupIds.length > 0) {
-                                setSelectedAlias({ aliasTitle: aliasRule.aliasTitle, groupIds });
+                                // ✅ alias는 번들 모달로 진입 (여러 group_id 토글 가능)
+                                setSelectedBundle({ bundleTitle: aliasRule.aliasTitle, groupIds });
                                 return;
                               }
                             }
-                            setSelectedGroupId(g.groupId);
+                            // ✅ 일반 그룹도 번들 모달로 진입
+                            const key = getCleanClassTitle(g.title);
+                            const ids = bundleGroupIdsByKey[key] || [g.groupId];
+                            setSelectedBundle({ bundleTitle: key || getCleanClassTitle(g.title), groupIds: ids });
                           }}
                           className="inline-flex px-3 py-1.5 rounded-full text-[11px] font-bold bg-blue-600 text-white hover:bg-blue-700 transition"
                         >
@@ -1098,6 +1142,14 @@ export default function ClassListPageV2() {
         aliasTitle={selectedAlias?.aliasTitle || ''}
         groupIds={selectedAlias?.groupIds || []}
         onClose={() => setSelectedAlias(null)}
+      />
+
+      <ClassBundlePanelV2
+        visible={!!selectedBundle}
+        bundleTitle={selectedBundle?.bundleTitle || ''}
+        groupIds={selectedBundle?.groupIds || []}
+        onClose={() => setSelectedBundle(null)}
+        onChanged={() => fetchGroups()}
       />
 
       <ClassDetailPanelV2

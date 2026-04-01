@@ -151,8 +151,8 @@ export default function Intro({ onStart }: IntroProps) {
           }}
         >
           {[
-            { n: '3만+', l: '참여 아이' },
-            { n: '1만+', l: '수업 시간' },
+            { n: '3만+', l: '스포키듀 누적 수업 참여' },
+            { n: '1만+', l: '스포키듀 누적 수업 시간' },
             { n: '16종', l: '성향 프로파일' },
           ].map((s, i) => (
             <div key={i} style={{ background: '#161616', padding: '18px 12px', textAlign: 'center' }}>

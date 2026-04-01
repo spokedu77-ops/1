@@ -130,6 +130,7 @@ export function useClassManagement() {
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
   return { 
+    allEvents,
     filteredEvents, 
     teacherList, 
     filterTeacher, 

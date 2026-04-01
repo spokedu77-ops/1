@@ -22,7 +22,11 @@ export default function Survey({ q, qi, resps, name, onAnswer, onBack }: SurveyP
   const lines = q.q.split('\n');
 
   const midMsg =
-    qi === 3 ? { em: '⚡', text: '거의 절반 왔어요! 이제 탐구 스타일을 볼게요' } : qi === 7 ? { em: '🎯', text: '이제 마지막 에너지 타입만 남았어요' } : null;
+    qi === 3
+      ? { em: '⚡', text: '잘 하고 있어요! 절반을 향해 가고 있어요' }
+      : qi === 7
+        ? { em: '🎯', text: '거의 다 왔어요! 마지막 4문항이에요' }
+        : null;
 
   return (
     <div className="page" style={{ background: '#0D0D0D', display: 'flex', flexDirection: 'column', minHeight: '100dvh', padding: '0 20px' }}>

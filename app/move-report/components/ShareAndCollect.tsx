@@ -14,11 +14,13 @@ interface ShareAndCollectProps {
 /** 원본 HTML 공유 + 연락처 저장 카드 */
 export default function ShareAndCollect({ p, onShare, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
   const [phone, setPhone] = useState('');
+  const [consent, setConsent] = useState(false);
   const [sent, setSent] = useState(false);
 
   const normalizedSaved = savedPhone.replace(/\D/g, '');
   const digits = phone.replace(/\D/g, '');
   const alreadySaved = normalizedSaved.length >= 10;
+  const active = digits.length >= 10 && consent;
 
   return (
     <div
@@ -122,9 +124,51 @@ export default function ShareAndCollect({ p, onShare, flash, onLeadSubmit, saved
               <br />
               <span style={{ color: '#888', fontWeight: 500, fontSize: '11px' }}>저장 후 관리자가 확인할 수 있어요</span>
             </p>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
+              <button
+                type="button"
+                aria-pressed={consent}
+                onClick={() => setConsent((c) => !c)}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '6px',
+                  flexShrink: 0,
+                  marginTop: '1px',
+                  cursor: 'pointer',
+                  background: consent ? '#FF4B1F' : '#1E1E1E',
+                  border: `1.5px solid ${consent ? '#FF4B1F' : '#333'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all .2s',
+                }}
+              >
+                {consent ? <i className="fa-solid fa-check" style={{ fontSize: '10px', color: '#fff' }} /> : null}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConsent((c) => !c)}
+                style={{
+                  fontSize: '12px',
+                  color: '#AAAAAA',
+                  lineHeight: 1.5,
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                }}
+              >
+                [필수] 결과 저장 및 스포키듀 체육교육 정보 안내를 위한 개인정보 수집·이용에 동의합니다.
+              </button>
+            </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="010-0000-0000"
@@ -143,7 +187,9 @@ export default function ShareAndCollect({ p, onShare, flash, onLeadSubmit, saved
               />
               <button
                 type="button"
+                disabled={!active}
                 onClick={async () => {
+                  if (!active) return;
                   if (digits.length < 10) {
                     flash('번호를 입력해 주세요.');
                     return;
@@ -154,12 +200,12 @@ export default function ShareAndCollect({ p, onShare, flash, onLeadSubmit, saved
                 style={{
                   padding: '11px 18px',
                   borderRadius: '10px',
-                  background: '#FEE500',
-                  color: '#3C1E1E',
+                  background: active ? '#FEE500' : '#2A2A2A',
+                  color: active ? '#3C1E1E' : '#555',
                   fontWeight: 800,
                   fontSize: '13px',
                   border: 'none',
-                  cursor: 'pointer',
+                  cursor: active ? 'pointer' : 'default',
                   outline: 'none',
                   fontFamily: 'Noto Sans KR,sans-serif',
                   whiteSpace: 'nowrap',

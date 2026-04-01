@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SLIDES_DATA } from '../data/config';
+import Image from 'next/image';
 
 function scrollToId(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -99,21 +100,23 @@ export default function Media() {
                 }}
               >
                 {s.src ? (
-                  <img
-                    src={s.src}
-                    alt={s.heading}
-                    loading={i === index ? 'eager' : 'lazy'}
-                    decoding="async"
-                    fetchPriority={i === index ? 'high' : undefined}
-                    sizes="(max-width: 720px) 100vw, 720px"
+                  <div
                     style={{
+                      position: 'relative',
                       width: '100%',
                       height: 380,
-                      objectFit: 'contain',
-                      display: 'block',
                       background: 'rgba(255,255,255,.02)',
                     }}
-                  />
+                  >
+                    <Image
+                      src={s.src}
+                      alt={s.heading}
+                      fill
+                      sizes="(max-width: 720px) 100vw, 720px"
+                      priority={i === index}
+                      style={{ objectFit: 'contain' }}
+                    />
+                  </div>
                 ) : (
                   <div
                     style={{

@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('[move-report/leads]', error);
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: false, error: '저장 중 오류가 발생했어요. 다시 시도해 주세요.' }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });

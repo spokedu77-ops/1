@@ -62,7 +62,7 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
           <p style={{ fontSize: '14px', color: '#CCCCCC', lineHeight: 1.65, wordBreak: 'keep-all' }}>
             지금 나온 우리 아이 결과를 저장하고,
             <br />
-            유형별 활동 팁을 함께 안내받을 수 있어요.
+            결과 화면의 유형별 안내와 스포키듀 수업 연결을 도울 수 있어요.
           </p>
         </div>
 
@@ -73,8 +73,8 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
           {(
             [
               { i: '📋', t: '우리 아이 결과 카드', d: '저장해두고 가족과 공유하기 좋아요' },
-              { i: '🎯', t: '유형별 집콕 활동 팁 3가지', d: '집에서도 가볍게 따라해볼 수 있어요' },
-              { i: '💡', t: '부모 피드백 한 줄 가이드', d: '우리 아이에게 잘 맞는 반응 방식을 알려드려요' },
+              { i: '🎯', t: '유형별 활동 아이디어', d: '결과 페이지에서 바로 확인할 수 있어요' },
+              { i: '💡', t: '스포키듀 수업 연결 안내', d: '아이 유형에 맞는 수업을 안내해드릴 수 있어요' },
             ] as const
           ).map((b, i) => (
             <div

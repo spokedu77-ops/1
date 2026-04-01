@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { compute } from './lib/compute';
 import { Qs } from './data/questions';
 import type { AgeGroup, ComputeResult } from './types';
@@ -25,10 +25,21 @@ export default function MoveReportClient() {
   const [savedPhone, setSavedPhone] = useState('');
 
   const questions = useMemo(() => Qs[age], [age]);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const flash = useCallback((msg: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(msg);
-    window.setTimeout(() => setToast(''), 2800);
+    toastTimer.current = window.setTimeout(() => {
+      setToast('');
+      toastTimer.current = null;
+    }, 2800);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
   }, []);
 
   const go = useCallback((s: Screen) => {
@@ -88,21 +99,24 @@ export default function MoveReportClient() {
     }
   }, [flash]);
 
-  const onAnswer = (v: string) => {
-    const nr = [...resps];
-    nr[qi] = v;
-    setResps(nr);
-    if (qi < 11) {
-      window.setTimeout(() => setQi((q) => q + 1), 160);
-      return;
-    }
-    window.setTimeout(() => {
-      const r = compute(nr, age, name);
-      setResult(r);
-      go('loading');
-      window.setTimeout(() => go('leadform'), 2200);
-    }, 200);
-  };
+  const onAnswer = useCallback(
+    (v: string) => {
+      const nr = [...resps];
+      nr[qi] = v;
+      setResps(nr);
+      if (qi < questions.length - 1) {
+        window.setTimeout(() => setQi((q) => q + 1), 160);
+        return;
+      }
+      window.setTimeout(() => {
+        const r = compute(nr, age, name);
+        setResult(r);
+        go('loading');
+        window.setTimeout(() => go('leadform'), 2200);
+      }, 200);
+    },
+    [age, go, name, qi, questions.length, resps]
+  );
 
   const surveyBack = () => {
     if (qi === 0) {

@@ -675,17 +675,17 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                 </div>
               </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-slate-100">
-                <table className="w-full text-xs">
+              <div className="overflow-x-hidden rounded-2xl border border-slate-100">
+                <table className="w-full table-fixed text-xs">
                   <thead className="bg-slate-50 text-[11px] font-bold text-slate-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">회차</th>
-                      <th className="px-3 py-2 text-left">날짜</th>
-                      <th className="px-3 py-2 text-left">시간</th>
-                      <th className="px-3 py-2 text-left">선생님</th>
-                      <th className="px-3 py-2 text-right">금액</th>
-                      <th className="px-3 py-2 text-center">상태</th>
-                      <th className="px-3 py-2 text-center">액션</th>
+                      <th className="px-2 py-2 text-left w-[56px]">회차</th>
+                      <th className="px-2 py-2 text-left w-[106px]">날짜</th>
+                      <th className="px-2 py-2 text-left w-[80px]">시간</th>
+                      <th className="px-2 py-2 text-left w-[98px]">선생님</th>
+                      <th className="px-2 py-2 text-right w-[78px]">금액</th>
+                      <th className="px-2 py-2 text-center w-[58px]">상태</th>
+                      <th className="px-2 py-2 text-center w-[62px]">액션</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -712,10 +712,10 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                                 : '예정';
                       return (
                         <tr key={s.id} className="border-t border-slate-100">
-                          <td className="px-3 py-2 font-bold text-slate-700">
+                          <td className="px-2 py-2 font-bold text-slate-700">
                             {Math.min(s.round_index ?? idx + 1, plannedTotal)}/{plannedTotal}
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-2 py-2">
                             <input
                               type="date"
                               className="w-[112px] bg-transparent border rounded-lg px-2 py-1"
@@ -732,7 +732,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                               }}
                             />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-2 py-2">
                             <input
                               type="time"
                               className="w-[84px] bg-transparent border rounded-lg px-2 py-1"
@@ -749,7 +749,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                               }}
                             />
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-2 py-2">
                             <select
                               className="w-[104px] bg-transparent border rounded-lg px-2 py-1 font-bold text-slate-700"
                               value={s.created_by}
@@ -766,7 +766,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                               ))}
                             </select>
                           </td>
-                          <td className="px-3 py-2 text-right">
+                          <td className="px-2 py-2 text-right">
                             <input
                               type="number"
                               className="w-[88px] bg-transparent border rounded-lg px-2 py-1 text-right"
@@ -776,7 +776,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                               }
                             />
                           </td>
-                          <td className="px-3 py-2 text-center">
+                          <td className="px-2 py-2 text-center">
                             <span
                               className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold ${
                                 statusLabel === '삭제'
@@ -795,11 +795,11 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                               {statusLabel}
                             </span>
                           </td>
-                          <td className="px-3 py-2 text-center">
-                            <div className="inline-flex items-center justify-center whitespace-nowrap min-w-[56px]">
+                          <td className="px-2 py-2 text-center">
+                            <div className="inline-flex items-center justify-center whitespace-nowrap min-w-[52px]">
                               <button
                                 type="button"
-                                className="inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-[10px] font-black rounded-full bg-violet-50 text-violet-600 hover:bg-violet-100"
+                                className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-violet-50 text-violet-600 hover:bg-violet-100"
                                 onClick={() => handlePostpone(s.id)}
                               >
                                 연기

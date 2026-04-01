@@ -574,8 +574,8 @@ export default function MemoryGameApp() {
   if (screen === 'setup') {
     const stepNum = (n: number, label: string) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>{n}</div>
-        <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>{label}</span>
+        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--subtle-bg)', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>{n}</div>
+        <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)' }}>{label}</span>
       </div>
     );
     return (
@@ -604,28 +604,28 @@ export default function MemoryGameApp() {
                         intervalSets: 4,
                       }));
                     }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '0.85rem 0.95rem', borderRadius: '1rem', border: `2px solid ${settings.mode === m.id ? m.accent : '#E2E8F0'}`, background: settings.mode === m.id ? `${m.accent}10` : '#FAFAFA', cursor: 'pointer', gap: '0.15rem', fontFamily: 'inherit', transition: 'all 0.13s' }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '0.85rem 0.95rem', borderRadius: '1rem', border: `2px solid ${settings.mode === m.id ? m.accent : 'var(--border)'}`, background: settings.mode === m.id ? `${m.accent}10` : 'var(--subtle-bg)', cursor: 'pointer', gap: '0.15rem', fontFamily: 'inherit', transition: 'all 0.13s' }}
                   >
                     <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{m.icon}</span>
-                    <span style={{ fontWeight: 800, fontSize: '0.84rem', color: settings.mode === m.id ? m.accent : '#334155', marginTop: '0.3rem', lineHeight: 1.2 }}>{m.title}</span>
-                    <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 500 }}>{m.en}</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.84rem', color: settings.mode === m.id ? m.accent : 'var(--text)', marginTop: '0.3rem', lineHeight: 1.2 }}>{m.title}</span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 500 }}>{m.en}</span>
                   </button>
                 ))}
               </div>
             </div>
             <div style={S.sec}>
               {stepNum(2, '난이도를 선택하세요')}
-              <p style={{ fontSize: '0.92rem', color: '#64748B', marginBottom: '0.7rem', lineHeight: 1.55 }}>{M.desc}</p>
+              <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '0.7rem', lineHeight: 1.55 }}>{M.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                 {M.levels.map((lv) => (
-                  <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : '#E2E8F0'}`, background: settings.level === lv.id ? `${M.accent}08` : '#fff', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
+                  <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : 'var(--border)'}`, background: settings.level === lv.id ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
                     <div style={{ width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : '1px solid var(--border)', flexShrink: 0, marginTop: '0.05rem' }}>{M.id === 'spatial' ? lv.name : `단계 ${lv.id}`}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 800, fontSize: '0.96rem', color: '#1E293B' }}>{lv.name}</span>
-                        <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 500 }}>{lv.enName}</span>
+                        <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text)' }}>{lv.name}</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>{lv.enName}</span>
                       </div>
-                      <div style={{ fontSize: '0.86rem', color: '#64748B', lineHeight: 1.55 }}>{lv.desc}</div>
+                      <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>{lv.desc}</div>
                     </div>
                   </button>
                 ))}
@@ -643,8 +643,8 @@ export default function MemoryGameApp() {
                 {settings.mode !== 'spatial' && (
                   <div style={S.sec}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>4</div>
-                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>분량을 선택하세요</span>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--subtle-bg)', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>4</div>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)' }}>분량을 선택하세요</span>
                     </div>
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                       {[10, 20, 30, 40].map((n) => (
@@ -659,11 +659,12 @@ export default function MemoryGameApp() {
                           style={{
                             padding: '0.6rem 1rem',
                             borderRadius: '0.75rem',
-                            border: `2px solid ${settings.targetReps === n ? '#F97316' : '#E2E8F0'}`,
-                            background: settings.targetReps === n ? '#FFF7ED' : '#fff',
+                            border: `2px solid ${settings.targetReps === n ? '#F97316' : 'var(--border)'}`,
+                            background: settings.targetReps === n ? '#FFF7ED' : 'var(--card)',
                             fontWeight: 700,
                             cursor: 'pointer',
-                            fontFamily: 'inherit'
+                            fontFamily: 'inherit',
+                            color: 'var(--text)',
                           }}
                         >
                           {n}회
@@ -675,12 +676,12 @@ export default function MemoryGameApp() {
                 {settings.mode === 'basic' && settings.level === 4 && (
                   <div style={S.sec}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0F172A', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #3B82F6' }}>5</div>
-                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>판단 규칙을 정하세요</span>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--subtle-bg)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #3B82F6' }}>5</div>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)' }}>판단 규칙을 정하세요</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       {NUMBER_RULES.map((rule) => (
-                        <button key={rule.id} type="button" onClick={() => set('numberRule', rule.id)} style={{ padding: '0.7rem 1rem', borderRadius: '0.85rem', border: `2px solid ${settings.numberRule === rule.id ? '#3B82F6' : '#E2E8F0'}`, background: settings.numberRule === rule.id ? '#EFF6FF' : '#fff', color: settings.numberRule === rule.id ? '#1D4ED8' : '#475569', fontWeight: settings.numberRule === rule.id ? 700 : 500, fontSize: '0.91rem', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.12s' }}>{settings.numberRule === rule.id ? '✓ ' : ''}{rule.label}</button>
+                        <button key={rule.id} type="button" onClick={() => set('numberRule', rule.id)} style={{ padding: '0.7rem 1rem', borderRadius: '0.85rem', border: `2px solid ${settings.numberRule === rule.id ? '#3B82F6' : 'var(--border)'}`, background: settings.numberRule === rule.id ? '#EFF6FF' : 'var(--card)', color: settings.numberRule === rule.id ? '#1D4ED8' : 'var(--text)', fontWeight: settings.numberRule === rule.id ? 700 : 600, fontSize: '0.91rem', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.12s' }}>{settings.numberRule === rule.id ? '✓ ' : ''}{rule.label}</button>
                       ))}
                     </div>
                   </div>
