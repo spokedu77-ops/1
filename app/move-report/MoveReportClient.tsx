@@ -25,7 +25,7 @@ export default function MoveReportClient() {
   const [savedPhone, setSavedPhone] = useState('');
 
   const questions = useMemo(() => Qs[age], [age]);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimer = useRef<number | null>(null);
 
   const flash = useCallback((msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
