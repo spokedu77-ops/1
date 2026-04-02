@@ -20,6 +20,7 @@
     "@fullcalendar/react": "^6.1.19",
     "@fullcalendar/timegrid": "^6.1.19",
     "@google/generative-ai": "^0.24.1",
+    "@mediapipe/tasks-vision": "^0.10.3",
     "@monaco-editor/react": "^4.6.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",

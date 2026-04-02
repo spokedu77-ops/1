@@ -1,8 +1,7 @@
 'use client';
 
-import React, { Component, useState } from 'react';
+import React, { Component } from 'react';
 import dynamic from 'next/dynamic';
-import Script from 'next/script';
 
 const SpokeduCameraApp = dynamic(
   () => import('./SpokeduCameraApp').then((m) => m.default),
@@ -45,26 +44,11 @@ class CameraErrorBoundary extends Component<
 }
 
 export default function CameraAppPage() {
-  const [visionBundleReady, setVisionBundleReady] = useState(false);
-  const [visionBundleLoadFailed, setVisionBundleLoadFailed] = useState(false);
-
   return (
-    <>
-      <Script
-        src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js"
-        strategy="afterInteractive"
-        crossOrigin="anonymous"
-        onLoad={() => setVisionBundleReady(true)}
-        onError={() => setVisionBundleLoadFailed(true)}
-      />
-      <div className="min-h-screen h-screen w-full overflow-hidden">
-        <CameraErrorBoundary>
-          <SpokeduCameraApp
-            visionBundleReady={visionBundleReady}
-            visionBundleLoadFailed={visionBundleLoadFailed}
-          />
-        </CameraErrorBoundary>
-      </div>
-    </>
+    <div className="min-h-screen h-screen w-full overflow-hidden">
+      <CameraErrorBoundary>
+        <SpokeduCameraApp />
+      </CameraErrorBoundary>
+    </div>
   );
 }

@@ -656,7 +656,7 @@ export default function TeacherCurriculumPage() {
 
      {/* 상세 모달 (읽기 전용, 8회기는 세부내용+링크2개) */}
      {isDetailModalOpen && selectedItem && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)} />
             <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                 {isPersonalItem(selectedItem) && selectedItem.category === '신체 기능향상 8회기' ? (
@@ -799,7 +799,7 @@ export default function TeacherCurriculumPage() {
      )}
 
      {isEquipmentDetailOpen && selectedEquipmentItem && (
-       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+       <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} />
          <div className="relative bg-white w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
            <div className="p-6 border-b border-slate-100 flex justify-between items-start">

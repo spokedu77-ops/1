@@ -70,12 +70,12 @@ export default function CurriculumCategoryPicker({
       {open && (
         <>
           <div
-            className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-[320] bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => onOpenChange(false)}
             aria-hidden
           />
           <div
-            className="fixed left-0 right-0 bottom-0 z-[61] bg-white rounded-t-[24px] shadow-2xl flex flex-col max-h-[75vh] animate-in slide-in-from-bottom duration-300 ease-out
+            className="fixed left-0 right-0 bottom-0 z-[321] bg-white rounded-t-[24px] shadow-2xl flex flex-col max-h-[75vh] animate-in slide-in-from-bottom duration-300 ease-out
               sm:left-1/2 sm:right-auto sm:bottom-1/2 sm:top-auto sm:-translate-x-1/2 sm:translate-y-1/2 sm:rounded-2xl sm:max-h-[85vh] sm:max-w-xl sm:w-full"
             role="dialog"
             aria-modal="true"

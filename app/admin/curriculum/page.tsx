@@ -1190,7 +1190,7 @@ export default function AdminCurriculumPage() {
       )}
 
       {is8huiSlotPickerOpen && (
-        <div className="fixed inset-0 z-[62] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIs8huiSlotPickerOpen(false)} />
           <div className="relative bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
@@ -1219,7 +1219,7 @@ export default function AdminCurriculumPage() {
       )}
 
       {isDetailModalOpen && selectedItem && (
-         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
              <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)} />
              <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                  {isPersonalItem(selectedItem) && selectedItem.category === '신체 기능향상 8회기' ? (
@@ -1387,7 +1387,7 @@ export default function AdminCurriculumPage() {
       )}
       
       {isInputModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeInputModal} />
           <form onSubmit={handleSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar text-left">
             <div className="flex justify-between items-center text-left">
@@ -1448,7 +1448,7 @@ export default function AdminCurriculumPage() {
       )}
 
       {isPersonalModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closePersonalModal} />
           <form onSubmit={handlePersonalSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar text-left">
             <div className="flex justify-between items-center text-left">
@@ -1495,7 +1495,7 @@ export default function AdminCurriculumPage() {
       )}
 
       {is8huiModalOpen && editing8huiSubTab != null && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={close8huiModal} />
           <form onSubmit={handle8huiSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
@@ -1522,7 +1522,7 @@ export default function AdminCurriculumPage() {
       )}
 
       {isEquipmentDetailOpen && selectedEquipmentItem && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} />
           <div className="relative bg-white w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-slate-100 flex justify-between items-start">
@@ -1542,7 +1542,7 @@ export default function AdminCurriculumPage() {
       )}
 
       {isEquipmentEditOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentEdit} />
           <form onSubmit={handleEquipmentSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
@@ -1579,7 +1579,7 @@ export default function AdminCurriculumPage() {
       )}
 
       {isEquipmentMasterEditOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentMasterEdit} />
           <form onSubmit={handleEquipmentMasterSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
