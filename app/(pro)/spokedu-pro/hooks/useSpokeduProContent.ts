@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 
 type Scope = 'public' | 'catalog';
 
@@ -26,7 +27,10 @@ export function useSpokeduProContent(scope: Scope, keys: string[], activeCenterI
       const q = new URLSearchParams({ scope, keys: keys.join(',') });
       const res = await fetch(`/api/spokedu-pro/content?${q}`, { credentials: 'include' });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
+        const j = await res.json().catch((err) => {
+          devLogger.error('[useSpokeduProContent] fetchContent error body', err);
+          return {};
+        });
         setError(j.error ?? `HTTP ${res.status}`);
         return;
       }
@@ -67,7 +71,10 @@ export function useSpokeduProAdminBlocks() {
     try {
       const res = await fetch('/api/spokedu-pro/admin/blocks', { credentials: 'include' });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
+        const j = await res.json().catch((err) => {
+          devLogger.error('[useSpokeduProContent] fetchBlocks error body', err);
+          return {};
+        });
         setError(j.error ?? `HTTP ${res.status}`);
         return;
       }
@@ -92,7 +99,10 @@ export function useSpokeduProAdminBlocks() {
           credentials: 'include',
           body: JSON.stringify({ key, value, expectedVersion }),
         });
-        const j = await res.json().catch(() => ({}));
+        const j = await res.json().catch((err) => {
+          devLogger.error('[useSpokeduProContent] saveContentDraft error body', err);
+          return {};
+        });
         if (!res.ok) {
           const errMsg = (j.error ?? j.message ?? `HTTP ${res.status}`) as string;
           setError(errMsg);
@@ -131,7 +141,10 @@ export function useSpokeduProAdminBlocks() {
         credentials: 'include',
         body: JSON.stringify({ keys }),
       });
-      const j = await res.json().catch(() => ({}));
+      const j = await res.json().catch((err) => {
+        devLogger.error('[useSpokeduProContent] publishContent error body', err);
+        return {};
+      });
       if (!res.ok) {
         setError(j.error ?? `HTTP ${res.status}`);
         return { ok: false };
@@ -157,7 +170,10 @@ export function useSpokeduProAdminBlocks() {
           credentials: 'include',
           body: JSON.stringify({ key, value, expectedVersion }),
         });
-        const j = await res.json().catch(() => ({}));
+        const j = await res.json().catch((err) => {
+          devLogger.error('[useSpokeduProContent] saveTenantDraft error body', err);
+          return {};
+        });
         if (!res.ok) {
           setError(j.error ?? j.message ?? `HTTP ${res.status}`);
           return { ok: false as const, version: undefined };
@@ -194,7 +210,10 @@ export function useSpokeduProAdminBlocks() {
         credentials: 'include',
         body: JSON.stringify({ keys }),
       });
-      const j = await res.json().catch(() => ({}));
+      const j = await res.json().catch((err) => {
+        devLogger.error('[useSpokeduProContent] publishTenant error body', err);
+        return {};
+      });
       if (!res.ok) {
         setError(j.error ?? `HTTP ${res.status}`);
         return { ok: false };

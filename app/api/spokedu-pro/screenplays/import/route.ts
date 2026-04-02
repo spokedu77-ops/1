@@ -6,10 +6,10 @@
  * is_published 기본값: false (수동 publish 필요)
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 
-const ADMIN_EMAILS = (process.env.SPOKEDU_ADMIN_EMAILS ?? '').split(',').map((e) => e.trim()).filter(Boolean);
+/** multipart CSV 업로드 상한 (메모리 보호). programs/import와 동일 기준 */
+const MAX_CSV_IMPORT_BYTES = 5 * 1024 * 1024;
 
 const VALID_MODE_IDS = [
   'CHALLENGE', 'FLOW', '반응인지', '순차기억', '스트룹', '이중과제',
@@ -59,13 +59,8 @@ function parseCSV(csv: string): ScreenplayRow[] {
 }
 
 export async function POST(req: NextRequest) {
-  // Admin 인증
-  const serverSupabase = await createServerSupabaseClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const isAdmin = ADMIN_EMAILS.length === 0 || ADMIN_EMAILS.includes(user.email ?? '');
-  if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
 
   let rows: ScreenplayRow[] = [];
 
@@ -84,6 +79,12 @@ export async function POST(req: NextRequest) {
       const formData = await req.formData();
       const file = formData.get('file') as File | null;
       if (!file) return NextResponse.json({ error: 'file field is required' }, { status: 400 });
+      if (file.size > MAX_CSV_IMPORT_BYTES) {
+        return NextResponse.json(
+          { error: `파일이 너무 큽니다 (최대 ${Math.floor(MAX_CSV_IMPORT_BYTES / 1024 / 1024)}MB)` },
+          { status: 400 }
+        );
+      }
       const text = await file.text();
       rows = parseCSV(text);
     } catch {

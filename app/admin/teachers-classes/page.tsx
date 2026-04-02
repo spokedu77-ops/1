@@ -96,6 +96,38 @@ export default function MasterQCPage() {
   );
 }
 
+/** 피드백 검수: 과외(개인/원데이) vs 센터 구분 — 수업안 조회와 별도 */
+const FEEDBACK_SESSION_TYPES_PRIVATE = ['one_day', 'one_day_private', 'regular_private'] as const satisfies readonly Session['session_type'][];
+const FEEDBACK_SESSION_TYPES_CENTER = ['regular_center', 'one_day_center'] as const satisfies readonly Session['session_type'][];
+
+/** lesson-plans-sessions API와 동일한 KST 주간(일 00:00 ~ 토 23:59) UTC 구간 */
+function getKstWeekRangeFromYmd(dateYmd: string): { start: Date; end: Date } {
+  const KST_OFFSET = 9 * 60 * 60 * 1000;
+  const anchorMs = new Date(`${dateYmd}T12:00:00+09:00`).getTime();
+  const nowKST = new Date(anchorMs + KST_OFFSET);
+  const dayOfWeek = nowKST.getUTCDay();
+  const startKST = new Date(nowKST);
+  startKST.setUTCDate(nowKST.getUTCDate() - dayOfWeek);
+  startKST.setUTCHours(0, 0, 0, 0);
+  const endKST = new Date(startKST);
+  endKST.setUTCDate(startKST.getUTCDate() + 6);
+  endKST.setUTCHours(23, 59, 59, 999);
+  return {
+    start: new Date(startKST.getTime() - KST_OFFSET),
+    end: new Date(endKST.getTime() - KST_OFFSET),
+  };
+}
+
+function formatKstWeekRangeLabel(start: Date, end: Date): string {
+  const opt: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Seoul',
+    month: 'numeric',
+    day: 'numeric',
+    weekday: 'short',
+  };
+  return `${new Intl.DateTimeFormat('ko-KR', opt).format(start)} ~ ${new Intl.DateTimeFormat('ko-KR', opt).format(end)}`;
+}
+
 // 피드백 검수 탭
 function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: ReturnType<typeof getSupabaseBrowserClient> | null }) {
   const getSessionTypeLabel = (sessionType: Session['session_type']): string => {
@@ -127,6 +159,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
   };
 
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [feedbackScope, setFeedbackScope] = useState<'private' | 'center'>('private');
   const [selectedCoachId, setSelectedCoachId] = useState('all');
   const [selectedDate, setSelectedDate] = useState(() => {
     const now = new Date();
@@ -154,16 +187,30 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
     setError(null);
     
     try {
-      const startOfDay = new Date(selectedDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(selectedDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      
+      const typeFilter =
+        feedbackScope === 'center' ? [...FEEDBACK_SESSION_TYPES_CENTER] : [...FEEDBACK_SESSION_TYPES_PRIVATE];
+
+      let rangeStart: Date;
+      let rangeEnd: Date;
+      if (feedbackScope === 'center') {
+        const w = getKstWeekRangeFromYmd(selectedDate);
+        rangeStart = w.start;
+        rangeEnd = w.end;
+      } else {
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(selectedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        rangeStart = startOfDay;
+        rangeEnd = endOfDay;
+      }
+
       let query = supabase
         .from('sessions')
         .select('id, title, start_at, end_at, status, students_text, photo_url, file_url, session_type, created_by, memo, feedback_fields, users:created_by(id, name)')
-        .gte('start_at', startOfDay.toISOString())
-        .lte('start_at', endOfDay.toISOString())
+        .in('session_type', typeFilter)
+        .gte('start_at', rangeStart.toISOString())
+        .lte('start_at', rangeEnd.toISOString())
         .order('start_at', { ascending: true });
       
       if (selectedCoachId !== 'all') {
@@ -179,11 +226,20 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedDate, selectedCoachId]);
+  }, [supabase, selectedDate, selectedCoachId, feedbackScope]);
 
   useEffect(() => {
     fetchListData();
   }, [fetchListData]);
+
+  useEffect(() => {
+    setSelectedSessions(new Set());
+  }, [feedbackScope]);
+
+  const centerWeekRangeText = useMemo(() => {
+    const { start, end } = getKstWeekRangeFromYmd(selectedDate);
+    return formatKstWeekRangeLabel(start, end);
+  }, [selectedDate]);
 
   const getSessionStatus = (session: Session): 'empty' | 'done' | 'verified' => {
     return getSessionDisplayStatus({
@@ -430,8 +486,37 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
       )}
 
       <div className="mb-8 space-y-2">
-        <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-3 rounded-3xl shadow-sm border border-slate-200 items-center">
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer" />
+        <div className="flex flex-wrap gap-2 bg-white p-1 rounded-2xl shadow-sm border border-slate-200">
+          <button
+            type="button"
+            onClick={() => setFeedbackScope('private')}
+            className={`flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              feedbackScope === 'private' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            과외 피드백
+          </button>
+          <button
+            type="button"
+            onClick={() => setFeedbackScope('center')}
+            className={`flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              feedbackScope === 'center' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            센터 피드백
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-3 rounded-3xl shadow-sm border border-slate-200 items-start sm:items-center">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer" />
+            {feedbackScope === 'center' ? (
+              <p className="text-[11px] text-slate-500 font-bold leading-snug px-1">
+                주간 조회 (KST 일요일~토요일): {centerWeekRangeText}
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-500 font-bold px-1">일간 조회: 선택한 날짜의 수업만</p>
+            )}
+          </div>
           <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer">
             <option value="all">전체 강사</option>
             {coaches.map(c => <option key={c.id} value={c.id}>{c.name} 선생님</option>)}
@@ -496,7 +581,13 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
         <div className="py-40 text-center font-black text-slate-300 animate-pulse">Syncing...</div>
       ) : filteredAndSearchedSessions.length === 0 ? (
         <div className="bg-white rounded-[40px] py-32 text-center border border-dashed border-slate-300">
-          <p className="text-slate-400 font-bold">{searchTerm || statusFilter !== 'all' ? '검색 결과가 없습니다.' : '해당 일자에 등록된 수업이 없습니다.'}</p>
+          <p className="text-slate-400 font-bold">
+            {searchTerm || statusFilter !== 'all'
+              ? '검색 결과가 없습니다.'
+              : feedbackScope === 'center'
+                ? '해당 주에 등록된 센터 수업이 없습니다.'
+                : '해당 일자에 등록된 과외 수업이 없습니다.'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">

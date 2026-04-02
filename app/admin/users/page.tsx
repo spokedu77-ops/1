@@ -161,7 +161,10 @@ export default function UserDashboardPage() {
           departure_location: newPartner.departure_location ?? undefined,
         }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch((err) => {
+        devLogger.error('[admin/users] create teacher response body', err);
+        return {};
+      });
       if (!res.ok) {
         toast.error(data.error || '등록에 실패했습니다.');
         return;
@@ -230,7 +233,10 @@ export default function UserDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch((err) => {
+        devLogger.error('[admin/users] reset-password response body', err);
+        return {};
+      });
       if (!res.ok) {
         toast.error(data.error || '비밀번호 재설정에 실패했습니다.');
         return;

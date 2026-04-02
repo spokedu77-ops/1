@@ -38,6 +38,26 @@ declare global {
   }
 }
 
+const MEDIAPIPE_WAIT_MAX_MS = 30_000;
+const MEDIAPIPE_WAIT_INTERVAL_MS = 100;
+
+/** CDN vision_bundle.js가 카메라 준비보다 늦을 수 있어 전역이 생길 때까지 대기 */
+async function waitForMediaPipeScript(
+  maxMs: number,
+  intervalMs: number,
+  shouldAbort: () => boolean,
+  loadFailed: () => boolean,
+): Promise<'ok' | 'timeout' | 'failed' | 'aborted'> {
+  const start = performance.now();
+  for (;;) {
+    if (shouldAbort()) return 'aborted';
+    if (loadFailed()) return 'failed';
+    if (window.FilesetResolver && window.PoseLandmarker) return 'ok';
+    if (performance.now() - start >= maxMs) return 'timeout';
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+}
+
 const initialGameState: GameState = {
   mode: null,
   diff: DEFAULT_SETTINGS.diff,
@@ -61,7 +81,17 @@ const initialGameState: GameState = {
   mirrorHoldStart: 0,
 };
 
-export default function SpokeduCameraApp() {
+type SpokeduCameraAppProps = {
+  /** page.tsx Script onLoad — 번들 준비 후 로비에서 지연 초기화 재시도에 사용 */
+  visionBundleReady?: boolean;
+  /** page.tsx Script onError — CDN 차단·네트워크 실패 */
+  visionBundleLoadFailed?: boolean;
+};
+
+export default function SpokeduCameraApp({
+  visionBundleReady = false,
+  visionBundleLoadFailed = false,
+}: SpokeduCameraAppProps = {}) {
   const [curScreen, setCurScreen] = useState<'home' | 'lobby' | 'game' | 'result' | 'report'>('home');
   const [scores, setScores] = useState([0, 0, 0]);
   const [hudTime, setHudTime] = useState('30<span style="font-size:1rem;font-weight:600">초</span>');
@@ -90,6 +120,9 @@ export default function SpokeduCameraApp() {
   const rafIdRef = useRef<number | null>(null);
   const endLockRef = useRef(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadMediaPipeRunIdRef = useRef(0);
+  const visionFailRef = useRef(visionBundleLoadFailed);
+  visionFailRef.current = visionBundleLoadFailed;
 
   const getEl = useCallback((id: string) => document.getElementById(id), []);
 
@@ -225,6 +258,82 @@ export default function SpokeduCameraApp() {
     }
   }, [getEl, onStateUpdate]);
 
+  const loadMediaPipe = useCallback(() => {
+    const runId = ++loadMediaPipeRunIdRef.current;
+    setCalibStatus({ text: 'AI 포즈 인식 엔진 로딩 중...', className: 'calib-wait' });
+
+    void (async () => {
+      const outcome = await waitForMediaPipeScript(
+        MEDIAPIPE_WAIT_MAX_MS,
+        MEDIAPIPE_WAIT_INTERVAL_MS,
+        () => runId !== loadMediaPipeRunIdRef.current,
+        () => visionFailRef.current,
+      );
+      if (runId !== loadMediaPipeRunIdRef.current) return;
+
+      if (outcome === 'aborted') return;
+      if (outcome === 'failed') {
+        setCalibStatus({
+          text: '❌ AI 엔진 스크립트를 불러오지 못했습니다. 네트워크·광고 차단·방화벽을 확인한 뒤 새로고침해 주세요.',
+          className: 'calib-err',
+        });
+        setLoaderVisible(false);
+        return;
+      }
+      if (outcome === 'timeout') {
+        setCalibStatus({
+          text: '❌ 라이브러리 로드 실패 (시간 초과). 새로고침 후 다시 시도해 주세요.',
+          className: 'calib-err',
+        });
+        setLoaderVisible(false);
+        return;
+      }
+
+      const FR = window.FilesetResolver!;
+      const PLA = window.PoseLandmarker!;
+      const FilesetResolver = FR as (url: string) => Promise<unknown>;
+      const PoseLandmarker = PLA as {
+        createFromOptions: (
+          vision: unknown,
+          opts: unknown,
+        ) => Promise<{
+          detectForVideo: (
+            v: HTMLVideoElement,
+            t: number,
+            cb: (r: { landmarks?: unknown[] }) => void,
+          ) => void;
+        }>;
+      };
+
+      try {
+        const vision = await FilesetResolver('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm');
+        if (runId !== loadMediaPipeRunIdRef.current) return;
+        const lm = await PoseLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath:
+              'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',
+            delegate: 'GPU',
+          },
+          runningMode: 'VIDEO',
+          numPoses: 3,
+          minPoseDetectionConfidence: 0.55,
+          minPosePresenceConfidence: 0.55,
+          minTrackingConfidence: 0.55,
+        });
+        if (runId !== loadMediaPipeRunIdRef.current) return;
+        poseLandmarkerRef.current = lm;
+        stateRef.current.camReady = true;
+        setLoaderVisible(false);
+        setStartBtnVisible(true);
+        setCalibStatus({ text: '✅ 준비 완료! 카메라 앞에 서주세요.', className: 'calib-ok' });
+      } catch {
+        if (runId !== loadMediaPipeRunIdRef.current) return;
+        setCalibStatus({ text: '❌ 모델 로드 실패', className: 'calib-err' });
+        setLoaderVisible(false);
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     Store.initStore();
   }, []);
@@ -270,47 +379,21 @@ export default function SpokeduCameraApp() {
         else msg = `❌ ${err.name}: ${err.message}`;
         setCalibStatus({ text: msg, className: 'calib-err' });
       });
-  }, [curScreen]);
 
-  function loadMediaPipe() {
-    setCalibStatus({ text: 'AI 포즈 인식 엔진 로딩 중...', className: 'calib-wait' });
-    const FR = window.FilesetResolver;
-    const PLA = window.PoseLandmarker;
-    if (!FR || !PLA) {
-      setCalibStatus({ text: '❌ 라이브러리 로드 실패', className: 'calib-err' });
-      setLoaderVisible(false);
-      return;
+    return () => {
+      loadMediaPipeRunIdRef.current += 1;
+    };
+  }, [curScreen, loadMediaPipe]);
+
+  /** vision_bundle.js가 늦게 도착한 뒤에도 메타데이터는 이미 지나간 경우 재시도 */
+  useEffect(() => {
+    if (curScreen !== 'lobby' || !visionBundleReady) return;
+    const video = videoRef.current;
+    if (!video?.srcObject || poseLandmarkerRef.current) return;
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      loadMediaPipe();
     }
-
-    const FilesetResolver = FR as (url: string) => Promise<unknown>;
-    const PoseLandmarker = PLA as { createFromOptions: (vision: unknown, opts: unknown) => Promise<{ detectForVideo: (v: HTMLVideoElement, t: number, cb: (r: { landmarks?: unknown[] }) => void) => void }> };
-
-    FilesetResolver('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm')
-      .then((vision) =>
-        PoseLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',
-            delegate: 'GPU',
-          },
-          runningMode: 'VIDEO',
-          numPoses: 3,
-          minPoseDetectionConfidence: 0.55,
-          minPosePresenceConfidence: 0.55,
-          minTrackingConfidence: 0.55,
-        })
-      )
-      .then((lm) => {
-        poseLandmarkerRef.current = lm;
-        stateRef.current.camReady = true;
-        setLoaderVisible(false);
-        setStartBtnVisible(true);
-        setCalibStatus({ text: '✅ 준비 완료! 카메라 앞에 서주세요.', className: 'calib-ok' });
-      })
-      .catch(() => {
-        setCalibStatus({ text: '❌ 모델 로드 실패', className: 'calib-err' });
-        setLoaderVisible(false);
-      });
-  }
+  }, [curScreen, visionBundleReady, loadMediaPipe]);
 
   // RAF 루프 (로비/게임 화면에서만)
   useEffect(() => {

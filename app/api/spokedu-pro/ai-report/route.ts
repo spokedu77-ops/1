@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { getPlanForUser, PLAN_LIMITS, getAiReportUsageThisMonth, incrementAiReportUsage } from '@/app/lib/spokedu-pro/planUtils';
 
 export const maxDuration = 60;
@@ -328,7 +329,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 사용량 증가 (비동기, 실패해도 응답에 영향 없음)
-    incrementAiReportUsage(user.id).catch(() => {});
+    incrementAiReportUsage(user.id).catch((err) => devLogger.error('[spokedu-pro ai-report] incrementAiReportUsage', err));
 
     // 성취 뱃지 저장 (비동기, 실패해도 응답에 영향 없음)
     const strengthSummary = parsed.strengthSummary ?? '';
@@ -342,7 +343,7 @@ export async function POST(req: NextRequest) {
         growthTag,
         period: body.periodLabel ?? '이번 수업',
         generatedAt: new Date().toISOString(),
-      }).catch(() => {});
+      }).catch((err) => devLogger.error('[spokedu-pro ai-report] saveBadge', err));
     }
 
     // spokedu_pro_ai_reports 저장 (center_id + tenant_student_id 있으면). 실패해도 응답은 200, savedToHistory로 안내.

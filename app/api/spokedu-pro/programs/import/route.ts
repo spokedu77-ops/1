@@ -7,6 +7,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { isFunctionType, isMainTheme, isGroupSize } from '@/app/lib/spokedu-pro/programClassification';
 
+/** multipart CSV 업로드 상한 (메모리 보호). screenplays/import와 동일 기준 */
+const MAX_CSV_IMPORT_BYTES = 5 * 1024 * 1024;
+
 type ProgramRow = {
   id?: number | null;
   title: string;
@@ -99,6 +102,12 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     if (!file) return NextResponse.json({ error: 'file 필수' }, { status: 400 });
+    if (file.size > MAX_CSV_IMPORT_BYTES) {
+      return NextResponse.json(
+        { error: `파일이 너무 큽니다 (최대 ${Math.floor(MAX_CSV_IMPORT_BYTES / 1024 / 1024)}MB)` },
+        { status: 400 }
+      );
+    }
     rows = parseCsvToRows(await file.text());
   } else {
     return NextResponse.json(
