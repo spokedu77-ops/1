@@ -226,12 +226,23 @@ export default function UserDashboardPage() {
   const handleResetPassword = async (user: UserData) => {
     if (currentUser?.role !== 'admin') return toast.error('관리자 권한이 필요합니다.');
     if (!confirm(`${user.name} 선생님 비밀번호를 새로 발급합니다. 강사에게 전달할 새 비밀번호가 한 번 표시됩니다. 계속할까요?`)) return;
+    const customPassword =
+      typeof window !== 'undefined'
+        ? window.prompt(
+            '새 비밀번호를 입력하세요.\n(비우면 임의 비밀번호가 생성됩니다.)',
+            ''
+          )
+        : null;
+    if (customPassword === null) return;
     setResetPasswordLoadingId(user.id);
     try {
       const res = await fetch('/api/admin/teachers/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({
+          userId: user.id,
+          ...(customPassword.trim() ? { password: customPassword.trim() } : {}),
+        }),
       });
       const data = await res.json().catch((err) => {
         devLogger.error('[admin/users] reset-password response body', err);

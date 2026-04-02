@@ -15,6 +15,18 @@ export function getCleanClassTitle(title: string): string {
   return cleaned || original.trim();
 }
 
+/**
+ * 리스트/캘린더 번들 묶음 키.
+ * 제목 끝의 `(연기 처리)`, `(정재원 / 성연호)` 등 괄호 구간은 같은 수업으로 보고 제거합니다.
+ * (별칭 `normalizeForAlias`와 동일한 괄호 제거를 번들 키에도 적용)
+ */
+export function getBundleTitleKey(title: string): string {
+  return getCleanClassTitle(title)
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function normalizeForAlias(rawTitle: string) {
   return getCleanClassTitle(rawTitle).replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
 }
@@ -39,7 +51,10 @@ export function resolveV2BundleFromSession(
 ): V2BundleSelection {
   const gid = ev.groupId ? String(ev.groupId) : "";
   if (!gid) {
-    return { bundleTitle: getCleanClassTitle(ev.title) || ev.title || "수업", groupIds: [] };
+    return {
+      bundleTitle: getBundleTitleKey(ev.title) || getCleanClassTitle(ev.title) || ev.title || "수업",
+      groupIds: [],
+    };
   }
 
   const alias = getAliasTitleForGroup(ev.title);
@@ -53,11 +68,11 @@ export function resolveV2BundleFromSession(
     return { bundleTitle: alias, groupIds: ids.length ? ids : [gid] };
   }
 
-  const key = getCleanClassTitle(ev.title);
+  const key = getBundleTitleKey(ev.title);
   const groupIds = new Set<string>();
   for (const s of allSessions) {
     if (!s.groupId) continue;
-    if (getCleanClassTitle(s.title) === key) groupIds.add(String(s.groupId));
+    if (getBundleTitleKey(s.title) === key) groupIds.add(String(s.groupId));
   }
   const ids = Array.from(groupIds);
   return { bundleTitle: key || ev.title || "수업", groupIds: ids.length ? ids : [gid] };

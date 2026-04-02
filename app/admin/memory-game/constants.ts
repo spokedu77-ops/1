@@ -16,6 +16,10 @@ export const ARROWS = [
   { id: 'right', label: '오른쪽', icon: '→', voice: '오른쪽으로' },
 ];
 
+/** 이중과제 2-1: 파랑·빨강만, 좌·우 화살표만 */
+export const DUAL_TWO_COLORS = COLORS.filter((c) => c.id === 'red' || c.id === 'blue');
+export const DUAL_LR_ARROWS = ARROWS.filter((a) => a.id === 'left' || a.id === 'right');
+
 export const ACTIONS = [
   { id: 'clap', label: '박수', voice: '박수', emoji: '👏' },
   { id: 'jump', label: '점프', voice: '점프', emoji: '⬆️' },
@@ -84,9 +88,8 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     tag: '분산 주의 · 복합 실행',
     desc: '두 가지 정보를 동시에 처리해 하나의 통합된 행동을 수행합니다.',
     levels: [
-      { id: 1, name: '색깔 숫자 통합', enName: 'Color-Number Integration', desc: '해당 색 콘으로 달린 뒤, 화면 숫자만큼 콘을 터치합니다.' },
-      { id: 2, name: '색-동작 통합', enName: 'Color-Action Integration', desc: '해당 색 콘 위치에서 화면에 나오는 동작을 수행합니다.' },
-      { id: 3, name: '스트룹-동작 통합', enName: 'Stroop-Action Integration', desc: '스트룹 과제로 색을 판단해 이동하고, 동작까지 수행합니다.' },
+      { id: 1, name: '1번 색깔·숫자 통합', enName: 'Color-Number Integration', desc: '화면 배경 색에 맞는 콘으로 이동한 뒤, 숫자만큼 반복 동작(터치·점프 등)을 합니다.' },
+      { id: 2, name: '2-1번 색깔·화살표', enName: 'Color & Arrow', desc: '파랑 또는 빨강 콘으로 이동한 뒤, 화면 화살표(왼쪽·오른쪽) 방향으로 이동합니다. 색과 방향은 매번 무작위입니다.' },
     ],
   },
   flow: {

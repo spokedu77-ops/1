@@ -121,6 +121,25 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const [restartStartTimeByGroup, setRestartStartTimeByGroup] = useState<Record<string, string>>({});
   const [restartDaysOfWeekByGroup, setRestartDaysOfWeekByGroup] = useState<Record<string, number[]>>({});
 
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
+  const [bulkTeacherIdByGroup, setBulkTeacherIdByGroup] = useState<Record<string, string>>({});
+  const [bulkTeacherApplyingGid, setBulkTeacherApplyingGid] = useState<string | null>(null);
+  const [restoringDeletedByGroup, setRestoringDeletedByGroup] = useState<Record<string, boolean>>({});
+
+  /** prop groupIds와 재시작으로 붙은 localGroupIds 합집합 — 첫 오픈 시 loadAll 레이스 방지 */
+  const effectiveGroupIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const id of groupIds) {
+      if (id) s.add(String(id));
+    }
+    for (const id of localGroupIds) {
+      if (id) s.add(String(id));
+    }
+    return Array.from(s);
+  }, [groupIds, localGroupIds]);
+
   const loadTeachers = useCallback(async () => {
     if (!supabase) return;
     try {
@@ -139,7 +158,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const loadAll = useCallback(async () => {
     if (!supabase) return;
     if (!visible) return;
-    if (localGroupIds.length === 0) {
+    if (effectiveGroupIds.length === 0) {
       setSessionsByGroupId({});
       return;
     }
@@ -150,8 +169,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         .select(
           "id, group_id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number"
         )
-        .in("group_id", localGroupIds)
-        .not("status", "in", '("deleted")')
+        .in("group_id", effectiveGroupIds)
         .order("start_at", { ascending: true });
       if (error) throw error;
       const rows = (data || []) as SessionRow[];
@@ -163,8 +181,23 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       }
       setSessionsByGroupId(map);
 
+      const flatTitles = effectiveGroupIds.flatMap((gid) => map[gid] || []).map((r) => r.title);
+      const firstTitle = flatTitles.find((t) => t && String(t).trim());
+      if (firstTitle) setTitleDraft(String(firstTitle).trim());
+
+      setBulkTeacherIdByGroup((prev) => {
+        const next = { ...prev };
+        for (const gid of effectiveGroupIds) {
+          const list = map[gid] || [];
+          if (next[gid] == null) {
+            next[gid] = list.find((s) => s.created_by)?.created_by ?? "";
+          }
+        }
+        return next;
+      });
+
       // 기본 오픈: 가장 가까운 예정/진행 사이클 1개, 없으면 첫 번째
-      const candidates = localGroupIds
+      const candidates = effectiveGroupIds
         .map((gid) => {
           const list = map[gid] || [];
           const minStart = list.length ? Math.min(...list.map((s) => new Date(s.start_at).getTime())) : Number.POSITIVE_INFINITY;
@@ -181,34 +214,34 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       // 기본값(확장/축소/재시작) 초기화
       setExtendCountByGroup((prev) => {
         const next = { ...prev };
-        for (const gid of localGroupIds) if (next[gid] == null) next[gid] = 1;
+        for (const gid of effectiveGroupIds) if (next[gid] == null) next[gid] = 1;
         return next;
       });
       setShrinkCountByGroup((prev) => {
         const next = { ...prev };
-        for (const gid of localGroupIds) if (next[gid] == null) next[gid] = 1;
+        for (const gid of effectiveGroupIds) if (next[gid] == null) next[gid] = 1;
         return next;
       });
       setRestartCountByGroup((prev) => {
         const next = { ...prev };
-        for (const gid of localGroupIds) {
+        for (const gid of effectiveGroupIds) {
           if (next[gid] == null) next[gid] = (map[gid] || []).length || 1;
         }
         return next;
       });
       setRestartWeeklyFrequencyByGroup((prev) => {
         const next = { ...prev };
-        for (const gid of localGroupIds) if (next[gid] == null) next[gid] = 1;
+        for (const gid of effectiveGroupIds) if (next[gid] == null) next[gid] = 1;
         return next;
       });
       setRestartIntervalDaysByGroup((prev) => {
         const next = { ...prev };
-        for (const gid of localGroupIds) if (next[gid] == null) next[gid] = 7;
+        for (const gid of effectiveGroupIds) if (next[gid] == null) next[gid] = 7;
         return next;
       });
       setRestartStartDateByGroup((prev) => {
         const next = { ...prev };
-        for (const gid of localGroupIds) {
+        for (const gid of effectiveGroupIds) {
           if (next[gid] != null) continue;
           const list = map[gid] || [];
           const last = list[list.length - 1];
@@ -219,7 +252,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       });
       setRestartStartTimeByGroup((prev) => {
         const next = { ...prev };
-        for (const gid of localGroupIds) {
+        for (const gid of effectiveGroupIds) {
           if (next[gid] != null) continue;
           const list = map[gid] || [];
           const last = list[list.length - 1];
@@ -230,7 +263,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       });
       setRestartDaysOfWeekByGroup((prev) => {
         const next = { ...prev };
-        for (const gid of localGroupIds) {
+        for (const gid of effectiveGroupIds) {
           if (next[gid] != null) continue;
           const list = map[gid] || [];
           const last = list[list.length - 1];
@@ -245,7 +278,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     } finally {
       setLoading(false);
     }
-  }, [supabase, visible, localGroupIds]);
+  }, [supabase, visible, effectiveGroupIds]);
 
   useEffect(() => {
     if (!visible) return;
@@ -260,6 +293,10 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     if (!visible) return;
     setLocalGroupIds(groupIds);
   }, [visible, groupIds]);
+
+  useEffect(() => {
+    if (!visible) setEditingTitle(false);
+  }, [visible]);
 
   const plannedTotalOfGroup = useCallback((rows: SessionRow[]) => {
     const baseAll = rows.filter(
@@ -532,15 +569,83 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     }
   };
 
+  const handleSaveBundleTitle = async () => {
+    if (!supabase || effectiveGroupIds.length === 0) return;
+    const nextTitle = titleDraft.trim();
+    if (!nextTitle) return toast.error("수업명을 입력해주세요.");
+    if (!confirm(`번들에 포함된 모든 사이클의 수업명을 "${nextTitle}"로 변경할까요?`)) return;
+    setSavingTitle(true);
+    try {
+      const { error } = await supabase
+        .from("sessions")
+        .update({ title: nextTitle })
+        .in("group_id", effectiveGroupIds);
+      if (error) throw error;
+      toast.success("수업명이 변경되었습니다.");
+      setEditingTitle(false);
+      onChanged?.();
+      void loadAll();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("수업명 변경에 실패했습니다.");
+    } finally {
+      setSavingTitle(false);
+    }
+  };
+
+  const handleApplyTeacherToGroup = async (gid: string) => {
+    if (!supabase) return;
+    const nextTeacherId = String(bulkTeacherIdByGroup[gid] || "").trim();
+    if (!nextTeacherId) return toast.error("선생님을 선택해주세요.");
+    if (!confirm("이 사이클(그룹)의 모든 회차 선생님을 변경할까요?")) return;
+    setBulkTeacherApplyingGid(gid);
+    try {
+      const { error } = await supabase.from("sessions").update({ created_by: nextTeacherId }).eq("group_id", gid);
+      if (error) throw error;
+      toast.success("선생님이 변경되었습니다.");
+      onChanged?.();
+      void loadAll();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("선생님 변경에 실패했습니다.");
+    } finally {
+      setBulkTeacherApplyingGid(null);
+    }
+  };
+
+  const handleRestoreDeletedForGroup = async (gid: string) => {
+    if (!supabase) return;
+    if (!confirm("status='deleted'로 숨겨진 회차를 복구할까요?")) return;
+    setRestoringDeletedByGroup((prev) => ({ ...prev, [gid]: true }));
+    try {
+      const { error } = await supabase
+        .from("sessions")
+        .update({ status: "opened" })
+        .eq("group_id", gid)
+        .eq("status", "deleted");
+      if (error) throw error;
+      toast.success("삭제된 회차가 복구되었습니다.");
+      onChanged?.();
+      void loadAll();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("복구에 실패했습니다.");
+    } finally {
+      setRestoringDeletedByGroup((prev) => ({ ...prev, [gid]: false }));
+    }
+  };
+
   const sortedGroupIds = useMemo(() => {
-    return [...localGroupIds].sort((a, b) => {
+    return [...effectiveGroupIds].sort((a, b) => {
       const ar = sessionsByGroupId[a] || [];
       const br = sessionsByGroupId[b] || [];
       const aMin = ar.length ? Math.min(...ar.map((s) => new Date(s.start_at).getTime())) : Number.POSITIVE_INFINITY;
       const bMin = br.length ? Math.min(...br.map((s) => new Date(s.start_at).getTime())) : Number.POSITIVE_INFINITY;
       return aMin - bMin;
     });
-  }, [localGroupIds, sessionsByGroupId]);
+  }, [effectiveGroupIds, sessionsByGroupId]);
+
+  const displayTitle = useMemo(() => titleDraft.trim() || bundleTitle, [titleDraft, bundleTitle]);
 
   return (
     <div className={`fixed inset-0 z-50 transition ${visible ? "pointer-events-auto" : "pointer-events-none"}`}>
@@ -553,13 +658,53 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
           visible ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <header className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
-          <div className="min-w-0 flex-1">
+        <header className="px-6 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1 space-y-2">
             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Class Bundle (V2)</p>
-            <h2 className="text-lg font-black text-slate-900 truncate">{bundleTitle}</h2>
-            <p className="text-xs text-slate-500 font-bold mt-1">{groupIds.length}개 사이클</p>
+            {!editingTitle ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-black text-slate-900 truncate">{displayTitle}</h2>
+                <button
+                  type="button"
+                  onClick={() => setEditingTitle(true)}
+                  className="px-2 py-1 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0"
+                >
+                  수업명 수정
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <input
+                  className="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold"
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  placeholder="수업명을 입력하세요"
+                />
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    disabled={!titleDraft.trim() || savingTitle}
+                    onClick={() => void handleSaveBundleTitle()}
+                    className="px-3 py-2 rounded-full text-xs font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {savingTitle ? "저장 중..." : "저장"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingTitle(false);
+                      void loadAll();
+                    }}
+                    className="px-3 py-2 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-slate-500 font-bold">{groupIds.length}개 사이클</p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+          <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 shrink-0">
             <X className="w-5 h-5" />
           </button>
         </header>
@@ -606,6 +751,45 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
                     {open && (
                       <div className="p-4 space-y-3">
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                          <h4 className="text-sm font-black text-slate-800">그룹 설정</h4>
+                          <p className="text-xs text-slate-500 font-bold mt-1">
+                            수업명은 상단에서 번들 전체로 변경합니다. 선생님은 이 사이클(그룹) 전체 회차에 적용됩니다.
+                          </p>
+                          <div className="mt-3 flex items-center gap-2 flex-wrap">
+                            <select
+                              className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold min-w-[140px]"
+                              value={bulkTeacherIdByGroup[gid] ?? ""}
+                              onChange={(e) =>
+                                setBulkTeacherIdByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
+                              }
+                            >
+                              <option value="">선생님 선택</option>
+                              {teachers.map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.name} T
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => void handleApplyTeacherToGroup(gid)}
+                              disabled={bulkTeacherApplyingGid === gid}
+                              className="px-3 py-2 rounded-full text-xs font-black bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+                            >
+                              {bulkTeacherApplyingGid === gid ? "적용 중..." : "선생님 변경"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleRestoreDeletedForGroup(gid)}
+                              disabled={!!restoringDeletedByGroup[gid]}
+                              className="px-3 py-2 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+                            >
+                              {restoringDeletedByGroup[gid] ? "복구 중..." : "삭제 복구"}
+                            </button>
+                          </div>
+                        </div>
+
                         <div className="flex items-center justify-between gap-2">
                           <div className="text-xs font-black text-slate-700">회차 목록</div>
                           <div className="flex items-center gap-2">

@@ -655,14 +655,20 @@ export default function SpokeduCameraApp() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && curScreen === 'game') {
+      if (e.key !== 'Escape') return;
+      if (curScreen === 'game') {
         if (stateRef.current.paused) resume();
         else pause();
+        return;
+      }
+      if (curScreen === 'lobby' || curScreen === 'result' || curScreen === 'report') {
+        e.preventDefault();
+        goHome();
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [curScreen, pause, resume]);
+  }, [curScreen, pause, resume, goHome]);
 
   const handleClearHistory = useCallback(() => {
     if (typeof window === 'undefined' || !window.confirm('모든 기록을 삭제하시겠습니까?')) return;

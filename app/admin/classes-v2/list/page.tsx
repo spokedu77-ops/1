@@ -12,7 +12,7 @@ import ClassDetailPanelV2 from '../components/ClassDetailPanelV2';
 import { GROUP_ALIAS_RULES } from '../lib/groupAliases';
 import ClassAliasViewerPanel from '../components/ClassAliasViewerPanel';
 import ClassBundlePanelV2 from '../components/ClassBundlePanelV2';
-import { getCleanClassTitle } from '../lib/v2BundleResolve';
+import { getCleanClassTitle, getBundleTitleKey } from '../lib/v2BundleResolve';
 
 type DayOption = { label: string; value: number };
 const DAYS: DayOption[] = [
@@ -116,7 +116,7 @@ export default function ClassListPageV2() {
       const bundleMap = new Map<string, Set<string>>();
       for (const row of data as any[]) {
         if (!row.group_id) continue;
-        const key = getCleanClassTitle(String(row.title || ''));
+        const key = getBundleTitleKey(String(row.title || ''));
         if (!key) continue;
         if (!bundleMap.has(key)) bundleMap.set(key, new Set<string>());
         bundleMap.get(key)!.add(String(row.group_id));
@@ -1119,9 +1119,9 @@ export default function ClassListPageV2() {
                               }
                             }
                             // ✅ 일반 그룹도 번들 모달로 진입
-                            const key = getCleanClassTitle(g.title);
+                            const key = getBundleTitleKey(g.title);
                             const ids = bundleGroupIdsByKey[key] || [g.groupId];
-                            setSelectedBundle({ bundleTitle: key || getCleanClassTitle(g.title), groupIds: ids });
+                            setSelectedBundle({ bundleTitle: key || getBundleTitleKey(g.title), groupIds: ids });
                           }}
                           className="inline-flex px-3 py-1.5 rounded-full text-[11px] font-bold bg-blue-600 text-white hover:bg-blue-700 transition"
                         >

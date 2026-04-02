@@ -59,7 +59,7 @@ export function getBeepForSignal(sig: { type?: string } | null): BeepType | null
   if (type === 'arrow') return 'high';
   if (type === 'number') return 'blip';
   if (type === 'stroop') return 'chord';
-  if (type === 'dual_num' || type === 'dual_action' || type === 'dual_stroop_action') return 'low';
+  if (type === 'dual_num' || type === 'dual_color_arrow') return 'low';
   return 'mid';
 }
 

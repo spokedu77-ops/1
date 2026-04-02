@@ -107,31 +107,33 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       </div>
     );
 
-  if (type === 'dual_num')
+  if (type === 'dual_num') {
+    const col = content?.color as { text?: string } | undefined;
+    const tc = col?.text ?? '#fff';
     return (
       <div key={animKey} className="signal-blink" style={C}>
-        <div style={{ fontSize: 'clamp(180px,38vw,400px)', color: '#fff', lineHeight: 1, fontWeight: 900, textShadow: '0 4px 60px rgba(0,0,0,0.4)' }}>{(content?.number as { label?: string })?.label}</div>
+        <div style={{ fontSize: 'clamp(180px,38vw,400px)', color: tc, lineHeight: 1, fontWeight: 900, textShadow: '0 4px 60px rgba(0,0,0,0.35)' }}>{(content?.number as { label?: string })?.label}</div>
       </div>
     );
+  }
 
-  if (type === 'dual_action')
+  if (type === 'dual_color_arrow') {
+    const arr = content?.arrow as { icon?: string } | undefined;
     return (
-      <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '1rem' }}>
-        <span style={{ fontSize: 'clamp(5rem, 18vw, 8rem)', lineHeight: 1 }}>{(content?.action as { emoji?: string })?.emoji}</span>
-        <span style={{ fontSize: 'clamp(1.2rem, 4vw, 2rem)', fontWeight: 700, color: '#fff' }}>{(content?.action as { label?: string })?.label}</span>
-      </div>
-    );
-
-  if (type === 'dual_stroop_action')
-    return (
-      <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '2rem' }}>
-        <div style={{ fontSize: 'clamp(72px,16vw,200px)', fontWeight: 900, color: content?.textHex as string, letterSpacing: '-0.03em', textShadow: '0 0 60px rgba(0,0,0,0.5)' }}>{content?.word as string}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(255,255,255,0.15)', padding: '1.5rem 3rem', borderRadius: '2rem', backdropFilter: 'blur(8px)' }}>
-          <span style={{ fontSize: 'clamp(5rem, 18vw, 8rem)', lineHeight: 1 }}>{(content?.action as { emoji?: string })?.emoji}</span>
-          <span style={{ fontSize: 'clamp(1.2rem, 4vw, 2rem)', fontWeight: 700, color: '#fff' }}>{(content?.action as { label?: string })?.label}</span>
+      <div key={animKey} className="signal-blink" style={C}>
+        <div
+          style={{
+            fontSize: 'clamp(150px, 36vw, 380px)',
+            color: '#0a0a0a',
+            lineHeight: 1,
+            fontWeight: 900,
+          }}
+        >
+          {arr?.icon}
         </div>
       </div>
     );
+  }
 
   return null;
 });

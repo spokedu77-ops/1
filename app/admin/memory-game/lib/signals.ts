@@ -2,7 +2,7 @@
  * 신호 생성: 메모리 패턴, 일반 신호 (basic/stroop/dual)
  */
 
-import { COLORS, ARROWS, NUMBERS, ACTIONS } from '../constants';
+import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS } from '../constants';
 
 type ColorItem = (typeof COLORS)[number];
 export type { ColorItem };
@@ -202,20 +202,15 @@ export function generateSignal(
   }
 
   if (mode === 'dual') {
-    const c = r(activeColors);
-    if (level === 1) {
-      const n = NUMBERS[Math.floor(Math.random() * 4)];
+    const lv = level === 2 ? 2 : 1;
+    if (lv === 1) {
+      const c = r(activeColors);
+      const n = r(NUMBERS);
       return { type: 'dual_num', bg: c.bg, content: { color: c, number: n }, voice: null };
     }
-    if (level === 2) {
-      const act = r(ACTIONS);
-      return { type: 'dual_action', bg: c.bg, content: { color: c, action: act }, voice: null };
-    }
-    if (level === 3) {
-      const [w, tc] = pair(activeColors.map((x) => ({ name: x.name, hex: x.bg })));
-      const act = r(ACTIONS);
-      return { type: 'dual_stroop_action', bg: '#0F172A', content: { word: w.name, textHex: tc.hex, action: act }, voice: null };
-    }
+    const c = r(DUAL_TWO_COLORS);
+    const a = r(DUAL_LR_ARROWS);
+    return { type: 'dual_color_arrow', bg: c.bg, content: { color: c, arrow: a }, voice: null };
   }
 
   return null;

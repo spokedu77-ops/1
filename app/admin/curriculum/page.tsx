@@ -2,7 +2,10 @@
 
 import { toast } from 'sonner';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useOverlayHistoryDismiss, popOverlayHistoryIfPresent } from '@/app/hooks/useOverlayHistoryDismiss';
+
+const CURRICULUM_ADMIN_HISTORY_KEY = 'spokeduCurriculumAdmin';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getCurrentWeekOfMonth } from '@/app/lib/curriculum/weekUtils';
@@ -435,7 +438,12 @@ export default function AdminCurriculumPage() {
       }
       
       await fetchItems();
-      closeInputModal();
+      const hadOverlay = !!(window.history.state as Record<string, unknown>)?.[CURRICULUM_ADMIN_HISTORY_KEY];
+      if (hadOverlay) {
+        popOverlayHistoryIfPresent(CURRICULUM_ADMIN_HISTORY_KEY);
+      } else {
+        closeInputModal();
+      }
     } catch (err: unknown) {
       toast.error('저장 중 오류 발생: ' + formatSaveError(err));
     }
@@ -542,9 +550,14 @@ export default function AdminCurriculumPage() {
         toast.success('등록되었습니다.');
       }
       await fetchPersonalItems();
-      setIsPersonalModalOpen(false);
-      setPersonalEditingId(null);
-      setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+      const hadOverlay = !!(window.history.state as Record<string, unknown>)?.[CURRICULUM_ADMIN_HISTORY_KEY];
+      if (hadOverlay) {
+        popOverlayHistoryIfPresent(CURRICULUM_ADMIN_HISTORY_KEY);
+      } else {
+        setIsPersonalModalOpen(false);
+        setPersonalEditingId(null);
+        setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+      }
     } catch (err: unknown) {
       toast.error('저장 중 오류: ' + formatSaveError(err));
     }
@@ -649,7 +662,12 @@ export default function AdminCurriculumPage() {
         toast.success('등록되었습니다.');
       }
       await fetchPersonalItems();
-      close8huiModal();
+      const hadOverlay = !!(window.history.state as Record<string, unknown>)?.[CURRICULUM_ADMIN_HISTORY_KEY];
+      if (hadOverlay) {
+        popOverlayHistoryIfPresent(CURRICULUM_ADMIN_HISTORY_KEY);
+      } else {
+        close8huiModal();
+      }
     } catch (err: unknown) {
       toast.error('저장 중 오류: ' + formatSaveError(err));
     }
@@ -682,7 +700,12 @@ export default function AdminCurriculumPage() {
         toast.success('등록되었습니다.');
       }
       await fetchCenterEquipment();
-      closeEquipmentMasterEdit();
+      const hadOverlay = !!(window.history.state as Record<string, unknown>)?.[CURRICULUM_ADMIN_HISTORY_KEY];
+      if (hadOverlay) {
+        popOverlayHistoryIfPresent(CURRICULUM_ADMIN_HISTORY_KEY);
+      } else {
+        closeEquipmentMasterEdit();
+      }
     } catch (err: unknown) {
       toast.error('저장 중 오류: ' + formatSaveError(err));
     }
@@ -704,6 +727,65 @@ export default function AdminCurriculumPage() {
     setEditingEquipmentId(null);
     setEquipmentForm({ number: 1, step: 1, activity_image_url: '', activity_text: '' });
   };
+
+  const closeAllCurriculumOverlays = useCallback(() => {
+    setCategoryPickerOpen(false);
+    setIs8huiSlotPickerOpen(false);
+    setIsInputModalOpen(false);
+    setEditingId(null);
+    setNewPost({
+      title: '',
+      url: '',
+      month: selectedMonth,
+      week: selectedWeek,
+      expertTip: '',
+      checkListText: '',
+      equipmentText: '',
+      stepsText: '',
+    });
+    setIsPersonalModalOpen(false);
+    setPersonalEditingId(null);
+    setPersonalPost({
+      category: categoryTab,
+      sub_tab: subTab,
+      title: '',
+      url: '',
+      expertTip: '',
+      checkListText: '',
+      equipmentText: '',
+      stepsText: '',
+    });
+    setIsDetailModalOpen(false);
+    setSelectedItem(null);
+    setIs8huiModalOpen(false);
+    setEditing8huiSubTab(null);
+    setEditing8huiId(null);
+    setEightHuiForm({ title: '', detailText: '', url: '' });
+    setIsEquipmentDetailOpen(false);
+    setSelectedEquipmentItem(null);
+    setIsEquipmentEditOpen(false);
+    setEditingEquipmentId(null);
+    setEquipmentForm({ number: 1, step: 1, activity_image_url: '', activity_text: '' });
+    setIsEquipmentMasterEditOpen(false);
+    setEquipmentMasterForm({ name: '', image_url: '' });
+  }, [selectedMonth, selectedWeek, categoryTab, subTab]);
+
+  const curriculumOverlayActive =
+    categoryPickerOpen ||
+    isInputModalOpen ||
+    isPersonalModalOpen ||
+    isDetailModalOpen ||
+    is8huiModalOpen ||
+    is8huiSlotPickerOpen ||
+    isEquipmentDetailOpen ||
+    isEquipmentEditOpen ||
+    isEquipmentMasterEditOpen;
+
+  const dismissCurriculumOverlay = useOverlayHistoryDismiss(
+    curriculumOverlayActive,
+    closeAllCurriculumOverlays,
+    'spokeduCurriculumAdmin'
+  );
 
   const handleEquipmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -729,7 +811,12 @@ export default function AdminCurriculumPage() {
         toast.success('등록되었습니다.');
       }
       await fetchEquipmentGuide();
-      closeEquipmentEdit();
+      const hadOverlay = !!(window.history.state as Record<string, unknown>)?.[CURRICULUM_ADMIN_HISTORY_KEY];
+      if (hadOverlay) {
+        popOverlayHistoryIfPresent(CURRICULUM_ADMIN_HISTORY_KEY);
+      } else {
+        closeEquipmentEdit();
+      }
     } catch (err: unknown) {
       toast.error('저장 중 오류: ' + formatSaveError(err));
     }
@@ -838,7 +925,10 @@ export default function AdminCurriculumPage() {
                    subTab={subTab}
                    onSelect={handleCategorySelect}
                    open={categoryPickerOpen}
-                   onOpenChange={setCategoryPickerOpen}
+                   onOpenChange={(open) => {
+                     if (open) setCategoryPickerOpen(true);
+                     else dismissCurriculumOverlay();
+                   }}
                  />
                  {/* 개인 수업 목록 (8회기는 카드 8개 + 전용 모달) */}
                  {personalLoading ? (
@@ -1191,11 +1281,11 @@ export default function AdminCurriculumPage() {
 
       {is8huiSlotPickerOpen && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIs8huiSlotPickerOpen(false)} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
           <div className="relative bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-black text-slate-900">어떤 회기를 등록/수정할까요?</h3>
-              <button type="button" onClick={() => setIs8huiSlotPickerOpen(false)} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
                 <X size={20} />
               </button>
             </div>
@@ -1220,13 +1310,13 @@ export default function AdminCurriculumPage() {
 
       {isDetailModalOpen && selectedItem && (
          <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)} />
+             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
              <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                  {isPersonalItem(selectedItem) && selectedItem.category === '신체 기능향상 8회기' ? (
                    <>
                      <div className="p-6 border-b border-slate-700 flex justify-between items-start">
                        <h2 className="text-xl font-black text-white">{selectedItem.title ?? selectedItem.sub_tab}</h2>
-                       <button type="button" onClick={() => setIsDetailModalOpen(false)} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
+                       <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
                      </div>
                      <div className="p-6 space-y-4 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
                        <div className="space-y-2">
@@ -1278,7 +1368,8 @@ export default function AdminCurriculumPage() {
                   </div>
                 )}
                 <button
-                  onClick={() => setIsDetailModalOpen(false)}
+                  type="button"
+                  onClick={() => dismissCurriculumOverlay()}
                   className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-all"
                 >
                   <X size={20} />
@@ -1388,11 +1479,11 @@ export default function AdminCurriculumPage() {
       
       {isInputModalOpen && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeInputModal} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
           <form onSubmit={handleSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar text-left">
             <div className="flex justify-between items-center text-left">
               <h2 className="text-2xl font-black">{editingId ? '커리큘럼 수정' : '새 커리큘럼 등록'}</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={closeInputModal} />
+              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
             </div>
             
             <div className="space-y-4 font-bold text-left">
@@ -1449,11 +1540,11 @@ export default function AdminCurriculumPage() {
 
       {isPersonalModalOpen && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closePersonalModal} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
           <form onSubmit={handlePersonalSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar text-left">
             <div className="flex justify-between items-center text-left">
               <h2 className="text-2xl font-black">{personalEditingId ? '개인 수업 수정' : '개인 수업 등록'}</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={closePersonalModal} />
+              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
             </div>
             <div className="space-y-4 font-bold text-left">
               <div className="space-y-2 text-left">
@@ -1496,11 +1587,11 @@ export default function AdminCurriculumPage() {
 
       {is8huiModalOpen && editing8huiSubTab != null && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={close8huiModal} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
           <form onSubmit={handle8huiSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{editing8huiId ? '루틴 프로그램 수정' : `${editing8huiSubTab} 등록`}</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={close8huiModal} />
+              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -1523,11 +1614,11 @@ export default function AdminCurriculumPage() {
 
       {isEquipmentDetailOpen && selectedEquipmentItem && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} />
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
           <div className="relative bg-white w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-slate-100 flex justify-between items-start">
               <h2 className="text-xl font-black text-slate-900">{selectedEquipmentItem.number}번 · {selectedEquipmentItem.step}단계 활동</h2>
-              <button type="button" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} className="p-2 rounded-full hover:bg-slate-100 text-slate-400"><X size={20}/></button>
+              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400"><X size={20}/></button>
             </div>
             <div className="p-6 overflow-y-auto space-y-4">
               {selectedEquipmentItem.activity_image_url && (
@@ -1543,11 +1634,11 @@ export default function AdminCurriculumPage() {
 
       {isEquipmentEditOpen && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentEdit} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
           <form onSubmit={handleEquipmentSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{editingEquipmentId ? '활동 수정' : '활동 등록'}</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={closeEquipmentEdit} />
+              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -1580,11 +1671,11 @@ export default function AdminCurriculumPage() {
 
       {isEquipmentMasterEditOpen && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentMasterEdit} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
           <form onSubmit={handleEquipmentMasterSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{selectedEquipmentNumber}번 교구 편집</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={closeEquipmentMasterEdit} />
+              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
             </div>
             <div className="space-y-4">
               <div className="space-y-2">

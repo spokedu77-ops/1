@@ -21,8 +21,13 @@ export async function POST(request: Request) {
     const userId = typeof body.userId === 'string' ? body.userId.trim() : '';
     if (!userId) return NextResponse.json({ error: 'userId가 필요합니다.' }, { status: 400 });
 
+    const rawPassword = typeof body.password === 'string' ? body.password.trim() : '';
+    const newPassword = rawPassword.length > 0 ? rawPassword : generatePassword();
+    if (newPassword.length < 6) {
+      return NextResponse.json({ error: '비밀번호는 6자 이상이어야 합니다.' }, { status: 400 });
+    }
+
     const supabase = getServiceSupabase();
-    const newPassword = generatePassword();
 
     const { data, error } = await supabase.auth.admin.updateUserById(userId, { password: newPassword });
     if (error) {

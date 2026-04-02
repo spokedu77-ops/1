@@ -20,6 +20,7 @@ import {
   Sparkles, X, Calendar, MoreHorizontal,
   CheckSquare, Box, ListOrdered, Play, Link2, ArrowLeft, ChevronRight
 } from 'lucide-react';
+import { useOverlayHistoryDismiss } from '@/app/hooks/useOverlayHistoryDismiss';
 
 type MainCurriculumTab = 'personal' | 'center';
 
@@ -217,6 +218,22 @@ export default function TeacherCurriculumPage() {
    return centerEquipmentList.find((e) => e.number === selectedEquipmentNumber) ?? null;
  }, [centerEquipmentList, selectedEquipmentNumber]);
 
+ const closeAllTeacherOverlays = useCallback(() => {
+   setCategoryPickerOpen(false);
+   setIsDetailModalOpen(false);
+   setSelectedItem(null);
+   setIsEquipmentDetailOpen(false);
+   setSelectedEquipmentItem(null);
+ }, []);
+
+ const teacherOverlayActive = categoryPickerOpen || isDetailModalOpen || isEquipmentDetailOpen;
+
+ const dismissTeacherOverlay = useOverlayHistoryDismiss(
+   teacherOverlayActive,
+   closeAllTeacherOverlays,
+   'spokeduCurriculumTeacher'
+ );
+
  const currentTheme = MONTHLY_THEMES[selectedMonth] || { 
    title: `${selectedMonth}월 집중 교육 목표`, 
    desc: '스포키듀와 함께 건강한 에너지를 발산해보세요!' 
@@ -353,7 +370,10 @@ export default function TeacherCurriculumPage() {
                   subTab={subTab}
                   onSelect={handleCategorySelect}
                   open={categoryPickerOpen}
-                  onOpenChange={setCategoryPickerOpen}
+                  onOpenChange={(open) => {
+                    if (open) setCategoryPickerOpen(true);
+                    else dismissTeacherOverlay();
+                  }}
                 />
                 {/* 개인 수업 목록 (8회기는 카드 8개, 조회 전용) */}
                 {personalLoading ? (
@@ -657,13 +677,13 @@ export default function TeacherCurriculumPage() {
      {/* 상세 모달 (읽기 전용, 8회기는 세부내용+링크2개) */}
      {isDetailModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)} />
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => dismissTeacherOverlay()} />
             <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                 {isPersonalItem(selectedItem) && selectedItem.category === '신체 기능향상 8회기' ? (
                   <>
                     <div className="p-6 border-b border-slate-700 flex justify-between items-start">
                       <h2 className="text-xl font-black text-white">{selectedItem.title ?? selectedItem.sub_tab}</h2>
-                      <button type="button" onClick={() => setIsDetailModalOpen(false)} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
+                      <button type="button" onClick={() => dismissTeacherOverlay()} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
                     </div>
                     <div className="p-6 space-y-4 overflow-y-auto bg-[#2C2C2C] text-white">
                       <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
@@ -695,7 +715,7 @@ export default function TeacherCurriculumPage() {
                       )}
                   </div>
                 )}
-                <button onClick={() => setIsDetailModalOpen(false)} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-all">
+                <button type="button" onClick={() => dismissTeacherOverlay()} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-all">
                   <X size={20} />
                 </button>
                 <div className="p-8 space-y-8 overflow-y-auto bg-[#2C2C2C] text-white">
@@ -800,11 +820,11 @@ export default function TeacherCurriculumPage() {
 
      {isEquipmentDetailOpen && selectedEquipmentItem && (
        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-         <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} />
+         <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => dismissTeacherOverlay()} />
          <div className="relative bg-white w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
            <div className="p-6 border-b border-slate-100 flex justify-between items-start">
              <h2 className="text-xl font-black text-slate-900">{selectedEquipmentItem.number}번 · {selectedEquipmentItem.step}단계 활동</h2>
-             <button type="button" onClick={() => { setIsEquipmentDetailOpen(false); setSelectedEquipmentItem(null); }} className="p-2 rounded-full hover:bg-slate-100 text-slate-400"><X size={20}/></button>
+             <button type="button" onClick={() => dismissTeacherOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400"><X size={20}/></button>
            </div>
            <div className="p-6 overflow-y-auto space-y-4">
              {selectedEquipmentItem.activity_image_url && (

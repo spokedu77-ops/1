@@ -290,8 +290,9 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: rgba(0,0,0,.5);
-  backdrop-filter: blur(8px);
+  /* 카메라 프리뷰는 유지하되, UI가 한 덩어리로 보이도록 어둡게 덮음 (이중 화면 느낌 완화) */
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(10px);
 }
 .root .lobby-card {
   width: 100%;

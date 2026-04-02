@@ -57,6 +57,9 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+/** 즐겨찾기 목록에서 항상 맨 위에 둘 노트 제목 (공통 보드) */
+const FAVORITE_PIN_TITLE = '공통보드';
+
 /* ─── types ─────────────────────────────────────────────────────────────── */
 type NoteDocument = {
   id: string;
@@ -841,10 +844,16 @@ export default function AdminNotePage() {
     return [...list].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   }, [documents, searchQuery, sortKey]);
 
-  const favoriteDocuments = useMemo(
-    () => (docTab === 'trash' ? [] : filteredDocuments.filter((d) => d.is_favorite)),
-    [docTab, filteredDocuments],
-  );
+  const favoriteDocuments = useMemo(() => {
+    if (docTab === 'trash') return [];
+    const fav = filteredDocuments.filter((d) => d.is_favorite);
+    return [...fav].sort((a, b) => {
+      const aPin = a.title.trim() === FAVORITE_PIN_TITLE;
+      const bPin = b.title.trim() === FAVORITE_PIN_TITLE;
+      if (aPin !== bPin) return aPin ? -1 : 1;
+      return 0;
+    });
+  }, [docTab, filteredDocuments]);
   const otherDocuments = useMemo(
     () => (docTab === 'trash' ? filteredDocuments : filteredDocuments.filter((d) => !d.is_favorite)),
     [docTab, filteredDocuments],
