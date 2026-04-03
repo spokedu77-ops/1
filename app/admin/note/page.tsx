@@ -14,6 +14,7 @@ import {
   Plus,
   FileText,
   Star,
+  Pin,
   Loader2,
   Trash2,
   CheckSquare,
@@ -57,15 +58,13 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-/** 즐겨찾기 목록에서 항상 맨 위에 둘 노트 제목 (공통 보드) */
-const FAVORITE_PIN_TITLE = '공통보드';
-
 /* ─── types ─────────────────────────────────────────────────────────────── */
 type NoteDocument = {
   id: string;
   title: string;
   is_archived: boolean;
   is_favorite: boolean;
+  is_pinned: boolean;
   parent_id: string | null;
   slug: string | null;
   created_at: string;
@@ -116,10 +115,11 @@ function relativeTime(dateStr: string): string {
 
 /* ─── DocItem ────────────────────────────────────────────────────────────── */
 function DocItem({
-  doc, isActive, onSelect, onFavorite, onDelete, indentLevel = 0, onCreateChild,
+  doc, isActive, onSelect, onPin, onFavorite, onDelete, indentLevel = 0, onCreateChild,
 }: {
   doc: NoteDocument; isActive: boolean;
   onSelect: () => void;
+  onPin: (e: React.MouseEvent) => void;
   onFavorite: (e: React.MouseEvent) => void;
   onDelete: (e: React.MouseEvent) => void;
   indentLevel?: number;
@@ -142,7 +142,7 @@ function DocItem({
       } ${isOver ? 'ring-2 ring-blue-300' : ''}`}
     >
       <FileText className={`h-4 w-4 shrink-0 ${
-        isActive ? 'text-blue-200' : doc.is_favorite ? 'text-amber-400' : 'text-slate-400'
+        isActive ? 'text-blue-200' : doc.is_pinned ? 'text-violet-500' : doc.is_favorite ? 'text-amber-400' : 'text-slate-400'
       }`} />
       <div className="min-w-0 flex-1">
         <p
@@ -161,6 +161,16 @@ function DocItem({
         className={`flex shrink-0 items-center gap-0.5 ${isActive ? 'visible' : 'invisible group-hover:visible'}`}
         onClick={(e) => e.stopPropagation()}
       >
+        <button type="button" title={doc.is_pinned ? '고정 해제' : '맨 위에 고정'}
+          className={`rounded p-1 transition-colors ${
+            isActive ? 'text-blue-200 hover:text-violet-200'
+            : doc.is_pinned ? 'text-violet-500 hover:text-violet-600'
+            : 'text-slate-400 hover:text-violet-500'
+          }`}
+          onClick={onPin}
+        >
+          <Pin className={`h-3.5 w-3.5 ${doc.is_pinned ? 'fill-current' : ''}`} />
+        </button>
         <button type="button" title={doc.is_favorite ? '즐겨찾기 해제' : '즐겨찾기'}
           className={`rounded p-1 transition-colors ${
             isActive ? 'text-blue-200 hover:text-amber-300'
@@ -346,7 +356,7 @@ function BlockContent({
       setHasSelection(false);
       onHideFormatToolbar?.();
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [block.content, onHideFormatToolbar, onUpdate]);
 
   const autoResize = useCallback(() => {
@@ -844,18 +854,17 @@ export default function AdminNotePage() {
     return [...list].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   }, [documents, searchQuery, sortKey]);
 
+  const pinnedDocuments = useMemo(() => {
+    if (docTab === 'trash') return [];
+    const pinned = filteredDocuments.filter((d) => d.is_pinned);
+    return [...pinned].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  }, [docTab, filteredDocuments]);
   const favoriteDocuments = useMemo(() => {
     if (docTab === 'trash') return [];
-    const fav = filteredDocuments.filter((d) => d.is_favorite);
-    return [...fav].sort((a, b) => {
-      const aPin = a.title.trim() === FAVORITE_PIN_TITLE;
-      const bPin = b.title.trim() === FAVORITE_PIN_TITLE;
-      if (aPin !== bPin) return aPin ? -1 : 1;
-      return 0;
-    });
+    return filteredDocuments.filter((d) => d.is_favorite && !d.is_pinned);
   }, [docTab, filteredDocuments]);
   const otherDocuments = useMemo(
-    () => (docTab === 'trash' ? filteredDocuments : filteredDocuments.filter((d) => !d.is_favorite)),
+    () => (docTab === 'trash' ? filteredDocuments : filteredDocuments.filter((d) => !d.is_favorite && !d.is_pinned)),
     [docTab, filteredDocuments],
   );
   const docMap = useMemo(() => new Map(filteredDocuments.map((d) => [d.id, d])), [filteredDocuments]);
@@ -910,9 +919,9 @@ export default function AdminNotePage() {
         const json = (await res.json()) as { documents: NoteDocument[] };
         setDocuments(json.documents ?? []);
         if (docTab === 'active' && !selectedId && json.documents?.length > 0) {
-          const first = json.documents[0];
-          setSelectedId(first.id);
-          router.replace(`/admin/note?id=${encodeURIComponent(first.id)}`);
+          const preferred = json.documents.find((d) => d.is_pinned) ?? json.documents[0];
+          setSelectedId(preferred.id);
+          router.replace(`/admin/note?id=${encodeURIComponent(preferred.id)}`);
         }
       } catch (e) { devLogger.error('[Note] loadDocs', e); setError(e instanceof Error ? e.message : '로드 실패'); }
       finally { setLoadingDocuments(false); }
@@ -1157,12 +1166,26 @@ export default function AdminNotePage() {
     }, 600);
   };
 
+  const handleTogglePin = async (e: React.MouseEvent, doc: NoteDocument) => {
+    e.stopPropagation();
+    const next = !doc.is_pinned;
+    setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, is_pinned: next } : d)));
+    try {
+      await fetch('/api/admin/note/documents', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: doc.id, is_pinned: next }),
+      });
+    } catch (err) { devLogger.error('[Note] togglePin', err); }
+  };
+
   const handleToggleFavorite = async (e: React.MouseEvent, doc: NoteDocument) => {
     e.stopPropagation();
     const next = !doc.is_favorite;
     setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, is_favorite: next } : d)));
     try { await fetch('/api/admin/note/documents', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: doc.id, is_favorite: next }) }); }
-    catch (e) { devLogger.error('[Note] toggleFavorite', e); }
+    catch (err) { devLogger.error('[Note] toggleFavorite', err); }
   };
 
   const handleDeleteDocument = async (e: React.MouseEvent, doc: NoteDocument) => {
@@ -1332,6 +1355,7 @@ export default function AdminNotePage() {
           isActive={doc.id === selectedId}
           indentLevel={depth}
           onSelect={() => handleSelectDocument(doc)}
+          onPin={(e) => handleTogglePin(e, doc)}
           onFavorite={(e) => handleToggleFavorite(e, doc)}
           onDelete={(e) => handleDeleteDocument(e, doc)}
           onCreateChild={(e) => { e.stopPropagation(); handleCreateDocument(doc.id); }}
@@ -1515,12 +1539,26 @@ export default function AdminNotePage() {
               </div>
             ) : (
               <>
+                {pinnedDocuments.length > 0 && (
+                  <div className="mb-3 mt-1">
+                    <p className="mb-1.5 px-2 text-[10px] font-extrabold uppercase tracking-widest text-violet-600">고정 · {pinnedDocuments.length}</p>
+                    {pinnedDocuments.map((doc) => (
+                      <DocItem key={doc.id} doc={doc} isActive={doc.id === selectedId}
+                        onSelect={() => handleSelectDocument(doc)}
+                        onPin={(e) => handleTogglePin(e, doc)}
+                        onFavorite={(e) => handleToggleFavorite(e, doc)}
+                        onDelete={(e) => handleDeleteDocument(e, doc)}
+                      />
+                    ))}
+                  </div>
+                )}
                 {favoriteDocuments.length > 0 && (
                   <div className="mb-3 mt-1">
                     <p className="mb-1.5 px-2 text-[10px] font-extrabold uppercase tracking-widest text-amber-500">즐겨찾기 · {favoriteDocuments.length}</p>
                     {favoriteDocuments.map((doc) => (
                       <DocItem key={doc.id} doc={doc} isActive={doc.id === selectedId}
                         onSelect={() => handleSelectDocument(doc)}
+                        onPin={(e) => handleTogglePin(e, doc)}
                         onFavorite={(e) => handleToggleFavorite(e, doc)}
                         onDelete={(e) => handleDeleteDocument(e, doc)}
                       />
@@ -1529,7 +1567,7 @@ export default function AdminNotePage() {
                 )}
                 {otherDocuments.length > 0 && (
                   <div className="mt-1">
-                    {favoriteDocuments.length > 0 && (
+                    {(pinnedDocuments.length > 0 || favoriteDocuments.length > 0) && (
                       <p className="mb-1.5 px-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">전체 · {otherDocuments.length}</p>
                     )}
                     {docTab === 'trash' ? (

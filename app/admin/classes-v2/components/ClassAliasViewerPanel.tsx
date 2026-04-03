@@ -5,8 +5,9 @@ import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { postponeCascade } from '@/app/admin/classes/lib/postponeUtils';
-import { extendClass } from '@/app/admin/classes/lib/roundExtendUtils';
+import { postponeCascade, undoPostponeCascade } from '@/app/admin/classes-shared/lib/postponeUtils';
+import { extendClass } from '@/app/admin/classes-shared/lib/roundExtendUtils';
+import { resolvePlannedTotal } from '../lib/plannedRoundTotal';
 
 type DayOption = { label: string; value: number };
 const DAYS: DayOption[] = [
@@ -23,6 +24,14 @@ function addDays(date: Date, days: number) {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
+}
+
+function toDateInputValueLocal(d: Date) {
+  // type="date"는 "로컬 YYYY-MM-DD" 기준으로 동작해야 합니다.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 type Props = {
@@ -42,6 +51,8 @@ type Row = {
   created_by: string | null;
   price: number | null;
   round_index: number | null;
+  round_total: number | null;
+  sequence_number?: number | null;
 };
 
 export default function ClassAliasViewerPanel({
@@ -67,10 +78,12 @@ export default function ClassAliasViewerPanel({
   const [restartIntervalDays, setRestartIntervalDays] = useState(7);
   const [restarting, setRestarting] = useState(false);
   const [restartWeeklyFrequency, setRestartWeeklyFrequency] = useState<1 | 2>(1);
-  const [restartStartDate, setRestartStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [restartStartDate, setRestartStartDate] = useState<string>(toDateInputValueLocal(new Date()));
   const [restartStartTime, setRestartStartTime] = useState<string>('10:00');
   const [restartDaysOfWeek, setRestartDaysOfWeek] = useState<number[]>([new Date().getDay()]);
-  const [roundView, setRoundView] = useState<'active' | 'all' | 'completed'>('all');
+  const [undoingPostponeSessionId, setUndoingPostponeSessionId] = useState<string | null>(null);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+  const [roundView, setRoundView] = useState<'active' | 'all' | 'completed'>('active');
 
   const load = useCallback(async () => {
     if (!supabase) return;
@@ -84,7 +97,9 @@ export default function ClassAliasViewerPanel({
     try {
       const { data, error } = await supabase
         .from('sessions')
-        .select('id, group_id, title, start_at, end_at, status, created_by, price, round_index')
+        .select(
+          'id, group_id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number'
+        )
         .in('group_id', groupIds)
         .not('status', 'in', '("deleted")')
         .order('start_at', { ascending: true });
@@ -161,16 +176,13 @@ export default function ClassAliasViewerPanel({
     setRoundView((prev) => (prev === 'all' ? 'active' : prev));
   }, [visible, cycleEnded]);
 
-  const plannedTotal = useMemo(() => {
-    const baseAll = rows.filter(
-      (r) => r.status !== 'postponed' && r.status !== 'deleted' && r.status !== 'cancelled'
-    );
-    const indices = baseAll
-      .map((r) => r.round_index)
-      .filter((v): v is number => typeof v === 'number');
-    if (indices.length) return Math.max(...indices);
-    return Math.max(1, baseAll.length || rows.length);
-  }, [rows]);
+  const plannedTotal = useMemo(() => resolvePlannedTotal(rows), [rows]);
+
+  const getActiveSessionsSorted = useCallback((rows: Row[]) => {
+    return [...rows]
+      .filter((r) => r.status !== 'postponed' && r.status !== 'deleted' && r.status !== 'cancelled')
+      .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+  }, []);
 
   const statusCounts = useMemo(() => {
     const total = rows.length;
@@ -181,10 +193,10 @@ export default function ClassAliasViewerPanel({
   }, [rows]);
 
   const visibleRows = useMemo(() => {
-    const baseAll = rows.filter((r) => r.status !== 'deleted' && r.status !== 'cancelled');
-    if (roundView === 'all') return baseAll;
-    if (roundView === 'completed') return baseAll.filter((r) => timeStatusOf(r).isCompletedByTime);
-    return baseAll.filter((r) => timeStatusOf(r).isActiveByTime);
+    const baseNoDeleted = rows.filter((r) => r.status !== 'deleted');
+    if (roundView === 'all') return baseNoDeleted;
+    if (roundView === 'completed') return baseNoDeleted.filter((r) => timeStatusOf(r).isCompletedByTime);
+    return baseNoDeleted.filter((r) => timeStatusOf(r).isActiveByTime);
   }, [rows, roundView, timeStatusOf]);
 
   useEffect(() => {
@@ -199,7 +211,7 @@ export default function ClassAliasViewerPanel({
     if (last?.start_at) {
       const lastStart = new Date(last.start_at);
       const nextStart = addDays(lastStart, 7);
-      setRestartStartDate(nextStart.toISOString().split('T')[0]);
+      setRestartStartDate(toDateInputValueLocal(nextStart));
       setRestartStartTime(nextStart.toTimeString().slice(0, 5));
       setRestartDaysOfWeek([nextStart.getDay()]);
     }
@@ -233,13 +245,14 @@ export default function ClassAliasViewerPanel({
     try {
       const { error } = await supabase.from('sessions').update(patch).eq('id', sessionId);
       if (error) throw error;
+      toast.success('저장되었습니다.');
       // 로컬 반영
       setRows((prev) =>
         prev.map((r) => (r.id === sessionId ? { ...r, ...(patch as any) } : r))
       );
     } catch (err) {
       devLogger.error(err);
-      toast.error('수정에 실패했습니다.');
+      toast.error('저장에 실패했습니다.');
     } finally {
       setSaving(false);
     }
@@ -255,6 +268,28 @@ export default function ClassAliasViewerPanel({
     });
   };
 
+  // postponed 상태였던 회차를 원래 일정으로 되돌립니다.
+  const handleUndoPostpone = async (sessionId: string) => {
+    if (!supabase) return;
+    if (!sessionId) return;
+    if (undoingPostponeSessionId === sessionId) return;
+    if (!confirm('복구하시겠습니까?')) return;
+
+    setUndoingPostponeSessionId(sessionId);
+    try {
+      await undoPostponeCascade(supabase, sessionId, {
+        onAfter: () => {
+          void load();
+        },
+      });
+    } catch (err) {
+      devLogger.error(err);
+      toast.error('일정 복구에 실패했습니다.');
+    } finally {
+      setUndoingPostponeSessionId(null);
+    }
+  };
+
   const handleExtend = async () => {
     if (!supabase || !baseGroupId) return;
     if (extendCount <= 0) return;
@@ -268,11 +303,10 @@ export default function ClassAliasViewerPanel({
 
   const handleReindexRounds = async () => {
     if (!supabase || !baseGroupId) return;
-    const current = [...baseRows].sort(
-      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-    );
-    if (current.length <= 1) return;
+    const active = getActiveSessionsSorted(baseRows);
+    if (active.length <= 1) return;
 
+    const current = active;
     const preview = current
       .slice(0, 6)
       .map((r, i) => `${i + 1}. ${new Date(r.start_at).toLocaleString('ko-KR')}`)
@@ -290,7 +324,7 @@ export default function ClassAliasViewerPanel({
 
     setReindexing(true);
     try {
-      const sorted = [...current];
+      const sorted = current;
       const total = sorted.length;
       await Promise.all(
         sorted.map((row, i) => {
@@ -318,17 +352,15 @@ export default function ClassAliasViewerPanel({
   const handleShrinkTail = async () => {
     if (!supabase || !baseGroupId) return;
     const n = Math.max(1, Math.floor(shrinkCount || 0));
-    const sorted = [...baseRows].sort(
-      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-    );
-    if (sorted.length === 0) return;
-    const toRemove = sorted.slice(-n);
+    const active = getActiveSessionsSorted(baseRows);
+    if (active.length === 0) return;
+    const toRemove = active.slice(-n);
     if (toRemove.length === 0) return;
 
     const hasPast = toRemove.some((s) => Date.now() > new Date(s.end_at).getTime());
     const msg = hasPast
-      ? `⚠ 과거/완료된 회차가 포함됩니다.\n마지막 ${toRemove.length}개 회차를 'deleted'로 숨기고 회차 정보를 재계산할까요?`
-      : `마지막 ${toRemove.length}개 회차를 'deleted'로 숨기고 회차 정보를 재계산할까요?`;
+      ? `⚠ 과거/완료된 회차가 포함됩니다.\n마지막 ${toRemove.length}개 회차를 DB에서 영구 삭제하고 회차 정보를 재계산할까요?`
+      : `마지막 ${toRemove.length}개 회차를 DB에서 영구 삭제하고 회차 정보를 재계산할까요?`;
     if (!confirm(msg)) return;
 
     setShrinking(true);
@@ -336,25 +368,27 @@ export default function ClassAliasViewerPanel({
       const idsToDelete = toRemove.map((s) => s.id);
       const { error: delErr } = await supabase
         .from('sessions')
-        .update({ status: 'deleted' })
+        .delete()
         .in('id', idsToDelete);
       if (delErr) throw delErr;
 
-      const remaining = sorted.filter((s) => !idsToDelete.includes(s.id));
-      const total = remaining.length;
-      await Promise.all(
-        remaining.map((row, i) =>
-          supabase
-            .from('sessions')
-            .update({
-              round_index: i + 1,
-              round_total: total,
-              sequence_number: i + 1,
-              round_display: `${i + 1}/${total}`,
-            })
-            .eq('id', row.id)
-        )
-      );
+      const remaining = active.filter((s) => !idsToDelete.includes(s.id));
+      if (remaining.length > 0) {
+        const total = remaining.length;
+        await Promise.all(
+          remaining.map((row, i) =>
+            supabase
+              .from('sessions')
+              .update({
+                round_index: i + 1,
+                round_total: total,
+                sequence_number: i + 1,
+                round_display: `${i + 1}/${total}`,
+              })
+              .eq('id', row.id)
+          )
+        );
+      }
       toast.success('회차가 축소되었습니다.');
       void load();
     } catch (err) {
@@ -362,6 +396,28 @@ export default function ClassAliasViewerPanel({
       toast.error('회차 축소에 실패했습니다.');
     } finally {
       setShrinking(false);
+    }
+  };
+
+  const handleDeleteSession = async (groupId: string, sessionId: string) => {
+    if (!supabase) return;
+    if (!groupId || !sessionId) return;
+    if (deletingSessionId === sessionId) return;
+    if (!confirm("해당 회차를 DB에서 영구 삭제할까요?")) return;
+
+    setDeletingSessionId(sessionId);
+    try {
+      const { error: delErr } = await supabase.from('sessions').delete().eq('id', sessionId);
+      if (delErr) throw delErr;
+      // 재정렬 없이 삭제만 — 재정렬 시 cancelled 제외 active 수로 round_total이 줄어
+      // 7·8회차가 5·6회차로 바뀌어 사라져 보이는 문제 방지.
+      toast.success('회차가 삭제되었습니다.');
+      void load();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error('회차 삭제에 실패했습니다.');
+    } finally {
+      setDeletingSessionId(null);
     }
   };
 
@@ -588,7 +644,7 @@ export default function ClassAliasViewerPanel({
                       const start = new Date(r.start_at);
                       const end = new Date(r.end_at);
                       const nowMs = Date.now();
-                      const dateStr = start.toISOString().split('T')[0];
+                      const dateStr = toDateInputValueLocal(start);
                       const timeStr = start.toTimeString().slice(0, 5);
                       // ✅ V2 운영 규칙: 연기/취소/삭제가 아니라면 end_at 경과 = 무조건 완료(정산 누락 0 전략)
                       const isPostponed = r.status === 'postponed';
@@ -669,10 +725,11 @@ export default function ClassAliasViewerPanel({
                           </td>
                           <td className="px-2 py-2 text-right">
                             <input
+                              key={`price-${r.id}-${r.price ?? 0}`}
                               type="number"
                               className="w-[88px] bg-transparent border rounded-lg px-2 py-1 text-right"
-                              value={Number(r.price) || 0}
-                              onChange={(e) => {
+                              defaultValue={Number(r.price) || 0}
+                              onBlur={(e) => {
                                 void handleInlineUpdate(r.id, { price: Number(e.target.value) || 0 });
                               }}
                             />
@@ -689,22 +746,43 @@ export default function ClassAliasViewerPanel({
                                       : statusLabel === '완료'
                                         ? 'bg-emerald-50 text-emerald-700'
                                         : statusLabel === '진행중'
-                                          ? 'bg-blue-50 text-blue-700'
-                                          : 'bg-slate-100 text-slate-700'
+                                          ? 'bg-blue-50 text-blue-800 border border-blue-200/70'
+                                          : 'bg-amber-50 text-amber-900 border border-amber-200/70'
                               }`}
                             >
                               {statusLabel}
                             </span>
                           </td>
                           <td className="px-2 py-2 text-center">
-                            <div className="inline-flex items-center justify-center whitespace-nowrap min-w-[52px]">
-                              <button
-                                type="button"
-                                className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-violet-50 text-violet-600 hover:bg-violet-100"
-                                onClick={() => void handlePostpone(r.id)}
-                              >
-                                연기
-                              </button>
+                            <div className="inline-flex flex-col items-stretch gap-1 min-w-[52px] mx-auto">
+                              {r.status === 'postponed' ? (
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                                  disabled={undoingPostponeSessionId === r.id}
+                                  onClick={() => void handleUndoPostpone(r.id)}
+                                >
+                                  {undoingPostponeSessionId === r.id ? '복구 중...' : '연기 취소'}
+                                </button>
+                              ) : r.status === 'cancelled' || r.status === 'deleted' ? null : (
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-violet-50 text-violet-600 hover:bg-violet-100"
+                                  onClick={() => void handlePostpone(r.id)}
+                                >
+                                  연기
+                                </button>
+                              )}
+                              {r.status !== 'cancelled' && r.status !== 'deleted' && (
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50"
+                                  disabled={deletingSessionId === r.id || statusLabel === '완료'}
+                                  onClick={() => void handleDeleteSession(r.group_id, r.id)}
+                                >
+                                  {deletingSessionId === r.id ? '삭제 중...' : '삭제'}
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>

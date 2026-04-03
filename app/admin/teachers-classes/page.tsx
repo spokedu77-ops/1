@@ -12,7 +12,7 @@ import {
   fieldsToTemplateText,
   getSessionDisplayStatus
 } from '@/app/lib/feedbackValidation';
-import { parseExtraTeachers } from '@/app/admin/classes/lib/sessionUtils';
+import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 
 interface Session {
   id: string;

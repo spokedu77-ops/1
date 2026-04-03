@@ -35,6 +35,40 @@ interface PreviousLessonPlan {
   content: string;
 }
 
+const LESSON_PLAN_DEFAULT_TEMPLATE = `2026.00.00.(요일) 00:00 ~ 00:00 - n회차
+
+강사명 : 
+수업 장소 : 
+사용 교구: 
+
+[수업 목표]
+-
+-
+
+[활동 계획]
+1. 
+-
+-
+
+2. 
+- 
+- 
+- 
+
+3. 
+-
+-
+-
+
+4. 
+-
+-
+-
+
+5. 
+-
+-`;
+
 function MyClassesContent() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -47,7 +81,7 @@ function MyClassesContent() {
   const [fileUrls, setFileUrls] = useState<string[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isLessonPlanModalOpen, setIsLessonPlanModalOpen] = useState(false);
-  const [lessonPlanContent, setLessonPlanContent] = useState('');
+  const [lessonPlanContent, setLessonPlanContent] = useState(LESSON_PLAN_DEFAULT_TEMPLATE);
   const [lessonPlanSaving, setLessonPlanSaving] = useState(false);
   const [currentSessionLessonPlanId, setCurrentSessionLessonPlanId] = useState<string | null>(null);
   const [previousPlans, setPreviousPlans] = useState<PreviousLessonPlan[]>([]);
@@ -157,7 +191,7 @@ function MyClassesContent() {
     setFileUrls([]);
 
     setIsLessonPlanModalOpen(false);
-    setLessonPlanContent('');
+    setLessonPlanContent(LESSON_PLAN_DEFAULT_TEMPLATE);
     setCurrentSessionLessonPlanId(null);
     setPreviousPlans([]);
     setPreviousPlansExpandedId(null);
@@ -305,7 +339,7 @@ function MyClassesContent() {
 
   const openLessonPlanModal = async () => {
     if (!supabase || !selectedEvent) return;
-    setLessonPlanContent('');
+    setLessonPlanContent(LESSON_PLAN_DEFAULT_TEMPLATE);
     setCurrentSessionLessonPlanId(null);
     setPreviousPlans([]);
     setPreviousPlansExpandedId(null);
@@ -321,7 +355,11 @@ function MyClassesContent() {
     ]);
     const current = currentRes.data as { id: string; content: string } | null;
     if (current) {
-      setLessonPlanContent(current.content || '');
+      setLessonPlanContent(
+        typeof current.content === 'string' && current.content.trim().length > 0
+          ? current.content
+          : LESSON_PLAN_DEFAULT_TEMPLATE,
+      );
       setCurrentSessionLessonPlanId(current.id);
     }
     const sessionsWithPlans = (sessionsRes.data || []) as Array<{ id: string; title: string; start_at: string; group_id?: string | null; lesson_plans: { content?: string }[] }>;
@@ -368,7 +406,7 @@ function MyClassesContent() {
       if (error) throw error;
       toast.success('삭제되었습니다.');
       setCurrentSessionLessonPlanId(null);
-      setLessonPlanContent('');
+      setLessonPlanContent(LESSON_PLAN_DEFAULT_TEMPLATE);
       setIsLessonPlanModalOpen(false);
       getMySchedule();
     } catch (err: unknown) {

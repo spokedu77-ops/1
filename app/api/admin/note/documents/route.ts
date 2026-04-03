@@ -7,6 +7,7 @@ type NoteDocument = {
   title: string;
   is_archived: boolean;
   is_favorite: boolean;
+  is_pinned: boolean;
   parent_id: string | null;
   slug: string | null;
   created_at: string;
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
 
       const { data: sourceDocs, error: sourceDocsError } = await supabase
         .from('note_documents')
-        .select('id, title, is_archived, is_favorite, parent_id, slug, created_at, updated_at')
+        .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
         .in('id', sourceDocIds)
         .order('updated_at', { ascending: false });
       if (sourceDocsError) {
@@ -98,7 +99,8 @@ export async function GET(request: NextRequest) {
 
     const query = supabase
       .from('note_documents')
-      .select('id, title, is_archived, is_favorite, parent_id, slug, created_at, updated_at')
+      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
+      .order('is_pinned', { ascending: false })
       .order('is_favorite', { ascending: false })
       .order('updated_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -153,6 +155,7 @@ export async function POST(request: NextRequest) {
         title,
         is_archived: false,
         is_favorite: false,
+        is_pinned: false,
         parent_id: parentId,
         slug,
         created_at: now,
@@ -160,7 +163,7 @@ export async function POST(request: NextRequest) {
         created_by: auth.ok ? auth.userId : null,
         updated_by: auth.ok ? auth.userId : null,
       })
-      .select('id, title, is_archived, is_favorite, parent_id, slug, created_at, updated_at')
+      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
       .single();
 
     if (error) {
@@ -203,6 +206,9 @@ export async function PATCH(request: NextRequest) {
     if (typeof body.is_favorite === 'boolean') {
       updates.is_favorite = body.is_favorite;
     }
+    if (typeof body.is_pinned === 'boolean') {
+      updates.is_pinned = body.is_pinned;
+    }
     if (body.parent_id === null || typeof body.parent_id === 'string') {
       updates.parent_id = body.parent_id;
     }
@@ -225,7 +231,7 @@ export async function PATCH(request: NextRequest) {
         updated_by: auth.userId,
       })
       .eq('id', id)
-      .select('id, title, is_archived, is_favorite, parent_id, slug, created_at, updated_at')
+      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
       .single();
 
     if (error) {

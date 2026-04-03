@@ -5,9 +5,10 @@ import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import type { EditableSession } from '../../classes/types';
-import { postponeCascade } from '../../classes/lib/postponeUtils';
-import { extendClass } from '../../classes/lib/roundExtendUtils';
+import type { EditableSession } from '@/app/admin/classes-shared/types';
+import { postponeCascade, undoPostponeCascade } from '@/app/admin/classes-shared/lib/postponeUtils';
+import { extendClass } from '@/app/admin/classes-shared/lib/roundExtendUtils';
+import { resolvePlannedTotal } from '../lib/plannedRoundTotal';
 
 interface ClassDetailPanelProps {
   groupId: string | null;
@@ -37,6 +38,41 @@ function addDays(date: Date, days: number) {
   return d;
 }
 
+function toDateInputValueLocal(d: Date) {
+  // type="date"는 "로컬 YYYY-MM-DD" 기준으로 동작해야 합니다.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** 일괄 적용 대상: 취소/삭제 제외, 시간상 완료(end 이전) 제외 — 예정·진행·연기(미종료) */
+function isSessionBulkTarget(s: { start_at: string; end_at: string; status: string | null }) {
+  const end = new Date(s.end_at);
+  const nowMs = Date.now();
+  const isPostponed = s.status === "postponed";
+  const isCancelled = s.status === "cancelled";
+  const isDeleted = s.status === "deleted";
+  if (isCancelled || isDeleted) return false;
+  const isCompletedByTime =
+    !isPostponed && !isCancelled && !isDeleted && nowMs > end.getTime();
+  return !isCompletedByTime;
+}
+
+/** 로컬 날짜 유지, 시·분만 변경. 수업 길이(ms) 유지 */
+function applyLocalTimeKeepDuration(startAtIso: string, endAtIso: string, timeHHmm: string) {
+  const [hh, mm] = timeHHmm.split(":").map(Number);
+  const start = new Date(startAtIso);
+  const end = new Date(endAtIso);
+  const durationMs = end.getTime() - start.getTime();
+  const newStart = new Date(start);
+  if (Number.isFinite(hh) && Number.isFinite(mm)) {
+    newStart.setHours(hh, mm, 0, 0);
+  }
+  const newEnd = new Date(newStart.getTime() + (Number.isFinite(durationMs) && durationMs > 0 ? durationMs : 3600000));
+  return { start_at: newStart.toISOString(), end_at: newEnd.toISOString() };
+}
+
 type DayOption = { label: string; value: number };
 const DAYS: DayOption[] = [
   { label: '일', value: 0 },
@@ -55,6 +91,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
   const [bulkTeacherId, setBulkTeacherId] = useState<string>('');
+  const [bulkStartTime, setBulkStartTime] = useState<string>('');
   const [bulkTeacherApplying, setBulkTeacherApplying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [extendCount, setExtendCount] = useState(1);
@@ -68,13 +105,15 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
   const [restartIntervalDays, setRestartIntervalDays] = useState(7);
   const [restarting, setRestarting] = useState(false);
   const [restartWeeklyFrequency, setRestartWeeklyFrequency] = useState<1 | 2>(1);
-  const [restartStartDate, setRestartStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [restartStartDate, setRestartStartDate] = useState<string>(toDateInputValueLocal(new Date()));
   const [restartStartTime, setRestartStartTime] = useState<string>('10:00');
   const [restartDaysOfWeek, setRestartDaysOfWeek] = useState<number[]>([new Date().getDay()]);
+  const [undoingPostponeSessionId, setUndoingPostponeSessionId] = useState<string | null>(null);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
 
   const [shrinkCount, setShrinkCount] = useState(1);
   const [shrinking, setShrinking] = useState(false);
-  const [roundView, setRoundView] = useState<'active' | 'all' | 'completed'>('all');
+  const [roundView, setRoundView] = useState<'active' | 'all' | 'completed'>('active');
   const [restoringDeleted, setRestoringDeleted] = useState(false);
 
   const loadSessions = useCallback(async () => {
@@ -100,7 +139,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
       if (last?.start_at) {
         const lastStart = new Date(last.start_at);
         const nextStart = addDays(lastStart, 7);
-        setRestartStartDate(nextStart.toISOString().split('T')[0]);
+        setRestartStartDate(toDateInputValueLocal(nextStart));
         setRestartStartTime(nextStart.toTimeString().slice(0, 5));
         setRestartDaysOfWeek([nextStart.getDay()]);
       }
@@ -152,6 +191,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
         })
         .eq('id', target.id);
       if (error) throw error;
+      toast.success('저장되었습니다.');
       onChanged?.();
       const next = [...sessions];
       next[idx] = {
@@ -164,6 +204,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
       setSessions(next);
     } catch (err) {
       devLogger.error(err);
+      toast.error('저장에 실패했습니다.');
     }
   };
 
@@ -176,6 +217,29 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
         loadSessions();
       },
     });
+  };
+
+  // postponed 상태였던 회차를 원래 슬롯 기준으로 복구합니다.
+  const handleUndoPostpone = async (sessionId: string) => {
+    if (!supabase) return;
+    if (!sessionId) return;
+    if (undoingPostponeSessionId === sessionId) return;
+    if (!confirm('복구하시겠습니까?')) return;
+
+    setUndoingPostponeSessionId(sessionId);
+    try {
+      await undoPostponeCascade(supabase, sessionId, {
+        onAfter: () => {
+          onChanged?.();
+          void loadSessions();
+        },
+      });
+    } catch (err) {
+      devLogger.error(err);
+      toast.error('일정 복구에 실패했습니다.');
+    } finally {
+      setUndoingPostponeSessionId(null);
+    }
   };
 
   const handleExtend = async () => {
@@ -192,10 +256,9 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
 
   const handleReindexRounds = async () => {
     if (!supabase || !groupId) return;
-    if (sessions.length <= 1) return;
-    const current = [...sessions].sort(
-      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-    );
+    const active = getActiveSessionsSorted(sessions);
+    if (active.length <= 1) return;
+    const current = active;
     const preview = current
       .slice(0, 6)
       .map((r, i) => `${i + 1}. ${new Date(r.start_at).toLocaleString('ko-KR')}`)
@@ -213,9 +276,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
 
     setReindexing(true);
     try {
-      const sorted = [...sessions].sort(
-        (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-      );
+      const sorted = active;
       const total = sorted.length;
 
       await Promise.all(
@@ -226,6 +287,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
               round_index: i + 1,
               round_total: total,
               sequence_number: i + 1,
+              round_display: `${i + 1}/${total}`,
             })
             .eq('id', row.id);
         })
@@ -242,42 +304,41 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
 
   const handleShrinkTail = async () => {
     if (!supabase || !groupId) return;
+    const active = getActiveSessionsSorted(sessions);
+    if (active.length === 0) return;
     const n = Math.max(1, Math.floor(shrinkCount || 0));
-    if (sessions.length === 0) return;
-
-    const sorted = [...sessions].sort(
-      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-    );
-    const toRemove = sorted.slice(-n);
+    const toRemove = active.slice(-n);
     if (toRemove.length === 0) return;
 
     const hasPast = toRemove.some((s) => Date.now() > new Date(s.end_at).getTime());
     const msg = hasPast
-      ? `⚠ 과거/완료된 회차가 포함됩니다.\n마지막 ${toRemove.length}개 회차를 'deleted'로 숨기고 회차 정보를 재계산할까요?`
-      : `마지막 ${toRemove.length}개 회차를 'deleted'로 숨기고 회차 정보를 재계산할까요?`;
+      ? `⚠ 과거/완료된 회차가 포함됩니다.\n마지막 ${toRemove.length}개 회차를 DB에서 영구 삭제하고 회차 정보를 재계산할까요?`
+      : `마지막 ${toRemove.length}개 회차를 DB에서 영구 삭제하고 회차 정보를 재계산할까요?`;
     if (!confirm(msg)) return;
 
     setShrinking(true);
     try {
       const idsToDelete = toRemove.map((s) => s.id);
-      const { error: delErr } = await supabase.from('sessions').update({ status: 'deleted' }).in('id', idsToDelete);
+      const { error: delErr } = await supabase.from('sessions').delete().in('id', idsToDelete);
       if (delErr) throw delErr;
 
-      const remaining = sorted.filter((s) => !idsToDelete.includes(s.id));
-      const total = remaining.length;
-      await Promise.all(
-        remaining.map((row, i) =>
-          supabase
-            .from('sessions')
-            .update({
-              round_index: i + 1,
-              round_total: total,
-              sequence_number: i + 1,
-              round_display: `${i + 1}/${total}`,
-            })
-            .eq('id', row.id)
-        )
-      );
+      const remaining = active.filter((s) => !idsToDelete.includes(s.id));
+      if (remaining.length > 0) {
+        const total = remaining.length;
+        await Promise.all(
+          remaining.map((row, i) =>
+            supabase
+              .from('sessions')
+              .update({
+                round_index: i + 1,
+                round_total: total,
+                sequence_number: i + 1,
+                round_display: `${i + 1}/${total}`,
+              })
+              .eq('id', row.id)
+          )
+        );
+      }
 
       toast.success('회차가 축소되었습니다.');
       onChanged?.();
@@ -287,6 +348,29 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
       toast.error('회차 축소에 실패했습니다.');
     } finally {
       setShrinking(false);
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!supabase || !groupId) return;
+    if (!sessionId) return;
+    if (deletingSessionId === sessionId) return;
+    if (!confirm("해당 회차를 DB에서 영구 삭제할까요?")) return;
+
+    setDeletingSessionId(sessionId);
+    try {
+      const { error: delErr } = await supabase.from('sessions').delete().eq('id', sessionId);
+      if (delErr) throw delErr;
+      // 재정렬 없이 그냥 삭제만 — 재정렬하면 cancelled 제외 후 active 수로 round_total이 줄어
+      // 7·8회차가 5·6회차로 변해버리는 문제가 생긴다.
+      toast.success('회차가 삭제되었습니다.');
+      onChanged?.();
+      loadSessions();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error('회차 삭제에 실패했습니다.');
+    } finally {
+      setDeletingSessionId(null);
     }
   };
 
@@ -334,17 +418,13 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     setRoundView((prev) => (prev === 'all' ? 'active' : prev));
   }, [visible, cycleEnded]);
 
-  const plannedTotal = useMemo(() => {
-    // ✅ 분모(총회차)는 "연기 제외"한 원래 회차만으로 유지
-    const baseAll = sessions.filter(
-      (s) => s.status !== 'postponed' && s.status !== 'deleted' && s.status !== 'cancelled'
-    );
-    const indices = baseAll
-      .map((s) => s.round_index)
-      .filter((v): v is number => typeof v === 'number');
-    if (indices.length) return Math.max(...indices);
-    return Math.max(1, baseAll.length || sessions.length);
-  }, [sessions]);
+  const plannedTotal = useMemo(() => resolvePlannedTotal(sessions), [sessions]);
+
+  const getActiveSessionsSorted = useCallback((rows: SessionRow[]) => {
+    return [...rows]
+      .filter((r) => r.status !== 'postponed' && r.status !== 'deleted' && r.status !== 'cancelled')
+      .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+  }, []);
 
   const statusCounts = useMemo(() => {
     const total = sessions.length;
@@ -355,11 +435,11 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
   }, [sessions]);
 
   const visibleSessions = useMemo(() => {
-    // ✅ 날짜는 전부 보여준다 (deleted/cancelled 제외). 연기는 상태만 연기로.
-    const baseAll = sessions.filter((s) => s.status !== 'deleted' && s.status !== 'cancelled');
-    if (roundView === 'all') return baseAll;
-    if (roundView === 'completed') return baseAll.filter((s) => timeStatusOf(s).isCompletedByTime);
-    return baseAll.filter((s) => timeStatusOf(s).isActiveByTime);
+    // ✅ 삭제만 제외. 전체 보기에서는 취소 회차도 표시.
+    const baseNoDeleted = sessions.filter((s) => s.status !== 'deleted');
+    if (roundView === 'all') return baseNoDeleted;
+    if (roundView === 'completed') return baseNoDeleted.filter((s) => timeStatusOf(s).isCompletedByTime);
+    return baseNoDeleted.filter((s) => timeStatusOf(s).isActiveByTime);
   }, [sessions, roundView, timeStatusOf]);
 
   const handleSaveTitle = async () => {
@@ -384,22 +464,51 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     }
   };
 
-  const handleApplyTeacherToGroup = async () => {
+  const handleBulkApplyGroup = async () => {
     if (!supabase || !groupId) return;
     const nextTeacherId = String(bulkTeacherId || '').trim();
-    if (!nextTeacherId) return toast.error('선생님을 선택해주세요.');
-    if (!confirm('그룹의 모든 회차 선생님을 변경할까요?')) return;
+    const timeStr = String(bulkStartTime || '').trim();
+    if (!nextTeacherId && !timeStr) {
+      return toast.error('선생님 또는 시작 시간 중 하나 이상 입력해주세요.');
+    }
+
+    const targets = sessions.filter(isSessionBulkTarget);
+    if (targets.length === 0) {
+      return toast.error(
+        '변경할 수 있는 회차가 없습니다. (종료된 회차만 있거나 취소·삭제만 있습니다.)'
+      );
+    }
+
+    const parts: string[] = [];
+    if (nextTeacherId) parts.push('메인 강사');
+    if (timeStr) parts.push('시작 시간');
+    if (
+      !confirm(
+        `종료되지 않은 회차 ${targets.length}건만 ${parts.join('·')}을(를) 변경할까요?`
+      )
+    ) {
+      return;
+    }
 
     setBulkTeacherApplying(true);
     try {
-      const { error } = await supabase.from('sessions').update({ created_by: nextTeacherId }).eq('group_id', groupId);
-      if (error) throw error;
-      toast.success('선생님이 변경되었습니다.');
+      for (const s of targets) {
+        const patch: Record<string, string> = {};
+        if (nextTeacherId) patch.created_by = nextTeacherId;
+        if (timeStr) {
+          const { start_at, end_at } = applyLocalTimeKeepDuration(s.start_at, s.end_at, timeStr);
+          patch.start_at = start_at;
+          patch.end_at = end_at;
+        }
+        const { error } = await supabase.from('sessions').update(patch).eq('id', s.id);
+        if (error) throw error;
+      }
+      toast.success(`일괄 적용 완료: ${targets.length}건`);
       onChanged?.();
       loadSessions();
     } catch (err) {
       devLogger.error(err);
-      toast.error('선생님 변경에 실패했습니다.');
+      toast.error('일괄 적용에 실패했습니다.');
     } finally {
       setBulkTeacherApplying(false);
     }
@@ -602,13 +711,14 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
               <div>
                 <h3 className="text-sm font-black text-slate-800">그룹 설정</h3>
                 <p className="text-xs text-slate-500 font-bold mt-1">
-                  수업명/선생님 변경은 그룹 전체에 적용됩니다.
+                  수업명은 위에서 전체 변경. 아래 일괄 적용은{' '}
+                  <span className="text-slate-700">종료되지 않은 회차</span>에만 메인 강사·시작 시간을 반영합니다.
                 </p>
                 <p className="text-[11px] text-slate-500 font-bold mt-2">
                   전체 {statusCounts.total} · 연기 {statusCounts.postponed} · 취소 {statusCounts.cancelled} · 삭제 {statusCounts.deleted}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
                 <select
                   className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold"
                   value={bulkTeacherId}
@@ -621,13 +731,22 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                     </option>
                   ))}
                 </select>
+                <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                  시작
+                  <input
+                    type="time"
+                    className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold"
+                    value={bulkStartTime}
+                    onChange={(e) => setBulkStartTime(e.target.value)}
+                  />
+                </label>
                 <button
                   type="button"
-                  onClick={handleApplyTeacherToGroup}
+                  onClick={() => void handleBulkApplyGroup()}
                   disabled={bulkTeacherApplying}
                   className="px-3 py-2 rounded-full text-xs font-black bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
                 >
-                  {bulkTeacherApplying ? '적용 중...' : '선생님 변경'}
+                  {bulkTeacherApplying ? '적용 중...' : '일괄 적용'}
                 </button>
                 <button
                   type="button"
@@ -693,7 +812,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                       const start = new Date(s.start_at);
                       const end = new Date(s.end_at);
                       const nowMs = Date.now();
-                      const dateStr = start.toISOString().split('T')[0];
+                      const dateStr = toDateInputValueLocal(start);
                       const timeStr = start.toTimeString().slice(0, 5);
                       // ✅ V2 운영 규칙: 연기/취소/삭제가 아니라면 end_at 경과 = 무조건 완료(정산 누락 0 전략)
                       const isPostponed = s.status === 'postponed';
@@ -768,10 +887,11 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                           </td>
                           <td className="px-2 py-2 text-right">
                             <input
+                              key={`price-${s.id}-${s.price ?? 0}`}
                               type="number"
                               className="w-[88px] bg-transparent border rounded-lg px-2 py-1 text-right"
-                              value={s.price ?? 0}
-                              onChange={(e) =>
+                              defaultValue={s.price ?? 0}
+                              onBlur={(e) =>
                                 handleInlineUpdate(sessions.findIndex((x) => x.id === s.id), { price: Number(e.target.value) || 0 })
                               }
                             />
@@ -788,22 +908,43 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                                     : statusLabel === '완료'
                                       ? 'bg-emerald-50 text-emerald-700'
                                   : statusLabel === '진행중'
-                                    ? 'bg-blue-50 text-blue-700'
-                                    : 'bg-slate-100 text-slate-700'
+                                    ? 'bg-blue-50 text-blue-800 border border-blue-200/70'
+                                    : 'bg-amber-50 text-amber-900 border border-amber-200/70'
                               }`}
                             >
                               {statusLabel}
                             </span>
                           </td>
                           <td className="px-2 py-2 text-center">
-                            <div className="inline-flex items-center justify-center whitespace-nowrap min-w-[52px]">
-                              <button
-                                type="button"
-                                className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-violet-50 text-violet-600 hover:bg-violet-100"
-                                onClick={() => handlePostpone(s.id)}
-                              >
-                                연기
-                              </button>
+                            <div className="inline-flex flex-col items-stretch gap-1 min-w-[52px] mx-auto">
+                              {s.status === 'postponed' ? (
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                                  disabled={undoingPostponeSessionId === s.id}
+                                  onClick={() => void handleUndoPostpone(s.id)}
+                                >
+                                  {undoingPostponeSessionId === s.id ? '복구 중...' : '연기 취소'}
+                                </button>
+                              ) : s.status === 'cancelled' || s.status === 'deleted' ? null : (
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-violet-50 text-violet-600 hover:bg-violet-100"
+                                  onClick={() => handlePostpone(s.id)}
+                                >
+                                  연기
+                                </button>
+                              )}
+                              {s.status !== 'cancelled' && s.status !== 'deleted' && (
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50"
+                                  disabled={deletingSessionId === s.id || statusLabel === '완료'}
+                                  onClick={() => void handleDeleteSession(s.id)}
+                                >
+                                  {deletingSessionId === s.id ? '삭제 중...' : '삭제'}
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>

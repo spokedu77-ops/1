@@ -13,7 +13,6 @@ interface ResultProps {
   tab: ResultTab;
   onTab: (t: ResultTab) => void;
   onReset: () => void;
-  onShare: () => void | Promise<void>;
   onLeadSubmit: (phone: string) => Promise<boolean>;
   savedPhone: string;
   flash: (msg: string) => void;
@@ -55,7 +54,6 @@ export default function Result({
   tab,
   onTab,
   onReset,
-  onShare,
   onLeadSubmit,
   savedPhone,
   flash,
@@ -567,7 +565,13 @@ export default function Result({
               </div>
 
               {hasSavedPhone ? (
-                <ShareAndCollect p={p} onShare={() => void onShare()} flash={flash} onLeadSubmit={onLeadSubmit} savedPhone={savedPhone} />
+                <ShareAndCollect
+                  p={p}
+                  displayName={displayName}
+                  flash={flash}
+                  onLeadSubmit={onLeadSubmit}
+                  savedPhone={savedPhone}
+                />
               ) : (
                 <div
                   className="card mr-card-html"

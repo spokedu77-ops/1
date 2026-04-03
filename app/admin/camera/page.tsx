@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 
 const SpokeduCameraApp = dynamic(
   () => import('./SpokeduCameraApp').then((m) => m.default),
-  { ssr: false, loading: () => <div className="flex min-h-screen items-center justify-center bg-sky-50 text-slate-600">로딩 중...</div> }
+  { ssr: false, loading: () => <div className="flex min-h-[100dvh] items-center justify-center bg-sky-50 text-slate-600">로딩 중...</div> }
 );
 
 interface CameraErrorBoundaryState {
@@ -45,7 +45,7 @@ class CameraErrorBoundary extends Component<
 
 export default function CameraAppPage() {
   return (
-    <div className="min-h-screen h-screen w-full overflow-hidden">
+    <div className="fixed inset-0 h-[100dvh] min-h-[100dvh] w-full overflow-hidden overscroll-none">
       <CameraErrorBoundary>
         <SpokeduCameraApp />
       </CameraErrorBoundary>

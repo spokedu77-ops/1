@@ -267,16 +267,39 @@ export default function SpokeduCameraApp() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video) return;
+    if (!canvas) return;
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    /** iPad/Safari: 100vh·innerHeight 불일치로 캔버스 비트맵과 표시 크기가 어긋나 하단이 잘리거나 ‘겹쳐 보이는’ 현상 방지 */
+    const syncCanvasBitmap = () => {
+      const rect = canvas.getBoundingClientRect();
+      let w = Math.max(1, Math.round(rect.width));
+      let h = Math.max(1, Math.round(rect.height));
+      if (w <= 1 || h <= 1) {
+        const vv = window.visualViewport;
+        w = Math.max(1, Math.round(vv?.width ?? window.innerWidth));
+        h = Math.max(1, Math.round(vv?.height ?? window.innerHeight));
+      }
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
     };
-    resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+
+    syncCanvasBitmap();
+    const ro = new ResizeObserver(() => syncCanvasBitmap());
+    ro.observe(canvas);
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', syncCanvasBitmap);
+    vv?.addEventListener('scroll', syncCanvasBitmap);
+    window.addEventListener('orientationchange', syncCanvasBitmap);
+    requestAnimationFrame(() => syncCanvasBitmap());
+
+    return () => {
+      ro.disconnect();
+      vv?.removeEventListener('resize', syncCanvasBitmap);
+      vv?.removeEventListener('scroll', syncCanvasBitmap);
+      window.removeEventListener('orientationchange', syncCanvasBitmap);
+    };
   }, []);
 
   // 카메라 초기화 (로비 진입 시)

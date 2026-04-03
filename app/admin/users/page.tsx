@@ -11,6 +11,13 @@ import {
 } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { CountingTab } from './CountingTab';
+import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
+import {
+  computeTier,
+  effectiveFees,
+  getTierDefaultFees,
+  totalLessonsFromCounts,
+} from '@/app/lib/teacherTierSchedule';
 
 interface DocumentFile {
   name: string;
@@ -31,6 +38,13 @@ interface UserData {
   ending_soon?: boolean;
   points?: number;
   session_count?: number;
+  /** 카운팅 탭과 동일: session_count_logs 건수 (클라이언트에서 병합) */
+  logCount?: number;
+  fee_private?: number | null;
+  fee_group?: number | null;
+  fee_center_main?: number | null;
+  fee_center_assist?: number | null;
+  fee_auto_from_tier?: boolean | null;
 }
 
 export default function UserDashboardPage() {
@@ -74,11 +88,29 @@ export default function UserDashboardPage() {
         devLogger.error('[users] fetchUsers error:', error);
         throw error;
       }
-      const fetchedUsers = (data as UserData[]).map(u => ({
+      const base = (data as UserData[]).map((u) => ({
         ...u,
         is_active: u.is_active ?? true,
         ending_soon: u.ending_soon ?? false,
-        documents: u.documents || []
+        documents: u.documents || [],
+      }));
+      const teacherIds = base.map((u) => u.id);
+      const logCountByTeacher: Record<string, number> = {};
+      if (teacherIds.length > 0) {
+        const { data: logRows } = await supabase
+          .from('session_count_logs')
+          .select('teacher_id')
+          .in('teacher_id', teacherIds);
+        if (logRows) {
+          for (const row of logRows) {
+            const tid = row.teacher_id as string;
+            if (tid) logCountByTeacher[tid] = (logCountByTeacher[tid] || 0) + 1;
+          }
+        }
+      }
+      const fetchedUsers = base.map((u) => ({
+        ...u,
+        logCount: logCountByTeacher[u.id] ?? 0,
       }));
       setUsers(fetchedUsers);
       const { data: { session } } = await supabase.auth.getSession();
@@ -108,7 +140,12 @@ export default function UserDashboardPage() {
           organization: editForm.organization,
           departure_location: editForm.departure_location,
           schedule: editForm.schedule,
-          ending_soon: editForm.ending_soon
+          ending_soon: editForm.ending_soon,
+          fee_private: editForm.fee_private ?? null,
+          fee_group: editForm.fee_group ?? null,
+          fee_center_main: editForm.fee_center_main ?? null,
+          fee_center_assist: editForm.fee_center_assist ?? null,
+          fee_auto_from_tier: editForm.fee_auto_from_tier ?? true,
         })
         .eq('id', userId);
       
@@ -272,6 +309,66 @@ export default function UserDashboardPage() {
     }
   };
 
+  const handleApplyTierFees = async (user: UserData) => {
+    if (!supabase || currentUser?.role !== 'admin') return toast.error('관리자 권한이 없습니다.');
+    const total = totalLessonsFromCounts(user.session_count, user.logCount);
+    const tier = computeTier(total);
+    const f = getTierDefaultFees(tier);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          fee_private: f.fee_private,
+          fee_group: f.fee_group,
+          fee_center_main: f.fee_center_main,
+          fee_center_assist: f.fee_center_assist,
+          fee_auto_from_tier: true,
+        })
+        .eq('id', user.id);
+      if (error) throw error;
+      toast.success('현재 누적 회차 기준 등급표 수업료가 저장되었습니다.');
+      fetchUsers();
+      if (editingId === user.id) {
+        setEditForm((prev) => ({ ...prev, ...f, fee_auto_from_tier: true }));
+      }
+    } catch (err: unknown) {
+      devLogger.error('[users] apply tier fees', err);
+      toast.error('적용 실패: DB에 수업료 컬럼이 있는지(sql/62_users_teacher_tier_fees.sql) 확인하세요.');
+    }
+  };
+
+  const handleResetFeesToTierSchedule = async (user: UserData) => {
+    if (!supabase || currentUser?.role !== 'admin') return toast.error('관리자 권한이 없습니다.');
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          fee_private: null,
+          fee_group: null,
+          fee_center_main: null,
+          fee_center_assist: null,
+          fee_auto_from_tier: true,
+        })
+        .eq('id', user.id);
+      if (error) throw error;
+      toast.success('저장값을 비웠습니다. 화면에는 현재 등급 표가 반영됩니다.');
+      fetchUsers();
+      if (editingId === user.id) {
+        setEditForm((prev) => ({
+          ...prev,
+          fee_private: null,
+          fee_group: null,
+          fee_center_main: null,
+          fee_center_assist: null,
+          fee_auto_from_tier: true,
+        }));
+      }
+    } catch (err: unknown) {
+      devLogger.error('[users] reset tier fees', err);
+      toast.error('초기화 실패: DB 마이그레이션을 확인하세요.');
+    }
+  };
+
   const filteredUsers = users.filter(u => {
     const matchesSearch = (u.name || '').includes(searchTerm) || (u.organization || '').includes(searchTerm);
     const matchesTab =
@@ -386,11 +483,131 @@ export default function UserDashboardPage() {
                     <span className="text-xs font-bold text-slate-600">종료 예정으로 표시</span>
                   </label>
                 )}
+                {currentUser?.role === 'admin' && (
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3 space-y-2">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">기본 수업료 (원)</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="text-[10px] font-bold text-slate-500">
+                        개인
+                        <input
+                          type="number"
+                          className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
+                          value={editForm.fee_private ?? ''}
+                          onChange={(e) => {
+                            const v = e.target.value === '' ? null : Number(e.target.value);
+                            setEditForm((prev) => ({ ...prev, fee_private: v, fee_auto_from_tier: false }));
+                          }}
+                        />
+                      </label>
+                      <label className="text-[10px] font-bold text-slate-500">
+                        그룹
+                        <input
+                          type="number"
+                          className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
+                          value={editForm.fee_group ?? ''}
+                          onChange={(e) => {
+                            const v = e.target.value === '' ? null : Number(e.target.value);
+                            setEditForm((prev) => ({ ...prev, fee_group: v, fee_auto_from_tier: false }));
+                          }}
+                        />
+                      </label>
+                      <label className="text-[10px] font-bold text-slate-500">
+                        센터 메인
+                        <input
+                          type="number"
+                          className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
+                          value={editForm.fee_center_main ?? ''}
+                          onChange={(e) => {
+                            const v = e.target.value === '' ? null : Number(e.target.value);
+                            setEditForm((prev) => ({ ...prev, fee_center_main: v, fee_auto_from_tier: false }));
+                          }}
+                        />
+                      </label>
+                      <label className="text-[10px] font-bold text-slate-500">
+                        센터 보조
+                        <input
+                          type="number"
+                          className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
+                          value={editForm.fee_center_assist ?? ''}
+                          onChange={(e) => {
+                            const v = e.target.value === '' ? null : Number(e.target.value);
+                            setEditForm((prev) => ({ ...prev, fee_center_assist: v, fee_auto_from_tier: false }));
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleApplyTierFees(user)}
+                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[10px] font-black hover:bg-indigo-700 cursor-pointer"
+                      >
+                        등급표 적용
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleResetFeesToTierSchedule(user)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-[10px] font-black hover:bg-slate-100 cursor-pointer"
+                      >
+                        저장값 비우기 (등급표만 표시)
+                      </button>
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-bold leading-relaxed">
+                      빈 칸은 현재 누적 회차에 맞는 등급 표를 화면에 반영합니다. 숫자를 직접 바꾸면 자동 등급표 연동은 해제됩니다.
+                    </p>
+                  </div>
+                )}
                 <button onClick={() => handleSaveInfo(user.id)} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black cursor-pointer">저장</button>
               </div>
             ) : (
               <div className="flex-1">
-                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">{user.name} <span className="text-lg text-slate-400 font-bold">선생님</span></h3>
+                <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">{user.name} <span className="text-lg text-slate-400 font-bold">선생님</span></h3>
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <TeacherTierBadge sessionCount={user.session_count} logCount={user.logCount} />
+                  <span className="text-[10px] font-bold text-slate-400">
+                    누적 {totalLessonsFromCounts(user.session_count, user.logCount).toLocaleString()}회
+                  </span>
+                </div>
+                {currentUser?.role === 'admin' && (() => {
+                  const tier = computeTier(totalLessonsFromCounts(user.session_count, user.logCount));
+                  const eff = effectiveFees(tier, {
+                    fee_private: user.fee_private ?? null,
+                    fee_group: user.fee_group ?? null,
+                    fee_center_main: user.fee_center_main ?? null,
+                    fee_center_assist: user.fee_center_assist ?? null,
+                  });
+                  return (
+                    <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">적용 기본 수업료 (원)</p>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-bold text-slate-700">
+                        <span className="text-slate-400">개인</span>
+                        <span>{eff.fee_private.toLocaleString()}</span>
+                        <span className="text-slate-400">그룹</span>
+                        <span>{eff.fee_group.toLocaleString()}</span>
+                        <span className="text-slate-400">센터 메인</span>
+                        <span>{eff.fee_center_main.toLocaleString()}</span>
+                        <span className="text-slate-400">센터 보조</span>
+                        <span>{eff.fee_center_assist.toLocaleString()}</span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleApplyTierFees(user)}
+                          className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[9px] font-black hover:bg-indigo-700 cursor-pointer"
+                        >
+                          등급표 적용
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleResetFeesToTierSchedule(user)}
+                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-[9px] font-black hover:bg-slate-100 cursor-pointer"
+                        >
+                          저장값 비우기
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
                 
                 <div className="space-y-4 mb-6">
                   {/* 학력 */}

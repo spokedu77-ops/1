@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { REPORT_OBSERVATIONS } from '../data/config';
 import {
   Radar,
@@ -19,6 +19,12 @@ export default function Report() {
   type ObservationTag = (typeof REPORT_OBSERVATIONS)[number];
   const [selectedTags, setSelectedTags] = useState<ObservationTag[]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [chartsReady, setChartsReady] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setChartsReady(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const radarData = useMemo(() => {
     // 선택 태그 개수에 따라 샘플 레이더 값이 변하는 “시연”용 로직입니다.
@@ -157,6 +163,8 @@ export default function Report() {
                     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gym-muted2)' }}>
                       분석 중…
                     </div>
+                  ) : !chartsReady ? (
+                    <div style={{ height: '100%', borderRadius: 12, border: '1px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.02)' }} />
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>

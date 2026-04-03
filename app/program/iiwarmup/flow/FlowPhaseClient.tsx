@@ -59,7 +59,7 @@ function FlowPhaseContent() {
   const stampOverlayRef = useRef<HTMLDivElement>(null);
   const badgeToastRef = useRef<HTMLDivElement>(null);
 
-  const domRefs: FlowDomRefs = {
+  const domRefsRef = useRef<FlowDomRefs>({
     progressBar: progressBarRef,
     levelNum: levelNumRef,
     levelTag: levelTagRef,
@@ -75,10 +75,7 @@ function FlowPhaseContent() {
     duckWarningLine: duckWarningLineRef,
     stampOverlay: stampOverlayRef,
     badgeToast: badgeToastRef,
-  };
-
-  const domRefsRef = useRef<FlowDomRefs>(domRefs);
-  domRefsRef.current = domRefs;
+  });
 
   const handleStart = useCallback(async () => {
     await engineRef.current?.startGame(bgmPath || undefined, panoPath || undefined, { timingOverrides });
@@ -108,7 +105,7 @@ function FlowPhaseContent() {
       engineRef.current = null;
       setEngineReady(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only init; domRefs intentionally excluded to avoid re-init on refs change
+     
   }, []);
 
   useEffect(() => {

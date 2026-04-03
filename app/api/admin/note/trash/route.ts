@@ -7,6 +7,7 @@ type NoteDocument = {
   title: string;
   is_archived: boolean;
   is_favorite: boolean;
+  is_pinned: boolean;
   parent_id: string | null;
   slug: string | null;
   created_at: string;
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     const supabase = getServiceSupabase();
     const { data, error } = await supabase
       .from('note_documents')
-      .select('id, title, is_archived, is_favorite, parent_id, slug, created_at, updated_at, deleted_at, deleted_by')
+      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at, deleted_at, deleted_by')
       .not('deleted_at', 'is', null)
       .order('deleted_at', { ascending: false })
       .range(offset, offset + limit - 1);

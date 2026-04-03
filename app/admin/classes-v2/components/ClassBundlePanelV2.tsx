@@ -1,12 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Minus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase/browser";
 import { devLogger } from "@/app/lib/logging/devLogger";
-import { postponeCascade } from "@/app/admin/classes/lib/postponeUtils";
-import { extendClass } from "@/app/admin/classes/lib/roundExtendUtils";
+import { postponeCascade } from "@/app/admin/classes-shared/lib/postponeUtils";
+import { undoPostponeCascade } from "@/app/admin/classes-shared/lib/postponeUtils";
+import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
+import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
+import { resolvePlannedTotal } from "@/app/admin/classes-v2/lib/plannedRoundTotal";
+import SessionMileageModal from "./SessionMileageModal";
+import type { TeacherInput } from "@/app/admin/classes-shared/types";
 
 type RoundView = "active" | "all" | "completed";
 
@@ -37,6 +42,15 @@ function addDays(date: Date, days: number) {
   return d;
 }
 
+function toDateInputValueLocal(d: Date) {
+  // type="date"는 "로컬 YYYY-MM-DD" 의미로 동작해야 합니다.
+  // toISOString()은 UTC 기준이라 한국 로컬 날짜가 하루 밀리는 문제가 생깁니다.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 type SessionRow = {
   id: string;
   group_id: string;
@@ -49,7 +63,92 @@ type SessionRow = {
   round_index: number | null;
   round_total: number | null;
   sequence_number?: number | null;
+  session_type: string | null;
+  memo?: string | null;
+  mileage_option?: string | null;
 };
+
+/** v1 수업 모달(SessionEditModal)과 동일: memo의 EXTRA_TEACHERS, 보조 최대 2명 */
+function extraTeachersFromMemo(memo: string | null | undefined): TeacherInput[] {
+  const { extraTeachers } = parseExtraTeachers(memo || "");
+  return extraTeachers.slice(0, 2);
+}
+
+function persistMemoExtras(rowMemo: string | null | undefined, extras: TeacherInput[]): string {
+  const { cleanMemo } = parseExtraTeachers(rowMemo || "");
+  const list = extras.slice(0, 2).map((e) => ({
+    id: e.id || "",
+    price: Number(e.price) || 0,
+  }));
+  if (list.length === 0) return cleanMemo;
+  return buildMemoWithExtras(cleanMemo, list);
+}
+
+function statusBadgeClass(label: string): string {
+  switch (label) {
+    case "완료":
+      return "bg-slate-700 text-white ring-1 ring-slate-600/30";
+    case "예정":
+      return "bg-amber-50 text-amber-900 border border-amber-200/80";
+    case "진행중":
+      return "bg-blue-50 text-blue-800 border border-blue-200/80";
+    case "연기":
+      return "bg-violet-100 text-violet-900 border border-violet-200";
+    case "취소":
+      return "bg-rose-50 text-rose-800 border border-rose-200/80";
+    case "삭제":
+      return "bg-slate-100 text-slate-700 border border-slate-200/80";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+}
+
+/** 번들 병합 시 메인 사이클의 대표 session_type (빈도 우선, 동률이면 one_day가 아닌 타입 우선) */
+function resolveMainSessionTypeFromRows(rows: SessionRow[]): string | null {
+  const active = rows.filter(
+    (r) => r.status !== "postponed" && r.status !== "cancelled" && r.status !== "deleted"
+  );
+  const types = active
+    .map((r) => r.session_type)
+    .filter((t): t is string => typeof t === "string" && t.length > 0);
+  if (types.length === 0) return null;
+  const counts = new Map<string, number>();
+  for (const t of types) counts.set(t, (counts.get(t) || 0) + 1);
+  const unique = [...new Set(types)];
+  unique.sort((a, b) => {
+    const ca = counts.get(a) || 0;
+    const cb = counts.get(b) || 0;
+    if (cb !== ca) return cb - ca;
+    const aOne = a.includes("one_day") ? 1 : 0;
+    const bOne = b.includes("one_day") ? 1 : 0;
+    return aOne - bOne;
+  });
+  return unique[0] ?? null;
+}
+
+/** DB에 남은 one_day_*를 regular_*로 바꿔 캘린더·다른 화면에서 개인=초록으로 일관되게 보이게 함 */
+function normalizeMergedSessionType(t: string): string {
+  if (t.includes("one_day_private")) return "regular_private";
+  if (t.includes("one_day_center")) return "regular_center";
+  if (t === "one_day") return "regular_private";
+  return t;
+}
+
+/**
+ * 회차 합치기 시 타입 결정: 메인 그룹만 보면 원데이만 남아 regular_private가 누락될 수 있어
+ * 번들(합칠 모든 그룹) 활성 세션을 기준으로 한다. regular_*가 하나라도 있으면 그쪽으로 통일.
+ */
+function resolveMergedBundleSessionType(rows: SessionRow[]): string | null {
+  const active = rows.filter(
+    (r) => r.status !== "postponed" && r.status !== "cancelled" && r.status !== "deleted"
+  );
+  const types = active
+    .map((r) => r.session_type)
+    .filter((t): t is string => typeof t === "string" && t.length > 0);
+  if (types.includes("regular_private")) return "regular_private";
+  if (types.includes("regular_center")) return "regular_center";
+  return resolveMainSessionTypeFromRows(rows);
+}
 
 function formatDateRange(rows: SessionRow[]) {
   if (rows.length === 0) return "-";
@@ -90,6 +189,59 @@ function getTimeStatusLabel(row: { start_at: string; end_at: string; status: str
   return { label, isCompletedByTime, isActiveByTime };
 }
 
+/** 일괄 적용 대상: 취소/삭제 제외, 시간상 완료 제외 */
+function isSessionBulkTarget(row: { start_at: string; end_at: string; status: string | null }) {
+  if (row.status === "cancelled" || row.status === "deleted") return false;
+  return !getTimeStatusLabel(row).isCompletedByTime;
+}
+
+/** 로컬 날짜 유지, 시·분만 변경. 수업 길이(ms) 유지 */
+function applyLocalTimeKeepDuration(startAtIso: string, endAtIso: string, timeHHmm: string) {
+  const [hh, mm] = timeHHmm.split(":").map(Number);
+  const start = new Date(startAtIso);
+  const end = new Date(endAtIso);
+  const durationMs = end.getTime() - start.getTime();
+  const newStart = new Date(start);
+  if (Number.isFinite(hh) && Number.isFinite(mm)) {
+    newStart.setHours(hh, mm, 0, 0);
+  }
+  const newEnd = new Date(
+    newStart.getTime() + (Number.isFinite(durationMs) && durationMs > 0 ? durationMs : 3600000)
+  );
+  return { start_at: newStart.toISOString(), end_at: newEnd.toISOString() };
+}
+
+/** 사이클(그룹)의 캘린더 구간: 첫 회차가 있는 날 00:00 ~ 마지막 회차 종료일 23:59:59 (로컬) */
+function getCycleCalendarBounds(list: SessionRow[]): { startDayMs: number; endDayMs: number } | null {
+  const use = list.filter((s) => s.status !== "deleted");
+  if (use.length === 0) return null;
+  const sorted = [...use].sort(
+    (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+  );
+  const first = new Date(sorted[0]!.start_at);
+  const last = new Date(sorted[sorted.length - 1]!.end_at);
+  const startDayMs = new Date(first.getFullYear(), first.getMonth(), first.getDate()).getTime();
+  const endDayMs = new Date(
+    last.getFullYear(),
+    last.getMonth(),
+    last.getDate(),
+    23,
+    59,
+    59,
+    999
+  ).getTime();
+  return { startDayMs, endDayMs };
+}
+
+/** 마지막 회차일이 오늘 0시 이전이면 지난 사이클(아카이브)로 묶음 */
+function isPastCycleGroup(list: SessionRow[]): boolean {
+  const bounds = getCycleCalendarBounds(list);
+  if (!bounds) return false;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  return bounds.endDayMs < startOfToday.getTime();
+}
+
 export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onClose, onChanged }: Props) {
   const [supabase] = useState(() =>
     typeof window !== "undefined" ? getSupabaseBrowserClient() : null
@@ -103,10 +255,15 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   }, [teachers]);
 
   const [loading, setLoading] = useState(false);
-  const [roundView, setRoundView] = useState<RoundView>("all");
+  const [roundView, setRoundView] = useState<RoundView>("active");
   const [openGroupIds, setOpenGroupIds] = useState<Record<string, boolean>>({});
+  const [pastArchiveOpen, setPastArchiveOpen] = useState(false);
   const [sessionsByGroupId, setSessionsByGroupId] = useState<Record<string, SessionRow[]>>({});
   const [localGroupIds, setLocalGroupIds] = useState<string[]>([]);
+  const [mergingByBundle, setMergingByBundle] = useState(false);
+  const [undoingPostponeSessionId, setUndoingPostponeSessionId] = useState<string | null>(null);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+  const [mileageModal, setMileageModal] = useState<{ gid: string; row: SessionRow } | null>(null);
 
   const [extendCountByGroup, setExtendCountByGroup] = useState<Record<string, number>>({});
   const [shrinkCountByGroup, setShrinkCountByGroup] = useState<Record<string, number>>({});
@@ -125,8 +282,17 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const [titleDraft, setTitleDraft] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
   const [bulkTeacherIdByGroup, setBulkTeacherIdByGroup] = useState<Record<string, string>>({});
+  const [bulkStartTimeByGroup, setBulkStartTimeByGroup] = useState<Record<string, string>>({});
   const [bulkTeacherApplyingGid, setBulkTeacherApplyingGid] = useState<string | null>(null);
-  const [restoringDeletedByGroup, setRestoringDeletedByGroup] = useState<Record<string, boolean>>({});
+
+  const [bundleTab, setBundleTab] = useState<"rounds" | "info">("rounds");
+  const [infoAddress, setInfoAddress] = useState("");
+  const [infoPhone, setInfoPhone] = useState("");
+  const [infoChild, setInfoChild] = useState("");
+  const [infoTuitionPaid, setInfoTuitionPaid] = useState(false);
+  const [infoNotes, setInfoNotes] = useState("");
+  const [infoLoading, setInfoLoading] = useState(false);
+  const [infoSaving, setInfoSaving] = useState(false);
 
   /** prop groupIds와 재시작으로 붙은 localGroupIds 합집합 — 첫 오픈 시 loadAll 레이스 방지 */
   const effectiveGroupIds = useMemo(() => {
@@ -139,6 +305,93 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     }
     return Array.from(s);
   }, [groupIds, localGroupIds]);
+
+  const bundleKey = useMemo(
+    () => [...effectiveGroupIds].map((id) => String(id)).sort().join(","),
+    [effectiveGroupIds]
+  );
+
+  useEffect(() => {
+    if (!visible) {
+      setBundleTab("rounds");
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible || bundleTab !== "info" || !bundleKey) return;
+    let cancelled = false;
+    (async () => {
+      setInfoLoading(true);
+      try {
+        const res = await fetch(
+          `/api/admin/class-bundle-info?bundleKey=${encodeURIComponent(bundleKey)}`,
+          { credentials: "include" }
+        );
+        const data = (await res.json()) as {
+          error?: string;
+          info?: {
+            address: string | null;
+            phone: string | null;
+            childInfo: string | null;
+            tuitionPaid: boolean;
+            notes: string | null;
+          } | null;
+        };
+        if (cancelled) return;
+        if (!res.ok) throw new Error(data.error || "불러오기 실패");
+        const inf = data.info;
+        if (inf) {
+          setInfoAddress(inf.address ?? "");
+          setInfoPhone(inf.phone ?? "");
+          setInfoChild(inf.childInfo ?? "");
+          setInfoTuitionPaid(!!inf.tuitionPaid);
+          setInfoNotes(inf.notes ?? "");
+        } else {
+          setInfoAddress("");
+          setInfoPhone("");
+          setInfoChild("");
+          setInfoTuitionPaid(false);
+          setInfoNotes("");
+        }
+      } catch (err) {
+        devLogger.error(err);
+        toast.error("수업 정보를 불러오지 못했습니다. (class_bundle_info 테이블·API 확인)");
+      } finally {
+        if (!cancelled) setInfoLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, bundleTab, bundleKey]);
+
+  const handleSaveBundleInfo = useCallback(async () => {
+    if (!bundleKey) return;
+    setInfoSaving(true);
+    try {
+      const res = await fetch("/api/admin/class-bundle-info", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          bundleKey,
+          address: infoAddress.trim() || null,
+          phone: infoPhone.trim() || null,
+          childInfo: infoChild.trim() || null,
+          tuitionPaid: infoTuitionPaid,
+          notes: infoNotes.trim() || null,
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error || "저장 실패");
+      toast.success("수업 정보가 저장되었습니다.");
+    } catch (err) {
+      devLogger.error(err);
+      toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
+    } finally {
+      setInfoSaving(false);
+    }
+  }, [bundleKey, infoAddress, infoPhone, infoChild, infoTuitionPaid, infoNotes]);
 
   const loadTeachers = useCallback(async () => {
     if (!supabase) return;
@@ -167,7 +420,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       const { data, error } = await supabase
         .from("sessions")
         .select(
-          "id, group_id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number"
+          "id, group_id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number, session_type, memo, mileage_option"
         )
         .in("group_id", effectiveGroupIds)
         .order("start_at", { ascending: true });
@@ -196,20 +449,15 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         return next;
       });
 
-      // 기본 오픈: 가장 가까운 예정/진행 사이클 1개, 없으면 첫 번째
-      const candidates = effectiveGroupIds
-        .map((gid) => {
-          const list = map[gid] || [];
-          const minStart = list.length ? Math.min(...list.map((s) => new Date(s.start_at).getTime())) : Number.POSITIVE_INFINITY;
-          const hasActive = list.some((s) => getTimeStatusLabel(s).isActiveByTime);
-          return { gid, minStart, hasActive };
-        })
-        .sort((a, b) => {
-          if (a.hasActive !== b.hasActive) return a.hasActive ? -1 : 1;
-          return a.minStart - b.minStart;
-        });
-      const first = candidates[0]?.gid;
-      if (first) setOpenGroupIds((prev) => ({ ...prev, [first]: true }));
+      // 기본 오픈: 예정/진행 사이클만 펼침. 지난 사이클 블록·개별 사이클은 접힘
+      const nextOpen: Record<string, boolean> = {};
+      for (const gid of effectiveGroupIds) {
+        const list = map[gid] || [];
+        if (list.length === 0) continue;
+        nextOpen[gid] = !isPastCycleGroup(list);
+      }
+      setOpenGroupIds(nextOpen);
+      setPastArchiveOpen(false);
 
       // 기본값(확장/축소/재시작) 초기화
       setExtendCountByGroup((prev) => {
@@ -246,7 +494,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
           const list = map[gid] || [];
           const last = list[list.length - 1];
           const base = last?.start_at ? addDays(new Date(last.start_at), 7) : new Date();
-          next[gid] = base.toISOString().split("T")[0]!;
+          next[gid] = toDateInputValueLocal(base);
         }
         return next;
       });
@@ -298,15 +546,12 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     if (!visible) setEditingTitle(false);
   }, [visible]);
 
-  const plannedTotalOfGroup = useCallback((rows: SessionRow[]) => {
-    const baseAll = rows.filter(
-      (r) => r.status !== "postponed" && r.status !== "cancelled" && r.status !== "deleted"
-    );
-    const indices = baseAll
-      .map((r) => r.round_index)
-      .filter((v): v is number => typeof v === "number");
-    if (indices.length) return Math.max(...indices);
-    return Math.max(1, baseAll.length || rows.length || 1);
+  const plannedTotalOfGroup = useCallback((rows: SessionRow[]) => resolvePlannedTotal(rows), []);
+
+  const getActiveSessionsSorted = useCallback((rows: SessionRow[]) => {
+    return [...rows]
+      .filter((r) => r.status !== "postponed" && r.status !== "cancelled" && r.status !== "deleted")
+      .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
   }, []);
 
   const toggleGroup = (gid: string) => {
@@ -316,12 +561,20 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const applyInlineUpdate = async (
     gid: string,
     sessionId: string,
-    patch: { start_at?: string; end_at?: string; price?: number; created_by?: string }
+    patch: {
+      start_at?: string;
+      end_at?: string;
+      price?: number;
+      created_by?: string;
+      memo?: string | null;
+      mileage_option?: string | null;
+    }
   ) => {
     if (!supabase) return;
     try {
       const { error } = await supabase.from("sessions").update(patch).eq("id", sessionId);
       if (error) throw error;
+      toast.success("저장되었습니다.");
       setSessionsByGroupId((prev) => {
         const next = { ...prev };
         next[gid] = (next[gid] || []).map((r) => (r.id === sessionId ? { ...r, ...(patch as any) } : r));
@@ -330,8 +583,45 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       onChanged?.();
     } catch (err) {
       devLogger.error(err);
-      toast.error("수정에 실패했습니다.");
+      toast.error("저장에 실패했습니다.");
     }
+  };
+
+  const saveSessionExtras = async (gid: string, row: SessionRow, extras: TeacherInput[]) => {
+    const memo = persistMemoExtras(row.memo, extras);
+    await applyInlineUpdate(gid, row.id, { memo });
+  };
+
+  const addAssistRow = async (gid: string, row: SessionRow) => {
+    const extras = extraTeachersFromMemo(row.memo);
+    if (extras.length >= 2) return;
+    await saveSessionExtras(gid, row, [...extras, { id: "", price: 0 }]);
+  };
+
+  const removeAssistRow = async (gid: string, row: SessionRow, index: number) => {
+    const extras = extraTeachersFromMemo(row.memo).filter((_, i) => i !== index);
+    await saveSessionExtras(gid, row, extras);
+  };
+
+  const setAssistIdAt = async (gid: string, row: SessionRow, index: number, teacherId: string) => {
+    const extras = [...extraTeachersFromMemo(row.memo)];
+    while (extras.length <= index) extras.push({ id: "", price: 0 });
+    extras[index] = { ...extras[index]!, id: teacherId };
+    await saveSessionExtras(gid, row, extras);
+  };
+
+  const setAssistPriceAt = async (gid: string, row: SessionRow, index: number, price: number) => {
+    const extras = [...extraTeachersFromMemo(row.memo)];
+    while (extras.length <= index) extras.push({ id: "", price: 0 });
+    extras[index] = { ...extras[index]!, price };
+    await saveSessionExtras(gid, row, extras);
+  };
+
+  const applyMainTeacher = async (gid: string, row: SessionRow, newMainId: string) => {
+    let extras = extraTeachersFromMemo(row.memo);
+    extras = extras.filter((t) => !t.id || t.id !== newMainId);
+    const memo = persistMemoExtras(row.memo, extras);
+    await applyInlineUpdate(gid, row.id, { created_by: newMainId, memo });
   };
 
   const handlePostpone = async (gid: string, sessionId: string) => {
@@ -343,6 +633,29 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         onChanged?.();
       },
     });
+  };
+
+  // postponed 상태였던 회차를 원래 슬롯 기준으로 복구합니다.
+  const handleUndoPostpone = async (sessionId: string) => {
+    if (!supabase) return;
+    if (!sessionId) return;
+    if (undoingPostponeSessionId === sessionId) return;
+    if (!confirm("복구하시겠습니까?")) return;
+
+    setUndoingPostponeSessionId(sessionId);
+    try {
+      await undoPostponeCascade(supabase, sessionId, {
+        onAfter: () => {
+          void loadAll();
+          onChanged?.();
+        },
+      });
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("일정 복구에 실패했습니다.");
+    } finally {
+      setUndoingPostponeSessionId(null);
+    }
   };
 
   const handleExtend = async (gid: string, addCount: number) => {
@@ -359,10 +672,9 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const handleReindexRounds = async (gid: string) => {
     if (!supabase) return;
     const sessions = sessionsByGroupId[gid] || [];
-    if (sessions.length <= 1) return;
-    const current = [...sessions].sort(
-      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-    );
+    const active = getActiveSessionsSorted(sessions);
+    if (active.length <= 1) return;
+    const current = active;
     const preview = current
       .slice(0, 6)
       .map((r, i) => `${i + 1}. ${new Date(r.start_at).toLocaleString("ko-KR")}`)
@@ -380,9 +692,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
     setReindexingByGroup((prev) => ({ ...prev, [gid]: true }));
     try {
-      const sorted = [...sessions].sort(
-        (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-      );
+      const sorted = active;
       const total = sorted.length;
       await Promise.all(
         sorted.map((row, i) => {
@@ -408,46 +718,170 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     }
   };
 
+  const handleDeleteSession = async (gid: string, sessionId: string) => {
+    if (!supabase) return;
+    if (!sessionId) return;
+    if (deletingSessionId === sessionId) return;
+    if (!confirm("해당 회차를 DB에서 영구 삭제할까요?")) return;
+
+    setDeletingSessionId(sessionId);
+    try {
+      const { error: delErr } = await supabase.from("sessions").delete().eq("id", sessionId);
+      if (delErr) throw delErr;
+      // 재정렬 없이 삭제만 — 재정렬 시 cancelled 제외 active 수로 round_total이 줄어
+      // 7·8회차가 5·6회차로 바뀌어 사라져 보이는 문제 방지.
+      toast.success("회차가 삭제되었습니다.");
+      await loadAll();
+      onChanged?.();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("회차 삭제에 실패했습니다.");
+    } finally {
+      setDeletingSessionId(null);
+    }
+  };
+
+  // 1+7회차처럼 group_id가 2개로 분리된 경우, 메인(총회차가 가장 큰) group_id로 합쳐서 1개의 회차로 보이게 합니다.
+  const handleMergeCycleRounds = async () => {
+    if (!supabase) return;
+    if (mergingByBundle) return;
+
+    const gids = effectiveGroupIds.filter((gid) => (sessionsByGroupId[gid] || []).length > 0);
+    if (gids.length <= 1) return;
+
+    // 메인 = plannedTotalOfGroup이 가장 큰 사이클(동률이면 시작이 더 이른 사이클)
+    const score = (gid: string) => plannedTotalOfGroup(sessionsByGroupId[gid] || []);
+    const minStart = (gid: string) => {
+      const rows = sessionsByGroupId[gid] || [];
+      const times = rows.map((r) => new Date(r.start_at).getTime());
+      return times.length ? Math.min(...times) : Number.POSITIVE_INFINITY;
+    };
+
+    const maxTotal = Math.max(...gids.map((g) => score(g)));
+    const mainCandidates = gids.filter((g) => score(g) === maxTotal);
+    const mainGid =
+      mainCandidates.sort((a, b) => minStart(a) - minStart(b))[0] ?? gids[0] ?? "";
+    if (!mainGid) return;
+
+    const otherGids = gids.filter((g) => g !== mainGid);
+    if (otherGids.length === 0) return;
+
+    if (
+      !confirm(
+        `번들 내 사이클을 하나로 합칠까요?\n- 메인: ${mainGid.slice(0, 8)}\n- 대상: ${otherGids.length}개`
+      )
+    )
+      return;
+
+    setMergingByBundle(true);
+    try {
+      const bundleRows = gids.flatMap((g) => sessionsByGroupId[g] || []);
+      const rawMainType = resolveMergedBundleSessionType(bundleRows);
+      const mainSessionType = rawMainType ? normalizeMergedSessionType(rawMainType) : null;
+
+      // 1) 메인 group_id로 세션 group_id 이동
+      const { error: moveErr } = await supabase
+        .from("sessions")
+        .update({ group_id: mainGid })
+        .in("group_id", otherGids);
+      if (moveErr) throw moveErr;
+
+      // 1b) 편입된 세션 포함 메인 그룹 전체 session_type을 메인 사이클 대표값으로 통일 (캘린더 색상 일치)
+      if (mainSessionType) {
+        const { error: typeErr } = await supabase
+          .from("sessions")
+          .update({ session_type: mainSessionType })
+          .eq("group_id", mainGid);
+        if (typeErr) throw typeErr;
+      }
+
+      // 2) 메인 group_id 기준으로 회차 번호/총회차 재계산
+      const { data: mainRows, error: mainSelErr } = await supabase
+        .from("sessions")
+        .select("id, start_at, end_at, status, round_total")
+        .eq("group_id", mainGid);
+      if (mainSelErr) throw mainSelErr;
+
+      const allMain = (mainRows || []) as Array<{
+        id: string;
+        start_at: string;
+        end_at: string;
+        status: string | null;
+        round_total: number | null;
+      }>;
+
+      const baseAll = allMain.filter(
+        (r) => r.status !== "postponed" && r.status !== "cancelled" && r.status !== "deleted"
+      );
+      const sortedBase = [...baseAll].sort(
+        (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+      );
+      const total = sortedBase.length;
+      if (total >= 1) {
+        await Promise.all(
+          sortedBase.map((row, i) =>
+            supabase
+              .from("sessions")
+              .update({
+                round_index: i + 1,
+                round_total: total,
+                sequence_number: i + 1,
+                round_display: `${i + 1}/${total}`,
+              })
+              .eq("id", row.id)
+          )
+        );
+      }
+
+      toast.success("회차를 합쳤습니다.");
+
+      await loadAll();
+      onChanged?.();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("회차 합치기에 실패했습니다.");
+    } finally {
+      setMergingByBundle(false);
+    }
+  };
+
   const handleShrinkTail = async (gid: string) => {
     if (!supabase) return;
     const sessions = sessionsByGroupId[gid] || [];
-    if (sessions.length === 0) return;
+    const active = getActiveSessionsSorted(sessions);
+    if (active.length === 0) return;
     const n = Math.max(1, Math.floor(shrinkCountByGroup[gid] || 1));
-    const sorted = [...sessions].sort(
-      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-    );
-    const toRemove = sorted.slice(-n);
+    const toRemove = active.slice(-n);
     if (toRemove.length === 0) return;
     const hasPast = toRemove.some((s) => Date.now() > new Date(s.end_at).getTime());
     const msg = hasPast
-      ? `⚠ 과거/완료된 회차가 포함됩니다.\n마지막 ${toRemove.length}개 회차를 'deleted'로 숨기고 회차 정보를 재계산할까요?`
-      : `마지막 ${toRemove.length}개 회차를 'deleted'로 숨기고 회차 정보를 재계산할까요?`;
+      ? `⚠ 과거/완료된 회차가 포함됩니다.\n마지막 ${toRemove.length}개 회차를 DB에서 영구 삭제하고 회차 정보를 재계산할까요?`
+      : `마지막 ${toRemove.length}개 회차를 DB에서 영구 삭제하고 회차 정보를 재계산할까요?`;
     if (!confirm(msg)) return;
 
     setShrinkingByGroup((prev) => ({ ...prev, [gid]: true }));
     try {
       const idsToDelete = toRemove.map((s) => s.id);
-      const { error: delErr } = await supabase
-        .from("sessions")
-        .update({ status: "deleted" })
-        .in("id", idsToDelete);
+      const { error: delErr } = await supabase.from("sessions").delete().in("id", idsToDelete);
       if (delErr) throw delErr;
 
-      const remaining = sorted.filter((s) => !idsToDelete.includes(s.id));
-      const total = remaining.length;
-      await Promise.all(
-        remaining.map((row, i) =>
-          supabase
-            .from("sessions")
-            .update({
-              round_index: i + 1,
-              round_total: total,
-              sequence_number: i + 1,
-              round_display: `${i + 1}/${total}`,
-            })
-            .eq("id", row.id)
-        )
-      );
+      const remaining = active.filter((s) => !idsToDelete.includes(s.id));
+      if (remaining.length > 0) {
+        const total = remaining.length;
+        await Promise.all(
+          remaining.map((row, i) =>
+            supabase
+              .from("sessions")
+              .update({
+                round_index: i + 1,
+                round_total: total,
+                sequence_number: i + 1,
+                round_display: `${i + 1}/${total}`,
+              })
+              .eq("id", row.id)
+          )
+        );
+      }
       toast.success("회차가 축소되었습니다.");
       void loadAll();
       onChanged?.();
@@ -593,45 +1027,58 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     }
   };
 
-  const handleApplyTeacherToGroup = async (gid: string) => {
+  const handleBulkApplyToGroup = async (gid: string) => {
     if (!supabase) return;
     const nextTeacherId = String(bulkTeacherIdByGroup[gid] || "").trim();
-    if (!nextTeacherId) return toast.error("선생님을 선택해주세요.");
-    if (!confirm("이 사이클(그룹)의 모든 회차 선생님을 변경할까요?")) return;
+    const timeStr = String(bulkStartTimeByGroup[gid] || "").trim();
+    if (!nextTeacherId && !timeStr) {
+      return toast.error("선생님 또는 시작 시간 중 하나 이상 입력해주세요.");
+    }
+
+    const rows = (sessionsByGroupId[gid] || []).filter(isSessionBulkTarget);
+    if (rows.length === 0) {
+      return toast.error(
+        "변경할 수 있는 회차가 없습니다. (종료된 회차만 있거나 취소·삭제만 있습니다.)"
+      );
+    }
+
+    const parts: string[] = [];
+    if (nextTeacherId) parts.push("메인 강사");
+    if (timeStr) parts.push("시작 시간");
+    if (
+      !confirm(
+        `종료되지 않은 회차 ${rows.length}건만 ${parts.join("·")}을(를) 변경할까요? (보조는 메인과 겹치면 제외됩니다.)`
+      )
+    ) {
+      return;
+    }
+
     setBulkTeacherApplyingGid(gid);
     try {
-      const { error } = await supabase.from("sessions").update({ created_by: nextTeacherId }).eq("group_id", gid);
-      if (error) throw error;
-      toast.success("선생님이 변경되었습니다.");
+      for (const s of rows) {
+        const patch: Record<string, unknown> = {};
+        if (nextTeacherId) {
+          const extras = extraTeachersFromMemo(s.memo).filter((t) => t.id && t.id !== nextTeacherId);
+          const memo = persistMemoExtras(s.memo, extras);
+          patch.created_by = nextTeacherId;
+          patch.memo = memo;
+        }
+        if (timeStr) {
+          const { start_at, end_at } = applyLocalTimeKeepDuration(s.start_at, s.end_at, timeStr);
+          patch.start_at = start_at;
+          patch.end_at = end_at;
+        }
+        const { error } = await supabase.from("sessions").update(patch).eq("id", s.id);
+        if (error) throw error;
+      }
+      toast.success(`일괄 적용 완료: ${rows.length}건`);
       onChanged?.();
       void loadAll();
     } catch (err) {
       devLogger.error(err);
-      toast.error("선생님 변경에 실패했습니다.");
+      toast.error("일괄 적용에 실패했습니다.");
     } finally {
       setBulkTeacherApplyingGid(null);
-    }
-  };
-
-  const handleRestoreDeletedForGroup = async (gid: string) => {
-    if (!supabase) return;
-    if (!confirm("status='deleted'로 숨겨진 회차를 복구할까요?")) return;
-    setRestoringDeletedByGroup((prev) => ({ ...prev, [gid]: true }));
-    try {
-      const { error } = await supabase
-        .from("sessions")
-        .update({ status: "opened" })
-        .eq("group_id", gid)
-        .eq("status", "deleted");
-      if (error) throw error;
-      toast.success("삭제된 회차가 복구되었습니다.");
-      onChanged?.();
-      void loadAll();
-    } catch (err) {
-      devLogger.error(err);
-      toast.error("복구에 실패했습니다.");
-    } finally {
-      setRestoringDeletedByGroup((prev) => ({ ...prev, [gid]: false }));
     }
   };
 
@@ -645,96 +1092,27 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     });
   }, [effectiveGroupIds, sessionsByGroupId]);
 
+  const { currentGroupIds, pastGroupIds } = useMemo(() => {
+    const current: string[] = [];
+    const past: string[] = [];
+    for (const gid of sortedGroupIds) {
+      const rows = sessionsByGroupId[gid] || [];
+      if (!rows.length) continue; // 병합 후 비어버린 그룹은 UI에서 숨깁니다.
+      if (isPastCycleGroup(rows)) past.push(gid);
+      else current.push(gid);
+    }
+    return { currentGroupIds: current, pastGroupIds: past };
+  }, [sortedGroupIds, sessionsByGroupId]);
+
   const displayTitle = useMemo(() => titleDraft.trim() || bundleTitle, [titleDraft, bundleTitle]);
 
-  return (
-    <div className={`fixed inset-0 z-50 transition ${visible ? "pointer-events-auto" : "pointer-events-none"}`}>
-      <div
-        className={`absolute inset-0 bg-black/30 transition-opacity ${visible ? "opacity-100" : "opacity-0"}`}
-        onClick={onClose}
-      />
-      <aside
-        className={`absolute right-0 top-0 h-full w-full max-w-4xl bg-white shadow-2xl border-l border-slate-100 flex flex-col transition-transform ${
-          visible ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <header className="px-6 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1 space-y-2">
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Class Bundle (V2)</p>
-            {!editingTitle ? (
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg font-black text-slate-900 truncate">{displayTitle}</h2>
-                <button
-                  type="button"
-                  onClick={() => setEditingTitle(true)}
-                  className="px-2 py-1 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0"
-                >
-                  수업명 수정
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <input
-                  className="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold"
-                  value={titleDraft}
-                  onChange={(e) => setTitleDraft(e.target.value)}
-                  placeholder="수업명을 입력하세요"
-                />
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    disabled={!titleDraft.trim() || savingTitle}
-                    onClick={() => void handleSaveBundleTitle()}
-                    className="px-3 py-2 rounded-full text-xs font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {savingTitle ? "저장 중..." : "저장"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingTitle(false);
-                      void loadAll();
-                    }}
-                    className="px-3 py-2 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  >
-                    취소
-                  </button>
-                </div>
-              </div>
-            )}
-            <p className="text-xs text-slate-500 font-bold">{groupIds.length}개 사이클</p>
-          </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 shrink-0">
-            <X className="w-5 h-5" />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-auto p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-black text-slate-600">
-              사이클(그룹)별로 접기/펼치기 할 수 있습니다.
-            </div>
-            <select
-              className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-black text-slate-700"
-              value={roundView}
-              onChange={(e) => setRoundView(e.target.value as RoundView)}
-            >
-              <option value="active">예정/진행만</option>
-              <option value="all">전체</option>
-              <option value="completed">완료만</option>
-            </select>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">불러오는 중...</div>
-          ) : (
-            <div className="space-y-3">
-              {sortedGroupIds.map((gid, idx) => {
-                const rows = sessionsByGroupId[gid] || [];
-                const open = !!openGroupIds[gid];
-                const label = `${formatDateRange(rows)} · ${plannedTotalOfGroup(rows)}회`;
-                return (
-                  <section key={gid} className="border border-slate-100 rounded-2xl overflow-hidden">
+  const renderCycleSection = (gid: string) => {
+    const cycleNum = sortedGroupIds.indexOf(gid) + 1;
+    const rows = sessionsByGroupId[gid] || [];
+    const open = !!openGroupIds[gid];
+    const label = `${formatDateRange(rows)} · ${plannedTotalOfGroup(rows)}회`;
+    return (
+      <section key={gid} className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
                     <button
                       type="button"
                       onClick={() => toggleGroup(gid)}
@@ -743,7 +1121,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                       <div className="flex items-center gap-2 min-w-0">
                         {open ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
                         <span className="text-xs font-black text-slate-700 truncate">
-                          사이클 {idx + 1} · {label}
+                          사이클 {cycleNum} · {label}
                         </span>
                       </div>
                       <span className="text-[11px] font-black text-slate-400">{gid.slice(0, 8)}</span>
@@ -754,7 +1132,9 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
                           <h4 className="text-sm font-black text-slate-800">그룹 설정</h4>
                           <p className="text-xs text-slate-500 font-bold mt-1">
-                            수업명은 상단에서 번들 전체로 변경합니다. 선생님은 이 사이클(그룹) 전체 회차에 적용됩니다.
+                            수업명은 상단에서 번들 전체로 변경합니다. 아래 일괄 적용은{" "}
+                            <span className="text-slate-700">종료되지 않은 회차</span>에만 메인 강사·시작 시간을
+                            반영합니다. 회차별 보조1·보조2는 표에서 설정합니다 (최대 3인: 메인+보조2).
                           </p>
                           <div className="mt-3 flex items-center gap-2 flex-wrap">
                             <select
@@ -764,28 +1144,34 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                 setBulkTeacherIdByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
                               }
                             >
-                              <option value="">선생님 선택</option>
+                              <option value="">메인 강사 선택</option>
                               {teachers.map((t) => (
                                 <option key={t.id} value={t.id}>
                                   {t.name} T
                                 </option>
                               ))}
                             </select>
+                            <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                              시작
+                              <input
+                                type="time"
+                                className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold"
+                                value={bulkStartTimeByGroup[gid] ?? ""}
+                                onChange={(e) =>
+                                  setBulkStartTimeByGroup((prev) => ({
+                                    ...prev,
+                                    [gid]: e.target.value,
+                                  }))
+                                }
+                              />
+                            </label>
                             <button
                               type="button"
-                              onClick={() => void handleApplyTeacherToGroup(gid)}
+                              onClick={() => void handleBulkApplyToGroup(gid)}
                               disabled={bulkTeacherApplyingGid === gid}
                               className="px-3 py-2 rounded-full text-xs font-black bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
                             >
-                              {bulkTeacherApplyingGid === gid ? "적용 중..." : "선생님 변경"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => void handleRestoreDeletedForGroup(gid)}
-                              disabled={!!restoringDeletedByGroup[gid]}
-                              className="px-3 py-2 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50"
-                            >
-                              {restoringDeletedByGroup[gid] ? "복구 중..." : "삭제 복구"}
+                              {bulkTeacherApplyingGid === gid ? "적용 중..." : "일괄 적용"}
                             </button>
                           </div>
                         </div>
@@ -810,20 +1196,31 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
                         <div className="rounded-2xl border border-slate-100 overflow-hidden">
                           <table className="w-full table-fixed text-xs">
-                            <thead className="bg-white text-[11px] font-bold text-slate-500">
+                            <colgroup>
+                              <col className="w-[52px]" />
+                              <col className="w-[120px]" />
+                              <col className="w-[108px]" />
+                              <col />
+                              <col className="w-[64px]" />
+                              <col className="w-[56px]" />
+                              <col className="w-[78px]" />
+                            </colgroup>
+                            <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 border-b border-slate-100">
                               <tr>
-                                <th className="px-2 py-2 text-left w-[56px]">회차</th>
-                                <th className="px-2 py-2 text-left w-[106px]">날짜</th>
-                                <th className="px-2 py-2 text-left w-[80px]">시간</th>
-                                <th className="px-2 py-2 text-left w-[98px]">선생님</th>
-                                <th className="px-2 py-2 text-right w-[78px]">금액</th>
-                                <th className="px-2 py-2 text-center w-[58px]">상태</th>
-                                <th className="px-2 py-2 text-center w-[62px]">액션</th>
+                                <th className="px-2 py-2 text-left">회차</th>
+                                <th className="px-2 py-2 text-left">날짜</th>
+                                <th className="px-2 py-2 text-left">시간</th>
+                                <th className="px-2 py-2 text-left">강사 / 수업료</th>
+                                <th className="px-2 py-2 text-center">마일리지</th>
+                                <th className="px-2 py-2 text-center">상태</th>
+                                <th className="px-2 py-2 text-center">액션</th>
                               </tr>
                             </thead>
                             <tbody>
                               {rows
                                 .filter((r) => {
+                                  if (r.status === "deleted") return false;
+                                  if (r.status === "cancelled") return roundView === "all";
                                   if (roundView === "all") return true;
                                   const s = getTimeStatusLabel(r);
                                   if (roundView === "completed") return s.isCompletedByTime;
@@ -832,18 +1229,19 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                 .map((r, i) => {
                                   const start = new Date(r.start_at);
                                   const end = new Date(r.end_at);
-                                  const dateStr = start.toISOString().split("T")[0];
+                                  const dateStr = toDateInputValueLocal(start);
                                   const timeStr = start.toTimeString().slice(0, 5);
                                   const total = plannedTotalOfGroup(rows);
                                   const n = Math.min(r.round_index ?? i + 1, total);
                                   const s = getTimeStatusLabel(r);
+                                  const assistList = extraTeachersFromMemo(r.memo);
                                   return (
                                     <tr key={r.id} className="border-t border-slate-100">
                                       <td className="px-2 py-2 font-bold text-slate-700">{n}/{total}</td>
                                       <td className="px-2 py-2">
                                         <input
                                           type="date"
-                                          className="w-[112px] bg-transparent border rounded-lg px-2 py-1"
+                                          className="w-full bg-transparent border rounded-lg px-2 py-1"
                                           value={dateStr}
                                           onChange={(e) => {
                                             const [y, m, d] = e.target.value.split("-").map(Number);
@@ -862,7 +1260,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                       <td className="px-2 py-2">
                                         <input
                                           type="time"
-                                          className="w-[84px] bg-transparent border rounded-lg px-2 py-1"
+                                          className="w-full bg-transparent border rounded-lg px-2 py-1"
                                           value={timeStr}
                                           onChange={(e) => {
                                             const [hh, mm] = e.target.value.split(":").map(Number);
@@ -878,41 +1276,120 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                           }}
                                         />
                                       </td>
-                                      <td className="px-2 py-2">
-                                        <select
-                                          className="w-[104px] bg-transparent border rounded-lg px-2 py-1 font-bold text-slate-700"
-                                          value={r.created_by ?? ""}
-                                          onChange={(e) => void applyInlineUpdate(gid, r.id, { created_by: e.target.value })}
-                                        >
-                                          <option value="" disabled>선생님</option>
-                                          {teachers.map((t) => (
-                                            <option key={t.id} value={t.id}>
-                                              {t.name} T
-                                            </option>
+                                      <td className="px-2 py-1.5 min-w-0">
+                                        <div className="flex flex-col gap-1.5 min-w-0">
+                                          {/* 메인 강사 + 수업료 */}
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            <select
+                                              className="min-w-0 flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-slate-800"
+                                              value={r.created_by ?? ""}
+                                              onChange={(e) => void applyMainTeacher(gid, r, e.target.value)}
+                                            >
+                                              <option value="" disabled>강사 선택</option>
+                                              {teachers.map((t) => (
+                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                              ))}
+                                            </select>
+                                            <input
+                                              key={`price-${r.id}-${r.price ?? 0}`}
+                                              type="number"
+                                              className="w-[80px] shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-right text-slate-800"
+                                              placeholder="수업료"
+                                              defaultValue={Number(r.price) || 0}
+                                              onBlur={(e) => void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })}
+                                            />
+                                          </div>
+                                          {/* 보조 강사 행 */}
+                                          {assistList.map((ex, aidx) => (
+                                            <div key={aidx} className="flex items-center gap-1.5 min-w-0">
+                                              <select
+                                                className="min-w-0 flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-slate-600"
+                                                value={ex.id}
+                                                onChange={(e) => void setAssistIdAt(gid, r, aidx, e.target.value)}
+                                              >
+                                                <option value="">보조 강사</option>
+                                                {teachers.map((t) => (
+                                                  <option key={t.id} value={t.id}>{t.name}</option>
+                                                ))}
+                                              </select>
+                                              <input
+                                                key={`assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
+                                                type="number"
+                                                className="w-[80px] shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-right text-slate-600"
+                                                placeholder="수업료"
+                                                defaultValue={Number(ex.price) || 0}
+                                                onBlur={(e) => void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)}
+                                              />
+                                              <button
+                                                type="button"
+                                                title="보조 제거"
+                                                className="shrink-0 rounded p-1 text-slate-300 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                                                onClick={() => void removeAssistRow(gid, r, aidx)}
+                                              >
+                                                <Minus size={12} strokeWidth={2.5} />
+                                              </button>
+                                            </div>
                                           ))}
-                                        </select>
+                                          {/* 보조 추가 */}
+                                          {assistList.length < 2 && (
+                                            <button
+                                              type="button"
+                                              className="flex items-center gap-0.5 text-[10px] font-black text-blue-500 hover:text-blue-700 transition-colors w-fit"
+                                              onClick={() => void addAssistRow(gid, r)}
+                                            >
+                                              <Plus size={11} strokeWidth={2.5} />
+                                              보조 추가
+                                            </button>
+                                          )}
+                                        </div>
                                       </td>
-                                      <td className="px-2 py-2 text-right">
-                                        <input
-                                          type="number"
-                                          className="w-[88px] bg-transparent border rounded-lg px-2 py-1 text-right"
-                                          value={Number(r.price) || 0}
-                                          onChange={(e) => void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })}
-                                        />
+                                      <td className="px-1 py-2 text-center align-top">
+                                        <button
+                                          type="button"
+                                          className="px-2 py-1.5 rounded-lg text-[10px] font-black bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/80 w-full max-w-[58px]"
+                                          onClick={() => setMileageModal({ gid, row: r })}
+                                        >
+                                          설정
+                                        </button>
                                       </td>
                                       <td className="px-2 py-2 text-center">
-                                        <span className="inline-flex px-2 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                                        <span
+                                          className={`inline-flex px-2 py-1 rounded-full text-[10px] font-black ${statusBadgeClass(s.label)}`}
+                                        >
                                           {s.label}
                                         </span>
                                       </td>
                                       <td className="px-2 py-2 text-center">
-                                        <button
-                                          type="button"
-                                          className="px-2.5 py-1.5 rounded-full text-[10px] font-black bg-violet-50 text-violet-600 hover:bg-violet-100"
-                                          onClick={() => void handlePostpone(gid, r.id)}
-                                        >
-                                          연기
-                                        </button>
+                                        {r.status === "cancelled" || r.status === "deleted" ? null : (
+                                          <div className="flex flex-col items-stretch gap-1 max-w-[68px] mx-auto">
+                                            {r.status === "postponed" ? (
+                                              <button
+                                                type="button"
+                                                className="px-2.5 py-1.5 rounded-full text-[10px] font-black bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                                                disabled={undoingPostponeSessionId === r.id}
+                                                onClick={() => void handleUndoPostpone(r.id)}
+                                              >
+                                                {undoingPostponeSessionId === r.id ? "복구 중..." : "연기 취소"}
+                                              </button>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                className="px-2.5 py-1.5 rounded-full text-[10px] font-black bg-violet-50 text-violet-600 hover:bg-violet-100"
+                                                onClick={() => void handlePostpone(gid, r.id)}
+                                              >
+                                                연기
+                                              </button>
+                                            )}
+                                            <button
+                                              type="button"
+                                              className="px-2.5 py-1.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50"
+                                              disabled={deletingSessionId === r.id || !s.isActiveByTime}
+                                              onClick={() => void handleDeleteSession(gid, r.id)}
+                                            >
+                                              {deletingSessionId === r.id ? "삭제 중..." : "삭제"}
+                                            </button>
+                                          </div>
+                                        )}
                                       </td>
                                     </tr>
                                   );
@@ -1038,7 +1515,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                             <input
                               type="date"
                               className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
-                              value={restartStartDateByGroup[gid] ?? new Date().toISOString().split("T")[0]}
+                              value={restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date())}
                               onChange={(e) =>
                                 setRestartStartDateByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
                               }
@@ -1058,7 +1535,9 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                             <div className="flex items-center gap-2 flex-wrap">
                               {DAYS.map((d) => {
                                 const baseDay = new Date(
-                                  `${restartStartDateByGroup[gid] ?? new Date().toISOString().split("T")[0]}T${restartStartTimeByGroup[gid] ?? "10:00"}`
+                                  `${restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date())}T${
+                                    restartStartTimeByGroup[gid] ?? "10:00"
+                                  }`
                                 ).getDay();
                                 const isBase = d.value === baseDay;
                                 const selected = restartDaysOfWeekByGroup[gid] ?? [baseDay];
@@ -1107,12 +1586,245 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                       </div>
                     )}
                   </section>
-                );
-              })}
-            </div>
-          )}
+    );
+  };
+
+  return (
+    <div className={`fixed inset-0 z-50 transition ${visible ? "pointer-events-auto" : "pointer-events-none"}`}>
+      <div
+        className={`absolute inset-0 bg-black/30 transition-opacity ${visible ? "opacity-100" : "opacity-0"}`}
+        onClick={onClose}
+      />
+      <aside
+        className={`absolute right-0 top-0 h-full w-full max-w-6xl bg-white shadow-2xl border-l border-slate-100 flex flex-col transition-transform ${
+          visible ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <header className="shrink-0 px-6 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1 space-y-2">
+            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Class Bundle (V2)</p>
+            {!editingTitle ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-black text-slate-900 truncate">{displayTitle}</h2>
+                <button
+                  type="button"
+                  onClick={() => setEditingTitle(true)}
+                  className="px-2 py-1 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0"
+                >
+                  수업명 수정
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <input
+                  className="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold"
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  placeholder="수업명을 입력하세요"
+                />
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    disabled={!titleDraft.trim() || savingTitle}
+                    onClick={() => void handleSaveBundleTitle()}
+                    className="px-3 py-2 rounded-full text-xs font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {savingTitle ? "저장 중..." : "저장"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingTitle(false);
+                      void loadAll();
+                    }}
+                    className="px-3 py-2 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-slate-500 font-bold">{groupIds.length}개 사이클</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </header>
+
+        <div className="flex gap-1 px-6 border-b border-slate-100 shrink-0">
+          <button
+            type="button"
+            onClick={() => setBundleTab("rounds")}
+            className={`px-4 py-2.5 text-xs font-black rounded-t-lg border-b-2 -mb-px transition-colors ${
+              bundleTab === "rounds"
+                ? "border-blue-600 text-blue-700 bg-white"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            회차 / 강사
+          </button>
+          <button
+            type="button"
+            onClick={() => setBundleTab("info")}
+            className={`px-4 py-2.5 text-xs font-black rounded-t-lg border-b-2 -mb-px transition-colors ${
+              bundleTab === "info"
+                ? "border-blue-600 text-blue-700 bg-white"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            수업 정보
+          </button>
         </div>
+
+        {bundleTab === "rounds" ? (
+          <div className="flex-1 overflow-auto p-6 space-y-4 min-h-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs font-black text-slate-600">
+                사이클(그룹)별로 접기/펼치기 할 수 있습니다. 지난 사이클은 아래 묶음에서 펼칩니다.
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleMergeCycleRounds()}
+                  disabled={
+                    mergingByBundle ||
+                    effectiveGroupIds.filter((gid) => (sessionsByGroupId[gid] || []).length > 0).length <= 1
+                  }
+                  className="px-3 py-2 rounded-full text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {mergingByBundle ? "합치는 중..." : "회차 합치기"}
+                </button>
+                <select
+                  className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-black text-slate-700"
+                  value={roundView}
+                  onChange={(e) => setRoundView(e.target.value as RoundView)}
+                >
+                  <option value="active">예정/진행만</option>
+                  <option value="all">전체</option>
+                  <option value="completed">완료만</option>
+                </select>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">불러오는 중...</div>
+            ) : (
+              <div className="space-y-3">
+                {currentGroupIds.map((gid) => renderCycleSection(gid))}
+                {pastGroupIds.length > 0 && (
+                  <section className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/90">
+                    <button
+                      type="button"
+                      onClick={() => setPastArchiveOpen((o) => !o)}
+                      className="w-full px-4 py-3 bg-slate-100/80 hover:bg-slate-100 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {pastArchiveOpen ? (
+                          <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                        )}
+                        <span className="text-xs font-black text-slate-700 truncate">
+                          지난 사이클 ({pastGroupIds.length}개)
+                        </span>
+                      </div>
+                    </button>
+                    {pastArchiveOpen && (
+                      <div className="p-3 space-y-3 border-t border-slate-200">
+                        {pastGroupIds.map((gid) => renderCycleSection(gid))}
+                      </div>
+                    )}
+                  </section>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-auto p-6 min-h-0">
+            {!bundleKey ? (
+              <p className="text-sm font-bold text-slate-500">사이클(그룹)이 없어 수업 정보를 저장할 수 없습니다.</p>
+            ) : infoLoading ? (
+              <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">불러오는 중...</div>
+            ) : (
+              <div className="max-w-xl space-y-4">
+                <p className="text-xs font-bold text-slate-500">
+                  이 번들({effectiveGroupIds.length}개 사이클)에 공통으로 쓰는 연락·주소 정보입니다. DB에 `bundle_key`로
+                  저장됩니다.
+                </p>
+                <label className="block space-y-1">
+                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-wide">주소</span>
+                  <textarea
+                    className="w-full min-h-[72px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800"
+                    value={infoAddress}
+                    onChange={(e) => setInfoAddress(e.target.value)}
+                    placeholder="도로명 / 상세 주소"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-wide">연락처</span>
+                  <input
+                    type="text"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800"
+                    value={infoPhone}
+                    onChange={(e) => setInfoPhone(e.target.value)}
+                    placeholder="010-0000-0000"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-wide">아이 정보</span>
+                  <textarea
+                    className="w-full min-h-[80px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800"
+                    value={infoChild}
+                    onChange={(e) => setInfoChild(e.target.value)}
+                    placeholder="이름, 학년, 특이사항 등"
+                  />
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    checked={infoTuitionPaid}
+                    onChange={(e) => setInfoTuitionPaid(e.target.checked)}
+                  />
+                  <span className="text-sm font-bold text-slate-800">수업료 납부 완료</span>
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-wide">메모</span>
+                  <input
+                    type="text"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800"
+                    value={infoNotes}
+                    onChange={(e) => setInfoNotes(e.target.value)}
+                    placeholder="운영 메모"
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={infoSaving}
+                  onClick={() => void handleSaveBundleInfo()}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {infoSaving ? "저장 중..." : "저장"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </aside>
+
+      <SessionMileageModal
+        open={!!mileageModal}
+        onClose={() => setMileageModal(null)}
+        sessionId={mileageModal?.row.id ?? ""}
+        sessionStartAt={mileageModal?.row.start_at ?? null}
+        title={mileageModal?.row.title ?? null}
+        memo={mileageModal?.row.memo}
+        mileage_option={mileageModal?.row.mileage_option}
+        created_by={mileageModal?.row.created_by ?? null}
+        onSaved={() => {
+          onChanged?.();
+          void loadAll();
+        }}
+      />
     </div>
   );
 }

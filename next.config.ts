@@ -5,6 +5,14 @@ const withPWA = withPWAInit({ dest: "public" });
 
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: false },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.postimg.cc",
+      },
+    ],
+  },
   // 빌드 시 webpack 사용 (PWA 플러그인 호환, turbopack 명시적 비활성화)
   turbopack: {},
   async redirects() {

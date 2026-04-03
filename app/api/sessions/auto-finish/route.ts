@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
-import { parseExtraTeachers } from '@/app/admin/classes/lib/sessionUtils';
+import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 
 export async function POST() {
   const auth = await requireAdmin();

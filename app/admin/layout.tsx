@@ -13,7 +13,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkSlow, setCheckSlow] = useState(false);
   const isFullscreenRoute = pathname != null && pathname.startsWith('/admin/spokedu-pro');
-  const isGameRoute = pathname != null && pathname.startsWith('/admin/memory-game');
+  const isGameRoute =
+    pathname != null &&
+    (pathname.startsWith('/admin/memory-game') || pathname.startsWith('/admin/camera'));
 
   useEffect(() => {
     const slowTimer = setTimeout(() => setCheckSlow(true), SLOW_CHECK_MS);

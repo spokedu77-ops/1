@@ -59,6 +59,9 @@ export default function MoveReportClient() {
   const submitLead = useCallback(
     async (phone: string): Promise<boolean> => {
       if (!result) return false;
+      const normalizedPhone = phone.replace(/\D/g, '');
+      const previewPhone = normalizedPhone.length >= 10 ? phone : phone.trim();
+      const allowLocalPreview = process.env.NODE_ENV === 'development';
       try {
         const res = await fetch('/api/move-report/leads', {
           method: 'POST',
@@ -75,29 +78,29 @@ export default function MoveReportClient() {
         });
         const data = (await res.json()) as { ok?: boolean; error?: string };
         if (data.ok) {
-          const digits = phone.replace(/\D/g, '');
-          setSavedPhone(digits.length >= 10 ? phone : phone.trim());
-          flash('📱 저장됐어요! 리포트를 확인해보세요.');
+          setSavedPhone(previewPhone);
+          flash('📱 저장 완료! 요약 카드 이미지로 저장/공유할 수 있어요.');
+          return true;
+        }
+        if (allowLocalPreview) {
+          setSavedPhone(previewPhone);
+          flash('🧪 로컬 미리보기 모드: 저장 실패여도 요약 카드 저장/공유를 테스트할 수 있어요.');
           return true;
         }
         flash(data.error || '저장 중 오류가 발생했어요. 다시 시도해 주세요.');
         return false;
       } catch {
+        if (allowLocalPreview) {
+          setSavedPhone(previewPhone);
+          flash('🧪 로컬 미리보기 모드: 네트워크 오류여도 요약 카드 저장/공유를 테스트할 수 있어요.');
+          return true;
+        }
         flash('네트워크 오류가 발생했어요.');
         return false;
       }
     },
     [age, flash, name, resps, result]
   );
-
-  const handleShare = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      flash('🔗 링크가 복사됐어요! 친구들에게 공유해 보세요.');
-    } catch {
-      flash('링크 복사를 지원하지 않는 환경이에요.');
-    }
-  }, [flash]);
 
   const onAnswer = useCallback(
     (v: string) => {
@@ -167,7 +170,6 @@ export default function MoveReportClient() {
           tab={tab}
           onTab={setTab}
           onReset={reset}
-          onShare={handleShare}
           onLeadSubmit={submitLead}
           savedPhone={savedPhone}
           flash={flash}

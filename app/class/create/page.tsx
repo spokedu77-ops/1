@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function ClassCreateRedirect() {
-  redirect('/admin/classes/create');
+  redirect('/admin/classes-v2/list');
 }

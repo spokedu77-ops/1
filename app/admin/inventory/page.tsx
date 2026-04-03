@@ -80,7 +80,7 @@ export default function AdminInventoryPage() {
   }, [supabase]);
 
   useEffect(() => {
-    /* eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only data fetch */
+     
     setIsInitialLoading(true);
     Promise.all([fetchCatalog(), fetchTeachers()]).finally(() => setIsInitialLoading(false));
   }, [fetchCatalog, fetchTeachers]);

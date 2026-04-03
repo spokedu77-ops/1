@@ -39,8 +39,25 @@ export function useClassManagement() {
 
     const { data, error } = sessionsRes;
     if (!error && data) {
+      // 분모(총 회차): deleted 제외한 전체(cancelled 포함)에서 round_total 최댓값 사용.
+      // 취소된 세션은 round_total을 유지하므로 여기서 올바른 계약 총회차를 구할 수 있다.
       const groupTotals: Record<string, number> = {};
-      data.forEach((s: { group_id?: string }) => { if(s.group_id) groupTotals[s.group_id] = (groupTotals[s.group_id] || 0) + 1; });
+      const groupActiveCount: Record<string, number> = {};
+      (data as { group_id?: string; status?: string | null; round_total?: number }[]).forEach((s) => {
+        const gid = s.group_id;
+        if (!gid) return;
+        const st = String(s.status ?? '');
+        if (st === 'deleted') return;
+        const rt = typeof s.round_total === 'number' && Number.isFinite(s.round_total) ? s.round_total : 0;
+        if (rt > 0) groupTotals[gid] = Math.max(groupTotals[gid] ?? 0, rt);
+        if (st !== 'postponed' && st !== 'cancelled') {
+          groupActiveCount[gid] = (groupActiveCount[gid] || 0) + 1;
+        }
+      });
+      // round_total이 없는 구형 데이터는 활성 세션 수로 fallback
+      for (const gid of Object.keys(groupActiveCount)) {
+        if (!groupTotals[gid]) groupTotals[gid] = groupActiveCount[gid];
+      }
       const groupCurrentRounds: Record<string, number> = {};
 
       type SessionRow = {
@@ -51,13 +68,27 @@ export function useClassManagement() {
       };
       const events: SessionEvent[] = data.map((s: SessionRow) => {
         const title = s.title ?? '';
-        let roundStr = s.round_display || '';
+        const gid = s.group_id;
+        const total = gid ? groupTotals[gid] : undefined;
+        // 1.5(가중치) 제거: 화면 표시 분모/표시는 round_index/round_total(=정수) 기준으로만 만듭니다.
+        // round_display가 있어도 그대로 쓰지 않습니다.
+        const roundIndex = typeof s.round_index === 'number' ? s.round_index : undefined;
+        let roundStr: string | undefined =
+          typeof roundIndex === 'number' && typeof total === 'number' && Number.isFinite(roundIndex) && Number.isFinite(total) && total > 0
+            ? `${roundIndex}/${total}`
+            : undefined;
+
+        // round_index가 비어있는 데이터만 최소 fallback(정수 패턴만) 처리
         if (!roundStr) {
-          const roundMatch = title.match(/(\d+\/\d+)/);
-          if (roundMatch) roundStr = roundMatch[1];
-          else if (s.group_id) {
-            groupCurrentRounds[s.group_id] = (groupCurrentRounds[s.group_id] || 0) + 1;
-            roundStr = `${groupCurrentRounds[s.group_id]}/${groupTotals[s.group_id]}`;
+          const roundMatch = title.match(/(\d+)\/(\d+)/);
+          if (roundMatch) roundStr = `${Number(roundMatch[1])}/${Number(roundMatch[2])}`;
+          else if (gid) {
+            const st = String(s.status ?? '');
+            if (st !== 'postponed' && st !== 'cancelled' && st !== 'deleted') {
+              groupCurrentRounds[gid] = (groupCurrentRounds[gid] || 0) + 1;
+              const t = groupTotals[gid] ?? 0;
+              if (t > 0) roundStr = `${groupCurrentRounds[gid]}/${t}`;
+            }
           }
         }
 
@@ -83,13 +114,13 @@ export function useClassManagement() {
           mileageAction: s.mileage_option || '',
           roundIndex: s.round_index ?? undefined,
           roundTotal: s.round_total ?? undefined,
-          roundDisplay: s.round_display,
+          roundDisplay: roundStr,
           session_type: s.session_type,
           mileage_option: s.mileage_option || ''
         };
         return {
           id: s.id,
-          title: title.replace(/(\d+\/\d+)\s?/, '').trim(),
+          title: title.replace(/(\d+(?:\.\d+)?\/\d+(?:\.\d+)?)\s?/, '').trim(),
           start: s.start_at,
           end: s.end_at,
           ...custom,
@@ -122,7 +153,7 @@ export function useClassManagement() {
       await fetchSessions();
       return true;
     } catch (err) {
-      devLogger.error("Mileage Update Error:", err);
+      devLogger.error('Mileage Update Error:', err);
       return false;
     }
   };

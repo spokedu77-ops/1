@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { parseExtraTeachers } from '@/app/admin/classes/lib/sessionUtils';
+import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 import {
   type FeedbackFields,
   fieldsToTemplateText,

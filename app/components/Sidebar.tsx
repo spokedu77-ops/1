@@ -65,7 +65,7 @@ export default function Sidebar() {
     {
       group: "수업",
       items: [
-        { name: "수업 관리", href: "/admin/classes", icon: Calendar },
+        { name: "수업 관리", href: "/admin/classes-v2/calendar", icon: Calendar },
         { name: "검수", href: "/admin/teachers-classes", icon: CheckCircle },
         { name: "교구·재고", href: "/admin/inventory", icon: Box },
       ]

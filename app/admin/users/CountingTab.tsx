@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, User, BookOpen } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import MileageDetailModal from '@/app/components/admin/MileageDetailModal';
+import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface Teacher {
@@ -14,6 +15,10 @@ interface Teacher {
   session_count: number;
   /** 앱 도입 이후 session_count_logs 실제 건수 */
   logCount?: number;
+  fee_private?: number | null;
+  fee_group?: number | null;
+  fee_center_main?: number | null;
+  fee_center_assist?: number | null;
 }
 
 interface CountingTabProps {
@@ -30,7 +35,7 @@ export function CountingTab({ supabase }: CountingTabProps) {
     try {
       const { data: userData } = await supabase
         .from('users')
-        .select('id, name, points, session_count')
+        .select('id, name, points, session_count, fee_private, fee_group, fee_center_main, fee_center_assist')
         .eq('is_active', true)
         .not('name', 'in', '("최지훈","김구민","김윤기")')
         .order('name', { ascending: true });
@@ -88,7 +93,10 @@ export function CountingTab({ supabase }: CountingTabProps) {
               <div className="bg-blue-50 w-8 h-8 flex items-center justify-center rounded-lg mb-3 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                 <User size={16} />
               </div>
-              <h3 className="font-black text-slate-900 text-sm mb-0.5">{t.name} T</h3>
+              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                <h3 className="font-black text-slate-900 text-sm">{t.name} T</h3>
+                <TeacherTierBadge sessionCount={t.session_count} logCount={t.logCount} />
+              </div>
               <div className="flex items-baseline gap-0.5 mb-2">
                 <span className="text-lg font-black text-blue-600">{(t.points || 0).toLocaleString()}</span>
                 <span className="text-[10px] font-black text-blue-300 italic">P</span>

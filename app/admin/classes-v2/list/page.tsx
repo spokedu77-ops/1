@@ -1,18 +1,28 @@
 "use client";
 
 import { toast } from 'sonner';
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import type { ClassGroup, EditableSession } from '../../classes/types';
+import type { ClassGroup, EditableSession } from '@/app/admin/classes-shared/types';
+import {
+  computeTier,
+  effectiveFees,
+  totalLessonsFromCounts,
+} from '@/app/lib/teacherTierSchedule';
 import ClassDetailPanelV2 from '../components/ClassDetailPanelV2';
 import { GROUP_ALIAS_RULES } from '../lib/groupAliases';
 import ClassAliasViewerPanel from '../components/ClassAliasViewerPanel';
 import ClassBundlePanelV2 from '../components/ClassBundlePanelV2';
-import { getCleanClassTitle, getBundleTitleKey } from '../lib/v2BundleResolve';
+import {
+  getCleanClassTitle,
+  getBundleTitleKey,
+  makeBundleCompositeKey,
+  getBundleTitleFromCompositeKey,
+} from '../lib/v2BundleResolve';
 
 type DayOption = { label: string; value: number };
 const DAYS: DayOption[] = [
@@ -25,7 +35,6 @@ const DAYS: DayOption[] = [
   { label: '토', value: 6 },
 ];
 
-type TimeFilter = 'upcoming' | 'ongoing';
 type TimeStatus = 'upcoming' | 'ongoing' | 'completed';
 
 type GroupView = ClassGroup & {
@@ -33,6 +42,61 @@ type GroupView = ClassGroup & {
   displayTeacherId: string | null;
   displayDateAt: string; // 리스트에 표시할 대표 날짜(보통 다음 수업일)
 };
+
+/** 같은 담당 + 정제 수업명(번들 키)인 행을 한 줄로 합쳐 표시 */
+function mergeGroupViewsByBundleKey(rows: GroupView[]): GroupView[] {
+  const byKey = new Map<string, GroupView[]>();
+  for (const g of rows) {
+    const k = makeBundleCompositeKey(g.displayTeacherId, g.title);
+    if (!byKey.has(k)) byKey.set(k, []);
+    byKey.get(k)!.push(g);
+  }
+  const out: GroupView[] = [];
+  for (const [k, list] of byKey) {
+    if (list.length === 1) {
+      out.push(list[0]!);
+      continue;
+    }
+    const sorted = [...list].sort(
+      (a, b) => new Date(a.displayDateAt).getTime() - new Date(b.displayDateAt).getTime()
+    );
+    const first = sorted[0]!;
+    const titleCanon = getBundleTitleFromCompositeKey(k) || getBundleTitleKey(first.title) || first.title;
+    const teacherSet = new Set<string>();
+    let minFirst = first.firstClassAt;
+    let maxLast = first.lastClassAt;
+    let minDisp = first.displayDateAt;
+    let roundSum = 0;
+    let completedSum = 0;
+    for (const x of sorted) {
+      roundSum += x.roundTotal;
+      completedSum += x.completedCount;
+      for (const tid of x.teacherIds) {
+        if (tid) teacherSet.add(tid);
+      }
+      if (new Date(x.firstClassAt).getTime() < new Date(minFirst).getTime()) minFirst = x.firstClassAt;
+      if (new Date(x.lastClassAt).getTime() > new Date(maxLast).getTime()) maxLast = x.lastClassAt;
+      if (new Date(x.displayDateAt).getTime() < new Date(minDisp).getTime()) minDisp = x.displayDateAt;
+    }
+    const anyOngoing = sorted.some((x) => x.timeStatus === 'ongoing');
+    out.push({
+      ...first,
+      groupId: first.groupId,
+      title: titleCanon,
+      roundTotal: roundSum,
+      completedCount: completedSum,
+      firstClassAt: minFirst,
+      lastClassAt: maxLast,
+      teacherIds: Array.from(teacherSet),
+      displayDateAt: minDisp,
+      displayTeacherId: first.displayTeacherId,
+      timeStatus: anyOngoing ? 'ongoing' : 'upcoming',
+    });
+  }
+  return out.sort((a, b) =>
+    getCleanClassTitle(a.title).localeCompare(getCleanClassTitle(b.title), 'ko-KR')
+  );
+}
 
 type AliasRow = {
   aliasTitle: string;
@@ -44,22 +108,32 @@ type BundleSelection = {
   groupIds: string[];
 };
 
+type TeacherOption = {
+  id: string;
+  name: string;
+  session_count?: number | null;
+  fee_private?: number | null;
+  fee_group?: number | null;
+  fee_center_main?: number | null;
+  fee_center_assist?: number | null;
+};
+
 export default function ClassListPageV2() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const focusAppliedRef = useRef(false);
   const [supabase] = useState(() =>
     typeof window !== 'undefined' ? getSupabaseBrowserClient() : null
   );
   const [groups, setGroups] = useState<GroupView[]>([]);
   const [teacherMap, setTeacherMap] = useState<Record<string, string>>({});
-  const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
+  const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedAlias, setSelectedAlias] = useState<AliasRow | null>(null);
   const [selectedBundle, setSelectedBundle] = useState<BundleSelection | null>(null);
   const [aliasGroupIdsByTitle, setAliasGroupIdsByTitle] = useState<Record<string, string[]>>({});
   const [bundleGroupIdsByKey, setBundleGroupIdsByKey] = useState<Record<string, string[]>>({});
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createStep, setCreateStep] = useState<1 | 2>(1);
@@ -80,8 +154,30 @@ export default function ClassListPageV2() {
   });
   const [editableSessions, setEditableSessions] = useState<EditableSession[]>([]);
 
-  const [autoFinishRunning, setAutoFinishRunning] = useState(false);
-  const [lastAutoFinishAt, setLastAutoFinishAt] = useState<string>('');
+  const resolveDefaultPrice = useCallback(
+    (
+      teacherId: string,
+      clsType: string,
+      oneDayPlacement: 'center' | 'private',
+    ): number => {
+      const selectedTeacher = teachers.find((t) => t.id === teacherId);
+      if (!selectedTeacher) return Number(createForm.price) || 30000;
+      const tier = computeTier(totalLessonsFromCounts(selectedTeacher.session_count ?? 0, 0));
+      const fees = effectiveFees(tier, {
+        fee_private: selectedTeacher.fee_private ?? null,
+        fee_group: selectedTeacher.fee_group ?? null,
+        fee_center_main: selectedTeacher.fee_center_main ?? null,
+        fee_center_assist: selectedTeacher.fee_center_assist ?? null,
+      });
+
+      if (clsType === 'regular_center') return fees.fee_center_main;
+      if (clsType === 'one_day') {
+        return oneDayPlacement === 'center' ? fees.fee_center_main : fees.fee_private;
+      }
+      return fees.fee_private;
+    },
+    [createForm.price, teachers],
+  );
 
   const fetchGroups = useCallback(async () => {
     if (!supabase) return;
@@ -91,12 +187,16 @@ export default function ClassListPageV2() {
           .from('sessions')
           .select('group_id, title, start_at, end_at, status, created_by, round_total, round_index')
           .not('status', 'in', '("deleted")'),
-        supabase.from('users').select('id, name').eq('is_active', true),
+        supabase
+          .from('users')
+          .select('id, name, session_count, fee_private, fee_group, fee_center_main, fee_center_assist')
+          .eq('is_active', true)
+          .order('name', { ascending: true }),
       ]);
 
       if (usersRes.data) {
         const map: Record<string, string> = {};
-        const list = usersRes.data as { id: string; name: string }[];
+        const list = usersRes.data as TeacherOption[];
         list.forEach((u) => {
           map[u.id] = u.name ?? '';
         });
@@ -111,13 +211,37 @@ export default function ClassListPageV2() {
         return;
       }
 
-      // ✅ 사이클 토글용 번들 키: 정제 수업명 기준으로 group_id 목록 생성(완료 포함)
+      // ✅ 리스트 "N회" 표시: 취소는 계약 회차를 줄이지 않음.
+      // 1) 그룹별 DB round_total 최댓값(삭제 제외)
+      // 2) 없으면 삭제·연기 제외 슬롯 수(취소 포함)
+      const maxRoundTotalByGroup: Record<string, number> = {};
+      const slotCountByGroup: Record<string, number> = {};
+      for (const row of data as any[]) {
+        if (!row.group_id) continue;
+        const st = String(row.status ?? '');
+        const key = String(row.group_id);
+        if (st !== 'deleted') {
+          const rt = Number(row.round_total);
+          if (Number.isFinite(rt) && rt > 0) {
+            maxRoundTotalByGroup[key] = Math.max(maxRoundTotalByGroup[key] ?? 0, rt);
+          }
+        }
+        if (st !== 'postponed' && st !== 'deleted') {
+          slotCountByGroup[key] = (slotCountByGroup[key] ?? 0) + 1;
+        }
+      }
+
+      // ✅ 사이클 토글용 번들 키: 담당(created_by) + 정제 수업명이 같으면 같은 번들(별도 개설 포함)
       // (리스트에는 완료를 숨기지만, 모달에서는 토글로 볼 수 있어야 함)
       const bundleMap = new Map<string, Set<string>>();
       for (const row of data as any[]) {
         if (!row.group_id) continue;
-        const key = getBundleTitleKey(String(row.title || ''));
-        if (!key) continue;
+        const titlePart = getBundleTitleKey(String(row.title || ''));
+        if (!titlePart) continue;
+        const key = makeBundleCompositeKey(
+          row.created_by as string | null | undefined,
+          String(row.title || '')
+        );
         if (!bundleMap.has(key)) bundleMap.set(key, new Set<string>());
         bundleMap.get(key)!.add(String(row.group_id));
       }
@@ -154,7 +278,8 @@ export default function ClassListPageV2() {
 
         const existing = byGroup.get(key);
         if (!existing) {
-          const roundTotal = Number(row.round_total) || 1;
+          const roundTotal =
+            maxRoundTotalByGroup[key] ?? slotCountByGroup[key] ?? Number(row.round_total) ?? 1;
           const g: GroupView = {
             groupId: key,
             title: row.title || '',
@@ -180,7 +305,7 @@ export default function ClassListPageV2() {
           });
         } else {
           const g = existing.g;
-          g.roundTotal = Math.max(g.roundTotal, Number(row.round_total) || 0, g.roundTotal);
+          g.roundTotal = maxRoundTotalByGroup[key] ?? slotCountByGroup[key] ?? g.roundTotal;
           if (startAt < g.firstClassAt) g.firstClassAt = startAt;
           if (endAt > g.lastClassAt) g.lastClassAt = endAt;
           if (teacherId && !g.teacherIds.includes(teacherId)) g.teacherIds.push(teacherId);
@@ -284,13 +409,15 @@ export default function ClassListPageV2() {
         getCleanClassTitle(a.title).localeCompare(getCleanClassTitle(b.title), 'ko-KR')
       );
 
+      const displayRows = mergeGroupViewsByBundleKey(combined);
+
       const nextAliasMap: Record<string, string[]> = {};
       for (const [aliasTitle, v] of mergedByAlias.entries()) {
         nextAliasMap[aliasTitle] = v.groupIds;
       }
       setAliasGroupIdsByTitle(nextAliasMap);
 
-      setGroups(combined);
+      setGroups(displayRows);
     } catch (err) {
       devLogger.error(err);
     } finally {
@@ -322,7 +449,10 @@ export default function ClassListPageV2() {
     if (!handled) {
       for (const [key, ids] of Object.entries(bundleGroupIdsByKey)) {
         if (ids.includes(focusGroupId)) {
-          setSelectedBundle({ bundleTitle: key, groupIds: ids });
+          setSelectedBundle({
+            bundleTitle: getBundleTitleFromCompositeKey(key),
+            groupIds: ids,
+          });
           handled = true;
           break;
         }
@@ -331,58 +461,6 @@ export default function ClassListPageV2() {
     focusAppliedRef.current = true;
     router.replace('/admin/classes-v2/list', { scroll: false });
   }, [loading, aliasGroupIdsByTitle, bundleGroupIdsByKey, router]);
-
-  const runAutoFinish = useCallback(async () => {
-    if (autoFinishRunning) return;
-    setAutoFinishRunning(true);
-    try {
-      const res = await fetch('/api/sessions/auto-finish', { method: 'POST', credentials: 'include' });
-      if (!res.ok) {
-        const msg = await res.text().catch(() => '');
-        throw new Error(msg || `auto-finish failed (${res.status})`);
-      }
-      const data = (await res.json().catch(() => ({}))) as { count?: number };
-      const nowIso = new Date().toISOString();
-      localStorage.setItem('classesV2_lastAutoFinishAt', nowIso);
-      localStorage.setItem('classesV2_lastAutoFinishDate', new Date().toISOString().slice(0, 10));
-      setLastAutoFinishAt(nowIso);
-      toast.success(`자동 마감 완료: ${Number(data.count) || 0}건`);
-      fetchGroups();
-    } catch (err) {
-      devLogger.error(err);
-      toast.error('자동 마감 실행에 실패했습니다.');
-    } finally {
-      setAutoFinishRunning(false);
-    }
-  }, [autoFinishRunning, fetchGroups]);
-
-  useEffect(() => {
-    // 하루 1회(로컬 기준): 오늘 아직 실행 안 했으면 V2 진입 시 자동 실행
-    try {
-      const lastAt = localStorage.getItem('classesV2_lastAutoFinishAt') || '';
-      const lastDate = localStorage.getItem('classesV2_lastAutoFinishDate') || '';
-      const today = new Date().toISOString().slice(0, 10);
-      if (lastAt) setLastAutoFinishAt(lastAt);
-      if (lastDate !== today) {
-        void runAutoFinish();
-      }
-    } catch {
-      // ignore
-    }
-  }, [runAutoFinish]);
-
-  const visibleGroups = useMemo(() => {
-    return groups.filter((g) => g.timeStatus === timeFilter);
-  }, [groups, timeFilter]);
-
-  const filterCounts = useMemo(() => {
-    const counts: Record<TimeFilter, number> = { upcoming: 0, ongoing: 0 };
-    for (const g of groups) {
-      if (g.timeStatus === 'upcoming') counts.upcoming += 1;
-      if (g.timeStatus === 'ongoing') counts.ongoing += 1;
-    }
-    return counts;
-  }, [groups]);
 
   const handleCreateChange = (field: string, value: string | number | boolean) => {
     setCreateForm((prev) => {
@@ -416,6 +494,14 @@ export default function ClassListPageV2() {
       return { ...prev, [field]: value };
     });
   };
+
+  useEffect(() => {
+    if (searchParams.get('create') !== '1') return;
+    setIsCreateOpen(true);
+    setCreateStep(1);
+    setEditableSessions([]);
+    router.replace('/admin/classes-v2/list', { scroll: false });
+  }, [router, searchParams]);
 
   const toggleCreateDay = (dayValue: number) => {
     setCreateForm((prev) => {
@@ -541,11 +627,7 @@ export default function ClassListPageV2() {
         const roundIndex = idx + 1;
         const roundDisplay = isOneDay
           ? '1/1'
-          : createForm.roundWeight === 1
-            ? `${roundIndex}/${totalRounds}`
-            : `${(roundIndex * createForm.roundWeight).toFixed(1)}/${(
-                totalRounds * createForm.roundWeight
-              ).toFixed(1)}`;
+          : `${roundIndex}/${totalRounds}`;
 
         sessionsToInsert.push({
           title: createForm.title,
@@ -578,6 +660,24 @@ export default function ClassListPageV2() {
     }
   };
 
+  useEffect(() => {
+    if (!createForm.teacherId) return;
+    const nextPrice = resolveDefaultPrice(
+      createForm.teacherId,
+      createForm.type,
+      createForm.oneDayPlacement,
+    );
+    if (Number(createForm.price) !== nextPrice) {
+      setCreateForm((prev) => ({ ...prev, price: nextPrice }));
+    }
+  }, [
+    createForm.oneDayPlacement,
+    createForm.price,
+    createForm.teacherId,
+    createForm.type,
+    resolveDefaultPrice,
+  ]);
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
@@ -590,20 +690,6 @@ export default function ClassListPageV2() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold text-slate-500 mr-2">
-              <span>자동마감:</span>
-              <span className="text-slate-700">
-                {lastAutoFinishAt ? new Date(lastAutoFinishAt).toLocaleString('ko-KR') : '미실행'}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={runAutoFinish}
-              disabled={autoFinishRunning}
-              className="px-4 py-2 rounded-full text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
-            >
-              {autoFinishRunning ? '자동 마감 중...' : '자동 마감 실행'}
-            </button>
             <button
               type="button"
               onClick={() => setIsCreateOpen(true)}
@@ -980,7 +1066,17 @@ export default function ClassListPageV2() {
                                     value={s.teacherId}
                                     onChange={(e) => {
                                       const next = [...editableSessions];
-                                      next[idx] = { ...next[idx], teacherId: e.target.value };
+                                      const nextTeacherId = e.target.value;
+                                      const nextPrice = resolveDefaultPrice(
+                                        nextTeacherId,
+                                        createForm.type,
+                                        createForm.oneDayPlacement,
+                                      );
+                                      next[idx] = {
+                                        ...next[idx],
+                                        teacherId: nextTeacherId,
+                                        price: nextPrice,
+                                      };
                                       setEditableSessions(next);
                                     }}
                                   >
@@ -1033,38 +1129,11 @@ export default function ClassListPageV2() {
           </div>
         )}
 
-        <div className="mb-4">
-          <div className="inline-flex gap-2 bg-white p-1 rounded-2xl shadow-sm border border-slate-100">
-            <button
-              type="button"
-              onClick={() => setTimeFilter('upcoming')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                timeFilter === 'upcoming'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              예정 ({filterCounts.upcoming})
-            </button>
-            <button
-              type="button"
-              onClick={() => setTimeFilter('ongoing')}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                timeFilter === 'ongoing'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              진행중 ({filterCounts.ongoing})
-            </button>
-          </div>
-        </div>
-
         {loading ? (
           <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">
             불러오는 중...
           </div>
-        ) : visibleGroups.length === 0 ? (
+        ) : groups.length === 0 ? (
           <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">
             표시할 수업이 없습니다.
           </div>
@@ -1082,7 +1151,7 @@ export default function ClassListPageV2() {
                 </tr>
               </thead>
               <tbody>
-                {visibleGroups.map((g) => {
+                {groups.map((g) => {
                   const firstDate = new Date(g.displayDateAt).toLocaleDateString('ko-KR', {
                     year: 'numeric',
                     month: '2-digit',
@@ -1090,9 +1159,10 @@ export default function ClassListPageV2() {
                   });
                   const statusLabel = g.timeStatus === 'ongoing' ? '진행중' : '예정';
                   const teacherName = g.displayTeacherId ? teacherMap[g.displayTeacherId] || g.displayTeacherId : '-';
+                  const rowKey = makeBundleCompositeKey(g.displayTeacherId, g.title);
 
                   return (
-                    <tr key={g.groupId} className="border-t border-slate-100 hover:bg-slate-50/50">
+                    <tr key={rowKey} className="border-t border-slate-100 hover:bg-slate-50/50">
                       <td className="px-4 py-3 font-bold text-slate-800">
                         {getCleanClassTitle(g.title)}
                       </td>
@@ -1100,7 +1170,13 @@ export default function ClassListPageV2() {
                       <td className="px-4 py-3 text-slate-600">{g.roundTotal}회</td>
                       <td className="px-4 py-3 text-slate-600">{firstDate}</td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-[11px] font-bold ${
+                            g.timeStatus === 'ongoing'
+                              ? 'bg-blue-50 text-blue-800 border border-blue-200/80'
+                              : 'bg-amber-50 text-amber-900 border border-amber-200/80'
+                          }`}
+                        >
                           {statusLabel}
                         </span>
                       </td>
@@ -1118,10 +1194,11 @@ export default function ClassListPageV2() {
                                 return;
                               }
                             }
-                            // ✅ 일반 그룹도 번들 모달로 진입
-                            const key = getBundleTitleKey(g.title);
-                            const ids = bundleGroupIdsByKey[key] || [g.groupId];
-                            setSelectedBundle({ bundleTitle: key || getBundleTitleKey(g.title), groupIds: ids });
+                            // ✅ 일반 그룹도 번들 모달로 진입 (담당 + 수업명 동일 시 여러 group_id)
+                            const compositeKey = makeBundleCompositeKey(g.displayTeacherId, g.title);
+                            const ids = bundleGroupIdsByKey[compositeKey] || [g.groupId];
+                            const titleOnly = getBundleTitleKey(g.title);
+                            setSelectedBundle({ bundleTitle: titleOnly || g.title, groupIds: ids });
                           }}
                           className="inline-flex px-3 py-1.5 rounded-full text-[11px] font-bold bg-blue-600 text-white hover:bg-blue-700 transition"
                         >

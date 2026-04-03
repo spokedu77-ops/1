@@ -17,13 +17,15 @@ export type GroupAliasRule = {
  */
 export const GROUP_ALIAS_RULES: GroupAliasRule[] = [
   {
-    aliasTitle: '신사 11남 학교체육&농구',
-    // 예: '신사 10남 농구(진우성)' + '신사 11남 학교체육 (김민창)'
+    aliasTitle: '신사 11남 학교체육',
     matchAny: [
       { titleIncludesAll: ['신사', '11남', '학교체육'] },
+    ],
+  },
+  {
+    aliasTitle: '신사 10남 농구',
+    matchAny: [
       { titleIncludesAll: ['신사', '10남', '농구'] },
-      { titleIncludesAll: ['신사', '농구'] },
-      { titleIncludesAll: ['신사', '학교체육'] },
     ],
   },
   {

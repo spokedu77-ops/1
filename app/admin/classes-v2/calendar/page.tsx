@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useMemo, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import Sidebar from "@/app/components/Sidebar";
-import { useClassManagement } from "../../classes/hooks/useClassManagement";
-import type { SessionEvent } from "@/app/admin/classes/types";
+import { useClassManagement } from "@/app/admin/classes-shared/hooks/useClassManagement";
+import type { SessionEvent } from "@/app/admin/classes-shared/types";
 import { resolveV2BundleFromSession } from "../lib/v2BundleResolve";
 import ClassBundlePanelV2 from "../components/ClassBundlePanelV2";
 
@@ -68,6 +68,8 @@ function monthRowTone(ev: SessionEvent): string {
   if (ev.status === "postponed") return "bg-violet-50 border-violet-100";
   const t = ev.type || "";
   if (t.includes("center")) return "bg-sky-50 border-sky-100";
+  // DB 정규 과외만 초록. 원데이( one_day / one_day_private 등 )는 "one_day"가 포함되므로 노란색
+  if (t === "regular_private") return "bg-emerald-50/90 border-emerald-100";
   if (t.includes("one_day")) return "bg-amber-50 border-amber-100";
   return "bg-emerald-50/90 border-emerald-100";
 }
@@ -86,12 +88,7 @@ function MonthExcelEventRow({
   const r = roundLabel(ev);
   const fin = showFinBadge(ev);
   const struck = ev.status === "cancelled" || ev.status === "deleted";
-  const teacherShort = ev.teacher
-    ? String(ev.teacher)
-        .split(",")[0]!
-        .trim()
-        .slice(0, 8)
-    : "";
+  const teacherShort = ev.teacher ? String(ev.teacher).trim() : "";
 
   return (
     <button
@@ -220,6 +217,12 @@ export default function ClassManagementCalendarV2() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href="/admin/classes-v2/list?create=1"
+              className="px-4 py-2 rounded-full text-xs font-black bg-blue-600 text-white hover:bg-blue-700"
+            >
+              새 수업 개설
+            </Link>
             <select
               className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-black text-slate-700 max-w-[160px]"
               value={filterTeacher}

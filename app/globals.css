@@ -26,6 +26,47 @@ body {
   font-size: 1rem;
 }
 
+/* 클릭·탭 가능한 요소는 기본 포인터 (텍스트 필드/textarea 제외) */
+@layer base {
+  a,
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="link"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [role="checkbox"]:not([aria-disabled="true"]),
+  [role="radio"]:not([aria-disabled="true"]),
+  summary,
+  label,
+  select:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="color"],
+  input[type="range"],
+  input[type="image"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
+/* 터치 최적화가 붙은 클릭 영역 — 포인터 보강 */
+.touch-manipulation {
+  cursor: pointer;
+}
+
 /* 스크롤바 숨김 유틸리티 */
 .scrollbar-hide {
   -ms-overflow-style: none;

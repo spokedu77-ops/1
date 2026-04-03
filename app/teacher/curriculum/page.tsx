@@ -156,7 +156,7 @@ export default function TeacherCurriculumPage() {
  }, [supabase]);
 
  useEffect(() => {
-   /* eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only data fetch */
+    
    void fetchItems();
  }, [fetchItems]);
 

@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, Save, Trash2, BookOpen, Calendar, ChevronDown } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
+import { computeTier, effectiveFees, totalLessonsFromCounts } from '@/app/lib/teacherTierSchedule';
 
 interface Teacher {
   id: string;
@@ -14,6 +16,10 @@ interface Teacher {
   session_count: number;
   /** 앱 도입 이후 session_count_logs 건수 */
   logCount?: number;
+  fee_private?: number | null;
+  fee_group?: number | null;
+  fee_center_main?: number | null;
+  fee_center_assist?: number | null;
 }
 
 interface MileageLog {
@@ -23,6 +29,8 @@ interface MileageLog {
   reason: string;
   session_title: string;
   created_at: string;
+  session_id?: string | null;
+  session_started_at?: string | null;
 }
 
 interface SessionCountLog {
@@ -47,10 +55,19 @@ function titleWithoutRound(title: string | null | undefined): string {
     .trim();
 }
 
+function stripTrailingParenDate(text: string): string {
+  return text.replace(/\s*\([^()]*\d{4}[^()]*\d{1,2}[^()]*\d{1,2}[^()]*\)\s*$/, '').trim();
+}
+
 /** 수업 이름(한글만) + 수업 날짜 괄호 표기 */
 function formatSessionWithDate(title: string | null | undefined, dateIso: string): string {
-  const dateStr = new Date(dateIso).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  const clean = titleWithoutRound(title);
+  const clean = stripTrailingParenDate(titleWithoutRound(title));
+  const dateStr = new Date(dateIso).toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Seoul',
+  });
   return clean ? `${clean} (${dateStr})` : dateStr;
 }
 
@@ -67,7 +84,13 @@ interface MileageDetailModalProps {
   onSaved?: () => void;
 }
 
-function SessionCountByMonth({ logs }: { logs: SessionCountLog[] }) {
+function SessionCountByMonth({
+  logs,
+  sessionStartById,
+}: {
+  logs: SessionCountLog[];
+  sessionStartById: Record<string, string>;
+}) {
   const [openMonth, setOpenMonth] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
@@ -107,17 +130,29 @@ function SessionCountByMonth({ logs }: { logs: SessionCountLog[] }) {
             {isOpen && (
               <div className="border-t border-slate-50 divide-y divide-slate-50">
                 {items.map((log) => (
+                  (() => {
+                    const resolvedDateIso =
+                      (log.session_id ? sessionStartById[log.session_id] : undefined)
+                      ?? log.sessions?.start_at
+                      ?? log.created_at;
+                    return (
                   <div key={log.id} className="flex items-center justify-between px-4 py-2.5 bg-slate-50/50">
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-[10px] font-black text-slate-400 shrink-0">
-                        {new Date(log.created_at).toLocaleDateString('ko', { month: 'numeric', day: 'numeric' })}
+                        {new Date(resolvedDateIso).toLocaleDateString('ko-KR', {
+                          month: 'numeric',
+                          day: 'numeric',
+                          timeZone: 'Asia/Seoul',
+                        })}
                       </span>
                       <span className="text-[11px] font-bold text-slate-700 truncate">
-                        {formatSessionWithDate(log.session_title, log.sessions?.start_at ?? log.created_at)}
+                        {formatSessionWithDate(log.session_title, resolvedDateIso)}
                       </span>
                     </div>
                     <span className="text-[10px] font-black text-emerald-500 shrink-0 ml-2">+{log.count_change}</span>
                   </div>
+                    );
+                  })()
                 ))}
               </div>
             )}
@@ -131,12 +166,31 @@ function SessionCountByMonth({ logs }: { logs: SessionCountLog[] }) {
 export default function MileageDetailModal({ teacher, supabase, onClose, onSaved }: MileageDetailModalProps) {
   const [modalTab, setModalTab] = useState<'mileage' | 'sessions'>('mileage');
   const [teacherLogs, setTeacherLogs] = useState<MileageLog[]>([]);
+  const [mileageSessionStartById, setMileageSessionStartById] = useState<Record<string, string>>({});
+  const [countSessionStartById, setCountSessionStartById] = useState<Record<string, string>>({});
   const [teacherCountLogs, setTeacherCountLogs] = useState<SessionCountLog[]>([]);
   const [editPointValue, setEditPointValue] = useState<number>(teacher.points || 0);
   const [editSessionCount, setEditSessionCount] = useState<number>(teacher.session_count || 0);
   const [selectedPenalty, setSelectedPenalty] = useState<string>('');
   const [editReason, setEditReason] = useState<string>('');
   const [lastPenaltyLog, setLastPenaltyLog] = useState<MileageLog | null>(null);
+
+  const tierFeePreview = useMemo(() => {
+    const tier = computeTier(totalLessonsFromCounts(teacher.session_count, teacher.logCount));
+    return effectiveFees(tier, {
+      fee_private: teacher.fee_private ?? null,
+      fee_group: teacher.fee_group ?? null,
+      fee_center_main: teacher.fee_center_main ?? null,
+      fee_center_assist: teacher.fee_center_assist ?? null,
+    });
+  }, [
+    teacher.session_count,
+    teacher.logCount,
+    teacher.fee_private,
+    teacher.fee_group,
+    teacher.fee_center_main,
+    teacher.fee_center_assist,
+  ]);
 
   const loadLogs = useCallback(async () => {
     if (!supabase || !teacher?.id) return;
@@ -145,14 +199,60 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
       .select('*')
       .eq('teacher_id', teacher.id)
       .order('created_at', { ascending: false });
-    if (mData) setTeacherLogs(mData as MileageLog[]);
+    if (mData) {
+      const logs = mData as MileageLog[];
+      setTeacherLogs(logs);
+      const ids = Array.from(
+        new Set(
+          logs
+            .map((l) => l.session_id)
+            .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+        )
+      );
+      if (ids.length > 0) {
+        const { data: sessions } = await supabase
+          .from('sessions')
+          .select('id, start_at')
+          .in('id', ids);
+        const map: Record<string, string> = {};
+        (sessions || []).forEach((s) => {
+          if (s.id && s.start_at) map[s.id] = s.start_at;
+        });
+        setMileageSessionStartById(map);
+      } else {
+        setMileageSessionStartById({});
+      }
+    }
 
     const { data: cData } = await supabase
       .from('session_count_logs')
       .select('*, sessions(start_at)')
       .eq('teacher_id', teacher.id)
       .order('created_at', { ascending: false });
-    if (cData) setTeacherCountLogs(cData as SessionCountLog[]);
+    if (cData) {
+      const logs = cData as SessionCountLog[];
+      setTeacherCountLogs(logs);
+      const ids = Array.from(
+        new Set(
+          logs
+            .map((l) => l.session_id)
+            .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+        )
+      );
+      if (ids.length > 0) {
+        const { data: sessions } = await supabase
+          .from('sessions')
+          .select('id, start_at')
+          .in('id', ids);
+        const map: Record<string, string> = {};
+        (sessions || []).forEach((s) => {
+          if (s.id && s.start_at) map[s.id] = s.start_at;
+        });
+        setCountSessionStartById(map);
+      } else {
+        setCountSessionStartById({});
+      }
+    }
   }, [supabase, teacher?.id]);
 
   useEffect(() => {
@@ -161,6 +261,8 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
     setSelectedPenalty('');
     setEditReason('');
     setTeacherLogs([]);
+    setMileageSessionStartById({});
+    setCountSessionStartById({});
     setTeacherCountLogs([]);
     setLastPenaltyLog(null);
     loadLogs();
@@ -282,14 +384,30 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
         <div className="p-6 sm:p-8 overflow-y-auto">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h2 className="text-xl font-black text-slate-950 italic uppercase tracking-tighter">{teacher.name} T</h2>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h2 className="text-xl font-black text-slate-950 italic uppercase tracking-tighter">{teacher.name} T</h2>
+                <TeacherTierBadge sessionCount={teacher.session_count} logCount={teacher.logCount} />
+              </div>
               <p className="text-blue-600 font-black text-2xl mt-1">{(teacher.points || 0).toLocaleString()} <span className="text-xs">P</span></p>
-              <p className="text-slate-400 font-bold text-sm mt-1 flex items-center gap-1">
+              <p className="text-slate-400 font-bold text-sm mt-1 flex items-center gap-1 flex-wrap">
                 <BookOpen size={14} /> {((teacher.session_count || 0) + (teacher.logCount || 0)).toLocaleString()}회 수업 완료
                 {teacher.logCount !== undefined && teacher.logCount > 0 && (
                   <span className="text-[10px] text-slate-300 ml-1">(기존 {(teacher.session_count || 0)} + 신규 {teacher.logCount})</span>
                 )}
               </p>
+              <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-600">
+                <span className="text-slate-400 font-black uppercase tracking-wider">적용 기본 수업료</span>
+                <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5">
+                  <span className="text-slate-400">개인</span>
+                  <span>{tierFeePreview.fee_private.toLocaleString()}원</span>
+                  <span className="text-slate-400">그룹</span>
+                  <span>{tierFeePreview.fee_group.toLocaleString()}원</span>
+                  <span className="text-slate-400">센터 메인</span>
+                  <span>{tierFeePreview.fee_center_main.toLocaleString()}원</span>
+                  <span className="text-slate-400">센터 보조</span>
+                  <span>{tierFeePreview.fee_center_assist.toLocaleString()}원</span>
+                </div>
+              </div>
             </div>
             <button onClick={onClose} className="min-h-[44px] min-w-[44px] hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer text-slate-400 flex items-center justify-center touch-manipulation"><X size={20}/></button>
           </div>
@@ -409,7 +527,12 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
                       <div className="hidden xs:block h-6 w-[1px] bg-slate-100"></div>
                       <div>
                         <p className="text-[11px] font-black text-slate-800 leading-tight">
-                          {formatSessionWithDate(log.session_title, log.created_at)}
+                          {formatSessionWithDate(
+                            log.session_title,
+                            (log.session_id ? mileageSessionStartById[log.session_id] : undefined)
+                              ?? log.session_started_at
+                              ?? log.created_at
+                          )}
                         </p>
                         <p className="text-[9px] font-bold text-slate-400 mt-0.5">{cleanReason(log.reason)}</p>
                       </div>
@@ -429,7 +552,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
             )}
 
             {modalTab === 'sessions' && (
-              <SessionCountByMonth logs={teacherCountLogs} />
+              <SessionCountByMonth logs={teacherCountLogs} sessionStartById={countSessionStartById} />
             )}
           </div>
         </div>

@@ -49,11 +49,19 @@ export async function extendClass(
       return;
     }
 
-    const last = sessions[sessions.length - 1];
+    const activeSessions = (sessions as any[]).filter(
+      (s) => !['postponed', 'cancelled', 'deleted'].includes(String(s.status ?? ''))
+    );
+    if (activeSessions.length === 0) {
+      toast.error('활성 회차를 찾지 못했습니다.');
+      return;
+    }
+
+    const last = activeSessions[activeSessions.length - 1];
 
     const lastStart = new Date(last.start_at);
-    const first = sessions[0];
-    const second = sessions[1];
+    const first = activeSessions[0];
+    const second = activeSessions[1];
 
     // 간격 추론: 동일 요일 패턴이라고 가정하고 평균 간격 사용 (기본 7일)
     let dayInterval = 7;
@@ -64,7 +72,7 @@ export async function extendClass(
       if (diffDays > 0) dayInterval = diffDays;
     }
 
-    const newTotal = sessions.length + addCount;
+    const newTotal = activeSessions.length + addCount;
     const baseDuration =
       (new Date(last.end_at).getTime() - new Date(last.start_at).getTime()) / (1000 * 60);
 
@@ -97,7 +105,7 @@ export async function extendClass(
       const end = new Date(start);
       end.setMinutes(end.getMinutes() + baseDuration);
 
-      const roundIndex = (last.round_index ?? sessions.length) + i;
+      const roundIndex = (last.round_index ?? activeSessions.length) + i;
       const roundDisplay = `${roundIndex}/${newTotal}`;
 
       newSessions.push({
@@ -119,12 +127,12 @@ export async function extendClass(
 
     // 기존 세션 round_total / round_display 업데이트
     await Promise.all(
-      sessions.map((s: any) =>
+      activeSessions.map((s: any) =>
         supabase
           .from('sessions')
           .update({
             round_total: newTotal,
-            round_display: `${s.round_index}/${newTotal}`,
+            round_display: `${s.round_index ?? 1}/${newTotal}`,
           })
           .eq('id', s.id)
       )
@@ -139,4 +147,3 @@ export async function extendClass(
     toast.error('회차 확장에 실패했습니다: ' + formatErrorMessage(error));
   }
 }
-
