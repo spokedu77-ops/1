@@ -37,7 +37,7 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
     try {
       blob = dataUrlToBlob(canvas.toDataURL('image/png', 1));
     } catch {
-      throw new Error('이미지 생성에 실패했습니다. 브라우저 저장 권한을 확인해 주세요.');
+      throw new Error('이미지 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.');
     }
   }
   return blob;

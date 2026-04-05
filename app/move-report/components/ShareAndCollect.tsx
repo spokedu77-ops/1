@@ -41,6 +41,8 @@ export default function ShareAndCollect({ p, displayName, flash, onLeadSubmit, s
           catchcopy: p.catchcopy,
           strengths,
           activity: recommendedActivity,
+          color: p.col,
+          emoji: p.em,
         })
       : '';
   const shareTitle = '스포키듀 MOVE 리포트';

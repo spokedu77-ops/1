@@ -138,15 +138,6 @@ export default function ShareResultCard({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gap: 12, marginBottom: 28 }}>
-          {strengths.map((item, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: 29, lineHeight: 1.45, color: '#DDD' }}>
-              <span style={{ color, fontWeight: 900, lineHeight: 1.4 }}>•</span>
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-
         <div
           style={{
             borderRadius: 24,

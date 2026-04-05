@@ -5,6 +5,8 @@ export type MoveReportSharePayload = {
   catchcopy: string;
   strengths: string[];
   activity: string;
+  color?: string;
+  emoji?: string;
 };
 
 function toBase64Url(input: string): string {
@@ -50,6 +52,8 @@ export function parseMoveReportSharePayload(raw: string | null): MoveReportShare
       catchcopy: parsed.catchcopy,
       strengths: parsed.strengths.slice(0, 3),
       activity: parsed.activity,
+      ...(typeof parsed.color === 'string' && parsed.color ? { color: parsed.color } : {}),
+      ...(typeof parsed.emoji === 'string' && parsed.emoji ? { emoji: parsed.emoji } : {}),
     };
   } catch {
     return null;

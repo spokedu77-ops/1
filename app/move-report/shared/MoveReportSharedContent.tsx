@@ -39,21 +39,33 @@ export default function MoveReportSharedContent() {
     );
   }
 
+  const accentColor = payload.color ?? '#FEE500';
+  const accentColorDim = `${accentColor}22`;
+  const accentColorBorder = `${accentColor}55`;
+  const accentColorGlow = `${accentColor}30`;
+
   return (
     <main style={{ minHeight: '100vh', background: '#0D0D0D', color: '#fff', padding: '24px', display: 'grid', placeItems: 'center' }}>
-      <section style={{ width: '100%', maxWidth: 460, borderRadius: 20, border: '1px solid #2A2A2A', background: 'linear-gradient(160deg,#141414,#1B1B1B)', padding: 22 }}>
+      <section style={{ width: '100%', maxWidth: 460, borderRadius: 20, border: `1px solid ${accentColorBorder}`, background: 'linear-gradient(160deg,#141414,#1B1B1B)', padding: 22, boxShadow: `0 0 40px ${accentColorGlow}` }}>
         <p style={{ fontSize: 12, color: '#A2A2A2', letterSpacing: '.08em', fontWeight: 700, marginBottom: 10 }}>MOVE SHARED RESULT</p>
-        <h1 style={{ fontSize: 30, lineHeight: 1.25, fontWeight: 900, marginBottom: 12 }}>
-          {payload.name}의 유형은
-          <br />
-          <span style={{ color: '#FEE500' }}>{payload.profileName}</span>
-        </h1>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          {payload.emoji ? (
+            <span style={{ fontSize: 48, lineHeight: 1, filter: `drop-shadow(0 0 16px ${accentColor}80)` }}>{payload.emoji}</span>
+          ) : null}
+          <h1 style={{ fontSize: 28, lineHeight: 1.25, fontWeight: 900, margin: 0 }}>
+            {payload.name}의 유형은
+            <br />
+            <span style={{ color: accentColor }}>{payload.profileName}</span>
+          </h1>
+        </div>
+
         <p
           style={{
             fontSize: 15,
             color: '#E4E4E4',
             lineHeight: 1.6,
-            borderLeft: '3px solid #FEE500',
+            borderLeft: `3px solid ${accentColor}`,
             paddingLeft: 12,
             marginBottom: 16,
           }}
@@ -65,15 +77,15 @@ export default function MoveReportSharedContent() {
           <p style={{ fontSize: 13, color: '#9A9A9A', marginBottom: 8 }}>강점 포인트</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {payload.strengths.map((item, idx) => (
-              <span key={idx} style={{ padding: '6px 10px', borderRadius: 999, border: '1px solid #3A3A3A', background: '#202020', fontSize: 13 }}>
+              <span key={idx} style={{ padding: '6px 10px', borderRadius: 999, border: `1px solid ${accentColorBorder}`, background: accentColorDim, fontSize: 13 }}>
                 {item}
               </span>
             ))}
           </div>
         </div>
 
-        <div style={{ borderRadius: 12, background: 'rgba(254,229,0,.12)', border: '1px solid rgba(254,229,0,.3)', padding: '12px 14px', marginBottom: 18 }}>
-          <p style={{ fontSize: 12, color: '#E8D770', marginBottom: 6, fontWeight: 700 }}>추천 활동</p>
+        <div style={{ borderRadius: 12, background: accentColorDim, border: `1px solid ${accentColorBorder}`, padding: '12px 14px', marginBottom: 18 }}>
+          <p style={{ fontSize: 12, color: accentColor, marginBottom: 6, fontWeight: 700 }}>추천 활동</p>
           <p style={{ fontSize: 15, color: '#FFFBE7', lineHeight: 1.5, fontWeight: 700 }}>{payload.activity}</p>
         </div>
 
@@ -86,8 +98,8 @@ export default function MoveReportSharedContent() {
             width: '100%',
             padding: '13px 16px',
             borderRadius: 12,
-            background: '#FEE500',
-            color: '#3C1E1E',
+            background: accentColor,
+            color: '#111',
             textDecoration: 'none',
             fontWeight: 900,
             fontSize: 15,

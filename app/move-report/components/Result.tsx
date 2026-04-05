@@ -603,7 +603,7 @@ export default function Result({
                     <div style={{ fontSize: '14px', fontWeight: 900, color: '#fff' }}>저장 후 기능을 이어갈 수 있어요</div>
                   </div>
                   <p style={{ fontSize: '11px', color: '#999', lineHeight: 1.5, wordBreak: 'keep-all', margin: '0 0 14px' }}>
-                    설문에서 웹에서만 결과를 봤다면, 아래에서 전화번호로 저장한 뒤 공유/저장 기능을 이용할 수 있어요.
+                    전화번호를 아직 저장하지 않으셨다면, 아래에서 저장 후 공유/이미지 저장 기능을 이용할 수 있어요.
                   </p>
                   <button
                     type="button"

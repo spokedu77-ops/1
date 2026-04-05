@@ -56,9 +56,9 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
               wordBreak: 'keep-all',
             }}
           >
-            결과 확인 전에,
+            결과는 바로 볼 수 있어요
             <br />
-            전화번호로 저장해드릴게요
+            원하시면 저장해드릴게요
           </h2>
           <p style={{ fontSize: '14px', color: '#CCCCCC', lineHeight: 1.65, wordBreak: 'keep-all' }}>
             지금 나온 우리 아이 결과를 저장하고,
