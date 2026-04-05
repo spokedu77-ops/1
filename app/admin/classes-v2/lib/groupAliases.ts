@@ -33,5 +33,14 @@ export const GROUP_ALIAS_RULES: GroupAliasRule[] = [
     // 예: '반포 10남 학교체육 (정재원 / 성연호)'
     matchAny: [{ titleIncludesAll: ['반포', '10남', '학교체육'] }],
   },
+  {
+    /** 화곡 새하늘 지역아동센터 — 괄호 안 문자열은 normalize 시 제거되므로 본문에 남는 키워드로 매칭 */
+    aliasTitle: '새하늘 지역 아동센터 (화곡)',
+    matchAny: [
+      { titleIncludesAll: ['새하늘', '지역아동'] },
+      { titleIncludesAll: ['새하늘', '아동센터'] },
+      { titleIncludesAll: ['새하늘', '지역', '아동'] },
+    ],
+  },
 ];
 

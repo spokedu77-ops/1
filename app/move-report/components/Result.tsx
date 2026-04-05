@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { ComputeResult } from '../types';
+import { isValidMoveReportPhone } from '../lib/phone';
 import Radar from './Radar';
 import AxisRow from './AxisRow';
 import ShareAndCollect from './ShareAndCollect';
@@ -67,7 +68,7 @@ export default function Result({
     return () => window.clearTimeout(t);
   }, []);
 
-  const hasSavedPhone = savedPhone.replace(/\D/g, '').length >= 10;
+  const hasSavedPhone = isValidMoveReportPhone(savedPhone);
 
   const codeLabels = [
     { code: key[0], label: key[0] === 'C' ? '협동형' : '독립형' },

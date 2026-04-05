@@ -50,3 +50,6 @@ WHERE s.group_id = g.group_id
 --   WHERE s.status = 'cancelled' AND s.round_total = 8
 -- )
 -- ORDER BY group_id, start_at;
+
+-- 운영 참고: 깨진 회차 데이터는 앱 코드의 재정렬·표시 로직으로 맞추지 말고,
+-- 위와 같이 SQL로 보정한 뒤, 화면은 `resolvePlannedTotal` / `buildGroupPlannedTotals`만 사용한다.

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { normalizeMoveReportPhone } from '../lib/phone';
 
 interface Props {
   onSubmit: (phone: string) => Promise<void>;
@@ -12,14 +13,14 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const digits = phone.replace(/\D/g, '');
-  const active = digits.length >= 10 && consent;
+  const normalizedPhone = normalizeMoveReportPhone(phone);
+  const active = !!normalizedPhone && consent;
 
   const handleSubmit = async () => {
     if (!active) return;
     setLoading(true);
     try {
-      await onSubmit(phone);
+      await onSubmit(normalizedPhone ?? phone);
     } finally {
       setLoading(false);
     }
@@ -111,6 +112,7 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
             autoComplete="tel"
             inputMode="tel"
           />
+          <p style={{ fontSize: '11px', color: '#777', marginTop: '8px' }}>11자리 휴대폰 번호(010-0000-0000)만 저장할 수 있어요.</p>
         </div>
 
         <div className="anim-rise d2" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '20px' }}>

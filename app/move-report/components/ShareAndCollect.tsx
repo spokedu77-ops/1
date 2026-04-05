@@ -3,7 +3,9 @@
 import { useMemo, useRef, useState } from 'react';
 import type { Profile } from '../types';
 import ShareResultCard from './ShareResultCard';
-import { downloadPng, makeShareCardBlob, sharePng } from '../lib/shareCard';
+import { copyTextToClipboard, downloadPng, makeShareCardBlob, shareTextAndUrl } from '../lib/shareCard';
+import { normalizeMoveReportPhone } from '../lib/phone';
+import { buildMoveReportShareUrl } from '../lib/shareLink';
 
 interface ShareAndCollectProps {
   p: Profile;
@@ -21,17 +23,30 @@ export default function ShareAndCollect({ p, displayName, flash, onLeadSubmit, s
   const [busy, setBusy] = useState<'download' | 'share' | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
 
-  const normalizedSaved = savedPhone.replace(/\D/g, '');
-  const digits = phone.replace(/\D/g, '');
-  const alreadySaved = normalizedSaved.length >= 10;
-  const active = digits.length >= 10 && consent;
+  const normalizedSaved = normalizeMoveReportPhone(savedPhone);
+  const normalizedInput = normalizeMoveReportPhone(phone);
+  const alreadySaved = !!normalizedSaved;
+  const active = !!normalizedInput && consent;
   const ready = sent || alreadySaved;
   const strengths = useMemo(() => p.str.slice(0, 2), [p.str]);
   const recommendedActivity = p.env[0] || p.shortTip;
 
   const fileName = `${displayName || '아이'}_MOVE_요약카드.png`;
+  const shareUrl =
+    typeof window !== 'undefined'
+      ? buildMoveReportShareUrl(window.location.origin, {
+          v: 1,
+          name: displayName || '우리 아이',
+          profileName: p.char,
+          catchcopy: p.catchcopy,
+          strengths,
+          activity: recommendedActivity,
+        })
+      : '';
+  const shareTitle = '스포키듀 MOVE 리포트';
+  const shareText = `${displayName || '우리 아이'} 결과를 공유했어요. 확인하고 나도 해보세요!`;
 
-  const withCardBlob = async (mode: 'download' | 'share') => {
+  const withCardBlob = async () => {
     if (!ready) {
       flash('전화번호 저장 후 요약 카드 저장/공유가 가능해요.');
       return;
@@ -40,23 +55,37 @@ export default function ShareAndCollect({ p, displayName, flash, onLeadSubmit, s
       flash('요약 카드 준비 중이에요. 잠시 후 다시 시도해 주세요.');
       return;
     }
-    setBusy(mode);
+    setBusy('download');
     try {
       const blob = await makeShareCardBlob(cardRef.current);
-      if (mode === 'download') {
-        downloadPng(blob, fileName);
-        flash('요약 카드 이미지가 저장됐어요.');
-      } else {
-        const shared = await sharePng(blob, 'MOVE 리포트 요약 카드', `${displayName} 아이 결과 요약 카드`, fileName);
-        if (shared) {
-          flash('요약 카드 공유 창을 열었어요.');
-        } else {
-          downloadPng(blob, fileName);
-          flash('공유를 지원하지 않아 이미지로 저장해드렸어요.');
-        }
+      downloadPng(blob, fileName);
+      flash('요약 카드 이미지가 저장됐어요.');
+    } catch (e) {
+      const message = e instanceof Error ? e.message : '이미지 생성 중 오류가 발생했어요. 다시 시도해 주세요.';
+      flash(message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const shareResultLink = async () => {
+    if (!ready) {
+      flash('전화번호 저장 후 결과 링크 공유가 가능해요.');
+      return;
+    }
+    setBusy('share');
+    try {
+      const shared = await shareTextAndUrl(shareTitle, shareText, shareUrl);
+      if (shared) {
+        flash('결과 링크 공유 창을 열었어요.');
+        return;
       }
-    } catch {
-      flash('이미지 생성 중 오류가 발생했어요. 다시 시도해 주세요.');
+      const copied = await copyTextToClipboard(shareUrl);
+      if (copied) {
+        flash('결과 링크를 복사했어요.');
+      } else {
+        flash('이 기기에서는 공유가 제한돼요. 주소창 링크를 직접 복사해 주세요.');
+      }
     } finally {
       setBusy(null);
     }
@@ -103,7 +132,7 @@ export default function ShareAndCollect({ p, displayName, flash, onLeadSubmit, s
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '8px' }}>
             <button
               type="button"
-              onClick={() => void withCardBlob('download')}
+              onClick={() => void withCardBlob()}
               disabled={!ready || busy !== null}
               style={{
                 display: 'inline-flex',
@@ -130,7 +159,7 @@ export default function ShareAndCollect({ p, displayName, flash, onLeadSubmit, s
             </button>
             <button
               type="button"
-              onClick={() => void withCardBlob('share')}
+              onClick={() => void shareResultLink()}
               disabled={!ready || busy !== null}
               style={{
                 display: 'inline-flex',
@@ -151,7 +180,7 @@ export default function ShareAndCollect({ p, displayName, flash, onLeadSubmit, s
               }}
             >
               <i className="fa-solid fa-share-nodes" />
-              공유
+              {busy === 'share' ? '링크 준비 중…' : '결과 링크 공유'}
             </button>
           </div>
           {!ready ? (
@@ -242,11 +271,11 @@ export default function ShareAndCollect({ p, displayName, flash, onLeadSubmit, s
                 disabled={!active}
                 onClick={async () => {
                   if (!active) return;
-                  if (digits.length < 10) {
-                    flash('번호를 입력해 주세요.');
+                  if (!normalizedInput) {
+                    flash('전화번호 11자리(010-0000-0000)를 입력해 주세요.');
                     return;
                   }
-                  const ok = await onLeadSubmit(phone);
+                  const ok = await onLeadSubmit(normalizedInput);
                   if (ok) setSent(true);
                 }}
                 style={{
@@ -267,7 +296,7 @@ export default function ShareAndCollect({ p, displayName, flash, onLeadSubmit, s
               </button>
             </div>
             <p style={{ fontSize: '10px', color: '#444', marginTop: '8px', lineHeight: 1.4 }}>
-              마케팅 정보 수신 동의 포함 · 언제든 수신 거부 가능
+              11자리 휴대폰 번호(010-0000-0000)만 저장 가능 · 언제든 수신 거부 가능
             </p>
           </div>
         )}
@@ -276,8 +305,10 @@ export default function ShareAndCollect({ p, displayName, flash, onLeadSubmit, s
         aria-hidden
         style={{
           position: 'fixed',
-          left: '-99999px',
+          left: 0,
           top: 0,
+          opacity: 0,
+          zIndex: -1,
           pointerEvents: 'none',
         }}
       >

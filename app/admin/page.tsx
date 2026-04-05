@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
 import { Calendar, RefreshCw, FileText, ExternalLink, Star, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -190,27 +191,22 @@ export default function SpokeduHQDashboard() {
 
       const rawClasses = classesRes.data || [];
 
-      // ✅ 라운드 토탈 흔들림 방지:
-      // deleted 만 제외하고 cancelled 포함 전체에서 round_total 최댓값을 분모로 사용한다.
-      // cancelled 세션은 round_total 을 보존하므로 계약 총 회차를 올바르게 반영한다.
-      const activeGroupRoundTotal: Record<string, number> = {};
-      for (const c of rawClasses as any[]) {
-        const gid = c.group_id;
-        if (!gid) continue;
-        const st = String(c.status ?? '');
-        if (st === 'deleted') continue;
-        const rt = c.round_total;
-        if (typeof rt === 'number' && Number.isFinite(rt) && rt > 0) {
-          activeGroupRoundTotal[gid] = Math.max(activeGroupRoundTotal[gid] ?? 0, rt);
-        }
-      }
+      const groupPlannedTotals = buildGroupPlannedTotals(
+        rawClasses as {
+          group_id?: string | null;
+          status?: string | null;
+          round_total?: number | null;
+          round_index?: number | null;
+        }[]
+      );
 
       const formattedClasses = rawClasses
         .map((c: { id: string; start_at: string; end_at: string; title?: string; status?: string; round_display?: string; round_index?: number; round_total?: number; users?: { name?: string } }) => {
           const endTime = new Date(c.end_at);
           const isPostponed = c.status === 'postponed';
           const isCancelled = c.status === 'cancelled';
-          const total = activeGroupRoundTotal[(c as any).group_id] ?? c.round_total;
+          const total =
+            ((c as any).group_id ? groupPlannedTotals[String((c as any).group_id)] : undefined) ?? c.round_total;
           const roundIndex = typeof c.round_index === 'number' ? c.round_index : undefined;
           const roundDisplay =
             typeof roundIndex === 'number' && Number.isFinite(roundIndex) && typeof total === 'number' && Number.isFinite(total) && total > 0

@@ -1,6 +1,6 @@
 /**
  * 수업안 조회 API (service_role로 RLS 무시 → 작성된 수업안이 정상 반환됨)
- * GET ?teacherId=all|{uuid} → 최근 1주 세션 + lesson_plans + users
+ * GET ?teacherId=all|{uuid}&scope=private|center → 이번 주(월~일 KST) 세션 + lesson_plans + users
  * 운영진(role / is_admin / name)만 호출 가능.
  */
 
@@ -16,13 +16,20 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const teacherId = searchParams.get('teacherId') ?? 'all';
+    /** 과외 vs 센터 (기본 과외) — 검수 화면 탭과 동일 분류 */
+    const scope = searchParams.get('scope') ?? 'private';
+    const sessionTypes =
+      scope === 'center'
+        ? (['regular_center', 'one_day_center'] as const)
+        : (['one_day', 'one_day_private', 'regular_private'] as const);
 
-    // 이번 주: 일요일 00:00 ~ 토요일 23:59 (KST 기준, UTC+9)
+    // 이번 주: 월요일 00:00 ~ 일요일 23:59 (KST, ISO 주간과 동일)
     const KST_OFFSET = 9 * 60 * 60 * 1000;
     const nowKST = new Date(Date.now() + KST_OFFSET);
-    const dayOfWeek = nowKST.getUTCDay(); // KST 기준 요일
+    const dayOfWeek = nowKST.getUTCDay(); // 0=일 … 6=토
+    const daysFromMonday = (dayOfWeek + 6) % 7; // 월=0 … 일=6
     const startKST = new Date(nowKST);
-    startKST.setUTCDate(nowKST.getUTCDate() - dayOfWeek);
+    startKST.setUTCDate(nowKST.getUTCDate() - daysFromMonday);
     startKST.setUTCHours(0, 0, 0, 0);
     const endKST = new Date(startKST);
     endKST.setUTCDate(startKST.getUTCDate() + 6);
@@ -35,13 +42,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('sessions')
       .select('*, lesson_plans(id, session_id, content), users!created_by(id, name)')
-      .in('session_type', [
-        'one_day',
-        'one_day_center',
-        'one_day_private',
-        'regular_private',
-        'regular_center',
-      ])
+      .in('session_type', [...sessionTypes])
       .gte('start_at', start.toISOString())
       .lte('start_at', end.toISOString())
       .order('start_at', { ascending: false });

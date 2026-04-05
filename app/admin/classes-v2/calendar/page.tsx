@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
 import Sidebar from "@/app/components/Sidebar";
 import { useClassManagement } from "@/app/admin/classes-shared/hooks/useClassManagement";
 import type { SessionEvent } from "@/app/admin/classes-shared/types";
+import { getSupabaseBrowserClient } from "@/app/lib/supabase/browser";
 import { resolveV2BundleFromSession } from "../lib/v2BundleResolve";
 import ClassBundlePanelV2 from "../components/ClassBundlePanelV2";
+import { monthRowToneClassesForSessionType } from "../lib/sessionTypeCategory";
 
 function toDate(v: Date | string) {
   return v instanceof Date ? v : new Date(v);
@@ -63,38 +66,52 @@ function formatTimeShort(d: Date) {
   return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 }
 
+/** 로컬 자정 기준 캘린더 날짜만 비교 */
+function startOfLocalDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function isPastCalendarDay(cell: Date) {
+  return startOfLocalDay(cell).getTime() < startOfLocalDay(new Date()).getTime();
+}
+
+function addLocalDays(d: Date, delta: number) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() + delta);
+  return x;
+}
+
 function monthRowTone(ev: SessionEvent): string {
-  if (ev.status === "cancelled" || ev.status === "deleted") return "bg-rose-50 border-rose-100";
-  if (ev.status === "postponed") return "bg-violet-50 border-violet-100";
-  const t = ev.type || "";
-  if (t.includes("center")) return "bg-sky-50 border-sky-100";
-  // DB 정규 과외만 초록. 원데이( one_day / one_day_private 등 )는 "one_day"가 포함되므로 노란색
-  if (t === "regular_private") return "bg-emerald-50/90 border-emerald-100";
-  if (t.includes("one_day")) return "bg-amber-50 border-amber-100";
-  return "bg-emerald-50/90 border-emerald-100";
+  if (ev.status === "cancelled" || ev.status === "deleted")
+    return "bg-rose-200 border-2 border-rose-600 shadow-sm";
+  if (ev.status === "postponed") return "bg-violet-200 border-2 border-violet-600 shadow-sm";
+  return monthRowToneClassesForSessionType(ev.type);
 }
 
 const FIN_BADGE_CLASS =
-  "inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-black bg-red-600 text-white shadow-sm shrink-0";
+  "inline-flex items-center justify-center px-1 py-px rounded leading-none text-[8px] font-black bg-red-600 text-white shadow-sm shrink-0";
 
 function MonthExcelEventRow({
   ev,
+  isPastDay,
   onOpen,
 }: {
   ev: SessionEvent;
+  isPastDay: boolean;
   onOpen: (ev: SessionEvent) => void;
 }) {
   const start = toDate(ev.start);
   const r = roundLabel(ev);
   const fin = showFinBadge(ev);
   const struck = ev.status === "cancelled" || ev.status === "deleted";
+  const strikeTitle = struck || isPastDay;
   const teacherShort = ev.teacher ? String(ev.teacher).trim() : "";
 
   return (
     <button
       type="button"
       onClick={() => onOpen(ev)}
-      className={`w-full text-left border-b border-slate-200/80 last:border-b-0 px-0.5 py-1 min-w-0 flex flex-col gap-0.5 ${monthRowTone(ev)} hover:brightness-95`}
+      className={`w-full text-left border-b border-slate-200/80 last:border-b-0 px-0.5 py-1 min-w-0 flex flex-col gap-0.5 ${monthRowTone(ev)} hover:brightness-[0.97]`}
     >
       <div className="flex items-start gap-1 min-w-0">
         <span className="shrink-0 text-[9px] font-black text-slate-600 tabular-nums w-9">
@@ -102,20 +119,32 @@ function MonthExcelEventRow({
         </span>
         <span
           className={`min-w-0 flex-1 text-[10px] font-bold text-slate-900 leading-snug line-clamp-2 break-words ${
-            struck ? "line-through text-slate-500" : ""
+            strikeTitle ? "line-through text-slate-500" : ""
           }`}
         >
           {ev.title}
         </span>
         <span className="shrink-0 flex flex-col items-end gap-0.5">
           {r ? (
-            <span className="text-[9px] font-black text-slate-600 tabular-nums whitespace-nowrap">{r}</span>
+            <span
+              className={`text-[9px] font-black tabular-nums whitespace-nowrap ${
+                strikeTitle ? "line-through text-slate-500" : "text-slate-600"
+              }`}
+            >
+              {r}
+            </span>
           ) : null}
-          {fin ? <span className={FIN_BADGE_CLASS}>FIN</span> : null}
         </span>
       </div>
-      {teacherShort ? (
-        <div className="pl-9 text-[8px] font-bold text-slate-500 truncate">{teacherShort}</div>
+      {teacherShort || fin ? (
+        <div
+          className={`pl-9 flex min-w-0 items-center justify-between gap-1 ${
+            strikeTitle ? "line-through text-slate-400" : "text-slate-500"
+          }`}
+        >
+          <span className="min-w-0 flex-1 truncate text-[8px] font-bold">{teacherShort || "\u00A0"}</span>
+          {fin ? <span className={FIN_BADGE_CLASS}>FIN</span> : null}
+        </div>
       ) : null}
     </button>
   );
@@ -132,14 +161,32 @@ export default function ClassManagementCalendarV2() {
   } = useClassManagement();
 
   const [monthAnchor, setMonthAnchor] = useState<Date>(() => new Date());
+  /** 모바일 3일 뷰: 가운데 날짜(로컬 자정). ◀/▶ 로 이동, 「오늘」로 리셋 */
+  const [threeDayCenter, setThreeDayCenter] = useState<Date>(() => startOfLocalDay(new Date()));
 
   const [bundleOpen, setBundleOpen] = useState(false);
   const [bundleTitle, setBundleTitle] = useState("");
   const [bundleGroupIds, setBundleGroupIds] = useState<string[]>([]);
 
   const openBundleForEvent = useCallback(
-    (ev: SessionEvent) => {
-      const { bundleTitle: title, groupIds } = resolveV2BundleFromSession(ev, allEvents);
+    async (ev: SessionEvent) => {
+      let { bundleTitle: title, groupIds } = resolveV2BundleFromSession(ev, allEvents);
+      if (groupIds.length === 0 && ev.id) {
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const { data, error } = await supabase
+            .from("sessions")
+            .select("group_id")
+            .eq("id", ev.id)
+            .maybeSingle();
+          if (!error && data?.group_id) {
+            groupIds = [String(data.group_id)];
+          }
+        }
+      }
+      if (groupIds.length === 0) {
+        toast.error("연결된 수업 그룹(group_id)을 찾을 수 없습니다. DB 세션을 확인해 주세요.");
+      }
       setBundleTitle(title);
       setBundleGroupIds(groupIds);
       setBundleOpen(true);
@@ -148,6 +195,32 @@ export default function ClassManagementCalendarV2() {
   );
 
   const monthInfo = useMemo(() => getMonthGrid(monthAnchor), [monthAnchor]);
+
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, SessionEvent[]>();
+    for (const ev of filteredEvents) {
+      const s = toDate(ev.start);
+      const key = dayMapKey(s);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(ev);
+    }
+    for (const [, arr] of map) {
+      arr.sort((a, b) => toDate(a.start).getTime() - toDate(b.start).getTime());
+    }
+    return map;
+  }, [filteredEvents]);
+
+  const mobileThreeDays = useMemo(() => {
+    const c = startOfLocalDay(threeDayCenter);
+    return [addLocalDays(c, -1), c, addLocalDays(c, 1)];
+  }, [threeDayCenter]);
+
+  const mobileRangeLabel = useMemo(() => {
+    const a = mobileThreeDays[0]!;
+    const b = mobileThreeDays[2]!;
+    const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+    return `${a.toLocaleDateString("ko-KR", opts)} ~ ${b.toLocaleDateString("ko-KR", opts)}`;
+  }, [mobileThreeDays]);
 
   const eventsByMonthDay = useMemo(() => {
     const map = new Map<string, SessionEvent[]>();
@@ -168,16 +241,16 @@ export default function ClassManagementCalendarV2() {
   const monthWeekRows = useMemo(() => chunkWeeks(monthInfo.cells), [monthInfo.cells]);
 
   return (
-    <div className="flex min-h-screen bg-white text-slate-900 w-full overflow-hidden">
+    <div className="flex min-h-screen bg-white text-slate-900 w-full min-w-0">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
-        <nav className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-white flex flex-wrap justify-between items-center gap-2 z-50">
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-            <h1 className="text-base sm:text-lg font-black italic uppercase text-slate-950 flex items-center gap-2">
+        <nav className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-white flex flex-wrap justify-between items-center gap-2 z-10">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap min-w-0">
+            <h1 className="text-base sm:text-lg font-black italic uppercase text-slate-950 flex items-center gap-2 shrink-0">
               <CalendarIcon size={18} className="text-blue-600" /> SPOKEDU (V2)
             </h1>
 
-            <div className="flex bg-slate-100 rounded-lg p-0.5 items-center">
+            <div className="hidden md:flex bg-slate-100 rounded-lg p-0.5 items-center">
               <button
                 type="button"
                 onClick={() =>
@@ -213,7 +286,44 @@ export default function ClassManagementCalendarV2() {
               </button>
             </div>
 
-            <div className="text-xs font-black text-slate-600 hidden sm:block">{monthInfo.monthLabel}</div>
+            <div className="text-xs font-black text-slate-600 hidden md:block">{monthInfo.monthLabel}</div>
+
+            <div className="flex md:hidden items-center gap-1 bg-slate-100 rounded-lg p-0.5 shrink-0">
+              <button
+                type="button"
+                aria-label="이전 날"
+                onClick={() =>
+                  setThreeDayCenter((prev) => addLocalDays(startOfLocalDay(prev), -1))
+                }
+                className="p-1.5 hover:bg-white rounded-md transition-all"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const t = startOfLocalDay(new Date());
+                  setThreeDayCenter(t);
+                  setMonthAnchor(new Date(t.getFullYear(), t.getMonth(), 1));
+                }}
+                className="px-2 py-1 text-[11px] font-black rounded-md hover:bg-white transition-all whitespace-nowrap"
+              >
+                오늘
+              </button>
+              <button
+                type="button"
+                aria-label="다음 날"
+                onClick={() =>
+                  setThreeDayCenter((prev) => addLocalDays(startOfLocalDay(prev), 1))
+                }
+                className="p-1.5 hover:bg-white rounded-md transition-all"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            <div className="text-[10px] font-black text-slate-500 md:hidden truncate max-w-[200px]">
+              {mobileRangeLabel}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -246,7 +356,61 @@ export default function ClassManagementCalendarV2() {
 
         <div className="flex-1 min-h-0 overflow-auto bg-slate-50">
           <div className="p-3 w-full max-w-[1600px] mx-auto min-w-0">
-            <div className="rounded-2xl border border-slate-300 bg-slate-200 overflow-hidden shadow-sm">
+            <div className="md:hidden space-y-3">
+              {mobileThreeDays.map((cell) => {
+                const key = dayMapKey(cell);
+                const dayEvents = eventsByDay.get(key) || [];
+                const t = new Date();
+                const isToday = startOfLocalDay(t).getTime() === startOfLocalDay(cell).getTime();
+                const isPastDay = isPastCalendarDay(cell);
+                const headerLabel = cell.toLocaleDateString("ko-KR", {
+                  weekday: "short",
+                  month: "numeric",
+                  day: "numeric",
+                });
+                return (
+                  <div
+                    key={key}
+                    className={`rounded-2xl border overflow-hidden shadow-sm ${
+                      isToday
+                        ? "border-blue-600 ring-2 ring-blue-500/40 bg-blue-50/40"
+                        : "border-slate-300 bg-slate-200"
+                    }`}
+                  >
+                    <div
+                      className={`shrink-0 flex items-center justify-center gap-2 py-2 px-3 text-xs font-black text-white ${
+                        isToday ? "bg-blue-800" : "bg-blue-600"
+                      }`}
+                    >
+                      {isToday ? (
+                        <span className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide bg-white/25 text-white">
+                          오늘
+                        </span>
+                      ) : null}
+                      <span>{headerLabel}</span>
+                    </div>
+                    <div className="flex flex-col min-h-0 min-w-0 bg-white">
+                      {dayEvents.length === 0 ? (
+                        <div className={`min-h-[52px] flex items-center justify-center text-[11px] font-bold text-slate-400 ${isToday ? "bg-blue-50/30" : ""}`}>
+                          일정 없음
+                        </div>
+                      ) : (
+                        dayEvents.map((ev) => (
+                          <MonthExcelEventRow
+                            key={ev.id}
+                            ev={ev}
+                            isPastDay={isPastDay}
+                            onOpen={openBundleForEvent}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden md:block rounded-2xl border border-slate-300 bg-slate-200 overflow-hidden shadow-sm">
               <div className="grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300">
                 {["월", "화", "수", "목", "금", "토", "일"].map((w) => (
                   <div
@@ -276,6 +440,7 @@ export default function ClassManagementCalendarV2() {
                     const dayEvents = eventsByMonthDay.get(key) || [];
                     const t = new Date();
                     const isToday = t.toDateString() === cell.toDateString();
+                    const isPastDay = isPastCalendarDay(cell);
                     const headerLabel = cell.toLocaleDateString("ko-KR", {
                       month: "long",
                       day: "numeric",
@@ -284,23 +449,35 @@ export default function ClassManagementCalendarV2() {
                     return (
                       <div
                         key={key}
-                        className={`flex flex-col min-w-0 min-h-0 bg-white border border-slate-200/80 ${
-                          isToday ? "ring-2 ring-blue-400 ring-inset z-[1]" : ""
+                        className={`flex flex-col min-w-0 min-h-0 border border-slate-200/80 ${
+                          isToday
+                            ? "z-[1] bg-blue-50/60 shadow-md ring-[3px] ring-blue-600 ring-inset"
+                            : "bg-white"
                         }`}
                       >
                         <div
-                          className={`shrink-0 text-center py-1.5 px-1 text-[10px] font-black text-white ${
-                            isToday ? "bg-blue-700" : "bg-blue-600"
+                          className={`shrink-0 flex items-center justify-center gap-1 flex-wrap py-1.5 px-1 text-[10px] font-black text-white ${
+                            isToday ? "bg-blue-800" : "bg-blue-600"
                           }`}
                         >
-                          {headerLabel}
+                          {isToday ? (
+                            <span className="rounded px-1 py-px text-[8px] font-black uppercase tracking-wide bg-white/25 text-white">
+                              오늘
+                            </span>
+                          ) : null}
+                          <span>{headerLabel}</span>
                         </div>
                         <div className="flex flex-col flex-1 min-h-0 min-w-0 p-0">
                           {dayEvents.length === 0 ? (
-                            <div className="flex-1 min-h-[48px] bg-white" />
+                            <div className={`flex-1 min-h-[48px] ${isToday ? "bg-blue-50/30" : "bg-white"}`} />
                           ) : (
                             dayEvents.map((ev) => (
-                              <MonthExcelEventRow key={ev.id} ev={ev} onOpen={openBundleForEvent} />
+                              <MonthExcelEventRow
+                                key={ev.id}
+                                ev={ev}
+                                isPastDay={isPastDay}
+                                onOpen={openBundleForEvent}
+                              />
                             ))
                           )}
                         </div>
@@ -310,7 +487,11 @@ export default function ClassManagementCalendarV2() {
                 </div>
               ))}
             </div>
-            <div className="mt-3 text-[11px] font-bold text-slate-500">
+            <div className="mt-3 text-[11px] font-bold text-slate-500 md:hidden">
+              모바일: 가운데 날짜 기준 전날·당일·다음날만 표시합니다. ◀ ▶ 로 하루씩 이동할 수 있습니다. 항목을 누르면 V2
+              번들 모달이 열립니다.
+            </div>
+            <div className="mt-3 text-[11px] font-bold text-slate-500 hidden md:block">
               월간(엑셀형): 같은 주의 행 높이는 가장 많은 일정이 있는 요일에 맞춰 늘어나며, 각 칸에는 일정을 모두
               나열합니다. 항목을 누르면 V2 번들 모달이 열립니다. 마지막 회차는 빨간 FIN 배지로 표시합니다.
             </div>

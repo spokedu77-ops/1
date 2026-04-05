@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import type { ViewId } from '@/app/(pro)/spokedu-pro/hooks/useSpokeduProUI';
 
 const SpokeduProClient = dynamic(() => import('@/app/(pro)/spokedu-pro/SpokeduProClient'), { ssr: false });
 
@@ -13,11 +11,15 @@ const SpokeduProClient = dynamic(() => import('@/app/(pro)/spokedu-pro/SpokeduPr
  * 업로드 버튼: 프로그램 CSV 업로드. (스크린플레이 일괄 업로드는 /admin/spokedu-pro/screenplays/upload)
  */
 export default function AdminSpokeduProPage() {
-  const [currentViewId, setCurrentViewId] = useState<ViewId>('roadmap');
-
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex-shrink-0 flex items-center justify-end gap-2 px-4 py-2 bg-slate-900 border-b border-slate-800">
+        <Link
+          href="/admin/spokedu-pro/subscriptions"
+          className="px-4 py-2 bg-emerald-700 text-white rounded-lg text-sm font-bold hover:bg-emerald-600"
+        >
+          구독 운영
+        </Link>
         <Link
           href="/admin/spokedu-pro/upload"
           className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-bold hover:bg-slate-600"
@@ -34,7 +36,7 @@ export default function AdminSpokeduProPage() {
         </Link>
       </div>
       <div className="flex-1 min-h-0">
-        <SpokeduProClient isEditMode onViewChange={setCurrentViewId} />
+        <SpokeduProClient isEditMode />
       </div>
     </div>
   );

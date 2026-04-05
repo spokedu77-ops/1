@@ -29,7 +29,12 @@ export default function Footer() {
           </div>
           <nav className="gym-foot-links" aria-label="푸터 메뉴">
             {FOOT_LINKS.map(({ href, label }) => (
-              <a key={label} href={href.startsWith('#') ? href : undefined} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}>
+              <a
+                key={label}
+                href={href}
+                target={href.startsWith('http') ? '_blank' : undefined}
+                rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+              >
                 {label}
               </a>
             ))}

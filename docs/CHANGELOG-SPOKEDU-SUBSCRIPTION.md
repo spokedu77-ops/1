@@ -4,6 +4,172 @@
 
 ---
 
+## 2026-04 (빠른 상용화 1차 범위 고정)
+
+### 1. 가격/플랜 단일 소스
+
+**파일**: `app/lib/spokedu-pro/planCatalog.ts` (신규)
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | `PLAN_PRICES`, `PLAN_LIMITS`, `PLAN_UI_META`, `PLAN_UI_ORDER`를 공용 카탈로그로 분리. |
+
+**파일**: `app/lib/spokedu-pro/planUtils.ts`
+
+| 구분 | 내용 |
+|------|------|
+| **변경** | 가격/한도 상수를 `planCatalog`에서 재사용하도록 정리. |
+
+**파일**: `app/(pro)/spokedu-pro/views/SettingsView.tsx`
+
+| 구분 | 내용 |
+|------|------|
+| **변경** | 플랜 카드의 가격/설명/혜택을 공용 카탈로그 기반으로 렌더링. |
+| **변경** | 결제 안내 문구를 “자동 결제 미지원 + 이메일 수동 전환”으로 명시. |
+| **변경** | 구독 상태 배지를 한글 라벨(`결제 지연`, `해지됨`, `만료`)로 통일. |
+
+---
+
+### 2. `/billing` 링크 정책 적용
+
+**파일**: `app/billing/page.tsx` (신규)
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | `/billing` 진입 시 `/spokedu-pro`로 리다이렉트하여 데드 링크 제거. |
+
+**파일**: `app/components/Sidebar.tsx`
+
+| 구분 | 내용 |
+|------|------|
+| **변경** | 구독자 메뉴 라벨을 `플랜 & 결제`로 통일. |
+
+---
+
+### 3. 운영 문서 고정 (상용화 필수)
+
+| 파일 | 내용 |
+|------|------|
+| `docs/spokedu-subscription-commercialization-checklist.md` | 2주 압축 실행 체크리스트 + 1차 범위 고정 + 제외 범위 확정 |
+| `docs/spokedu-subscription-state-playbook.md` | `trialing/active/past_due/canceled/expired` 상태 전환 규칙 및 수동 SQL |
+| `docs/spokedu-subscription-prod-db-audit.md` | 프로덕션 DB 점검 SQL, 합격 기준, 실패 시 조치 |
+| `docs/spokedu-subscription-launch-rehearsal.md` | 출시 리허설 시나리오, 실행 템플릿, 1차 반영 결과 |
+
+---
+
+## 2026-04 (다음 디벨롭: 운영 자동화/링크 정리)
+
+### 1. 운영 FAQ/응답 템플릿 고정
+
+**파일**: `docs/spokedu-subscription-ops-templates.md` (신규)
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | 고객 FAQ 5개, 운영 응답 템플릿(A~E), 운영자 체크포인트 문서화 |
+
+---
+
+### 2. 구독 상태 수동 운영 API + 모니터링
+
+**파일**: `app/api/admin/spokedu-pro/subscriptions/route.ts` (신규)
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | 관리자용 구독 목록 조회 API (`GET`) |
+
+**파일**: `app/api/admin/spokedu-pro/subscriptions/[centerId]/route.ts` (신규)
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | 관리자용 구독 상태 변경 API (`PATCH`) |
+| **추가** | 변경 시 `reason` 필수 검증, `expired` 기본 전환 로직 포함 |
+| **추가** | `admin_productivity_events`에 `SUBSCRIPTION_STATUS_UPDATED` 이벤트 기록 |
+
+**파일**: `app/api/admin/spokedu-pro/subscription-events/route.ts` (신규)
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | 구독 상태 변경 이벤트 로그 조회 API (`GET`) |
+
+**파일**: `docs/spokedu-subscription-admin-api.md` (신규)
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | Admin API 사용법, 요청/응답 예시, 운영 규칙 정리 |
+
+---
+
+### 3. 개인정보처리방침 링크 실경로화
+
+**파일**: `app/info/gym/privacy/page.tsx` (신규)
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | 랜딩용 개인정보처리방침 페이지 생성 |
+
+**파일**: `app/info/gym/data/config.ts`
+
+| 구분 | 내용 |
+|------|------|
+| **변경** | `privacyUrl`을 `javascript:void(0)`에서 `/info/gym/privacy`로 변경 |
+
+**파일**: `app/info/gym/components/Footer.tsx`
+
+| 구분 | 내용 |
+|------|------|
+| **변경** | 푸터 링크를 실제 `href`로 렌더링하도록 수정 |
+
+**파일**: `app/info/gym/components/ContactForm.tsx`
+
+| 구분 | 내용 |
+|------|------|
+| **변경** | 개인정보처리방침 링크를 외부 링크일 때만 새 탭으로 열도록 정리 |
+
+---
+
+## 2026-04 (다음 디벨롭: 관리자 운영 UI)
+
+**파일**: `app/admin/spokedu-pro/subscriptions/page.tsx` (신규)
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | 구독 운영 UI: 상태별 카운트, 구독 목록 조회, 상태 변경 모달, 최근 변경 이력 표시 |
+| **연동** | `/api/admin/spokedu-pro/subscriptions`, `/api/admin/spokedu-pro/subscriptions/[centerId]`, `/api/admin/spokedu-pro/subscription-events` |
+
+**파일**: `app/admin/spokedu-pro/page.tsx`
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | 상단 액션 버튼에 `구독 운영` 링크 추가 |
+
+---
+
+## 2026-04 (다음 디벨롭: 운영 UI 고도화)
+
+**파일**: `app/admin/spokedu-pro/subscriptions/page.tsx`
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | 대량 상태 변경 드라이런 모드(실제 변경 없이 대상/결과 미리보기) |
+| **추가** | 대량 처리 실패 항목 재선택 버튼(재시도용) |
+| **추가** | 변경 이력의 `centerId` 클릭 시 해당 센터로 즉시 필터링 |
+| **개선** | 대량 처리 결과 메시지 영역 추가 |
+
+---
+
+## 2026-04 (다음 디벨롭: 배치 처리 강화)
+
+**파일**: `app/admin/spokedu-pro/subscriptions/page.tsx`
+
+| 구분 | 내용 |
+|------|------|
+| **추가** | 대량 변경 확정 전 미리보기 모달 (선택 센터 before/after 검토) |
+| **추가** | 빠른 액션: `만료 trial 자동 선택`, `past_due 자동 선택` |
+| **개선** | 변경 이력 Diff에서 실제 변경 필드 강조(이전/이후 색 구분) |
+| **개선** | 드라이런/실행 결과 메시지 및 적용 흐름 강화 |
+
+---
+
 ## 2025-03 (전문가 로드맵 1단계: 내실)
 
 ### 1. Error Boundary

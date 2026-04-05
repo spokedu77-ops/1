@@ -4,20 +4,10 @@
  */
 
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { PLAN_LIMITS, PLAN_PRICES, type Plan } from '@/app/lib/spokedu-pro/planCatalog';
 
-export type Plan = 'free' | 'basic' | 'pro';
-
-export const PLAN_PRICES: Record<Plan, number> = {
-  free:  0,
-  basic: 49900,
-  pro:   79900,
-};
-
-export const PLAN_LIMITS: Record<Plan, { aiReportsPerMonth: number; maxClasses: number | null }> = {
-  free:  { aiReportsPerMonth: 0,        maxClasses: 1    },
-  basic: { aiReportsPerMonth: 20,       maxClasses: 3    },
-  pro:   { aiReportsPerMonth: Infinity, maxClasses: null },
-};
+export type { Plan };
+export { PLAN_LIMITS, PLAN_PRICES };
 
 /** 사용자의 현재 활성 플랜 반환. 조회 실패 시 'free'. */
 export async function getPlanForUser(userId: string): Promise<Plan> {

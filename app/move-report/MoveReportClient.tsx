@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { compute } from './lib/compute';
+import { normalizeMoveReportPhone } from './lib/phone';
 import { Qs } from './data/questions';
 import type { AgeGroup, ComputeResult } from './types';
 import Intro from './components/Intro';
@@ -59,15 +60,17 @@ export default function MoveReportClient() {
   const submitLead = useCallback(
     async (phone: string): Promise<boolean> => {
       if (!result) return false;
-      const normalizedPhone = phone.replace(/\D/g, '');
-      const previewPhone = normalizedPhone.length >= 10 ? phone : phone.trim();
-      const allowLocalPreview = process.env.NODE_ENV === 'development';
+      const normalizedPhone = normalizeMoveReportPhone(phone);
+      if (!normalizedPhone) {
+        flash('전화번호 11자리(010-0000-0000)를 입력해 주세요.');
+        return false;
+      }
       try {
         const res = await fetch('/api/move-report/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            phone,
+            phone: normalizedPhone,
             childName: name.trim() || undefined,
             ageGroup: age,
             profileKey: result.key,
@@ -78,23 +81,13 @@ export default function MoveReportClient() {
         });
         const data = (await res.json()) as { ok?: boolean; error?: string };
         if (data.ok) {
-          setSavedPhone(previewPhone);
+          setSavedPhone(normalizedPhone);
           flash('📱 저장 완료! 요약 카드 이미지로 저장/공유할 수 있어요.');
-          return true;
-        }
-        if (allowLocalPreview) {
-          setSavedPhone(previewPhone);
-          flash('🧪 로컬 미리보기 모드: 저장 실패여도 요약 카드 저장/공유를 테스트할 수 있어요.');
           return true;
         }
         flash(data.error || '저장 중 오류가 발생했어요. 다시 시도해 주세요.');
         return false;
       } catch {
-        if (allowLocalPreview) {
-          setSavedPhone(previewPhone);
-          flash('🧪 로컬 미리보기 모드: 네트워크 오류여도 요약 카드 저장/공유를 테스트할 수 있어요.');
-          return true;
-        }
         flash('네트워크 오류가 발생했어요.');
         return false;
       }

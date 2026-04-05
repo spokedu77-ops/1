@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { compute } from '@/app/move-report/lib/compute';
+import { normalizeMoveReportPhone } from '@/app/move-report/lib/phone';
 import type { AgeGroup } from '@/app/move-report/types';
 
 const RESPONSE_LEN = 12;
 const VALID_AXIS = new Set(['C', 'I', 'R', 'E', 'P', 'G', 'D', 'S']);
-
-function normalizePhone(raw: unknown): string | null {
-  const digits = String(raw ?? '').replace(/\D/g, '');
-  if (!digits) return null;
-  if (digits.startsWith('8210') && digits.length >= 12) {
-    const n = `010${digits.slice(4)}`;
-    return /^010\d{8}$/.test(n) ? n : null;
-  }
-  if (/^010\d{8}$/.test(digits)) return digits;
-  if (digits.length >= 10) return digits;
-  return null;
-}
 
 function parseSurveyResponses(raw: unknown): string[] | null {
   if (!Array.isArray(raw) || raw.length !== RESPONSE_LEN) return null;
@@ -34,7 +23,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { phone, childName, ageGroup, profileKey, profileTitle, consent, surveyResponses } = body;
 
-    const normalized = normalizePhone(phone);
+    const normalized = normalizeMoveReportPhone(phone);
     if (!normalized) {
       return NextResponse.json({ ok: false, error: '전화번호가 유효하지 않습니다.' }, { status: 400 });
     }

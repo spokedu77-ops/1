@@ -1,6 +1,6 @@
 /**
  * 강사 등급(수업 개수) 및 등급별 기본 수업료 표.
- * 금액 변경은 배포로 반영 (운영에서 DB만으로 바꾸지 않음).
+ * 기본 표(HARD_CODED)는 fallback 이고, 운영값은 DB teacher_tier_fees로 덮어쓸 수 있습니다.
  */
 
 export type TeacherTierId = 'rookie' | 'silver' | 'gold' | 'diamond' | 'partner';
@@ -12,16 +12,36 @@ export type TierDefaultFees = {
   fee_center_assist: number;
 };
 
-/** 구간: 루키 1~50, 실버 51~105, 골드 106~165, 다이아 166~230, 파트너 231~ */
-const TIER_ORDER: TeacherTierId[] = ['rookie', 'silver', 'gold', 'diamond', 'partner'];
+export type TierFeeMap = Record<TeacherTierId, TierDefaultFees>;
 
-const TIER_THRESHOLDS: { max: number | null; fees: TierDefaultFees }[] = [
-  { max: 50, fees: { fee_private: 30_000, fee_group: 35_000, fee_center_main: 42_500, fee_center_assist: 25_000 } },
-  { max: 105, fees: { fee_private: 31_000, fee_group: 37_500, fee_center_main: 42_500, fee_center_assist: 27_500 } },
-  { max: 165, fees: { fee_private: 32_000, fee_group: 40_000, fee_center_main: 45_000, fee_center_assist: 30_000 } },
-  { max: 230, fees: { fee_private: 33_000, fee_group: 42_500, fee_center_main: 47_500, fee_center_assist: 32_500 } },
-  { max: null, fees: { fee_private: 35_000, fee_group: 45_000, fee_center_main: 50_000, fee_center_assist: 35_000 } },
+/** 구간: 루키 1~50, 실버 51~105, 골드 106~165, 다이아 166~230, 파트너 231~ */
+export const TEACHER_TIER_IDS: TeacherTierId[] = ['rookie', 'silver', 'gold', 'diamond', 'partner'];
+
+const TIER_THRESHOLDS: { max: number | null; tier: TeacherTierId }[] = [
+  { max: 50, tier: 'rookie' },
+  { max: 105, tier: 'silver' },
+  { max: 165, tier: 'gold' },
+  { max: 230, tier: 'diamond' },
+  { max: null, tier: 'partner' },
 ];
+
+export const HARD_CODED_TIER_FEES: TierFeeMap = {
+  rookie: { fee_private: 30_000, fee_group: 35_000, fee_center_main: 42_500, fee_center_assist: 25_000 },
+  silver: { fee_private: 31_000, fee_group: 37_500, fee_center_main: 42_500, fee_center_assist: 27_500 },
+  gold: { fee_private: 32_000, fee_group: 40_000, fee_center_main: 45_000, fee_center_assist: 30_000 },
+  diamond: { fee_private: 33_000, fee_group: 42_500, fee_center_main: 47_500, fee_center_assist: 32_500 },
+  partner: { fee_private: 35_000, fee_group: 45_000, fee_center_main: 50_000, fee_center_assist: 35_000 },
+};
+
+export function cloneTierFeeMap(source: TierFeeMap = HARD_CODED_TIER_FEES): TierFeeMap {
+  return {
+    rookie: { ...source.rookie },
+    silver: { ...source.silver },
+    gold: { ...source.gold },
+    diamond: { ...source.diamond },
+    partner: { ...source.partner },
+  };
+}
 
 export function totalLessonsFromCounts(sessionCount: number | null | undefined, logCount: number | null | undefined): number {
   return (Number(sessionCount) || 0) + (Number(logCount) || 0);
@@ -30,17 +50,20 @@ export function totalLessonsFromCounts(sessionCount: number | null | undefined, 
 export function computeTier(totalLessons: number): TeacherTierId {
   const n = Math.max(0, Math.floor(totalLessons));
   if (n <= 0) return 'rookie';
-  if (n <= 50) return 'rookie';
-  if (n <= 105) return 'silver';
-  if (n <= 165) return 'gold';
-  if (n <= 230) return 'diamond';
-  return 'partner';
+  for (const row of TIER_THRESHOLDS) {
+    if (row.max == null || n <= row.max) return row.tier;
+  }
+  return 'rookie';
 }
 
-export function getTierDefaultFees(tier: TeacherTierId): TierDefaultFees {
-  const idx = TIER_ORDER.indexOf(tier);
-  const row = TIER_THRESHOLDS[idx >= 0 ? idx : 0];
-  return { ...row.fees };
+export function getTierDefaultFees(tier: TeacherTierId, feeMap?: Partial<TierFeeMap>): TierDefaultFees {
+  const src = feeMap?.[tier] ?? HARD_CODED_TIER_FEES[tier];
+  return {
+    fee_private: Number(src?.fee_private) || HARD_CODED_TIER_FEES[tier].fee_private,
+    fee_group: Number(src?.fee_group) || HARD_CODED_TIER_FEES[tier].fee_group,
+    fee_center_main: Number(src?.fee_center_main) || HARD_CODED_TIER_FEES[tier].fee_center_main,
+    fee_center_assist: Number(src?.fee_center_assist) || HARD_CODED_TIER_FEES[tier].fee_center_assist,
+  };
 }
 
 export function tierLabelKo(tier: TeacherTierId): string {
@@ -85,9 +108,10 @@ export function effectiveFees(
     fee_group: number | null;
     fee_center_main: number | null;
     fee_center_assist: number | null;
-  }
+  },
+  feeMap?: Partial<TierFeeMap>
 ): TierDefaultFees {
-  const d = getTierDefaultFees(tier);
+  const d = getTierDefaultFees(tier, feeMap);
   return {
     fee_private: stored.fee_private ?? d.fee_private,
     fee_group: stored.fee_group ?? d.fee_group,

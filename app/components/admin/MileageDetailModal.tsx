@@ -6,7 +6,15 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, Save, Trash2, BookOpen, Calendar, ChevronDown } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
-import { computeTier, effectiveFees, totalLessonsFromCounts } from '@/app/lib/teacherTierSchedule';
+import {
+  cloneTierFeeMap,
+  computeTier,
+  effectiveFees,
+  HARD_CODED_TIER_FEES,
+  totalLessonsFromCounts,
+  type TierFeeMap,
+} from '@/app/lib/teacherTierSchedule';
+import { fetchTeacherTierFeeMap } from '@/app/lib/teacherTierFeesStore';
 
 interface Teacher {
   id: string;
@@ -174,6 +182,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
   const [selectedPenalty, setSelectedPenalty] = useState<string>('');
   const [editReason, setEditReason] = useState<string>('');
   const [lastPenaltyLog, setLastPenaltyLog] = useState<MileageLog | null>(null);
+  const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
 
   const tierFeePreview = useMemo(() => {
     const tier = computeTier(totalLessonsFromCounts(teacher.session_count, teacher.logCount));
@@ -182,7 +191,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
       fee_group: teacher.fee_group ?? null,
       fee_center_main: teacher.fee_center_main ?? null,
       fee_center_assist: teacher.fee_center_assist ?? null,
-    });
+    }, tierFeeMap);
   }, [
     teacher.session_count,
     teacher.logCount,
@@ -190,7 +199,21 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
     teacher.fee_group,
     teacher.fee_center_main,
     teacher.fee_center_assist,
+    tierFeeMap,
   ]);
+
+  useEffect(() => {
+    let mounted = true;
+    const run = async () => {
+      const { map: next } = await fetchTeacherTierFeeMap(supabase);
+      if (!mounted) return;
+      setTierFeeMap(next);
+    };
+    void run();
+    return () => {
+      mounted = false;
+    };
+  }, [supabase]);
 
   const loadLogs = useCallback(async () => {
     if (!supabase || !teacher?.id) return;

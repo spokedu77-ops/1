@@ -161,20 +161,19 @@ export default function ClassAliasViewerPanel({
     return { statusLabel, isCompletedByTime, isActiveByTime, isPostponed, isCancelled, isDeleted };
   }, []);
 
-  const cycleEnded = useMemo(() => {
-    if (rows.length === 0) return false;
-    return rows.every((r) => {
-      const { isCompletedByTime, isCancelled, isDeleted } = timeStatusOf(r);
-      // ✅ 연기(postponed)는 "끝난 사이클"로 보지 않습니다.
-      return isCompletedByTime || isCancelled || isDeleted;
-    });
-  }, [rows, timeStatusOf]);
-
+  /** "예정/진행만"인데 해당 회차가 없으면(전부 완료 등) 빈 표 방지 — 번들 모달과 동일 */
   useEffect(() => {
     if (!visible) return;
-    if (!cycleEnded) return;
-    setRoundView((prev) => (prev === 'all' ? 'active' : prev));
-  }, [visible, cycleEnded]);
+    if (rows.length === 0) return;
+    const baseNoDeleted = rows.filter((r) => r.status !== 'deleted');
+    const hasActive = baseNoDeleted.some((r) => {
+      if (r.status === 'cancelled') return false;
+      return timeStatusOf(r).isActiveByTime;
+    });
+    if (!hasActive && baseNoDeleted.length > 0) {
+      setRoundView((prev) => (prev === 'active' ? 'all' : prev));
+    }
+  }, [visible, rows, timeStatusOf]);
 
   const plannedTotal = useMemo(() => resolvePlannedTotal(rows), [rows]);
 
@@ -526,7 +525,7 @@ export default function ClassAliasViewerPanel({
 
   return (
     <div
-      className={`fixed inset-0 z-50 transition ${visible ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      className={`fixed inset-0 z-[400] transition ${visible ? 'pointer-events-auto' : 'pointer-events-none'}`}
     >
       <div
         className={`absolute inset-0 bg-black/30 transition-opacity ${visible ? 'opacity-100' : 'opacity-0'}`}

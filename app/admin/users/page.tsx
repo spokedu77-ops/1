@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
@@ -13,11 +13,17 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { CountingTab } from './CountingTab';
 import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
 import {
+  cloneTierFeeMap,
   computeTier,
   effectiveFees,
   getTierDefaultFees,
+  HARD_CODED_TIER_FEES,
+  TEACHER_TIER_IDS,
+  tierLabelKo,
   totalLessonsFromCounts,
+  type TierFeeMap,
 } from '@/app/lib/teacherTierSchedule';
+import { fetchTeacherTierFeeMap } from '@/app/lib/teacherTierFeesStore';
 
 interface DocumentFile {
   name: string;
@@ -74,6 +80,10 @@ export default function UserDashboardPage() {
   const [createdCredential, setCreatedCredential] = useState<{ email: string; initialPassword: string } | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<{ email: string; initialPassword: string } | null>(null);
   const [resetPasswordLoadingId, setResetPasswordLoadingId] = useState<string | null>(null);
+  const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
+  const [tierFeeDraft, setTierFeeDraft] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
+  const [tierFeeSaving, setTierFeeSaving] = useState(false);
+  const tierFeeFallbackNotifiedRef = useRef(false);
 
   const fetchUsers = useCallback(async () => {
     if (!supabase) return;
@@ -113,6 +123,15 @@ export default function UserDashboardPage() {
         logCount: logCountByTeacher[u.id] ?? 0,
       }));
       setUsers(fetchedUsers);
+      const tierRes = await fetchTeacherTierFeeMap(supabase);
+      setTierFeeMap(tierRes.map);
+      setTierFeeDraft(cloneTierFeeMap(tierRes.map));
+      if (tierRes.source === 'fallback' && !tierFeeFallbackNotifiedRef.current) {
+        tierFeeFallbackNotifiedRef.current = true;
+        toast.warning(
+          '등급 수업료 표를 DB에서 불러오지 못해 기본값을 사용합니다. sql/65_teacher_tier_fees_table.sql 적용 여부를 확인하세요.'
+        );
+      }
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const { data: me } = await supabase.from('users').select('id, name, role').eq('id', session.user.id).single();
@@ -313,7 +332,7 @@ export default function UserDashboardPage() {
     if (!supabase || currentUser?.role !== 'admin') return toast.error('관리자 권한이 없습니다.');
     const total = totalLessonsFromCounts(user.session_count, user.logCount);
     const tier = computeTier(total);
-    const f = getTierDefaultFees(tier);
+    const f = getTierDefaultFees(tier, tierFeeMap);
     try {
       const { error } = await supabase
         .from('users')
@@ -366,6 +385,45 @@ export default function UserDashboardPage() {
     } catch (err: unknown) {
       devLogger.error('[users] reset tier fees', err);
       toast.error('초기화 실패: DB 마이그레이션을 확인하세요.');
+    }
+  };
+
+  const handleTierDraftValue = (
+    tierId: keyof TierFeeMap,
+    key: keyof TierFeeMap[keyof TierFeeMap],
+    raw: string
+  ) => {
+    const value = Math.max(0, Number(raw) || 0);
+    setTierFeeDraft((prev) => ({
+      ...prev,
+      [tierId]: {
+        ...prev[tierId],
+        [key]: value,
+      },
+    }));
+  };
+
+  const handleSaveTierFeeTable = async () => {
+    if (!supabase || currentUser?.role !== 'admin') return toast.error('관리자 권한이 없습니다.');
+    setTierFeeSaving(true);
+    try {
+      const rows = TEACHER_TIER_IDS.map((tierId) => ({
+        tier_id: tierId,
+        fee_private: tierFeeDraft[tierId].fee_private,
+        fee_group: tierFeeDraft[tierId].fee_group,
+        fee_center_main: tierFeeDraft[tierId].fee_center_main,
+        fee_center_assist: tierFeeDraft[tierId].fee_center_assist,
+        updated_at: new Date().toISOString(),
+      }));
+      const { error } = await supabase.from('teacher_tier_fees').upsert(rows, { onConflict: 'tier_id' });
+      if (error) throw error;
+      setTierFeeMap(cloneTierFeeMap(tierFeeDraft));
+      toast.success('등급별 기본 수업료 표가 저장되었습니다.');
+    } catch (err: unknown) {
+      devLogger.error('[users] save teacher_tier_fees', err);
+      toast.error('등급표 저장에 실패했습니다. SQL 65 적용 여부를 확인하세요.');
+    } finally {
+      setTierFeeSaving(false);
     }
   };
 
@@ -441,6 +499,87 @@ export default function UserDashboardPage() {
             </div>
           )}
         </div>
+        {mainTab === 'info' && currentUser?.role === 'admin' && (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-800">등급별 기본 수업료 표</h3>
+                <p className="text-[11px] font-bold text-slate-500 mt-1">
+                  하드코딩이 아니라 DB 기준표입니다. 저장 후 등급표 적용/자동 기본값에 반영됩니다.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTierFeeDraft(cloneTierFeeMap(HARD_CODED_TIER_FEES))}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[11px] font-black text-slate-700 hover:bg-slate-50"
+                >
+                  코드 기본값으로 복원
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveTierFeeTable()}
+                  disabled={tierFeeSaving}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-black hover:bg-indigo-700 disabled:opacity-60"
+                >
+                  {tierFeeSaving ? '저장 중...' : '등급표 저장'}
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-[760px] w-full text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b">
+                    <th className="py-2 pr-2 text-left font-black">등급</th>
+                    <th className="py-2 px-2 text-left font-black">개인</th>
+                    <th className="py-2 px-2 text-left font-black">그룹</th>
+                    <th className="py-2 px-2 text-left font-black">센터 메인</th>
+                    <th className="py-2 pl-2 text-left font-black">센터 보조</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {TEACHER_TIER_IDS.map((tierId) => (
+                    <tr key={tierId} className="border-b last:border-b-0">
+                      <td className="py-2 pr-2 text-slate-700 font-black">{tierLabelKo(tierId)}</td>
+                      <td className="py-2 px-2">
+                        <input
+                          type="number"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
+                          value={tierFeeDraft[tierId].fee_private}
+                          onChange={(e) => handleTierDraftValue(tierId, 'fee_private', e.target.value)}
+                        />
+                      </td>
+                      <td className="py-2 px-2">
+                        <input
+                          type="number"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
+                          value={tierFeeDraft[tierId].fee_group}
+                          onChange={(e) => handleTierDraftValue(tierId, 'fee_group', e.target.value)}
+                        />
+                      </td>
+                      <td className="py-2 px-2">
+                        <input
+                          type="number"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
+                          value={tierFeeDraft[tierId].fee_center_main}
+                          onChange={(e) => handleTierDraftValue(tierId, 'fee_center_main', e.target.value)}
+                        />
+                      </td>
+                      <td className="py-2 pl-2">
+                        <input
+                          type="number"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
+                          value={tierFeeDraft[tierId].fee_center_assist}
+                          onChange={(e) => handleTierDraftValue(tierId, 'fee_center_assist', e.target.value)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="max-w-4xl mx-auto min-w-0">
@@ -575,7 +714,7 @@ export default function UserDashboardPage() {
                     fee_group: user.fee_group ?? null,
                     fee_center_main: user.fee_center_main ?? null,
                     fee_center_assist: user.fee_center_assist ?? null,
-                  });
+                  }, tierFeeMap);
                   return (
                     <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">적용 기본 수업료 (원)</p>

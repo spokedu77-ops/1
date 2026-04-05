@@ -10,6 +10,7 @@ import { undoPostponeCascade } from "@/app/admin/classes-shared/lib/postponeUtil
 import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
 import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { resolvePlannedTotal } from "@/app/admin/classes-v2/lib/plannedRoundTotal";
+import { SESSION_TYPE_OPTIONS } from "@/app/admin/classes-v2/lib/sessionTypeCategory";
 import SessionMileageModal from "./SessionMileageModal";
 import type { TeacherInput } from "@/app/admin/classes-shared/types";
 
@@ -233,7 +234,7 @@ function getCycleCalendarBounds(list: SessionRow[]): { startDayMs: number; endDa
   return { startDayMs, endDayMs };
 }
 
-/** 마지막 회차일이 오늘 0시 이전이면 지난 사이클(아카이브)로 묶음 */
+/** 마지막 회차일이 오늘 0시 이전이면 지난 사이클(완료)로 묶음 */
 function isPastCycleGroup(list: SessionRow[]): boolean {
   const bounds = getCycleCalendarBounds(list);
   if (!bounds) return false;
@@ -241,6 +242,8 @@ function isPastCycleGroup(list: SessionRow[]): boolean {
   startOfToday.setHours(0, 0, 0, 0);
   return bounds.endDayMs < startOfToday.getTime();
 }
+
+type ToolPanelKey = "extend" | "shrink" | "restart";
 
 export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onClose, onChanged }: Props) {
   const [supabase] = useState(() =>
@@ -293,6 +296,16 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const [infoNotes, setInfoNotes] = useState("");
   const [infoLoading, setInfoLoading] = useState(false);
   const [infoSaving, setInfoSaving] = useState(false);
+
+  const [sessionTypePanelOpen, setSessionTypePanelOpen] = useState(false);
+  const [bundleSessionTypeDraft, setBundleSessionTypeDraft] = useState("regular_private");
+  const [bundleSessionTypesMixed, setBundleSessionTypesMixed] = useState(false);
+  const [savingSessionType, setSavingSessionType] = useState(false);
+
+  /** 회차 확장 / 축소 / 재시작 블록 접기(기본 접힘) */
+  const [toolPanelOpenByGroup, setToolPanelOpenByGroup] = useState<
+    Record<string, Partial<Record<ToolPanelKey, boolean>>>
+  >({});
 
   /** prop groupIds와 재시작으로 붙은 localGroupIds 합집합 — 첫 오픈 시 loadAll 레이스 방지 */
   const effectiveGroupIds = useMemo(() => {
@@ -434,6 +447,29 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       }
       setSessionsByGroupId(map);
 
+      // 기본 필터가 "예정/진행만"이라, 전부 종료된 번들은 행이 0건으로 보임 → 캘린더·리스트와 동일하게 회차 표를 쓰려면 "전체"로 전환
+      const nonDeleted = rows.filter((r) => r.status !== "deleted");
+      const hasActiveRound = nonDeleted.some((r) => {
+        if (r.status === "cancelled") return false;
+        return getTimeStatusLabel(r).isActiveByTime;
+      });
+      if (!hasActiveRound && nonDeleted.length > 0) {
+        setRoundView((prev) => (prev === "active" ? "all" : prev));
+      }
+
+      const bundleRows = effectiveGroupIds.flatMap((gid) => map[gid] || []);
+      const resolvedType =
+        resolveMergedBundleSessionType(bundleRows) ??
+        resolveMainSessionTypeFromRows(bundleRows) ??
+        "regular_private";
+      const distinctTypes = new Set(
+        bundleRows
+          .map((r) => r.session_type)
+          .filter((t): t is string => typeof t === "string" && t.length > 0)
+      );
+      setBundleSessionTypeDraft(resolvedType);
+      setBundleSessionTypesMixed(distinctTypes.size > 1);
+
       const flatTitles = effectiveGroupIds.flatMap((gid) => map[gid] || []).map((r) => r.title);
       const firstTitle = flatTitles.find((t) => t && String(t).trim());
       if (firstTitle) setTitleDraft(String(firstTitle).trim());
@@ -449,15 +485,37 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         return next;
       });
 
-      // 기본 오픈: 예정/진행 사이클만 펼침. 지난 사이클 블록·개별 사이클은 접힘
+      // 기본 오픈: 예정/진행 사이클만 펼침. 지난 사이클(완료)은 접어 둠.
+      // 단, 진행·예정 사이클이 하나도 없으면(전부 지난 사이클) 아카이브+각 사이클을 펼쳐 회차 확장·재시작 등이 보이게 함.
       const nextOpen: Record<string, boolean> = {};
       for (const gid of effectiveGroupIds) {
         const list = map[gid] || [];
         if (list.length === 0) continue;
         nextOpen[gid] = !isPastCycleGroup(list);
       }
+      const hasCurrentCycle = effectiveGroupIds.some((gid) => {
+        const list = map[gid] || [];
+        return list.length > 0 && !isPastCycleGroup(list);
+      });
+      const hasAnySessions = effectiveGroupIds.some((gid) => (map[gid] || []).length > 0);
+      if (hasAnySessions && !hasCurrentCycle) {
+        for (const gid of effectiveGroupIds) {
+          const list = map[gid] || [];
+          if (list.length > 0) nextOpen[gid] = true;
+        }
+        setPastArchiveOpen(true);
+        setToolPanelOpenByGroup((prev) => {
+          const next = { ...prev };
+          for (const gid of effectiveGroupIds) {
+            if ((map[gid] || []).length === 0) continue;
+            next[gid] = { ...next[gid], extend: true };
+          }
+          return next;
+        });
+      } else {
+        setPastArchiveOpen(false);
+      }
       setOpenGroupIds(nextOpen);
-      setPastArchiveOpen(false);
 
       // 기본값(확장/축소/재시작) 초기화
       setExtendCountByGroup((prev) => {
@@ -543,7 +601,10 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   }, [visible, groupIds]);
 
   useEffect(() => {
-    if (!visible) setEditingTitle(false);
+    if (!visible) {
+      setEditingTitle(false);
+      setSessionTypePanelOpen(false);
+    }
   }, [visible]);
 
   const plannedTotalOfGroup = useCallback((rows: SessionRow[]) => resolvePlannedTotal(rows), []);
@@ -557,6 +618,15 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const toggleGroup = (gid: string) => {
     setOpenGroupIds((prev) => ({ ...prev, [gid]: !prev[gid] }));
   };
+
+  const toggleToolPanel = (gid: string, key: ToolPanelKey) => {
+    setToolPanelOpenByGroup((prev) => {
+      const cur = prev[gid] ?? {};
+      return { ...prev, [gid]: { ...cur, [key]: !cur[key] } };
+    });
+  };
+
+  const isToolPanelOpen = (gid: string, key: ToolPanelKey) => !!toolPanelOpenByGroup[gid]?.[key];
 
   const applyInlineUpdate = async (
     gid: string,
@@ -1027,6 +1097,36 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     }
   };
 
+  const handleSaveBundleSessionType = async () => {
+    if (!supabase || effectiveGroupIds.length === 0) return;
+    const next = bundleSessionTypeDraft.trim();
+    if (!next) return toast.error("수업 타입을 선택해주세요.");
+    const label = SESSION_TYPE_OPTIONS.find((o) => o.value === next)?.label ?? next;
+    if (
+      !confirm(
+        `번들에 포함된 모든 사이클(${effectiveGroupIds.length}개 group_id)의 세션에 수업 타입을 "${label}"(으)로 통일할까요?`
+      )
+    )
+      return;
+    setSavingSessionType(true);
+    try {
+      const { error } = await supabase
+        .from("sessions")
+        .update({ session_type: next })
+        .in("group_id", effectiveGroupIds);
+      if (error) throw error;
+      toast.success("수업 타입이 반영되었습니다.");
+      setBundleSessionTypesMixed(false);
+      onChanged?.();
+      void loadAll();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("수업 타입 변경에 실패했습니다.");
+    } finally {
+      setSavingSessionType(false);
+    }
+  };
+
   const handleBulkApplyToGroup = async (gid: string) => {
     if (!supabase) return;
     const nextTeacherId = String(bulkTeacherIdByGroup[gid] || "").trim();
@@ -1097,7 +1197,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     const past: string[] = [];
     for (const gid of sortedGroupIds) {
       const rows = sessionsByGroupId[gid] || [];
-      if (!rows.length) continue; // 병합 후 비어버린 그룹은 UI에서 숨깁니다.
+      if (!rows.length) continue;
       if (isPastCycleGroup(rows)) past.push(gid);
       else current.push(gid);
     }
@@ -1398,68 +1498,111 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                           </table>
                         </div>
 
-                        <div className="mt-3 border-t border-slate-100 pt-3 space-y-3">
-                          <h4 className="text-xs font-black text-slate-700">회차 확장</h4>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min={1}
-                              className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
-                              value={extendCountByGroup[gid] ?? 1}
-                              onChange={(e) =>
-                                setExtendCountByGroup((prev) => ({
-                                  ...prev,
-                                  [gid]: Number(e.target.value) || 1,
-                                }))
-                              }
-                            />
-                            <span className="text-xs text-slate-600">회 추가</span>
-                            <button
-                              type="button"
-                              className="ml-auto px-4 py-2 rounded-full text-xs font-bold bg-blue-600 text-white hover:bg-blue-700"
-                              onClick={() => {
-                                const n = Math.max(1, Math.floor(extendCountByGroup[gid] ?? 1));
-                                if (!confirm(`${n}회차를 추가하시겠습니까?`)) return;
-                                void handleExtend(gid, n);
-                              }}
-                            >
-                              회차 확장
-                            </button>
-                          </div>
+                        <div className="mt-3 border-t border-slate-100 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleToolPanel(gid, "extend")}
+                            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left hover:bg-slate-50"
+                          >
+                            <span className="text-xs font-black text-slate-700">회차 확장</span>
+                            {isToolPanelOpen(gid, "extend") ? (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
+                            )}
+                          </button>
+                          {isToolPanelOpen(gid, "extend") ? (
+                            <div className="space-y-2 px-1 pb-2 pt-1">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                                  value={extendCountByGroup[gid] ?? 1}
+                                  onChange={(e) =>
+                                    setExtendCountByGroup((prev) => ({
+                                      ...prev,
+                                      [gid]: Number(e.target.value) || 1,
+                                    }))
+                                  }
+                                />
+                                <span className="text-xs text-slate-600">회 추가</span>
+                                <button
+                                  type="button"
+                                  className="ml-auto px-4 py-2 rounded-full text-xs font-bold bg-blue-600 text-white hover:bg-blue-700"
+                                  onClick={() => {
+                                    const n = Math.max(1, Math.floor(extendCountByGroup[gid] ?? 1));
+                                    if (!confirm(`${n}회차를 추가하시겠습니까?`)) return;
+                                    void handleExtend(gid, n);
+                                  }}
+                                >
+                                  회차 확장
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
 
-                        <div className="border-t border-slate-100 pt-3 space-y-3">
-                          <h4 className="text-xs font-black text-slate-700">회차 축소/삭제</h4>
-                          <p className="text-[11px] text-slate-500 font-bold">
-                            마지막 N회차를 status='deleted'로 숨기고 회차 정보를 재계산합니다.
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min={1}
-                              className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
-                              value={shrinkCountByGroup[gid] ?? 1}
-                              onChange={(e) =>
-                                setShrinkCountByGroup((prev) => ({
-                                  ...prev,
-                                  [gid]: Number(e.target.value) || 1,
-                                }))
-                              }
-                            />
-                            <span className="text-xs text-slate-600">회 줄이기</span>
-                            <button
-                              type="button"
-                              className="ml-auto px-4 py-2 rounded-full text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50"
-                              disabled={!!shrinkingByGroup[gid]}
-                              onClick={() => void handleShrinkTail(gid)}
-                            >
-                              {shrinkingByGroup[gid] ? "처리 중..." : "마지막 회차 삭제"}
-                            </button>
-                          </div>
+                        <div className="border-t border-slate-100 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleToolPanel(gid, "shrink")}
+                            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left hover:bg-slate-50"
+                          >
+                            <span className="text-xs font-black text-slate-700">회차 축소/삭제</span>
+                            {isToolPanelOpen(gid, "shrink") ? (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
+                            )}
+                          </button>
+                          {isToolPanelOpen(gid, "shrink") ? (
+                            <div className="space-y-2 px-1 pb-2 pt-1">
+                              <p className="text-[11px] text-slate-500 font-bold">
+                                마지막 N회차를 status='deleted'로 숨기고 회차 정보를 재계산합니다.
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                                  value={shrinkCountByGroup[gid] ?? 1}
+                                  onChange={(e) =>
+                                    setShrinkCountByGroup((prev) => ({
+                                      ...prev,
+                                      [gid]: Number(e.target.value) || 1,
+                                    }))
+                                  }
+                                />
+                                <span className="text-xs text-slate-600">회 줄이기</span>
+                                <button
+                                  type="button"
+                                  className="ml-auto px-4 py-2 rounded-full text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50"
+                                  disabled={!!shrinkingByGroup[gid]}
+                                  onClick={() => void handleShrinkTail(gid)}
+                                >
+                                  {shrinkingByGroup[gid] ? "처리 중..." : "마지막 회차 삭제"}
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
 
-                        <div className="border-t border-slate-100 pt-3 space-y-3">
-                          <h4 className="text-xs font-black text-slate-700">사이클 재시작</h4>
+                        <div className="border-t border-slate-100 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleToolPanel(gid, "restart")}
+                            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left hover:bg-slate-50"
+                          >
+                            <span className="text-xs font-black text-slate-700">사이클 재시작</span>
+                            {isToolPanelOpen(gid, "restart") ? (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
+                            )}
+                          </button>
+                          {isToolPanelOpen(gid, "restart") ? (
+                            <div className="space-y-3 px-1 pb-2 pt-1">
                           <p className="text-[11px] text-slate-500 font-bold">
                             기존 사이클은 유지하고, 새 group_id로 예정 회차를 생성합니다.
                           </p>
@@ -1582,6 +1725,8 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                               {restartingByGroup[gid] ? "생성 중..." : "사이클 재시작"}
                             </button>
                           </div>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     )}
@@ -1590,7 +1735,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   };
 
   return (
-    <div className={`fixed inset-0 z-50 transition ${visible ? "pointer-events-auto" : "pointer-events-none"}`}>
+    <div className={`fixed inset-0 z-[400] transition ${visible ? "pointer-events-auto" : "pointer-events-none"}`}>
       <div
         className={`absolute inset-0 bg-black/30 transition-opacity ${visible ? "opacity-100" : "opacity-0"}`}
         onClick={onClose}
@@ -1600,19 +1745,65 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
           visible ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <header className="shrink-0 px-6 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
+        <header className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1 space-y-2">
             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Class Bundle (V2)</p>
             {!editingTitle ? (
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg font-black text-slate-900 truncate">{displayTitle}</h2>
-                <button
-                  type="button"
-                  onClick={() => setEditingTitle(true)}
-                  className="px-2 py-1 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0"
-                >
-                  수업명 수정
-                </button>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg font-black text-slate-900 truncate">{displayTitle}</h2>
+                  <button
+                    type="button"
+                    onClick={() => setEditingTitle(true)}
+                    className="px-2 py-1 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0"
+                  >
+                    수업명 수정
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSessionTypePanelOpen((o) => !o)}
+                    className={`px-2 py-1 rounded-full text-[11px] font-black shrink-0 border ${
+                      sessionTypePanelOpen
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    수업 타입
+                  </button>
+                </div>
+                {sessionTypePanelOpen ? (
+                  <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    <label className="text-[11px] font-black text-slate-600 shrink-0">수업 타입 (번들 전체)</label>
+                    <select
+                      className="min-w-[180px] flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-800"
+                      value={bundleSessionTypeDraft}
+                      onChange={(e) => setBundleSessionTypeDraft(e.target.value)}
+                    >
+                      {SESSION_TYPE_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                      {!SESSION_TYPE_OPTIONS.some((o) => o.value === bundleSessionTypeDraft) &&
+                      bundleSessionTypeDraft ? (
+                        <option value={bundleSessionTypeDraft}>{bundleSessionTypeDraft} (현재 DB)</option>
+                      ) : null}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={savingSessionType || effectiveGroupIds.length === 0}
+                      onClick={() => void handleSaveBundleSessionType()}
+                      className="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-black text-white hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      {savingSessionType ? "저장 중..." : "적용"}
+                    </button>
+                    {bundleSessionTypesMixed ? (
+                      <p className="w-full text-[11px] font-bold text-amber-800">
+                        세션마다 타입이 다릅니다. 적용 시 번들 전체가 위 선택값으로 통일됩니다.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -1651,7 +1842,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
           </button>
         </header>
 
-        <div className="flex gap-1 px-6 border-b border-slate-100 shrink-0">
+        <div className="flex gap-1 px-4 sm:px-6 border-b border-slate-100 shrink-0 overflow-x-auto">
           <button
             type="button"
             onClick={() => setBundleTab("rounds")}
@@ -1677,12 +1868,13 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         </div>
 
         {bundleTab === "rounds" ? (
-          <div className="flex-1 overflow-auto p-6 space-y-4 min-h-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-xs font-black text-slate-600">
-                사이클(그룹)별로 접기/펼치기 할 수 있습니다. 지난 사이클은 아래 묶음에서 펼칩니다.
+          <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-4 min-h-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-xs font-black text-slate-600 min-w-0">
+                사이클(그룹)별로 접기/펼치기 할 수 있습니다. 완료된 일정은 아래 <span className="text-slate-800">지난 사이클</span>에
+                모입니다.
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => void handleMergeCycleRounds()}
@@ -1708,6 +1900,15 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
             {loading ? (
               <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">불러오는 중...</div>
+            ) : effectiveGroupIds.length === 0 ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-6 text-sm font-bold text-amber-900">
+                이 번들에 연결된 <span className="font-black">group_id</span>가 없습니다. 세션에 그룹이 지정돼 있는지
+                확인해 주세요.
+              </div>
+            ) : Object.keys(sessionsByGroupId).length === 0 ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-6 text-sm font-bold text-rose-900">
+                회차를 불러오지 못했습니다. 같은 그룹의 세션이 삭제됐거나, 조회 권한·필터를 확인해 주세요.
+              </div>
             ) : (
               <div className="space-y-3">
                 {currentGroupIds.map((gid) => renderCycleSection(gid))}
@@ -1716,7 +1917,8 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                     <button
                       type="button"
                       onClick={() => setPastArchiveOpen((o) => !o)}
-                      className="w-full px-4 py-3 bg-slate-100/80 hover:bg-slate-100 flex items-center justify-between gap-2">
+                      className="w-full px-4 py-3 bg-slate-100/80 hover:bg-slate-100 flex items-center justify-between gap-2"
+                    >
                       <div className="flex items-center gap-2 min-w-0">
                         {pastArchiveOpen ? (
                           <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
@@ -1739,7 +1941,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
             )}
           </div>
         ) : (
-          <div className="flex-1 overflow-auto p-6 min-h-0">
+          <div className="flex-1 overflow-auto p-4 sm:p-6 min-h-0">
             {!bundleKey ? (
               <p className="text-sm font-bold text-slate-500">사이클(그룹)이 없어 수업 정보를 저장할 수 없습니다.</p>
             ) : infoLoading ? (

@@ -3,6 +3,7 @@
 import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { ADMIN_NAMES } from '@/app/admin/classes-shared/constants/admins';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { Send, RotateCcw, User, MapPin, X, ExternalLink, FileText, Maximize2, Search, BookOpen, AlertTriangle } from 'lucide-react';
@@ -36,12 +37,28 @@ interface Coach {
   name: string;
 }
 
+/** QC(피드백·수업안)에서 제외: 운영 admin 계정 — 이름이 `김구민 T` 형태여도 동일인으로 본다 */
+function isQcExcludedAdminCoach(coach: { name?: string | null }): boolean {
+  const n = String(coach.name ?? '')
+    .replace(/\s*T\s*$/i, '')
+    .trim();
+  return ADMIN_NAMES.includes(n);
+}
 
 export default function MasterQCPage() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [activeTab, setActiveTab] = useState<'feedback' | 'lessonplan'>('feedback');
   const [coaches, setCoaches] = useState<Coach[]>([]);
-  
+
+  const qcCoaches = useMemo(
+    () => coaches.filter((c) => !isQcExcludedAdminCoach(c)),
+    [coaches]
+  );
+  const excludedAdminCoachIds = useMemo(
+    () => coaches.filter((c) => isQcExcludedAdminCoach(c)).map((c) => c.id),
+    [coaches]
+  );
+
   useEffect(() => {
     const initPage = async () => {
       if (!supabase) return;
@@ -87,9 +104,17 @@ export default function MasterQCPage() {
 
         {/* 내용 */}
         {activeTab === 'feedback' ? (
-          <FeedbackReviewTab coaches={coaches} supabase={supabase} />
+          <FeedbackReviewTab
+            coaches={qcCoaches}
+            excludedAdminCoachIds={excludedAdminCoachIds}
+            supabase={supabase}
+          />
         ) : (
-          <LessonPlanTab coaches={coaches} supabase={supabase} />
+          <LessonPlanTab
+            coaches={qcCoaches}
+            excludedAdminCoachIds={excludedAdminCoachIds}
+            supabase={supabase}
+          />
         )}
       </div>
     </div>
@@ -100,14 +125,15 @@ export default function MasterQCPage() {
 const FEEDBACK_SESSION_TYPES_PRIVATE = ['one_day', 'one_day_private', 'regular_private'] as const satisfies readonly Session['session_type'][];
 const FEEDBACK_SESSION_TYPES_CENTER = ['regular_center', 'one_day_center'] as const satisfies readonly Session['session_type'][];
 
-/** lesson-plans-sessions API와 동일한 KST 주간(일 00:00 ~ 토 23:59) UTC 구간 */
+/** lesson-plans-sessions API와 동일한 KST 주간(월 00:00 ~ 일 23:59) UTC 구간 */
 function getKstWeekRangeFromYmd(dateYmd: string): { start: Date; end: Date } {
   const KST_OFFSET = 9 * 60 * 60 * 1000;
   const anchorMs = new Date(`${dateYmd}T12:00:00+09:00`).getTime();
   const nowKST = new Date(anchorMs + KST_OFFSET);
   const dayOfWeek = nowKST.getUTCDay();
+  const daysFromMonday = (dayOfWeek + 6) % 7;
   const startKST = new Date(nowKST);
-  startKST.setUTCDate(nowKST.getUTCDate() - dayOfWeek);
+  startKST.setUTCDate(nowKST.getUTCDate() - daysFromMonday);
   startKST.setUTCHours(0, 0, 0, 0);
   const endKST = new Date(startKST);
   endKST.setUTCDate(startKST.getUTCDate() + 6);
@@ -129,7 +155,15 @@ function formatKstWeekRangeLabel(start: Date, end: Date): string {
 }
 
 // 피드백 검수 탭
-function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: ReturnType<typeof getSupabaseBrowserClient> | null }) {
+function FeedbackReviewTab({
+  coaches,
+  excludedAdminCoachIds,
+  supabase,
+}: {
+  coaches: Coach[];
+  excludedAdminCoachIds: string[];
+  supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
+}) {
   const getSessionTypeLabel = (sessionType: Session['session_type']): string => {
     switch (sessionType) {
       case 'regular_center':
@@ -219,14 +253,21 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
       
       const { data, error } = await query;
       if (error) throw error;
-      if (data) setSessions(data as unknown as Session[]);
+      if (data) {
+        const rows = data as unknown as Session[];
+        const filtered =
+          excludedAdminCoachIds.length === 0
+            ? rows
+            : rows.filter((s) => !excludedAdminCoachIds.includes(s.created_by));
+        setSessions(filtered);
+      }
     } catch (err: unknown) {
       devLogger.error('데이터 로드 실패:', err);
       setError(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedDate, selectedCoachId, feedbackScope]);
+  }, [supabase, selectedDate, selectedCoachId, feedbackScope, excludedAdminCoachIds]);
 
   useEffect(() => {
     fetchListData();
@@ -511,7 +552,7 @@ function FeedbackReviewTab({ coaches, supabase }: { coaches: Coach[]; supabase: 
             <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer" />
             {feedbackScope === 'center' ? (
               <p className="text-[11px] text-slate-500 font-bold leading-snug px-1">
-                주간 조회 (KST 일요일~토요일): {centerWeekRangeText}
+                주간 조회 (KST 월요일~일요일): {centerWeekRangeText}
               </p>
             ) : (
               <p className="text-[11px] text-slate-500 font-bold px-1">일간 조회: 선택한 날짜의 수업만</p>
@@ -846,7 +887,16 @@ function getLessonPlanContent(session: LessonPlanSession): string | null {
   const content = Array.isArray(lp) ? lp[0]?.content : (lp as { content?: unknown } | null)?.content;
   return content != null && content !== '' ? String(content) : null;
 }
-function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: ReturnType<typeof getSupabaseBrowserClient> | null }) {
+function LessonPlanTab({
+  coaches,
+  excludedAdminCoachIds,
+  supabase,
+}: {
+  coaches: Coach[];
+  excludedAdminCoachIds: string[];
+  supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
+}) {
+  const [lessonPlanScope, setLessonPlanScope] = useState<'private' | 'center'>('private');
   const [sessions, setSessions] = useState<LessonPlanSession[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -857,8 +907,9 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
     const fetchSessions = async () => {
       setLoading(true);
       try {
+        const scopeParam = lessonPlanScope === 'center' ? 'center' : 'private';
         const res = await fetch(
-          `/api/admin/lesson-plans-sessions?teacherId=${encodeURIComponent(selectedTeacher)}&_=${Date.now()}`,
+          `/api/admin/lesson-plans-sessions?teacherId=${encodeURIComponent(selectedTeacher)}&scope=${scopeParam}&_=${Date.now()}`,
           { credentials: 'include', cache: 'no-store' }
         );
         if (!res.ok) {
@@ -869,7 +920,12 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
           throw new Error(await res.text());
         }
         const data = await res.json();
-        setSessions(Array.isArray(data) ? data : []);
+        const raw = Array.isArray(data) ? data : [];
+        const filtered =
+          excludedAdminCoachIds.length === 0
+            ? raw
+            : raw.filter((s: LessonPlanSession) => !excludedAdminCoachIds.includes(String(s.created_by)));
+        setSessions(filtered);
       } catch (err: unknown) {
         devLogger.error('수업안 로드 실패:', err instanceof Error ? err.message : err);
         setSessions([]);
@@ -878,7 +934,7 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
       }
     };
     fetchSessions();
-  }, [selectedTeacher]);
+  }, [selectedTeacher, lessonPlanScope, excludedAdminCoachIds]);
 
   const groupedByTeacher = useMemo(() => {
     const groups: Record<string, LessonPlanSession[]> = {};
@@ -892,19 +948,44 @@ function LessonPlanTab({ coaches, supabase }: { coaches: Coach[]; supabase: Retu
 
   return (
     <>
+      <div className="mb-6 flex flex-wrap gap-2 bg-white p-1 rounded-2xl shadow-sm border border-slate-200">
+        <button
+          type="button"
+          onClick={() => setLessonPlanScope('private')}
+          className={`flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            lessonPlanScope === 'private' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          과외 수업안
+        </button>
+        <button
+          type="button"
+          onClick={() => setLessonPlanScope('center')}
+          className={`flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            lessonPlanScope === 'center' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          센터 수업안
+        </button>
+      </div>
+
       <div className="mb-8 flex flex-wrap items-center gap-4">
         <select value={selectedTeacher} onChange={e => setSelectedTeacher(e.target.value)} className="px-4 py-3 bg-white border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-blue-400 hover:border-slate-300 transition-colors cursor-pointer">
           <option value="all">전체 선생님</option>
           {coaches.map(c => <option key={c.id} value={c.id}>{c.name} 선생님</option>)}
         </select>
-        <span className="text-sm text-slate-500">이번 주 (일요일~토요일)</span>
+        <span className="text-sm text-slate-500">이번 주 (월요일~일요일, KST)</span>
       </div>
 
       {loading ? (
         <div className="py-40 text-center text-slate-400 font-bold animate-pulse">Loading...</div>
       ) : Object.keys(groupedByTeacher).length === 0 ? (
         <div className="bg-white rounded-[40px] py-32 text-center border border-dashed">
-          <p className="text-slate-400 font-bold">이번 주 수업이 없습니다</p>
+          <p className="text-slate-400 font-bold">
+            {lessonPlanScope === 'center'
+              ? '이번 주 센터 수업이 없습니다.'
+              : '이번 주 과외 수업이 없습니다.'}
+          </p>
         </div>
       ) : (
         <div className="space-y-6">

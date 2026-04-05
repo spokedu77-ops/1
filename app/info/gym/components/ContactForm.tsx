@@ -16,6 +16,7 @@ function validatePhone(raw: string) {
 export default function ContactForm() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [phoneError, setPhoneError] = useState('');
+  const isExternalPrivacy = /^https?:\/\//.test(GYM_CONFIG.center.privacyUrl);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -152,7 +153,11 @@ export default function ContactForm() {
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12, fontSize: 13, cursor: 'pointer' }}>
               <input type="checkbox" name="consent" required style={{ marginTop: 4 }} />
               <span>
-                <a href={GYM_CONFIG.center.privacyUrl} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={GYM_CONFIG.center.privacyUrl}
+                  target={isExternalPrivacy ? '_blank' : undefined}
+                  rel={isExternalPrivacy ? 'noopener noreferrer' : undefined}
+                >
                   개인정보처리방침
                 </a>
                 에 동의합니다. 수집 항목: 성함·연락처·자녀 연령 / 목적: 수강 상담 / 보유 기간: 상담 종료 후 즉시 파기 <abbr title="필수">(필수)</abbr>

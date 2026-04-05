@@ -9,13 +9,15 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import type { ClassGroup, EditableSession } from '@/app/admin/classes-shared/types';
 import {
+  cloneTierFeeMap,
   computeTier,
   effectiveFees,
+  HARD_CODED_TIER_FEES,
   totalLessonsFromCounts,
+  type TierFeeMap,
 } from '@/app/lib/teacherTierSchedule';
-import ClassDetailPanelV2 from '../components/ClassDetailPanelV2';
+import { fetchTeacherTierFeeMap } from '@/app/lib/teacherTierFeesStore';
 import { GROUP_ALIAS_RULES } from '../lib/groupAliases';
-import ClassAliasViewerPanel from '../components/ClassAliasViewerPanel';
 import ClassBundlePanelV2 from '../components/ClassBundlePanelV2';
 import {
   getCleanClassTitle,
@@ -23,6 +25,15 @@ import {
   makeBundleCompositeKey,
   getBundleTitleFromCompositeKey,
 } from '../lib/v2BundleResolve';
+import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
+import { SESSION_TYPE_OPTIONS } from '../lib/sessionTypeCategory';
+
+const CREATE_TYPE_ICONS: Record<(typeof SESSION_TYPE_OPTIONS)[number]['value'], string> = {
+  one_day_private: '🎓',
+  regular_private: '🏠',
+  regular_center: '🏢',
+  one_day_center: '🎉',
+};
 
 type DayOption = { label: string; value: number };
 const DAYS: DayOption[] = [
@@ -98,11 +109,6 @@ function mergeGroupViewsByBundleKey(rows: GroupView[]): GroupView[] {
   );
 }
 
-type AliasRow = {
-  aliasTitle: string;
-  groupIds: string[];
-};
-
 type BundleSelection = {
   bundleTitle: string;
   groupIds: string[];
@@ -129,8 +135,7 @@ export default function ClassListPageV2() {
   const [teacherMap, setTeacherMap] = useState<Record<string, string>>({});
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [selectedAlias, setSelectedAlias] = useState<AliasRow | null>(null);
+  const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const [selectedBundle, setSelectedBundle] = useState<BundleSelection | null>(null);
   const [aliasGroupIdsByTitle, setAliasGroupIdsByTitle] = useState<Record<string, string[]>>({});
   const [bundleGroupIdsByKey, setBundleGroupIdsByKey] = useState<Record<string, string[]>>({});
@@ -140,8 +145,7 @@ export default function ClassListPageV2() {
   const [createLoading, setCreateLoading] = useState(false);
   const [createForm, setCreateForm] = useState({
     title: '',
-    type: 'regular_private',
-    oneDayPlacement: 'private' as 'center' | 'private',
+    type: 'regular_private' as (typeof SESSION_TYPE_OPTIONS)[number]['value'],
     teacherId: '',
     startDate: new Date().toISOString().split('T')[0],
     startTime: '10:00',
@@ -155,28 +159,21 @@ export default function ClassListPageV2() {
   const [editableSessions, setEditableSessions] = useState<EditableSession[]>([]);
 
   const resolveDefaultPrice = useCallback(
-    (
-      teacherId: string,
-      clsType: string,
-      oneDayPlacement: 'center' | 'private',
-    ): number => {
+    (teacherId: string, clsType: string): number => {
       const selectedTeacher = teachers.find((t) => t.id === teacherId);
-      if (!selectedTeacher) return Number(createForm.price) || 30000;
+      if (!selectedTeacher) return 30000;
       const tier = computeTier(totalLessonsFromCounts(selectedTeacher.session_count ?? 0, 0));
       const fees = effectiveFees(tier, {
         fee_private: selectedTeacher.fee_private ?? null,
         fee_group: selectedTeacher.fee_group ?? null,
         fee_center_main: selectedTeacher.fee_center_main ?? null,
         fee_center_assist: selectedTeacher.fee_center_assist ?? null,
-      });
+      }, tierFeeMap);
 
-      if (clsType === 'regular_center') return fees.fee_center_main;
-      if (clsType === 'one_day') {
-        return oneDayPlacement === 'center' ? fees.fee_center_main : fees.fee_private;
-      }
+      if (clsType === 'regular_center' || clsType === 'one_day_center') return fees.fee_center_main;
       return fees.fee_private;
     },
-    [createForm.price, teachers],
+    [teachers, tierFeeMap],
   );
 
   const fetchGroups = useCallback(async () => {
@@ -203,6 +200,8 @@ export default function ClassListPageV2() {
         setTeacherMap(map);
         setTeachers(list);
       }
+      const { map: nextTierFeeMap } = await fetchTeacherTierFeeMap(supabase);
+      setTierFeeMap(nextTierFeeMap);
 
       const { data, error } = sessionsRes;
       if (error) throw error;
@@ -211,25 +210,7 @@ export default function ClassListPageV2() {
         return;
       }
 
-      // ✅ 리스트 "N회" 표시: 취소는 계약 회차를 줄이지 않음.
-      // 1) 그룹별 DB round_total 최댓값(삭제 제외)
-      // 2) 없으면 삭제·연기 제외 슬롯 수(취소 포함)
-      const maxRoundTotalByGroup: Record<string, number> = {};
-      const slotCountByGroup: Record<string, number> = {};
-      for (const row of data as any[]) {
-        if (!row.group_id) continue;
-        const st = String(row.status ?? '');
-        const key = String(row.group_id);
-        if (st !== 'deleted') {
-          const rt = Number(row.round_total);
-          if (Number.isFinite(rt) && rt > 0) {
-            maxRoundTotalByGroup[key] = Math.max(maxRoundTotalByGroup[key] ?? 0, rt);
-          }
-        }
-        if (st !== 'postponed' && st !== 'deleted') {
-          slotCountByGroup[key] = (slotCountByGroup[key] ?? 0) + 1;
-        }
-      }
+      const plannedByGroup = buildGroupPlannedTotals(data as any[]);
 
       // ✅ 사이클 토글용 번들 키: 담당(created_by) + 정제 수업명이 같으면 같은 번들(별도 개설 포함)
       // (리스트에는 완료를 숨기지만, 모달에서는 토글로 볼 수 있어야 함)
@@ -278,8 +259,7 @@ export default function ClassListPageV2() {
 
         const existing = byGroup.get(key);
         if (!existing) {
-          const roundTotal =
-            maxRoundTotalByGroup[key] ?? slotCountByGroup[key] ?? Number(row.round_total) ?? 1;
+          const roundTotal = plannedByGroup[key] ?? Number(row.round_total) ?? 1;
           const g: GroupView = {
             groupId: key,
             title: row.title || '',
@@ -305,7 +285,7 @@ export default function ClassListPageV2() {
           });
         } else {
           const g = existing.g;
-          g.roundTotal = maxRoundTotalByGroup[key] ?? slotCountByGroup[key] ?? g.roundTotal;
+          g.roundTotal = plannedByGroup[key] ?? g.roundTotal;
           if (startAt < g.firstClassAt) g.firstClassAt = startAt;
           if (endAt > g.lastClassAt) g.lastClassAt = endAt;
           if (teacherId && !g.teacherIds.includes(teacherId)) g.teacherIds.push(teacherId);
@@ -348,14 +328,13 @@ export default function ClassListPageV2() {
             : Number.isFinite(maxEndMs) && now > maxEndMs
               ? 'completed'
               : 'ongoing';
-        if (timeStatus === 'completed') continue; // ✅ 완료(종료) 그룹은 숨김
-
         g.timeStatus = timeStatus;
         g.displayTeacherId = (hasOngoing ? ongoingTeacherId : earliestUpcomingTeacherId) ?? null;
         // ✅ 대표 날짜: 진행중이면 "가장 가까운 진행중(또는 다음 예정)", 예정이면 "다음 예정"
         g.displayDateAt =
           (timeStatus === 'ongoing' ? (earliestOngoingStartAt || earliestUpcomingStartAt) : earliestUpcomingStartAt) ||
           g.firstClassAt;
+        if (timeStatus === 'completed') continue; // ✅ 완료(종료) 그룹은 목록에서 숨김
         list.push(g);
       }
 
@@ -464,16 +443,38 @@ export default function ClassListPageV2() {
 
   const handleCreateChange = (field: string, value: string | number | boolean) => {
     setCreateForm((prev) => {
-      if (field === 'type' && value === 'one_day') {
-        return {
+      const applyTierDefaultPrice = (next: typeof prev) =>
+        next.teacherId
+          ? {
+              ...next,
+              price: resolveDefaultPrice(next.teacherId, next.type),
+            }
+          : next;
+
+      if (field === 'price') {
+        return { ...prev, price: Number(value) || 0 };
+      }
+
+      if (field === 'type') {
+        const v = String(value);
+        const wasSingle =
+          prev.type === 'one_day_private' || prev.type === 'one_day_center';
+        const nextSingle = v === 'one_day_private' || v === 'one_day_center';
+        if (nextSingle) {
+          return applyTierDefaultPrice({
+            ...prev,
+            type: v as typeof prev.type,
+            weeklyFrequency: 1,
+            sessionCount: 1,
+            roundWeight: 1,
+            daysOfWeek: [new Date(`${prev.startDate}T${prev.startTime}`).getDay()],
+          });
+        }
+        return applyTierDefaultPrice({
           ...prev,
-          type: value,
-          oneDayPlacement: 'private',
-          weeklyFrequency: 1,
-          sessionCount: 1,
-          roundWeight: 1,
-          daysOfWeek: [new Date(`${prev.startDate}T${prev.startTime}`).getDay()],
-        };
+          type: v as typeof prev.type,
+          sessionCount: wasSingle ? 4 : prev.sessionCount,
+        });
       }
       if (field === 'startDate') {
         const newBaseDay = new Date(`${value}T${prev.startTime}`).getDay();
@@ -491,7 +492,12 @@ export default function ClassListPageV2() {
         const nextDays = [baseDay, ...extras.slice(0, needed)].sort((a, b) => a - b);
         return { ...prev, weeklyFrequency: Number(value), daysOfWeek: nextDays };
       }
-      return { ...prev, [field]: value };
+
+      const next = { ...prev, [field]: value } as typeof prev;
+      if (field === 'teacherId') {
+        return applyTierDefaultPrice(next);
+      }
+      return next;
     });
   };
 
@@ -518,7 +524,7 @@ export default function ClassListPageV2() {
   const buildCreateDates = () => {
     const sessions: Date[] = [];
     const start = new Date(`${createForm.startDate}T${createForm.startTime}`);
-    if (createForm.type === 'one_day') return [start];
+    if (createForm.type === 'one_day_private' || createForm.type === 'one_day_center') return [start];
     const selectedDays = createForm.daysOfWeek.length ? createForm.daysOfWeek : [start.getDay()];
     const cursor = new Date(start);
 
@@ -561,7 +567,8 @@ export default function ClassListPageV2() {
   const goToCreateStep2 = () => {
     if (!createForm.title || !createForm.teacherId) return toast.error('수업명과 강사를 확인해주세요!');
     if (
-      createForm.type !== 'one_day' &&
+      createForm.type !== 'one_day_private' &&
+      createForm.type !== 'one_day_center' &&
       createForm.weeklyFrequency > 1 &&
       createForm.daysOfWeek.length < createForm.weeklyFrequency
     ) {
@@ -592,7 +599,6 @@ export default function ClassListPageV2() {
     setCreateForm({
       title: '',
       type: 'regular_private',
-      oneDayPlacement: 'private',
       teacherId: '',
       startDate: new Date().toISOString().split('T')[0],
       startTime: '10:00',
@@ -615,17 +621,14 @@ export default function ClassListPageV2() {
       const sorted = [...editableSessions].sort((a, b) => a.roundIndex - b.roundIndex);
       const totalRounds = sorted.length;
 
-      const isOneDay = createForm.type === 'one_day';
-      const sessionType = isOneDay
-        ? createForm.oneDayPlacement === 'center'
-          ? 'one_day_center'
-          : 'one_day_private'
-        : createForm.type;
+      const isSingleSessionType =
+        createForm.type === 'one_day_private' || createForm.type === 'one_day_center';
+      const sessionType = createForm.type;
 
       const sessionsToInsert: Record<string, unknown>[] = [];
       sorted.forEach((session, idx) => {
         const roundIndex = idx + 1;
-        const roundDisplay = isOneDay
+        const roundDisplay = isSingleSessionType
           ? '1/1'
           : `${roundIndex}/${totalRounds}`;
 
@@ -660,36 +663,18 @@ export default function ClassListPageV2() {
     }
   };
 
-  useEffect(() => {
-    if (!createForm.teacherId) return;
-    const nextPrice = resolveDefaultPrice(
-      createForm.teacherId,
-      createForm.type,
-      createForm.oneDayPlacement,
-    );
-    if (Number(createForm.price) !== nextPrice) {
-      setCreateForm((prev) => ({ ...prev, price: nextPrice }));
-    }
-  }, [
-    createForm.oneDayPlacement,
-    createForm.price,
-    createForm.teacherId,
-    createForm.type,
-    resolveDefaultPrice,
-  ]);
-
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
-      <main className="flex-1 px-6 py-6 overflow-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900">수업 목록 (V2)</h1>
+      <main className="flex-1 min-w-0 px-3 sm:px-6 py-4 sm:py-6 overflow-auto">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900">수업 목록 (V2)</h1>
             <p className="text-xs text-slate-500 font-bold mt-1">
               group_id 기준으로 묶인 수업 시리즈입니다.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setIsCreateOpen(true)}
@@ -707,11 +692,11 @@ export default function ClassListPageV2() {
         </div>
 
         {isCreateOpen && (
-          <div className="fixed inset-0 z-50">
+          <div className="fixed inset-0 z-[400]">
             <div className="absolute inset-0 bg-black/40" onClick={() => setIsCreateOpen(false)} />
-            <div className="absolute inset-0 flex items-center justify-center p-4">
-              <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
+              <div className="w-full max-w-4xl max-h-[calc(100dvh-2rem)] flex flex-col bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+                <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
                   <div>
                     <h2 className="text-lg font-black text-slate-900">수업 개설 (V2)</h2>
                     <p className="text-xs text-slate-500 font-bold mt-1">
@@ -730,30 +715,26 @@ export default function ClassListPageV2() {
                   </button>
                 </div>
 
-                <div className="p-6 space-y-6">
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { id: 'regular_private', label: '과외', icon: '🏠' },
-                      { id: 'regular_center', label: '센터', icon: '🏢' },
-                      { id: 'one_day', label: '원데이', icon: '🎉' },
-                    ].map((t) => (
+                <div className="p-4 sm:p-6 space-y-6 overflow-y-auto min-h-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {SESSION_TYPE_OPTIONS.map((t) => (
                       <button
-                        key={t.id}
+                        key={t.value}
                         type="button"
-                        onClick={() => handleCreateChange('type', t.id)}
+                        onClick={() => handleCreateChange('type', t.value)}
                         className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all ${
-                          createForm.type === t.id
+                          createForm.type === t.value
                             ? 'border-blue-600 bg-blue-50 text-blue-700'
                             : 'border-slate-100 bg-white text-slate-400 hover:text-slate-600'
                         }`}
                       >
-                        <span className="text-2xl">{t.icon}</span>
-                        <span className="text-sm font-black">{t.label}</span>
+                        <span className="text-2xl">{CREATE_TYPE_ICONS[t.value]}</span>
+                        <span className="text-sm font-black text-center leading-tight">{t.label}</span>
                       </button>
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-600">수업명</label>
                       <input
@@ -781,42 +762,7 @@ export default function ClassListPageV2() {
                     </div>
                   </div>
 
-                  {createForm.type === 'one_day' && (
-                    <div className="bg-slate-900 rounded-2xl p-4 border border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <span className="text-white text-xs font-black">원데이 타입</span>
-                        <span className="text-[10px] font-black bg-blue-600 text-white px-2 py-1 rounded-full">
-                          총 1회
-                        </span>
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleCreateChange('oneDayPlacement', 'center')}
-                          className={`flex-1 py-3 rounded-xl text-sm font-black border ${
-                            createForm.oneDayPlacement === 'center'
-                              ? 'bg-blue-600 text-white border-blue-500'
-                              : 'bg-slate-800 text-white/70 border-slate-700 hover:bg-slate-700'
-                          }`}
-                        >
-                          센터
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleCreateChange('oneDayPlacement', 'private')}
-                          className={`flex-1 py-3 rounded-xl text-sm font-black border ${
-                            createForm.oneDayPlacement === 'private'
-                              ? 'bg-emerald-600 text-white border-emerald-500'
-                              : 'bg-slate-800 text-white/70 border-slate-700 hover:bg-slate-700'
-                          }`}
-                        >
-                          개인
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-600">첫 수업일</label>
                       <input
@@ -860,7 +806,8 @@ export default function ClassListPageV2() {
                     </div>
                   </div>
 
-                  {createForm.type !== 'one_day' && (
+                  {createForm.type !== 'one_day_private' &&
+                    createForm.type !== 'one_day_center' && (
                     <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
                       <div className="flex items-center gap-3 flex-wrap">
                         <label className="text-xs font-black text-slate-700">주당 횟수</label>
@@ -943,8 +890,8 @@ export default function ClassListPageV2() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`inline-flex px-3 py-1 rounded-full text-xs font-black ${
                           createStep === 1 ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'
@@ -965,12 +912,12 @@ export default function ClassListPageV2() {
                         type="button"
                         onClick={goToCreateStep2}
                         disabled={createLoading}
-                        className="px-4 py-2 rounded-full text-sm font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                        className="px-4 py-2 rounded-full text-sm font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 shrink-0"
                       >
                         회차 설정으로
                       </button>
                     ) : (
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2 justify-end">
                         <button
                           type="button"
                           onClick={() => setCreateStep(1)}
@@ -1070,7 +1017,6 @@ export default function ClassListPageV2() {
                                       const nextPrice = resolveDefaultPrice(
                                         nextTeacherId,
                                         createForm.type,
-                                        createForm.oneDayPlacement,
                                       );
                                       next[idx] = {
                                         ...next[idx],
@@ -1138,7 +1084,8 @@ export default function ClassListPageV2() {
             표시할 수업이 없습니다.
           </div>
         ) : (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="overflow-x-auto -mx-3 sm:mx-0">
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden min-w-[640px] sm:min-w-0">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                 <tr>
@@ -1210,28 +1157,16 @@ export default function ClassListPageV2() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </main>
-
-      <ClassAliasViewerPanel
-        visible={!!selectedAlias}
-        aliasTitle={selectedAlias?.aliasTitle || ''}
-        groupIds={selectedAlias?.groupIds || []}
-        onClose={() => setSelectedAlias(null)}
-      />
 
       <ClassBundlePanelV2
         visible={!!selectedBundle}
         bundleTitle={selectedBundle?.bundleTitle || ''}
         groupIds={selectedBundle?.groupIds || []}
         onClose={() => setSelectedBundle(null)}
-        onChanged={() => fetchGroups()}
-      />
-
-      <ClassDetailPanelV2
-        groupId={selectedGroupId}
-        onClose={() => setSelectedGroupId(null)}
         onChanged={() => fetchGroups()}
       />
     </div>

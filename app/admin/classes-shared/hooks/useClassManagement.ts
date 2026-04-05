@@ -4,6 +4,8 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { SessionEvent } from '../types';
 import { parseExtraTeachers } from '../lib/sessionUtils';
 import { ADMIN_NAMES } from '../constants/admins';
+import { buildGroupPlannedTotals } from '../lib/plannedRoundTotal';
+import { themeColorHexForSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 
 export function useClassManagement() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
@@ -15,10 +17,11 @@ export function useClassManagement() {
 
   const fetchSessions = useCallback(async () => {
     if (!supabase) return;
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const sixMonthsLater = new Date();
-    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+    // V2 번들 매칭·과거 월 조회: ±6개월은 누락이 잦아 관리 캘린더는 넓게 잡음
+    const rangeStart = new Date();
+    rangeStart.setMonth(rangeStart.getMonth() - 24);
+    const rangeEnd = new Date();
+    rangeEnd.setMonth(rangeEnd.getMonth() + 24);
 
     const [usersRes, sessionsRes] = await Promise.all([
       supabase
@@ -29,8 +32,8 @@ export function useClassManagement() {
       supabase
         .from('sessions')
         .select('*, users:created_by(id, name)')
-        .gte('start_at', sixMonthsAgo.toISOString())
-        .lte('start_at', sixMonthsLater.toISOString())
+        .gte('start_at', rangeStart.toISOString())
+        .lte('start_at', rangeEnd.toISOString())
         .order('start_at', { ascending: true })
     ]);
 
@@ -39,25 +42,14 @@ export function useClassManagement() {
 
     const { data, error } = sessionsRes;
     if (!error && data) {
-      // 분모(총 회차): deleted 제외한 전체(cancelled 포함)에서 round_total 최댓값 사용.
-      // 취소된 세션은 round_total을 유지하므로 여기서 올바른 계약 총회차를 구할 수 있다.
-      const groupTotals: Record<string, number> = {};
-      const groupActiveCount: Record<string, number> = {};
-      (data as { group_id?: string; status?: string | null; round_total?: number }[]).forEach((s) => {
-        const gid = s.group_id;
-        if (!gid) return;
-        const st = String(s.status ?? '');
-        if (st === 'deleted') return;
-        const rt = typeof s.round_total === 'number' && Number.isFinite(s.round_total) ? s.round_total : 0;
-        if (rt > 0) groupTotals[gid] = Math.max(groupTotals[gid] ?? 0, rt);
-        if (st !== 'postponed' && st !== 'cancelled') {
-          groupActiveCount[gid] = (groupActiveCount[gid] || 0) + 1;
-        }
-      });
-      // round_total이 없는 구형 데이터는 활성 세션 수로 fallback
-      for (const gid of Object.keys(groupActiveCount)) {
-        if (!groupTotals[gid]) groupTotals[gid] = groupActiveCount[gid];
-      }
+      const groupTotals = buildGroupPlannedTotals(
+        data as {
+          group_id?: string | null;
+          status?: string | null;
+          round_total?: number | null;
+          round_index?: number | null;
+        }[]
+      );
       const groupCurrentRounds: Record<string, number> = {};
 
       type SessionRow = {
@@ -110,7 +102,7 @@ export function useClassManagement() {
           memo: s.memo || '',
           isAdmin: ADMIN_NAMES.some(admin => displayTeacher.includes(admin)),
           roundInfo: roundStr,
-          themeColor: (s.session_type === 'regular_center' || s.session_type === 'one_day_center' ? '#2563EB' : '#10B981'),
+          themeColor: themeColorHexForSessionType(s.session_type),
           mileageAction: s.mileage_option || '',
           roundIndex: s.round_index ?? undefined,
           roundTotal: s.round_total ?? undefined,

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Check, Copy, Download, ExternalLink, Loader2, RefreshCw, Search, X } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, Loader2, RefreshCw, Search, Trash2, X } from 'lucide-react';
 
 type LeadRow = {
   id: string;
@@ -25,6 +25,7 @@ export default function AdminMoveReportPage() {
   const [selected, setSelected] = useState<LeadRow | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -113,6 +114,31 @@ export default function AdminMoveReportPage() {
     if (!ok) return;
     setCopiedPhone(selected.phone);
     window.setTimeout(() => setCopiedPhone((prev) => (prev === selected.phone ? null : prev)), 1200);
+  };
+
+  const onDeleteRow = async (row: LeadRow) => {
+    const okToDelete = window.confirm(`이 리드를 삭제할까요?\n전화번호: ${row.phone}`);
+    if (!okToDelete) return;
+    setDeletingId(row.id);
+    try {
+      const res = await fetch('/api/admin/move-report/leads', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: row.id }),
+      });
+      const json = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        window.alert(json.error ?? '삭제 중 오류가 발생했습니다.');
+        return;
+      }
+      setRows((prev) => prev.filter((r) => r.id !== row.id));
+      setSelected((prev) => (prev?.id === row.id ? null : prev));
+    } catch {
+      window.alert('네트워크 오류가 발생했습니다.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const total = useMemo(() => rows.length, [rows]);
@@ -259,6 +285,7 @@ export default function AdminMoveReportPage() {
                   <th className="px-3 py-2 text-left font-semibold text-slate-600">프로필명</th>
                   <th className="px-3 py-2 text-left font-semibold text-slate-600">동의</th>
                   <th className="px-3 py-2 text-left font-semibold text-slate-600">상세</th>
+                  <th className="px-3 py-2 text-left font-semibold text-slate-600">삭제</th>
                 </tr>
               </thead>
               <tbody>
@@ -298,6 +325,17 @@ export default function AdminMoveReportPage() {
                         className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
                       >
                         보기
+                      </button>
+                    </td>
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => void onDeleteRow(r)}
+                        disabled={deletingId === r.id}
+                        className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {deletingId === r.id ? '삭제 중' : '삭제'}
                       </button>
                     </td>
                   </tr>

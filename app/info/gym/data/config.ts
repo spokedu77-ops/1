@@ -4,7 +4,7 @@ export const GYM_CONFIG = {
     tagline: "MOVE CORE 중심 아동청소년 체육교육 LAB",
     address: "서울시 강동구 성내동 430-2, 7층 2호",
     hours: "평일 13:00-20:00 / 토 09:00-20:00 / 일요일 프로그램 운영",
-    privacyUrl: "javascript:void(0)",
+    privacyUrl: "/info/gym/privacy",
   },
   phoneParts: ["010", "4437", "9294"] as [string, string, string],
   kakao: {

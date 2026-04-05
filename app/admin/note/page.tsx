@@ -260,6 +260,7 @@ function BlockContent({
   onShowFormatToolbar,
   onHideFormatToolbar,
   isDragging,
+  focusedToggleId,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -270,6 +271,7 @@ function BlockContent({
   onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
   onHideFormatToolbar?: () => void;
   isDragging?: boolean;
+  focusedToggleId?: string | null;
 }) {
   const textRef = useRef<HTMLTextAreaElement>(null);
   const [showSlash, setShowSlash] = useState(false);
@@ -639,19 +641,31 @@ function BlockContent({
       : (typeof block.content?.text === 'string' ? block.content.text : '');
     const body = typeof block.content?.body === 'string' ? block.content.body : '';
     const collapsed = !!block.content?.collapsed;
+    const rawIm = block.content?.images;
+    const toggleImages = Array.isArray(rawIm)
+      ? rawIm.map((u) => (typeof u === 'string' ? u : ''))
+      : [];
+    const isThisToggleFocused = focusedToggleId === block.id;
+    const patchToggle = (partial: Record<string, unknown>) =>
+      onUpdate({ ...block.content, title, body, collapsed, images: toggleImages, ...partial });
     return (
-      <div className="relative rounded-lg border border-slate-200 bg-white px-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
+      <div
+        className={`relative rounded-lg border bg-white px-3 py-2 ${
+          isThisToggleFocused ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'
+        }`}
+        style={{ marginLeft: `${blockDepth * 20}px` }}
+      >
         <div className="mb-1 flex items-center gap-2">
           <button
             type="button"
             className={`transition-transform ${collapsed ? '-rotate-90' : ''}`}
-            onClick={() => onUpdate({ ...block.content, collapsed: !collapsed })}
+            onClick={() => patchToggle({ collapsed: !collapsed })}
           >
             <ChevronDown className="h-4 w-4 text-slate-500" />
           </button>
           <input
             value={title}
-            onChange={(e) => onUpdate({ ...block.content, title: e.target.value, body, collapsed })}
+            onChange={(e) => patchToggle({ title: e.target.value })}
             className="flex-1 bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
             placeholder="토글 제목"
           />
@@ -673,6 +687,42 @@ function BlockContent({
               placeholderClassName: 'text-slate-400',
               field: 'body',
             })}
+            {toggleImages.length > 0 && (
+              <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">토글 안 이미지</p>
+                {toggleImages.map((url, idx) => (
+                  <div key={idx} className="rounded-lg border border-slate-100 bg-slate-50/80 p-2">
+                    <div className="mb-1 flex items-center gap-2">
+                      <ImageIcon className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <input
+                        className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-2 py-1 text-[13px] text-slate-700 outline-none focus:border-blue-400"
+                        placeholder="이미지 URL"
+                        value={url}
+                        onChange={(e) => {
+                          const next = [...toggleImages];
+                          next[idx] = e.target.value;
+                          patchToggle({ images: next });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="shrink-0 rounded p-1 text-slate-400 hover:text-rose-500"
+                        title="이미지 제거"
+                        onClick={() => patchToggle({ images: toggleImages.filter((_, j) => j !== idx) })}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    {url.trim() ? (
+                      <div className="overflow-hidden rounded-md bg-white">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url.trim()} alt="" className="max-h-56 w-full object-contain" />
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -715,6 +765,8 @@ function SortableBlockRow({
   onOpenDocument,
   onShowFormatToolbar,
   onHideFormatToolbar,
+  focusedToggleId,
+  onFocusToggle,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -724,6 +776,8 @@ function SortableBlockRow({
   onOpenDocument?: (documentId: string) => void;
   onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
   onHideFormatToolbar?: () => void;
+  focusedToggleId?: string | null;
+  onFocusToggle?: (blockId: string | null) => void;
 }) {
   const {
     attributes,
@@ -761,7 +815,12 @@ function SortableBlockRow({
       </button>
 
       {/* 블록 콘텐츠 */}
-      <div className="flex-1 min-w-0">
+      <div
+        className="flex-1 min-w-0"
+        onMouseDownCapture={() => {
+          onFocusToggle?.(block.type === 'toggle' ? block.id : null);
+        }}
+      >
         <BlockContent
           block={block}
           onUpdate={onUpdate}
@@ -772,6 +831,7 @@ function SortableBlockRow({
           onShowFormatToolbar={onShowFormatToolbar}
           onHideFormatToolbar={onHideFormatToolbar}
           isDragging={isDragging}
+          focusedToggleId={focusedToggleId}
         />
       </div>
     </div>
@@ -820,6 +880,8 @@ export default function AdminNotePage() {
   const [sortKey, setSortKey] = useState<SortKey>('recent');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  /** 상단 '이미지' 블록 추가 시 토글 안에 넣을 대상 (토글 블록 클릭으로 설정) */
+  const [focusedToggleId, setFocusedToggleId] = useState<string | null>(null);
   const [formatToolbar, setFormatToolbar] = useState<{ applyMark: (mark: InlineMark) => void } | null>(null);
   const [docTab, setDocTab] = useState<'active' | 'trash'>('active');
 
@@ -1253,9 +1315,33 @@ export default function AdminNotePage() {
     }
   }, [triggerSave]);
 
+  const handleUpdateBlock = useCallback((block: NoteBlock, content: any) => {
+    setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content } : b)));
+    setLoadingState('saving');
+    const timers = saveTimersRef.current;
+    if (timers[block.id]) clearTimeout(timers[block.id]);
+    timers[block.id] = window.setTimeout(async () => {
+      try {
+        await fetch('/api/admin/note/blocks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: block.id, content }) });
+        delete timers[block.id];
+        if (Object.keys(timers).filter((k) => !k.startsWith('doc_')).length === 0) triggerSave();
+      } catch (e) { devLogger.error('[Note] updateBlock', e); setLoadingState('idle'); }
+    }, 600);
+  }, [triggerSave]);
+
   const handleAddBlock = useCallback(async (type: NoteBlock['type']) => {
     if (!selectedId) return;
     try {
+      if (type === 'image' && focusedToggleId) {
+        const target = blocks.find((b) => b.id === focusedToggleId);
+        if (target?.type === 'toggle') {
+          const c = (target.content ?? {}) as Record<string, unknown>;
+          const rawIm = c.images;
+          const imgs = Array.isArray(rawIm) ? rawIm.map((u) => (typeof u === 'string' ? u : '')) : [];
+          handleUpdateBlock(target, { ...c, collapsed: false, images: [...imgs, ''] });
+          return;
+        }
+      }
       setLoadingState('saving');
       if (type === 'page') {
         const createDocRes = await fetch('/api/admin/note/documents', {
@@ -1294,7 +1380,7 @@ export default function AdminNotePage() {
       const defaultContent =
         type === 'heading' ? { text: '' }
         : type === 'todo' ? { text: '', checked: false }
-        : type === 'toggle' ? { title: '', body: '', collapsed: false, depth: 0 }
+        : type === 'toggle' ? { title: '', body: '', collapsed: false, depth: 0, images: [] }
         : type === 'callout' ? { text: '', icon: '💡', depth: 0 }
         : type === 'divider' ? {}
         : type === 'page' ? { page_document_id: '', title: '문서' }
@@ -1305,27 +1391,13 @@ export default function AdminNotePage() {
       setBlocks((prev) => [json.block, ...prev]);
       triggerSave();
     } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
-  }, [selectedId, triggerSave]);
-
-  const handleUpdateBlock = useCallback((block: NoteBlock, content: any) => {
-    setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content } : b)));
-    setLoadingState('saving');
-    const timers = saveTimersRef.current;
-    if (timers[block.id]) clearTimeout(timers[block.id]);
-    timers[block.id] = window.setTimeout(async () => {
-      try {
-        await fetch('/api/admin/note/blocks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: block.id, content }) });
-        delete timers[block.id];
-        if (Object.keys(timers).filter((k) => !k.startsWith('doc_')).length === 0) triggerSave();
-      } catch (e) { devLogger.error('[Note] updateBlock', e); setLoadingState('idle'); }
-    }, 600);
-  }, [triggerSave]);
+  }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock]);
 
   const handleChangeBlockType = useCallback(async (block: NoteBlock, type: NoteBlock['type']) => {
     const defaultContent =
       type === 'heading' ? { text: '' }
       : type === 'todo' ? { text: '', checked: false }
-      : type === 'toggle' ? { title: '', body: '', collapsed: false, depth: 0 }
+      : type === 'toggle' ? { title: '', body: '', collapsed: false, depth: 0, images: [] }
       : type === 'callout' ? { text: '', icon: '💡', depth: 0 }
       : type === 'divider' ? {}
       : type === 'page' ? { page_document_id: '', title: '문서' }
@@ -1686,7 +1758,15 @@ export default function AdminNotePage() {
                 </div>
                 <div className="mx-auto flex max-w-3xl flex-wrap gap-2 px-4 pb-2 md:px-16">
                   {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
-                    <button key={type} type="button" onClick={() => handleAddBlock(type)}
+                    <button
+                      key={type}
+                      type="button"
+                      title={
+                        type === 'image' && focusedToggleId
+                          ? '선택한 토글 블록 안에 이미지 슬롯을 추가합니다. 토글을 한 번 클릭한 뒤 누르세요.'
+                          : undefined
+                      }
+                      onClick={() => handleAddBlock(type)}
                       className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-medium text-slate-600 shadow-sm transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 hover:shadow"
                     >
                       <Icon className="h-3.5 w-3.5" />{label}
@@ -1760,6 +1840,8 @@ export default function AdminNotePage() {
                         onOpenDocument={handleOpenDocumentById}
                         onShowFormatToolbar={showFormatToolbar}
                         onHideFormatToolbar={hideFormatToolbar}
+                        focusedToggleId={focusedToggleId}
+                        onFocusToggle={setFocusedToggleId}
                       />
                     ))}
                   </div>

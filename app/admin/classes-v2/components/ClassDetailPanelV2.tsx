@@ -403,20 +403,19 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     return { statusLabel, isCompletedByTime, isActiveByTime, isPostponed, isCancelled, isDeleted };
   }, []);
 
-  const cycleEnded = useMemo(() => {
-    if (sessions.length === 0) return false;
-    return sessions.every((s) => {
-      const { isCompletedByTime, isCancelled, isDeleted } = timeStatusOf(s);
-      // ✅ 연기(postponed)는 "끝난 사이클"로 보지 않습니다. (연기 일정도 다시 진행해야 함)
-      return isCompletedByTime || isCancelled || isDeleted;
-    });
-  }, [sessions, timeStatusOf]);
-
+  /** "예정/진행만"인데 해당 회차가 없으면 빈 표 방지 */
   useEffect(() => {
     if (!visible) return;
-    if (!cycleEnded) return;
-    setRoundView((prev) => (prev === 'all' ? 'active' : prev));
-  }, [visible, cycleEnded]);
+    if (sessions.length === 0) return;
+    const baseNoDeleted = sessions.filter((s) => s.status !== 'deleted');
+    const hasActive = baseNoDeleted.some((s) => {
+      if (s.status === 'cancelled') return false;
+      return timeStatusOf(s).isActiveByTime;
+    });
+    if (!hasActive && baseNoDeleted.length > 0) {
+      setRoundView((prev) => (prev === 'active' ? 'all' : prev));
+    }
+  }, [visible, sessions, timeStatusOf]);
 
   const plannedTotal = useMemo(() => resolvePlannedTotal(sessions), [sessions]);
 
@@ -640,7 +639,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
 
   return (
     <div
-      className={`fixed inset-0 z-50 transition ${visible ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      className={`fixed inset-0 z-[400] transition ${visible ? 'pointer-events-auto' : 'pointer-events-none'}`}
     >
       <div
         className={`absolute inset-0 bg-black/30 transition-opacity ${visible ? 'opacity-100' : 'opacity-0'}`}

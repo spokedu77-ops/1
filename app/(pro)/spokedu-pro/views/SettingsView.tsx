@@ -6,8 +6,8 @@ import {
   Bot, Mail, ChevronRight, AlertTriangle, LayoutGrid, Timer,
 } from 'lucide-react';
 import { useProContext, type Plan } from '../hooks/useProContext';
+import { PLAN_PRICES, PLAN_UI_META, PLAN_UI_ORDER } from '@/app/lib/spokedu-pro/planCatalog';
 
-// ── 플랜 정의 (PLAN_PRICES는 서버 상수와 반드시 동기화) ─────────────────────
 type PlanDef = {
   id: Plan;
   label: string;
@@ -19,52 +19,22 @@ type PlanDef = {
   icon: React.ElementType;
 };
 
-const PLANS: PlanDef[] = [
-  {
-    id: 'free',
-    label: 'Free',
-    priceKrw: 0,
-    description: '기본 기능을 무료로',
-    features: [
-      '로드맵 & 100대 프로그램 열람',
-      '수업 보조도구 (팀 나누기, 술래 정하기)',
-      '학생 무제한 등록',
-      '반 1개',
-    ],
-    icon: Building2,
-  },
-  {
-    id: 'basic',
-    label: 'Basic',
-    priceKrw: 49900,
-    description: '소규모 센터 최적화',
-    features: [
-      'Free 기능 전체 포함',
-      '학생 무제한 등록',
-      '반 최대 3개',
-      'AI 에듀-에코 리포트 월 20회',
-      '출결·신체 평가 CSV 내보내기',
-    ],
-    badge: 'Popular',
-    badgeColor: 'bg-blue-500',
-    icon: Zap,
-  },
-  {
-    id: 'pro',
-    label: 'Pro',
-    priceKrw: 79900,
-    description: '성장하는 센터를 위한 풀 패키지',
-    features: [
-      'Basic 기능 전체 포함',
-      '반 무제한',
-      'AI 리포트 무제한',
-      '우선 지원 채널',
-    ],
-    badge: 'Best',
-    badgeColor: 'bg-amber-500',
-    icon: Crown,
-  },
-];
+const PLAN_ICON: Record<Plan, React.ElementType> = {
+  free: Building2,
+  basic: Zap,
+  pro: Crown,
+};
+
+const PLANS: PlanDef[] = PLAN_UI_ORDER.map((id) => ({
+  id,
+  label: PLAN_UI_META[id].label,
+  priceKrw: PLAN_PRICES[id],
+  description: PLAN_UI_META[id].description,
+  features: PLAN_UI_META[id].features,
+  badge: PLAN_UI_META[id].badge,
+  badgeColor: PLAN_UI_META[id].badgeColor,
+  icon: PLAN_ICON[id],
+}));
 
 // ── Trial 배너 ───────────────────────────────────────────────────────────────
 function TrialBanner({ trialEndAt }: { trialEndAt: string }) {
@@ -215,7 +185,7 @@ function PlanCard({
           ) : (
             <ChevronRight className="w-3.5 h-3.5" />
           )}
-          {plan.label}로 업그레이드
+          {plan.label} 도입 문의
         </button>
       ) : (
         <div className="h-9" />
@@ -233,6 +203,13 @@ export default function SettingsView() {
   const currentPlan = ctx.entitlement.plan;
   const isTrialing = ctx.entitlement.status === 'trialing';
   const { usage } = ctx;
+  const statusLabel: Record<string, string> = {
+    trialing: '체험 중',
+    active: '활성',
+    past_due: '결제 지연',
+    canceled: '해지됨',
+    expired: '만료',
+  };
 
   const handleUpgrade = async (plan: Plan) => {
     setUpgrading(true);
@@ -240,7 +217,7 @@ export default function SettingsView() {
     try {
       await new Promise((r) => setTimeout(r, 400));
       setUpgradeMsg(
-        `${plan === 'basic' ? 'Basic' : 'Pro'} 업그레이드 신청을 원하시면 아래 이메일로 문의해 주세요.`
+        `${plan === 'basic' ? 'Basic' : 'Pro'} 도입 문의를 접수했습니다. 결제 연동 전까지는 이메일 상담으로 전환을 도와드려요.`
       );
     } finally {
       setUpgrading(false);
@@ -300,11 +277,11 @@ export default function SettingsView() {
       <div className="rounded-2xl border border-blue-500/25 bg-blue-500/10 px-5 py-4 text-sm text-slate-200 leading-relaxed">
         <p className="font-bold text-blue-200 mb-1">결제 안내</p>
         <p className="text-slate-300">
-          온라인 결제(카드·정기결제)는 곧 연동될 예정입니다. 지금은 플랜 업그레이드·견적 문의를{' '}
+          현재 자동 결제(카드·정기결제)는 미지원입니다. 플랜 변경은{' '}
           <a href="mailto:contact@spokedu.co.kr" className="text-blue-400 font-bold underline underline-offset-2">
             이메일
           </a>
-          로 보내 주시면 안내드릴게요.
+          문의로 수동 전환 안내를 드립니다.
         </p>
       </div>
 
@@ -357,7 +334,7 @@ export default function SettingsView() {
                   : 'bg-amber-500/20 text-amber-400'
               }`}
             >
-              {isTrialing ? '체험 중' : ctx.entitlement.status === 'active' ? '활성' : ctx.entitlement.status}
+              {statusLabel[ctx.entitlement.status] ?? ctx.entitlement.status}
             </span>
           </div>
           {ctx.billing.currentPeriodEndAt && (

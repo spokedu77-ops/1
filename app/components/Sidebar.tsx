@@ -93,7 +93,7 @@ export default function Sidebar() {
     {
       group: "계정 관리",
       items: [
-        { name: "결제 정보", href: "/billing", icon: CreditCard },
+        { name: "플랜 & 결제", href: "/billing", icon: CreditCard },
       ]
     }
   ];

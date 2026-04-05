@@ -88,7 +88,8 @@ export function resolveV2BundleFromSession(
       if (getAliasTitleForGroup(s.title) === alias) groupIds.add(String(s.groupId));
     }
     const ids = Array.from(groupIds);
-    return { bundleTitle: alias, groupIds: ids.length ? ids : [gid] };
+    // 클릭한 일정이 allSessions(기간 제한) 밖에만 있으면 ids가 비었을 수 있음 → gid로 폴백
+    return { bundleTitle: alias, groupIds: ids.length ? ids : gid ? [gid] : [] };
   }
 
   const titleKey = getBundleTitleKey(ev.title);
