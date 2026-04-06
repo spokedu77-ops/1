@@ -8,6 +8,7 @@ import { devLogger } from "@/app/lib/logging/devLogger";
 import { postponeCascade } from "@/app/admin/classes-shared/lib/postponeUtils";
 import { undoPostponeCascade } from "@/app/admin/classes-shared/lib/postponeUtils";
 import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
+import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/lib/sessionInsertClone";
 import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { resolvePlannedTotal } from "@/app/admin/classes-v2/lib/plannedRoundTotal";
 import { SESSION_TYPE_OPTIONS } from "@/app/admin/classes-v2/lib/sessionTypeCategory";
@@ -1025,11 +1026,8 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     setRestartingByGroup((prev) => ({ ...prev, [gid]: true }));
     try {
       const nextGroupId = crypto.randomUUID();
-      const { id: _id, created_at: _ca, updated_at: _ua, start_at: _sa, end_at: _ea, status: _st, ...insertBase } =
-        last as any;
-      void _id;
-      void _ca;
-      void _ua;
+      const base = omitSessionIdentityForInsertClone(last as Record<string, unknown>);
+      const { start_at: _sa, end_at: _ea, status: _st, ...insertBase } = base;
       void _sa;
       void _ea;
       void _st;
@@ -1344,12 +1342,17 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                           className="w-full bg-transparent border rounded-lg px-2 py-1"
                                           value={dateStr}
                                           onChange={(e) => {
+                                            if (!e.target.value) return;
                                             const [y, m, d] = e.target.value.split("-").map(Number);
+                                            if (![y, m, d].every((v) => Number.isFinite(v))) return;
                                             const startAt = new Date(start);
                                             startAt.setFullYear(y, m - 1, d);
+                                            if (Number.isNaN(startAt.getTime()) || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
                                             const duration = (end.getTime() - start.getTime()) / (1000 * 60);
+                                            if (!Number.isFinite(duration)) return;
                                             const endAt = new Date(startAt);
                                             endAt.setMinutes(endAt.getMinutes() + duration);
+                                            if (Number.isNaN(endAt.getTime())) return;
                                             void applyInlineUpdate(gid, r.id, {
                                               start_at: startAt.toISOString(),
                                               end_at: endAt.toISOString(),
@@ -1363,12 +1366,17 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                           className="w-full bg-transparent border rounded-lg px-2 py-1"
                                           value={timeStr}
                                           onChange={(e) => {
+                                            if (!e.target.value) return;
                                             const [hh, mm] = e.target.value.split(":").map(Number);
+                                            if (![hh, mm].every((v) => Number.isFinite(v))) return;
                                             const startAt = new Date(start);
                                             startAt.setHours(hh, mm, 0, 0);
+                                            if (Number.isNaN(startAt.getTime()) || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
                                             const duration = (end.getTime() - start.getTime()) / (1000 * 60);
+                                            if (!Number.isFinite(duration)) return;
                                             const endAt = new Date(startAt);
                                             endAt.setMinutes(endAt.getMinutes() + duration);
+                                            if (Number.isNaN(endAt.getTime())) return;
                                             void applyInlineUpdate(gid, r.id, {
                                               start_at: startAt.toISOString(),
                                               end_at: endAt.toISOString(),

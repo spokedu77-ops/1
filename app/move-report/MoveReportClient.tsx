@@ -65,6 +65,20 @@ export default function MoveReportClient() {
         flash('전화번호 11자리(010-0000-0000)를 입력해 주세요.');
         return false;
       }
+      const normalizedResponses = questions
+        .map((q, idx) => {
+          const raw = resps[idx];
+          const [left, right] = q.axis.split('/');
+          if (typeof raw === 'string' && (raw === left || raw === right)) return raw;
+          if (result.key.includes(left)) return left;
+          if (result.key.includes(right)) return right;
+          return null;
+        })
+        .filter((v): v is string => typeof v === 'string');
+      if (normalizedResponses.length !== questions.length) {
+        flash('설문 응답을 확인할 수 없어 다시 시작해 주세요.');
+        return false;
+      }
       try {
         const res = await fetch('/api/move-report/leads', {
           method: 'POST',
@@ -76,7 +90,7 @@ export default function MoveReportClient() {
             profileKey: result.key,
             profileTitle: result.profile.char,
             consent: true,
-            surveyResponses: resps,
+            surveyResponses: normalizedResponses,
           }),
         });
         const data = (await res.json()) as { ok?: boolean; error?: string };
@@ -92,8 +106,17 @@ export default function MoveReportClient() {
         return false;
       }
     },
-    [age, flash, name, resps, result]
+    [age, flash, name, questions, resps, result]
   );
+
+  const handleShare = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      flash('결과 링크를 복사했어요.');
+    } catch {
+      flash('링크 복사를 지원하지 않는 환경이에요.');
+    }
+  }, [flash]);
 
   const onAnswer = useCallback(
     (v: string) => {
@@ -163,6 +186,7 @@ export default function MoveReportClient() {
           tab={tab}
           onTab={setTab}
           onReset={reset}
+          onShare={handleShare}
           onLeadSubmit={submitLead}
           savedPhone={savedPhone}
           flash={flash}

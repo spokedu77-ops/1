@@ -318,12 +318,29 @@ function MyClassesContent() {
     }
   };
 
+  const getDisplayFileName = (url: string): string => {
+    const raw = url.split('/').pop() || '';
+    const withoutQuery = raw.split('?')[0];
+    const decoded = (() => {
+      try {
+        return decodeURIComponent(withoutQuery);
+      } catch {
+        return withoutQuery;
+      }
+    })();
+    const withoutPrefix = decoded.replace(/^\d+_/, '');
+    return withoutPrefix || 'File';
+  };
+
   const uploadFile = async (file: File, bucket: string) => {
     if (!supabase || !selectedEvent) return null;
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const safeFileName = `${selectedEvent.id}/${Date.now()}.${fileExt}`;
+      const originalName = file.name.normalize('NFC').replace(/[\\/:*?"<>|]/g, '_').trim();
+      const fallbackName = 'file';
+      const safeBaseName = originalName.length > 0 ? originalName : fallbackName;
+      const encodedName = encodeURIComponent(safeBaseName);
+      const safeFileName = `${selectedEvent.id}/${Date.now()}_${encodedName}`;
       const { error } = await supabase.storage.from(bucket).upload(safeFileName, file);
       if (error) throw error;
       const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(safeFileName).data;
@@ -568,7 +585,7 @@ function MyClassesContent() {
                     <div className="grid gap-2">
                       {fileUrls.map((url, i) => (
                         <div key={i} className="flex items-center justify-between bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
-                          <span className="text-xs font-bold text-slate-600 truncate max-w-[300px]">{url.split('/').pop()}</span>
+                          <span className="text-xs font-bold text-slate-600 truncate max-w-[300px]">{getDisplayFileName(url)}</span>
                           <button onClick={() => setFileUrls(fileUrls.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-red-500 cursor-pointer"><X size={16} /></button>
                         </div>
                       ))}

@@ -1,5 +1,7 @@
 import { toast } from 'sonner';
 
+import { omitSessionIdentityForInsertClone } from './sessionInsertClone';
+
 function formatErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (err && typeof err === 'object') {
@@ -87,6 +89,8 @@ export async function extendClass(
       round_index: _roundIndex,
       round_total: _roundTotal,
       round_display: _roundDisplay,
+      // 마지막 회차의 short_code를 그대로 넣으면 신규 행끼리·기존 행과 유니크 충돌 (idx_sessions_short_code_unique)
+      short_code: _shortCode,
       ...insertBase
     } = last;
     void _id;
@@ -98,6 +102,9 @@ export async function extendClass(
     void _roundIndex;
     void _roundTotal;
     void _roundDisplay;
+    void _shortCode;
+
+    const insertBaseSafe = omitSessionIdentityForInsertClone(insertBase as Record<string, unknown>);
 
     for (let i = 1; i <= addCount; i++) {
       const start = new Date(lastStart);
@@ -109,7 +116,7 @@ export async function extendClass(
       const roundDisplay = `${roundIndex}/${newTotal}`;
 
       newSessions.push({
-        ...insertBase,
+        ...insertBaseSafe,
         // 다음 회차(opened) 생성 시 이전 회차의 피드백이 그대로 이어붙지 않도록 초기화합니다.
         // (students_text / feedback_fields / 첨부파일이 복사되면 teacher 화면에서 "계속 복사된 것처럼" 보입니다.)
         students_text: null,

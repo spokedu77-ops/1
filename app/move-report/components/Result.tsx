@@ -14,6 +14,7 @@ interface ResultProps {
   tab: ResultTab;
   onTab: (t: ResultTab) => void;
   onReset: () => void;
+  onShare: () => void | Promise<void>;
   onLeadSubmit: (phone: string) => Promise<boolean>;
   savedPhone: string;
   flash: (msg: string) => void;
@@ -55,6 +56,7 @@ export default function Result({
   tab,
   onTab,
   onReset,
+  onShare,
   onLeadSubmit,
   savedPhone,
   flash,
@@ -569,6 +571,14 @@ export default function Result({
                 <ShareAndCollect
                   p={p}
                   displayName={displayName}
+                  profileKey={key}
+                  graphCode={`${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`}
+                  graph={{
+                    social: Math.max(bd.social.l, bd.social.r),
+                    structure: Math.max(bd.structure.l, bd.structure.r),
+                    motivation: Math.max(bd.motivation.l, bd.motivation.r),
+                    energy: Math.max(bd.energy.l, bd.energy.r),
+                  }}
                   flash={flash}
                   onLeadSubmit={onLeadSubmit}
                   savedPhone={savedPhone}
@@ -603,20 +613,38 @@ export default function Result({
                     <div style={{ fontSize: '14px', fontWeight: 900, color: '#fff' }}>저장 후 기능을 이어갈 수 있어요</div>
                   </div>
                   <p style={{ fontSize: '11px', color: '#999', lineHeight: 1.5, wordBreak: 'keep-all', margin: '0 0 14px' }}>
-                    설문에서 웹에서만 결과를 봤다면, 아래에서 전화번호로 저장한 뒤 공유/저장 기능을 이용할 수 있어요.
+                    전화번호를 아직 저장하지 않으셨다면, 아래에서 저장 후 공유/이미지 저장 기능을 이용할 수 있어요.
                   </p>
-                  <button
-                    type="button"
-                    className="btn-fire"
-                    onClick={onRequestLead}
-                    style={{
-                      background: '#FEE500',
-                      color: '#3C1E1E',
-                      boxShadow: '0 4px 24px rgba(254,229,0,.35)',
-                    }}
-                  >
-                    전화번호로 저장하기
-                  </button>
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="btn-fire"
+                      onClick={onRequestLead}
+                      style={{
+                        background: '#FEE500',
+                        color: '#3C1E1E',
+                        boxShadow: '0 4px 24px rgba(254,229,0,.35)',
+                      }}
+                    >
+                      전화번호로 저장하기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void onShare()}
+                      style={{
+                        minHeight: '44px',
+                        borderRadius: '12px',
+                        border: '1px solid #333',
+                        background: '#1A1A1A',
+                        color: '#D4D4D4',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      결과 링크 공유하기
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

@@ -56,14 +56,14 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
               wordBreak: 'keep-all',
             }}
           >
-            결과 확인 전에,
+            결과는 바로 볼 수 있어요 -
             <br />
-            전화번호로 저장해드릴게요
+            원하시면 저장해드릴게요
           </h2>
           <p style={{ fontSize: '14px', color: '#CCCCCC', lineHeight: 1.65, wordBreak: 'keep-all' }}>
             지금 나온 우리 아이 결과를 저장하고,
             <br />
-            결과 화면의 유형별 안내와 스포키듀 수업 연결을 도울 수 있어요.
+            가족·지인에게 공유하고 스포키듀 인사이트를 계속 받아볼 수 있어요.
           </p>
         </div>
 
@@ -75,7 +75,7 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
             [
               { i: '📋', t: '우리 아이 결과 카드', d: '저장해두고 가족과 공유하기 좋아요' },
               { i: '🎯', t: '유형별 활동 아이디어', d: '결과 페이지에서 바로 확인할 수 있어요' },
-              { i: '💡', t: '스포키듀 수업 연결 안내', d: '아이 유형에 맞는 수업을 안내해드릴 수 있어요' },
+              { i: '💡', t: '스포키듀 공식 채널 소식', d: '유형 인사이트와 콘텐츠 업데이트를 확인할 수 있어요' },
             ] as const
           ).map((b, i) => (
             <div

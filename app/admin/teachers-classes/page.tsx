@@ -192,6 +192,20 @@ function FeedbackReviewTab({
     }
   };
 
+  const getDisplayFileName = (url: string): string => {
+    const raw = url.split('/').pop() || '';
+    const withoutQuery = raw.split('?')[0];
+    const decoded = (() => {
+      try {
+        return decodeURIComponent(withoutQuery);
+      } catch {
+        return withoutQuery;
+      }
+    })();
+    const withoutPrefix = decoded.replace(/^\d+_/, '');
+    return withoutPrefix || 'File';
+  };
+
   const [sessions, setSessions] = useState<Session[]>([]);
   const [feedbackScope, setFeedbackScope] = useState<'private' | 'center'>('private');
   const [selectedCoachId, setSelectedCoachId] = useState('all');
@@ -796,7 +810,7 @@ function FeedbackReviewTab({
                   {fileUrls.length > 0 ? fileUrls.map((url, i) => (
                     <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl hover:bg-indigo-100 cursor-pointer">
                       <FileText size={18} className="text-indigo-500" />
-                      <span className="text-sm font-bold text-slate-600 truncate">{decodeURIComponent(url.split('/').pop() || 'File')}</span>
+                      <span className="text-sm font-bold text-slate-600 truncate">{getDisplayFileName(url)}</span>
                       <ExternalLink size={14} className="ml-auto text-indigo-300" />
                     </a>
                   )) : <p className="text-slate-400 text-sm py-4 text-center">업로드된 파일이 없습니다</p>}

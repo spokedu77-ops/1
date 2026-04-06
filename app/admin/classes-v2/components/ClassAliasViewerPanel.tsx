@@ -7,6 +7,7 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { postponeCascade, undoPostponeCascade } from '@/app/admin/classes-shared/lib/postponeUtils';
 import { extendClass } from '@/app/admin/classes-shared/lib/roundExtendUtils';
+import { omitSessionIdentityForInsertClone } from '@/app/admin/classes-shared/lib/sessionInsertClone';
 import { resolvePlannedTotal } from '../lib/plannedRoundTotal';
 
 type DayOption = { label: string; value: number };
@@ -480,11 +481,8 @@ export default function ClassAliasViewerPanel({
 
     setRestarting(true);
     try {
-      const { id: _id, created_at: _ca, updated_at: _ua, start_at: _sa, end_at: _ea, status: _st, ...insertBase } =
-        last as any;
-      void _id;
-      void _ca;
-      void _ua;
+      const base = omitSessionIdentityForInsertClone(last as Record<string, unknown>);
+      const { start_at: _sa, end_at: _ea, status: _st, ...insertBase } = base;
       void _sa;
       void _ea;
       void _st;

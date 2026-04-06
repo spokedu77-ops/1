@@ -18,7 +18,7 @@ import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMon
 import {
   Instagram, AlertCircle,
   Sparkles, X, Calendar, MoreHorizontal,
-  CheckSquare, Box, ListOrdered, Play, Link2, ArrowLeft, ChevronRight
+  CheckSquare, Box, ListOrdered, Play, ArrowLeft, ChevronRight
 } from 'lucide-react';
 import { useOverlayHistoryDismiss } from '@/app/hooks/useOverlayHistoryDismiss';
 
@@ -277,11 +277,17 @@ export default function TeacherCurriculumPage() {
  const isPersonalItem = (item: CurriculumItem | PersonalCurriculumItem): item is PersonalCurriculumItem =>
    'category' in item && 'sub_tab' in item;
 
- const hasUrl = (item: { url?: string }) => {
+const hasUrl = (item: { url?: string }) => {
    const u = item?.url?.trim();
    if (!u || u === '#' || u === 'null' || u === 'undefined' || u.toLowerCase() === 'none') return false;
    return u.startsWith('http://') || u.startsWith('https://');
  };
+
+const hasValidUrlString = (url?: string) => {
+  const u = url?.trim();
+  if (!u || u === '#' || u === 'null' || u === 'undefined' || u.toLowerCase() === 'none') return false;
+  return u.startsWith('http://') || u.startsWith('https://');
+};
 
  type YuaThemePart = {
    title: string;
@@ -685,14 +691,74 @@ export default function TeacherCurriculumPage() {
                       <h2 className="text-xl font-black text-white">{selectedItem.title ?? selectedItem.sub_tab}</h2>
                       <button type="button" onClick={() => dismissTeacherOverlay()} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
                     </div>
-                    <div className="p-6 space-y-4 overflow-y-auto bg-[#2C2C2C] text-white">
+                    <div className="p-6 space-y-4 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
+                      {hasValidUrlString(selectedItem.url) && (
+                        <div className="space-y-2">
+                          <span className="text-xs font-black text-slate-400 uppercase">영상 1</span>
+                          <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
+                            {getYouTubeId(selectedItem.url ?? '') ? (
+                              <iframe
+                                src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url ?? '')}?autoplay=1`}
+                                className="w-full h-full"
+                                allow="autoplay; encrypted-media"
+                                allowFullScreen
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
+                                <Instagram size={40} />
+                                <a
+                                  href={selectedItem.url ?? '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm"
+                                >
+                                  링크에서 영상 보기
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {hasValidUrlString(selectedItem.link2) && (
+                        <div className="space-y-2">
+                          <span className="text-xs font-black text-slate-400 uppercase">영상 2</span>
+                          <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
+                            {getYouTubeId(selectedItem.link2 ?? '') ? (
+                              <iframe
+                                src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.link2 ?? '')}?autoplay=1`}
+                                className="w-full h-full"
+                                allow="autoplay; encrypted-media"
+                                allowFullScreen
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
+                                <Instagram size={40} />
+                                <a
+                                  href={selectedItem.link2 ?? '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm"
+                                >
+                                  링크에서 영상 보기
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
-                        <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap mb-4">{selectedItem.detailText || '등록된 내용이 없습니다.'}</p>
-                        {selectedItem.url?.trim() ? (
-                          <a href={selectedItem.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-bold text-sm">
-                            <Link2 size={16} /> 링크 열기
-                          </a>
-                        ) : null}
+                        <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap">{selectedItem.detailText || '등록된 내용이 없습니다.'}</p>
+                      </div>
+                      {selectedItem.detailText2?.trim() ? (
+                        <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
+                          <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap">{selectedItem.detailText2}</p>
+                        </div>
+                      ) : null}
+                      {!hasValidUrlString(selectedItem.url) && !hasValidUrlString(selectedItem.link2) ? (
+                        <p className="text-slate-500 text-sm">등록된 영상 링크가 없습니다.</p>
+                      ) : null}
                       </div>
                     </div>
                   </>

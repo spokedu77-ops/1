@@ -496,9 +496,15 @@ export default function MemoryGameApp() {
             <button type="button" style={S.back} onClick={() => setScreen('home')}>← 처음으로</button>
             <h2 style={S.ctitle}>📖 훈련 가이드</h2>
             <p style={S.csub}>어떤 훈련인지, 어떻게 진행하는지 확인하세요.</p>
-            <div style={{ background: '#0F172A', borderRadius: '1rem', padding: '1.1rem 1.3rem', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '0.96rem', fontWeight: 700, color: '#F97316', letterSpacing: '0.1em', marginBottom: '0.4rem' }}>수업 준비 (고정)</div>
-              <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.8 }}>체육관 바닥 네 방향에 <strong style={{ color: '#fff' }}>빨강 / 파랑 / 초록 / 노랑</strong> 콘을 하나씩 놓아주세요.<br />화면 신호가 나오면 해당 콘으로 달려가 터치하고 제자리로 돌아옵니다.</div>
+            <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', borderRadius: '1.1rem', padding: '1rem 1.1rem', marginBottom: '1.2rem', border: '1px solid rgba(148,163,184,0.24)', boxShadow: '0 10px 22px rgba(15,23,42,0.22)' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 900, color: '#FDBA74', letterSpacing: '0.08em', marginBottom: '0.55rem', textTransform: 'uppercase', padding: '0.3rem 0.55rem', borderRadius: '999px', border: '1px solid rgba(251,146,60,0.45)', background: 'rgba(251,146,60,0.12)' }}>
+                준비 체크
+              </div>
+              <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)', lineHeight: 1.8, fontWeight: 600 }}>
+                체육관 바닥 네 방향에 <strong style={{ color: '#fff' }}>빨강 / 파랑 / 초록 / 노랑</strong> 콘을 배치하세요.
+                <br />
+                화면 신호가 나오면 해당 콘으로 이동해 터치 후 제자리로 복귀합니다.
+              </div>
             </div>
             {[
               {
@@ -561,24 +567,48 @@ export default function MemoryGameApp() {
                 tip: '실수 교정은 “규칙을 다시 말하게 하기 → 바로 다음 신호”가 가장 좋습니다. 멈춰서 길게 설명하면 훈련 효과가 떨어집니다.',
                 accent: '#F97316',
               },
-            ].map((block) => (
-              <div key={block.title} style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '1.2rem' }}>{block.icon}</span>
-                  <span style={{ fontSize: '1rem', fontWeight: 800, color: block.accent }}>{block.title}</span>
+            ].map((block, blockIndex) => (
+              <section
+                key={block.title}
+                style={{
+                  marginBottom: '1rem',
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '1rem',
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 18px rgba(15,23,42,0.06)',
+                }}
+              >
+                <div style={{ padding: '0.9rem 1rem', borderBottom: '1px solid #EEF2F7', background: `linear-gradient(90deg, ${block.accent}10 0%, #F8FAFC 70%)` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.3rem' }}>
+                    <span style={{ width: 24, height: 24, borderRadius: 999, background: '#fff', border: `1px solid ${block.accent}55`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>{block.icon}</span>
+                    <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>{block.title}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 800, color: block.accent }}>STEP {blockIndex + 1}</span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', lineHeight: 1.45 }}>{block.tag}</div>
                 </div>
-                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#64748B', marginBottom: '0.5rem', letterSpacing: '0.02em' }}>{block.tag}</div>
-                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '0.85rem', padding: '0.85rem 1rem', marginBottom: '0.5rem', fontSize: '0.92rem', color: '#475569', lineHeight: 1.75 }}>
-                  {block.steps.map((s, i) => (
-                    <div key={i} style={{ marginBottom: i < block.steps.length - 1 ? '0.4rem' : 0 }}>{s}</div>
-                  ))}
+                <div style={{ padding: '0.9rem 1rem', background: '#FCFDFE' }}>
+                  <div style={{ display: 'grid', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    {block.steps.map((s, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', fontSize: '0.87rem', color: '#475569', lineHeight: 1.62, fontWeight: 600 }}>
+                        <span style={{ marginTop: '0.13rem', width: 20, height: 20, borderRadius: 6, background: '#EEF2FF', color: '#4F46E5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900, flexShrink: 0 }}>
+                          {i + 1}
+                        </span>
+                        <span>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ border: '1px solid #E2E8F0', background: '#F8FAFC', borderRadius: '0.75rem', padding: '0.7rem 0.8rem', fontSize: '0.83rem', color: '#334155', lineHeight: 1.55, fontWeight: 700 }}>
+                    <span style={{ color: block.accent, fontWeight: 900 }}>코칭 팁</span>
+                    <span style={{ color: '#64748B' }}> · </span>
+                    {block.tip}
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.96rem', color: '#64748B', fontStyle: 'italic', lineHeight: 1.5 }}>팁: {block.tip}</div>
-              </div>
+              </section>
             ))}
-            <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '1rem', padding: '0.9rem 1.1rem', marginTop: '0.5rem', color: '#9A3412' }}>
-              <div style={{ fontSize: '0.96rem', fontWeight: 900, letterSpacing: '0.08em', marginBottom: '0.35rem' }}>고급 설정 요약</div>
-              <div style={{ fontSize: '0.92rem', lineHeight: 1.65, fontWeight: 600 }}>
+            <div style={{ background: 'linear-gradient(180deg, #FFF7ED 0%, #FFFBF5 100%)', border: '1px solid #FED7AA', borderRadius: '1rem', padding: '0.95rem 1.05rem', marginTop: '0.2rem', color: '#9A3412', boxShadow: '0 8px 20px rgba(251,146,60,0.12)' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 900, letterSpacing: '0.08em', marginBottom: '0.4rem', textTransform: 'uppercase' }}>고급 설정 요약</div>
+              <div style={{ fontSize: '0.88rem', lineHeight: 1.65, fontWeight: 700 }}>
                 - 인터벌 모드(Tabata)는 <strong>4세트 고정</strong>입니다(Work/Rest는 설정값 사용).<br />
                 - 점진 가속(accel)은 인터벌이 아닌 일반 모드에서만 적용되며, 진행률에 따라 신호 간격이 선형으로 빨라져 마지막엔 <strong>60%</strong>까지 단축됩니다.<br />
                 - 음성/비프는 <strong>스트룹에서만</strong> 사용 가능합니다.

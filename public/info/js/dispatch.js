@@ -15,11 +15,11 @@
   ];
 
   var processSteps = [
-    { n: '01', icon: 'message-square', title: '상담 및 접수', desc: '웹사이트 폼, 전화 또는 카카오 채널로 파견 문의를 접수합니다.' },
-    { n: '02', icon: 'search', title: '기관 환경 분석', desc: '대상 연령, 인원, 특이사항을 파악해 기관에 맞는 제안서를 발송합니다.' },
-    { n: '03', icon: 'file-signature', title: '일정·조건 협의', desc: '파견 일정과 수업 구성 등을 협의하고 진행 방식을 확정합니다.' },
-    { n: '04', icon: 'user-check', title: '전담 강사·디렉터 배정', desc: '기관의 성향과 목표에 맞는 검증된 강사·디렉터를 매칭합니다.' },
-    { n: '05', icon: 'play-circle', title: '첫 수업 개시', desc: '기관 담당자와 사전 오리엔테이션 후, 첫 수업을 시작합니다.' },
+    { n: '01', icon: 'message-square', title: '상담 및 접수', desc: '웹사이트 폼, 전화 또는 카카오 채널로 파견 문의를 접수합니다.', duration: '당일~24시간' },
+    { n: '02', icon: 'search', title: '기관 환경 분석', desc: '대상 연령, 인원, 특이사항을 파악해 기관에 맞는 제안서를 발송합니다.', duration: '1~2일' },
+    { n: '03', icon: 'file-signature', title: '일정·조건 협의', desc: '파견 일정과 수업 구성 등을 협의하고 진행 방식을 확정합니다.', duration: '1~3일' },
+    { n: '04', icon: 'user-check', title: '전담 강사·디렉터 배정', desc: '기관의 성향과 목표에 맞는 검증된 강사·디렉터를 매칭합니다.', duration: '3~5일' },
+    { n: '05', icon: 'play-circle', title: '첫 수업 개시', desc: '기관 담당자와 사전 오리엔테이션 후, 첫 수업을 시작합니다.', duration: '7일 이내' },
   ];
 
   var faqs = [
@@ -29,6 +29,8 @@
     { q: '도입 비용은 어떻게 산정되나요?', a: '대상 연령(유아/초등/시니어 등), 수업 횟수, 학생 수, 필요 장비 등에 따라 합리적인 맞춤 견적을 산정합니다. 하단의 문의 폼을 남겨주시면 24시간 내에 상세 견적이 포함된 제안서를 발송해 드립니다.' },
     { q: '체육 수업에 필요한 교구는 기관에서 구매해야 하나요?', a: '전혀 필요 없습니다. 스포키듀의 전담 디렉터가 수업 커리큘럼에 맞는 트렌디하고 안전한 최고급 교구 일체를 직접 지참하여 방문합니다. 기관은 안전한 공간만 마련해 주시면 됩니다.' },
     { q: '파견 기간과 가능 지역이 궁금합니다.', a: '분기(3개월) 단위 진행을 기본으로 안정적인 수업 품질을 유지합니다. 수도권(서울·경기·인천) 전 지역 파견이 가능하며, 타 지역은 별도 문의로 협의합니다.' },
+    { q: '계약 기간이 지나면 어떻게 연장하나요? 자동 갱신인가요?', a: '기본 계약 만료 전에 담당 매니저가 기관 운영 상황을 점검한 뒤 연장 여부를 안내드립니다. 자동 갱신이 아닌 사전 협의 방식으로 진행되어, 필요 시 횟수·커리큘럼·예산을 조정한 재계약이 가능합니다.' },
+    { q: '다른 체육 업체와 비교했을 때 비용이 더 비싸지 않나요?', a: '단순 단가만 보면 차이가 있어 보일 수 있지만, 교구 지참·대체 강사 대응·월간 리포트·운영 매니징까지 포함된 통합 운영 기준으로 비교하면 추가 인력/장비 비용을 줄여 총 운영비를 안정적으로 관리할 수 있습니다. 기관 규모에 맞춘 합리적 견적을 제안해 드립니다.' },
   ];
 
   var programs = ['유아 놀이 체육', '학교 스포츠·방과후', '특수·통합 체육', '운동회·단기 이벤트'];
@@ -38,13 +40,14 @@
     if (!container) return;
     compareRows.forEach(function (row, i) {
       var div = document.createElement('div');
-      div.className = 'grid grid-cols-3 text-sm transition-colors hover:bg-slate-800/30';
+      div.className = 'dispatch-compare-row grid grid-cols-3 text-sm transition-colors';
       div.style.backgroundColor = i % 2 === 0 ? '' : 'rgba(255,255,255,.015)';
       div.innerHTML =
         '<div class="p-4 sm:p-5 text-slate-300 font-bold border-t" style="border-color:var(--border)">' +
         row[0] +
         '</div>' +
-        '<div class="p-4 sm:p-5 text-slate-500 border-l border-t leading-relaxed" style="border-color:var(--border)">' +
+        '<div class="p-4 sm:p-5 text-slate-500 border-l border-t leading-relaxed flex items-start sm:items-center gap-2" style="border-color:var(--border)">' +
+        '<i data-lucide="x-circle" class="mt-0.5 sm:mt-0 shrink-0" style="width:16px;height:16px;color:#64748b"></i>' +
         row[1] +
         '</div>' +
         '<div class="p-4 sm:p-5 text-sky-300 font-bold flex items-start sm:items-center gap-2 border-l border-t leading-relaxed" style="border-color:var(--border);background:rgba(56,189,248,.04)">' +
@@ -65,6 +68,9 @@
         i < processSteps.length - 1
           ? '<div class="hidden md:block absolute top-1/2 -right-3 z-10"><i data-lucide="chevron-right" style="width:20px;height:20px;color:#334155"></i></div>'
           : '';
+      var duration = step.duration
+        ? '<div class="dispatch-process-duration"><i data-lucide="clock-3" style="width:14px;height:14px"></i>' + step.duration + '</div>'
+        : '';
       div.innerHTML =
         '<div class="text-xs font-black mb-3" style="color:rgba(56,189,248,.5);letter-spacing:.1em">' +
         step.n +
@@ -79,6 +85,7 @@
         '<p class="text-slate-400 text-xs leading-relaxed break-keep">' +
         step.desc +
         '</p>' +
+        duration +
         arrow;
       container.appendChild(div);
     });

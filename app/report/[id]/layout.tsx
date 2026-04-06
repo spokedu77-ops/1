@@ -21,10 +21,10 @@ export async function generateMetadata({
   const baseUrl = await getBaseUrlFromRequestHeaders();
   const title = 'SPOKEDU 리포트';
   const description = '오늘 우리 아이는 한 뼘 더 자랐습니다.';
-  const imageUrl = `${baseUrl}/og/spokedu-report-logo.png`;
   const { id } = await params;
   const safeId = typeof id === 'string' ? encodeURIComponent(id) : '';
   const url = `${baseUrl}/report/${safeId}`;
+  const imageUrl = `${baseUrl}/report/${safeId}/opengraph-image`;
 
   return {
     metadataBase: new URL(baseUrl),

@@ -212,6 +212,39 @@ body.dispatch-page::before {
   letter-spacing: 0.02em;
 }
 
+/* Stats banner */
+.dispatch-stats-banner {
+  position: relative;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(14, 165, 233, 0.04) 45%, rgba(15, 23, 42, 0.35));
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.dispatch-stats-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+.dispatch-stat-highlight {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1;
+  color: #f8fafc;
+  letter-spacing: 0.02em;
+}
+
+.dispatch-stat-highlight-label {
+  margin-top: 0.5rem;
+  color: #bfdbfe;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 /* Section label */
 .dispatch-section-label {
   color: var(--sky);
@@ -403,6 +436,27 @@ body.dispatch-page::before {
 .dispatch-divider {
   height: 1px;
   background: linear-gradient(to right, transparent, var(--border), transparent);
+}
+
+/* Compare table */
+.dispatch-compare-row:hover {
+  background-color: rgba(56, 189, 248, 0.08) !important;
+}
+
+/* Process duration */
+.dispatch-process-duration {
+  margin-top: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 /* Toast */
