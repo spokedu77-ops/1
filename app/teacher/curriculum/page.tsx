@@ -759,7 +759,6 @@ const hasValidUrlString = (url?: string) => {
                       {!hasValidUrlString(selectedItem.url) && !hasValidUrlString(selectedItem.link2) ? (
                         <p className="text-slate-500 text-sm">등록된 영상 링크가 없습니다.</p>
                       ) : null}
-                      </div>
                     </div>
                   </>
                 ) : (

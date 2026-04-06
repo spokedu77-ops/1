@@ -594,7 +594,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
 
     setRestarting(true);
     try {
-      const base = omitSessionIdentityForInsertClone(last as Record<string, unknown>);
+      const base = omitSessionIdentityForInsertClone(last as unknown as Record<string, unknown>);
       const { start_at: _sa, end_at: _ea, status: _st, ...insertBase } = base;
       void _sa;
       void _ea;

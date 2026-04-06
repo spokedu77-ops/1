@@ -94,7 +94,9 @@ export function parseMoveReportSharePayload(raw: string | null): (MoveReportShar
   if (!raw) return null;
   try {
     const decoded = fromBase64Url(raw);
-    const parsed = JSON.parse(decoded) as Partial<MoveReportSharePayload & CompactSharePayload & CompactSharePayloadV3>;
+    const parsed = JSON.parse(decoded) as Partial<
+      MoveReportSharePayload | CompactSharePayload | CompactSharePayloadV3
+    >;
 
     if (parsed.v === 3) {
       if (typeof parsed.n !== 'string') return null;
