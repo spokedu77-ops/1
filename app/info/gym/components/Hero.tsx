@@ -32,38 +32,35 @@ export default function Hero() {
             <div className="inner">
               <div className="gym-hero-tag">
                 <span className="gym-hero-tag-dot" aria-hidden />
-                MOVE CORE 중심 아동청소년 체육교육 LAB
+                SPOKEDU LAB
               </div>
               <h1 id="heroHeading">
-                우리 아이 운동, 어떻게 시작해야 할지 고민이라면
-                <br />
-                <span style={{ color: 'var(--gym-accent)' }}>SPOKEDU LAB</span>
+                우리 아이에게 맞는 체육,
+                <br />12주 안에 변화가 보이도록 설계합니다.
               </h1>
               <p className="gym-hero-lead">
-                PLAY - THINK - GROW를 기준으로
-                아이의 움직임을 체계적으로 키웁니다.
-                관찰 기반 시작점 조정, 소그룹 운영, 수업/활동 리포트까지 한 흐름으로 운영합니다.
+                연세대 체교 기반 커리큘럼으로 시작하고,
+                소그룹 수업과 분기 리포트로 변화를 끝까지 확인합니다.
+                <br />
+                서울 강동구 · 체험 수업 15,000원
               </p>
               <div className="gym-hero-actions">
                 <button type="button" className="gym-btn primary" onClick={() => scrollToId('contact')}>
                   체험 수업 신청
                 </button>
-                <button type="button" className="gym-btn" onClick={() => scrollToId('lab-intro')}>
-                  클래스 구조 보기
-                </button>
               </div>
               <div className="gym-hero-metrics" role="list">
                 <div className="gym-metric" role="listitem">
+                  <strong>연세대 체교 기반</strong>
+                  <span>졸업생이 수업 흐름을 설계합니다</span>
+                </div>
+                <div className="gym-metric" role="listitem">
+                  <strong>12주 흐름 + 분기 리포트</strong>
+                  <span>변화 포인트를 보호자와 함께 확인합니다</span>
+                </div>
+                <div className="gym-metric" role="listitem">
                   <strong>최대 10명 소그룹</strong>
-                  <span>아이별 참여 밀도를 높이는 인원 구조</span>
-                </div>
-                <div className="gym-metric" role="listitem">
-                  <strong>수업/활동 리포트</strong>
-                  <span>매 분기 변화 포인트를 확인</span>
-                </div>
-                <div className="gym-metric" role="listitem">
-                  <strong>관찰 기반 시작점 조정</strong>
-                  <span>아이의 현재 리듬을 보고 목표를 맞춰갑니다</span>
+                  <span>아이별 참여 밀도를 높입니다</span>
                 </div>
               </div>
             </div>

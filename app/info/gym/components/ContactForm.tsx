@@ -13,10 +13,16 @@ function validatePhone(raw: string) {
   return n.length >= 10 && n.length <= 11;
 }
 
+function getKakaoMapSearchUrl(address: string) {
+  return `https://map.kakao.com/?q=${encodeURIComponent(address)}`;
+}
+
 export default function ContactForm() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [phoneError, setPhoneError] = useState('');
   const isExternalPrivacy = /^https?:\/\//.test(GYM_CONFIG.center.privacyUrl);
+  const mapUrl = getKakaoMapSearchUrl(GYM_CONFIG.center.address);
+  const kakaoPathUrl = GYM_CONFIG.kakao.deepLink || mapUrl;
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -72,10 +78,10 @@ export default function ContactForm() {
       <div className="gym-container">
         <div className="gym-contact-grid">
           <div>
-            <div className="gym-kicker">예약 및 문의</div>
-            <h2 id="contactHeading" className="gym-section-title">아이에게 맞는 시작점을 함께 찾습니다</h2>
+            <div className="gym-kicker">상담 신청 + 오시는 길</div>
+            <h2 id="contactHeading" className="gym-section-title">체험 수업 신청하고 위치를 확인하세요</h2>
             <p className="gym-section-desc">
-              평가나 판정보다, 현재 위치를 함께 확인하고 첫 수업 흐름을 제안합니다.
+              폼 접수 후 운영팀이 순차적으로 연락드립니다.
             </p>
             <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span className="gym-review-badge">연세대 체교 기반 설계</span>
@@ -84,7 +90,7 @@ export default function ContactForm() {
             </div>
             <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="gym-card" style={{ background: 'rgba(255,255,255,.03)' }}>
-                <h3 style={{ margin: 0, fontSize: 15 }}>센터 정보</h3>
+                <h3 style={{ margin: 0, fontSize: 15 }}>센터 정보 / 오시는 길</h3>
                 <p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.7, color: 'var(--gym-muted)' }}>
                   {GYM_CONFIG.center.name}
                   <br />
@@ -92,6 +98,14 @@ export default function ContactForm() {
                   <br />
                   {GYM_CONFIG.center.hours}
                 </p>
+                <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="gym-btn">
+                    카카오맵 보기
+                  </a>
+                  <a href={kakaoPathUrl} target="_blank" rel="noopener noreferrer" className="gym-btn primary">
+                    길찾기 열기
+                  </a>
+                </div>
               </div>
               <div className="gym-card" style={{ background: 'rgba(255,255,255,.03)' }}>
                 <h3 style={{ margin: 0, fontSize: 15 }}>체험 수업 안내</h3>

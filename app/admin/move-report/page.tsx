@@ -15,6 +15,31 @@ type LeadRow = {
   created_at: string;
 };
 
+type EventName =
+  | 'intro_started'
+  | 'survey_completed'
+  | 'result_viewed'
+  | 'lead_saved'
+  | 'share_clicked'
+  | 'shared_entry_opened'
+  | 'shared_entry_completed';
+
+type SummaryWindow = {
+  counts: Record<EventName, number>;
+  kpi: {
+    completionRate: number;
+    shareRate: number;
+    sharedRecompletionRate: number;
+  };
+};
+
+type WindowKey = 'today' | 'days7' | 'days30';
+
+function formatPercentSafe(num: number, den: number) {
+  if (!den) return '-';
+  return `${((num / den) * 100).toFixed(1)}%`;
+}
+
 export default function AdminMoveReportPage() {
   const [rows, setRows] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +51,11 @@ export default function AdminMoveReportPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [summary, setSummary] = useState<Record<WindowKey, SummaryWindow> | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [windowKey, setWindowKey] = useState<WindowKey>('today');
+  const [summaryLoadedAt, setSummaryLoadedAt] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -49,6 +79,35 @@ export default function AdminMoveReportPage() {
 
   useEffect(() => {
     void load();
+  }, []);
+
+  const loadSummary = async () => {
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      const res = await fetch('/api/admin/move-report/events-summary', { credentials: 'include' });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        summary?: Record<WindowKey, SummaryWindow>;
+        error?: string;
+      };
+      if (!json.ok || !json.summary) {
+        setSummaryError(json.error ?? '퍼널 요약 데이터를 불러오지 못했습니다.');
+        setSummary(null);
+        return;
+      }
+      setSummary(json.summary);
+      setSummaryLoadedAt(new Date().toLocaleString('ko-KR'));
+    } catch {
+      setSummaryError('퍼널 요약 네트워크 오류가 발생했습니다.');
+      setSummary(null);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadSummary();
   }, []);
 
   const profileOptions = useMemo(() => {
@@ -142,6 +201,7 @@ export default function AdminMoveReportPage() {
   };
 
   const total = useMemo(() => rows.length, [rows]);
+  const activeSummary = summary?.[windowKey] ?? null;
 
   const exportCsv = () => {
     const header = ['created_at', 'phone', 'child_name', 'age_group', 'profile_key', 'profile_title', 'consent'];
@@ -187,7 +247,10 @@ export default function AdminMoveReportPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => void load()}
+              onClick={() => {
+                void load();
+                void loadSummary();
+              }}
               className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
             >
               <RefreshCw className="h-4 w-4" />
@@ -215,6 +278,83 @@ export default function AdminMoveReportPage() {
         </div>
 
         <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <div className="text-sm font-semibold text-slate-800">퍼널 KPI</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                기준: {windowKey === 'today' ? '오늘 00:00~현재' : windowKey === 'days7' ? '최근 7일' : '최근 30일'}
+                {summaryLoadedAt ? ` · 갱신 ${summaryLoadedAt}` : ''}
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setWindowKey('today')}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer ${
+                  windowKey === 'today' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                오늘
+              </button>
+              <button
+                type="button"
+                onClick={() => setWindowKey('days7')}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer ${
+                  windowKey === 'days7' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                7일
+              </button>
+              <button
+                type="button"
+                onClick={() => setWindowKey('days30')}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer ${
+                  windowKey === 'days30' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                30일
+              </button>
+            </div>
+          </div>
+          {summaryLoading ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">요약 로딩 중...</div>
+          ) : summaryError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-600">{summaryError}</div>
+          ) : activeSummary ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="text-xs text-slate-500">완료율</div>
+                <div className="mt-1 text-xl font-bold text-slate-900">
+                  {formatPercentSafe(activeSummary.counts.survey_completed, activeSummary.counts.intro_started)}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {activeSummary.counts.survey_completed} / {activeSummary.counts.intro_started}
+                </div>
+                <div className="mt-1 text-[11px] text-slate-400">설문완료 / 인트로진입</div>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="text-xs text-slate-500">공유율</div>
+                <div className="mt-1 text-xl font-bold text-slate-900">
+                  {formatPercentSafe(activeSummary.counts.share_clicked, activeSummary.counts.result_viewed)}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {activeSummary.counts.share_clicked} / {activeSummary.counts.result_viewed}
+                </div>
+                <div className="mt-1 text-[11px] text-slate-400">공유클릭 / 결과뷰</div>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="text-xs text-slate-500">공유유입 재완료율</div>
+                <div className="mt-1 text-xl font-bold text-slate-900">
+                  {formatPercentSafe(activeSummary.counts.shared_entry_completed, activeSummary.counts.shared_entry_opened)}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {activeSummary.counts.shared_entry_completed} / {activeSummary.counts.shared_entry_opened}
+                </div>
+                <div className="mt-1 text-[11px] text-slate-400">공유진입완료 / 공유진입</div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
             <div className="lg:col-span-2">
               <label className="text-xs text-slate-500">검색</label>

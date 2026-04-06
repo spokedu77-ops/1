@@ -7,16 +7,19 @@ import { AXIS_COL, AXIS_ICON } from '../lib/constants';
 interface SurveyProps {
   q: Question;
   qi: number;
+  total: number;
   resps: string[];
   name: string;
   onAnswer: (v: string) => void;
   onBack: () => void;
+  answering?: boolean;
 }
 
 /** 원본 HTML 설문 (진행률·중간 메시지·닷 네비) */
-export default function Survey({ q, qi, resps, name, onAnswer, onBack }: SurveyProps) {
+export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, answering = false }: SurveyProps) {
   if (!q) return null;
-  const prog = ((qi + 1) / 12) * 100;
+  const safeTotal = Math.max(total, 1);
+  const prog = ((qi + 1) / safeTotal) * 100;
   const acol = AXIS_COL[q.axis] ?? '#FF4B1F';
   const aicon = AXIS_ICON[q.axis] ?? 'fa-circle';
   const lines = q.q.split('\n');
@@ -54,7 +57,7 @@ export default function Survey({ q, qi, resps, name, onAnswer, onBack }: SurveyP
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: '22px', color: '#fff', lineHeight: 1 }}>
                 {qi + 1}
-                <span style={{ fontSize: '14px', color: '#A8A8A8' }}>/12</span>
+                <span style={{ fontSize: '14px', color: '#A8A8A8' }}>/ {safeTotal}</span>
               </div>
               <div
                 style={{
@@ -165,6 +168,7 @@ export default function Survey({ q, qi, resps, name, onAnswer, onBack }: SurveyP
                   key={i}
                   type="button"
                   className={`survey-html-opt${sel ? ' sel' : ''}`}
+                  disabled={answering}
                   onClick={() => onAnswer(opt.v)}
                   style={
                     sel
@@ -200,7 +204,7 @@ export default function Survey({ q, qi, resps, name, onAnswer, onBack }: SurveyP
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', paddingTop: '4px' }}>
-            {Array.from({ length: 12 }).map((_, i) => (
+            {Array.from({ length: safeTotal }).map((_, i) => (
               <div
                 key={i}
                 style={{

@@ -4,26 +4,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { GYM_CONFIG } from '../data/config';
 
 const NAV_LINKS = [
-  { href: '#lab-intro', label: 'LAB 소개' },
-  { href: '#media', label: '사진/영상' },
-  { href: '#target', label: '대상/연령' },
-  { href: '#curriculum', label: '12주 커리큘럼' },
-  { href: '#instructors', label: '강사진' },
-  { href: '#weekly-ops', label: '주간 운영 구조' },
-  { href: '#report', label: '성장 리포트' },
-  { href: '#reviews', label: '후기' },
+  { href: '#target', label: '우리 아이 어디에 맞나요?' },
+  { href: '#reviews', label: '학부모 후기' },
+  { href: '#why-spokedu', label: '수업이 다른 이유' },
+  { href: '#pricing', label: '가격/체험' },
   { href: '#faq', label: 'FAQ' },
-  { href: '#schedule', label: '시간표' },
-  { href: '#pricing', label: '가격' },
-  { href: '#location', label: '오시는 길' },
   { href: '#contact', label: '체험/상담' },
 ] as const;
 
 /** 데스크톱용 3~4개 항으로 묶음 */
 const NAV_GROUPS = [
-  { key: 'about', label: 'LAB 안내', ids: ['lab-intro', 'media', 'target', 'curriculum', 'instructors'] as const },
-  { key: 'ops', label: '운영 구조', ids: ['weekly-ops', 'report', 'reviews'] as const },
-  { key: 'info', label: '안내 정보', ids: ['faq', 'schedule', 'pricing', 'location'] as const },
+  { key: 'fit', label: '맞춤 안내', ids: ['target', 'reviews'] as const },
+  { key: 'guide', label: '등록 안내', ids: ['why-spokedu', 'pricing', 'faq'] as const },
 ] as const;
 
 function scrollToId(id: string) {

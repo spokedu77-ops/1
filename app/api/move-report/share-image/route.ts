@@ -18,11 +18,18 @@ function normalizeHexColor(color?: string): string {
 type ImagePayload = {
   name: string;
   profileName: string;
+  profileCode: string;
   catchcopy: string;
   strengths: string[];
   activity: string;
   color?: string;
   emoji?: string;
+  graph: {
+    social: number;
+    structure: number;
+    motivation: number;
+    energy: number;
+  };
 };
 
 export async function GET(req: Request) {
@@ -31,21 +38,39 @@ export async function GET(req: Request) {
   const payload: ImagePayload | null =
     !parsed
       ? null
-      : parsed.v !== 3
-        ? parsed
-        : (() => {
-            const profile = P[parsed.profileKey];
-            if (!profile) return null;
-            return {
-              name: parsed.name,
-              profileName: profile.char,
-              catchcopy: profile.catchcopy,
-              strengths: profile.str.slice(0, 1),
-              activity: profile.env[0] || profile.shortTip,
-              color: profile.col,
-              emoji: profile.em,
-            };
-          })();
+      : (() => {
+          const profile = P[parsed.profileKey];
+          if (!profile) return null;
+          const profileCode = parsed.profileKey;
+          const graphFromCode =
+            parsed.v === 5 && /^[0-3]{8}$/.test(parsed.graphCode)
+              ? (() => {
+                  const [sl, sr, tl, tr, ml, mr, el, er] = parsed.graphCode.split('').map((v) => Number(v));
+                  return {
+                    social: Math.max(sl, sr),
+                    structure: Math.max(tl, tr),
+                    motivation: Math.max(ml, mr),
+                    energy: Math.max(el, er),
+                  };
+                })()
+              : {
+                  social: profileCode[0] === 'C' ? 3 : 0,
+                  structure: profileCode[1] === 'R' ? 3 : 0,
+                  motivation: profileCode[2] === 'P' ? 3 : 0,
+                  energy: profileCode[3] === 'D' ? 3 : 0,
+                };
+          return {
+            name: '우리 아이',
+            profileName: profile.char,
+            profileCode,
+            catchcopy: profile.catchcopy,
+            strengths: profile.str.slice(0, 1),
+            activity: profile.env[0] || profile.shortTip,
+            color: profile.col,
+            emoji: profile.em,
+            graph: graphFromCode,
+          };
+        })();
 
   if (!payload) {
     return new ImageResponse(
@@ -137,6 +162,26 @@ export async function GET(req: Request) {
       ),
       React.createElement(
         'div',
+        { style: { display: 'flex', gap: 8, marginBottom: 14 } },
+        React.createElement(
+          'div',
+          {
+            style: {
+              padding: '6px 12px',
+              borderRadius: 999,
+              border: `1px solid ${accent}77`,
+              background: `${accent}22`,
+              color: accent,
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: 1,
+            },
+          },
+          payload.profileCode
+        )
+      ),
+      React.createElement(
+        'div',
         { style: { display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' } },
         ...payload.strengths.slice(0, 1).map((item, idx) =>
           React.createElement(
@@ -152,6 +197,49 @@ export async function GET(req: Request) {
               },
             },
             item
+          )
+        )
+      ),
+      React.createElement(
+        'div',
+        { style: { display: 'flex', gap: 10, marginBottom: 18 } },
+        ...(
+          [
+            ['사회', payload.graph.social],
+            ['탐구', payload.graph.structure],
+            ['동기', payload.graph.motivation],
+            ['에너지', payload.graph.energy],
+          ] as const
+        ).map(([label, value]) =>
+          React.createElement(
+            'div',
+            {
+              key: label,
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                minWidth: 86,
+              },
+            },
+            React.createElement('div', { style: { fontSize: 14, color: '#AFAFAF' } }, label),
+            React.createElement('div', {
+              style: {
+                width: '100%',
+                height: 8,
+                borderRadius: 999,
+                background: '#2A2A2A',
+                overflow: 'hidden',
+              },
+            },
+            React.createElement('div', {
+              style: {
+                width: `${Math.max(0, Math.min(3, value)) * (100 / 3)}%`,
+                height: '100%',
+                background: accent,
+              },
+            }))
           )
         )
       ),

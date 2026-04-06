@@ -3,13 +3,13 @@ import GymLandingClient from './components/GymLandingClient';
 import './styles/gym-landing.css';
 
 export const metadata: Metadata = {
-  title: 'SPOKEDU LAB | MOVE CORE 아동청소년 체육교육',
+  title: 'SPOKEDU LAB | 강동구 아동 체육',
   description:
-    'MOVE CORE 중심의 아동청소년 체육교육 LAB. 성장·보완·적용 흐름으로 움직임을 설계합니다.',
+    '운동을 싫어하는 아이도 12주면 먼저 가방을 챙깁니다. 연세대 체교 기반 커리큘럼, 최대 10명 소그룹, 분기 성장 리포트.',
   openGraph: {
-    title: 'SPOKEDU LAB | 움직임을 배우는 체육관',
+    title: 'SPOKEDU LAB | 12주 변화가 보이는 체육 수업',
     description:
-      '집중·반응, 몸의 기본, 게임·스포츠 적용까지. 아이의 움직임을 세 축으로 설계하는 아동청소년 체육교육 공간.',
+      '서울 강동구 아동 체육. 체험 수업 15,000원으로 시작하고 아이에게 맞는 반을 상담으로 추천합니다.',
   },
 };
 

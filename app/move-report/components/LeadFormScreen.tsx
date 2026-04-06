@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { normalizeMoveReportPhone } from '../lib/phone';
+import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 
 interface Props {
   onSubmit: (phone: string) => Promise<void>;
@@ -40,7 +40,7 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
       <div style={{ maxWidth: 380, width: '100%' }}>
         <div className="anim-rise" style={{ textAlign: 'center', marginBottom: '6px' }}>
           <span style={{ fontSize: '11px', color: '#666', fontWeight: 500 }}>
-            결과는 바로 확인할 수 있고, 원하시면 아래에 전화번호를 남겨 저장할 수 있어요.
+            전화번호 저장은 선택이며, 저장 없이도 바로 결과를 볼 수 있어요.
           </span>
         </div>
 
@@ -107,10 +107,17 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
             className="sp-input"
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(formatMoveReportPhone(e.target.value))}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              if (!loading) void handleSubmit();
+            }}
             placeholder="010-0000-0000"
             autoComplete="tel"
             inputMode="tel"
+            maxLength={13}
+            aria-label="전화번호 입력"
           />
           <p style={{ fontSize: '11px', color: '#777', marginTop: '8px' }}>11자리 휴대폰 번호(010-0000-0000)만 저장할 수 있어요.</p>
         </div>
@@ -204,7 +211,7 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
               letterSpacing: '-.01em',
             }}
           >
-            먼저 웹에서 결과 볼게요
+            저장 없이 결과 보기
           </button>
         </div>
       </div>

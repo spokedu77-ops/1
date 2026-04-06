@@ -64,6 +64,7 @@ export default function Result({
 }: ResultProps) {
   const { profile: p, bd, displayName, key } = result;
   const [revealed, setRevealed] = useState(false);
+  const [reportExpanded, setReportExpanded] = useState(false);
 
   useEffect(() => {
     const t = window.setTimeout(() => setRevealed(true), 100);
@@ -437,135 +438,171 @@ export default function Result({
                 </div>
               </div>
 
-              <div className="card mr-card-html">
-                <div className="card-head">
-                  <div
-                    className="card-head-icon"
-                    style={{ ['--p-dim' as string]: `${p.col}20`, background: `var(--p-dim, ${p.col}20)` }}
-                  >
-                    <i className="fa-solid fa-sliders" style={{ fontSize: '13px', color: p.col }} />
-                  </div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>성향 강도 분석</div>
-                </div>
-                <div className="card-section" style={{ paddingTop: '4px' }}>
-                  <AxisRow
-                    label="사회성"
-                    ll={bd.social.ll}
-                    rl={bd.social.rl}
-                    lv={bd.social.l}
-                    rv={bd.social.r}
-                    col="#1E90FF"
-                    delay={0}
-                  />
-                  <AxisRow
-                    label="탐구"
-                    ll={bd.structure.ll}
-                    rl={bd.structure.rl}
-                    lv={bd.structure.l}
-                    rv={bd.structure.r}
-                    col="#FF2D88"
-                    delay={120}
-                  />
-                  <AxisRow
-                    label="동기"
-                    ll={bd.motivation.ll}
-                    rl={bd.motivation.rl}
-                    lv={bd.motivation.l}
-                    rv={bd.motivation.r}
-                    col="#FFB020"
-                    delay={240}
-                  />
-                  <AxisRow
-                    label="에너지"
-                    ll={bd.energy.ll}
-                    rl={bd.energy.rl}
-                    lv={bd.energy.l}
-                    rv={bd.energy.r}
-                    col="#44CC00"
-                    delay={360}
-                  />
-                </div>
+              <div
+                className="card mr-card-html"
+                style={{
+                  background: '#141414',
+                  border: '1px solid #262626',
+                  padding: '12px 14px',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setReportExpanded((v) => !v)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#E8E8E8',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  <span>{reportExpanded ? '상세 분석 접기' : '상세 분석 펼쳐보기'}</span>
+                  <i className={`fa-solid ${reportExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ color: '#9A9A9A' }} />
+                </button>
               </div>
 
-              <div className="card mr-card-html">
-                <div className="card-head">
-                  <div
-                    className="card-head-icon"
-                    style={{ ['--p-dim' as string]: `${p.col}20`, background: `var(--p-dim, ${p.col}20)` }}
-                  >
-                    <i className="fa-solid fa-bolt" style={{ fontSize: '13px', color: p.col }} />
-                  </div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>사고 &amp; 강점 (THINK)</div>
-                </div>
-                <div className="card-section" style={{ paddingTop: '4px' }}>
-                  {p.str.map((s, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        gap: '10px',
-                        padding: '10px 0',
-                        borderBottom: i < p.str.length - 1 ? '1px solid #1E1E1E' : 'none',
-                      }}
-                    >
+              {reportExpanded ? (
+                <>
+                  <div className="card mr-card-html">
+                    <div className="card-head">
                       <div
-                        style={{
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '7px',
-                          flexShrink: 0,
-                          background: `${p.col}18`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginTop: '1px',
-                        }}
+                        className="card-head-icon"
+                        style={{ ['--p-dim' as string]: `${p.col}20`, background: `var(--p-dim, ${p.col}20)` }}
                       >
-                        <i className="fa-solid fa-check" style={{ fontSize: '9px', color: p.col }} />
+                        <i className="fa-solid fa-sliders" style={{ fontSize: '13px', color: p.col }} />
                       </div>
-                      <p
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: '#C0C0C0',
-                          lineHeight: 1.6,
-                          wordBreak: 'keep-all',
-                          margin: 0,
-                        }}
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>성향 강도 분석</div>
+                    </div>
+                    <div className="card-section" style={{ paddingTop: '4px' }}>
+                      <AxisRow
+                        label="사회성"
+                        ll={bd.social.ll}
+                        rl={bd.social.rl}
+                        lv={bd.social.l}
+                        rv={bd.social.r}
+                        col="#1E90FF"
+                        delay={0}
+                      />
+                      <AxisRow
+                        label="탐구"
+                        ll={bd.structure.ll}
+                        rl={bd.structure.rl}
+                        lv={bd.structure.l}
+                        rv={bd.structure.r}
+                        col="#FF2D88"
+                        delay={120}
+                      />
+                      <AxisRow
+                        label="동기"
+                        ll={bd.motivation.ll}
+                        rl={bd.motivation.rl}
+                        lv={bd.motivation.l}
+                        rv={bd.motivation.r}
+                        col="#FFB020"
+                        delay={240}
+                      />
+                      <AxisRow
+                        label="에너지"
+                        ll={bd.energy.ll}
+                        rl={bd.energy.rl}
+                        lv={bd.energy.l}
+                        rv={bd.energy.r}
+                        col="#44CC00"
+                        delay={360}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="card mr-card-html">
+                    <div className="card-head">
+                      <div
+                        className="card-head-icon"
+                        style={{ ['--p-dim' as string]: `${p.col}20`, background: `var(--p-dim, ${p.col}20)` }}
                       >
-                        {s}
-                      </p>
+                        <i className="fa-solid fa-bolt" style={{ fontSize: '13px', color: p.col }} />
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>사고 &amp; 강점 (THINK)</div>
+                    </div>
+                    <div className="card-section" style={{ paddingTop: '4px' }}>
+                      {p.str.map((s, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: 'flex',
+                            gap: '10px',
+                            padding: '10px 0',
+                            borderBottom: i < p.str.length - 1 ? '1px solid #1E1E1E' : 'none',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: '22px',
+                              height: '22px',
+                              borderRadius: '7px',
+                              flexShrink: 0,
+                              background: `${p.col}18`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginTop: '1px',
+                            }}
+                          >
+                            <i className="fa-solid fa-check" style={{ fontSize: '9px', color: p.col }} />
+                          </div>
+                          <p
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              color: '#C0C0C0',
+                              lineHeight: 1.6,
+                              wordBreak: 'keep-all',
+                              margin: 0,
+                            }}
+                          >
+                            {s}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
+              {reportExpanded ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {(
+                    [
+                      { label: '✨ 찰떡궁합', sub: p.best.n, desc: p.best.d, top: '#FFB020' },
+                      { label: '🤝 배려 필요', sub: p.care.n, desc: p.care.d, top: '#555' },
+                    ] as const
+                  ).map((c, i) => (
+                    <div key={i} className="card mr-card-html" style={{ borderTop: `2px solid ${c.top}`, overflow: 'hidden' }}>
+                      <div style={{ padding: '14px' }}>
+                        <div
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            letterSpacing: '.06em',
+                            color: c.top,
+                            marginBottom: '6px',
+                          }}
+                        >
+                          {c.label}
+                        </div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>{c.sub}</div>
+                        <p style={{ fontSize: '11px', color: '#999', lineHeight: 1.5, wordBreak: 'keep-all', margin: 0 }}>{c.desc}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                {(
-                  [
-                    { label: '✨ 찰떡궁합', sub: p.best.n, desc: p.best.d, top: '#FFB020' },
-                    { label: '🤝 배려 필요', sub: p.care.n, desc: p.care.d, top: '#555' },
-                  ] as const
-                ).map((c, i) => (
-                  <div key={i} className="card mr-card-html" style={{ borderTop: `2px solid ${c.top}`, overflow: 'hidden' }}>
-                    <div style={{ padding: '14px' }}>
-                      <div
-                        style={{
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          letterSpacing: '.06em',
-                          color: c.top,
-                          marginBottom: '6px',
-                        }}
-                      >
-                        {c.label}
-                      </div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>{c.sub}</div>
-                      <p style={{ fontSize: '11px', color: '#999', lineHeight: 1.5, wordBreak: 'keep-all', margin: 0 }}>{c.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              ) : null}
 
               {hasSavedPhone ? (
                 <ShareAndCollect
@@ -614,6 +651,9 @@ export default function Result({
                   </div>
                   <p style={{ fontSize: '11px', color: '#999', lineHeight: 1.5, wordBreak: 'keep-all', margin: '0 0 14px' }}>
                     전화번호를 아직 저장하지 않으셨다면, 아래에서 저장 후 공유/이미지 저장 기능을 이용할 수 있어요.
+                  </p>
+                  <p style={{ fontSize: '10px', color: '#727272', lineHeight: 1.5, wordBreak: 'keep-all', margin: '0 0 14px' }}>
+                    저장은 선택이며, 동의 후에만 저장됩니다.
                   </p>
                   <div style={{ display: 'grid', gap: '8px' }}>
                     <button

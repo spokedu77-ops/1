@@ -3,7 +3,7 @@
 import { GYM_CONFIG } from '../data/config';
 
 const FOOT_LINKS = [
-  { href: '#lab-intro', label: 'LAB 소개' },
+  { href: '#target', label: '연령별 안내' },
   { href: '#pricing', label: '수강료' },
   { href: '#contact', label: '상담' },
   { href: GYM_CONFIG.center.privacyUrl, label: '개인정보처리방침' },

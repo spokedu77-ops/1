@@ -13,18 +13,16 @@ type PageProps = {
 export function generateMetadata({ searchParams }: PageProps): Metadata {
   const raw = searchParams?.d ?? null;
   const parsed = parseMoveReportSharePayload(raw);
-  const payload =
-    !parsed || parsed.v !== 3
-      ? parsed
-      : (() => {
-          const profile = P[parsed.profileKey];
-          if (!profile) return null;
-          return {
-            ...parsed,
-            v: 1 as const,
-            profileName: profile.char,
-          };
-        })();
+  const payload = !parsed
+    ? null
+    : (() => {
+        const profile = P[parsed.profileKey];
+        if (!profile) return null;
+        return {
+          name: '우리 아이',
+          profileName: profile.char,
+        };
+      })();
 
   const title = payload ? `${payload.name}의 MOVE 리포트 결과` : '공유된 MOVE 리포트 결과';
   const description = payload

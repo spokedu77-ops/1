@@ -4,19 +4,11 @@ import { useEffect, useState } from 'react';
 import Header from './Header';
 import Hero from './Hero';
 import TrustAssetsBar from './TrustAssetsBar';
-import Intro from './Intro';
-import Media from './Media';
 import TargetAudience from './TargetAudience';
-import Curriculum from './Curriculum';
-import Instructors from './Instructors';
-import WeeklyStructure from './WeeklyStructure';
-import Report from './Report';
 import Reviews from './Reviews';
-import Schedule from './Schedule';
 import Pricing from './Pricing';
 import ContactForm from './ContactForm';
 import FAQ from './FAQ';
-import Location from './Location';
 import Footer from './Footer';
 import { GYM_CONFIG } from '../data/config';
 
@@ -47,20 +39,12 @@ export default function GymLandingClient() {
       <Header />
       <main id="top">
         <Hero />
-        <TrustAssetsBar />
-        <Intro />
-        <Media />
         <TargetAudience />
-        <Curriculum />
-        <Instructors />
         <Reviews />
-        <WeeklyStructure />
-        <Report />
-        <ContactForm />
-        <FAQ />
-        <Schedule />
+        <TrustAssetsBar />
         <Pricing />
-        <Location />
+        <FAQ />
+        <ContactForm />
         <Footer />
       </main>
 

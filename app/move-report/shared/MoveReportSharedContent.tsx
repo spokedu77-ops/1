@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { parseMoveReportSharePayload } from '../lib/shareLink';
 import { P } from '../data/profiles';
 import Radar from '../components/Radar';
 import type { BreakdownResult } from '../types';
+import { trackMoveReportEvent } from '../lib/events';
 
 function normalizeHexColor(color?: string): string | null {
   if (!color) return null;
@@ -24,24 +25,28 @@ export default function MoveReportSharedContent() {
   const searchParams = useSearchParams();
   const raw = searchParams.get('d');
   const parsed = useMemo(() => parseMoveReportSharePayload(raw), [raw]);
-  const profileCode = parsed?.v === 3 ? parsed.profileKey : null;
+  const moveReportHref = raw ? `/move-report?d=${encodeURIComponent(raw)}` : '/move-report';
+  const profileCode = parsed?.profileKey ?? null;
   const payload = useMemo(() => {
     if (!parsed) return null;
-    if (parsed.v !== 3) return parsed;
     const profile = P[parsed.profileKey];
     if (!profile) return null;
     return {
       v: 1 as const,
-      name: parsed.name,
+      name: '우리 아이',
       profileName: profile.char,
       catchcopy: profile.catchcopy,
       strengths: profile.str.slice(0, 1),
       activity: profile.env[0] || profile.shortTip,
       color: profile.col,
       emoji: profile.em,
-      graphCode: parsed.graphCode,
     };
   }, [parsed]);
+
+  useEffect(() => {
+    if (!raw) return;
+    void trackMoveReportEvent({ eventName: 'shared_entry_opened', shareKey: raw });
+  }, [raw]);
 
   if (!payload) {
     return (
@@ -52,7 +57,7 @@ export default function MoveReportSharedContent() {
             링크가 만료되었거나 형식이 올바르지 않습니다.
           </p>
           <Link
-            href="/move-report"
+            href={moveReportHref}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -66,7 +71,7 @@ export default function MoveReportSharedContent() {
               fontWeight: 800,
             }}
           >
-            나도 결과 해보기
+            나도 MOVE 리포트 해보기
           </Link>
         </div>
       </main>
@@ -77,14 +82,14 @@ export default function MoveReportSharedContent() {
   const profileEmoji = payload.emoji?.trim();
   const radarBreakdown = useMemo<BreakdownResult | null>(() => {
     if (!profileCode || profileCode.length !== 4) return null;
-    const g = 'graphCode' in payload && typeof payload.graphCode === 'string' && /^[0-3]{8}$/.test(payload.graphCode) ? payload.graphCode : null;
-    if (g) {
-      const [cl, ir, rl, er, pl, gr, dl, sr] = g.split('').map((v) => Number(v));
+    if (parsed?.v === 5 && /^[0-3]{8}$/.test(parsed.graphCode)) {
+      const [sl, sr, tl, tr, ml, mr, el, er] = parsed.graphCode.split('').map((v) => Number(v));
+      const [social, structure, motivation, energy] = profileCode.split('');
       return {
-        social: { l: cl, r: ir, ll: '협동', rl: '독립', sel: cl >= ir ? 'C' : 'I' },
-        structure: { l: rl, r: er, ll: '규칙', rl: '탐색', sel: rl >= er ? 'R' : 'E' },
-        motivation: { l: pl, r: gr, ll: '과정', rl: '목표', sel: pl >= gr ? 'P' : 'G' },
-        energy: { l: dl, r: sr, ll: '동적', rl: '정적', sel: dl >= sr ? 'D' : 'S' },
+        social: { l: sl, r: sr, ll: '협동', rl: '독립', sel: social },
+        structure: { l: tl, r: tr, ll: '규칙', rl: '탐색', sel: structure },
+        motivation: { l: ml, r: mr, ll: '과정', rl: '목표', sel: motivation },
+        energy: { l: el, r: er, ll: '동적', rl: '정적', sel: energy },
       };
     }
     const [social, structure, motivation, energy] = profileCode.split('');
@@ -94,7 +99,7 @@ export default function MoveReportSharedContent() {
       motivation: { l: motivation === 'P' ? 3 : 0, r: motivation === 'G' ? 3 : 0, ll: '과정', rl: '목표', sel: motivation },
       energy: { l: energy === 'D' ? 3 : 0, r: energy === 'S' ? 3 : 0, ll: '동적', rl: '정적', sel: energy },
     };
-  }, [payload, profileCode]);
+  }, [parsed, profileCode]);
 
   return (
     <main style={{ minHeight: '100vh', background: '#0D0D0D', color: '#fff', padding: '16px', display: 'grid', placeItems: 'center' }}>
@@ -214,7 +219,7 @@ export default function MoveReportSharedContent() {
         </a>
 
         <Link
-          href="/move-report"
+          href={moveReportHref}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -231,6 +236,9 @@ export default function MoveReportSharedContent() {
         >
           나도 MOVE 리포트 해보기
         </Link>
+        <p style={{ margin: '10px 2px 0', color: '#8F8F8F', fontSize: 11, lineHeight: 1.45, textAlign: 'center' }}>
+          본 결과는 관찰형 유형 리포트이며, 의료적 진단을 대체하지 않습니다.
+        </p>
       </section>
     </main>
   );

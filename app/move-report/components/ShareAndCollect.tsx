@@ -4,20 +4,21 @@ import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Profile } from '../types';
 import ShareResultCard from './ShareResultCard';
 import { copyTextToClipboard, downloadPng, makeShareCardBlob, sharePng, shareTextAndUrl } from '../lib/shareCard';
-import { normalizeMoveReportPhone } from '../lib/phone';
+import { trackMoveReportEvent } from '../lib/events';
+import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 import { buildMoveReportShareUrl } from '../lib/shareLink';
 
 interface ShareAndCollectProps {
   p: Profile;
   displayName: string;
   profileKey: string;
-  graphCode: string;
   graph: {
     social: number;
     structure: number;
     motivation: number;
     energy: number;
   };
+  graphCode: string;
   flash: (msg: string) => void;
   onLeadSubmit: (phone: string) => Promise<boolean>;
   savedPhone: string;
@@ -72,11 +73,13 @@ const secondaryBtn = (disabled: boolean): CSSProperties => ({
 });
 
 /** 연락처 저장 후 앨범 저장(공유 시트) · 결과 링크 공유 */
-export default function ShareAndCollect({ p, displayName, profileKey, graphCode, graph, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
+export default function ShareAndCollect({ p, displayName, profileKey, graph, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState<'download' | 'share' | null>(null);
+  const [openingImage, setOpeningImage] = useState(false);
+  const [savingLead, setSavingLead] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   const normalizedSaved = normalizeMoveReportPhone(savedPhone);
@@ -90,14 +93,22 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
   const shareUrl =
     typeof window !== 'undefined'
       ? buildMoveReportShareUrl(window.location.origin, {
-          v: 3,
-          name: displayName || '우리 아이',
+          v: 5,
           profileKey,
           graphCode,
         })
       : '';
   const shareTitle = '스포키듀 MOVE 리포트';
   const shareText = `${displayName || '우리 아이'} 결과를 공유했어요. 확인하고 나도 해보세요!`;
+  const shareKey = useMemo(() => {
+    if (!shareUrl) return null;
+    try {
+      const u = new URL(shareUrl);
+      return u.searchParams.get('d');
+    } catch {
+      return null;
+    }
+  }, [shareUrl]);
 
   const saveToAlbum = async () => {
     if (!ready) {
@@ -117,12 +128,40 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
         return;
       }
       downloadPng(blob, fileName);
-      flash('이 기기에서는 공유가 제한되어 파일 다운로드로 저장했어요.');
+      flash('공유 시트를 지원하지 않아 파일 다운로드로 저장을 시도했어요.');
     } catch (e) {
       const message = e instanceof Error ? e.message : '이미지 생성 중 오류가 발생했어요. 다시 시도해 주세요.';
       flash(message);
     } finally {
       setBusy(null);
+    }
+  };
+
+  const openImageForManualSave = async () => {
+    if (!ready) {
+      flash('전화번호 저장 후 이용할 수 있어요.');
+      return;
+    }
+    if (!cardRef.current) {
+      flash('요약 카드 준비 중이에요. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    setOpeningImage(true);
+    try {
+      const blob = await makeShareCardBlob(cardRef.current);
+      const imageUrl = URL.createObjectURL(blob);
+      const opened = window.open(imageUrl, '_blank', 'noopener,noreferrer');
+      if (opened) {
+        flash('새 창에서 이미지를 길게 눌러 저장해 주세요.');
+      } else {
+        const copied = await copyTextToClipboard(shareUrl);
+        flash(copied ? '새 창이 차단되어 링크를 복사했어요. 공유로 전달해 주세요.' : '새 창이 차단됐어요. 아래 결과 링크 공유를 이용해 주세요.');
+      }
+      window.setTimeout(() => URL.revokeObjectURL(imageUrl), 60_000);
+    } catch {
+      flash('이미지 열기에 실패했어요. 결과 링크 공유를 이용해 주세요.');
+    } finally {
+      setOpeningImage(false);
     }
   };
 
@@ -136,11 +175,13 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
       const shared = await shareTextAndUrl(shareTitle, shareText, shareUrl);
       if (shared) {
         flash('결과 링크 공유 창을 열었어요.');
+        void trackMoveReportEvent({ eventName: 'share_clicked', shareKey });
         return;
       }
       const copied = await copyTextToClipboard(shareUrl);
       if (copied) {
         flash('결과 링크를 복사했어요.');
+        void trackMoveReportEvent({ eventName: 'share_clicked', shareKey });
       } else {
         flash('이 기기에서는 공유가 제한돼요. 주소창 링크를 직접 복사해 주세요.');
       }
@@ -251,9 +292,29 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
                 inputMode="tel"
                 autoComplete="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(formatMoveReportPhone(e.target.value))}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  e.preventDefault();
+                  if (!active || savingLead) return;
+                  void (async () => {
+                    if (!normalizedInput) {
+                      flash('전화번호 11자리(010-0000-0000)를 입력해 주세요.');
+                      return;
+                    }
+                    setSavingLead(true);
+                    try {
+                      const ok = await onLeadSubmit(normalizedInput);
+                      if (ok) setSent(true);
+                    } finally {
+                      setSavingLead(false);
+                    }
+                  })();
+                }}
                 placeholder="010-0000-0000"
                 className="sp-input"
+                maxLength={13}
+                aria-label="전화번호 입력"
                 style={{
                   flex: 1,
                   minWidth: 0,
@@ -270,32 +331,37 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
               />
               <button
                 type="button"
-                disabled={!active}
+                disabled={!active || savingLead}
                 onClick={async () => {
-                  if (!active) return;
+                  if (!active || savingLead) return;
                   if (!normalizedInput) {
                     flash('전화번호 11자리(010-0000-0000)를 입력해 주세요.');
                     return;
                   }
-                  const ok = await onLeadSubmit(normalizedInput);
-                  if (ok) setSent(true);
+                  setSavingLead(true);
+                  try {
+                    const ok = await onLeadSubmit(normalizedInput);
+                    if (ok) setSent(true);
+                  } finally {
+                    setSavingLead(false);
+                  }
                 }}
                 style={{
                   minHeight: '46px',
                   padding: '12px 20px',
                   borderRadius: '12px',
-                  background: active ? '#FEE500' : '#2A2A2A',
-                  color: active ? '#3C1E1E' : '#555',
+                  background: active && !savingLead ? '#FEE500' : '#2A2A2A',
+                  color: active && !savingLead ? '#3C1E1E' : '#555',
                   fontWeight: 800,
                   fontSize: '14px',
                   border: 'none',
-                  cursor: active ? 'pointer' : 'default',
+                  cursor: active && !savingLead ? 'pointer' : 'default',
                   outline: 'none',
                   fontFamily: 'Noto Sans KR,sans-serif',
                   whiteSpace: 'nowrap',
                 }}
               >
-                저장하기
+                {savingLead ? '저장 중…' : '저장하기'}
               </button>
             </div>
             <p style={{ fontSize: '10px', color: '#555', marginTop: '10px', lineHeight: 1.45 }}>
@@ -313,13 +379,13 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
                 marginBottom: '6px',
               }}
             >
-              저장 완료
+              준비 완료
             </div>
             <p style={{ fontSize: '15px', fontWeight: 800, color: '#F0F0F0', margin: '0 0 6px', lineHeight: 1.45, wordBreak: 'keep-all' }}>
-              앨범에 저장하거나 링크를 공유해 보세요
+              이제 이미지 저장 또는 링크 공유를 할 수 있어요
             </p>
             <p style={{ fontSize: '12px', color: '#8B8B8B', margin: '0 0 14px', lineHeight: 1.5 }}>
-              미리보기는 저장되는 이미지와 같아요.
+              아래는 공유용 카드 미리보기예요.
             </p>
 
             <div
@@ -371,9 +437,9 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
               <button
                 type="button"
                 onClick={() => void saveToAlbum()}
-                disabled={ctaBusy}
+                disabled={ctaBusy || openingImage}
                 aria-busy={busy === 'download'}
-                style={primaryBtn(p.col, ctaBusy)}
+                style={primaryBtn(p.col, ctaBusy || openingImage)}
               >
                 <i className="fa-solid fa-image" aria-hidden />
                 {busy === 'download' ? '이미지 준비 중…' : '앨범에 저장'}
@@ -381,12 +447,33 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
               <button
                 type="button"
                 onClick={() => void shareResultLink()}
-                disabled={ctaBusy}
+                disabled={ctaBusy || openingImage}
                 aria-busy={busy === 'share'}
-                style={secondaryBtn(ctaBusy)}
+                style={secondaryBtn(ctaBusy || openingImage)}
               >
                 <i className="fa-solid fa-share-nodes" aria-hidden />
                 {busy === 'share' ? '링크 준비 중…' : '결과 링크 공유'}
+              </button>
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <button
+                type="button"
+                onClick={() => void openImageForManualSave()}
+                disabled={ctaBusy || openingImage}
+                style={{
+                  width: '100%',
+                  minHeight: '40px',
+                  borderRadius: '10px',
+                  border: '1px dashed #3A3A3A',
+                  background: '#121212',
+                  color: '#BDBDBD',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: ctaBusy || openingImage ? 'default' : 'pointer',
+                  opacity: ctaBusy || openingImage ? 0.6 : 1,
+                }}
+              >
+                {openingImage ? '이미지 여는 중…' : '저장이 안 되면: 이미지 새 창에서 길게 눌러 저장'}
               </button>
             </div>
             <div

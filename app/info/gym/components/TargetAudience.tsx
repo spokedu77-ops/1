@@ -1,42 +1,37 @@
 'use client';
 
 import { AGE_BANDS } from '../data/config';
-import { SLOTS } from '../data/config';
 
 export default function TargetAudience() {
-  function scrollToId(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  }
+  const classByAge: Record<string, string> = {
+    '미취학 (6-7세)': 'Adaptive Move Class',
+    '초등 저학년 (1-3학년)': 'MOVE CORE CLUB',
+    '초등 고학년 (4-6학년)': 'CUSTOMIZING LAB',
+  };
 
   return (
     <section id="target" className="gym-section" aria-labelledby="targetHeading">
       <div className="gym-container">
         <div className="gym-section-head">
-          <div className="gym-kicker">대상/연령</div>
+          <div className="gym-kicker">연령별 추천</div>
           <h2 id="targetHeading" className="gym-section-title">
-            같은 나이라도 교육 초점은 다릅니다
+            우리 아이, 어디에 맞나요?
           </h2>
           <p className="gym-section-desc">
-            연령만 나누는 것이 아니라, 각 시기에 필요한 움직임 학습 과제를 다르게 설정합니다.
+            같은 나이여도 참여 리듬과 목표는 다릅니다.
+            연령대별 핵심 과제와 추천 클래스를 함께 안내합니다.
           </p>
         </div>
-        <div className="gym-grid-4">
+        <div className="gym-grid-3">
           {AGE_BANDS.map((band) => (
             <div className="gym-card" key={band.title}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
-                <h3>{band.title}</h3>
-                <span className={`gym-slot-badge ${SLOTS.find((s) => s.age === band.title)?.status ?? 'open'}`}>
-                  {SLOTS.find((s) => s.age === band.title)?.label ?? '모집중'}
-                </span>
-              </div>
+              <h3>{band.title}</h3>
               <p>{band.focus}</p>
+              <p style={{ marginTop: 10, color: 'var(--gym-text)', fontWeight: 600 }}>
+                추천 클래스: {classByAge[band.title]}
+              </p>
             </div>
           ))}
-        </div>
-        <div style={{ marginTop: 14 }}>
-          <button type="button" className="gym-btn primary" onClick={() => scrollToId('contact')}>
-            우리 아이 맞는 반 확인하기 {'->'}
-          </button>
         </div>
       </div>
     </section>

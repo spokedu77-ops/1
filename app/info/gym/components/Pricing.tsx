@@ -16,7 +16,8 @@ export default function Pricing() {
             가격 안내 — 월 단위 등록
           </h2>
           <p className="gym-section-desc">
-            월 등록 기준이며, 반 편성·운영은 상담을 통해 안내합니다.
+            월 등록 기준이며, 체험 후 아이의 현재 수준과 목표에 맞춰
+            반 편성과 주당 수업 횟수를 안내합니다.
           </p>
         </div>
         <div className="gym-pricing-grid">
@@ -36,7 +37,15 @@ export default function Pricing() {
                       <b>{row.label}</b>
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid rgba(255,255,255,.08)', fontSize: 13 }}>{row.composition}</td>
-                    <td style={{ padding: 12, borderBottom: '1px solid rgba(255,255,255,.08)', fontSize: 13 }}>
+                    <td
+                      style={{
+                        padding: 12,
+                        borderBottom: '1px solid rgba(255,255,255,.08)',
+                        fontSize: 13,
+                        color: row.label === '체험 수업' ? 'var(--gym-accent)' : 'var(--gym-text)',
+                        fontWeight: row.label === '체험 수업' ? 800 : 600,
+                      }}
+                    >
                       <b>{row.price}</b>
                     </td>
                   </tr>
@@ -47,16 +56,16 @@ export default function Pricing() {
           <div className="gym-card" style={{ background: 'linear-gradient(180deg, rgba(18,26,46,.62), rgba(10,14,25,.7))' }}>
             <h3 style={{ margin: '0 0 10px', fontSize: 15 }}>체험/등록 안내</h3>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--gym-muted)', lineHeight: 1.6 }}>
-              등록은 상담 기반으로 진행합니다. 아이의 연령/경험/성향과 정원을 함께 고려해 반을 추천합니다.
+              아이의 연령, 수업 적응 리듬, 보호자 목표를 함께 보고 반을 추천합니다.
             </p>
             <div style={{ marginTop: 14, fontSize: 12, color: 'var(--gym-muted2)', lineHeight: 1.7 }}>
               <b>체험 수업</b><br />
-              • 50분 체험 수업 1회 (정가 대비 50% 할인)<br />
+              • 50분 체험 수업 1회: <span style={{ color: 'var(--gym-accent)', fontWeight: 700 }}>15,000원</span><br />
               • 체험 당일 상담 가능<br /><br />
-              <b>할인(선택)</b><br />
+              <b>할인 혜택</b><br />
               • 형제/자매: 각각 10% 할인<br />
               • 지인 소개 등록: 추천인/피추천인 각 2만원 차감(신규 등록 1회 기준)<br /><br />
-              <b>안내</b><br />
+              <b>운영 안내</b><br />
               • 월 등록 기준, 공휴일/센터 일정에 따라 보강 정책 적용<br />
               • 프로그램 구성은 연령과 현재 수준에 맞춰 클래스별로 안내합니다.
             </div>
