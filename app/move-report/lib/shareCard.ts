@@ -43,21 +43,44 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
   return blob;
 }
 
-/** blob을 새 탭 HTML 안의 <img>로 표시(iOS 등에서 직접 blob URL만 열면 깨질 수 있음) */
-export function openImageBlobInNewTab(blob: Blob): boolean {
+function readBlobAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const v = r.result;
+      if (typeof v === 'string') resolve(v);
+      else reject(new Error('data url'));
+    };
+    r.onerror = () => reject(new Error('read failed'));
+    r.readAsDataURL(blob);
+  });
+}
+
+/**
+ * 새 탭에 PNG 표시. iOS Safari는 부모가 만든 blob: URL을 자식 문서의 img에 넣으면 흰 화면만 나오는 경우가 많아,
+ * data URL로 읽은 뒤 새 창 script 경로로 img.src에 직접 할당한다.
+ */
+export async function openImageBlobInNewTab(blob: Blob): Promise<boolean> {
   if (typeof window === 'undefined') return false;
-  const url = URL.createObjectURL(blob);
-  const w = window.open('', '_blank', 'noopener,noreferrer');
-  if (!w) {
-    URL.revokeObjectURL(url);
+  let dataUrl: string;
+  try {
+    dataUrl = await readBlobAsDataUrl(blob);
+  } catch {
     return false;
   }
-  const safeSrc = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>MOVE 카드</title><style>body{margin:0;background:#0d0d0d;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}img{max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5)}</style></head><body><img src="${safeSrc}" alt="MOVE 요약 카드"/></body></html>`;
+  const w = window.open('', '_blank', 'noopener,noreferrer');
+  if (!w) return false;
   w.document.open();
-  w.document.write(html);
+  w.document.write(
+    '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>MOVE 카드</title>' +
+      '<style>body{margin:0;background:#0d0d0d;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}' +
+      'img{max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5)}</style></head><body></body></html>',
+  );
   w.document.close();
-  window.setTimeout(() => URL.revokeObjectURL(url), 180_000);
+  const img = w.document.createElement('img');
+  img.alt = 'MOVE 요약 카드';
+  img.src = dataUrl;
+  w.document.body.appendChild(img);
   return true;
 }
 

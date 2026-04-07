@@ -114,7 +114,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
     setBusy('download');
     try {
       const blob = await makeShareCardBlob(cardRef.current);
-      if (openImageBlobInNewTab(blob)) {
+      if (await openImageBlobInNewTab(blob)) {
         flash('새 창에서 이미지를 길게 눌러 저장하거나 다운로드해 주세요.');
         return;
       }
