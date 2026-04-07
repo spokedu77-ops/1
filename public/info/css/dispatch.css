@@ -329,6 +329,44 @@ body.dispatch-page::before {
   letter-spacing: 0.05em;
 }
 
+.dispatch-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.dispatch-choice-card {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.dispatch-choice-card input {
+  width: 16px;
+  height: 16px;
+  accent-color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.dispatch-choice-card:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #f8fafc;
+}
+
+.dispatch-choice-card.is-selected {
+  border-color: rgba(56, 189, 248, 0.85);
+  background: rgba(56, 189, 248, 0.14);
+  color: #e0f2fe;
+}
+
 /* Buttons */
 .dispatch-btn-primary {
   display: inline-flex;
@@ -484,6 +522,30 @@ body.dispatch-page::before {
 }
 
 @media (max-width: 640px) {
+  .dispatch-hero-content {
+    padding: 0 1rem 4rem;
+  }
+
+  .dispatch-hero-h1 {
+    font-size: clamp(2rem, 9vw, 2.7rem);
+    line-height: 1.28;
+    margin-bottom: 1.2rem;
+  }
+
+  .dispatch-hero-sub {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  .dispatch-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dispatch-choice-card {
+    font-size: 0.86rem;
+  }
+
   .dispatch-stat-item {
     padding: 1rem 1.25rem;
   }

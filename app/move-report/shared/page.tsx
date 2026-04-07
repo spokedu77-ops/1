@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import MoveReportSharedContent from './MoveReportSharedContent';
 import { parseMoveReportSharePayload } from '../lib/shareLink';
+import { getMoveReportMetadataBaseUrl } from '../lib/siteUrl';
 import { P } from '../data/profiles';
 
 type PageProps = {
@@ -29,22 +30,33 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const description = payload
     ? `${payload.profileName} 유형 결과를 확인하고, 나도 MOVE 리포트를 해보세요.`
     : '공유받은 MOVE 리포트 결과를 확인하고, 나도 테스트해보세요.';
-  const ogImage = raw ? `/api/move-report/share-image?d=${encodeURIComponent(raw)}` : '/move-report/opengraph-image';
+  const baseUrl = await getMoveReportMetadataBaseUrl();
+  const pathWithQuery = raw ? `/move-report/shared?d=${encodeURIComponent(raw)}` : '/move-report/shared';
+  const ogImagePath = raw ? `/api/move-report/share-image?d=${encodeURIComponent(raw)}` : '/move-report/opengraph-image';
+  const ogImageAbsolute = `${baseUrl}${ogImagePath}`;
+  const pageUrlAbsolute = `${baseUrl}${pathWithQuery}`;
 
   return {
+    metadataBase: new URL(baseUrl),
     title,
     description,
+    alternates: {
+      canonical: pathWithQuery,
+    },
     openGraph: {
+      type: 'website',
+      siteName: 'SPOKEDU',
+      locale: 'ko_KR',
       title,
       description,
-      url: '/move-report/shared',
-      images: [{ url: ogImage, width: 1200, height: 630, alt: 'MOVE 리포트 공유 이미지' }],
+      url: pageUrlAbsolute,
+      images: [{ url: ogImageAbsolute, width: 1200, height: 630, alt: 'MOVE 리포트 공유 이미지' }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [ogImage],
+      images: [ogImageAbsolute],
     },
   };
 }

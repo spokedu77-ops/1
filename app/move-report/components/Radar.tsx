@@ -42,10 +42,11 @@ export default function Radar({ bd, col, maxWidthPx = 240 }: RadarProps) {
     })
     .join(' ');
 
+  // viewBox를 넉넉히 잡지 않으면 한글 라벨(특히 우측)이 SVG 뷰포트 밖으로 나가 html2canvas 캡처 시 잘림
   return (
     <svg
-      viewBox="0 0 220 220"
-      style={{ width: '100%', maxWidth: maxWidthPx, display: 'block', margin: '0 auto' }}
+      viewBox="-32 -32 284 284"
+      style={{ width: '100%', maxWidth: maxWidthPx, display: 'block', margin: '0 auto', overflow: 'visible' }}
       aria-hidden
     >
       {[0.33, 0.66, 1].map((l, i) => {

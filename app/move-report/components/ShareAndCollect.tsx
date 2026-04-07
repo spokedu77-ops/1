@@ -107,6 +107,13 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
     }
   }, [shareUrl]);
 
+  const getShareSavedGuide = (): string => {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
+    const isIOS = /iphone|ipad|ipod/.test(ua);
+    if (isIOS) return "공유창이 뜨면 아래로 내려 '이미지 저장'을 눌러주세요";
+    return '공유창 또는 다운로드가 시작됩니다';
+  };
+
   const saveToAlbum = async () => {
     if (!ready) {
       flash('전화번호 저장 후 이용할 수 있어요.');
@@ -117,15 +124,16 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
       return;
     }
     setBusy('download');
+    let blob: Blob | null = null;
     try {
-      const blob = await makeShareCardBlob(cardRef.current);
+      blob = await makeShareCardBlob(cardRef.current);
       const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean }) : null;
       if (nav && typeof nav.share === 'function') {
         const file = new File([blob], fileName, { type: 'image/png' });
         // iOS 안정성: files-only가 가장 성공률이 높음
         const primary: ShareData = { files: [file] };
         const secondary: ShareData = { files: [file], title: shareTitle };
-        const tryShare = async (data: ShareData): Promise<'shared' | 'cancelled' | 'failed'> => {
+        const tryShare = async (data: ShareData): Promise<'shared' | 'cancelled' | 'fallback' | 'failed'> => {
           const canShare = typeof nav.canShare === 'function' ? nav.canShare(data) : true;
           if (!canShare) return 'failed';
           try {
@@ -133,27 +141,46 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
             return 'shared';
           } catch (e) {
             if (e instanceof Error && e.name === 'AbortError') return 'cancelled';
+            if (e instanceof Error && e.name === 'NotAllowedError') return 'fallback';
             return 'failed';
           }
         };
 
         const r1 = await tryShare(primary);
         if (r1 === 'shared') {
-          flash('공유 시트에서 "이미지 저장"을 눌러주세요.');
+          flash(getShareSavedGuide());
           return;
         }
         if (r1 === 'cancelled') return;
+        if (r1 === 'fallback') {
+          downloadPng(blob, fileName);
+          flash('기기 제한으로 파일 다운로드로 저장했어요.');
+          return;
+        }
 
         const r2 = await tryShare(secondary);
         if (r2 === 'shared') {
-          flash('공유 시트에서 "이미지 저장"을 눌러주세요.');
+          flash(getShareSavedGuide());
           return;
         }
         if (r2 === 'cancelled') return;
+        if (r2 === 'fallback') {
+          downloadPng(blob, fileName);
+          flash('기기 제한으로 파일 다운로드로 저장했어요.');
+          return;
+        }
       }
       downloadPng(blob, fileName);
       flash('기기 제한으로 파일 다운로드로 저장했어요.');
     } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') return;
+      if (e instanceof Error && e.name === 'NotAllowedError') {
+        if (blob) {
+          downloadPng(blob, fileName);
+          flash('기기 제한으로 파일 다운로드로 저장했어요.');
+          return;
+        }
+      }
       const message = e instanceof Error ? e.message : '이미지 생성 중 오류가 발생했어요. 다시 시도해 주세요.';
       flash(message);
     } finally {
@@ -181,6 +208,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
   };
 
   const ctaBusy = busy !== null;
+  const isSavingImage = busy === 'download';
 
   return (
     <div
@@ -377,11 +405,11 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
                 type="button"
                 onClick={() => void saveToAlbum()}
                 disabled={ctaBusy}
-                aria-busy={busy === 'download'}
+                aria-busy={isSavingImage}
                 style={primaryBtn(p.col, ctaBusy)}
               >
                 <i className="fa-solid fa-image" aria-hidden />
-                {busy === 'download' ? '이미지 준비 중…' : '앨범에 저장'}
+                {isSavingImage ? '이미지 준비 중…' : '앨범에 저장'}
               </button>
               <button
                 type="button"

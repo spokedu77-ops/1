@@ -6,31 +6,34 @@
 (function () {
   'use strict';
 
+  var leadEmail = 'spokedu77@gmail.com';
+  var leadApiEndpoint = '/api/dispatch/leads';
+
   var compareRows = [
-    ['핵심 커리큘럼', '강사 개인의 경험 및 재량에 의존', '연세대 연구진이 검증한 자체 연간 커리큘럼 적용'],
-    ['강사 파견 기준', '검증 이력 없는 단기 프리랜서 혼용', '체계적 교육과 커리큘럼을 이수한 검증 강사·디렉터'],
-    ['결근·펑크 리스크', '기관 원장님과 교사가 직접 대타 해결', '부재 시 즉시 공유 후 대체 강사 투입으로 공백 최소화'],
-    ['수업 진행 방식', '단순 기구 놀이 및 시간 채우기식 체육', '아이들의 자발적 몰입을 이끄는 인터랙티브 웜업'],
-    ['기관 제공 데이터', '전무함 (구두 전달 수준)', '참여도 및 신체 성장 지표를 분석한 월간 리포트 발송'],
+    ['핵심 커리큘럼', '연세대학교 체육전공자들의 전문성과 실제 현장 데이터가 적용된 연간 커리큘럼', '강사 개인의 경험 및 재량에 의존'],
+    ['강사 파견 기준', '체육 전공자 출신으로 스포키듀 교육과정을 이수한 전문 강사', '검증 이력 없는 단기 프리랜서 혼용'],
+    ['결근·펑크 리스크', '부재 시 즉시 공유 후 운영진 투입으로 공백 최소화', '대부분 수업 진행 불가 및 휴강 처리'],
+    ['수업 진행 방식', '아이의 반응과 움직임을 설계하면서 몰입과 성장의 흐름을 만드는 프로그램', '단순 기구 놀이 및 시간 채우기식 체육'],
+    ['기관 제공 데이터', '참여도 및 신체 성장 지표를 분석한 월간 리포트 발송', '전무함 (구두 전달 수준)'],
   ];
 
   var processSteps = [
     { n: '01', icon: 'message-square', title: '상담 및 접수', desc: '웹사이트 폼, 전화 또는 카카오 채널로 파견 문의를 접수합니다.', duration: '당일~24시간' },
     { n: '02', icon: 'search', title: '기관 환경 분석', desc: '대상 연령, 인원, 특이사항을 파악해 기관에 맞는 제안서를 발송합니다.', duration: '1~2일' },
     { n: '03', icon: 'file-signature', title: '일정·조건 협의', desc: '파견 일정과 수업 구성 등을 협의하고 진행 방식을 확정합니다.', duration: '1~3일' },
-    { n: '04', icon: 'user-check', title: '전담 강사·디렉터 배정', desc: '기관의 성향과 목표에 맞는 검증된 강사·디렉터를 매칭합니다.', duration: '3~5일' },
+    { n: '04', icon: 'user-check', title: '전담 강사 배정', desc: '기관의 성향과 목표에 맞는 검증된 강사를 매칭합니다.', duration: '3~5일' },
     { n: '05', icon: 'play-circle', title: '첫 수업 개시', desc: '기관 담당자와 사전 오리엔테이션 후, 첫 수업을 시작합니다.', duration: '7일 이내' },
   ];
 
   var faqs = [
     { q: '비용은 어떻게 되나요?', a: '기관 규모, 대상 연령, 파견 횟수에 따라 달라집니다. 제안서 신청 후 맞춤 견적을 안내드립니다.' },
-    { q: '최소 계약 기간이 있나요?', a: '학기 단위(3개월)부터 운영 가능합니다. 단기 이벤트는 1회부터 가능합니다.' },
+    { q: '최소 계약 기간이 있나요?', a: '없습니다. 원데이 수업부터, 단기, 정기 수업까지 모두 가능합니다.' },
     { q: '강사 교체 요청이 가능한가요?', a: '네, 담당 매니저를 통해 언제든 요청 가능합니다.' },
-    { q: '특수학급 아동이 포함된 통합반도 운영되나요?', a: '장애인 스포츠 지도사 자격을 보유한 특수 체육 전문 디렉터를 별도 배정합니다.' },
+    { q: '특수학급 아동이 포함된 통합반도 운영되나요?', a: '느린 학습자와 특수 체육 대상자를 고려한 수업 경험이 있는 강사가 함께합니다.' },
     { q: '운영 가능한 지역이 어디인가요?', a: '현재 서울 및 수도권 근교 지역에서 운영 중입니다. 운영 가능 여부는 문의 시 확인해 드립니다.' },
   ];
 
-  var programs = ['유아 놀이 체육', '학교 스포츠·방과후', '특수·통합 체육', '운동회·단기 이벤트'];
+  var programs = ['스포무브', '월간 스포츠', '슬로우 스포츠', '이벤트 클래스 | 미니 올림픽 & 체험형 스포츠 부스'];
 
   function renderCompareTable() {
     var container = document.getElementById('dispatch-compare-rows');
@@ -43,12 +46,12 @@
         '<div class="p-4 sm:p-5 text-slate-300 font-bold border-t" style="border-color:var(--border)">' +
         row[0] +
         '</div>' +
-        '<div class="p-4 sm:p-5 text-slate-500 border-l border-t leading-relaxed flex items-start sm:items-center gap-2" style="border-color:var(--border)">' +
-        '<i data-lucide="x-circle" class="mt-0.5 sm:mt-0 shrink-0" style="width:16px;height:16px;color:#64748b"></i>' +
-        row[1] +
-        '</div>' +
         '<div class="p-4 sm:p-5 text-sky-300 font-bold flex items-start sm:items-center gap-2 border-l border-t leading-relaxed" style="border-color:var(--border);background:rgba(56,189,248,.04)">' +
         '<i data-lucide="check-circle-2" class="mt-0.5 sm:mt-0 shrink-0" style="width:16px;height:16px;color:#38bdf8"></i>' +
+        row[1] +
+        '</div>' +
+        '<div class="p-4 sm:p-5 text-slate-500 border-l border-t leading-relaxed flex items-start sm:items-center gap-2" style="border-color:var(--border)">' +
+        '<i data-lucide="x-circle" class="mt-0.5 sm:mt-0 shrink-0" style="width:16px;height:16px;color:#64748b"></i>' +
         row[2] +
         '</div>';
       container.appendChild(div);
@@ -116,12 +119,62 @@
     if (!container) return;
     programs.forEach(function (p) {
       var label = document.createElement('label');
-      label.className = 'flex items-center gap-2 cursor-pointer text-sm text-slate-300 hover:text-white transition';
-      label.style.cssText =
-        'padding:.75rem .75rem; border:1px solid var(--border); border-radius:.5rem; background:rgba(255,255,255,.03)';
-      label.innerHTML = '<input type="checkbox" class="accent-sky-400" style="width:16px;height:16px"> <span class="truncate">' + p + '</span>';
+      label.className = 'dispatch-choice-card';
+      label.innerHTML = '<input type="checkbox" name="programs" value="' + p + '"><span>' + p + '</span>';
       container.appendChild(label);
     });
+  }
+
+  function updateChoiceCardState(input) {
+    if (!input || !input.closest) return;
+    var card = input.closest('.dispatch-choice-card');
+    if (!card) return;
+    card.classList.toggle('is-selected', !!input.checked);
+  }
+
+  function initChoiceCards() {
+    document.querySelectorAll('.dispatch-choice-card input').forEach(function (input) {
+      updateChoiceCardState(input);
+      input.addEventListener('change', function () {
+        updateChoiceCardState(input);
+      });
+    });
+  }
+
+  function getCheckedValues(form, name) {
+    var values = [];
+    form.querySelectorAll('input[name="' + name + '"]:checked').forEach(function (el) {
+      values.push(el.value);
+    });
+    return values;
+  }
+
+  function openMailFallback(payload) {
+    var subject = '[SPOKEDU] 기관 맞춤 제안서 요청';
+    var lines = [
+      '기관명/센터명: ' + (payload.organization || '-'),
+      '담당자 직책 및 성함: ' + (payload.manager || '-'),
+      '연락처: ' + (payload.phone || '-'),
+      '이메일: ' + (payload.email || '-'),
+      '기관 소재지: ' + (payload.location || '-'),
+      '파견 희망 시작일: ' + (payload.startDate || '-'),
+      '파견 희망 종료일: ' + (payload.endDate || '-'),
+      '파견 희망 프로그램: ' + (payload.programs && payload.programs.length ? payload.programs.join(', ') : '-'),
+      '대상 연령: ' + (payload.targetAge && payload.targetAge.length ? payload.targetAge.join(', ') : '-'),
+      '대략적인 인원: ' + (payload.headcount || '-'),
+      '특수 아동 참여 유무: ' + (payload.specialNeeds || '-'),
+      '',
+      '[희망하는 수업 내용 또는 방향성]',
+      payload.inquiry || '-',
+      '',
+      '접수 시각: ' + (payload.createdAt || '-'),
+      '유입 경로: ' + (payload.source || '-')
+    ];
+    var body = lines.join('\n');
+    var mailto = 'mailto:' + encodeURIComponent(leadEmail) +
+      '?subject=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(body);
+    window.location.href = mailto;
   }
 
   function initReveal() {
@@ -157,11 +210,77 @@
     if (!form || !toast) return;
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      toast.classList.add('show');
-      setTimeout(function () {
-        toast.classList.remove('show');
-      }, 4000);
-      form.reset();
+      var submitButton = form.querySelector('button[type="submit"]');
+      var originalLabel = submitButton ? submitButton.innerHTML : '';
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = '접수 중...';
+      }
+      var formData = new FormData(form);
+      var payload = {
+        organization: formData.get('organization') || '',
+        manager: formData.get('manager') || '',
+        phone: formData.get('phone') || '',
+        email: formData.get('email') || '',
+        location: formData.get('location') || '',
+        startDate: formData.get('startDate') || '',
+        endDate: formData.get('endDate') || '',
+        programs: getCheckedValues(form, 'programs'),
+        targetAge: getCheckedValues(form, 'targetAge'),
+        headcount: formData.get('headcount') || '',
+        specialNeeds: formData.get('specialNeeds') || '',
+        inquiry: formData.get('inquiry') || '',
+        createdAt: new Date().toISOString(),
+        source: 'dispatch-page'
+      };
+
+      if (!payload.phone && !payload.email) {
+        toast.textContent = '⚠️ 연락처(번호 또는 메일) 중 최소 1개를 입력해 주세요.';
+        toast.classList.add('show');
+        setTimeout(function () {
+          toast.classList.remove('show');
+        }, 3500);
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.innerHTML = originalLabel;
+        }
+        return;
+      }
+
+      fetch(leadApiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) {
+          if (!res.ok) {
+            throw new Error('HTTP ' + res.status);
+          }
+          toast.textContent = '✅ 접수 완료! 운영팀이 확인 후 빠르게 연락드립니다.';
+          toast.classList.add('show');
+          setTimeout(function () {
+            toast.classList.remove('show');
+          }, 3800);
+          form.reset();
+          document.querySelectorAll('.dispatch-choice-card.is-selected').forEach(function (card) {
+            card.classList.remove('is-selected');
+          });
+        })
+        .catch(function (error) {
+          console.error('[dispatch-contact-form]', error);
+          toast.textContent = '⚠️ 접수 연결에 실패해 메일 작성창으로 연결합니다.';
+          toast.classList.add('show');
+          openMailFallback(payload);
+          setTimeout(function () {
+            toast.classList.remove('show');
+          }, 4500);
+        })
+        .finally(function () {
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalLabel;
+          }
+        });
     });
   }
 
@@ -190,6 +309,7 @@
 
     initReveal();
     initNavbarScroll();
+    initChoiceCards();
     initContactForm();
     initSmoothScroll();
 
