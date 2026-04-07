@@ -67,6 +67,7 @@ export default function MoveReportClient() {
 
   useEffect(() => {
     if (sc !== 'result') return;
+    window.scrollTo(0, 0);
     void trackMoveReportEvent({ eventName: 'result_viewed', shareKey });
     if (shareKey) {
       void trackMoveReportEvent({ eventName: 'shared_entry_completed', shareKey });
@@ -217,7 +218,7 @@ export default function MoveReportClient() {
       {sc === 'survey' && currentQ && (
         <Survey q={currentQ} qi={qi} total={questions.length} resps={resps} name={name} onAnswer={onAnswer} onBack={surveyBack} answering={answering} />
       )}
-      {sc === 'loading' && <Loading name={name} />}
+      {sc === 'loading' && <Loading />}
       {sc === 'leadform' && result && (
         <LeadFormScreen
           onSubmit={async (phone) => {

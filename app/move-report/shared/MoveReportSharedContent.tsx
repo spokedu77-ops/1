@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import ShareResultCard from '../components/ShareResultCard';
 import { parseMoveReportSharePayload } from '../lib/shareLink';
 import { P } from '../data/profiles';
-import Radar from '../components/Radar';
 import type { BreakdownResult } from '../types';
 import { trackMoveReportEvent } from '../lib/events';
 
@@ -21,34 +21,74 @@ function normalizeHexColor(color?: string): string | null {
   return null;
 }
 
+const CARD_W = 1080;
+const CARD_H = 1580;
+
 export default function MoveReportSharedContent() {
   const searchParams = useSearchParams();
   const raw = searchParams.get('d');
   const parsed = useMemo(() => parseMoveReportSharePayload(raw), [raw]);
   const moveReportHref = raw ? `/move-report?d=${encodeURIComponent(raw)}` : '/move-report';
   const profileCode = parsed?.profileKey ?? null;
+
   const payload = useMemo(() => {
     if (!parsed) return null;
     const profile = P[parsed.profileKey];
     if (!profile) return null;
     return {
-      v: 1 as const,
       name: '우리 아이',
       profileName: profile.char,
       catchcopy: profile.catchcopy,
       strengths: profile.str.slice(0, 1),
       activity: profile.env[0] || profile.shortTip,
       color: profile.col,
-      emoji: profile.em,
     };
   }, [parsed]);
+
+  const radarBreakdown = useMemo<BreakdownResult | null>(() => {
+    if (!profileCode || profileCode.length !== 4) return null;
+    if (parsed?.v === 5 && /^[0-3]{8}$/.test(parsed.graphCode)) {
+      const [sl, sr, tl, tr, ml, mr, el, er] = parsed.graphCode.split('').map((v) => Number(v));
+      const [social, structure, motivation, energy] = profileCode.split('');
+      return {
+        social: { l: sl, r: sr, ll: '협동', rl: '독립', sel: social },
+        structure: { l: tl, r: tr, ll: '규칙', rl: '탐색', sel: structure },
+        motivation: { l: ml, r: mr, ll: '과정', rl: '목표', sel: motivation },
+        energy: { l: el, r: er, ll: '동적', rl: '정적', sel: energy },
+      };
+    }
+    const [social, structure, motivation, energy] = profileCode.split('');
+    return {
+      social: { l: social === 'C' ? 3 : 0, r: social === 'I' ? 3 : 0, ll: '협동', rl: '독립', sel: social },
+      structure: { l: structure === 'R' ? 3 : 0, r: structure === 'E' ? 3 : 0, ll: '규칙', rl: '탐색', sel: structure },
+      motivation: { l: motivation === 'P' ? 3 : 0, r: motivation === 'G' ? 3 : 0, ll: '과정', rl: '목표', sel: motivation },
+      energy: { l: energy === 'D' ? 3 : 0, r: energy === 'S' ? 3 : 0, ll: '동적', rl: '정적', sel: energy },
+    };
+  }, [parsed, profileCode]);
+
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.38);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     if (!raw) return;
     void trackMoveReportEvent({ eventName: 'shared_entry_opened', shareKey: raw });
   }, [raw]);
 
-  if (!payload) {
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || !payload) return;
+    const apply = () => setScale(Math.min(1, el.clientWidth / CARD_W));
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [payload]);
+
+  if (!payload || !parsed || !radarBreakdown || !profileCode) {
     return (
       <main style={{ minHeight: '100vh', background: '#0D0D0D', color: '#fff', padding: '24px', display: 'grid', placeItems: 'center' }}>
         <div style={{ width: '100%', maxWidth: 420, borderRadius: 18, border: '1px solid #2A2A2A', background: '#171717', padding: 20 }}>
@@ -79,145 +119,36 @@ export default function MoveReportSharedContent() {
   }
 
   const accentColor = normalizeHexColor(payload.color) ?? '#FEE500';
-  const profileEmoji = payload.emoji?.trim();
-  const radarBreakdown = useMemo<BreakdownResult | null>(() => {
-    if (!profileCode || profileCode.length !== 4) return null;
-    if (parsed?.v === 5 && /^[0-3]{8}$/.test(parsed.graphCode)) {
-      const [sl, sr, tl, tr, ml, mr, el, er] = parsed.graphCode.split('').map((v) => Number(v));
-      const [social, structure, motivation, energy] = profileCode.split('');
-      return {
-        social: { l: sl, r: sr, ll: '협동', rl: '독립', sel: social },
-        structure: { l: tl, r: tr, ll: '규칙', rl: '탐색', sel: structure },
-        motivation: { l: ml, r: mr, ll: '과정', rl: '목표', sel: motivation },
-        energy: { l: el, r: er, ll: '동적', rl: '정적', sel: energy },
-      };
-    }
-    const [social, structure, motivation, energy] = profileCode.split('');
-    return {
-      social: { l: social === 'C' ? 3 : 0, r: social === 'I' ? 3 : 0, ll: '협동', rl: '독립', sel: social },
-      structure: { l: structure === 'R' ? 3 : 0, r: structure === 'E' ? 3 : 0, ll: '규칙', rl: '탐색', sel: structure },
-      motivation: { l: motivation === 'P' ? 3 : 0, r: motivation === 'G' ? 3 : 0, ll: '과정', rl: '목표', sel: motivation },
-      energy: { l: energy === 'D' ? 3 : 0, r: energy === 'S' ? 3 : 0, ll: '동적', rl: '정적', sel: energy },
-    };
-  }, [parsed, profileCode]);
 
   return (
-    <main style={{ minHeight: '100vh', background: '#0D0D0D', color: '#fff', padding: '16px', display: 'grid', placeItems: 'center' }}>
-      <section style={{ width: '100%', maxWidth: 460, borderRadius: 18, border: '1px solid #2A2A2A', background: 'linear-gradient(160deg,#141414,#1B1B1B)', padding: 18 }}>
-        <p style={{ fontSize: 11, color: '#A2A2A2', letterSpacing: '.08em', fontWeight: 700, marginBottom: 8 }}>MOVE SHARED RESULT</p>
-        <h1 style={{ fontSize: 26, lineHeight: 1.25, fontWeight: 900, marginBottom: 12 }}>
-          {payload.name}의 유형은
-          <br />
-          <span style={{ color: accentColor }}>
-            {profileEmoji ? `${profileEmoji} ` : ''}
-            {payload.profileName}
-          </span>
-        </h1>
-        {profileCode ? (
+    <main style={{ minHeight: '100vh', background: '#0D0D0D', color: '#fff', padding: '16px 16px 40px' }}>
+      <div ref={wrapRef} style={{ width: '100%', maxWidth: 430, margin: '0 auto' }}>
+        <div style={{ height: CARD_H * scale, position: 'relative' }}>
           <div
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              marginBottom: 10,
-              padding: '5px 10px',
-              borderRadius: 999,
-              border: `1px solid ${accentColor}88`,
-              background: `${accentColor}1E`,
-              color: accentColor,
-              fontSize: 12,
-              fontWeight: 900,
-              letterSpacing: '.08em',
+              position: 'absolute',
+              top: 0,
+              left: '50%',
+              transform: `translateX(-50%) scale(${scale})`,
+              transformOrigin: 'top center',
+              width: CARD_W,
             }}
           >
-            {profileCode}
-          </div>
-        ) : null}
-        <p
-          style={{
-            fontSize: 14,
-            color: '#E4E4E4',
-            lineHeight: 1.6,
-            borderLeft: `3px solid ${accentColor}`,
-            paddingLeft: 12,
-            marginBottom: 14,
-          }}
-        >
-          &quot;{payload.catchcopy}&quot;
-        </p>
-
-        <div style={{ marginBottom: 12 }}>
-          <p style={{ fontSize: 13, color: '#9A9A9A', marginBottom: 8 }}>강점 포인트</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {payload.strengths.slice(0, 1).map((item, idx) => (
-              <span
-                key={idx}
-                style={{
-                  padding: '6px 9px',
-                  borderRadius: 999,
-                  border: `1px solid ${accentColor}66`,
-                  background: `${accentColor}22`,
-                  fontSize: 12,
-                  color: '#EFEFEF',
-                }}
-              >
-                {item}
-              </span>
-            ))}
+            <ShareResultCard
+              displayName={payload.name}
+              profileCode={profileCode}
+              profileName={payload.profileName}
+              catchcopy={payload.catchcopy}
+              strengths={payload.strengths}
+              recommendedActivity={payload.activity}
+              bd={radarBreakdown}
+              color={accentColor}
+            />
           </div>
         </div>
+      </div>
 
-        <div style={{ borderRadius: 12, background: `${accentColor}1F`, border: `1px solid ${accentColor}4D`, padding: '11px 12px', marginBottom: 16 }}>
-          <p style={{ fontSize: 12, color: accentColor, marginBottom: 6, fontWeight: 700 }}>추천 활동</p>
-          <p style={{ fontSize: 14, color: '#FFFBE7', lineHeight: 1.5, fontWeight: 700 }}>{payload.activity}</p>
-        </div>
-
-        {radarBreakdown ? (
-          <div style={{ borderRadius: 12, border: '1px solid #2A2A2A', background: '#121212', padding: '10px 12px', marginBottom: 14 }}>
-            <p style={{ fontSize: 12, color: '#9A9A9A', marginBottom: 8, fontWeight: 700 }}>움직임 그래프</p>
-            <Radar bd={radarBreakdown} col={accentColor} />
-          </div>
-        ) : null}
-
-        <a
-          href="https://www.instagram.com/spokedu_kids?igsh=M2ZmYWZxMzRxenVt&utm_source=qr"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: 'block', textDecoration: 'none', background: 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)', borderRadius: '16px', padding: '2px', marginBottom: 10 }}
-        >
-          <div
-            style={{
-              background: '#111',
-              borderRadius: '14px',
-              padding: '16px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '11px',
-                  flexShrink: 0,
-                  background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <i className="fa-brands fa-instagram" style={{ fontSize: '20px', color: '#fff' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginBottom: '2px' }}>스포키듀 인스타그램</div>
-                <div style={{ fontSize: '12px', color: '#AAAAAA' }}>@spokedu_kids · 수업 현장 영상 보러가기 →</div>
-              </div>
-            </div>
-            <span style={{ fontSize: 16, fontWeight: 900, color: '#F0F0F0' }}>↗</span>
-          </div>
-        </a>
-
+      <div style={{ width: '100%', maxWidth: 430, margin: '20px auto 0' }}>
         <Link
           href={moveReportHref}
           style={{
@@ -236,10 +167,10 @@ export default function MoveReportSharedContent() {
         >
           나도 MOVE 리포트 해보기
         </Link>
-        <p style={{ margin: '10px 2px 0', color: '#8F8F8F', fontSize: 11, lineHeight: 1.45, textAlign: 'center' }}>
+        <p style={{ margin: '12px 4px 0', color: '#8F8F8F', fontSize: 11, lineHeight: 1.45, textAlign: 'center' }}>
           본 결과는 관찰형 유형 리포트이며, 의료적 진단을 대체하지 않습니다.
         </p>
-      </section>
+      </div>
     </main>
   );
 }

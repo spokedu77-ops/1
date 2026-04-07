@@ -4,11 +4,7 @@ interface IntroProps {
   onStart: () => void;
 }
 
-/** 고정 띠: 두 줄로 균형 있게 (한 줄은 좁은 화면에서 가로 스크롤) */
-const INTRO_FIXED_LINES = [
-  'MOVE 리포트 · 16가지 유형 · 3만+ 아이',
-  '연세대 체육교육학과 출신 개발 · 무료 테스트',
-] as const;
+const INTRO_FIXED_LINE = '연세대 체육교육학과 출신 개발 · 무료 테스트';
 
 /** 인트로: 브랜딩 + 고정 안내 띠(비스크롤) + CTA */
 export default function Intro({ onStart }: IntroProps) {
@@ -226,12 +222,7 @@ export default function Intro({ onStart }: IntroProps) {
               wordBreak: 'keep-all',
             }}
           >
-            {INTRO_FIXED_LINES.map((line, i) => (
-              <span key={i}>
-                {i > 0 ? <br /> : null}
-                {line}
-              </span>
-            ))}
+            {INTRO_FIXED_LINE}
           </p>
         </div>
       </div>

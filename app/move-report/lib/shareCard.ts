@@ -43,6 +43,24 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
   return blob;
 }
 
+/** blob을 새 탭 HTML 안의 <img>로 표시(iOS 등에서 직접 blob URL만 열면 깨질 수 있음) */
+export function openImageBlobInNewTab(blob: Blob): boolean {
+  if (typeof window === 'undefined') return false;
+  const url = URL.createObjectURL(blob);
+  const w = window.open('', '_blank', 'noopener,noreferrer');
+  if (!w) {
+    URL.revokeObjectURL(url);
+    return false;
+  }
+  const safeSrc = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>MOVE 카드</title><style>body{margin:0;background:#0d0d0d;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}img{max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5)}</style></head><body><img src="${safeSrc}" alt="MOVE 요약 카드"/></body></html>`;
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  window.setTimeout(() => URL.revokeObjectURL(url), 180_000);
+  return true;
+}
+
 export function downloadPng(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

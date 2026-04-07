@@ -45,7 +45,19 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
         </div>
 
         <div className="anim-rise" style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ fontSize: '44px', marginBottom: '12px', animation: 'floatY 3s ease-in-out infinite' }}>✨</div>
+          <div
+            style={{
+              marginBottom: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              animation: 'floatY 3s ease-in-out infinite',
+            }}
+          >
+            <span style={{ fontFamily: 'Black Han Sans,sans-serif', fontSize: '22px', color: '#fff', letterSpacing: '-0.02em' }}>스포키듀</span>
+            <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: '18px', letterSpacing: '0.18em', color: '#FF4B1F' }}>SPOKEDU</span>
+          </div>
           <h2
             style={{
               fontFamily: 'Black Han Sans,sans-serif',

@@ -1,3 +1,5 @@
+import { P } from '../data/profiles';
+
 export type MoveReportSharePayloadCompactV5 = {
   v: 5;
   profileKey: string;
@@ -9,6 +11,9 @@ type CompactSharePayloadV5 = {
   k: string;
   g: string;
 };
+
+/** v5 + 4자리 유형키 + 8자리 그래프(0–3) = 13자, base64 JSON 대비 짧은 공유 URL */
+const COMPACT_V5_RE = /^5([CI][RE][PG][DS])([0-3]{8})$/;
 
 function encodeBase64(binary: string): string {
   if (typeof btoa === 'function') return btoa(binary);
@@ -44,26 +49,38 @@ export function buildMoveReportShareUrl(
   origin: string,
   payload: MoveReportSharePayloadCompactV5
 ): string {
-  const compact: CompactSharePayloadV5 = {
-    v: 5,
-    k: payload.profileKey,
-    g: payload.graphCode,
-  };
-  const encoded = toBase64Url(JSON.stringify(compact));
-  return `${origin}/move-report/shared?d=${encoded}`;
+  const { profileKey, graphCode } = payload;
+  if (!COMPACT_V5_RE.test(`5${profileKey}${graphCode}`)) {
+    const fallback: CompactSharePayloadV5 = { v: 5, k: profileKey, g: graphCode };
+    const encoded = toBase64Url(JSON.stringify(fallback));
+    return `${origin}/move-report/shared?d=${encodeURIComponent(encoded)}`;
+  }
+  const short = `5${profileKey}${graphCode}`;
+  return `${origin}/move-report/shared?d=${encodeURIComponent(short)}`;
 }
 
 export function parseMoveReportSharePayload(
   raw: string | null
 ): MoveReportSharePayloadCompactV5 | null {
   if (!raw) return null;
+  const trimmed = raw.trim();
+
+  const compact = COMPACT_V5_RE.exec(trimmed);
+  if (compact) {
+    const profileKey = compact[1];
+    const graphCode = compact[2];
+    if (!(profileKey in P)) return null;
+    return { v: 5, profileKey, graphCode };
+  }
+
   try {
-    const decoded = fromBase64Url(raw);
+    const decoded = fromBase64Url(trimmed);
     const parsed = JSON.parse(decoded) as Partial<CompactSharePayloadV5>;
 
     if (parsed.v === 5) {
       if (typeof parsed.k !== 'string') return null;
       if (typeof parsed.g !== 'string' || !/^[0-3]{8}$/.test(parsed.g)) return null;
+      if (!(parsed.k in P)) return null;
       return {
         v: 5,
         profileKey: parsed.k,

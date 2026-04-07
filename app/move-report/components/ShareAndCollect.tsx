@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { BreakdownResult, Profile } from '../types';
 import ShareResultCard from './ShareResultCard';
-import { copyTextToClipboard, downloadPng, makeShareCardBlob } from '../lib/shareCard';
+import { copyTextToClipboard, downloadPng, makeShareCardBlob, openImageBlobInNewTab } from '../lib/shareCard';
 import { trackMoveReportEvent } from '../lib/events';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 import { buildMoveReportShareUrl } from '../lib/shareLink';
@@ -67,7 +67,7 @@ const secondaryBtn = (disabled: boolean): CSSProperties => ({
   opacity: disabled ? 0.55 : 1,
 });
 
-/** 연락처 저장 후 이미지 저장(다운로드) · 결과 링크 복사 */
+/** 연락처 저장 후 이미지 새 창으로 열기(저장) · 결과 링크 복사 */
 export default function ShareAndCollect({ p, displayName, profileKey, bd, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
@@ -114,6 +114,10 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
     setBusy('download');
     try {
       const blob = await makeShareCardBlob(cardRef.current);
+      if (openImageBlobInNewTab(blob)) {
+        flash('새 창에서 이미지를 길게 눌러 저장하거나 다운로드해 주세요.');
+        return;
+      }
       downloadPng(blob, fileName);
       flash('저장되었습니다');
     } catch (e) {

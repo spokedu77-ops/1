@@ -1,122 +1,64 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-interface LoadingProps {
-  name: string;
-}
-
-/** 원본 HTML 로딩 (단계 리스트) */
-export default function Loading({ name }: LoadingProps) {
-  const [step, setStep] = useState(0);
-  useEffect(() => {
-    const t1 = window.setTimeout(() => setStep(1), 700);
-    const t2 = window.setTimeout(() => setStep(2), 1500);
-    return () => {
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-    };
-  }, []);
-
-  const steps = ['행동 지표 수집 중…', '성향 패턴 분석 중…', '무브 리포트 생성 중…'];
-  const display = name.trim() || '우리 아이';
-
+/** 보고서 직전: 움직임 없이 SPOKEDU 워드마크만 (다크·트렌디) */
+export default function Loading() {
   return (
     <div
       style={{
         minHeight: '100dvh',
-        background: '#0D0D0D',
+        background: '#0A0A0A',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '24px',
+        padding: '32px',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ textAlign: 'center', maxWidth: 300 }}>
-        <div style={{ position: 'relative', width: '72px', height: '72px', margin: '0 auto 28px' }}>
-          <div style={{ position: 'absolute', inset: 0, border: '2px solid #2A2A2A', borderRadius: '50%' }} />
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              border: '2px solid #FF4B1F',
-              borderRadius: '50%',
-              borderTopColor: 'transparent',
-              animation: 'spin 1s linear infinite',
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              inset: '10px',
-              background: '#1A1A1A',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px',
-            }}
-          >
-            ✨
-          </div>
-        </div>
-        <h2
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse 80% 50% at 50% 40%, rgba(255,75,31,.12) 0%, transparent 55%)',
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: '-20%',
+          right: '-15%',
+          width: '55vw',
+          maxWidth: 420,
+          height: 420,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,75,31,.08) 0%, transparent 65%)',
+          pointerEvents: 'none',
+        }}
+      />
+      <div style={{ position: 'relative', textAlign: 'center', zIndex: 1 }}>
+        <div
           style={{
-            fontFamily: 'Black Han Sans,sans-serif',
-            fontSize: '22px',
-            color: '#fff',
-            marginBottom: '6px',
-            lineHeight: 1.3,
+            fontFamily: 'Bebas Neue,sans-serif',
+            fontSize: 'clamp(52px, 16vw, 88px)',
+            lineHeight: 1,
+            letterSpacing: '0.32em',
+            color: '#FF4B1F',
+            fontWeight: 400,
+            textShadow: '0 0 48px rgba(255,75,31,.35), 0 2px 0 rgba(0,0,0,.4)',
           }}
         >
-          {display}의 리포트
-          <br />
-          완성 중이에요
-        </h2>
-        <p style={{ fontSize: '13px', color: '#A8A8A8', marginBottom: '28px', lineHeight: 1.6, wordBreak: 'keep-all' }}>
-          1만 시간의 체육 수업 데이터를
-          <br />
-          분석하고 있어요
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-          {steps.map((s, i) => (
-            <div
-              key={s}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '10px 14px',
-                borderRadius: '10px',
-                background: step >= i ? '#1A1A1A' : 'transparent',
-                border: `1px solid ${step >= i ? '#2A2A2A' : 'transparent'}`,
-                transition: 'all .4s',
-                opacity: step >= i ? 1 : 0.3,
-              }}
-            >
-              <div
-                style={{
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                  background: step > i ? '#FF4B1F' : step === i ? '#2A2A2A' : '#1A1A1A',
-                  border: `1.5px solid ${step > i ? '#FF4B1F' : step === i ? '#FF4B1F' : '#333'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all .3s',
-                }}
-              >
-                {step > i ? <i className="fa-solid fa-check" style={{ fontSize: '8px', color: '#fff' }} /> : null}
-                {step === i ? (
-                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#FF4B1F', animation: 'mr-html-pulse 1.2s infinite' }} />
-                ) : null}
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: step >= i ? '#ccc' : '#444' }}>{s}</span>
-            </div>
-          ))}
+          SPOKEDU
         </div>
+        <div
+          style={{
+            width: 'min(200px, 55vw)',
+            height: 3,
+            margin: '20px auto 0',
+            borderRadius: 2,
+            background: 'linear-gradient(90deg, #FF4B1F, rgba(255,75,31,.15), transparent)',
+          }}
+        />
       </div>
     </div>
   );

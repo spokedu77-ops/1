@@ -67,6 +67,10 @@ export default function Result({
   const [reportExpanded, setReportExpanded] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     const t = window.setTimeout(() => setRevealed(true), 100);
     return () => window.clearTimeout(t);
   }, []);

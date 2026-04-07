@@ -5,13 +5,14 @@ import { parseMoveReportSharePayload } from '../lib/shareLink';
 import { P } from '../data/profiles';
 
 type PageProps = {
-  searchParams?: {
-    d?: string;
-  };
+  /** Next.js 15+ : searchParams는 Promise */
+  searchParams?: Promise<{ d?: string | string[] }>;
 };
 
-export function generateMetadata({ searchParams }: PageProps): Metadata {
-  const raw = searchParams?.d ?? null;
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = searchParams ? await searchParams : undefined;
+  const d = params?.d;
+  const raw = typeof d === 'string' ? d : Array.isArray(d) ? d[0] ?? null : null;
   const parsed = parseMoveReportSharePayload(raw);
   const payload = !parsed
     ? null
