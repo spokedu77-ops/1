@@ -3,7 +3,13 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { BreakdownResult, Profile } from '../types';
 import ShareResultCard from './ShareResultCard';
-import { copyTextToClipboard, downloadPng, makeShareCardBlob, openImageBlobInNewTab } from '../lib/shareCard';
+import {
+  copyTextToClipboard,
+  downloadPng,
+  fillImageViewerWindow,
+  makeShareCardBlob,
+  openImageViewerWindowSync,
+} from '../lib/shareCard';
 import { trackMoveReportEvent } from '../lib/events';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 import { buildMoveReportShareUrl } from '../lib/shareLink';
@@ -112,15 +118,46 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
       return;
     }
     setBusy('download');
+    const viewer = openImageViewerWindowSync();
     try {
+      if (!viewer) {
+        const blob = await makeShareCardBlob(cardRef.current);
+        downloadPng(blob, fileName);
+        flash('팝업이 차단되어 다운로드로 저장했어요.');
+        return;
+      }
+      try {
+        viewer.document.open();
+        viewer.document.write(
+          '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>MOVE</title>' +
+            '<style>html,body{margin:0;min-height:100%;background:#0d0d0d;color:#9a9a9a;display:flex;align-items:center;justify-content:center;font:15px system-ui,sans-serif}</style></head><body>이미지 준비 중…</body></html>',
+        );
+        viewer.document.close();
+      } catch {
+        /* noop */
+      }
+
       const blob = await makeShareCardBlob(cardRef.current);
-      if (await openImageBlobInNewTab(blob)) {
+      const filled = await fillImageViewerWindow(viewer, blob);
+      if (filled) {
         flash('새 창에서 이미지를 길게 눌러 저장하거나 다운로드해 주세요.');
         return;
+      }
+      try {
+        viewer.close();
+      } catch {
+        /* noop */
       }
       downloadPng(blob, fileName);
       flash('저장되었습니다');
     } catch (e) {
+      if (viewer) {
+        try {
+          viewer.close();
+        } catch {
+          /* noop */
+        }
+      }
       const message = e instanceof Error ? e.message : '이미지 생성 중 오류가 발생했어요. 다시 시도해 주세요.';
       flash(message);
     } finally {

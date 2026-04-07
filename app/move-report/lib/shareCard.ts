@@ -57,31 +57,63 @@ function readBlobAsDataUrl(blob: Blob): Promise<string> {
 }
 
 /**
- * 새 탭에 PNG 표시. iOS Safari는 부모가 만든 blob: URL을 자식 문서의 img에 넣으면 흰 화면만 나오는 경우가 많아,
- * data URL로 읽은 뒤 새 창 script 경로로 img.src에 직접 할당한다.
+ * iOS Safari: 터치 직후가 아닌 `await` 뒤에 호출되는 `window.open()`은 새 탭은 열리지만
+ * 문서에 쓰기가 막혀 흰 화면만 남는 경우가 많음 → 반드시 클릭 핸들러에서 **동기로** 먼저 연 뒤,
+ * `fillImageViewerWindow`로 내용을 채운다.
  */
-export async function openImageBlobInNewTab(blob: Blob): Promise<boolean> {
-  if (typeof window === 'undefined') return false;
+export function openImageViewerWindowSync(): Window | null {
+  if (typeof window === 'undefined') return null;
+  return window.open('about:blank', '_blank');
+}
+
+/**
+ * 이미 연 `about:blank` 창에 PNG 표시. data URL + img (blob URL은 새 문서 img에서 iOS가 자주 실패).
+ */
+export async function fillImageViewerWindow(w: Window, blob: Blob): Promise<boolean> {
   let dataUrl: string;
   try {
     dataUrl = await readBlobAsDataUrl(blob);
   } catch {
     return false;
   }
-  const w = window.open('', '_blank', 'noopener,noreferrer');
-  if (!w) return false;
-  w.document.open();
-  w.document.write(
-    '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>MOVE 카드</title>' +
-      '<style>body{margin:0;background:#0d0d0d;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}' +
-      'img{max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5)}</style></head><body></body></html>',
-  );
-  w.document.close();
-  const img = w.document.createElement('img');
-  img.alt = 'MOVE 요약 카드';
-  img.src = dataUrl;
-  w.document.body.appendChild(img);
-  return true;
+  try {
+    const doc = w.document;
+    doc.open();
+    doc.write(
+      '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><title>MOVE 카드</title>' +
+        '<style>*{box-sizing:border-box}html,body{margin:0;padding:0;min-height:100%;background:#0d0d0d}' +
+        'body{display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-left));padding-bottom:max(12px,env(safe-area-inset-bottom))}' +
+        'img{max-width:100%;height:auto;display:block;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5)}</style></head><body></body></html>',
+    );
+    doc.close();
+    const img = doc.createElement('img');
+    img.alt = 'MOVE 요약 카드';
+    img.decoding = 'async';
+    const loaded = await new Promise<boolean>((resolve) => {
+      let settled = false;
+      const finish = (ok: boolean) => {
+        if (settled) return;
+        settled = true;
+        resolve(ok);
+      };
+      img.onload = () => finish(true);
+      img.onerror = () => finish(false);
+      // iOS에서 onload/onerror 콜백이 유실되는 경우 대비
+      window.setTimeout(() => finish(false), 3500);
+      img.src = dataUrl;
+      doc.body.appendChild(img);
+    });
+    if (loaded) return true;
+  } catch {
+    // 아래 location 폴백으로 진행
+  }
+  try {
+    // 최종 폴백: 문서 렌더링 대신 data URL을 직접 로드
+    w.location.replace(dataUrl);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function downloadPng(blob: Blob, fileName: string): void {

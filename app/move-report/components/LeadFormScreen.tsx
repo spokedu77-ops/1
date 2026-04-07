@@ -48,15 +48,12 @@ export default function LeadFormScreen({ onSubmit, onSkip }: Props) {
           <div
             style={{
               marginBottom: '14px',
-              display: 'flex',
-              flexDirection: 'column',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '4px',
               animation: 'floatY 3s ease-in-out infinite',
             }}
           >
-            <span style={{ fontFamily: 'Black Han Sans,sans-serif', fontSize: '22px', color: '#fff', letterSpacing: '-0.02em' }}>스포키듀</span>
-            <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: '18px', letterSpacing: '0.18em', color: '#FF4B1F' }}>SPOKEDU</span>
+            <span style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: '24px', letterSpacing: '0.08em', color: '#FF4B1F' }}>spokedu</span>
           </div>
           <h2
             style={{
