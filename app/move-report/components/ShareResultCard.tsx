@@ -1,5 +1,8 @@
 'use client';
 
+import type { BreakdownResult } from '../types';
+import Radar from './Radar';
+
 interface ShareResultCardProps {
   displayName: string;
   profileCode: string;
@@ -7,12 +10,7 @@ interface ShareResultCardProps {
   catchcopy: string;
   strengths: string[];
   recommendedActivity: string;
-  graph: {
-    social: number;
-    structure: number;
-    motivation: number;
-    energy: number;
-  };
+  bd: BreakdownResult;
   color: string;
 }
 
@@ -23,7 +21,7 @@ export default function ShareResultCard({
   catchcopy,
   strengths,
   recommendedActivity,
-  graph,
+  bd,
   color,
 }: ShareResultCardProps) {
   const safeName = displayName || '우리';
@@ -33,7 +31,7 @@ export default function ShareResultCard({
       data-share-card="move-report"
       style={{
         width: 1080,
-        minHeight: 1350,
+        minHeight: 1580,
         background: 'linear-gradient(165deg,#090909 0%,#121212 52%,#171717 100%)',
         color: '#fff',
         borderRadius: 40,
@@ -171,21 +169,9 @@ export default function ShareResultCard({
           }}
         >
           <div style={{ fontSize: 24, fontWeight: 800, color: '#F4F4F4', marginBottom: 12, letterSpacing: '-0.01em' }}>움직임 그래프</div>
-          {(
-            [
-              { k: '사회성', v: graph.social },
-              { k: '탐구', v: graph.structure },
-              { k: '동기', v: graph.motivation },
-              { k: '에너지', v: graph.energy },
-            ] as const
-          ).map((item) => (
-            <div key={item.k} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 9 }}>
-              <div style={{ width: 98, fontSize: 19, color: '#BFBFBF', fontWeight: 700 }}>{item.k}</div>
-              <div style={{ flex: 1, height: 14, borderRadius: 999, background: '#262626', overflow: 'hidden' }}>
-                <div style={{ width: `${Math.max(0, Math.min(item.v, 3)) * 33.33}%`, height: '100%', background: color }} />
-              </div>
-            </div>
-          ))}
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 4px' }}>
+            <Radar bd={bd} col={color} maxWidthPx={480} />
+          </div>
         </div>
 
         <div

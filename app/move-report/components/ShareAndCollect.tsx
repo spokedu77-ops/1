@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
-import type { Profile } from '../types';
+import type { BreakdownResult, Profile } from '../types';
 import ShareResultCard from './ShareResultCard';
-import { copyTextToClipboard, downloadPng, makeShareCardBlob, sharePng, shareTextAndUrl } from '../lib/shareCard';
+import { copyTextToClipboard, downloadPng, makeShareCardBlob } from '../lib/shareCard';
 import { trackMoveReportEvent } from '../lib/events';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 import { buildMoveReportShareUrl } from '../lib/shareLink';
@@ -12,12 +12,7 @@ interface ShareAndCollectProps {
   p: Profile;
   displayName: string;
   profileKey: string;
-  graph: {
-    social: number;
-    structure: number;
-    motivation: number;
-    energy: number;
-  };
+  bd: BreakdownResult;
   graphCode: string;
   flash: (msg: string) => void;
   onLeadSubmit: (phone: string) => Promise<boolean>;
@@ -72,13 +67,12 @@ const secondaryBtn = (disabled: boolean): CSSProperties => ({
   opacity: disabled ? 0.55 : 1,
 });
 
-/** 연락처 저장 후 앨범 저장(공유 시트) · 결과 링크 공유 */
-export default function ShareAndCollect({ p, displayName, profileKey, graph, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
+/** 연락처 저장 후 이미지 저장(다운로드) · 결과 링크 복사 */
+export default function ShareAndCollect({ p, displayName, profileKey, bd, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState<'download' | 'share' | null>(null);
-  const [openingImage, setOpeningImage] = useState(false);
   const [savingLead, setSavingLead] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
 
@@ -98,8 +92,6 @@ export default function ShareAndCollect({ p, displayName, profileKey, graph, gra
           graphCode,
         })
       : '';
-  const shareTitle = '스포키듀 MOVE 리포트';
-  const shareText = `${displayName || '우리 아이'} 결과를 공유했어요. 확인하고 나도 해보세요!`;
   const shareKey = useMemo(() => {
     if (!shareUrl) return null;
     try {
@@ -112,7 +104,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, graph, gra
 
   const saveToAlbum = async () => {
     if (!ready) {
-      flash('전화번호 저장 후 앨범 저장/링크 공유가 가능해요.');
+      flash('전화번호 저장 후 이용할 수 있어요.');
       return;
     }
     if (!cardRef.current) {
@@ -122,13 +114,8 @@ export default function ShareAndCollect({ p, displayName, profileKey, graph, gra
     setBusy('download');
     try {
       const blob = await makeShareCardBlob(cardRef.current);
-      const openedShareSheet = await sharePng(blob, shareTitle, `${shareText} 사진으로 저장해 보세요.`, fileName);
-      if (openedShareSheet) {
-        flash('공유 창이 열렸어요. 사진 앱에 저장해 주세요.');
-        return;
-      }
       downloadPng(blob, fileName);
-      flash('공유 시트를 지원하지 않아 파일 다운로드로 저장을 시도했어요.');
+      flash('저장되었습니다');
     } catch (e) {
       const message = e instanceof Error ? e.message : '이미지 생성 중 오류가 발생했어요. 다시 시도해 주세요.';
       flash(message);
@@ -137,53 +124,19 @@ export default function ShareAndCollect({ p, displayName, profileKey, graph, gra
     }
   };
 
-  const openImageForManualSave = async () => {
-    if (!ready) {
-      flash('전화번호 저장 후 이용할 수 있어요.');
-      return;
-    }
-    if (!cardRef.current) {
-      flash('요약 카드 준비 중이에요. 잠시 후 다시 시도해 주세요.');
-      return;
-    }
-    setOpeningImage(true);
-    try {
-      const blob = await makeShareCardBlob(cardRef.current);
-      const imageUrl = URL.createObjectURL(blob);
-      const opened = window.open(imageUrl, '_blank', 'noopener,noreferrer');
-      if (opened) {
-        flash('새 창에서 이미지를 길게 눌러 저장해 주세요.');
-      } else {
-        const copied = await copyTextToClipboard(shareUrl);
-        flash(copied ? '새 창이 차단되어 링크를 복사했어요. 공유로 전달해 주세요.' : '새 창이 차단됐어요. 아래 결과 링크 공유를 이용해 주세요.');
-      }
-      window.setTimeout(() => URL.revokeObjectURL(imageUrl), 60_000);
-    } catch {
-      flash('이미지 열기에 실패했어요. 결과 링크 공유를 이용해 주세요.');
-    } finally {
-      setOpeningImage(false);
-    }
-  };
-
   const shareResultLink = async () => {
     if (!ready) {
-      flash('전화번호 저장 후 결과 링크 공유가 가능해요.');
+      flash('전화번호 저장 후 링크를 복사할 수 있어요.');
       return;
     }
     setBusy('share');
     try {
-      const shared = await shareTextAndUrl(shareTitle, shareText, shareUrl);
-      if (shared) {
-        flash('결과 링크 공유 창을 열었어요.');
-        void trackMoveReportEvent({ eventName: 'share_clicked', shareKey });
-        return;
-      }
       const copied = await copyTextToClipboard(shareUrl);
       if (copied) {
-        flash('결과 링크를 복사했어요.');
+        flash('링크가 복사되었습니다');
         void trackMoveReportEvent({ eventName: 'share_clicked', shareKey });
       } else {
-        flash('이 기기에서는 공유가 제한돼요. 주소창 링크를 직접 복사해 주세요.');
+        flash('복사에 실패했어요. 잠시 후 다시 시도해 주세요.');
       }
     } finally {
       setBusy(null);
@@ -375,71 +328,20 @@ export default function ShareAndCollect({ p, displayName, profileKey, graph, gra
                 fontSize: '11px',
                 fontWeight: 800,
                 letterSpacing: '0.08em',
-                color: '#A8A8A8',
-                marginBottom: '6px',
-              }}
-            >
-              준비 완료
-            </div>
-            <p style={{ fontSize: '15px', fontWeight: 800, color: '#F0F0F0', margin: '0 0 6px', lineHeight: 1.45, wordBreak: 'keep-all' }}>
-              이제 이미지 저장 또는 링크 공유를 할 수 있어요
-            </p>
-            <p style={{ fontSize: '12px', color: '#8B8B8B', margin: '0 0 14px', lineHeight: 1.5 }}>
-              아래는 공유용 카드 미리보기예요.
-            </p>
-
-            <div
-              style={{
-                borderRadius: '12px',
-                overflow: 'hidden',
-                border: '1px solid #2A2A2A',
-                background: '#0A0A0A',
-                marginBottom: '16px',
-                height: '220px',
-                position: 'relative',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: '10px',
-                  transform: 'translateX(-50%) scale(0.185)',
-                  transformOrigin: 'top center',
-                  width: '1080px',
-                }}
-              >
-                <ShareResultCard
-                  displayName={displayName}
-                  profileCode={profileKey}
-                  profileName={p.char}
-                  catchcopy={p.catchcopy}
-                  strengths={strengths}
-                  recommendedActivity={recommendedActivity}
-                  graph={graph}
-                  color={p.col}
-                />
-              </div>
-            </div>
-
-            <div
-              style={{
-                fontSize: '11px',
-                fontWeight: 800,
-                letterSpacing: '0.08em',
                 color: p.col,
                 marginBottom: '10px',
               }}
             >
               2단계 · 저장 및 공유
             </div>
+
             <div style={BTN_ROW}>
               <button
                 type="button"
                 onClick={() => void saveToAlbum()}
-                disabled={ctaBusy || openingImage}
+                disabled={ctaBusy}
                 aria-busy={busy === 'download'}
-                style={primaryBtn(p.col, ctaBusy || openingImage)}
+                style={primaryBtn(p.col, ctaBusy)}
               >
                 <i className="fa-solid fa-image" aria-hidden />
                 {busy === 'download' ? '이미지 준비 중…' : '앨범에 저장'}
@@ -447,66 +349,60 @@ export default function ShareAndCollect({ p, displayName, profileKey, graph, gra
               <button
                 type="button"
                 onClick={() => void shareResultLink()}
-                disabled={ctaBusy || openingImage}
+                disabled={ctaBusy}
                 aria-busy={busy === 'share'}
-                style={secondaryBtn(ctaBusy || openingImage)}
+                style={secondaryBtn(ctaBusy)}
               >
-                <i className="fa-solid fa-share-nodes" aria-hidden />
-                {busy === 'share' ? '링크 준비 중…' : '결과 링크 공유'}
+                <i className="fa-solid fa-link" aria-hidden />
+                {busy === 'share' ? '복사 중…' : '결과 링크 복사'}
               </button>
             </div>
-            <div style={{ marginTop: 8 }}>
-              <button
-                type="button"
-                onClick={() => void openImageForManualSave()}
-                disabled={ctaBusy || openingImage}
-                style={{
-                  width: '100%',
-                  minHeight: '40px',
-                  borderRadius: '10px',
-                  border: '1px dashed #3A3A3A',
-                  background: '#121212',
-                  color: '#BDBDBD',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: ctaBusy || openingImage ? 'default' : 'pointer',
-                  opacity: ctaBusy || openingImage ? 0.6 : 1,
-                }}
-              >
-                {openingImage ? '이미지 여는 중…' : '저장이 안 되면: 이미지 새 창에서 길게 눌러 저장'}
-              </button>
-            </div>
-            <div
+
+            <a
+              href="https://www.instagram.com/spokedu_kids?igsh=M2ZmYWZxMzRxenVt&utm_source=qr"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
-                marginTop: 10,
-                borderRadius: 12,
-                border: `1px solid ${p.col}55`,
-                background: `linear-gradient(135deg,${p.col}20,${p.col}10)`,
-                padding: '10px 12px',
+                display: 'block',
+                textDecoration: 'none',
+                background: 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)',
+                borderRadius: '16px',
+                padding: '2px',
+                marginTop: 12,
               }}
             >
-              <p style={{ margin: 0, fontSize: '11px', color: '#D3D3D3', lineHeight: 1.5 }}>
-                공유 링크로 주변 부모님도 바로 테스트할 수 있어요.
-              </p>
-              <a
-                href="https://www.instagram.com/spokedu_kids?igsh=M2ZmYWZxMzRxenVt&utm_source=qr"
-                target="_blank"
-                rel="noopener noreferrer"
+              <div
                 style={{
-                  marginTop: 6,
-                  display: 'inline-flex',
+                  background: '#111',
+                  borderRadius: '14px',
+                  padding: '18px 20px',
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
-                  color: '#FFFFFF',
-                  fontWeight: 900,
-                  fontSize: 13,
-                  textDecoration: 'none',
+                  justifyContent: 'space-between',
                 }}
               >
-                <span>Instagram @spokedu_kids</span>
-                <span style={{ color: p.col }}>↗</span>
-              </a>
-            </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '12px',
+                      flexShrink: 0,
+                      background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <i className="fa-brands fa-instagram" style={{ fontSize: '22px', color: '#fff' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginBottom: '3px' }}>스포키듀 인스타그램</div>
+                    <div style={{ fontSize: '12px', color: '#AAAAAA' }}>@spokedu_kids · 수업 현장 영상 보러가기 →</div>
+                  </div>
+                </div>
+              </div>
+            </a>
           </div>
         )}
       </div>
@@ -530,7 +426,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, graph, gra
             catchcopy={p.catchcopy}
             strengths={strengths}
             recommendedActivity={recommendedActivity}
-            graph={graph}
+            bd={bd}
             color={p.col}
           />
         </div>

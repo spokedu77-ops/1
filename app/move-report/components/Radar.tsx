@@ -5,10 +5,12 @@ import type { BreakdownResult } from '../types';
 interface RadarProps {
   bd: BreakdownResult;
   col: string;
+  /** 기본 240. 공유 카드 등에서 동일 그래프를 크게 쓸 때 지정 */
+  maxWidthPx?: number;
 }
 
 /** 원본 HTML 8축 레이더 (C,P,E,D,I,G,R,S) */
-export default function Radar({ bd, col }: RadarProps) {
+export default function Radar({ bd, col, maxWidthPx = 240 }: RadarProps) {
   const cx = 110;
   const cy = 110;
   const mr = 80;
@@ -43,7 +45,7 @@ export default function Radar({ bd, col }: RadarProps) {
   return (
     <svg
       viewBox="0 0 220 220"
-      style={{ width: '100%', maxWidth: 240, display: 'block', margin: '0 auto' }}
+      style={{ width: '100%', maxWidth: maxWidthPx, display: 'block', margin: '0 auto' }}
       aria-hidden
     >
       {[0.33, 0.66, 1].map((l, i) => {

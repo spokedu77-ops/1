@@ -54,32 +54,6 @@ export function downloadPng(blob: Blob, fileName: string): void {
   URL.revokeObjectURL(url);
 }
 
-export async function sharePng(blob: Blob, title: string, text: string, fileName: string): Promise<boolean> {
-  if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return false;
-  const file = new File([blob], fileName, { type: 'image/png' });
-  const canShare =
-    typeof (navigator as Navigator & { canShare?: (data?: ShareData) => boolean }).canShare === 'function'
-      ? (navigator as Navigator & { canShare?: (data?: ShareData) => boolean }).canShare?.({ files: [file] })
-      : true;
-  if (!canShare) return false;
-  try {
-    await navigator.share({ title, text, files: [file] });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export async function shareTextAndUrl(title: string, text: string, url: string): Promise<boolean> {
-  if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return false;
-  try {
-    await navigator.share({ title, text, url });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function copyTextToClipboard(text: string): Promise<boolean> {
   const value = text.trim();
   if (!value || typeof navigator === 'undefined') return false;

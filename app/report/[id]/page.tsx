@@ -23,12 +23,20 @@ function renderSmartText(content: string) {
   const raw = String(content ?? '').replace(/\r\n/g, '\n').trim();
   if (!raw) return null;
 
-  const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean);
-  const bulletLike = lines.filter((l) => /^[-*•]\s+/.test(l) || /^\d+[.)]\s+/.test(l));
+  const lines = raw.split('\n').map((l) => l.trim());
+  const nonEmpty = lines.filter(Boolean);
+  if (nonEmpty.length === 0) return null;
 
-  // If the author wrote bullets/numbering, keep them as a list.
-  if (bulletLike.length >= 2 && bulletLike.length >= Math.max(2, Math.floor(lines.length * 0.6))) {
-    const items = lines.map((l) => l.replace(/^[-*•]\s+/, '').replace(/^\d+[.)]\s+/, '').trim()).filter(Boolean);
+  // `-항목` / `1.항목` 처럼 공백 없이 쓴 경우도 인식 (수업안 혼합 형식과 구분용)
+  const isBulletLine = (l: string) => /^[-*•](\s|\S)/.test(l);
+  const isNumberedLine = (l: string) => /^\d+[.)](\s|\S)/.test(l);
+
+  const allBullet = nonEmpty.length >= 2 && nonEmpty.every(isBulletLine);
+  const allNumbered = nonEmpty.length >= 2 && nonEmpty.every(isNumberedLine);
+
+  // 번호 섹션 + 하위 `-` + 일반 줄이 섞이면 자동 목록으로 바꾸지 않음 (줄마다 불릿이 생기는 문제 방지)
+  if (allBullet) {
+    const items = nonEmpty.map((l) => l.replace(/^[-*•]\s*/, '').trim()).filter(Boolean);
     return (
       <ul className="list-disc pl-5 space-y-2">
         {items.map((it, idx) => (
@@ -40,15 +48,22 @@ function renderSmartText(content: string) {
     );
   }
 
-  // Otherwise preserve paragraphs.
-  const paragraphs = raw.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  if (allNumbered) {
+    const items = nonEmpty.map((l) => l.replace(/^\d+[.)]\s*/, '').trim()).filter(Boolean);
+    return (
+      <ol className="list-decimal pl-5 space-y-2 marker:font-medium">
+        {items.map((it, idx) => (
+          <li key={idx} className="text-[15px] leading-[1.9] text-slate-700 font-medium break-keep pl-1">
+            {it}
+          </li>
+        ))}
+      </ol>
+    );
+  }
+
   return (
-    <div className="space-y-3">
-      {paragraphs.map((p, idx) => (
-        <p key={idx} className="text-[15px] leading-[1.9] text-slate-700 font-medium break-keep whitespace-pre-wrap">
-          {p}
-        </p>
-      ))}
+    <div className="text-[15px] leading-[1.9] text-slate-700 font-medium break-keep whitespace-pre-wrap">
+      {raw}
     </div>
   );
 }

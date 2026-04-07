@@ -398,7 +398,13 @@ export default function ClassListPageV2() {
 
       setGroups(displayRows);
     } catch (err) {
-      devLogger.error(err);
+      const msg =
+        err instanceof Error
+          ? err.message
+          : err && typeof err === 'object' && 'message' in err
+            ? String((err as { message?: unknown }).message)
+            : String(err);
+      devLogger.error('[classes-v2 list] fetchGroups failed:', msg, err);
     } finally {
       setLoading(false);
     }

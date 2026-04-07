@@ -4,12 +4,14 @@ interface IntroProps {
   onStart: () => void;
 }
 
-/** 원본 HTML 인트로 (고정 티커 + CTA) */
-export default function Intro({ onStart }: IntroProps) {
-  const tickerItems = Array(6)
-    .fill(['MOVE 리포트', '16가지 유형', '3만+ 아이', '연세대 체육교육학과 출신 개발', '무료 테스트', 'SPOKEDU'])
-    .flat();
+/** 고정 띠: 두 줄로 균형 있게 (한 줄은 좁은 화면에서 가로 스크롤) */
+const INTRO_FIXED_LINES = [
+  'MOVE 리포트 · 16가지 유형 · 3만+ 아이',
+  '연세대 체육교육학과 출신 개발 · 무료 테스트',
+] as const;
 
+/** 인트로: 브랜딩 + 고정 안내 띠(비스크롤) + CTA */
+export default function Intro({ onStart }: IntroProps) {
   return (
     <div className="page mr-intro-page" style={{ background: '#0D0D0D', position: 'relative', overflow: 'hidden', minHeight: '100dvh' }}>
       <div
@@ -46,11 +48,33 @@ export default function Intro({ onStart }: IntroProps) {
         }}
       />
 
-      <div style={{ position: 'relative', zIndex: 1, padding: '0 24px', paddingTop: '52px', paddingBottom: '140px' }}>
-        <div className="anim-rise" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '44px' }}>
-          <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: '18px', letterSpacing: '.12em', color: '#FF4B1F' }}>SPOKEDU</div>
-          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg,#FF4B1F,transparent)' }} />
-          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.1em', color: '#777' }}>ORIGINAL</div>
+      <div style={{ position: 'relative', zIndex: 1, padding: '0 24px', paddingTop: '40px', paddingBottom: '200px' }}>
+        {/* 브랜드: 영문 워드마크만 */}
+        <div className="anim-rise" style={{ marginBottom: '36px', textAlign: 'center' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '10px',
+            }}
+          >
+            <div
+              style={{
+                fontFamily: 'Bebas Neue,sans-serif',
+                fontSize: 'clamp(44px, 12vw, 64px)',
+                lineHeight: 1,
+                letterSpacing: '0.22em',
+                color: '#FF4B1F',
+                fontWeight: 900,
+                textShadow: '0 0 32px rgba(255,75,31,.45)',
+                WebkitTextStroke: '0.5px rgba(255,75,31,.35)',
+              }}
+            >
+              SPOKEDU
+            </div>
+            <div style={{ width: '160px', height: '4px', borderRadius: '2px', background: 'linear-gradient(90deg,#FF4B1F,transparent)' }} />
+          </div>
         </div>
 
         <div className="anim-rise d1" style={{ marginBottom: '8px' }}>
@@ -147,12 +171,12 @@ export default function Intro({ onStart }: IntroProps) {
             background: '#222',
             borderRadius: '16px',
             overflow: 'hidden',
-            marginBottom: '48px',
+            marginBottom: '32px',
           }}
         >
           {[
-            { n: '3만+', l: '스포키듀 누적 수업 참여' },
-            { n: '1만+', l: '스포키듀 누적 수업 시간' },
+            { n: '3만+', l: '누적 수업 참여' },
+            { n: '1만+', l: '누적 수업 시간' },
             { n: '16종', l: '성향 프로파일' },
           ].map((s, i) => (
             <div key={i} style={{ background: '#161616', padding: '18px 12px', textAlign: 'center' }}>
@@ -169,13 +193,46 @@ export default function Intro({ onStart }: IntroProps) {
         </div>
       </div>
 
-      <div className="ticker-wrap" style={{ position: 'fixed', bottom: '116px', left: 0, right: 0, zIndex: 10 }}>
-        <div className="ticker-inner">
-          {tickerItems.map((t, i) => (
-            <span key={i} className="ticker-item">
-              {t}
-            </span>
-          ))}
+      {/* 움직이는 티커 제거 → 고정 문구 띠 */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '116px',
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          padding: '0 16px',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 430,
+            margin: '0 auto',
+            padding: '12px 14px',
+            borderRadius: '12px',
+            border: '1px solid #2A2A2A',
+            background: 'rgba(22,22,22,.92)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontSize: '11px',
+              fontWeight: 600,
+              color: '#9A9A9A',
+              lineHeight: 1.55,
+              textAlign: 'center',
+              wordBreak: 'keep-all',
+            }}
+          >
+            {INTRO_FIXED_LINES.map((line, i) => (
+              <span key={i}>
+                {i > 0 ? <br /> : null}
+                {line}
+              </span>
+            ))}
+          </p>
         </div>
       </div>
 
