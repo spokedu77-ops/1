@@ -25,6 +25,7 @@ export default function ShareResultCard({
   color,
 }: ShareResultCardProps) {
   const safeName = displayName || '우리';
+  const subject = /\s*아이$/.test(safeName) ? safeName.replace(/\s*아이$/, '') : safeName;
 
   return (
     <div
@@ -105,7 +106,7 @@ export default function ShareResultCard({
           </span>
         </div>
         <div style={{ fontSize: 62, fontWeight: 900, lineHeight: 1.14, marginBottom: 14, letterSpacing: '-0.02em' }}>
-          {safeName} 아이는
+          {subject || '우리'} 아이는
           <br />
           <span style={{ color, textShadow: `0 0 26px ${color}55` }}>{profileName}</span>
         </div>

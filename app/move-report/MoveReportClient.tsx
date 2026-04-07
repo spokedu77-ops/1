@@ -129,7 +129,6 @@ export default function MoveReportClient() {
         const data = (await res.json()) as { ok?: boolean; error?: string };
         if (data.ok) {
           setSavedPhone(normalizedPhone);
-          flash('📱 저장 완료! 요약 카드 이미지로 저장/공유할 수 있어요.');
           void trackMoveReportEvent({ eventName: 'lead_saved', shareKey });
           return true;
         }

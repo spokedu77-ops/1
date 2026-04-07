@@ -60,7 +60,7 @@ export async function GET(req: Request) {
                   energy: profileCode[3] === 'D' ? 3 : 0,
                 };
           return {
-            name: '우리 아이',
+            name: '우리',
             profileName: profile.char,
             profileCode,
             catchcopy: profile.catchcopy,
@@ -98,7 +98,7 @@ export async function GET(req: Request) {
   }
 
   const accent = normalizeHexColor(payload.color);
-  const profile = `${payload.emoji ? `${payload.emoji} ` : ''}${payload.profileName}`;
+  const subject = /\s*아이$/.test(payload.name) ? payload.name.replace(/\s*아이$/, '') : payload.name;
 
   return new ImageResponse(
     React.createElement(
@@ -133,17 +133,16 @@ export async function GET(req: Request) {
         {
           style: {
             display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            alignItems: 'baseline',
-            fontSize: 60,
+            flexDirection: 'column',
+            fontSize: 62,
             fontWeight: 900,
-            lineHeight: 1.15,
+            lineHeight: 1.1,
             marginBottom: 20,
+            letterSpacing: '-0.02em',
           },
         },
-        `${payload.name}의 유형은 `,
-        React.createElement('span', { style: { color: accent } }, profile)
+        React.createElement('span', null, `${subject || '우리'} 아이는`),
+        React.createElement('span', { style: { color: accent, marginTop: 4 } }, payload.profileName),
       ),
       React.createElement(
         'div',

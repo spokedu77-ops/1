@@ -6,9 +6,7 @@ import ShareResultCard from './ShareResultCard';
 import {
   copyTextToClipboard,
   downloadPng,
-  fillImageViewerWindow,
   makeShareCardBlob,
-  openImageViewerWindowSync,
 } from '../lib/shareCard';
 import { trackMoveReportEvent } from '../lib/events';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
@@ -90,6 +88,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
   const strengths = useMemo(() => p.str.slice(0, 1), [p.str]);
   const recommendedActivity = p.env[0] || p.shortTip;
   const fileName = `${displayName || '아이'}_MOVE_요약카드.png`;
+  const shareTitle = '스포키듀 MOVE 리포트';
   const shareUrl =
     typeof window !== 'undefined'
       ? buildMoveReportShareUrl(window.location.origin, {
@@ -118,46 +117,43 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
       return;
     }
     setBusy('download');
-    const viewer = openImageViewerWindowSync();
     try {
-      if (!viewer) {
-        const blob = await makeShareCardBlob(cardRef.current);
-        downloadPng(blob, fileName);
-        flash('팝업이 차단되어 다운로드로 저장했어요.');
-        return;
-      }
-      try {
-        viewer.document.open();
-        viewer.document.write(
-          '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>MOVE</title>' +
-            '<style>html,body{margin:0;min-height:100%;background:#0d0d0d;color:#9a9a9a;display:flex;align-items:center;justify-content:center;font:15px system-ui,sans-serif}</style></head><body>이미지 준비 중…</body></html>',
-        );
-        viewer.document.close();
-      } catch {
-        /* noop */
-      }
-
       const blob = await makeShareCardBlob(cardRef.current);
-      const filled = await fillImageViewerWindow(viewer, blob);
-      if (filled) {
-        flash('새 창에서 이미지를 길게 눌러 저장하거나 다운로드해 주세요.');
-        return;
-      }
-      try {
-        viewer.close();
-      } catch {
-        /* noop */
+      const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean }) : null;
+      if (nav && typeof nav.share === 'function') {
+        const file = new File([blob], fileName, { type: 'image/png' });
+        // iOS 안정성: files-only가 가장 성공률이 높음
+        const primary: ShareData = { files: [file] };
+        const secondary: ShareData = { files: [file], title: shareTitle };
+        const tryShare = async (data: ShareData): Promise<'shared' | 'cancelled' | 'failed'> => {
+          const canShare = typeof nav.canShare === 'function' ? nav.canShare(data) : true;
+          if (!canShare) return 'failed';
+          try {
+            await nav.share(data);
+            return 'shared';
+          } catch (e) {
+            if (e instanceof Error && e.name === 'AbortError') return 'cancelled';
+            return 'failed';
+          }
+        };
+
+        const r1 = await tryShare(primary);
+        if (r1 === 'shared') {
+          flash('공유 시트에서 "이미지 저장"을 눌러주세요.');
+          return;
+        }
+        if (r1 === 'cancelled') return;
+
+        const r2 = await tryShare(secondary);
+        if (r2 === 'shared') {
+          flash('공유 시트에서 "이미지 저장"을 눌러주세요.');
+          return;
+        }
+        if (r2 === 'cancelled') return;
       }
       downloadPng(blob, fileName);
-      flash('저장되었습니다');
+      flash('기기 제한으로 파일 다운로드로 저장했어요.');
     } catch (e) {
-      if (viewer) {
-        try {
-          viewer.close();
-        } catch {
-          /* noop */
-        }
-      }
       const message = e instanceof Error ? e.message : '이미지 생성 중 오류가 발생했어요. 다시 시도해 주세요.';
       flash(message);
     } finally {
@@ -173,12 +169,12 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
     setBusy('share');
     try {
       const copied = await copyTextToClipboard(shareUrl);
-      if (copied) {
-        flash('링크가 복사되었습니다');
-        void trackMoveReportEvent({ eventName: 'share_clicked', shareKey });
-      } else {
+      if (!copied) {
         flash('복사에 실패했어요. 잠시 후 다시 시도해 주세요.');
+        return;
       }
+      flash('링크가 복사되었습니다');
+      void trackMoveReportEvent({ eventName: 'share_clicked', shareKey });
     } finally {
       setBusy(null);
     }
@@ -394,8 +390,8 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
                 aria-busy={busy === 'share'}
                 style={secondaryBtn(ctaBusy)}
               >
-                <i className="fa-solid fa-link" aria-hidden />
-                {busy === 'share' ? '복사 중…' : '결과 링크 복사'}
+                <i className="fa-solid fa-share-nodes" aria-hidden />
+                {busy === 'share' ? '공유 준비 중…' : '결과 링크 공유'}
               </button>
             </div>
 
