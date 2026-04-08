@@ -86,21 +86,31 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
             <div
               key={i}
               style={{
-                fontFamily: 'Bebas Neue, sans-serif',
-                fontSize: 50,
+                position: 'relative',
                 width: 86,
                 height: 86,
                 borderRadius: 20,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 background: `${p.col}22`,
                 border: `2px solid ${p.col}60`,
-                color: p.col,
                 boxShadow: `0 0 20px ${p.col}30`,
               }}
             >
-              {c}
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  fontSize: 50,
+                  lineHeight: 1,
+                  color: p.col,
+                  display: 'block',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {c}
+              </span>
             </div>
           ))}
         </div>
