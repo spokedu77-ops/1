@@ -81,31 +81,9 @@ function SharedFallback() {
 }
 
 export default function MoveReportSharedPage() {
-  const title = '공유된 MOVE 리포트 결과';
-  const description = '공유받은 MOVE 리포트 결과를 확인하고, 나도 테스트해보세요.';
-  const image = '/move-report/opengraph-image';
   return (
-    <>
-      <head>
-        <title>{title}</title>
-        <meta name="description" content={description} />
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="SPOKEDU" />
-        <meta property="og:locale" content="ko_KR" />
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
-        <meta property="og:image" content={image} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:type" content="image/png" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={image} />
-      </head>
-      <Suspense fallback={<SharedFallback />}>
-        <MoveReportSharedContent />
-      </Suspense>
-    </>
+    <Suspense fallback={<SharedFallback />}>
+      <MoveReportSharedContent />
+    </Suspense>
   );
 }

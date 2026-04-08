@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
 import Sidebar from './components/Sidebar';
 import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
@@ -19,6 +19,7 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
   const hideSidebar = isFullscreenPath(pathname);
+  const [isDesktopOpen, setIsDesktopOpen] = useState(true);
   const fullscreenWrapStyle = hideSidebar
     ? { minHeight: 'var(--viewport-height-px, 100vh)', height: 'var(--viewport-height-px, 100vh)', width: '100vw', maxWidth: '100%' }
     : undefined;
@@ -48,13 +49,18 @@ export default function RootLayout({
             style={fullscreenWrapStyle}
           >
             {/* 사이드바 조건부 렌더링 */}
-            {!hideSidebar && <Sidebar />}
+            {!hideSidebar && (
+              <Sidebar
+                isDesktopOpen={isDesktopOpen}
+                onToggleDesktop={() => setIsDesktopOpen(v => !v)}
+              />
+            )}
 
             <main 
               className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                 hideSidebar
                   ? 'flex flex-col min-h-0 pr-0 mr-0 overflow-x-hidden'
-                  : 'pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0 md:ml-64'
+                  : `pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0${isDesktopOpen ? ' md:ml-64' : ' md:ml-0'}`
               }`}
             >
               {children}

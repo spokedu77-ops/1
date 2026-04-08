@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Sidebar from '@/app/components/Sidebar';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import type { ClassGroup, EditableSession } from '@/app/admin/classes-shared/types';
@@ -671,7 +670,6 @@ export default function ClassListPageV2() {
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <Sidebar />
       <main className="flex-1 min-w-0 px-3 sm:px-6 py-4 sm:py-6 overflow-auto">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="min-w-0">

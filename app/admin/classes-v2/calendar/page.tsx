@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
-import Sidebar from "@/app/components/Sidebar";
 import { useClassManagement } from "@/app/admin/classes-shared/hooks/useClassManagement";
 import type { SessionEvent } from "@/app/admin/classes-shared/types";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase/browser";
@@ -242,7 +241,6 @@ export default function ClassManagementCalendarV2() {
 
   return (
     <div className="flex min-h-screen bg-white text-slate-900 w-full min-w-0">
-      <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <nav className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-white flex flex-wrap justify-between items-center gap-2 z-10">
           <div className="flex items-center gap-2 sm:gap-4 flex-wrap min-w-0">

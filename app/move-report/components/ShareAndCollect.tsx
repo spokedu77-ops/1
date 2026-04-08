@@ -481,6 +481,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
           opacity: 0,
           zIndex: -1,
           pointerEvents: 'none',
+          width: 1080,
         }}
       >
         <div ref={cardRef}>

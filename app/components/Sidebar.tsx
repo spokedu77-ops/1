@@ -21,9 +21,16 @@ import {
   Medal,
   Sparkles,
   Building2,
+  PanelLeftOpen,
+  PanelLeftClose,
 } from 'lucide-react';
 
-export default function Sidebar() {
+interface SidebarProps {
+  isDesktopOpen?: boolean;
+  onToggleDesktop?: () => void;
+}
+
+export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: SidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -133,7 +140,7 @@ export default function Sidebar() {
       <aside className={`
         fixed left-0 top-0 z-[260] flex h-screen w-64 flex-col bg-[#1e293b] text-white transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
-        md:translate-x-0 md:flex md:shrink-0
+        ${isDesktopOpen ? 'md:translate-x-0' : 'md:-translate-x-full'}
       `}>
         <div className="p-6 border-b border-slate-700 hidden md:block text-left">
           <h1 className="text-xl font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
@@ -229,6 +236,17 @@ export default function Sidebar() {
           </button>
         </div>
       </aside>
+
+      {/* 데스크톱 전용 사이드바 토글 버튼 (좌하단 고정) */}
+      {onToggleDesktop && (
+        <button
+          onClick={onToggleDesktop}
+          className="fixed bottom-4 left-4 z-[300] hidden md:flex items-center justify-center w-10 h-10 rounded-xl bg-[#1e293b] text-slate-300 shadow-lg hover:bg-slate-700 hover:text-white transition-colors cursor-pointer"
+          title={isDesktopOpen ? '사이드바 닫기' : '사이드바 열기'}
+        >
+          {isDesktopOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+        </button>
+      )}
     </>
   );
 }
