@@ -5,7 +5,6 @@ import type { Profile } from '../types';
 import {
   copyTextToClipboard,
   downloadPng,
-  makeShareCardBlob,
 } from '../lib/shareCard';
 import { trackMoveReportEvent } from '../lib/events';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
@@ -109,20 +108,27 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
     return '공유창 또는 다운로드가 시작됩니다';
   };
 
+  const ogImageUrl = useMemo(() => {
+    if (!shareKey) return null;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/api/move-report/share-image?d=${encodeURIComponent(shareKey)}`;
+  }, [shareKey]);
+
   const saveToAlbum = async () => {
     if (!ready) {
       flash('전화번호 저장 후 이용할 수 있어요.');
       return;
     }
-    const heroEl = document.querySelector('[data-capture-hero]') as HTMLElement | null;
-    if (!heroEl) {
-      flash('결과 화면을 찾을 수 없어요. 페이지를 새로고침해 주세요.');
+    if (!ogImageUrl) {
+      flash('이미지 URL을 생성할 수 없어요. 페이지를 새로고침해 주세요.');
       return;
     }
     setBusy('download');
     let blob: Blob | null = null;
     try {
-      blob = await makeShareCardBlob(heroEl);
+      const res = await fetch(ogImageUrl);
+      if (!res.ok) throw new Error('이미지를 불러오지 못했어요.');
+      blob = await res.blob();
       const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean }) : null;
       if (nav && typeof nav.share === 'function') {
         const file = new File([blob], fileName, { type: 'image/png' });

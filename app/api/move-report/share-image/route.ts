@@ -38,12 +38,14 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const parsed = parseMoveReportSharePayload(searchParams.get('d'));
 
+  const cacheHeaders = { 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800' };
+
   if (!parsed) {
     const fontData = await loadKoreanFont('MOVE 리포트 공유 결과');
     const fonts = fontData
       ? [{ name: 'NotoKR', data: fontData, weight: 700 as const, style: 'normal' as const }]
       : [];
-    return new ImageResponse(
+    const res = new ImageResponse(
       React.createElement(
         'div',
         {
@@ -68,16 +70,20 @@ export async function GET(req: Request) {
       ),
       { width: 1200, height: 630, fonts },
     );
+    res.headers.set('Cache-Control', cacheHeaders['Cache-Control']);
+    return res;
   }
 
   const profile = P[parsed.profileKey];
   if (!profile) {
-    return new ImageResponse(
+    const empty = new ImageResponse(
       React.createElement('div', {
         style: { width: '100%', height: '100%', background: '#0A0A0A', display: 'flex' },
       }),
       { width: 1200, height: 630 },
     );
+    empty.headers.set('Cache-Control', cacheHeaders['Cache-Control']);
+    return empty;
   }
 
   const profileKey = parsed.profileKey;
@@ -105,7 +111,7 @@ export async function GET(req: Request) {
     ? [{ name: fontFamily, data: fontData, weight: 700 as const, style: 'normal' as const }]
     : [];
 
-  return new ImageResponse(
+  const main = new ImageResponse(
     React.createElement(
       'div',
       {
@@ -332,4 +338,6 @@ export async function GET(req: Request) {
     ),
     { width: 1200, height: 630, fonts },
   );
+  main.headers.set('Cache-Control', cacheHeaders['Cache-Control']);
+  return main;
 }
