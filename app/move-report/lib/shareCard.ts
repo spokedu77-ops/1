@@ -12,32 +12,24 @@ function dataUrlToBlob(dataUrl: string): Blob {
 }
 
 export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
-  // 폰트/레이아웃이 안정화된 뒤 캡처해야 모바일에서 빈 이미지가 줄어듭니다.
   if (typeof document !== 'undefined' && 'fonts' in document) {
     try {
       await (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts?.ready;
-    } catch {
-      // 폰트 준비 실패는 치명적이지 않으므로 캡처를 계속 진행합니다.
-    }
+    } catch { /* 무시 */ }
   }
-  await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
 
-  const width = node.offsetWidth;
-  const height = node.offsetHeight;
+  const prevY = window.scrollY;
+  node.scrollIntoView({ block: 'start', behavior: 'instant' as ScrollBehavior });
+  await new Promise((r) => setTimeout(r, 80));
 
   const canvas = await html2canvas(node, {
     backgroundColor: '#0A0A0A',
     scale: window.devicePixelRatio || 2,
     useCORS: true,
-    allowTaint: false,
-    imageTimeout: 15000,
-    removeContainer: true,
     logging: false,
-    width,
-    height,
-    windowWidth: Math.max(window.innerWidth, width),
-    windowHeight: Math.max(window.innerHeight, height),
   });
+
+  window.scrollTo({ top: prevY, behavior: 'instant' as ScrollBehavior });
 
   let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1));
   if (!blob) {
