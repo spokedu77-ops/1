@@ -113,11 +113,13 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: 10,
                 padding: '10px 20px',
                 borderRadius: 14,
                 background: `${p.col}18`,
                 border: `1.5px solid ${p.col}35`,
+                flex: 1,
               }}
             >
               <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 28, color: p.col, lineHeight: 1 }}>{item.code}</span>
