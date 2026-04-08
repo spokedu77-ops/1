@@ -97,6 +97,7 @@ export default function Result({
       >
         {/* 히어로 (공유용) */}
         <div
+          data-capture-hero
           style={{
             position: 'relative',
             overflow: 'hidden',

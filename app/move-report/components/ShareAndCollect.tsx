@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import type { Profile } from '../types';
-import ShareResultCard from './ShareResultCard';
 import {
   copyTextToClipboard,
   downloadPng,
@@ -77,7 +76,6 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState<'download' | 'share' | null>(null);
   const [savingLead, setSavingLead] = useState(false);
-  const cardRef = useRef<HTMLDivElement | null>(null);
 
   const normalizedSaved = normalizeMoveReportPhone(savedPhone);
   const normalizedInput = normalizeMoveReportPhone(phone);
@@ -116,14 +114,15 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
       flash('전화번호 저장 후 이용할 수 있어요.');
       return;
     }
-    if (!cardRef.current) {
-      flash('요약 카드 준비 중이에요. 잠시 후 다시 시도해 주세요.');
+    const heroEl = document.querySelector('[data-capture-hero]') as HTMLElement | null;
+    if (!heroEl) {
+      flash('결과 화면을 찾을 수 없어요. 페이지를 새로고침해 주세요.');
       return;
     }
     setBusy('download');
     let blob: Blob | null = null;
     try {
-      blob = await makeShareCardBlob(cardRef.current);
+      blob = await makeShareCardBlob(heroEl);
       const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean }) : null;
       if (nav && typeof nav.share === 'function') {
         const file = new File([blob], fileName, { type: 'image/png' });
@@ -469,26 +468,6 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
         )}
       </div>
 
-      <div
-        aria-hidden
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          opacity: 0,
-          zIndex: -1,
-          pointerEvents: 'none',
-          width: 1080,
-        }}
-      >
-        <div ref={cardRef}>
-          <ShareResultCard
-            displayName={displayName}
-            profileCode={profileKey}
-            p={p}
-          />
-        </div>
-      </div>
     </div>
   );
 }

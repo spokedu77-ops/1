@@ -22,16 +22,11 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
   }
   await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
 
-  // position:fixed 래퍼는 모바일 뷰포트 폭(예: 390px)으로 잡히지만,
-  // 실제 카드 요소(data-share-card)는 1080px 고정폭을 가집니다.
-  // 래퍼의 offsetWidth/scrollWidth를 쓰면 390px이 되어 우측이 잘리므로
-  // 카드 요소 자체에서 치수를 읽어야 합니다.
-  const cardEl = (node.querySelector('[data-share-card]') ?? node) as HTMLElement;
-  const width = cardEl.offsetWidth;
-  const height = cardEl.offsetHeight;
+  const width = node.offsetWidth;
+  const height = node.offsetHeight;
 
   const canvas = await html2canvas(node, {
-    backgroundColor: '#0D0D0D',
+    backgroundColor: '#0A0A0A',
     scale: window.devicePixelRatio || 2,
     useCORS: true,
     allowTaint: false,
@@ -42,8 +37,6 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
     height,
     windowWidth: Math.max(window.innerWidth, width),
     windowHeight: Math.max(window.innerHeight, height),
-    scrollX: 0,
-    scrollY: 0,
   });
 
   let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1));
