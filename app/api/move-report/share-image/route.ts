@@ -23,7 +23,8 @@ async function loadKoreanFont(characters: string): Promise<ArrayBuffer | null> {
     );
     if (!cssRes.ok) throw new Error('css fetch failed');
     const css = await cssRes.text();
-    const woff2Url = css.match(/url\(([^)]+\.woff2)\)/)?.[1];
+    // Google Fonts URL은 .woff2로 끝나지 않는 인코딩 URL이므로 format('woff2') 앞의 url(...) 추출
+    const woff2Url = css.match(/url\(([^)]+)\)\s*format\(['"]?woff2['"]?\)/)?.[1];
     if (!woff2Url) throw new Error('woff2 url not found');
     const fontRes = await fetch(woff2Url);
     if (!fontRes.ok) throw new Error('font fetch failed');
