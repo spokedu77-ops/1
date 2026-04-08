@@ -81,13 +81,11 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
         </div>
 
         {/* 유형코드 뱃지 I R G D */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginBottom: 36, alignItems: 'center' }}>
+        <div style={{ display: 'inline-flex', gap: 14, marginBottom: 36 }}>
           {profileCode.split('').map((c, i) => (
             <div
               key={i}
               style={{
-                fontFamily: 'Bebas Neue, sans-serif',
-                fontSize: 50,
                 width: 86,
                 height: 86,
                 borderRadius: 20,
@@ -96,24 +94,32 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
                 justifyContent: 'center',
                 background: `${p.col}22`,
                 border: `2px solid ${p.col}60`,
-                color: p.col,
                 boxShadow: `0 0 20px ${p.col}30`,
               }}
             >
-              {c}
+              <span
+                style={{
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  fontSize: 50,
+                  lineHeight: 1,
+                  color: p.col,
+                  display: 'block',
+                }}
+              >
+                {c}
+              </span>
             </div>
           ))}
         </div>
 
         {/* 코드 라벨 뱃지 */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 48 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 48 }}>
           {codeLabels.map((item, i) => (
             <div
               key={i}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
                 gap: 10,
                 padding: '10px 20px',
                 borderRadius: 14,
@@ -121,8 +127,28 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
                 border: `1.5px solid ${p.col}35`,
               }}
             >
-              <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 28, color: p.col, lineHeight: 1 }}>{item.code}</span>
-              <span style={{ fontSize: 22, color: 'rgba(255,255,255,.7)', fontWeight: 600 }}>{item.label}</span>
+              <span
+                style={{
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  fontSize: 28,
+                  lineHeight: 1,
+                  color: p.col,
+                  display: 'block',
+                }}
+              >
+                {item.code}
+              </span>
+              <span
+                style={{
+                  fontSize: 22,
+                  lineHeight: 1,
+                  color: 'rgba(255,255,255,.7)',
+                  fontWeight: 600,
+                  display: 'block',
+                }}
+              >
+                {item.label}
+              </span>
             </div>
           ))}
         </div>
@@ -135,7 +161,6 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
             background: `${p.col}18`,
             border: `1.5px solid ${p.col}40`,
             borderRadius: 18,
-            textAlign: 'center',
           }}
         >
           <p
@@ -154,18 +179,18 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
         </div>
 
         {/* 이모지 + 유형명 섹션 */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 40, textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 40, marginBottom: 40 }}>
           <div
             style={{
-              fontSize: 140,
+              fontSize: 150,
               lineHeight: 1,
               filter: `drop-shadow(0 0 40px ${p.col}80)`,
-              marginBottom: 24,
+              flexShrink: 0,
             }}
           >
             {p.em}
           </div>
-          <div>
+          <div style={{ paddingTop: 16 }}>
             <div
               style={{
                 fontSize: 26,
@@ -204,7 +229,7 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
         </div>
 
         {/* 키워드 태그 */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 40 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 40 }}>
           {p.kw.map((k, i) => (
             <span
               key={i}
@@ -242,7 +267,6 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
               lineHeight: 1.65,
               margin: 0,
               wordBreak: 'keep-all',
-              textAlign: 'center',
             }}
           >
             {p.desc}
