@@ -22,6 +22,10 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
   }
   await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
 
+  const rect = node.getBoundingClientRect();
+  const width = Math.max(Math.ceil(rect.width), node.scrollWidth, node.offsetWidth);
+  const height = Math.max(Math.ceil(rect.height), node.scrollHeight, node.offsetHeight);
+
   const canvas = await html2canvas(node, {
     backgroundColor: '#0D0D0D',
     scale: window.devicePixelRatio || 2,
@@ -30,6 +34,12 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
     imageTimeout: 15000,
     removeContainer: true,
     logging: false,
+    width,
+    height,
+    windowWidth: Math.max(window.innerWidth, width),
+    windowHeight: Math.max(window.innerHeight, height),
+    scrollX: 0,
+    scrollY: 0,
   });
 
   let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1));
