@@ -1,199 +1,266 @@
 'use client';
 
-import type { BreakdownResult } from '../types';
-import Radar from './Radar';
+import type { Profile } from '../types';
 
 interface ShareResultCardProps {
   displayName: string;
   profileCode: string;
-  profileName: string;
-  catchcopy: string;
-  strengths: string[];
-  recommendedActivity: string;
-  bd: BreakdownResult;
-  color: string;
+  p: Profile;
 }
 
-export default function ShareResultCard({
-  displayName,
-  profileCode,
-  profileName,
-  catchcopy,
-  strengths,
-  recommendedActivity,
-  bd,
-  color,
-}: ShareResultCardProps) {
-  const safeName = displayName || '우리';
-  const subject = /\s*아이$/.test(safeName) ? safeName.replace(/\s*아이$/, '') : safeName;
+export default function ShareResultCard({ displayName, profileCode, p }: ShareResultCardProps) {
+  const codeLabels = [
+    { code: profileCode[0] ?? '', label: profileCode[0] === 'C' ? '협동형' : '독립형' },
+    { code: profileCode[1] ?? '', label: profileCode[1] === 'R' ? '규칙 친화' : '탐구 지향' },
+    { code: profileCode[2] ?? '', label: profileCode[2] === 'P' ? '과정 중시' : '목표 지향' },
+    { code: profileCode[3] ?? '', label: profileCode[3] === 'D' ? '동적 에너지' : '정적 에너지' },
+  ];
 
   return (
     <div
       data-share-card="move-report"
       style={{
         width: 1080,
-        minHeight: 1580,
-        background: 'linear-gradient(165deg,#090909 0%,#121212 52%,#171717 100%)',
+        background: '#0A0A0A',
         color: '#fff',
-        borderRadius: 40,
-        border: '1px solid #2E2E2E',
-        padding: '66px 66px',
-        fontFamily: 'Noto Sans KR,sans-serif',
+        fontFamily: 'Noto Sans KR, sans-serif',
         boxSizing: 'border-box',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 24px 80px rgba(0,0,0,.45)',
+        padding: '90px 80px 70px',
       }}
     >
+      {/* 배경 장식 */}
       <div
         style={{
           position: 'absolute',
-          top: -160,
-          right: -120,
-          width: 540,
-          height: 540,
-          background: `radial-gradient(circle,${color}88 0%,${color}22 38%,transparent 72%)`,
+          top: '-15%',
+          right: '-8%',
+          width: '65%',
+          height: '65%',
+          background: `radial-gradient(circle,${p.col}40 0%,transparent 65%)`,
+          pointerEvents: 'none',
         }}
       />
       <div
         style={{
           position: 'absolute',
-          bottom: -150,
-          left: -100,
-          width: 440,
-          height: 440,
-          background: 'radial-gradient(circle,rgba(255,176,32,.18) 0%,transparent 70%)',
+          bottom: '5%',
+          left: '-8%',
+          width: '45%',
+          height: '45%',
+          background: 'radial-gradient(circle,rgba(255,176,32,.12) 0%,transparent 65%)',
+          pointerEvents: 'none',
         }}
       />
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background:
-            'linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,0) 18%,rgba(255,255,255,0) 82%,rgba(255,255,255,.04) 100%)',
+          opacity: 0.04,
+          backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)',
+          backgroundSize: '50px 50px',
           pointerEvents: 'none',
         }}
       />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* SPOKEDU 우상단 브랜딩 */}
         <div
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 12,
-            borderRadius: 999,
-            border: `1px solid ${color}66`,
-            background: `${color}20`,
-            padding: '10px 16px',
-            marginBottom: 18,
+            position: 'absolute',
+            top: -68,
+            right: 0,
+            fontFamily: 'Bebas Neue, sans-serif',
+            fontSize: 36,
+            letterSpacing: '.1em',
+            color: '#FF4B1F',
           }}
         >
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, boxShadow: `0 0 18px ${color}` }} />
-          <span style={{ fontSize: 22, letterSpacing: '.07em', color: '#ECECEC', fontWeight: 800 }}>MOVE RESULT CARD</span>
-          <span
+          SPOKEDU
+        </div>
+
+        {/* 유형코드 뱃지 I R G D */}
+        <div style={{ display: 'inline-flex', gap: 14, marginBottom: 36, alignItems: 'center' }}>
+          {profileCode.split('').map((c, i) => (
+            <div
+              key={i}
+              style={{
+                fontFamily: 'Bebas Neue, sans-serif',
+                fontSize: 50,
+                width: 86,
+                height: 86,
+                borderRadius: 20,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: `${p.col}22`,
+                border: `2px solid ${p.col}60`,
+                color: p.col,
+                boxShadow: `0 0 20px ${p.col}30`,
+              }}
+            >
+              {c}
+            </div>
+          ))}
+        </div>
+
+        {/* 코드 라벨 뱃지 */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 48 }}>
+          {codeLabels.map((item, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 20px',
+                borderRadius: 14,
+                background: `${p.col}18`,
+                border: `1.5px solid ${p.col}35`,
+              }}
+            >
+              <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 28, color: p.col, lineHeight: 1 }}>{item.code}</span>
+              <span style={{ fontSize: 22, color: 'rgba(255,255,255,.7)', fontWeight: 600 }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* 캐치카피 */}
+        <div
+          style={{
+            marginBottom: 48,
+            padding: '24px 30px',
+            background: `${p.col}18`,
+            border: `1.5px solid ${p.col}40`,
+            borderRadius: 18,
+          }}
+        >
+          <p
             style={{
-              marginLeft: 6,
-              padding: '4px 10px',
-              borderRadius: 999,
-              border: `1px solid ${color}99`,
-              fontSize: 18,
-              fontWeight: 900,
-              color,
-              letterSpacing: '.08em',
+              fontSize: 30,
+              fontWeight: 800,
+              color: '#fff',
+              margin: 0,
+              lineHeight: 1.4,
+              letterSpacing: '-.01em',
+              wordBreak: 'keep-all',
             }}
           >
-            {profileCode}
-          </span>
-        </div>
-        <div style={{ fontSize: 62, fontWeight: 900, lineHeight: 1.14, marginBottom: 14, letterSpacing: '-0.02em' }}>
-          {subject || '우리'} 아이는
-          <br />
-          <span style={{ color, textShadow: `0 0 26px ${color}55` }}>{profileName}</span>
-        </div>
-        <div
-          style={{
-            fontSize: 30,
-            lineHeight: 1.5,
-            color: '#EAEAEA',
-            background: 'rgba(255,255,255,.05)',
-            border: '1px solid rgba(255,255,255,.12)',
-            borderLeft: `8px solid ${color}`,
-            borderRadius: 24,
-            padding: '26px 28px',
-            marginBottom: 28,
-            wordBreak: 'keep-all',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,.08)',
-          }}
-        >
-          &quot;{catchcopy}&quot;
+            &quot;{p.catchcopy}&quot;
+          </p>
         </div>
 
-        <div
-          style={{
-            borderRadius: 24,
-            border: '1px solid #303030',
-            background: 'rgba(255,255,255,.03)',
-            padding: '22px 24px',
-            marginBottom: 20,
-          }}
-        >
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#F4F4F4', marginBottom: 12, letterSpacing: '-0.01em' }}>강점 키워드</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {strengths.map((item, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  borderRadius: 999,
-                  border: `1px solid ${color}66`,
-                  background: `${color}26`,
-                  padding: '9px 14px',
-                  fontSize: 22,
-                  color: '#F3F3F3',
-                  fontWeight: 700,
-                }}
-              >
-                {item}
-              </div>
-            ))}
+        {/* 이모지 + 유형명 섹션 */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 40, marginBottom: 40 }}>
+          <div
+            style={{
+              fontSize: 150,
+              lineHeight: 1,
+              filter: `drop-shadow(0 0 40px ${p.col}80)`,
+              flexShrink: 0,
+            }}
+          >
+            {p.em}
+          </div>
+          <div style={{ paddingTop: 16 }}>
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 700,
+                letterSpacing: '.08em',
+                color: p.col,
+                marginBottom: 14,
+              }}
+            >
+              {displayName || '우리 아이'}의 MOVE 유형
+            </div>
+            <div
+              style={{
+                fontFamily: 'Black Han Sans, sans-serif',
+                fontSize: 76,
+                color: '#fff',
+                lineHeight: 1.1,
+                letterSpacing: '-.01em',
+                textShadow: `0 0 50px ${p.col}50`,
+              }}
+            >
+              {p.char}
+            </div>
+            <div
+              style={{
+                fontFamily: 'Bebas Neue, sans-serif',
+                fontSize: 34,
+                letterSpacing: '.06em',
+                color: p.col,
+                marginTop: 12,
+              }}
+            >
+              {p.title}
+            </div>
           </div>
         </div>
 
-        <div
-          style={{
-            borderRadius: 24,
-            border: '1px solid #303030',
-            background: 'rgba(255,255,255,.025)',
-            padding: '20px 24px',
-            marginBottom: 20,
-          }}
-        >
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#F4F4F4', marginBottom: 12, letterSpacing: '-0.01em' }}>움직임 그래프</div>
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 4px' }}>
-            <Radar bd={bd} col={color} maxWidthPx={480} />
-          </div>
+        {/* 키워드 태그 */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 40 }}>
+          {p.kw.map((k, i) => (
+            <span
+              key={i}
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                padding: '10px 20px',
+                borderRadius: 10,
+                letterSpacing: '.04em',
+                background: 'rgba(255,255,255,.07)',
+                color: 'rgba(255,255,255,.75)',
+                border: '1px solid rgba(255,255,255,.12)',
+              }}
+            >
+              {k}
+            </span>
+          ))}
         </div>
 
+        {/* 설명 텍스트 */}
         <div
           style={{
-            borderRadius: 24,
-            border: `1px solid ${color}88`,
-            background: `linear-gradient(135deg,${color}24,${color}12)`,
-            padding: '24px 26px',
-            marginBottom: 32,
-            boxShadow: `inset 0 1px 0 ${color}44`,
+            background: 'rgba(0,0,0,.5)',
+            border: '1px solid #2A2A2A',
+            borderLeft: `6px solid ${p.col}`,
+            borderRadius: 18,
+            padding: '34px 38px',
           }}
         >
-          <div style={{ fontSize: 23, color: '#EDEDED', fontWeight: 800, marginBottom: 8 }}>추천 활동</div>
-          <div style={{ fontSize: 30, lineHeight: 1.4, color: '#FFFFFF', fontWeight: 800, letterSpacing: '-0.01em' }}>
-            {recommendedActivity}
-          </div>
+          <p
+            style={{
+              fontSize: 26,
+              fontWeight: 500,
+              color: '#CCCCCC',
+              lineHeight: 1.65,
+              margin: 0,
+              wordBreak: 'keep-all',
+            }}
+          >
+            {p.desc}
+          </p>
         </div>
 
-        <div style={{ borderTop: '1px solid #2F2F2F', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 21, color: '#A5A5A5', fontWeight: 600 }}>Instagram @spokedu_kids</div>
-          <div style={{ fontSize: 31, color: '#FF4B1F', fontWeight: 900, letterSpacing: '.04em' }}>SPOKEDU</div>
+        {/* 하단 브랜딩 */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 40,
+            paddingTop: 24,
+            borderTop: '1px solid #2A2A2A',
+          }}
+        >
+          <div style={{ fontSize: 20, color: '#A5A5A5', fontWeight: 600 }}>Instagram @spokedu_kids</div>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 32, color: '#FF4B1F', letterSpacing: '.05em' }}>
+            SPOKEDU
+          </div>
         </div>
       </div>
     </div>

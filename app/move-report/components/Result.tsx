@@ -614,7 +614,6 @@ export default function Result({
                   displayName={displayName}
                   profileKey={key}
                   graphCode={`${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`}
-                  bd={bd}
                   flash={flash}
                   onLeadSubmit={onLeadSubmit}
                   savedPhone={savedPhone}

@@ -154,20 +154,15 @@ function MyClassesContent() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
-      const userData = { user: session.user };
 
       const { monday, sunday } = getWeekRange(new Date(currentDate));
 
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('*')
-        .eq('created_by', userData.user.id)
-        .gte('start_at', monday.toISOString())
-        .lte('start_at', sunday.toISOString())
-        .order('start_at', { ascending: true });
-
-      if (error) throw error;
-      setSessions(data || []);
+      const res = await fetch(
+        `/api/teacher/my-schedule?from=${monday.toISOString()}&to=${sunday.toISOString()}`
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setSessions(json.data || []);
     } catch (err) {
       devLogger.error(err);
       setScheduleError('일정을 불러오지 못했습니다.');

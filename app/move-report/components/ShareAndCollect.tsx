@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
-import type { BreakdownResult, Profile } from '../types';
+import type { Profile } from '../types';
 import ShareResultCard from './ShareResultCard';
 import {
   copyTextToClipboard,
@@ -16,7 +16,6 @@ interface ShareAndCollectProps {
   p: Profile;
   displayName: string;
   profileKey: string;
-  bd: BreakdownResult;
   graphCode: string;
   flash: (msg: string) => void;
   onLeadSubmit: (phone: string) => Promise<boolean>;
@@ -72,7 +71,7 @@ const secondaryBtn = (disabled: boolean): CSSProperties => ({
 });
 
 /** 연락처 저장 후 이미지 새 창으로 열기(저장) · 결과 링크 복사 */
-export default function ShareAndCollect({ p, displayName, profileKey, bd, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
+export default function ShareAndCollect({ p, displayName, profileKey, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
   const [sent, setSent] = useState(false);
@@ -85,8 +84,6 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
   const alreadySaved = !!normalizedSaved;
   const active = !!normalizedInput && consent;
   const ready = sent || alreadySaved;
-  const strengths = useMemo(() => p.str.slice(0, 1), [p.str]);
-  const recommendedActivity = p.env[0] || p.shortTip;
   const fileName = `${displayName || '아이'}_MOVE_요약카드.png`;
   const shareTitle = '스포키듀 MOVE 리포트';
   const shareUrl =
@@ -488,12 +485,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, bd, graphC
           <ShareResultCard
             displayName={displayName}
             profileCode={profileKey}
-            profileName={p.char}
-            catchcopy={p.catchcopy}
-            strengths={strengths}
-            recommendedActivity={recommendedActivity}
-            bd={bd}
-            color={p.col}
+            p={p}
           />
         </div>
       </div>
