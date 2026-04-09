@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { compute } from './lib/compute';
 import { trackMoveReportEvent } from './lib/events';
 import { normalizeMoveReportPhone } from './lib/phone';
+import { buildMoveReportShareUrl } from './lib/shareLink';
 import { Qs } from './data/questions';
 import type { AgeGroup, ComputeResult } from './types';
 import Intro from './components/Intro';
@@ -143,14 +144,25 @@ export default function MoveReportClient() {
   );
 
   const handleShare = useCallback(async () => {
+    let url = window.location.href;
+    if (result) {
+      const bd = result.bd;
+      const graphCode = `${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`;
+      url = buildMoveReportShareUrl(window.location.origin, {
+        v: 5,
+        profileKey: result.key,
+        graphCode,
+        displayName: result.displayName !== '아이' ? result.displayName : undefined,
+      });
+    }
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(url);
       flash('결과 링크를 복사했어요.');
       void trackMoveReportEvent({ eventName: 'share_clicked', shareKey });
     } catch {
       flash('링크 복사를 지원하지 않는 환경이에요.');
     }
-  }, [flash, shareKey]);
+  }, [flash, result, shareKey]);
 
   const onAnswer = useCallback(
     (v: string) => {

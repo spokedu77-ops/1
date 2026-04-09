@@ -19,7 +19,11 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
   }
 
   const rect = node.getBoundingClientRect();
-  const isOffscreen = rect.right < 0 || rect.left > window.innerWidth;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  /** 뷰포트 밖(수평·수직) — 화면에 보이는 노드에는 onclone을 쓰지 않아 레이아웃 왜곡 방지 */
+  const isOffscreen =
+    rect.bottom <= 0 || rect.top >= vh || rect.right <= 0 || rect.left >= vw;
 
   const capture = async (): Promise<Blob> => {
     const canvas = await html2canvas(node, {
@@ -27,8 +31,17 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
       scale: window.devicePixelRatio || 2,
       useCORS: true,
       logging: false,
-      /** flex/line-height 세로정렬이 캔버스와 어긋나는 경우 완화(브라우저와 동일에 가깝게) */
-      foreignObjectRendering: true,
+      ...(isOffscreen
+        ? {
+            onclone: (_clonedDoc, cloned) => {
+              if (!(cloned instanceof HTMLElement)) return;
+              cloned.style.position = 'absolute';
+              cloned.style.left = '0';
+              cloned.style.top = '0';
+              cloned.style.margin = '0';
+            },
+          }
+        : {}),
     });
     let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1));
     if (!blob) {

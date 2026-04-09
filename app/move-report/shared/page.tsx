@@ -5,6 +5,9 @@ import { parseMoveReportSharePayload } from '../lib/shareLink';
 import { getMoveReportMetadataBaseUrl } from '../lib/siteUrl';
 import { P } from '../data/profiles';
 
+/** 매 요청마다 Host 기준으로 og:url·og:image 절대 경로를 잡기 (크롤러 미리보기 깨짐 방지) */
+export const dynamic = 'force-dynamic';
+
 type PageProps = {
   /** Next.js 15+ : searchParams는 Promise */
   searchParams?: Promise<{ d?: string | string[] }>;

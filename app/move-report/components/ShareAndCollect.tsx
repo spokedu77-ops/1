@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import type { Profile } from '../types';
 import {
   copyTextToClipboard,
@@ -117,15 +118,16 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
       flash('전화번호 저장 후 이용할 수 있어요.');
       return;
     }
-    const node = cardRef.current;
-    if (!node) {
+    const wrapper = cardRef.current;
+    const target = wrapper?.querySelector<HTMLElement>('[data-share-card]');
+    if (!target) {
       flash('이미지를 준비할 수 없어요. 페이지를 새로고침해 주세요.');
       return;
     }
     setBusy('download');
     let blob: Blob | null = null;
     try {
-      blob = await makeShareCardBlob(node);
+      blob = await makeShareCardBlob(target);
       const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean }) : null;
       if (nav && typeof nav.share === 'function') {
         const file = new File([blob], fileName, { type: 'image/png' });
@@ -473,20 +475,25 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
         </div>
       </div>
 
-      {/* fixed: absolute+긴 카드가 문서 스크롤 높이를 불필요하게 늘리는 브라우저 동작 방지(html2canvas 캡처는 동일) */}
-      <div
-        ref={cardRef}
-        style={{
-          position: 'fixed',
-          left: '-9999px',
-          top: 0,
-          width: '1080px',
-          pointerEvents: 'none',
-        }}
-        aria-hidden
-      >
-        <ShareResultCard displayName={displayName} profileCode={profileKey} p={p} />
-      </div>
+      {ready &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={cardRef}
+            aria-hidden
+            style={{
+              position: 'fixed',
+              left: '-9999px',
+              top: 0,
+              width: '1080px',
+              pointerEvents: 'none',
+              zIndex: -1,
+            }}
+          >
+            <ShareResultCard displayName={displayName} profileCode={profileKey} p={p} />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
