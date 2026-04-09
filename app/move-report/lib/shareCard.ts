@@ -1,5 +1,6 @@
 'use client';
 
+import { getFontEmbedCSS, toBlob } from 'html-to-image';
 import html2canvas from 'html2canvas';
 
 function dataUrlToBlob(dataUrl: string): Blob {
@@ -11,17 +12,46 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
-  if (typeof document !== 'undefined' && 'fonts' in document) {
-    try {
-      await (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts?.ready;
-    } catch { /* 무시 */ }
+/** html2canvas 전용: 클론에서 웹폰트 메트릭 차이 완화 */
+function normalizeFontsInHtml2CanvasClone(root: HTMLElement): void {
+  const list = [root, ...root.querySelectorAll<HTMLElement>('*')];
+  for (const el of list) {
+    el.style.fontFamily = '"Noto Sans KR", "Malgun Gothic", sans-serif';
   }
+}
 
+/**
+ * 1순위: html-to-image — SVG foreignObject로 브라우저 레이아웃·박스 내 텍스트 정렬이 화면과 거의 동일.
+ * 2순위: html2canvas — iOS/Safari 등에서 foreignObject 실패 시.
+ */
+async function rasterizeWithHtmlToImage(node: HTMLElement): Promise<Blob | null> {
+  const pixelRatio = Math.min(window.devicePixelRatio || 2, 2.5);
+  let fontEmbedCSS: string | undefined;
+  try {
+    fontEmbedCSS = await getFontEmbedCSS(node, { cacheBust: true });
+  } catch {
+    fontEmbedCSS = undefined;
+  }
+  try {
+    const blob = await toBlob(node, {
+      pixelRatio,
+      backgroundColor: '#0A0A0A',
+      cacheBust: true,
+      skipFonts: false,
+      type: 'image/png',
+      ...(fontEmbedCSS ? { fontEmbedCSS } : {}),
+    });
+    if (blob && blob.size > 500) return blob;
+  } catch {
+    /* SecurityError 등 → 폴백 */
+  }
+  return null;
+}
+
+async function rasterizeWithHtml2Canvas(node: HTMLElement): Promise<Blob> {
   const rect = node.getBoundingClientRect();
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  /** 뷰포트 밖(수평·수직) — 화면에 보이는 노드에는 onclone을 쓰지 않아 레이아웃 왜곡 방지 */
   const isOffscreen =
     rect.bottom <= 0 || rect.top >= vh || rect.right <= 0 || rect.left >= vw;
 
@@ -39,6 +69,7 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
               cloned.style.left = '0';
               cloned.style.top = '0';
               cloned.style.margin = '0';
+              normalizeFontsInHtml2CanvasClone(cloned);
             },
           }
         : {}),
@@ -66,6 +97,22 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
   }
 
   return capture();
+}
+
+export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
+  if (typeof document !== 'undefined' && 'fonts' in document) {
+    try {
+      await (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts?.ready;
+      await new Promise((r) => setTimeout(r, 50));
+    } catch {
+      /* 무시 */
+    }
+  }
+
+  const primary = await rasterizeWithHtmlToImage(node);
+  if (primary) return primary;
+
+  return rasterizeWithHtml2Canvas(node);
 }
 
 export function downloadPng(blob: Blob, fileName: string): void {

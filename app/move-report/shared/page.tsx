@@ -36,8 +36,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     : '공유받은 MOVE 리포트 결과를 확인하고, 나도 테스트해보세요.';
   const baseUrl = await getMoveReportMetadataBaseUrl();
   const pathWithQuery = raw ? `/move-report/shared?d=${encodeURIComponent(raw)}` : '/move-report/shared';
-  const ogImagePath = raw ? `/api/move-report/share-image?d=${encodeURIComponent(raw)}` : '/move-report/opengraph-image';
-  const ogImageAbsolute = `${baseUrl}${ogImagePath}`;
+  /** 카카오 등 크롤러 안정성 + 기대 미리보기: 메인 MOVE와 동일한 정적 OG 이미지(소개 카드). 제목/설명만 결과 기준 개인화. */
+  const ogImageAbsolute = `${baseUrl}/move-report/opengraph-image`;
   const pageUrlAbsolute = `${baseUrl}${pathWithQuery}`;
 
   return {

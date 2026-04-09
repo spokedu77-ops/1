@@ -80,86 +80,71 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
           SPOKEDU
         </div>
 
-        {/* 유형코드 뱃지 — html2canvas는 table-cell 세로정렬이 flex/line-height보다 화면과 일치하기 쉬움 */}
-        <div style={{ display: 'inline-flex', gap: 14, marginBottom: 36, alignItems: 'center' }}>
+        {/* 유형코드 뱃지 — transform 가운데 정렬이 html2canvas에서 table/flex보다 안정적 */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 36, alignItems: 'center' }}>
           {profileCode.split('').map((c, i) => (
             <div
               key={i}
               style={{
-                display: 'table',
+                position: 'relative',
                 width: 86,
                 height: 86,
+                flexShrink: 0,
                 borderRadius: 20,
                 background: `${p.col}22`,
                 border: `2px solid ${p.col}60`,
                 boxShadow: `0 0 20px ${p.col}30`,
                 overflow: 'hidden',
-                borderCollapse: 'collapse',
-                tableLayout: 'fixed',
               }}
             >
-              <div
+              <span
                 style={{
-                  display: 'table-cell',
-                  width: 86,
-                  height: 86,
-                  verticalAlign: 'middle',
-                  textAlign: 'center',
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
                   fontFamily: 'Bebas Neue, sans-serif',
                   fontSize: 50,
                   lineHeight: 1,
                   color: p.col,
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {c}
-              </div>
+              </span>
             </div>
           ))}
         </div>
 
-        {/* 코드 라벨 뱃지 */}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 48 }}>
+        {/* 코드 라벨 뱃지 — inline-flex + alignItems로 한 줄 세로 중앙(캡처 엔진과 화면 정합) */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 48, alignItems: 'center' }}>
           {codeLabels.map((item, i) => (
             <div
               key={i}
               style={{
-                display: 'inline-table',
-                verticalAlign: 'middle',
-                borderCollapse: 'separate',
-                borderSpacing: 0,
+                display: 'inline-flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
                 padding: '10px 20px',
                 borderRadius: 14,
                 background: `${p.col}18`,
                 border: `1.5px solid ${p.col}35`,
               }}
             >
-              <div style={{ display: 'table-row' }}>
-                <div
-                  style={{
-                    display: 'table-cell',
-                    verticalAlign: 'middle',
-                    paddingRight: 10,
-                    fontFamily: 'Bebas Neue, sans-serif',
-                    fontSize: 28,
-                    lineHeight: 1,
-                    color: p.col,
-                  }}
-                >
-                  {item.code}
-                </div>
-                <div
-                  style={{
-                    display: 'table-cell',
-                    verticalAlign: 'middle',
-                    fontSize: 22,
-                    lineHeight: 1.25,
-                    color: 'rgba(255,255,255,.7)',
-                    fontWeight: 600,
-                  }}
-                >
-                  {item.label}
-                </div>
-              </div>
+              <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 28, lineHeight: 1, color: p.col }}>
+                {item.code}
+              </span>
+              <span
+                style={{
+                  fontSize: 22,
+                  lineHeight: 1.25,
+                  color: 'rgba(255,255,255,.7)',
+                  fontWeight: 600,
+                }}
+              >
+                {item.label}
+              </span>
             </div>
           ))}
         </div>
@@ -245,31 +230,21 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
             <span
               key={i}
               style={{
-                display: 'inline-table',
-                verticalAlign: 'middle',
-                borderCollapse: 'separate',
-                borderSpacing: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 padding: '10px 20px',
                 borderRadius: 10,
                 letterSpacing: '.04em',
                 background: 'rgba(255,255,255,.07)',
                 color: 'rgba(255,255,255,.75)',
                 border: '1px solid rgba(255,255,255,.12)',
+                fontSize: 22,
+                fontWeight: 700,
+                lineHeight: 1.2,
               }}
             >
-              <span style={{ display: 'table-row' }}>
-                <span
-                  style={{
-                    display: 'table-cell',
-                    verticalAlign: 'middle',
-                    fontSize: 22,
-                    fontWeight: 700,
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {k}
-                </span>
-              </span>
+              {k}
             </span>
           ))}
         </div>
@@ -301,42 +276,29 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
         {/* 하단 브랜딩 */}
         <div
           style={{
-            display: 'table',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             width: '100%',
-            tableLayout: 'fixed',
-            borderCollapse: 'collapse',
             marginTop: 40,
             paddingTop: 24,
             borderTop: '1px solid #2A2A2A',
+            gap: 16,
           }}
         >
-          <div style={{ display: 'table-row' }}>
-            <div
-              style={{
-                display: 'table-cell',
-                verticalAlign: 'middle',
-                fontSize: 20,
-                color: '#A5A5A5',
-                fontWeight: 600,
-                lineHeight: 1.2,
-              }}
-            >
-              Instagram @spokedu_kids
-            </div>
-            <div
-              style={{
-                display: 'table-cell',
-                verticalAlign: 'middle',
-                textAlign: 'right',
-                fontFamily: 'Bebas Neue, sans-serif',
-                fontSize: 32,
-                lineHeight: 1,
-                color: '#FF4B1F',
-                letterSpacing: '.05em',
-              }}
-            >
-              SPOKEDU
-            </div>
+          <div style={{ fontSize: 20, color: '#A5A5A5', fontWeight: 600, lineHeight: 1.2 }}>Instagram @spokedu_kids</div>
+          <div
+            style={{
+              fontFamily: 'Bebas Neue, sans-serif',
+              fontSize: 32,
+              lineHeight: 1,
+              color: '#FF4B1F',
+              letterSpacing: '.05em',
+              flexShrink: 0,
+            }}
+          >
+            SPOKEDU
           </div>
         </div>
       </div>

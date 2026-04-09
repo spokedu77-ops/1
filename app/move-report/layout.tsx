@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import './move-report.css';
 import { getMoveReportMetadataBaseUrl } from './lib/siteUrl';
 
+/** Host·환경 기준 절대 OG URL이 빌드/캐시에 localhost 등으로 박히지 않게 매 요청 계산 */
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = await getMoveReportMetadataBaseUrl();
   const title = '스포키듀 MOVE 리포트 | 우리 아이 움직임 성향 분석';
