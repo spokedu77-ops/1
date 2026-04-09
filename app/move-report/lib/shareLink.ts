@@ -4,12 +4,16 @@ export type MoveReportSharePayloadCompactV5 = {
   v: 5;
   profileKey: string;
   graphCode: string;
+  /** 공유 링크·OG용 표시 이름 (compact 13자 링크에는 미포함) */
+  displayName?: string;
 };
 
 type CompactSharePayloadV5 = {
   v: 5;
   k: string;
   g: string;
+  /** 표시 이름 (base64 JSON 경로 전용) */
+  n?: string;
 };
 
 /** v5 + 4자리 유형키 + 8자리 그래프(0–3) = 13자, base64 JSON 대비 짧은 공유 URL */
@@ -49,14 +53,21 @@ export function buildMoveReportShareUrl(
   origin: string,
   payload: MoveReportSharePayloadCompactV5
 ): string {
-  const { profileKey, graphCode } = payload;
-  if (!COMPACT_V5_RE.test(`5${profileKey}${graphCode}`)) {
-    const fallback: CompactSharePayloadV5 = { v: 5, k: profileKey, g: graphCode };
-    const encoded = toBase64Url(JSON.stringify(fallback));
-    return `${origin}/move-report/shared?d=${encodeURIComponent(encoded)}`;
+  const { profileKey, graphCode, displayName } = payload;
+  const shortCandidate = `5${profileKey}${graphCode}`;
+  const includeName =
+    typeof displayName === 'string' && displayName.trim() !== '' && displayName !== '아이';
+
+  if (!includeName && COMPACT_V5_RE.test(shortCandidate)) {
+    return `${origin}/move-report/shared?d=${encodeURIComponent(shortCandidate)}`;
   }
-  const short = `5${profileKey}${graphCode}`;
-  return `${origin}/move-report/shared?d=${encodeURIComponent(short)}`;
+
+  const body: CompactSharePayloadV5 = { v: 5, k: profileKey, g: graphCode };
+  if (includeName) {
+    body.n = displayName;
+  }
+  const encoded = toBase64Url(JSON.stringify(body));
+  return `${origin}/move-report/shared?d=${encodeURIComponent(encoded)}`;
 }
 
 export function parseMoveReportSharePayload(
@@ -81,10 +92,12 @@ export function parseMoveReportSharePayload(
       if (typeof parsed.k !== 'string') return null;
       if (typeof parsed.g !== 'string' || !/^[0-3]{8}$/.test(parsed.g)) return null;
       if (!(parsed.k in P)) return null;
+      const n = typeof parsed.n === 'string' ? parsed.n.trim() : '';
       return {
         v: 5,
         profileKey: parsed.k,
         graphCode: parsed.g,
+        ...(n ? { displayName: n } : {}),
       };
     }
 

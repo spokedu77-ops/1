@@ -20,8 +20,9 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     : (() => {
         const profile = P[parsed.profileKey];
         if (!profile) return null;
+        const name = parsed.displayName || '우리 아이';
         return {
-          name: '우리 아이',
+          name,
           profileName: profile.char,
         };
       })();

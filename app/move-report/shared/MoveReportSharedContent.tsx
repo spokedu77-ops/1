@@ -22,7 +22,8 @@ export default function MoveReportSharedContent() {
     if (!parsed) return null;
     const profile = P[parsed.profileKey];
     if (!profile) return null;
-    return { name: '우리 아이', profile };
+    const name = parsed.displayName || '우리 아이';
+    return { name, profile };
   }, [parsed]);
 
   const wrapRef = useRef<HTMLDivElement>(null);

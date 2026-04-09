@@ -18,28 +18,39 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
     } catch { /* 무시 */ }
   }
 
-  const prevY = window.scrollY;
-  node.scrollIntoView({ block: 'start', behavior: 'instant' as ScrollBehavior });
-  await new Promise((r) => setTimeout(r, 80));
+  const rect = node.getBoundingClientRect();
+  const isOffscreen = rect.right < 0 || rect.left > window.innerWidth;
 
-  const canvas = await html2canvas(node, {
-    backgroundColor: '#0A0A0A',
-    scale: window.devicePixelRatio || 2,
-    useCORS: true,
-    logging: false,
-  });
+  const capture = async (): Promise<Blob> => {
+    const canvas = await html2canvas(node, {
+      backgroundColor: '#0A0A0A',
+      scale: window.devicePixelRatio || 2,
+      useCORS: true,
+      logging: false,
+    });
+    let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1));
+    if (!blob) {
+      try {
+        blob = dataUrlToBlob(canvas.toDataURL('image/png', 1));
+      } catch {
+        throw new Error('이미지 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    }
+    return blob;
+  };
 
-  window.scrollTo({ top: prevY, behavior: 'instant' as ScrollBehavior });
-
-  let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1));
-  if (!blob) {
+  if (!isOffscreen) {
+    const prevY = window.scrollY;
+    node.scrollIntoView({ block: 'start', behavior: 'instant' as ScrollBehavior });
+    await new Promise((r) => setTimeout(r, 80));
     try {
-      blob = dataUrlToBlob(canvas.toDataURL('image/png', 1));
-    } catch {
-      throw new Error('이미지 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      return await capture();
+    } finally {
+      window.scrollTo({ top: prevY, behavior: 'instant' as ScrollBehavior });
     }
   }
-  return blob;
+
+  return capture();
 }
 
 export function downloadPng(blob: Blob, fileName: string): void {

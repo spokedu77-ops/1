@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Profile } from '../types';
 import {
   copyTextToClipboard,
   downloadPng,
+  makeShareCardBlob,
 } from '../lib/shareCard';
+import ShareResultCard from './ShareResultCard';
 import { trackMoveReportEvent } from '../lib/events';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 import { buildMoveReportShareUrl } from '../lib/shareLink';
@@ -70,6 +72,7 @@ const secondaryBtn = (disabled: boolean): CSSProperties => ({
 
 /** 연락처 저장 후 이미지 새 창으로 열기(저장) · 결과 링크 복사 */
 export default function ShareAndCollect({ p, displayName, profileKey, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
   const [sent, setSent] = useState(false);
@@ -89,6 +92,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
           v: 5,
           profileKey,
           graphCode,
+          displayName: displayName !== '아이' ? displayName : undefined,
         })
       : '';
   const shareKey = useMemo(() => {
@@ -108,27 +112,20 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
     return '공유창 또는 다운로드가 시작됩니다';
   };
 
-  const ogImageUrl = useMemo(() => {
-    if (!shareKey) return null;
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    return `${origin}/api/move-report/share-image?d=${encodeURIComponent(shareKey)}`;
-  }, [shareKey]);
-
   const saveToAlbum = async () => {
     if (!ready) {
       flash('전화번호 저장 후 이용할 수 있어요.');
       return;
     }
-    if (!ogImageUrl) {
-      flash('이미지 URL을 생성할 수 없어요. 페이지를 새로고침해 주세요.');
+    const node = cardRef.current;
+    if (!node) {
+      flash('이미지를 준비할 수 없어요. 페이지를 새로고침해 주세요.');
       return;
     }
     setBusy('download');
     let blob: Blob | null = null;
     try {
-      const res = await fetch(ogImageUrl);
-      if (!res.ok) throw new Error('이미지를 불러오지 못했어요.');
-      blob = await res.blob();
+      blob = await makeShareCardBlob(node);
       const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean }) : null;
       if (nav && typeof nav.share === 'function') {
         const file = new File([blob], fileName, { type: 'image/png' });
@@ -213,30 +210,31 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
   const isSavingImage = busy === 'download';
 
   return (
-    <div
-      style={{
-        background: 'linear-gradient(135deg,#0D0D0D,#161616)',
-        border: '1px solid #2A2A2A',
-        borderRadius: '16px',
-        padding: '20px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
+    <div style={{ position: 'relative' }}>
       <div
         style={{
-          position: 'absolute',
-          top: '-20px',
-          right: '-20px',
-          width: '120px',
-          height: '120px',
-          background: `radial-gradient(circle,${p.col}25,transparent 70%)`,
-          pointerEvents: 'none',
+          background: 'linear-gradient(135deg,#0D0D0D,#161616)',
+          border: '1px solid #2A2A2A',
+          borderRadius: '16px',
+          padding: '20px',
+          position: 'relative',
+          overflow: 'hidden',
         }}
-      />
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {!ready ? (
-          <div>
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: '-20px',
+            right: '-20px',
+            width: '120px',
+            height: '120px',
+            background: `radial-gradient(circle,${p.col}25,transparent 70%)`,
+            pointerEvents: 'none',
+          }}
+        />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {!ready ? (
+            <div>
             <div
               style={{
                 fontSize: '11px',
@@ -387,9 +385,9 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
             <p style={{ fontSize: '10px', color: '#555', marginTop: '10px', lineHeight: 1.45 }}>
               11자리 휴대폰 번호(010-0000-0000)만 저장 가능 · 언제든 수신 거부 가능
             </p>
-          </div>
-        ) : (
-          <div>
+            </div>
+          ) : (
+            <div>
             <div
               style={{
                 fontSize: '11px',
@@ -470,10 +468,24 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
                 </div>
               </div>
             </a>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
 
+      <div
+        ref={cardRef}
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: 0,
+          width: '1080px',
+          pointerEvents: 'none',
+        }}
+        aria-hidden
+      >
+        <ShareResultCard displayName={displayName} profileCode={profileKey} p={p} />
+      </div>
     </div>
   );
 }

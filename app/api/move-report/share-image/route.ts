@@ -88,6 +88,8 @@ export async function GET(req: Request) {
 
   const profileKey = parsed.profileKey;
   const col = profile.col;
+  const displayName = parsed.displayName || '우리 아이';
+  const moveTypeLabel = `${displayName}의 MOVE 유형`;
 
   const codeLabels = [
     { code: profileKey[0], label: profileKey[0] === 'C' ? '협동형' : '독립형' },
@@ -97,7 +99,7 @@ export async function GET(req: Request) {
   ];
 
   const textForFont = [
-    '우리 아이의 MOVE 유형',
+    moveTypeLabel,
     profile.char,
     profile.title,
     profile.catchcopy,
@@ -208,7 +210,7 @@ export async function GET(req: Request) {
               marginBottom: 10,
             },
           },
-          '우리 아이의 MOVE 유형',
+          moveTypeLabel,
         ),
         /* 유형 이름 */
         React.createElement(
