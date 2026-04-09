@@ -199,6 +199,16 @@ export function generateSignal(
       const [w, tc, bg] = triple(stroopPool);
       return { type: 'stroop', bg: bg.hex, content: { word: w.name, textHex: tc.hex }, voice: tc.name };
     }
+    if (level === 4) {
+      const arrow = r(ARROWS);
+      const fill = r(stroopPool);
+      return {
+        type: 'stroop_arrow',
+        bg: '#0F172A',
+        content: { arrowId: arrow.id, fillHex: fill.hex },
+        voice: fill.name,
+      };
+    }
   }
 
   if (mode === 'dual') {

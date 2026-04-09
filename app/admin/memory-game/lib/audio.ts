@@ -1,8 +1,6 @@
 /**
- * Web Audio 비프음 + 신호별 음성 텍스트
+ * Web Audio 비프음. 신호 동기 TTS는 사용하지 않음(SPOMOVE는 월별 BGM).
  */
-
-import { COLORS } from '../constants';
 
 let _audioCtx: AudioContext | null = null;
 
@@ -58,23 +56,17 @@ export function getBeepForSignal(sig: { type?: string } | null): BeepType | null
   if (type === 'basic_variant_color') return 'mid';
   if (type === 'arrow') return 'high';
   if (type === 'number') return 'blip';
-  if (type === 'stroop') return 'chord';
+  if (type === 'stroop' || type === 'stroop_arrow') return 'chord';
   if (type === 'dual_num' || type === 'dual_color_arrow') return 'low';
   return 'mid';
 }
 
-/** 스트룹 모드 단계 2·3에서만 정답 색 이름을 읽어줌(역 스트룹 1단계는 힌트 없음). 그 외는 null. */
+/** 훅 호환용. 신호마다 읽어 주는 음성은 쓰지 않음. */
 export function getSignalVoice(
-  sig: Record<string, unknown> | null,
-  mode: string,
-  level: number,
-  audioMode: string
+  _sig: Record<string, unknown> | null,
+  _mode: string,
+  _level: number,
+  _audioMode: string
 ): string | null {
-  if (!sig || audioMode === 'off' || audioMode === 'beep') return null;
-  if (mode !== 'stroop') return null;
-  if (level === 1) return null;
-  const type = sig.type as string;
-  const voice = sig.voice as string | undefined;
-  if (type === 'stroop') return voice ?? null;
   return null;
 }

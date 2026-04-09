@@ -69,6 +69,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 1, name: '역 스트룹', enName: 'Reverse Stroop', desc: '칠해진 색은 무시하고 글자에 쓰인 내용을 그대로 말합니다.' },
       { id: 2, name: '색 명명', enName: 'Color Naming', desc: '"빨강"이 파란색으로 칠해져 있다면 → "파랑"이라고 말합니다. 글자에 칠해진 색이 무엇인지를 말하세요.' },
       { id: 3, name: '배경 간섭', enName: 'Background Interference', desc: '배경색이 추가되어 방해합니다. 글자에 칠해진 색만 말하세요.' },
+      { id: 4, name: '채움 화살표', enName: 'Filled Arrow Stroop', desc: '위·아래·왼쪽·오른쪽으로 가리키는 삼각 화살표 안을 색으로 채웁니다. 방향은 무시하고, 화살표 안을 칠한 색 이름만 말하세요.' },
     ],
   },
   spatial: {

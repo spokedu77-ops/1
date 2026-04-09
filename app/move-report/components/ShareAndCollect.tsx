@@ -473,10 +473,11 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
         </div>
       </div>
 
+      {/* fixed: absolute+긴 카드가 문서 스크롤 높이를 불필요하게 늘리는 브라우저 동작 방지(html2canvas 캡처는 동일) */}
       <div
         ref={cardRef}
         style={{
-          position: 'absolute',
+          position: 'fixed',
           left: '-9999px',
           top: 0,
           width: '1080px',

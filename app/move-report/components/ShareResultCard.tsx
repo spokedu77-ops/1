@@ -80,27 +80,39 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
           SPOKEDU
         </div>
 
-        {/* 유형코드 뱃지 I R G D */}
+        {/* 유형코드 뱃지 — html2canvas는 table-cell 세로정렬이 flex/line-height보다 화면과 일치하기 쉬움 */}
         <div style={{ display: 'inline-flex', gap: 14, marginBottom: 36, alignItems: 'center' }}>
           {profileCode.split('').map((c, i) => (
             <div
               key={i}
               style={{
-                fontFamily: 'Bebas Neue, sans-serif',
-                fontSize: 50,
-                lineHeight: '86px',
-                textAlign: 'center',
+                display: 'table',
                 width: 86,
                 height: 86,
                 borderRadius: 20,
                 background: `${p.col}22`,
                 border: `2px solid ${p.col}60`,
-                color: p.col,
                 boxShadow: `0 0 20px ${p.col}30`,
                 overflow: 'hidden',
+                borderCollapse: 'collapse',
+                tableLayout: 'fixed',
               }}
             >
-              {c}
+              <div
+                style={{
+                  display: 'table-cell',
+                  width: 86,
+                  height: 86,
+                  verticalAlign: 'middle',
+                  textAlign: 'center',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  fontSize: 50,
+                  lineHeight: 1,
+                  color: p.col,
+                }}
+              >
+                {c}
+              </div>
             </div>
           ))}
         </div>
@@ -111,18 +123,43 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
             <div
               key={i}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
+                display: 'inline-table',
+                verticalAlign: 'middle',
+                borderCollapse: 'separate',
+                borderSpacing: 0,
                 padding: '10px 20px',
                 borderRadius: 14,
                 background: `${p.col}18`,
                 border: `1.5px solid ${p.col}35`,
               }}
             >
-              <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 28, color: p.col, lineHeight: 1 }}>{item.code}</span>
-              <span style={{ fontSize: 22, color: 'rgba(255,255,255,.7)', fontWeight: 600 }}>{item.label}</span>
+              <div style={{ display: 'table-row' }}>
+                <div
+                  style={{
+                    display: 'table-cell',
+                    verticalAlign: 'middle',
+                    paddingRight: 10,
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    fontSize: 28,
+                    lineHeight: 1,
+                    color: p.col,
+                  }}
+                >
+                  {item.code}
+                </div>
+                <div
+                  style={{
+                    display: 'table-cell',
+                    verticalAlign: 'middle',
+                    fontSize: 22,
+                    lineHeight: 1.25,
+                    color: 'rgba(255,255,255,.7)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {item.label}
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -203,13 +240,15 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
         </div>
 
         {/* 키워드 태그 */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 40 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 40, alignItems: 'center' }}>
           {p.kw.map((k, i) => (
             <span
               key={i}
               style={{
-                fontSize: 22,
-                fontWeight: 700,
+                display: 'inline-table',
+                verticalAlign: 'middle',
+                borderCollapse: 'separate',
+                borderSpacing: 0,
                 padding: '10px 20px',
                 borderRadius: 10,
                 letterSpacing: '.04em',
@@ -218,7 +257,19 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
                 border: '1px solid rgba(255,255,255,.12)',
               }}
             >
-              {k}
+              <span style={{ display: 'table-row' }}>
+                <span
+                  style={{
+                    display: 'table-cell',
+                    verticalAlign: 'middle',
+                    fontSize: 22,
+                    fontWeight: 700,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {k}
+                </span>
+              </span>
             </span>
           ))}
         </div>
@@ -250,17 +301,42 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
         {/* 하단 브랜딩 */}
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            display: 'table',
+            width: '100%',
+            tableLayout: 'fixed',
+            borderCollapse: 'collapse',
             marginTop: 40,
             paddingTop: 24,
             borderTop: '1px solid #2A2A2A',
           }}
         >
-          <div style={{ fontSize: 20, color: '#A5A5A5', fontWeight: 600 }}>Instagram @spokedu_kids</div>
-          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 32, color: '#FF4B1F', letterSpacing: '.05em' }}>
-            SPOKEDU
+          <div style={{ display: 'table-row' }}>
+            <div
+              style={{
+                display: 'table-cell',
+                verticalAlign: 'middle',
+                fontSize: 20,
+                color: '#A5A5A5',
+                fontWeight: 600,
+                lineHeight: 1.2,
+              }}
+            >
+              Instagram @spokedu_kids
+            </div>
+            <div
+              style={{
+                display: 'table-cell',
+                verticalAlign: 'middle',
+                textAlign: 'right',
+                fontFamily: 'Bebas Neue, sans-serif',
+                fontSize: 32,
+                lineHeight: 1,
+                color: '#FF4B1F',
+                letterSpacing: '.05em',
+              }}
+            >
+              SPOKEDU
+            </div>
           </div>
         </div>
       </div>

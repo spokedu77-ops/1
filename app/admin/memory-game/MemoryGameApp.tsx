@@ -49,7 +49,7 @@ const defaultSettings: Settings = {
   timeMode: 'time',
   duration: 60,
   targetReps: 20,
-  // 음성은 스트룹에서만 허용 → 기본은 off
+  // 신호별 음성/비프 미사용(기본 off). 배경음은 훈련 시작 시 월별 BGM(플로우 제외).
   audioMode: 'off',
   numberRule: 'odd_left',
   intervalMode: false,
@@ -238,8 +238,8 @@ export default function MemoryGameApp() {
       if (cfg.timeMode !== 'reps') cfg = { ...cfg, timeMode: 'reps' };
       // 인터벌 세트는 4로 고정
       if (cfg.intervalSets !== 4) cfg = { ...cfg, intervalSets: 4 };
-      // 음성은 스트룹에서만 허용 (그 외 모드는 강제 off)
-      if (cfg.mode !== 'stroop' && cfg.audioMode !== 'off') cfg = { ...cfg, audioMode: 'off' };
+      // 신호별 음성·비프는 사용하지 않음(모든 모드 audioMode off)
+      if (cfg.audioMode !== 'off') cfg = { ...cfg, audioMode: 'off' };
       if (cfg.dual21Advance == null) cfg = { ...cfg, dual21Advance: 'default' };
       if (cfg.mode === 'dual' && cfg.level === 2 && cfg.dual21Advance === 'touch') {
         cfg = { ...cfg, intervalMode: false };
@@ -270,11 +270,10 @@ export default function MemoryGameApp() {
 
       // BGM 정책:
       // - flow: iframe(/program/iiwarmup/flow) 안 FlowEngine이 BGM 재생 — 부모 BgmPlayer로 재생하면 이중 재생됨
-      // - basic/spatial/dual: list 랜덤 재생
-      // - stroop: BGM 없음
+      // - basic/spatial/dual/stroop: 월별 BGM list 랜덤 재생
       const bgmMode = cfg.mode;
       const shouldTryBgmParent =
-        bgmMode === 'basic' || bgmMode === 'spatial' || bgmMode === 'dual';
+        bgmMode === 'basic' || bgmMode === 'spatial' || bgmMode === 'dual' || bgmMode === 'stroop';
       if (shouldTryBgmParent) {
         if (flowBgmList.length === 0) {
           if (flowBgmLoading) pendingBgmStartRef.current = { mode: bgmMode };
@@ -520,7 +519,7 @@ export default function MemoryGameApp() {
                   '단계 4(수 판단): 숫자를 규칙으로 판단(예: 홀수 왼쪽/짝수 오른쪽). 코칭: “판단은 짧게, 움직임은 크게.”',
                   '난이도 조절: 신호 속도(초)를 낮추면 난이도↑. 분량은 횟수(10/20/30/40회)로 운영.',
                 ],
-                tip: '스트룹을 제외한 모드에서는 음성/비프가 나오지 않습니다. 코칭은 선생님 구두로 진행하세요.',
+                tip: '시작 후 월별 BGM이 깔립니다. 신호마다 음성·비프는 나오지 않으니 코칭은 선생님 구두로 진행하세요.',
                 accent: '#3B82F6',
               },
               {
@@ -532,10 +531,11 @@ export default function MemoryGameApp() {
                   '단계 1(역 스트룹): 색은 무시하고 글자 내용을 그대로 말하기(가장 흔히 헷갈림).',
                   '단계 2(색 명명): 글자 내용은 무시하고 글자 색을 말하기. 예: “파란색 빨강” → “파랑”.',
                   '단계 3(배경 간섭): 배경색까지 섞여 방해. 규칙은 동일(글자 색만). 초반엔 속도 느리게.',
+                  '단계 4(채움 화살표): 위·아래·좌·우를 가리키는 화살표 안이 색으로 채워집니다. 방향은 무시하고 화살표 안 색 이름만 말합니다.',
                   '운영 팁: 실수했을 때 즉시 정답을 말하게 하고 다음 신호로 넘어가기(멈추지 않기).',
-                  '음성: 이 모드에서만 음성/비프 설정이 유효합니다(다른 모드는 강제 OFF).',
+                  '배경: 다른 훈련과 같이 월별 BGM이 재생됩니다(시작 버튼 클릭 후).',
                 ],
-                tip: '음성 힌트(켜기)는 스트룹 단계 2·3에서만 정답 색 이름을 읽어줍니다. 단계 1(역 스트룹)에서는 힌트가 나오지 않는 것이 정상입니다.',
+                tip: '스트룹은 신호별 음성 힌트 없이 진행합니다. 정답은 선생님이 확인·코칭해 주세요.',
                 accent: '#A855F7',
               },
               {
@@ -611,7 +611,7 @@ export default function MemoryGameApp() {
               <div style={{ fontSize: '0.88rem', lineHeight: 1.65, fontWeight: 700 }}>
                 - 인터벌 모드(Tabata)는 <strong>4세트 고정</strong>입니다(Work/Rest는 설정값 사용).<br />
                 - 점진 가속(accel)은 인터벌이 아닌 일반 모드에서만 적용되며, 진행률에 따라 신호 간격이 선형으로 빨라져 마지막엔 <strong>60%</strong>까지 단축됩니다.<br />
-                - 음성/비프는 <strong>스트룹에서만</strong> 사용 가능합니다.
+                - 반응 인지·스트룹·순차 기억·이중 과제는 시작 시 <strong>월별 BGM</strong>이 재생됩니다(플로우는 iframe 내부 BGM).
               </div>
             </div>
             <button type="button" style={{ ...S.btn, ...S.bDark, marginTop: '0.5rem' }} onClick={() => setScreen('home')}>🏠 처음으로</button>
@@ -653,8 +653,7 @@ export default function MemoryGameApp() {
                         ...s,
                         mode: m.id,
                         level: 1,
-                        // 스트룹 외 모드는 음성 강제 off
-                        audioMode: m.id === 'stroop' ? s.audioMode : 'off',
+                        audioMode: 'off',
                         // 인터벌 세트는 4로 고정
                         intervalSets: 4,
                       }));
@@ -789,23 +788,6 @@ export default function MemoryGameApp() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       {NUMBER_RULES.map((rule) => (
                         <button key={rule.id} type="button" onClick={() => set('numberRule', rule.id)} style={{ padding: '0.7rem 1rem', borderRadius: '0.85rem', border: `2px solid ${settings.numberRule === rule.id ? '#3B82F6' : 'var(--border)'}`, background: settings.numberRule === rule.id ? '#EFF6FF' : 'var(--card)', color: settings.numberRule === rule.id ? '#1D4ED8' : 'var(--text)', fontWeight: settings.numberRule === rule.id ? 700 : 600, fontSize: '0.91rem', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.12s' }}>{settings.numberRule === rule.id ? '✓ ' : ''}{rule.label}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {settings.mode === 'stroop' && (
-                  <div style={S.sec}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>스트룹 힌트</span>
-                    </div>
-                    <p style={{ fontSize: '0.96rem', color: '#64748B', marginBottom: '0.6rem', lineHeight: 1.5 }}>스트룹 단계 2·3에서만 정답 색 이름을 읽어줍니다 (1단계 역 스트룹 제외)</p>
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {[
-                        { id: 'off', label: '끔' },
-                        { id: 'beep', label: '비프만' },
-                        { id: 'signal', label: '켜기' },
-                      ].map((o) => (
-                        <button key={o.id} type="button" onClick={() => set('audioMode', o.id)} style={{ padding: '0.55rem 0.9rem', borderRadius: '0.75rem', border: `2px solid ${settings.audioMode === o.id ? '#A855F7' : '#E2E8F0'}`, background: settings.audioMode === o.id ? '#F5F3FF' : '#fff', fontSize: '0.96rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{o.label}</button>
                       ))}
                     </div>
                   </div>

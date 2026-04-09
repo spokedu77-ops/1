@@ -100,6 +100,38 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       </div>
     );
 
+  if (type === 'stroop_arrow') {
+    const arrowId = content?.arrowId as string | undefined;
+    const fillHex = (content?.fillHex as string | undefined) ?? '#FFFFFF';
+    const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
+    return (
+      <div key={animKey} className="signal-blink" style={C}>
+        <svg
+          viewBox="0 0 100 130"
+          preserveAspectRatio="xMidYMid meet"
+          style={{
+            /* 화면(뷰포트 짧은 변) 기준 약 50% — 풀스크린 훈련에서 한눈에 보이도록 */
+            width: 'clamp(7.5rem, 50vmin, min(92vw, 92vh))',
+            height: 'clamp(7.5rem, 50vmin, min(92vw, 92vh))',
+            filter: 'drop-shadow(0 10px 48px rgba(0,0,0,0.5))',
+          }}
+          aria-hidden
+        >
+          {/* 꼬리(몸통)를 viewBox 세로 확장으로 실제로 길게: 머리·날개는 유지, 몸통만 아래로 연장 */}
+          <g transform={`rotate(${rot} 50 67)`}>
+            <path
+              d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
+              fill={fillHex}
+              stroke="rgba(255,255,255,0.22)"
+              strokeWidth={1}
+              strokeLinejoin="round"
+            />
+          </g>
+        </svg>
+      </div>
+    );
+  }
+
   if (type === 'stroop')
     return (
       <div key={animKey} className="signal-blink" style={C}>

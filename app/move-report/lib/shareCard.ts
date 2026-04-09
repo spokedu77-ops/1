@@ -27,6 +27,8 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
       scale: window.devicePixelRatio || 2,
       useCORS: true,
       logging: false,
+      /** flex/line-height 세로정렬이 캔버스와 어긋나는 경우 완화(브라우저와 동일에 가깝게) */
+      foreignObjectRendering: true,
     });
     let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 1));
     if (!blob) {
