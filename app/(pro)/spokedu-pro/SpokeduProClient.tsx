@@ -44,10 +44,16 @@ export default function SpokeduProClient({
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
   const [drawerContext, setDrawerContext] = useState<{ role?: string; themeKey?: string } | null>(null);
   const [libraryPreset, setLibraryPreset] = useState<{ themeKey?: string; preset?: string } | null>(null);
+  const [libraryMode, setLibraryMode] = useState<'program' | 'screenplay'>('program');
   const [showCurationDrawer, setShowCurationDrawer] = useState(false);
   const [postClassGroup, setPostClassGroup] = useState<string | null>(null);
   const [aiInitialStudentId, setAiInitialStudentId] = useState<string | null>(null);
   const [toolsFocusToken, setToolsFocusToken] = useState(0);
+  const [memoryGameModal, setMemoryGameModal] = useState<{ open: boolean; mode: string; level: number }>({
+    open: false,
+    mode: 'basic',
+    level: 1,
+  });
 
   const { data: contentData, fetchContent } = useSpokeduProContent('catalog', ['program_details']);
   const { content: adminContent, fetchBlocks, saveContentDraft } = useSpokeduProAdminBlocks();
@@ -60,7 +66,10 @@ export default function SpokeduProClient({
   }, [isEditMode, fetchBlocks]);
 
   useEffect(() => {
-    if (viewId !== 'library') setLibraryPreset(null);
+    if (viewId !== 'library') {
+      setLibraryPreset(null);
+      setLibraryMode('program');
+    }
   }, [viewId]);
 
   useEffect(() => {
@@ -138,17 +147,20 @@ export default function SpokeduProClient({
   const goToLibrary = useCallback(
     (themeKey?: string, preset?: string) => {
       setLibraryPreset(themeKey != null || preset != null ? { themeKey, preset } : null);
+      setLibraryMode(themeKey === 'cognitive' ? 'screenplay' : 'program');
       switchView('library');
     },
     [switchView]
   );
   const openLibraryAll = useCallback(() => {
     setLibraryPreset(null);
+    setLibraryMode('program');
     switchView('library');
   }, [switchView]);
   const goToLibraryTheme = useCallback(
     (themeKey: ThemeKey) => {
       setLibraryPreset({ themeKey });
+      setLibraryMode(themeKey === 'cognitive' ? 'screenplay' : 'program');
       switchView('library');
     },
     [switchView]
@@ -200,7 +212,14 @@ export default function SpokeduProClient({
           <LessonPlanView programDetails={programDetailsForDrawer} />
         </div>
         <div className={`view-content ${viewId === 'library' ? 'active' : ''}`}>
-          <LibraryView onOpenDetail={openDrawer} initialPreset={libraryPreset} programDetails={programDetailsForDrawer} />
+          <LibraryView
+            onOpenDetail={openDrawer}
+            onOpenMemoryGame={(mode, level) => setMemoryGameModal({ open: true, mode, level })}
+            initialPreset={libraryPreset}
+            programDetails={programDetailsForDrawer}
+            functionalCap={isEditMode ? 144 : undefined}
+            libraryMode={libraryMode}
+          />
         </div>
         <div className={`view-content ${viewId === 'data-center' ? 'active' : ''}`}>
           <DataCenterView onOpenSettings={() => switchView('settings')} />
@@ -254,6 +273,35 @@ export default function SpokeduProClient({
           setPostClassGroup(null);
         }}
       />
+
+      {memoryGameModal.open && (
+        <>
+          <div
+            role="presentation"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 transition-opacity cursor-pointer"
+            onClick={() => setMemoryGameModal((m) => ({ ...m, open: false }))}
+          />
+          <div className="fixed inset-0 z-50 p-2 md:p-4">
+            <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 shadow-2xl">
+              <div className="h-12 px-4 flex items-center justify-between border-b border-slate-700 bg-slate-950/80">
+                <p className="text-sm font-bold text-slate-200">SPOMOVE 실행</p>
+                <button
+                  type="button"
+                  onClick={() => setMemoryGameModal((m) => ({ ...m, open: false }))}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold"
+                >
+                  닫기
+                </button>
+              </div>
+              <iframe
+                title="SPOMOVE"
+                className="w-full h-[calc(100%-3rem)] bg-slate-900"
+                src={`/admin/memory-game?mode=${encodeURIComponent(memoryGameModal.mode)}&level=${encodeURIComponent(String(memoryGameModal.level))}&embed=1`}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {showCurationDrawer && (
         <>

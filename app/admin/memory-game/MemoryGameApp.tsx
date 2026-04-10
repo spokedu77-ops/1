@@ -61,7 +61,13 @@ const defaultSettings: Settings = {
   dual21Advance: 'default',
 };
 
-export default function MemoryGameApp() {
+export default function MemoryGameApp({
+  initialMode,
+  initialLevel,
+}: {
+  initialMode?: string;
+  initialLevel?: number;
+}) {
   const [screen, setScreen] = useState<Screen>('home');
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const { students, add: addStudent, remove: removeStudent, rename: renameStudent } = useStudents();
@@ -115,6 +121,18 @@ export default function MemoryGameApp() {
       window.removeEventListener('online', onOnline);
     };
   }, []);
+
+  useEffect(() => {
+    if (!initialMode || !(initialMode in MODES)) return;
+    const modeDef = MODES[initialMode];
+    if (!modeDef) return;
+    const targetLevel =
+      typeof initialLevel === 'number' && modeDef.levels.some((lv) => lv.id === initialLevel)
+        ? initialLevel
+        : modeDef.levels[0]?.id ?? 1;
+    setSettings((s) => ({ ...s, mode: initialMode, level: targetLevel }));
+    setScreen('setup');
+  }, [initialMode, initialLevel]);
 
   const set = useCallback((key: keyof Settings, value: unknown) => {
     setSettings((s) => ({ ...s, [key]: value }));

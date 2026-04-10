@@ -12,6 +12,7 @@ export default function AdminSpokeduProUploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([]);
   const [loading, setLoading] = useState(false);
+  const [syncingCenter, setSyncingCenter] = useState(false);
   const [result, setResult] = useState<{ success: number; failed: number; total: number; errors?: { row: number; message: string }[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,6 +84,37 @@ export default function AdminSpokeduProUploadPage() {
     }
   };
 
+  const onSyncCenterCurriculum = async () => {
+    setSyncingCenter(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch('/api/spokedu-pro/programs/import-center', {
+        method: 'POST',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? '센터 커리큘럼 가져오기 실패');
+        return;
+      }
+      setResult({
+        success: (data.inserted ?? 0) + (data.updated ?? 0),
+        failed: data.failed ?? 0,
+        total: data.total ?? 0,
+        errors: Array.isArray(data.errors)
+          ? data.errors.map((e: { curriculumId?: number; message?: string }) => ({
+              row: e.curriculumId ?? 0,
+              message: e.message ?? '실패',
+            }))
+          : [],
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '네트워크 오류');
+    } finally {
+      setSyncingCenter(false);
+    }
+  };
+
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-slate-900 text-white p-6">
       <div className="flex items-center gap-4 mb-6">
@@ -114,6 +146,24 @@ export default function AdminSpokeduProUploadPage() {
       </header>
 
       <div className="flex flex-col gap-4 max-w-2xl mb-8">
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/spokedu-pro/screenplays/upload"
+            className="px-4 py-2 rounded-lg border border-slate-600 text-slate-200 text-sm font-bold hover:bg-slate-800"
+          >
+            스포무브(Screenplay) 업로드로 이동
+          </Link>
+        </div>
+
+        <button
+          type="button"
+          onClick={onSyncCenterCurriculum}
+          disabled={syncingCenter || loading}
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {syncingCenter ? '가져오는 중...' : '센터 커리큘럼 데이터 가져오기'}
+        </button>
+
         <label className="flex items-center gap-3 cursor-pointer">
           <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center">
             <FileSpreadsheet className="w-6 h-6 text-slate-400" />

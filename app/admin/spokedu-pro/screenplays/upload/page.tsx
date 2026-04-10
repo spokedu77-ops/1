@@ -11,6 +11,7 @@ export default function AdminScreenplayUploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([]);
   const [loading, setLoading] = useState(false);
+  const [syncingMemoryGame, setSyncingMemoryGame] = useState(false);
   const [result, setResult] = useState<{
     imported: number;
     total: number;
@@ -68,6 +69,32 @@ export default function AdminScreenplayUploadPage() {
       setError('네트워크 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImportFromMemoryGame = async () => {
+    setSyncingMemoryGame(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch('/api/spokedu-pro/screenplays/import-memory-game', {
+        method: 'POST',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? '메모리게임 이식 실패');
+        return;
+      }
+      const imported = (data.inserted ?? 0) + (data.updated ?? 0);
+      setResult({
+        imported,
+        total: imported + (data.failed ?? 0),
+        message: `메모리게임 기반 이식 완료 (신규 ${data.inserted ?? 0} / 갱신 ${data.updated ?? 0})`,
+      });
+    } catch {
+      setError('메모리게임 이식 중 네트워크 오류');
+    } finally {
+      setSyncingMemoryGame(false);
     }
   };
 
@@ -192,6 +219,15 @@ export default function AdminScreenplayUploadPage() {
       )}
 
       {/* 업로드 버튼 */}
+      <button
+        type="button"
+        onClick={handleImportFromMemoryGame}
+        disabled={syncingMemoryGame || loading}
+        className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black rounded-2xl transition-colors flex items-center justify-center gap-2 text-base"
+      >
+        {syncingMemoryGame ? '이식 중...' : 'admin/memory-game 데이터 이식'}
+      </button>
+
       <button
         type="button"
         onClick={handleUpload}

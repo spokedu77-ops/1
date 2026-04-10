@@ -18,6 +18,9 @@ type ProgramRow = {
   main_theme?: string | null;
   group_size?: string | null;
   video_url?: string | null;
+  mode_id?: string | null;
+  preset_ref?: string | null;
+  thumbnail_url?: string | null;
 };
 
 const ProgramCard = memo(function ProgramCard({
@@ -77,18 +80,26 @@ function SkeletonCard() {
 
 export default function LibraryView({
   onOpenDetail,
+  onOpenMemoryGame,
   onSelectProgram,
   initialPreset = null,
   programDetails = {},
   compact = false,
+  functionalCap,
+  libraryMode = 'program',
 }: {
   onOpenDetail: (id: number, context?: { role?: string; themeKey?: string }) => void;
+  onOpenMemoryGame?: (mode: string, level: number) => void;
   /** 설정 시 카드 클릭으로 프로그램 선택(드로어 대신). */
   onSelectProgram?: (id: number) => void;
   initialPreset?: { themeKey?: string; preset?: string } | null;
   programDetails?: Record<string, ProgramDetail>;
   /** 슬라이드 패널 등 좁은 영역용(헤더·필터 일부 축소). */
   compact?: boolean;
+  /** 펑셔널 무브 프리셋에서 기본 노출 상한(예: 144). */
+  functionalCap?: number;
+  /** 라이브러리 데이터 소스 강제 모드 */
+  libraryMode?: 'program' | 'screenplay';
 }) {
   const [functionType, setFunctionType] = useState<string>('');
   const [mainTheme, setMainTheme] = useState<string>('');
@@ -98,6 +109,7 @@ export default function LibraryView({
   const [isReady, setIsReady] = useState(false);
   const [programsFromApi, setProgramsFromApi] = useState<ProgramRow[] | null>(null);
   const [fetchError, setFetchError] = useState(false);
+  const isScreenplayPreset = libraryMode === 'screenplay' || initialPreset?.themeKey === 'cognitive';
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -113,8 +125,17 @@ export default function LibraryView({
   useEffect(() => {
     const tk = initialPreset?.themeKey;
     if (tk && (THEME_KEYS as readonly string[]).includes(tk)) {
+      // 사이드바 프리셋(펑셔널/스포무브) 진입 시 이전 수동 필터 잔존으로 0개가 보이는 상황을 방지
+      setFunctionType('');
+      setGroupSize('');
+      setSearch('');
       const bank = THEME_KEY_TO_BANK_THEME[tk as ThemeKey];
-      if (bank) setMainTheme(bank);
+      // 프리셋 라벨과 실제 DB main_theme 분류가 다를 수 있어, 유효한 분류값일 때만 테마 필터를 적용
+      if (bank && (MAIN_THEMES as readonly string[]).includes(bank)) {
+        setMainTheme(bank);
+      } else {
+        setMainTheme('');
+      }
     } else if (prevPresetRef.current?.themeKey && !tk) {
       setMainTheme('');
     }
@@ -124,33 +145,69 @@ export default function LibraryView({
   useEffect(() => {
     let cancelled = false;
     setFetchError(false);
-    const params = new URLSearchParams();
-    params.set('limit', '200');
-    if (functionType) params.set('function_type', functionType);
-    if (mainTheme) params.set('main_theme', mainTheme);
-    if (groupSize) params.set('group_size', groupSize);
-    if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
-    fetch(`/api/spokedu-pro/programs?${params}`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (cancelled || !Array.isArray(json?.data)) return;
-        setProgramsFromApi(json.data);
-      })
-      .catch(() => {
-        if (!cancelled) { setProgramsFromApi([]); setFetchError(true); }
-      });
+    if (isScreenplayPreset) {
+      fetch('/api/spokedu-pro/screenplays')
+        .then((res) => res.json())
+        .then((json) => {
+          if (cancelled || !Array.isArray(json?.screenplays)) return;
+          const q = debouncedSearch.trim().toLowerCase();
+          const mapped = json.screenplays
+            .map((s: { id: number | string; modeId?: string; title?: string; presetRef?: string; thumbnailUrl?: string }) => ({
+              id: Number(s.id) || 0,
+              title: s.title ?? '',
+              function_type: s.modeId ?? null,
+              main_theme: null,
+              group_size: null,
+              video_url: null,
+              mode_id: s.modeId ?? null,
+              preset_ref: s.presetRef ?? null,
+              thumbnail_url: s.thumbnailUrl ?? null,
+            }))
+            .filter((s: ProgramRow) => (q ? s.title.toLowerCase().includes(q) : true));
+          setProgramsFromApi(mapped);
+        })
+        .catch(() => {
+          if (!cancelled) { setProgramsFromApi([]); setFetchError(true); }
+        });
+    } else {
+      const params = new URLSearchParams();
+      params.set('limit', '200');
+      if (functionType) params.set('function_type', functionType);
+      if (mainTheme) params.set('main_theme', mainTheme);
+      if (groupSize) params.set('group_size', groupSize);
+      if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+      fetch(`/api/spokedu-pro/programs?${params}`)
+        .then((res) => res.json())
+        .then((json) => {
+          if (cancelled || !Array.isArray(json?.data)) return;
+          setProgramsFromApi(json.data);
+        })
+        .catch(() => {
+          if (!cancelled) { setProgramsFromApi([]); setFetchError(true); }
+        });
+    }
     return () => { cancelled = true; };
-  }, [functionType, mainTheme, groupSize, debouncedSearch]);
+  }, [functionType, mainTheme, groupSize, debouncedSearch, isScreenplayPreset]);
 
   const isLoading = programsFromApi === null;
   const filteredPrograms = programsFromApi ?? [];
+  const isFunctionalPreset = initialPreset?.themeKey === 'co-op';
+  const hasManualFilters =
+    functionType !== '' || mainTheme !== '' || groupSize !== '' || search.trim() !== '';
+  const visiblePrograms = useMemo(() => {
+    // 펑셔널 무브 기본 진입 시에는 센터 커리큘럼 카드 144개만 우선 노출합니다.
+    if (isFunctionalPreset && !hasManualFilters && typeof functionalCap === 'number' && functionalCap > 0) {
+      return filteredPrograms.slice(0, functionalCap);
+    }
+    return filteredPrograms;
+  }, [isFunctionalPreset, hasManualFilters, filteredPrograms, functionalCap]);
   const clearFilters = () => {
     setFunctionType('');
     setMainTheme('');
     setGroupSize('');
     setSearch('');
   };
-  const hasActiveFilters = functionType !== '' || mainTheme !== '' || groupSize !== '' || search.trim() !== '';
+  const hasActiveFilters = hasManualFilters;
 
   const selectionMode = typeof onSelectProgram === 'function';
 
@@ -161,10 +218,10 @@ export default function LibraryView({
           <h2 className={compact ? 'text-xl font-black text-white tracking-tight' : 'text-3xl md:text-4xl font-black text-white tracking-tight'}>
             {selectionMode ? '프로그램 선택' : '프로그램 뱅크'}
           </h2>
-          <span className="text-slate-400 text-sm font-medium">{filteredPrograms.length}개</span>
+          <span className="text-slate-400 text-sm font-medium">{visiblePrograms.length}개</span>
         </div>
 
-        {!compact && (
+        {!compact && !isScreenplayPreset && (
         <div className="flex flex-wrap gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">기능</span>
           {FUNCTION_TYPES.map((t) => (
@@ -183,7 +240,7 @@ export default function LibraryView({
           ))}
         </div>
         )}
-        {!compact && (
+        {!compact && !isScreenplayPreset && (
         <div className="flex flex-wrap gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">테마</span>
           {MAIN_THEMES.map((t) => (
@@ -202,7 +259,7 @@ export default function LibraryView({
           ))}
         </div>
         )}
-        {!compact && (
+        {!compact && !isScreenplayPreset && (
         <div className="flex flex-wrap gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">인원</span>
           {GROUP_SIZES.map((t) => (
@@ -273,7 +330,7 @@ export default function LibraryView({
         </div>
       )}
 
-      {!isLoading && !fetchError && filteredPrograms.length === 0 && (
+      {!isLoading && !fetchError && visiblePrograms.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
           <span className="text-5xl">🔍</span>
           <p className="text-white font-black text-lg">검색 결과가 없습니다</p>
@@ -283,7 +340,7 @@ export default function LibraryView({
         </div>
       )}
 
-      {!isLoading && filteredPrograms.length > 0 && (
+      {!isLoading && visiblePrograms.length > 0 && (
         <div
           className={
             compact
@@ -291,20 +348,51 @@ export default function LibraryView({
               : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6'
           }
         >
-          {filteredPrograms.map((p) => {
+          {visiblePrograms.map((p) => {
                 const detail = programDetails[String(p.id)];
-                const videoUrl = detail?.videoUrl ?? p.video_url;
-                const thumbnailUrl = videoUrl ? getYouTubeThumbnailUrl(videoUrl) : null;
-                const tags = [p.function_type, p.main_theme, p.group_size].filter(Boolean) as string[];
+                const videoUrl = isScreenplayPreset ? p.video_url : (detail?.videoUrl ?? p.video_url);
+                const thumbnailUrl = isScreenplayPreset
+                  ? (p.thumbnail_url ?? null)
+                  : (p.thumbnail_url ?? (videoUrl ? getYouTubeThumbnailUrl(videoUrl) : null));
+                const tags = isScreenplayPreset
+                  ? [p.mode_id ?? p.function_type].filter(Boolean) as string[]
+                  : [p.function_type, p.main_theme, p.group_size].filter(Boolean) as string[];
                 return (
                   <ProgramCard
                     key={p.id}
-                    title={detail?.title ?? p.title}
+                    title={isScreenplayPreset ? p.title : (detail?.title ?? p.title)}
                     tags={tags}
                     thumbnailUrl={thumbnailUrl}
-                    onClick={() =>
-                      selectionMode ? onSelectProgram!(p.id) : onOpenDetail(p.id, undefined)
-                    }
+                    onClick={() => {
+                      if (selectionMode) {
+                        onSelectProgram!(p.id);
+                        return;
+                      }
+                      if (isScreenplayPreset) {
+                        const level = Number(p.preset_ref ?? '1');
+                        const modeMap: Record<string, string> = {
+                          FLOW: 'flow',
+                          반응인지: 'basic',
+                          순차기억: 'spatial',
+                          스트룹: 'stroop',
+                          이중과제: 'dual',
+                          CHALLENGE: 'basic',
+                        };
+                        const mode = modeMap[String(p.mode_id ?? p.function_type ?? '')] ?? 'basic';
+                        const targetLevel = Number.isFinite(level) && level > 0 ? level : 1;
+                        if (onOpenMemoryGame) {
+                          onOpenMemoryGame(mode, targetLevel);
+                        } else {
+                          const qs = new URLSearchParams({
+                            mode,
+                            level: String(targetLevel),
+                          });
+                          window.location.href = `/admin/memory-game?${qs.toString()}`;
+                        }
+                        return;
+                      }
+                      onOpenDetail(p.id, undefined);
+                    }}
                   />
                 );
               })}

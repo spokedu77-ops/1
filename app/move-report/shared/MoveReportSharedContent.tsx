@@ -102,6 +102,51 @@ export default function MoveReportSharedContent() {
       </div>
 
       <div style={{ width: '100%', maxWidth: 430, margin: '20px auto 0' }}>
+        <a
+          href="https://www.instagram.com/spokedu_kids?igsh=M2ZmYWZxMzRxenVt&utm_source=qr"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'block',
+            textDecoration: 'none',
+            background: 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)',
+            borderRadius: '16px',
+            padding: '2px',
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              background: '#111',
+              borderRadius: '14px',
+              padding: '18px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  flexShrink: 0,
+                  background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <i className="fa-brands fa-instagram" style={{ fontSize: '22px', color: '#fff' }} aria-hidden />
+              </div>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginBottom: '3px' }}>스포키듀 인스타그램</div>
+                <div style={{ fontSize: '12px', color: '#AAAAAA' }}>@spokedu_kids · 수업 현장 영상 보러가기 →</div>
+              </div>
+            </div>
+          </div>
+        </a>
         <Link
           href={moveReportHref}
           style={{

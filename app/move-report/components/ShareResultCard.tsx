@@ -272,35 +272,6 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
             {p.desc}
           </p>
         </div>
-
-        {/* 하단 브랜딩 */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            marginTop: 40,
-            paddingTop: 24,
-            borderTop: '1px solid #2A2A2A',
-            gap: 16,
-          }}
-        >
-          <div style={{ fontSize: 20, color: '#A5A5A5', fontWeight: 600, lineHeight: 1.2 }}>Instagram @spokedu_kids</div>
-          <div
-            style={{
-              fontFamily: 'Bebas Neue, sans-serif',
-              fontSize: 32,
-              lineHeight: 1,
-              color: '#FF4B1F',
-              letterSpacing: '.05em',
-              flexShrink: 0,
-            }}
-          >
-            SPOKEDU
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 
 const MemoryGameApp = dynamic(
   () => import('./MemoryGameApp').then((m) => m.default),
@@ -8,5 +9,10 @@ const MemoryGameApp = dynamic(
 );
 
 export default function MemoryGamePage() {
-  return <MemoryGameApp />;
+  const searchParams = useSearchParams();
+  const mode = searchParams.get('mode') ?? undefined;
+  const levelRaw = Number(searchParams.get('level') ?? '');
+  const level = Number.isFinite(levelRaw) && levelRaw > 0 ? levelRaw : undefined;
+
+  return <MemoryGameApp initialMode={mode} initialLevel={level} />;
 }

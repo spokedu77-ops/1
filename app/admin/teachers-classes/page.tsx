@@ -7,6 +7,7 @@ import { ADMIN_NAMES } from '@/app/admin/classes-shared/constants/admins';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { Send, RotateCcw, User, MapPin, X, ExternalLink, FileText, Maximize2, Search, BookOpen, AlertTriangle } from 'lucide-react';
+import { SessionPhotosCleanupButton } from '@/app/components/admin/assets/SessionPhotosCleanupButton';
 import { 
   FeedbackFields,
   parseTemplateToFields,
@@ -75,6 +76,9 @@ export default function MasterQCPage() {
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase">Spokedu QC</h1>
             <p className="text-slate-500 font-bold mt-2">체육 교육의 기준점, 스포키듀 리포트 마스터 검수</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <SessionPhotosCleanupButton days={7} />
           </div>
         </header>
 

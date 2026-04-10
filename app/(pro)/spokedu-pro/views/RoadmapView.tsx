@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Zap, Star, ChevronRight } from 'lucide-react';
 import { useSpokeduProDashboard } from '../hooks/useSpokeduProDashboard';
 import {
@@ -15,6 +15,14 @@ import { getYouTubeThumbnailUrl } from '../utils/youtube';
 import type { ProgramDetail } from '../types';
 import TodayClassCard from './roadmap/TodayClassCard';
 import { setTodayClassPhase } from '../utils/todayClassStorage';
+
+type ScreenplayRow = {
+  id: number | string;
+  modeId?: string;
+  title?: string;
+  subtitle?: string;
+  thumbnailUrl?: string;
+};
 
 function ProgramCardRow1({
   programId,
@@ -115,6 +123,45 @@ function ProgramCardRow2({
   );
 }
 
+function ScreenplayCard({
+  title,
+  subtitle,
+  thumbnailUrl,
+  onClick,
+}: {
+  title: string;
+  subtitle?: string;
+  thumbnailUrl?: string;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      className="media-card relative w-full aspect-[4/3] rounded-2xl overflow-hidden group cursor-pointer"
+      onClick={onClick}
+    >
+      {thumbnailUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-sky-600 to-cyan-700 opacity-80 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <span className="text-5xl text-white/90">S</span>
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/40 to-transparent p-5 flex flex-col justify-end">
+        {subtitle ? (
+          <div className="mb-2">
+            <span className="text-[10px] font-black text-slate-200 px-2 py-0.5 bg-slate-800/70 rounded">{subtitle}</span>
+          </div>
+        ) : null}
+        <h4 className="text-white font-black text-lg md:text-xl line-clamp-2">{title}</h4>
+      </div>
+    </div>
+  );
+}
+
 export default function RoadmapView({
   onOpenDetail,
   onGoToLibrary,
@@ -135,12 +182,33 @@ export default function RoadmapView({
   onAddClassFromToday?: () => void;
 }) {
   const { data, weekLabel, loading, error, fetchDashboard } = useSpokeduProDashboard();
+  const [screenplays, setScreenplays] = useState<ScreenplayRow[]>([]);
 
   useEffect(() => {
     const handler = () => fetchDashboard();
     window.addEventListener('spokedu-pro-dashboard-saved', handler);
     return () => window.removeEventListener('spokedu-pro-dashboard-saved', handler);
   }, [fetchDashboard]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/spokedu-pro/screenplays', { credentials: 'include' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
+        if (Array.isArray(json?.screenplays)) {
+          setScreenplays(json.screenplays);
+        } else {
+          setScreenplays([]);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setScreenplays([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const dashboard = data ?? DEFAULT_DASHBOARD_V4;
   const { weekTheme, row2 } = dashboard;
@@ -236,14 +304,14 @@ export default function RoadmapView({
           <div className="text-slate-400 font-medium">대시보드 불러오는 중...</div>
         )}
 
-        {!error && data && dashboard.weekTheme.items.length === 0 && dashboard.row2.items.length === 0 && (
+        {!error && data && dashboard.weekTheme.items.length === 0 && screenplays.length === 0 && (
           <div className="py-12 text-center text-slate-400">
             <p className="font-medium">이번 주 추천이 아직 없어요.</p>
             <p className="text-sm mt-1">곧 업데이트될 예정이에요.</p>
           </div>
         )}
 
-        {!error && (loading ? !!data : true) && (dashboard.weekTheme.items.length > 0 || dashboard.row2.items.length > 0) && (
+        {!error && (loading ? !!data : true) && (dashboard.weekTheme.items.length > 0 || screenplays.length > 0) && (
         <>
         {/* Row1: 이번 주 수업 가이드 (고정) */}
         <div className="space-y-4">
@@ -306,17 +374,23 @@ export default function RoadmapView({
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-6">
-            {row2.items.slice(0, 4).map((item, idx) => (
-              <ProgramCardRow2
-                key={`row2-${idx}-${item.programId}`}
-                programId={item.programId}
-                tag2={item.tag2 ?? []}
-                programDetail={programDetails[String(item.programId)] ?? null}
-                onClick={() => onOpenDetail(item.programId, { themeKey: 'cognitive' })}
-              />
-            ))}
-          </div>
+          {screenplays.length === 0 ? (
+            <div className="rounded-2xl border border-slate-700 bg-slate-900/40 px-4 py-6 text-sm text-slate-400">
+              등록된 스포무브(Screenplay) 프로그램이 없습니다.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-6">
+              {screenplays.slice(0, 4).map((item, idx) => (
+                <ScreenplayCard
+                  key={`row2-screenplay-${idx}-${item.id}`}
+                  title={item.title ?? `Screenplay #${item.id}`}
+                  subtitle={item.subtitle ?? item.modeId}
+                  thumbnailUrl={item.thumbnailUrl}
+                  onClick={() => onGoToLibrary?.('cognitive')}
+                />
+              ))}
+            </div>
+          )}
         </div>
         </>
         )}

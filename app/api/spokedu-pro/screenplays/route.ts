@@ -8,22 +8,11 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { SCREENPLAY_CATALOG } from '@/app/lib/spokedu-pro/screenplayCatalog';
-
-const DB_READY = process.env.SPOKEDU_PRO_SCREENPLAYS_DB_READY === 'true';
 
 export async function GET() {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  if (!DB_READY) {
-    return NextResponse.json({
-      ok: true,
-      screenplays: SCREENPLAY_CATALOG,
-      source: 'catalog',
-    });
-  }
 
   try {
     const supabase = getServiceSupabase();
@@ -49,11 +38,11 @@ export async function GET() {
 
     return NextResponse.json({ ok: true, screenplays, source: 'db' });
   } catch {
-    // DB 실패 시 hardcoded fallback
+    // DB 실패 시에도 잘못된 하드코딩 노출을 막기 위해 빈 목록 반환
     return NextResponse.json({
       ok: true,
-      screenplays: SCREENPLAY_CATALOG,
-      source: 'catalog_fallback',
+      screenplays: [],
+      source: 'empty_db_error',
     });
   }
 }
