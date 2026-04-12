@@ -101,6 +101,14 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 1, name: 'FLOW 프로그램', enName: 'Flow Program', desc: '시작-레벨-휴식을 포함한 FLOW 전체 시퀀스를 진행합니다.' },
     ],
   },
+  challenge: {
+    id: 'challenge', title: '챌린지', en: 'Challenge', icon: '🥁', accent: '#14B8A6',
+    tag: '리듬 · 방향 반응',
+    desc: '스튜디오에서 설정한 BGM·그리드 기준 리듬 챌린지를 SPOMOVE에서 실행합니다.',
+    levels: [
+      { id: 1, name: '리듬 프로그램', enName: 'Rhythm Program', desc: '4단계 리듬 시퀀스를 끝까지 진행합니다.' },
+    ],
+  },
 };
 
 export const STUDENTS_KEY = 'spokedu_students_v1';

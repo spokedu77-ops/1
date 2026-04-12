@@ -21,7 +21,7 @@ import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
 import { CSS, S } from './styles';
 import type { DupStats } from './lib/signals';
 
-type Screen = 'home' | 'setup' | 'guide' | 'students' | 'training' | 'memory' | 'flow' | 'result';
+type Screen = 'home' | 'setup' | 'guide' | 'students' | 'training' | 'memory' | 'flow' | 'challenge' | 'result';
 
 type Settings = {
   mode: string;
@@ -99,6 +99,7 @@ export default function MemoryGameApp({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trainingContainerRef = useRef<HTMLDivElement>(null);
   const flowCompleteGuardRef = useRef(false);
+  const challengeCompleteGuardRef = useRef(false);
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
 
   const month = new Date().getMonth() + 1;
@@ -230,7 +231,7 @@ export default function MemoryGameApp({
 
   useEffect(() => {
     // 훈련/메모리 화면 이탈 시 BGM 정지 (요청: 시작 클릭 시만 재생, 훈련/메모리에서만 유지)
-    if (screen === 'training' || screen === 'memory' || screen === 'flow') return;
+    if (screen === 'training' || screen === 'memory' || screen === 'flow' || screen === 'challenge') return;
     bgmPlayerRef.current?.fadeOut(220);
   }, [screen]);
 
@@ -287,7 +288,7 @@ export default function MemoryGameApp({
       };
 
       // BGM 정책:
-      // - flow: iframe(/program/iiwarmup/flow) 안 FlowEngine이 BGM 재생 — 부모 BgmPlayer로 재생하면 이중 재생됨
+      // - flow / challenge: iframe 안에서 BGM 재생 — 부모 BgmPlayer로 재생하면 이중 재생됨
       // - basic/spatial/dual/stroop: 월별 BGM list 랜덤 재생
       const bgmMode = cfg.mode;
       const shouldTryBgmParent =
@@ -306,6 +307,10 @@ export default function MemoryGameApp({
       if (cfg.mode === 'flow') {
         flowCompleteGuardRef.current = false;
         setScreen('flow');
+        setCountdown(null);
+      } else if (cfg.mode === 'challenge') {
+        challengeCompleteGuardRef.current = false;
+        setScreen('challenge');
         setCountdown(null);
       } else {
         // spatial(순차기억)도 warmup 카운트다운 적용
@@ -354,10 +359,10 @@ export default function MemoryGameApp({
     if (flowBgmLoading) return;
     pendingBgmStartRef.current = null;
     if (flowBgmList.length === 0) return;
-    if (!(screen === 'training' || screen === 'memory' || screen === 'flow')) return;
+    if (!(screen === 'training' || screen === 'memory' || screen === 'flow' || screen === 'challenge')) return;
 
     const mode = pending.mode;
-    if (mode === 'flow') return;
+    if (mode === 'flow' || mode === 'challenge') return;
     const pick = flowBgmList[Math.floor(Math.random() * flowBgmList.length)]!;
     if (!pick) return;
     try {
@@ -394,18 +399,31 @@ export default function MemoryGameApp({
     setScreen('result');
   }, [settings, selectedStudentId]);
 
+  const handleChallengeComplete = useCallback(() => {
+    if (challengeCompleteGuardRef.current) return;
+    challengeCompleteGuardRef.current = true;
+    if (document.fullscreenElement) document.exitFullscreen();
+    const cfg = { ...settings, mode: 'challenge', level: 1 };
+    const completedStages = 4;
+    setResult({ count: completedStages, cfg });
+    setScreen('result');
+  }, [settings]);
+
   useEffect(() => {
-    if (screen !== 'flow') return;
+    if (screen !== 'flow' && screen !== 'challenge') return;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       const messageType = (event.data as { type?: string } | null)?.type;
-      if (messageType === 'flow-ending' || messageType === 'flow-ended') {
+      if (screen === 'flow' && (messageType === 'flow-ending' || messageType === 'flow-ended')) {
         handleFlowComplete();
+      }
+      if (screen === 'challenge' && messageType === 'challenge-ended') {
+        handleChallengeComplete();
       }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [screen, handleFlowComplete]);
+  }, [screen, handleFlowComplete, handleChallengeComplete]);
 
   const M = MODES[settings.mode];
   if (!M) return null;
@@ -473,7 +491,7 @@ export default function MemoryGameApp({
                     <div style={{ fontSize: 'clamp(1rem,2.5vw,1.2rem)', marginBottom: '0.25rem' }}>{m.icon}</div>
                     <div style={{ fontSize: 'clamp(0.72rem,1.8vw,0.82rem)', fontWeight: 800, color: active ? m.accent : 'rgba(255,255,255,0.8)', lineHeight: 1.2 }}>{m.title}</div>
                     <div style={{ fontSize: 'clamp(0.58rem,1.4vw,0.65rem)', color: 'rgba(255,255,255,0.28)', marginTop: '0.12rem', fontWeight: 500 }}>{m.en}</div>
-                    <div style={{ fontSize: 'clamp(0.55rem,1.3vw,0.62rem)', color: 'rgba(255,255,255,0.2)', marginTop: '0.2rem', fontWeight: 600 }}>{m.id === 'spatial' || m.id === 'dual' ? `${m.levels.length}번` : m.id === 'flow' ? `${m.levels.length}프로그램` : `${m.levels.length}단계`}</div>
+                    <div style={{ fontSize: 'clamp(0.55rem,1.3vw,0.62rem)', color: 'rgba(255,255,255,0.2)', marginTop: '0.2rem', fontWeight: 600 }}>{m.id === 'spatial' || m.id === 'dual' ? `${m.levels.length}번` : m.id === 'flow' || m.id === 'challenge' ? `${m.levels.length}프로그램` : `${m.levels.length}단계`}</div>
                   </button>
                 );
               })}
@@ -703,7 +721,7 @@ export default function MemoryGameApp({
                 ))}
               </div>
             </div>
-            {settings.mode !== 'flow' && (
+            {settings.mode !== 'flow' && settings.mode !== 'challenge' && (
               <>
                 {isDual21 && (
                   <div style={S.sec}>
@@ -895,6 +913,26 @@ export default function MemoryGameApp({
     );
   }
 
+  if (screen === 'challenge') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#0c0a09', zIndex: 320 }}>
+        <style>{CSS}</style>
+        <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
+          <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>
+            챌린지 프로그램 실행 중
+          </div>
+          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+        </div>
+        <iframe
+          src="/program/iiwarmup/challenge?autoStart=1"
+          title="SPOMOVE Challenge Program"
+          style={{ width: '100%', height: '100%', border: 0 }}
+          allow="autoplay"
+        />
+      </div>
+    );
+  }
+
   if (screen === 'training') {
     const bg = flashing ? '#ffffff' : (signal?.bg as string) ?? '#0F172A';
     const dark = !flashing && (bg === '#0F172A' || bg.startsWith('#0') || bg.startsWith('#1'));
@@ -975,7 +1013,7 @@ export default function MemoryGameApp({
   if (screen === 'result' && result) {
     const { count, cfg, dupStats } = result;
     const mo = MODES[cfg.mode];
-    const isMem = cfg.mode === 'spatial' || cfg.mode === 'flow';
+    const isMem = cfg.mode === 'spatial' || cfg.mode === 'flow' || cfg.mode === 'challenge';
     const isDual21TouchCfg = cfg.mode === 'dual' && cfg.level === 2 && cfg.dual21Advance === 'touch';
     const totalSec = isMem
       ? MEMORY_ROUNDS * 5
@@ -997,7 +1035,7 @@ export default function MemoryGameApp({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <span style={{ fontSize: '1.1rem' }}>{mo?.icon}</span>
-                <span style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text-muted)' }}>{mo?.title} · {cfg.mode === 'spatial' ? `${cfg.level}번` : cfg.mode === 'dual' ? (cfg.level === 1 ? '1번' : '2-1번') : cfg.mode === 'flow' ? `${cfg.level}프로그램` : `단계 ${cfg.level}`}</span>
+                <span style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text-muted)' }}>{mo?.title} · {cfg.mode === 'spatial' ? `${cfg.level}번` : cfg.mode === 'dual' ? (cfg.level === 1 ? '1번' : '2-1번') : cfg.mode === 'flow' || cfg.mode === 'challenge' ? `${cfg.level}프로그램` : `단계 ${cfg.level}`}</span>
               </div>
               {student && <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><div style={{ width: 20, height: 20, borderRadius: '50%', background: student.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 900, color: '#fff' }}>{student.name[0]}</div><span style={{ fontSize: '0.96rem', fontWeight: 700, color: student.color }}>{student.name}</span></div>}
             </div>

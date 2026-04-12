@@ -80,7 +80,6 @@ function SkeletonCard() {
 
 export default function LibraryView({
   onOpenDetail,
-  onOpenMemoryGame,
   onSelectProgram,
   initialPreset = null,
   programDetails = {},
@@ -88,8 +87,7 @@ export default function LibraryView({
   functionalCap,
   libraryMode = 'program',
 }: {
-  onOpenDetail: (id: number, context?: { role?: string; themeKey?: string }) => void;
-  onOpenMemoryGame?: (mode: string, level: number) => void;
+  onOpenDetail: (id: number, context?: { role?: string; themeKey?: string; screenplay?: boolean }) => void;
   /** 설정 시 카드 클릭으로 프로그램 선택(드로어 대신). */
   onSelectProgram?: (id: number) => void;
   initialPreset?: { themeKey?: string; preset?: string } | null;
@@ -152,17 +150,27 @@ export default function LibraryView({
           if (cancelled || !Array.isArray(json?.screenplays)) return;
           const q = debouncedSearch.trim().toLowerCase();
           const mapped = json.screenplays
-            .map((s: { id: number | string; modeId?: string; title?: string; presetRef?: string; thumbnailUrl?: string }) => ({
-              id: Number(s.id) || 0,
-              title: s.title ?? '',
-              function_type: s.modeId ?? null,
-              main_theme: null,
-              group_size: null,
-              video_url: null,
-              mode_id: s.modeId ?? null,
-              preset_ref: s.presetRef ?? null,
-              thumbnail_url: s.thumbnailUrl ?? null,
-            }))
+            .map(
+              (s: {
+                id: number | string;
+                modeId?: string;
+                title?: string;
+                subtitle?: string;
+                description?: string;
+                presetRef?: string;
+                thumbnailUrl?: string;
+              }) => ({
+                id: Number(s.id) || 0,
+                title: s.title ?? '',
+                function_type: s.modeId ?? null,
+                main_theme: null,
+                group_size: null,
+                video_url: null,
+                mode_id: s.modeId ?? null,
+                preset_ref: s.presetRef ?? null,
+                thumbnail_url: s.thumbnailUrl ?? null,
+              })
+            )
             .filter((s: ProgramRow) => (q ? s.title.toLowerCase().includes(q) : true));
           setProgramsFromApi(mapped);
         })
@@ -369,26 +377,7 @@ export default function LibraryView({
                         return;
                       }
                       if (isScreenplayPreset) {
-                        const level = Number(p.preset_ref ?? '1');
-                        const modeMap: Record<string, string> = {
-                          FLOW: 'flow',
-                          반응인지: 'basic',
-                          순차기억: 'spatial',
-                          스트룹: 'stroop',
-                          이중과제: 'dual',
-                          CHALLENGE: 'basic',
-                        };
-                        const mode = modeMap[String(p.mode_id ?? p.function_type ?? '')] ?? 'basic';
-                        const targetLevel = Number.isFinite(level) && level > 0 ? level : 1;
-                        if (onOpenMemoryGame) {
-                          onOpenMemoryGame(mode, targetLevel);
-                        } else {
-                          const qs = new URLSearchParams({
-                            mode,
-                            level: String(targetLevel),
-                          });
-                          window.location.href = `/admin/memory-game?${qs.toString()}`;
-                        }
+                        onOpenDetail(p.id, { screenplay: true });
                         return;
                       }
                       onOpenDetail(p.id, undefined);

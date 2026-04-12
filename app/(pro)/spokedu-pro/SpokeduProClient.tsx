@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
 import './styles/spokedu-pro.css';
 import { useSpokeduProUI, type ViewId } from './hooks/useSpokeduProUI';
@@ -24,6 +24,12 @@ import PostClassModal from './components/PostClassModal';
 import { SpokeduProErrorBoundary } from './components/SpokeduProErrorBoundary';
 import { useProContext } from './hooks/useProContext';
 import { setTodayClassPhase } from './utils/todayClassStorage';
+import {
+  getSpomoveLaunchParams,
+  mergeScreenplayProgramDetailForDrawer,
+  screenplayDetailStorageKey,
+  type ScreenplayMeta,
+} from './utils/spomoveLaunch';
 
 export default function SpokeduProClient({
   isEditMode = false,
@@ -43,6 +49,14 @@ export default function SpokeduProClient({
   const [toolkitOpen, setToolkitOpen] = useState(false);
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
   const [drawerContext, setDrawerContext] = useState<{ role?: string; themeKey?: string } | null>(null);
+  /** 라이브러리(프로그램 뱅크) 탭 전용 상세 모달 — 로드맵 등과 분리 */
+  const [libraryDrawerProgramId, setLibraryDrawerProgramId] = useState<number | null>(null);
+  const [libraryDrawerContext, setLibraryDrawerContext] = useState<{
+    role?: string;
+    themeKey?: string;
+    screenplay?: boolean;
+  } | null>(null);
+  const [screenplayById, setScreenplayById] = useState<Record<number, ScreenplayMeta>>({});
   const [libraryPreset, setLibraryPreset] = useState<{ themeKey?: string; preset?: string } | null>(null);
   const [libraryMode, setLibraryMode] = useState<'program' | 'screenplay'>('program');
   const [showCurationDrawer, setShowCurationDrawer] = useState(false);
@@ -69,6 +83,8 @@ export default function SpokeduProClient({
     if (viewId !== 'library') {
       setLibraryPreset(null);
       setLibraryMode('program');
+      setLibraryDrawerProgramId(null);
+      setLibraryDrawerContext(null);
     }
   }, [viewId]);
 
@@ -97,6 +113,37 @@ export default function SpokeduProClient({
       .catch(() => setProgramsFromApi([]));
   }, []);
 
+  useEffect(() => {
+    fetch('/api/spokedu-pro/screenplays', { credentials: 'include' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (!Array.isArray(json?.screenplays)) return;
+        const next: Record<number, ScreenplayMeta> = {};
+        for (const s of json.screenplays as Array<{
+          id: number;
+          modeId?: string;
+          title?: string;
+          subtitle?: string;
+          description?: string;
+          presetRef?: string;
+          thumbnailUrl?: string;
+        }>) {
+          const id = Number(s.id);
+          if (!Number.isFinite(id)) continue;
+          next[id] = {
+            title: s.title ?? `Screenplay #${id}`,
+            modeId: s.modeId,
+            subtitle: s.subtitle,
+            description: s.description,
+            presetRef: s.presetRef,
+            thumbnailUrl: s.thumbnailUrl,
+          };
+        }
+        setScreenplayById(next);
+      })
+      .catch(() => setScreenplayById({}));
+  }, []);
+
   const programDetailsFromApi: Record<string, ProgramDetail> = {};
   programsFromApi.forEach((row) => {
     programDetailsFromApi[String(row.id)] = {
@@ -116,13 +163,37 @@ export default function SpokeduProClient({
   const adminProgramDetails = (adminContent?.program_details?.draft_value ?? {}) as Record<string, ProgramDetail>;
   const contentDetails = isEditMode ? adminProgramDetails : programDetails;
   const programDetailsForDrawer: Record<string, ProgramDetail> = { ...programDetailsFromApi, ...contentDetails };
-  const drawerProgramDetail = drawerProgramId != null ? programDetailsForDrawer[String(drawerProgramId)] ?? null : null;
+  const libraryDrawerOpen = viewId === 'library' && libraryDrawerProgramId !== null;
+  const globalDrawerOpen = drawerProgramId !== null;
+  const resolvedDrawerProgramId = libraryDrawerOpen ? libraryDrawerProgramId : drawerProgramId;
+  const resolvedDrawerContext = libraryDrawerOpen ? libraryDrawerContext : drawerContext;
+  const libraryScreenplayDetail =
+    libraryDrawerOpen && libraryDrawerContext?.screenplay && libraryDrawerProgramId != null
+      ? programDetailsForDrawer[screenplayDetailStorageKey(libraryDrawerProgramId)]
+      : undefined;
+
+  const drawerProgramDetail = useMemo(() => {
+    if (resolvedDrawerProgramId == null) return null;
+    if (libraryDrawerOpen && libraryDrawerContext?.screenplay) {
+      const sp = screenplayById[resolvedDrawerProgramId];
+      return mergeScreenplayProgramDetailForDrawer(sp, libraryScreenplayDetail);
+    }
+    return programDetailsForDrawer[String(resolvedDrawerProgramId)] ?? null;
+  }, [
+    resolvedDrawerProgramId,
+    libraryDrawerOpen,
+    libraryDrawerContext?.screenplay,
+    screenplayById,
+    libraryScreenplayDetail,
+    programDetailsForDrawer,
+  ]);
 
   const handleSaveProgramDetail = useCallback(
-    async (programId: number, detail: ProgramDetail) => {
+    async (programId: number, detail: ProgramDetail, opts?: { screenplay?: boolean }) => {
       const entry = adminContent?.program_details;
       const current = (entry?.draft_value ?? {}) as Record<string, ProgramDetail>;
-      const next = { ...current, [String(programId)]: detail };
+      const key = opts?.screenplay ? screenplayDetailStorageKey(programId) : String(programId);
+      const next = { ...current, [key]: detail };
       const version = entry?.version ?? 0;
       const result = await saveContentDraft('program_details', next, version);
       if (result.ok) {
@@ -140,9 +211,20 @@ export default function SpokeduProClient({
     setDrawerProgramId(id);
     setDrawerContext(context ?? null);
   }, []);
+  const openLibraryProgramDetail = useCallback(
+    (id: number, context?: { role?: string; themeKey?: string; screenplay?: boolean }) => {
+      setLibraryDrawerProgramId(id);
+      setLibraryDrawerContext(context ?? null);
+    },
+    []
+  );
   const closeProgramDrawer = useCallback(() => {
     setDrawerProgramId(null);
     setDrawerContext(null);
+  }, []);
+  const closeLibraryProgramDrawer = useCallback(() => {
+    setLibraryDrawerProgramId(null);
+    setLibraryDrawerContext(null);
   }, []);
   const goToLibrary = useCallback(
     (themeKey?: string, preset?: string) => {
@@ -213,8 +295,7 @@ export default function SpokeduProClient({
         </div>
         <div className={`view-content ${viewId === 'library' ? 'active' : ''}`}>
           <LibraryView
-            onOpenDetail={openDrawer}
-            onOpenMemoryGame={(mode, level) => setMemoryGameModal({ open: true, mode, level })}
+            onOpenDetail={openLibraryProgramDetail}
             initialPreset={libraryPreset}
             programDetails={programDetailsForDrawer}
             functionalCap={isEditMode ? 144 : undefined}
@@ -248,14 +329,32 @@ export default function SpokeduProClient({
       />
 
       <SpokeduProDrawer
-        open={drawerProgramId !== null && !showCurationDrawer}
-        programId={drawerProgramId}
+        open={(libraryDrawerOpen || globalDrawerOpen) && !showCurationDrawer}
+        programId={resolvedDrawerProgramId}
         programDetail={drawerProgramDetail}
-        role={drawerContext?.role}
-        themeKey={drawerContext?.themeKey}
+        role={resolvedDrawerContext?.role}
+        themeKey={resolvedDrawerContext?.themeKey}
         isEditMode={isEditMode}
         onSaveProgramDetail={isEditMode ? handleSaveProgramDetail : undefined}
-        onClose={closeProgramDrawer}
+        detailKind={libraryDrawerOpen && libraryDrawerContext?.screenplay ? 'screenplay' : 'program'}
+        onLaunchMemoryGame={
+          libraryDrawerOpen &&
+          libraryDrawerContext?.screenplay &&
+          resolvedDrawerProgramId != null &&
+          screenplayById[resolvedDrawerProgramId]
+            ? () => {
+                const id = resolvedDrawerProgramId;
+                if (id == null) return;
+                const sp = screenplayById[id];
+                const { mode, level } = getSpomoveLaunchParams(sp.modeId, sp.presetRef);
+                setMemoryGameModal({ open: true, mode, level });
+              }
+            : undefined
+        }
+        onClose={() => {
+          if (libraryDrawerOpen) closeLibraryProgramDrawer();
+          else closeProgramDrawer();
+        }}
       />
 
       <PostClassModal
@@ -278,10 +377,10 @@ export default function SpokeduProClient({
         <>
           <div
             role="presentation"
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 transition-opacity cursor-pointer"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] transition-opacity cursor-pointer"
             onClick={() => setMemoryGameModal((m) => ({ ...m, open: false }))}
           />
-          <div className="fixed inset-0 z-50 p-2 md:p-4">
+          <div className="fixed inset-0 z-[80] p-2 md:p-4">
             <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 shadow-2xl">
               <div className="h-12 px-4 flex items-center justify-between border-b border-slate-700 bg-slate-950/80">
                 <p className="text-sm font-bold text-slate-200">SPOMOVE 실행</p>

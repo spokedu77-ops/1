@@ -114,6 +114,7 @@ export function CountingTab({ supabase }: CountingTabProps) {
         <MileageDetailModal
           teacher={selectedTeacher}
           supabase={supabase}
+          hideAppliedFeePreview
           onClose={() => setSelectedTeacher(null)}
           onSaved={() => fetchData()}
         />

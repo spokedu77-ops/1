@@ -7,9 +7,12 @@ import {
   ChevronLeft, ChevronRight, 
   Camera, X, FileText, Paperclip, ChevronDown, ChevronUp, Copy 
 } from 'lucide-react';
-import { 
+import {
   FeedbackFields,
   parseTemplateToFields,
+  sessionFileDisplayName,
+  alignCenterDocumentNamesWithUrls,
+  FEEDBACK_TEXT_FIELD_KEYS,
 } from '@/app/lib/feedbackValidation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -214,9 +217,25 @@ function MyClassesContent() {
       return;
     }
 
-    setFeedbackFields(nextFeedbackFields);
+    const urls = Array.isArray(session.file_url) ? session.file_url : [];
+    const isCenterSession =
+      session.session_type === 'regular_center' || session.session_type === 'one_day_center';
+    let fieldsForModal: FeedbackFields = nextFeedbackFields;
+    if (isCenterSession && urls.length > 0) {
+      fieldsForModal = {
+        ...nextFeedbackFields,
+        center_document_names: alignCenterDocumentNamesWithUrls(urls, nextFeedbackFields.center_document_names),
+      };
+    } else if (!isCenterSession) {
+      const { center_document_names: _c, ...rest } = nextFeedbackFields as FeedbackFields & {
+        center_document_names?: string[];
+      };
+      fieldsForModal = rest;
+    }
+
+    setFeedbackFields(fieldsForModal);
     setPhotoUrls(Array.isArray(session.photo_url) ? session.photo_url : []);
-    setFileUrls(Array.isArray(session.file_url) ? session.file_url : []);
+    setFileUrls(urls);
     setIsModalOpen(true);
   };
 
@@ -243,11 +262,10 @@ function MyClassesContent() {
       }
     } else {
       // 개인 수업: 필수 필드 체크
-      const requiredFields = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'] as const;
-      const missingFields = requiredFields.filter(
-        field => !feedbackFields[field as keyof FeedbackFields] || 
-                 feedbackFields[field as keyof FeedbackFields]!.trim().length < 5
-      );
+      const missingFields = FEEDBACK_TEXT_FIELD_KEYS.filter((field) => {
+        const v = feedbackFields[field];
+        return typeof v !== 'string' || v.trim().length < 5;
+      });
       
       if (missingFields.length > 0) {
         const fieldNames: Record<string, string> = {
@@ -257,7 +275,7 @@ function MyClassesContent() {
           next_goals: '다음 수업 목표 및 계획',
           condition_notes: '특이사항 및 시작/종료 시간'
         };
-        const missingFieldNames = missingFields.map(f => fieldNames[f]).join(', ');
+        const missingFieldNames = missingFields.map((f) => fieldNames[f]).join(', ');
         return toast.error(`다음 필드를 작성해주세요: ${missingFieldNames}`);
       }
     }
@@ -313,33 +331,31 @@ function MyClassesContent() {
     }
   };
 
-  const getDisplayFileName = (url: string): string => {
-    const raw = url.split('/').pop() || '';
-    const withoutQuery = raw.split('?')[0];
-    const decoded = (() => {
-      try {
-        return decodeURIComponent(withoutQuery);
-      } catch {
-        return withoutQuery;
-      }
-    })();
-    const withoutPrefix = decoded.replace(/^\d+_/, '');
-    return withoutPrefix || 'File';
-  };
-
   const uploadFile = async (file: File, bucket: string) => {
     if (!supabase || !selectedEvent) return null;
     setUploading(true);
     try {
-      const originalName = file.name.normalize('NFC').replace(/[\\/:*?"<>|]/g, '_').trim();
-      const fallbackName = 'file';
-      const safeBaseName = originalName.length > 0 ? originalName : fallbackName;
-      const encodedName = encodeURIComponent(safeBaseName);
-      const safeFileName = `${selectedEvent.id}/${Date.now()}_${encodedName}`;
+      const displayName =
+        file.name.normalize('NFC').trim().replace(/[/\\]/g, '_').slice(0, 300) || 'file';
+      const rawName = file.name.normalize('NFC').trim();
+      const lastDot = rawName.lastIndexOf('.');
+      const basePart = lastDot > 0 ? rawName.slice(0, lastDot) : rawName;
+      const ext =
+        lastDot > 0 && lastDot < rawName.length - 1
+          ? rawName.slice(lastDot).replace(/[^.a-zA-Z0-9]/g, '')
+          : '';
+      const sanitizedBase = basePart
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+      const safeBase = sanitizedBase.length > 0 ? sanitizedBase : 'file';
+      const safeFileName = `${selectedEvent.id}/${Date.now()}_${safeBase}${ext}`;
       const { error } = await supabase.storage.from(bucket).upload(safeFileName, file);
       if (error) throw error;
       const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(safeFileName).data;
-      return publicUrl;
+      return { publicUrl, displayName };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(`파일 업로드 오류: ${msg}`);
@@ -580,15 +596,42 @@ function MyClassesContent() {
                     <div className="grid gap-2">
                       {fileUrls.map((url, i) => (
                         <div key={i} className="flex items-center justify-between bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
-                          <span className="text-xs font-bold text-slate-600 truncate max-w-[300px]">{getDisplayFileName(url)}</span>
-                          <button onClick={() => setFileUrls(fileUrls.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-red-500 cursor-pointer"><X size={16} /></button>
+                          <span className="text-xs font-bold text-slate-600 truncate max-w-[300px]">
+                            {sessionFileDisplayName(url, i, feedbackFields.center_document_names ?? null)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFileUrls((prev) => prev.filter((_, idx) => idx !== i));
+                              setFeedbackFields((prev) => ({
+                                ...prev,
+                                center_document_names: Array.isArray(prev.center_document_names)
+                                  ? prev.center_document_names.filter((_, idx) => idx !== i)
+                                  : [],
+                              }));
+                            }}
+                            className="text-slate-300 hover:text-red-500 cursor-pointer"
+                          >
+                            <X size={16} />
+                          </button>
                         </div>
                       ))}
                       <label className="flex items-center justify-center p-4 bg-white border-2 border-dashed border-blue-200 rounded-xl text-blue-500 hover:bg-blue-50 cursor-pointer transition-all active:scale-95">
                         <span className="text-xs font-black uppercase tracking-widest">+ Add File</span>
                         <input type="file" className="hidden" onChange={async (e) => {
-                          const url = await uploadFile(e.target.files?.[0] as File, 'session-files');
-                          if (url) setFileUrls(prev => [...prev, url]);
+                          const f = e.target.files?.[0];
+                          e.target.value = '';
+                          if (!f) return;
+                          const r = await uploadFile(f, 'session-files');
+                          if (!r) return;
+                          setFileUrls((prev) => [...prev, r.publicUrl]);
+                          setFeedbackFields((prev) => ({
+                            ...prev,
+                            center_document_names: [
+                              ...(Array.isArray(prev.center_document_names) ? prev.center_document_names : []),
+                              r.displayName,
+                            ],
+                          }));
                         }} disabled={uploading} />
                       </label>
                     </div>
@@ -686,8 +729,11 @@ function MyClassesContent() {
                     <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center bg-white text-slate-300 hover:bg-slate-50 hover:border-blue-400 cursor-pointer transition-all active:scale-95">
                       <Camera size={24} />
                       <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
-                        const url = await uploadFile(e.target.files?.[0] as File, 'session-photos');
-                        if (url) setPhotoUrls(prev => [...prev, url]);
+                        const f = e.target.files?.[0];
+                        e.target.value = '';
+                        if (!f) return;
+                        const r = await uploadFile(f, 'session-photos');
+                        if (r) setPhotoUrls((prev) => [...prev, r.publicUrl]);
                       }} disabled={uploading} />
                     </label>
                   </div>

@@ -79,10 +79,10 @@ function formatSessionWithDate(title: string | null | undefined, dateIso: string
   return clean ? `${clean} (${dateStr})` : dateStr;
 }
 
-const PENALTY_OPTIONS = [
-  { label: '공지 댓글 미등록', value: -5000 },
-  { label: '수업 연기 요청', value: -5000 },
-  { label: '당일 수업 연기 요청', value: -15000 },
+/** 운영에서 조건 충족 시 수동 지급하는 빠른 추가 항목 */
+const ADDITIONAL_POINT_OPTIONS = [
+  { label: '하루 수업 3개 이상 진행', value: 5000 },
+  { label: '한 아이 25회 이상 수업 진행', value: 15000 },
 ];
 
 interface MileageDetailModalProps {
@@ -90,6 +90,8 @@ interface MileageDetailModalProps {
   supabase: SupabaseClient | null;
   onClose: () => void;
   onSaved?: () => void;
+  /** true면 카운팅 관리 등에서 열었을 때 상단 「적용 기본 수업료」 블록 숨김 */
+  hideAppliedFeePreview?: boolean;
 }
 
 function SessionCountByMonth({
@@ -171,7 +173,13 @@ function SessionCountByMonth({
   );
 }
 
-export default function MileageDetailModal({ teacher, supabase, onClose, onSaved }: MileageDetailModalProps) {
+export default function MileageDetailModal({
+  teacher,
+  supabase,
+  onClose,
+  onSaved,
+  hideAppliedFeePreview = false,
+}: MileageDetailModalProps) {
   const [modalTab, setModalTab] = useState<'mileage' | 'sessions'>('mileage');
   const [teacherLogs, setTeacherLogs] = useState<MileageLog[]>([]);
   const [mileageSessionStartById, setMileageSessionStartById] = useState<Record<string, string>>({});
@@ -179,12 +187,13 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
   const [teacherCountLogs, setTeacherCountLogs] = useState<SessionCountLog[]>([]);
   const [editPointValue, setEditPointValue] = useState<number>(teacher.points || 0);
   const [editSessionCount, setEditSessionCount] = useState<number>(teacher.session_count || 0);
-  const [selectedPenalty, setSelectedPenalty] = useState<string>('');
+  const [selectedAdditional, setSelectedAdditional] = useState<string>('');
   const [editReason, setEditReason] = useState<string>('');
-  const [lastPenaltyLog, setLastPenaltyLog] = useState<MileageLog | null>(null);
+  const [lastAdditionalLog, setLastAdditionalLog] = useState<MileageLog | null>(null);
   const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
 
   const tierFeePreview = useMemo(() => {
+    if (hideAppliedFeePreview) return null;
     const tier = computeTier(totalLessonsFromCounts(teacher.session_count, teacher.logCount));
     return effectiveFees(tier, {
       fee_private: teacher.fee_private ?? null,
@@ -193,6 +202,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
       fee_center_assist: teacher.fee_center_assist ?? null,
     }, tierFeeMap);
   }, [
+    hideAppliedFeePreview,
     teacher.session_count,
     teacher.logCount,
     teacher.fee_private,
@@ -203,6 +213,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
   ]);
 
   useEffect(() => {
+    if (hideAppliedFeePreview) return;
     let mounted = true;
     const run = async () => {
       const { map: next } = await fetchTeacherTierFeeMap(supabase);
@@ -213,7 +224,7 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
     return () => {
       mounted = false;
     };
-  }, [supabase]);
+  }, [supabase, hideAppliedFeePreview]);
 
   const loadLogs = useCallback(async () => {
     if (!supabase || !teacher?.id) return;
@@ -281,13 +292,13 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
   useEffect(() => {
     setEditPointValue(teacher.points || 0);
     setEditSessionCount(teacher.session_count || 0);
-    setSelectedPenalty('');
+    setSelectedAdditional('');
     setEditReason('');
     setTeacherLogs([]);
     setMileageSessionStartById({});
     setCountSessionStartById({});
     setTeacherCountLogs([]);
-    setLastPenaltyLog(null);
+    setLastAdditionalLog(null);
     loadLogs();
   }, [teacher, loadLogs]);
 
@@ -351,44 +362,43 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
     }
   };
 
-  const handleQuickPenalty = async () => {
-    if (!supabase || !teacher || !selectedPenalty) return;
-    const penalty = PENALTY_OPTIONS.find(p => p.label === selectedPenalty);
-    if (!penalty) return;
-    if (!confirm(`${teacher.name} 강사에게 ${penalty.label} (${penalty.value.toLocaleString()}P)를 차감하시겠습니까?`)) return;
+  const handleQuickAdditional = async () => {
+    if (!supabase || !teacher || !selectedAdditional) return;
+    const item = ADDITIONAL_POINT_OPTIONS.find((p) => p.label === selectedAdditional);
+    if (!item) return;
+    if (!confirm(`${teacher.name} 강사에게 ${item.label} (+${item.value.toLocaleString()}P)를 지급하시겠습니까?`)) return;
 
     try {
       const { data: user } = await supabase.from('users').select('points').eq('id', teacher.id).single();
       const currentPoints = user?.points ?? 0;
-      await supabase.from('users').update({ points: currentPoints + penalty.value }).eq('id', teacher.id);
+      await supabase.from('users').update({ points: currentPoints + item.value }).eq('id', teacher.id);
       const { data: newLog } = await supabase.from('mileage_logs').insert([{
         teacher_id: teacher.id,
-        amount: penalty.value,
-        reason: `[Penalty] ${penalty.label}`,
+        amount: item.value,
+        reason: `[추가] ${item.label}`,
         session_title: '운영진 조치'
       }]).select().single();
-      if (newLog) setLastPenaltyLog(newLog as MileageLog);
-      toast.success('차감이 완료되었습니다.');
+      if (newLog) setLastAdditionalLog(newLog as MileageLog);
+      toast.success('지급이 완료되었습니다.');
       onSaved?.();
       loadLogs();
     } catch (error: unknown) {
-      toast.error('차감 실패: ' + (error instanceof Error ? error.message : String(error)));
+      toast.error('지급 실패: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
-  const handleUndoPenalty = async () => {
-    if (!supabase || !teacher || !lastPenaltyLog) return;
-    if (!confirm(`최근 Penalty (${lastPenaltyLog.amount.toLocaleString()}P)를 취소하시겠습니까?`)) return;
+  const handleUndoAdditional = async () => {
+    if (!supabase || !teacher || !lastAdditionalLog) return;
+    if (!confirm(`최근 추가 항목 (${lastAdditionalLog.amount.toLocaleString()}P) 지급을 취소하시겠습니까?`)) return;
 
     try {
       const { data: user } = await supabase.from('users').select('points').eq('id', teacher.id).single();
       const currentPoints = user?.points ?? 0;
-      await supabase.from('users').update({ points: currentPoints - lastPenaltyLog.amount }).eq('id', teacher.id);
-      const { error } = await supabase.from('mileage_logs').delete().eq('id', lastPenaltyLog.id);
+      await supabase.from('users').update({ points: currentPoints - lastAdditionalLog.amount }).eq('id', teacher.id);
+      const { error } = await supabase.from('mileage_logs').delete().eq('id', lastAdditionalLog.id);
       if (error) throw error;
-      // [취소] 로그는 남기지 않음 (운영진 조치)
-      setLastPenaltyLog(null);
-      toast.success('Penalty가 취소되었습니다.');
+      setLastAdditionalLog(null);
+      toast.success('추가 지급이 취소되었습니다.');
       onSaved?.();
       loadLogs();
     } catch (error: unknown) {
@@ -418,19 +428,21 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
                   <span className="text-[10px] text-slate-300 ml-1">(기존 {(teacher.session_count || 0)} + 신규 {teacher.logCount})</span>
                 )}
               </p>
-              <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-600">
-                <span className="text-slate-400 font-black uppercase tracking-wider">적용 기본 수업료</span>
-                <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5">
-                  <span className="text-slate-400">개인</span>
-                  <span>{tierFeePreview.fee_private.toLocaleString()}원</span>
-                  <span className="text-slate-400">그룹</span>
-                  <span>{tierFeePreview.fee_group.toLocaleString()}원</span>
-                  <span className="text-slate-400">센터 메인</span>
-                  <span>{tierFeePreview.fee_center_main.toLocaleString()}원</span>
-                  <span className="text-slate-400">센터 보조</span>
-                  <span>{tierFeePreview.fee_center_assist.toLocaleString()}원</span>
+              {!hideAppliedFeePreview && tierFeePreview && (
+                <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-600">
+                  <span className="text-slate-400 font-black uppercase tracking-wider">적용 기본 수업료</span>
+                  <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5">
+                    <span className="text-slate-400">개인</span>
+                    <span>{tierFeePreview.fee_private.toLocaleString()}원</span>
+                    <span className="text-slate-400">그룹</span>
+                    <span>{tierFeePreview.fee_group.toLocaleString()}원</span>
+                    <span className="text-slate-400">센터 메인</span>
+                    <span>{tierFeePreview.fee_center_main.toLocaleString()}원</span>
+                    <span className="text-slate-400">센터 보조</span>
+                    <span>{tierFeePreview.fee_center_assist.toLocaleString()}원</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <button onClick={onClose} className="min-h-[44px] min-w-[44px] hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer text-slate-400 flex items-center justify-center touch-manipulation"><X size={20}/></button>
           </div>
@@ -478,33 +490,33 @@ export default function MileageDetailModal({ teacher, supabase, onClose, onSaved
           </button>
 
           <div className="border-t border-slate-100 pt-6 mb-8">
-            <h4 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-3">Penalty</h4>
+            <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3">추가 항목</h4>
             <div className="space-y-2">
               <select
-                value={selectedPenalty}
-                onChange={(e) => setSelectedPenalty(e.target.value)}
-                className="w-full bg-red-50 border-2 border-red-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-red-600 cursor-pointer"
+                value={selectedAdditional}
+                onChange={(e) => setSelectedAdditional(e.target.value)}
+                className="w-full bg-emerald-50 border-2 border-emerald-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-emerald-600 cursor-pointer"
               >
-                <option value="">차감 항목 선택</option>
-                {PENALTY_OPTIONS.map(option => (
+                <option value="">추가 항목 선택</option>
+                {ADDITIONAL_POINT_OPTIONS.map((option) => (
                   <option key={option.label} value={option.label}>
-                    {option.label} ({option.value.toLocaleString()}P)
+                    {option.label} (+{option.value.toLocaleString()}P)
                   </option>
                 ))}
               </select>
               <div className="flex gap-2">
                 <button
-                  onClick={handleQuickPenalty}
-                  disabled={!selectedPenalty}
-                  className="flex-1 bg-red-600 text-white px-5 py-3.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-red-700 transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleQuickAdditional}
+                  disabled={!selectedAdditional}
+                  className="flex-1 bg-emerald-600 text-white px-5 py-3.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  차감 실행
+                  지급 실행
                 </button>
                 <button
-                  onClick={handleUndoPenalty}
-                  disabled={!lastPenaltyLog}
-                  className="px-5 py-3.5 bg-orange-100 text-orange-700 rounded-xl font-black text-xs hover:bg-orange-200 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                  title="최근 Penalty 취소"
+                  onClick={handleUndoAdditional}
+                  disabled={!lastAdditionalLog}
+                  className="px-5 py-3.5 bg-amber-100 text-amber-800 rounded-xl font-black text-xs hover:bg-amber-200 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="최근 추가 항목 지급 취소"
                 >
                   롤백
                 </button>

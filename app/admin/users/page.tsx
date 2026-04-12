@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
-  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, FileCheck, MapPin, KeyRound
+  Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, FileCheck, MapPin, KeyRound, ChevronDown
 } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { CountingTab } from './CountingTab';
@@ -83,6 +83,9 @@ export default function UserDashboardPage() {
   const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const [tierFeeDraft, setTierFeeDraft] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const [tierFeeSaving, setTierFeeSaving] = useState(false);
+  const [tierFeeTableOpen, setTierFeeTableOpen] = useState(false);
+  /** 강사 카드별 「적용/기본 수업료」 블록 펼침 (기본 접힘) */
+  const [userFeeSectionOpen, setUserFeeSectionOpen] = useState<Record<string, boolean>>({});
   const tierFeeFallbackNotifiedRef = useRef(false);
 
   const fetchUsers = useCallback(async () => {
@@ -501,83 +504,98 @@ export default function UserDashboardPage() {
         </div>
         {mainTab === 'info' && currentUser?.role === 'admin' && (
           <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
-              <div>
-                <h3 className="text-sm font-black text-slate-800">등급별 기본 수업료 표</h3>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">
-                  하드코딩이 아니라 DB 기준표입니다. 저장 후 등급표 적용/자동 기본값에 반영됩니다.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTierFeeDraft(cloneTierFeeMap(HARD_CODED_TIER_FEES))}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[11px] font-black text-slate-700 hover:bg-slate-50"
-                >
-                  코드 기본값으로 복원
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleSaveTierFeeTable()}
-                  disabled={tierFeeSaving}
-                  className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-black hover:bg-indigo-700 disabled:opacity-60"
-                >
-                  {tierFeeSaving ? '저장 중...' : '등급표 저장'}
-                </button>
-              </div>
+            <div className="flex items-start justify-between gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setTierFeeTableOpen((o) => !o)}
+                className="flex items-start gap-2 text-left min-w-0 flex-1 cursor-pointer group"
+                aria-expanded={tierFeeTableOpen}
+              >
+                <ChevronDown
+                  size={18}
+                  className={`shrink-0 mt-0.5 text-slate-400 transition-transform ${tierFeeTableOpen ? '' : '-rotate-90'}`}
+                />
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 group-hover:text-slate-950">등급별 기본 수업료 표</h3>
+                  <p className="text-[11px] font-bold text-slate-500 mt-1">
+                    하드코딩이 아니라 DB 기준표입니다. 저장 후 등급표 적용/자동 기본값에 반영됩니다.
+                  </p>
+                </div>
+              </button>
+              {tierFeeTableOpen && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setTierFeeDraft(cloneTierFeeMap(HARD_CODED_TIER_FEES))}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[11px] font-black text-slate-700 hover:bg-slate-50"
+                  >
+                    코드 기본값으로 복원
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveTierFeeTable()}
+                    disabled={tierFeeSaving}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-black hover:bg-indigo-700 disabled:opacity-60"
+                  >
+                    {tierFeeSaving ? '저장 중...' : '등급표 저장'}
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-[760px] w-full text-xs">
-                <thead>
-                  <tr className="text-slate-500 border-b">
-                    <th className="py-2 pr-2 text-left font-black">등급</th>
-                    <th className="py-2 px-2 text-left font-black">개인</th>
-                    <th className="py-2 px-2 text-left font-black">그룹</th>
-                    <th className="py-2 px-2 text-left font-black">센터 메인</th>
-                    <th className="py-2 pl-2 text-left font-black">센터 보조</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {TEACHER_TIER_IDS.map((tierId) => (
-                    <tr key={tierId} className="border-b last:border-b-0">
-                      <td className="py-2 pr-2 text-slate-700 font-black">{tierLabelKo(tierId)}</td>
-                      <td className="py-2 px-2">
-                        <input
-                          type="number"
-                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
-                          value={tierFeeDraft[tierId].fee_private}
-                          onChange={(e) => handleTierDraftValue(tierId, 'fee_private', e.target.value)}
-                        />
-                      </td>
-                      <td className="py-2 px-2">
-                        <input
-                          type="number"
-                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
-                          value={tierFeeDraft[tierId].fee_group}
-                          onChange={(e) => handleTierDraftValue(tierId, 'fee_group', e.target.value)}
-                        />
-                      </td>
-                      <td className="py-2 px-2">
-                        <input
-                          type="number"
-                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
-                          value={tierFeeDraft[tierId].fee_center_main}
-                          onChange={(e) => handleTierDraftValue(tierId, 'fee_center_main', e.target.value)}
-                        />
-                      </td>
-                      <td className="py-2 pl-2">
-                        <input
-                          type="number"
-                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
-                          value={tierFeeDraft[tierId].fee_center_assist}
-                          onChange={(e) => handleTierDraftValue(tierId, 'fee_center_assist', e.target.value)}
-                        />
-                      </td>
+            {tierFeeTableOpen && (
+              <div className="overflow-x-auto mt-3">
+                <table className="min-w-[760px] w-full text-xs">
+                  <thead>
+                    <tr className="text-slate-500 border-b">
+                      <th className="py-2 pr-2 text-left font-black">등급</th>
+                      <th className="py-2 px-2 text-left font-black">개인</th>
+                      <th className="py-2 px-2 text-left font-black">그룹</th>
+                      <th className="py-2 px-2 text-left font-black">센터 메인</th>
+                      <th className="py-2 pl-2 text-left font-black">센터 보조</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {TEACHER_TIER_IDS.map((tierId) => (
+                      <tr key={tierId} className="border-b last:border-b-0">
+                        <td className="py-2 pr-2 text-slate-700 font-black">{tierLabelKo(tierId)}</td>
+                        <td className="py-2 px-2">
+                          <input
+                            type="number"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
+                            value={tierFeeDraft[tierId].fee_private}
+                            onChange={(e) => handleTierDraftValue(tierId, 'fee_private', e.target.value)}
+                          />
+                        </td>
+                        <td className="py-2 px-2">
+                          <input
+                            type="number"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
+                            value={tierFeeDraft[tierId].fee_group}
+                            onChange={(e) => handleTierDraftValue(tierId, 'fee_group', e.target.value)}
+                          />
+                        </td>
+                        <td className="py-2 px-2">
+                          <input
+                            type="number"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
+                            value={tierFeeDraft[tierId].fee_center_main}
+                            onChange={(e) => handleTierDraftValue(tierId, 'fee_center_main', e.target.value)}
+                          />
+                        </td>
+                        <td className="py-2 pl-2">
+                          <input
+                            type="number"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold"
+                            value={tierFeeDraft[tierId].fee_center_assist}
+                            onChange={(e) => handleTierDraftValue(tierId, 'fee_center_assist', e.target.value)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -588,7 +606,18 @@ export default function UserDashboardPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 min-w-0">
         {filteredUsers.map((user) => (
-          <div key={user.id} className={`bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 border-2 transition-all duration-300 flex flex-col hover:shadow-xl min-w-0 w-full max-w-full overflow-hidden ${user.is_active ? 'border-blue-500 shadow-blue-500/5' : 'border-transparent shadow-sm'}`}>
+          <div
+            key={user.id}
+            className={`bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 border-2 transition-all duration-300 flex flex-col hover:shadow-xl min-w-0 w-full max-w-full overflow-hidden ${
+              user.name.trim() === '미정'
+                ? user.is_active
+                  ? 'border-red-500 shadow-red-500/10 bg-red-50/40'
+                  : 'border-red-400 shadow-sm bg-red-50/30'
+                : user.is_active
+                  ? 'border-blue-500 shadow-blue-500/5'
+                  : 'border-transparent shadow-sm'
+            }`}
+          >
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${user.role === 'teacher' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>{user.role === 'teacher' ? 'Inst' : 'Adm'}</span>
@@ -622,80 +651,102 @@ export default function UserDashboardPage() {
                     <span className="text-xs font-bold text-slate-600">종료 예정으로 표시</span>
                   </label>
                 )}
-                {currentUser?.role === 'admin' && (
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3 space-y-2">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">기본 수업료 (원)</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <label className="text-[10px] font-bold text-slate-500">
-                        개인
-                        <input
-                          type="number"
-                          className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
-                          value={editForm.fee_private ?? ''}
-                          onChange={(e) => {
-                            const v = e.target.value === '' ? null : Number(e.target.value);
-                            setEditForm((prev) => ({ ...prev, fee_private: v, fee_auto_from_tier: false }));
-                          }}
-                        />
-                      </label>
-                      <label className="text-[10px] font-bold text-slate-500">
-                        그룹
-                        <input
-                          type="number"
-                          className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
-                          value={editForm.fee_group ?? ''}
-                          onChange={(e) => {
-                            const v = e.target.value === '' ? null : Number(e.target.value);
-                            setEditForm((prev) => ({ ...prev, fee_group: v, fee_auto_from_tier: false }));
-                          }}
-                        />
-                      </label>
-                      <label className="text-[10px] font-bold text-slate-500">
-                        센터 메인
-                        <input
-                          type="number"
-                          className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
-                          value={editForm.fee_center_main ?? ''}
-                          onChange={(e) => {
-                            const v = e.target.value === '' ? null : Number(e.target.value);
-                            setEditForm((prev) => ({ ...prev, fee_center_main: v, fee_auto_from_tier: false }));
-                          }}
-                        />
-                      </label>
-                      <label className="text-[10px] font-bold text-slate-500">
-                        센터 보조
-                        <input
-                          type="number"
-                          className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
-                          value={editForm.fee_center_assist ?? ''}
-                          onChange={(e) => {
-                            const v = e.target.value === '' ? null : Number(e.target.value);
-                            setEditForm((prev) => ({ ...prev, fee_center_assist: v, fee_auto_from_tier: false }));
-                          }}
-                        />
-                      </label>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
+                {currentUser?.role === 'admin' && (() => {
+                  const feeOpen = userFeeSectionOpen[user.id] ?? false;
+                  return (
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/80 overflow-hidden">
                       <button
                         type="button"
-                        onClick={() => void handleApplyTierFees(user)}
-                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[10px] font-black hover:bg-indigo-700 cursor-pointer"
+                        onClick={() =>
+                          setUserFeeSectionOpen((p) => ({ ...p, [user.id]: !(p[user.id] ?? false) }))
+                        }
+                        className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-slate-100/60 transition-colors cursor-pointer group"
+                        aria-expanded={feeOpen}
                       >
-                        등급표 적용
+                        <ChevronDown
+                          size={16}
+                          className={`shrink-0 mt-0.5 text-slate-400 transition-transform ${feeOpen ? '' : '-rotate-90'}`}
+                        />
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider group-hover:text-slate-700">
+                          기본 수업료 (원) · 등급표 적용 / 저장값 비우기
+                        </span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleResetFeesToTierSchedule(user)}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-[10px] font-black hover:bg-slate-100 cursor-pointer"
-                      >
-                        저장값 비우기 (등급표만 표시)
-                      </button>
+                      {feeOpen && (
+                        <div className="px-3 pb-3 pt-0 space-y-2 border-t border-slate-100/80">
+                          <div className="grid grid-cols-2 gap-2">
+                            <label className="text-[10px] font-bold text-slate-500">
+                              개인
+                              <input
+                                type="number"
+                                className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
+                                value={editForm.fee_private ?? ''}
+                                onChange={(e) => {
+                                  const v = e.target.value === '' ? null : Number(e.target.value);
+                                  setEditForm((prev) => ({ ...prev, fee_private: v, fee_auto_from_tier: false }));
+                                }}
+                              />
+                            </label>
+                            <label className="text-[10px] font-bold text-slate-500">
+                              그룹
+                              <input
+                                type="number"
+                                className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
+                                value={editForm.fee_group ?? ''}
+                                onChange={(e) => {
+                                  const v = e.target.value === '' ? null : Number(e.target.value);
+                                  setEditForm((prev) => ({ ...prev, fee_group: v, fee_auto_from_tier: false }));
+                                }}
+                              />
+                            </label>
+                            <label className="text-[10px] font-bold text-slate-500">
+                              센터 메인
+                              <input
+                                type="number"
+                                className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
+                                value={editForm.fee_center_main ?? ''}
+                                onChange={(e) => {
+                                  const v = e.target.value === '' ? null : Number(e.target.value);
+                                  setEditForm((prev) => ({ ...prev, fee_center_main: v, fee_auto_from_tier: false }));
+                                }}
+                              />
+                            </label>
+                            <label className="text-[10px] font-bold text-slate-500">
+                              센터 보조
+                              <input
+                                type="number"
+                                className="mt-0.5 w-full px-2 py-1.5 text-xs border rounded-lg bg-white"
+                                value={editForm.fee_center_assist ?? ''}
+                                onChange={(e) => {
+                                  const v = e.target.value === '' ? null : Number(e.target.value);
+                                  setEditForm((prev) => ({ ...prev, fee_center_assist: v, fee_auto_from_tier: false }));
+                                }}
+                              />
+                            </label>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleApplyTierFees(user)}
+                              className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[10px] font-black hover:bg-indigo-700 cursor-pointer"
+                            >
+                              등급표 적용
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleResetFeesToTierSchedule(user)}
+                              className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-[10px] font-black hover:bg-slate-100 cursor-pointer"
+                            >
+                              저장값 비우기 (등급표만 표시)
+                            </button>
+                          </div>
+                          <p className="text-[9px] text-slate-400 font-bold leading-relaxed">
+                            빈 칸은 현재 누적 회차에 맞는 등급 표를 화면에 반영합니다. 숫자를 직접 바꾸면 자동 등급표 연동은 해제됩니다.
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-[9px] text-slate-400 font-bold leading-relaxed">
-                      빈 칸은 현재 누적 회차에 맞는 등급 표를 화면에 반영합니다. 숫자를 직접 바꾸면 자동 등급표 연동은 해제됩니다.
-                    </p>
-                  </div>
-                )}
+                  );
+                })()}
                 <button onClick={() => handleSaveInfo(user.id)} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black cursor-pointer">저장</button>
               </div>
             ) : (
@@ -715,35 +766,55 @@ export default function UserDashboardPage() {
                     fee_center_main: user.fee_center_main ?? null,
                     fee_center_assist: user.fee_center_assist ?? null,
                   }, tierFeeMap);
+                  const feeOpen = userFeeSectionOpen[user.id] ?? false;
                   return (
-                    <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">적용 기본 수업료 (원)</p>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-bold text-slate-700">
-                        <span className="text-slate-400">개인</span>
-                        <span>{eff.fee_private.toLocaleString()}</span>
-                        <span className="text-slate-400">그룹</span>
-                        <span>{eff.fee_group.toLocaleString()}</span>
-                        <span className="text-slate-400">센터 메인</span>
-                        <span>{eff.fee_center_main.toLocaleString()}</span>
-                        <span className="text-slate-400">센터 보조</span>
-                        <span>{eff.fee_center_assist.toLocaleString()}</span>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void handleApplyTierFees(user)}
-                          className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[9px] font-black hover:bg-indigo-700 cursor-pointer"
-                        >
-                          등급표 적용
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleResetFeesToTierSchedule(user)}
-                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-[9px] font-black hover:bg-slate-100 cursor-pointer"
-                        >
-                          저장값 비우기
-                        </button>
-                      </div>
+                    <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/60 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setUserFeeSectionOpen((p) => ({ ...p, [user.id]: !(p[user.id] ?? false) }))
+                        }
+                        className="w-full flex items-start gap-2 px-3 py-2.5 text-left hover:bg-slate-100/50 transition-colors cursor-pointer group"
+                        aria-expanded={feeOpen}
+                      >
+                        <ChevronDown
+                          size={16}
+                          className={`shrink-0 mt-0.5 text-slate-400 transition-transform ${feeOpen ? '' : '-rotate-90'}`}
+                        />
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider group-hover:text-slate-600">
+                          적용 기본 수업료 (원) · 등급표 적용 / 저장값 비우기
+                        </span>
+                      </button>
+                      {feeOpen && (
+                        <div className="px-3 pb-3 pt-0 border-t border-slate-100/80">
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-bold text-slate-700">
+                            <span className="text-slate-400">개인</span>
+                            <span>{eff.fee_private.toLocaleString()}</span>
+                            <span className="text-slate-400">그룹</span>
+                            <span>{eff.fee_group.toLocaleString()}</span>
+                            <span className="text-slate-400">센터 메인</span>
+                            <span>{eff.fee_center_main.toLocaleString()}</span>
+                            <span className="text-slate-400">센터 보조</span>
+                            <span>{eff.fee_center_assist.toLocaleString()}</span>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleApplyTierFees(user)}
+                              className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[9px] font-black hover:bg-indigo-700 cursor-pointer"
+                            >
+                              등급표 적용
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleResetFeesToTierSchedule(user)}
+                              className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-[9px] font-black hover:bg-slate-100 cursor-pointer"
+                            >
+                              저장값 비우기
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}

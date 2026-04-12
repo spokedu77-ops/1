@@ -2,12 +2,12 @@
 
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import html2canvas from 'html2canvas';
-import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp, FileText } from 'lucide-react';
+import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp, FileText, X } from 'lucide-react';
 
 type TeacherRow = { id: string; name: string };
 type ExtraTeacher = { id: string; price?: number };
@@ -27,6 +27,27 @@ function getExtraTeachersFromSession(s: { students_text?: string; memo?: string 
   return [];
 }
 type SettlementRow = { id: string; teacher_id: string; amount?: number; reason?: string };
+
+function parseKrwInputToNumber(raw: string): number {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return 0;
+  const n = parseInt(digits, 10);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return n;
+}
+
+type VatCalcMode = 'supply' | 'total';
+
+function computeVatBreakdown(mode: VatCalcMode, amount: number): { supply: number; vat: number; total: number } {
+  if (mode === 'supply') {
+    const vat = Math.round(amount * 0.1);
+    const total = Math.round(amount + vat);
+    return { supply: amount, vat, total };
+  }
+  const supply = Math.round(amount / 1.1);
+  const vat = Math.round(amount - supply);
+  return { supply, vat, total: amount };
+}
 type ReportTeacher = {
   id: string;
   name: string;
@@ -56,6 +77,30 @@ export default function UltimateSettlementPage() {
   const [taxSummaryOpen, setTaxSummaryOpen] = useState(false);
   const [taxSummaryData, setTaxSummaryData] = useState<{ id: string; name: string; grossTotal: number; is_active?: boolean }[]>([]);
   const [taxSummaryLoading, setTaxSummaryLoading] = useState(false);
+
+  const [vatCalcOpen, setVatCalcOpen] = useState(false);
+  const [vatCalcMode, setVatCalcMode] = useState<VatCalcMode>('total');
+  const [vatCalcInputDisplay, setVatCalcInputDisplay] = useState('');
+
+  const vatCalcAmount = useMemo(() => parseKrwInputToNumber(vatCalcInputDisplay), [vatCalcInputDisplay]);
+  const vatCalcBreakdown = useMemo(
+    () => computeVatBreakdown(vatCalcMode, vatCalcAmount),
+    [vatCalcMode, vatCalcAmount]
+  );
+
+  const onVatCalcInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 15);
+    if (!digits) {
+      setVatCalcInputDisplay('');
+      return;
+    }
+    const n = parseInt(digits, 10);
+    if (!Number.isFinite(n) || n < 0) {
+      setVatCalcInputDisplay('');
+      return;
+    }
+    setVatCalcInputDisplay(n.toLocaleString('ko-KR'));
+  }, []);
 
   useEffect(() => {
     const checkMaster = async () => {
@@ -294,6 +339,9 @@ export default function UltimateSettlementPage() {
 
   if (!isAdmin) return null;
 
+  const taxSummaryNonZero = taxSummaryData.filter((row) => (row.grossTotal || 0) !== 0);
+  const taxSummaryZeroOnly = taxSummaryData.filter((row) => (row.grossTotal || 0) === 0);
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 pb-32 pt-10 font-sans">
       
@@ -313,6 +361,14 @@ export default function UltimateSettlementPage() {
           >
             <FileText size={14} />
             {taxSummaryLoading ? '조회 중…' : '세금 계산용 (월별 세전)'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setVatCalcOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wide transition-all shadow-sm border border-indigo-700/30"
+          >
+            <Calculator size={14} />
+            부가세 계산기
           </button>
           <div className="flex bg-white p-2 rounded-3xl shadow-sm border border-slate-100 gap-2 items-center">
           <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="p-2 text-slate-400 outline-none bg-transparent cursor-pointer text-xs font-black uppercase">
@@ -342,26 +398,51 @@ export default function UltimateSettlementPage() {
           {taxSummaryLoading ? (
             <p className="text-amber-700 text-xs font-bold">불러오는 중…</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-amber-200/60">
-                    <th className="py-3 px-2 text-[10px] font-black text-amber-800 uppercase tracking-wider">선생님</th>
-                    <th className="py-3 px-2 text-[10px] font-black text-amber-800 uppercase tracking-wider text-right">세전 총액 (원)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {taxSummaryData.map((row) => (
-                    <tr key={row.id} className="border-b border-amber-100/60 last:border-0">
-                      <td className="py-2.5 px-2 text-sm font-bold text-slate-800">
-                        {row.name}
-                        {row.is_active === false && <span className="ml-1.5 text-[10px] font-bold text-slate-400">(종료)</span>}
-                      </td>
-                      <td className="py-2.5 px-2 text-sm font-black text-slate-900 text-right">{(row.grossTotal || 0).toLocaleString()}</td>
+            <div className="space-y-3">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-amber-200/60">
+                      <th className="py-3 px-2 text-[10px] font-black text-amber-800 uppercase tracking-wider">선생님</th>
+                      <th className="py-3 px-2 text-[10px] font-black text-amber-800 uppercase tracking-wider text-right">세전 총액 (원)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {taxSummaryNonZero.map((row) => (
+                      <tr key={row.id} className="border-b border-amber-100/60 last:border-0">
+                        <td className="py-2.5 px-2 text-sm font-bold text-slate-800">
+                          {row.name}
+                          {row.is_active === false && <span className="ml-1.5 text-[10px] font-bold text-slate-400">(종료)</span>}
+                        </td>
+                        <td className="py-2.5 px-2 text-sm font-black text-slate-900 text-right">{(row.grossTotal || 0).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {taxSummaryZeroOnly.length > 0 && (
+                <details className="rounded-2xl border border-amber-200/50 bg-white/60 overflow-hidden group">
+                  <summary className="cursor-pointer list-none py-3 px-3 text-xs font-black text-amber-900 uppercase tracking-wide flex items-center justify-between gap-2 select-none hover:bg-amber-100/40 [&::-webkit-details-marker]:hidden">
+                    <span>세전 0원 선생님 ({taxSummaryZeroOnly.length}명)</span>
+                    <span className="text-[10px] font-bold text-amber-600/80 shrink-0">펼치기 · 접기</span>
+                  </summary>
+                  <div className="overflow-x-auto border-t border-amber-100/80">
+                    <table className="w-full text-left border-collapse">
+                      <tbody>
+                        {taxSummaryZeroOnly.map((row) => (
+                          <tr key={row.id} className="border-b border-amber-100/40 last:border-0">
+                            <td className="py-2 px-3 text-sm font-bold text-slate-600">
+                              {row.name}
+                              {row.is_active === false && <span className="ml-1.5 text-[10px] font-bold text-slate-400">(종료)</span>}
+                            </td>
+                            <td className="py-2 px-3 text-sm font-bold text-slate-500 text-right">0</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              )}
             </div>
           )}
         </section>
@@ -496,6 +577,105 @@ export default function UltimateSettlementPage() {
           </p>
         </div>
       </div>
+
+      {vatCalcOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="vat-calc-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-900/45 backdrop-blur-[2px]"
+            onClick={() => setVatCalcOpen(false)}
+            aria-label="부가세 계산기 닫기"
+          />
+          <div className="relative w-full max-w-lg rounded-[28px] bg-white shadow-2xl border border-slate-200/90 p-6 md:p-8 max-h-[min(90vh,640px)] overflow-y-auto">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h2 id="vat-calc-title" className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                  부가세 계산기
+                </h2>
+                <p className="mt-1 text-[11px] font-bold text-slate-500 leading-relaxed">
+                  부가세 10% 기준 · 원 단위 반올림 (합계 역산 시 공급가액 = 합계 ÷ 1.1)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVatCalcOpen(false)}
+                className="shrink-0 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                aria-label="닫기"
+              >
+                <X size={22} strokeWidth={2.25} />
+              </button>
+            </div>
+
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">입력 기준</p>
+            <div className="flex bg-slate-100 p-1 rounded-2xl gap-1 mb-5">
+              <button
+                type="button"
+                onClick={() => setVatCalcMode('supply')}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-[11px] font-black transition-all ${
+                  vatCalcMode === 'supply'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-400'
+                }`}
+              >
+                공급가액 (세전)
+              </button>
+              <button
+                type="button"
+                onClick={() => setVatCalcMode('total')}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-[11px] font-black transition-all ${
+                  vatCalcMode === 'total'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-400'
+                }`}
+              >
+                합계금액 (공급대가)
+              </button>
+            </div>
+
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+              {vatCalcMode === 'supply' ? '공급가액 (원)' : '합계금액 (원)'}
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="금액 입력"
+              value={vatCalcInputDisplay}
+              onChange={onVatCalcInputChange}
+              className="w-full text-2xl md:text-3xl font-black text-slate-900 tracking-tight px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50/80 outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-shadow"
+            />
+
+            <div className="mt-8 grid gap-4">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-5">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">공급가액</p>
+                <p className="text-3xl md:text-4xl font-black text-slate-900 tabular-nums tracking-tighter">
+                  {vatCalcBreakdown.supply.toLocaleString()}
+                  <span className="text-lg md:text-xl font-bold text-slate-400 ml-1">원</span>
+                </p>
+              </div>
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-5">
+                <p className="text-[10px] font-black text-amber-800/70 uppercase tracking-widest mb-1">부가세 (10%)</p>
+                <p className="text-3xl md:text-4xl font-black text-amber-900 tabular-nums tracking-tighter">
+                  {vatCalcBreakdown.vat.toLocaleString()}
+                  <span className="text-lg md:text-xl font-bold text-amber-700/60 ml-1">원</span>
+                </p>
+              </div>
+              <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-5">
+                <p className="text-[10px] font-black text-indigo-800/70 uppercase tracking-widest mb-1">합계금액</p>
+                <p className="text-3xl md:text-4xl font-black text-indigo-950 tabular-nums tracking-tighter">
+                  {vatCalcBreakdown.total.toLocaleString()}
+                  <span className="text-lg md:text-xl font-bold text-indigo-400 ml-1">원</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

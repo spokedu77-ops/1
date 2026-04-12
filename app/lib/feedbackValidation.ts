@@ -4,12 +4,65 @@
 // 필수: 5개 전항목, 사진은 선택사항
 // ===================================================================
 
+/** 텍스트 피드백 항목 (`center_document_names` 등과 구분) */
+export type FeedbackTextFieldKey =
+  | 'main_activity'
+  | 'strengths'
+  | 'improvements'
+  | 'next_goals'
+  | 'condition_notes';
+
+export const FEEDBACK_TEXT_FIELD_KEYS: readonly FeedbackTextFieldKey[] = [
+  'main_activity',
+  'strengths',
+  'improvements',
+  'next_goals',
+  'condition_notes',
+];
+
 export interface FeedbackFields {
   main_activity?: string;
   strengths?: string;
   improvements?: string;
   next_goals?: string;
   condition_notes?: string;
+  /** 센터 수업 첨부: `file_url`과 같은 순서·개수의 표시용 원본 파일명(한글 등) */
+  center_document_names?: string[];
+}
+
+/** 스토리지 URL + 선택적 `center_document_names`로 목록에 보일 파일명 */
+export function sessionFileDisplayName(
+  url: string,
+  index: number,
+  centerDocumentNames?: string[] | null,
+): string {
+  const list = centerDocumentNames;
+  if (Array.isArray(list) && typeof list[index] === 'string') {
+    const t = list[index]!.trim();
+    if (t.length > 0) return t.slice(0, 300);
+  }
+  const raw = url.split('/').pop() || '';
+  const withoutQuery = raw.split('?')[0];
+  let decoded = withoutQuery;
+  try {
+    decoded = decodeURIComponent(withoutQuery);
+  } catch {
+    /* keep withoutQuery */
+  }
+  const withoutPrefix = decoded.replace(/^\d+_/, '');
+  return withoutPrefix || 'File';
+}
+
+/** 세션 로드 시 `file_url` 길이에 맞춰 표시용 이름 배열 정렬 */
+export function alignCenterDocumentNamesWithUrls(urls: string[], names?: unknown): string[] {
+  const n = urls.length;
+  if (!Array.isArray(names) || names.length !== n) {
+    return urls.map((u, i) => sessionFileDisplayName(u, i, null));
+  }
+  return names.map((x, i) => {
+    const s = String(x).trim().slice(0, 300);
+    return s.length > 0 ? s : sessionFileDisplayName(urls[i]!, i, null);
+  });
 }
 
 export interface CompletionStatus {
@@ -44,24 +97,16 @@ export function calculateCompletionStatus(
   photoUrls: string[] = [],
   requiredPhotos: number = 0  // 사진은 선택사항
 ): CompletionStatus {
-  const requiredFields = [
-    'main_activity',
-    'strengths',
-    'improvements',
-    'next_goals',
-    'condition_notes',
-  ];
-  
-  const completedFields = requiredFields.filter(field => 
-    isFieldValid(feedbackFields[field as keyof FeedbackFields])
-  );
+  const requiredFields = FEEDBACK_TEXT_FIELD_KEYS;
+
+  const completedFields = requiredFields.filter((field) => isFieldValid(feedbackFields[field]));
   
   const uploadedPhotos = photoUrls.length;
   const completionRate = Math.round((completedFields.length / requiredFields.length) * 100);
   
   return {
-    required_fields: requiredFields,
-    completed_fields: completedFields,
+    required_fields: [...requiredFields],
+    completed_fields: [...completedFields],
     required_photos: requiredPhotos,
     uploaded_photos: uploadedPhotos,
     completion_rate: completionRate
@@ -198,15 +243,9 @@ export function getSessionDisplayStatus(session: SessionWithFeedback): 'empty' |
   if (isCenterCondition && fileUrls.length > 0) return 'done';
 
   const feedbackFields = session.feedback_fields || {};
-  const requiredFields: Array<keyof FeedbackFields> = [
-    'main_activity',
-    'strengths',
-    'improvements',
-    'next_goals',
-    'condition_notes',
-  ];
+  const requiredFields = FEEDBACK_TEXT_FIELD_KEYS;
 
-  const hasContent = requiredFields.every(field => isFieldValid(feedbackFields[field]));
+  const hasContent = requiredFields.every((field) => isFieldValid(feedbackFields[field]));
 
   return hasContent ? 'done' : 'empty';
 }

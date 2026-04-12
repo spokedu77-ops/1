@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb, Play, ListChecks } from 'lucide-react';
+import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb, Play, ListChecks, Gamepad2 } from 'lucide-react';
 import type { ProgramDetail } from '../types';
 import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
 
@@ -20,6 +20,8 @@ export default function SpokeduProDrawer({
   onSaveProgramDetail,
   onClose,
   onFabClick,
+  detailKind = 'program',
+  onLaunchMemoryGame,
 }: {
   open: boolean;
   programId: number | null;
@@ -27,15 +29,23 @@ export default function SpokeduProDrawer({
   role?: string;
   themeKey?: string;
   isEditMode?: boolean;
-  onSaveProgramDetail?: (programId: number, detail: ProgramDetail) => Promise<void>;
+  onSaveProgramDetail?: (
+    programId: number,
+    detail: ProgramDetail,
+    options?: { screenplay?: boolean }
+  ) => Promise<void>;
   onClose: () => void;
   onFabClick?: () => void;
+  /** 스크린플레이(스포무브): 센터 설명 모달과 별도로 게임 실행 */
+  detailKind?: 'program' | 'screenplay';
+  onLaunchMemoryGame?: () => void;
 }) {
   const checklistSectionRef = useRef<HTMLElement | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({
     title: '',
+    subtitle: '',
     videoUrl: '',
     functionType: '',
     mainTheme: '',
@@ -51,6 +61,7 @@ export default function SpokeduProDrawer({
     if (!open || programId == null) return;
     setEditForm({
       title: d?.title ?? `프로그램 #${programId}`,
+      subtitle: d?.subtitle ?? '',
       videoUrl: d?.videoUrl ?? '',
       functionType: d?.functionType ?? '',
       mainTheme: d?.mainTheme ?? '',
@@ -61,11 +72,25 @@ export default function SpokeduProDrawer({
       activityTip: d?.activityTip ?? '',
     });
     setIsEditModalOpen(false);
-  }, [open, programId, d?.title, d?.videoUrl, d?.functionType, d?.mainTheme, d?.groupSize, d?.checklist, d?.equipment, d?.activityMethod, d?.activityTip]);
+  }, [
+    open,
+    programId,
+    d?.title,
+    d?.subtitle,
+    d?.videoUrl,
+    d?.functionType,
+    d?.mainTheme,
+    d?.groupSize,
+    d?.checklist,
+    d?.equipment,
+    d?.activityMethod,
+    d?.activityTip,
+  ]);
 
   if (!open) return null;
 
   const title = d?.title ?? editForm.title ?? `프로그램 #${programId ?? ''}`;
+  const subtitle = d?.subtitle ?? editForm.subtitle ?? '';
   const videoUrl = d?.videoUrl ?? editForm.videoUrl ?? '';
   const functionType = d?.functionType ?? editForm.functionType;
   const mainTheme = d?.mainTheme ?? editForm.mainTheme;
@@ -82,6 +107,7 @@ export default function SpokeduProDrawer({
     setIsEditModalOpen(false);
     setEditForm({
       title: d?.title ?? '',
+      subtitle: d?.subtitle ?? '',
       videoUrl: d?.videoUrl ?? '',
       functionType: d?.functionType ?? '',
       mainTheme: d?.mainTheme ?? '',
@@ -98,17 +124,22 @@ export default function SpokeduProDrawer({
     if (programId == null || !onSaveProgramDetail) return;
     setSaving(true);
     try {
-      await onSaveProgramDetail(programId, {
-        title: editForm.title.trim() || undefined,
-        videoUrl: editForm.videoUrl.trim() || undefined,
-        functionType: editForm.functionType.trim() || undefined,
-        mainTheme: editForm.mainTheme.trim() || undefined,
-        groupSize: editForm.groupSize.trim() || undefined,
-        checklist: editForm.checklist.trim() || undefined,
-        equipment: editForm.equipment.trim() || undefined,
-        activityMethod: editForm.activityMethod.trim() || undefined,
-        activityTip: editForm.activityTip.trim() || undefined,
-      });
+      await onSaveProgramDetail(
+        programId,
+        {
+          title: editForm.title.trim() || undefined,
+          subtitle: editForm.subtitle.trim() || undefined,
+          videoUrl: editForm.videoUrl.trim() || undefined,
+          functionType: editForm.functionType.trim() || undefined,
+          mainTheme: editForm.mainTheme.trim() || undefined,
+          groupSize: editForm.groupSize.trim() || undefined,
+          checklist: editForm.checklist.trim() || undefined,
+          equipment: editForm.equipment.trim() || undefined,
+          activityMethod: editForm.activityMethod.trim() || undefined,
+          activityTip: editForm.activityTip.trim() || undefined,
+        },
+        detailKind === 'screenplay' ? { screenplay: true } : undefined
+      );
       setIsEditModalOpen(false);
     } finally {
       setSaving(false);
@@ -119,6 +150,7 @@ export default function SpokeduProDrawer({
     e.stopPropagation();
     setEditForm({
       title: d?.title ?? title,
+      subtitle: d?.subtitle ?? subtitle,
       videoUrl: d?.videoUrl ?? videoUrl,
       functionType: d?.functionType ?? functionType ?? '',
       mainTheme: d?.mainTheme ?? mainTheme ?? '',
@@ -185,7 +217,10 @@ export default function SpokeduProDrawer({
           {/* 스크롤 콘텐츠 */}
           <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight mb-3">{title}</h2>
+              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">{title}</h2>
+              {subtitle ? (
+                <p className="text-slate-400 text-sm font-medium mt-2 mb-3 whitespace-pre-wrap">{subtitle}</p>
+              ) : null}
               {tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {tags.map((t) => (
@@ -200,6 +235,16 @@ export default function SpokeduProDrawer({
               )}
               {/* 수업에서 바로 쓰는 액션 */}
               <div className="flex flex-wrap gap-2 mt-4">
+                {detailKind === 'screenplay' && onLaunchMemoryGame && (
+                  <button
+                    type="button"
+                    onClick={onLaunchMemoryGame}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-sm font-bold transition-colors"
+                  >
+                    <Gamepad2 className="w-4 h-4" />
+                    SPOMOVE 실행
+                  </button>
+                )}
                 {videoUrl && (
                   <a
                     href={videoUrl}
@@ -264,7 +309,7 @@ export default function SpokeduProDrawer({
               </section>
             )}
 
-            {!checklist && !equipment && !activityMethod && !activityTip && (
+            {!checklist && !equipment && !activityMethod && !activityTip && !subtitle && (
               <p className="text-slate-500 text-sm py-4">등록된 상세가 없습니다.</p>
             )}
 
@@ -318,6 +363,15 @@ export default function SpokeduProDrawer({
                   placeholder="프로그램 제목"
                   value={editForm.title}
                   onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">부제 / 한 줄 설명</label>
+                <input
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                  placeholder="모드·난이도 안내 등"
+                  value={editForm.subtitle}
+                  onChange={(e) => setEditForm((f) => ({ ...f, subtitle: e.target.value }))}
                 />
               </div>
               <div>

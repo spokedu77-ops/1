@@ -21,7 +21,7 @@ export default function ThinkStudioPage() {
     return (n >= 1 && n <= 4 ? n : 1) as 1 | 2 | 3 | 4;
   });
   const [seed, setSeed] = useState(() => Date.now());
-  const [debug, setDebug] = useState(true);
+  const [debug, setDebug] = useState(false);
   const { thinkPackByMonthAndWeek } = useThink150Pack();
   const { selected: bgmPath } = useThinkBGM();
   const [previewMonth, setPreviewMonth] = useState(() => {

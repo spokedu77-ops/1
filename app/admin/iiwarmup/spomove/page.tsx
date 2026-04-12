@@ -1,0 +1,61 @@
+import Link from 'next/link';
+
+export default function SpomoveHubPage() {
+  return (
+    <div className="space-y-6">
+      <section>
+        <h2 className="text-lg font-extrabold">SPOMOVE</h2>
+        <p className="mt-1 text-sm text-neutral-400">
+          스튜디오·훈련·카메라 도구로 이동합니다.
+        </p>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Link
+          href="/admin/iiwarmup/think"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">Think Studio</h3>
+          <p className="mt-2 text-sm text-neutral-400">150초 SPOKEDU Think · 인지 단계 제작·미리보기</p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
+        </Link>
+
+        <Link
+          href="/admin/iiwarmup/challenge"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">Challenge Studio</h3>
+          <p className="mt-2 text-sm text-neutral-400">리듬 게임 BPM·그리드·단계별 저장 (주차별)</p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
+        </Link>
+
+        <Link
+          href="/admin/iiwarmup/flow"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">Flow Studio</h3>
+          <p className="mt-2 text-sm text-neutral-400">3D 몰입 환경 · 공간 왜곡·속도 제어</p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
+        </Link>
+
+        <Link
+          href="/admin/camera"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">카메라 앱</h3>
+          <p className="mt-2 text-sm text-neutral-400">밸런스·미러 포즈 · 수업용 카메라 앱</p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
+        </Link>
+
+        <Link
+          href="/admin/memory-game"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">SPOMOVE 훈련</h3>
+          <p className="mt-2 text-sm text-neutral-400">N-back·시그널 훈련 · 수업용 반응 인지</p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
+        </Link>
+      </section>
+    </div>
+  );
+}

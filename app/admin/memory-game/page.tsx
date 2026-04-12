@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 const MemoryGameApp = dynamic(
@@ -14,5 +15,19 @@ export default function MemoryGamePage() {
   const levelRaw = Number(searchParams.get('level') ?? '');
   const level = Number.isFinite(levelRaw) && levelRaw > 0 ? levelRaw : undefined;
 
-  return <MemoryGameApp initialMode={mode} initialLevel={level} />;
+  return (
+    <div className="flex min-h-screen flex-col">
+      <div className="shrink-0 border-b border-slate-700 bg-slate-950 px-4 py-2">
+        <Link
+          href="/admin/iiwarmup/spomove"
+          className="text-sm font-semibold text-blue-400 hover:underline"
+        >
+          ← SPOMOVE 허브
+        </Link>
+      </div>
+      <div className="min-h-0 flex-1">
+        <MemoryGameApp initialMode={mode} initialLevel={level} />
+      </div>
+    </div>
+  );
 }

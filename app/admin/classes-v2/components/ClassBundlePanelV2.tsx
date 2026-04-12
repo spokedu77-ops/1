@@ -11,6 +11,12 @@ import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
 import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/lib/sessionInsertClone";
 import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { resolvePlannedTotal } from "@/app/admin/classes-v2/lib/plannedRoundTotal";
+import {
+  isSessionScheduleDraftDirty,
+  isoRangeFromDateTimeInputs,
+  mergeSessionScheduleDraft,
+  type SessionScheduleDraft,
+} from "@/app/admin/classes-v2/lib/sessionScheduleDraftUtils";
 import { SESSION_TYPE_OPTIONS } from "@/app/admin/classes-v2/lib/sessionTypeCategory";
 import SessionMileageModal from "./SessionMileageModal";
 import type { TeacherInput } from "@/app/admin/classes-shared/types";
@@ -266,6 +272,10 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const [localGroupIds, setLocalGroupIds] = useState<string[]>([]);
   const [mergingByBundle, setMergingByBundle] = useState(false);
   const [undoingPostponeSessionId, setUndoingPostponeSessionId] = useState<string | null>(null);
+  const [scheduleDraftBySessionId, setScheduleDraftBySessionId] = useState<
+    Record<string, SessionScheduleDraft>
+  >({});
+  const [savingSessionScheduleId, setSavingSessionScheduleId] = useState<string | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
   const [mileageModal, setMileageModal] = useState<{ gid: string; row: SessionRow } | null>(null);
 
@@ -324,6 +334,10 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     () => [...effectiveGroupIds].map((id) => String(id)).sort().join(","),
     [effectiveGroupIds]
   );
+
+  useEffect(() => {
+    setScheduleDraftBySessionId({});
+  }, [bundleKey, visible]);
 
   useEffect(() => {
     if (!visible) {
@@ -646,6 +660,13 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       const { error } = await supabase.from("sessions").update(patch).eq("id", sessionId);
       if (error) throw error;
       toast.success("저장되었습니다.");
+      if (patch.start_at && patch.end_at) {
+        setScheduleDraftBySessionId((prev) => {
+          const next = { ...prev };
+          delete next[sessionId];
+          return next;
+        });
+      }
       setSessionsByGroupId((prev) => {
         const next = { ...prev };
         next[gid] = (next[gid] || []).map((r) => (r.id === sessionId ? { ...r, ...(patch as any) } : r));
@@ -655,6 +676,33 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     } catch (err) {
       devLogger.error(err);
       toast.error("저장에 실패했습니다.");
+    }
+  };
+
+  const saveSessionSchedule = async (gid: string, r: SessionRow) => {
+    const savedDateStr = toDateInputValueLocal(new Date(r.start_at));
+    const savedTimeStr = new Date(r.start_at).toTimeString().slice(0, 5);
+    const draft =
+      scheduleDraftBySessionId[r.id] ??
+      ({ dateStr: savedDateStr, timeStr: savedTimeStr } satisfies SessionScheduleDraft);
+    const patchIso = isoRangeFromDateTimeInputs(
+      r.start_at,
+      r.end_at,
+      draft.dateStr,
+      draft.timeStr
+    );
+    if (!patchIso) {
+      toast.error("날짜와 시간을 확인해 주세요.");
+      return;
+    }
+    setSavingSessionScheduleId(r.id);
+    try {
+      await applyInlineUpdate(gid, r.id, {
+        start_at: patchIso.start_at,
+        end_at: patchIso.end_at,
+      });
+    } finally {
+      setSavingSessionScheduleId(null);
     }
   };
 
@@ -1307,7 +1355,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                               <tr>
                                 <th className="px-2 py-2 text-left">회차</th>
                                 <th className="px-2 py-2 text-left">날짜</th>
-                                <th className="px-2 py-2 text-left">시간</th>
+                                <th className="px-2 py-2 text-left">시간 / 저장</th>
                                 <th className="px-2 py-2 text-left">강사 / 수업료</th>
                                 <th className="px-2 py-2 text-center">마일리지</th>
                                 <th className="px-2 py-2 text-center">상태</th>
@@ -1327,8 +1375,18 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                 .map((r, i) => {
                                   const start = new Date(r.start_at);
                                   const end = new Date(r.end_at);
-                                  const dateStr = toDateInputValueLocal(start);
-                                  const timeStr = start.toTimeString().slice(0, 5);
+                                  const savedDateStr = toDateInputValueLocal(start);
+                                  const savedTimeStr = start.toTimeString().slice(0, 5);
+                                  const scheduleDraft = scheduleDraftBySessionId[r.id];
+                                  const dateStr = scheduleDraft?.dateStr ?? savedDateStr;
+                                  const timeStr = scheduleDraft?.timeStr ?? savedTimeStr;
+                                  const scheduleDirty =
+                                    !!scheduleDraft &&
+                                    isSessionScheduleDraftDirty(
+                                      scheduleDraft,
+                                      savedDateStr,
+                                      savedTimeStr
+                                    );
                                   const total = plannedTotalOfGroup(rows);
                                   const n = Math.min(r.round_index ?? i + 1, total);
                                   const s = getTimeStatusLabel(r);
@@ -1342,47 +1400,49 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                           className="w-full bg-transparent border rounded-lg px-2 py-1"
                                           value={dateStr}
                                           onChange={(e) => {
-                                            if (!e.target.value) return;
-                                            const [y, m, d] = e.target.value.split("-").map(Number);
-                                            if (![y, m, d].every((v) => Number.isFinite(v))) return;
-                                            const startAt = new Date(start);
-                                            startAt.setFullYear(y, m - 1, d);
-                                            if (Number.isNaN(startAt.getTime()) || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
-                                            const duration = (end.getTime() - start.getTime()) / (1000 * 60);
-                                            if (!Number.isFinite(duration)) return;
-                                            const endAt = new Date(startAt);
-                                            endAt.setMinutes(endAt.getMinutes() + duration);
-                                            if (Number.isNaN(endAt.getTime())) return;
-                                            void applyInlineUpdate(gid, r.id, {
-                                              start_at: startAt.toISOString(),
-                                              end_at: endAt.toISOString(),
-                                            });
+                                            setScheduleDraftBySessionId((prev) => ({
+                                              ...prev,
+                                              [r.id]: mergeSessionScheduleDraft(
+                                                prev[r.id],
+                                                savedDateStr,
+                                                savedTimeStr,
+                                                { dateStr: e.target.value }
+                                              ),
+                                            }));
                                           }}
                                         />
                                       </td>
                                       <td className="px-2 py-2">
-                                        <input
-                                          type="time"
-                                          className="w-full bg-transparent border rounded-lg px-2 py-1"
-                                          value={timeStr}
-                                          onChange={(e) => {
-                                            if (!e.target.value) return;
-                                            const [hh, mm] = e.target.value.split(":").map(Number);
-                                            if (![hh, mm].every((v) => Number.isFinite(v))) return;
-                                            const startAt = new Date(start);
-                                            startAt.setHours(hh, mm, 0, 0);
-                                            if (Number.isNaN(startAt.getTime()) || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
-                                            const duration = (end.getTime() - start.getTime()) / (1000 * 60);
-                                            if (!Number.isFinite(duration)) return;
-                                            const endAt = new Date(startAt);
-                                            endAt.setMinutes(endAt.getMinutes() + duration);
-                                            if (Number.isNaN(endAt.getTime())) return;
-                                            void applyInlineUpdate(gid, r.id, {
-                                              start_at: startAt.toISOString(),
-                                              end_at: endAt.toISOString(),
-                                            });
-                                          }}
-                                        />
+                                        <div className="flex flex-col gap-1 items-stretch">
+                                          <input
+                                            type="time"
+                                            className="w-full bg-transparent border rounded-lg px-2 py-1"
+                                            value={timeStr}
+                                            onChange={(e) => {
+                                              setScheduleDraftBySessionId((prev) => ({
+                                                ...prev,
+                                                [r.id]: mergeSessionScheduleDraft(
+                                                  prev[r.id],
+                                                  savedDateStr,
+                                                  savedTimeStr,
+                                                  { timeStr: e.target.value }
+                                                ),
+                                              }));
+                                            }}
+                                          />
+                                          <button
+                                            type="button"
+                                            disabled={
+                                              !scheduleDirty || savingSessionScheduleId === r.id
+                                            }
+                                            onClick={() => void saveSessionSchedule(gid, r)}
+                                            className="w-full px-1.5 py-1 rounded-md text-[9px] font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:pointer-events-none"
+                                          >
+                                            {savingSessionScheduleId === r.id
+                                              ? "저장 중…"
+                                              : "일정 저장"}
+                                          </button>
+                                        </div>
                                       </td>
                                       <td className="px-2 py-1.5 min-w-0">
                                         <div className="flex flex-col gap-1.5 min-w-0">

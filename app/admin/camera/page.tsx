@@ -2,6 +2,7 @@
 
 import React, { Component } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 
 const SpokeduCameraApp = dynamic(
   () => import('./SpokeduCameraApp').then((m) => m.default),
@@ -45,10 +46,22 @@ class CameraErrorBoundary extends Component<
 
 export default function CameraAppPage() {
   return (
-    <div className="fixed inset-0 h-[100dvh] min-h-[100dvh] w-full overflow-hidden overscroll-none">
-      <CameraErrorBoundary>
-        <SpokeduCameraApp />
-      </CameraErrorBoundary>
+    <div className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden">
+      <div className="shrink-0 border-b border-slate-700 bg-slate-900 px-4 py-2">
+        <Link
+          href="/admin/iiwarmup/spomove"
+          className="text-sm font-semibold text-sky-400 hover:underline"
+        >
+          ← SPOMOVE 허브
+        </Link>
+      </div>
+      <div className="relative min-h-0 flex-1">
+        <CameraErrorBoundary>
+          <div className="absolute inset-0 overflow-hidden overscroll-none">
+            <SpokeduCameraApp />
+          </div>
+        </CameraErrorBoundary>
+      </div>
     </div>
   );
 }

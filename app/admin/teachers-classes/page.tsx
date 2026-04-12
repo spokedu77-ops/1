@@ -8,11 +8,13 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { Send, RotateCcw, User, MapPin, X, ExternalLink, FileText, Maximize2, Search, BookOpen, AlertTriangle } from 'lucide-react';
 import { SessionPhotosCleanupButton } from '@/app/components/admin/assets/SessionPhotosCleanupButton';
-import { 
+import {
   FeedbackFields,
   parseTemplateToFields,
   fieldsToTemplateText,
-  getSessionDisplayStatus
+  getSessionDisplayStatus,
+  sessionFileDisplayName,
+  alignCenterDocumentNamesWithUrls,
 } from '@/app/lib/feedbackValidation';
 import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 
@@ -194,20 +196,6 @@ function FeedbackReviewTab({
       default:
         return '개인 수업';
     }
-  };
-
-  const getDisplayFileName = (url: string): string => {
-    const raw = url.split('/').pop() || '';
-    const withoutQuery = raw.split('?')[0];
-    const decoded = (() => {
-      try {
-        return decodeURIComponent(withoutQuery);
-      } catch {
-        return withoutQuery;
-      }
-    })();
-    const withoutPrefix = decoded.replace(/^\d+_/, '');
-    return withoutPrefix || 'File';
   };
 
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -457,10 +445,24 @@ function FeedbackReviewTab({
 
   const openEditModal = async (session: Session) => {
     setSelectedEvent(session);
-    const fields = session.feedback_fields || parseTemplateToFields(session.students_text || '');
+    const urls = Array.isArray(session.file_url) ? session.file_url : [];
+    const isCenter =
+      session.session_type === 'regular_center' || session.session_type === 'one_day_center';
+    let fields: FeedbackFields = session.feedback_fields || parseTemplateToFields(session.students_text || '');
+    if (isCenter && urls.length > 0) {
+      fields = {
+        ...fields,
+        center_document_names: alignCenterDocumentNamesWithUrls(urls, fields.center_document_names),
+      };
+    } else if (!isCenter) {
+      const { center_document_names: _cd, ...rest } = fields as FeedbackFields & {
+        center_document_names?: string[];
+      };
+      fields = rest;
+    }
     setFeedbackFields(fields);
     setPhotoUrls(Array.isArray(session.photo_url) ? session.photo_url : []);
-    setFileUrls(Array.isArray(session.file_url) ? session.file_url : []);
+    setFileUrls(urls);
     
     // 중복 체크
     const check = await checkDuplicateFeedback(session);
@@ -762,9 +764,6 @@ function FeedbackReviewTab({
                   <button type="button" onClick={() => window.open(`/report/${selectedEvent.id}`, '_blank')} className="text-indigo-500 text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer">
                     <ExternalLink size={12} /> 미리보기
                   </button>
-                  {selectedEvent.status === 'verified' && (
-                    null
-                  )}
                 </div>
               </div>
               <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-300 hover:text-slate-900 cursor-pointer shrink-0"><X size={32} /></button>
@@ -814,7 +813,9 @@ function FeedbackReviewTab({
                   {fileUrls.length > 0 ? fileUrls.map((url, i) => (
                     <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl hover:bg-indigo-100 cursor-pointer">
                       <FileText size={18} className="text-indigo-500" />
-                      <span className="text-sm font-bold text-slate-600 truncate">{getDisplayFileName(url)}</span>
+                      <span className="text-sm font-bold text-slate-600 truncate">
+                        {sessionFileDisplayName(url, i, feedbackFields.center_document_names ?? null)}
+                      </span>
                       <ExternalLink size={14} className="ml-auto text-indigo-300" />
                     </a>
                   )) : <p className="text-slate-400 text-sm py-4 text-center">업로드된 파일이 없습니다</p>}

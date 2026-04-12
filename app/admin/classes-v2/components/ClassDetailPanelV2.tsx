@@ -10,6 +10,12 @@ import { postponeCascade, undoPostponeCascade } from '@/app/admin/classes-shared
 import { extendClass } from '@/app/admin/classes-shared/lib/roundExtendUtils';
 import { omitSessionIdentityForInsertClone } from '@/app/admin/classes-shared/lib/sessionInsertClone';
 import { resolvePlannedTotal } from '../lib/plannedRoundTotal';
+import {
+  isSessionScheduleDraftDirty,
+  isoRangeFromDateTimeInputs,
+  mergeSessionScheduleDraft,
+  type SessionScheduleDraft,
+} from '../lib/sessionScheduleDraftUtils';
 
 interface ClassDetailPanelProps {
   groupId: string | null;
@@ -111,6 +117,10 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
   const [restartDaysOfWeek, setRestartDaysOfWeek] = useState<number[]>([new Date().getDay()]);
   const [undoingPostponeSessionId, setUndoingPostponeSessionId] = useState<string | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+  const [scheduleDraftBySessionId, setScheduleDraftBySessionId] = useState<
+    Record<string, SessionScheduleDraft>
+  >({});
+  const [savingSessionScheduleId, setSavingSessionScheduleId] = useState<string | null>(null);
 
   const [shrinkCount, setShrinkCount] = useState(1);
   const [shrinking, setShrinking] = useState(false);
@@ -156,6 +166,10 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
   }, [loadSessions]);
 
   useEffect(() => {
+    setScheduleDraftBySessionId({});
+  }, [groupId]);
+
+  useEffect(() => {
     if (!supabase) return;
     const fetchTeachers = async () => {
       try {
@@ -194,6 +208,13 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
       if (error) throw error;
       toast.success('저장되었습니다.');
       onChanged?.();
+      if (patch.startAt && patch.endAt) {
+        setScheduleDraftBySessionId((prev) => {
+          const next = { ...prev };
+          delete next[target.id];
+          return next;
+        });
+      }
       const next = [...sessions];
       next[idx] = {
         ...target,
@@ -206,6 +227,36 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     } catch (err) {
       devLogger.error(err);
       toast.error('저장에 실패했습니다.');
+    }
+  };
+
+  const saveSessionSchedule = async (s: SessionRow) => {
+    const globalIdx = sessions.findIndex((x) => x.id === s.id);
+    if (globalIdx === -1) return;
+    const start = new Date(s.start_at);
+    const savedDateStr = toDateInputValueLocal(start);
+    const savedTimeStr = start.toTimeString().slice(0, 5);
+    const draft =
+      scheduleDraftBySessionId[s.id] ??
+      ({ dateStr: savedDateStr, timeStr: savedTimeStr } satisfies SessionScheduleDraft);
+    const patchIso = isoRangeFromDateTimeInputs(
+      s.start_at,
+      s.end_at,
+      draft.dateStr,
+      draft.timeStr
+    );
+    if (!patchIso) {
+      toast.error('날짜와 시간을 확인해 주세요.');
+      return;
+    }
+    setSavingSessionScheduleId(s.id);
+    try {
+      await handleInlineUpdate(globalIdx, {
+        startAt: new Date(patchIso.start_at),
+        endAt: new Date(patchIso.end_at),
+      });
+    } finally {
+      setSavingSessionScheduleId(null);
     }
   };
 
@@ -797,7 +848,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                     <tr>
                       <th className="px-2 py-2 text-left w-[56px]">회차</th>
                       <th className="px-2 py-2 text-left w-[106px]">날짜</th>
-                      <th className="px-2 py-2 text-left w-[80px]">시간</th>
+                      <th className="px-2 py-2 text-left w-[92px]">시간 / 저장</th>
                       <th className="px-2 py-2 text-left w-[98px]">선생님</th>
                       <th className="px-2 py-2 text-right w-[78px]">금액</th>
                       <th className="px-2 py-2 text-center w-[58px]">상태</th>
@@ -809,8 +860,14 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                       const start = new Date(s.start_at);
                       const end = new Date(s.end_at);
                       const nowMs = Date.now();
-                      const dateStr = toDateInputValueLocal(start);
-                      const timeStr = start.toTimeString().slice(0, 5);
+                      const savedDateStr = toDateInputValueLocal(start);
+                      const savedTimeStr = start.toTimeString().slice(0, 5);
+                      const scheduleDraft = scheduleDraftBySessionId[s.id];
+                      const dateStr = scheduleDraft?.dateStr ?? savedDateStr;
+                      const timeStr = scheduleDraft?.timeStr ?? savedTimeStr;
+                      const scheduleDirty =
+                        !!scheduleDraft &&
+                        isSessionScheduleDraftDirty(scheduleDraft, savedDateStr, savedTimeStr);
                       // ✅ V2 운영 규칙: 연기/취소/삭제가 아니라면 end_at 경과 = 무조건 완료(정산 누락 0 전략)
                       const isPostponed = s.status === 'postponed';
                       const isCancelled = s.status === 'cancelled';
@@ -837,33 +894,47 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                               className="w-[112px] bg-transparent border rounded-lg px-2 py-1"
                               value={dateStr}
                               onChange={(e) => {
-                                const [y, m, d] = e.target.value.split('-').map(Number);
-                                const startAt = new Date(start);
-                                startAt.setFullYear(y, m - 1, d);
-                                const duration = (end.getTime() - start.getTime()) / (1000 * 60);
-                                const endAt = new Date(startAt);
-                                endAt.setMinutes(endAt.getMinutes() + duration);
-                                const globalIdx = sessions.findIndex((x) => x.id === s.id);
-                                handleInlineUpdate(globalIdx, { startAt, endAt });
+                                setScheduleDraftBySessionId((prev) => ({
+                                  ...prev,
+                                  [s.id]: mergeSessionScheduleDraft(
+                                    prev[s.id],
+                                    savedDateStr,
+                                    savedTimeStr,
+                                    { dateStr: e.target.value }
+                                  ),
+                                }));
                               }}
                             />
                           </td>
                           <td className="px-2 py-2">
-                            <input
-                              type="time"
-                              className="w-[84px] bg-transparent border rounded-lg px-2 py-1"
-                              value={timeStr}
-                              onChange={(e) => {
-                                const [hh, mm] = e.target.value.split(':').map(Number);
-                                const startAt = new Date(start);
-                                startAt.setHours(hh, mm, 0, 0);
-                                const duration = (end.getTime() - start.getTime()) / (1000 * 60);
-                                const endAt = new Date(startAt);
-                                endAt.setMinutes(endAt.getMinutes() + duration);
-                                const globalIdx = sessions.findIndex((x) => x.id === s.id);
-                                handleInlineUpdate(globalIdx, { startAt, endAt });
-                              }}
-                            />
+                            <div className="flex flex-col gap-1 items-stretch">
+                              <input
+                                type="time"
+                                className="w-[84px] bg-transparent border rounded-lg px-2 py-1"
+                                value={timeStr}
+                                onChange={(e) => {
+                                  setScheduleDraftBySessionId((prev) => ({
+                                    ...prev,
+                                    [s.id]: mergeSessionScheduleDraft(
+                                      prev[s.id],
+                                      savedDateStr,
+                                      savedTimeStr,
+                                      { timeStr: e.target.value }
+                                    ),
+                                  }));
+                                }}
+                              />
+                              <button
+                                type="button"
+                                disabled={
+                                  !scheduleDirty || savingSessionScheduleId === s.id
+                                }
+                                onClick={() => void saveSessionSchedule(s)}
+                                className="w-full px-1.5 py-1 rounded-md text-[9px] font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:pointer-events-none"
+                              >
+                                {savingSessionScheduleId === s.id ? '저장 중…' : '일정 저장'}
+                              </button>
+                            </div>
                           </td>
                           <td className="px-2 py-2">
                             <select

@@ -18,6 +18,26 @@ type Body = {
   fileUrls?: unknown;
 };
 
+function alignCenterDocumentNamesForSave(
+  fileUrls: string[],
+  fromBody: unknown,
+  fromPrev: unknown,
+): string[] {
+  const n = fileUrls.length;
+  const normalizeList = (arr: unknown): string[] | null => {
+    if (!Array.isArray(arr)) return null;
+    const strings = arr.map((x) => String(x).replace(/\0/g, '').trim().slice(0, 300));
+    if (strings.length === n) return strings;
+    if (strings.length > n) return strings.slice(0, n);
+    return null;
+  };
+  return (
+    normalizeList(fromBody) ??
+    normalizeList(fromPrev) ??
+    fileUrls.map((_, i) => `첨부파일 ${i + 1}`)
+  );
+}
+
 export async function POST(req: Request) {
   try {
     const serverSupabase = await createServerSupabaseClient();
@@ -43,7 +63,7 @@ export async function POST(req: Request) {
     const svc = getServiceSupabase();
     const { data: row, error: fetchErr } = await svc
       .from('sessions')
-      .select('id, created_by, start_at, session_type, title, memo, status')
+      .select('id, created_by, start_at, session_type, title, memo, status, feedback_fields')
       .eq('id', sessionId)
       .maybeSingle();
 
@@ -72,6 +92,28 @@ export async function POST(req: Request) {
     const sessionType = String(row.session_type || '');
     const isCenterType =
       sessionType === 'regular_center' || sessionType === 'one_day_center';
+
+    const prevFf =
+      row.feedback_fields && typeof row.feedback_fields === 'object' && !Array.isArray(row.feedback_fields)
+        ? (row.feedback_fields as Record<string, unknown>)
+        : {};
+
+    let mergedFeedback: FeedbackFields = { ...feedbackFields };
+    if (isCenterType && fileUrls.length > 0) {
+      mergedFeedback = {
+        ...mergedFeedback,
+        center_document_names: alignCenterDocumentNamesForSave(
+          fileUrls,
+          feedbackFields.center_document_names,
+          prevFf.center_document_names,
+        ),
+      };
+    } else {
+      const { center_document_names: _omit, ...rest } = mergedFeedback as FeedbackFields & {
+        center_document_names?: string[];
+      };
+      mergedFeedback = rest;
+    }
 
     if (isCenterType) {
       if (fileUrls.length === 0) {
@@ -107,8 +149,8 @@ export async function POST(req: Request) {
       .from('sessions')
       .update({
         status: 'finished',
-        feedback_fields: feedbackFields,
-        students_text: fieldsToTemplateText(feedbackFields),
+        feedback_fields: mergedFeedback,
+        students_text: fieldsToTemplateText(mergedFeedback),
         photo_url: photoUrls,
         file_url: fileUrls,
       })

@@ -1109,7 +1109,9 @@ export default function ClassListPageV2() {
                     day: '2-digit',
                   });
                   const statusLabel = g.timeStatus === 'ongoing' ? '진행중' : '예정';
-                  const teacherName = g.displayTeacherId ? teacherMap[g.displayTeacherId] || g.displayTeacherId : '-';
+                  const teacherName = g.displayTeacherId ? teacherMap[g.displayTeacherId] || g.displayTeacherId : '미정';
+                  const teacherUndecided =
+                    !g.displayTeacherId || String(teacherName).trim() === '미정';
                   const rowKey = makeBundleCompositeKey(g.displayTeacherId, g.title);
 
                   return (
@@ -1117,7 +1119,11 @@ export default function ClassListPageV2() {
                       <td className="px-4 py-3 font-bold text-slate-800">
                         {getCleanClassTitle(g.title)}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{teacherName}</td>
+                      <td
+                        className={`px-4 py-3 ${teacherUndecided ? 'font-bold text-red-600' : 'text-slate-600'}`}
+                      >
+                        {teacherName}
+                      </td>
                       <td className="px-4 py-3 text-slate-600">{g.roundTotal}회</td>
                       <td className="px-4 py-3 text-slate-600">{firstDate}</td>
                       <td className="px-4 py-3">
