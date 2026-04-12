@@ -1,12 +1,22 @@
 'use client';
 
-import { Suspense, useCallback, useMemo } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
 import { useChallengeBGM } from '@/app/lib/admin/hooks/useChallengeBGM';
-
-/** SPOMOVE 임베드용 고정 1종 — 스튜디오 기본 포맷 1과 동일한 시작 그리드 */
-const EMBEDDED_CHALLENGE_GRID = ['앞', '뒤', '앞', '뒤', '앞', '뒤', '앞', '뒤'];
+import { useChallengeEmbedTemplate } from '@/app/lib/spomove/useChallengeEmbedTemplate';
+import {
+  CHALLENGE_DISPLAY_BPM_OPTIONS,
+  getSpomoveChallengeEmbed,
+  mergeSpomoveChallengeLevelData,
+  resolveChallengeProgramBpm,
+} from '@/app/lib/spomove/challengeEmbedStorage';
+import {
+  buildEmbeddedChallengeLevelData,
+  collectEmbeddedImageUrls,
+  preloadImages,
+} from './challengeEmbeddedPreset';
+import { buildLevelDataFromChallengeTemplate, normalizeChallengeTemplateId } from './challengeTemplateDefaults';
 
 function notifyParentComplete() {
   try {
@@ -22,13 +32,65 @@ function ChallengeProgramInner() {
   const searchParams = useSearchParams();
   const autoStart =
     searchParams.get('autoStart') === '1' || searchParams.get('autoStart') === 'true';
-  const { selected: bgmPath, sourceBpm, loading } = useChallengeBGM();
+
+  const templateId = useMemo(() => {
+    const fromUrl = searchParams.get('template');
+    if (fromUrl) return normalizeChallengeTemplateId(fromUrl);
+    return normalizeChallengeTemplateId(getSpomoveChallengeEmbed()?.templateId);
+  }, [searchParams]);
+
+  const { template, loaded: tplLoaded } = useChallengeEmbedTemplate(templateId);
+  const { selected: bgmPath, sourceBpm, bgmStartOffsetMs, loading: bgmLoading } = useChallengeBGM();
+
+  const codePreset = useMemo(() => buildEmbeddedChallengeLevelData(), []);
+  const studioLevelData = useMemo(
+    () => buildLevelDataFromChallengeTemplate(template, codePreset),
+    [template, codePreset]
+  );
+
+  const levelData = useMemo(
+    () => mergeSpomoveChallengeLevelData(studioLevelData),
+    [studioLevelData]
+  );
+
+  const effectiveBpm = useMemo(() => {
+    const storedBpm = getSpomoveChallengeEmbed()?.bpm;
+    const manualLocal =
+      typeof storedBpm === 'number' &&
+      CHALLENGE_DISPLAY_BPM_OPTIONS.includes(
+        storedBpm as (typeof CHALLENGE_DISPLAY_BPM_OPTIONS)[number]
+      );
+    if (manualLocal) return resolveChallengeProgramBpm(storedBpm, sourceBpm);
+    if (typeof sourceBpm === 'number' && sourceBpm > 0) {
+      return resolveChallengeProgramBpm(undefined, sourceBpm);
+    }
+    return resolveChallengeProgramBpm(template.bpm, undefined);
+  }, [sourceBpm, template.bpm]);
+
+  const [assetsReady, setAssetsReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const urls = collectEmbeddedImageUrls(levelData);
+    if (urls.length === 0) {
+      setAssetsReady(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+    void preloadImages(urls).then(() => {
+      if (!cancelled) setAssetsReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [levelData]);
 
   const onEnd = useCallback(() => {
     notifyParentComplete();
   }, []);
 
-  const ready = useMemo(() => !loading, [loading]);
+  const ready = !bgmLoading && tplLoaded && assetsReady;
 
   return (
     <main
@@ -37,7 +99,7 @@ function ChallengeProgramInner() {
     >
       {!ready ? (
         <div className="flex min-h-screen items-center justify-center text-sm text-neutral-500">
-          챌린지 로딩 중…
+          챌린지 준비 중…
         </div>
       ) : (
         <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-2 py-4">
@@ -47,9 +109,10 @@ function ChallengeProgramInner() {
             lockBpm
             bgmPath={bgmPath || undefined}
             bgmSourceBpm={sourceBpm ?? undefined}
-            initialBpm={100}
+            bgmStartOffsetMs={bgmStartOffsetMs}
+            initialBpm={effectiveBpm}
             initialLevel={1}
-            initialGrid={EMBEDDED_CHALLENGE_GRID}
+            initialLevelData={levelData}
             autoStart={autoStart}
             onEnd={onEnd}
           />

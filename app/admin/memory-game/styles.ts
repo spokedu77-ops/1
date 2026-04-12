@@ -50,6 +50,26 @@ export const CSS = `
   }
   .signal-blink { animation: signalBlink 0.18s ease-out forwards; }
 
+  /** 연속 동일 색(전면·사분할): 한 번만 은은하게 덮어 “같은 자극”을 인지 (고휘도 다중 펄스는 눈부심) */
+  @keyframes trainingDupSalienceOverlay {
+    0%   { opacity: 0; background: transparent; }
+    32%  { opacity: 1; background: rgba(248, 250, 252, 0.5); }
+    100% { opacity: 0; background: transparent; }
+  }
+  .training-dup-salience-overlay {
+    animation: trainingDupSalienceOverlay 0.32s cubic-bezier(0.33, 0, 0.2, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    @keyframes trainingDupSalienceOverlayReduced {
+      0%   { opacity: 0; background: transparent; }
+      38%  { opacity: 1; background: rgba(248, 250, 252, 0.42); }
+      100% { opacity: 0; background: transparent; }
+    }
+    .training-dup-salience-overlay {
+      animation: trainingDupSalienceOverlayReduced 0.18s ease-out both;
+    }
+  }
+
   @keyframes memColorEnter {
     0%   { opacity: 0; transform: scale(0.88); }
     60%  { opacity: 1; transform: scale(1.04); }

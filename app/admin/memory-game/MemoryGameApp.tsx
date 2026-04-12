@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { COLORS, MODES, MEMORY_ROUNDS, NUMBER_RULES } from './constants';
-import { useFlowBGM } from '@/app/lib/admin/hooks/useFlowBGM';
+import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { useStudents } from './hooks/useStudents';
@@ -18,8 +18,30 @@ import { SignalDisplay } from './components/SignalDisplay';
 import { MemoryGame } from './components/MemoryGame';
 import { MemoryGameLevel4 } from './components/MemoryGameLevel4';
 import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
+import { ChallengeSpomoveSetupPanel } from './components/ChallengeSpomoveSetupPanel';
+import { TrainingGuideScreen } from './components/TrainingGuideScreen';
+import { getSpomoveChallengeEmbed } from '@/app/lib/spomove/challengeEmbedStorage';
 import { CSS, S } from './styles';
 import type { DupStats } from './lib/signals';
+import { preloadVariantFruitImages } from './lib/preloadVariantFruitImages';
+import { variantFruitUrlsForPreload } from './lib/variantFruitAssets';
+import { useSpomoveVariantSlidesForTraining } from './hooks/useSpomoveVariantFruitSlidesForTraining';
+import {
+  SPOMOVE_COLOR_THEME_LABELS,
+  SPOMOVE_COLOR_THEME_ORDER,
+  SPOMOVE_VARIANT_THEME_LS_KEY,
+  parseStoredVariantTheme,
+  type SpomoveColorThemeId,
+} from './lib/spomoveVariantThemeConfig';
+function modeLevelRangeLabel(modeId: string, levelCount: number): string {
+  if (modeId === 'flow' || modeId === 'challenge') return '1번';
+  return levelCount <= 1 ? '1번' : `1~${levelCount}번`;
+}
+
+function resultLevelLabel(mode: string | undefined, level: number): string {
+  if (mode === 'dual') return level === 1 ? '1번' : '2-1번';
+  return `${level}번`;
+}
 
 type Screen = 'home' | 'setup' | 'guide' | 'students' | 'training' | 'memory' | 'flow' | 'challenge' | 'result';
 
@@ -40,6 +62,8 @@ type Settings = {
   accel: boolean;
   /** 이중과제 2-1번만: 기본형(신호 속도 자동) / 터치형(화면 터치 시 다음) */
   dual21Advance: 'default' | 'touch';
+  /** 반응 인지 3·4·5번 변형 색지각 이미지 테마 (Asset Hub 1번 섹션과 localStorage 동기화) */
+  variantColorTheme: SpomoveColorThemeId;
 };
 
 const defaultSettings: Settings = {
@@ -49,7 +73,7 @@ const defaultSettings: Settings = {
   timeMode: 'time',
   duration: 60,
   targetReps: 20,
-  // 신호별 음성/비프 미사용(기본 off). 배경음은 훈련 시작 시 월별 BGM(플로우 제외).
+  // 신호별 음성/비프 미사용(기본 off). 배경음은 Asset Hub 「BGM」풀에서 무작위(플로우·챌린지 iframe 제외).
   audioMode: 'off',
   numberRule: 'odd_left',
   intervalMode: false,
@@ -59,6 +83,7 @@ const defaultSettings: Settings = {
   warmup: 3,
   accel: false,
   dual21Advance: 'default',
+  variantColorTheme: 'fruit',
 };
 
 export default function MemoryGameApp({
@@ -70,6 +95,11 @@ export default function MemoryGameApp({
 }) {
   const [screen, setScreen] = useState<Screen>('home');
   const [settings, setSettings] = useState<Settings>(defaultSettings);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const t = parseStoredVariantTheme(localStorage.getItem(SPOMOVE_VARIANT_THEME_LS_KEY));
+    setSettings((s) => ({ ...s, variantColorTheme: t }));
+  }, []);
   const { students, add: addStudent, remove: removeStudent, rename: renameStudent } = useStudents();
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -81,7 +111,9 @@ export default function MemoryGameApp({
   const [countdown, setCountdown] = useState<number | null>(null);
   const [signal, setSignal] = useState<Record<string, unknown> | null>(null);
   const [signalKey, setSignalKey] = useState(0);
-  const [flashing, setFlashing] = useState(false);
+  const [dupFlashVisible, setDupFlashVisible] = useState(false);
+  const [dupFlashNonce, setDupFlashNonce] = useState(0);
+  const dupFlashClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevBgRef = useRef<string | null>(null);
   const [stats, setStats] = useState({ timeLeft: 30, repsLeft: 20, progress: 0 });
   const [result, setResult] = useState<{
@@ -102,9 +134,15 @@ export default function MemoryGameApp({
   const challengeCompleteGuardRef = useRef(false);
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
 
-  const month = new Date().getMonth() + 1;
-  const { list: flowBgmList, selected: flowBgmSelected, loading: flowBgmLoading } = useFlowBGM(month);
+  const { list: spomoveBgmList, loading: spomoveBgmLoading } = useSpomoveTrainingBGM();
   const pendingBgmStartRef = useRef<null | { mode: string }>(null);
+
+  const challengeIframeSrc = useMemo(() => {
+    const t = getSpomoveChallengeEmbed()?.templateId?.trim();
+    return t
+      ? `/program/iiwarmup/challenge?autoStart=1&template=${encodeURIComponent(t)}`
+      : '/program/iiwarmup/challenge?autoStart=1';
+  }, [screen]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
@@ -123,6 +161,43 @@ export default function MemoryGameApp({
     };
   }, []);
 
+  const { slides: variantFruitSlides } = useSpomoveVariantSlidesForTraining(settings.variantColorTheme);
+  const variantFruitUrls = useMemo(() => variantFruitUrlsForPreload(variantFruitSlides), [variantFruitSlides]);
+
+  /** SPOMOVE 진입 직후 과일 이미지 선로딩(설정·난이도 선택 전에도 캐시 채움) */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    void preloadVariantFruitImages(variantFruitUrls);
+  }, [variantFruitUrls]);
+
+  /** 변형 색지각(basic 3·4·5번): 설정·워밍업·훈련 중 과일 이미지 프리로드 */
+  const basicVariantLevel = useMemo(
+    () => settings.mode === 'basic' && (settings.level === 3 || settings.level === 4 || settings.level === 5),
+    [settings.mode, settings.level]
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (screen !== 'setup') return;
+    if (!basicVariantLevel) return;
+    void preloadVariantFruitImages(variantFruitUrls);
+  }, [screen, basicVariantLevel, variantFruitUrls]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (screen !== 'training') return;
+    if (countdown === null) return;
+    if (!basicVariantLevel) return;
+    void preloadVariantFruitImages(variantFruitUrls);
+  }, [screen, countdown, basicVariantLevel, variantFruitUrls]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isTraining || screen !== 'training') return;
+    if (!basicVariantLevel) return;
+    void preloadVariantFruitImages(variantFruitUrls);
+  }, [isTraining, screen, basicVariantLevel, variantFruitUrls]);
+
   useEffect(() => {
     if (!initialMode || !(initialMode in MODES)) return;
     const modeDef = MODES[initialMode];
@@ -136,17 +211,32 @@ export default function MemoryGameApp({
   }, [initialMode, initialLevel]);
 
   const set = useCallback((key: keyof Settings, value: unknown) => {
-    setSettings((s) => ({ ...s, [key]: value }));
+    setSettings((s) => {
+      const next = { ...s, [key]: value } as Settings;
+      if (key === 'variantColorTheme' && typeof window !== 'undefined' && typeof value === 'string') {
+        localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, value);
+      }
+      return next;
+    });
   }, []);
 
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
     setDisplayCount(countRef.current);
-    if (sig.type === 'full_color' && (sig.bg as string) === prevBgRef.current) {
-      setFlashing(true);
-      setTimeout(() => setFlashing(false), 80);
+    const dupKey =
+      sig.type === 'think_quad'
+        ? String((sig.content as { colorId?: string })?.colorId ?? '')
+        : String(sig.bg ?? '');
+    if ((sig.type === 'full_color' || sig.type === 'gonogo_color' || sig.type === 'think_quad') && dupKey === prevBgRef.current) {
+      setDupFlashNonce((n) => n + 1);
+      setDupFlashVisible(true);
+      if (dupFlashClearRef.current != null) clearTimeout(dupFlashClearRef.current);
+      dupFlashClearRef.current = setTimeout(() => {
+        dupFlashClearRef.current = null;
+        setDupFlashVisible(false);
+      }, 360);
     }
-    prevBgRef.current = (sig.bg as string) ?? null;
+    prevBgRef.current = dupKey || null;
     setSignal(sig);
     setSignalKey((k) => k + 1);
   }, []);
@@ -162,7 +252,7 @@ export default function MemoryGameApp({
     setResult({ count, cfg, dupStats: cfg.mode === 'basic' ? dupStats ?? undefined : undefined });
     setSessionMemo('');
     setScreen('result');
-    if (cfg.audioMode !== 'off') setTimeout(() => tts('훈련 완료! 수고했어요!', true), 300);
+    if (cfg.audioMode !== 'off') setTimeout(() => tts('트레이닝 완료! 수고했어요!', true), 300);
   }, [settings, selectedStudentId]);
 
   const { getProgress } = useTrainingTimer({
@@ -176,6 +266,7 @@ export default function MemoryGameApp({
     level: settings.level,
     audioMode: settings.audioMode,
     colors: COLORS,
+    fruitSlides: variantFruitSlides,
     onSignal,
     onFinish,
   });
@@ -200,6 +291,7 @@ export default function MemoryGameApp({
     level: settings.level,
     audioMode: settings.audioMode,
     colors: COLORS,
+    fruitSlides: variantFruitSlides,
     onSignal,
     onFinish,
   });
@@ -267,7 +359,11 @@ export default function MemoryGameApp({
       countRef.current = 0;
       setDisplayCount(0);
       setSignal(null);
-      setFlashing(false);
+      if (dupFlashClearRef.current != null) {
+        clearTimeout(dupFlashClearRef.current);
+        dupFlashClearRef.current = null;
+      }
+      setDupFlashVisible(false);
       prevBgRef.current = null;
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -289,15 +385,21 @@ export default function MemoryGameApp({
 
       // BGM 정책:
       // - flow / challenge: iframe 안에서 BGM 재생 — 부모 BgmPlayer로 재생하면 이중 재생됨
-      // - basic/spatial/dual/stroop: 월별 BGM list 랜덤 재생
+      // - 그 외 SPOMOVE 훈련: Asset Hub 「BGM」풀(spomove_training_bgm_settings) 목록 중 무작위
       const bgmMode = cfg.mode;
       const shouldTryBgmParent =
-        bgmMode === 'basic' || bgmMode === 'spatial' || bgmMode === 'dual' || bgmMode === 'stroop';
+        bgmMode === 'basic' ||
+        bgmMode === 'spatial' ||
+        bgmMode === 'dual' ||
+        bgmMode === 'stroop' ||
+        bgmMode === 'simon' ||
+        bgmMode === 'flanker' ||
+        bgmMode === 'gonogo';
       if (shouldTryBgmParent) {
-        if (flowBgmList.length === 0) {
-          if (flowBgmLoading) pendingBgmStartRef.current = { mode: bgmMode };
+        if (spomoveBgmList.length === 0) {
+          if (spomoveBgmLoading) pendingBgmStartRef.current = { mode: bgmMode };
         } else {
-          const pick = flowBgmList[Math.floor(Math.random() * flowBgmList.length)]!;
+          const pick = spomoveBgmList[Math.floor(Math.random() * spomoveBgmList.length)]!;
           playBgm(pick);
         }
       }
@@ -350,20 +452,20 @@ export default function MemoryGameApp({
         }, 900);
       }
     },
-    [settings, flowBgmList, flowBgmSelected, flowBgmLoading]
+    [settings, spomoveBgmList, spomoveBgmLoading]
   );
 
   useEffect(() => {
     const pending = pendingBgmStartRef.current;
     if (!pending?.mode) return;
-    if (flowBgmLoading) return;
+    if (spomoveBgmLoading) return;
     pendingBgmStartRef.current = null;
-    if (flowBgmList.length === 0) return;
+    if (spomoveBgmList.length === 0) return;
     if (!(screen === 'training' || screen === 'memory' || screen === 'flow' || screen === 'challenge')) return;
 
     const mode = pending.mode;
     if (mode === 'flow' || mode === 'challenge') return;
-    const pick = flowBgmList[Math.floor(Math.random() * flowBgmList.length)]!;
+    const pick = spomoveBgmList[Math.floor(Math.random() * spomoveBgmList.length)]!;
     if (!pick) return;
     try {
       const url = getPublicUrl(pick);
@@ -374,7 +476,7 @@ export default function MemoryGameApp({
     } catch {
       // ignore
     }
-  }, [flowBgmLoading, flowBgmList, flowBgmSelected, screen]);
+  }, [spomoveBgmLoading, spomoveBgmList, screen]);
 
   const stop = useCallback(() => {
     if (timerRef.current) {
@@ -383,7 +485,11 @@ export default function MemoryGameApp({
     }
     if (document.fullscreenElement) document.exitFullscreen();
     setIsTraining(false);
-    setFlashing(false);
+    if (dupFlashClearRef.current != null) {
+      clearTimeout(dupFlashClearRef.current);
+      dupFlashClearRef.current = null;
+    }
+    setDupFlashVisible(false);
     setSignal(null);
     bgmPlayerRef.current?.fadeOut(220);
     setScreen('home');
@@ -440,7 +546,7 @@ export default function MemoryGameApp({
           {isOffline && (
             <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.75rem', padding: '0.55rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.96rem', fontWeight: 700, color: '#FCA5A5' }}>
               <span>📵</span>
-              <span>오프라인 상태입니다 — 저장된 데이터로 훈련은 계속 가능합니다</span>
+              <span>오프라인 상태입니다 — 저장된 데이터로 트레이닝은 계속 가능합니다</span>
             </div>
           )}
           <div className="home-fadein" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -472,10 +578,19 @@ export default function MemoryGameApp({
               몸이 움직이면<br />
               <span style={{ color: '#F97316' }}>뇌가 깨어납니다</span>
             </h1>
-            <p style={{ fontSize: 'clamp(0.92rem,2.2vw,1.05rem)', color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, fontWeight: 400 }}>신체 활동과 인지 훈련을 통합한<br />교육 기반 퍼포먼스 트레이닝 도구</p>
+            <p style={{ fontSize: 'clamp(0.92rem,2.2vw,1.05rem)', color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, fontWeight: 400 }}>신체 활동과 인지 트레이닝을 통합한<br />교육 기반 퍼포먼스 도구 — SPOMOVE 트레이닝</p>
             <div className="home-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
               {Object.values(MODES).map((m) => {
-                const rgbMap: Record<string, string> = { '#3B82F6': '59,130,246', '#A855F7': '168,85,247', '#22C55E': '34,197,94', '#F97316': '249,115,22' };
+                const rgbMap: Record<string, string> = {
+                  '#3B82F6': '59,130,246',
+                  '#A855F7': '168,85,247',
+                  '#22C55E': '34,197,94',
+                  '#F97316': '249,115,22',
+                  '#EC4899': '236,72,153',
+                  '#06B6D4': '6,182,212',
+                  '#14B8A6': '20,184,166',
+                  '#6366F1': '99,102,241',
+                };
                 const rgb = rgbMap[m.accent] ?? '249,115,22';
                 const active = settings.mode === m.id;
                 return (
@@ -491,7 +606,7 @@ export default function MemoryGameApp({
                     <div style={{ fontSize: 'clamp(1rem,2.5vw,1.2rem)', marginBottom: '0.25rem' }}>{m.icon}</div>
                     <div style={{ fontSize: 'clamp(0.72rem,1.8vw,0.82rem)', fontWeight: 800, color: active ? m.accent : 'rgba(255,255,255,0.8)', lineHeight: 1.2 }}>{m.title}</div>
                     <div style={{ fontSize: 'clamp(0.58rem,1.4vw,0.65rem)', color: 'rgba(255,255,255,0.28)', marginTop: '0.12rem', fontWeight: 500 }}>{m.en}</div>
-                    <div style={{ fontSize: 'clamp(0.55rem,1.3vw,0.62rem)', color: 'rgba(255,255,255,0.2)', marginTop: '0.2rem', fontWeight: 600 }}>{m.id === 'spatial' || m.id === 'dual' ? `${m.levels.length}번` : m.id === 'flow' || m.id === 'challenge' ? `${m.levels.length}프로그램` : `${m.levels.length}단계`}</div>
+                    <div style={{ fontSize: 'clamp(0.55rem,1.3vw,0.62rem)', color: 'rgba(255,255,255,0.2)', marginTop: '0.2rem', fontWeight: 600 }}>{modeLevelRangeLabel(m.id, m.levels.length)}</div>
                   </button>
                 );
               })}
@@ -499,10 +614,10 @@ export default function MemoryGameApp({
           </div>
           <div className="home-fadein-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-              <button type="button" onClick={() => setScreen('guide')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.85rem', padding: 'clamp(0.7rem,2vw,0.9rem)', fontSize: 'clamp(0.78rem,2vw,0.86rem)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>📖 가이드</button>
+              <button type="button" onClick={() => setScreen('guide')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.85rem', padding: 'clamp(0.7rem,2vw,0.9rem)', fontSize: 'clamp(0.78rem,2vw,0.86rem)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>📖 상세 가이드</button>
             </div>
             <div className="home-fadein-3" style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 'clamp(0.62rem,1.6vw,0.7rem)', color: 'rgba(255,255,255,0.18)', fontWeight: 500, lineHeight: 1.6 }}>연세대학교 체육교육 전문가가 설계한<br />신체·인지 통합 트레이닝 도구</p>
+              <p style={{ fontSize: 'clamp(0.62rem,1.6vw,0.7rem)', color: 'rgba(255,255,255,0.18)', fontWeight: 500, lineHeight: 1.6 }}>연세대학교 체육교육 전문가가 설계한<br />신체·인지 통합 SPOMOVE 트레이닝</p>
             </div>
           </div>
         </div>
@@ -522,140 +637,7 @@ export default function MemoryGameApp({
   // ── STUDENTS / HISTORY / GUIDE (delegate to components) ──
   if (screen === 'students') return <StudentManageScreen students={students} onAdd={addStudent} onRemove={removeStudent} onRename={renameStudent} onBack={() => setScreen('home')} />;
 
-  if (screen === 'guide') {
-    return (
-      <div style={S.page}>
-        <style>{CSS}</style>
-        <div style={S.scroll}>
-          <div style={{ ...S.card, maxWidth: '36rem' }}>
-            <button type="button" style={S.back} onClick={() => setScreen('home')}>← 처음으로</button>
-            <h2 style={S.ctitle}>📖 훈련 가이드</h2>
-            <p style={S.csub}>어떤 훈련인지, 어떻게 진행하는지 확인하세요.</p>
-            <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', borderRadius: '1.1rem', padding: '1rem 1.1rem', marginBottom: '1.2rem', border: '1px solid rgba(148,163,184,0.24)', boxShadow: '0 10px 22px rgba(15,23,42,0.22)' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 900, color: '#FDBA74', letterSpacing: '0.08em', marginBottom: '0.55rem', textTransform: 'uppercase', padding: '0.3rem 0.55rem', borderRadius: '999px', border: '1px solid rgba(251,146,60,0.45)', background: 'rgba(251,146,60,0.12)' }}>
-                준비 체크
-              </div>
-              <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)', lineHeight: 1.8, fontWeight: 600 }}>
-                체육관 바닥 네 방향에 <strong style={{ color: '#fff' }}>빨강 / 파랑 / 초록 / 노랑</strong> 콘을 배치하세요.
-                <br />
-                화면 신호가 나오면 해당 콘으로 이동해 터치 후 제자리로 복귀합니다.
-              </div>
-            </div>
-            {[
-              {
-                icon: '⚡',
-                title: '반응 인지',
-                tag: '키우는 능력: 순발력 · 지각(색/방향/수) · 반응-실행 연결',
-                steps: [
-                  '준비물/세팅: 빨강·파랑·초록·노랑 콘을 4방향(앞/뒤/좌/우)으로 배치. 초보는 거리 2~3m, 익숙하면 4~6m.',
-                  '진행 기본 룰: 신호가 나오면 즉시 해당 콘으로 이동 → 터치(또는 발로 라인 밟기) → 출발점 복귀.',
-                  '단계 1(색): 화면 전체 색 = 이동할 콘. 코칭: “색 먼저 보고, 한 박자 빠르게 출발!”',
-                  '단계 2(변형 색지각): 좌·우에 같은 과일이 보이며, 연속 신호에서 같은 과일은 반복되지 않습니다. 해당 색 콘으로 이동. 코칭: “보이는 색만 빠르게!”',
-                  '단계 3(방향): ↑/↓/←/→ 방향 이동. 코칭: “몸은 먼저, 눈은 다음 신호로.”',
-                  '단계 4(수 판단): 숫자를 규칙으로 판단(예: 홀수 왼쪽/짝수 오른쪽). 코칭: “판단은 짧게, 움직임은 크게.”',
-                  '난이도 조절: 신호 속도(초)를 낮추면 난이도↑. 분량은 횟수(10/20/30/40회)로 운영.',
-                ],
-                tip: '시작 후 월별 BGM이 깔립니다. 신호마다 음성·비프는 나오지 않으니 코칭은 선생님 구두로 진행하세요.',
-                accent: '#3B82F6',
-              },
-              {
-                icon: '🧠',
-                title: '스트룹 과제',
-                tag: '키우는 능력: 억제 제어 · 인지 유연성 · 오류 교정',
-                steps: [
-                  '목표: “자동 반응(글자 읽기)”을 억제하고 “정답 규칙(색/내용)”에 맞춰 응답하기.',
-                  '단계 1(역 스트룹): 색은 무시하고 글자 내용을 그대로 말하기(가장 흔히 헷갈림).',
-                  '단계 2(색 명명): 글자 내용은 무시하고 글자 색을 말하기. 예: “파란색 빨강” → “파랑”.',
-                  '단계 3(배경 간섭): 배경색까지 섞여 방해. 규칙은 동일(글자 색만). 초반엔 속도 느리게.',
-                  '단계 4(채움 화살표): 위·아래·좌·우를 가리키는 화살표 안이 색으로 채워집니다. 방향은 무시하고 화살표 안 색 이름만 말합니다.',
-                  '운영 팁: 실수했을 때 즉시 정답을 말하게 하고 다음 신호로 넘어가기(멈추지 않기).',
-                  '배경: 다른 훈련과 같이 월별 BGM이 재생됩니다(시작 버튼 클릭 후).',
-                ],
-                tip: '스트룹은 신호별 음성 힌트 없이 진행합니다. 정답은 선생님이 확인·코칭해 주세요.',
-                accent: '#A855F7',
-              },
-              {
-                icon: '🎨',
-                title: '순차 기억',
-                tag: '키우는 능력: 작업기억 · 순서 재생 · 집중 유지',
-                steps: [
-                  '진행 방식: 화면에 색(및 번호)이 순서대로 제시 → 학생이 순서대로 말하기 → 선생님이 정답 공개.',
-                  '속도: 설정의 “신호 속도(초)”가 색/번호가 바뀌는 실제 템포입니다(예: 4.0초면 4초마다 다음 카드).',
-                  '1번(3항): 3개를 기억해 순서대로 말하기. 초보 워밍업용.',
-                  '2번(5항): 5개를 기억해 순서대로 말하기. 집중 유지 훈련.',
-                  '3번(10항): 10개를 본 뒤 전체 정답 목록으로 확인(반복 학습용).',
-                  '4번(색-번호 Q&A): 1~10을 모두 본 뒤 5개 질문. 질문 문구는 “숫자 N은 무슨 색깔이었을까요?”로 통일.',
-                  '5번(색-번호 전체 공개): 10개를 모두 본 뒤 번호별 정답을 한 화면에 공개.',
-                ],
-                tip: '순차기억은 “정답 맞히기”보다 “기억 전략”을 코칭하는 게 핵심입니다(예: 소리내어 묶기, 3개 단위 청킹).',
-                accent: '#22C55E',
-              },
-              {
-                icon: '🔀',
-                title: '이중 과제',
-                tag: '키우는 능력: 분산 주의 · 복합 실행 · 전환 능력',
-                steps: [
-                  '목표: 두 정보를 동시에 처리하고 행동으로 옮기기.',
-                  '1번(색깔·숫자): 화면 배경 색에 맞는 콘으로 이동한 뒤, 숫자만큼 반복 동작(터치·점프 등)을 수행합니다.',
-                  '2-1번(색깔·화살표): 파랑 또는 빨강 콘으로 이동한 뒤, 화면 화살표(왼쪽·오른쪽) 방향으로 이동합니다. 색과 방향은 매번 무작위입니다.',
-                  '난이도 조절: 신호 속도·분량(횟수)으로 조절합니다.',
-                ],
-                tip: '실수 교정은 “규칙을 다시 말하게 하기 → 바로 다음 신호”가 가장 좋습니다. 멈춰서 길게 설명하면 훈련 효과가 떨어집니다.',
-                accent: '#F97316',
-              },
-            ].map((block, blockIndex) => (
-              <section
-                key={block.title}
-                style={{
-                  marginBottom: '1rem',
-                  background: '#FFFFFF',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '1rem',
-                  overflow: 'hidden',
-                  boxShadow: '0 8px 18px rgba(15,23,42,0.06)',
-                }}
-              >
-                <div style={{ padding: '0.9rem 1rem', borderBottom: '1px solid #EEF2F7', background: `linear-gradient(90deg, ${block.accent}10 0%, #F8FAFC 70%)` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.3rem' }}>
-                    <span style={{ width: 24, height: 24, borderRadius: 999, background: '#fff', border: `1px solid ${block.accent}55`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>{block.icon}</span>
-                    <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>{block.title}</span>
-                    <span style={{ marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 800, color: block.accent }}>STEP {blockIndex + 1}</span>
-                  </div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', lineHeight: 1.45 }}>{block.tag}</div>
-                </div>
-                <div style={{ padding: '0.9rem 1rem', background: '#FCFDFE' }}>
-                  <div style={{ display: 'grid', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    {block.steps.map((s, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', fontSize: '0.87rem', color: '#475569', lineHeight: 1.62, fontWeight: 600 }}>
-                        <span style={{ marginTop: '0.13rem', width: 20, height: 20, borderRadius: 6, background: '#EEF2FF', color: '#4F46E5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900, flexShrink: 0 }}>
-                          {i + 1}
-                        </span>
-                        <span>{s}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ border: '1px solid #E2E8F0', background: '#F8FAFC', borderRadius: '0.75rem', padding: '0.7rem 0.8rem', fontSize: '0.83rem', color: '#334155', lineHeight: 1.55, fontWeight: 700 }}>
-                    <span style={{ color: block.accent, fontWeight: 900 }}>코칭 팁</span>
-                    <span style={{ color: '#64748B' }}> · </span>
-                    {block.tip}
-                  </div>
-                </div>
-              </section>
-            ))}
-            <div style={{ background: 'linear-gradient(180deg, #FFF7ED 0%, #FFFBF5 100%)', border: '1px solid #FED7AA', borderRadius: '1rem', padding: '0.95rem 1.05rem', marginTop: '0.2rem', color: '#9A3412', boxShadow: '0 8px 20px rgba(251,146,60,0.12)' }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 900, letterSpacing: '0.08em', marginBottom: '0.4rem', textTransform: 'uppercase' }}>고급 설정 요약</div>
-              <div style={{ fontSize: '0.88rem', lineHeight: 1.65, fontWeight: 700 }}>
-                - 인터벌 모드(Tabata)는 <strong>4세트 고정</strong>입니다(Work/Rest는 설정값 사용).<br />
-                - 점진 가속(accel)은 인터벌이 아닌 일반 모드에서만 적용되며, 진행률에 따라 신호 간격이 선형으로 빨라져 마지막엔 <strong>60%</strong>까지 단축됩니다.<br />
-                - 반응 인지·스트룹·순차 기억·이중 과제는 시작 시 <strong>월별 BGM</strong>이 재생됩니다(플로우는 iframe 내부 BGM).
-              </div>
-            </div>
-            <button type="button" style={{ ...S.btn, ...S.bDark, marginTop: '0.5rem' }} onClick={() => setScreen('home')}>🏠 처음으로</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (screen === 'guide') return <TrainingGuideScreen onBack={() => setScreen('home')} />;
 
   // ── SETUP (abbreviated: only mode/level/speed/start to keep file size down; full setup can be added in same pattern)
   if (screen === 'setup') {
@@ -668,17 +650,17 @@ export default function MemoryGameApp({
     const isDual21 = settings.mode === 'dual' && settings.level === 2;
     const stepSpeed = isDual21 ? 4 : 3;
     const stepReps = isDual21 ? 5 : 4;
-    const stepBasicRule = isDual21 ? 6 : 5;
+    const stepBasicRule = isDual21 ? 6 : 7;
     return (
       <div style={S.page}>
         <style>{CSS}</style>
         <div style={S.scroll}>
           <div style={{ ...S.card, maxWidth: '34rem' }}>
             <button type="button" style={S.back} onClick={() => setScreen('home')}>← 처음으로</button>
-            <h2 style={S.ctitle}>훈련 설정</h2>
+            <h2 style={S.ctitle}>트레이닝 설정</h2>
             <p style={S.csub}>아래 항목을 순서대로 설정하고 시작하세요.</p>
             <div style={S.sec}>
-              {stepNum(1, '어떤 훈련을 할까요?')}
+              {stepNum(1, '어떤 트레이닝을 할까요?')}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
                 {Object.values(MODES).map((m) => (
                   <button
@@ -709,7 +691,7 @@ export default function MemoryGameApp({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                 {M.levels.map((lv) => (
                   <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : 'var(--border)'}`, background: settings.level === lv.id ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
-                    <div style={{ ...(M.id === 'dual' ? { minWidth: 52, width: 'auto', padding: '0 0.35rem' } : { width: 40 }), height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : '1px solid var(--border)', flexShrink: 0, marginTop: '0.05rem' }}>{M.id === 'spatial' ? lv.name : M.id === 'dual' ? (lv.id === 1 ? '1번' : '2-1번') : `단계 ${lv.id}`}</div>
+                    <div style={{ ...(M.id === 'dual' ? { minWidth: 52, width: 'auto', padding: '0 0.35rem' } : { minWidth: 40, width: 40 }), height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : `1px solid var(--border)`, flexShrink: 0, marginTop: '0.05rem' }}>{lv.name}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text)' }}>{lv.name}</span>
@@ -720,7 +702,39 @@ export default function MemoryGameApp({
                   </button>
                 ))}
               </div>
+              {settings.mode === 'basic' && [3, 4, 5].includes(settings.level) && (
+                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>변형 색지각 이미지 테마</div>
+                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
+                    Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 3·4·5번 신호에 나옵니다.
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                    {SPOMOVE_COLOR_THEME_ORDER.map((tid) => (
+                      <button
+                        key={tid}
+                        type="button"
+                        onClick={() => set('variantColorTheme', tid)}
+                        style={{
+                          padding: '0.55rem 0.95rem',
+                          borderRadius: '0.75rem',
+                          border: `2px solid ${settings.variantColorTheme === tid ? M.accent : 'var(--border)'}`,
+                          background: settings.variantColorTheme === tid ? `${M.accent}12` : 'var(--card)',
+                          color: settings.variantColorTheme === tid ? M.accent : 'var(--text)',
+                          fontWeight: settings.variantColorTheme === tid ? 800 : 600,
+                          fontSize: '0.88rem',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {settings.variantColorTheme === tid ? '✓ ' : ''}
+                        {SPOMOVE_COLOR_THEME_LABELS[tid]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+            {settings.mode === 'challenge' && <ChallengeSpomoveSetupPanel />}
             {settings.mode !== 'flow' && settings.mode !== 'challenge' && (
               <>
                 {isDual21 && (
@@ -815,7 +829,7 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 )}
-                {settings.mode === 'basic' && settings.level === 4 && (
+                {settings.mode === 'basic' && settings.level === 7 && (
                   <div style={S.sec}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
                       <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--subtle-bg)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #3B82F6' }}>{stepBasicRule}</div>
@@ -860,7 +874,7 @@ export default function MemoryGameApp({
               </>
             )}
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button type="button" style={{ ...S.btn, ...S.bPrimary, flex: 3, fontSize: '1.05rem', padding: '1.1rem' }} onClick={() => startSession()}>훈련 시작 →</button>
+              <button type="button" style={{ ...S.btn, ...S.bPrimary, flex: 3, fontSize: '1.05rem', padding: '1.1rem' }} onClick={() => startSession()}>트레이닝 시작 →</button>
             </div>
           </div>
         </div>
@@ -924,7 +938,8 @@ export default function MemoryGameApp({
           <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}>✕</button>
         </div>
         <iframe
-          src="/program/iiwarmup/challenge?autoStart=1"
+          key={challengeIframeSrc}
+          src={challengeIframeSrc}
           title="SPOMOVE Challenge Program"
           style={{ width: '100%', height: '100%', border: 0 }}
           allow="autoplay"
@@ -934,16 +949,93 @@ export default function MemoryGameApp({
   }
 
   if (screen === 'training') {
-    const bg = flashing ? '#ffffff' : (signal?.bg as string) ?? '#0F172A';
-    const dark = !flashing && (bg === '#0F172A' || bg.startsWith('#0') || bg.startsWith('#1'));
+    const bg = (signal?.bg as string) ?? '#0F172A';
+    const dark = bg === '#0F172A' || bg.startsWith('#0') || bg.startsWith('#1');
     const currentRule = NUMBER_RULES.find((r) => r.id === settings.numberRule);
     const trainingDual21Touch =
       settings.mode === 'dual' && settings.level === 2 && settings.dual21Advance === 'touch';
     return (
-      <div ref={trainingContainerRef} style={{ position: 'fixed', inset: 0, background: bg, overflow: 'hidden', transition: flashing ? 'none' : 'background 0.06s' }}>
+      <div ref={trainingContainerRef} style={{ position: 'fixed', inset: 0, background: bg, overflow: 'hidden', transition: 'background 0.06s' }}>
         <style>{CSS}</style>
-        {settings.mode === 'basic' && settings.level === 4 && currentRule && (
+        {settings.mode === 'gonogo' && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '1.5rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 20,
+              maxWidth: 'min(94vw, 36rem)',
+              textAlign: 'center',
+              background: 'rgba(0,0,0,0.55)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '2rem',
+              padding: '0.5rem 1.2rem',
+              color: 'rgba(255,255,255,0.88)',
+              fontSize: 'clamp(0.7rem, 2vw, 0.88rem)',
+              fontWeight: 600,
+              lineHeight: 1.45,
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}
+          >
+            {settings.level === 1 && '📋 빨강·파랑·노랑 → 이동(Go) · 초록 → 멈춤(No-Go)'}
+            {settings.level === 2 && '📋 동그라미 → 이동(Go) · 세모 → 멈춤(No-Go)'}
+            {settings.level === 3 && '📋 화살표 → 이동 · ✕ → 멈춤'}
+            {settings.level === 4 && '📋 빨강 동그라미 → 이동(Go) · 빨강 세모 → 멈춤(No-Go)'}
+          </div>
+        )}
+        {settings.mode === 'basic' && settings.level === 7 && currentRule && (
           <div style={{ position: 'absolute', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 20, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', borderRadius: '2rem', padding: '0.5rem 1.2rem', color: 'rgba(255,255,255,0.75)', fontSize: 'clamp(0.72rem,2vw,0.9rem)', fontWeight: 600, whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.12)' }}>📋 규칙: {currentRule.label}</div>
+        )}
+        {settings.mode === 'basic' && [3, 4, 5].includes(settings.level) && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '1.5rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 20,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.45rem',
+              maxWidth: 'min(92vw, 28rem)',
+            }}
+          >
+            <div
+              style={{
+                textAlign: 'center',
+                background: 'rgba(0,0,0,0.55)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '2rem',
+                padding: '0.45rem 1rem',
+                color: 'rgba(255,255,255,0.85)',
+                fontSize: 'clamp(0.72rem,2vw,0.9rem)',
+                fontWeight: 600,
+                border: '1px solid rgba(255,255,255,0.12)',
+              }}
+            >
+              🎨 테마: {SPOMOVE_COLOR_THEME_LABELS[settings.variantColorTheme]}
+            </div>
+            {settings.level === 5 && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  background: 'rgba(0,0,0,0.55)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '2rem',
+                  padding: '0.5rem 1.2rem',
+                  color: 'rgba(255,255,255,0.85)',
+                  fontSize: 'clamp(0.72rem,2vw,0.9rem)',
+                  fontWeight: 600,
+                  lineHeight: 1.45,
+                  border: '1px solid rgba(255,255,255,0.12)',
+                }}
+              >
+                두 색 콘을 동시에 한 발씩 밟으세요
+              </div>
+            )}
+          </div>
         )}
         <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
           <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1.2rem', color: '#fff', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -987,6 +1079,14 @@ export default function MemoryGameApp({
         )}
         <div style={{ position: 'absolute', inset: 0 }}>
           {countdown !== null ? null : signal ? <SignalDisplay signal={signal} animKey={signalKey} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569', fontSize: '2rem', fontWeight: 700 }}>준비하세요</div>}
+          {dupFlashVisible && countdown === null ? (
+            <div
+              key={dupFlashNonce}
+              className="training-dup-salience-overlay"
+              aria-hidden
+              style={{ position: 'absolute', inset: 0, zIndex: 16, pointerEvents: 'none' }}
+            />
+          ) : null}
           {countdown === null && trainingDual21Touch && (
             <div
               role="presentation"
@@ -1024,7 +1124,10 @@ export default function MemoryGameApp({
           : (cfg.targetReps ?? 0) * (cfg.speed ?? 1);
     const spm = !isMem && !isDual21TouchCfg && totalSec > 0 ? Math.round((count / totalSec) * 60) : null;
     const mainVal = spm != null ? `${spm}` : `${count}`;
-    const mainLabel = spm != null ? 'SPM' : '회';
+    const mainLabel = spm != null ? '분당 신호 수(추정)' : '처리한 신호 횟수';
+    const mainHint = spm != null
+      ? '설정한 시간·속도를 기준으로, 1분이면 약 이 정도로 많은 신호를 보신 셈이에요.'
+      : '이번 세션에서 화면에 나온 신호를 모두 세어요.';
     const mainColor = mo?.accent ?? '#F97316';
     const student = students.find((s) => s.id === selectedStudentId);
     return (
@@ -1035,38 +1138,49 @@ export default function MemoryGameApp({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <span style={{ fontSize: '1.1rem' }}>{mo?.icon}</span>
-                <span style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text-muted)' }}>{mo?.title} · {cfg.mode === 'spatial' ? `${cfg.level}번` : cfg.mode === 'dual' ? (cfg.level === 1 ? '1번' : '2-1번') : cfg.mode === 'flow' || cfg.mode === 'challenge' ? `${cfg.level}프로그램` : `단계 ${cfg.level}`}</span>
+                <span style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text-muted)' }}>{mo?.title} · {resultLevelLabel(cfg.mode, cfg.level)}</span>
               </div>
               {student && <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><div style={{ width: 20, height: 20, borderRadius: '50%', background: student.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 900, color: '#fff' }}>{student.name[0]}</div><span style={{ fontSize: '0.96rem', fontWeight: 700, color: student.color }}>{student.name}</span></div>}
             </div>
             <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
               <div style={{ fontSize: 'clamp(5rem,20vw,7rem)', fontWeight: 900, lineHeight: 1, color: mainColor, letterSpacing: '-0.03em' }}>{mainVal}</div>
-              <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-muted)', marginTop: '0.2rem' }}>{mainLabel}</div>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginTop: '0.35rem' }}>{mainLabel}</div>
+              <div style={{ fontSize: '0.86rem', fontWeight: 500, color: 'var(--text-muted)', marginTop: '0.45rem', lineHeight: 1.55, maxWidth: '22rem', marginLeft: 'auto', marginRight: 'auto' }}>{mainHint}</div>
             </div>
             {cfg.mode === 'basic' && dupStats && (
               <div
                 style={{
-                  textAlign: 'center',
+                  textAlign: 'left',
                   marginBottom: '1rem',
-                  padding: '0.65rem 0.9rem',
+                  padding: '0.85rem 1rem',
                   background: '#F8FAFC',
                   border: '1px solid #E2E8F0',
                   borderRadius: '0.75rem',
-                  fontSize: '0.95rem',
-                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
                   color: '#475569',
-                  lineHeight: 1.5,
+                  lineHeight: 1.65,
                 }}
               >
-                전환 중복{' '}
-                {dupStats.tripleViolation ? (
-                  <span style={{ color: '#94A3B8' }}>0%</span>
-                ) : (
-                  <span style={{ color: '#64748B' }}>{Math.round(dupStats.dupRatio * 100)}%</span>
-                )}
-                <span style={{ opacity: 0.45, margin: '0 0.35rem' }}>·</span>
-                최대 연속 동일{' '}
-                <span style={{ color: '#64748B' }}>{dupStats.displayMaxConsecutive}회</span>
+                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', marginBottom: '0.5rem' }}>이번 세션 해석</div>
+                <p style={{ margin: '0 0 0.55rem' }}>
+                  <strong style={{ color: '#334155' }}>신호가 얼마나 바뀌었나요?</strong>{' '}
+                  바로 이어서 똑같은 신호(같은 색·같은 그림 등)가 나온 비율이{' '}
+                  <strong style={{ color: '#1E293B' }}>{Math.round(dupStats.dupRatio * 100)}%</strong>
+                  이에요. 숫자가 낮을수록 매번 다른 과제를 보는 쪽에 가깝습니다.
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong style={{ color: '#334155' }}>같은 신호를 연달아 본 적은?</strong>{' '}
+                  {dupStats.maxConsecutiveSame >= 3 ? (
+                    <>
+                      최대 <strong style={{ color: '#B45309' }}>{dupStats.maxConsecutiveSame}번</strong>까지 이어졌어요. 속도를 조금 낮추거나 휴식을 넣으면 집중하기 더 수월해요.
+                    </>
+                  ) : (
+                    <>
+                      최대 <strong style={{ color: '#1E293B' }}>{dupStats.maxConsecutiveSame}번</strong>까지 이어졌어요. 2번 이내면 설계 목표에 가깝습니다.
+                    </>
+                  )}
+                </p>
               </div>
             )}
             <div style={{ display: 'flex', gap: '0.6rem' }}>

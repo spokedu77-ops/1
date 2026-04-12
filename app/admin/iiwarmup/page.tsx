@@ -28,7 +28,7 @@ export default function TeacherAppOverviewPage() {
         >
           <h3 className="text-base font-extrabold">SPOMOVE</h3>
           <p className="mt-2 text-sm text-neutral-400">
-            Think · Challenge · Flow · 카메라 · 반응 훈련 등 도구 모음
+            Think · Challenge · Flow · 카메라 · SPOMOVE 트레이닝 등 도구 모음
           </p>
           <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
         </Link>

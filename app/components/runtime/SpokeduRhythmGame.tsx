@@ -38,6 +38,8 @@ export interface SpokeduRhythmGameProps {
   lockBpm?: boolean;
   /** true면 마운트 후 재생 버튼 없이 바로 카운트다운·플레이 시작 (구독자 전체 재생 등) */
   autoStart?: boolean;
+  /** (예약) BGM 시작 오프셋 — 현재 재생 로직에는 사용하지 않음. 스튜디오 저장값만 유지. */
+  bgmStartOffsetMs?: number;
 }
 
 const MAX_LEVELS = 4;
@@ -46,7 +48,7 @@ const BEATS_PER_PHASE = 8;
 const BEATS_PER_ROUND = 16;
 /** 허용 BPM (4종). 미지원 값(80/160 등)은 초기화 시 100으로 정규화됨. */
 const bpmOptions = [100, 120, 150, 180];
-/** 180 선택 시 1단계 21.05초 동기화용 미세조정. 플레이 화면에는 180만 노출. */
+/** 180 선택 시 1단계 21.05초 동기화용 미세조정. 플레이 화면에는 180만 노출. (BGM·레벨 전환 t0 누적 오차 보정과는 별개의 경험적 값) */
 const BPM_180_SYNC = 182.4;
 /** 150 선택 시 정박 미세조정. 3~4단계 살짝 밀림 보정용으로 소폭 상향. */
 const BPM_150_SYNC = 150.5;
@@ -83,6 +85,13 @@ function getTotalChallengeDurationSec(bpm: number, _bgmSourceBpm?: number | null
   );
 }
 
+/** 한 레벨(64비트) 플레이 길이 — 벽시계 ms. BGM은 1·2·3·4단계 모두 파일 처음부터 이 길이만큼 같은 구간을 반복 재생. */
+function getBgmDurationMsPerLevel(bpm: number): number {
+  const beatSec = 60 / bpm;
+  const beatsPerLevel = ROUNDS_PER_LEVEL * BEATS_PER_ROUND;
+  return Math.round(beatsPerLevel * beatSec * 1000);
+}
+
 /** 각 단계 첫 페이지 = 룰(8칸 구성). 2~5라운드는 이 배열을 셔플만 함. */
 const defaultLevels: Record<number, string[]> = {
   1: ['앞', '뒤', '앞', '뒤', '앞', '뒤', '앞', '뒤'], // 1단계: 앞/뒤만
@@ -104,6 +113,7 @@ export function SpokeduRhythmGame({
   onPresetChange,
   lockBpm = false,
   autoStart = false,
+  bgmStartOffsetMs = 0,
 }: SpokeduRhythmGameProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isCountingDown, setIsCountingDown] = useState(false);
@@ -169,10 +179,11 @@ export function SpokeduRhythmGame({
         : initialGrid ?? defaultLevels[initialLevel ?? 1] ?? defaultLevels[1];
     return [...firstGrid];
   });
+  /** 셔플 시 그리드 셀 DOM을 확실히 갱신하기 위한 레이아웃 키(고정 슬롯 + 셔플 세대). */
+  const [gridLayoutKey, setGridLayoutKey] = useState(0);
 
   const currentLevelRef = useRef(currentLevel);
   const levelDataRef = useRef(levelData);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadTargetIndex, setUploadTargetIndex] = useState<number | null>(null);
   const [composingCell, setComposingCell] = useState<{ index: number; value: string } | null>(null);
@@ -186,8 +197,22 @@ export function SpokeduRhythmGame({
     return newArr;
   }, []);
 
-  const isImage = (content: string) =>
-    typeof content === 'string' && content.startsWith('data:image');
+  const setGridFromShuffle = useCallback(
+    (arr: string[]) => {
+      setShuffledGrid(shuffleArray(arr));
+      setGridLayoutKey((k) => k + 1);
+    },
+    [shuffleArray]
+  );
+
+  const isImage = (content: string) => {
+    if (typeof content !== 'string') return false;
+    const t = content.trim();
+    if (t.startsWith('data:image')) return true;
+    if (t.startsWith('http://') || t.startsWith('https://')) return true;
+    if (t.startsWith('//')) return true;
+    return false;
+  };
 
   useEffect(() => {
     isPlayingRef.current = isPlaying;
@@ -254,11 +279,6 @@ export function SpokeduRhythmGame({
     bgmSourceBpmRef.current = bgmSourceBpm;
   }, [bgmSourceBpm]);
 
-  useEffect(() => {
-    currentLevelRef.current = currentLevel;
-    levelDataRef.current = levelData;
-  }, [currentLevel, levelData]);
-
   const playClick = useCallback(
     (time: number) => {
       if (!soundOn || !audioContextRef.current) return;
@@ -318,9 +338,9 @@ export function SpokeduRhythmGame({
       osc2.connect(gainNode);
       gainNode.connect(ctx.destination);
       osc1.start(t);
-      osc2.start(t + duration);
-      osc1.stop(t + duration + 0.1);
-      osc2.stop(t + duration + 0.1);
+      osc2.start(t);
+      osc1.stop(t + duration);
+      osc2.stop(t + duration);
     },
     [soundOn]
   );
@@ -404,7 +424,7 @@ export function SpokeduRhythmGame({
         setRestCountdown(1);
       }, 2000);
 
-      // 3초 후 다음 레벨 설정, BGM 해당 구간부터 재시작 후 스케줄러 시작 (BGM 실제 재생 시작 후 그리드 시작으로 박자 일치)
+      // 3초 후 다음 레벨: BGM은 항상 파일 0초부터 1단계와 동일 길이만 재생(곡 앞 구간 반복)
       setTimeout(() => {
         if (myRunId !== runIdRef.current) return;
         const nextLvl = levelWhenComplete + 1;
@@ -413,7 +433,7 @@ export function SpokeduRhythmGame({
         levelRoundCountRef.current = 1;
         setCurrentLevel(nextLvl);
         setRoundInLevel(1);
-        setShuffledGrid(shuffleArray(levelData[nextLvl] ?? defaultLevels[nextLvl]));
+        setGridFromShuffle(levelData[nextLvl] ?? defaultLevels[nextLvl]);
         isTransitioningRef.current = false;
         setIsTransitioning(false);
         setRestCountdown(null);
@@ -421,6 +441,7 @@ export function SpokeduRhythmGame({
         const startSchedulerNow = () => {
           if (myRunId !== runIdRef.current) return;
           if (audioContextRef.current) {
+            // 매 레벨마다 ctx.currentTime 기준 절대 시각(이전 단계와 선행시간이 누적되지 않음)
             const t0 = audioContextRef.current.currentTime + 0.1 + BGM_OUTPUT_LATENCY;
             schedulerStartTimeRef.current = t0;
             nextNoteTimeRef.current = t0;
@@ -431,17 +452,12 @@ export function SpokeduRhythmGame({
 
         if (bgmPath) {
           const bpm = bpmRef.current;
-          const beatSec = 60 / bpm;
-          const beatsPerLevel = ROUNDS_PER_LEVEL * BEATS_PER_ROUND;
-          const offsetSec = INITIAL_COUNTDOWN_MS / 1000 + levelWhenComplete * (BETWEEN_LEVEL_MS / 1000 + beatsPerLevel * beatSec);
-          const offsetMs = Math.round(offsetSec * 1000);
-          const totalSec = getTotalChallengeDurationSec(bpm, bgmSourceBpmRef.current);
-          const durationMs = Math.max(0, Math.round((totalSec - offsetSec) * 1000));
           const playbackRate =
             typeof bgmSourceBpmRef.current === 'number' && bgmSourceBpmRef.current > 0
               ? bpm / bgmSourceBpmRef.current
               : 1;
-          startChallengeBGM(bgmPath, offsetMs, durationMs, playbackRate)
+          const durationMs = getBgmDurationMsPerLevel(bpm);
+          startChallengeBGM(bgmPath, 0, durationMs, playbackRate)
             .then(startSchedulerNow)
             .catch(() => startSchedulerNow());
         } else {
@@ -449,7 +465,7 @@ export function SpokeduRhythmGame({
         }
       }, transitionMs);
     }, delayMs);
-  }, [levelData, finishGame, shuffleArray, bpm, bgmPath]);
+  }, [levelData, finishGame, bpm, bgmPath, setGridFromShuffle]);
 
   const scheduleNote = useCallback(
     (beatNumber: number, time: number, currentLevelRound: number) => {
@@ -482,7 +498,7 @@ export function SpokeduRhythmGame({
         if (beatNumber === 0 && currentLevelRound > 1) {
           const lv = currentLevelRef.current;
           const data = levelDataRef.current;
-          setShuffledGrid(shuffleArray(data[lv] ?? defaultLevels[lv]));
+          setGridFromShuffle(data[lv] ?? defaultLevels[lv]);
         }
 
         setCurrentBeat(beatNumber);
@@ -494,7 +510,7 @@ export function SpokeduRhythmGame({
         }
       }, delayMs);
     },
-    [playClick, playGuideTone, playWhistle, shuffleArray, levelData, currentLevel]
+    [playClick, playGuideTone, playWhistle, setGridFromShuffle]
   );
 
   const scheduler = useCallback(() => {
@@ -563,6 +579,7 @@ export function SpokeduRhythmGame({
         if (isFinishingRef.current) return;
         setIsCountingDown(false);
         if (audioContextRef.current) {
+          // 1단계 시작: 레벨 전환과 동일하게 ctx 기준 절대 t0(누적 아님)
           const t0 = audioContextRef.current.currentTime + 0.1 + BGM_OUTPUT_LATENCY;
           schedulerStartTimeRef.current = t0;
           nextNoteTimeRef.current = t0;
@@ -604,9 +621,9 @@ export function SpokeduRhythmGame({
 
   useEffect(() => {
     if (isCountingDown && roundInLevel === 1) {
-      setShuffledGrid(shuffleArray(levelData[currentLevel] ?? defaultLevels[currentLevel]));
+      setGridFromShuffle(levelData[currentLevel] ?? defaultLevels[currentLevel]);
     }
-  }, [isCountingDown, roundInLevel, levelData, currentLevel, shuffleArray]);
+  }, [isCountingDown, roundInLevel, levelData, currentLevel, setGridFromShuffle]);
 
   const resetGame = useCallback(() => {
     runIdRef.current++;
@@ -661,17 +678,17 @@ export function SpokeduRhythmGame({
         setRoundInLevel(1);
         setTotalBeatsPlayed(0);
         isFinishingRef.current = false;
-        setShuffledGrid(shuffleArray(levelData[1] ?? defaultLevels[1]));
+        setGridFromShuffle(levelData[1] ?? defaultLevels[1]);
         if (bgmPath) {
           const currentBpm = bpmRef.current;
           const currentSourceBpm = bgmSourceBpmRef.current;
-          const totalSec = getTotalChallengeDurationSec(currentBpm, currentSourceBpm);
           const playbackRate =
             typeof currentSourceBpm === 'number' && currentSourceBpm > 0
               ? currentBpm / currentSourceBpm
               : 1;
+          const levelBgmMs = getBgmDurationMsPerLevel(currentBpm);
           onCountdownEndRef.current = () =>
-            startChallengeBGM(bgmPath, 0, totalSec * 1000, playbackRate);
+            startChallengeBGM(bgmPath, 0, levelBgmMs, playbackRate);
         }
         startCountdown();
       } else {
@@ -706,7 +723,7 @@ export function SpokeduRhythmGame({
     bgmSourceBpm,
     bpm,
     levelData,
-    shuffleArray,
+    setGridFromShuffle,
   ]);
 
   const togglePlayRef = useRef<() => void | Promise<void>>(() => {});
@@ -1037,7 +1054,7 @@ export function SpokeduRhythmGame({
 
               return (
                 <div
-                  key={index}
+                  key={`${gridLayoutKey}-${index}`}
                   className={`
                     aspect-square flex items-center justify-center rounded-xl transition-all duration-75 relative overflow-hidden bg-white
                     ${borderClass}
@@ -1046,7 +1063,10 @@ export function SpokeduRhythmGame({
                   {hasImage ? (
                     <img
                       src={content}
-                      alt="grid-item"
+                      alt=""
+                      loading="eager"
+                      decoding="async"
+                      draggable={false}
                       className={`w-full h-full object-contain ${effectiveEditing ? 'opacity-50' : ''}`}
                     />
                   ) : effectiveEditing ? (

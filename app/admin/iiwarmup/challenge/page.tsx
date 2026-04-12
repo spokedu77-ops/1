@@ -6,34 +6,14 @@ import { toast } from 'sonner';
 import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
 import { useChallengeBGM } from '@/app/lib/admin/hooks/useChallengeBGM';
 import { getAllOverrides, putOverride, type TemplateOverrideEntry } from '@/app/lib/admin/assets/templateOverrideStore';
+import {
+  type ChallengeTemplate,
+  CHALLENGE_TEMPLATES,
+} from '@/app/program/iiwarmup/challenge/challengeTemplateDefaults';
 
-export type ChallengeTemplate = {
-  id: string;
-  title: string;
-  bpm: number;
-  level: number;
-  grid: string[];
-  gridsByLevel?: Record<number, string[]>;
-  notes?: string;
-};
+export type { ChallengeTemplate };
 
 type ChallengeTemplateOverride = TemplateOverrideEntry;
-
-/** 1단계 룰: 앞/뒤만 8칸 (2~5라운드는 이 구성을 셔플) */
-const DEFAULT_GRID_LEVEL1 = ['앞', '뒤', '앞', '뒤', '앞', '뒤', '앞', '뒤'];
-
-const TEMPLATE_COUNT = 12;
-const TEMPLATES_12: ChallengeTemplate[] = Array.from({ length: TEMPLATE_COUNT }, (_, i) => {
-  const n = i + 1;
-  return {
-    id: `tpl_${n}`,
-    title: `포맷 ${n}`,
-    bpm: 100,
-    level: 1,
-    grid: [...DEFAULT_GRID_LEVEL1],
-    notes: '',
-  };
-});
 
 
 function TemplateSelector({
@@ -72,6 +52,8 @@ function ChallengePageContent() {
     selected: bgmPath,
     sourceBpm,
     setSourceBpm,
+    bgmStartOffsetMs,
+    setOffsetMs,
     loading: bgmLoading,
     error: bgmError,
     upload: uploadBgm,
@@ -80,7 +62,7 @@ function ChallengePageContent() {
   } = useChallengeBGM();
   const bgmFileRef = useRef<HTMLInputElement>(null);
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(TEMPLATES_12[0]?.id ?? 'tpl_1');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(CHALLENGE_TEMPLATES[0]?.id ?? 'tpl_1');
   const [overrides, setOverrides] = useState<Record<string, ChallengeTemplateOverride>>({});
   const [overridesLoaded, setOverridesLoaded] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
@@ -103,7 +85,7 @@ function ChallengePageContent() {
   }, []);
 
   const selectedTemplate = useMemo(() => {
-    const base = TEMPLATES_12.find((t) => t.id === selectedTemplateId) ?? TEMPLATES_12[0]!;
+    const base = CHALLENGE_TEMPLATES.find((t) => t.id === selectedTemplateId) ?? CHALLENGE_TEMPLATES[0]!;
     const override = overrides[selectedTemplateId];
     if (!override) return base;
     return { ...base, ...override };
@@ -194,7 +176,7 @@ function ChallengePageContent() {
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="space-y-4 rounded-xl bg-neutral-900 p-4 ring-1 ring-neutral-800">
-          <TemplateSelector templates={TEMPLATES_12} selectedId={selectedTemplateId} onSelect={setSelectedTemplateId} />
+          <TemplateSelector templates={CHALLENGE_TEMPLATES} selectedId={selectedTemplateId} onSelect={setSelectedTemplateId} />
           <div className="rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-sm">
             <p className="font-medium text-neutral-300">
               {selectedTemplate.title} · BPM {selectedTemplate.bpm}
@@ -246,6 +228,22 @@ function ChallengePageContent() {
                 className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-sm text-neutral-200"
               />
             </div>
+            <div className="mt-2">
+              <label className="text-xs font-medium text-neutral-400">BGM 시작 오프셋 (ms)</label>
+              <p className="mt-0.5 text-[11px] text-neutral-500">첫 비트를 화면 비트에 맞출 때 조정. 저장 시 DB 반영.</p>
+              <input
+                type="number"
+                min={0}
+                max={600000}
+                step={1}
+                value={bgmStartOffsetMs}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (!Number.isNaN(n) && n >= 0) setOffsetMs(Math.round(n));
+                }}
+                className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-sm text-neutral-200"
+              />
+            </div>
             {bgmLoading && <p className="mt-1 text-xs text-amber-400">BGM 로딩 중…</p>}
           </section>
         </aside>
@@ -264,6 +262,7 @@ function ChallengePageContent() {
                 soundOn={soundOn}
                 bgmPath={bgmPath || undefined}
                 bgmSourceBpm={sourceBpm ?? undefined}
+                bgmStartOffsetMs={bgmStartOffsetMs}
                 initialBpm={selectedTemplate.bpm}
                 initialLevel={selectedTemplate.level}
                 initialGrid={selectedTemplate.grid}

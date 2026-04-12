@@ -11,6 +11,9 @@ type ModeToScreenplay = {
 const MODE_MAP: ModeToScreenplay[] = [
   { modeKey: 'basic', modeId: '반응인지', sortBase: 1000 },
   { modeKey: 'stroop', modeId: '스트룹', sortBase: 2000 },
+  { modeKey: 'simon', modeId: '사이먼효과', sortBase: 2500 },
+  { modeKey: 'flanker', modeId: '플랭커', sortBase: 2600 },
+  { modeKey: 'gonogo', modeId: 'GoNoGo', sortBase: 2650 },
   { modeKey: 'spatial', modeId: '순차기억', sortBase: 3000 },
   { modeKey: 'dual', modeId: '이중과제', sortBase: 4000 },
   { modeKey: 'flow', modeId: 'FLOW', sortBase: 5000 },

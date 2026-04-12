@@ -115,7 +115,8 @@ export function useChallengeBGM() {
     ) => {
       setError(null);
       const offset = nextOffsetMs ?? bgmStartOffsetMs;
-      const bpm = nextSourceBpm !== undefined ? nextSourceBpm : sourceBpm;
+      // undefined: 기존 유지 / null: DB에서 원곡 BPM 제거 / number: 설정
+      const bpm = nextSourceBpm === undefined ? sourceBpm : nextSourceBpm;
       try {
         const supabase = getSupabaseBrowserClient();
         await supabase.from('think_asset_packs').upsert(
@@ -193,7 +194,7 @@ export function useChallengeBGM() {
   const setSourceBpmValue = useCallback(
     (bpm: number | null) => {
       setSourceBpm(bpm);
-      save(list, selected, undefined, bpm ?? undefined);
+      save(list, selected, undefined, bpm);
     },
     [list, selected, save]
   );

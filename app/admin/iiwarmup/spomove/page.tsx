@@ -6,7 +6,7 @@ export default function SpomoveHubPage() {
       <section>
         <h2 className="text-lg font-extrabold">SPOMOVE</h2>
         <p className="mt-1 text-sm text-neutral-400">
-          스튜디오·훈련·카메라 도구로 이동합니다.
+          스튜디오·트레이닝·카메라 도구로 이동합니다.
         </p>
       </section>
 
@@ -51,8 +51,8 @@ export default function SpomoveHubPage() {
           href="/admin/memory-game"
           className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >
-          <h3 className="text-base font-extrabold">SPOMOVE 훈련</h3>
-          <p className="mt-2 text-sm text-neutral-400">N-back·시그널 훈련 · 수업용 반응 인지</p>
+          <h3 className="text-base font-extrabold">SPOMOVE 트레이닝</h3>
+          <p className="mt-2 text-sm text-neutral-400">N-back·시그널 · 반응 인지 등 수업용 인지·신체 트레이닝</p>
           <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
         </Link>
       </section>

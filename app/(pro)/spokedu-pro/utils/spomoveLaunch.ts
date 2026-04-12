@@ -41,6 +41,9 @@ export function getSpomoveLaunchParams(
     반응인지: 'basic',
     순차기억: 'spatial',
     스트룹: 'stroop',
+    사이먼효과: 'simon',
+    플랭커: 'flanker',
+    GoNoGo: 'gonogo',
     이중과제: 'dual',
     CHALLENGE: 'challenge',
   };

@@ -61,7 +61,7 @@ export default function TeacherAppIiwarmupLayout({ children }: { children: React
         <header className="flex flex-col gap-4">
           <div>
             <h1 className="text-2xl font-black tracking-tight">선생님 APP</h1>
-            <p className="text-sm text-neutral-400">Asset Hub · SPOMOVE(스튜디오·훈련·카메라)</p>
+            <p className="text-sm text-neutral-400">Asset Hub · SPOMOVE(스튜디오·트레이닝·카메라)</p>
           </div>
 
           <nav className="flex flex-wrap gap-2 text-sm" aria-label="선생님 APP 1차 메뉴">
@@ -94,7 +94,7 @@ export default function TeacherAppIiwarmupLayout({ children }: { children: React
                 카메라 앱
               </Link>
               <Link className={subNavClass(false)} href="/admin/memory-game">
-                SPOMOVE 훈련
+                SPOMOVE 트레이닝
               </Link>
             </nav>
           )}

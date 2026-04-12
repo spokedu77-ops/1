@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { generateSignal, createBasicSignalGenerator, type DupStats } from '../lib/signals';
+import {
+  generateSignal,
+  createBasicSignalGenerator,
+  createModeColorDupGenerator,
+  createSimonSignalGenerator,
+  type DupStats,
+  type FruitSlide,
+} from '../lib/signals';
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
 
@@ -18,6 +25,7 @@ export function useTrainingTimer({
   level,
   audioMode,
   colors,
+  fruitSlides,
   onSignal,
   onFinish,
 }: {
@@ -31,17 +39,33 @@ export function useTrainingTimer({
   level: number;
   audioMode: string;
   colors: ColorItem[];
+  /** basic 변형 색지각(3~5번) 슬롯; 미전달 시 signals 기본값 */
+  fruitSlides?: FruitSlide[];
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const idxRef = useRef(-1);
-  const genRef = useRef<ReturnType<typeof createBasicSignalGenerator> | null>(null);
+  const genRef = useRef<
+    | ReturnType<typeof createBasicSignalGenerator>
+    | ReturnType<typeof createModeColorDupGenerator>
+    | ReturnType<typeof createSimonSignalGenerator>
+    | null
+  >(null);
 
   useEffect(() => {
     if (!active) return;
-    genRef.current = mode === 'basic' ? createBasicSignalGenerator(level, colors) : null;
+    const fruitOpts = fruitSlides ? { fruitSlides } : undefined;
+    if (mode === 'basic') {
+      genRef.current = createBasicSignalGenerator(level, colors, fruitSlides);
+    } else if (mode === 'simon') {
+      genRef.current = createSimonSignalGenerator(level, colors);
+    } else if (mode === 'dual' || mode === 'stroop' || mode === 'flanker' || mode === 'gonogo') {
+      genRef.current = createModeColorDupGenerator(mode, level, colors, fruitOpts);
+    } else {
+      genRef.current = null;
+    }
     startRef.current = performance.now();
     idxRef.current = -1;
     const totalMs = timeMode === 'time' ? duration * 1000 : targetReps * speed * 1000;
@@ -62,7 +86,9 @@ export function useTrainingTimer({
 
     const emitSignal = (elapsed: number) => {
       const sig =
-        mode === 'basic' ? genRef.current?.next() ?? null : generateSignal(mode, level, colors);
+        mode === 'basic' || mode === 'simon' || mode === 'dual' || mode === 'stroop' || mode === 'flanker' || mode === 'gonogo'
+          ? genRef.current?.next() ?? null
+          : generateSignal(mode, level, colors, fruitSlides ? { fruitSlides } : undefined);
       if (sig) {
         onSignal(sig);
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
@@ -107,7 +133,7 @@ export function useTrainingTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, fruitSlides, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

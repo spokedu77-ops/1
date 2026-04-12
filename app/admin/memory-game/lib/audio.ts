@@ -1,5 +1,5 @@
 /**
- * Web Audio 비프음. 신호 동기 TTS는 사용하지 않음(SPOMOVE는 월별 BGM).
+ * Web Audio 비프음. 신호 동기 TTS는 사용하지 않음(SPOMOVE는 Asset Hub BGM 풀).
  */
 
 let _audioCtx: AudioContext | null = null;
@@ -53,11 +53,18 @@ export function getBeepForSignal(sig: { type?: string } | null): BeepType | null
   if (!sig) return null;
   const { type } = sig;
   if (type === 'full_color') return 'mid';
+  if (type === 'think_quad') return 'mid';
   if (type === 'basic_variant_color') return 'mid';
   if (type === 'arrow') return 'high';
   if (type === 'number') return 'blip';
   if (type === 'stroop' || type === 'stroop_arrow') return 'chord';
   if (type === 'dual_num' || type === 'dual_color_arrow') return 'low';
+  if (type === 'simon_shape') return 'mid';
+  if (type === 'simon_arrow') return 'high';
+  if (type === 'flanker_row') return 'mid';
+  if (type === 'gonogo_color') return 'mid';
+  if (type === 'gonogo_shape' || type === 'gonogo_dual') return 'mid';
+  if (type === 'gonogo_action') return 'high';
   return 'mid';
 }
 

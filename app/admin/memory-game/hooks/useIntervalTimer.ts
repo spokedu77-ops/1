@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { generateSignal, createBasicSignalGenerator, type DupStats } from '../lib/signals';
+import {
+  generateSignal,
+  createBasicSignalGenerator,
+  createModeColorDupGenerator,
+  createSimonSignalGenerator,
+  type DupStats,
+  type FruitSlide,
+} from '../lib/signals';
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
 
@@ -17,6 +24,7 @@ export function useIntervalTimer({
   level,
   audioMode,
   colors,
+  fruitSlides,
   onSignal,
   onFinish,
 }: {
@@ -29,11 +37,17 @@ export function useIntervalTimer({
   level: number;
   audioMode: string;
   colors: ColorItem[];
+  fruitSlides?: FruitSlide[];
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
   const rafRef = useRef<number | null>(null);
-  const genRef = useRef<ReturnType<typeof createBasicSignalGenerator> | null>(null);
+  const genRef = useRef<
+    | ReturnType<typeof createBasicSignalGenerator>
+    | ReturnType<typeof createModeColorDupGenerator>
+    | ReturnType<typeof createSimonSignalGenerator>
+    | null
+  >(null);
   const startRef = useRef<number>(0);
   const phaseRef = useRef<'work' | 'rest'>('work');
   const setRef = useRef(0);
@@ -49,7 +63,16 @@ export function useIntervalTimer({
       setIntervalLeft(workSec);
       return;
     }
-    genRef.current = mode === 'basic' ? createBasicSignalGenerator(level, colors) : null;
+    const fruitOpts = fruitSlides ? { fruitSlides } : undefined;
+    if (mode === 'basic') {
+      genRef.current = createBasicSignalGenerator(level, colors, fruitSlides);
+    } else if (mode === 'simon') {
+      genRef.current = createSimonSignalGenerator(level, colors);
+    } else if (mode === 'dual' || mode === 'stroop' || mode === 'flanker' || mode === 'gonogo') {
+      genRef.current = createModeColorDupGenerator(mode, level, colors, fruitOpts);
+    } else {
+      genRef.current = null;
+    }
     startRef.current = performance.now();
     phaseRef.current = 'work';
     setRef.current = 0;
@@ -94,7 +117,9 @@ export function useIntervalTimer({
         if (sigIdx > lastSignalRef.current) {
           lastSignalRef.current = sigIdx;
           const sig =
-            mode === 'basic' ? genRef.current?.next() ?? null : generateSignal(mode, level, colors);
+            mode === 'basic' || mode === 'simon' || mode === 'dual' || mode === 'stroop' || mode === 'flanker' || mode === 'gonogo'
+              ? genRef.current?.next() ?? null
+              : generateSignal(mode, level, colors, fruitSlides ? { fruitSlides } : undefined);
           if (sig) {
             onSignal(sig);
             if (audioMode === 'beep') {
@@ -115,7 +140,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

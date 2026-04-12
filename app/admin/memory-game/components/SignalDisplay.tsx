@@ -1,6 +1,37 @@
 'use client';
 
 import React from 'react';
+import { PAD_POSITIONS } from '@/app/lib/admin/constants/padGrid';
+import type { FruitSlide, VariantPanelContent } from '../lib/signals';
+
+function variantCells(panel: VariantPanelContent | null | undefined): FruitSlide[] {
+  if (!panel) return [];
+  return panel.cells ?? (panel.slide ? [panel.slide] : []);
+}
+
+/** postimg 등 **직링크**만 사용 (next/image·최적화 경로 없음 — 환경마다 깨지는 문제 방지). */
+function VariantFruitImg({ slide }: { slide: FruitSlide }) {
+  return (
+    <img
+      src={slide.imageUrl}
+      alt=""
+      draggable={false}
+      loading="eager"
+      decoding="async"
+      style={{
+        width: '100%',
+        height: '100%',
+        flex: 1,
+        minHeight: 0,
+        objectFit: 'cover',
+        objectPosition: 'center',
+        display: 'block',
+        userSelect: 'none',
+        pointerEvents: 'none',
+      }}
+    />
+  );
+}
 
 export const SignalDisplay = React.memo(function SignalDisplay({
   signal,
@@ -14,7 +45,70 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   const content = signal.content as Record<string, unknown> | undefined;
   const C: React.CSSProperties = { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
-  if (type === 'full_color')
+  if (type === 'think_quad') {
+    const colorId = (content?.colorId as string) ?? '';
+    const fillHex = (content?.fillHex as string) ?? '#EF4444';
+    const symbol = content?.symbol as string | undefined;
+    const textColor = (content?.textColor as string) ?? '#fff';
+    return (
+      <div
+        key={animKey}
+        className="signal-blink"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'clamp(0.75rem, 5vmin, 2.5rem)',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            maxWidth: 'min(96vw, 96vh)',
+            maxHeight: 'min(96vw, 96vh)',
+            aspectRatio: '1',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gridTemplateRows: '1fr 1fr',
+            gap: 'clamp(6px, 1.2vw, 14px)',
+            minHeight: 0,
+          }}
+        >
+          {PAD_POSITIONS.map((row, ri) =>
+            row.map((padColorId, ci) => {
+              const isActive = padColorId === colorId;
+              return (
+                <div
+                  key={`${ri}-${ci}`}
+                  style={{
+                    borderRadius: 12,
+                    border: '1px solid rgba(148,163,184,0.55)',
+                    backgroundColor: isActive ? fillHex : 'rgba(255,255,255,0.15)',
+                    minHeight: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {isActive && symbol ? (
+                    <span style={{ fontSize: 'clamp(40px, 11vmin, 100px)', lineHeight: 1, color: textColor, opacity: 0.45, userSelect: 'none' }}>
+                      {symbol}
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'full_color' || type === 'gonogo_color')
     return (
       <div key={animKey} className="signal-blink" style={C}>
         {content && (
@@ -25,6 +119,91 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       </div>
     );
 
+  if (type === 'gonogo_shape') {
+    const shape = content?.shape as 'circle' | 'triangle' | undefined;
+    const fill = '#F8FAFC';
+    const box = 'min(52vmin, 78vw)';
+    return (
+      <div key={animKey} className="signal-blink" style={C}>
+        <div
+          style={{
+            width: box,
+            height: box,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+          }}
+        >
+          {shape === 'circle' ? (
+            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: fill, boxShadow: '0 12px 48px rgba(0,0,0,0.35)' }} />
+          ) : (
+            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block', filter: 'drop-shadow(0 12px 48px rgba(0,0,0,0.35))' }} aria-hidden>
+              <polygon points="50,8 94,92 6,92" fill={fill} />
+            </svg>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'gonogo_action') {
+    const kind = content?.kind as string | undefined;
+    if (kind === 'arrow') {
+      return (
+        <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ fontSize: 'clamp(110px,26vw,280px)', color: '#fff', lineHeight: 1, fontWeight: 900, textShadow: '0 4px 50px rgba(0,0,0,0.4)' }}>{content?.icon as string}</div>
+          <div style={{ fontSize: 'clamp(28px,6vw,56px)', color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: '0.05em' }}>{content?.label as string}</div>
+        </div>
+      );
+    }
+    return (
+      <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '0.35rem' }}>
+        <div
+          style={{
+            fontSize: 'clamp(100px, 28vw, 300px)',
+            lineHeight: 1,
+            fontWeight: 900,
+            color: '#F87171',
+            textShadow: '0 6px 40px rgba(0,0,0,0.45)',
+            userSelect: 'none',
+          }}
+        >
+          ✕
+        </div>
+        <div style={{ fontSize: 'clamp(22px,5vw,40px)', color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>멈춤</div>
+      </div>
+    );
+  }
+
+  if (type === 'gonogo_dual') {
+    const shape = content?.shape as 'circle' | 'triangle' | undefined;
+    const fill = '#FFFFFF';
+    const box = 'min(48vmin, 72vw)';
+    return (
+      <div key={animKey} className="signal-blink" style={C}>
+        <div
+          style={{
+            width: box,
+            height: box,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+          }}
+        >
+          {shape === 'circle' ? (
+            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: fill, boxShadow: '0 12px 48px rgba(0,0,0,0.25)' }} />
+          ) : (
+            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block', filter: 'drop-shadow(0 12px 48px rgba(0,0,0,0.25))' }} aria-hidden>
+              <polygon points="50,8 94,92 6,92" fill={fill} />
+            </svg>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (type === 'arrow')
     return (
       <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '0.5rem' }}>
@@ -34,27 +213,27 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     );
 
   if (type === 'basic_variant_color') {
-    const panels = ((content?.panels as Array<{ slide?: { imageUrl?: string; color?: { name?: string; text?: string } } | null } | null>) ?? []);
+    const panels = (content?.panels as VariantPanelContent[] | undefined) ?? [];
+    const pad = 'clamp(12px, 2.5vw, 40px)';
+    const outer: React.CSSProperties = {
+      position: 'absolute',
+      inset: 0,
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      justifyContent: 'stretch',
+      background: '#0F172A',
+      padding: pad,
+      gap: 3,
+      boxSizing: 'border-box',
+    };
+
+    /* 1단계: 3패널 모두 과일. 2단계: 3패널 중 1~3칸만 과일(나머지 흰 빈 칸). 3단계: 2패널 각 1장. 패널당 이미지 1장만, 스택 없음 */
     return (
-      <div
-        key={animKey}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'stretch',
-          justifyContent: 'stretch',
-          background: '#0F172A',
-          /* 전체 대비 살짝만 작게: 테두리로 다크 배경 노출 */
-          padding: 'clamp(100px, 14vw, 180px)',
-          gap: 2,
-          boxSizing: 'border-box',
-        }}
-      >
-        {[0, 1].map((idx) => {
-          const item = panels[idx] as { slide?: { imageUrl?: string; color?: { name?: string; text?: string } } } | null | undefined;
-          const slide = item?.slide;
+      <div key={animKey} className="signal-blink" style={outer}>
+        {panels.map((panel, idx) => {
+          const cells = variantCells(panel);
+          const slide = cells[0];
           return (
             <div
               key={idx}
@@ -63,29 +242,13 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                 minWidth: 0,
                 minHeight: 0,
                 height: '100%',
-                background: '#000',
+                background: slide ? '#000' : '#fff',
                 overflow: 'hidden',
-                transform: 'translateZ(0)',
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
-              {slide?.imageUrl && (
-                <img
-                  src={slide.imageUrl}
-                  alt=""
-                  draggable={false}
-                  loading="eager"
-                  decoding="async"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'center',
-                    userSelect: 'none',
-                    pointerEvents: 'none',
-                    transform: 'translateZ(0)',
-                  }}
-                />
-              )}
+              {slide ? <VariantFruitImg slide={slide} /> : null}
             </div>
           );
         })}
@@ -103,6 +266,21 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'stroop_arrow') {
     const arrowId = content?.arrowId as string | undefined;
     const fillHex = (content?.fillHex as string | undefined) ?? '#FFFFFF';
+    const pageBg = (signal.bg as string) ?? '#FFFFFF';
+    const lightPage =
+      pageBg === '#FFFFFF' ||
+      pageBg.toLowerCase() === '#fff' ||
+      pageBg === '#FACC15' ||
+      (pageBg.startsWith('#') &&
+        (() => {
+          const h = pageBg.slice(1);
+          if (h.length !== 6) return false;
+          const R = parseInt(h.slice(0, 2), 16);
+          const G = parseInt(h.slice(2, 4), 16);
+          const B = parseInt(h.slice(4, 6), 16);
+          return (0.299 * R + 0.587 * G + 0.114 * B) / 255 > 0.55;
+        })());
+    const strokeCol = lightPage ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.22)';
     const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
     return (
       <div key={animKey} className="signal-blink" style={C}>
@@ -113,7 +291,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             /* 화면(뷰포트 짧은 변) 기준 약 50% — 풀스크린 훈련에서 한눈에 보이도록 */
             width: 'clamp(7.5rem, 50vmin, min(92vw, 92vh))',
             height: 'clamp(7.5rem, 50vmin, min(92vw, 92vh))',
-            filter: 'drop-shadow(0 10px 48px rgba(0,0,0,0.5))',
+            filter: lightPage ? 'drop-shadow(0 8px 32px rgba(0,0,0,0.12))' : 'drop-shadow(0 10px 48px rgba(0,0,0,0.5))',
           }}
           aria-hidden
         >
@@ -122,7 +300,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             <path
               d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
               fill={fillHex}
-              stroke="rgba(255,255,255,0.22)"
+              stroke={strokeCol}
               strokeWidth={1}
               strokeLinejoin="round"
             />
@@ -132,12 +310,38 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     );
   }
 
-  if (type === 'stroop')
+  if (type === 'stroop') {
+    const pageBg = (signal.bg as string) ?? '#FFFFFF';
+    const light =
+      pageBg === '#FFFFFF' ||
+      pageBg.toLowerCase() === '#fff' ||
+      (pageBg.startsWith('#') &&
+        (() => {
+          const h = pageBg.slice(1);
+          if (h.length !== 6) return false;
+          const R = parseInt(h.slice(0, 2), 16);
+          const G = parseInt(h.slice(2, 4), 16);
+          const B = parseInt(h.slice(4, 6), 16);
+          return (0.299 * R + 0.587 * G + 0.114 * B) / 255 > 0.55;
+        })());
     return (
       <div key={animKey} className="signal-blink" style={C}>
-        <div style={{ fontSize: 'clamp(80px,20vw,260px)', fontWeight: 900, color: content?.textHex as string, lineHeight: 1, letterSpacing: '-0.03em', textAlign: 'center', textShadow: '0 0 80px rgba(0,0,0,0.6)' }}>{content?.word as string}</div>
+        <div
+          style={{
+            fontSize: 'clamp(80px,20vw,260px)',
+            fontWeight: 900,
+            color: content?.textHex as string,
+            lineHeight: 1,
+            letterSpacing: '-0.03em',
+            textAlign: 'center',
+            textShadow: light ? '0 1px 3px rgba(0,0,0,0.18)' : '0 0 80px rgba(0,0,0,0.6)',
+          }}
+        >
+          {content?.word as string}
+        </div>
       </div>
     );
+  }
 
   if (type === 'dual_num') {
     const col = content?.color as { text?: string } | undefined;
@@ -162,6 +366,164 @@ export const SignalDisplay = React.memo(function SignalDisplay({
           }}
         >
           {arr?.icon}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'flanker_row') {
+    const circles = (content?.circles as { bg: string; id: string }[] | undefined) ?? [];
+    const sizeMultsRaw = content?.sizeMults as number[] | undefined;
+    const hasVariedSizes =
+      Array.isArray(sizeMultsRaw) &&
+      sizeMultsRaw.length === circles.length &&
+      sizeMultsRaw.length > 0;
+    /** 4번: grow 비율로 크기 차등. 1~3번: 균등. %·vmin 혼합 calc는 부모 너비 미확정 시 0이 되어 원이 안 보일 수 있어 사용하지 않음 */
+    const mults = hasVariedSizes
+      ? sizeMultsRaw!.map((m) => Math.max(0.35, m))
+      : circles.map(() => 1);
+    const gap = 'clamp(6px, 1.5vmin, 14px)';
+    return (
+      <div
+        key={animKey}
+        className="signal-blink"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'clamp(8px, 2vw, 20px)',
+          boxSizing: 'border-box',
+          minWidth: 0,
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '100%',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexWrap: 'nowrap',
+            gap,
+            boxSizing: 'border-box',
+          }}
+        >
+          {circles.map((cell, i) => (
+            <div
+              key={i}
+              style={{
+                flex: `${mults[i] ?? 1} 1 0`,
+                minWidth: 'clamp(6px, 2.2vmin, 28px)',
+                maxWidth: hasVariedSizes ? 'min(38vmin, 46vw)' : 'min(30vmin, 24vw)',
+                aspectRatio: '1',
+                flexShrink: 1,
+                borderRadius: '50%',
+                background: cell.bg,
+                boxSizing: 'border-box',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'simon_arrow') {
+    const posX = typeof content?.posX === 'number' ? content.posX : 0.5;
+    const posY = typeof content?.posY === 'number' ? content.posY : 0.5;
+    const icon = (content?.icon as string) ?? '↑';
+    const label = (content?.label as string) ?? '';
+    const box = 'min(32vw, 32vh)';
+    return (
+      <div key={animKey} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <div
+          className="signal-blink"
+          style={{
+            position: 'absolute',
+            left: `${posX * 100}%`,
+            top: `${posY * 100}%`,
+            transform: 'translate(-50%, -50%)',
+            width: box,
+            height: box,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+            gap: 'clamp(4px, 1vmin, 12px)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 'clamp(72px, min(28vmin, 28vw), min(40vw, 40vh))',
+              color: '#fff',
+              lineHeight: 1,
+              fontWeight: 900,
+              textShadow: '0 4px 48px rgba(0,0,0,0.45)',
+              userSelect: 'none',
+            }}
+          >
+            {icon}
+          </div>
+          <div
+            style={{
+              fontSize: 'clamp(14px, 3.5vmin, 22px)',
+              color: 'rgba(255,255,255,0.82)',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+            }}
+          >
+            {label}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'simon_shape') {
+    const shape = content?.shape as 'circle' | 'triangle' | 'square' | undefined;
+    const fillHex = (content?.fillHex as string) ?? '#EF4444';
+    const posX = typeof content?.posX === 'number' ? content.posX : 0.5;
+    const posY = typeof content?.posY === 'number' ? content.posY : 0.5;
+    const size = 'min(25vw, 25vh)';
+    const common: React.CSSProperties = {
+      width: '100%',
+      height: '100%',
+      background: fillHex,
+      flexShrink: 0,
+    };
+    return (
+      <div key={animKey} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <div
+          className="signal-blink"
+          style={{
+            position: 'absolute',
+            left: `${posX * 100}%`,
+            top: `${posY * 100}%`,
+            transform: 'translate(-50%, -50%)',
+            width: size,
+            height: size,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+          }}
+        >
+          {shape === 'circle' ? (
+            <div style={{ ...common, borderRadius: '50%' }} />
+          ) : shape === 'square' ? (
+            <div style={{ ...common, borderRadius: '6%' }} />
+          ) : (
+            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block' }} aria-hidden>
+              <polygon points="50,6 94,94 6,94" fill={fillHex} />
+            </svg>
+          )}
         </div>
       </div>
     );

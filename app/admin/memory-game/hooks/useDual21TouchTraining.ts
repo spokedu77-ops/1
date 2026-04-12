@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { generateSignal } from '../lib/signals';
+import { createModeColorDupGenerator, generateSignal } from '../lib/signals';
 import { playBeep, getBeepForSignal } from '../lib/audio';
 import { ttsClear } from '../lib/tts';
 
@@ -32,9 +32,10 @@ export function useDual21TouchTraining({
   const startRef = useRef(0);
   /** 세션당 첫 신호 1회만 (Strict Mode 이중 실행 방지) */
   const bootKeyRef = useRef<number | null>(null);
+  const genRef = useRef<ReturnType<typeof createModeColorDupGenerator> | null>(null);
 
   const emitOne = useCallback(() => {
-    const sig = generateSignal('dual', 2, colors);
+    const sig = genRef.current?.next() ?? generateSignal('dual', 2, colors);
     if (!sig) return;
     onSignal(sig);
     if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
@@ -51,12 +52,13 @@ export function useDual21TouchTraining({
 
     shownRef.current = 0;
     startRef.current = performance.now();
+    genRef.current = createModeColorDupGenerator('dual', 2, colors);
     ttsClear();
     const n = Math.max(1, targetReps);
     shownRef.current = 1;
     emitOne();
     if (n <= 1) onFinish();
-  }, [active, trainingKey, targetReps, emitOne, onFinish]);
+  }, [active, trainingKey, targetReps, colors, emitOne, onFinish]);
 
   const advance = useCallback(() => {
     if (!active) return;
