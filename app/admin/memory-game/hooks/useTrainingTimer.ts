@@ -5,6 +5,7 @@ import {
   generateSignal,
   createBasicSignalGenerator,
   createModeColorDupGenerator,
+  createTaskSwitchSignalGenerator,
   createSimonSignalGenerator,
   type DupStats,
   type FruitSlide,
@@ -50,6 +51,7 @@ export function useTrainingTimer({
   const genRef = useRef<
     | ReturnType<typeof createBasicSignalGenerator>
     | ReturnType<typeof createModeColorDupGenerator>
+    | ReturnType<typeof createTaskSwitchSignalGenerator>
     | ReturnType<typeof createSimonSignalGenerator>
     | null
   >(null);
@@ -61,6 +63,8 @@ export function useTrainingTimer({
       genRef.current = createBasicSignalGenerator(level, colors, fruitSlides);
     } else if (mode === 'simon') {
       genRef.current = createSimonSignalGenerator(level, colors);
+    } else if (mode === 'taskswitch') {
+      genRef.current = createTaskSwitchSignalGenerator(level, colors, fruitOpts);
     } else if (mode === 'dual' || mode === 'stroop' || mode === 'flanker' || mode === 'gonogo') {
       genRef.current = createModeColorDupGenerator(mode, level, colors, fruitOpts);
     } else {
@@ -86,7 +90,7 @@ export function useTrainingTimer({
 
     const emitSignal = (elapsed: number) => {
       const sig =
-        mode === 'basic' || mode === 'simon' || mode === 'dual' || mode === 'stroop' || mode === 'flanker' || mode === 'gonogo'
+        mode === 'basic' || mode === 'simon' || mode === 'dual' || mode === 'stroop' || mode === 'flanker' || mode === 'gonogo' || mode === 'taskswitch'
           ? genRef.current?.next() ?? null
           : generateSignal(mode, level, colors, fruitSlides ? { fruitSlides } : undefined);
       if (sig) {

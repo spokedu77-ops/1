@@ -227,7 +227,12 @@ export default function MemoryGameApp({
       sig.type === 'think_quad'
         ? String((sig.content as { colorId?: string })?.colorId ?? '')
         : String(sig.bg ?? '');
-    if ((sig.type === 'full_color' || sig.type === 'gonogo_color' || sig.type === 'think_quad') && dupKey === prevBgRef.current) {
+    const dupFlashColorBg =
+      sig.type === 'full_color' ||
+      sig.type === 'gonogo_color' ||
+      sig.type === 'think_quad' ||
+      (sig.type === 'task_switch' && (sig.content as { stimulusKind?: string })?.stimulusKind === 'color');
+    if (dupFlashColorBg && dupKey === prevBgRef.current) {
       setDupFlashNonce((n) => n + 1);
       setDupFlashVisible(true);
       if (dupFlashClearRef.current != null) clearTimeout(dupFlashClearRef.current);
@@ -394,7 +399,8 @@ export default function MemoryGameApp({
         bgmMode === 'stroop' ||
         bgmMode === 'simon' ||
         bgmMode === 'flanker' ||
-        bgmMode === 'gonogo';
+        bgmMode === 'gonogo' ||
+        bgmMode === 'taskswitch';
       if (shouldTryBgmParent) {
         if (spomoveBgmList.length === 0) {
           if (spomoveBgmLoading) pendingBgmStartRef.current = { mode: bgmMode };
@@ -982,6 +988,34 @@ export default function MemoryGameApp({
             {settings.level === 2 && '📋 동그라미 → 이동(Go) · 세모 → 멈춤(No-Go)'}
             {settings.level === 3 && '📋 화살표 → 이동 · ✕ → 멈춤'}
             {settings.level === 4 && '📋 빨강 동그라미 → 이동(Go) · 빨강 세모 → 멈춤(No-Go)'}
+          </div>
+        )}
+        {settings.mode === 'taskswitch' && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '1.5rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 20,
+              maxWidth: 'min(94vw, 38rem)',
+              textAlign: 'center',
+              background: 'rgba(0,0,0,0.55)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '2rem',
+              padding: '0.5rem 1.2rem',
+              color: 'rgba(255,255,255,0.88)',
+              fontSize: 'clamp(0.68rem, 1.9vw, 0.85rem)',
+              fontWeight: 600,
+              lineHeight: 1.45,
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}
+          >
+            {settings.level === 1 &&
+              '📋 색=보이는 색 콘 · 위치=화살표 방향 콘 · 반대로=색은 짝반대·화살표는 반대 방향'}
+            {settings.level === 2 && '📋 🎨색 · 📍위치 · ⇄반대(색/화살표는 화면 자극과 동일)'}
+            {settings.level === 3 &&
+              '📋 흰 실선=색 규칙 · 흰 점선=위치 규칙 · 흰 이중선=반대로(자극은 색 또는 화살표)'}
           </div>
         )}
         {settings.mode === 'basic' && settings.level === 7 && currentRule && (

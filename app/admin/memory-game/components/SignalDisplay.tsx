@@ -371,6 +371,81 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     );
   }
 
+  if (type === 'task_switch') {
+    const cueTier = typeof content?.cueTier === 'number' ? content.cueTier : 1;
+    const rule = (content?.rule as string) ?? 'color';
+    const stimulusKind = (content?.stimulusKind as string) ?? 'color';
+    const ruleTextK = rule === 'color' ? '색' : rule === 'position' ? '위치' : '반대로';
+    const frameTier3: React.CSSProperties =
+      cueTier === 3
+        ? rule === 'color'
+          ? { border: '7px solid rgba(255,255,255,0.94)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
+          : rule === 'position'
+            ? { border: '7px dashed rgba(255,255,255,0.9)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
+            : { border: '12px double rgba(255,255,255,0.92)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
+        : {};
+    const stimulus =
+      stimulusKind === 'color' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', userSelect: 'none' }}>
+          <div style={{ fontSize: 'clamp(80px,18vw,180px)', lineHeight: 1, color: content?.textColor as string, opacity: 0.35 }}>{content?.symbol as string}</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontSize: 'clamp(120px, 30vw, 320px)', color: '#fff', lineHeight: 1, fontWeight: 900, textShadow: '0 4px 50px rgba(0,0,0,0.4)' }}>{content?.icon as string}</div>
+        </div>
+      );
+    return (
+      <div
+        key={animKey}
+        className="signal-blink"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          justifyContent: 'flex-start',
+          padding: 'clamp(8px, 2vw, 20px)',
+          boxSizing: 'border-box',
+        }}
+      >
+        {cueTier === 1 && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '0.45rem 0 0.85rem',
+              fontSize: 'clamp(1.65rem, 6.5vw, 2.75rem)',
+              fontWeight: 900,
+              color: 'rgba(255,255,255,0.98)',
+              textShadow: '0 3px 18px rgba(0,0,0,0.45)',
+              letterSpacing: '0.14em',
+            }}
+          >
+            {ruleTextK}
+          </div>
+        )}
+        {cueTier === 2 && (
+          <div style={{ textAlign: 'center', padding: '0.35rem 0 0.75rem', fontSize: 'clamp(3rem, 11vw, 5rem)', lineHeight: 1 }}>
+            {rule === 'color' ? '🎨' : rule === 'position' ? '📍' : '⇄'}
+          </div>
+        )}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: cueTier === 3 ? 'clamp(10px, 2vmin, 20px)' : 0,
+            ...frameTier3,
+          }}
+        >
+          {stimulus}
+        </div>
+      </div>
+    );
+  }
+
   if (type === 'flanker_row') {
     const circles = (content?.circles as { bg: string; id: string }[] | undefined) ?? [];
     const sizeMultsRaw = content?.sizeMults as number[] | undefined;

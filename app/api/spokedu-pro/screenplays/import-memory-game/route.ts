@@ -14,6 +14,7 @@ const MODE_MAP: ModeToScreenplay[] = [
   { modeKey: 'simon', modeId: '사이먼효과', sortBase: 2500 },
   { modeKey: 'flanker', modeId: '플랭커', sortBase: 2600 },
   { modeKey: 'gonogo', modeId: 'GoNoGo', sortBase: 2650 },
+  { modeKey: 'taskswitch', modeId: 'TaskSwitching', sortBase: 2675 },
   { modeKey: 'spatial', modeId: '순차기억', sortBase: 3000 },
   { modeKey: 'dual', modeId: '이중과제', sortBase: 4000 },
   { modeKey: 'flow', modeId: 'FLOW', sortBase: 5000 },

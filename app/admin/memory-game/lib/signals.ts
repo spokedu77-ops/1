@@ -71,6 +71,21 @@ function generateColorsWithPerMax(
   return Array.from({ length: count }, (_, i) => pool[i % pool.length]!);
 }
 
+/** Task Switching 「반대로」 — 보이는 색/방향의 짝 반대(콘 기준) */
+export const TASK_SWITCH_OPPOSITE_COLOR_ID: Record<string, string> = {
+  red: 'green',
+  green: 'red',
+  blue: 'yellow',
+  yellow: 'blue',
+};
+
+export const TASK_SWITCH_OPPOSITE_ARROW_ID: Record<string, string> = {
+  up: 'down',
+  down: 'up',
+  left: 'right',
+  right: 'left',
+};
+
 function fisherYates<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -227,6 +242,8 @@ export type GenerateSignalOptions = {
   excludeVariantPairKey?: string | null;
   /** Asset Hub 등에서 주입한 과일 슬롯(미지정 시 DEFAULT_FRUIT_SLIDES) */
   fruitSlides?: FruitSlide[];
+  /** Task Switching 1단계: 직전 trial 규칙(연속 반대로 방지·약 30% 반대로 비율) */
+  taskSwitchPrevRule?: 'color' | 'position' | 'reverse' | null;
 };
 
 export function generateSignal(
@@ -599,6 +616,81 @@ export function generateSignal(
     return null;
   }
 
+  /** Task Switching: 규칙(색 / 위치 / 반대로) + cue 표현 단계(1=글자 2=아이콘 3=테두리) */
+  if (mode === 'taskswitch') {
+    const cueTier = level >= 1 && level <= 3 ? level : 1;
+    type TsRule = 'color' | 'position' | 'reverse';
+    const prevRule = opts?.taskSwitchPrevRule ?? null;
+    let rule: TsRule;
+    if (level === 1) {
+      const u = Math.random();
+      if (prevRule === 'reverse') {
+        /** 연속 「반대로」 방지 — 색/위치만 */
+        rule = u < 0.5 ? 'color' : 'position';
+      } else {
+        /** 약 30% 반대로, 나머지는 색·위치 균등 */
+        if (u < 0.3) rule = 'reverse';
+        else if (u < 0.65) rule = 'color';
+        else rule = 'position';
+      }
+    } else {
+      rule = (['color', 'position', 'reverse'] as const)[Math.floor(Math.random() * 3)]!;
+    }
+
+    const pack = (tsRule: TsRule, sk: 'color' | 'arrow', payload: Record<string, unknown>): Record<string, unknown> => {
+      const { bg: bgVal, ...rest } = payload;
+      return {
+        type: 'task_switch' as const,
+        bg: (bgVal as string) ?? '#0F172A',
+        content: {
+          cueTier,
+          rule: tsRule,
+          stimulusKind: sk,
+          ...rest,
+        },
+        voice: null,
+      };
+    };
+
+    if (rule === 'color') {
+      const c = r(activeColors);
+      return pack('color', 'color', {
+        bg: c.bg,
+        colorId: c.id,
+        symbol: c.symbol,
+        textColor: c.text,
+        name: c.name,
+      });
+    }
+    if (rule === 'position') {
+      const a = r(ARROWS);
+      return pack('position', 'arrow', {
+        bg: '#0F172A',
+        arrowId: a.id,
+        icon: a.icon,
+        label: a.label,
+      });
+    }
+    const useColor = Math.random() < 0.5;
+    if (useColor) {
+      const c = r(activeColors);
+      return pack('reverse', 'color', {
+        bg: c.bg,
+        colorId: c.id,
+        symbol: c.symbol,
+        textColor: c.text,
+        name: c.name,
+      });
+    }
+    const a = r(ARROWS);
+    return pack('reverse', 'arrow', {
+      bg: '#0F172A',
+      arrowId: a.id,
+      icon: a.icon,
+      label: a.label,
+    });
+  }
+
   /** 사이먼: 위치는 createSimonSignalGenerator에서 양극단 순환으로만 생성 */
   if (mode === 'simon') return null;
 
@@ -766,6 +858,16 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
     const c = sig.content as { shape?: string; isGo?: boolean };
     return `gnd:${c.shape ?? ''}:${String(c.isGo)}`;
   }
+  if (t === 'task_switch') {
+    const c = sig.content as {
+      cueTier?: number;
+      rule?: string;
+      stimulusKind?: string;
+      colorId?: string;
+      arrowId?: string;
+    };
+    return `ts:${c.cueTier ?? 0}:${c.rule ?? ''}:${c.stimulusKind ?? ''}:${c.colorId ?? ''}:${c.arrowId ?? ''}`;
+  }
   return `raw:${t}`;
 }
 
@@ -911,6 +1013,9 @@ export function colorDupFingerprint(sig: Record<string, unknown>): string {
     const c = sig.content as { shape?: string; isGo?: boolean };
     return `cd:gn:d:${c.shape ?? ''}:${String(c.isGo)}`;
   }
+  if (t === 'task_switch') {
+    return `cd:${signalFingerprint(sig)}`;
+  }
   if (t === 'dual_num' || t === 'dual_color_arrow') {
     const col = (sig.content as { color?: { id?: string } })?.color;
     return `cd:${col?.id ?? ''}`;
@@ -1013,4 +1118,26 @@ export function createModeColorDupGenerator(
     () => generateSignal(mode, level, colors, opts),
     colorDupFingerprint
   );
+}
+
+/**
+ * Task Switching: 1단계에서 직전 규칙을 넘겨 연속 「반대로」를 막고 약 30% 비율을 맞춤.
+ */
+export function createTaskSwitchSignalGenerator(level: number, colors: ColorItem[], opts?: GenerateSignalOptions) {
+  let lastRule: 'color' | 'position' | 'reverse' | null = null;
+  const base = createColorDupConstrainedGenerator(
+    () => generateSignal('taskswitch', level, colors, { ...opts, taskSwitchPrevRule: lastRule }),
+    colorDupFingerprint
+  );
+  return {
+    next(): Record<string, unknown> | null {
+      const sig = base.next();
+      if (sig && (sig.type as string) === 'task_switch') {
+        const r = (sig.content as { rule?: string }).rule;
+        if (r === 'color' || r === 'position' || r === 'reverse') lastRule = r;
+      }
+      return sig;
+    },
+    getStats: base.getStats,
+  };
 }

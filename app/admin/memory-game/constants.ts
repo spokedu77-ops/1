@@ -111,6 +111,16 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 4, name: '4번', enName: 'Dual Rule', desc: '이중 규칙 — 빨강 동그라미는 Go, 빨강 세모는 No-Go.' },
     ],
   },
+  taskswitch: {
+    id: 'taskswitch', title: 'Task Switching', en: 'Task Switching', icon: '🔀', accent: '#A3E635',
+    tag: '과제 전환 · 규칙 cue',
+    desc: '색·위치·반대로 세 가지 규칙이 바뀔 때마다 cue에 맞춰 반응합니다. 난이도는 cue 표현(글자·아이콘·테두리)만 다릅니다.',
+    levels: [
+      { id: 1, name: '1번', enName: 'Text Cues', desc: '입문 — 한글 cue(색·위치·반대로)로 규칙을 알려 줍니다.' },
+      { id: 2, name: '2번', enName: 'Icon Cues', desc: '중간 — 팔레트·핀·반전 아이콘으로 글자 의존도를 줄입니다.' },
+      { id: 3, name: '3번', enName: 'Border Cues', desc: '고난 — 실선/점선/이중 테두리만으로 규칙을 읽어야 합니다.' },
+    ],
+  },
   spatial: {
     id: 'spatial', title: '순차 기억', en: 'Sequential Memory', icon: '🎨', accent: '#22C55E',
     tag: '작업기억 · 순서 재생',

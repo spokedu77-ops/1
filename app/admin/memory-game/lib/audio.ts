@@ -65,6 +65,7 @@ export function getBeepForSignal(sig: { type?: string } | null): BeepType | null
   if (type === 'gonogo_color') return 'mid';
   if (type === 'gonogo_shape' || type === 'gonogo_dual') return 'mid';
   if (type === 'gonogo_action') return 'high';
+  if (type === 'task_switch') return 'mid';
   return 'mid';
 }
 
