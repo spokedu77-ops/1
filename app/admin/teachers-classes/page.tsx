@@ -2,11 +2,26 @@
 
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback, useMemo, type MouseEvent } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type MouseEvent } from 'react';
 import { ADMIN_NAMES } from '@/app/admin/classes-shared/constants/admins';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { Send, RotateCcw, User, MapPin, X, ExternalLink, FileText, Maximize2, Search, BookOpen, AlertTriangle } from 'lucide-react';
+import {
+  Send,
+  RotateCcw,
+  User,
+  MapPin,
+  X,
+  ExternalLink,
+  FileText,
+  Maximize2,
+  Search,
+  BookOpen,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+} from 'lucide-react';
 import { SessionPhotosCleanupButton } from '@/app/components/admin/assets/SessionPhotosCleanupButton';
 import {
   FeedbackFields,
@@ -161,6 +176,18 @@ function formatKstWeekRangeLabel(start: Date, end: Date): string {
   return `${new Intl.DateTimeFormat('ko-KR', opt).format(start)} ~ ${new Intl.DateTimeFormat('ko-KR', opt).format(end)}`;
 }
 
+/** 피드백 조회용 YYYY-MM-DD에 로컬 달력 기준 일 수를 더함 */
+function addDaysToYmd(ymd: string, deltaDays: number): string {
+  const [y, m, d] = ymd.split('-').map((v) => parseInt(v, 10));
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return ymd;
+  const base = new Date(y, m - 1, d);
+  base.setDate(base.getDate() + deltaDays);
+  const yy = base.getFullYear();
+  const mm = String(base.getMonth() + 1).padStart(2, '0');
+  const dd = String(base.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
 // 피드백 검수 탭
 function FeedbackReviewTab({
   coaches,
@@ -178,6 +205,7 @@ function FeedbackReviewTab({
     url: string,
     index: number,
     centerNames: string[] | null | undefined,
+    sessionId: string,
   ) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
@@ -185,8 +213,16 @@ function FeedbackReviewTab({
     const filename = displayNameForDownload(url, index, centerNames ?? null);
     setDownloadingCenterFileIndex(index);
     try {
-      const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
-      if (!res.ok) throw new Error(String(res.status));
+      const res = await fetch('/api/admin/storage/center-session-file', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, fileIndex: index }),
+      });
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(payload.error || `다운로드 실패 (${res.status})`);
+      }
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -199,7 +235,8 @@ function FeedbackReviewTab({
       URL.revokeObjectURL(objectUrl);
     } catch (err) {
       devLogger.warn('[FeedbackReviewTab] center file download', err);
-      toast.error('원본 이름으로 받기에 실패해 새 탭에서 열었습니다.');
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`${msg} — 새 탭에서 열었습니다.`);
       window.open(url, '_blank', 'noopener,noreferrer');
     } finally {
       setDownloadingCenterFileIndex(null);
@@ -255,6 +292,7 @@ function FeedbackReviewTab({
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [duplicateCheck, setDuplicateCheck] = useState<{ isDuplicate: boolean; similarity?: number; matchedSession?: { title?: string; start_at?: string }; duplicate?: boolean; message?: string } | null>(null);
+  const feedbackDateInputRef = useRef<HTMLInputElement>(null);
 
   const fetchListData = useCallback(async () => {
     if (!supabase) return;
@@ -604,7 +642,58 @@ function FeedbackReviewTab({
         </div>
         <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-3 rounded-3xl shadow-sm border border-slate-200 items-start sm:items-center">
           <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer" />
+            <div className="flex items-stretch gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                aria-label={feedbackScope === 'center' ? '이전 주' : '이전 날'}
+                title={feedbackScope === 'center' ? '이전 주' : '이전 날'}
+                onClick={() =>
+                  setSelectedDate((prev) => addDaysToYmd(prev, feedbackScope === 'center' ? -7 : -1))
+                }
+                className="shrink-0 flex items-center justify-center w-10 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer transition-colors"
+              >
+                <ChevronLeft size={20} strokeWidth={2.5} />
+              </button>
+              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-2 sm:px-3 py-1.5">
+                <button
+                  type="button"
+                  aria-label="날짜 선택(캘린더)"
+                  title="날짜 선택"
+                  onClick={() => {
+                    const el = feedbackDateInputRef.current;
+                    if (!el) return;
+                    if (typeof el.showPicker === 'function') {
+                      el.showPicker();
+                    } else {
+                      el.focus();
+                      el.click();
+                    }
+                  }}
+                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 cursor-pointer transition-colors"
+                >
+                  <Calendar size={18} />
+                </button>
+                <input
+                  ref={feedbackDateInputRef}
+                  id="feedback-review-date"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="min-w-0 flex-1 bg-transparent py-1 text-sm font-bold text-slate-800 outline-none cursor-pointer"
+                />
+              </div>
+              <button
+                type="button"
+                aria-label={feedbackScope === 'center' ? '다음 주' : '다음 날'}
+                title={feedbackScope === 'center' ? '다음 주' : '다음 날'}
+                onClick={() =>
+                  setSelectedDate((prev) => addDaysToYmd(prev, feedbackScope === 'center' ? 7 : 1))
+                }
+                className="shrink-0 flex items-center justify-center w-10 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer transition-colors"
+              >
+                <ChevronRight size={20} strokeWidth={2.5} />
+              </button>
+            </div>
             {feedbackScope === 'center' ? (
               <p className="text-[11px] text-slate-500 font-bold leading-snug px-1">
                 주간 조회 (KST 월요일~일요일): {centerWeekRangeText}
@@ -852,7 +941,13 @@ function FeedbackReviewTab({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) =>
-                        handleCenterFileOpenOrDownload(e, url, i, feedbackFields.center_document_names)
+                        handleCenterFileOpenOrDownload(
+                          e,
+                          url,
+                          i,
+                          feedbackFields.center_document_names,
+                          selectedEvent.id,
+                        )
                       }
                       className={`flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl hover:bg-indigo-100 cursor-pointer ${downloadingCenterFileIndex === i ? 'opacity-60 pointer-events-none' : ''}`}
                     >
