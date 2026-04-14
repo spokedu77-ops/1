@@ -6,7 +6,6 @@ import { SpokeduRhythmGame } from '@/app/components/runtime/SpokeduRhythmGame';
 import { useChallengeBGM } from '@/app/lib/admin/hooks/useChallengeBGM';
 import { useChallengeEmbedTemplate } from '@/app/lib/spomove/useChallengeEmbedTemplate';
 import {
-  CHALLENGE_DISPLAY_BPM_OPTIONS,
   getSpomoveChallengeEmbed,
   mergeSpomoveChallengeLevelData,
   resolveChallengeProgramBpm,
@@ -56,10 +55,7 @@ function ChallengeProgramInner() {
   const effectiveBpm = useMemo(() => {
     const storedBpm = getSpomoveChallengeEmbed()?.bpm;
     const manualLocal =
-      typeof storedBpm === 'number' &&
-      CHALLENGE_DISPLAY_BPM_OPTIONS.includes(
-        storedBpm as (typeof CHALLENGE_DISPLAY_BPM_OPTIONS)[number]
-      );
+      typeof storedBpm === 'number' && Number.isFinite(storedBpm) && storedBpm > 0;
     if (manualLocal) return resolveChallengeProgramBpm(storedBpm, sourceBpm);
     if (typeof sourceBpm === 'number' && sourceBpm > 0) {
       return resolveChallengeProgramBpm(undefined, sourceBpm);

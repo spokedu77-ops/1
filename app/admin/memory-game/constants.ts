@@ -70,14 +70,11 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     tag: '억제 제어 · 인지 유연성',
     desc: '배경은 기본 흰색입니다. 화살표·글자 과제에서 규칙에 따라 방향·색·의미를 말합니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Arrow Dir / Arrow Fill', desc: '화살표 방향 스트룹 / 화살표 색상 스트룹 — 배경 흰색. 신호마다 「방향 말하기」와 「채움 색 말하기」가 무작위로 바뀝니다.' },
-      { id: 2, name: '2번', enName: 'Arrow + BG', desc: '화살표 스트룹(배경 간섭) — 1번과 동일하나 화면 전체 배경에 색이 깔립니다.' },
-      { id: 3, name: '3번', enName: 'Arrow Rev Dir / Rev Fill', desc: '화살표 역방향 스트룹 / 역색상 스트룹 — 1번의 역규칙(힌트가 반대 차원). 배경 흰색.' },
-      { id: 4, name: '4번', enName: 'Arrow Rev + BG', desc: '화살표 역스트룹(배경 간섭) — 3번과 동일하나 배경에 색이 깔립니다.' },
-      { id: 5, name: '5번', enName: 'Word Meaning / Word Ink', desc: '글자 의미 스트룹 / 글자 색상 스트룹 — 배경 흰색. 글자 뜻(의미) 또는 잉크 색을 말합니다(신호마다 무작위).' },
-      { id: 6, name: '6번', enName: 'Word + BG', desc: '글자 스트룹(배경 간섭) — 잉크 색을 말하되, 배경색이 추가로 겹칩니다.' },
-      { id: 7, name: '7번', enName: 'Word Rev Meaning / Rev Ink', desc: '글자 의미 역스트룹 / 글자 색상 역스트룹 — 5번의 역규칙. 배경 흰색.' },
-      { id: 8, name: '8번', enName: 'Missing Color', desc: '역스트룹(배경 간섭 — 나오지 않은 색) — 글자·잉크·배경 세 가지 색에 나오지 않은 네 번째 색 이름을 말합니다.' },
+      { id: 1, name: '1번', enName: 'Arrow Stroop / Reverse', desc: '화살표 스트룹/역스트룹 통합 — 배경 흰색. 신호마다 일반·역규칙이 무작위로 섞입니다.' },
+      { id: 2, name: '2번', enName: 'Arrow + BG Interference', desc: '화살표 스트룹/역스트룹(배경 간섭) 통합 — 배경색 간섭이 있는 상태에서 일반·역규칙이 무작위로 섞입니다.' },
+      { id: 3, name: '3번', enName: 'Word Stroop / Reverse', desc: '글자 스트룹/역스트룹 통합 — 배경 흰색. 글자 의미·잉크색의 일반·역규칙이 무작위로 섞입니다.' },
+      { id: 4, name: '4번', enName: 'Word + BG', desc: '글자 스트룹(배경 간섭) — 잉크 색을 말하되, 배경색이 추가로 겹칩니다.' },
+      { id: 5, name: '5번', enName: 'Missing Color', desc: '역스트룹(배경 간섭 — 나오지 않은 색) — 글자·잉크·배경 세 가지 색에 나오지 않은 네 번째 색 이름을 말합니다.' },
     ],
   },
   simon: {
@@ -98,6 +95,8 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 2, name: '2번', enName: 'Grouped Flankers', desc: '양끝(1·5번)과 가운데 셋(2·3·4번)끼리 각각 같은 색입니다. 답은 항상 가운데(3번) 원의 색입니다.' },
       { id: 3, name: '3번', enName: 'Random Flankers', desc: '다섯 원 색이 각각 무작위입니다. 가운데 원 색만 보고 콘을 고릅니다.' },
       { id: 4, name: '4번', enName: 'Mixed Size & Color', desc: '다섯 원의 크기·색이 서로 다르게(한 줄, 스크롤 없음) 나옵니다. 가운데 원 색 콘으로 달립니다.' },
+      { id: 5, name: '5번', enName: '3-Circle Extreme Sizes', desc: '원 3개만 표시됩니다. 100%·70%·40% 크기가 랜덤 순서로 강하게 섞여 나오며, 가운데 원 색 콘으로 달립니다.' },
+      { id: 6, name: '6번', enName: '5-Circle Extreme Sizes', desc: '원 5개가 모두 서로 다른 크기로 매우 강하게 표시됩니다. 답은 가운데(3번) 원의 색입니다.' },
     ],
   },
   gonogo: {

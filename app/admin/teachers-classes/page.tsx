@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type MouseEvent } from 'react';
 import { ADMIN_NAMES } from '@/app/admin/classes-shared/constants/admins';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -14,6 +14,7 @@ import {
   fieldsToTemplateText,
   getSessionDisplayStatus,
   sessionFileDisplayName,
+  displayNameForDownload,
   alignCenterDocumentNamesWithUrls,
 } from '@/app/lib/feedbackValidation';
 import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
@@ -170,6 +171,40 @@ function FeedbackReviewTab({
   excludedAdminCoachIds: string[];
   supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
 }) {
+  const [downloadingCenterFileIndex, setDownloadingCenterFileIndex] = useState<number | null>(null);
+
+  const handleCenterFileOpenOrDownload = async (
+    e: MouseEvent<HTMLAnchorElement>,
+    url: string,
+    index: number,
+    centerNames: string[] | null | undefined,
+  ) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    if (downloadingCenterFileIndex !== null) return;
+    const filename = displayNameForDownload(url, index, centerNames ?? null);
+    setDownloadingCenterFileIndex(index);
+    try {
+      const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      devLogger.warn('[FeedbackReviewTab] center file download', err);
+      toast.error('원본 이름으로 받기에 실패해 새 탭에서 열었습니다.');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } finally {
+      setDownloadingCenterFileIndex(null);
+    }
+  };
   const getSessionTypeLabel = (sessionType: Session['session_type']): string => {
     switch (sessionType) {
       case 'regular_center':
@@ -811,12 +846,21 @@ function FeedbackReviewTab({
                     <div className="bg-white p-5 rounded-[24px] border border-indigo-100 space-y-3">
                   <p className="text-[10px] font-black text-indigo-400 uppercase">파일</p>
                   {fileUrls.length > 0 ? fileUrls.map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl hover:bg-indigo-100 cursor-pointer">
-                      <FileText size={18} className="text-indigo-500" />
+                    <a
+                      key={i}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) =>
+                        handleCenterFileOpenOrDownload(e, url, i, feedbackFields.center_document_names)
+                      }
+                      className={`flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl hover:bg-indigo-100 cursor-pointer ${downloadingCenterFileIndex === i ? 'opacity-60 pointer-events-none' : ''}`}
+                    >
+                      <FileText size={18} className="text-indigo-500 shrink-0" />
                       <span className="text-sm font-bold text-slate-600 truncate">
                         {sessionFileDisplayName(url, i, feedbackFields.center_document_names ?? null)}
                       </span>
-                      <ExternalLink size={14} className="ml-auto text-indigo-300" />
+                      <ExternalLink size={14} className="ml-auto text-indigo-300 shrink-0" />
                     </a>
                   )) : <p className="text-slate-400 text-sm py-4 text-center">업로드된 파일이 없습니다</p>}
                     </div>

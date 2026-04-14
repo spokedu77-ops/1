@@ -121,7 +121,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
 
   if (type === 'gonogo_shape') {
     const shape = content?.shape as 'circle' | 'triangle' | undefined;
-    const fill = '#F8FAFC';
+    const fill = (content?.fillHex as string) ?? '#F8FAFC';
     const box = 'min(52vmin, 78vw)';
     return (
       <div key={animKey} className="signal-blink" style={C}>
@@ -150,10 +150,30 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'gonogo_action') {
     const kind = content?.kind as string | undefined;
     if (kind === 'arrow') {
+      const arrowId = content?.arrowId as string | undefined;
+      const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
       return (
-        <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ fontSize: 'clamp(110px,26vw,280px)', color: '#fff', lineHeight: 1, fontWeight: 900, textShadow: '0 4px 50px rgba(0,0,0,0.4)' }}>{content?.icon as string}</div>
-          <div style={{ fontSize: 'clamp(28px,6vw,56px)', color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: '0.05em' }}>{content?.label as string}</div>
+        <div key={animKey} className="signal-blink" style={C}>
+          <svg
+            viewBox="0 0 100 130"
+            preserveAspectRatio="xMidYMid meet"
+            style={{
+              width: 'clamp(9rem, 58vmin, min(98vw, 98vh))',
+              height: 'clamp(9rem, 58vmin, min(98vw, 98vh))',
+              filter: 'drop-shadow(0 10px 48px rgba(0,0,0,0.5))',
+            }}
+            aria-hidden
+          >
+            <g transform={`rotate(${rot} 50 67)`}>
+              <path
+                d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
+                fill="#FFFFFF"
+                stroke="rgba(255,255,255,0.26)"
+                strokeWidth={5}
+                strokeLinejoin="round"
+              />
+            </g>
+          </svg>
         </div>
       );
     }
@@ -379,10 +399,10 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     const frameTier3: React.CSSProperties =
       cueTier === 3
         ? rule === 'color'
-          ? { border: '7px solid rgba(255,255,255,0.94)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
+          ? { border: '21px solid rgba(255,255,255,0.94)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
           : rule === 'position'
-            ? { border: '7px dashed rgba(255,255,255,0.9)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
-            : { border: '12px double rgba(255,255,255,0.92)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
+            ? { border: '21px dashed rgba(255,255,255,0.9)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
+            : { border: '36px double rgba(255,255,255,0.92)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
         : {};
     const stimulus =
       stimulusKind === 'color' ? (
@@ -413,8 +433,8 @@ export const SignalDisplay = React.memo(function SignalDisplay({
           <div
             style={{
               textAlign: 'center',
-              padding: '0.45rem 0 0.85rem',
-              fontSize: 'clamp(1.65rem, 6.5vw, 2.75rem)',
+              padding: '0.6rem 0 1rem',
+              fontSize: 'clamp(4.8rem, 19vw, 8.2rem)',
               fontWeight: 900,
               color: 'rgba(255,255,255,0.98)',
               textShadow: '0 3px 18px rgba(0,0,0,0.45)',
@@ -425,7 +445,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
           </div>
         )}
         {cueTier === 2 && (
-          <div style={{ textAlign: 'center', padding: '0.35rem 0 0.75rem', fontSize: 'clamp(3rem, 11vw, 5rem)', lineHeight: 1 }}>
+          <div style={{ textAlign: 'center', padding: '0.35rem 0 0.75rem', fontSize: 'clamp(9rem, 33vw, 15rem)', lineHeight: 1 }}>
             {rule === 'color' ? '🎨' : rule === 'position' ? '📍' : '⇄'}
           </div>
         )}
@@ -457,7 +477,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     const mults = hasVariedSizes
       ? sizeMultsRaw!.map((m) => Math.max(0.35, m))
       : circles.map(() => 1);
-    const gap = 'clamp(6px, 1.5vmin, 14px)';
+    const gap = hasVariedSizes ? 'clamp(0px, 0.18vmin, 2px)' : 'clamp(6px, 1.5vmin, 14px)';
     return (
       <div
         key={animKey}
@@ -468,7 +488,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 'clamp(8px, 2vw, 20px)',
+          padding: hasVariedSizes ? 'clamp(0px, 0.2vw, 3px)' : 'clamp(8px, 2vw, 20px)',
           boxSizing: 'border-box',
           minWidth: 0,
           overflow: 'hidden',
@@ -492,9 +512,27 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             <div
               key={i}
               style={{
-                flex: `${mults[i] ?? 1} 1 0`,
-                minWidth: 'clamp(6px, 2.2vmin, 28px)',
-                maxWidth: hasVariedSizes ? 'min(38vmin, 46vw)' : 'min(30vmin, 24vw)',
+                flex: hasVariedSizes && circles.length === 3 ? '0 0 auto' : `${mults[i] ?? 1} 1 0`,
+                width:
+                  hasVariedSizes && circles.length === 3
+                    ? `min(${(mults[i] ?? 1) * 58}vmin, ${(mults[i] ?? 1) * 58}vw)`
+                    : hasVariedSizes && circles.length === 5
+                      ? `min(${(mults[i] ?? 1) * 52}vmin, ${(mults[i] ?? 1) * 52}vw)`
+                    : undefined,
+                minWidth:
+                  hasVariedSizes && circles.length === 3
+                    ? `min(${(mults[i] ?? 1) * 12}vmin, ${(mults[i] ?? 1) * 12}vw)`
+                    : hasVariedSizes && circles.length === 5
+                      ? `min(${(mults[i] ?? 1) * 12}vmin, ${(mults[i] ?? 1) * 12}vw)`
+                    : 'clamp(6px, 2.2vmin, 28px)',
+                maxWidth:
+                  hasVariedSizes && circles.length === 3
+                    ? `min(${(mults[i] ?? 1) * 58}vmin, ${(mults[i] ?? 1) * 58}vw)`
+                    : hasVariedSizes && circles.length === 5
+                      ? `min(${(mults[i] ?? 1) * 52}vmin, ${(mults[i] ?? 1) * 52}vw)`
+                    : hasVariedSizes
+                      ? 'min(38vmin, 46vw)'
+                      : 'min(30vmin, 24vw)',
                 aspectRatio: '1',
                 flexShrink: 1,
                 borderRadius: '50%',
@@ -512,9 +550,8 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'simon_arrow') {
     const posX = typeof content?.posX === 'number' ? content.posX : 0.5;
     const posY = typeof content?.posY === 'number' ? content.posY : 0.5;
-    const icon = (content?.icon as string) ?? '↑';
-    const label = (content?.label as string) ?? '';
-    const box = 'min(32vw, 32vh)';
+    const arrowId = content?.arrowId as string | undefined;
+    const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
     return (
       <div key={animKey} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <div
@@ -524,38 +561,35 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             left: `${posX * 100}%`,
             top: `${posY * 100}%`,
             transform: 'translate(-50%, -50%)',
-            width: box,
-            height: box,
+            width: 'min(44vw, 44vh)',
+            height: 'min(44vw, 44vh)',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             boxSizing: 'border-box',
-            gap: 'clamp(4px, 1vmin, 12px)',
           }}
         >
-          <div
+          <svg
+            viewBox="0 0 100 130"
+            preserveAspectRatio="xMidYMid meet"
             style={{
-              fontSize: 'clamp(72px, min(28vmin, 28vw), min(40vw, 40vh))',
-              color: '#fff',
-              lineHeight: 1,
-              fontWeight: 900,
-              textShadow: '0 4px 48px rgba(0,0,0,0.45)',
-              userSelect: 'none',
+              width: '100%',
+              height: '100%',
+              display: 'block',
+              filter: 'drop-shadow(0 8px 44px rgba(0,0,0,0.45))',
             }}
+            aria-hidden
           >
-            {icon}
-          </div>
-          <div
-            style={{
-              fontSize: 'clamp(14px, 3.5vmin, 22px)',
-              color: 'rgba(255,255,255,0.82)',
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-            }}
-          >
-            {label}
-          </div>
+            <g transform={`rotate(${rot} 50 67)`}>
+              <path
+                d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
+                fill="#FFFFFF"
+                stroke="rgba(255,255,255,0.24)"
+                strokeWidth={6}
+                strokeLinejoin="round"
+              />
+            </g>
+          </svg>
         </div>
       </div>
     );

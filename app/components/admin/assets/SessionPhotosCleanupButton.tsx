@@ -45,12 +45,14 @@ async function postJson<T>(url: string): Promise<T> {
   return payload as T;
 }
 
+type LoadingPhase = 'idle' | 'scanning' | 'deleting';
+
 export function SessionPhotosCleanupButton({ days = 7 }: { days?: number }) {
-  const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<LoadingPhase>('idle');
 
   const handleClick = async () => {
-    if (loading) return;
-    setLoading(true);
+    if (phase !== 'idle') return;
+    setPhase('scanning');
     try {
       const dry = await postJson<DryRunResponse>(
         `/api/admin/storage/cleanup-session-photos?dryRun=1&days=${days}`
@@ -71,6 +73,7 @@ export function SessionPhotosCleanupButton({ days = 7 }: { days?: number }) {
       const proceed = window.confirm(msgLines.join('\n'));
       if (!proceed) return;
 
+      setPhase('deleting');
       const run = await postJson<RunResponse>(
         `/api/admin/storage/cleanup-session-photos?days=${days}`
       );
@@ -90,23 +93,30 @@ export function SessionPhotosCleanupButton({ days = 7 }: { days?: number }) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(`세션 사진 정리 실패: ${msg}`);
     } finally {
-      setLoading(false);
+      setPhase('idle');
     }
   };
+
+  const label =
+    phase === 'scanning'
+      ? `스캔 중… (대용량이면 수 분, 완료 후 확인 창이 뜹니다)`
+      : phase === 'deleting'
+        ? '삭제·DB 정리 중…'
+        : `세션 사진 정리 (${days}일)`;
 
   return (
     <button
       type="button"
       onClick={handleClick}
-      disabled={loading}
+      disabled={phase !== 'idle'}
       className={`rounded-lg px-3 py-2 text-sm font-bold ${
-        loading
+        phase !== 'idle'
           ? 'cursor-not-allowed bg-neutral-700 text-neutral-400'
           : 'bg-red-600 text-white hover:bg-red-500'
       }`}
-      title="session-photos 버킷에서 오래된 사진을 정리합니다"
+      title="session-photos 버킷에서 오래된 사진을 정리합니다. 첫 단계에서 전체 버킷을 나열하므로 시간이 걸릴 수 있습니다."
     >
-      {loading ? '정리 준비 중...' : `세션 사진 정리 (${days}일)`}
+      {label}
     </button>
   );
 }

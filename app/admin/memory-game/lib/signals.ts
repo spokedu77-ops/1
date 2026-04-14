@@ -354,14 +354,15 @@ export function generateSignal(
       return (candidates.length ? r(candidates) : r(stroopPool)).hex;
     };
 
-    // 1~4: 화살표 스트룹 (배경 흰색 또는 배경 간섭색)
-    if (level === 1) return pickArrowStroop(WHITE, false);
+    // 1~2: 화살표 스트룹/역스트룹 통합 (배경 흰색 / 배경 간섭)
+    if (level === 1) return pickArrowStroop(WHITE, Math.random() < 0.5);
     if (level === 2) {
+      const reverse = Math.random() < 0.5;
       const fill = r(stroopPool);
       const bgHex = pickBgNotFill(fill.hex);
       const arrow = r(ARROWS);
       const taskDir = Math.random() < 0.5;
-      const voice = taskDir ? arrow.voice : fill.name;
+      const voice = !reverse ? (taskDir ? arrow.voice : fill.name) : (taskDir ? fill.name : arrow.voice);
       return {
         type: 'stroop_arrow',
         bg: bgHex,
@@ -369,47 +370,33 @@ export function generateSignal(
           arrowId: arrow.id,
           fillHex: fill.hex,
           stroopArrowTask: taskDir ? ('direction' as const) : ('fill' as const),
-          stroopArrowReverse: false,
-        },
-        voice,
-      };
-    }
-    if (level === 3) return pickArrowStroop(WHITE, true);
-    if (level === 4) {
-      const fill = r(stroopPool);
-      const bgHex = pickBgNotFill(fill.hex);
-      const arrow = r(ARROWS);
-      const taskDir = Math.random() < 0.5;
-      const voice = taskDir ? fill.name : arrow.voice;
-      return {
-        type: 'stroop_arrow',
-        bg: bgHex,
-        content: {
-          arrowId: arrow.id,
-          fillHex: fill.hex,
-          stroopArrowTask: taskDir ? ('direction' as const) : ('fill' as const),
-          stroopArrowReverse: true,
+          stroopArrowReverse: reverse,
         },
         voice,
       };
     }
 
-    // 5~8: 글자 스트룹 (배경 흰색 또는 배경 간섭 / 역 / 미출현 색)
-    if (level === 5) {
+    // 3: 글자 스트룹/역스트룹 통합(배경 흰색)
+    if (level === 3) {
       const [w, tc] = pair(stroopPool);
       const sayMeaning = Math.random() < 0.5;
+      const reverse = Math.random() < 0.5;
       return {
         type: 'stroop',
         bg: WHITE,
         content: {
           word: w.name,
           textHex: tc.hex,
-          stroopKind: sayMeaning ? ('word_meaning' as const) : ('ink' as const),
+          stroopKind: reverse
+            ? (sayMeaning ? ('word_meaning_rev' as const) : ('ink_rev' as const))
+            : (sayMeaning ? ('word_meaning' as const) : ('ink' as const)),
         },
-        voice: sayMeaning ? w.name : tc.name,
+        voice: !reverse ? (sayMeaning ? w.name : tc.name) : (sayMeaning ? tc.name : w.name),
       };
     }
-    if (level === 6) {
+
+    // 4~5: 기존 6·8번 유지
+    if (level === 4) {
       for (let retry = 0; retry < 25; retry++) {
         const [w, tc, bg] = triple(stroopPool);
         const textHex = tc.hex;
@@ -432,21 +419,7 @@ export function generateSignal(
         voice: tc.name,
       };
     }
-    if (level === 7) {
-      const [w, tc] = pair(stroopPool);
-      const sayMeaning = Math.random() < 0.5;
-      return {
-        type: 'stroop',
-        bg: WHITE,
-        content: {
-          word: w.name,
-          textHex: tc.hex,
-          stroopKind: sayMeaning ? ('word_meaning_rev' as const) : ('ink_rev' as const),
-        },
-        voice: sayMeaning ? tc.name : w.name,
-      };
-    }
-    if (level === 8) {
+    if (level === 5) {
       const shuffled = fisherYates([...stroopPool]);
       const w = shuffled[0]!;
       const tc = shuffled[1]!;
@@ -479,7 +452,6 @@ export function generateSignal(
   }
 
   if (mode === 'flanker') {
-    const centerIdx = 2;
     const packRow = (
       circles: { id: string; bg: string; text: string }[],
       sizeMults?: number[]
@@ -488,8 +460,8 @@ export function generateSignal(
       bg: '#0F172A',
       content: {
         circles,
-        centerIndex: centerIdx,
-        targetColorId: circles[centerIdx]!.id,
+        centerIndex: Math.floor((circles.length - 1) / 2),
+        targetColorId: circles[Math.floor((circles.length - 1) / 2)]!.id,
         ...(sizeMults && sizeMults.length === circles.length ? { sizeMults } : {}),
       },
       voice: null,
@@ -538,6 +510,21 @@ export function generateSignal(
       const sizeMults = fisherYates([0.68, 0.78, 0.9, 1.05, 1.22]);
       return packRow(circles, sizeMults);
     }
+    if (level === 5) {
+      const pool = activeColors.length >= 2 ? activeColors : COLORS;
+      const colorSeq = generateColorsWithPerMax(pool, 3, 2);
+      const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
+      const sizeMults = fisherYates([1.0, 0.62, 0.28]);
+      return packRow(circles, sizeMults);
+    }
+    if (level === 6) {
+      const pool = activeColors.length >= 2 ? activeColors : COLORS;
+      const maxPer = Math.max(2, Math.ceil(5 / Math.max(1, pool.length)));
+      const colorSeq = generateColorsWithPerMax(pool, 5, maxPer);
+      const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
+      const sizeMults = fisherYates([1.0, 0.62, 0.44, 0.28, 0.14]);
+      return packRow(circles, sizeMults);
+    }
     return null;
   }
 
@@ -572,10 +559,11 @@ export function generateSignal(
     if (level === 2) {
       const isGo = Math.random() < 0.5;
       const shape = isGo ? ('circle' as const) : ('triangle' as const);
+      const fill = r(COLORS);
       return {
         type: 'gonogo_shape',
         bg: '#0F172A',
-        content: { shape, isGo },
+        content: { shape, isGo, fillHex: fill.bg },
         voice: null,
       };
     }
@@ -606,9 +594,10 @@ export function generateSignal(
     if (level === 4) {
       const isGo = Math.random() < 0.5;
       const shape = isGo ? ('circle' as const) : ('triangle' as const);
+      const randomBg = r(COLORS).bg;
       return {
         type: 'gonogo_dual',
-        bg: '#EF4444',
+        bg: randomBg,
         content: { shape, isGo },
         voice: null,
       };

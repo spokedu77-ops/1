@@ -71,7 +71,7 @@ export const CHALLENGE_DISPLAY_BPM_OPTIONS = [100, 120, 150, 180] as const;
 
 export function getSpomoveChallengeEmbedBpm(): number | undefined {
   const b = getSpomoveChallengeEmbed()?.bpm;
-  if (typeof b !== 'number' || !Number.isFinite(b)) return undefined;
+  if (typeof b !== 'number' || !Number.isFinite(b) || b <= 0) return undefined;
   return b;
 }
 
@@ -92,16 +92,11 @@ export function resolveChallengeProgramBpm(
   storedBpm: number | undefined,
   sourceBpm: number | null | undefined
 ): number {
-  if (
-    typeof storedBpm === 'number' &&
-    CHALLENGE_DISPLAY_BPM_OPTIONS.includes(
-      storedBpm as (typeof CHALLENGE_DISPLAY_BPM_OPTIONS)[number]
-    )
-  ) {
+  if (typeof storedBpm === 'number' && Number.isFinite(storedBpm) && storedBpm > 0) {
     return storedBpm;
   }
   if (typeof sourceBpm === 'number' && sourceBpm > 0) {
-    return snapSourceBpmToDisplayBpm(sourceBpm);
+    return sourceBpm;
   }
   return 100;
 }

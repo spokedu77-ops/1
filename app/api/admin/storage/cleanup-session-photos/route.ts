@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
+/** 버킷 전체 스캔·삭제는 수 분 걸릴 수 있음 (플랫폼 기본 제한 회피) */
+export const maxDuration = 300;
+
 const TARGET_BUCKET = 'session-photos';
 const LIST_PAGE_SIZE = 1000;
 const REMOVE_BATCH_SIZE = 100;
@@ -133,6 +136,7 @@ export async function POST(request: NextRequest) {
         .from('sessions')
         .select('id, photo_url')
         .not('photo_url', 'is', null)
+        .order('id', { ascending: true })
         .range(sessionOffset, sessionOffset + SESSION_PAGE_SIZE - 1);
 
       if (error) {

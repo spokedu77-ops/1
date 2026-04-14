@@ -11,7 +11,6 @@ import {
   getSpomoveChallengeEmbed,
   resolveChallengeProgramBpm,
   setSpomoveChallengeEmbed,
-  snapSourceBpmToDisplayBpm,
 } from '@/app/lib/spomove/challengeEmbedStorage';
 
 const LEVELS = [1, 2, 3, 4] as const;
@@ -52,11 +51,7 @@ export function ChallengeSpomoveSetupPanel() {
   useEffect(() => {
     const s = getSpomoveChallengeEmbed();
     const storedBpm = s?.bpm;
-    const manual =
-      typeof storedBpm === 'number' &&
-      CHALLENGE_DISPLAY_BPM_OPTIONS.includes(
-        storedBpm as (typeof CHALLENGE_DISPLAY_BPM_OPTIONS)[number]
-      );
+    const manual = typeof storedBpm === 'number' && Number.isFinite(storedBpm) && storedBpm > 0;
     setUseManualBpm(manual);
     if (manual) setBpm(storedBpm);
     else setBpm(resolveChallengeProgramBpm(undefined, sourceBpm));
@@ -64,7 +59,7 @@ export function ChallengeSpomoveSetupPanel() {
 
   const autoBpmHint = useMemo(() => {
     if (typeof sourceBpm === 'number' && sourceBpm > 0) {
-      return `${snapSourceBpmToDisplayBpm(sourceBpm)} BPM (원곡 ${sourceBpm}에 가장 가까운 값)`;
+      return `${sourceBpm} BPM (원곡 BPM 그대로 적용)`;
     }
     return '관리자 챌린지 페이지에 원곡 BPM을 입력하면 여기서 자동으로 맞춰집니다.';
   }, [sourceBpm]);

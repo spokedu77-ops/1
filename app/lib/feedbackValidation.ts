@@ -53,6 +53,41 @@ export function sessionFileDisplayName(
   return withoutPrefix || 'File';
 }
 
+/** 저장/다운로드 대화상자용 — 경로·금지 문자 제거 */
+export function sanitizeFileNameForDownload(name: string): string {
+  const n = name.normalize('NFC').trim().slice(0, 200);
+  const cleaned = n.replace(/[/\\?*:"<>|]/g, '_').replace(/\s+/g, ' ').trim();
+  return cleaned.length > 0 ? cleaned : 'download';
+}
+
+/**
+ * 센터 첨부: UI와 동일한 표시명을 다운로드 파일명으로 쓰되,
+ * 표시명에 확장자가 없으면 스토리지 URL 경로의 확장자를 붙인다.
+ */
+export function displayNameForDownload(
+  url: string,
+  index: number,
+  centerDocumentNames?: string[] | null,
+): string {
+  const base = sessionFileDisplayName(url, index, centerDocumentNames);
+  if (/\.\w{2,10}$/i.test(base)) {
+    return sanitizeFileNameForDownload(base);
+  }
+  const raw = url.split('/').pop() || '';
+  const withoutQuery = raw.split('?')[0];
+  let decoded = withoutQuery;
+  try {
+    decoded = decodeURIComponent(withoutQuery);
+  } catch {
+    /* keep withoutQuery */
+  }
+  const extMatch = decoded.match(/(\.[a-zA-Z0-9]{2,10})$/);
+  if (extMatch) {
+    return sanitizeFileNameForDownload(`${base}${extMatch[1]}`);
+  }
+  return sanitizeFileNameForDownload(base);
+}
+
 /** 세션 로드 시 `file_url` 길이에 맞춰 표시용 이름 배열 정렬 */
 export function alignCenterDocumentNamesWithUrls(urls: string[], names?: unknown): string[] {
   const n = urls.length;
