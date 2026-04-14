@@ -1,7 +1,23 @@
 'use client';
 
-import { getFontEmbedCSS, toBlob } from 'html-to-image';
+import { toBlob } from 'html-to-image';
 import html2canvas from 'html2canvas';
+
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = window.setTimeout(() => reject(new Error(`${label} 시간 초과`)), ms);
+    p.then(
+      (v) => {
+        window.clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        window.clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
+}
 
 function dataUrlToBlob(dataUrl: string): Blob {
   const [header, body] = dataUrl.split(',');
@@ -21,29 +37,27 @@ function normalizeFontsInHtml2CanvasClone(root: HTMLElement): void {
 }
 
 /**
- * 1순위: html-to-image — SVG foreignObject로 브라우저 레이아웃·박스 내 텍스트 정렬이 화면과 거의 동일.
- * 2순위: html2canvas — iOS/Safari 등에서 foreignObject 실패 시.
+ * 1순위: html-to-image — 레이아웃이 화면과 비슷하게 나오는 편.
+ * getFontEmbedCSS는 외부 폰트 CSS를 긁어오며 모바일에서 지연·실패가 잦아 쓰지 않음(라이브러리가 노드 스타일 인라인).
+ * 2순위: html2canvas — foreignObject 차단·타임아웃 시.
  */
 async function rasterizeWithHtmlToImage(node: HTMLElement): Promise<Blob | null> {
   const pixelRatio = Math.min(window.devicePixelRatio || 2, 2.5);
-  let fontEmbedCSS: string | undefined;
   try {
-    fontEmbedCSS = await getFontEmbedCSS(node, { cacheBust: true });
+    const blob = await withTimeout(
+      toBlob(node, {
+        pixelRatio,
+        backgroundColor: '#0A0A0A',
+        cacheBust: true,
+        skipFonts: false,
+        type: 'image/png',
+      }),
+      15000,
+      '이미지 변환',
+    );
+    if (blob && blob.size > 200) return blob;
   } catch {
-    fontEmbedCSS = undefined;
-  }
-  try {
-    const blob = await toBlob(node, {
-      pixelRatio,
-      backgroundColor: '#0A0A0A',
-      cacheBust: true,
-      skipFonts: false,
-      type: 'image/png',
-      ...(fontEmbedCSS ? { fontEmbedCSS } : {}),
-    });
-    if (blob && blob.size > 500) return blob;
-  } catch {
-    /* SecurityError 등 → 폴백 */
+    /* SecurityError, 타임아웃 등 → 폴백 */
   }
   return null;
 }
@@ -112,7 +126,7 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
   const primary = await rasterizeWithHtmlToImage(node);
   if (primary) return primary;
 
-  return rasterizeWithHtml2Canvas(node);
+  return await withTimeout(rasterizeWithHtml2Canvas(node), 30000, '이미지 변환');
 }
 
 export function downloadPng(blob: Blob, fileName: string): void {
