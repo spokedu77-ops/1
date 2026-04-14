@@ -32,6 +32,8 @@ const DAY_LABELS: Record<string, string> = {
   mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일',
 };
 
+const EMPTY_BADGE = 'inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500';
+
 interface CentersClientProps {
   initialCenters: Center[];
 }
@@ -209,7 +211,7 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                     <div className="flex items-center gap-1 shrink-0">
                       {pendingCount > 0 && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                          ✓ {pendingCount}
+                          대기 {pendingCount}
                         </span>
                       )}
                       <Link href={`/admin/centers/${c.id}`} className="text-slate-400 hover:text-indigo-600">
@@ -234,17 +236,22 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                     {c.main_teacher_name && (
                       <span className="text-xs text-slate-600 font-medium">{c.main_teacher_name} T</span>
                     )}
+                    {!c.main_teacher_name && (
+                      <span className={EMPTY_BADGE}>강사 미배정</span>
+                    )}
                   </div>
                   {c.contact_name && (
                     <p className="text-xs text-slate-500 mb-1">
                       {c.contact_name}{c.contact_role ? ` (${c.contact_role})` : ''}{c.contact_phone ? ` · ${c.contact_phone}` : ''}
                     </p>
                   )}
-                  {schedule.length > 0 && (
+                  {schedule.length > 0 ? (
                     <p className="text-xs text-slate-500 mb-1">
                       {schedule.slice(0, 2).map((s) => `${DAY_LABELS[s.day] ?? s.day} ${s.start}~${s.end}`).join(' / ')}
                       {schedule.length > 2 ? ` +${schedule.length - 2}` : ''}
                     </p>
+                  ) : (
+                    <p className="text-xs text-amber-700 mb-1">시간표 미설정</p>
                   )}
                   {c.highlights && (
                     <p className="text-xs text-slate-400 line-clamp-1">{c.highlights}</p>
@@ -324,7 +331,11 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                           </select>
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700 font-medium">
-                          {c.main_teacher_name ? `${c.main_teacher_name} T` : <span className="text-slate-300">-</span>}
+                          {c.main_teacher_name ? (
+                            `${c.main_teacher_name} T`
+                          ) : (
+                            <span className={EMPTY_BADGE}>미배정</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-600">
                           <div className="flex flex-col gap-0.5">
@@ -333,7 +344,9 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-xs text-slate-500">
-                          {schedule.length === 0 ? '-' : (
+                          {schedule.length === 0 ? (
+                            <span className={EMPTY_BADGE}>미설정</span>
+                          ) : (
                             <span>
                               {schedule.slice(0, 2).map((s) => `${DAY_LABELS[s.day] ?? s.day} ${s.start}`).join(' / ')}
                               {schedule.length > 2 ? ` +${schedule.length - 2}` : ''}
@@ -343,10 +356,10 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                         <td className="px-4 py-3">
                           {pendingCount > 0 ? (
                             <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                              ✓ {pendingCount}
+                              대기 {pendingCount}
                             </span>
                           ) : (
-                            <span className="text-xs text-slate-300">-</span>
+                            <span className={EMPTY_BADGE}>없음</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">

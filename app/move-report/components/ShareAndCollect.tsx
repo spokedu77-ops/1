@@ -1,11 +1,8 @@
 'use client';
 
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Profile } from '../types';
-import {
-  copyTextToClipboard,
-  downloadPng,
-} from '../lib/shareCard';
+import { copyTextToClipboard, downloadPng } from '../lib/shareCard';
 import { trackMoveReportEvent } from '../lib/events';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 import { buildMoveReportShareUrl } from '../lib/shareLink';
@@ -68,13 +65,16 @@ const secondaryBtn = (disabled: boolean): CSSProperties => ({
   opacity: disabled ? 0.55 : 1,
 });
 
-/** 연락처 저장 후 이미지 새 창으로 열기(저장) · 결과 링크 복사 */
+/** 연락처 저장 후 이미지 공유/다운로드 · 결과 링크 복사 */
 export default function ShareAndCollect({ p, displayName, profileKey, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
   const [sent, setSent] = useState(false);
-  const [busy, setBusy] = useState<'download' | 'share' | null>(null);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [blobReady, setBlobReady] = useState(false);
   const [savingLead, setSavingLead] = useState(false);
+  const blobRef = useRef<Blob | null>(null);
 
   const normalizedSaved = normalizeMoveReportPhone(savedPhone);
   const normalizedInput = normalizeMoveReportPhone(phone);
@@ -82,7 +82,6 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
   const active = !!normalizedInput && consent;
   const ready = sent || alreadySaved;
   const fileName = `${displayName || '아이'}_MOVE_요약카드.png`;
-  const shareTitle = '스포키듀 MOVE 리포트';
   const shareUrl =
     typeof window !== 'undefined'
       ? buildMoveReportShareUrl(window.location.origin, {
@@ -108,97 +107,74 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
     return `${origin}/api/move-report/share-image?d=${encodeURIComponent(shareKey)}`;
   }, [shareKey]);
 
-  const getShareSavedGuide = (): string => {
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
-    const isIOS = /iphone|ipad|ipod/.test(ua);
-    if (isIOS) return "공유창이 뜨면 아래로 내려 '이미지 저장'을 눌러주세요";
-    return '공유창 또는 다운로드가 시작됩니다';
-  };
+  useEffect(() => {
+    blobRef.current = null;
+    setBlobReady(false);
+    if (!ogImageUrl) return;
 
-  const saveToAlbum = async () => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(ogImageUrl);
+        if (!res.ok) return;
+        const blob = await res.blob();
+        if (cancelled) return;
+        blobRef.current = blob;
+        setBlobReady(true);
+      } catch {
+        // preload 실패 시 클릭에서 fetch 재시도
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ogImageUrl]);
+
+  /** 새 탭 금지: API PNG → 공유 시트(모바일) 또는 브라우저 다운로드만 */
+  const saveImageToAlbum = async () => {
     if (!ready) {
       flash('전화번호 저장 후 이용할 수 있어요.');
       return;
     }
     if (!ogImageUrl) {
-      flash('이미지 URL을 생성할 수 없어요. 페이지를 새로고침해 주세요.');
+      flash('이미지 주소를 만들 수 없어요. 새로고침 후 다시 시도해 주세요.');
       return;
     }
-    setBusy('download');
-    let blob: Blob | null = null;
+    setSaveBusy(true);
     try {
-      const ac = new AbortController();
-      const tid = window.setTimeout(() => ac.abort(), 25000);
-      let res: Response;
-      try {
-        res = await fetch(ogImageUrl, { signal: ac.signal, cache: 'no-store' });
-      } finally {
-        window.clearTimeout(tid);
+      let blob = blobRef.current;
+      if (!blob) {
+        const res = await fetch(ogImageUrl);
+        if (!res.ok) throw new Error('이미지를 불러오지 못했어요.');
+        blob = await res.blob();
+        blobRef.current = blob;
+        setBlobReady(true);
       }
-      if (!res.ok) throw new Error('이미지를 불러오지 못했어요.');
-      blob = await res.blob();
-      const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean }) : null;
+      const file = new File([blob], fileName, { type: 'image/png' });
+      const nav = typeof navigator !== 'undefined'
+        ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean })
+        : null;
+
       if (nav && typeof nav.share === 'function') {
-        const file = new File([blob], fileName, { type: 'image/png' });
-        // iOS 안정성: files-only가 가장 성공률이 높음
-        const primary: ShareData = { files: [file] };
-        const secondary: ShareData = { files: [file], title: shareTitle };
-        const tryShare = async (data: ShareData): Promise<'shared' | 'cancelled' | 'fallback' | 'failed'> => {
-          const canShare = typeof nav.canShare === 'function' ? nav.canShare(data) : true;
-          if (!canShare) return 'failed';
+        const data: ShareData = { files: [file] };
+        const can = typeof nav.canShare !== 'function' || nav.canShare(data);
+        if (can) {
           try {
             await nav.share(data);
-            return 'shared';
+            flash("공유 창에서 '이미지 저장' 또는 앨범으로 저장해 주세요.");
+            return;
           } catch (e) {
-            if (e instanceof Error && e.name === 'AbortError') return 'cancelled';
-            if (e instanceof Error && e.name === 'NotAllowedError') return 'fallback';
-            return 'failed';
+            if (e instanceof Error && e.name === 'AbortError') return;
           }
-        };
-
-        const r1 = await tryShare(primary);
-        if (r1 === 'shared') {
-          flash(getShareSavedGuide());
-          return;
-        }
-        if (r1 === 'cancelled') return;
-        if (r1 === 'fallback') {
-          downloadPng(blob, fileName);
-          flash('기기 제한으로 파일 다운로드로 저장했어요.');
-          return;
-        }
-
-        const r2 = await tryShare(secondary);
-        if (r2 === 'shared') {
-          flash(getShareSavedGuide());
-          return;
-        }
-        if (r2 === 'cancelled') return;
-        if (r2 === 'fallback') {
-          downloadPng(blob, fileName);
-          flash('기기 제한으로 파일 다운로드로 저장했어요.');
-          return;
         }
       }
       downloadPng(blob, fileName);
-      flash('기기 제한으로 파일 다운로드로 저장했어요.');
+      flash('다운로드한 이미지를 앨범으로 옮겨 주세요.');
     } catch (e) {
-      if (e instanceof Error && e.name === 'AbortError') {
-        window.open(ogImageUrl, '_blank', 'noopener,noreferrer');
-        flash('이미지가 느려 새 창에서 열었어요. 길게 눌러 저장해 주세요.');
-        return;
-      }
-      if (e instanceof Error && e.name === 'NotAllowedError') {
-        if (blob) {
-          downloadPng(blob, fileName);
-          flash('기기 제한으로 파일 다운로드로 저장했어요.');
-          return;
-        }
-      }
-      window.open(ogImageUrl, '_blank', 'noopener,noreferrer');
-      flash('저장에 실패해 이미지를 새 창으로 열었어요. 길게 눌러 저장해 주세요.');
+      flash(e instanceof Error ? e.message : '이미지를 불러오지 못했어요.');
     } finally {
-      setBusy(null);
+      setSaveBusy(false);
     }
   };
 
@@ -207,7 +183,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
       flash('전화번호 저장 후 링크를 복사할 수 있어요.');
       return;
     }
-    setBusy('share');
+    setShareBusy(true);
     try {
       const copied = await copyTextToClipboard(shareUrl);
       if (!copied) {
@@ -217,12 +193,11 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
       flash('링크가 복사되었습니다');
       void trackMoveReportEvent({ eventName: 'share_clicked', shareKey });
     } finally {
-      setBusy(null);
+      setShareBusy(false);
     }
   };
 
-  const ctaBusy = busy !== null;
-  const isSavingImage = busy === 'download';
+  const ctaBusy = shareBusy || saveBusy;
 
   return (
     <div style={{ position: 'relative' }}>
@@ -418,23 +393,23 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
             <div style={BTN_ROW}>
               <button
                 type="button"
-                onClick={() => void saveToAlbum()}
+                onClick={() => void saveImageToAlbum()}
                 disabled={ctaBusy}
-                aria-busy={isSavingImage}
+                aria-busy={saveBusy}
                 style={primaryBtn(p.col, ctaBusy)}
               >
                 <i className="fa-solid fa-image" aria-hidden />
-                {isSavingImage ? '이미지 준비 중…' : '앨범에 저장'}
+                {saveBusy ? '준비 중…' : blobReady ? '앨범에 저장' : '이미지 로딩 중…'}
               </button>
               <button
                 type="button"
                 onClick={() => void shareResultLink()}
                 disabled={ctaBusy}
-                aria-busy={busy === 'share'}
+                aria-busy={shareBusy}
                 style={secondaryBtn(ctaBusy)}
               >
                 <i className="fa-solid fa-share-nodes" aria-hidden />
-                {busy === 'share' ? '공유 준비 중…' : '결과 링크 공유'}
+                {shareBusy ? '공유 준비 중…' : '결과 링크 공유'}
               </button>
             </div>
 

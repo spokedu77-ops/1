@@ -10,6 +10,40 @@ export type GetCentersFilters = {
   region_tag?: string;
 };
 
+type MainTeacherJoin = { id: string; name: string } | { id: string; name: string }[] | null;
+type CenterRowWithTeacher = Partial<Center> & { main_teacher?: MainTeacherJoin };
+
+function normalizeCenterRow(row: CenterRowWithTeacher): Center {
+  const { main_teacher, ...baseRow } = row;
+  const mainTeacherName = Array.isArray(main_teacher)
+    ? main_teacher[0]?.name ?? null
+    : main_teacher?.name ?? null;
+
+  return {
+    id: baseRow.id as string,
+    name: baseRow.name as string,
+    region_tag: (baseRow.region_tag as string | null) ?? null,
+    address: (baseRow.address as string | null) ?? null,
+    access_note: (baseRow.access_note as string | null) ?? null,
+    contact_name: (baseRow.contact_name as string | null) ?? null,
+    contact_phone: (baseRow.contact_phone as string | null) ?? null,
+    contact_role: (baseRow.contact_role as string | null) ?? null,
+    status: (baseRow.status as Center['status']) ?? 'active',
+    contract_start: (baseRow.contract_start as string | null) ?? null,
+    contract_end: (baseRow.contract_end as string | null) ?? null,
+    session_fee: (baseRow.session_fee as number | null) ?? null,
+    main_teacher_id: (baseRow.main_teacher_id as string | null) ?? null,
+    weekly_schedule: (baseRow.weekly_schedule as Center['weekly_schedule']) ?? [],
+    instructors_default:
+      (baseRow.instructors_default as Center['instructors_default']) ?? { main: null, sub: null, backup: [] },
+    highlights: (baseRow.highlights as string | null) ?? null,
+    next_actions: (baseRow.next_actions as Center['next_actions']) ?? [],
+    created_at: (baseRow.created_at as string) ?? new Date().toISOString(),
+    updated_at: (baseRow.updated_at as string) ?? new Date().toISOString(),
+    main_teacher_name: mainTeacherName,
+  };
+}
+
 export async function getCenters(filters: GetCentersFilters = {}): Promise<Center[]> {
   const supabase = await createServerSupabaseClient();
   let q = supabase
@@ -47,40 +81,7 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
   const { data, error } = await q;
   if (error) throw error;
 
-  // UI 목록 화면에서 필요한 컬럼만 select했기 때문에,
-  // Center 타입이 요구하는 필드들이 일부 누락됩니다.
-  // 여기서는 목록 UI에 영향 없는 값들은 안전한 기본값으로 채웁니다.
-  type MainTeacherJoin = { id: string; name: string } | { id: string; name: string }[] | null;
-  type CenterListRow = Partial<Center> & { main_teacher?: MainTeacherJoin };
-  return ((data ?? []) as unknown as CenterListRow[]).map(({ main_teacher, ...row }) => {
-    const mainTeacherName = Array.isArray(main_teacher)
-      ? main_teacher[0]?.name ?? null
-      : main_teacher?.name ?? null;
-
-    return {
-    id: row.id as string,
-    name: row.name as string,
-    region_tag: (row.region_tag as string | null) ?? null,
-    address: (row.address as string | null) ?? null,
-    access_note: (row.access_note as string | null) ?? null,
-    contact_name: (row.contact_name as string | null) ?? null,
-    contact_phone: (row.contact_phone as string | null) ?? null,
-    contact_role: (row.contact_role as string | null) ?? null,
-    status: (row.status as Center['status']) ?? 'active',
-    contract_start: (row.contract_start as string | null) ?? null,
-    contract_end: (row.contract_end as string | null) ?? null,
-    session_fee: (row.session_fee as number | null) ?? null,
-    main_teacher_id: (row.main_teacher_id as string | null) ?? null,
-    weekly_schedule: (row.weekly_schedule as Center['weekly_schedule']) ?? [],
-    instructors_default:
-      (row.instructors_default as Center['instructors_default']) ?? { main: null, sub: null, backup: [] },
-    highlights: (row.highlights as string | null) ?? null,
-    next_actions: (row.next_actions as Center['next_actions']) ?? [],
-    created_at: (row.created_at as string) ?? new Date().toISOString(),
-    updated_at: (row.updated_at as string) ?? new Date().toISOString(),
-    main_teacher_name: mainTeacherName,
-    };
-  });
+  return ((data ?? []) as unknown as CenterRowWithTeacher[]).map(normalizeCenterRow);
 }
 
 export async function getCenterById(id: string): Promise<Center | null> {
@@ -94,11 +95,7 @@ export async function getCenterById(id: string): Promise<Center | null> {
     if (error.code === 'PGRST116') return null;
     throw error;
   }
-  const { main_teacher, ...row } = data as Center & { main_teacher?: { id: string; name: string } | null };
-  return {
-    ...row,
-    main_teacher_name: main_teacher?.name ?? null,
-  };
+  return normalizeCenterRow(data as CenterRowWithTeacher);
 }
 
 /** 활동 중인 강사 목록 조회 (강사 선택 select용) */
@@ -140,10 +137,10 @@ export async function createCenter(input: unknown): Promise<{ data?: Center; err
       highlights: parsed.data.highlights ?? null,
       next_actions: parsed.data.next_actions ?? [],
     })
-    .select()
+    .select('*, main_teacher:main_teacher_id(id, name)')
     .single();
   if (error) return { error: error.message };
-  return { data: data as Center };
+  return { data: normalizeCenterRow(data as CenterRowWithTeacher) };
 }
 
 export async function updateCenter(
@@ -177,10 +174,10 @@ export async function updateCenter(
     .from('centers')
     .update(payload)
     .eq('id', id)
-    .select()
+    .select('*, main_teacher:main_teacher_id(id, name)')
     .single();
   if (error) return { error: error.message };
-  return { data: data as Center };
+  return { data: normalizeCenterRow(data as CenterRowWithTeacher) };
 }
 
 export async function deleteCenter(id: string): Promise<{ data?: true; error?: string }> {

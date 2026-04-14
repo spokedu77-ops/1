@@ -410,7 +410,7 @@ export function CenterDetailClient({ id }: { id: string }) {
                 ? <span className="font-medium">{center.session_fee.toLocaleString()}원</span>
                 : <span className="text-slate-400">미설정</span>}
             </p>
-            {(instructors.main || instructors.sub) && (
+            {(instructors.sub || (instructors.backup && instructors.backup.length > 0)) && (
               <p className="text-xs text-slate-400 mt-1">
                 보조: {instructors.sub ?? '-'} / 백업: {instructors.backup?.join(', ') || '-'}
               </p>
@@ -614,9 +614,9 @@ export function CenterDetailClient({ id }: { id: string }) {
                   </div>
                 </fieldset>
 
-                {/* 수업료 / 메인 강사 */}
+                {/* 운영 정보 */}
                 <fieldset className="space-y-3">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">수업료 / 메인 강사</legend>
+                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">운영 정보</legend>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">회당 수업료 (원)</label>
@@ -645,6 +645,37 @@ export function CenterDetailClient({ id }: { id: string }) {
                           <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">보조 강사</label>
+                      <input
+                        type="text"
+                        value={editForm.instructors_default.sub ?? ''}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            instructors_default: { ...f.instructors_default, sub: e.target.value || null },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">백업 강사 (쉼표 구분)</label>
+                      <input
+                        type="text"
+                        value={editForm.instructors_default.backup?.join(', ') ?? ''}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            instructors_default: {
+                              ...f.instructors_default,
+                              backup: e.target.value ? e.target.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
+                            },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                      />
                     </div>
                   </div>
                 </fieldset>
@@ -693,58 +724,6 @@ export function CenterDetailClient({ id }: { id: string }) {
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                   />
                 </div>
-
-                {/* 강사 배정 */}
-                <fieldset className="space-y-2">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">강사 배정</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">메인</label>
-                      <input
-                        type="text"
-                        value={editForm.instructors_default.main ?? ''}
-                        onChange={(e) =>
-                          setEditForm((f) => ({
-                            ...f,
-                            instructors_default: { ...f.instructors_default, main: e.target.value || null },
-                          }))
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">서브</label>
-                      <input
-                        type="text"
-                        value={editForm.instructors_default.sub ?? ''}
-                        onChange={(e) =>
-                          setEditForm((f) => ({
-                            ...f,
-                            instructors_default: { ...f.instructors_default, sub: e.target.value || null },
-                          }))
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">백업 (쉼표 구분)</label>
-                      <input
-                        type="text"
-                        value={editForm.instructors_default.backup?.join(', ') ?? ''}
-                        onChange={(e) =>
-                          setEditForm((f) => ({
-                            ...f,
-                            instructors_default: {
-                              ...f.instructors_default,
-                              backup: e.target.value ? e.target.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
-                            },
-                          }))
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </fieldset>
 
                 {/* 주간 시간표 */}
                 <fieldset className="space-y-2">
