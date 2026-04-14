@@ -1,14 +1,11 @@
 'use client';
 
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
-import { createPortal } from 'react-dom';
+import { useMemo, useState, type CSSProperties } from 'react';
 import type { Profile } from '../types';
 import {
   copyTextToClipboard,
   downloadPng,
-  makeShareCardBlob,
 } from '../lib/shareCard';
-import ShareResultCard from './ShareResultCard';
 import { trackMoveReportEvent } from '../lib/events';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 import { buildMoveReportShareUrl } from '../lib/shareLink';
@@ -73,7 +70,6 @@ const secondaryBtn = (disabled: boolean): CSSProperties => ({
 
 /** 연락처 저장 후 이미지 새 창으로 열기(저장) · 결과 링크 복사 */
 export default function ShareAndCollect({ p, displayName, profileKey, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
   const [sent, setSent] = useState(false);
@@ -106,6 +102,12 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
     }
   }, [shareUrl]);
 
+  const ogImageUrl = useMemo(() => {
+    if (!shareKey) return null;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/api/move-report/share-image?d=${encodeURIComponent(shareKey)}`;
+  }, [shareKey]);
+
   const getShareSavedGuide = (): string => {
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
     const isIOS = /iphone|ipad|ipod/.test(ua);
@@ -118,16 +120,23 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
       flash('전화번호 저장 후 이용할 수 있어요.');
       return;
     }
-    const wrapper = cardRef.current;
-    const target = wrapper?.querySelector<HTMLElement>('[data-share-card]');
-    if (!target) {
-      flash('이미지를 준비할 수 없어요. 페이지를 새로고침해 주세요.');
+    if (!ogImageUrl) {
+      flash('이미지 URL을 생성할 수 없어요. 페이지를 새로고침해 주세요.');
       return;
     }
     setBusy('download');
     let blob: Blob | null = null;
     try {
-      blob = await makeShareCardBlob(target);
+      const ac = new AbortController();
+      const tid = window.setTimeout(() => ac.abort(), 25000);
+      let res: Response;
+      try {
+        res = await fetch(ogImageUrl, { signal: ac.signal, cache: 'no-store' });
+      } finally {
+        window.clearTimeout(tid);
+      }
+      if (!res.ok) throw new Error('이미지를 불러오지 못했어요.');
+      blob = await res.blob();
       const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean }) : null;
       if (nav && typeof nav.share === 'function') {
         const file = new File([blob], fileName, { type: 'image/png' });
@@ -174,7 +183,11 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
       downloadPng(blob, fileName);
       flash('기기 제한으로 파일 다운로드로 저장했어요.');
     } catch (e) {
-      if (e instanceof Error && e.name === 'AbortError') return;
+      if (e instanceof Error && e.name === 'AbortError') {
+        window.open(ogImageUrl, '_blank', 'noopener,noreferrer');
+        flash('이미지가 느려 새 창에서 열었어요. 길게 눌러 저장해 주세요.');
+        return;
+      }
       if (e instanceof Error && e.name === 'NotAllowedError') {
         if (blob) {
           downloadPng(blob, fileName);
@@ -182,8 +195,8 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
           return;
         }
       }
-      const message = e instanceof Error ? e.message : '이미지 생성 중 오류가 발생했어요. 다시 시도해 주세요.';
-      flash(message);
+      window.open(ogImageUrl, '_blank', 'noopener,noreferrer');
+      flash('저장에 실패해 이미지를 새 창으로 열었어요. 길게 눌러 저장해 주세요.');
     } finally {
       setBusy(null);
     }
@@ -474,26 +487,6 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
           )}
         </div>
       </div>
-
-      {ready &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            ref={cardRef}
-            aria-hidden
-            style={{
-              position: 'fixed',
-              left: '-9999px',
-              top: 0,
-              width: '1080px',
-              pointerEvents: 'none',
-              zIndex: -1,
-            }}
-          >
-            <ShareResultCard displayName={displayName} profileCode={profileKey} p={p} />
-          </div>,
-          document.body,
-        )}
     </div>
   );
 }
