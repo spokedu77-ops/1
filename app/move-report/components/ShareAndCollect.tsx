@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Profile } from '../types';
 import { copyTextToClipboard, downloadPng } from '../lib/shareCard';
 import { trackMoveReportEvent } from '../lib/events';
@@ -24,6 +24,8 @@ const BTN_ROW: CSSProperties = {
   justifyContent: 'stretch',
 };
 
+const OG_IMAGE_REVISION = '2';
+
 const primaryBtn = (col: string, disabled: boolean): CSSProperties => ({
   display: 'inline-flex',
   alignItems: 'center',
@@ -44,6 +46,13 @@ const primaryBtn = (col: string, disabled: boolean): CSSProperties => ({
   fontFamily: 'Noto Sans KR,sans-serif',
   opacity: disabled ? 0.55 : 1,
 });
+
+function scheduleShareFlash(flash: (msg: string) => void, msg: string): void {
+  const isIos =
+    typeof navigator !== 'undefined' &&
+    /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  window.setTimeout(() => flash(msg), isIos ? 350 : 60);
+}
 
 function safePngFileName(displayName: string): string {
   const stem = `${(displayName || '아이').trim() || '아이'}_MOVE_요약카드`.replace(/[/\\:*?"<>|]/g, '_');
@@ -77,6 +86,8 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState<'download' | 'share' | null>(null);
   const [savingLead, setSavingLead] = useState(false);
+  const [imageReady, setImageReady] = useState(false);
+  const prefetchedBlobRef = useRef<Blob | null>(null);
 
   const normalizedSaved = normalizeMoveReportPhone(savedPhone);
   const normalizedInput = normalizeMoveReportPhone(phone);
@@ -106,8 +117,23 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
   const ogImageUrl = useMemo(() => {
     if (!shareKey) return null;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    return `${origin}/api/move-report/share-image?d=${encodeURIComponent(shareKey)}`;
+    return `${origin}/api/move-report/share-image?d=${encodeURIComponent(shareKey)}&v=${OG_IMAGE_REVISION}`;
   }, [shareKey]);
+
+  useEffect(() => {
+    prefetchedBlobRef.current = null;
+    setImageReady(false);
+    if (!ogImageUrl) return;
+    fetch(ogImageUrl)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('이미지를 불러오지 못했어요.'))))
+      .then((rawBlob) => {
+        prefetchedBlobRef.current = new Blob([rawBlob], { type: 'image/png' });
+        setImageReady(true);
+      })
+      .catch(() => {
+        // prefetch 실패 시 저장 버튼 클릭 경로에서 재시도
+      });
+  }, [ogImageUrl]);
 
   const saveToAlbum = async () => {
     if (!ready) {
@@ -120,14 +146,20 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
     }
 
     setBusy('download');
-    try {
-      const res = await fetch(ogImageUrl);
-      if (!res.ok) throw new Error('이미지를 불러오지 못했어요.');
 
-      const rawBlob = await res.blob();
-      const blob = new Blob([rawBlob], { type: 'image/png' });
+    try {
+      let blob: Blob | null = prefetchedBlobRef.current;
+      if (!blob) {
+        const r = await fetch(ogImageUrl);
+        if (!r.ok) throw new Error('이미지를 불러오지 못했어요.');
+        const raw = await r.blob();
+        blob = new Blob([raw], { type: 'image/png' });
+      }
       const safeName = fileName.endsWith('.png') ? fileName : `${fileName}.png`;
-      const file = new File([blob], safeName, { type: 'image/png' });
+      const buf = await blob.arrayBuffer();
+      const freshBlob = new Blob([buf], { type: 'image/png' });
+      const file = new File([freshBlob], safeName, { type: 'image/png' });
+      prefetchedBlobRef.current = freshBlob;
 
       const nav =
         typeof navigator !== 'undefined'
@@ -135,19 +167,37 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
           : null;
 
       if (nav && typeof nav.share === 'function') {
-        const data: ShareData = { files: [file] };
-        if (typeof nav.canShare !== 'function' || nav.canShare(data)) {
-          try {
-            await nav.share(data);
-            flash("공유 창에서 '이미지 저장' 또는 앨범으로 저장해 주세요.");
-            return;
-          } catch (e) {
-            if (e instanceof Error && e.name === 'AbortError') return;
-          }
+        const attemptShare = (data: ShareData): Promise<'ok' | 'abort' | 'error' | 'timeout'> => {
+          let settled = false;
+          return Promise.race([
+            nav.share(data).then(
+              () => {
+                settled = true;
+                return 'ok' as const;
+              },
+              (e: unknown) => {
+                settled = true;
+                if (e instanceof Error && e.name === 'AbortError') return 'abort' as const;
+                return 'error' as const;
+              },
+            ),
+            new Promise<'timeout'>((resolve) => {
+              window.setTimeout(() => {
+                if (!settled) resolve('timeout');
+              }, 12000);
+            }),
+          ]);
+        };
+
+        const result = await attemptShare({ files: [file] });
+        if (result === 'ok' || result === 'timeout') {
+          scheduleShareFlash(flash, "공유 창에서 '이미지 저장'을 눌러 사진 앱에 저장해 주세요.");
+          return;
         }
+        if (result === 'abort') return;
       }
 
-      downloadPng(blob, safeName);
+      downloadPng(freshBlob, safeName);
       flash('다운로드한 이미지를 앨범으로 옮겨 주세요.');
     } catch (e) {
       flash(e instanceof Error ? e.message : '이미지를 불러오지 못했어요.');
@@ -378,7 +428,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
                   style={primaryBtn(p.col, ctaBusy)}
                 >
                   <i className="fa-solid fa-image" aria-hidden />
-                  {isSavingImage ? '이미지 준비 중…' : '앨범에 저장'}
+                  {busy === 'download' ? '저장 중…' : imageReady ? '앨범에 저장' : '이미지 준비 중…'}
                 </button>
                 <button
                   type="button"

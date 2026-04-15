@@ -151,6 +151,16 @@ export async function GET(req: Request) {
           background: `radial-gradient(circle,${col}40 0%,transparent 65%)`,
         },
       }),
+      React.createElement('div', {
+        style: {
+          position: 'absolute',
+          bottom: '-20%',
+          left: '-8%',
+          width: '38%',
+          height: '85%',
+          background: 'radial-gradient(circle,rgba(255,176,32,.14) 0%,transparent 65%)',
+        },
+      }),
 
       /* 왼쪽: 이모지 + 유형명 */
       React.createElement(
