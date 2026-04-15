@@ -59,6 +59,8 @@ interface PersonalCurriculumItem {
   detailText?: string;
   detailText2?: string;
   link2?: string;
+  link3?: string;
+  link4?: string;
   [key: string]: unknown;
 }
 
@@ -95,6 +97,7 @@ export default function TeacherCurriculumPage() {
  // 상세 모달 상태 (입력 모달은 필요 없음)
  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
  const [selectedItem, setSelectedItem] = useState<CurriculumItem | PersonalCurriculumItem | null>(null);
+const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
  const [centerViewMode, setCenterViewMode] = useState<'center' | 'equipment-guide'>('center');
  const [centerEquipmentList, setCenterEquipmentList] = useState<CenterEquipmentItem[]>([]);
@@ -142,7 +145,7 @@ export default function TeacherCurriculumPage() {
      setPersonalLoading(false);
      return;
    }
-   setPersonalItems((data ?? []).map((row: { expert_tip?: string; check_list?: string[]; equipment?: string[]; steps?: string[]; detail_text?: string; detail_text_2?: string; link_2?: string; [key: string]: unknown }) => ({
+  setPersonalItems((data ?? []).map((row: { expert_tip?: string; check_list?: string[]; equipment?: string[]; steps?: string[]; detail_text?: string; detail_text_2?: string; link_2?: string; link_3?: string; link_4?: string; [key: string]: unknown }) => ({
      ...row,
      expertTip: row.expert_tip,
      checkList: row.check_list,
@@ -151,6 +154,8 @@ export default function TeacherCurriculumPage() {
      detailText: row.detail_text ?? row.expert_tip,
      detailText2: row.detail_text_2,
      link2: row.link_2,
+    link3: row.link_3,
+    link4: row.link_4,
    })));
    setPersonalLoading(false);
  }, [supabase]);
@@ -201,6 +206,14 @@ export default function TeacherCurriculumPage() {
      return { label, item };
    });
  }, [personalItems]);
+
+const yuaSessionSlots = useMemo(() => {
+  const labels = getSubTabsForCategory('유아체육');
+  return labels.map((label) => {
+    const item = personalItems.find((p: PersonalCurriculumItem) => p.category === '유아체육' && p.sub_tab === label) ?? null;
+    return { label, item };
+  });
+}, [personalItems]);
 
  const filteredEquipmentItems = useMemo(() => {
    return equipmentGuideItems.filter((i) => i.number === selectedEquipmentNumber && i.step === selectedEquipmentStep);
@@ -280,6 +293,14 @@ const hasValidUrlString = (url?: string) => {
   if (!u || u === '#' || u === 'null' || u === 'undefined' || u.toLowerCase() === 'none') return false;
   return u.startsWith('http://') || u.startsWith('https://');
 };
+
+const getVideoLinks = (item: { url?: string; link2?: string; link3?: string; link4?: string }) =>
+  [item.url, item.link2, item.link3, item.link4].filter((u): u is string => hasValidUrlString(u));
+
+useEffect(() => {
+  if (!isDetailModalOpen) return;
+  setActiveVideoIndex(0);
+}, [isDetailModalOpen, selectedItem]);
 
  type YuaThemePart = {
    title: string;
@@ -382,6 +403,36 @@ const hasValidUrlString = (url?: string) => {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {eighthSessionSlots.map(({ label, item }) => {
                       const thumb = item?.url && getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '';
+                      return (
+                        <div
+                          key={label}
+                          role="button"
+                          tabIndex={0}
+                          className={`group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm transition-all duration-200 ${item ? 'hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 cursor-pointer' : 'opacity-60 cursor-default'}`}
+                          onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } }}
+                          onKeyDown={(e) => { if (item && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelectedItem(item); setIsDetailModalOpen(true); } }}
+                        >
+                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                            {thumb ? (
+                              <img src={thumb} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                <Play size={28} className="text-slate-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
+                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : categoryTab === '유아체육' ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {yuaSessionSlots.map(({ label, item }) => {
+                      const thumb = item ? getSafeThumbnailUrl(item) : '';
                       return (
                         <div
                           key={label}
@@ -628,61 +679,72 @@ const hasValidUrlString = (url?: string) => {
                       <button type="button" onClick={() => dismissTeacherOverlay()} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
                     </div>
                     <div className="p-6 space-y-4 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
-                      {hasValidUrlString(selectedItem.url) && (
-                        <div className="space-y-2">
-                          <span className="text-xs font-black text-slate-400 uppercase">영상 1</span>
-                          <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
-                            {getYouTubeId(selectedItem.url ?? '') ? (
-                              <iframe
-                                src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url ?? '')}?autoplay=1`}
-                                className="w-full h-full"
-                                allow="autoplay; encrypted-media"
-                                allowFullScreen
-                              />
-                            ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
-                                <Instagram size={40} />
-                                <a
-                                  href={selectedItem.url ?? '#'}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm"
-                                >
-                                  링크에서 영상 보기
-                                </a>
+                      {(() => {
+                        const links = getVideoLinks(selectedItem);
+                        if (links.length === 0) return null;
+                        const safeIndex = Math.min(activeVideoIndex, links.length - 1);
+                        const currentUrl = links[safeIndex];
+                        return (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black text-slate-400 uppercase">영상 {safeIndex + 1}</span>
+                              <span className="text-xs font-bold text-slate-500">{safeIndex + 1} / {links.length}</span>
+                            </div>
+                            <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
+                              {getYouTubeId(currentUrl) ? (
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${getYouTubeId(currentUrl)}?autoplay=1`}
+                                  className="w-full h-full"
+                                  allow="autoplay; encrypted-media"
+                                  allowFullScreen
+                                />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
+                                  <Instagram size={40} />
+                                  <a
+                                    href={currentUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm"
+                                  >
+                                    링크에서 영상 보기
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                            {links.length > 1 ? (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  {links.map((_, idx) => (
+                                    <span
+                                      key={`video-dot-${idx}`}
+                                      className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
+                                    />
+                                  ))}
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40"
+                                    onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))}
+                                    disabled={safeIndex === 0}
+                                  >
+                                    이전 영상
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40"
+                                    onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))}
+                                    disabled={safeIndex >= links.length - 1}
+                                  >
+                                    다음 영상
+                                  </button>
+                                </div>
                               </div>
-                            )}
+                            ) : null}
                           </div>
-                        </div>
-                      )}
-
-                      {hasValidUrlString(selectedItem.link2) && (
-                        <div className="space-y-2">
-                          <span className="text-xs font-black text-slate-400 uppercase">영상 2</span>
-                          <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
-                            {getYouTubeId(selectedItem.link2 ?? '') ? (
-                              <iframe
-                                src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.link2 ?? '')}?autoplay=1`}
-                                className="w-full h-full"
-                                allow="autoplay; encrypted-media"
-                                allowFullScreen
-                              />
-                            ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
-                                <Instagram size={40} />
-                                <a
-                                  href={selectedItem.link2 ?? '#'}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm"
-                                >
-                                  링크에서 영상 보기
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
                         <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap">{selectedItem.detailText || '등록된 내용이 없습니다.'}</p>
@@ -692,30 +754,76 @@ const hasValidUrlString = (url?: string) => {
                           <p className="text-slate-200 text-sm font-bold leading-relaxed whitespace-pre-wrap">{selectedItem.detailText2}</p>
                         </div>
                       ) : null}
-                      {!hasValidUrlString(selectedItem.url) && !hasValidUrlString(selectedItem.link2) ? (
+                      {!hasValidUrlString(selectedItem.url) && !hasValidUrlString(selectedItem.link2) && !hasValidUrlString(selectedItem.link3) && !hasValidUrlString(selectedItem.link4) ? (
                         <p className="text-slate-500 text-sm">등록된 영상 링크가 없습니다.</p>
                       ) : null}
                     </div>
                   </>
                 ) : (
                   <>
-                {hasUrl(selectedItem) && (
-                  <div className="relative w-full aspect-video bg-black">
-                      {selectedItem.type === 'youtube' && getYouTubeId(selectedItem.url ?? '') ? (
-                          <iframe
-                              src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url ?? '')}?autoplay=1`}
+                {isPersonalItem(selectedItem) ? (
+                  (() => {
+                    const links = getVideoLinks(selectedItem);
+                    if (links.length === 0) return null;
+                    const safeIndex = Math.min(activeVideoIndex, links.length - 1);
+                    const currentUrl = links[safeIndex];
+                    return (
+                      <div className="p-6 pb-0 bg-[#2C2C2C] space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-slate-400 uppercase">영상 {safeIndex + 1}</span>
+                          <span className="text-xs font-bold text-slate-500">{safeIndex + 1} / {links.length}</span>
+                        </div>
+                        <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
+                          {(selectedItem.type === 'youtube' || getYouTubeId(currentUrl)) && getYouTubeId(currentUrl) ? (
+                            <iframe
+                              src={`https://www.youtube.com/embed/${getYouTubeId(currentUrl)}?autoplay=1`}
                               className="w-full h-full"
                               allow="autoplay; encrypted-media"
                               allowFullScreen
-                          />
-                      ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-white">
-                              <Instagram size={64} className="mb-4" />
-                              <a href={selectedItem.url ?? '#'} target="_blank" rel="noopener noreferrer" className="bg-white text-black px-6 py-3 rounded-full font-bold">인스타그램에서 보기</a>
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
+                              <Instagram size={48} />
+                              <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="bg-white text-black px-6 py-3 rounded-full font-bold">링크에서 영상 보기</a>
+                            </div>
+                          )}
+                        </div>
+                        {links.length > 1 ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {links.map((_, idx) => (
+                                <span
+                                  key={`video-dot-${idx}`}
+                                  className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
+                                />
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>이전 영상</button>
+                              <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))} disabled={safeIndex >= links.length - 1}>다음 영상</button>
+                            </div>
                           </div>
-                      )}
+                        ) : null}
+                      </div>
+                    );
+                  })()
+                ) : hasUrl(selectedItem) ? (
+                  <div className="relative w-full aspect-video bg-black">
+                    {selectedItem.type === 'youtube' && getYouTubeId(selectedItem.url ?? '') ? (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url ?? '')}?autoplay=1`}
+                        className="w-full h-full"
+                        allow="autoplay; encrypted-media"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-white">
+                        <Instagram size={64} className="mb-4" />
+                        <a href={selectedItem.url ?? '#'} target="_blank" rel="noopener noreferrer" className="bg-white text-black px-6 py-3 rounded-full font-bold">인스타그램에서 보기</a>
+                      </div>
+                    )}
                   </div>
-                )}
+                ) : null}
                 <button type="button" onClick={() => dismissTeacherOverlay()} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-all">
                   <X size={20} />
                 </button>

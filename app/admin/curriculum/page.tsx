@@ -63,6 +63,8 @@ interface PersonalCurriculumItem {
   detailText?: string;
   detailText2?: string;
   link2?: string;
+  link3?: string;
+  link4?: string;
   [key: string]: unknown;
 }
 
@@ -117,6 +119,7 @@ export default function AdminCurriculumPage() {
   const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<CurriculumItem | PersonalCurriculumItem | null>(null);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [personalEditingId, setPersonalEditingId] = useState<number | null>(null);
   
@@ -127,7 +130,7 @@ export default function AdminCurriculumPage() {
   const [personalPost, setPersonalPost] = useState({
     category: '신체 기능향상 8회기',
     sub_tab: '1-1',
-    title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '',
+    title: '', url: '', url2: '', url3: '', url4: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '',
   });
   const [is8huiModalOpen, setIs8huiModalOpen] = useState(false);
   const [is8huiSlotPickerOpen, setIs8huiSlotPickerOpen] = useState(false);
@@ -188,7 +191,7 @@ export default function AdminCurriculumPage() {
     if (error) {
       devLogger.error('Error fetching personal curriculum:', error);
     } else if (data) {
-      setPersonalItems(data.map((row: { expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; detail_text?: string; detail_text_2?: string; link_2?: string; [key: string]: unknown }) => ({
+      setPersonalItems(data.map((row: { expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; detail_text?: string; detail_text_2?: string; link_2?: string; link_3?: string; link_4?: string; [key: string]: unknown }) => ({
         ...row,
         expertTip: row.expert_tip,
         checkList: row.check_list,
@@ -197,6 +200,8 @@ export default function AdminCurriculumPage() {
         detailText: row.detail_text ?? row.expert_tip,
         detailText2: row.detail_text_2,
         link2: row.link_2,
+        link3: row.link_3,
+        link4: row.link_4,
       })));
     }
     setPersonalLoading(false);
@@ -354,6 +359,14 @@ export default function AdminCurriculumPage() {
     });
   }, [personalItems]);
 
+  const yuaSessionSlots = useMemo(() => {
+    const labels = getSubTabsForCategory('유아체육');
+    return labels.map((label) => {
+      const item = personalItems.find((p: PersonalCurriculumItem) => p.category === '유아체육' && p.sub_tab === label) ?? null;
+      return { label, item };
+    });
+  }, [personalItems]);
+
   const currentEquipment = useMemo(() => {
     return centerEquipmentList.find((e) => e.number === selectedEquipmentNumber) ?? null;
   }, [centerEquipmentList, selectedEquipmentNumber]);
@@ -379,6 +392,14 @@ export default function AdminCurriculumPage() {
     if (!u || u === '#' || u === 'null' || u === 'undefined' || u.toLowerCase() === 'none') return false;
     return u.startsWith('http://') || u.startsWith('https://');
   };
+
+  const getVideoLinks = (item: { url?: string; link2?: string; link3?: string; link4?: string }) =>
+    [item.url, item.link2, item.link3, item.link4].filter((u): u is string => hasValidUrl(u));
+
+  useEffect(() => {
+    if (!isDetailModalOpen) return;
+    setActiveVideoIndex(0);
+  }, [isDetailModalOpen, selectedItem]);
 
   const getSafeThumbnailUrl = (item: { url?: string; thumbnail?: string }) => {
     const id = getYouTubeId(item.url ?? '');
@@ -527,6 +548,9 @@ export default function AdminCurriculumPage() {
       sub_tab: personalPost.sub_tab,
       title: personalPost.title,
       url: personalPost.url,
+      link_2: personalPost.url2 || null,
+      link_3: personalPost.url3 || null,
+      link_4: personalPost.url4 || null,
       type,
       thumbnail: isInsta ? '' : (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : ''),
       expert_tip: personalPost.expertTip,
@@ -551,7 +575,7 @@ export default function AdminCurriculumPage() {
       } else {
         setIsPersonalModalOpen(false);
         setPersonalEditingId(null);
-        setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+        setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', url2: '', url3: '', url4: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
       }
     } catch (err: unknown) {
       toast.error('저장 중 오류: ' + formatSaveError(err));
@@ -559,7 +583,25 @@ export default function AdminCurriculumPage() {
   };
 
   const openPersonalModal = () => {
-    setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+    setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', url2: '', url3: '', url4: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+    setPersonalEditingId(null);
+    setIsPersonalModalOpen(true);
+  };
+
+  const openPersonalModalForSubTab = (targetSubTab: string) => {
+    setPersonalPost({
+      category: '유아체육',
+      sub_tab: targetSubTab,
+      title: '',
+      url: '',
+      url2: '',
+      url3: '',
+      url4: '',
+      expertTip: '',
+      checkListText: '',
+      equipmentText: '',
+      stepsText: '',
+    });
     setPersonalEditingId(null);
     setIsPersonalModalOpen(true);
   };
@@ -572,6 +614,9 @@ export default function AdminCurriculumPage() {
       sub_tab: item.sub_tab,
       title: item.title ?? '',
       url: item.url ?? '',
+      url2: item.link2 ?? '',
+      url3: item.link3 ?? '',
+      url4: item.link4 ?? '',
       expertTip: item.expertTip ?? '',
       checkListText: item.checkList ? item.checkList.join('\n') : '',
       equipmentText: item.equipment ? item.equipment.join('\n') : '',
@@ -595,7 +640,7 @@ export default function AdminCurriculumPage() {
   const closePersonalModal = () => {
     setIsPersonalModalOpen(false);
     setPersonalEditingId(null);
-    setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+    setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', url2: '', url3: '', url4: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
   };
 
   const open8huiEdit = (subTabLabel: string, item: PersonalCurriculumItem | null) => {
@@ -730,6 +775,9 @@ export default function AdminCurriculumPage() {
       sub_tab: subTab,
       title: '',
       url: '',
+      url2: '',
+      url3: '',
+      url4: '',
       expertTip: '',
       checkListText: '',
       equipmentText: '',
@@ -930,6 +978,41 @@ export default function AdminCurriculumPage() {
                             {item && (
                               <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"><Trash2 size={16}/></button>
                             )}
+                          </div>
+                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                            {thumb ? (
+                              <img src={thumb} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                <Play size={28} className="text-slate-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
+                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : categoryTab === '유아체육' ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {yuaSessionSlots.map(({ label, item }) => {
+                      const thumb = item ? getSafeThumbnailUrl(item) : '';
+                      return (
+                        <div
+                          key={label}
+                          className={`group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm transition-all duration-200 ${item ? 'hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 cursor-pointer' : 'cursor-pointer opacity-90 hover:shadow-sm'}`}
+                          onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } else openPersonalModalForSubTab(label); }}
+                        >
+                          <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {item ? (
+                              <>
+                                <button type="button" onClick={(e) => openPersonalEdit(item, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-indigo-600 shadow-md"><Edit2 size={16}/></button>
+                                <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"><Trash2 size={16}/></button>
+                              </>
+                            ) : null}
                           </div>
                           <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
                             {thumb ? (
@@ -1217,61 +1300,58 @@ export default function AdminCurriculumPage() {
                        <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
                      </div>
                     <div className="p-6 space-y-4 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
-                      {hasValidUrl(selectedItem.url) && (
-                        <div className="space-y-2">
-                          <span className="text-xs font-black text-slate-400 uppercase">영상 1</span>
-                          <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
-                            {getYouTubeId(selectedItem.url ?? '') ? (
-                              <iframe
-                                src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url ?? '')}?autoplay=1`}
-                                className="w-full h-full"
-                                allow="autoplay; encrypted-media"
-                                allowFullScreen
-                              />
-                            ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
-                                <Instagram size={40} />
-                                <a
-                                  href={selectedItem.url ?? '#'}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm"
-                                >
-                                  링크에서 영상 보기
-                                </a>
+                      {(() => {
+                        const links = getVideoLinks(selectedItem);
+                        if (links.length === 0) return null;
+                        const safeIndex = Math.min(activeVideoIndex, links.length - 1);
+                        const currentUrl = links[safeIndex];
+                        return (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black text-slate-400 uppercase">영상 {safeIndex + 1}</span>
+                              <span className="text-xs font-bold text-slate-500">{safeIndex + 1} / {links.length}</span>
+                            </div>
+                            <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
+                              {getYouTubeId(currentUrl) ? (
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${getYouTubeId(currentUrl)}?autoplay=1`}
+                                  className="w-full h-full"
+                                  allow="autoplay; encrypted-media"
+                                  allowFullScreen
+                                />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
+                                  <Instagram size={40} />
+                                  <a
+                                    href={currentUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm"
+                                  >
+                                    링크에서 영상 보기
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                            {links.length > 1 ? (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  {links.map((_, idx) => (
+                                    <span
+                                      key={`video-dot-${idx}`}
+                                      className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
+                                    />
+                                  ))}
+                                </div>
+                                <div className="flex gap-2">
+                                  <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>이전 영상</button>
+                                  <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))} disabled={safeIndex >= links.length - 1}>다음 영상</button>
+                                </div>
                               </div>
-                            )}
+                            ) : null}
                           </div>
-                        </div>
-                      )}
-
-                      {hasValidUrl(selectedItem.link2) && (
-                        <div className="space-y-2">
-                          <span className="text-xs font-black text-slate-400 uppercase">영상 2</span>
-                          <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
-                            {getYouTubeId(selectedItem.link2 ?? '') ? (
-                              <iframe
-                                src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.link2 ?? '')}?autoplay=1`}
-                                className="w-full h-full"
-                                allow="autoplay; encrypted-media"
-                                allowFullScreen
-                              />
-                            ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
-                                <Instagram size={40} />
-                                <a
-                                  href={selectedItem.link2 ?? '#'}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm"
-                                >
-                                  링크에서 영상 보기
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                        <div className="space-y-2">
                          <span className="text-xs font-black text-slate-400 uppercase">제목</span>
@@ -1291,14 +1371,60 @@ export default function AdminCurriculumPage() {
                           </div>
                         </div>
                       ) : null}
-                      {!hasValidUrl(selectedItem.url) && !hasValidUrl(selectedItem.link2) ? (
+                      {!hasValidUrl(selectedItem.url) && !hasValidUrl(selectedItem.link2) && !hasValidUrl(selectedItem.link3) && !hasValidUrl(selectedItem.link4) ? (
                         <p className="text-slate-500 text-sm">등록된 영상 링크가 없습니다.</p>
                       ) : null}
                      </div>
                    </>
                  ) : (
                    <>
-                {hasValidUrl(selectedItem.url as string | undefined) && (
+                {isPersonalItem(selectedItem) ? (
+                  (() => {
+                    const links = getVideoLinks(selectedItem);
+                    if (links.length === 0) return null;
+                    const safeIndex = Math.min(activeVideoIndex, links.length - 1);
+                    const currentUrl = links[safeIndex];
+                    return (
+                      <div className="p-6 pb-0 bg-[#2C2C2C] space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-slate-400 uppercase">영상 {safeIndex + 1}</span>
+                          <span className="text-xs font-bold text-slate-500">{safeIndex + 1} / {links.length}</span>
+                        </div>
+                        <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-600">
+                          {(selectedItem.type === 'youtube' || getYouTubeId(currentUrl)) && getYouTubeId(currentUrl) ? (
+                            <iframe
+                              src={`https://www.youtube.com/embed/${getYouTubeId(currentUrl)}?autoplay=1`}
+                              className="w-full h-full"
+                              allow="autoplay; encrypted-media"
+                              allowFullScreen
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
+                              <Instagram size={48} />
+                              <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="bg-white text-black px-6 py-3 rounded-full font-bold">링크에서 영상 보기</a>
+                            </div>
+                          )}
+                        </div>
+                        {links.length > 1 ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {links.map((_, idx) => (
+                                <span
+                                  key={`video-dot-${idx}`}
+                                  className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
+                                />
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>이전 영상</button>
+                              <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))} disabled={safeIndex >= links.length - 1}>다음 영상</button>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })()
+                ) : hasValidUrl(selectedItem.url as string | undefined) ? (
                   <div className="relative w-full aspect-video bg-black">
                     {selectedItem.type === 'youtube' && getYouTubeId(selectedItem.url ?? '') ? (
                       <iframe
@@ -1321,7 +1447,7 @@ export default function AdminCurriculumPage() {
                       </div>
                     )}
                   </div>
-                )}
+                ) : null}
                 <button
                   type="button"
                   onClick={() => dismissCurriculumOverlay()}
@@ -1523,8 +1649,20 @@ export default function AdminCurriculumPage() {
                 <input required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="수업 제목" value={personalPost.title} onChange={e => setPersonalPost({ ...personalPost, title: e.target.value })} />
               </div>
               <div className="space-y-2 text-left">
-                <label className="text-xs font-black text-slate-400 uppercase text-left">URL (YouTube / Shorts)</label>
+                <label className="text-xs font-black text-slate-400 uppercase text-left">영상 링크 1 (YouTube / Shorts)</label>
                 <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="유튜브 영상 또는 쇼츠 링크 (선택)" value={personalPost.url} onChange={e => setPersonalPost({ ...personalPost, url: e.target.value })} />
+              </div>
+              <div className="space-y-2 text-left">
+                <label className="text-xs font-black text-slate-400 uppercase text-left">영상 링크 2</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="두 번째 영상 링크 (선택)" value={personalPost.url2} onChange={e => setPersonalPost({ ...personalPost, url2: e.target.value })} />
+              </div>
+              <div className="space-y-2 text-left">
+                <label className="text-xs font-black text-slate-400 uppercase text-left">영상 링크 3</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="세 번째 영상 링크 (선택)" value={personalPost.url3} onChange={e => setPersonalPost({ ...personalPost, url3: e.target.value })} />
+              </div>
+              <div className="space-y-2 text-left">
+                <label className="text-xs font-black text-slate-400 uppercase text-left">영상 링크 4</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="네 번째 영상 링크 (선택)" value={personalPost.url4} onChange={e => setPersonalPost({ ...personalPost, url4: e.target.value })} />
               </div>
               <div className="space-y-2 text-left">
                 <label className="text-xs font-black text-slate-400 uppercase text-left">Activity Steps (엔터로 구분)</label>
