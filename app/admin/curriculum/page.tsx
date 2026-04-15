@@ -19,7 +19,6 @@ import {
   EQUIPMENT_GUIDE_STEPS,
 } from '@/app/lib/curriculum/constants';
 import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
-import PersonalCurriculumTabItemGrid from '@/app/components/curriculum/PersonalCurriculumTabItemGrid';
 import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
 import {
   Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2,
@@ -950,17 +949,33 @@ export default function AdminCurriculumPage() {
                     })}
                   </div>
                 ) : filteredPersonalItems.length > 0 ? (
-                  <PersonalCurriculumTabItemGrid
-                    items={filteredPersonalItems}
-                    badgeLabel={subTab}
-                    variant="admin"
-                    onCardClick={(item) => {
-                      setSelectedItem(item as PersonalCurriculumItem);
-                      setIsDetailModalOpen(true);
-                    }}
-                    onEdit={(item, e) => openPersonalEdit(item as PersonalCurriculumItem, e)}
-                    onDelete={(id, e) => deletePersonalItem(id, e)}
-                  />
+                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                     {filteredPersonalItems.map((item: PersonalCurriculumItem) => (
+                       <div
+                         key={item.id}
+                         className="group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                         onClick={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}
+                       >
+                         <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <button type="button" onClick={(e) => openPersonalEdit(item, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-indigo-600 shadow-md"><Edit2 size={16}/></button>
+                           <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"><Trash2 size={16}/></button>
+                         </div>
+                         <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                           {getSafeThumbnailUrl(item) ? (
+                             <img src={getSafeThumbnailUrl(item)} alt="" className="w-full h-full object-cover" />
+                           ) : (
+                             <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                               <Play size={28} className="text-slate-400" />
+                             </div>
+                           )}
+                         </div>
+                         <div className="p-4">
+                           <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{subTab}</span>
+                           <h3 className="text-base font-black text-slate-900 line-clamp-1">{item.title ?? subTab}</h3>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
                  ) : (
                    <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
                      {categoryTab} · {subTab}에 등록된 커리큘럼이 없습니다. 추가 버튼으로 등록하세요.

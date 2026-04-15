@@ -148,13 +148,16 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
     setBusy('download');
 
     try {
-      const blob =
+      const blobCandidate =
         prefetchedBlobRef.current ??
         await fetch(ogImageUrl)
           .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('이미지를 불러오지 못했어요.'))))
           .then((raw) => new Blob([raw], { type: 'image/png' }));
+      if (!blobCandidate) {
+        throw new Error('이미지를 불러오지 못했어요.');
+      }
       const safeName = fileName.endsWith('.png') ? fileName : `${fileName}.png`;
-      const buf = await blob.arrayBuffer();
+      const buf = await blobCandidate.arrayBuffer();
       const freshBlob = new Blob([buf], { type: 'image/png' });
       const file = new File([freshBlob], safeName, { type: 'image/png' });
       prefetchedBlobRef.current = freshBlob;
