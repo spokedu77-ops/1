@@ -58,7 +58,7 @@ export default function CurriculumCategoryPicker({
         className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all text-left font-bold text-slate-800 touch-manipulation min-h-[48px]"
       >
         <span className="truncate text-sm sm:text-base">
-          {getCategoryDisplayName(category)}
+          {category === EIGHTH_SESSION_CATEGORY ? getCategoryDisplayName(category) : `${getCategoryDisplayName(category)} · ${subTab}`}
         </span>
         <ChevronDown
           size={20}

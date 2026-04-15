@@ -1,80 +1,71 @@
 'use client';
 
-import { Edit2, Trash2, Play } from 'lucide-react';
-import { getPersonalCurriculumThumbnailUrl } from '@/app/lib/curriculum/personalCurriculumThumbnails';
-import type { PersonalCurriculumSlotRow } from '@/app/lib/curriculum/personalCurriculumSlots';
+import { Play, Edit2, Trash2 } from 'lucide-react';
+import { getSafePersonalThumbnailUrl } from '@/app/lib/curriculum/personalCurriculumThumbnails';
 
-export type PersonalCurriculumSlotGridItem = {
+export type PersonalCurriculumTabGridItem = {
   id: number;
-  category: string;
-  sub_tab: string;
   url?: string;
   thumbnail?: string | null;
   title?: string;
-  [key: string]: unknown;
 };
 
-export interface PersonalCurriculumSlotGridProps<
-  T extends PersonalCurriculumSlotGridItem = PersonalCurriculumSlotGridItem,
-> {
-  slots: PersonalCurriculumSlotRow<T>[];
+type PersonalCurriculumTabItemGridProps = {
+  items: PersonalCurriculumTabGridItem[];
+  /** 현재 선택된 하위 탭 라벨(배지) */
+  badgeLabel: string;
   variant: 'teacher' | 'admin';
-  onSlotClick: (slot: PersonalCurriculumSlotRow<T>) => void;
-  onAdminEdit?: (e: React.MouseEvent, slot: PersonalCurriculumSlotRow<T>) => void;
-  onAdminDelete?: (e: React.MouseEvent, item: T) => void;
-}
+  onCardClick: (item: PersonalCurriculumTabGridItem) => void;
+  onEdit?: (item: PersonalCurriculumTabGridItem, e: React.MouseEvent) => void;
+  onDelete?: (id: number, e: React.MouseEvent) => void;
+};
 
-export default function PersonalCurriculumSlotGrid<
-  T extends PersonalCurriculumSlotGridItem = PersonalCurriculumSlotGridItem,
->({ slots, variant, onSlotClick, onAdminEdit, onAdminDelete }: PersonalCurriculumSlotGridProps<T>) {
+export default function PersonalCurriculumTabItemGrid({
+  items,
+  badgeLabel,
+  variant,
+  onCardClick,
+  onEdit,
+  onDelete,
+}: PersonalCurriculumTabItemGridProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      {slots.map(({ label, item }) => {
-        const thumb = item ? getPersonalCurriculumThumbnailUrl(item) : '';
-        const clickable = Boolean(item);
-        const isAdmin = variant === 'admin';
-
+      {items.map((item) => {
+        const thumb = getSafePersonalThumbnailUrl(item);
         return (
           <div
-            key={label}
+            key={item.id}
             role="button"
             tabIndex={0}
-            className={`group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm transition-all duration-200 ${
-              clickable || isAdmin
-                ? 'hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 cursor-pointer'
-                : 'opacity-60 cursor-default'
-            }`}
-            onClick={() => {
-              if (clickable || isAdmin) onSlotClick({ label, item });
-            }}
+            className="group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+            onClick={() => onCardClick(item)}
             onKeyDown={(e) => {
-              if (!clickable && !isAdmin) return;
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                onSlotClick({ label, item });
+                onCardClick(item);
               }
             }}
           >
-            {isAdmin && (onAdminEdit || onAdminDelete) ? (
+            {variant === 'admin' && (onEdit || onDelete) ? (
               <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                {onAdminEdit ? (
+                {onEdit ? (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onAdminEdit(e, { label, item });
+                      onEdit(item, e);
                     }}
                     className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-indigo-600 shadow-md"
                   >
                     <Edit2 size={16} />
                   </button>
                 ) : null}
-                {item && onAdminDelete ? (
+                {onDelete ? (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onAdminDelete(e, item);
+                      onDelete(item.id, e);
                     }}
                     className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"
                   >
@@ -94,9 +85,9 @@ export default function PersonalCurriculumSlotGrid<
             </div>
             <div className="p-4">
               <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">
-                {label}
+                {badgeLabel}
               </span>
-              <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
+              <h3 className="text-base font-black text-slate-900 line-clamp-1">{item.title ?? badgeLabel}</h3>
             </div>
           </div>
         );

@@ -18,10 +18,8 @@ import {
   EQUIPMENT_GUIDE_NUMBERS,
   EQUIPMENT_GUIDE_STEPS,
 } from '@/app/lib/curriculum/constants';
-import { buildPersonalCurriculumSlots } from '@/app/lib/curriculum/personalCurriculumSlots';
-import { getYouTubeId, getPersonalCurriculumThumbnailUrl } from '@/app/lib/curriculum/personalCurriculumThumbnails';
-import PersonalCurriculumSlotGrid from '@/app/components/curriculum/PersonalCurriculumSlotGrid';
 import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
+import PersonalCurriculumTabItemGrid from '@/app/components/curriculum/PersonalCurriculumTabItemGrid';
 import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
 import {
   Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2,
@@ -345,10 +343,17 @@ export default function AdminCurriculumPage() {
     return items.filter((item: CurriculumItem) => item.month === selectedMonth && item.week === selectedWeek);
   }, [items, selectedMonth, selectedWeek]);
 
-  const personalCurriculumSlots = useMemo(
-    () => buildPersonalCurriculumSlots(categoryTab, personalItems),
-    [categoryTab, personalItems]
-  );
+  const filteredPersonalItems = useMemo(() => {
+    return personalItems.filter((p: PersonalCurriculumItem) => p.category === categoryTab && p.sub_tab === subTab);
+  }, [personalItems, categoryTab, subTab]);
+
+  /** 신체 기능향상 8회기: 1~8회기 슬롯별 아이템 */
+  const eighthSessionSlots = useMemo(() => {
+    return EIGHTH_SESSION_LABELS.map((label) => {
+      const item = personalItems.find((p: PersonalCurriculumItem) => p.category === '신체 기능향상 8회기' && p.sub_tab === label) ?? null;
+      return { label, item };
+    });
+  }, [personalItems]);
 
   const currentEquipment = useMemo(() => {
     return centerEquipmentList.find((e) => e.number === selectedEquipmentNumber) ?? null;
@@ -363,10 +368,27 @@ export default function AdminCurriculumPage() {
     desc: '스포키듀와 함께 건강한 에너지를 발산해보세요!' 
   };
 
+  const getYouTubeId = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
   const hasValidUrl = (url?: string) => {
     const u = url?.trim();
     if (!u || u === '#' || u === 'null' || u === 'undefined' || u.toLowerCase() === 'none') return false;
     return u.startsWith('http://') || u.startsWith('https://');
+  };
+
+  const getSafeThumbnailUrl = (item: { url?: string; thumbnail?: string }) => {
+    const id = getYouTubeId(item.url ?? '');
+    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    if (item.thumbnail?.includes('img.youtube.com')) {
+      if (item.thumbnail.includes('vi/null')) return '';
+      return item.thumbnail.replace('maxresdefault', 'hqdefault');
+    }
+    return item.thumbnail ?? '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -539,21 +561,6 @@ export default function AdminCurriculumPage() {
 
   const openPersonalModal = () => {
     setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
-    setPersonalEditingId(null);
-    setIsPersonalModalOpen(true);
-  };
-
-  const openPersonalModalForSubTab = (targetSubTab: string) => {
-    setPersonalPost({
-      category: categoryTab,
-      sub_tab: targetSubTab,
-      title: '',
-      url: '',
-      expertTip: '',
-      checkListText: '',
-      equipmentText: '',
-      stepsText: '',
-    });
     setPersonalEditingId(null);
     setIsPersonalModalOpen(true);
   };
@@ -904,45 +911,60 @@ export default function AdminCurriculumPage() {
                      else dismissCurriculumOverlay();
                    }}
                  />
-                 {/* 개인 수업: 카테고리별 고정 슬롯 그리드 */}
+                 {/* 개인 수업 목록 (8회기는 카드 8개 + 전용 모달) */}
                  {personalLoading ? (
                    <div className="flex justify-center py-12">
                      <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
                    </div>
-                ) : personalCurriculumSlots.length === 0 ? (
-                   <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
-                     {categoryTab}에 설정된 하위 탭이 없습니다.
-                   </div>
-                ) : (
-                  <PersonalCurriculumSlotGrid
-                    slots={personalCurriculumSlots}
+                ) : categoryTab === '신체 기능향상 8회기' ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {eighthSessionSlots.map(({ label, item }) => {
+                      const thumb = item?.url && getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '';
+                      return (
+                        <div
+                          key={label}
+                          className="group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                          onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } else open8huiEdit(label, null); }}
+                        >
+                          <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); open8huiEdit(label, item); }} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-indigo-600 shadow-md"><Edit2 size={16}/></button>
+                            {item && (
+                              <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"><Trash2 size={16}/></button>
+                            )}
+                          </div>
+                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                            {thumb ? (
+                              <img src={thumb} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                <Play size={28} className="text-slate-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
+                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : filteredPersonalItems.length > 0 ? (
+                  <PersonalCurriculumTabItemGrid
+                    items={filteredPersonalItems}
+                    badgeLabel={subTab}
                     variant="admin"
-                    onSlotClick={(slot) => {
-                      if (categoryTab === '신체 기능향상 8회기') {
-                        if (slot.item) {
-                          setSelectedItem(slot.item);
-                          setIsDetailModalOpen(true);
-                        } else {
-                          open8huiEdit(slot.label, null);
-                        }
-                      } else if (slot.item) {
-                        setSelectedItem(slot.item);
-                        setIsDetailModalOpen(true);
-                      } else {
-                        openPersonalModalForSubTab(slot.label);
-                      }
+                    onCardClick={(item) => {
+                      setSelectedItem(item as PersonalCurriculumItem);
+                      setIsDetailModalOpen(true);
                     }}
-                    onAdminEdit={(e, slot) => {
-                      if (categoryTab === '신체 기능향상 8회기') {
-                        open8huiEdit(slot.label, slot.item);
-                      } else if (slot.item) {
-                        openPersonalEdit(slot.item, e);
-                      } else {
-                        openPersonalModalForSubTab(slot.label);
-                      }
-                    }}
-                    onAdminDelete={(e, item) => deletePersonalItem(item.id, e)}
+                    onEdit={(item, e) => openPersonalEdit(item as PersonalCurriculumItem, e)}
+                    onDelete={(id, e) => deletePersonalItem(id, e)}
                   />
+                 ) : (
+                   <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
+                     {categoryTab} · {subTab}에 등록된 커리큘럼이 없습니다. 추가 버튼으로 등록하세요.
+                   </div>
                  )}
                </>
              ) : (
@@ -1078,7 +1100,7 @@ export default function AdminCurriculumPage() {
                                                  <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram Reels</span>
                                              </div>
                                          ) : (
-                                             <img src={getPersonalCurriculumThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
+                                             <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
                                          )}
                                          <div className="absolute top-4 left-4">
                                              <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type}</span>
@@ -1151,7 +1173,7 @@ export default function AdminCurriculumPage() {
               </button>
             </div>
             <div className="grid grid-cols-4 gap-2">
-              {personalCurriculumSlots.map(({ label, item }) => (
+              {eighthSessionSlots.map(({ label, item }) => (
                 <button
                   key={label}
                   type="button"

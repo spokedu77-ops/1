@@ -9,13 +9,12 @@ import { getCurrentWeekOfMonth } from '@/app/lib/curriculum/weekUtils';
 import {
   getSubTabsForCategory,
   CENTER_SECTIONS,
+  EIGHTH_SESSION_LABELS,
   EQUIPMENT_GUIDE_NUMBERS,
   EQUIPMENT_GUIDE_STEPS,
 } from '@/app/lib/curriculum/constants';
-import { buildPersonalCurriculumSlots } from '@/app/lib/curriculum/personalCurriculumSlots';
-import { getYouTubeId, getPersonalCurriculumThumbnailUrl } from '@/app/lib/curriculum/personalCurriculumThumbnails';
-import PersonalCurriculumSlotGrid from '@/app/components/curriculum/PersonalCurriculumSlotGrid';
 import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
+import PersonalCurriculumTabItemGrid from '@/app/components/curriculum/PersonalCurriculumTabItemGrid';
 import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
 import {
   Instagram, AlertCircle,
@@ -86,7 +85,7 @@ export default function TeacherCurriculumPage() {
  const currentMonth = new Date().getMonth() + 1;
  const [mainTab, setMainTab] = useState<MainCurriculumTab>('personal');
   const [categoryTab, setCategoryTab] = useState<string>('신체 기능향상 8회기');
-  const [subTab, setSubTab] = useState<string>(() => getSubTabsForCategory('신체 기능향상 8회기')[0] ?? '1-1');
+  const [subTab, setSubTab] = useState<string>(() => getSubTabsForCategory('신체 기능향상 8회기')[0] ?? (EIGHTH_SESSION_LABELS[0] ?? '1-1'));
  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
  const [selectedWeek, setSelectedWeek] = useState(() => getCurrentWeekOfMonth());
@@ -193,10 +192,16 @@ export default function TeacherCurriculumPage() {
    return items.filter(item => item.month === selectedMonth && item.week === selectedWeek);
  }, [items, selectedMonth, selectedWeek]);
 
- const personalCurriculumSlots = useMemo(
-   () => buildPersonalCurriculumSlots(categoryTab, personalItems),
-   [categoryTab, personalItems]
- );
+ const filteredPersonalItems = useMemo(() => {
+   return personalItems.filter(p => p.category === categoryTab && p.sub_tab === subTab);
+ }, [personalItems, categoryTab, subTab]);
+
+ const eighthSessionSlots = useMemo(() => {
+   return EIGHTH_SESSION_LABELS.map((label) => {
+     const item = personalItems.find((p: PersonalCurriculumItem) => p.category === '신체 기능향상 8회기' && p.sub_tab === label) ?? null;
+     return { label, item };
+   });
+ }, [personalItems]);
 
  const filteredEquipmentItems = useMemo(() => {
    return equipmentGuideItems.filter((i) => i.number === selectedEquipmentNumber && i.step === selectedEquipmentStep);
@@ -225,6 +230,23 @@ export default function TeacherCurriculumPage() {
  const currentTheme = MONTHLY_THEMES[selectedMonth] || { 
    title: `${selectedMonth}월 집중 교육 목표`, 
    desc: '스포키듀와 함께 건강한 에너지를 발산해보세요!' 
+ };
+
+ const getYouTubeId = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+ };
+
+ const getSafeThumbnailUrl = (item: { url?: string; thumbnail?: string | null }) => {
+    const id = getYouTubeId(item.url ?? '');
+    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    if (item.thumbnail?.includes('img.youtube.com')) {
+      if (item.thumbnail.includes('vi/null')) return '';
+      return item.thumbnail.replace('maxresdefault', 'hqdefault');
+    }
+    return item.thumbnail ?? '';
  };
 
  const openDetailModal = (item: CurriculumItem) => {
@@ -352,25 +374,55 @@ const hasValidUrlString = (url?: string) => {
                     else dismissTeacherOverlay();
                   }}
                 />
-                {/* 개인 수업: 카테고리별 고정 슬롯 그리드 (8회기·유아·기타 동일 패턴) */}
+                {/* 개인 수업 목록 (8회기는 카드 8개, 조회 전용) */}
                 {personalLoading ? (
                   <div className="flex justify-center py-12">
                     <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
                   </div>
-                ) : personalCurriculumSlots.length === 0 ? (
-                  <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
-                    {categoryTab}에 등록된 하위 탭 구성이 없습니다.
+                ) : categoryTab === '신체 기능향상 8회기' ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {eighthSessionSlots.map(({ label, item }) => {
+                      const thumb = item?.url && getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '';
+                      return (
+                        <div
+                          key={label}
+                          role="button"
+                          tabIndex={0}
+                          className={`group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm transition-all duration-200 ${item ? 'hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 cursor-pointer' : 'opacity-60 cursor-default'}`}
+                          onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } }}
+                          onKeyDown={(e) => { if (item && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelectedItem(item); setIsDetailModalOpen(true); } }}
+                        >
+                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                            {thumb ? (
+                              <img src={thumb} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                <Play size={28} className="text-slate-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
+                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ) : (
-                  <PersonalCurriculumSlotGrid
-                    slots={personalCurriculumSlots}
+                ) : filteredPersonalItems.length > 0 ? (
+                  <PersonalCurriculumTabItemGrid
+                    items={filteredPersonalItems}
+                    badgeLabel={subTab}
                     variant="teacher"
-                    onSlotClick={(slot) => {
-                      if (!slot.item) return;
-                      setSelectedItem(slot.item);
+                    onCardClick={(item) => {
+                      setSelectedItem(item as PersonalCurriculumItem);
                       setIsDetailModalOpen(true);
                     }}
                   />
+                ) : (
+                  <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
+                    {categoryTab} · {subTab}에 등록된 커리큘럼이 없습니다.
+                  </div>
                 )}
               </>
             ) : (
@@ -506,7 +558,7 @@ const hasValidUrlString = (url?: string) => {
                             ) : (
                               <>
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={getPersonalCurriculumThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
+                                <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
                               </>
                             )}
                             <div className="absolute top-4 left-4">
