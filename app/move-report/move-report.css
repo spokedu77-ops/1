@@ -272,7 +272,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   text-align: center;
-  z-index: 50;
+  z-index: 2147483646;
   pointer-events: none;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }

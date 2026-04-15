@@ -3,6 +3,9 @@
 import { toBlob } from 'html-to-image';
 import html2canvas from 'html2canvas';
 
+/** 배경만 있는 PNG도 수백~수 KB가 될 수 있어, 실질 콘텐츠가 있는지 구분하는 하한 (html-to-image 빈 결과 차단) */
+export const MIN_SHARE_CARD_PNG_BYTES = 5000;
+
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const t = window.setTimeout(() => reject(new Error(`${label} 시간 초과`)), ms);
@@ -49,13 +52,13 @@ async function rasterizeWithHtmlToImage(node: HTMLElement): Promise<Blob | null>
         pixelRatio,
         backgroundColor: '#0A0A0A',
         cacheBust: true,
-        skipFonts: false,
+        skipFonts: true,
         type: 'image/png',
       }),
       15000,
       '이미지 변환',
     );
-    if (blob && blob.size > 200) return blob;
+    if (blob && blob.size > MIN_SHARE_CARD_PNG_BYTES) return blob;
   } catch {
     /* SecurityError, 타임아웃 등 → 폴백 */
   }
@@ -122,6 +125,14 @@ export async function makeShareCardBlob(node: HTMLElement): Promise<Blob> {
       /* 무시 */
     }
   }
+
+  // 결과 화면에서 아래로 스크롤한 뒤에도 히어로가 보이도록 한 번 올림 (html-to-image는 화면 밖 노드에서 실패하기 쉬움)
+  try {
+    node.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior });
+  } catch {
+    /* 무시 */
+  }
+  await new Promise((r) => setTimeout(r, 150));
 
   const primary = await rasterizeWithHtmlToImage(node);
   if (primary) return primary;
