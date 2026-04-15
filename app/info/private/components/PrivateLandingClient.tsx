@@ -3,7 +3,6 @@
 import { useCallback, useState } from 'react';
 import Header from './Header';
 import Hero from './Hero';
-import Philosophy from './Philosophy';
 import Instructors from './Instructors';
 import ClassFlow from './ClassFlow';
 import Curriculum from './Curriculum';
@@ -63,10 +62,9 @@ export default function PrivateLandingClient() {
       <Header />
       <main id="top">
         <Hero />
-        <Philosophy />
         <Instructors />
-        <ClassFlow />
         <Curriculum />
+        <ClassFlow />
         <Diagnosis
           onResultChange={handleResultChange}
           onAnalyzeResult={handleAnalyzeResult}

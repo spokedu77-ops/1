@@ -242,7 +242,7 @@ export default function ApplyForm({
                 onClick={handleKakao}
                 style={{ padding: '16px 32px', fontSize: 16 }}
               >
-                카카오 채널로 문의 전송하기
+                우리 카카오 채널 채팅 바로가기
               </button>
             </div>
           </div>

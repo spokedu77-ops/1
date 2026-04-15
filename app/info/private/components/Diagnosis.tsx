@@ -137,7 +137,7 @@ export default function Diagnosis({ onResultChange, onAnalyzeResult }: Diagnosis
             />
             <ChipGroup
               questionId="q4"
-              title="Q4. 우리 아이 연령대 (선택)"
+              title="Q4. 우리 아이 연령대"
               options={Q4_OPTIONS}
               selected={q4}
               onToggle={toggle('q4')}

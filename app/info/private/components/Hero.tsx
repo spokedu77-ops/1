@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  PARTNERS,
   COUNTER_BASE_DATE,
   COUNTER_BASE_STUDENTS,
   COUNTER_BASE_SESSIONS,
@@ -81,10 +80,10 @@ export default function Hero() {
           </div>
           <HeroStats />
           <h1>
-            신체 활동으로
+            즐거운 신체활동으로
             <br />
-            <span className="pl-text-gradient">스스로 생각하는 힘</span>
-            을 기릅니다
+            <span className="pl-text-gradient">평생체육의 경험</span>
+            을 선물합니다.
           </h1>
           <p>
             단순한 기술 습득이 아닌, 아이들이 스스로 판단하고 몰입하게 만드는 1:1 방문 체육. 학문적 근거와 누적
@@ -97,17 +96,6 @@ export default function Hero() {
             <Link className="pl-btn pl-btn-primary" href="#apply" style={{ color: '#09090b' }}>
               전문 상담 접수하기
             </Link>
-          </div>
-        </div>
-        <div className="pl-partners-bar">
-          <div className="pl-partners-title">공공기관 및 프리미엄 브랜드 검증 완료</div>
-          <div className="pl-partners-list">
-            {PARTNERS.map((text) => (
-              <div key={text} className="pl-partner-item">
-                <span>✓</span>
-                {text}
-              </div>
-            ))}
           </div>
         </div>
       </div>

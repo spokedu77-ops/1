@@ -1349,6 +1349,18 @@ export default function AdminCurriculumPage() {
                                     />
                                   ))}
                                 </div>
+                                <div className="grid grid-cols-4 gap-2">
+                                  {links.map((_, idx) => (
+                                    <button
+                                      key={`video-jump-${idx}`}
+                                      type="button"
+                                      className={`min-h-[44px] rounded-xl border text-sm font-black transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400/70 ${idx === safeIndex ? 'bg-indigo-500 text-white border-indigo-300 shadow-md shadow-indigo-500/25' : 'bg-[#383838] text-slate-200 border-slate-600 hover:border-slate-400'}`}
+                                      onClick={() => setActiveVideoIndex(idx)}
+                                    >
+                                      {idx + 1}
+                                    </button>
+                                  ))}
+                                </div>
                                 <div className="flex gap-2">
                                   <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>이전 영상</button>
                                   <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))} disabled={safeIndex >= links.length - 1}>다음 영상</button>
@@ -1419,6 +1431,18 @@ export default function AdminCurriculumPage() {
                                   key={`video-dot-${idx}`}
                                   className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
                                 />
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                              {links.map((_, idx) => (
+                                <button
+                                  key={`video-jump-${idx}`}
+                                  type="button"
+                                  className={`min-h-[44px] rounded-xl border text-sm font-black transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400/70 ${idx === safeIndex ? 'bg-indigo-500 text-white border-indigo-300 shadow-md shadow-indigo-500/25' : 'bg-[#383838] text-slate-200 border-slate-600 hover:border-slate-400'}`}
+                                  onClick={() => setActiveVideoIndex(idx)}
+                                >
+                                  {idx + 1}
+                                </button>
                               ))}
                             </div>
                             <div className="flex gap-2">
@@ -1570,7 +1594,9 @@ export default function AdminCurriculumPage() {
           <form onSubmit={handleSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar text-left">
             <div className="flex justify-between items-center text-left">
               <h2 className="text-2xl font-black">{editingId ? '커리큘럼 수정' : '새 커리큘럼 등록'}</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
+              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
+                <X />
+              </button>
             </div>
             
             <div className="space-y-4 font-bold text-left">
@@ -1631,7 +1657,9 @@ export default function AdminCurriculumPage() {
           <form onSubmit={handlePersonalSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar text-left">
             <div className="flex justify-between items-center text-left">
               <h2 className="text-2xl font-black">{personalEditingId ? '개인 수업 수정' : '개인 수업 등록'}</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
+              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
+                <X />
+              </button>
             </div>
             <div className="space-y-4 font-bold text-left">
               <div className="space-y-2 text-left">
@@ -1690,7 +1718,9 @@ export default function AdminCurriculumPage() {
           <form onSubmit={handle8huiSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{editing8huiId ? '루틴 프로그램 수정' : `${editing8huiSubTab} 등록`}</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
+              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
+                <X />
+              </button>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -1749,7 +1779,9 @@ export default function AdminCurriculumPage() {
           <form onSubmit={handleEquipmentSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{editingEquipmentId ? '활동 수정' : '활동 등록'}</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
+              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
+                <X />
+              </button>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -1786,7 +1818,9 @@ export default function AdminCurriculumPage() {
           <form onSubmit={handleEquipmentMasterSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{selectedEquipmentNumber}번 교구 편집</h2>
-              <X className="text-slate-400 cursor-pointer" onClick={() => dismissCurriculumOverlay()} />
+              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
+                <X />
+              </button>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">

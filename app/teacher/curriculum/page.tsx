@@ -722,6 +722,18 @@ useEffect(() => {
                                     />
                                   ))}
                                 </div>
+                                <div className="grid grid-cols-4 gap-2">
+                                  {links.map((_, idx) => (
+                                    <button
+                                      key={`video-jump-${idx}`}
+                                      type="button"
+                                      className={`min-h-[44px] rounded-xl border text-sm font-black transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400/70 ${idx === safeIndex ? 'bg-indigo-500 text-white border-indigo-300 shadow-md shadow-indigo-500/25' : 'bg-[#383838] text-slate-200 border-slate-600 hover:border-slate-400'}`}
+                                      onClick={() => setActiveVideoIndex(idx)}
+                                    >
+                                      {idx + 1}
+                                    </button>
+                                  ))}
+                                </div>
                                 <div className="flex gap-2">
                                   <button
                                     type="button"
@@ -796,6 +808,18 @@ useEffect(() => {
                                   key={`video-dot-${idx}`}
                                   className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
                                 />
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                              {links.map((_, idx) => (
+                                <button
+                                  key={`video-jump-${idx}`}
+                                  type="button"
+                                  className={`min-h-[44px] rounded-xl border text-sm font-black transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400/70 ${idx === safeIndex ? 'bg-indigo-500 text-white border-indigo-300 shadow-md shadow-indigo-500/25' : 'bg-[#383838] text-slate-200 border-slate-600 hover:border-slate-400'}`}
+                                  onClick={() => setActiveVideoIndex(idx)}
+                                >
+                                  {idx + 1}
+                                </button>
                               ))}
                             </div>
                             <div className="flex gap-2">

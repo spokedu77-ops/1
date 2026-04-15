@@ -676,15 +676,11 @@
 }
 
 .pl-curr-item {
-  aspect-ratio: 4/5;
   border-radius: var(--pl-r-md);
   background: var(--pl-bg-alt);
   border: 1px solid var(--pl-border);
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  padding: 20px;
-  position: relative;
   overflow: hidden;
   transition: transform 0.2s;
 }
@@ -694,40 +690,80 @@
   border-color: var(--pl-border-hover);
 }
 
-.pl-curr-item img {
-  position: absolute;
-  inset: 0;
+.pl-curr-image-btn {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 1;
-  opacity: 0.6;
-  transition: opacity 0.3s;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: zoom-in;
 }
 
-.pl-curr-item:hover img {
-  opacity: 0.8;
+.pl-curr-image {
+  width: 100%;
+  height: auto;
+  max-height: 260px;
+  object-fit: contain;
+  background: #0b0b0d;
+  border-radius: 0;
 }
 
 .pl-curr-content {
-  position: relative;
-  z-index: 2;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
-  padding: 40px 20px 20px;
-  margin: -20px;
+  padding: 16px 16px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--pl-border);
 }
 
 .pl-curr-content h4 {
   margin: 0 0 4px;
   font-size: 16px;
   font-weight: 800;
-  color: #fff;
+  color: var(--pl-text);
 }
 
 .pl-curr-content p {
   margin: 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--pl-muted);
+}
+
+.pl-image-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.pl-image-modal-inner {
+  width: min(980px, 100%);
+  position: relative;
+}
+
+.pl-image-modal-close {
+  margin-left: auto;
+  margin-bottom: 10px;
+  display: block;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--pl-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+}
+
+.pl-image-modal-img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: calc(100vh - 100px);
+  object-fit: contain;
+  border-radius: 12px;
+  background: #0b0b0d;
+  margin: 0 auto;
 }
 
 /* Diagnosis */
