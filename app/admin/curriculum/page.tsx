@@ -136,7 +136,7 @@ export default function AdminCurriculumPage() {
   const [is8huiSlotPickerOpen, setIs8huiSlotPickerOpen] = useState(false);
   const [editing8huiSubTab, setEditing8huiSubTab] = useState<string | null>(null);
   const [editing8huiId, setEditing8huiId] = useState<number | null>(null);
-  const [eightHuiForm, setEightHuiForm] = useState({ title: '', detailText: '', url: '' });
+  const [eightHuiForm, setEightHuiForm] = useState({ title: '', detailText: '', url: '', url2: '', url3: '', url4: '' });
 
   const [centerViewMode, setCenterViewMode] = useState<'center' | 'equipment-guide'>('center');
   const [centerEquipmentList, setCenterEquipmentList] = useState<CenterEquipmentItem[]>([]);
@@ -650,6 +650,9 @@ export default function AdminCurriculumPage() {
       title: item?.title ?? subTabLabel,
       detailText: item?.detailText ?? '',
       url: item?.url ?? '',
+      url2: item?.link2 ?? '',
+      url3: item?.link3 ?? '',
+      url4: item?.link4 ?? '',
     });
     setIs8huiModalOpen(true);
   };
@@ -658,7 +661,7 @@ export default function AdminCurriculumPage() {
     setIs8huiModalOpen(false);
     setEditing8huiSubTab(null);
     setEditing8huiId(null);
-    setEightHuiForm({ title: '', detailText: '', url: '' });
+    setEightHuiForm({ title: '', detailText: '', url: '', url2: '', url3: '', url4: '' });
   };
 
   const handle8huiSubmit = async (e: React.FormEvent) => {
@@ -670,6 +673,9 @@ export default function AdminCurriculumPage() {
       sub_tab: subTabLabel,
       title: eightHuiForm.title,
       url: eightHuiForm.url || null,
+      link_2: eightHuiForm.url2 || null,
+      link_3: eightHuiForm.url3 || null,
+      link_4: eightHuiForm.url4 || null,
       type: 'youtube',
       expert_tip: eightHuiForm.detailText || null,
       check_list: [],
@@ -788,7 +794,7 @@ export default function AdminCurriculumPage() {
     setIs8huiModalOpen(false);
     setEditing8huiSubTab(null);
     setEditing8huiId(null);
-    setEightHuiForm({ title: '', detailText: '', url: '' });
+    setEightHuiForm({ title: '', detailText: '', url: '', url2: '', url3: '', url4: '' });
     setIsEquipmentDetailOpen(false);
     setSelectedEquipmentItem(null);
     setIsEquipmentEditOpen(false);
@@ -1696,8 +1702,20 @@ export default function AdminCurriculumPage() {
                 <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="관련 설명" value={eightHuiForm.detailText} onChange={e => setEightHuiForm(f => ({ ...f, detailText: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">URL (선택)</label>
+                <label className="text-xs font-black text-slate-400 uppercase">영상 링크 1 (선택)</label>
                 <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={eightHuiForm.url} onChange={e => setEightHuiForm(f => ({ ...f, url: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">영상 링크 2 (선택)</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={eightHuiForm.url2} onChange={e => setEightHuiForm(f => ({ ...f, url2: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">영상 링크 3 (선택)</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={eightHuiForm.url3} onChange={e => setEightHuiForm(f => ({ ...f, url3: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">영상 링크 4 (선택)</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={eightHuiForm.url4} onChange={e => setEightHuiForm(f => ({ ...f, url4: e.target.value }))} />
               </div>
             </div>
             <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all text-center">저장</button>
