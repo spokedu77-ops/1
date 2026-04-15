@@ -95,9 +95,8 @@ export default function Result({
           borderRight: '1px solid #1A1A1A',
         }}
       >
-        {/* 히어로 (공유용) — ShareAndCollect makeShareCardBlob 캡처 대상 */}
+        {/* 히어로 */}
         <div
-          data-capture-hero
           style={{
             position: 'relative',
             overflow: 'hidden',

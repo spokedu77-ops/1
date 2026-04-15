@@ -2,12 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from 'react';
 import type { Profile } from '../types';
-import {
-  copyTextToClipboard,
-  downloadPng,
-  makeShareCardBlob,
-  MIN_SHARE_CARD_PNG_BYTES,
-} from '../lib/shareCard';
+import { copyTextToClipboard, downloadPng } from '../lib/shareCard';
 import { trackMoveReportEvent } from '../lib/events';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 import { buildMoveReportShareUrl } from '../lib/shareLink';
@@ -50,24 +45,9 @@ const primaryBtn = (col: string, disabled: boolean): CSSProperties => ({
   opacity: disabled ? 0.55 : 1,
 });
 
-/** iOS: 공유 시트가 닫힌 뒤에야 토스트가 보이는 경우가 많음 */
-function scheduleFlash(flash: (msg: string) => void, msg: string) {
-  const ios = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  window.setTimeout(() => flash(msg), ios ? 450 : 80);
-}
-
 function safePngFileName(displayName: string): string {
   const stem = `${(displayName || '아이').trim() || '아이'}_MOVE_요약카드`.replace(/[/\\:*?"<>|]/g, '_');
   return stem.toLowerCase().endsWith('.png') ? stem : `${stem}.png`;
-}
-
-async function toSharePngFile(blob: Blob, name: string): Promise<File> {
-  const buf = await blob.arrayBuffer();
-  if (buf.byteLength < MIN_SHARE_CARD_PNG_BYTES) {
-    throw new Error('이미지가 너무 작아 저장할 수 없어요. 잠시 후 다시 시도해 주세요.');
-  }
-  const png = new Blob([buf], { type: 'image/png' });
-  return new File([png], name, { type: 'image/png', lastModified: Date.now() });
 }
 
 const secondaryBtn = (disabled: boolean): CSSProperties => ({
@@ -90,7 +70,7 @@ const secondaryBtn = (disabled: boolean): CSSProperties => ({
   opacity: disabled ? 0.55 : 1,
 });
 
-/** 연락처 저장 후 이미지 공유/다운로드 · 결과 링크 복사 (히어로 DOM → makeShareCardBlob, OG API fetch 이전 방식) */
+/** 연락처 저장 후 이미지 공유/다운로드 · 결과 링크 복사 (앨범 저장 = 서버 OG PNG `/api/move-report/share-image`) */
 export default function ShareAndCollect({ p, displayName, profileKey, graphCode, flash, onLeadSubmit, savedPhone }: ShareAndCollectProps) {
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
@@ -104,7 +84,6 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
   const active = !!normalizedInput && consent;
   const ready = sent || alreadySaved;
   const fileName = safePngFileName(displayName);
-  const shareTitle = '스포키듀 MOVE 리포트';
   const shareUrl =
     typeof window !== 'undefined'
       ? buildMoveReportShareUrl(window.location.origin, {
@@ -124,88 +103,54 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
     }
   }, [shareUrl]);
 
-  const getShareSavedGuide = (): string => {
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
-    const isIOS = /iphone|ipad|ipod/.test(ua);
-    if (isIOS) return "공유 창에서 '이미지 저장'을 눌러 사진 앱에 저장해 주세요.";
-    return '공유 또는 저장이 시작됩니다.';
-  };
+  const ogImageUrl = useMemo(() => {
+    if (!shareKey) return null;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/api/move-report/share-image?d=${encodeURIComponent(shareKey)}`;
+  }, [shareKey]);
 
   const saveToAlbum = async () => {
     if (!ready) {
       flash('전화번호 저장 후 이용할 수 있어요.');
       return;
     }
-    const heroEl = document.querySelector('[data-capture-hero]') as HTMLElement | null;
-    if (!heroEl) {
-      flash('결과 화면을 찾을 수 없어요. 페이지를 새로고침해 주세요.');
+    if (!ogImageUrl) {
+      flash('이미지 주소를 만들 수 없어요. 새로고침 후 다시 시도해 주세요.');
       return;
     }
+
     setBusy('download');
-    let blob: Blob | null = null;
     try {
-      blob = await makeShareCardBlob(heroEl);
-      const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean }) : null;
+      const res = await fetch(ogImageUrl);
+      if (!res.ok) throw new Error('이미지를 불러오지 못했어요.');
+
+      const rawBlob = await res.blob();
+      const blob = new Blob([rawBlob], { type: 'image/png' });
+      const safeName = fileName.endsWith('.png') ? fileName : `${fileName}.png`;
+      const file = new File([blob], safeName, { type: 'image/png' });
+
+      const nav =
+        typeof navigator !== 'undefined'
+          ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean })
+          : null;
+
       if (nav && typeof nav.share === 'function') {
-        const file = await toSharePngFile(blob, fileName);
-        const primary: ShareData = { files: [file] };
-        const secondary: ShareData = { files: [file], title: shareTitle };
-        // iOS WebKit은 canShare(files)가 거짓인데도 share가 동작하는 경우가 있어, canShare는 참고만 하고 share를 직접 호출
-        const tryShare = async (data: ShareData): Promise<'shared' | 'cancelled' | 'fallback' | 'failed'> => {
+        const data: ShareData = { files: [file] };
+        if (typeof nav.canShare !== 'function' || nav.canShare(data)) {
           try {
             await nav.share(data);
-            return 'shared';
+            flash("공유 창에서 '이미지 저장' 또는 앨범으로 저장해 주세요.");
+            return;
           } catch (e) {
-            if (e instanceof Error && e.name === 'AbortError') return 'cancelled';
-            if (e instanceof Error && e.name === 'NotAllowedError') return 'fallback';
-            return 'failed';
+            if (e instanceof Error && e.name === 'AbortError') return;
           }
-        };
-
-        const r1 = await tryShare(primary);
-        if (r1 === 'shared') {
-          scheduleFlash(flash, getShareSavedGuide());
-          return;
-        }
-        if (r1 === 'cancelled') {
-          scheduleFlash(flash, '공유를 취소했어요.');
-          return;
-        }
-        if (r1 === 'fallback') {
-          downloadPng(blob, fileName);
-          scheduleFlash(flash, '기기 제한으로 파일 다운로드로 대체했어요.');
-          return;
-        }
-
-        const r2 = await tryShare(secondary);
-        if (r2 === 'shared') {
-          scheduleFlash(flash, getShareSavedGuide());
-          return;
-        }
-        if (r2 === 'cancelled') {
-          scheduleFlash(flash, '공유를 취소했어요.');
-          return;
-        }
-        if (r2 === 'fallback') {
-          downloadPng(blob, fileName);
-          scheduleFlash(flash, '기기 제한으로 파일 다운로드로 대체했어요.');
-          return;
         }
       }
-      downloadPng(blob, fileName);
-      scheduleFlash(flash, '기기 제한으로 파일 다운로드로 대체했어요.');
+
+      downloadPng(blob, safeName);
+      flash('다운로드한 이미지를 앨범으로 옮겨 주세요.');
     } catch (e) {
-      if (e instanceof Error && e.name === 'AbortError') return;
-      if (e instanceof Error && e.name === 'NotAllowedError') {
-        if (blob) {
-          downloadPng(blob, fileName);
-          flash('기기 제한으로 파일 다운로드로 대체했어요.');
-          return;
-        }
-      }
-      const message =
-        e instanceof Error ? e.message : '이미지 생성 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.';
-      flash(message);
+      flash(e instanceof Error ? e.message : '이미지를 불러오지 못했어요.');
     } finally {
       setBusy(null);
     }

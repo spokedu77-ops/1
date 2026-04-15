@@ -34,11 +34,21 @@ async function loadKoreanFont(characters: string): Promise<ArrayBuffer | null> {
   }
 }
 
+/** 이모지 → Twemoji CDN URL (ZWJ 시퀀스 포함) */
+function toTwemojiUrl(em: string): string {
+  const codePoints = [...em]
+    .map((c) => c.codePointAt(0)!.toString(16))
+    .filter((cp) => cp !== 'fe0f');
+  return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/${codePoints.join('-')}.png`;
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const parsed = parseMoveReportSharePayload(searchParams.get('d'));
 
-  const cacheHeaders = { 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800' };
+  const cacheHeaders = {
+    'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
+  };
 
   if (!parsed) {
     const fontData = await loadKoreanFont('MOVE 리포트 공유 결과');
@@ -112,6 +122,7 @@ export async function GET(req: Request) {
   const fonts = fontData
     ? [{ name: fontFamily, data: fontData, weight: 700 as const, style: 'normal' as const }]
     : [];
+  const emojiUrl = toTwemojiUrl(profile.em);
 
   const main = new ImageResponse(
     React.createElement(
@@ -126,27 +137,18 @@ export async function GET(req: Request) {
           color: '#fff',
           fontFamily: fonts.length ? fontFamily : 'sans-serif',
           position: 'relative',
+          overflow: 'hidden',
         },
       },
       /* 배경 장식 */
       React.createElement('div', {
         style: {
           position: 'absolute',
-          top: '-20%',
+          top: '-10%',
           right: '-5%',
-          width: '55%',
-          height: '140%',
-          background: `radial-gradient(circle,${col}45 0%,transparent 65%)`,
-        },
-      }),
-      React.createElement('div', {
-        style: {
-          position: 'absolute',
-          bottom: '-20%',
-          left: '-5%',
-          width: '35%',
-          height: '80%',
-          background: 'radial-gradient(circle,rgba(255,176,32,.14) 0%,transparent 65%)',
+          width: '50%',
+          height: '120%',
+          background: `radial-gradient(circle,${col}40 0%,transparent 65%)`,
         },
       }),
 
@@ -158,26 +160,27 @@ export async function GET(req: Request) {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: '52px 48px',
-            width: '48%',
+            padding: '44px 40px',
+            width: '46%',
             position: 'relative',
             zIndex: 1,
+            gap: 0,
           },
         },
         /* IEPD 뱃지 */
         React.createElement(
           'div',
-          { style: { display: 'flex', gap: 10, marginBottom: 20 } },
+          { style: { display: 'flex', gap: 8, marginBottom: 18 } },
           ...profileKey.split('').map((letter, i) =>
             React.createElement(
               'div',
               {
                 key: i,
                 style: {
-                  fontSize: 30,
-                  width: 52,
-                  height: 52,
-                  borderRadius: 12,
+                  fontSize: 26,
+                  width: 46,
+                  height: 46,
+                  borderRadius: 10,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -192,22 +195,23 @@ export async function GET(req: Request) {
             ),
           ),
         ),
-        /* 이모지 */
-        React.createElement(
-          'div',
-          { style: { fontSize: 110, lineHeight: 1, marginBottom: 16, display: 'flex' } },
-          profile.em,
-        ),
+        /* 이모지 이미지 */
+        React.createElement('img', {
+          src: emojiUrl,
+          width: 96,
+          height: 96,
+          style: { marginBottom: 14, objectFit: 'contain' },
+        }),
         /* 유형명 레이블 */
         React.createElement(
           'div',
           {
             style: {
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: 700,
               color: col,
               letterSpacing: '0.06em',
-              marginBottom: 10,
+              marginBottom: 8,
             },
           },
           moveTypeLabel,
@@ -215,13 +219,27 @@ export async function GET(req: Request) {
         /* 유형 이름 */
         React.createElement(
           'div',
-          { style: { fontSize: 58, fontWeight: 900, color: '#fff', lineHeight: 1.1 } },
+          {
+            style: {
+              fontSize: 52,
+              fontWeight: 900,
+              color: '#fff',
+              lineHeight: 1.1,
+              marginBottom: 8,
+            },
+          },
           profile.char,
         ),
         /* 타이틀 */
         React.createElement(
           'div',
-          { style: { fontSize: 24, fontWeight: 700, color: col, marginTop: 10 } },
+          {
+            style: {
+              fontSize: 22,
+              fontWeight: 700,
+              color: col,
+            },
+          },
           profile.title,
         ),
       ),
@@ -234,11 +252,12 @@ export async function GET(req: Request) {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: '52px 52px 52px 32px',
-            width: '52%',
+            padding: '44px 44px 44px 28px',
+            width: '54%',
             position: 'relative',
             zIndex: 1,
             borderLeft: '1px solid rgba(255,255,255,.08)',
+            gap: 0,
           },
         },
         /* SPOKEDU 브랜딩 */
@@ -246,11 +265,11 @@ export async function GET(req: Request) {
           'div',
           {
             style: {
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: 900,
               color: '#FF4B1F',
               letterSpacing: '0.1em',
-              marginBottom: 22,
+              marginBottom: 18,
               fontFamily: 'sans-serif',
             },
           },
@@ -259,7 +278,7 @@ export async function GET(req: Request) {
         /* 코드 라벨 뱃지 */
         React.createElement(
           'div',
-          { style: { display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap' } },
+          { style: { display: 'flex', gap: 7, marginBottom: 18, flexWrap: 'wrap' } },
           ...codeLabels.map((item, i) =>
             React.createElement(
               'div',
@@ -268,9 +287,9 @@ export async function GET(req: Request) {
                 style: {
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
-                  padding: '6px 14px',
-                  borderRadius: 10,
+                  gap: 5,
+                  padding: '5px 12px',
+                  borderRadius: 8,
                   background: `${col}18`,
                   border: `1.5px solid ${col}35`,
                 },
@@ -279,7 +298,7 @@ export async function GET(req: Request) {
                 'span',
                 {
                   style: {
-                    fontSize: 18,
+                    fontSize: 16,
                     color: col,
                     fontWeight: 900,
                     fontFamily: 'sans-serif',
@@ -289,7 +308,7 @@ export async function GET(req: Request) {
               ),
               React.createElement(
                 'span',
-                { style: { fontSize: 15, color: 'rgba(255,255,255,.7)', fontWeight: 700 } },
+                { style: { fontSize: 14, color: 'rgba(255,255,255,.7)', fontWeight: 700 } },
                 item.label,
               ),
             ),
@@ -300,33 +319,41 @@ export async function GET(req: Request) {
           'div',
           {
             style: {
-              padding: '18px 22px',
+              padding: '16px 20px',
               background: `${col}18`,
               border: `1.5px solid ${col}40`,
-              borderRadius: 14,
-              marginBottom: 20,
+              borderRadius: 12,
+              marginBottom: 18,
             },
           },
           React.createElement(
             'div',
-            { style: { fontSize: 22, fontWeight: 700, color: '#fff', lineHeight: 1.4, display: 'flex' } },
+            {
+              style: {
+                fontSize: 20,
+                fontWeight: 700,
+                color: '#fff',
+                lineHeight: 1.45,
+                display: 'flex',
+              },
+            },
             `"${profile.catchcopy}"`,
           ),
         ),
         /* 키워드 태그 */
         React.createElement(
           'div',
-          { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+          { style: { display: 'flex', gap: 7, flexWrap: 'wrap' } },
           ...profile.kw.map((k, i) =>
             React.createElement(
               'span',
               {
                 key: i,
                 style: {
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: 700,
-                  padding: '7px 14px',
-                  borderRadius: 8,
+                  padding: '6px 13px',
+                  borderRadius: 7,
                   background: 'rgba(255,255,255,.07)',
                   color: 'rgba(255,255,255,.75)',
                   border: '1px solid rgba(255,255,255,.12)',
