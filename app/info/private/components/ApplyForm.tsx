@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { KAKAO_CHANNEL_URL } from '../data/config';
+import { useCallback, useState } from 'react';
+import { KAKAO_CHANNEL_URL, KAKAO_JS_KEY } from '../data/config';
 
 const INPUT_IDS = ['f1', 'f2', 'f3', 'f4', 'f5'] as const;
 const REQUIRED_COUNT = 4;
@@ -23,8 +23,48 @@ function safeVal(v: string): string {
 type ApplyFormProps = {
   diagnosisSummary: string;
   onCopyResult?: (ok: boolean) => void;
-  onKakaoOpen?: (requiredFilled: boolean) => void;
+  onKakaoOpen?: (result: {
+    requiredFilled: boolean;
+    saved: boolean;
+    shared: boolean;
+    fallbackUsed: boolean;
+    message: string;
+  }) => void;
 };
+
+function getKakao(): any | null {
+  if (typeof window === 'undefined') return null;
+  return (window as Window & { Kakao?: any }).Kakao || null;
+}
+
+async function loadKakaoSdk(): Promise<any | null> {
+  const loaded = getKakao();
+  if (loaded) return loaded;
+  await new Promise<void>((resolve, reject) => {
+    const existing = document.getElementById('kakao-js-sdk') as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error('sdk-load-failed')), { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'kakao-js-sdk';
+    script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('sdk-load-failed'));
+    document.head.appendChild(script);
+  });
+  return getKakao();
+}
+
+async function ensureKakaoReady(): Promise<any | null> {
+  if (!KAKAO_JS_KEY) return null;
+  const kakao = await loadKakaoSdk();
+  if (!kakao) return null;
+  if (!kakao.isInitialized()) kakao.init(KAKAO_JS_KEY);
+  return kakao;
+}
 
 export default function ApplyForm({
   diagnosisSummary,
@@ -89,14 +129,100 @@ export default function ApplyForm({
   }, [previewText, copyToClipboard, onCopyResult]);
 
   const handleKakao = useCallback(async () => {
-    await copyToClipboard(previewText);
     const isRequiredFilled = INPUT_IDS.slice(0, REQUIRED_COUNT).every(
       (id) => (values[id] || '').trim() !== ''
     );
-    onKakaoOpen?.(isRequiredFilled);
-    setTimeout(() => {
+    if (!isRequiredFilled) {
+      onKakaoOpen?.({
+        requiredFilled: false,
+        saved: false,
+        shared: false,
+        fallbackUsed: false,
+        message: '안내: 필수 항목 1~4번을 모두 기재하시면 상담이 더욱 신속해집니다.',
+      });
+      return;
+    }
+
+    const copied = await copyToClipboard(previewText);
+
+    let saved = false;
+    try {
+      const response = await fetch('/api/private/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: values.f1,
+          phone: values.f3,
+          content: previewText,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as
+        | { ok?: boolean; message?: string }
+        | null;
+      if (response.ok && result?.ok) {
+        saved = true;
+      }
+    } catch {
+      saved = false;
+    }
+
+    if (!saved) {
       window.open(KAKAO_CHANNEL_URL, '_blank', 'noopener,noreferrer');
-    }, 800);
+      onKakaoOpen?.({
+        requiredFilled: true,
+        saved: false,
+        shared: false,
+        fallbackUsed: true,
+        message:
+          'DB 저장에 실패하여 카카오 채널로 백업 이동했습니다. 복사된 내용을 채팅창에 붙여넣어 주세요.',
+      });
+      return;
+    }
+
+    try {
+      const kakao = await ensureKakaoReady();
+      if (!kakao?.Share?.sendDefault) throw new Error('kakao-share-unavailable');
+      const linkUrl = `${window.location.origin}/info/private`;
+      kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: '스포키듀 상담 신청',
+          description: `신청이 접수되었습니다.\n${safeVal(values.f1)} / ${safeVal(values.f2)}`,
+          imageUrl: 'https://i.postimg.cc/8Cjz4T9Y/Kakao-Talk-20260415-155838324.png',
+          link: {
+            mobileWebUrl: linkUrl,
+            webUrl: linkUrl,
+          },
+        },
+        buttons: [
+          {
+            title: '카카오 채널 바로가기',
+            link: {
+              mobileWebUrl: KAKAO_CHANNEL_URL,
+              webUrl: KAKAO_CHANNEL_URL,
+            },
+          },
+        ],
+      });
+      onKakaoOpen?.({
+        requiredFilled: true,
+        saved: true,
+        shared: true,
+        fallbackUsed: false,
+        message: 'DB 저장 후 카카오 공유창을 열었습니다. 전송 대상을 선택해 주세요.',
+      });
+    } catch {
+      window.open(KAKAO_CHANNEL_URL, '_blank', 'noopener,noreferrer');
+      onKakaoOpen?.({
+        requiredFilled: true,
+        saved: true,
+        shared: false,
+        fallbackUsed: true,
+        message: copied
+          ? 'DB 저장은 완료되었습니다. 공유창 실패로 백업 이동했으니 복사된 내용을 채팅창에 붙여넣어 주세요.'
+          : 'DB 저장은 완료되었습니다. 공유창 실패로 카카오 채널을 열었습니다.',
+      });
+    }
   }, [previewText, values, copyToClipboard, onKakaoOpen]);
 
   return (
@@ -242,7 +368,7 @@ export default function ApplyForm({
                 onClick={handleKakao}
                 style={{ padding: '16px 32px', fontSize: 16 }}
               >
-                우리 카카오 채널 채팅 바로가기
+                카카오 채널 바로 가기
               </button>
             </div>
           </div>

@@ -29,11 +29,10 @@ export function useOverlayHistoryDismiss(
   }, [closeAll]);
 
   const dismiss = useCallback(() => {
+    closeAll();
     const st = window.history.state as Record<string, unknown> | null;
     if (st?.[historyKey]) {
       window.history.back();
-    } else {
-      closeAll();
     }
   }, [closeAll, historyKey]);
 

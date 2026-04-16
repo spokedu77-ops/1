@@ -47,12 +47,26 @@ export default function PrivateLandingClient() {
   );
 
   const handleKakaoOpen = useCallback(
-    (requiredFilled: boolean) => {
-      if (requiredFilled) {
-        show('내용이 복사되었습니다. 카카오 채널에서 붙여넣기 하여 상담을 시작해 주세요.');
-      } else {
+    (result: {
+      requiredFilled: boolean;
+      saved: boolean;
+      shared: boolean;
+      fallbackUsed: boolean;
+      message: string;
+    }) => {
+      if (!result.requiredFilled) {
         show('안내: 필수 항목 1~4번을 모두 기재하시면 상담이 더욱 신속해집니다.', 4000);
+        return;
       }
+      if (!result.saved) {
+        show(result.message, 5000);
+        return;
+      }
+      if (result.shared) {
+        show(result.message, 3500);
+        return;
+      }
+      show(result.message, result.fallbackUsed ? 5000 : 4000);
     },
     [show]
   );
