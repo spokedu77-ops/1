@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { compute } from './lib/compute';
 import { trackMoveReportEvent } from './lib/events';
-import { normalizeMoveReportPhone } from './lib/phone';
 import { buildMoveReportShareUrl } from './lib/shareLink';
 import { Qs } from './data/questions';
 import type { AgeGroup, ComputeResult } from './types';
@@ -11,10 +10,9 @@ import Intro from './components/Intro';
 import Setup from './components/Setup';
 import Survey from './components/Survey';
 import Loading from './components/Loading';
-import LeadFormScreen from './components/LeadFormScreen';
 import Result, { type ResultTab } from './components/Result';
 
-type Screen = 'intro' | 'setup' | 'survey' | 'loading' | 'leadform' | 'result';
+type Screen = 'intro' | 'setup' | 'survey' | 'loading' | 'result';
 
 export default function MoveReportClient() {
   const [sc, setSc] = useState<Screen>('intro');
@@ -25,7 +23,6 @@ export default function MoveReportClient() {
   const [result, setResult] = useState<ComputeResult | null>(null);
   const [tab, setTab] = useState<ResultTab>('report');
   const [toast, setToast] = useState('');
-  const [savedPhone, setSavedPhone] = useState('');
   const [shareKey, setShareKey] = useState<string | null>(null);
   const [answering, setAnswering] = useState(false);
 
@@ -34,7 +31,6 @@ export default function MoveReportClient() {
   const introTrackedRef = useRef(false);
   const stepTimer = useRef<number | null>(null);
   const computeTimer = useRef<number | null>(null);
-  const leadformTimer = useRef<number | null>(null);
 
   const flash = useCallback((msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -62,7 +58,6 @@ export default function MoveReportClient() {
       if (toastTimer.current) clearTimeout(toastTimer.current);
       if (stepTimer.current) clearTimeout(stepTimer.current);
       if (computeTimer.current) clearTimeout(computeTimer.current);
-      if (leadformTimer.current) clearTimeout(leadformTimer.current);
     };
   }, []);
 
@@ -86,62 +81,9 @@ export default function MoveReportClient() {
     setQi(0);
     setResult(null);
     setTab('report');
-    setSavedPhone('');
     setAnswering(false);
     go('intro');
   }, [go]);
-
-  const submitLead = useCallback(
-    async (phone: string): Promise<boolean> => {
-      if (!result) return false;
-      const normalizedPhone = normalizeMoveReportPhone(phone);
-      if (!normalizedPhone) {
-        flash('전화번호 11자리(010-0000-0000)를 입력해 주세요.');
-        return false;
-      }
-      const normalizedResponses = questions
-        .map((q, idx) => {
-          const raw = resps[idx];
-          const [left, right] = q.axis.split('/');
-          if (typeof raw === 'string' && (raw === left || raw === right)) return raw;
-          if (result.key.includes(left)) return left;
-          if (result.key.includes(right)) return right;
-          return null;
-        })
-        .filter((v): v is string => typeof v === 'string');
-      if (normalizedResponses.length !== questions.length) {
-        flash('설문 응답을 확인할 수 없어 다시 시작해 주세요.');
-        return false;
-      }
-      try {
-        const res = await fetch('/api/move-report/leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: normalizedPhone,
-            childName: name.trim() || undefined,
-            ageGroup: age,
-            profileKey: result.key,
-            profileTitle: result.profile.char,
-            consent: true,
-            surveyResponses: normalizedResponses,
-          }),
-        });
-        const data = (await res.json()) as { ok?: boolean; error?: string };
-        if (data.ok) {
-          setSavedPhone(normalizedPhone);
-          void trackMoveReportEvent({ eventName: 'lead_saved', shareKey });
-          return true;
-        }
-        flash(data.error || '저장 중 오류가 발생했어요. 다시 시도해 주세요.');
-        return false;
-      } catch {
-        flash('네트워크 오류가 발생했어요.');
-        return false;
-      }
-    },
-    [age, flash, name, questions, resps, result, shareKey]
-  );
 
   const handleShare = useCallback(async () => {
     let url = window.location.href;
@@ -184,10 +126,9 @@ export default function MoveReportClient() {
         setResult(r);
         void trackMoveReportEvent({ eventName: 'survey_completed', shareKey });
         go('loading');
-        leadformTimer.current = window.setTimeout(() => {
-          go('leadform');
+        window.setTimeout(() => {
+          go('result');
           setAnswering(false);
-          leadformTimer.current = null;
         }, 2200);
         computeTimer.current = null;
       }, 200);
@@ -230,15 +171,6 @@ export default function MoveReportClient() {
         <Survey q={currentQ} qi={qi} total={questions.length} resps={resps} name={name} onAnswer={onAnswer} onBack={surveyBack} answering={answering} />
       )}
       {sc === 'loading' && <Loading />}
-      {sc === 'leadform' && result && (
-        <LeadFormScreen
-          onSubmit={async (phone) => {
-            const ok = await submitLead(phone);
-            if (ok) go('result');
-          }}
-          onSkip={() => go('result')}
-        />
-      )}
       {sc === 'result' && result && (
         <Result
           result={result}
@@ -246,10 +178,7 @@ export default function MoveReportClient() {
           onTab={setTab}
           onReset={reset}
           onShare={handleShare}
-          onLeadSubmit={submitLead}
-          savedPhone={savedPhone}
           flash={flash}
-            onRequestLead={() => go('leadform')}
         />
       )}
       {toast ? (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, RefreshCw, X } from 'lucide-react';
 
@@ -45,6 +45,7 @@ export default function AdminConsultPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ConsultRow | null>(null);
   const [typeTab, setTypeTab] = useState<TypeTab>('all');
+  const seenPendingIdsRef = useRef<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,7 +58,11 @@ export default function AdminConsultPage() {
         setRows([]);
         return;
       }
-      setRows(json.rows ?? []);
+      const nextRows = json.rows ?? [];
+      setRows(nextRows);
+      for (const r of nextRows) {
+        if (r.status === 'pending') seenPendingIdsRef.current.add(r.id);
+      }
     } catch {
       setError('네트워크 오류가 발생했습니다.');
       setRows([]);
@@ -69,6 +74,54 @@ export default function AdminConsultPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const pollForNewPending = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/consult', { credentials: 'include' });
+      const json = (await res.json()) as { ok?: boolean; rows?: ConsultRow[]; error?: string };
+      if (!json.ok) return;
+
+      const nextRows = json.rows ?? [];
+      setRows(nextRows);
+
+      const shouldAutoOpen = detail == null && updatingId == null && deletingId == null;
+      if (!shouldAutoOpen) {
+        for (const r of nextRows) {
+          if (r.status === 'pending') seenPendingIdsRef.current.add(r.id);
+        }
+        return;
+      }
+
+      const newPending = nextRows.find(
+        (r) => r.status === 'pending' && !seenPendingIdsRef.current.has(r.id)
+      );
+
+      for (const r of nextRows) {
+        if (r.status === 'pending') seenPendingIdsRef.current.add(r.id);
+      }
+
+      if (newPending) setDetail(newPending);
+    } catch {
+      // ignore network errors for polling
+    }
+  }, [detail, updatingId, deletingId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => void pollForNewPending(), 300_000);
+    const onVisibility = () => {
+      if (!document.hidden) void pollForNewPending();
+    };
+    const onFocus = () => void pollForNewPending();
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [pollForNewPending]);
 
   useEffect(() => {
     if (!detail) return;

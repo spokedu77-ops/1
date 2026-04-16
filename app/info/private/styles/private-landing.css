@@ -518,9 +518,6 @@
   background: var(--pl-bg-alt);
   border: 1px solid var(--pl-border);
   border-radius: var(--pl-r-md);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
   position: relative;
   overflow: hidden;
 }
@@ -535,66 +532,86 @@
   background: var(--pl-gradient);
 }
 
-.pl-inst-header {
+.pl-inst-body {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  text-align: center;
+  gap: 18px;
+}
+
+.pl-inst-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .pl-inst-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
+  width: 176px;
+  height: 176px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.02);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
   border: 1px solid var(--pl-border);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
-.pl-inst-info h4 {
-  margin: 0 0 4px;
-  font-size: 18px;
+.pl-inst-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.pl-inst-name {
+  margin: 0;
+  font-size: 22px;
   font-weight: 800;
+  line-height: 1.25;
 }
 
-.pl-inst-info span {
-  font-size: 13px;
-  color: var(--pl-primary);
+.pl-inst-degree {
+  margin: 0;
+  font-size: 15px;
   font-weight: 600;
-  display: inline-block;
-  padding: 2px 8px;
-  background: rgba(59, 130, 246, 0.1);
-  border-radius: 4px;
+  color: var(--pl-primary);
+  line-height: 1.45;
 }
 
-.pl-inst-badges {
+.pl-inst-meta {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
-  margin-top: 8px;
 }
 
-.pl-badge {
-  padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--pl-border);
-  border-radius: 6px;
-  font-size: 12px;
+.pl-inst-meta li {
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--pl-muted);
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  line-height: 1.25;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .pl-inst-desc {
-  margin: 0;
+  margin: 10px 0 0;
   font-size: 14px;
   color: var(--pl-muted);
   line-height: 1.6;
-  padding-top: 16px;
+  padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1479,6 +1496,44 @@
 
   .pl-inst-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pl-inst-body {
+    flex-direction: row;
+    align-items: flex-start;
+    text-align: left;
+    gap: 14px;
+  }
+
+  .pl-inst-main {
+    align-items: flex-start;
+  }
+
+  .pl-inst-avatar {
+    width: 144px;
+    height: 144px;
+    border-radius: 18px;
+  }
+
+  .pl-inst-card {
+    padding: 22px;
+  }
+
+  .pl-inst-name {
+    font-size: 20px;
+  }
+
+  .pl-inst-degree {
+    font-size: 14px;
+  }
+
+  .pl-inst-meta {
+    justify-content: flex-start;
+  }
+
+  .pl-inst-meta li {
+    font-size: 13px;
+    padding: 6px 9px;
   }
 
   .pl-flow-wrapper {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -35,6 +35,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [pendingConsultCount, setPendingConsultCount] = useState<number>(0);
 
   useEffect(() => { setIsOpen(false); }, [pathname]);
 
@@ -119,6 +120,39 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
   
   // 구독자 페이지에서는 구독자 메뉴 사용
   const groups = isSubscriber ? subscriberMenuItems : adminMenuItems;
+
+  const loadConsultSummary = useCallback(async () => {
+    if (!isAdmin || isSubscriber) return;
+    try {
+      const res = await fetch('/api/admin/consult/summary', { credentials: 'include' });
+      const json = (await res.json()) as { ok?: boolean; pendingCount?: number };
+      if (!json.ok) return;
+      setPendingConsultCount(typeof json.pendingCount === 'number' ? json.pendingCount : 0);
+    } catch {
+      // ignore network errors for badge polling
+    }
+  }, [isAdmin, isSubscriber]);
+
+  useEffect(() => {
+    if (!isAdmin || isSubscriber) return;
+
+    void loadConsultSummary();
+    const interval = window.setInterval(() => void loadConsultSummary(), 300_000);
+
+    const onVisibility = () => {
+      if (!document.hidden) void loadConsultSummary();
+    };
+    const onFocus = () => void loadConsultSummary();
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [isAdmin, isSubscriber, loadConsultSummary]);
 
   return (
     <>
@@ -211,6 +245,11 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
                     >
                       <Icon size={18} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
                       <span className="text-sm font-semibold">{item.name}</span>
+                      {item.href === '/admin/consult' && pendingConsultCount > 0 && (
+                        <span className="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-extrabold text-rose-200">
+                          +{pendingConsultCount}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

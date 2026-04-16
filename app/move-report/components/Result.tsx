@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import type { ComputeResult } from '../types';
-import { isValidMoveReportPhone } from '../lib/phone';
 import Radar from './Radar';
 import AxisRow from './AxisRow';
 import ShareAndCollect from './ShareAndCollect';
@@ -15,10 +14,7 @@ interface ResultProps {
   onTab: (t: ResultTab) => void;
   onReset: () => void;
   onShare: () => void | Promise<void>;
-  onLeadSubmit: (phone: string) => Promise<boolean>;
-  savedPhone: string;
   flash: (msg: string) => void;
-  onRequestLead: () => void;
 }
 
 function DescAccordion({ desc, col, revealed }: { desc: string; col: string; revealed: boolean }) {
@@ -57,10 +53,7 @@ export default function Result({
   onTab,
   onReset,
   onShare,
-  onLeadSubmit,
-  savedPhone,
   flash,
-  onRequestLead,
 }: ResultProps) {
   const { profile: p, bd, displayName, key } = result;
   const [revealed, setRevealed] = useState(false);
@@ -74,8 +67,6 @@ export default function Result({
     const t = window.setTimeout(() => setRevealed(true), 100);
     return () => window.clearTimeout(t);
   }, []);
-
-  const hasSavedPhone = isValidMoveReportPhone(savedPhone);
 
   const codeLabels = [
     { code: key[0], label: key[0] === 'C' ? '협동형' : '독립형' },
@@ -608,83 +599,13 @@ export default function Result({
                 </div>
               ) : null}
 
-              {hasSavedPhone ? (
-                <ShareAndCollect
-                  p={p}
-                  displayName={displayName}
-                  profileKey={key}
-                  graphCode={`${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`}
-                  flash={flash}
-                  onLeadSubmit={onLeadSubmit}
-                  savedPhone={savedPhone}
-                />
-              ) : (
-                <div
-                  className="card mr-card-html"
-                  style={{
-                    background: '#161616',
-                    border: '1px solid #2A2A2A',
-                    borderRadius: '16px',
-                    padding: '16px 18px',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                    <div
-                      style={{
-                        width: '30px',
-                        height: '30px',
-                        borderRadius: '8px',
-                        background: `${p.col}18`,
-                        border: `1px solid ${p.col}35`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <i className="fa-solid fa-phone" style={{ fontSize: '13px', color: p.col }} />
-                    </div>
-                    <div style={{ fontSize: '14px', fontWeight: 900, color: '#fff' }}>저장 후 기능을 이어갈 수 있어요</div>
-                  </div>
-                  <p style={{ fontSize: '11px', color: '#999', lineHeight: 1.5, wordBreak: 'keep-all', margin: '0 0 14px' }}>
-                    전화번호를 아직 저장하지 않으셨다면, 아래에서 저장 후 공유/이미지 저장 기능을 이용할 수 있어요.
-                  </p>
-                  <p style={{ fontSize: '10px', color: '#727272', lineHeight: 1.5, wordBreak: 'keep-all', margin: '0 0 14px' }}>
-                    저장은 선택이며, 동의 후에만 저장됩니다.
-                  </p>
-                  <div style={{ display: 'grid', gap: '8px' }}>
-                    <button
-                      type="button"
-                      className="btn-fire"
-                      onClick={onRequestLead}
-                      style={{
-                        background: '#FEE500',
-                        color: '#3C1E1E',
-                        boxShadow: '0 4px 24px rgba(254,229,0,.35)',
-                      }}
-                    >
-                      전화번호로 저장하기
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void onShare()}
-                      style={{
-                        minHeight: '44px',
-                        borderRadius: '12px',
-                        border: '1px solid #333',
-                        background: '#1A1A1A',
-                        color: '#D4D4D4',
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      결과 링크 공유하기
-                    </button>
-                  </div>
-                </div>
-              )}
+              <ShareAndCollect
+                p={p}
+                displayName={displayName}
+                profileKey={key}
+                graphCode={`${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`}
+                flash={flash}
+              />
             </div>
           )}
 
