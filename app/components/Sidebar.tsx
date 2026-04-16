@@ -23,6 +23,7 @@ import {
   Building2,
   PanelLeftOpen,
   PanelLeftClose,
+  MessageSquare,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -67,6 +68,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
         { name: "센터 관리", href: "/admin/centers", icon: Building2 },
         { name: "공지", href: "/admin/notice", icon: ClipboardList },
         { name: "안내 페이지", href: "/admin/info-pages", icon: BookOpen },
+        { name: "상담 신청", href: "/admin/consult", icon: MessageSquare },
       ]
     },
     {

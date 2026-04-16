@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import Link from 'next/link';
 import {
   Q1_OPTIONS,
   Q2_OPTIONS,
@@ -91,6 +90,14 @@ export default function Diagnosis({ onResultChange, onAnalyzeResult }: Diagnosis
       onAnalyzeResult('success');
     }
   }, [q1, q2, q3, q4, onResultChange, onAnalyzeResult]);
+
+  const scrollToApply = useCallback(() => {
+    const el = document.getElementById('apply');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.setTimeout(() => {
+      document.getElementById('f1')?.focus();
+    }, 400);
+  }, []);
 
   const handleReset = useCallback(() => {
     setQ1([]);
@@ -197,9 +204,9 @@ export default function Diagnosis({ onResultChange, onAnalyzeResult }: Diagnosis
             <div className="pl-result-info">
               이 진단 결과가 하단 상담 폼에 자동으로 반영되어, 더 깊이 있는 상담이 가능해집니다.
             </div>
-            <Link href="#apply" className="pl-btn pl-btn-primary" style={{ width: '100%' }}>
+            <button type="button" className="pl-btn pl-btn-primary" style={{ width: '100%' }} onClick={scrollToApply}>
               상담 폼으로 이동
-            </Link>
+            </button>
           </div>
         </div>
       </div>

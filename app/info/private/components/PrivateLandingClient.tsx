@@ -46,27 +46,22 @@ export default function PrivateLandingClient() {
     [show]
   );
 
-  const handleKakaoOpen = useCallback(
+  const handleConsultSubmit = useCallback(
     (result: {
       requiredFilled: boolean;
-      saved: boolean;
-      shared: boolean;
-      fallbackUsed: boolean;
+      ok: boolean;
+      emailSent: boolean;
       message: string;
     }) => {
       if (!result.requiredFilled) {
-        show('안내: 필수 항목 1~4번을 모두 기재하시면 상담이 더욱 신속해집니다.', 4000);
+        show('안내: 필수 항목(학습자·연락처·종목·지역·시간)을 모두 기재하시면 상담이 더욱 신속해집니다.', 4000);
         return;
       }
-      if (!result.saved) {
-        show(result.message, 5000);
+      if (result.ok) {
+        show('상담 신청이 완료되었습니다.', result.emailSent ? 4000 : 5500);
         return;
       }
-      if (result.shared) {
-        show(result.message, 3500);
-        return;
-      }
-      show(result.message, result.fallbackUsed ? 5000 : 4000);
+      show(result.message, 5000);
     },
     [show]
   );
@@ -88,7 +83,7 @@ export default function PrivateLandingClient() {
         <ApplyForm
           diagnosisSummary={diagnosisSummary}
           onCopyResult={handleCopyResult}
-          onKakaoOpen={handleKakaoOpen}
+          onConsultSubmit={handleConsultSubmit}
         />
       </main>
       <Footer />

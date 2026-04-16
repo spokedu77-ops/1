@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 
 const NAV_LINKS = [
-  { href: '#about', label: '철학' },
+  { href: '#instructors', label: '소개' },
   { href: '#curriculum', label: '커리큘럼' },
   { href: '#class-flow', label: '수업 현장' },
   { href: '#diagnosis', label: '성향 진단' },
@@ -76,6 +76,9 @@ export default function Header() {
           <Link href="#apply" onClick={closeDrawer}>
             상담 접수
           </Link>
+          <a href="tel:010-4437-9294" onClick={closeDrawer}>
+            유선 문의
+          </a>
         </div>
       </aside>
 
@@ -102,12 +105,12 @@ export default function Header() {
             >
               <MenuIcon />
             </button>
-            <a className="pl-btn pl-btn-outline" href="tel:010-0000-0000">
-              유선 문의
-            </a>
             <Link className="pl-btn pl-btn-primary" href="#apply" style={{ color: '#09090b' }}>
               상담 접수
             </Link>
+            <a className="pl-btn pl-btn-outline" href="tel:010-4437-9294">
+              유선 문의
+            </a>
           </div>
         </div>
       </header>

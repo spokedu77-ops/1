@@ -68,6 +68,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: '접수 저장 중 오류가 발생했습니다.' }, { status: 500 });
     }
 
+    const consultContent = [
+      '[기관 맞춤 제안서 요청]',
+      `기관명/센터명: ${organization || '-'}`,
+      `담당자: ${manager || '-'}`,
+      `연락처: ${phone || '-'}`,
+      `이메일: ${email || '-'}`,
+      `기관 소재지: ${location || '-'}`,
+      `파견 희망 시작일: ${startDate || '-'}`,
+      `파견 희망 종료일: ${endDate || '-'}`,
+      `희망 프로그램: ${programs.length ? programs.join(', ') : '-'}`,
+      `대상 연령: ${targetAge.length ? targetAge.join(', ') : '-'}`,
+      `인원: ${headcount || '-'}`,
+      `특수 아동 참여 유무: ${specialNeeds || '-'}`,
+      '',
+      '[희망 수업 내용/방향성]',
+      inquiry || '-',
+      '',
+      `유입 경로: ${source || '-'}`,
+    ].join('\n');
+
+    const { error: consultError } = await supabase.from('consultations').insert({
+      parent_name: `${organization} / ${manager}`,
+      phone: phone || null,
+      child_age: null,
+      content: consultContent,
+      consult_type: 'center',
+      status: 'pending',
+    });
+    if (consultError) {
+      console.error('[dispatch/leads] consultations mirror insert failed', consultError);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[dispatch/leads] unexpected', error);

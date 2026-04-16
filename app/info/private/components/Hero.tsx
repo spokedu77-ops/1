@@ -8,6 +8,7 @@ import {
   COUNTER_BASE_SESSIONS,
   COUNTER_DAILY_STUDENTS,
   COUNTER_DAILY_SESSIONS,
+  KAKAO_CHANNEL_URL,
 } from '../data/config';
 
 function ShieldIcon() {
@@ -80,15 +81,11 @@ export default function Hero() {
           </div>
           <HeroStats />
           <h1>
-            즐거운 신체활동으로
-            <br />
-            <span className="pl-text-gradient">평생체육의 경험</span>
-            을 선물합니다.
+            <span className="pl-hero-title-line">즐거운 신체활동으로</span>
+            <span className="pl-hero-title-line">
+              <span className="pl-text-gradient">평생체육의 경험</span>을 선물합니다.
+            </span>
           </h1>
-          <p>
-            단순한 기술 습득이 아닌, 아이들이 스스로 판단하고 몰입하게 만드는 1:1 방문 체육. 학문적 근거와 누적
-            10,000회 이상의 현장 경험이 집약된 유아동 및 청소년 프리미엄 커리큘럼을 경험해 보세요.
-          </p>
           <div className="pl-hero-cta">
             <Link className="pl-btn pl-btn-outline" href="#diagnosis">
               우리 아이 성향 진단
@@ -96,6 +93,9 @@ export default function Hero() {
             <Link className="pl-btn pl-btn-primary" href="#apply" style={{ color: '#09090b' }}>
               전문 상담 접수하기
             </Link>
+            <a className="pl-btn pl-btn-kakao" href={KAKAO_CHANNEL_URL} target="_blank" rel="noopener noreferrer">
+              스포키듀 카카오채널
+            </a>
           </div>
         </div>
       </div>
