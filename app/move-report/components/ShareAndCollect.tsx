@@ -88,6 +88,7 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
   const [savingLead, setSavingLead] = useState(false);
   const [imageReady, setImageReady] = useState(false);
   const prefetchedBlobRef = useRef<Blob | null>(null);
+  const [inlinePreviewUrl, setInlinePreviewUrl] = useState<string | null>(null);
 
   const normalizedSaved = normalizeMoveReportPhone(savedPhone);
   const normalizedInput = normalizeMoveReportPhone(phone);
@@ -123,17 +124,40 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
   useEffect(() => {
     prefetchedBlobRef.current = null;
     setImageReady(false);
+    setInlinePreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     if (!ogImageUrl) return;
+
+    let cancelled = false;
     fetch(ogImageUrl)
       .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('이미지를 불러오지 못했어요.'))))
       .then((rawBlob) => {
-        prefetchedBlobRef.current = new Blob([rawBlob], { type: 'image/png' });
+        if (cancelled) return;
+        const b = new Blob([rawBlob], { type: 'image/png' });
+        prefetchedBlobRef.current = b;
         setImageReady(true);
+        setInlinePreviewUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(b);
+        });
       })
       .catch(() => {
         // prefetch 실패 시 저장 버튼 클릭 경로에서 재시도
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [ogImageUrl]);
+
+  const ensureInlinePreview = (blob: Blob) => {
+    setInlinePreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(blob);
+    });
+  };
 
   const saveToAlbum = async () => {
     if (!ready) {
@@ -146,13 +170,14 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
     }
 
     setBusy('download');
+    flash('이미지를 불러 저장 방법을 열고 있어요.');
 
     try {
       const blobCandidate =
         prefetchedBlobRef.current ??
-        await fetch(ogImageUrl)
+        (await fetch(ogImageUrl)
           .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('이미지를 불러오지 못했어요.'))))
-          .then((raw) => new Blob([raw], { type: 'image/png' }));
+          .then((raw) => new Blob([raw], { type: 'image/png' })));
       if (!blobCandidate) {
         throw new Error('이미지를 불러오지 못했어요.');
       }
@@ -161,45 +186,32 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
       const freshBlob = new Blob([buf], { type: 'image/png' });
       const file = new File([freshBlob], safeName, { type: 'image/png' });
       prefetchedBlobRef.current = freshBlob;
+      ensureInlinePreview(freshBlob);
 
       const nav =
         typeof navigator !== 'undefined'
           ? (navigator as Navigator & { canShare?: (d?: ShareData) => boolean })
           : null;
 
-      if (nav && typeof nav.share === 'function') {
-        const attemptShare = (data: ShareData): Promise<'ok' | 'abort' | 'error' | 'timeout'> => {
-          let settled = false;
-          return Promise.race([
-            nav.share(data).then(
-              () => {
-                settled = true;
-                return 'ok' as const;
-              },
-              (e: unknown) => {
-                settled = true;
-                if (e instanceof Error && e.name === 'AbortError') return 'abort' as const;
-                return 'error' as const;
-              },
-            ),
-            new Promise<'timeout'>((resolve) => {
-              window.setTimeout(() => {
-                if (!settled) resolve('timeout');
-              }, 12000);
-            }),
-          ]);
-        };
+      const data: ShareData = { files: [file] };
+      const canFileShare =
+        nav &&
+        typeof nav.share === 'function' &&
+        (typeof nav.canShare !== 'function' || nav.canShare(data));
 
-        const result = await attemptShare({ files: [file] });
-        if (result === 'ok' || result === 'timeout') {
+      if (canFileShare && nav) {
+        try {
+          await nav.share(data);
           scheduleShareFlash(flash, "공유 창에서 '이미지 저장'을 눌러 사진 앱에 저장해 주세요.");
           return;
+        } catch (e) {
+          if (e instanceof Error && e.name === 'AbortError') return;
+          flash('공유로 저장하기 어려워, 파일 저장과 아래 미리보기로 이어갑니다.');
         }
-        if (result === 'abort') return;
       }
 
       downloadPng(freshBlob, safeName);
-      flash('다운로드한 이미지를 앨범으로 옮겨 주세요.');
+      flash('저장이 안 보이면 아래 이미지를 길게 눌러 사진에 저장해 주세요.');
     } catch (e) {
       flash(e instanceof Error ? e.message : '이미지를 불러오지 못했어요.');
     } finally {
@@ -442,6 +454,45 @@ export default function ShareAndCollect({ p, displayName, profileKey, graphCode,
                   {busy === 'share' ? '공유 준비 중…' : '결과 링크 공유'}
                 </button>
               </div>
+
+              {inlinePreviewUrl ? (
+                <div
+                  style={{
+                    marginTop: 14,
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                    border: '1px solid #333',
+                    background: '#111',
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: '#aaa',
+                      padding: '10px 12px',
+                      margin: 0,
+                      lineHeight: 1.45,
+                      wordBreak: 'keep-all',
+                    }}
+                  >
+                    공유·다운로드가 어려울 때는 아래 이미지를 <span style={{ color: '#eee', fontWeight: 700 }}>길게 눌러</span>{' '}
+                    사진에 저장을 선택해 주세요.
+                  </p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={inlinePreviewUrl}
+                    alt="MOVE 요약 카드"
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      display: 'block',
+                      maxHeight: 280,
+                      objectFit: 'contain',
+                      verticalAlign: 'top',
+                    }}
+                  />
+                </div>
+              ) : null}
 
               <a
                 href="https://www.instagram.com/spokedu_kids?igsh=M2ZmYWZxMzRxenVt&utm_source=qr"
