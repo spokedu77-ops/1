@@ -15,9 +15,10 @@ export const PUBLIC_CONTENT_KEYS = [
   'report_tags_catalog',
   'free_sample_program_ids', // D5: free일 때 뱅크에 노출할 프로그램 ID 목록(운영 선택)
   'program_details', // 프로그램별 영상 링크·상세설명 등 (id -> { videoUrl, description, ... })
+  'screenplay_tag_mapping_v1', // 스포무브 카드 태그 표시명 매핑
 ] as const;
 
-export const CATALOG_SCOPE_KEYS = ['catalog_programs', 'catalog_tags', 'catalog_themes', 'report_tags_catalog', 'free_sample_program_ids', 'program_details'] as const;
+export const CATALOG_SCOPE_KEYS = ['catalog_programs', 'catalog_tags', 'catalog_themes', 'report_tags_catalog', 'free_sample_program_ids', 'program_details', 'screenplay_tag_mapping_v1'] as const;
 export const PUBLIC_SCOPE_KEYS = ['hero', 'theme', 'roadmap'] as const;
 
 /** 테넌트 content 허용 key. v4: dashboard_v4 = 대시보드 큐레이션(2줄 4+4) */

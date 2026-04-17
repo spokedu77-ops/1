@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { CURRICULUM_IMAGES } from '../data/images';
 
 export default function Curriculum() {
@@ -29,7 +30,16 @@ export default function Curriculum() {
                 onClick={() => setZoomedImage({ src: img, alt })}
                 aria-label={`${title} 이미지 확대`}
               >
-                <img src={img} alt={alt} className="pl-curr-image" />
+                <Image
+                  src={img}
+                  alt={alt}
+                  className="pl-curr-image"
+                  width={1200}
+                  height={900}
+                  sizes="(max-width: 900px) 50vw, 25vw"
+                  loading="lazy"
+                  fetchPriority="low"
+                />
               </button>
               <div className="pl-curr-content">
                 <h4>{title}</h4>
@@ -56,7 +66,12 @@ export default function Curriculum() {
             >
               닫기
             </button>
-            <img src={zoomedImage.src} alt={zoomedImage.alt} className="pl-image-modal-img" />
+            <img
+              src={zoomedImage.src}
+              alt={zoomedImage.alt}
+              className="pl-image-modal-img"
+              decoding="async"
+            />
           </div>
         </div>
       )}

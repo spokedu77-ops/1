@@ -9,6 +9,9 @@ import {
   type ThemeKey,
 } from '@/app/lib/spokedu-pro/dashboardDefaults';
 import { getYouTubeThumbnailUrl } from '../utils/youtube';
+import { screenplayDetailStorageKey } from '../utils/spomoveLaunch';
+import { useSpokeduProContent } from '../hooks/useSpokeduProContent';
+import { resolveScreenplayTagMappingV1, getScreenplayLevelTag } from '../utils/screenplayTagMapping';
 import type { ProgramDetail } from '../types';
 
 type ProgramRow = {
@@ -108,6 +111,18 @@ export default function LibraryView({
   const [programsFromApi, setProgramsFromApi] = useState<ProgramRow[] | null>(null);
   const [fetchError, setFetchError] = useState(false);
   const isScreenplayPreset = libraryMode === 'screenplay' || initialPreset?.themeKey === 'cognitive';
+
+  // 스포무브(스크린플레이) 카드 태그: 인지영역/과제유형/레벨
+  const { data: tagMappingContent, fetchContent: fetchTagMapping } = useSpokeduProContent('catalog', [
+    'screenplay_tag_mapping_v1',
+  ]);
+  useEffect(() => {
+    fetchTagMapping();
+  }, [fetchTagMapping]);
+
+  const screenplayTagMapping = resolveScreenplayTagMappingV1(
+    tagMappingContent?.screenplay_tag_mapping_v1?.value
+  );
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -357,18 +372,28 @@ export default function LibraryView({
           }
         >
           {visiblePrograms.map((p) => {
+                const screenplayDetail = isScreenplayPreset ? programDetails[screenplayDetailStorageKey(p.id)] : undefined;
                 const detail = programDetails[String(p.id)];
-                const videoUrl = isScreenplayPreset ? p.video_url : (detail?.videoUrl ?? p.video_url);
+                const videoUrl = isScreenplayPreset
+                  ? (screenplayDetail?.videoUrl ?? p.video_url)
+                  : (detail?.videoUrl ?? p.video_url);
                 const thumbnailUrl = isScreenplayPreset
-                  ? (p.thumbnail_url ?? null)
+                  ? (p.thumbnail_url ?? (videoUrl ? getYouTubeThumbnailUrl(videoUrl) : null))
                   : (p.thumbnail_url ?? (videoUrl ? getYouTubeThumbnailUrl(videoUrl) : null));
                 const tags = isScreenplayPreset
-                  ? [p.mode_id ?? p.function_type].filter(Boolean) as string[]
+                  ? (() => {
+                      const modeId = String(p.mode_id ?? p.function_type ?? '');
+                      const entry = screenplayTagMapping.modeIdMap[modeId];
+                      const domainTag = entry?.domainLabel ?? '인지영역';
+                      const taskTag = entry?.taskLabel ?? (modeId || '과제유형');
+                      const levelTag = getScreenplayLevelTag(p.preset_ref, screenplayTagMapping.levelLabelTemplate);
+                      return [domainTag, taskTag, levelTag].filter(Boolean) as string[];
+                    })()
                   : [p.function_type, p.main_theme, p.group_size].filter(Boolean) as string[];
                 return (
                   <ProgramCard
                     key={p.id}
-                    title={isScreenplayPreset ? p.title : (detail?.title ?? p.title)}
+                    title={isScreenplayPreset ? (screenplayDetail?.title ?? p.title) : (detail?.title ?? p.title)}
                     tags={tags}
                     thumbnailUrl={thumbnailUrl}
                     onClick={() => {

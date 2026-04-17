@@ -39,9 +39,6 @@ export async function POST(req: NextRequest) {
     if (!phone && !email) {
       return NextResponse.json({ ok: false, error: '연락처(번호 또는 메일) 중 하나는 필수입니다.' }, { status: 400 });
     }
-    if (phone && (phone.length < 10 || phone.length > 11)) {
-      return NextResponse.json({ ok: false, error: '전화번호 형식이 올바르지 않습니다.' }, { status: 400 });
-    }
     if (email && !isValidEmail(email)) {
       return NextResponse.json({ ok: false, error: '이메일 형식이 올바르지 않습니다.' }, { status: 400 });
     }

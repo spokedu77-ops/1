@@ -1636,3 +1636,32 @@
     padding: 60px 0;
   }
 }
+
+@media (max-width: 420px) {
+  .pl-inst-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 16px;
+  }
+
+  .pl-inst-card {
+    padding: 18px;
+  }
+
+  .pl-inst-name {
+    font-size: 18px;
+  }
+
+  .pl-inst-degree {
+    font-size: 13px;
+  }
+
+  .pl-inst-meta {
+    gap: 6px;
+  }
+
+  .pl-inst-meta li {
+    font-size: 12.5px;
+    padding: 5px 8px;
+  }
+}

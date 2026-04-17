@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 const INSTRUCTORS = [
   {
     photo: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png',
@@ -38,7 +40,13 @@ export default function Instructors() {
             <div key={name} className="pl-inst-card">
               <div className="pl-inst-body">
                 <div className="pl-inst-avatar">
-                  <img src={photo} alt={name} />
+                  <Image
+                    src={photo}
+                    alt={name}
+                    width={176}
+                    height={176}
+                    sizes="(max-width: 420px) 120px, (max-width: 900px) 144px, 176px"
+                  />
                 </div>
                 <div className="pl-inst-main">
                   <h4 className="pl-inst-name">{name}</h4>

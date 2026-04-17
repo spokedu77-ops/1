@@ -5,6 +5,12 @@ import { FileEdit, Download, Video, FileText } from 'lucide-react';
 import { useSpokeduProAdminBlocks, type BlockEntry } from '../hooks/useSpokeduProContent';
 import type { ProgramDetail } from '../types';
 import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
+import {
+  DEFAULT_SCREENPLAY_TAG_MAPPING_V1,
+  SCREENPLAY_MODE_IDS,
+  type ScreenplayTagMappingV1,
+  resolveScreenplayTagMappingV1,
+} from '../utils/screenplayTagMapping';
 
 export type { ProgramDetail };
 
@@ -204,6 +210,128 @@ function ProgramDetailForm({
   );
 }
 
+function ScreenplayTagMappingForm({
+  content,
+  saving,
+  onSaveContent,
+  onToast,
+}: {
+  content: Record<string, BlockEntry>;
+  saving: boolean;
+  onSaveContent: (key: string, value: unknown, version: number) => Promise<void>;
+  onToast?: (msg: string) => void;
+}) {
+  const entry = content['screenplay_tag_mapping_v1'];
+  const draft = entry?.draft_value as unknown;
+  const version = entry?.version ?? 0;
+
+  const [mapping, setMapping] = useState<ScreenplayTagMappingV1>(() =>
+    resolveScreenplayTagMappingV1(draft)
+  );
+
+  useEffect(() => {
+    setMapping(resolveScreenplayTagMappingV1(draft));
+  }, [draft]);
+
+  const handleSave = useCallback(async () => {
+    await onSaveContent('screenplay_tag_mapping_v1', mapping, version);
+    onToast?.('스포무브 태그 매핑이 저장되었습니다.');
+  }, [mapping, onSaveContent, version, onToast]);
+
+  return (
+    <div className="bg-slate-800/80 rounded-xl border border-slate-600 p-4 space-y-4">
+      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+        <FileText className="w-4 h-4 text-emerald-400" />
+        스포무브(브레인체육) 카드 태그 매핑 (mode_id → 표시명)
+      </h4>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-bold text-slate-400 mb-1">레벨 표시 템플릿</label>
+          <input
+            type="text"
+            value={mapping.levelLabelTemplate ?? DEFAULT_SCREENPLAY_TAG_MAPPING_V1.levelLabelTemplate ?? 'Lv.{n}'}
+            onChange={(e) =>
+              setMapping((m) => ({ ...m, levelLabelTemplate: e.target.value }))
+            }
+            className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+          />
+          <p className="text-[11px] text-slate-500 mt-1">
+            예: Lv.{"{n}"} . {"{n}"}은 preset_ref 숫자로 대체됩니다.
+          </p>
+        </div>
+        <div className="lg:col-span-1">
+          <p className="text-[12px] text-slate-400 leading-relaxed">
+            태그는 항상 3종으로 표시됩니다: <br />
+            인지영역 / 과제유형 / 레벨
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {SCREENPLAY_MODE_IDS.map((modeId) => {
+          const cur = mapping.modeIdMap[modeId] ?? DEFAULT_SCREENPLAY_TAG_MAPPING_V1.modeIdMap[modeId];
+          return (
+            <div
+              key={modeId}
+              className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-3"
+            >
+              <div className="text-xs font-black text-slate-200 uppercase tracking-wider">
+                {modeId}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">인지영역</label>
+                  <input
+                    type="text"
+                    value={cur.domainLabel}
+                    onChange={(e) =>
+                      setMapping((m) => ({
+                        ...m,
+                        modeIdMap: {
+                          ...m.modeIdMap,
+                          [modeId]: { ...cur, domainLabel: e.target.value },
+                        },
+                      }))
+                    }
+                    className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">과제유형</label>
+                  <input
+                    type="text"
+                    value={cur.taskLabel}
+                    onChange={(e) =>
+                      setMapping((m) => ({
+                        ...m,
+                        modeIdMap: {
+                          ...m.modeIdMap,
+                          [modeId]: { ...cur, taskLabel: e.target.value },
+                        },
+                      }))
+                    }
+                    className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-sm transition-colors disabled:cursor-not-allowed"
+      >
+        저장
+      </button>
+    </div>
+  );
+}
+
 export default function SpokeduProEditPanel({ onToast }: { onToast?: (msg: string) => void }) {
   const [open, setOpen] = useState(true);
   const {
@@ -253,6 +381,12 @@ export default function SpokeduProEditPanel({ onToast }: { onToast?: (msg: strin
             </button>
           </div>
           <ProgramDetailForm
+            content={content}
+            saving={saving}
+            onSaveContent={handleSaveContent}
+            onToast={onToast}
+          />
+          <ScreenplayTagMappingForm
             content={content}
             saving={saving}
             onSaveContent={handleSaveContent}

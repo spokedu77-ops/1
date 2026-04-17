@@ -1,4 +1,5 @@
 import { CLASS_FLOW_IMAGES } from '../data/images';
+import Image from 'next/image';
 
 const STEPS = [
   {
@@ -38,11 +39,16 @@ export default function ClassFlow() {
           </div>
           <div className="pl-flow-gallery">
             {CLASS_FLOW_IMAGES.map((img) => (
-              <img
+              <Image
                 key={img.alt}
                 src={img.src}
                 alt={img.alt}
                 className={img.large ? 'pl-large' : ''}
+                width={img.large ? 1600 : 900}
+                height={img.large ? 700 : 900}
+                sizes="(max-width: 900px) 100vw, 50vw"
+                loading="lazy"
+                fetchPriority="low"
               />
             ))}
           </div>

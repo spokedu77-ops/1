@@ -234,6 +234,10 @@
         source: 'dispatch-page'
       };
 
+      // 서버 검증과 동일한 방식으로 phone을 숫자만 남겨서(예: 010-1234-5678 -> 01012345678)
+      // 잘못된 입력으로 인한 400 발생(메일 fallback) 흐름을 사전에 차단합니다.
+      payload.phone = (payload.phone || '').replace(/\D/g, '');
+
       if (!payload.phone && !payload.email) {
         toast.textContent = '⚠️ 연락처(번호 또는 메일) 중 최소 1개를 입력해 주세요.';
         toast.classList.add('show');
