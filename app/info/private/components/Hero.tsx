@@ -8,7 +8,6 @@ import {
   COUNTER_BASE_SESSIONS,
   COUNTER_DAILY_STUDENTS,
   COUNTER_DAILY_SESSIONS,
-  KAKAO_CHANNEL_URL,
 } from '../data/config';
 
 function ShieldIcon() {
@@ -93,9 +92,6 @@ export default function Hero() {
             <Link className="pl-btn pl-btn-primary" href="#apply" style={{ color: '#09090b' }}>
               전문 상담 접수하기
             </Link>
-            <a className="pl-btn pl-btn-kakao" href={KAKAO_CHANNEL_URL} target="_blank" rel="noopener noreferrer">
-              스포키듀 카카오채널
-            </a>
           </div>
         </div>
       </div>

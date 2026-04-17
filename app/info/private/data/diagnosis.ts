@@ -81,8 +81,31 @@ export type DiagnosisResult = {
   focusLines: string[];
   curriculumHints: string[];
   growthHints: string[];
+  /** 상담 폼·접수 본문에 붙는 전체 진단 내역(선택 문항 + 솔루션 요약) */
   summaryForForm: string;
 };
+
+function labelsForSelected(
+  values: string[],
+  options: readonly { value: string; label: string }[]
+): string[] {
+  const out: string[] = [];
+  for (const v of values) {
+    const opt = options.find((o) => o.value === v);
+    if (opt) out.push(opt.label);
+  }
+  return out;
+}
+
+function pushBullets(lines: string[], labels: string[]) {
+  if (labels.length === 0) {
+    lines.push('· (선택 없음)');
+    return;
+  }
+  for (const l of labels) {
+    lines.push(`· ${l}`);
+  }
+}
 
 /**
  * 선택 결과로 진단 유형 라벨·접근 방향·추천 포인트·상담 폼용 요약 생성
@@ -110,8 +133,43 @@ export function getDiagnosisResult(
     .map((v) => Q3_GROWTH_HINT[v])
     .filter(Boolean);
 
-  const partCount = focusLines.length + curriculumHints.length + growthHints.length;
-  const summaryForForm = `진단 결과 요약: ${typeLabel} 외 ${partCount}개 항목 반영 완료`;
+  const q1Labels = labelsForSelected(q1, Q1_OPTIONS);
+  const q2Labels = labelsForSelected(q2, Q2_OPTIONS);
+  const q3Labels = labelsForSelected(q3, Q3_OPTIONS);
+  const q4Labels = labelsForSelected(q4, Q4_OPTIONS);
+
+  const formLines: string[] = [];
+  formLines.push('[선택한 진단 문항]');
+  formLines.push('');
+  formLines.push('Q1. 우리 아이의 현재 가장 큰 고민은?');
+  pushBullets(formLines, q1Labels);
+  formLines.push('');
+  formLines.push('Q2. 어떤 신체 능력을 키워주고 싶으신가요?');
+  pushBullets(formLines, q2Labels);
+  formLines.push('');
+  formLines.push('Q3. 우리 아이가 어떻게 성장하길 바라시나요?');
+  pushBullets(formLines, q3Labels);
+  formLines.push('');
+  formLines.push('Q4. 우리 아이 연령대');
+  pushBullets(formLines, q4Labels);
+  formLines.push('');
+  formLines.push('[솔루션 분석 요약]');
+  formLines.push(`진단 유형: ${typeLabel}`);
+  formLines.push('');
+  formLines.push('주요 접근 방향');
+  pushBullets(formLines, focusLines);
+  if (curriculumHints.length > 0) {
+    formLines.push('');
+    formLines.push('추천 커리큘럼 포인트');
+    pushBullets(formLines, curriculumHints);
+  }
+  if (growthHints.length > 0) {
+    formLines.push('');
+    formLines.push('기대하는 변화');
+    pushBullets(formLines, growthHints);
+  }
+
+  const summaryForForm = formLines.join('\n');
 
   return {
     typeLabel,

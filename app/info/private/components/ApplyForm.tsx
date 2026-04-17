@@ -2,6 +2,8 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
+import { KAKAO_CHANNEL_URL } from '../data/config';
+
 const VALUE_IDS = ['fp', 'f2', 'f3', 'f4', 'f5'] as const;
 
 function InfoIcon() {
@@ -99,8 +101,13 @@ export default function ApplyForm({
       `5. 가능 시간대 : ${safeVal(values.f4)}`,
       `6. 전하고 싶은 말 : ${safeVal(values.f5)}`,
     ];
-    if (diagnosisSummary) {
-      head.push('', '[SPOKEDU 시스템 사전 진단 내역]', `- ${diagnosisSummary}`);
+    if (diagnosisSummary.trim()) {
+      head.push('', '[SPOKEDU 시스템 사전 진단 내역]');
+      for (const raw of diagnosisSummary.split('\n')) {
+        const line = raw.trimEnd();
+        if (line.trim() === '') continue;
+        head.push(line);
+      }
     }
     head.push('', '위 내용을 바탕으로 맞춤 상담 및 일정 그리고 수업료 안내를 도와드리겠습니다.');
     return head;
@@ -210,7 +217,7 @@ export default function ApplyForm({
           <div className="pl-step-box">
             <div className="pl-step-icon">2</div>
             <div className="pl-step-text">
-              <strong>카카오톡 상담</strong>
+              <strong>카카오 채널 상담</strong>
               <span>전문가와 내용 확인</span>
             </div>
           </div>
@@ -357,7 +364,7 @@ export default function ApplyForm({
                   6. 전하고 싶은 말 <span style={{ fontWeight: 400 }}>(선택)</span>
                 </label>
                 <p className="pl-input-subhint pl-input-subhint-spacing">
-                  원데이 또는 단체 수업을 희망하실 경우에는 여기(6번)에 적어 주세요.
+                  상담시 전달하고 싶은 말씀/원데이 희망/단체수업 희망 등 추가 사항은 여기(6번)에 적어 주세요.
                 </p>
                 <input
                   type="text"
@@ -382,13 +389,40 @@ export default function ApplyForm({
             </div>
 
             <div className="pl-submit-area">
-              <button
-                type="button"
-                className="pl-btn pl-btn-kakao"
-                onClick={handleSubmitConsult}
-              >
-                상담 신청 보내기
-              </button>
+              <div className="pl-submit-col">
+                <div className="pl-submit-actions">
+                  <button
+                    type="button"
+                    className="pl-btn pl-btn-kakao pl-btn-submit-consult"
+                    onClick={handleSubmitConsult}
+                  >
+                    상담 신청 보내기
+                  </button>
+                  <a
+                    className="pl-btn pl-btn-kakao"
+                    href={KAKAO_CHANNEL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    스포키듀 카카오채널
+                  </a>
+                </div>
+                <aside
+                  className="pl-must-read-notice"
+                  aria-labelledby="pl-must-read-heading"
+                >
+                  <div id="pl-must-read-heading" className="pl-must-read-title">
+                    필독 사항
+                  </div>
+                  <p className="pl-must-read-main">
+                    작성 후, 학생 이름으로 수업 문의 남겨 주셨다고{' '}
+                    <strong>꼭 카카오 채널 채팅방에 남겨 주셔야 합니다!</strong>
+                  </p>
+                  <p className="pl-must-read-example">
+                    (예시 : 지훈이 수업 문의 남겼습니다)
+                  </p>
+                </aside>
+              </div>
             </div>
           </div>
         </div>
