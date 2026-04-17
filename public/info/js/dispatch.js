@@ -33,27 +33,41 @@
     { q: '운영 가능한 지역이 어디인가요?', a: '현재 서울 및 수도권 근교 지역에서 운영 중입니다. 운영 가능 여부는 문의 시 확인해 드립니다.' },
   ];
 
-  var programs = ['스포무브', '월간 스포츠', '슬로우 스포츠', '이벤트 클래스 | 미니 올림픽 & 체험형 스포츠 부스'];
+  var programs = [
+    '스포무브',
+    '월간 스포츠',
+    '슬로우 스포츠',
+    '스페셜 클래스 : 미니 올림픽',
+    '스페셜 클래스 : 체험형 스포츠 부스',
+  ];
 
   function renderCompareTable() {
     var container = document.getElementById('dispatch-compare-rows');
     if (!container) return;
     compareRows.forEach(function (row, i) {
       var div = document.createElement('div');
-      div.className = 'dispatch-compare-row grid grid-cols-3 text-sm transition-colors';
-      div.style.backgroundColor = i % 2 === 0 ? '' : 'rgba(255,255,255,.015)';
+      div.className = 'dispatch-compare-row transition-colors';
+      if (i % 2 === 1) {
+        div.classList.add('dispatch-compare-row--alt');
+      }
       div.innerHTML =
-        '<div class="p-4 sm:p-5 text-slate-300 font-bold border-t" style="border-color:var(--border)">' +
+        '<div class="dispatch-compare-cell dispatch-compare-cell--label">' +
         row[0] +
         '</div>' +
-        '<div class="p-4 sm:p-5 text-sky-300 font-bold flex items-start sm:items-center gap-2 border-l border-t leading-relaxed" style="border-color:var(--border);background:rgba(56,189,248,.04)">' +
-        '<i data-lucide="check-circle-2" class="mt-0.5 sm:mt-0 shrink-0" style="width:16px;height:16px;color:#38bdf8"></i>' +
+        '<div class="dispatch-compare-cell dispatch-compare-cell--premium">' +
+        '<div class="dispatch-compare-cell-head"><span>SPOKEDU</span></div>' +
+        '<div class="dispatch-compare-cell-inner">' +
+        '<i data-lucide="check-circle-2" class="dispatch-compare-icon dispatch-compare-icon--ok"></i>' +
+        '<span class="dispatch-compare-premium-text">' +
         row[1] +
-        '</div>' +
-        '<div class="p-4 sm:p-5 text-slate-500 border-l border-t leading-relaxed flex items-start sm:items-center gap-2" style="border-color:var(--border)">' +
-        '<i data-lucide="x-circle" class="mt-0.5 sm:mt-0 shrink-0" style="width:16px;height:16px;color:#64748b"></i>' +
+        '</span></div></div>' +
+        '<div class="dispatch-compare-cell dispatch-compare-cell--basic">' +
+        '<div class="dispatch-compare-cell-head dispatch-compare-cell-head--basic"><span>일반 업체</span></div>' +
+        '<div class="dispatch-compare-cell-inner">' +
+        '<i data-lucide="x-circle" class="dispatch-compare-icon dispatch-compare-icon--no"></i>' +
+        '<span class="dispatch-compare-basic-text">' +
         row[2] +
-        '</div>';
+        '</span></div></div>';
       container.appendChild(div);
     });
   }
@@ -117,12 +131,50 @@
   function renderProgramCheckboxes() {
     var container = document.getElementById('dispatch-program-checkboxes');
     if (!container) return;
-    programs.forEach(function (p) {
-      var label = document.createElement('label');
-      label.className = 'dispatch-choice-card';
-      label.innerHTML = '<input type="checkbox" name="programs" value="' + p + '"><span>' + p + '</span>';
-      container.appendChild(label);
+    container.textContent = '';
+    programs.forEach(function (p, i) {
+      var row = document.createElement('label');
+      row.className = 'dispatch-program-check-row';
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.name = 'programs';
+      input.value = p;
+      input.className = 'dispatch-program-check-input';
+      var span = document.createElement('span');
+      span.className = 'dispatch-program-check-text';
+      span.textContent = i + 1 + '. ' + p;
+      row.appendChild(input);
+      row.appendChild(span);
+      container.appendChild(row);
     });
+
+    var otherRow = document.createElement('label');
+    otherRow.className = 'dispatch-program-check-row dispatch-program-check-row--other';
+    var otherChk = document.createElement('input');
+    otherChk.type = 'checkbox';
+    otherChk.id = 'dispatch-program-other-check';
+    otherChk.className = 'dispatch-program-check-input';
+    otherChk.setAttribute('aria-controls', 'dispatch-program-other-wrap');
+    var otherSpan = document.createElement('span');
+    otherSpan.className = 'dispatch-program-check-text';
+    otherSpan.textContent = '6. 기타';
+    otherRow.appendChild(otherChk);
+    otherRow.appendChild(otherSpan);
+    container.appendChild(otherRow);
+
+    var otherWrap = document.getElementById('dispatch-program-other-wrap');
+    var otherText = document.getElementById('dispatch-program-other-text');
+    if (otherChk && otherWrap) {
+      otherChk.addEventListener('change', function () {
+        var on = !!otherChk.checked;
+        otherWrap.hidden = !on;
+        otherChk.setAttribute('aria-expanded', on ? 'true' : 'false');
+        if (!on && otherText) {
+          otherText.value = '';
+        }
+      });
+      otherChk.setAttribute('aria-expanded', 'false');
+    }
   }
 
   function updateChoiceCardState(input) {
@@ -208,6 +260,16 @@
     var form = document.getElementById('dispatch-contact-form');
     var toast = document.getElementById('dispatch-toast');
     if (!form || !toast) return;
+    form.addEventListener('reset', function () {
+      var wrap = document.getElementById('dispatch-program-other-wrap');
+      var chk = document.getElementById('dispatch-program-other-check');
+      if (wrap) wrap.hidden = true;
+      if (chk) {
+        chk.checked = false;
+        chk.setAttribute('aria-expanded', 'false');
+      }
+    });
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var submitButton = form.querySelector('button[type="submit"]');
@@ -217,6 +279,12 @@
         submitButton.textContent = '접수 중...';
       }
       var formData = new FormData(form);
+      var programsList = getCheckedValues(form, 'programs');
+      var otherChk = document.getElementById('dispatch-program-other-check');
+      var otherDetail = (formData.get('programOtherDetail') || '').trim();
+      if (otherChk && otherChk.checked) {
+        programsList.push(otherDetail ? '기타: ' + otherDetail : '기타');
+      }
       var payload = {
         organization: formData.get('organization') || '',
         manager: formData.get('manager') || '',
@@ -225,7 +293,7 @@
         location: formData.get('location') || '',
         startDate: formData.get('startDate') || '',
         endDate: formData.get('endDate') || '',
-        programs: getCheckedValues(form, 'programs'),
+        programs: programsList,
         targetAge: getCheckedValues(form, 'targetAge'),
         headcount: formData.get('headcount') || '',
         specialNeeds: formData.get('specialNeeds') || '',
@@ -239,7 +307,7 @@
       payload.phone = (payload.phone || '').replace(/\D/g, '');
 
       if (!payload.phone && !payload.email) {
-        toast.textContent = '⚠️ 연락처(번호 또는 메일) 중 최소 1개를 입력해 주세요.';
+        toast.textContent = '⚠️ 전화번호 또는 이메일 중 최소 한 가지는 입력해 주세요.';
         toast.classList.add('show');
         setTimeout(function () {
           toast.classList.remove('show');

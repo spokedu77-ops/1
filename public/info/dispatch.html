@@ -10,6 +10,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dispatch.css">
+  <link rel="dns-prefetch" href="https://i.postimg.cc">
+  <link rel="preconnect" href="https://i.postimg.cc">
+  <link rel="preload" as="image" href="https://i.postimg.cc/8CCvkfs1/seupomubeu.jpg">
+  <link rel="preload" as="image" href="https://i.postimg.cc/J0pswpW4/20260417-115503.png">
+  <link rel="preload" as="image" href="https://i.postimg.cc/VvXrZjZF/wolganseupocheu.jpg">
+  <link rel="preload" as="image" href="https://i.postimg.cc/X73p7BD2/Kakao-Talk-20260407-164353816.jpg">
+  <link rel="preload" as="image" href="https://i.postimg.cc/ZKk6Pqs3/IMG-7940.jpg">
 </head>
 <body class="dispatch-page">
 
@@ -19,14 +26,14 @@
       <a href="#" class="text-2xl font-black tracking-tighter text-white" style="font-family:'DM Sans',sans-serif;">
         SPOK<span style="color:var(--sky)">EDU</span>
       </a>
-      <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-400">
+      <div class="hidden md:flex items-center gap-8 text-base font-semibold text-slate-400">
         <a href="#comparison" class="hover:text-white transition">차별성</a>
         <a href="#program" class="hover:text-white transition">맞춤형 파견</a>
         <a href="#process" class="hover:text-white transition">도입 절차</a>
         <a href="#faq" class="hover:text-white transition">FAQ</a>
       </div>
       <a href="#contact" class="dispatch-btn-primary text-sm py-2.5 px-5">
-        제휴 문의하기
+        클래스 문의하기
       </a>
     </div>
   </nav>
@@ -157,20 +164,20 @@
           운영 안정성과 수업 설계 품질을 함께 확인해 보세요.
         </p>
       </div>
-      <div class="dispatch-glass-card overflow-hidden mb-16 dispatch-reveal">
-        <div class="grid grid-cols-3 text-sm font-bold" style="background:rgba(255,255,255,.04);">
-          <div class="p-5 text-slate-500">비교 항목</div>
-          <div class="p-5 text-sky-400 border-l flex items-center gap-2" style="border-color:var(--border);background:rgba(56,189,248,.08);">
-            SPOKEDU
+      <div class="dispatch-glass-card overflow-hidden mb-16 dispatch-reveal dispatch-compare-wrap">
+        <div class="dispatch-compare-head">
+          <div class="dispatch-compare-head-item dispatch-compare-head-item--label">비교 항목</div>
+          <div class="dispatch-compare-head-item dispatch-compare-head-item--premium">
+            <span class="dispatch-compare-head-brand">SPOKEDU</span>
             <span class="dispatch-badge" style="background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.35);color:#7dd3fc;">PREMIUM</span>
           </div>
-          <div class="p-5 text-slate-400 border-l flex items-center gap-2" style="border-color:var(--border);">
-            일반 업체
+          <div class="dispatch-compare-head-item dispatch-compare-head-item--basic">
+            <span class="dispatch-compare-head-brand dispatch-compare-head-brand--muted">일반 업체</span>
             <span class="dispatch-badge" style="background:rgba(100,116,139,.18);border:1px solid rgba(100,116,139,.35);color:#cbd5e1;">BASIC</span>
           </div>
         </div>
-        <div class="dispatch-divider"></div>
-        <div id="dispatch-compare-rows"></div>
+        <div class="dispatch-divider dispatch-compare-divider"></div>
+        <div id="dispatch-compare-rows" class="dispatch-compare-rows"></div>
       </div>
     </div>
   </section>
@@ -190,85 +197,180 @@
           팀빌딩 활동을 통해 팀 내 협동과 팀 간 건강한 경쟁 경험을 함께 설계합니다.
         </p>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="dispatch-glass-card overflow-hidden dispatch-reveal group">
-          <div class="dispatch-img-grid-cell" style="aspect-ratio:16/9;">
-            <img src="https://i.postimg.cc/8CCvkfs1/seupomubeu.jpg" alt="스포무브" loading="lazy">
+      <div class="dispatch-lineup-grid">
+        <article class="dispatch-lineup-card dispatch-glass-card overflow-hidden dispatch-reveal group">
+          <div class="dispatch-lineup-media">
+            <img src="https://i.postimg.cc/8CCvkfs1/seupomubeu.jpg" alt="스포무브 시지각 브레인 놀이체육" class="dispatch-lineup-img" width="800" height="450" fetchpriority="high">
             <div class="dispatch-img-overlay"></div>
-            <div class="absolute bottom-0 left-0 p-5 z-10">
-              <span class="dispatch-badge text-sky-400 mb-2" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">유치원,호텔,백화점 문화센터 등</span>
+            <div class="dispatch-lineup-kicker">
+              <span class="dispatch-badge text-sky-400" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">초중고 방과후 · 지역아동센터 · 기관 클래스</span>
             </div>
           </div>
-          <div class="p-8">
-            <h3 class="text-3xl font-black text-white mb-3">스포무브 (시지각 브레인 놀이체육)</h3>
-            <p class="text-slate-400 text-sm leading-relaxed mb-4">스포무브는 화면에 제시되는 색, 글자, 위치, 순서 등의 시각 정보를 인지하고, 이를 판단한 뒤 신체 움직임으로 반응하는 에듀테크형 놀이체육 프로그램입니다.</p>
-            <p class="text-slate-400 text-sm leading-relaxed mb-4">단순히 화면을 따라 움직이는 활동이 아니라, 보고–생각하고–반응하는 과정을 반복하며 시지각 능력, 주의집중력, 판단력, 반응속도, 협응력을 함께 자극하도록 설계되었습니다.</p>
-            <p class="text-slate-400 text-sm leading-relaxed mb-6">아이들은 놀이처럼 즐겁게 참여하면서도, 두뇌 인지와 신체 움직임이 연결되는 통합적인 신체활동을 경험하게 됩니다.</p>
-            <div class="flex flex-wrap gap-2">
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">몰입형 웜업 탑재</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">연령별 발달 커리큘럼</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">교구 직접 지참</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 색깔 공 분류 릴레이, 균형 감각 미션</span>
+          <div class="dispatch-lineup-body">
+            <h3 class="dispatch-lineup-title">
+              <span class="dispatch-lineup-title-main">스포무브</span>
+              <span class="dispatch-lineup-title-sub">시지각 브레인 놀이체육</span>
+            </h3>
+            <div class="dispatch-lineup-desc">
+              <p>화면의 시각 정보를 보고 판단한 뒤 몸으로 반응하는 에듀테크형 놀이체육입니다. 보고–생각하고–움직이는 과정을 반복하며 시지각, 주의집중, 판단력, 협응을 함께 자극합니다.</p>
+              <p>놀이처럼 즐겁게 참여하면서도 두뇌 인지와 신체 움직임이 연결되는 통합형 신체활동을 경험할 수 있도록 구성합니다.</p>
+            </div>
+            <div class="dispatch-lineup-tags">
+              <div class="dispatch-lineup-tags-main">
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">몰입형 웜업</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">연령별 커리큘럼</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">교구 직접 지참</span>
+              </div>
+              <div class="dispatch-lineup-tags-example">
+                <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 반응 인지, 이중 과제 등</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="dispatch-glass-card overflow-hidden dispatch-reveal delay-1 group">
-          <div class="dispatch-img-grid-cell" style="aspect-ratio:16/9;">
-            <img src="https://i.postimg.cc/VvXrZjZF/wolganseupocheu.jpg" alt="월간 스포츠" loading="lazy">
+        </article>
+        <article class="dispatch-lineup-card dispatch-glass-card overflow-hidden dispatch-reveal delay-1 group">
+          <div class="dispatch-lineup-media">
+            <img src="https://i.postimg.cc/VvXrZjZF/wolganseupocheu.jpg" alt="월간 스포츠 매달 바뀌는 종목·뉴스포츠 체험" class="dispatch-lineup-img" width="800" height="450">
             <div class="dispatch-img-overlay"></div>
-            <div class="absolute bottom-0 left-0 p-5 z-10">
-              <span class="dispatch-badge text-sky-400 mb-2" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">초중고 방과후 · 지역아동센터</span>
+            <div class="dispatch-lineup-kicker">
+              <span class="dispatch-badge text-sky-400" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">초중고 방과후 · 지역아동센터 · 기관 클래스</span>
             </div>
           </div>
-          <div class="p-8">
-            <h3 class="text-3xl font-black text-white mb-3">월간 스포츠</h3>
-            <p class="text-slate-400 text-sm leading-relaxed mb-6">매달 새로운 스포츠와 뉴스포츠 종목을 경험하며, 다양한 움직임과 규칙을 익히는 월간 스포츠 프로그램입니다. 한 가지 종목에만 머무르지 않고 월별로 다른 활동을 구성해 아이들의 흥미를 지속적으로 이끌어내며, 협동심·사회성·상황 판단력까지 함께 기를 수 있도록 설계합니다.</p>
-            <div class="flex flex-wrap gap-2">
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">월별 종목 순환 운영</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">다양한 스포츠·뉴스포츠 경험</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">협동심·사회성·판단력 향상</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 플로어볼, 플래그풋볼, 변형 피구, 팀 전략형 게임</span>
+          <div class="dispatch-lineup-body">
+            <h3 class="dispatch-lineup-title">
+              <span class="dispatch-lineup-title-main">월간 스포츠</span>
+              <span class="dispatch-lineup-title-sub">매달 바뀌는 종목·뉴스포츠 체험</span>
+            </h3>
+            <div class="dispatch-lineup-desc">
+              <p>매달 새로운 스포츠와 뉴스포츠를 경험하며 다양한 움직임과 규칙을 익히는 월간 클래스입니다. 한 종목에 머무르지 않고 월별로 구성을 바꿔 흥미와 참여를 지속적으로 이끌어냅니다.</p>
+              <p>종목 경험에 그치지 않고 협동, 사회성, 상황 판단이 함께 이루어질 수 있도록 팀 활동과 규칙 이해를 균형 있게 반영합니다.</p>
+            </div>
+            <div class="dispatch-lineup-tags">
+              <div class="dispatch-lineup-tags-main">
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">월별 순환 구성</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">뉴스포츠 체험</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">협동·판단 강화</span>
+              </div>
+              <div class="dispatch-lineup-tags-example">
+                <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 플로어볼, 플래그풋볼 등</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="dispatch-glass-card overflow-hidden dispatch-reveal group">
-          <div class="dispatch-img-grid-cell" style="aspect-ratio:16/9;">
-            <img src="https://i.postimg.cc/X73p7BD2/Kakao-Talk-20260407-164353816.jpg" alt="느린학습자 수업" loading="lazy">
+        </article>
+        <article class="dispatch-lineup-card dispatch-glass-card overflow-hidden dispatch-reveal delay-2 group">
+          <div class="dispatch-lineup-media">
+            <img src="https://i.postimg.cc/X73p7BD2/Kakao-Talk-20260407-164353816.jpg" alt="슬로우 스포츠 속도에 맞춘 포용형 체육" class="dispatch-lineup-img" width="800" height="450">
             <div class="dispatch-img-overlay"></div>
-            <div class="absolute bottom-0 left-0 p-5 z-10">
-              <span class="dispatch-badge text-sky-400 mb-2" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">발달센터 · 복지관 · 특수학급</span>
+            <div class="dispatch-lineup-kicker">
+              <span class="dispatch-badge text-sky-400" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">발달센터 · 복지관 · 특수학급 · 포용형 클래스</span>
             </div>
           </div>
-          <div class="p-8">
-            <h3 class="text-3xl font-black text-white mb-3">슬로우 스포츠</h3>
-            <p class="text-slate-400 text-sm leading-relaxed mb-6">느린 학습자와 특수 체육 대상자를 포함해, 각자의 속도와 반응에 맞춰 참여할 수 있도록 설계한 포용형 체육 프로그램입니다. 빠른 수행보다 안정적인 참여와 반복 경험에 초점을 맞춰, 누구나 수업 안에서 성공 경험과 신체 활동의 즐거움을 느낄 수 있도록 운영합니다.</p>
-            <div class="flex flex-wrap gap-2">
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">각자의 속도에 맞춘 참여 설계</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">수준별 난이도 조절 운영</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">함께 참여하는 포용형 수업</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 3단계 난이도 운영, 반복 반응형 미션</span>
+          <div class="dispatch-lineup-body">
+            <h3 class="dispatch-lineup-title">
+              <span class="dispatch-lineup-title-main">슬로우 스포츠</span>
+              <span class="dispatch-lineup-title-sub">속도에 맞춘 포용형 체육</span>
+            </h3>
+            <div class="dispatch-lineup-desc">
+              <p>느린 학습자와 특수 체육 대상을 포함해 각자의 속도에 맞춰 참여할 수 있도록 설계한 포용형 체육 클래스입니다. 빠른 수행보다 안정적인 참여와 반복 경험에 초점을 두고 수업을 진행합니다.</p>
+              <p>무리한 경쟁보다 활동의 즐거움과 성공 경험을 느낄 수 있도록 난이도와 과제를 단계적으로 구성합니다.</p>
+            </div>
+            <div class="dispatch-lineup-tags">
+              <div class="dispatch-lineup-tags-main">
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">개별 속도 반영</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">반복 중심 활동</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">성공 경험 설계</span>
+              </div>
+              <div class="dispatch-lineup-tags-example">
+                <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 단계별 이동운동, 규칙 단순화 게임 등</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="dispatch-glass-card overflow-hidden dispatch-reveal delay-1 group">
-          <div class="dispatch-img-grid-cell" style="aspect-ratio:16/9;">
-            <img src="https://i.postimg.cc/ZKk6Pqs3/IMG-7940.jpg" alt="이벤트 클래스" loading="lazy">
+        </article>
+        <article class="dispatch-lineup-card dispatch-glass-card overflow-hidden dispatch-reveal group">
+          <div class="dispatch-lineup-media">
+            <img src="https://i.postimg.cc/J0pswpW4/20260417-115503.png" alt="미니 올림픽 팀 활동 스페셜 클래스" class="dispatch-lineup-img" width="800" height="450" fetchpriority="high">
             <div class="dispatch-img-overlay"></div>
-            <div class="absolute bottom-0 left-0 p-5 z-10">
-              <span class="dispatch-badge text-sky-400 mb-2" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">기관 단체 행사 · 방학 캠프</span>
+            <div class="dispatch-lineup-kicker">
+              <span class="dispatch-badge text-sky-400" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">유치원 · 학교 · 복지관 · 기관 클래스</span>
             </div>
           </div>
-          <div class="p-8">
-            <h3 class="text-3xl font-black text-white mb-3 leading-tight">이벤트 클래스<br><span class="block mt-1 text-2xl md:text-3xl">| 미니 올림픽 &amp; 체험형 스포츠 부스</span></h3>
-            <p class="text-slate-400 text-sm leading-relaxed mb-6">아이들이 직접 뛰고, 체험하고, 함께 즐길 수 있도록 설계한 참여형 스포츠 이벤트 프로그램입니다. 소규모 미니 올림픽부터 다인원 체험형 스포츠 부스까지, 기관의 목적과 공간, 인원 구성에 맞춰 종목과 진행 방식을 유연하게 설계해 특별한 현장 경험을 만듭니다.</p>
-            <div class="flex flex-wrap gap-2">
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">미니 올림픽형 프로그램 운영</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">체험형 스포츠 부스 구성</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">공간·인원 맞춤 이벤트 설계</span>
-              <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 팀 대항 미니 올림픽, 순환형 스포츠 체험 부스, 기록 도전형 이벤트 클래스</span>
+          <div class="dispatch-lineup-body">
+            <h3 class="dispatch-lineup-title">
+              <span class="dispatch-lineup-title-main">미니 올림픽</span>
+              <span class="dispatch-lineup-title-sub">협동과 참여로 완성하는 스포츠 스페셜 클래스</span>
+            </h3>
+            <div class="dispatch-lineup-desc">
+              <p>다양한 스포츠 요소를 쉽고 재미있게 재구성해 누구나 함께 참여할 수 있도록 만든 스페셜 클래스입니다. 팀을 이루어 도전하고 협력하는 과정에서 자연스럽게 몰입과 성취를 경험할 수 있습니다.</p>
+              <p>단순한 경기 진행에 그치지 않고 응원, 협동, 규칙 이해, 역할 수행이 함께 이루어지도록 구성해 현장의 분위기와 참여도를 높입니다.</p>
+            </div>
+            <div class="dispatch-lineup-tags">
+              <div class="dispatch-lineup-tags-main">
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">팀 기반 활동</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">협동·응원 중심</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">스페셜 클래스</span>
+              </div>
+              <div class="dispatch-lineup-tags-example">
+                <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 스포츠 경기, 줄다리기 등</span>
+              </div>
             </div>
           </div>
-        </div>
+        </article>
+        <article class="dispatch-lineup-card dispatch-glass-card overflow-hidden dispatch-reveal delay-1 group">
+          <div class="dispatch-lineup-media">
+            <img src="https://i.postimg.cc/ZKk6Pqs3/IMG-7940.jpg" alt="체험형 스포츠 부스 현장 체험" class="dispatch-lineup-img" width="800" height="450">
+            <div class="dispatch-img-overlay"></div>
+            <div class="dispatch-lineup-kicker">
+              <span class="dispatch-badge text-sky-400" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">학교 · 축제 · 박람회 · 기관 행사</span>
+            </div>
+          </div>
+          <div class="dispatch-lineup-body">
+            <h3 class="dispatch-lineup-title">
+              <span class="dispatch-lineup-title-main">체험형 스포츠 부스</span>
+              <span class="dispatch-lineup-title-sub">다양한 종목을 경험하는 스포츠 체험 부스</span>
+            </h3>
+            <div class="dispatch-lineup-desc">
+              <p>여러 가지 스포츠와 활동 요소를 짧고 직관적으로 경험할 수 있도록 구성한 체험형 부스입니다. 핵심 동작과 규칙을 부담 없이 접할 수 있어 처음 참여하는 아동도 쉽고 즐겁게 몰입할 수 있습니다.</p>
+              <p>운영 목적과 참여 인원에 맞춰 구성을 유연하게 조정할 수 있으며, 짧은 시간 안에도 높은 참여도와 현장 활기를 이끌어낼 수 있도록 진행합니다.</p>
+            </div>
+            <div class="dispatch-lineup-tags">
+              <div class="dispatch-lineup-tags-main">
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">순환형 체험 구성</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">높은 참여도</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">현장 맞춤 운영</span>
+              </div>
+              <div class="dispatch-lineup-tags-example">
+                <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 자이언트 체스, 에듀테크 등</span>
+              </div>
+            </div>
+          </div>
+        </article>
+        <article class="dispatch-lineup-card dispatch-glass-card overflow-hidden dispatch-reveal delay-2 group">
+          <div class="dispatch-lineup-media dispatch-lineup-media--custom" role="img" aria-label="맞춤형 체육 클래스 설계">
+            <div class="dispatch-img-overlay"></div>
+            <div class="dispatch-lineup-kicker">
+              <span class="dispatch-badge text-sky-400" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);">어린이집 · 학교 · 센터 · 복지기관</span>
+            </div>
+          </div>
+          <div class="dispatch-lineup-body">
+            <h3 class="dispatch-lineup-title">
+              <span class="dispatch-lineup-title-main">커스터마이징</span>
+              <span class="dispatch-lineup-title-sub">대상과 목적에 맞춰 설계하는 맞춤형 체육 클래스</span>
+            </h3>
+            <div class="dispatch-lineup-desc">
+              <p>연령, 인원, 공간, 운동 수준, 운영 목적에 맞춰 가장 적합한 형태로 구성하는 맞춤형 체육 클래스입니다. 획일적인 수업이 아닌 현장에 실제로 필요한 내용과 흐름을 반영해 효율적으로 운영할 수 있도록 설계합니다.</p>
+              <p>기초체력, 협동 활동, 학교체육, 뉴스포츠, 놀이체육 등 다양한 방향으로 조정할 수 있으며, 기관 특성과 참여자 수준에 맞춘 현실적인 클래스 구성을 제안합니다.</p>
+            </div>
+            <div class="dispatch-lineup-tags">
+              <div class="dispatch-lineup-tags-main">
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">맞춤형 설계</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">유연한 구성 운영</span>
+                <span class="dispatch-badge text-xs" style="background:rgba(255,255,255,.07);color:#94a3b8;">현장 중심 제안</span>
+              </div>
+              <div class="dispatch-lineup-tags-example">
+                <span class="dispatch-badge text-xs" style="background:rgba(56,189,248,.14);color:#bae6fd;">예시: 자유로운 테마 융복합 등</span>
+              </div>
+            </div>
+          </div>
+        </article>
       </div>
     </div>
   </section>
@@ -310,70 +412,104 @@
       </div>
       <div class="dispatch-glass-card p-8 md:p-12 dispatch-reveal border-t-2" style="border-top-color: #0ea5e9;">
         <form id="dispatch-contact-form" novalidate>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label class="dispatch-form-label">기관명 / 센터명 <span class="text-sky-400">*</span></label>
-              <input type="text" name="organization" class="dispatch-form-input" placeholder="예: 스포키유치원, 스포키지역아동센터" required>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 mb-10">
+            <div class="dispatch-form-field">
+              <label class="dispatch-form-label" for="dispatch-org">기관명 / 센터명 <span class="text-sky-400">*</span></label>
+              <input id="dispatch-org" type="text" name="organization" class="dispatch-form-input" placeholder="예: 스포키유치원, 스포키지역아동센터" required>
             </div>
-            <div>
-              <label class="dispatch-form-label">담당자 직책 및 성함 <span class="text-sky-400">*</span></label>
-              <input type="text" name="manager" class="dispatch-form-input" placeholder="예: 홍길동 원장, 김철수 교사" required>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <div>
-              <label class="dispatch-form-label">담당자 연락처 (번호 또는 메일 중 1개 이상) <span class="text-sky-400">*</span></label>
-              <input type="tel" name="phone" class="dispatch-form-input" placeholder="010-4437-9294">
-            </div>
-            <div>
-              <label class="dispatch-form-label">담당자 이메일</label>
-              <input type="email" name="email" class="dispatch-form-input" placeholder="example@domain.com">
-            </div>
-            <div>
-              <label class="dispatch-form-label">기관 소재지</label>
-              <input type="text" name="location" class="dispatch-form-input" placeholder="예: 서울 마포구, 경기 성남시">
-            </div>
-            <div>
-              <label class="dispatch-form-label">파견 희망 시작일</label>
-              <input type="date" name="startDate" class="dispatch-form-input">
-            </div>
-            <div>
-              <label class="dispatch-form-label">파견 희망 종료일</label>
-              <input type="date" name="endDate" class="dispatch-form-input">
+            <div class="dispatch-form-field">
+              <label class="dispatch-form-label" for="dispatch-manager">담당자 직책 및 성함 <span class="text-sky-400">*</span></label>
+              <input id="dispatch-manager" type="text" name="manager" class="dispatch-form-input" placeholder="예: 홍길동 원장, 김철수 교사" required>
             </div>
           </div>
-          <div class="mb-6">
-            <label class="dispatch-form-label">파견 희망 프로그램 (다중 선택 가능)</label>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1" id="dispatch-program-checkboxes"></div>
+
+          <div class="dispatch-form-section">
+            <div class="dispatch-form-callout" role="note">
+              <span class="dispatch-form-callout-title">연락처 안내</span>
+              <p class="dispatch-form-callout-text">
+                전화번호와 이메일 중 <strong class="text-sky-300">최소 한 가지 이상</strong> 입력해 주세요.
+                두 항목을 모두 남기시면 가장 빠르게 회신드릴 수 있습니다.
+              </p>
+            </div>
+
+            <div class="dispatch-form-grid-2">
+              <div class="dispatch-form-field">
+                <label class="dispatch-form-label" for="dispatch-phone">담당자 전화번호</label>
+                <p class="dispatch-form-hint" id="dispatch-phone-hint">휴대전화·유선 모두 가능합니다. 하이픈(-) 포함 여부는 자유입니다.</p>
+                <input id="dispatch-phone" type="tel" name="phone" class="dispatch-form-input" placeholder="예: 010-1234-5678" aria-describedby="dispatch-phone-hint" autocomplete="tel">
+              </div>
+              <div class="dispatch-form-field">
+                <label class="dispatch-form-label" for="dispatch-email">담당자 이메일</label>
+                <p class="dispatch-form-hint" id="dispatch-email-hint">제안서·견적 회신을 받으실 메일 주소를 적어 주세요.</p>
+                <input id="dispatch-email" type="email" name="email" class="dispatch-form-input" placeholder="예: 담당자@기관도메인.kr" aria-describedby="dispatch-email-hint" autocomplete="email">
+              </div>
+            </div>
+
+            <div class="dispatch-form-field dispatch-form-field--block">
+              <label class="dispatch-form-label" for="dispatch-location">기관 소재지 <span class="text-slate-500 font-semibold normal-case tracking-normal">(선택)</span></label>
+              <p class="dispatch-form-hint" id="dispatch-location-hint">시·도와 구·군 정도로 적어 주시면 담당 배정에 도움이 됩니다.</p>
+              <input id="dispatch-location" type="text" name="location" class="dispatch-form-input" placeholder="예: 서울 마포구, 경기 성남시 분당구" aria-describedby="dispatch-location-hint" autocomplete="address-level2">
+            </div>
+
+            <div class="dispatch-form-grid-2 dispatch-form-grid-dates">
+              <div class="dispatch-form-field">
+                <label class="dispatch-form-label" for="dispatch-start">파견 희망 시작일 <span class="text-slate-500 font-semibold normal-case tracking-normal">(선택)</span></label>
+                <p class="dispatch-form-hint" id="dispatch-start-hint">미정이면 비워 두셔도 됩니다. 아래 달력에서 날짜를 선택하세요.</p>
+                <input id="dispatch-start" type="date" name="startDate" class="dispatch-form-input dispatch-form-input--date" aria-describedby="dispatch-start-hint">
+              </div>
+              <div class="dispatch-form-field">
+                <label class="dispatch-form-label" for="dispatch-end">파견 희망 종료일 <span class="text-slate-500 font-semibold normal-case tracking-normal">(선택)</span></label>
+                <p class="dispatch-form-hint" id="dispatch-end-hint">시작일 이후 날짜로 선택해 주세요.</p>
+                <input id="dispatch-end" type="date" name="endDate" class="dispatch-form-input dispatch-form-input--date" aria-describedby="dispatch-end-hint">
+              </div>
+            </div>
           </div>
-          <div class="mb-8 space-y-5">
-            <div>
-              <label class="dispatch-form-label">1. 대상 연령 (다중 선택 가능)</label>
-              <div class="dispatch-choice-grid mt-1">
-                <label class="dispatch-choice-card"><input type="checkbox" name="targetAge" value="미취학"><span>미취학</span></label>
-                <label class="dispatch-choice-card"><input type="checkbox" name="targetAge" value="초등 저학년"><span>초등 저학년</span></label>
-                <label class="dispatch-choice-card"><input type="checkbox" name="targetAge" value="초등 고학년"><span>초등 고학년</span></label>
-                <label class="dispatch-choice-card"><input type="checkbox" name="targetAge" value="중, 고등학생"><span>중, 고등학생</span></label>
+
+          <div class="mb-10 mt-4 dispatch-form-field">
+            <label class="dispatch-form-label">파견 희망 프로그램 <span class="text-slate-500 font-semibold normal-case tracking-normal">(다중 선택)</span></label>
+            <p class="dispatch-form-hint">해당되는 프로그램을 모두 선택해 주세요.</p>
+            <div class="dispatch-program-block mt-2">
+              <div id="dispatch-program-checkboxes" class="dispatch-program-block-options" role="group" aria-label="파견 희망 프로그램"></div>
+              <div id="dispatch-program-other-wrap" class="dispatch-program-other-wrap" hidden>
+                <label class="dispatch-form-label dispatch-form-label--other" for="dispatch-program-other-text">기타 프로그램·조건을 적어 주세요</label>
+                <input type="text" id="dispatch-program-other-text" name="programOtherDetail" class="dispatch-form-input mt-2" placeholder="희망하시는 프로그램이나 조건을 적어 주세요" autocomplete="off">
               </div>
             </div>
-            <div>
-              <label class="dispatch-form-label">2. 대략적인 인원 (단일 선택 가능)</label>
-              <div class="dispatch-choice-grid mt-1">
-                <label class="dispatch-choice-card"><input type="radio" name="headcount" value="12명 미만"><span>12명 미만</span></label>
-                <label class="dispatch-choice-card"><input type="radio" name="headcount" value="12명 이상"><span>12명 이상</span></label>
-                <label class="dispatch-choice-card"><input type="radio" name="headcount" value="20명 이상"><span>20명 이상</span></label>
+          </div>
+          <div class="mb-8 space-y-7">
+            <div class="dispatch-form-field">
+              <label class="dispatch-form-label">대상 연령 <span class="text-slate-500 font-semibold normal-case tracking-normal">(다중 선택 가능)</span></label>
+              <div class="dispatch-program-block mt-2">
+                <div class="dispatch-choice-stack" role="group" aria-label="대상 연령">
+                  <label class="dispatch-choice-card"><input type="checkbox" name="targetAge" value="미취학"><span>미취학</span></label>
+                  <label class="dispatch-choice-card"><input type="checkbox" name="targetAge" value="초등 저학년"><span>초등 저학년</span></label>
+                  <label class="dispatch-choice-card"><input type="checkbox" name="targetAge" value="초등 고학년"><span>초등 고학년</span></label>
+                  <label class="dispatch-choice-card"><input type="checkbox" name="targetAge" value="중, 고등학생"><span>중, 고등학생</span></label>
+                </div>
               </div>
             </div>
-            <div>
-              <label class="dispatch-form-label">3. 특수 아동 참여 유무</label>
-              <div class="dispatch-choice-grid mt-1">
-                <label class="dispatch-choice-card"><input type="radio" name="specialNeeds" value="O"><span>O</span></label>
-                <label class="dispatch-choice-card"><input type="radio" name="specialNeeds" value="X"><span>X</span></label>
+            <div class="dispatch-form-field">
+              <label class="dispatch-form-label">대략적인 인원 <span class="text-slate-500 font-semibold normal-case tracking-normal">(단일 선택 가능)</span></label>
+              <div class="dispatch-program-block mt-2">
+                <div class="dispatch-choice-stack" role="radiogroup" aria-label="대략적인 인원">
+                  <label class="dispatch-choice-card"><input type="radio" name="headcount" value="12명 미만"><span>12명 미만</span></label>
+                  <label class="dispatch-choice-card"><input type="radio" name="headcount" value="12명 이상"><span>12명 이상</span></label>
+                  <label class="dispatch-choice-card"><input type="radio" name="headcount" value="20명 이상"><span>20명 이상</span></label>
+                </div>
               </div>
             </div>
-            <div>
-              <label class="dispatch-form-label">4. 희망하는 수업 내용 또는 방향성</label>
-              <textarea name="inquiry" class="dispatch-form-input" rows="4" placeholder="원하시는 수업 방향, 운영 목적, 꼭 반영하고 싶은 사항을 자유롭게 작성해 주세요."></textarea>
+            <div class="dispatch-form-field">
+              <label class="dispatch-form-label">특수 아동 참여 유무</label>
+              <div class="dispatch-program-block mt-2">
+                <div class="dispatch-choice-stack" role="radiogroup" aria-label="특수 아동 참여 유무">
+                  <label class="dispatch-choice-card"><input type="radio" name="specialNeeds" value="O"><span>O</span></label>
+                  <label class="dispatch-choice-card"><input type="radio" name="specialNeeds" value="X"><span>X</span></label>
+                </div>
+              </div>
+            </div>
+            <div class="dispatch-form-field">
+              <label class="dispatch-form-label" for="dispatch-inquiry">희망하는 수업 내용 또는 방향성</label>
+              <textarea id="dispatch-inquiry" name="inquiry" class="dispatch-form-input mt-2" rows="4" placeholder="원하시는 수업 방향, 운영 목적, 꼭 반영하고 싶은 사항을 자유롭게 작성해 주세요."></textarea>
             </div>
           </div>
           <p class="text-sm text-slate-300 mb-5 leading-relaxed">
