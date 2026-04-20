@@ -176,7 +176,7 @@ const DEFAULT_EXPECTED_BULLETS = [
 ] as const;
 
 function expectedChangeBullets(q5: string[]): readonly string[] {
-  const base = [...DEFAULT_EXPECTED_BULLETS];
+  const base: string[] = [...DEFAULT_EXPECTED_BULLETS];
   if (q5.includes('priority_fun')) {
     base[0] = '즐거운 참여를 바탕으로 운동에 대한 부담 감소 및 참여도 증가';
   }
