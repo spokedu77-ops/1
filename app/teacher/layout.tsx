@@ -29,7 +29,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const moreMenus = [
     { id: '/teacher/inventory', label: '교구목록', icon: Package },
     { id: '/teacher/report', label: '정산 확인', icon: Receipt },
-  ];
+  ] as const;
 
   return (
     <div className="min-h-screen w-full bg-[#F9FBFF] block relative overflow-x-hidden">
@@ -90,11 +90,11 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center bg-white/95 backdrop-blur-xl border-t border-slate-100 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_10px_rgba(0,0,0,0.02)]">
         <div className="max-w-2xl w-full h-20 px-4 flex justify-around items-center">
-          {[
+          {([
             { id: '/teacher', label: '메인', icon: Home },
             { id: '/teacher/curriculum', label: '프로그램', icon: BookOpen },
             { id: '/teacher/my-classes', label: '일정', icon: Calendar },
-          ].map((item) => (
+          ] as const).map((item) => (
             <button 
               key={item.id} 
               onClick={() => router.push(item.id)} 

@@ -9,6 +9,15 @@ import { PLAN_LIMITS, PLAN_PRICES, type Plan } from '@/app/lib/spokedu-pro/planC
 export type { Plan };
 export { PLAN_LIMITS, PLAN_PRICES };
 
+/** DB에 저장된 plan/status 기준으로 기능 한도·과금 표시에 쓸 플랜. active/trialing 만 유료 혜택. */
+export function planForFeatureLimits(
+  rowPlan: Plan,
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired'
+): Plan {
+  if (status === 'active' || status === 'trialing') return rowPlan;
+  return 'free';
+}
+
 /** 사용자의 현재 활성 플랜 반환. 조회 실패 시 'free'. */
 export async function getPlanForUser(userId: string): Promise<Plan> {
   try {
@@ -41,8 +50,7 @@ export async function getPlanForUser(userId: string): Promise<Plan> {
 
     if (!sub) return 'free';
 
-    const isActive = sub.status === 'active' || sub.status === 'trialing';
-    return isActive ? (sub.plan as Plan) : 'free';
+    return planForFeatureLimits(sub.plan as Plan, sub.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired');
   } catch {
     return 'free';
   }
@@ -85,7 +93,8 @@ export async function incrementAiReportUsage(userId: string): Promise<void> {
       p_owner_id: userId,
       p_month_key: currentMonthKey(),
     });
-  } catch {
-    // 사용량 저장 실패는 무시 (리포트 생성 자체는 성공으로 처리)
+  } catch (e) {
+    // 리포트 생성은 성공으로 두되, 운영·디버깅용으로 로그만 남김 (한도 표시와 괴리 가능)
+    console.warn('[incrementAiReportUsage] failed', e);
   }
 }

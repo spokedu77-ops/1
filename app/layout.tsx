@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import Sidebar from './components/Sidebar';
 import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
 import { QueryProvider } from './providers/QueryProvider';
+import { I18nProvider } from './providers/I18nProvider';
 import { Plus_Jakarta_Sans, Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
 
@@ -43,6 +44,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-gray-50 text-slate-900 font-sans">
         <QueryProvider>
+          <I18nProvider>
           <Toaster position="top-center" richColors closeButton />
           <div
             className={`flex min-h-screen ${hideSidebar ? 'w-full overflow-x-hidden' : ''}`}
@@ -66,6 +68,7 @@ export default function RootLayout({
               {children}
             </main>
           </div>
+          </I18nProvider>
         </QueryProvider>
       </body>
     </html>

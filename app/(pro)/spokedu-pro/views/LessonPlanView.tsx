@@ -1,7 +1,8 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Plus, X, Share2, BookOpenCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Share2, BookOpenCheck, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import LibraryView from './LibraryView';
 import { useLessonPlan, type LessonPlanDayKo } from '../hooks/useLessonPlan';
@@ -22,6 +23,7 @@ export default function LessonPlanView({
 }: {
   programDetails?: Record<string, ProgramDetail>;
 }) {
+  const tr = useTranslator();
   const [weekOffset, setWeekOffset] = useState(0);
   const {
     monday,
@@ -34,10 +36,14 @@ export default function LessonPlanView({
     addProgramToSlot,
     removeProgramFromSlot,
     DAY_ORDER,
+    persistError,
+    retryPersist,
+    clearPersistError,
   } = useLessonPlan(weekOffset);
 
   const { classes } = useClassStore();
   const [librarySlotId, setLibrarySlotId] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   const weekTitle = useMemo(() => formatWeekLabelFromMonday(monday), [monday]);
 
@@ -47,44 +53,88 @@ export default function LessonPlanView({
   );
 
   const buildShareText = useCallback(() => {
-    const lines: string[] = [`[스포키듀] 수업 계획 ${weekTitle} (${weekLabel})`, ''];
+    const lines: string[] = [
+      `[${tr('스포키듀')}] ${tr('수업 계획')} ${tr(weekTitle)} (${tr(weekLabel)})`,
+      '',
+    ];
     for (const { day } of dayColumns) {
       const slots = slotsByDay[day];
       if (slots.length === 0) continue;
-      lines.push(`■ ${day}요일`);
+      lines.push(`■ ${day}${tr('요일')}`);
       for (const s of slots) {
-        lines.push(`  · ${s.classGroup || '(반 미정)'}`);
+        lines.push(`  · ${s.classGroup || tr('(반 미정)')}`);
         if (s.programIds.length) {
           s.programIds.forEach((id) => {
             const t = programDetails[String(id)]?.title ?? getProgramTitle(id);
             lines.push(`    - ${t}`);
           });
         }
-        if (s.memo.trim()) lines.push(`    메모: ${s.memo.trim()}`);
-        lines.push(`    ${s.completed ? '✓ 완료' : '○ 예정'}`);
+        if (s.memo.trim()) lines.push(`    ${tr('메모:')} ${s.memo.trim()}`);
+        lines.push(`    ${s.completed ? tr('✓ 완료') : tr('○ 예정')}`);
       }
       lines.push('');
     }
     return lines.join('\n').trim();
-  }, [dayColumns, slotsByDay, weekTitle, weekLabel, programDetails]);
+  }, [dayColumns, slotsByDay, weekTitle, weekLabel, programDetails, tr]);
 
   const handleShare = () => {
     const text = buildShareText();
-    navigator.clipboard.writeText(text).then(
-      () => toast.success('계획이 클립보드에 복사되었습니다.'),
-      () => toast.error('복사에 실패했습니다.')
+    setShareError(null);
+    void navigator.clipboard.writeText(text).then(
+      () => {
+        toast.success(tr('계획이 클립보드에 복사되었습니다.'));
+      },
+      () => {
+        setShareError(tr('클립보드에 복사하지 못했어요. 브라우저 권한을 확인해 주세요.'));
+        toast.error(tr('복사에 실패했습니다.'));
+      }
     );
   };
 
   return (
     <div className="relative min-h-full flex flex-col bg-[#0F172A]">
       <section className="px-4 sm:px-8 lg:px-12 py-8 pb-40 space-y-6 flex-1">
+        {persistError && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-sm text-red-200">
+            <span className="flex-1">{persistError}</span>
+            <div className="flex flex-wrap gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => void retryPersist()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                {tr('다시 시도')}
+              </button>
+              <button
+                type="button"
+                onClick={() => clearPersistError()}
+                className="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-100 text-xs font-bold hover:bg-red-950/40"
+              >
+                {tr('닫기')}
+              </button>
+            </div>
+          </div>
+        )}
+        {shareError && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-amber-900/20 border border-amber-500/30 rounded-xl text-sm text-amber-100">
+            <span className="flex-1">{shareError}</span>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              {tr('다시 시도')}
+            </button>
+          </div>
+        )}
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-6">
           <div className="flex items-center gap-2">
             <BookOpenCheck className="w-8 h-8 text-sky-400 shrink-0" />
             <div>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">주간 수업 계획</h2>
-              <p className="text-slate-400 text-sm font-medium mt-0.5">{weekTitle}</p>
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">{tr('주간 수업 계획')}</h2>
+              <p className="text-slate-400 text-sm font-medium mt-0.5">{tr(weekTitle)}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -92,7 +142,7 @@ export default function LessonPlanView({
               type="button"
               onClick={() => setWeekOffset((o) => o - 1)}
               className="p-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 transition-colors"
-              aria-label="이전 주"
+              aria-label={tr('이전 주')}
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -101,13 +151,13 @@ export default function LessonPlanView({
               onClick={() => setWeekOffset(0)}
               className="px-4 py-2.5 rounded-xl font-bold bg-slate-800 border border-slate-600 text-white hover:bg-slate-700 transition-colors text-sm"
             >
-              이번 주
+              {tr('이번 주')}
             </button>
             <button
               type="button"
               onClick={() => setWeekOffset((o) => o + 1)}
               className="p-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 transition-colors"
-              aria-label="다음 주"
+              aria-label={tr('다음 주')}
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -117,7 +167,7 @@ export default function LessonPlanView({
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors text-sm"
             >
               <Share2 className="w-4 h-4" />
-              이 계획 공유
+              {tr('이 계획 공유')}
             </button>
           </div>
         </header>
@@ -166,18 +216,18 @@ export default function LessonPlanView({
         <>
           <button
             type="button"
-            aria-label="패널 닫기"
+            aria-label={tr('패널 닫기')}
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
             onClick={() => setLibrarySlotId(null)}
           />
           <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col overflow-hidden">
             <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-800">
-              <p className="text-white font-black text-sm">프로그램 추가</p>
+              <p className="text-white font-black text-sm">{tr('프로그램 추가')}</p>
               <button
                 type="button"
                 onClick={() => setLibrarySlotId(null)}
                 className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-                aria-label="닫기"
+                aria-label={tr('닫기')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -187,7 +237,7 @@ export default function LessonPlanView({
                 onOpenDetail={() => {}}
                 onSelectProgram={(id) => {
                   addProgramToSlot(librarySlotId, id);
-                  toast.success('계획에 추가했습니다.');
+                  toast.success(tr('계획에 추가했습니다.'));
                 }}
                 programDetails={programDetails}
                 compact
@@ -223,6 +273,7 @@ function DayColumn({
   onRemoveProgram: (slotId: string, programId: number) => void;
   onOpenLibrary: (slotId: string) => void;
 }) {
+  const tr = useTranslator();
   return (
     <div className="rounded-2xl bg-slate-800/50 border border-slate-700 p-3 space-y-3 min-h-[120px]">
       <div className="flex items-center justify-between gap-2">
@@ -237,7 +288,7 @@ function DayColumn({
                 onChange={(e) => onUpdateSlot(slot.slotId, { classGroup: e.target.value })}
                 className="flex-1 min-w-0 bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-sky-500/50"
               >
-                <option value="">반 선택</option>
+                <option value="">{tr('반 선택')}</option>
                 {classes.map((c) => (
                   <option key={c.id} value={c.name}>
                     {c.name}
@@ -248,7 +299,7 @@ function DayColumn({
                 type="button"
                 onClick={() => onRemoveSlot(slot.slotId)}
                 className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-800 shrink-0"
-                aria-label="슬롯 삭제"
+                aria-label={tr('슬롯 삭제')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -258,7 +309,7 @@ function DayColumn({
               onClick={() => onOpenLibrary(slot.slotId)}
               className="w-full py-2 rounded-lg text-xs font-bold bg-sky-600/20 text-sky-300 border border-sky-500/30 hover:bg-sky-600/30 transition-colors"
             >
-              프로그램 추가
+              {tr('프로그램 추가')}
             </button>
             {slot.programIds.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -279,7 +330,7 @@ function DayColumn({
                         type="button"
                         onClick={() => onRemoveProgram(slot.slotId, pid)}
                         className="p-0.5 rounded text-slate-500 hover:text-white shrink-0"
-                        aria-label="제거"
+                        aria-label={tr('제거')}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -291,7 +342,7 @@ function DayColumn({
             <textarea
               value={slot.memo}
               onChange={(e) => onUpdateSlot(slot.slotId, { memo: e.target.value })}
-              placeholder="메모"
+              placeholder={tr('메모')}
               rows={2}
               className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-white placeholder:text-slate-600 resize-none focus:outline-none focus:border-slate-500"
             />
@@ -302,7 +353,7 @@ function DayColumn({
                 onChange={(e) => onMarkDone(slot.slotId, e.target.checked)}
                 className="rounded border-slate-600 text-amber-500"
               />
-              완료
+              {tr('완료')}
             </label>
           </div>
         ))}
@@ -312,7 +363,7 @@ function DayColumn({
         onClick={onAddSlot}
         className="w-full flex items-center justify-center gap-1 py-2 rounded-xl border border-dashed border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 text-xs font-bold transition-colors"
       >
-        <Plus className="w-4 h-4" /> 수업 추가
+        <Plus className="w-4 h-4" /> {tr('수업 추가')}
       </button>
     </div>
   );

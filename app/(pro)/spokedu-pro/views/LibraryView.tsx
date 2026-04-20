@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useMemo, memo, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
@@ -37,13 +38,14 @@ const ProgramCard = memo(function ProgramCard({
   thumbnailUrl?: string | null;
   onClick: () => void;
 }) {
+  const tr = useTranslator();
   return (
     <div
       className="media-card relative w-full aspect-[4/3] rounded-2xl overflow-hidden group cursor-pointer border border-slate-700/80"
       onClick={onClick}
       role="button"
       tabIndex={0}
-      aria-label={title}
+      aria-label={tr(title)}
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
     >
       {thumbnailUrl ? (
@@ -61,12 +63,12 @@ const ProgramCard = memo(function ProgramCard({
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent p-4 flex flex-col justify-end">
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
-            {tags.slice(0, 3).map((t) => (
+            {tags.slice(0, 3).map((tag) => (
               <span
-                key={t}
+                key={tag}
                 className="text-[10px] font-bold text-emerald-200 px-2 py-0.5 bg-emerald-500/25 rounded-md border border-emerald-500/30"
               >
-                {t}
+                {tr(tag)}
               </span>
             ))}
           </div>
@@ -102,6 +104,7 @@ export default function LibraryView({
   /** 라이브러리 데이터 소스 강제 모드 */
   libraryMode?: 'program' | 'screenplay';
 }) {
+  const tr = useTranslator();
   const [functionType, setFunctionType] = useState<string>('');
   const [mainTheme, setMainTheme] = useState<string>('');
   const [groupSize, setGroupSize] = useState<string>('');
@@ -160,9 +163,15 @@ export default function LibraryView({
     setFetchError(false);
     if (isScreenplayPreset) {
       fetch('/api/spokedu-pro/screenplays')
-        .then((res) => res.json())
-        .then((json) => {
-          if (cancelled || !Array.isArray(json?.screenplays)) return;
+        .then((res) => res.json().then((json) => ({ res, json })))
+        .then(({ res, json }) => {
+          if (cancelled || !res.ok || !Array.isArray(json?.screenplays)) {
+            if (!cancelled) {
+              setProgramsFromApi([]);
+              setFetchError(true);
+            }
+            return;
+          }
           const q = debouncedSearch.trim().toLowerCase();
           const mapped = json.screenplays
             .map(
@@ -188,6 +197,7 @@ export default function LibraryView({
             )
             .filter((s: ProgramRow) => (q ? s.title.toLowerCase().includes(q) : true));
           setProgramsFromApi(mapped);
+          setFetchError(false);
         })
         .catch(() => {
           if (!cancelled) { setProgramsFromApi([]); setFetchError(true); }
@@ -200,10 +210,17 @@ export default function LibraryView({
       if (groupSize) params.set('group_size', groupSize);
       if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
       fetch(`/api/spokedu-pro/programs?${params}`)
-        .then((res) => res.json())
-        .then((json) => {
-          if (cancelled || !Array.isArray(json?.data)) return;
+        .then((res) => res.json().then((json) => ({ res, json })))
+        .then(({ res, json }) => {
+          if (cancelled || !res.ok || !Array.isArray(json?.data)) {
+            if (!cancelled) {
+              setProgramsFromApi([]);
+              setFetchError(true);
+            }
+            return;
+          }
           setProgramsFromApi(json.data);
+          setFetchError(false);
         })
         .catch(() => {
           if (!cancelled) { setProgramsFromApi([]); setFetchError(true); }
@@ -239,64 +256,64 @@ export default function LibraryView({
       <header className={compact ? 'space-y-3' : 'space-y-6'}>
         <div className="flex items-end justify-between flex-wrap gap-3">
           <h2 className={compact ? 'text-xl font-black text-white tracking-tight' : 'text-3xl md:text-4xl font-black text-white tracking-tight'}>
-            {selectionMode ? '프로그램 선택' : '프로그램 뱅크'}
+            {selectionMode ? tr('프로그램 선택') : tr('프로그램 뱅크')}
           </h2>
-          <span className="text-slate-400 text-sm font-medium">{visiblePrograms.length}개</span>
+          <span className="text-slate-400 text-sm font-medium">{visiblePrograms.length}{tr('개')}</span>
         </div>
 
         {!compact && !isScreenplayPreset && (
         <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">기능</span>
-          {FUNCTION_TYPES.map((t) => (
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">{tr('기능')}</span>
+          {FUNCTION_TYPES.map((ft) => (
             <button
-              key={t}
+              key={ft}
               type="button"
-              onClick={() => setFunctionType(functionType === t ? '' : t)}
+              onClick={() => setFunctionType(functionType === ft ? '' : ft)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                functionType === t
+                functionType === ft
                   ? 'bg-emerald-600 text-white'
                   : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
               }`}
             >
-              {t}
+              {tr(ft)}
             </button>
           ))}
         </div>
         )}
         {!compact && !isScreenplayPreset && (
         <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">테마</span>
-          {MAIN_THEMES.map((t) => (
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">{tr('테마')}</span>
+          {MAIN_THEMES.map((mt) => (
             <button
-              key={t}
+              key={mt}
               type="button"
-              onClick={() => setMainTheme(mainTheme === t ? '' : t)}
+              onClick={() => setMainTheme(mainTheme === mt ? '' : mt)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                mainTheme === t
+                mainTheme === mt
                   ? 'bg-emerald-600 text-white'
                   : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
               }`}
             >
-              {t}
+              {tr(mt)}
             </button>
           ))}
         </div>
         )}
         {!compact && !isScreenplayPreset && (
         <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">인원</span>
-          {GROUP_SIZES.map((t) => (
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">{tr('인원')}</span>
+          {GROUP_SIZES.map((gs) => (
             <button
-              key={t}
+              key={gs}
               type="button"
-              onClick={() => setGroupSize(groupSize === t ? '' : t)}
+              onClick={() => setGroupSize(groupSize === gs ? '' : gs)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                groupSize === t
+                groupSize === gs
                   ? 'bg-emerald-600 text-white'
                   : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
               }`}
             >
-              {t}
+              {tr(gs)}
             </button>
           ))}
         </div>
@@ -309,7 +326,7 @@ export default function LibraryView({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="프로그램명 검색..."
+              placeholder={tr('프로그램명 검색...')}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white text-sm pl-10 pr-10 py-2.5 focus:outline-none focus:border-emerald-500"
             />
             {search && (
@@ -317,7 +334,7 @@ export default function LibraryView({
                 type="button"
                 onClick={() => setSearch('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
-                aria-label="지우기"
+                aria-label={tr('지우기')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -329,7 +346,7 @@ export default function LibraryView({
               onClick={clearFilters}
               className="px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-600 text-slate-400 hover:bg-slate-800 hover:text-white"
             >
-              필터 초기화
+              {tr('필터 초기화')}
             </button>
           )}
         </div>
@@ -349,16 +366,16 @@ export default function LibraryView({
 
       {!isLoading && fetchError && (
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
-          <p className="text-slate-400 text-sm">프로그램 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.</p>
+          <p className="text-slate-400 text-sm">{tr('프로그램 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.')}</p>
         </div>
       )}
 
       {!isLoading && !fetchError && visiblePrograms.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
           <span className="text-5xl">🔍</span>
-          <p className="text-white font-black text-lg">검색 결과가 없습니다</p>
+          <p className="text-white font-black text-lg">{tr('검색 결과가 없습니다')}</p>
           <button type="button" onClick={clearFilters} className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-500">
-            필터 초기화
+            {tr('필터 초기화')}
           </button>
         </div>
       )}
@@ -384,8 +401,8 @@ export default function LibraryView({
                   ? (() => {
                       const modeId = String(p.mode_id ?? p.function_type ?? '');
                       const entry = screenplayTagMapping.modeIdMap[modeId];
-                      const domainTag = entry?.domainLabel ?? '인지영역';
-                      const taskTag = entry?.taskLabel ?? (modeId || '과제유형');
+                      const domainTag = entry?.domainLabel ?? tr('인지영역');
+                      const taskTag = entry?.taskLabel ?? (modeId || tr('과제유형'));
                       const levelTag = getScreenplayLevelTag(p.preset_ref, screenplayTagMapping.levelLabelTemplate);
                       return [domainTag, taskTag, levelTag].filter(Boolean) as string[];
                     })()

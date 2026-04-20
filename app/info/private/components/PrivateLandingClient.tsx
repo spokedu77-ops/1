@@ -25,9 +25,9 @@ export default function PrivateLandingClient() {
   const handleAnalyzeResult = useCallback(
     (result: string) => {
       if (result === 'required') {
-        show('안내: Q1 문항(필수 항목)을 최소 1개 이상 선택해 주세요.');
+        show('안내: Q1 문항을 최소 1개 이상 선택해 주세요.');
       } else if (result === 'success') {
-        show('솔루션 분석이 완료되어 상담 폼에 반영되었습니다.');
+        show('맞춤 추천 분석이 완료되어 상담 폼에 반영되었습니다.');
       } else if (result === 'reset') {
         show('진단 내역이 초기화되었습니다.');
       }

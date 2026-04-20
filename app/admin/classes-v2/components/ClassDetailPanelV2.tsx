@@ -97,6 +97,11 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
   );
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
+  const teacherMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    teachers.forEach((t) => (map[t.id] = t.name));
+    return map;
+  }, [teachers]);
   const [bulkTeacherId, setBulkTeacherId] = useState<string>('');
   const [bulkStartTime, setBulkStartTime] = useState<string>('');
   const [bulkTeacherApplying, setBulkTeacherApplying] = useState(false);
@@ -493,6 +498,15 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     return baseNoDeleted.filter((s) => timeStatusOf(s).isActiveByTime);
   }, [sessions, roundView, timeStatusOf]);
 
+  const sessionGridMainUndecided = useMemo(() => {
+    return sessions.filter(isSessionBulkTarget).some((s) => {
+      const tid = String(s.created_by || '').trim();
+      if (!tid) return true;
+      const tname = String(teacherMap[tid] || '').trim();
+      return tname === '미정';
+    });
+  }, [sessions, teacherMap]);
+
   const handleSaveTitle = async () => {
     if (!supabase || !groupId) return;
     const nextTitle = titleDraft.trim();
@@ -842,7 +856,13 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                 </div>
               </div>
 
-              <div className="overflow-x-hidden rounded-2xl border border-slate-100">
+              <div
+                className={
+                  sessionGridMainUndecided
+                    ? 'overflow-x-hidden rounded-2xl border-2 border-red-500 bg-red-50/70 shadow-sm shadow-red-100'
+                    : 'overflow-x-hidden rounded-2xl border border-slate-100'
+                }
+              >
                 <table className="w-full table-fixed text-xs">
                   <thead className="bg-slate-50 text-[11px] font-bold text-slate-500">
                     <tr>

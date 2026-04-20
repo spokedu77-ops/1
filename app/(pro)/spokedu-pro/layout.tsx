@@ -1,5 +1,6 @@
 'use client';
 
+import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -33,9 +34,12 @@ export default function SpokeduProLayout({
 
   return (
     <div
-      className="w-full max-w-full min-w-0 overflow-hidden bg-[#0F172A] flex flex-col flex-1"
+      className="relative w-full max-w-full min-w-0 overflow-hidden bg-[#0F172A] flex flex-col flex-1"
       style={{ minHeight: 'var(--viewport-height-px, 100vh)', height: 'var(--viewport-height-px, 100vh)' }}
     >
+      <div className="pointer-events-auto absolute right-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[200] sm:right-3">
+        <LanguageSwitcher variant="dark" className="max-w-[130px]" />
+      </div>
       {children}
     </div>
   );

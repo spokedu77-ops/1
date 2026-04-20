@@ -4,6 +4,145 @@
 
 ---
 
+## 2026-04-21 (Billing Portal·퍼널 보강)
+
+| 파일 | 내용 |
+|------|------|
+| `app/api/spokedu-pro/billing-portal/route.ts` | Stripe Customer Portal 세션 `POST` |
+| `app/api/spokedu-pro/context/route.ts` | `billing.stripeCustomerId` 노출 |
+| `app/(pro)/spokedu-pro/hooks/useProContext.ts` | `stripeCustomerId` 타입 |
+| `app/(pro)/spokedu-pro/views/SettingsView.tsx` | 포털 CTA·`spokedu_pro_checkout_start` |
+| `app/(pro)/spokedu-pro/SpokeduProClient.tsx` | 드로어 시 `spokedu_pro_week_card_open` |
+| `docs/spokedu-subscription-stripe-env.md` | Portal Dashboard 안내 |
+| `docs/spokedu-subscription-funnel-events.md` | checkout_start·week_card 비고 |
+
+---
+
+## 2026-04-21 (물결 E — Stripe↔DB 정합·웹훅 하드닝·테넌트 감사)
+
+| 파일 | 내용 |
+|------|------|
+| `supabase/migrations/20260421090000_spokedu_stripe_webhook_hardening.sql` | 웹훅 멱등 테이블 RLS, `event_type`, TTL `spokedu_pro_purge_stripe_webhook_events` |
+| `supabase/migrations/20260421090100_spokedu_pro_ai_reports_student_created_idx.sql` | AI 리포트 히스토리 `(student_id, created_at DESC)` 인덱스 |
+| `app/lib/server/stripeWebhookLog.ts` | JSON 한 줄 로그 + `STRIPE_WEBHOOK_OPS_ALERT_URL` |
+| `app/api/webhooks/stripe/route.ts` | 구조화 로그, `invoice.payment_failed`→`past_due`, 실패 시 알림, 멱등 insert에 `event_type` |
+| `docs/spokedu-subscription-stripe-env.md` | 알림 URL·이벤트·purge·관측 문구 |
+| `docs/spokedu-subscription-prod-db-audit.md` | §5 Stripe↔DB 정합 SQL, §6 테넌트 무결성 SQL |
+
+---
+
+## 2026-04-19 (다음 단계 플랜 — 모바일·결제·퍼널·Stripe 멱등)
+
+| 파일 | 내용 |
+|------|------|
+| `app/(pro)/spokedu-pro/utils/spokeduProAnalytics.ts` | 퍼널 `track()` 헬퍼(개발 console) |
+| `app/(pro)/spokedu-pro/SpokeduProClient.tsx` | `past_due` 배너, 뷰·로그인 이벤트 |
+| `app/(pro)/spokedu-pro/views/AssistantToolsView.tsx` | 모바일 44px·팀 그리드·vibrate·술래 이벤트 |
+| `app/(pro)/spokedu-pro/views/AIReportView.tsx` | 리포트 생성 성공 이벤트 |
+| `app/(pro)/spokedu-pro/views/SettingsView.tsx` | `past_due` 안내·결제 앵커 스크롤 |
+| `app/(pro)/spokedu-pro/components/SpokeduProToolkit.tsx` | 수업 보조 한 줄 안내 |
+| `app/(pro)/spokedu-pro/views/RoadmapView.tsx` | 다음 주 갱신 정적 문구 |
+| `app/(pro)/spokedu-pro/components/OnboardingWizard.tsx` | 터치·포커스 링 |
+| `app/(pro)/spokedu-pro/legal/subscription/page.tsx` | 해지 전 일시중지·다운그레이드 문의 |
+| `app/api/webhooks/stripe/route.ts` | `event.id` 멱등·`invoice.payment_failed` 로그 |
+| `supabase/migrations/20260419120000_spokedu_stripe_webhook_idempotency.sql` | 웹훅 처리 이벤트 테이블 |
+| `docs/spokedu-subscription-section-4-execution.md` | §6.1 개발·CI 선행 증적 |
+| `docs/spokedu-subscription-roadmap-1-3-qa-log.md` | §4 브라우저 스모크·§5 온보딩 |
+| `docs/spokedu-subscription-expert-roadmap.md` | §3.5·§4.4·§5.4 갱신 |
+| `docs/spokedu-subscription-funnel-events.md` | 헬퍼 연동 문구 |
+| `docs/spokedu-subscription-stripe-env.md` | 멱등 마이그레이션 반영 |
+
+---
+
+## 2026-04-19 (그다음 스프린트 — 수업 보조·리포트·§4 증적)
+
+| 파일 | 내용 |
+|------|------|
+| `docs/spokedu-subscription-section-4-execution.md` | §6 §4 본문↔증적 표 |
+| `docs/spokedu-subscription-roadmap-1-3-qa-log.md` | 1.3 점검 로그 완료 표기 |
+| `docs/spokedu-subscription-commercialization-checklist.md` | §4 상단에 §6 증적 안내 |
+| `docs/spokedu-subscription-expert-roadmap.md` | §3.5·§4.3 링크 갱신 |
+| `docs/spokedu-subscription-funnel-events.md` | 퍼널 이벤트 이름표(신규) |
+| `docs/spokedu-subscription-go-nogo-bundle.md` | 퍼널 문서 링크 |
+| `docs/spokedu-subscription-stripe-env.md` | `stripe listen` 예시 |
+| `app/(pro)/spokedu-pro/views/AssistantToolsView.tsx` | 직전 술래 제외, 팀 다시 나누기, 순서 정하기 탭 |
+| `app/(pro)/spokedu-pro/views/ai-report/ReportHistoryPanel.tsx` | 리포트 목록 주차 라벨 |
+| `app/(pro)/spokedu-pro/views/SettingsView.tsx` | 결제 재시도·연동 재조회 |
+
+---
+
+## 2026-04-19 (다음 스프린트 — §4 선행·로드맵 2~3·Stripe 문서)
+
+| 파일 | 내용 |
+|------|------|
+| `docs/spokedu-subscription-commercialization-checklist.md` | §4.3 개발·CI 선행(`verify:spokedu-plan-copy`) |
+| `docs/spokedu-subscription-section-4-execution.md` | §4 자동 검증 exit 0 체크 표시 |
+| `docs/spokedu-subscription-roadmap-1-3-qa-log.md` | 로드맵 1.3 점검 표(신규) |
+| `docs/spokedu-subscription-expert-roadmap.md` | §1.3·§2.4 완료 기준 갱신, 용어 정책 초안 |
+| `docs/spokedu-subscription-stripe-env.md` | 과금 오픈 후 심화 체크리스트 |
+| `app/(pro)/spokedu-pro/hooks/useSpokeduProDashboard.ts` | 월요일 넘김·탭 복귀 시 주차 refetch |
+| `app/(pro)/spokedu-pro/views/RoadmapView.tsx` | Row1 카드 영상·준비 버튼, 수업 보조 CTA, 지난/다음 주 안내 `details` |
+| `app/(pro)/spokedu-pro/views/DataCenterView.tsx` | 수업 보조도구 이동 버튼 |
+| `app/(pro)/spokedu-pro/SpokeduProClient.tsx` | Roadmap·DataCenter에 `onGoToAssistantTools` 연결 |
+
+---
+
+## 2026-04-19 (내실 웨이브 — 로드맵 1~2·운영·정리)
+
+| 파일 | 내용 |
+|------|------|
+| `app/(pro)/spokedu-pro/hooks/useLessonPlan.ts` | localStorage 저장 실패 시 메시지·`retryPersist` |
+| `app/(pro)/spokedu-pro/views/LessonPlanView.tsx` | 저장/클립보드 실패 인라인 배너·다시 시도 |
+| `app/(pro)/spokedu-pro/views/RoadmapView.tsx` | 스포무브 목록 fetch `res.ok`·오류·재시도·로딩; 모바일 주차 라벨; 빈 상태 문구 통일 |
+| `app/(pro)/spokedu-pro/views/AssistantToolsView.tsx` | 술래 탭 출석 0명 시 원생 관리 이동 버튼 |
+| `app/lib/spokedu-pro/weekUtils.ts` | 대시보드 주차·큐레이션 주석 보강 |
+| `docs/spokedu-subscription-expert-roadmap.md` | §2.1 프로그램 풀·구현 기준 단락 |
+| `docs/spokedu-subscription-section-4-execution.md` | 자동 검증(`verify:spokedu-plan-copy`) 참고 절 |
+| `app/api/webhooks/stripe/route.ts` | 과금 오픈 후 확장 시 문서 참조 주석 |
+| 삭제 | `app/(pro)/spokedu-pro/SpokeduProView.tsx` (미사용 플레이스홀더, 재삭제) |
+
+---
+
+## 2026-04-19 (다음 계획 — Phase A/B/C)
+
+| 파일 | 내용 |
+|------|------|
+| `docs/spokedu-subscription-section-4-execution.md` | §4 운영 실행·서명란 체크리스트 |
+| `docs/spokedu-subscription-ops-templates-slack.md` | 슬랙 복붙 템플릿 |
+| `scripts/verify-spokedu-plan-copy.mjs` + `package.json` | `npm run verify:spokedu-plan-copy` |
+| `app/lib/server/stripeSpokedu.ts` | Stripe 클라이언트·상태 매핑 |
+| `app/api/spokedu-pro/checkout/route.ts` | Checkout GET/POST |
+| `app/api/webhooks/stripe/route.ts` | 구독 동기화 웹훅 |
+| `docs/spokedu-subscription-stripe-env.md` | Stripe env 안내 |
+| `app/(pro)/spokedu-pro/views/SettingsView.tsx` | Stripe 결제 버튼(설정 시) |
+| `app/(pro)/spokedu-pro/page.tsx` | `Suspense`로 `useSearchParams` |
+| `app/(pro)/spokedu-pro/SpokeduProClient.tsx` | `checkout` 쿼리 토스트·`refresh` |
+| `app/(pro)/spokedu-pro/views/DataCenterView.tsx` | 출석 range `res.ok`·동기화 복구 토스트 |
+| `app/(pro)/spokedu-pro/views/AIReportView.tsx` | 히스토리 fetch `res.ok` 처리 |
+| `app/lib/spokedu-pro/planUtils.ts` | `incrementAiReportUsage` 실패 `console.warn` |
+| `docs/spokedu-subscription-commercialization-checklist.md` | §4.2 보강 |
+| `docs/spokedu-subscription-go-nogo-bundle.md` | §4 실행 문서 링크 |
+
+---
+
+## 2026-04-19 (상용 갭 보완 — 결제 제외)
+
+| 파일 | 내용 |
+|------|------|
+| `app/lib/spokedu-pro/planUtils.ts` | `planForFeatureLimits` 추가, `getPlanForUser`와 동일 한도 기준 공유. |
+| `app/api/spokedu-pro/context/route.ts` | 비활성 구독 시 사용량 한도를 `planForFeatureLimits`로 계산. |
+| `app/(pro)/spokedu-pro/hooks/useProContext.ts` | 로드 실패 시 `contextLoadError`·재시도 가능(에러 시 캐시 재조회). |
+| `app/(pro)/spokedu-pro/SpokeduProClient.tsx` | 컨텍스트 오류 배너, 온보딩 조건 정리, programs/screenplays `res.ok` 처리. |
+| `app/api/spokedu-pro/plan-inquiry/route.ts` | 플랜 도입 문의 POST(Resend·수신 메일 선택). |
+| `app/(pro)/spokedu-pro/views/SettingsView.tsx` | 업그레이드 CTA → plan-inquiry API, 법적 고지 링크. |
+| `app/(pro)/spokedu-pro/legal/subscription/page.tsx` | 구독·청약·환불 요약 고지. |
+| `app/(pro)/spokedu-pro/views/AssistantToolsView.tsx` | 원생 스토어 동기화 실패 배너·재시도. |
+| `app/(pro)/spokedu-pro/views/LibraryView.tsx` | 목록 fetch `res.ok` 및 오류 플래그. |
+| `docs/spokedu-subscription-go-nogo-bundle.md` | Go/No-Go §4 실행 번들. |
+| `docs/spokedu-subscription-commercialization-checklist.md` | §4.1 항목 반영. |
+
+---
+
 ## 2026-04 (빠른 상용화 1차 범위 고정)
 
 ### 1. 가격/플랜 단일 소스

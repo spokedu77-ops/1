@@ -57,6 +57,17 @@ export default function AdminMoveReportPage() {
   const [windowKey, setWindowKey] = useState<WindowKey>('today');
   const [summaryLoadedAt, setSummaryLoadedAt] = useState<string | null>(null);
 
+  const [ipLimitSummary, setIpLimitSummary] = useState<{ totalIps: number; ipsAtLimit: number } | null>(null);
+  const [ipLimitLoading, setIpLimitLoading] = useState(true);
+  const [ipLimitError, setIpLimitError] = useState<string | null>(null);
+  const [ipResetInput, setIpResetInput] = useState('');
+  const [ipResetting, setIpResetting] = useState(false);
+
+  const [bypassUrl, setBypassUrl] = useState<string | null>(null);
+  const [bypassConfigured, setBypassConfigured] = useState<boolean | null>(null);
+  const [bypassError, setBypassError] = useState<string | null>(null);
+  const [bypassRegenerating, setBypassRegenerating] = useState(false);
+
   const load = async () => {
     setLoading(true);
     setError(null);
@@ -108,6 +119,79 @@ export default function AdminMoveReportPage() {
 
   useEffect(() => {
     void loadSummary();
+  }, []);
+
+  const loadIpLimits = async () => {
+    setIpLimitLoading(true);
+    setIpLimitError(null);
+    try {
+      const res = await fetch('/api/admin/move-report/ip-limits', { credentials: 'include' });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        totalIps?: number;
+        ipsAtLimit?: number;
+        error?: string;
+      };
+      if (!json.ok) {
+        setIpLimitError(json.error ?? '이용 제한 현황을 불러오지 못했습니다.');
+        setIpLimitSummary(null);
+        return;
+      }
+      setIpLimitSummary({ totalIps: json.totalIps ?? 0, ipsAtLimit: json.ipsAtLimit ?? 0 });
+    } catch {
+      setIpLimitError('이용 제한 현황 네트워크 오류가 발생했습니다.');
+      setIpLimitSummary(null);
+    } finally {
+      setIpLimitLoading(false);
+    }
+  };
+
+  const loadBypassLink = async () => {
+    setBypassError(null);
+    try {
+      const res = await fetch('/api/admin/move-report/bypass-link', { credentials: 'include' });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        configured?: boolean;
+        url?: string | null;
+        error?: string;
+      };
+      if (!json.ok) {
+        setBypassConfigured(false);
+        setBypassUrl(null);
+        setBypassError(json.error ?? '체육관 링크를 불러오지 못했습니다.');
+        return;
+      }
+      setBypassConfigured(!!json.configured);
+      setBypassUrl(typeof json.url === 'string' ? json.url : null);
+    } catch {
+      setBypassConfigured(false);
+      setBypassUrl(null);
+      setBypassError('체육관 링크 네트워크 오류가 발생했습니다.');
+    }
+  };
+
+  const issueOrRegenerateGymKey = async () => {
+    if (!window.confirm('새 체육관용 키를 발급할까요? 이전에 나눠준 링크는 더 이상 제한 해제에 쓰이지 않습니다.')) return;
+    setBypassRegenerating(true);
+    try {
+      const res = await fetch('/api/admin/move-report/gym-key', { method: 'POST', credentials: 'include' });
+      const json = (await res.json()) as { ok?: boolean; url?: string; error?: string };
+      if (!res.ok || !json.ok) {
+        window.alert(json.error ?? '발급에 실패했습니다.');
+        return;
+      }
+      await loadBypassLink();
+    } catch {
+      window.alert('네트워크 오류가 발생했습니다.');
+    } finally {
+      setBypassRegenerating(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadIpLimits();
+    void loadBypassLink();
   }, []);
 
   const profileOptions = useMemo(() => {
@@ -250,6 +334,8 @@ export default function AdminMoveReportPage() {
               onClick={() => {
                 void load();
                 void loadSummary();
+                void loadIpLimits();
+                void loadBypassLink();
               }}
               className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
             >
@@ -266,7 +352,7 @@ export default function AdminMoveReportPage() {
               CSV 다운로드
             </button>
             <Link
-              href="/move-report"
+              href={bypassUrl ?? '/move-report'}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -395,6 +481,139 @@ export default function AdminMoveReportPage() {
                 ))}
               </select>
             </div>
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+          <div className="text-sm font-semibold text-slate-800 mb-2">MOVE 리포트 이용 제한 (IP)</div>
+          {ipLimitLoading ? (
+            <div className="text-sm text-slate-500">로딩 중...</div>
+          ) : ipLimitError ? (
+            <div className="text-sm text-red-600">{ipLimitError}</div>
+          ) : ipLimitSummary ? (
+            <div className="flex flex-wrap gap-4 text-sm text-slate-700 mb-4">
+              <div>
+                총 완료 IP: <span className="font-bold text-slate-900">{ipLimitSummary.totalIps}</span>개
+              </div>
+              <div>
+                3회 한도 소진 IP: <span className="font-bold text-slate-900">{ipLimitSummary.ipsAtLimit}</span>개
+              </div>
+            </div>
+          ) : null}
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-xs text-slate-500">IP 리셋 (카운트 삭제)</label>
+              <input
+                value={ipResetInput}
+                onChange={(e) => setIpResetInput(e.target.value)}
+                placeholder="예: 203.255.255.1"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              disabled={ipResetting || !ipResetInput.trim()}
+              onClick={async () => {
+                const ip = ipResetInput.trim();
+                if (!ip) return;
+                if (!window.confirm(`이 IP의 완료 기록을 삭제할까요?\n${ip}`)) return;
+                setIpResetting(true);
+                try {
+                  const res = await fetch('/api/admin/move-report/ip-limits', {
+                    method: 'DELETE',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip }),
+                  });
+                  const json = (await res.json()) as { ok?: boolean; error?: string };
+                  if (!res.ok || !json.ok) {
+                    window.alert(json.error ?? '삭제에 실패했습니다.');
+                    return;
+                  }
+                  setIpResetInput('');
+                  void loadIpLimits();
+                } catch {
+                  window.alert('네트워크 오류가 발생했습니다.');
+                } finally {
+                  setIpResetting(false);
+                }
+              }}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              리셋
+            </button>
+          </div>
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <div className="text-xs font-semibold text-slate-600 mb-1">체육관·단체용 링크 (제한 없음, DB 저장)</div>
+            {bypassConfigured === null ? (
+              <div className="text-sm text-slate-500">로딩 중...</div>
+            ) : bypassError ? (
+              <div className="space-y-2">
+                <p className="text-sm text-red-600">{bypassError}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void loadBypassLink()}
+                    className="inline-flex min-h-[36px] items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  >
+                    다시 불러오기
+                  </button>
+                  <button
+                    type="button"
+                    disabled={bypassRegenerating}
+                    onClick={() => void issueOrRegenerateGymKey()}
+                    className="inline-flex min-h-[36px] items-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+                  >
+                    키 발급
+                  </button>
+                </div>
+              </div>
+            ) : !bypassConfigured ? (
+              <div className="space-y-2">
+                <p className="text-sm text-slate-600">
+                  아직 DB에 체육관용 키가 없습니다. Supabase 마이그레이션을 적용했는지 확인한 뒤, 아래에서 키를 발급하세요.
+                </p>
+                <button
+                  type="button"
+                  disabled={bypassRegenerating}
+                  onClick={() => void issueOrRegenerateGymKey()}
+                  className="inline-flex min-h-[36px] items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+                >
+                  {bypassRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  키 발급
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                <code className="text-xs break-all rounded-lg bg-slate-50 border border-slate-200 px-2 py-1.5 text-slate-800 max-w-full flex-1 min-w-0">
+                  {bypassUrl}
+                </code>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!bypassUrl) return;
+                      const ok = await copyToClipboard(bypassUrl);
+                      if (ok) window.alert('링크를 복사했습니다.');
+                      else window.alert('복사에 실패했습니다.');
+                    }}
+                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    복사
+                  </button>
+                  <button
+                    type="button"
+                    disabled={bypassRegenerating}
+                    onClick={() => void issueOrRegenerateGymKey()}
+                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 cursor-pointer"
+                  >
+                    {bypassRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                    키 재발급
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

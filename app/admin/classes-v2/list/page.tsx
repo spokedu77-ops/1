@@ -1115,8 +1115,19 @@ export default function ClassListPageV2() {
                   const rowKey = makeBundleCompositeKey(g.displayTeacherId, g.title);
 
                   return (
-                    <tr key={rowKey} className="border-t border-slate-100 hover:bg-slate-50/50">
-                      <td className="px-4 py-3 font-bold text-slate-800">
+                    <tr
+                      key={rowKey}
+                      className={
+                        teacherUndecided
+                          ? "border-t border-red-200 bg-red-50/90 hover:bg-red-50"
+                          : "border-t border-slate-100 hover:bg-slate-50/50"
+                      }
+                    >
+                      <td
+                        className={`px-4 py-3 font-bold ${
+                          teacherUndecided ? "text-slate-900" : "text-slate-800"
+                        }`}
+                      >
                         {getCleanClassTitle(g.title)}
                       </td>
                       <td
@@ -1124,8 +1135,16 @@ export default function ClassListPageV2() {
                       >
                         {teacherName}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{g.roundTotal}회</td>
-                      <td className="px-4 py-3 text-slate-600">{firstDate}</td>
+                      <td
+                        className={`px-4 py-3 ${teacherUndecided ? "text-slate-800" : "text-slate-600"}`}
+                      >
+                        {g.roundTotal}회
+                      </td>
+                      <td
+                        className={`px-4 py-3 ${teacherUndecided ? "text-slate-800" : "text-slate-600"}`}
+                      >
+                        {firstDate}
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex px-3 py-1 rounded-full text-[11px] font-bold ${

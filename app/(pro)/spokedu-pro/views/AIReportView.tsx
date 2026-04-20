@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Bot, Sparkles, User, Loader2, AlertCircle, History, ChevronDown } from 'lucide-react';
 import { useStudentStore, type Student } from '../hooks/useStudentStore';
@@ -9,6 +10,7 @@ import type { ReportData, ReportMeta, HistoryReportItem, Tone } from './ai-repor
 import AIReportForm from './ai-report/AIReportForm';
 import ReportHistoryPanel from './ai-report/ReportHistoryPanel';
 import { ReportCard, EmptyState } from './ai-report/ReportPreview';
+import { trackSpokeduProEvent } from '../utils/spokeduProAnalytics';
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AIReportView({
@@ -18,6 +20,7 @@ export default function AIReportView({
   initialStudentId?: string | null;
   onConsumeInitialStudent?: () => void;
 } = {}) {
+  const tr = useTranslator();
   const { students } = useStudentStore();
   const { ctx } = useProContext();
 
@@ -90,9 +93,16 @@ export default function AIReportView({
     setHistoryLoadError(null);
     setSelectedHistoryReport(null);
     fetch(`/api/spokedu-pro/ai-report?studentId=${encodeURIComponent(selectedStudentId)}`)
-      .then((res) => res.json())
-      .then((data) => {
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
         if (cancelled) return;
+        if (!res.ok) {
+          setHistoryLoadError(
+            typeof data.error === 'string' ? data.error : `목록을 불러오지 못했어요. (${res.status})`
+          );
+          setHistoryReports([]);
+          return;
+        }
         if (!data.ok) {
           setHistoryLoadError(data.error ?? '목록을 불러오지 못했어요.');
           setHistoryReports([]);
@@ -144,35 +154,41 @@ export default function AIReportView({
       setReport(data.report);
       setMeta(data.meta);
       setSavedToHistory(data.savedToHistory === true);
+      trackSpokeduProEvent('spokedu_pro_report_generate', {
+        plan: ctx.entitlement.plan,
+        aiReportThisMonth: ctx.usage.aiReportThisMonth,
+        aiReportMonthlyLimit: ctx.usage.aiReportMonthlyLimit,
+      });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '알 수 없는 오류');
     } finally {
       setLoading(false);
     }
-  }, [selectedStudent, sessionNotes, developmentGoal, additionalGoal, tone]);
+  }, [selectedStudent, sessionNotes, developmentGoal, additionalGoal, tone, ctx.entitlement.plan, ctx.usage]);
 
   const handleCopy = useCallback(async () => {
     const sourceReport = tab === 'history' ? viewingReport : report;
     const sourceMeta = tab === 'history' ? viewingMeta : meta;
     if (!sourceReport || !sourceMeta) return;
+    const period = sourceMeta.period ?? '';
     const text = [
-      `📋 ${sourceMeta.studentName} ${sourceMeta.classGroup} 수업 리포트 (${sourceMeta.period ?? ''})`,
+      `📋 ${sourceMeta.studentName} ${sourceMeta.classGroup} ${tr('수업 리포트')} (${period})`,
       '',
-      `✨ 이번 수업 하이라이트`,
+      tr('✨ 이번 수업 하이라이트'),
       sourceReport.highlight,
       '',
-      `📈 성장 포인트`,
+      tr('📈 성장 포인트'),
       sourceReport.growth,
       '',
-      `🏠 가정 연계 활동`,
+      tr('🏠 가정 연계 활동'),
       sourceReport.homeActivity,
       '',
-      `💬 코치 한마디`,
+      tr('💬 코치 한마디'),
       sourceReport.coachMessage,
       '',
-      `🎯 다음 수업 목표: ${sourceReport.nextGoal}`,
+      `${tr('🎯 다음 수업 목표:')} ${sourceReport.nextGoal}`,
       '',
-      `[스포키듀 AI 리포트 | ${new Date(sourceMeta.generatedAt).toLocaleDateString('ko-KR')}]`,
+      `[${tr('스포키듀 AI 리포트')} | ${new Date(sourceMeta.generatedAt).toLocaleDateString('ko-KR')}]`,
     ].join('\n');
     try {
       await navigator.clipboard.writeText(text);
@@ -181,7 +197,7 @@ export default function AIReportView({
     } catch {
       setError('복사 실패 — 수동으로 선택해 복사해주세요.');
     }
-  }, [tab, report, meta, viewingReport, viewingMeta]);
+  }, [tab, report, meta, viewingReport, viewingMeta, tr]);
 
   const handleReset = useCallback(() => {
     setReport(null);
@@ -205,18 +221,18 @@ export default function AIReportView({
         format: [canvas.width, canvas.height],
       });
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`${sourceMeta.studentName}_리포트.pdf`);
+      pdf.save(`${sourceMeta.studentName}_${tr('리포트')}.pdf`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'PDF 저장 실패');
     }
-  }, [tab, meta, viewingMeta]);
+  }, [tab, meta, viewingMeta, tr]);
 
   const handleKakaoShare = useCallback(() => {
     const sourceReport = tab === 'history' ? viewingReport : report;
     const sourceMeta = tab === 'history' ? viewingMeta : meta;
     if (!sourceReport || !sourceMeta) return;
 
-    const text = `${sourceMeta.studentName} 수업 리포트\n\n${sourceReport.highlight}\n\n- 스포키듀 AI 리포트`;
+    const text = `${sourceMeta.studentName} ${tr('수업 리포트')}\n\n${sourceReport.highlight}\n\n- ${tr('스포키듀 AI 리포트')}`;
 
     // 카카오 SDK를 제거했으므로, 버튼 동작은 동일 텍스트를 클립보드에 복사하는 것으로 대체합니다.
     void (async () => {
@@ -226,7 +242,7 @@ export default function AIReportView({
         setError('복사 실패 — 수동으로 선택해 복사해주세요.');
       }
     })();
-  }, [tab, report, meta, viewingReport, viewingMeta, setError]);
+  }, [tab, report, meta, viewingReport, viewingMeta, setError, tr]);
 
   const canGenerate = !!selectedStudent && !loading && !isBlocked && !isLimitReached;
 
@@ -242,9 +258,9 @@ export default function AIReportView({
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
-                에듀-에코 AI 리포트
+                {tr('에듀-에코 AI 리포트')}
               </h1>
-              <p className="text-slate-500 text-sm mt-0.5">Gemini 기반 학부모 연계 리포트 자동 생성</p>
+              <p className="text-slate-500 text-sm mt-0.5">{tr('Gemini 기반 학부모 연계 리포트 자동 생성')}</p>
             </div>
           </div>
 
@@ -253,8 +269,8 @@ export default function AIReportView({
             <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sm">
               <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-amber-300 font-semibold">AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.</p>
-                <p className="text-amber-400/70 text-xs mt-0.5">설정 → 플랜 업그레이드 또는 운영팀에 문의해 주세요.</p>
+                <p className="text-amber-300 font-semibold">{tr('AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.')}</p>
+                <p className="text-amber-400/70 text-xs mt-0.5">{tr('설정 → 플랜 업그레이드 또는 운영팀에 문의해 주세요.')}</p>
               </div>
             </div>
           )}
@@ -262,8 +278,8 @@ export default function AIReportView({
             <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sm">
               <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-amber-300 font-semibold">이번 달 AI 리포트를 18회 사용했습니다. 2회 남았어요.</p>
-                <p className="text-amber-400/70 text-xs mt-0.5">Pro 업그레이드 시 무제한 생성 가능합니다.</p>
+                <p className="text-amber-300 font-semibold">{tr('이번 달 AI 리포트를 18회 사용했습니다. 2회 남았어요.')}</p>
+                <p className="text-amber-400/70 text-xs mt-0.5">{tr('Pro 업그레이드 시 무제한 생성 가능합니다.')}</p>
               </div>
             </div>
           )}
@@ -271,15 +287,15 @@ export default function AIReportView({
             <div className="flex items-start gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-red-300 font-semibold">이번 달 AI 리포트 한도({monthlyLimit}회)를 모두 사용했습니다.</p>
-                <p className="text-red-400/70 text-xs mt-0.5">Pro 플랜 업그레이드 시 무제한으로 사용할 수 있습니다.</p>
+                <p className="text-red-300 font-semibold">{tr(`이번 달 AI 리포트 한도(${monthlyLimit}회)를 모두 사용했습니다.`)}</p>
+                <p className="text-red-400/70 text-xs mt-0.5">{tr('Pro 플랜 업그레이드 시 무제한으로 사용할 수 있습니다.')}</p>
               </div>
             </div>
           )}
           {!isBlocked && !isLimitReached && monthlyLimit !== null && (
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <Bot className="w-3.5 h-3.5" />
-              이번 달 사용: <span className="text-slate-300 font-bold">{usage.aiReportThisMonth} / {monthlyLimit}회</span>
+              {tr('이번 달 사용:')} <span className="text-slate-300 font-bold">{usage.aiReportThisMonth} / {monthlyLimit}{tr('회')}</span>
             </div>
           )}
 
@@ -291,7 +307,7 @@ export default function AIReportView({
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === 'create' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'text-slate-400 hover:text-white'}`}
             >
               <Sparkles className="w-4 h-4" />
-              새 리포트 만들기
+              {tr('새 리포트 만들기')}
             </button>
             <button
               type="button"
@@ -299,7 +315,7 @@ export default function AIReportView({
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === 'history' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'text-slate-400 hover:text-white'}`}
             >
               <History className="w-4 h-4" />
-              이전 리포트 보기
+              {tr('이전 리포트 보기')}
             </button>
           </div>
         </header>
@@ -314,12 +330,12 @@ export default function AIReportView({
               {/* 수강생 선택 (공통) */}
               <div className="space-y-2">
                 <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-widest">
-                  <User className="w-3.5 h-3.5" /> 수강생 선택
+                  <User className="w-3.5 h-3.5" /> {tr('수강생 선택')}
                 </label>
                 {students.length === 0 ? (
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
                     <p className="text-amber-400 text-xs font-medium">
-                      수강생 데이터가 없습니다. 출석부에서 먼저 학생을 등록해 주세요.
+                      {tr('수강생 데이터가 없습니다. 출석부에서 먼저 원생을 등록해 주세요.')}
                     </p>
                   </div>
                 ) : (
@@ -329,7 +345,7 @@ export default function AIReportView({
                       onChange={(e) => setSelectedStudentId(e.target.value)}
                       className="w-full appearance-none bg-white/5 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/30 font-medium text-sm transition-all cursor-pointer"
                     >
-                      <option value="" className={OPTION_DARK_CLASS}>— 학생을 선택하세요 —</option>
+                      <option value="" className={OPTION_DARK_CLASS}>{tr('— 학생을 선택하세요 —')}</option>
                       {students.map((s) => (
                         <option key={s.id} value={s.id} className={OPTION_DARK_CLASS}>
                           {s.name} ({s.classGroup})
@@ -381,8 +397,8 @@ export default function AIReportView({
               <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4">
                 <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-red-300 font-semibold text-sm">생성 실패</p>
-                  <p className="text-red-400/70 text-xs mt-0.5">{error}</p>
+                  <p className="text-red-300 font-semibold text-sm">{tr('생성 실패')}</p>
+                  <p className="text-red-400/70 text-xs mt-0.5">{tr(error)}</p>
                 </div>
               </div>
             )}
@@ -393,8 +409,8 @@ export default function AIReportView({
                   <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
                 </div>
                 <div className="text-center">
-                  <p className="text-white font-bold">Gemini가 분석 중입니다</p>
-                  <p className="text-slate-500 text-sm mt-1">신체 데이터와 수업 메모를 기반으로 리포트를 작성하고 있어요.</p>
+                  <p className="text-white font-bold">{tr('Gemini가 분석 중입니다')}</p>
+                  <p className="text-slate-500 text-sm mt-1">{tr('신체 데이터와 수업 메모를 기반으로 리포트를 작성하고 있어요.')}</p>
                 </div>
                 <div className="flex gap-1.5 mt-2 flex-wrap justify-center">
                   {['수업 분석', '성장 포인트 도출', '가정 활동 추천'].map((step) => (
@@ -402,7 +418,7 @@ export default function AIReportView({
                       key={step}
                       className="px-2 py-1 bg-white/5 border border-white/10 text-slate-500 text-xs rounded-lg"
                     >
-                      {step}
+                      {tr(step)}
                     </span>
                   ))}
                 </div>
@@ -414,7 +430,7 @@ export default function AIReportView({
             {tab === 'history' && !selectedHistoryReport && selectedStudentId && !historyLoading && (
               <div className="flex-1 flex flex-col items-center justify-center py-16 text-center px-6">
                 <History className="w-16 h-16 text-slate-600 mb-4" />
-                <p className="text-slate-500 text-sm">목록에서 볼 리포트를 선택하세요.</p>
+                <p className="text-slate-500 text-sm">{tr('목록에서 볼 리포트를 선택하세요.')}</p>
               </div>
             )}
 
@@ -447,7 +463,7 @@ export default function AIReportView({
                 );
               } catch {
                 return (
-                  <div className="text-slate-500 text-sm p-4">리포트를 불러올 수 없습니다.</div>
+                  <div className="text-slate-500 text-sm p-4">{tr('리포트를 불러올 수 없습니다.')}</div>
                 );
               }
             })()}
@@ -456,7 +472,7 @@ export default function AIReportView({
               <>
                 {savedToHistory === false && (
                   <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sm text-amber-200">
-                    이전 리포트 목록에 저장되지 않았을 수 있습니다. 복사·PDF로 보관해 주세요.
+                    {tr('이전 리포트 목록에 저장되지 않았을 수 있습니다. 복사·PDF로 보관해 주세요.')}
                   </div>
                 )}
                 <ReportCard

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useCallback } from 'react';
 import { Building2, UserPlus, Sparkles, ChevronRight, Loader2 } from 'lucide-react';
 import { useProContext } from '../hooks/useProContext';
@@ -16,6 +17,7 @@ export default function OnboardingWizard({
   onDismiss: () => void;
   onSwitchView: (viewId: ViewId) => void;
 }) {
+  const t = useTranslator();
   const { refresh } = useProContext();
   const [step, setStep] = useState<Step>(1);
   const [centerName, setCenterName] = useState('');
@@ -110,34 +112,34 @@ export default function OnboardingWizard({
                   <Building2 className="w-6 h-6 text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-white">센터 이름을 알려주세요</h2>
-                  <p className="text-slate-400 text-sm">14일 무료 체험이 시작됩니다.</p>
+                  <h2 className="text-xl font-black text-white">{t('센터 이름을 알려주세요')}</h2>
+                  <p className="text-slate-400 text-sm">{t('14일 무료 체험이 시작됩니다.')}</p>
                 </div>
               </div>
               <input
                 type="text"
                 value={centerName}
                 onChange={(e) => setCenterName(e.target.value)}
-                placeholder="예: OO 체육관"
+                placeholder={t('예: OO 체육관')}
                 className="w-full bg-slate-900 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 placeholder:text-slate-500"
               />
-              {error && <p className="text-red-400 text-sm">{error}</p>}
+              {error && <p className="text-red-400 text-sm">{t(error)}</p>}
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm font-bold"
+                  className="flex-1 min-h-[44px] py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
-                  나중에
+                  {t('나중에')}
                 </button>
                 <button
                   type="button"
                   onClick={handleStep1}
                   disabled={loading}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 min-h-[44px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/90 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
-                  시작하기
+                  {t('시작하기')}
                 </button>
               </div>
             </>
@@ -150,29 +152,29 @@ export default function OnboardingWizard({
                   <UserPlus className="w-6 h-6 text-emerald-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-white">원생 등록 (선택)</h2>
-                  <p className="text-slate-400 text-sm">나중에 출석부에서도 추가할 수 있어요.</p>
+                  <h2 className="text-xl font-black text-white">{t('원생 등록 (선택)')}</h2>
+                  <p className="text-slate-400 text-sm">{t('나중에 출석부에서도 추가할 수 있어요.')}</p>
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">첫 반 이름</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('첫 반 이름')}</label>
                 <input
                   type="text"
                   value={firstClassName}
                   onChange={(e) => setFirstClassName(e.target.value)}
-                  placeholder="예: 유치부 인지반"
+                  placeholder={t('예: 유치부 인지반')}
                   className="w-full bg-slate-900 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 placeholder:text-slate-500"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">원생 이름 (최대 5명)</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('원생 이름 (최대 5명)')}</label>
                 {studentRows.map((row, i) => (
                   <input
                     key={i}
                     type="text"
                     value={row.name}
                     onChange={(e) => setStudentName(i, e.target.value)}
-                    placeholder={`원생 ${i + 1}`}
+                    placeholder={t(`원생 ${i + 1}`)}
                     className="w-full bg-slate-900 border border-slate-600 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 placeholder:text-slate-500"
                   />
                 ))}
@@ -182,27 +184,27 @@ export default function OnboardingWizard({
                     onClick={addStudentRow}
                     className="text-xs text-blue-400 hover:text-blue-300 font-bold"
                   >
-                    + 한 명 더
+                    {t('+ 한 명 더')}
                   </button>
                 )}
               </div>
-              {error && <p className="text-red-400 text-sm">{error}</p>}
+              {error && <p className="text-red-400 text-sm">{t(error)}</p>}
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={handleStep2Skip}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm font-bold"
+                  className="flex-1 min-h-[44px] py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
-                  건너뛰기
+                  {t('건너뛰기')}
                 </button>
                 <button
                   type="button"
                   onClick={handleStep2Continue}
                   disabled={loading}
-                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 min-h-[44px] py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/90 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  등록하고 계속
+                  {t('등록하고 계속')}
                 </button>
               </div>
             </>
@@ -215,28 +217,28 @@ export default function OnboardingWizard({
                   <Sparkles className="w-6 h-6 text-violet-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-white">준비 완료!</h2>
-                  <p className="text-slate-400 text-sm">지금 바로 반 전체 리포트를 뽑아보세요.</p>
+                  <h2 className="text-xl font-black text-white">{t('준비 완료!')}</h2>
+                  <p className="text-slate-400 text-sm">{t('지금 바로 반 전체 리포트를 뽑아보세요.')}</p>
                 </div>
               </div>
               <p className="text-slate-300 text-sm leading-relaxed">
-                14일 동안 Basic 기능을 무료로 사용할 수 있어요. AI 리포트 20회, 반 3개까지 이용 가능합니다.
+                {t('14일 동안 Basic 기능을 무료로 사용할 수 있어요. AI 리포트 20회, 반 3개까지 이용 가능합니다.')}
               </p>
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm font-bold"
+                  className="flex-1 min-h-[44px] py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
-                  닫기
+                  {t('닫기')}
                 </button>
                 <button
                   type="button"
                   onClick={handleStep3Start}
-                  className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold flex items-center justify-center gap-1.5"
+                  className="flex-1 min-h-[44px] py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/90 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   <Sparkles className="w-4 h-4" />
-                  AI 리포트 시작
+                  {t('AI 리포트 시작')}
                 </button>
               </div>
             </>

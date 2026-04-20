@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import { ClipboardList, MessageSquare, Target, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 import { useStudentStore, PHYSICAL_LABELS, LEVEL_LABELS, type Student } from '../../hooks/useStudentStore';
 import { DEVELOPMENT_GOAL_OPTIONS, getPeriodLabel, OPTION_DARK_CLASS } from './constants';
@@ -35,13 +36,14 @@ export default function AIReportForm({
   loading: boolean;
   canGenerate: boolean;
 }) {
+  const tr = useTranslator();
   const periodLabel = getPeriodLabel();
 
   return (
     <>
       {selectedStudent && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-          <p className="text-xs font-semibold text-slate-500 mb-2">신체 기능 현황</p>
+          <p className="text-xs font-semibold text-slate-500 mb-2">{tr('신체 기능 현황')}</p>
           <div className="flex flex-wrap gap-1.5">
             {Object.entries(selectedStudent.physical).map(([k, v]) => {
               const colorMap: Record<number, string> = {
@@ -54,7 +56,7 @@ export default function AIReportForm({
                   key={k}
                   className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${colorMap[v as PhysicalLevel]}`}
                 >
-                  {PHYSICAL_LABELS[k as keyof typeof PHYSICAL_LABELS]} {LEVEL_LABELS[v as PhysicalLevel]}
+                  {tr(PHYSICAL_LABELS[k as keyof typeof PHYSICAL_LABELS])} {tr(LEVEL_LABELS[v as PhysicalLevel])}
                 </span>
               );
             })}
@@ -64,21 +66,21 @@ export default function AIReportForm({
 
       <div className="space-y-2">
         <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-widest">
-          <ClipboardList className="w-3.5 h-3.5" /> 수업 기간
+          <ClipboardList className="w-3.5 h-3.5" /> {tr('수업 기간')}
         </label>
         <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium">
-          {periodLabel}
+          {tr(periodLabel)}
         </div>
       </div>
 
       <div className="space-y-2">
         <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-widest">
-          <MessageSquare className="w-3.5 h-3.5" /> 수업 메모
+          <MessageSquare className="w-3.5 h-3.5" /> {tr('수업 메모')}
         </label>
         <textarea
           value={sessionNotes}
           onChange={(e) => onSessionNotesChange(e.target.value)}
-          placeholder="오늘 수업에서 있었던 특이사항, 잘한 점, 아쉬운 점 등을 자유롭게 입력하세요."
+          placeholder={tr('오늘 수업에서 있었던 특이사항, 잘한 점, 아쉬운 점 등을 자유롭게 입력하세요.')}
           rows={4}
           className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/30 text-sm leading-relaxed resize-none transition-all"
         />
@@ -86,7 +88,7 @@ export default function AIReportForm({
 
       <div className="space-y-2">
         <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-widest">
-          <Target className="w-3.5 h-3.5" /> 핵심 발달 목표
+          <Target className="w-3.5 h-3.5" /> {tr('핵심 발달 목표')}
         </label>
         <div className="relative">
           <select
@@ -96,7 +98,7 @@ export default function AIReportForm({
           >
             {DEVELOPMENT_GOAL_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value} className={OPTION_DARK_CLASS}>
-                {opt.label}
+                {tr(opt.label)}
               </option>
             ))}
           </select>
@@ -106,20 +108,20 @@ export default function AIReportForm({
 
       <div className="space-y-2">
         <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-          추가 목표 (선택)
+          {tr('추가 목표 (선택)')}
         </label>
         <input
           type="text"
           value={additionalGoal}
           onChange={(e) => onAdditionalGoalChange(e.target.value)}
-          placeholder="예: 친구와 사이좋게 나누기"
+          placeholder={tr('예: 친구와 사이좋게 나누기')}
           className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/30 text-sm transition-all"
         />
       </div>
 
       <div className="space-y-2">
         <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-          리포트 어조
+          {tr('리포트 어조')}
         </label>
         <div className="flex gap-2">
           <ToneChip value="warm" current={tone} label="따뜻하게" emoji="🤗" onClick={() => onToneChange('warm')} />
@@ -136,16 +138,16 @@ export default function AIReportForm({
       >
         {loading ? (
           <>
-            <Loader2 className="w-5 h-5 animate-spin" /> Gemini 분석 중...
+            <Loader2 className="w-5 h-5 animate-spin" /> {tr('Gemini 분석 중...')}
           </>
         ) : (
           <>
-            <Sparkles className="w-5 h-5" /> 학부모 리포트 생성
+            <Sparkles className="w-5 h-5" /> {tr('학부모 리포트 생성')}
           </>
         )}
       </button>
       {!selectedStudent && (
-        <p className="text-center text-slate-600 text-xs">학생을 선택해야 생성할 수 있습니다.</p>
+        <p className="text-center text-slate-600 text-xs">{tr('학생을 선택해야 생성할 수 있습니다.')}</p>
       )}
     </>
   );

@@ -53,11 +53,31 @@
 
 ## 4) 출시 직전 Go/No-Go
 
+**실행 절차(한 권)**: [`spokedu-subscription-ops-runbook.md`](./spokedu-subscription-ops-runbook.md) — SQL·Stripe·앱 확인·증적 예시.  
+증적 표는 [`spokedu-subscription-section-4-execution.md`](./spokedu-subscription-section-4-execution.md) **§6**을 채운 뒤, 아래 네 줄을 `[x]`로 바꿉니다.
+
 - [ ] 운영 담당자 1명 이상이 플레이북 절차를 직접 실행해 봄
 - [ ] `trialing -> expired`, `active -> past_due`, `past_due -> active` 수동 전환 테스트 완료
 - [ ] 공지/문의 템플릿(결제 지연, 해지 요청) 운영 채널에 배포
 - [ ] 링크/문구/요금표가 실제 정책과 100% 일치
 
+### 4.1) 실행 번들(문서·앱 링크)
+
+- [x] Go/No-Go 실행 번들 문서: [`docs/spokedu-subscription-go-nogo-bundle.md`](./spokedu-subscription-go-nogo-bundle.md) (플레이북·리허설·DB 감사·템플릿 한곳 링크)
+- [x] 구독 고지 페이지: 앱 내 `/spokedu-pro/legal/subscription` (설정 화면에서 링크)
+
+### 4.2) §4 본문 실행 지원(문서·검증)
+
+- [x] 단계별 실행·서명란: [`docs/spokedu-subscription-section-4-execution.md`](./spokedu-subscription-section-4-execution.md)
+- [x] 슬랙용 템플릿: [`docs/spokedu-subscription-ops-templates-slack.md`](./spokedu-subscription-ops-templates-slack.md)
+- [x] 요금·설정 단일 소스 검증: `npm run verify:spokedu-plan-copy` ([`scripts/verify-spokedu-plan-copy.mjs`](../scripts/verify-spokedu-plan-copy.mjs))
+
+> §4 **본문 4개 체크박스**는 스테이징/운영에서 실제 수행 후에만 `[x]`로 바꿉니다. 위 문서의 서명란을 기준으로 합니다.
+
+### 4.3) 개발·CI 선행(§4 본문과 별개)
+
+- [x] `npm run verify:spokedu-plan-copy` exit 0 — [`section-4-execution`](./spokedu-subscription-section-4-execution.md) §4 자동 검증 항목과 동일
+
 ---
 
-마지막 업데이트: 2026-04-03
+마지막 업데이트: 2026-04-22

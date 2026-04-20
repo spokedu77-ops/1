@@ -6,7 +6,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { Plus, Trash2, X, Pin, ChevronDown, RefreshCw, Edit3, Image as ImageIcon, FileText, Camera, MessageSquare, ChevronRight } from 'lucide-react';
-import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
+import { uploadToStorage, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { parseTemplateToFields, isFieldValid } from '@/app/lib/feedbackValidation';
 import type { FeedbackFields } from '@/app/lib/feedbackValidation';
 
@@ -476,21 +476,25 @@ export default function NoticePage() {
 
   const handleWbPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (!supabase || files.length === 0) return;
+    if (files.length === 0) return;
     const urls: string[] = [];
-    for (const file of files) {
-      const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_.-]/g, '_');
-      const path = `weekly_best/${Date.now()}_${safeName}`;
-      const { error } = await supabase.storage.from(BUCKET_NAME).upload(path, file, { contentType: file.type, upsert: true });
-      if (error) {
-        toast.error('이미지 업로드 실패');
-        return;
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const safeName =
+          file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_.-]/g, '_') || 'image';
+        const path = `weekly_best/${Date.now()}_${i}_${safeName}`;
+        await uploadToStorage(path, file, file.type || 'image/jpeg');
+        urls.push(getPublicUrl(path));
       }
-      const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
-      urls.push(data.publicUrl);
+      setWbForm((prev) => ({ ...prev, photo_urls: [...prev.photo_urls, ...urls] }));
+    } catch (err) {
+      devLogger.error('[weekly_best photo upload]', err);
+      const msg = err instanceof Error ? err.message : '이미지 업로드 실패';
+      toast.error(msg);
+    } finally {
+      e.target.value = '';
     }
-    setWbForm((prev) => ({ ...prev, photo_urls: [...prev.photo_urls, ...urls] }));
-    e.target.value = '';
   };
 
   const saveWeeklyBest = async () => {
@@ -524,21 +528,22 @@ export default function NoticePage() {
   };
 
   const uploadImages = async (files: File[]): Promise<string[]> => {
-    if (!supabase || files.length === 0) return [];
+    if (files.length === 0) return [];
     setUploadingImages(true);
     const urls: string[] = [];
     try {
-      for (const file of files) {
-        const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_.-]/g, '_');
-        const path = `notices/${Date.now()}_${safeName}`;
-        const { error } = await supabase.storage.from(BUCKET_NAME).upload(path, file, { contentType: file.type, upsert: true });
-        if (error) throw error;
-        const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
-        urls.push(data.publicUrl);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const safeName =
+          file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_.-]/g, '_') || 'image';
+        const path = `notices/${Date.now()}_${i}_${safeName}`;
+        await uploadToStorage(path, file, file.type || 'image/jpeg');
+        urls.push(getPublicUrl(path));
       }
     } catch (err) {
       devLogger.error('이미지 업로드 오류:', err);
-      toast.error('이미지 업로드에 실패했습니다.');
+      const msg = err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.';
+      toast.error(msg);
     } finally {
       setUploadingImages(false);
     }

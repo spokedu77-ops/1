@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Library, Bell, ClipboardCheck, Sparkles, UserPlus } from 'lucide-react';
 import type { ThemeKey } from '@/app/lib/spokedu-pro/dashboardDefaults';
@@ -27,6 +28,7 @@ export default function TodayClassCard({
   onGoToAIReport: () => void;
   onAddClass: () => void;
 }) {
+  const t = useTranslator();
   const { classes, loaded } = useClassStore();
   const [persisted, setPersisted] = useState(() => readTodayClassState());
 
@@ -65,8 +67,8 @@ export default function TodayClassCard({
     const m = now.getMonth() + 1;
     const day = now.getDate();
     const wd = WEEKDAYS[now.getDay()];
-    return `${y}년 ${m}월 ${day}일 ${wd}`;
-  }, []);
+    return t(`${y}년 ${m}월 ${day}일 ${wd}`);
+  }, [t]);
 
   const filledBars = phase === 'idle' ? 0 : phase === 'ready' ? 1 : phase === 'in-progress' ? 2 : 3;
 
@@ -82,15 +84,15 @@ export default function TodayClassCard({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-slate-400 text-sm font-bold">{dateLabel}</p>
         </div>
-        <h3 className="text-xl font-black text-white">오늘 수업 없음</h3>
-        <p className="text-slate-400 text-sm">등록된 반이 없어요. 반을 추가하면 오늘의 수업 카드를 쓸 수 있어요.</p>
+        <h3 className="text-xl font-black text-white">{t('오늘 수업 없음')}</h3>
+        <p className="text-slate-400 text-sm">{t('등록된 반이 없어요. 반을 추가하면 오늘의 수업 카드를 쓸 수 있어요.')}</p>
         <button
           type="button"
           onClick={onAddClass}
           className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold bg-sky-600 hover:bg-sky-500 text-white transition-colors"
         >
           <UserPlus className="w-5 h-5" />
-          반 추가하기
+          {t('반 추가하기')}
         </button>
       </div>
     );
@@ -101,11 +103,11 @@ export default function TodayClassCard({
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <p className="text-slate-400 text-sm font-bold">{dateLabel}</p>
-          <h3 className="text-lg font-black text-white mt-1">오늘의 수업</h3>
+          <h3 className="text-lg font-black text-white mt-1">{t('오늘의 수업')}</h3>
         </div>
         <div className="relative min-w-[160px]">
           <label className="sr-only" htmlFor="today-class-select">
-            수업 반 선택
+            {t('수업 반 선택')}
           </label>
           <select
             id="today-class-select"
@@ -125,6 +127,7 @@ export default function TodayClassCard({
 
       <div className="flex items-center gap-1 sm:gap-2">
         {(['준비 완료', '수업 중', '수업 마무리'] as const).map((label, i) => {
+          const labelTr = t(label);
           const done = i < filledBars;
           const current = i === filledBars && phase !== 'done';
           return (
@@ -139,16 +142,16 @@ export default function TodayClassCard({
                   done || current ? 'text-amber-400' : 'text-slate-500'
                 }`}
               >
-                {label}
+                {labelTr}
               </span>
             </div>
           );
         })}
       </div>
       <div className="flex lg:hidden justify-between text-[10px] font-bold text-slate-500 uppercase gap-1">
-        <span className={filledBars >= 1 ? 'text-amber-400' : ''}>준비</span>
-        <span className={filledBars >= 2 ? 'text-amber-400' : ''}>진행</span>
-        <span className={filledBars >= 3 ? 'text-amber-400' : ''}>마무리</span>
+        <span className={filledBars >= 1 ? 'text-amber-400' : ''}>{t('준비')}</span>
+        <span className={filledBars >= 2 ? 'text-amber-400' : ''}>{t('진행')}</span>
+        <span className={filledBars >= 3 ? 'text-amber-400' : ''}>{t('마무리')}</span>
       </div>
 
       <div>
@@ -162,7 +165,7 @@ export default function TodayClassCard({
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
           >
             <Library className="w-5 h-5" />
-            수업 준비 시작
+            {t('수업 준비 시작')}
           </button>
         )}
         {phase === 'ready' && (
@@ -175,7 +178,7 @@ export default function TodayClassCard({
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 transition-colors"
           >
             <Bell className="w-5 h-5" />
-            수업 시작 🔔
+            {t('수업 시작 🔔')}
           </button>
         )}
         {phase === 'in-progress' && (
@@ -185,7 +188,7 @@ export default function TodayClassCard({
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors"
           >
             <ClipboardCheck className="w-5 h-5" />
-            수업 마무리
+            {t('수업 마무리')}
           </button>
         )}
         {phase === 'done' && (
@@ -195,7 +198,7 @@ export default function TodayClassCard({
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold bg-purple-600 hover:bg-purple-500 text-white transition-colors"
           >
             <Sparkles className="w-5 h-5" />
-            리포트 생성하기
+            {t('리포트 생성하기')}
           </button>
         )}
       </div>

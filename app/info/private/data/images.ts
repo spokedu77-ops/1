@@ -5,9 +5,9 @@
 
 /** 수업 현장 섹션 (class-flow) 이미지 */
 export const CLASS_FLOW_IMAGES = [
-  { src: 'https://i.postimg.cc/4xWDWVRM/SE-5e4e5035-6810-11ee-a584-85f14318c83a.jpg', alt: '60분 수업 스케치 1', large: true },
-  { src: 'https://i.postimg.cc/FHTMT3QX/IMG-1392.jpg', alt: '60분 수업 스케치 2', large: false },
-  { src: 'https://i.postimg.cc/VkKxKnPV/DSC06500.jpg', alt: '60분 수업 스케치 3', large: false },
+  { src: 'https://i.postimg.cc/4xWDWVRM/SE-5e4e5035-6810-11ee-a584-85f14318c83a.jpg', alt: '스포키듀 수업 스케치 1', large: true },
+  { src: 'https://i.postimg.cc/FHTMT3QX/IMG-1392.jpg', alt: '스포키듀 수업 스케치 2', large: false },
+  { src: 'https://i.postimg.cc/VkKxKnPV/DSC06500.jpg', alt: '스포키듀 수업 스케치 3', large: false },
 ] as const;
 
 /** 커리큘럼 섹션 이미지 */

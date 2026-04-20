@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import SpokeduProClient from './SpokeduProClient';
 
 export const metadata: Metadata = {
-  title: '스포키듀 구독 | SPOKEDU PRO',
-  description: 'Accessible Smart PE. 스포키듀 스마트 대시보드 및 구독자 전용 콘텐츠.',
+  title: 'SPOKEDU PRO — Subscription',
+  description:
+    'Accessible Smart PE — subscriber dashboard, lesson tools, and premium content for SPOKEDU PRO.',
 };
 
 export default function SpokeduProPage() {
-  return <SpokeduProClient isEditMode={false} />;
+  return (
+    <Suspense fallback={null}>
+      <SpokeduProClient isEditMode={false} />
+    </Suspense>
+  );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import {
   Sparkles,
   Copy,
@@ -36,6 +37,7 @@ function buildRadarData(student: Student) {
 }
 
 function RadarChartCard({ student }: { student: Student }) {
+  const tr = useTranslator();
   const data = buildRadarData(student);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -43,7 +45,7 @@ function RadarChartCard({ student }: { student: Student }) {
   }, []);
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-      <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">신체 기능 프로파일</p>
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">{tr('신체 기능 프로파일')}</p>
       {ready ? (
         <ResponsiveContainer width="100%" height={180}>
           <RadarChart data={data} cx="50%" cy="50%" outerRadius={65}>
@@ -53,7 +55,7 @@ function RadarChartCard({ student }: { student: Student }) {
               tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
             />
             <Radar
-              name="신체기능"
+              name={tr('신체기능')}
               dataKey="value"
               stroke="#8b5cf6"
               fill="#8b5cf6"
@@ -86,6 +88,7 @@ function ReportSection({
   content: string;
   color: ColorKey;
 }) {
+  const tr = useTranslator();
   const colors: Record<ColorKey, { bg: string; border: string; icon: string; label: string }> = {
     violet: { bg: 'bg-violet-500/10', border: 'border-violet-500/20', icon: 'text-violet-400', label: 'text-violet-300' },
     emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: 'text-emerald-400', label: 'text-emerald-300' },
@@ -100,7 +103,7 @@ function ReportSection({
     <div className={`${c.bg} ${c.border} border rounded-xl p-4 space-y-2`}>
       <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest ${c.label}`}>
         <Icon className={`w-3.5 h-3.5 ${c.icon}`} />
-        {label}
+        {tr(label)}
       </div>
       {isList ? (
         <ul className="space-y-1.5">
@@ -141,6 +144,7 @@ export function ReportCard({
   showRadar?: boolean;
   readOnly?: boolean;
 }) {
+  const tr = useTranslator();
   const date = new Date(meta.generatedAt).toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric',
   });
@@ -151,17 +155,17 @@ export function ReportCard({
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="px-2.5 py-0.5 bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-bold rounded-full">
-              AI 리포트
+              {tr('AI 리포트')}
             </span>
             {meta.period && (
-              <span className="text-xs text-slate-500">{meta.period}</span>
+              <span className="text-xs text-slate-500">{meta.period ? tr(meta.period) : null}</span>
             )}
           </div>
           <h3 className="text-xl font-black text-white">
             {meta.studentName}
             <span className="text-slate-400 font-normal text-base ml-2">{meta.classGroup}</span>
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">{date} 생성</p>
+          <p className="text-xs text-slate-500 mt-0.5">{date} {tr('생성')}</p>
         </div>
         <div className="flex gap-2 shrink-0">
           {!readOnly && (
@@ -169,7 +173,7 @@ export function ReportCard({
               type="button"
               onClick={onReset}
               className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
-              title="다시 작성"
+              title={tr('다시 작성')}
             >
               <RotateCcw className="w-4 h-4 text-slate-400" />
             </button>
@@ -178,19 +182,19 @@ export function ReportCard({
             type="button"
             onClick={onDownloadPdf}
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-600/20 hover:bg-slate-600/30 border border-slate-500/30 text-slate-300 rounded-xl text-xs font-bold transition-all"
-            title="PDF 저장"
+            title={tr('PDF 저장')}
           >
             <FileDown className="w-3.5 h-3.5" />
-            PDF 저장
+            {tr('PDF 저장')}
           </button>
           <button
             type="button"
             onClick={onKakaoShare}
             className="flex items-center gap-1.5 px-3 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-300 rounded-xl text-xs font-bold transition-all"
-            title="카카오로 부모님께 공유"
+            title={tr('카카오로 부모님께 공유')}
           >
             <Share2 className="w-3.5 h-3.5" />
-            카카오 공유
+            {tr('카카오 공유')}
           </button>
           <button
             type="button"
@@ -198,7 +202,7 @@ export function ReportCard({
             className="flex items-center gap-1.5 px-3 py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-violet-300 rounded-xl text-xs font-bold transition-all"
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? '복사됨' : '복사'}
+            {copied ? tr('복사됨') : tr('복사')}
           </button>
         </div>
       </div>
@@ -222,7 +226,7 @@ export function ReportCard({
       </div>
 
       <div className="bg-gradient-to-r from-violet-600/10 to-blue-600/10 border border-violet-500/20 rounded-xl p-4">
-        <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-1">다음 수업 목표</p>
+        <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-1">{tr('다음 수업 목표')}</p>
         <p className="text-white font-medium text-sm">{report.nextGoal}</p>
       </div>
     </div>
@@ -230,19 +234,20 @@ export function ReportCard({
 }
 
 export function EmptyState() {
+  const tr = useTranslator();
   return (
     <div className="h-full flex flex-col items-center justify-center py-16 text-center px-6">
       <div className="w-20 h-20 bg-violet-600/10 border border-violet-500/20 rounded-3xl flex items-center justify-center mb-5">
         <Bot className="w-9 h-9 text-violet-400" />
       </div>
-      <h3 className="text-white font-bold text-lg mb-2">AI 리포트 대기 중</h3>
+      <h3 className="text-white font-bold text-lg mb-2">{tr('AI 리포트 대기 중')}</h3>
       <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
-        학생을 선택하고 수업 내용을 입력하면 맞춤형 학부모 리포트를 자동 생성합니다.
+        {tr('학생을 선택하고 수업 내용을 입력하면 맞춤형 학부모 리포트를 자동 생성합니다.')}
       </p>
       <div className="mt-6 flex gap-2 flex-wrap justify-center">
         {['신체 기능 데이터 기반', 'AI 분석', '가정 연계 활동'].map((tag) => (
           <span key={tag} className="px-3 py-1 bg-white/5 border border-white/10 text-slate-500 text-xs rounded-full">
-            {tag}
+            {tr(tag)}
           </span>
         ))}
       </div>

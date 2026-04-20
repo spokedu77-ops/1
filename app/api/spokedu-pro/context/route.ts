@@ -6,7 +6,12 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
-import { getAiReportUsageThisMonth, PLAN_LIMITS, PLAN_PRICES } from '@/app/lib/spokedu-pro/planUtils';
+import {
+  getAiReportUsageThisMonth,
+  PLAN_LIMITS,
+  PLAN_PRICES,
+  planForFeatureLimits,
+} from '@/app/lib/spokedu-pro/planUtils';
 
 type Plan = 'free' | 'basic' | 'pro';
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired';
@@ -96,10 +101,11 @@ export async function GET() {
     let isPro = false;
     let currentPeriodEndAt: string | null = null;
 
+    let stripeCustomerId: string | null = null;
     if (activeCenterId) {
       const { data: sub } = await supabase
         .from('spokedu_pro_subscriptions')
-        .select('plan, status, current_period_end, trial_end')
+        .select('plan, status, current_period_end, trial_end, stripe_customer_id')
         .eq('center_id', activeCenterId)
         .maybeSingle();
 
@@ -109,10 +115,16 @@ export async function GET() {
         entitlementStatus = sub.status as SubscriptionStatus;
         isPro = isActive && (sub.plan === 'pro' || sub.plan === 'basic');
         currentPeriodEndAt = (sub.current_period_end as string | null) ?? (sub.trial_end as string | null) ?? null;
+        const cid = sub.stripe_customer_id as string | null | undefined;
+        stripeCustomerId = cid && String(cid).trim() !== '' ? String(cid).trim() : null;
       }
     }
 
-    const limits = PLAN_LIMITS[entitlementPlan];
+    const limitsPlan =
+      activeCenterId && entitlementPlan !== 'free'
+        ? planForFeatureLimits(entitlementPlan, entitlementStatus)
+        : entitlementPlan;
+    const limits = PLAN_LIMITS[limitsPlan];
 
     return NextResponse.json({
       activeCenterId,
@@ -124,6 +136,7 @@ export async function GET() {
         promoPriceKrw: null as number | null,
         promoEndAt: null as string | null,
         currentPeriodEndAt,
+        stripeCustomerId,
       },
       usage: {
         studentCount,
@@ -141,7 +154,13 @@ export async function GET() {
       centers: [],
       role: null,
       entitlement: { plan: 'free' as Plan, status: 'active' as SubscriptionStatus, isPro: false },
-      billing: { priceKrw: PLAN_PRICES['free'], promoPriceKrw: null, promoEndAt: null, currentPeriodEndAt: null },
+      billing: {
+        priceKrw: PLAN_PRICES['free'],
+        promoPriceKrw: null,
+        promoEndAt: null,
+        currentPeriodEndAt: null,
+        stripeCustomerId: null,
+      },
       usage: {
         studentCount,
         aiReportThisMonth,

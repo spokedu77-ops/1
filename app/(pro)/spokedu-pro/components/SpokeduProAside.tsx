@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import {
   LayoutDashboard,
   Grid,
@@ -50,6 +51,7 @@ export default function SpokeduProAside({
   isEditMode?: boolean;
   onOpenCurationDrawer?: () => void;
 }) {
+  const t = useTranslator();
   let lastGroup = '';
 
   const isLibraryView = viewId === 'library';
@@ -78,20 +80,20 @@ export default function SpokeduProAside({
                 <div key={id}>
                   {showGroup && (
                     <div className="hidden lg:block px-4 pb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      {group}
+                      {t(group)}
                     </div>
                   )}
                   <button
                     type="button"
                     onClick={() => onSwitchView(id)}
-                    aria-label={label}
+                    aria-label={t(label)}
                     aria-current={viewId === id ? 'page' : undefined}
                     className={`nav-item w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm ${
                       viewId === id ? 'nav-active' : ''
                     }`}
                   >
                     <Icon className={`w-5 h-5 shrink-0 ${iconClass ?? 'text-slate-400'}`} />
-                    <span className="hidden lg:block font-medium">{label}</span>
+                    <span className="hidden lg:block font-medium">{t(label)}</span>
                   </button>
                 </div>
               );
@@ -100,7 +102,7 @@ export default function SpokeduProAside({
             {/* 라이브러리 (테마 하위) */}
             <div>
               <div className="hidden lg:block px-4 pb-2 pt-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                라이브러리
+                {t('라이브러리')}
               </div>
               <div className="hidden lg:flex flex-col gap-0.5 pl-0">
                 {LIBRARY_SIDEBAR_ITEMS.map(({ themeKey, label }) => {
@@ -110,14 +112,14 @@ export default function SpokeduProAside({
                       key={themeKey}
                       type="button"
                       onClick={() => onGoToLibraryTheme(themeKey)}
-                      aria-label={label}
+                      aria-label={t(label)}
                       aria-current={active ? 'page' : undefined}
                       className={`nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-left ${
                         active ? 'nav-active' : ''
                       }`}
                     >
                       <Grid className="w-4 h-4 shrink-0 text-emerald-400/90" />
-                      <span className="font-medium leading-snug">{label}</span>
+                      <span className="font-medium leading-snug">{t(label)}</span>
                     </button>
                   );
                 })}
@@ -129,7 +131,7 @@ export default function SpokeduProAside({
                 className={`lg:hidden nav-item w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm ${
                   isLibraryView ? 'nav-active' : ''
                 }`}
-                aria-label="프로그램 라이브러리"
+                aria-label={t('프로그램 라이브러리')}
               >
                 <Grid className="w-5 h-5 shrink-0 text-emerald-400" />
               </button>
@@ -143,20 +145,20 @@ export default function SpokeduProAside({
                 <div key={id}>
                   {showGroup && (
                     <div className="hidden lg:block px-4 pb-2 pt-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      {group}
+                      {group ? t(group) : null}
                     </div>
                   )}
                   <button
                     type="button"
                     onClick={() => onSwitchView(id)}
-                    aria-label={label}
+                    aria-label={t(label)}
                     aria-current={viewId === id ? 'page' : undefined}
                     className={`nav-item w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm ${
                       viewId === id ? 'nav-active' : ''
                     }`}
                   >
                     <Icon className={`w-5 h-5 shrink-0 ${iconClass ?? 'text-slate-400'}`} />
-                    <span className="hidden lg:block font-medium">{label}</span>
+                    <span className="hidden lg:block font-medium">{t(label)}</span>
                   </button>
                 </div>
               );
@@ -165,16 +167,16 @@ export default function SpokeduProAside({
             {isEditMode && onOpenCurationDrawer && (
               <div className="pt-2 mt-2 border-t border-slate-800">
                 <div className="hidden lg:block px-4 pb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                  편집
+                  {t('편집')}
                 </div>
                 <button
                   type="button"
                   onClick={onOpenCurationDrawer}
-                  aria-label="대시보드 편집"
+                  aria-label={t('대시보드 편집')}
                   className="nav-item w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm"
                 >
                   <Settings2 className="w-5 h-5 shrink-0 text-amber-400" />
-                  <span className="hidden lg:block font-medium">대시보드 편집</span>
+                  <span className="hidden lg:block font-medium">{t('대시보드 편집')}</span>
                 </button>
               </div>
             )}
@@ -186,8 +188,8 @@ export default function SpokeduProAside({
               <span className="text-white text-lg">👤</span>
             </div>
             <div className="hidden lg:block">
-              <p className="text-sm font-bold text-white">강사 계정</p>
-              <p className="text-xs text-slate-400 font-medium">연세 체육교육 연구소</p>
+              <p className="text-sm font-bold text-white">{t('강사 계정')}</p>
+              <p className="text-xs text-slate-400 font-medium">{t('연세 체육교육 연구소')}</p>
             </div>
           </div>
         </div>
@@ -196,7 +198,7 @@ export default function SpokeduProAside({
       <nav
         className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#0B1120] border-t border-slate-800 flex items-center justify-around px-1 py-2 safe-area-bottom"
         role="navigation"
-        aria-label="하단 탐색"
+        aria-label={t('하단 탐색')}
       >
         {MOBILE_TABS.map(({ id, label, icon: Icon, iconClass }) => (
           <button
@@ -207,25 +209,25 @@ export default function SpokeduProAside({
                 ? onOpenLibraryAll()
                 : onSwitchView(id)
             }
-            aria-label={label}
+            aria-label={t(label)}
             aria-current={viewId === id ? 'page' : undefined}
             className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${
               viewId === id ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <Icon className={`w-5 h-5 ${viewId === id ? 'text-blue-400' : iconClass ?? 'text-slate-500'}`} />
-            <span className="text-[10px] font-bold leading-none line-clamp-2 text-center">{label}</span>
+            <span className="text-[10px] font-bold leading-none line-clamp-2 text-center">{t(label)}</span>
           </button>
         ))}
         {isEditMode && onOpenCurationDrawer && (
           <button
             type="button"
             onClick={onOpenCurationDrawer}
-            aria-label="대시보드 편집"
+            aria-label={t('대시보드 편집')}
             className="flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] text-amber-500 hover:text-amber-400 transition-colors"
           >
             <Settings2 className="w-5 h-5" />
-            <span className="text-[10px] font-bold leading-none">편집</span>
+            <span className="text-[10px] font-bold leading-none">{t('편집')}</span>
           </button>
         )}
       </nav>

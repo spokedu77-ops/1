@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useI18n, useTranslator } from '@/app/providers/I18nProvider';
+import type { UiLocale } from '@/app/lib/i18n/constants';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   Users, UserPlus, X, ChevronDown, ChevronUp, CheckCircle, Clock, XCircle,
-  RefreshCw, AlertCircle, CloudOff, Plus, Pencil, Trash2, Zap, Crown, Award, Share2,
+  RefreshCw, AlertCircle, CloudOff, Plus, Pencil, Trash2, Zap, Crown, Award, Share2, Shuffle,
 } from 'lucide-react';
 import {
   useStudentStore,
@@ -30,9 +32,25 @@ import {
   PolarGrid,
   PolarAngleAxis,
 } from 'recharts';
+import { toast } from 'sonner';
 
-function makeBadgeTitle(strengthSummary: string): string {
-  return strengthSummary ? `이번 달의 ${strengthSummary}` : '성취 뱃지';
+function makeBadgeTitle(tr: (s: string) => string, strengthSummary: string): string {
+  return strengthSummary ? `${tr('이번 달의')} ${tr(strengthSummary)}` : tr('성취 뱃지');
+}
+
+function intlLocaleTag(ui: UiLocale): string {
+  switch (ui) {
+    case 'ko':
+      return 'ko-KR';
+    case 'ja':
+      return 'ja-JP';
+    case 'zh':
+      return 'zh-CN';
+    case 'es':
+      return 'es-ES';
+    default:
+      return 'en-US';
+  }
 }
 
 // ── 업셀 팝업 ────────────────────────────────────────────────────────────────
@@ -47,6 +65,7 @@ function ClassLimitModal({
   onClose: () => void;
   onGoToSettings: () => void;
 }) {
+  const tr = useTranslator();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-slate-800 border border-slate-700 rounded-2xl p-7 max-w-sm w-full space-y-5 shadow-2xl">
@@ -57,16 +76,17 @@ function ClassLimitModal({
             <Crown className="w-6 h-6 text-amber-400 shrink-0" />
           )}
           <h3 className="text-lg font-black text-white">
-            {plan === 'free' ? 'Basic으로 업그레이드' : 'Pro로 업그레이드'}
+            {plan === 'free' ? tr('Basic으로 업그레이드') : tr('Pro로 업그레이드')}
           </h3>
         </div>
         <p className="text-slate-300 text-sm leading-relaxed">
-          현재 플랜은 반을 <span className="text-white font-bold">{limit}개</span>까지만
-          만들 수 있습니다.
+          {tr('현재 플랜은 반을')}{' '}
+          <span className="text-white font-bold">{limit}{tr('개')}</span>
+          {tr('까지만 만들 수 있습니다.')}
           <br />
           {plan === 'free'
-            ? 'Basic 플랜으로 업그레이드하면 반 3개까지 관리할 수 있어요.'
-            : 'Pro 플랜으로 업그레이드하면 반 개수 제한 없이 관리할 수 있어요.'}
+            ? tr('Basic 플랜으로 업그레이드하면 반 3개까지 관리할 수 있어요.')
+            : tr('Pro 플랜으로 업그레이드하면 반 개수 제한 없이 관리할 수 있어요.')}
         </p>
         <div className="flex gap-3">
           <button
@@ -74,7 +94,7 @@ function ClassLimitModal({
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-400 text-sm font-bold hover:border-slate-500 transition-colors"
           >
-            닫기
+            {tr('닫기')}
           </button>
           <button
             type="button"
@@ -84,7 +104,7 @@ function ClassLimitModal({
             }}
             className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-colors"
           >
-            설정에서 업그레이드
+            {tr('설정에서 업그레이드')}
           </button>
         </div>
       </div>
@@ -108,6 +128,7 @@ function ClassManagerPanel({
   onRenameClass: (id: string, name: string) => void;
   onDeleteClass: (id: string) => void;
 }) {
+  const tr = useTranslator();
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -139,20 +160,20 @@ function ClassManagerPanel({
   return (
     <div className="p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">반 관리</p>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{tr('반 관리')}</p>
         {classLimit !== null && (
           <span className="text-xs text-slate-500 tabular-nums">
             <span className={isAtLimit ? 'text-amber-400 font-bold' : 'text-slate-400'}>
               {classes.length}
             </span>
-            /{classLimit}개
+            /{classLimit}{tr('개')}
           </span>
         )}
       </div>
 
       {/* 반 목록 */}
       {classes.length === 0 ? (
-        <p className="text-sm text-slate-500 py-2">등록된 반이 없습니다. 첫 반을 만들어 보세요.</p>
+        <p className="text-sm text-slate-500 py-2">{tr('등록된 반이 없습니다. 첫 반을 만들어 보세요.')}</p>
       ) : (
         <ul className="space-y-2">
           {classes.map((c) => (
@@ -169,13 +190,13 @@ function ClassManagerPanel({
                     autoFocus
                     className="flex-1 bg-slate-900 border border-blue-500 rounded-lg px-3 py-1 text-sm text-white focus:outline-none"
                   />
-                  <button type="submit" className="text-xs font-bold text-blue-400 hover:text-blue-300">저장</button>
-                  <button type="button" onClick={() => { setEditingId(null); setNameError(''); }} className="text-xs text-slate-500 hover:text-slate-300">취소</button>
+                  <button type="submit" className="text-xs font-bold text-blue-400 hover:text-blue-300">{tr('저장')}</button>
+                  <button type="button" onClick={() => { setEditingId(null); setNameError(''); }} className="text-xs text-slate-500 hover:text-slate-300">{tr('취소')}</button>
                 </form>
               ) : (
                 <>
                   <span className="flex-1 text-sm font-bold text-white">{c.name}</span>
-                  <span className="text-xs text-slate-500 tabular-nums">{studentsByClass[c.name] ?? 0}명</span>
+                  <span className="text-xs text-slate-500 tabular-nums">{studentsByClass[c.name] ?? 0}{tr('명')}</span>
                   <button
                     type="button"
                     onClick={() => { setEditingId(c.id); setEditName(c.name); setNameError(''); }}
@@ -186,7 +207,7 @@ function ClassManagerPanel({
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm(`"${c.name}" 반을 삭제하시겠습니까?\n해당 반의 학생은 '미분류'로 이동됩니다.`)) {
+                      if (window.confirm(tr(`"${c.name}" 반을 삭제하시겠습니까?\n해당 반의 학생은 '미분류'로 이동됩니다.`))) {
                         onDeleteClass(c.id);
                       }
                     }}
@@ -202,14 +223,14 @@ function ClassManagerPanel({
       )}
 
       {nameError && (
-        <p className="text-xs text-red-400">{nameError}</p>
+        <p className="text-xs text-red-400">{tr(nameError)}</p>
       )}
 
       {/* 새 반 추가 */}
       <div className="flex gap-2 pt-1">
         <input
           type="text"
-          placeholder="새 반 이름"
+          placeholder={tr('새 반 이름')}
           value={newName}
           onChange={(e) => { setNewName(e.target.value); setNameError(''); }}
           onKeyDown={(e) => e.key === 'Enter' && !isAtLimit && handleCreate()}
@@ -228,14 +249,14 @@ function ClassManagerPanel({
           className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors"
         >
           <Plus className="w-4 h-4" />
-          반 추가
+          {tr('반 추가')}
         </button>
       </div>
 
       {isAtLimit && (
         <p className="text-xs text-amber-400 flex items-center gap-1">
           <AlertCircle className="w-3.5 h-3.5" />
-          플랜 한도에 도달했습니다. 업그레이드하면 더 많은 반을 만들 수 있어요.
+          {tr('플랜 한도에 도달했습니다. 업그레이드하면 더 많은 반을 만들 수 있어요.')}
         </p>
       )}
     </div>
@@ -252,6 +273,7 @@ function LevelButton({
   current: PhysicalLevel;
   onChange: (v: PhysicalLevel) => void;
 }) {
+  const tr = useTranslator();
   const colors: Record<PhysicalLevel, string> = {
     1: 'bg-red-500/20 text-red-400 border-red-500/50',
     2: 'bg-amber-500/20 text-amber-400 border-amber-500/50',
@@ -270,7 +292,7 @@ function LevelButton({
         current === value ? active[value] : colors[value] + ' hover:opacity-80'
       }`}
     >
-      {LEVEL_LABELS[value]}
+      {tr(LEVEL_LABELS[value])}
     </button>
   );
 }
@@ -287,6 +309,7 @@ function StudentCard({
   onRemove: (id: string) => void;
   onUpdatePhysical: (id: string, key: keyof PhysicalFunctions, v: PhysicalLevel) => void;
 }) {
+  const tr = useTranslator();
   const [expanded, setExpanded] = useState(false);
 
   const statusConfig = {
@@ -310,7 +333,9 @@ function StudentCard({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-black text-base truncate">{student.name}</p>
-            <p className="text-slate-400 text-xs font-medium">{student.classGroup || '미분류'}</p>
+            <p className="text-slate-400 text-xs font-medium">
+              {student.classGroup ? (student.classGroup === '미분류' ? tr('미분류') : student.classGroup) : tr('미분류')}
+            </p>
           </div>
           <div className="hidden sm:flex items-center gap-2 w-28 shrink-0">
             <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden min-w-0">
@@ -328,25 +353,25 @@ function StudentCard({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${cfg.cls}`}
             >
               <StatusIcon className="w-3.5 h-3.5" />
-              {cfg.label}
+              {tr(cfg.label)}
             </button>
             <button
               type="button"
               onClick={() => setExpanded((e) => !e)}
               className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"
-              aria-label="신체 기능 펼치기"
+              aria-label={tr('신체 기능 펼치기')}
             >
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
             <button
               type="button"
               onClick={() => {
-                if (window.confirm(`"${student.name}" 원생을 삭제하시겠습니까?`)) {
+                if (window.confirm(tr(`"${student.name}" 원생을 삭제하시겠습니까?`))) {
                   onRemove(student.id);
                 }
               }}
               className="p-2 rounded-lg bg-slate-700 hover:bg-red-900/40 text-slate-500 hover:text-red-400 transition-colors"
-              aria-label="삭제"
+              aria-label={tr('삭제')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -357,12 +382,12 @@ function StudentCard({
       {expanded && (
         <div className="border-t border-slate-700 p-4 bg-slate-900/40 overflow-x-auto">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
-            신체 기능 평가 — 팀 나누기·술래 정하기에 활용됩니다
+            {tr('신체 기능 평가 — 팀 나누기·술래 정하기에 활용됩니다')}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {(Object.keys(PHYSICAL_LABELS) as (keyof PhysicalFunctions)[]).map((key) => (
               <div key={key} className="flex items-center justify-between gap-2 min-w-[180px]">
-                <span className="text-sm text-slate-300 font-semibold shrink-0">{PHYSICAL_LABELS[key]}</span>
+                <span className="text-sm text-slate-300 font-semibold shrink-0">{tr(PHYSICAL_LABELS[key])}</span>
                 <div className="flex gap-1 shrink-0">
                   {([1, 2, 3] as PhysicalLevel[]).map((v) => (
                     <LevelButton
@@ -385,12 +410,17 @@ function StudentCard({
 // ── 메인 컴포넌트 ────────────────────────────────────────────────────────────
 export default function DataCenterView({
   onOpenSettings,
+  onGoToAssistantTools,
   attendanceInlineClassGroup = null,
 }: {
   onOpenSettings?: () => void;
+  /** 수업 보조(술래·팀·스톱워치) 뷰로 전환 */
+  onGoToAssistantTools?: () => void;
   /** 설정 시 전체 페이지 대신 해당 반 출결만 컴팩트하게 표시 (임베드·모달용). */
   attendanceInlineClassGroup?: string | null;
 }) {
+  const tr = useTranslator();
+  const { locale } = useI18n();
   const {
     students,
     loaded: studentsLoaded,
@@ -432,9 +462,13 @@ export default function DataCenterView({
   useEffect(() => {
     let cancelled = false;
     fetch('/api/spokedu-pro/attendance/range?days=30')
-      .then((res) => res.json())
-      .then((json) => {
-        if (cancelled || !json?.ok || !Array.isArray(json.days)) return;
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || !json?.ok || !Array.isArray(json.days)) {
+          setAttendanceRangeError(true);
+          return;
+        }
         setAttendanceRange(json.days);
         setAttendanceRangeError(false);
       })
@@ -445,6 +479,14 @@ export default function DataCenterView({
       cancelled = true;
     };
   }, []);
+
+  const prevSyncError = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevSyncError.current && !syncError) {
+      toast.success(tr('서버와 다시 연결되었습니다.'));
+    }
+    prevSyncError.current = syncError;
+  }, [syncError, tr]);
 
   const filteredStudents = useMemo(
     () => (filterGroup === '전체' ? students : students.filter((s) => s.classGroup === filterGroup)),
@@ -488,9 +530,9 @@ export default function DataCenterView({
     return keys.map((k) => {
       const sum = filteredStudents.reduce((acc, s) => acc + s.physical[k], 0);
       const avg = sum / filteredStudents.length;
-      return { subject: PHYSICAL_LABELS[k], value: avg * 33.3 };
+      return { subject: tr(PHYSICAL_LABELS[k]), value: avg * 33.3 };
     });
-  }, [filteredStudents]);
+  }, [filteredStudents, tr]);
 
   const handleAdd = () => {
     const trimmed = newName.trim();
@@ -530,12 +572,13 @@ export default function DataCenterView({
   }, [deleteClass, filterGroup, classes]);
 
   const handleBadgeKakaoShare = useCallback((badge: Badge) => {
-    const title = makeBadgeTitle(badge.strengthSummary);
-    const text = `${badge.studentName} · ${title}\n${badge.growthTag}\n\n- 스포키듀 성취 뱃지`;
+    const title = makeBadgeTitle(tr, badge.strengthSummary);
+    const growthLine = badge.growthTag ? `${tr(badge.growthTag)}\n` : '';
+    const text = `${badge.studentName} · ${title}\n${growthLine}\n- ${tr('스포키듀 성취 뱃지')}`;
 
     // 카카오 SDK 제거에 따라 공유는 동일 텍스트 클립보드 복사로 대체합니다.
     void navigator.clipboard.writeText(text).catch(() => {});
-  }, []);
+  }, [tr]);
 
   const isLoaded = studentsLoaded && classesLoaded;
 
@@ -544,7 +587,7 @@ export default function DataCenterView({
       <section className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="flex items-center gap-2 text-slate-500 text-sm">
           <RefreshCw className="w-4 h-4 animate-spin" />
-          <span>데이터 불러오는 중...</span>
+          <span>{tr('데이터 불러오는 중...')}</span>
         </div>
       </section>
     );
@@ -555,10 +598,10 @@ export default function DataCenterView({
     return (
       <section className="px-4 py-4 space-y-3 rounded-2xl border border-slate-700 bg-slate-900/50">
         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-          출결 · {attendanceInlineClassGroup}
+          {tr('출결')} · {attendanceInlineClassGroup}
         </p>
         {list.length === 0 ? (
-          <p className="text-sm text-slate-500">이 반에 등록된 원생이 없습니다.</p>
+          <p className="text-sm text-slate-500">{tr('이 반에 등록된 원생이 없습니다.')}</p>
         ) : (
           <ul className="space-y-2">
             {list.map((s) => (
@@ -576,7 +619,7 @@ export default function DataCenterView({
                         ? 'bg-emerald-500/30 border-emerald-500 text-emerald-400'
                         : 'border-slate-600 text-slate-500 hover:border-emerald-500/50'
                     }`}
-                    aria-label="출석"
+                    aria-label={tr('출석')}
                   >
                     <CheckCircle className="w-4 h-4" />
                   </button>
@@ -588,7 +631,7 @@ export default function DataCenterView({
                         ? 'bg-amber-500/30 border-amber-500 text-amber-400'
                         : 'border-slate-600 text-slate-500 hover:border-amber-500/50'
                     }`}
-                    aria-label="지각"
+                    aria-label={tr('지각')}
                   >
                     <Clock className="w-4 h-4" />
                   </button>
@@ -600,7 +643,7 @@ export default function DataCenterView({
                         ? 'bg-red-500/30 border-red-500 text-red-400'
                         : 'border-slate-600 text-slate-500 hover:border-red-500/50'
                     }`}
-                    aria-label="결석"
+                    aria-label={tr('결석')}
                   >
                     <XCircle className="w-4 h-4" />
                   </button>
@@ -628,23 +671,35 @@ export default function DataCenterView({
       {/* 헤더 */}
       <header className="space-y-3 border-b border-slate-800 pb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-widest">
-          <Users className="w-4 h-4" /> 원생 관리 및 평가
+          <Users className="w-4 h-4" /> {tr('원생 관리 및 평가')}
         </div>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="space-y-1">
-            <h2 className="text-4xl font-black text-white tracking-tight">출석부 & 신체 기능 평가</h2>
+            <h2 className="text-4xl font-black text-white tracking-tight">{tr('출석부 & 신체 기능 평가')}</h2>
             <p className="text-slate-400 font-medium">
-              출결을 관리하고 신체 기능을 평가하세요. 평가 데이터는 수업 보조도구의 술래 정하기·팀 나누기에 자동 활용됩니다.
+              {tr('출결을 관리하고 신체 기능을 평가하세요. 평가 데이터는 수업 보조도구의 술래 정하기·팀 나누기에 자동 활용됩니다.')}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowClassManager((v) => !v)}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-bold rounded-xl transition-colors shrink-0"
-          >
-            <Pencil className="w-4 h-4" />
-            반 관리
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {onGoToAssistantTools && (
+              <button
+                type="button"
+                onClick={onGoToAssistantTools}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl transition-colors"
+              >
+                <Shuffle className="w-4 h-4" />
+                {tr('수업 보조도구')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowClassManager((v) => !v)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-bold rounded-xl transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+              {tr('반 관리')}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -665,27 +720,27 @@ export default function DataCenterView({
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 text-sm">
           <div className="flex items-center gap-2 flex-1">
             <CloudOff className="w-4 h-4 shrink-0" />
-            <span>서버 연결 실패 — 로컬 캐시로 표시 중. 변경사항은 연결 복구 시 저장됩니다.</span>
+            <span>{tr('서버 연결 실패 — 로컬 캐시로 표시 중. 변경사항은 연결 복구 시 저장됩니다.')}</span>
           </div>
           <button
             type="button"
-            onClick={() => refetch()}
+            onClick={() => void refetch()}
             className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition-colors shrink-0"
           >
-            다시 시도
+            {tr('다시 시도')}
           </button>
         </div>
       )}
       {syncing && !syncError && (
         <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-slate-500 text-xs">
           <RefreshCw className="w-3 h-3 animate-spin" />
-          <span>서버에서 최신 데이터를 불러오고 있어요...</span>
+          <span>{tr('서버에서 최신 데이터를 불러오고 있어요...')}</span>
         </div>
       )}
       {!syncing && !syncError && (
         <div className="flex items-center gap-1.5 text-xs text-emerald-500/70">
           <AlertCircle className="w-3 h-3" />
-          <span>데이터가 서버에 안전하게 저장됩니다.</span>
+          <span>{tr('데이터가 서버에 안전하게 저장됩니다.')}</span>
         </div>
       )}
 
@@ -694,15 +749,15 @@ export default function DataCenterView({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-2xl bg-slate-800/40 border border-slate-700 p-5 space-y-3">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">최근 30일 출석률</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{tr('최근 30일 출석률')}</p>
               <p className="text-sm text-slate-400 mt-1">
-                선택한 반 기준 · 일별 출석·지각 비율(결석 제외)
+                {tr('선택한 반 기준 · 일별 출석·지각 비율(결석 제외)')}
               </p>
             </div>
             {attendanceRangeError ? (
-              <p className="text-sm text-amber-400">출석 기록을 불러오지 못했습니다.</p>
+              <p className="text-sm text-amber-400">{tr('출석 기록을 불러오지 못했습니다.')}</p>
             ) : attendanceChartPoints.length === 0 ? (
-              <p className="text-sm text-slate-500">표시할 데이터가 없습니다.</p>
+              <p className="text-sm text-slate-500">{tr('표시할 데이터가 없습니다.')}</p>
             ) : !chartsReady ? (
               <div className="h-[220px] w-full min-w-0 rounded-xl bg-slate-900/30 border border-slate-700" />
             ) : (
@@ -722,7 +777,7 @@ export default function DataCenterView({
                         const p = payload?.[0]?.payload as { date?: string } | undefined;
                         return p?.date ?? '';
                       }}
-                      formatter={(value) => [`${value ?? 0}%`, '출석률']}
+                      formatter={(value) => [`${value ?? 0}%`, tr('출석률')]}
                     />
                     <Line
                       type="monotone"
@@ -730,7 +785,7 @@ export default function DataCenterView({
                       stroke="#34d399"
                       strokeWidth={2}
                       dot={false}
-                      name="출석률"
+                      name={tr('출석률')}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -740,11 +795,11 @@ export default function DataCenterView({
 
           <div className="rounded-2xl bg-slate-800/40 border border-slate-700 p-5 space-y-3">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">반 평균 신체 기능</p>
-              <p className="text-sm text-slate-400 mt-1">필터에 맞는 원생 평균 (1~3단계 환산)</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{tr('반 평균 신체 기능')}</p>
+              <p className="text-sm text-slate-400 mt-1">{tr('필터에 맞는 원생 평균 (1~3단계 환산)')}</p>
             </div>
             {classRadarData.length === 0 ? (
-              <p className="text-sm text-slate-500">원생을 등록하면 레이더가 표시됩니다.</p>
+              <p className="text-sm text-slate-500">{tr('원생을 등록하면 레이더가 표시됩니다.')}</p>
             ) : !chartsReady ? (
               <div className="h-[220px] w-full min-w-0 rounded-xl bg-slate-900/30 border border-slate-700" />
             ) : (
@@ -754,7 +809,7 @@ export default function DataCenterView({
                     <PolarGrid stroke="rgba(148,163,184,0.2)" />
                     <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} />
                     <Radar
-                      name="평균"
+                      name={tr('평균')}
                       dataKey="value"
                       stroke="#8b5cf6"
                       fill="#8b5cf6"
@@ -767,7 +822,7 @@ export default function DataCenterView({
                         border: '1px solid rgba(139,92,246,0.3)',
                         borderRadius: 10,
                       }}
-                      formatter={(v) => [`${((Number(v) || 0) / 33.3).toFixed(1)} / 3`, '평균 단계']}
+                      formatter={(v) => [`${((Number(v) || 0) / 33.3).toFixed(1)} / 3`, tr('평균 단계')]}
                     />
                   </RadarChart>
                 </ResponsiveContainer>
@@ -785,21 +840,21 @@ export default function DataCenterView({
             onChange={(e) => setFilterGroup(e.target.value)}
             className="bg-slate-800 border border-slate-700 text-white text-sm font-medium rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500"
           >
-            <option value="전체">전체 반</option>
+            <option value="전체">{tr('전체 반')}</option>
             {classes.map((g) => (
               <option key={g.id} value={g.name}>{g.name}</option>
             ))}
             {students.some((s) => !classes.some((c) => c.name === s.classGroup)) && (
-              <option value="미분류">미분류</option>
+              <option value="미분류">{tr('미분류')}</option>
             )}
           </select>
 
           {filteredStudents.length > 0 && (
             <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl">
               <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-sm font-bold text-white">출석 {presentCount}</span>
+              <span className="text-sm font-bold text-white">{tr('출석')} {presentCount}</span>
               <span className="text-slate-500">/</span>
-              <span className="text-sm text-slate-400">{filteredStudents.length}명</span>
+              <span className="text-sm text-slate-400">{filteredStudents.length}{tr('명')}</span>
             </div>
           )}
 
@@ -809,7 +864,7 @@ export default function DataCenterView({
               onClick={() => markAllPresent(filteredStudents.map((s) => s.id))}
               className="px-4 py-2.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 text-sm font-bold rounded-xl transition-colors"
             >
-              전체 출석 처리
+              {tr('전체 출석 처리')}
             </button>
           )}
         </div>
@@ -820,18 +875,18 @@ export default function DataCenterView({
           className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg"
         >
           <UserPlus className="w-4 h-4" />
-          원생 등록
+          {tr('원생 등록')}
         </button>
       </div>
 
       {/* 원생 추가 폼 */}
       {showAddForm && (
         <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 space-y-4">
-          <p className="text-white font-black text-base">새 원생 등록</p>
+          <p className="text-white font-black text-base">{tr('새 원생 등록')}</p>
           <div className="flex flex-wrap gap-3">
             <input
               type="text"
-              placeholder="이름"
+              placeholder={tr('이름')}
               value={newName}
               onChange={(e) => { setNewName(e.target.value); setNameError(''); }}
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
@@ -843,7 +898,7 @@ export default function DataCenterView({
               onChange={(e) => setNewGroup(e.target.value)}
               className="bg-slate-900 border border-slate-600 text-white text-sm font-medium rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500"
             >
-              <option value="">미분류</option>
+              <option value="">{tr('미분류')}</option>
               {classes.map((g) => (
                 <option key={g.id} value={g.name}>{g.name}</option>
               ))}
@@ -853,28 +908,28 @@ export default function DataCenterView({
               onClick={handleAdd}
               className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors"
             >
-              추가
+              {tr('추가')}
             </button>
             <button
               type="button"
               onClick={() => { setShowAddForm(false); setNewName(''); setNewGroup(''); setNameError(''); }}
               className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors"
             >
-              취소
+              {tr('취소')}
             </button>
           </div>
-          {nameError && <p className="text-red-400 text-sm font-medium">{nameError}</p>}
+          {nameError && <p className="text-red-400 text-sm font-medium">{tr(nameError)}</p>}
 
           {classes.length === 0 && (
             <p className="text-xs text-slate-500 flex items-center gap-1.5">
               <AlertCircle className="w-3.5 h-3.5" />
-              반을 먼저 만들면 학생을 반별로 관리할 수 있어요.{' '}
+              {tr('반을 먼저 만들면 학생을 반별로 관리할 수 있어요.')}{' '}
               <button
                 type="button"
                 onClick={() => setShowClassManager(true)}
                 className="text-blue-400 underline underline-offset-2"
               >
-                반 관리 열기
+                {tr('반 관리 열기')}
               </button>
             </p>
           )}
@@ -885,7 +940,7 @@ export default function DataCenterView({
       {filteredStudents.length > 0 && (
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-bold text-slate-400">
-            <span>오늘 출석률</span>
+            <span>{tr('오늘 출석률')}</span>
             <span>{Math.round((presentCount / filteredStudents.length) * 100)}%</span>
           </div>
           <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
@@ -905,10 +960,10 @@ export default function DataCenterView({
           </div>
           <div className="space-y-2">
             <p className="text-white font-black text-xl">
-              {filterGroup === '전체' ? '등록된 원생이 없습니다' : `${filterGroup}에 원생이 없습니다`}
+              {filterGroup === '전체' ? tr('등록된 원생이 없습니다') : tr(`${filterGroup}에 원생이 없습니다`)}
             </p>
             <p className="text-slate-400 text-sm max-w-xs mx-auto">
-              원생을 등록하면 출결 관리, 신체 기능 평가, 술래 정하기, 팀 나누기를 사용할 수 있습니다.
+              {tr('원생을 등록하면 출결 관리, 신체 기능 평가, 술래 정하기, 팀 나누기를 사용할 수 있습니다.')}
             </p>
           </div>
           <button
@@ -916,13 +971,13 @@ export default function DataCenterView({
             onClick={() => setShowAddForm(true)}
             className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center gap-2 transition-colors"
           >
-            <UserPlus className="w-4 h-4" /> 첫 원생 등록하기
+            <UserPlus className="w-4 h-4" /> {tr('첫 원생 등록하기')}
           </button>
         </div>
       ) : (
         <div className="space-y-3">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-            {filteredStudents.length}명 등록 · 상태 버튼 클릭으로 출결 변경 · ∨ 버튼으로 신체 기능 평가
+            {filteredStudents.length}{tr('명 등록 · 상태 버튼 클릭으로 출결 변경 · ∨ 버튼으로 신체 기능 평가')}
           </p>
           {filteredStudents.map((s) => (
             <StudentCard
@@ -941,9 +996,9 @@ export default function DataCenterView({
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Award className="w-5 h-5 text-amber-400" />
-            <h3 className="text-lg font-black text-white">이달의 성취 뱃지</h3>
+            <h3 className="text-lg font-black text-white">{tr('이달의 성취 뱃지')}</h3>
           </div>
-          <p className="text-slate-400 text-sm">AI 리포트에서 도출된 강점·성장 태그로 만든 뱃지예요.</p>
+          <p className="text-slate-400 text-sm">{tr('AI 리포트에서 도출된 강점·성장 태그로 만든 뱃지예요.')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {badges.map((badge) => (
               <div
@@ -953,7 +1008,9 @@ export default function DataCenterView({
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-white font-bold truncate">{badge.studentName}</p>
-                    <p className="text-slate-500 text-xs">{badge.classGroup || '미분류'}</p>
+                    <p className="text-slate-500 text-xs">
+                      {badge.classGroup ? (badge.classGroup === '미분류' ? tr('미분류') : badge.classGroup) : tr('미분류')}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -961,17 +1018,17 @@ export default function DataCenterView({
                     className="flex items-center gap-1.5 px-2.5 py-1.5 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-300 rounded-lg text-xs font-bold shrink-0"
                   >
                     <Share2 className="w-3.5 h-3.5" />
-                    공유
+                    {tr('공유')}
                   </button>
                 </div>
-                <p className="text-amber-400 font-bold text-sm">{makeBadgeTitle(badge.strengthSummary)}</p>
+                <p className="text-amber-400 font-bold text-sm">{makeBadgeTitle(tr, badge.strengthSummary)}</p>
                 {badge.growthTag && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium rounded-full w-fit">
-                    {badge.growthTag}
+                    {tr(badge.growthTag)}
                   </span>
                 )}
                 <p className="text-slate-500 text-xs mt-auto">
-                  {new Date(badge.generatedAt).toLocaleDateString('ko-KR')} · {badge.period}
+                  {new Date(badge.generatedAt).toLocaleDateString(intlLocaleTag(locale))} · {tr(badge.period)}
                 </p>
               </div>
             ))}

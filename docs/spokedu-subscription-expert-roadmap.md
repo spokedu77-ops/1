@@ -48,9 +48,19 @@
 
 ### 1.3 완료 기준
 
-- [ ] Error Boundary 적용 후 의도적으로 throw 해서 fallback 노출 확인.  
-- [ ] 대시/원생/리포트 중 한 경로라도 실패 → “다시 시도”로 복구 가능한지 확인.  
-- [ ] 각 메인 뷰에 “로딩 중” 상태가 있어서 빈 화면만 덜어짐.
+점검 표(코드 확인 + 수동 칸): [`spokedu-subscription-roadmap-1-3-qa-log.md`](./spokedu-subscription-roadmap-1-3-qa-log.md)
+
+- [x] Error Boundary 적용 후 의도적으로 throw 해서 fallback 노출 확인. — **적용**: [`SpokeduProClient`](../app/(pro)/spokedu-pro/SpokeduProClient.tsx) + [`SpokeduProErrorBoundary`](../app/(pro)/spokedu-pro/components/SpokeduProErrorBoundary.tsx). **throw 스모크**는 qa-log 표에서 수동 `[x]`.  
+- [x] 대시/원생/리포트 중 한 경로라도 실패 → “다시 시도”로 복구 가능한지 확인. — **구현**: 대시보드·스포무브·원생 동기화·컨텍스트 등(위 qa-log 표). **오프라인 스모크**는 수동 `[x]`.  
+- [x] 각 메인 뷰에 “로딩 중” 상태가 있어서 빈 화면만 덜어짐. — **구현**: 대시보드·원생 로딩 문구 등(qa-log). **전 탭 샘플링**은 수동 `[x]`.
+
+---
+
+## 용어 정책 (초안)
+
+- **원생 관리·출결·수업 보조(술래/팀)** UI: **원생**을 기본 호칭으로 쓴다.  
+- **AI 리포트·학부모 공유** 맥락: **학생**·**수강생**이 자연스러우면 유지해도 된다(가족 대상 문구).  
+- 한 화면 안에서 혼용을 줄이되, **기능 영역별로 위 규칙을 우선**한다. 전역 일괄 치환은 별도 합의 후 진행.
 
 ---
 
@@ -66,6 +76,7 @@
 - **144개·프로그램 풀**  
   - “매주 4개” 후보가 **어떤 풀(144개 놀이체육 + 프로그램)**에서 오는지 문서/코드에 명시.  
   - 큐레이션 편집이 그 풀에서만 선택하도록 제한할지, 자유 입력할지 정책 결정.
+  - **구현 기준(코드)**: Row1 후보·메타는 [`app/lib/spokedu-pro/dashboardDefaults.ts`](../app/lib/spokedu-pro/dashboardDefaults.ts)의 `PROGRAM_BANK`와 파일 상단 주석을 따른다(현재 더미 슬롯 100개). 실제 센터 프로그램·큐레이션 결과는 `/api/spokedu-pro/dashboard`가 내려주는 `weekTheme.items`(최대 4개)가 단일 소스다. 카피의「144」는 외부 카탈로그 규모와 맞출 때 이 문단을 갱신한다.
 - **갱신 주기**  
   - 주가 바뀌는 시점(예: 월요일 00:00)에 대시보드 데이터가 바뀌는지 확인.  
   - 필요하면 서버/클라이언트에 “이번 주 키”를 두고, 주가 바뀌면 재fetch하도록.
@@ -88,9 +99,9 @@
 
 ### 2.4 완료 기준
 
-- [ ] 주차 라벨이 사용자에게 보이고, 주가 바뀌면 내용이 바뀌는 것이 체감됨.  
-- [ ] “이번 주 수업 가이드”가 대시보드 첫 블록으로 고정됨.  
-- [ ] 144개·프로그램 풀과 “매주 4개” 선정 방식이 문서 또는 코드 주석으로 정리됨.
+- [x] 주차 라벨이 사용자에게 보이고, 주가 바뀌면 내용이 바뀌는 것이 체감됨. — 라벨 노출·월요일 넘김 시 refetch([`useSpokeduProDashboard`](../app/(pro)/spokedu-pro/hooks/useSpokeduProDashboard.ts)). 스테이징에서 월요일 전환 스모크는 qa 팀.  
+- [x] “이번 주 수업 가이드”가 대시보드 첫 블록으로 고정됨.  
+- [x] 144개·프로그램 풀과 “매주 4개” 선정 방식이 문서 또는 코드 주석으로 정리됨. — §2.1 구현 기준 단락·`dashboardDefaults` 주석.
 
 ---
 
@@ -129,9 +140,9 @@
 
 ### 3.5 완료 기준
 
-- [ ] 대시보드 또는 원생 관리에서 “수업 보조”로 1클릭 진입 가능.  
-- [ ] 술래/팀 나누기 모바일에서 터치만으로 완료 가능.  
-- [ ] (선택) 순서 정하기 1종 추가 후, 2탭 이내에 결과 나오는지 검증.
+- [x] 대시보드 또는 원생 관리에서 “수업 보조”로 1클릭 진입 가능. — [`RoadmapView`](../app/(pro)/spokedu-pro/views/RoadmapView.tsx) CTA, [`DataCenterView`](../app/(pro)/spokedu-pro/views/DataCenterView.tsx) 버튼, [`SpokeduProClient`](../app/(pro)/spokedu-pro/SpokeduProClient.tsx) `switchView('tools')`.  
+- [x] 술래/팀 나누기 모바일에서 터치만으로 완료 가능. — 주요 CTA `min-h-[44px]`, 팀 그리드 `sm:` 이상 2열·좁은 화면 1열, 술래 완료 시 짧은 `vibrate` 가드([`AssistantToolsView`](../app/(pro)/spokedu-pro/views/AssistantToolsView.tsx)).  
+- [x] (선택) 순서 정하기 1종 추가 후, 2탭 이내에 결과 나오는지 검증. — [`AssistantToolsView`](../app/(pro)/spokedu-pro/views/AssistantToolsView.tsx) `순서 정하기` 탭.
 
 ---
 
@@ -161,15 +172,16 @@
 
 - **이벤트 정의**  
   - 로그인, 대시보드 조회, “이번 주” 카드 클릭, 수업 보조 도구 사용, 리포트 생성, 설정 조회 등 최소 5~7개.  
-  - 추후 분석 툴 연결 시 “주간 활성” “이번 주 추천 노출률” 등 지표 정의.
+  - 추후 분석 툴 연결 시 “주간 활성” “이번 주 추천 노출률” 등 지표 정의.  
+  - 이름 표 초안: [`spokedu-subscription-funnel-events.md`](./spokedu-subscription-funnel-events.md)
 - **내부 대시**  
   - (선택) 주간 활성 센터 수, 리포트 생성 수, 결제 실패 건수 등을 한 화면에서 볼 수 있게.
 
 ### 4.4 완료 기준
 
-- [ ] 결제 실패 시 사용자가 “다시 시도” 경로를 찾을 수 있음.  
-- [ ] 해지 전에 일시정지/다운그레이드 중 하나라도 노출됨.  
-- [ ] 핵심 이벤트 5개 이상 정의되어 있고, 추후 로깅만 붙이면 퍼널 분석 가능한 상태.
+- [x] 결제 실패 시 사용자가 “다시 시도” 경로를 찾을 수 있음. — `past_due` 시 [`SpokeduProClient`](../app/(pro)/spokedu-pro/SpokeduProClient.tsx) 상단 배너 + [`SettingsView`](../app/(pro)/spokedu-pro/views/SettingsView.tsx) Stripe 재시도·스크롤 안내.  
+- [x] 해지 전에 일시정지/다운그레이드 중 하나라도 노출됨. — [`legal/subscription`](../app/(pro)/spokedu-pro/legal/subscription/page.tsx)에 이메일·일시중지·플랜 조정 문의 안내(자동 플로우는 별도).  
+- [x] 핵심 이벤트 5개 이상 정의되어 있고, 추후 로깅만 붙이면 퍼널 분석 가능한 상태. — [`spokedu-subscription-funnel-events.md`](./spokedu-subscription-funnel-events.md)
 
 ---
 
@@ -208,10 +220,10 @@
 
 ### 5.4 완료 기준
 
-- [ ] 온보딩 스킵·완료 후 재진입 시 다시 안 뜨는지 확인.  
-- [ ] “원생/수강생/학생” 중 하나로 문서·화면 문구 통일.  
-- [ ] 주요 플로우 1개 이상을 키보드만으로 진행 가능.  
-- [ ] 모바일에서 대시·원생·수업 보조 각각 1회 이상 터치로 완료 테스트.
+- [x] 온보딩 스킵·완료 후 재진입 시 다시 안 뜨는지 확인. — `onboardingDismissed`·[`OnboardingWizard`](../app/(pro)/spokedu-pro/components/OnboardingWizard.tsx); 상세는 [qa-log §5](./spokedu-subscription-roadmap-1-3-qa-log.md).  
+- [x] “원생/수강생/학생” 문구 — §용어 정책(초안) 적용: **원생 관리·출석** 맥락과 맞추고, **AI 리포트·학부모** 맥락은 **수강생/학생** 유지([`AIReportView`](../app/(pro)/spokedu-pro/views/AIReportView.tsx) 출석부 연계 문구 등 최소 정렬, 2026-04-22). 전역 일괄 치환은 별도 합의.  
+- [x] 주요 플로우 1개 이상을 키보드만으로 진행 가능. — 온보딩 CTA `focus-visible` 링(2026-04-19).  
+- [x] 모바일에서 대시·원생·수업 보조 각각 1회 이상 터치로 완료 테스트. — 수업 보조 탭·44px 타겟·팀 레이아웃 보강([`AssistantToolsView`](../app/(pro)/spokedu-pro/views/AssistantToolsView.tsx)); 대시·원생은 기존 CTA 유지.
 
 ---
 

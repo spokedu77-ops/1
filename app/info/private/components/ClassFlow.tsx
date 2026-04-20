@@ -5,7 +5,7 @@ const STEPS = [
   {
     num: '01',
     title: '라포 형성 및 신체기능 향상 세션',
-    desc: '강사와의 유대감을 형성하고, 그날 진행할 메인 활동에 필요한 신체 기능 향상 프로그램을 진행합니다.',
+    desc: '강사와의 유대감을 형성하고, 그날 진행할 메인 세션에 필요한 신체 기능 향상 프로그램을 진행합니다.',
   },
   {
     num: '02',
@@ -23,8 +23,8 @@ export default function ClassFlow() {
   return (
     <section id="class-flow">
       <div className="pl-container">
-        <h2 className="pl-section-title">스포키듀 60분 수업 스케치</h2>
-        <p className="pl-lead">아이의 몰입을 완벽하게 이끌어내는 체계적인 3단계 수업 구조입니다.</p>
+        <h2 className="pl-section-title">스포키듀 수업 스케치</h2>
+        <p className="pl-lead">아이의 자발적인 참여를 이끌어내는 체계적인 3단계 수업 구조입니다.</p>
         <div className="pl-flow-wrapper">
           <div className="pl-flow-timeline">
             {STEPS.map(({ num, title, desc }) => (

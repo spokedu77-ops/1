@@ -1257,6 +1257,14 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     const rows = sessionsByGroupId[gid] || [];
     const open = !!openGroupIds[gid];
     const label = `${formatDateRange(rows)} · ${plannedTotalOfGroup(rows)}회`;
+    const cycleMainUndecided = rows
+      .filter(isSessionBulkTarget)
+      .some((s) => {
+        const tid = String(s.created_by || "").trim();
+        if (!tid) return true;
+        const tname = String(teacherMap[tid] || "").trim();
+        return tname === "미정";
+      });
     return (
       <section key={gid} className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
                     <button
@@ -1340,7 +1348,13 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                           </div>
                         </div>
 
-                        <div className="rounded-2xl border border-slate-100 overflow-hidden">
+                        <div
+                          className={
+                            cycleMainUndecided
+                              ? "rounded-2xl border-2 border-red-500 bg-red-50/70 overflow-hidden shadow-sm shadow-red-100"
+                              : "rounded-2xl border border-slate-100 overflow-hidden"
+                          }
+                        >
                           <table className="w-full table-fixed text-xs">
                             <colgroup>
                               <col className="w-[52px]" />

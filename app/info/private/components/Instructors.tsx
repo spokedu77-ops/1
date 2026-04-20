@@ -3,21 +3,21 @@ import Image from 'next/image';
 const INSTRUCTORS = [
   {
     photo: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png',
-    name: '총괄 팀장',
+    name: '총괄팀장 최지훈',
     tag: '연세대학교 체육교육학 학사',
     badges: ['지도 경력 10년 차', '교원자격증', '시스템 구축 및 강사 교육'],
     desc: '',
   },
   {
     photo: 'https://i.postimg.cc/RZ73P8f2/IMG-7176.jpg',
-    name: '운영 팀장',
+    name: '운영팀장 김윤기',
     tag: '연세대학교 체육교육학 학사',
     badges: ['지도 경력 8년 차', '교원자격증', '강사 관리 및 프로그램 기획'],
     desc: '',
   },
   {
     photo: 'https://i.postimg.cc/5yW4kbxr/20260403-134412.png',
-    name: '수업 팀장',
+    name: '수업팀장 김구민',
     tag: '강원대학교 체육교육학 학사',
     badges: ['지도 경력 5년 차', '생활체육 지도자 자격증', '프로그램 개발 및 수업 총괄'],
     desc: '',

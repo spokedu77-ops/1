@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import type { Tone } from './types';
 
 export default function ToneChip({
@@ -15,6 +16,7 @@ export default function ToneChip({
   emoji: string;
   onClick: () => void;
 }) {
+  const t = useTranslator();
   const active = current === value;
   return (
     <button
@@ -27,7 +29,7 @@ export default function ToneChip({
       }`}
     >
       <span className="mr-1">{emoji}</span>
-      {label}
+      {t(label)}
     </button>
   );
 }

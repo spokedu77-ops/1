@@ -1,6 +1,10 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import './styles/spokedu-pro.css';
 import { useSpokeduProUI, type ViewId } from './hooks/useSpokeduProUI';
@@ -23,6 +27,7 @@ import OnboardingWizard from './components/OnboardingWizard';
 import PostClassModal from './components/PostClassModal';
 import { SpokeduProErrorBoundary } from './components/SpokeduProErrorBoundary';
 import { useProContext } from './hooks/useProContext';
+import { trackSpokeduProEvent } from './utils/spokeduProAnalytics';
 import { setTodayClassPhase } from './utils/todayClassStorage';
 import {
   getSpomoveLaunchParams,
@@ -38,13 +43,54 @@ export default function SpokeduProClient({
   isEditMode?: boolean;
   onViewChange?: (viewId: ViewId) => void;
 }) {
+  const tr = useTranslator();
+  const searchParams = useSearchParams();
   const rootRef = useRef<HTMLDivElement>(null);
   const { viewId, switchView } = useSpokeduProUI('roadmap');
   const { ctx, loading: ctxLoading, refresh } = useProContext();
+  const loginSuccessTracked = useRef(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState(
     () => typeof window !== 'undefined' && !!localStorage.getItem('onboardingDismissed')
   );
-  const showOnboarding = !ctxLoading && ctx.activeCenterId === null && !onboardingDismissed;
+  const showOnboarding =
+    !ctxLoading &&
+    !ctx.contextLoadError &&
+    ctx.dbReady !== false &&
+    ctx.activeCenterId === null &&
+    !onboardingDismissed;
+
+  useEffect(() => {
+    const checkout = searchParams.get('checkout');
+    if (!checkout) return;
+    if (checkout === 'success') {
+      toast.success(tr('결제가 완료되었습니다. 구독 정보를 갱신합니다.'));
+      void refresh();
+    } else if (checkout === 'cancel') {
+      toast.message(tr('결제를 취소했습니다.'));
+    }
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('checkout');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    } catch {
+      /* ignore */
+    }
+  }, [searchParams, tr, refresh]);
+
+  useEffect(() => {
+    const v = searchParams.get('view');
+    if (v !== 'settings') return;
+    switchView('settings');
+    void refresh();
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('view');
+      const qs = url.searchParams.toString();
+      window.history.replaceState({}, '', `${url.pathname}${qs ? `?${qs}` : ''}`);
+    } catch {
+      /* ignore */
+    }
+  }, [searchParams, switchView, refresh]);
 
   const [toolkitOpen, setToolkitOpen] = useState(false);
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
@@ -92,6 +138,27 @@ export default function SpokeduProClient({
     onViewChange?.(viewId);
   }, [viewId, onViewChange]);
 
+  useEffect(() => {
+    if (ctxLoading || ctx.contextLoadError) return;
+    if (loginSuccessTracked.current) return;
+    loginSuccessTracked.current = true;
+    trackSpokeduProEvent('spokedu_pro_login_success', {
+      hasCenter: Boolean(ctx.activeCenterId),
+      plan: ctx.entitlement.plan,
+    });
+  }, [ctxLoading, ctx.contextLoadError, ctx.activeCenterId, ctx.entitlement.plan]);
+
+  useEffect(() => {
+    if (ctxLoading) return;
+    const byView: Partial<Record<ViewId, string>> = {
+      roadmap: 'spokedu_pro_dashboard_view',
+      tools: 'spokedu_pro_assistant_open',
+      settings: 'spokedu_pro_settings_view',
+    };
+    const name = byView[viewId];
+    if (name) trackSpokeduProEvent(name, { viewId });
+  }, [ctxLoading, viewId]);
+
   const [programsFromApi, setProgramsFromApi] = useState<Array<{
     id: number;
     title: string;
@@ -105,19 +172,34 @@ export default function SpokeduProClient({
     activity_tip?: string | null;
   }>>([]);
   useEffect(() => {
-    fetch('/api/spokedu-pro/programs?limit=200')
-      .then((res) => res.json())
-      .then((json) => {
-        if (Array.isArray(json?.data)) setProgramsFromApi(json.data);
-      })
-      .catch(() => setProgramsFromApi([]));
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/spokedu-pro/programs?limit=200');
+        const json = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (res.ok && Array.isArray(json?.data)) setProgramsFromApi(json.data);
+        else setProgramsFromApi([]);
+      } catch {
+        if (!cancelled) setProgramsFromApi([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    fetch('/api/spokedu-pro/screenplays', { credentials: 'include' })
-      .then((res) => res.json())
-      .then((json) => {
-        if (!Array.isArray(json?.screenplays)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/spokedu-pro/screenplays', { credentials: 'include' });
+        const json = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || !Array.isArray(json?.screenplays)) {
+          setScreenplayById({});
+          return;
+        }
         const next: Record<number, ScreenplayMeta> = {};
         for (const s of json.screenplays as Array<{
           id: number;
@@ -140,8 +222,13 @@ export default function SpokeduProClient({
           };
         }
         setScreenplayById(next);
-      })
-      .catch(() => setScreenplayById({}));
+      } catch {
+        if (!cancelled) setScreenplayById({});
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const programDetailsFromApi: Record<string, ProgramDetail> = {};
@@ -197,22 +284,34 @@ export default function SpokeduProClient({
       const version = entry?.version ?? 0;
       const result = await saveContentDraft('program_details', next, version);
       if (result.ok) {
-        toast.success('수정되었습니다.');
+        toast.success(tr('수정되었습니다.'));
         await fetchContent();
         await fetchBlocks();
       } else {
-        toast.error('저장 실패: ' + (result.error ?? '알 수 없는 오류'));
+        toast.error(tr(`저장 실패: ${result.error ?? '알 수 없는 오류'}`));
       }
     },
-    [adminContent?.program_details, saveContentDraft, fetchContent, fetchBlocks]
+    [adminContent?.program_details, saveContentDraft, fetchContent, fetchBlocks, tr]
   );
 
   const openDrawer = useCallback((id: number, context?: { role?: string; themeKey?: string }) => {
+    trackSpokeduProEvent('spokedu_pro_week_card_open', {
+      programId: id,
+      source: 'dashboard_drawer',
+      role: context?.role,
+      themeKey: context?.themeKey,
+    });
     setDrawerProgramId(id);
     setDrawerContext(context ?? null);
   }, []);
   const openLibraryProgramDetail = useCallback(
     (id: number, context?: { role?: string; themeKey?: string; screenplay?: boolean }) => {
+      trackSpokeduProEvent('spokedu_pro_week_card_open', {
+        programId: id,
+        source: context?.screenplay ? 'library_screenplay_drawer' : 'library_program_drawer',
+        role: context?.role,
+        themeKey: context?.themeKey,
+      });
       setLibraryDrawerProgramId(id);
       setLibraryDrawerContext(context ?? null);
     },
@@ -276,6 +375,53 @@ export default function SpokeduProClient({
         onOpenCurationDrawer={isEditMode ? () => setShowCurationDrawer(true) : undefined}
       />
       <main className="flex-1 w-full max-w-full min-w-0 h-full overflow-y-auto overflow-x-hidden custom-scroll relative bg-[#0F172A] z-0 min-h-0 pr-0 mr-0">
+        {!ctxLoading && !ctx.contextLoadError && ctx.entitlement.status === 'past_due' && (
+          <div className="sticky top-0 z-[25] flex flex-wrap items-center gap-3 px-4 py-3 bg-rose-950/95 border-b border-rose-700/50 text-rose-50 text-sm">
+            <p className="flex-1 min-w-[200px] font-medium">
+              {tr('결제가 지연된 상태입니다. 플랜 & 결제에서 카드를 갱신하거나 결제를 다시 시도해 주세요.')}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => switchView('settings')}
+                className="inline-flex min-h-[44px] items-center px-3 py-2 rounded-lg bg-rose-800 hover:bg-rose-700 text-white text-xs font-bold"
+              >
+                {tr('플랜 & 결제로 이동')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void refresh()}
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-900/80 hover:bg-rose-900 text-white text-xs font-bold"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                {tr('상태 새로고침')}
+              </button>
+            </div>
+          </div>
+        )}
+        {!ctxLoading && ctx.contextLoadError && (
+          <div className="sticky top-0 z-[25] flex flex-wrap items-center gap-3 px-4 py-3 bg-amber-950/95 border-b border-amber-700/50 text-amber-100 text-sm">
+            <p className="flex-1 min-w-[200px] font-medium">{tr(ctx.contextLoadError)}</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => void refresh()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-800 hover:bg-amber-700 text-white text-xs font-bold"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                {tr('다시 시도')}
+              </button>
+              {(ctx.contextLoadError?.includes('로그인') ?? false) && (
+                <Link
+                  href="/login"
+                  className="text-xs font-bold text-amber-200 underline underline-offset-2"
+                >
+                  {tr('로그인')}
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
         <div className={`view-content ${viewId === 'roadmap' ? 'active' : ''}`}>
           <RoadmapView
             onOpenDetail={openDrawer}
@@ -288,6 +434,10 @@ export default function SpokeduProClient({
             onOpenPostClass={(name) => setPostClassGroup(name)}
             onGoToAIReportFromToday={() => switchView('ai')}
             onAddClassFromToday={() => switchView('data-center')}
+            onGoToAssistantTools={() => {
+              setToolsFocusToken((t) => t + 1);
+              switchView('tools');
+            }}
           />
         </div>
         <div className={`view-content ${viewId === 'lesson-plan' ? 'active' : ''}`}>
@@ -303,7 +453,13 @@ export default function SpokeduProClient({
           />
         </div>
         <div className={`view-content ${viewId === 'data-center' ? 'active' : ''}`}>
-          <DataCenterView onOpenSettings={() => switchView('settings')} />
+          <DataCenterView
+            onOpenSettings={() => switchView('settings')}
+            onGoToAssistantTools={() => {
+              setToolsFocusToken((t) => t + 1);
+              switchView('tools');
+            }}
+          />
         </div>
         <div className={`view-content ${viewId === 'ai' ? 'active' : ''}`}>
           <AIReportView
@@ -383,13 +539,13 @@ export default function SpokeduProClient({
           <div className="fixed inset-0 z-[80] p-2 md:p-4">
             <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 shadow-2xl">
               <div className="h-12 px-4 flex items-center justify-between border-b border-slate-700 bg-slate-950/80">
-                <p className="text-sm font-bold text-slate-200">SPOMOVE 실행</p>
+                <p className="text-sm font-bold text-slate-200">{tr('SPOMOVE 실행')}</p>
                 <button
                   type="button"
                   onClick={() => setMemoryGameModal((m) => ({ ...m, open: false }))}
                   className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold"
                 >
-                  닫기
+                  {tr('닫기')}
                 </button>
               </div>
               <iframe

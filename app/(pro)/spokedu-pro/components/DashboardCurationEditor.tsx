@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
@@ -19,6 +20,7 @@ import {
 const ROW1_ROLE_OPTIONS = ROW1_ROLES as unknown as string[];
 
 export default function DashboardCurationEditor({ onClose }: { onClose?: () => void }) {
+  const tr = useTranslator();
   const [data, setData] = useState<DashboardV4>(DEFAULT_DASHBOARD_V4);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -73,16 +75,16 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
         const j = await res.json().catch(() => ({}));
         const errText = (j.error as string) ?? `HTTP ${res.status}`;
         setMessage({ type: 'error', text: errText });
-        toast.error('대시보드 저장 실패: ' + errText);
+        toast.error(tr(`대시보드 저장 실패: ${errText}`));
         return;
       }
       setMessage({ type: 'ok', text: '저장되었습니다. 대시보드에 곧바로 반영됩니다.' });
-      toast.success('저장되었습니다. 대시보드에 곧바로 반영됩니다.');
+      toast.success(tr('저장되었습니다. 대시보드에 곧바로 반영됩니다.'));
       window.dispatchEvent(new CustomEvent('spokedu-pro-dashboard-saved'));
     } catch (e) {
-      const errText = e instanceof Error ? e.message : '저장 실패';
+      const errText = e instanceof Error ? e.message : tr('저장 실패');
       setMessage({ type: 'error', text: errText });
-      toast.error('대시보드 저장 실패: ' + errText);
+      toast.error(tr(`대시보드 저장 실패: ${errText}`));
     } finally {
       setSaving(false);
     }
@@ -114,7 +116,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
   if (loading) {
     return (
       <div className="p-6 text-slate-400 flex items-center justify-center min-h-[200px]">
-        대시보드 데이터 불러오는 중...
+        {tr('대시보드 데이터 불러오는 중...')}
       </div>
     );
   }
@@ -122,7 +124,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
   return (
     <div className="p-4 pb-20 space-y-4 overflow-y-auto h-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-base font-bold text-white">대시보드 큐레이션 — 저장 시 즉시 반영</h2>
+        <h2 className="text-base font-bold text-white">{tr('대시보드 큐레이션 — 저장 시 즉시 반영')}</h2>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -130,14 +132,14 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
             disabled={saving}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-50"
           >
-            {saving ? '저장 중…' : '저장'}
+            {saving ? tr('저장 중…') : tr('저장')}
           </button>
           {onClose && (
             <button
               type="button"
               onClick={onClose}
               className="p-2 bg-slate-800 text-white rounded-lg border border-slate-700 hover:bg-slate-700"
-              aria-label="닫기"
+              aria-label={tr('닫기')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -150,26 +152,26 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
             message.type === 'ok' ? 'bg-emerald-900/30 text-emerald-300' : 'bg-red-900/30 text-red-300'
           }`}
         >
-          {message.text}
+          {tr(message.text)}
         </div>
       )}
 
       {/* 테마 1개 — 박스 전체 클릭 시 입력 포커스 */}
       <div className="space-y-1.5">
-        <h3 className="text-xs font-bold text-slate-400">이번 주 테마 (Row1)</h3>
+        <h3 className="text-xs font-bold text-slate-400">{tr('이번 주 테마 (Row1)')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <label className="block cursor-text rounded-lg bg-slate-800/80 border border-slate-700 p-2 hover:border-slate-600">
-            <span className="block text-xs text-slate-500 mb-0.5">배지 문구</span>
+            <span className="block text-xs text-slate-500 mb-0.5">{tr('배지 문구')}</span>
             <input
               type="text"
               value={data.weekTheme.badge}
               onChange={(e) => setWeekTheme({ badge: e.target.value })}
               className="w-full bg-transparent border-0 text-white rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
-              placeholder="이번 주 테마"
+              placeholder={tr('이번 주 테마')}
             />
           </label>
           <label className="block cursor-text rounded-lg bg-slate-800/80 border border-slate-700 p-2 hover:border-slate-600">
-            <span className="block text-xs text-slate-500 mb-0.5">테마 키</span>
+            <span className="block text-xs text-slate-500 mb-0.5">{tr('테마 키')}</span>
             <select
               value={data.weekTheme.themeKey}
               onChange={(e) => setWeekTheme({ themeKey: e.target.value as ThemeKey })}
@@ -177,29 +179,29 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
             >
               {THEME_KEYS.map((k) => (
                 <option key={k} value={k}>
-                  {THEME_LABELS[k]}
+                  {tr(THEME_LABELS[k])}
                 </option>
               ))}
             </select>
           </label>
           <label className="block cursor-text rounded-lg bg-slate-800/80 border border-slate-700 p-2 hover:border-slate-600 md:col-span-2">
-            <span className="block text-xs text-slate-500 mb-0.5">제목</span>
+            <span className="block text-xs text-slate-500 mb-0.5">{tr('제목')}</span>
             <input
               type="text"
               value={data.weekTheme.title}
               onChange={(e) => setWeekTheme({ title: e.target.value })}
               className="w-full bg-transparent border-0 text-white rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
-              placeholder="테마 제목"
+              placeholder={tr('테마 제목')}
             />
           </label>
           <label className="block cursor-text rounded-lg bg-slate-800/80 border border-slate-700 p-2 hover:border-slate-600 md:col-span-2">
-            <span className="block text-xs text-slate-500 mb-0.5">부제목</span>
+            <span className="block text-xs text-slate-500 mb-0.5">{tr('부제목')}</span>
             <input
               type="text"
               value={data.weekTheme.subtitle}
               onChange={(e) => setWeekTheme({ subtitle: e.target.value })}
               className="w-full bg-transparent border-0 text-white rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
-              placeholder="부제목"
+              placeholder={tr('부제목')}
             />
           </label>
         </div>
@@ -207,12 +209,12 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
 
       {/* Row1: 4개 */}
       <div className="space-y-1.5">
-        <h3 className="text-xs font-bold text-slate-400">Row1 — 테마 4개</h3>
+        <h3 className="text-xs font-bold text-slate-400">{tr('Row1 — 테마 4개')}</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-3">
           {data.weekTheme.items.slice(0, 4).map((item, idx) => (
             <div key={idx} className="bg-slate-800/60 border border-slate-700 rounded-lg p-2 space-y-1.5">
               <label className="block cursor-pointer">
-                <span className="block text-xs text-slate-500 mb-0.5">프로그램</span>
+                <span className="block text-xs text-slate-500 mb-0.5">{tr('프로그램')}</span>
                 <select
                   value={item.programId}
                   onChange={(e) => setRow1Item(idx, { programId: Number(e.target.value) })}
@@ -226,7 +228,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
                 </select>
               </label>
               <label className="block cursor-pointer">
-                <span className="block text-xs text-slate-500 mb-0.5">역할</span>
+                <span className="block text-xs text-slate-500 mb-0.5">{tr('역할')}</span>
                 <select
                   value={item.role}
                   onChange={(e) => setRow1Item(idx, { role: e.target.value })}
@@ -240,7 +242,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
                 </select>
               </label>
               <div>
-                <span className="block text-xs text-slate-500 mb-0.5">태그 2개</span>
+                <span className="block text-xs text-slate-500 mb-0.5">{tr('태그 2개')}</span>
                 <div className="flex gap-1">
                   <label className="flex-1 cursor-text rounded bg-slate-800 px-1.5 py-0.5 min-h-[28px] flex items-center">
                     <input
@@ -252,7 +254,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
                         setRow1Item(idx, { tag2: t.slice(0, 2) });
                       }}
                       className="w-full bg-transparent border-0 text-white text-xs focus:outline-none"
-                      placeholder="태그1"
+                      placeholder={tr('태그1')}
                     />
                   </label>
                   <label className="flex-1 cursor-text rounded bg-slate-800 px-1.5 py-0.5 min-h-[28px] flex items-center">
@@ -265,7 +267,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
                         setRow1Item(idx, { tag2: t.slice(0, 2) });
                       }}
                       className="w-full bg-transparent border-0 text-white text-xs focus:outline-none"
-                      placeholder="태그2"
+                      placeholder={tr('태그2')}
                     />
                   </label>
                 </div>
@@ -277,22 +279,22 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
 
       {/* Row2: 4개 */}
       <div className="space-y-1.5">
-        <h3 className="text-xs font-bold text-slate-400">Row2 — 베스트 4개</h3>
+        <h3 className="text-xs font-bold text-slate-400">{tr('Row2 — 베스트 4개')}</h3>
         <label className="block cursor-text rounded-lg bg-slate-800/80 border border-slate-700 p-2 hover:border-slate-600 mb-2 max-w-md">
-          <span className="block text-xs text-slate-500 mb-0.5">Row2 제목</span>
+          <span className="block text-xs text-slate-500 mb-0.5">{tr('Row2 제목')}</span>
           <input
             type="text"
             value={data.row2.title}
             onChange={(e) => setData((p) => ({ ...p, row2: { ...p.row2, title: e.target.value } }))}
             className="w-full bg-transparent border-0 text-white rounded px-1 py-0.5 text-sm focus:outline-none"
-            placeholder="선생님 베스트 활동"
+            placeholder={tr('선생님 베스트 활동')}
           />
         </label>
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-3">
           {data.row2.items.slice(0, 4).map((item, idx) => (
             <div key={idx} className="bg-slate-800/60 border border-slate-700 rounded-lg p-2 space-y-1.5">
               <label className="block cursor-pointer">
-                <span className="block text-xs text-slate-500 mb-0.5">프로그램</span>
+                <span className="block text-xs text-slate-500 mb-0.5">{tr('프로그램')}</span>
                 <select
                   value={item.programId}
                   onChange={(e) => setRow2Item(idx, { programId: Number(e.target.value) })}
@@ -306,7 +308,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
                 </select>
               </label>
               <div>
-                <span className="block text-xs text-slate-500 mb-0.5">태그 2개</span>
+                <span className="block text-xs text-slate-500 mb-0.5">{tr('태그 2개')}</span>
                 <div className="flex gap-1">
                   <label className="flex-1 cursor-text rounded bg-slate-800 px-1.5 py-0.5 min-h-[28px] flex items-center">
                     <input
@@ -318,7 +320,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
                         setRow2Item(idx, { tag2: t.slice(0, 2) });
                       }}
                       className="w-full bg-transparent border-0 text-white text-xs focus:outline-none"
-                      placeholder="태그1"
+                      placeholder={tr('태그1')}
                     />
                   </label>
                   <label className="flex-1 cursor-text rounded bg-slate-800 px-1.5 py-0.5 min-h-[28px] flex items-center">
@@ -331,7 +333,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
                         setRow2Item(idx, { tag2: t.slice(0, 2) });
                       }}
                       className="w-full bg-transparent border-0 text-white text-xs focus:outline-none"
-                      placeholder="태그2"
+                      placeholder={tr('태그2')}
                     />
                   </label>
                 </div>

@@ -1,14 +1,18 @@
 /**
- * Admin Storage 업로드 (서버에서 실행 → 쿠키 기반 admin 세션으로 Storage RLS 통과)
+ * Admin Storage 업로드
+ * requireAdmin()으로 앱 기준 관리자만 허용 후, Service Role로 업로드 → Storage RLS와 무관
  * POST FormData: path, file, contentType(optional)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
   try {
     const formData = await request.formData();
     const path = formData.get('path');
@@ -18,14 +22,18 @@ export async function POST(request: NextRequest) {
     if (typeof path !== 'string' || !path.trim()) {
       return NextResponse.json({ error: 'path 필수' }, { status: 400 });
     }
+    const normalizedPath = path.trim().replace(/^\/+/, '');
+    if (normalizedPath.includes('..')) {
+      return NextResponse.json({ error: 'path에 허용되지 않는 문자가 있습니다.' }, { status: 400 });
+    }
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json({ error: 'file 필수' }, { status: 400 });
     }
 
-    const supabase = await createServerSupabaseClient();
+    const supabase = getServiceSupabase();
     const { error } = await supabase.storage
       .from(BUCKET_NAME)
-      .upload(path, file, {
+      .upload(normalizedPath, file, {
         contentType,
         upsert: true,
       });
@@ -38,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ path });
+    return NextResponse.json({ path: normalizedPath });
   } catch (err) {
     devLogger.error('[storage/upload]', err);
     return NextResponse.json(

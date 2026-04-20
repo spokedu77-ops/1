@@ -84,7 +84,9 @@ function monthRowTone(ev: SessionEvent): string {
   if (ev.status === "cancelled" || ev.status === "deleted")
     return "bg-rose-200 border-2 border-rose-600 shadow-sm";
   if (ev.status === "postponed") return "bg-violet-200 border-2 border-violet-600 shadow-sm";
-  if (!ev.teacherId) return "bg-red-100 border-2 border-red-500 shadow-sm";
+  const teacherLabel = String(ev.teacher || "").trim();
+  const mainUndecided = !ev.teacherId || teacherLabel.startsWith("미정");
+  if (mainUndecided) return "bg-red-100 border-2 border-red-500 shadow-sm";
   return monthRowToneClassesForSessionType(ev.type);
 }
 

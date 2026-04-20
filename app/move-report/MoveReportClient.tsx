@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { compute } from './lib/compute';
-import { trackMoveReportEvent } from './lib/events';
+import { getMoveReportSessionId, trackMoveReportEvent } from './lib/events';
 import { buildMoveReportShareUrl } from './lib/shareLink';
 import { Qs } from './data/questions';
 import type { AgeGroup, ComputeResult } from './types';
@@ -10,9 +10,11 @@ import Intro from './components/Intro';
 import Setup from './components/Setup';
 import Survey from './components/Survey';
 import Loading from './components/Loading';
+import Blocked from './components/Blocked';
 import Result, { type ResultTab } from './components/Result';
+import { getMrCompletionCount, incrementMrCompletionCount } from './lib/completionLimit';
 
-type Screen = 'intro' | 'setup' | 'survey' | 'loading' | 'result';
+type Screen = 'intro' | 'setup' | 'survey' | 'loading' | 'result' | 'blocked';
 
 export default function MoveReportClient() {
   const [sc, setSc] = useState<Screen>('intro');
@@ -31,6 +33,8 @@ export default function MoveReportClient() {
   const introTrackedRef = useRef(false);
   const stepTimer = useRef<number | null>(null);
   const computeTimer = useRef<number | null>(null);
+  const loadLimitTimer = useRef<number | null>(null);
+  const gymKeyRef = useRef<string>('');
 
   const flash = useCallback((msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -43,8 +47,10 @@ export default function MoveReportClient() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const key = params.get('d');
-    if (key) setShareKey(key);
+    const d = params.get('d');
+    if (d) setShareKey(d);
+    const k = params.get('key');
+    gymKeyRef.current = typeof k === 'string' ? k.trim() : '';
   }, []);
 
   useEffect(() => {
@@ -58,6 +64,7 @@ export default function MoveReportClient() {
       if (toastTimer.current) clearTimeout(toastTimer.current);
       if (stepTimer.current) clearTimeout(stepTimer.current);
       if (computeTimer.current) clearTimeout(computeTimer.current);
+      if (loadLimitTimer.current) clearTimeout(loadLimitTimer.current);
     };
   }, []);
 
@@ -125,15 +132,82 @@ export default function MoveReportClient() {
         const r = compute(nr, age, name);
         setResult(r);
         void trackMoveReportEvent({ eventName: 'survey_completed', shareKey });
+        // Save anonymous survey payload for analysis; never block UX on failure.
+        void fetch('/api/move-report/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: getMoveReportSessionId(),
+            ageGroup: age,
+            profileKey: r.key,
+            profileTitle: r.profile.char,
+            surveyResponses: nr,
+          }),
+        }).catch(() => undefined);
         go('loading');
-        window.setTimeout(() => {
-          go('result');
-          setAnswering(false);
+        loadLimitTimer.current = window.setTimeout(() => {
+          loadLimitTimer.current = null;
+          void (async () => {
+            try {
+              const postLimit = async (body: Record<string, unknown>) => {
+                const res = await fetch('/api/move-report/limit', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(body),
+                });
+                return (await res.json()) as {
+                  ok?: boolean;
+                  allowed?: boolean;
+                  bypass?: boolean;
+                  error?: string;
+                };
+              };
+
+              const gymKey = gymKeyRef.current;
+              if (gymKey) {
+                const chk = await postLimit({ action: 'check', gymKey });
+                if (chk.ok && chk.bypass && chk.allowed) {
+                  go('result');
+                  return;
+                }
+              }
+
+              if (getMrCompletionCount() >= 3) {
+                go('blocked');
+                return;
+              }
+
+              const chk2 = await postLimit({ action: 'check' });
+              if (!chk2.ok || !chk2.allowed) {
+                go('blocked');
+                return;
+              }
+
+              const recRes = await fetch('/api/move-report/limit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'record' }),
+              });
+              const rec = (await recRes.json()) as { ok?: boolean };
+              if (!recRes.ok || !rec.ok) {
+                go('blocked');
+                return;
+              }
+
+              incrementMrCompletionCount();
+              go('result');
+            } catch {
+              flash('일시적으로 확인할 수 없어요. 잠시 후 다시 시도해 주세요.');
+              go('blocked');
+            } finally {
+              setAnswering(false);
+            }
+          })();
         }, 2200);
         computeTimer.current = null;
       }, 200);
     },
-    [age, answering, go, name, qi, questions.length, resps, shareKey]
+    [age, answering, flash, go, name, qi, questions.length, resps, shareKey]
   );
 
   const surveyBack = () => {
@@ -171,6 +245,7 @@ export default function MoveReportClient() {
         <Survey q={currentQ} qi={qi} total={questions.length} resps={resps} name={name} onAnswer={onAnswer} onBack={surveyBack} answering={answering} />
       )}
       {sc === 'loading' && <Loading />}
+      {sc === 'blocked' && <Blocked onHome={() => go('intro')} />}
       {sc === 'result' && result && (
         <Result
           result={result}
