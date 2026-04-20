@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, type MouseEvent } fr
 import { ADMIN_NAMES } from '@/app/admin/classes-shared/constants/admins';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { copyTextToClipboardSync } from '@/app/lib/client/copyToClipboard';
+import { getPublicAppOrigin } from '@/app/lib/client/publicAppOrigin';
 import {
   Send,
   RotateCcw,
@@ -47,6 +49,8 @@ interface Session {
   created_by: string;
   memo?: string | null;
   feedback_fields?: FeedbackFields;
+  /** 학부모 단축 링크 `/r/XXXXXX` — 목록에서 미리 채워 복사 시 네트워크 없이 동기 복사 */
+  short_code?: string | null;
   users?: { id: string; name: string };
   lesson_plans?: { content?: string }[];
 }
@@ -188,6 +192,14 @@ function addDaysToYmd(ymd: string, deltaDays: number): string {
   return `${yy}-${mm}-${dd}`;
 }
 
+/** 피드백 검수 탭: 카드·필터용 empty | done | verified (fetchListData보다 위에 두어 클로저 순서 명확) */
+function getSessionStatusForFeedbackReview(session: Session): 'empty' | 'done' | 'verified' {
+  return getSessionDisplayStatus({
+    ...session,
+    feedback_fields: session.feedback_fields ?? parseTemplateToFields(session.students_text || ''),
+  });
+}
+
 // 피드백 검수 탭
 function FeedbackReviewTab({
   coaches,
@@ -320,7 +332,7 @@ function FeedbackReviewTab({
 
       let query = supabase
         .from('sessions')
-        .select('id, title, start_at, end_at, status, students_text, photo_url, file_url, session_type, created_by, memo, feedback_fields, users:created_by(id, name)')
+        .select('id, title, start_at, end_at, status, students_text, photo_url, file_url, session_type, created_by, memo, feedback_fields, short_code, users:created_by(id, name)')
         .in('session_type', typeFilter)
         .gte('start_at', rangeStart.toISOString())
         .lte('start_at', rangeEnd.toISOString())
@@ -333,12 +345,49 @@ function FeedbackReviewTab({
       const { data, error } = await query;
       if (error) throw error;
       if (data) {
-        const rows = data as unknown as Session[];
+        let rows = data as unknown as Session[];
         const filtered =
           excludedAdminCoachIds.length === 0
             ? rows
             : rows.filter((s) => !excludedAdminCoachIds.includes(s.created_by));
-        setSessions(filtered);
+        rows = filtered;
+
+        // 검수완료 카드의 링크 복사: iPad/iOS는 클릭 직후 await fetch가 끼면 clipboard가 막히는 경우가 많아,
+        // short_code를 목록 단계에서 미리 발급·캐시해 두고 복사 버튼에서는 네트워크 없이 동기 복사만 수행
+        const needsShortCode = rows.filter((s) => {
+          if (getSessionStatusForFeedbackReview(s) !== 'verified') return false;
+          const sc = s.short_code;
+          return typeof sc !== 'string' || !/^[A-Z0-9]{6}$/.test(sc);
+        });
+        const idToCode = new Map<string, string>();
+        const chunk = 8;
+        for (let i = 0; i < needsShortCode.length; i += chunk) {
+          const slice = needsShortCode.slice(i, i + chunk);
+          await Promise.all(
+            slice.map(async (s) => {
+              try {
+                const res = await fetch('/api/admin/session-short-code', {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sessionId: s.id }),
+                });
+                if (!res.ok) return;
+                const json = (await res.json().catch(() => ({}))) as { shortCode?: string };
+                if (typeof json.shortCode === 'string' && /^[A-Z0-9]{6}$/.test(json.shortCode)) {
+                  idToCode.set(s.id, json.shortCode);
+                }
+              } catch (err) {
+                devLogger.warn('[FeedbackReviewTab] prefetch short_code', err);
+              }
+            })
+          );
+        }
+        const enriched = rows.map((s) => {
+          const c = idToCode.get(s.id);
+          return c ? { ...s, short_code: c } : s;
+        });
+        setSessions(enriched);
       }
     } catch (err: unknown) {
       devLogger.error('데이터 로드 실패:', err);
@@ -361,24 +410,17 @@ function FeedbackReviewTab({
     return formatKstWeekRangeLabel(start, end);
   }, [selectedDate]);
 
-  const getSessionStatus = (session: Session): 'empty' | 'done' | 'verified' => {
-    return getSessionDisplayStatus({
-      ...session,
-      feedback_fields: session.feedback_fields ?? parseTemplateToFields(session.students_text || '')
-    });
-  };
-
   const statistics = useMemo(() => {
-    const empty = sessions.filter(s => getSessionStatus(s) === 'empty').length;
-    const done = sessions.filter(s => getSessionStatus(s) === 'done').length;
-    const verified = sessions.filter(s => getSessionStatus(s) === 'verified').length;
+    const empty = sessions.filter((s) => getSessionStatusForFeedbackReview(s) === 'empty').length;
+    const done = sessions.filter((s) => getSessionStatusForFeedbackReview(s) === 'done').length;
+    const verified = sessions.filter((s) => getSessionStatusForFeedbackReview(s) === 'verified').length;
     return { empty, done, verified, total: sessions.length };
   }, [sessions]);
 
   const filteredAndSearchedSessions = useMemo(() => {
     return sessions.filter(s => {
       if (statusFilter !== 'all') {
-        const sessionStatus = getSessionStatus(s);
+        const sessionStatus = getSessionStatusForFeedbackReview(s);
         if (sessionStatus !== statusFilter) return false;
       }
       if (searchTerm) {
@@ -402,7 +444,12 @@ function FeedbackReviewTab({
 
   const selectAll = () => {
     const allDone = filteredAndSearchedSessions
-      .filter((s) => getSessionStatus(s) === 'done' && s.status !== 'postponed' && s.status !== 'cancelled')
+      .filter(
+        (s) =>
+          getSessionStatusForFeedbackReview(s) === 'done' &&
+          s.status !== 'postponed' &&
+          s.status !== 'cancelled'
+      )
       .map(s => s.id);
     setSelectedSessions(new Set(allDone));
   };
@@ -710,7 +757,8 @@ function FeedbackReviewTab({
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-[11px] text-slate-600 leading-relaxed space-y-2">
           <p>
             검수 완료된 리포트는 `링크 복사`로 학부모에게 전달하세요.
-            단축 URL은 필요 시 자동 발급되어 `/r/XXXXXX` 형태로 복사됩니다.
+            목록을 불러올 때 단축 코드를 미리 준비해 두어, iPad·iPhone에서도 복사가 잘 되도록 했습니다.
+            운영 도메인 고정은 <code className="text-[10px] bg-white px-1 rounded">NEXT_PUBLIC_APP_URL</code>을 권장합니다.
           </p>
         </div>
       </div>
@@ -777,7 +825,7 @@ function FeedbackReviewTab({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredAndSearchedSessions.map((s) => {
-            const sessionStatus = getSessionStatus(s);
+            const sessionStatus = getSessionStatusForFeedbackReview(s);
             const rawStatus = s.status;
             const isSelected = selectedSessions.has(s.id);
             const canSelect =
@@ -832,27 +880,45 @@ function FeedbackReviewTab({
                     <button 
                       onClick={(e) => { 
                         e.stopPropagation();
-                        if(!isVerified) return toast.error('검수 완료된 리포트만 복사 가능합니다.');
-                        void (async () => {
-                          try {
-                            const res = await fetch('/api/admin/session-short-code', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ sessionId: s.id }),
-                            });
-                            if (!res.ok) throw new Error('short_code 발급 실패');
-
-                            const json = (await res.json().catch(() => ({}))) as { shortCode?: string };
-                            const shortCode = json.shortCode;
-                            if (!shortCode) throw new Error('shortCode missing');
-
-                            const shortUrl = `${window.location.origin}/r/${shortCode}`;
-                            await navigator.clipboard.writeText(shortUrl);
+                        if (!isVerified) {
+                          toast.error('검수 완료된 리포트만 복사 가능합니다.');
+                          return;
+                        }
+                        const origin = getPublicAppOrigin();
+                        if (!origin) {
+                          toast.error('복사할 사이트 주소를 찾을 수 없습니다.');
+                          return;
+                        }
+                        const shortCode = s.short_code;
+                        if (typeof shortCode === 'string' && /^[A-Z0-9]{6}$/.test(shortCode)) {
+                          const shortUrl = `${origin}/r/${shortCode}`;
+                          if (copyTextToClipboardSync(shortUrl)) {
                             toast.success('링크 복사 완료!');
-                          } catch {
-                            toast.error('링크 복사에 실패했습니다.');
+                            return;
                           }
-                        })();
+                          if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+                            void navigator
+                              .share({ url: shortUrl, title: '학부모 리포트 링크' })
+                              .then(() => {
+                                toast.success('공유 패널에서 링크를 보내 주세요.');
+                              })
+                              .catch((shareErr) => {
+                                if ((shareErr as { name?: string })?.name === 'AbortError') return;
+                                window.prompt(
+                                  '자동 복사가 되지 않습니다. 아래 링크를 길게 눌러 복사해 주세요.',
+                                  shortUrl
+                                );
+                              });
+                            return;
+                          }
+                          window.prompt(
+                            '자동 복사가 되지 않습니다. 아래 링크를 길게 눌러 복사해 주세요.',
+                            shortUrl
+                          );
+                          return;
+                        }
+                        toast.info('링크 코드를 불러오는 중입니다. 잠시 후 다시 눌러 주세요.');
+                        void fetchListData();
                       }} 
                       className={`p-2 rounded-xl ${isVerified ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}
                     >
