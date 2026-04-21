@@ -52,7 +52,7 @@ export type ResolveCenterSessionFileError = { error: string; status: number };
 
 /**
  * 피드백 검수 센터 첨부: 세션·URL·스토리지 ref 검증 후 객체 경로 반환.
- * 관리자 API(large body / signed URL JSON) 공통 사용.
+ * `/api/admin/storage/center-session-file` 프록시에서 사용.
  */
 export async function resolveCenterSessionFileForAdmin(
   svc: SupabaseClient,

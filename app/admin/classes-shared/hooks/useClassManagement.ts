@@ -22,25 +22,51 @@ export function useClassManagement() {
     rangeStart.setMonth(rangeStart.getMonth() - 24);
     const rangeEnd = new Date();
     rangeEnd.setMonth(rangeEnd.getMonth() + 24);
+    const rangeStartIso = rangeStart.toISOString();
+    const rangeEndIso = rangeEnd.toISOString();
+    /** PostgREST 기본 max_rows(보통 1000) 초과 시 뒷구간 일정이 잘리지 않도록 페이지네이션 */
+    const PAGE = 1000;
 
-    const [usersRes, sessionsRes] = await Promise.all([
+    const sessionsInRange = () =>
+      supabase
+        .from('sessions')
+        .select('*, users:created_by(id, name)')
+        .gte('start_at', rangeStartIso)
+        .lte('start_at', rangeEndIso)
+        .order('start_at', { ascending: true });
+
+    const [usersRes, firstSessions] = await Promise.all([
       supabase
         .from('users')
         .select('id, name')
         .eq('is_active', true)
         .order('name', { ascending: true }),
-      supabase
-        .from('sessions')
-        .select('*, users:created_by(id, name)')
-        .gte('start_at', rangeStart.toISOString())
-        .lte('start_at', rangeEnd.toISOString())
-        .order('start_at', { ascending: true })
+      sessionsInRange().range(0, PAGE - 1),
     ]);
 
     const tList = usersRes.data || [];
     setTeacherList(tList);
 
-    const { data, error } = sessionsRes;
+    let data = firstSessions.data;
+    const error = firstSessions.error;
+
+    if (!error && data && data.length === PAGE) {
+      let offset = PAGE;
+      const accumulated = [...data];
+      for (;;) {
+        const { data: nextPage, error: pageErr } = await sessionsInRange().range(offset, offset + PAGE - 1);
+        if (pageErr) {
+          devLogger.error('fetchSessions sessions pagination error:', pageErr);
+          break;
+        }
+        if (!nextPage || nextPage.length === 0) break;
+        accumulated.push(...nextPage);
+        if (nextPage.length < PAGE) break;
+        offset += PAGE;
+      }
+      data = accumulated;
+    }
+
     if (!error && data) {
       const groupTotals = buildGroupPlannedTotals(
         data as {

@@ -213,11 +213,21 @@ function downloadBlobWithFilename(blob: Blob, filename: string): void {
   URL.revokeObjectURL(objectUrl);
 }
 
+/** `/api/admin/storage/center-session-file`의 MAX_BYTES_PER_CHUNK(3MB)와 동일 */
+const CENTER_FILE_CHUNK_BYTES = 3 * 1024 * 1024;
+
+function parseTotalBytesFromContentRangeHeader(cr: string | null): number | null {
+  if (!cr) return null;
+  const m = cr.trim().match(/\/(\d+)\s*$/);
+  if (m) return parseInt(m[1], 10);
+  return null;
+}
+
 /**
- * 센터 첨부: 관리자 서명 URL(JSON) → 브라우저가 스토리지에서 Blob 수신 → 한글 파일명으로 저장.
- * (서버에 파일 전체를 한 번에 싣지 않아 대용량·호스팅 한도 회피)
+ * 서버는 3MB 단위로만 응답(Vercel 등 4.5MB 제한 회피) — 클라이언트가 이어붙인 뒤
+ * `displayNameForDownload` 한글 파일명으로만 저장한다.
  */
-async function downloadCenterSessionFileViaSignedUrl(params: {
+async function downloadCenterSessionFileAsKoreanName(params: {
   sessionId: string;
   fileIndex: number;
   fileStorageUrl: string;
@@ -226,26 +236,54 @@ async function downloadCenterSessionFileViaSignedUrl(params: {
   const { sessionId, fileIndex, fileStorageUrl, centerDocumentNames } = params;
   const filename = displayNameForDownload(fileStorageUrl, fileIndex, centerDocumentNames ?? null);
 
-  const signRes = await fetch('/api/admin/storage/center-session-file-sign', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, fileIndex }),
-  });
-  if (!signRes.ok) {
-    const payload = (await signRes.json().catch(() => ({}))) as { error?: string };
-    throw new Error(payload.error || `다운로드 준비 실패 (${signRes.status})`);
+  let offset = 0;
+  let total: number | null = null;
+  const parts: Blob[] = [];
+  let iterations = 0;
+
+  for (;;) {
+    iterations += 1;
+    if (iterations > 50_000) {
+      throw new Error('다운로드 분할 횟수가 비정상적으로 많습니다.');
+    }
+
+    const end =
+      total === null
+        ? offset + CENTER_FILE_CHUNK_BYTES - 1
+        : Math.min(offset + CENTER_FILE_CHUNK_BYTES - 1, total - 1);
+
+    const res = await fetch('/api/admin/storage/center-session-file', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, fileIndex, byteStart: offset, byteEnd: end }),
+    });
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(payload.error || `다운로드 실패 (${res.status})`);
+    }
+
+    const parsed = parseTotalBytesFromContentRangeHeader(res.headers.get('content-range'));
+    if (parsed !== null) {
+      total = parsed;
+    }
+
+    const part = await res.blob();
+    parts.push(part);
+    offset += part.size;
+
+    if (total !== null && offset >= total) {
+      break;
+    }
+    if (part.size === 0) {
+      break;
+    }
+    if (total === null && part.size < CENTER_FILE_CHUNK_BYTES) {
+      break;
+    }
   }
-  const json = (await signRes.json().catch(() => ({}))) as { signedUrl?: string };
-  if (typeof json.signedUrl !== 'string' || !json.signedUrl) {
-    throw new Error('서명 URL을 받지 못했습니다.');
-  }
-  const fileRes = await fetch(json.signedUrl, { mode: 'cors', credentials: 'omit' });
-  if (!fileRes.ok) {
-    throw new Error(`파일을 받지 못했습니다 (${fileRes.status})`);
-  }
-  const blob = await fileRes.blob();
-  downloadBlobWithFilename(blob, filename);
+
+  downloadBlobWithFilename(new Blob(parts), filename);
 }
 
 // 피드백 검수 탭
@@ -272,7 +310,7 @@ function FeedbackReviewTab({
     if (downloadingCenterFileIndex !== null) return;
     setDownloadingCenterFileIndex(index);
     try {
-      await downloadCenterSessionFileViaSignedUrl({
+      await downloadCenterSessionFileAsKoreanName({
         sessionId,
         fileIndex: index,
         fileStorageUrl: url,
