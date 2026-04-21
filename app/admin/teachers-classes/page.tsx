@@ -213,6 +213,41 @@ function downloadBlobWithFilename(blob: Blob, filename: string): void {
   URL.revokeObjectURL(objectUrl);
 }
 
+/**
+ * 센터 첨부: 관리자 서명 URL(JSON) → 브라우저가 스토리지에서 Blob 수신 → 한글 파일명으로 저장.
+ * (서버에 파일 전체를 한 번에 싣지 않아 대용량·호스팅 한도 회피)
+ */
+async function downloadCenterSessionFileViaSignedUrl(params: {
+  sessionId: string;
+  fileIndex: number;
+  fileStorageUrl: string;
+  centerDocumentNames: string[] | null | undefined;
+}): Promise<void> {
+  const { sessionId, fileIndex, fileStorageUrl, centerDocumentNames } = params;
+  const filename = displayNameForDownload(fileStorageUrl, fileIndex, centerDocumentNames ?? null);
+
+  const signRes = await fetch('/api/admin/storage/center-session-file-sign', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, fileIndex }),
+  });
+  if (!signRes.ok) {
+    const payload = (await signRes.json().catch(() => ({}))) as { error?: string };
+    throw new Error(payload.error || `다운로드 준비 실패 (${signRes.status})`);
+  }
+  const json = (await signRes.json().catch(() => ({}))) as { signedUrl?: string };
+  if (typeof json.signedUrl !== 'string' || !json.signedUrl) {
+    throw new Error('서명 URL을 받지 못했습니다.');
+  }
+  const fileRes = await fetch(json.signedUrl, { mode: 'cors', credentials: 'omit' });
+  if (!fileRes.ok) {
+    throw new Error(`파일을 받지 못했습니다 (${fileRes.status})`);
+  }
+  const blob = await fileRes.blob();
+  downloadBlobWithFilename(blob, filename);
+}
+
 // 피드백 검수 탭
 function FeedbackReviewTab({
   coaches,
@@ -235,36 +270,18 @@ function FeedbackReviewTab({
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
     if (downloadingCenterFileIndex !== null) return;
-    const filename = displayNameForDownload(url, index, centerNames ?? null);
     setDownloadingCenterFileIndex(index);
     try {
-      const res = await fetch('/api/admin/storage/center-session-file', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, fileIndex: index }),
+      await downloadCenterSessionFileViaSignedUrl({
+        sessionId,
+        fileIndex: index,
+        fileStorageUrl: url,
+        centerDocumentNames: centerNames,
       });
-      if (!res.ok) {
-        const payload = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(payload.error || `다운로드 실패 (${res.status})`);
-      }
-      const blob = await res.blob();
-      downloadBlobWithFilename(blob, filename);
     } catch (err) {
       devLogger.warn('[FeedbackReviewTab] center file download', err);
-      try {
-        const directRes = await fetch(url, { mode: 'cors', credentials: 'omit' });
-        if (directRes.ok) {
-          const blob = await directRes.blob();
-          downloadBlobWithFilename(blob, filename);
-          return;
-        }
-      } catch (directErr) {
-        devLogger.warn('[FeedbackReviewTab] center file direct fetch fallback', directErr);
-      }
       const msg = err instanceof Error ? err.message : String(err);
-      toast.error(`${msg} — 새 탭에서 열었습니다.`);
-      window.open(url, '_blank', 'noopener,noreferrer');
+      toast.error(msg);
     } finally {
       setDownloadingCenterFileIndex(null);
     }
