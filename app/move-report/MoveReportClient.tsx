@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { compute } from './lib/compute';
+import { captureMoveReportAttribution, getMoveReportAttribution, pickAttributionForShareUrl } from './lib/attribution';
 import { getMoveReportSessionId, trackMoveReportEvent } from './lib/events';
-import { buildMoveReportShareUrl } from './lib/shareLink';
+import { appendMoveReportAttributionToUrl, buildMoveReportShareUrl } from './lib/shareLink';
 import { Qs } from './data/questions';
 import type { AgeGroup, ComputeResult } from './types';
 import Intro from './components/Intro';
@@ -43,6 +44,10 @@ export default function MoveReportClient() {
       setToast('');
       toastTimer.current = null;
     }, 2800);
+  }, []);
+
+  useLayoutEffect(() => {
+    captureMoveReportAttribution();
   }, []);
 
   useEffect(() => {
@@ -97,12 +102,13 @@ export default function MoveReportClient() {
     if (result) {
       const bd = result.bd;
       const graphCode = `${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`;
-      url = buildMoveReportShareUrl(window.location.origin, {
+      const built = buildMoveReportShareUrl(window.location.origin, {
         v: 5,
         profileKey: result.key,
         graphCode,
         displayName: result.displayName !== '아이' ? result.displayName : undefined,
       });
+      url = appendMoveReportAttributionToUrl(built, pickAttributionForShareUrl(getMoveReportAttribution()));
     }
     try {
       await navigator.clipboard.writeText(url);
@@ -142,6 +148,7 @@ export default function MoveReportClient() {
             profileKey: r.key,
             profileTitle: r.profile.char,
             surveyResponses: nr,
+            attribution: getMoveReportAttribution(),
           }),
         }).catch(() => undefined);
         go('loading');

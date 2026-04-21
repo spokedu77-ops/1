@@ -33,6 +33,7 @@ export async function uploadToStorage(
   const res = await fetch('/api/admin/storage/upload', {
     method: 'POST',
     body: formData,
+    credentials: 'same-origin',
   });
 
   if (!res.ok) {

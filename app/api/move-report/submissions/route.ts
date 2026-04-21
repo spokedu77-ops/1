@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { compute } from '@/app/move-report/lib/compute';
+import { normalizeMoveReportAttribution } from '@/app/move-report/lib/attributionSchema';
 import type { AgeGroup } from '@/app/move-report/types';
 
 const RESPONSE_LEN = 12;
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
           profileKey?: unknown;
           profileTitle?: unknown;
           surveyResponses?: unknown;
+          attribution?: unknown;
         }
       | null;
 
@@ -50,6 +52,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: '결과 정보가 설문과 일치하지 않습니다.' }, { status: 400 });
     }
 
+    const attribution = normalizeMoveReportAttribution(body?.attribution);
+
     const supabase = getServiceSupabase();
     const { error } = await supabase.from('move_report_submissions').insert({
       session_id: sessionId,
@@ -58,6 +62,7 @@ export async function POST(req: NextRequest) {
       profile_title: profileTitle,
       survey_responses: responses,
       source: 'move_report',
+      attribution,
     });
 
     if (error) {

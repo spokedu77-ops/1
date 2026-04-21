@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ShareResultCard from '../components/ShareResultCard';
-import { parseMoveReportSharePayload } from '../lib/shareLink';
+import { captureMoveReportAttribution, getMoveReportAttribution, pickAttributionForShareUrl } from '../lib/attribution';
+import { appendMoveReportAttributionToUrl, parseMoveReportSharePayload } from '../lib/shareLink';
 import { P } from '../data/profiles';
 import { trackMoveReportEvent } from '../lib/events';
 
@@ -15,7 +16,8 @@ export default function MoveReportSharedContent() {
   const searchParams = useSearchParams();
   const raw = searchParams.get('d');
   const parsed = useMemo(() => parseMoveReportSharePayload(raw), [raw]);
-  const moveReportHref = raw ? `/move-report?d=${encodeURIComponent(raw)}` : '/move-report';
+  const moveReportBasePath = raw ? `/move-report?d=${encodeURIComponent(raw)}` : '/move-report';
+  const [moveReportHref, setMoveReportHref] = useState(moveReportBasePath);
   const profileCode = parsed?.profileKey ?? null;
 
   const payload = useMemo(() => {
@@ -32,6 +34,20 @@ export default function MoveReportSharedContent() {
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useLayoutEffect(() => {
+    captureMoveReportAttribution();
+    try {
+      const url = appendMoveReportAttributionToUrl(
+        new URL(moveReportBasePath, window.location.origin).href,
+        pickAttributionForShareUrl(getMoveReportAttribution()),
+      );
+      const u = new URL(url);
+      setMoveReportHref(`${u.pathname}${u.search}`);
+    } catch {
+      setMoveReportHref(moveReportBasePath);
+    }
+  }, [moveReportBasePath]);
 
   useEffect(() => {
     if (!raw) return;

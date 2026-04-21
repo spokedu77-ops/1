@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react';
 import type { Question } from '../types';
 import { AXIS_COL, AXIS_ICON } from '../lib/constants';
+import { personalizeMoveReportQuestion } from '../lib/personalizeQuestion';
 
 interface SurveyProps {
   q: Question;
@@ -33,7 +34,10 @@ export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, an
 
   return (
     <div className="page" style={{ background: '#0D0D0D', display: 'flex', flexDirection: 'column', minHeight: '100dvh', padding: '0 20px' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: 430, width: '100%', margin: '0 auto', paddingTop: '24px', paddingBottom: '24px' }}>
+      <div
+        className="mr-content-max"
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', margin: '0 auto', paddingTop: '24px', paddingBottom: '24px' }}
+      >
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
             <button
@@ -163,6 +167,8 @@ export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, an
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {q.opts.map((opt, i) => {
               const sel = resps[qi] === opt.v;
+              const optTitle = personalizeMoveReportQuestion(opt.t, name);
+              const optDesc = personalizeMoveReportQuestion(opt.d, name);
               return (
                 <button
                   key={i}
@@ -193,9 +199,9 @@ export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, an
                         marginBottom: '3px',
                       }}
                     >
-                      {opt.t}
+                      {optTitle}
                     </div>
-                    <div style={{ fontSize: '12px', fontWeight: 500, color: '#A8A8A8', wordBreak: 'keep-all', lineHeight: 1.4 }}>{opt.d}</div>
+                    <div style={{ fontSize: '12px', fontWeight: 500, color: '#A8A8A8', wordBreak: 'keep-all', lineHeight: 1.4 }}>{optDesc}</div>
                   </div>
                   {sel ? <div style={{ fontSize: '18px' }}>{opt.e}</div> : null}
                 </button>

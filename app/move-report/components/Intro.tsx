@@ -44,7 +44,7 @@ export default function Intro({ onStart }: IntroProps) {
         }}
       />
 
-      <div style={{ position: 'relative', zIndex: 1, padding: '0 24px', paddingTop: '40px', paddingBottom: '200px' }}>
+      <div className="mr-content-max" style={{ position: 'relative', zIndex: 1, padding: '0 24px', paddingTop: '40px', paddingBottom: '200px' }}>
         {/* 브랜드: 영문 워드마크만 */}
         <div className="anim-rise" style={{ marginBottom: '36px', textAlign: 'center' }}>
           <div
@@ -171,7 +171,7 @@ export default function Intro({ onStart }: IntroProps) {
           }}
         >
           {[
-            { n: '3만+', l: '누적 수업 참여' },
+            { n: '3만+', l: '누적 수업 인원' },
             { n: '1만+', l: '누적 수업 시간' },
             { n: '16종', l: '성향 프로파일' },
           ].map((s, i) => (
@@ -201,8 +201,8 @@ export default function Intro({ onStart }: IntroProps) {
         }}
       >
         <div
+          className="mr-content-max"
           style={{
-            maxWidth: 430,
             margin: '0 auto',
             padding: '12px 14px',
             borderRadius: '12px',
@@ -238,7 +238,7 @@ export default function Intro({ onStart }: IntroProps) {
           zIndex: 10,
         }}
       >
-        <div style={{ maxWidth: 430, margin: '0 auto' }}>
+        <div className="mr-content-max" style={{ margin: '0 auto' }}>
           <button type="button" onClick={onStart} className="btn-fire mr-btn-fire-html">
             <span>분석 시작하기</span>
             <span

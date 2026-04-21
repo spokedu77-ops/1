@@ -523,7 +523,7 @@ export default function NoticePage() {
         const file = files[i];
         const safeName =
           file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_.-]/g, '_') || 'image';
-        const path = `weekly_best/${Date.now()}_${i}_${safeName}`;
+        const path = `weekly_best/${Date.now()}_${i}_${Math.random().toString(36).slice(2, 10)}_${safeName}`;
         await uploadToStorage(path, file, file.type || 'image/jpeg');
         urls.push(getPublicUrl(path));
       }
@@ -1105,11 +1105,22 @@ export default function NoticePage() {
               {wizardStep === 3 && (
                 <>
                   <p className="text-[11px] text-slate-500">사진을 업로드하세요. (없으면 없음으로 넘어갈 수 있습니다)</p>
-                  <input ref={wbPhotoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleWbPhotoUpload} />
-                  <button type="button" onClick={() => wbPhotoInputRef.current?.click()} className="w-full min-h-[120px] border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all">
+                  <label
+                    htmlFor="weekly-best-wizard-photo"
+                    className="w-full min-h-[120px] border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all cursor-pointer touch-manipulation"
+                  >
+                    <input
+                      id="weekly-best-wizard-photo"
+                      ref={wbPhotoInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="sr-only"
+                      onChange={handleWbPhotoUpload}
+                    />
                     <Camera size={32} />
                     <span className="text-sm font-bold">사진 선택</span>
-                  </button>
+                  </label>
                   {wbForm.photo_urls.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {wbForm.photo_urls.map((url, i) => (

@@ -26,14 +26,16 @@ export async function POST(request: NextRequest) {
     if (normalizedPath.includes('..')) {
       return NextResponse.json({ error: 'path에 허용되지 않는 문자가 있습니다.' }, { status: 400 });
     }
-    if (!file || !(file instanceof Blob)) {
+    if (file == null || typeof file !== 'object') {
       return NextResponse.json({ error: 'file 필수' }, { status: 400 });
     }
+    // Next/undici File이 다른 realm의 Blob과 instanceof 불일치할 수 있어 arrayBuffer로 통일
+    const body = new Uint8Array(await (file as Blob).arrayBuffer());
 
     const supabase = getServiceSupabase();
     const { error } = await supabase.storage
       .from(BUCKET_NAME)
-      .upload(normalizedPath, file, {
+      .upload(normalizedPath, body, {
         contentType,
         upsert: true,
       });

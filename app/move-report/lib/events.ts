@@ -1,5 +1,7 @@
 'use client';
 
+import { getMoveReportAttribution } from './attribution';
+
 export type MoveReportEventName =
   | 'intro_started'
   | 'survey_completed'
@@ -54,6 +56,13 @@ export async function trackMoveReportEvent(params: {
     }
     window.sessionStorage.setItem(stampKey, String(now));
 
+    const snap = getMoveReportAttribution();
+    const baseMeta = params.meta ?? {};
+    const meta =
+      Object.keys(snap).length > 0
+        ? { ...baseMeta, attribution: snap }
+        : { ...baseMeta };
+
     await fetch('/api/move-report/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -62,7 +71,7 @@ export async function trackMoveReportEvent(params: {
         eventName: params.eventName,
         sessionId: getMoveReportSessionId(),
         shareKey: params.shareKey ?? null,
-        meta: params.meta ?? {},
+        meta,
       }),
     });
   } catch {

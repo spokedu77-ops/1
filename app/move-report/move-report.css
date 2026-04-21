@@ -28,6 +28,24 @@
   z-index: 1;
 }
 
+/* 태블릿/웹: 본문·설문·인트로 셸만 소폭 확장 (모바일 430px 유지) */
+.mr-content-max {
+  width: 100%;
+  max-width: 430px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 768px) {
+  .mr-page-inner {
+    max-width: min(560px, 100%);
+  }
+
+  .mr-content-max {
+    max-width: min(560px, 100%);
+  }
+}
+
 .grain {
   pointer-events: none;
   position: fixed;

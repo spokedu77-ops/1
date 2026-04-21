@@ -1,4 +1,5 @@
 import { P } from '../data/profiles';
+import { MOVE_REPORT_ATTRIBUTION_QUERY_KEYS } from './attributionSchema';
 
 export type MoveReportSharePayloadCompactV5 = {
   v: 5;
@@ -68,6 +69,21 @@ export function buildMoveReportShareUrl(
   }
   const encoded = toBase64Url(JSON.stringify(body));
   return `${origin}/move-report/shared?d=${encodeURIComponent(encoded)}`;
+}
+
+/** 공유 URL에 전파할 UTM·ref 등만 덧붙임(`d` 등 기존 쿼리 유지, 이미 있는 키는 덮어쓰지 않음) */
+export function appendMoveReportAttributionToUrl(url: string, attribution: Record<string, string>): string {
+  if (!attribution || Object.keys(attribution).length === 0) return url;
+  try {
+    const u = new URL(url);
+    for (const key of MOVE_REPORT_ATTRIBUTION_QUERY_KEYS) {
+      const v = attribution[key];
+      if (typeof v === 'string' && v && !u.searchParams.has(key)) u.searchParams.set(key, v);
+    }
+    return u.toString();
+  } catch {
+    return url;
+  }
 }
 
 export function parseMoveReportSharePayload(

@@ -3,8 +3,9 @@
 import { useMemo, useState } from 'react';
 import type { Profile } from '../types';
 import { copyTextToClipboard } from '../lib/shareCard';
+import { getMoveReportAttribution, pickAttributionForShareUrl } from '../lib/attribution';
 import { trackMoveReportEvent } from '../lib/events';
-import { buildMoveReportShareUrl } from '../lib/shareLink';
+import { appendMoveReportAttributionToUrl, buildMoveReportShareUrl } from '../lib/shareLink';
 
 interface ShareAndCollectProps {
   p: Profile;
@@ -17,15 +18,16 @@ interface ShareAndCollectProps {
 export default function ShareAndCollect({ p, displayName, profileKey, graphCode, flash }: ShareAndCollectProps) {
   const [sharing, setSharing] = useState(false);
 
-  const shareUrl =
-    typeof window !== 'undefined'
-      ? buildMoveReportShareUrl(window.location.origin, {
-          v: 5,
-          profileKey,
-          graphCode,
-          displayName: displayName !== '아이' ? displayName : undefined,
-        })
-      : '';
+  const shareUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    const built = buildMoveReportShareUrl(window.location.origin, {
+      v: 5,
+      profileKey,
+      graphCode,
+      displayName: displayName !== '아이' ? displayName : undefined,
+    });
+    return appendMoveReportAttributionToUrl(built, pickAttributionForShareUrl(getMoveReportAttribution()));
+  }, [displayName, profileKey, graphCode]);
 
   const shareKey = useMemo(() => {
     if (!shareUrl) return null;
