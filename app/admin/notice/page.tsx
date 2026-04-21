@@ -86,6 +86,7 @@ type MainTab = 'notice' | 'weekly_best';
 function WeeklyBestCard({
   row,
   onDelete,
+  onEdit,
   detailLesson,
   detailFeedback,
   isExpanded,
@@ -93,6 +94,7 @@ function WeeklyBestCard({
 }: {
   row: WeeklyBest;
   onDelete: (id: string) => void;
+  onEdit?: (row: WeeklyBest) => void;
   detailLesson: string | null;
   detailFeedback: string | null;
   isExpanded: boolean;
@@ -142,7 +144,19 @@ function WeeklyBestCard({
               {row.feedback_session_id ? (detailFeedback ?? '로딩 중...') : '— 없음'}
             </div>
           </section>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2 flex-wrap">
+            {onEdit ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(row);
+                }}
+                className="min-h-[44px] flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 text-xs font-bold px-4 py-2 hover:bg-indigo-50 rounded-full transition-all touch-manipulation cursor-pointer"
+              >
+                <Edit3 size={14} /> 수정
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => onDelete(row.id)}
@@ -162,11 +176,13 @@ function WeeklyBestList({
   loading,
   supabase,
   onDelete,
+  onEdit,
 }: {
   list: WeeklyBest[];
   loading: boolean;
   supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
   onDelete: (id: string) => void;
+  onEdit: (row: WeeklyBest) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [detailLesson, setDetailLesson] = useState<string | null>(null);
@@ -216,6 +232,7 @@ function WeeklyBestList({
           key={row.id}
           row={row}
           onDelete={onDelete}
+          onEdit={onEdit}
           detailLesson={expandedId === row.id ? detailLesson : null}
           detailFeedback={expandedId === row.id ? detailFeedback : null}
           isExpanded={expandedId === row.id}
@@ -240,10 +257,12 @@ function WeeklyBestCardWithState({
   row,
   supabase,
   onDelete,
+  onEdit,
 }: {
   row: WeeklyBest;
   supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
   onDelete: (id: string) => void;
+  onEdit: (row: WeeklyBest) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [detailLesson, setDetailLesson] = useState<string | null>(null);
@@ -267,6 +286,7 @@ function WeeklyBestCardWithState({
     <WeeklyBestCard
       row={row}
       onDelete={onDelete}
+      onEdit={onEdit}
       detailLesson={detailLesson}
       detailFeedback={detailFeedback}
       isExpanded={isExpanded}
@@ -296,6 +316,7 @@ export default function NoticePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showWeeklyBestWizard, setShowWeeklyBestWizard] = useState(false);
+  const [editingWeeklyBestId, setEditingWeeklyBestId] = useState<string | null>(null);
   const [wizardStep, setWizardStep] = useState(1);
   const [wizardOpenDate, setWizardOpenDate] = useState<Date>(() => new Date());
   const [wbForm, setWbForm] = useState<{
@@ -452,9 +473,44 @@ export default function NoticePage() {
 
   const openWeeklyBestWizard = () => {
     setShowWriteChoiceModal(false);
+    setEditingWeeklyBestId(null);
     setWizardOpenDate(new Date());
     setWizardStep(1);
     setWbForm({ title: '', content: '', lesson_plan_session_id: '', photo_urls: [], feedback_session_id: '' });
+    setShowWeeklyBestWizard(true);
+  };
+
+  const openWeeklyBestEdit = async (row: WeeklyBest) => {
+    setShowWriteChoiceModal(false);
+    let anchor = new Date();
+    if (supabase) {
+      const sid = row.lesson_plan_session_id || row.feedback_session_id;
+      if (sid) {
+        const { data } = await supabase.from('sessions').select('start_at').eq('id', sid).maybeSingle();
+        if (data?.start_at) {
+          const d = new Date(data.start_at);
+          anchor = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+          anchor.setDate(anchor.getDate() + 1);
+        } else {
+          const c = new Date(row.created_at);
+          anchor = new Date(c.getFullYear(), c.getMonth(), c.getDate());
+        }
+      } else {
+        const c = new Date(row.created_at);
+        anchor = new Date(c.getFullYear(), c.getMonth(), c.getDate());
+      }
+    }
+    setWizardOpenDate(anchor);
+    setEditingWeeklyBestId(row.id);
+    setWizardStep(1);
+    setWbForm({
+      title: row.title,
+      content: row.content ?? '',
+      lesson_plan_session_id: row.lesson_plan_session_id ?? '',
+      photo_urls: [...(row.photo_urls ?? [])],
+      feedback_session_id: row.feedback_session_id ?? '',
+    });
+    setWbCoachFilter('all');
     setShowWeeklyBestWizard(true);
   };
 
@@ -488,20 +544,24 @@ export default function NoticePage() {
     }
     setWbSaving(true);
     try {
-      const { error } = await supabase.from('weekly_best').insert([{
+      const payload = {
         title: wbForm.title,
         content: wbForm.content || null,
         lesson_plan_session_id: wbForm.lesson_plan_session_id || null,
         photo_urls: wbForm.photo_urls,
         feedback_session_id: wbForm.feedback_session_id || null,
-      }]);
+      };
+      const { error } = editingWeeklyBestId
+        ? await supabase.from('weekly_best').update(payload).eq('id', editingWeeklyBestId)
+        : await supabase.from('weekly_best').insert([payload]);
       if (error) {
         const msg = typeof (error as { message?: string }).message === 'string' ? (error as { message: string }).message : JSON.stringify(error);
         toast.error('저장 실패: ' + msg);
         return;
       }
-      toast.success('주간베스트가 등록되었습니다.');
+      toast.success(editingWeeklyBestId ? '주간베스트가 수정되었습니다.' : '주간베스트가 등록되었습니다.');
       setShowWeeklyBestWizard(false);
+      setEditingWeeklyBestId(null);
       fetchWeeklyBest();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : (err && typeof err === 'object' && 'message' in err ? String((err as { message: unknown }).message) : '알 수 없는 오류');
@@ -722,6 +782,7 @@ export default function NoticePage() {
             loading={weeklyBestLoading}
             supabase={supabase}
             onDelete={handleDeleteWeeklyBest}
+            onEdit={openWeeklyBestEdit}
           />
         ) : (
           <>
@@ -752,6 +813,7 @@ export default function NoticePage() {
                       row={item.data as WeeklyBest}
                       supabase={supabase}
                       onDelete={handleDeleteWeeklyBest}
+                      onEdit={openWeeklyBestEdit}
                     />
                   );
                 }
@@ -960,8 +1022,19 @@ export default function NoticePage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-md">
           <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col">
             <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
-              <h3 className="text-lg font-black text-slate-900">주간베스트 작성 ({wizardStep}/4)</h3>
-              <button type="button" onClick={() => setShowWeeklyBestWizard(false)} className="p-2 rounded-full hover:bg-slate-100"><X size={20} /></button>
+              <h3 className="text-lg font-black text-slate-900">
+                {editingWeeklyBestId ? '주간베스트 수정' : '주간베스트 작성'} ({wizardStep}/4)
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowWeeklyBestWizard(false);
+                  setEditingWeeklyBestId(null);
+                }}
+                className="p-2 rounded-full hover:bg-slate-100"
+              >
+                <X size={20} />
+              </button>
             </div>
             <div className="p-6 space-y-6">
               {wizardStep === 1 && (
@@ -1098,7 +1171,7 @@ export default function NoticePage() {
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setWizardStep(3)} className="flex-1 min-h-[48px] bg-slate-100 text-slate-700 rounded-2xl font-bold">이전</button>
                     <button type="button" onClick={saveWeeklyBest} disabled={wbSaving} className="flex-1 min-h-[48px] bg-indigo-600 text-white rounded-2xl font-bold disabled:opacity-50">
-                      {wbSaving ? '저장 중...' : '주간베스트 게시하기'}
+                      {wbSaving ? '저장 중...' : editingWeeklyBestId ? '수정 저장' : '주간베스트 게시하기'}
                     </button>
                   </div>
                 </>

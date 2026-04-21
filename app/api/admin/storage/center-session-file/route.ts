@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
       if (totalLen > 0) {
         const endActual = byteStart + bytes.byteLength - 1;
         const cr = `bytes ${byteStart}-${endActual}/${totalLen}`;
-        return new NextResponse(bytes, {
+        return new NextResponse(Buffer.from(bytes), {
           status: 206,
           headers: {
             'Content-Type': contentType,
@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
       }
 
       const cr = `bytes 0-${bytes.byteLength - 1}/${bytes.byteLength}`;
-      return new NextResponse(bytes, {
+      return new NextResponse(Buffer.from(bytes), {
         status: 200,
         headers: {
           'Content-Type': contentType,
