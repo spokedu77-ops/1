@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { getTenantQuerySchema, patchTenantBodySchema, TENANT_KEYS } from '@/app/lib/spokedu-pro/schemas';
 type PatchTenantBody = z.infer<typeof patchTenantBodySchema>;
 
-async function getUserId(request: NextRequest): Promise<string | null> {
+async function getUserId(): Promise<string | null> {
   const serverSupabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -21,7 +21,7 @@ async function getUserId(request: NextRequest): Promise<string | null> {
 
 /** GET: 로그인 사용자 본인 테넌트 published_value만. keys=tenant_roadmap,tenant_favorites,... */
 export async function GET(request: NextRequest) {
-  const userId = await getUserId(request);
+  const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
 /** PATCH: 본인 draft 저장. expectedVersion 불일치 시 409 */
 export async function PATCH(request: NextRequest) {
-  const userId = await getUserId(request);
+  const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   let body: unknown;

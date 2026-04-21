@@ -200,6 +200,19 @@ function getSessionStatusForFeedbackReview(session: Session): 'empty' | 'done' |
   });
 }
 
+/** Blob을 `download` 속성으로 저장 — `displayNameForDownload`로 만든 한글 파일명 유지 */
+function downloadBlobWithFilename(blob: Blob, filename: string): void {
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 // 피드백 검수 탭
 function FeedbackReviewTab({
   coaches,
@@ -236,17 +249,19 @@ function FeedbackReviewTab({
         throw new Error(payload.error || `다운로드 실패 (${res.status})`);
       }
       const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = objectUrl;
-      a.download = filename;
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(objectUrl);
+      downloadBlobWithFilename(blob, filename);
     } catch (err) {
       devLogger.warn('[FeedbackReviewTab] center file download', err);
+      try {
+        const directRes = await fetch(url, { mode: 'cors', credentials: 'omit' });
+        if (directRes.ok) {
+          const blob = await directRes.blob();
+          downloadBlobWithFilename(blob, filename);
+          return;
+        }
+      } catch (directErr) {
+        devLogger.warn('[FeedbackReviewTab] center file direct fetch fallback', directErr);
+      }
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(`${msg} — 새 탭에서 열었습니다.`);
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -384,8 +399,23 @@ function FeedbackReviewTab({
           );
         }
         const enriched = rows.map((s) => {
+          let row: Session = { ...s };
           const c = idToCode.get(s.id);
-          return c ? { ...s, short_code: c } : s;
+          if (c) row = { ...row, short_code: c };
+          const urls = Array.isArray(row.file_url) ? row.file_url : [];
+          const isCenter =
+            row.session_type === 'regular_center' || row.session_type === 'one_day_center';
+          if (isCenter && urls.length > 0) {
+            const ff = (row.feedback_fields || {}) as FeedbackFields;
+            row = {
+              ...row,
+              feedback_fields: {
+                ...ff,
+                center_document_names: alignCenterDocumentNamesWithUrls(urls, ff.center_document_names),
+              },
+            };
+          }
+          return row;
         });
         setSessions(enriched);
       }

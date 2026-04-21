@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint app/info/gym --cache",
     "lint:all": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:rules": "eslint . --format json -o eslint-report.json && node scripts/eslint-rule-count.mjs eslint-report.json",
+    "lint:ci": "eslint . --max-warnings 102",
     "test": "vitest run",
     "verify:spokedu-plan-copy": "node scripts/verify-spokedu-plan-copy.mjs"
   },

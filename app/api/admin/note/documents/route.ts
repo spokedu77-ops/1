@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { allocateSlugForActiveRow, slugifyTitle } from '@/app/lib/server/noteDocumentSlug';
 
 type NoteDocument = {
   id: string;
@@ -26,17 +27,6 @@ function parseOffset(value: string | null): number {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
-}
-
-function slugifyTitle(input: string): string {
-  const slug = input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9가-힣\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-  return slug || 'untitled';
 }
 
 export async function GET(request: NextRequest) {
@@ -88,6 +78,7 @@ export async function GET(request: NextRequest) {
         .from('note_documents')
         .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
         .in('id', sourceDocIds)
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false });
       if (sourceDocsError) {
         devLogger.error('[admin/note/documents] GET backlinks docs error', sourceDocsError);
@@ -142,11 +133,12 @@ export async function POST(request: NextRequest) {
     const rawTitle = typeof body.title === 'string' ? body.title.trim() : '';
     const title = rawTitle.length > 0 ? rawTitle : 'Untitled';
     const parentId = typeof body.parent_id === 'string' ? body.parent_id : null;
-    const slug = typeof body.slug === 'string' && body.slug.trim().length > 0
+    const rawSlug = typeof body.slug === 'string' && body.slug.trim().length > 0
       ? slugifyTitle(body.slug)
       : slugifyTitle(title);
 
     const supabase = getServiceSupabase();
+    const slug = await allocateSlugForActiveRow(supabase, rawSlug, null);
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
@@ -197,7 +189,9 @@ export async function PATCH(request: NextRequest) {
       const t = body.title.trim();
       updates.title = t.length > 0 ? t : 'Untitled';
       if (typeof body.slug !== 'string') {
-        updates.slug = slugifyTitle(t.length > 0 ? t : 'Untitled');
+        const desired = slugifyTitle(t.length > 0 ? t : 'Untitled');
+        const supabase = getServiceSupabase();
+        updates.slug = await allocateSlugForActiveRow(supabase, desired, id);
       }
     }
     if (typeof body.is_archived === 'boolean') {
@@ -213,7 +207,9 @@ export async function PATCH(request: NextRequest) {
       updates.parent_id = body.parent_id;
     }
     if (typeof body.slug === 'string') {
-      updates.slug = slugifyTitle(body.slug);
+      const desired = slugifyTitle(body.slug);
+      const supabaseEarly = getServiceSupabase();
+      updates.slug = await allocateSlugForActiveRow(supabaseEarly, desired, id);
     }
 
     if (Object.keys(updates).length === 0) {

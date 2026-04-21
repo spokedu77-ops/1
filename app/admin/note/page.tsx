@@ -558,7 +558,7 @@ function BlockContent({
         </div>
         {url && (
           <div className="overflow-hidden rounded-lg bg-slate-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            { }
             <img src={url} alt="" className="max-h-80 w-full object-contain" />
           </div>
         )}
@@ -715,7 +715,7 @@ function BlockContent({
                     </div>
                     {url.trim() ? (
                       <div className="overflow-hidden rounded-md bg-white">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        { }
                         <img src={url.trim()} alt="" className="max-h-56 w-full object-contain" />
                       </div>
                     ) : null}

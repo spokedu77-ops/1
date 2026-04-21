@@ -231,25 +231,31 @@ export default function SpokeduProClient({
     };
   }, []);
 
-  const programDetailsFromApi: Record<string, ProgramDetail> = {};
-  programsFromApi.forEach((row) => {
-    programDetailsFromApi[String(row.id)] = {
-      title: row.title,
-      videoUrl: row.video_url ?? undefined,
-      functionType: row.function_type ?? undefined,
-      mainTheme: row.main_theme ?? undefined,
-      groupSize: row.group_size ?? undefined,
-      checklist: row.checklist ?? undefined,
-      equipment: row.equipment ?? undefined,
-      activityMethod: row.activity_method ?? undefined,
-      activityTip: row.activity_tip ?? undefined,
-    };
-  });
+  const programDetailsFromApi = useMemo(() => {
+    const out: Record<string, ProgramDetail> = {};
+    programsFromApi.forEach((row) => {
+      out[String(row.id)] = {
+        title: row.title,
+        videoUrl: row.video_url ?? undefined,
+        functionType: row.function_type ?? undefined,
+        mainTheme: row.main_theme ?? undefined,
+        groupSize: row.group_size ?? undefined,
+        checklist: row.checklist ?? undefined,
+        equipment: row.equipment ?? undefined,
+        activityMethod: row.activity_method ?? undefined,
+        activityTip: row.activity_tip ?? undefined,
+      };
+    });
+    return out;
+  }, [programsFromApi]);
 
   const programDetails = (contentData?.program_details?.value ?? {}) as Record<string, ProgramDetail>;
   const adminProgramDetails = (adminContent?.program_details?.draft_value ?? {}) as Record<string, ProgramDetail>;
   const contentDetails = isEditMode ? adminProgramDetails : programDetails;
-  const programDetailsForDrawer: Record<string, ProgramDetail> = { ...programDetailsFromApi, ...contentDetails };
+  const programDetailsForDrawer = useMemo(
+    () => ({ ...programDetailsFromApi, ...contentDetails }),
+    [programDetailsFromApi, contentDetails]
+  );
   const libraryDrawerOpen = viewId === 'library' && libraryDrawerProgramId !== null;
   const globalDrawerOpen = drawerProgramId !== null;
   const resolvedDrawerProgramId = libraryDrawerOpen ? libraryDrawerProgramId : drawerProgramId;

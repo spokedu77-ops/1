@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { allocateSlugForActiveRow } from '@/app/lib/server/noteDocumentSlug';
 
 type NoteDocument = {
   id: string;
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     // 복구 대상 문서의 parent_id를 확인
     const { data: current, error: currentError } = await supabase
       .from('note_documents')
-      .select('id, parent_id')
+      .select('id, parent_id, slug')
       .eq('id', id)
       .maybeSingle();
 
@@ -57,12 +58,29 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date().toISOString();
+
+    let resolvedSlug: string | undefined;
+    const slugVal = typeof current?.slug === 'string' ? current.slug : null;
+    if (slugVal) {
+      const { data: taken } = await supabase
+        .from('note_documents')
+        .select('id')
+        .eq('slug', slugVal)
+        .is('deleted_at', null)
+        .neq('id', id)
+        .maybeSingle();
+      if (taken) {
+        resolvedSlug = await allocateSlugForActiveRow(supabase, slugVal, id);
+      }
+    }
+
     const { data, error } = await supabase
       .from('note_documents')
       .update({
         deleted_at: null,
         deleted_by: null,
         parent_id: safeParentId,
+        ...(resolvedSlug != null ? { slug: resolvedSlug } : {}),
         updated_at: now,
         updated_by: auth.userId,
       })

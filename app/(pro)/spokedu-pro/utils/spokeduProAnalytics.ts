@@ -9,7 +9,7 @@ type WindowWithPosthog = Window & { posthog?: { capture?: (n: string, p?: Record
 export function trackSpokeduProEvent(name: string, payload?: Record<string, unknown>): void {
   if (typeof window === 'undefined') return;
   if (process.env.NODE_ENV !== 'production') {
-    // eslint-disable-next-line no-console -- 의도적 디버그 채널
+     
     console.debug('[spokedu-pro]', name, payload ?? {});
     return;
   }

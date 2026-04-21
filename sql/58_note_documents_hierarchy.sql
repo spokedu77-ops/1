@@ -15,3 +15,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_note_documents_slug_unique
   ON public.note_documents(slug)
   WHERE slug IS NOT NULL;
 
+-- 휴지통(소프트 삭제) 컬럼이 있으면(60_note_trash.sql 이후) 동일 slug가 휴지통·활성에 동시 존재할 수 있어야 하므로
+-- 아래 스크립트로 인덱스를 “활성 행만 유니크”로 교체하세요.
+--   sql/62_note_documents_slug_unique_active_only.sql
+

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 
-async function getUserId(request: NextRequest): Promise<string | null> {
+async function getUserId(): Promise<string | null> {
   const serverSupabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -16,7 +16,7 @@ async function getUserId(request: NextRequest): Promise<string | null> {
 }
 
 export async function POST(request: NextRequest) {
-  const userId = await getUserId(request);
+  const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));

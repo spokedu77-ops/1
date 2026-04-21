@@ -16,3 +16,6 @@ CREATE INDEX IF NOT EXISTS idx_note_documents_active_updated_at
 
 SELECT 'note trash columns applied.' AS status;
 
+-- 다음(운영 권장): slug 전역 유니크는 휴지통 행과 충돌하므로
+-- sql/62_note_documents_slug_unique_active_only.sql 실행으로 활성 문서만 유니크로 교체
+

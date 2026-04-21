@@ -31,6 +31,32 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-require-imports": "off",
     },
   },
+  // 레거시 정적 JS(전역 함수·미사용 export): 앱 번들과 분리, unused 경고만 소음
+  {
+    files: [
+      "public/info/js/**/*.js",
+      "public/info/data/**/*.js",
+      "spokedu/js/**/*.js",
+      "spokedu/data/**/*.js",
+    ],
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  // Admin / 런타임 / 랜딩·교사: 동적 URL·캔버스·에디터 등 <Image /> 부적합 구간 — 성능 규칙 소음 완화
+  {
+    files: [
+      "app/admin/**/*.{tsx,ts}",
+      "app/components/admin/**/*.{tsx,ts}",
+      "app/components/runtime/**/*.{tsx,ts}",
+      "app/(pro)/spokedu-pro/**/*.{tsx,ts}",
+      "app/teacher/**/*.{tsx,ts}",
+      "app/info/**/*.{tsx,ts}",
+    ],
+    rules: {
+      "@next/next/no-img-element": "off",
+    },
+  },
   // Teacher/Admin: 쿠키 세션을 쓰려면 getSupabaseBrowserClient만 사용. createClient 사용 시 로그인/데이터 미표시 오류.
   {
     files: ["app/teacher/**/*.ts", "app/teacher/**/*.tsx"],
@@ -46,6 +72,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "public/workbox-*.js",
+    // 참고용·통합 스니펫(린트 대상에서 제외해 경고만 감소, 런타임 미사용)
+    "docs/**",
   ]),
 ]);
 

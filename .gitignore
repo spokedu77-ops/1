@@ -30,6 +30,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .eslintcache
+eslint-report.json
 .cursor/debug-*.log
 
 # env files (can opt-in for committing if needed)

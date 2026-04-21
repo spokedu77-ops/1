@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import DOMPurify from 'isomorphic-dompurify';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { Plus, Trash2, X, Pin, ChevronDown, RefreshCw, Edit3, Image as ImageIcon, FileText, Camera, MessageSquare, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, X, Pin, ChevronDown, RefreshCw, Edit3, Image as ImageIcon, FileText, Camera, MessageSquare } from 'lucide-react';
 import { uploadToStorage, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { parseTemplateToFields, isFieldValid } from '@/app/lib/feedbackValidation';
 import type { FeedbackFields } from '@/app/lib/feedbackValidation';
@@ -85,18 +85,14 @@ type MainTab = 'notice' | 'weekly_best';
 
 function WeeklyBestCard({
   row,
-  supabase,
   onDelete,
-  onRefresh,
   detailLesson,
   detailFeedback,
   isExpanded,
   onToggle,
 }: {
   row: WeeklyBest;
-  supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
   onDelete: (id: string) => void;
-  onRefresh: () => void;
   detailLesson: string | null;
   detailFeedback: string | null;
   isExpanded: boolean;
@@ -165,13 +161,11 @@ function WeeklyBestList({
   list,
   loading,
   supabase,
-  onRefresh,
   onDelete,
 }: {
   list: WeeklyBest[];
   loading: boolean;
   supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
-  onRefresh: () => void;
   onDelete: (id: string) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -221,9 +215,7 @@ function WeeklyBestList({
         <WeeklyBestCard
           key={row.id}
           row={row}
-          supabase={supabase}
           onDelete={onDelete}
-          onRefresh={onRefresh}
           detailLesson={expandedId === row.id ? detailLesson : null}
           detailFeedback={expandedId === row.id ? detailFeedback : null}
           isExpanded={expandedId === row.id}
@@ -248,12 +240,10 @@ function WeeklyBestCardWithState({
   row,
   supabase,
   onDelete,
-  onRefresh,
 }: {
   row: WeeklyBest;
   supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
   onDelete: (id: string) => void;
-  onRefresh: () => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [detailLesson, setDetailLesson] = useState<string | null>(null);
@@ -276,9 +266,7 @@ function WeeklyBestCardWithState({
   return (
     <WeeklyBestCard
       row={row}
-      supabase={supabase}
       onDelete={onDelete}
-      onRefresh={onRefresh}
       detailLesson={detailLesson}
       detailFeedback={detailFeedback}
       isExpanded={isExpanded}
@@ -454,10 +442,6 @@ export default function NoticePage() {
   useEffect(() => {
     if (showWeeklyBestWizard && wizardStep === 4) fetchFeedbackCandidates();
   }, [showWeeklyBestWizard, wizardStep, fetchFeedbackCandidates]);
-
-  const openWriteChoice = () => {
-    setShowWriteChoiceModal(true);
-  };
 
   const openNoticeForm = () => {
     setShowWriteChoiceModal(false);
@@ -737,7 +721,6 @@ export default function NoticePage() {
             list={weeklyBestList}
             loading={weeklyBestLoading}
             supabase={supabase}
-            onRefresh={fetchWeeklyBest}
             onDelete={handleDeleteWeeklyBest}
           />
         ) : (
@@ -769,7 +752,6 @@ export default function NoticePage() {
                       row={item.data as WeeklyBest}
                       supabase={supabase}
                       onDelete={handleDeleteWeeklyBest}
-                      onRefresh={refreshAll}
                     />
                   );
                 }

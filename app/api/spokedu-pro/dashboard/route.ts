@@ -3,13 +3,13 @@
  * 없으면 기본값 fallback.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { DEFAULT_DASHBOARD_V4 } from '@/app/lib/spokedu-pro/dashboardDefaults';
 import { getCurrentWeekLabel } from '@/app/lib/spokedu-pro/weekUtils';
 
-async function getUserId(request: NextRequest): Promise<string | null> {
+async function getUserId(): Promise<string | null> {
   const serverSupabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -18,8 +18,8 @@ async function getUserId(request: NextRequest): Promise<string | null> {
 }
 
 /** GET: 로그인 사용자 테넌트 dashboard_v4(published_value). 없으면 기본값 */
-export async function GET(request: NextRequest) {
-  const userId = await getUserId(request);
+export async function GET() {
+  const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const supabase = getServiceSupabase();

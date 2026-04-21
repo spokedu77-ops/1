@@ -627,7 +627,7 @@ useEffect(() => {
                               </div>
                             ) : (
                               <>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                { }
                                 <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
                               </>
                             )}

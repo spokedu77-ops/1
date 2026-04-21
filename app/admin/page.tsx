@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
-import { Calendar, RefreshCw, FileText, ExternalLink, Star, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Calendar, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 // --- Interfaces ---
 interface IClassSession {
@@ -20,13 +19,6 @@ interface IClassSession {
   isCancelled?: boolean;
   status?: string;
   roundDisplay?: string;
-}
-
-interface NoteDocument {
-  id: string;
-  title: string;
-  is_favorite: boolean;
-  updated_at: string;
 }
 
 interface PostponeNotice {
@@ -335,18 +327,6 @@ export default function SpokeduHQDashboard() {
     today.setHours(0, 0, 0, 0);
     const diff = Math.floor((date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
     return diff <= 1;
-  };
-
-  const formatNoteDate = (iso: string) => {
-    const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return '방금';
-    if (diffMin < 60) return `${diffMin}분 전`;
-    const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `${diffH}시간 전`;
-    return d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
   };
 
   const isClassFinished = (cls: IClassSession) => {

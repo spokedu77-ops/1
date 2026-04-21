@@ -108,18 +108,12 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     }
   ];
 
-  const isAdmin = 
-    pathname.startsWith('/admin') || 
-    pathname.startsWith('/master') || 
+  const isAdmin =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/master') ||
     pathname.startsWith('/class');
-  
+
   const isSubscriber = pathname.startsWith('/billing');
-  
-  // 관리자도 아니고 구독자 페이지도 아니면 사이드바 숨김
-  if (!isAdmin && !isSubscriber) return null;
-  
-  // 구독자 페이지에서는 구독자 메뉴 사용
-  const groups = isSubscriber ? subscriberMenuItems : adminMenuItems;
 
   const loadConsultSummary = useCallback(async () => {
     if (!isAdmin || isSubscriber) return;
@@ -153,6 +147,11 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [isAdmin, isSubscriber, loadConsultSummary]);
+
+  // 관리자도 아니고 구독자 페이지도 아니면 사이드바 숨김 (Hooks 이후에만 return)
+  if (!isAdmin && !isSubscriber) return null;
+
+  const groups = isSubscriber ? subscriberMenuItems : adminMenuItems;
 
   return (
     <>
