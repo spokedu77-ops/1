@@ -328,9 +328,9 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
   const gRef = useRef<GameState | null>(null);
   const onCompleteRef = useRef(onComplete);
   const hudTimeRef = useRef<HTMLDivElement>(null);
-  const hudStimsRef = useRef<HTMLSpanElement>(null);
+  const hudStimsRef = useRef<HTMLDivElement>(null);
   const comboRef = useRef<HTMLDivElement>(null);
-  const comboNRef = useRef<HTMLSpanElement>(null);
+  const comboNRef = useRef<HTMLDivElement>(null);
   const laneExplRefs = useRef<(HTMLDivElement | null)[]>([]);
   const padRefs = useRef<(HTMLDivElement | null)[]>([]);
   const milestoneRootRef = useRef<HTMLDivElement>(null);
