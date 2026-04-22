@@ -157,6 +157,17 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 1, name: '1번', enName: 'Rhythm Program', desc: '리듬 프로그램 — 4개 구간 리듬 시퀀스를 끝까지 진행합니다.' },
     ],
   },
+  reactTrain: {
+    id: 'reactTrain', title: '시지각 반응', en: 'Visual Reaction', icon: '◆', accent: '#E11D48',
+    tag: '시지각 · 반응 훈련',
+    desc: '색 자극이 떨어질 때 해당 색 콘으로 밟는 시지각·반응 훈련입니다.',
+    levels: [
+      { id: 1, name: '1번', enName: 'FLOW', desc: '색 타일이 레인을 따라 흘러내립니다.' },
+      { id: 2, name: '2번', enName: 'FLASH', desc: '원형 버블이 자유 낙하합니다.' },
+      { id: 3, name: '3번', enName: 'PATTERN', desc: '두 색이 동시에 낙하 — 양발로 두 색 콘을 동시에 밟습니다.' },
+      { id: 4, name: '4번', enName: 'Diagonal', desc: '모서리에서 중앙 2×2 패드로 날아오는 유성 자극 — 색에 맞는 콘으로 밟습니다. 30초 후 가속이 들어갑니다.' },
+    ],
+  },
 };
 
 export const STUDENTS_KEY = 'spokedu_students_v1';

@@ -18,6 +18,7 @@ const MODE_MAP: ModeToScreenplay[] = [
   { modeKey: 'spatial', modeId: '순차기억', sortBase: 3000 },
   { modeKey: 'dual', modeId: '이중과제', sortBase: 4000 },
   { modeKey: 'flow', modeId: 'FLOW', sortBase: 5000 },
+  { modeKey: 'reactTrain', modeId: '시지각반응', sortBase: 5100 },
 ];
 
 export async function POST() {
@@ -29,8 +30,8 @@ export async function POST() {
   let inserted = 0;
   let updated = 0;
 
-  // 스포무브는 memory-game 기준 16개만 노출해야 하므로,
-  // 재이식 시 기존 screenplay를 모두 비공개 처리한 뒤 대상 16개만 다시 공개합니다.
+  // 스포무브 Pro: memory-game MODES(레벨마다 1 screenplays)에 맞춰 동기화합니다.
+  // 재이식 시 기존 screenplay를 모두 비공개 처리한 뒤, MODE_MAP 대상만 다시 공개합니다.
   const { error: hideError } = await supabase
     .from('spokedu_pro_screenplays')
     .update({ is_published: false })

@@ -18,6 +18,9 @@ import { SignalDisplay } from './components/SignalDisplay';
 import { MemoryGame } from './components/MemoryGame';
 import { MemoryGameLevel4 } from './components/MemoryGameLevel4';
 import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
+import { VisualReactionTraining, type ReactTrainCompleteStats } from './components/VisualReactionTraining';
+import { DiagonalReactionTraining } from './components/DiagonalReactionTraining';
+import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { ChallengeSpomoveSetupPanel } from './components/ChallengeSpomoveSetupPanel';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { getSpomoveChallengeEmbed } from '@/app/lib/spomove/challengeEmbedStorage';
@@ -43,7 +46,17 @@ function resultLevelLabel(mode: string | undefined, level: number): string {
   return `${level}번`;
 }
 
-type Screen = 'home' | 'setup' | 'guide' | 'students' | 'training' | 'memory' | 'flow' | 'challenge' | 'result';
+type Screen =
+  | 'home'
+  | 'setup'
+  | 'guide'
+  | 'students'
+  | 'training'
+  | 'memory'
+  | 'visualReaction'
+  | 'flow'
+  | 'challenge'
+  | 'result';
 
 type Settings = {
   mode: string;
@@ -130,6 +143,7 @@ export default function MemoryGameApp({
   const countRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trainingContainerRef = useRef<HTMLDivElement>(null);
+  const visualReactionContainerRef = useRef<HTMLDivElement>(null);
   const flowCompleteGuardRef = useRef(false);
   const challengeCompleteGuardRef = useRef(false);
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
@@ -328,7 +342,8 @@ export default function MemoryGameApp({
 
   useEffect(() => {
     // 훈련/메모리 화면 이탈 시 BGM 정지 (요청: 시작 클릭 시만 재생, 훈련/메모리에서만 유지)
-    if (screen === 'training' || screen === 'memory' || screen === 'flow' || screen === 'challenge') return;
+    if (screen === 'training' || screen === 'memory' || screen === 'visualReaction' || screen === 'flow' || screen === 'challenge')
+      return;
     bgmPlayerRef.current?.fadeOut(220);
   }, [screen]);
 
@@ -348,10 +363,18 @@ export default function MemoryGameApp({
     return () => cancelAnimationFrame(id);
   }, [screen]);
 
+  useEffect(() => {
+    if (screen !== 'visualReaction') return;
+    const id = requestAnimationFrame(() => {
+      visualReactionContainerRef.current?.requestFullscreen?.().catch(() => {});
+    });
+    return () => cancelAnimationFrame(id);
+  }, [screen]);
+
   const startSession = useCallback(
     (cfg: Settings = settings) => {
-      // 분량 선택은 횟수만 노출/사용 → 안전하게 reps로 고정
-      if (cfg.timeMode !== 'reps') cfg = { ...cfg, timeMode: 'reps' };
+      // 분량 선택은 횟수만 노출/사용 → 시지각 반응(reactTrain) 제외하고 reps로 고정
+      if (cfg.mode !== 'reactTrain' && cfg.timeMode !== 'reps') cfg = { ...cfg, timeMode: 'reps' };
       // 인터벌 세트는 4로 고정
       if (cfg.intervalSets !== 4) cfg = { ...cfg, intervalSets: 4 };
       // 신호별 음성·비프는 사용하지 않음(모든 모드 audioMode off)
@@ -400,7 +423,8 @@ export default function MemoryGameApp({
         bgmMode === 'simon' ||
         bgmMode === 'flanker' ||
         bgmMode === 'gonogo' ||
-        bgmMode === 'taskswitch';
+        bgmMode === 'taskswitch' ||
+        bgmMode === 'reactTrain';
       if (shouldTryBgmParent) {
         if (spomoveBgmList.length === 0) {
           if (spomoveBgmLoading) pendingBgmStartRef.current = { mode: bgmMode };
@@ -421,8 +445,9 @@ export default function MemoryGameApp({
         setScreen('challenge');
         setCountdown(null);
       } else {
-        // spatial(순차기억)도 warmup 카운트다운 적용
-        const nextScreen: Screen = cfg.mode === 'spatial' ? 'memory' : 'training';
+        // spatial(순차기억)·시지각 반응도 warmup 카운트다운 적용
+        const nextScreen: Screen =
+          cfg.mode === 'spatial' ? 'memory' : cfg.mode === 'reactTrain' ? 'visualReaction' : 'training';
         setScreen(nextScreen);
         setIsTraining(false);
 
@@ -467,7 +492,16 @@ export default function MemoryGameApp({
     if (spomoveBgmLoading) return;
     pendingBgmStartRef.current = null;
     if (spomoveBgmList.length === 0) return;
-    if (!(screen === 'training' || screen === 'memory' || screen === 'flow' || screen === 'challenge')) return;
+    if (
+      !(
+        screen === 'training' ||
+        screen === 'memory' ||
+        screen === 'visualReaction' ||
+        screen === 'flow' ||
+        screen === 'challenge'
+      )
+    )
+      return;
 
     const mode = pending.mode;
     if (mode === 'flow' || mode === 'challenge') return;
@@ -520,6 +554,15 @@ export default function MemoryGameApp({
     setResult({ count: completedStages, cfg });
     setScreen('result');
   }, [settings]);
+
+  const handleReactTrainComplete = useCallback(
+    (stats: ReactTrainCompleteStats) => {
+      if (document.fullscreenElement) document.exitFullscreen();
+      setResult({ count: stats.stims, cfg: { ...settings } });
+      setScreen('result');
+    },
+    [settings]
+  );
 
   useEffect(() => {
     if (screen !== 'flow' && screen !== 'challenge') return;
@@ -592,6 +635,7 @@ export default function MemoryGameApp({
                   '#A855F7': '168,85,247',
                   '#22C55E': '34,197,94',
                   '#F97316': '249,115,22',
+                  '#E11D48': '225,29,72',
                   '#EC4899': '236,72,153',
                   '#06B6D4': '6,182,212',
                   '#14B8A6': '20,184,166',
@@ -604,7 +648,12 @@ export default function MemoryGameApp({
                     key={m.id}
                     type="button"
                     onClick={() => {
-                      setSettings((s) => ({ ...s, mode: m.id, level: 1 }));
+                      setSettings((s) => ({
+                        ...s,
+                        mode: m.id,
+                        level: 1,
+                        ...(m.id === 'reactTrain' ? { timeMode: 'time' as const, duration: 60 } : {}),
+                      }));
                       setScreen('setup');
                     }}
                     style={{ background: active ? `rgba(${rgb},0.14)` : 'rgba(255,255,255,0.04)', border: `2px solid ${active ? m.accent : 'rgba(255,255,255,0.08)'}`, borderRadius: '0.85rem', padding: 'clamp(0.6rem,2vw,0.85rem)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.15s' }}
@@ -804,8 +853,36 @@ export default function MemoryGameApp({
                   )}
                 </div>
 
-                {/* 분량 선택: 횟수만 (spatial은 분량 선택 숨김) */}
-                {settings.mode !== 'spatial' && (
+                {/* 시지각 반응: 훈련 시간 / 그 외(spatial 제외): 분량(횟수) */}
+                {settings.mode === 'reactTrain' && (
+                  <div style={S.sec}>
+                    {stepNum(stepReps, '훈련 시간을 선택하세요')}
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      {[30, 60, 120, 180].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => {
+                            setSettings((s) => ({ ...s, timeMode: 'time', duration: n }));
+                          }}
+                          style={{
+                            padding: '0.6rem 1rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${settings.duration === n ? '#F97316' : 'var(--border)'}`,
+                            background: settings.duration === n ? '#FFF7ED' : 'var(--card)',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            color: 'var(--text)',
+                          }}
+                        >
+                          {n < 60 ? `${n}초` : n === 60 ? '1분' : n === 120 ? '2분' : '3분'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {settings.mode !== 'spatial' && settings.mode !== 'reactTrain' && (
                   <div style={S.sec}>
                     {stepNum(stepReps, '분량을 선택하세요')}
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -910,6 +987,38 @@ export default function MemoryGameApp({
       return <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />;
     return (
       <MemoryGame level={settings.level} onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />
+    );
+  }
+
+  if (screen === 'visualReaction') {
+    if (countdown !== null) {
+      return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400 }}>
+          <style>{CSS}</style>
+          <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
+        </div>
+      );
+    }
+    return (
+      <div ref={visualReactionContainerRef} style={{ position: 'fixed', inset: 0, zIndex: 320 }}>
+        <style>{CSS}</style>
+        {settings.level === 4 ? (
+          <DiagonalReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={mapSpomoveSpeedToReactTrainSpd(settings.speed)}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : (
+          <VisualReactionTraining
+            variant={settings.level === 1 ? 'flow' : settings.level === 2 ? 'flash' : 'pattern'}
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={mapSpomoveSpeedToReactTrainSpd(settings.speed)}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        )}
+      </div>
     );
   }
 

@@ -46,6 +46,27 @@ export async function uploadToStorage(
 }
 
 /**
+ * 관리자 브라우저 세션으로 Storage에 직접 업로드 (브라우저 → Supabase).
+ * API 경유 업로드는 호스팅의 요청 본문 한도에 걸릴 수 있어, 주간베스트 사진 등 대용량은 이 경로를 씁니다.
+ * (Storage RLS의 `is_admin()`이 통과하는 관리자만 성공)
+ */
+export async function uploadToStorageDirect(
+  path: string,
+  file: File,
+  contentType?: string
+): Promise<string> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.storage.from(BUCKET_NAME).upload(path, file, {
+    contentType: contentType ?? (file.type || 'image/jpeg'),
+    upsert: true,
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+  return path;
+}
+
+/**
  * Storage 경로에서 Public URL 생성
  * @param path Storage 경로
  * @returns Public URL

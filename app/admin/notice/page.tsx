@@ -6,7 +6,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { Plus, Trash2, X, Pin, ChevronDown, RefreshCw, Edit3, Image as ImageIcon, FileText, Camera, MessageSquare } from 'lucide-react';
-import { uploadToStorage, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
+import { uploadToStorageDirect, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { parseTemplateToFields, isFieldValid } from '@/app/lib/feedbackValidation';
 import type { FeedbackFields } from '@/app/lib/feedbackValidation';
 
@@ -524,7 +524,7 @@ export default function NoticePage() {
         const safeName =
           file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_.-]/g, '_') || 'image';
         const path = `weekly_best/${Date.now()}_${i}_${Math.random().toString(36).slice(2, 10)}_${safeName}`;
-        await uploadToStorage(path, file, file.type || 'image/jpeg');
+        await uploadToStorageDirect(path, file, file.type || 'image/jpeg');
         urls.push(getPublicUrl(path));
       }
       setWbForm((prev) => ({ ...prev, photo_urls: [...prev.photo_urls, ...urls] }));
@@ -581,7 +581,7 @@ export default function NoticePage() {
         const safeName =
           file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_.-]/g, '_') || 'image';
         const path = `notices/${Date.now()}_${i}_${safeName}`;
-        await uploadToStorage(path, file, file.type || 'image/jpeg');
+        await uploadToStorageDirect(path, file, file.type || 'image/jpeg');
         urls.push(getPublicUrl(path));
       }
     } catch (err) {
