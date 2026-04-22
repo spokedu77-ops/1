@@ -327,7 +327,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
   const cvRef = useRef<HTMLCanvasElement>(null);
   const gRef = useRef<GameState | null>(null);
   const onCompleteRef = useRef(onComplete);
-  const hudTimeRef = useRef<HTMLSpanElement>(null);
+  const hudTimeRef = useRef<HTMLDivElement>(null);
   const hudStimsRef = useRef<HTMLSpanElement>(null);
   const comboRef = useRef<HTMLDivElement>(null);
   const comboNRef = useRef<HTMLSpanElement>(null);
