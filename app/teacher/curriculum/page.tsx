@@ -15,6 +15,8 @@ import {
 } from '@/app/lib/curriculum/constants';
 import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
 import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
+import { sortCenterCurriculumByDisplayOrder } from '@/app/lib/curriculum/sortCenterCurriculum';
+import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
 import {
   Instagram, AlertCircle,
   Sparkles, X, Calendar, MoreHorizontal,
@@ -31,6 +33,9 @@ const MONTHLY_THEMES: { [key: number]: { title: string; desc: string } } = {
 
 export interface CurriculumItem {
   id?: number;
+  display_order?: number | null;
+  is_sub?: boolean;
+  equipment_tag_numbers?: number[] | null;
   month?: number;
   week?: number;
   title?: string;
@@ -64,11 +69,19 @@ interface PersonalCurriculumItem {
   [key: string]: unknown;
 }
 
+/** 교구 가이드라인 전용 */
 interface CenterEquipmentItem {
   id: number;
   number: number;
   name: string;
   image_url: string | null;
+}
+
+/** SUB 커리큘럼 전용 독립 교구 태그 */
+interface CurriculumSubTag {
+  id: number;
+  name: string;
+  display_order: number;
 }
 
 interface CenterEquipmentGuideItem {
@@ -99,6 +112,9 @@ export default function TeacherCurriculumPage() {
  const [selectedItem, setSelectedItem] = useState<CurriculumItem | PersonalCurriculumItem | null>(null);
 const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
+ const [centerIsSub, setCenterIsSub] = useState(false);
+ const [equipmentTagFilter, setEquipmentTagFilter] = useState<number | null>(null);
+ const [subTagList, setSubTagList] = useState<CurriculumSubTag[]>([]);
  const [centerViewMode, setCenterViewMode] = useState<'center' | 'equipment-guide'>('center');
  const [centerEquipmentList, setCenterEquipmentList] = useState<CenterEquipmentItem[]>([]);
  const [equipmentGuideItems, setEquipmentGuideItems] = useState<CenterEquipmentGuideItem[]>([]);
@@ -116,6 +132,7 @@ const [activeVideoIndex, setActiveVideoIndex] = useState(0);
     const { data, error } = await supabase
       .from('curriculum')
       .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
       .order('id', { ascending: false });
     
     if (error) {
@@ -176,6 +193,17 @@ const [activeVideoIndex, setActiveVideoIndex] = useState(0);
    else setCenterEquipmentList((data ?? []) as CenterEquipmentItem[]);
  }, [supabase]);
 
+ const fetchSubTags = useCallback(async () => {
+   if (!supabase) return;
+   const { data, error } = await supabase
+     .from('curriculum_sub_tags')
+     .select('*')
+     .order('display_order', { ascending: true })
+     .order('id', { ascending: true });
+   if (error) devLogger.error('Error fetching curriculum_sub_tags:', error);
+   else setSubTagList((data ?? []) as CurriculumSubTag[]);
+ }, [supabase]);
+
  const fetchEquipmentGuide = useCallback(async () => {
    if (!supabase) return;
    setEquipmentGuideLoading(true);
@@ -189,12 +217,25 @@ const [activeVideoIndex, setActiveVideoIndex] = useState(0);
    if (supabase && mainTab === 'center') {
      void fetchEquipmentGuide();
      void fetchCenterEquipment();
+     void fetchSubTags();
    }
- }, [supabase, mainTab, fetchEquipmentGuide, fetchCenterEquipment]);
+ }, [supabase, mainTab, fetchEquipmentGuide, fetchCenterEquipment, fetchSubTags]);
 
  const filteredItems = useMemo(() => {
-   return items.filter(item => item.month === selectedMonth && item.week === selectedWeek);
- }, [items, selectedMonth, selectedWeek]);
+   let base: CurriculumItem[];
+   if (centerIsSub) {
+     base = items.filter((item) => item.is_sub === true);
+   } else {
+     base = items.filter((item) => !item.is_sub && item.month === selectedMonth && item.week === selectedWeek);
+   }
+   const sorted = sortCenterCurriculumByDisplayOrder(base);
+   if (equipmentTagFilter !== null) {
+     return sorted.filter((item) =>
+       Array.isArray(item.equipment_tag_numbers) && item.equipment_tag_numbers.includes(equipmentTagFilter),
+     );
+   }
+   return sorted;
+ }, [items, selectedMonth, selectedWeek, centerIsSub, equipmentTagFilter]);
 
  const filteredPersonalItems = useMemo(() => {
    return personalItems.filter(p => p.category === categoryTab && p.sub_tab === subTab);
@@ -242,13 +283,6 @@ const yuaSessionSlots = useMemo(() => {
  const currentTheme = MONTHLY_THEMES[selectedMonth] || { 
    title: `${selectedMonth}월 집중 교육 목표`, 
    desc: '스포키듀와 함께 건강한 에너지를 발산해보세요!' 
- };
-
- const getYouTubeId = (url: string) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
  };
 
  const getSafeThumbnailUrl = (item: { url?: string; thumbnail?: string | null }) => {
@@ -584,23 +618,70 @@ useEffect(() => {
                 <CurriculumMonthWeekPicker
                   selectedMonth={selectedMonth}
                   selectedWeek={selectedWeek}
-                  onMonthChange={setSelectedMonth}
+                  onMonthChange={(m) => { setSelectedMonth(m); setEquipmentTagFilter(null); }}
                   onWeekChange={setSelectedWeek}
+                  isSubSelected={centerIsSub}
+                  onSubChange={(sub) => { setCenterIsSub(sub); setEquipmentTagFilter(null); }}
                   teacherMode
                   currentMonth={currentMonth}
                 />
 
-                {/* 배너 */}
-                <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
-                  <Sparkles size={120} className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4" />
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2 opacity-90 text-[10px] font-bold uppercase">
-                      <Calendar size={14} /> {selectedMonth}월 집중 교육 목표
+                {/* 배너: 월별 모드일 때만 */}
+                {!centerIsSub && (
+                  <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
+                    <Sparkles size={120} className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4" />
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-2 opacity-90 text-[10px] font-bold uppercase">
+                        <Calendar size={14} /> {selectedMonth}월 집중 교육 목표
+                      </div>
+                      <h2 className="text-2xl md:text-3xl font-black mb-2">{currentTheme.title}</h2>
+                      <p className="text-indigo-100 font-medium text-sm md:text-base">{currentTheme.desc}</p>
                     </div>
-                    <h2 className="text-2xl md:text-3xl font-black mb-2">{currentTheme.title}</h2>
-                    <p className="text-indigo-100 font-medium text-sm md:text-base">{currentTheme.desc}</p>
                   </div>
-                </div>
+                )}
+
+                {/* 교구 태그 필터 — SUB 모드에서만 표시 */}
+                {centerIsSub && subTagList.length > 0 && (
+                  <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">교구 태그</span>
+                      {equipmentTagFilter !== null && (
+                        <button
+                          type="button"
+                          onClick={() => setEquipmentTagFilter(null)}
+                          className="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 transition-colors"
+                        >
+                          전체 보기
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEquipmentTagFilter(null)}
+                        className={`h-9 px-4 rounded-xl text-xs font-bold transition-all touch-manipulation
+                          ${equipmentTagFilter === null
+                            ? 'bg-slate-800 text-white shadow-sm'
+                            : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-400'}`}
+                      >
+                        전체
+                      </button>
+                      {subTagList.map((tag) => (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => setEquipmentTagFilter(equipmentTagFilter === tag.id ? null : tag.id)}
+                          className={`h-9 px-4 rounded-xl text-xs font-bold transition-all touch-manipulation
+                            ${equipmentTagFilter === tag.id
+                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                              : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600'}`}
+                        >
+                          {tag.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* 리스트 (조회 전용) */}
                 <div className="w-full">
@@ -626,10 +707,7 @@ useEffect(() => {
                                 <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram Reels</span>
                               </div>
                             ) : (
-                              <>
-                                { }
-                                <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
-                              </>
+                              <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
                             )}
                             <div className="absolute top-4 left-4">
                               <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type}</span>
@@ -644,17 +722,24 @@ useEffect(() => {
                           </div>
                           <div className="p-6 space-y-3">
                             <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
-                            <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
-                              <AlertCircle size={14} className="text-slate-400 mt-1 flex-shrink-0" />
-                              <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-3">{item.expertTip}</p>
-                            </div>
+                            {item.equipment && item.equipment.length > 0 ? (
+                              <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
+                                <Box size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-3">{item.equipment.join(' · ')}</p>
+                              </div>
+                            ) : (
+                              <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
+                                <Box size={14} className="text-slate-300 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-slate-300 font-bold">등록된 교구 없음</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-black">
-                      해당 주차에 등록된 커리큘럼이 없습니다.
+                      {centerIsSub ? 'SUB에 등록된 커리큘럼이 없습니다.' : '해당 주차에 등록된 커리큘럼이 없습니다.'}
                     </div>
                   )}
                 </div>

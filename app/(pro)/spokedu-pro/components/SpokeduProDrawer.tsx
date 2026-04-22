@@ -5,13 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb, Play, ListChecks, Gamepad2 } from 'lucide-react';
 import type { ProgramDetail } from '../types';
 import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
-
-function getYouTubeId(url: string): string | null {
-  if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11 ? match[2] : null;
-}
+import { getYouTubeId } from '@/app/(pro)/spokedu-pro/utils/youtube';
 
 export default function SpokeduProDrawer({
   open,

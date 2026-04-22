@@ -20,9 +20,27 @@ import {
 } from '@/app/lib/curriculum/constants';
 import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
 import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
+import { sortCenterCurriculumByDisplayOrder } from '@/app/lib/curriculum/sortCenterCurriculum';
+import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2,
-  CheckSquare, Box, ListOrdered, Play, AlertCircle, ArrowLeft, ChevronRight
+  CheckSquare, Box, ListOrdered, Play, AlertCircle, ArrowLeft, ChevronRight, GripVertical
 } from 'lucide-react';
 
 export type MainCurriculumTab = 'personal' | 'center';
@@ -36,6 +54,9 @@ const WEEKS = [1, 2, 3, 4];
 
 interface CurriculumItem {
   id: number;
+  display_order?: number | null;
+  is_sub?: boolean;
+  equipment_tag_numbers?: number[] | null;
   type?: string;
   title?: string;
   url?: string;
@@ -68,12 +89,19 @@ interface PersonalCurriculumItem {
   [key: string]: unknown;
 }
 
-/** 번호별 고정 교구 12개 (이름 + 이미지) */
+/** 번호별 고정 교구 12개 (이름 + 이미지) — 교구 가이드라인 전용 */
 interface CenterEquipmentItem {
   id: number;
   number: number;
   name: string;
   image_url: string | null;
+}
+
+/** SUB 커리큘럼 전용 독립 교구 태그 (center_equipment와 완전히 무관) */
+interface CurriculumSubTag {
+  id: number;
+  name: string;
+  display_order: number;
 }
 
 /** 단계별 활동 (활동 이미지 또는 활동 내용) */
@@ -97,6 +125,88 @@ function formatSaveError(err: unknown): string {
   }
   if (err != null && typeof err === 'object') return JSON.stringify(err);
   return String(err);
+}
+
+function SortableCenterCurriculumCard({
+  item,
+  getSafeThumbnailUrl,
+  openDetailModal,
+  openEditModal,
+  deleteItem,
+}: {
+  item: CurriculumItem;
+  getSafeThumbnailUrl: (row: { url?: string; thumbnail?: string }) => string;
+  openDetailModal: (row: CurriculumItem) => void;
+  openEditModal: (row: CurriculumItem, e: React.MouseEvent) => void;
+  deleteItem: (id: number, e: React.MouseEvent) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const { onPointerDown: sortablePointerDown, ...restListeners } = listeners as typeof listeners & {
+    onPointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void;
+  };
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer ${isDragging ? 'opacity-60 z-10 shadow-lg ring-2 ring-indigo-300' : ''}`}
+      onClick={() => openDetailModal(item)}
+    >
+      <button
+        type="button"
+        className="absolute top-4 left-4 z-30 p-2 rounded-full bg-white/95 backdrop-blur text-slate-400 hover:text-slate-700 shadow-sm cursor-grab active:cursor-grabbing touch-manipulation"
+        aria-label="순서 변경"
+        {...attributes}
+        {...restListeners}
+        onPointerDown={(e) => {
+          sortablePointerDown?.(e);
+          e.stopPropagation();
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical size={18} />
+      </button>
+      <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button type="button" onClick={(e) => openEditModal(item, e)} className="p-2 bg-white/90 backdrop-blur rounded-full text-slate-600 hover:text-indigo-600 shadow-sm"><Edit2 size={16}/></button>
+        <button type="button" onClick={(e) => deleteItem(item.id, e)} className="p-2 bg-white/90 backdrop-blur rounded-full text-slate-600 hover:text-red-600 shadow-sm"><Trash2 size={16}/></button>
+      </div>
+      <div className="relative aspect-video bg-slate-100">
+        {item.type === 'instagram' ? (
+          <div className="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex flex-col items-center justify-center text-white p-6">
+            <Instagram size={48} className="mb-2 opacity-80" />
+            <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram Reels</span>
+          </div>
+        ) : (
+          <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
+        )}
+        <div className="absolute top-4 left-14 pointer-events-none">
+          <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type}</span>
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all pointer-events-none">
+          <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+            <Play size={20} className="fill-slate-900 text-slate-900 ml-1"/>
+          </div>
+        </div>
+      </div>
+      <div className="p-6 space-y-3">
+        <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
+        {item.equipment && item.equipment.length > 0 ? (
+          <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
+            <Box size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-3">{item.equipment.join(' · ')}</p>
+          </div>
+        ) : (
+          <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
+            <Box size={14} className="text-slate-300 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-slate-300 font-bold">등록된 교구 없음</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminCurriculumPage() {
@@ -138,6 +248,15 @@ export default function AdminCurriculumPage() {
   const [editing8huiId, setEditing8huiId] = useState<number | null>(null);
   const [eightHuiForm, setEightHuiForm] = useState({ title: '', detailText: '', url: '', url2: '', url3: '', url4: '' });
 
+  const [centerIsSub, setCenterIsSub] = useState(false);
+  const [equipmentTagFilter, setEquipmentTagFilter] = useState<number | null>(null);
+  const [newPostEquipmentTags, setNewPostEquipmentTags] = useState<number[]>([]);
+  const [editingTagId, setEditingTagId] = useState<number | null>(null);
+  const [editingTagName, setEditingTagName] = useState('');
+  const [subTagList, setSubTagList] = useState<CurriculumSubTag[]>([]);
+  const [newTagInputVisible, setNewTagInputVisible] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+
   const [centerViewMode, setCenterViewMode] = useState<'center' | 'equipment-guide'>('center');
   const [centerEquipmentList, setCenterEquipmentList] = useState<CenterEquipmentItem[]>([]);
   const [equipmentGuideItems, setEquipmentGuideItems] = useState<CenterEquipmentGuideItem[]>([]);
@@ -161,6 +280,7 @@ export default function AdminCurriculumPage() {
     const { data, error } = await supabase
       .from('curriculum')
       .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
       .order('id', { ascending: false });
     
     if (error) {
@@ -218,6 +338,20 @@ export default function AdminCurriculumPage() {
     }
   };
 
+  const fetchSubTags = async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase
+      .from('curriculum_sub_tags')
+      .select('*')
+      .order('display_order', { ascending: true })
+      .order('id', { ascending: true });
+    if (error) {
+      devLogger.error('Error fetching curriculum_sub_tags:', error);
+    } else {
+      setSubTagList((data ?? []) as CurriculumSubTag[]);
+    }
+  };
+
   const fetchEquipmentGuide = async () => {
     if (!supabase) return;
     setEquipmentGuideLoading(true);
@@ -236,6 +370,7 @@ export default function AdminCurriculumPage() {
     if (supabase && mainTab === 'center') {
       void fetchCenterEquipment();
       void fetchEquipmentGuide();
+      void fetchSubTags();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- when center tab active
   }, [supabase, mainTab]);
@@ -344,8 +479,57 @@ export default function AdminCurriculumPage() {
   }, [supabase]);
 
   const filteredItems = useMemo(() => {
-    return items.filter((item: CurriculumItem) => item.month === selectedMonth && item.week === selectedWeek);
-  }, [items, selectedMonth, selectedWeek]);
+    let base: CurriculumItem[];
+    if (centerIsSub) {
+      base = items.filter((item) => item.is_sub === true);
+    } else {
+      base = items.filter((item) => !item.is_sub && item.month === selectedMonth && item.week === selectedWeek);
+    }
+    const sorted = sortCenterCurriculumByDisplayOrder(base);
+    if (equipmentTagFilter !== null) {
+      return sorted.filter((item) =>
+        Array.isArray(item.equipment_tag_numbers) && item.equipment_tag_numbers.includes(equipmentTagFilter),
+      );
+    }
+    return sorted;
+  }, [items, selectedMonth, selectedWeek, centerIsSub, equipmentTagFilter]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
+
+  const handleCenterCurriculumDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !supabase) return;
+    const activeId = Number(active.id);
+    const overId = Number(over.id);
+    // 드래그 가능한 전체 목록(필터 미적용)에서 순서 계산
+    const draggableItems = sortCenterCurriculumByDisplayOrder(
+      centerIsSub ? items.filter((i) => i.is_sub === true) : items.filter((i) => !i.is_sub && i.month === selectedMonth && i.week === selectedWeek),
+    );
+    const oldIndex = draggableItems.findIndex((i) => i.id === activeId);
+    const newIndex = draggableItems.findIndex((i) => i.id === overId);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = arrayMove(draggableItems, oldIndex, newIndex);
+    setItems((prev) => {
+      const orderMap = new Map(reordered.map((it, idx) => [it.id, idx]));
+      return prev.map((it) => (orderMap.has(it.id) ? { ...it, display_order: orderMap.get(it.id)! } : it));
+    });
+    try {
+      const results = await Promise.all(
+        reordered.map((it, index) =>
+          supabase.from('curriculum').update({ display_order: index }).eq('id', it.id),
+        ),
+      );
+      const firstErr = results.find((r) => r.error);
+      if (firstErr?.error) throw firstErr.error;
+      toast.success('순서가 저장되었습니다.');
+    } catch (err: unknown) {
+      toast.error('순서 저장 실패: ' + formatSaveError(err));
+      await fetchItems();
+    }
+  };
 
   const filteredPersonalItems = useMemo(() => {
     return personalItems.filter((p: PersonalCurriculumItem) => p.category === categoryTab && p.sub_tab === subTab);
@@ -378,13 +562,6 @@ export default function AdminCurriculumPage() {
   const currentTheme = MONTHLY_THEMES[selectedMonth] || { 
     title: `${selectedMonth}월 집중 교육 목표`, 
     desc: '스포키듀와 함께 건강한 에너지를 발산해보세요!' 
-  };
-
-  const getYouTubeId = (url: string) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
   };
 
   const hasValidUrl = (url?: string) => {
@@ -422,32 +599,43 @@ export default function AdminCurriculumPage() {
     const equipment = newPost.equipmentText.split('\n').filter((t: string) => t.trim() !== '');
     const steps = newPost.stepsText.split('\n').filter((t: string) => t.trim() !== '');
 
-    const postData = {
+    const isSub = centerIsSub;
+    const postDataBase = {
       title: newPost.title, 
       url: newPost.url, 
-      month: newPost.month, 
-      week: newPost.week, 
+      month: isSub ? 1 : newPost.month,
+      week: isSub ? 1 : newPost.week,
       expert_tip: newPost.expertTip,
       check_list: checkList, 
       equipment: equipment, 
       steps: steps, 
       type,
-      thumbnail: isInsta ? '' : (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : '')
+      thumbnail: isInsta ? '' : (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : ''),
+      is_sub: isSub,
+      equipment_tag_numbers: newPostEquipmentTags.length > 0 ? newPostEquipmentTags : null,
     };
     
     try {
       if (editingId) {
         const { error } = await supabase
           .from('curriculum')
-          .update(postData)
+          .update(postDataBase)
           .eq('id', editingId);
 
         if (error) throw error;
         toast.success('수정되었습니다.');
       } else {
+        const sameGroup = isSub
+          ? items.filter((i) => i.is_sub === true)
+          : items.filter((i) => !i.is_sub && i.month === newPost.month && i.week === newPost.week);
+        let nextOrder = 0;
+        for (const i of sameGroup) {
+          const o = typeof i.display_order === 'number' ? i.display_order : -1;
+          if (o >= nextOrder) nextOrder = o + 1;
+        }
         const { error } = await supabase
           .from('curriculum')
-          .insert([postData]);
+          .insert([{ ...postDataBase, display_order: nextOrder }]);
 
         if (error) throw error;
         toast.success('등록되었습니다.');
@@ -505,6 +693,7 @@ export default function AdminCurriculumPage() {
       equipmentText: item.equipment ? item.equipment.join('\n') : '',
       stepsText: item.steps ? item.steps.join('\n') : ''
     });
+    setNewPostEquipmentTags(Array.isArray(item.equipment_tag_numbers) ? item.equipment_tag_numbers : []);
     setIsInputModalOpen(true);
   };
 
@@ -517,6 +706,58 @@ export default function AdminCurriculumPage() {
     setIsInputModalOpen(false);
     setEditingId(null);
     setNewPost({ title: '', url: '', month: selectedMonth, week: selectedWeek, expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+    setNewPostEquipmentTags([]);
+  };
+
+  const saveTagName = async (id: number, name: string) => {
+    if (!supabase) return;
+    const trimmed = name.trim();
+    if (!trimmed) { setEditingTagId(null); return; }
+    const { error } = await supabase
+      .from('curriculum_sub_tags')
+      .update({ name: trimmed })
+      .eq('id', id);
+    if (error) {
+      toast.error('태그 이름 저장 실패: ' + formatSaveError(error));
+    } else {
+      setSubTagList((prev) => prev.map((t) => (t.id === id ? { ...t, name: trimmed } : t)));
+      toast.success('태그 이름이 저장되었습니다.');
+    }
+    setEditingTagId(null);
+  };
+
+  const createSubTag = async (name: string) => {
+    if (!supabase) return;
+    const trimmed = name.trim();
+    if (!trimmed) { setNewTagInputVisible(false); setNewTagName(''); return; }
+    const nextOrder = subTagList.length > 0
+      ? Math.max(...subTagList.map((t) => t.display_order)) + 1
+      : 0;
+    const { data, error } = await supabase
+      .from('curriculum_sub_tags')
+      .insert([{ name: trimmed, display_order: nextOrder }])
+      .select()
+      .single();
+    if (error) {
+      toast.error('태그 생성 실패: ' + formatSaveError(error));
+    } else if (data) {
+      setSubTagList((prev) => [...prev, data as CurriculumSubTag]);
+      toast.success('태그가 생성되었습니다.');
+    }
+    setNewTagInputVisible(false);
+    setNewTagName('');
+  };
+
+  const deleteSubTag = async (id: number) => {
+    if (!supabase || !confirm('태그를 삭제하면 해당 태그가 연결된 프로그램에서도 제거됩니다. 계속하시겠습니까?')) return;
+    const { error } = await supabase.from('curriculum_sub_tags').delete().eq('id', id);
+    if (error) {
+      toast.error('태그 삭제 실패: ' + formatSaveError(error));
+    } else {
+      setSubTagList((prev) => prev.filter((t) => t.id !== id));
+      if (equipmentTagFilter === id) setEquipmentTagFilter(null);
+      toast.success('태그가 삭제되었습니다.');
+    }
   };
 
   const handleMainTabChange = (tab: MainCurriculumTab) => {
@@ -1168,20 +1409,133 @@ export default function AdminCurriculumPage() {
                  <CurriculumMonthWeekPicker
                    selectedMonth={selectedMonth}
                    selectedWeek={selectedWeek}
-                   onMonthChange={setSelectedMonth}
+                   onMonthChange={(m) => { setSelectedMonth(m); setEquipmentTagFilter(null); }}
                    onWeekChange={setSelectedWeek}
+                   isSubSelected={centerIsSub}
+                   onSubChange={(sub) => { setCenterIsSub(sub); setEquipmentTagFilter(null); }}
                  />
 
-                 <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
+                 {!centerIsSub && (
+                   <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
                      <Sparkles size={120} className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4" />
                      <div className="relative z-10">
-                         <div className="flex items-center gap-2 mb-2 opacity-90 text-[10px] font-bold uppercase">
-                             <Calendar size={14} /> {selectedMonth}월 집중 교육 목표
-                         </div>
-                         <h2 className="text-2xl md:text-3xl font-black mb-2">{currentTheme.title}</h2>
-                         <p className="text-indigo-100 font-medium text-sm md:text-base">{currentTheme.desc}</p>
+                       <div className="flex items-center gap-2 mb-2 opacity-90 text-[10px] font-bold uppercase">
+                         <Calendar size={14} /> {selectedMonth}월 집중 교육 목표
+                       </div>
+                       <h2 className="text-2xl md:text-3xl font-black mb-2">{currentTheme.title}</h2>
+                       <p className="text-indigo-100 font-medium text-sm md:text-base">{currentTheme.desc}</p>
                      </div>
-                 </div>
+                   </div>
+                 )}
+
+                 {/* 교구 태그 필터 — SUB 모드에서만 표시 */}
+                 {centerIsSub && (
+                   <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                     <div className="flex items-center justify-between">
+                       <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">교구 태그</span>
+                       {equipmentTagFilter !== null && (
+                         <button
+                           type="button"
+                           onClick={() => setEquipmentTagFilter(null)}
+                           className="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 transition-colors"
+                         >
+                           전체 보기
+                         </button>
+                       )}
+                     </div>
+                     <div className="flex flex-wrap gap-2">
+                       {/* 전체 칩 */}
+                       <button
+                         type="button"
+                         onClick={() => setEquipmentTagFilter(null)}
+                         className={`h-9 px-4 rounded-xl text-xs font-bold transition-all touch-manipulation
+                           ${equipmentTagFilter === null
+                             ? 'bg-slate-800 text-white shadow-sm'
+                             : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-400'}`}
+                       >
+                         전체
+                       </button>
+
+                       {/* 각 태그 칩 */}
+                       {subTagList.map((tag) =>
+                         editingTagId === tag.id ? (
+                           <form
+                             key={tag.id}
+                             onSubmit={(e) => { e.preventDefault(); void saveTagName(tag.id, editingTagName); }}
+                           >
+                             <input
+                               autoFocus
+                               value={editingTagName}
+                               onChange={(e) => setEditingTagName(e.target.value)}
+                               onBlur={() => void saveTagName(tag.id, editingTagName)}
+                               className="h-9 px-4 rounded-xl text-xs font-bold border-2 border-indigo-400 bg-indigo-50 outline-none w-32"
+                               placeholder="태그 이름"
+                             />
+                           </form>
+                         ) : (
+                           <div key={tag.id} className="group/tag relative flex items-center">
+                             <button
+                               type="button"
+                               onClick={() => setEquipmentTagFilter(equipmentTagFilter === tag.id ? null : tag.id)}
+                               className={`h-9 pl-4 pr-8 rounded-xl text-xs font-bold transition-all touch-manipulation
+                                 ${equipmentTagFilter === tag.id
+                                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                                   : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600'}`}
+                             >
+                               {tag.name}
+                             </button>
+                             {/* 호버 시 수정·삭제 아이콘 (태그 오른쪽 내부) */}
+                             <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover/tag:opacity-100 transition-opacity">
+                               <button
+                                 type="button"
+                                 title="이름 수정"
+                                 onClick={() => { setEditingTagId(tag.id); setEditingTagName(tag.name); }}
+                                 className={`w-5 h-5 flex items-center justify-center rounded-md transition-colors
+                                   ${equipmentTagFilter === tag.id ? 'text-indigo-200 hover:text-white hover:bg-indigo-500' : 'text-slate-300 hover:text-indigo-500 hover:bg-indigo-50'}`}
+                               >
+                                 <Edit2 size={10} />
+                               </button>
+                               <button
+                                 type="button"
+                                 title="태그 삭제"
+                                 onClick={() => void deleteSubTag(tag.id)}
+                                 className={`w-5 h-5 flex items-center justify-center rounded-md transition-colors
+                                   ${equipmentTagFilter === tag.id ? 'text-indigo-200 hover:text-white hover:bg-red-500' : 'text-slate-300 hover:text-red-500 hover:bg-red-50'}`}
+                               >
+                                 <Trash2 size={10} />
+                               </button>
+                             </div>
+                           </div>
+                         )
+                       )}
+
+                       {/* 새 태그 추가 */}
+                       {newTagInputVisible ? (
+                         <form
+                           onSubmit={(e) => { e.preventDefault(); void createSubTag(newTagName); }}
+                         >
+                           <input
+                             autoFocus
+                             value={newTagName}
+                             onChange={(e) => setNewTagName(e.target.value)}
+                             onBlur={() => { if (!newTagName.trim()) { setNewTagInputVisible(false); } }}
+                             className="h-9 px-4 rounded-xl text-xs font-bold border-2 border-indigo-400 bg-indigo-50 outline-none w-32"
+                             placeholder="태그 이름 입력"
+                           />
+                         </form>
+                       ) : (
+                         <button
+                           type="button"
+                           onClick={() => setNewTagInputVisible(true)}
+                           className="h-9 px-4 rounded-xl text-xs font-bold border border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50 transition-all touch-manipulation flex items-center gap-1.5"
+                         >
+                           <Plus size={13} />
+                           태그 추가
+                         </button>
+                       )}
+                     </div>
+                   </div>
+                 )}
 
                  <div className="w-full">
                      {isLoading ? (
@@ -1190,44 +1544,25 @@ export default function AdminCurriculumPage() {
                          <p className="text-sm font-bold text-slate-400">커리큘럼 불러오는 중...</p>
                        </div>
                      ) : filteredItems.length > 0 ? (
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             {filteredItems.map((item: CurriculumItem) => (
-                                 <div key={item.id} className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer" onClick={() => openDetailModal(item)}>
-                                     <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                         <button type="button" onClick={(e) => openEditModal(item, e)} className="p-2 bg-white/90 backdrop-blur rounded-full text-slate-600 hover:text-indigo-600 shadow-sm"><Edit2 size={16}/></button>
-                                         <button type="button" onClick={(e) => deleteItem(item.id, e)} className="p-2 bg-white/90 backdrop-blur rounded-full text-slate-600 hover:text-red-600 shadow-sm"><Trash2 size={16}/></button>
-                                     </div>
-                                     <div className="relative aspect-video bg-slate-100">
-                                         {item.type === 'instagram' ? (
-                                             <div className="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex flex-col items-center justify-center text-white p-6">
-                                                 <Instagram size={48} className="mb-2 opacity-80" />
-                                                 <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram Reels</span>
-                                             </div>
-                                         ) : (
-                                             <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
-                                         )}
-                                         <div className="absolute top-4 left-4">
-                                             <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type}</span>
-                                         </div>
-                                         <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
-                                             <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                                 <Play size={20} className="fill-slate-900 text-slate-900 ml-1"/>
-                                             </div>
-                                         </div>
-                                     </div>
-                                     <div className="p-6 space-y-3">
-                                         <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
-                                         <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
-                                             <AlertCircle size={14} className="text-slate-400 mt-1 flex-shrink-0" />
-                                             <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-3">{item.expertTip}</p>
-                                         </div>
-                                     </div>
-                                 </div>
-                             ))}
-                         </div>
+                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCenterCurriculumDragEnd}>
+                           <SortableContext items={filteredItems.map((i) => i.id)} strategy={rectSortingStrategy}>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                               {filteredItems.map((item: CurriculumItem) => (
+                                 <SortableCenterCurriculumCard
+                                   key={item.id}
+                                   item={item}
+                                   getSafeThumbnailUrl={getSafeThumbnailUrl}
+                                   openDetailModal={openDetailModal}
+                                   openEditModal={openEditModal}
+                                   deleteItem={deleteItem}
+                                 />
+                               ))}
+                             </div>
+                           </SortableContext>
+                         </DndContext>
                      ) : (
                          <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-black">
-                             해당 주차에 등록된 커리큘럼이 없습니다.
+                             {centerIsSub ? 'SUB에 등록된 커리큘럼이 없습니다.' : '해당 주차에 등록된 커리큘럼이 없습니다.'}
                          </div>
                      )}
                  </div>
@@ -1244,6 +1579,7 @@ export default function AdminCurriculumPage() {
             openEquipmentEdit(null);
           } else {
             setNewPost({ title: '', url: '', month: selectedMonth, week: selectedWeek, expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+            setNewPostEquipmentTags([]);
             setIsInputModalOpen(true);
           }
         }}>
@@ -1600,25 +1936,33 @@ export default function AdminCurriculumPage() {
             </div>
             
             <div className="space-y-4 font-bold text-left">
+              {centerIsSub && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
+                  <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">SUB 프로그램</span>
+                </div>
+              )}
+
               <div className="space-y-2 text-left">
                 <label className="text-xs font-black text-slate-400 uppercase text-left">Title</label>
                 <input required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="수업 제목" value={newPost.title} onChange={e => setNewPost({...newPost, title: e.target.value})} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-left">
-                <div className="space-y-2 text-left">
-                  <label className="text-xs font-black text-slate-400 uppercase text-left">Month</label>
-                  <select className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={newPost.month} onChange={e => setNewPost({...newPost, month: Number(e.target.value)})}>
-                    {MONTHS.map((m: number) => <option key={m} value={m}>{m}월</option>)}
-                  </select>
+              {!centerIsSub && (
+                <div className="grid grid-cols-2 gap-4 text-left">
+                  <div className="space-y-2 text-left">
+                    <label className="text-xs font-black text-slate-400 uppercase text-left">Month</label>
+                    <select className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={newPost.month} onChange={e => setNewPost({...newPost, month: Number(e.target.value)})}>
+                      {MONTHS.map((m: number) => <option key={m} value={m}>{m}월</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2 text-left">
+                    <label className="text-xs font-black text-slate-400 uppercase text-left">Week</label>
+                    <select className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={newPost.week} onChange={e => setNewPost({...newPost, week: Number(e.target.value)})}>
+                      {WEEKS.map((w: number) => <option key={w} value={w}>{w}주차</option>)}
+                    </select>
+                  </div>
                 </div>
-                <div className="space-y-2 text-left">
-                  <label className="text-xs font-black text-slate-400 uppercase text-left">Week</label>
-                  <select className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={newPost.week} onChange={e => setNewPost({...newPost, week: Number(e.target.value)})}>
-                    {WEEKS.map((w: number) => <option key={w} value={w}>{w}주차</option>)}
-                  </select>
-                </div>
-              </div>
+              )}
 
               <div className="space-y-2 text-left">
                   <label className="text-xs font-black text-slate-400 uppercase text-left">URL (YouTube / Shorts)</label>
@@ -1634,6 +1978,33 @@ export default function AdminCurriculumPage() {
                   <label className="text-xs font-black text-slate-400 uppercase text-left">Equipment (엔터로 구분)</label>
                   <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="예: 후프 2개&#13;&#10;공 1개" value={newPost.equipmentText} onChange={e => setNewPost({...newPost, equipmentText: e.target.value})} />
               </div>
+
+              {centerIsSub && subTagList.length > 0 && (
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase text-left">교구 태그 (복수 선택)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {subTagList.map((tag) => {
+                      const selected = newPostEquipmentTags.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() =>
+                            setNewPostEquipmentTags(
+                              selected
+                                ? newPostEquipmentTags.filter((n) => n !== tag.id)
+                                : [...newPostEquipmentTags, tag.id],
+                            )
+                          }
+                          className={`px-3 py-1.5 rounded-full text-xs font-black transition-all border touch-manipulation ${selected ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'}`}
+                        >
+                          {tag.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2 text-left">
                   <label className="text-xs font-black text-slate-400 uppercase text-left">Activity Steps (엔터로 구분)</label>
