@@ -251,6 +251,7 @@ export default function AdminCurriculumPage() {
   const [centerIsSub, setCenterIsSub] = useState(false);
   const [equipmentTagFilter, setEquipmentTagFilter] = useState<number | null>(null);
   const [newPostEquipmentTags, setNewPostEquipmentTags] = useState<number[]>([]);
+  const [postIsSub, setPostIsSub] = useState(false);
   const [editingTagId, setEditingTagId] = useState<number | null>(null);
   const [editingTagName, setEditingTagName] = useState('');
   const [subTagList, setSubTagList] = useState<CurriculumSubTag[]>([]);
@@ -599,7 +600,7 @@ export default function AdminCurriculumPage() {
     const equipment = newPost.equipmentText.split('\n').filter((t: string) => t.trim() !== '');
     const steps = newPost.stepsText.split('\n').filter((t: string) => t.trim() !== '');
 
-    const isSub = centerIsSub;
+    const isSub = postIsSub;
     const postDataBase = {
       title: newPost.title, 
       url: newPost.url, 
@@ -612,7 +613,7 @@ export default function AdminCurriculumPage() {
       type,
       thumbnail: isInsta ? '' : (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : ''),
       is_sub: isSub,
-      equipment_tag_numbers: newPostEquipmentTags.length > 0 ? newPostEquipmentTags : null,
+      equipment_tag_numbers: isSub ? (newPostEquipmentTags.length > 0 ? newPostEquipmentTags : null) : null,
     };
     
     try {
@@ -683,6 +684,7 @@ export default function AdminCurriculumPage() {
   const openEditModal = (item: CurriculumItem, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingId(item.id);
+    setPostIsSub(item.is_sub === true);
     setNewPost({ 
       title: item.title ?? '', 
       url: item.url ?? '', 
@@ -707,6 +709,7 @@ export default function AdminCurriculumPage() {
     setEditingId(null);
     setNewPost({ title: '', url: '', month: selectedMonth, week: selectedWeek, expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
     setNewPostEquipmentTags([]);
+    setPostIsSub(false);
   };
 
   const saveTagName = async (id: number, name: string) => {
@@ -1580,6 +1583,7 @@ export default function AdminCurriculumPage() {
           } else {
             setNewPost({ title: '', url: '', month: selectedMonth, week: selectedWeek, expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
             setNewPostEquipmentTags([]);
+            setPostIsSub(centerIsSub);
             setIsInputModalOpen(true);
           }
         }}>
@@ -1936,18 +1940,37 @@ export default function AdminCurriculumPage() {
             </div>
             
             <div className="space-y-4 font-bold text-left">
-              {centerIsSub && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
-                  <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">SUB 프로그램</span>
+              {/* 월/주차 ↔ SUB 전환 (기존 프로그램을 SUB로 "이동" 가능) */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl">
+                  <button
+                    type="button"
+                    onClick={() => { setPostIsSub(false); setNewPostEquipmentTags([]); }}
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${!postIsSub ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    월/주차
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPostIsSub(true)}
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${postIsSub ? 'bg-indigo-600 text-white shadow shadow-indigo-200' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    SUB
+                  </button>
                 </div>
-              )}
+                {postIsSub && (
+                  <span className="text-[11px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-xl">
+                    SUB 프로그램으로 이동
+                  </span>
+                )}
+              </div>
 
               <div className="space-y-2 text-left">
                 <label className="text-xs font-black text-slate-400 uppercase text-left">Title</label>
                 <input required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="수업 제목" value={newPost.title} onChange={e => setNewPost({...newPost, title: e.target.value})} />
               </div>
 
-              {!centerIsSub && (
+              {!postIsSub && (
                 <div className="grid grid-cols-2 gap-4 text-left">
                   <div className="space-y-2 text-left">
                     <label className="text-xs font-black text-slate-400 uppercase text-left">Month</label>
@@ -1979,7 +2002,7 @@ export default function AdminCurriculumPage() {
                   <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="예: 후프 2개&#13;&#10;공 1개" value={newPost.equipmentText} onChange={e => setNewPost({...newPost, equipmentText: e.target.value})} />
               </div>
 
-              {centerIsSub && subTagList.length > 0 && (
+              {postIsSub && subTagList.length > 0 && (
                 <div className="space-y-2 text-left">
                   <label className="text-xs font-black text-slate-400 uppercase text-left">교구 태그 (복수 선택)</label>
                   <div className="flex flex-wrap gap-2">
