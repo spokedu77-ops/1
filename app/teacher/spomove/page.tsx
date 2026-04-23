@@ -381,8 +381,8 @@ button {
 }
 
 .spm-csw.on {
-  border-color: rgba(255,255,255,0.76);
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.08), 0 14px 26px rgba(0,0,0,0.26);
+  border-color: transparent;
+  box-shadow: 0 0 0 3px #0F1118, 0 0 0 6px rgba(255,255,255,0.94), 0 14px 26px rgba(0,0,0,0.28);
 }
 
 .spm-grid4, .spm-grid5 {
@@ -932,6 +932,525 @@ button {
   border-color: rgba(255,255,255,0.18);
 }
 
+/* ── 인트로 ─────────────────────────────────────────────── */
+
+.spm-intro {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 48px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.spm-intro-top {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spm-intro-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(200,255,0,0.16);
+  background: rgba(200,255,0,0.08);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  width: fit-content;
+  margin-bottom: 8px;
+}
+
+.spm-intro-title {
+  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: clamp(52px, 14vw, 72px);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+}
+
+.spm-intro-sub {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.spm-intro-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.spm-intro-btn {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.spm-intro-btn:hover {
+  transform: translateY(-2px);
+}
+
+.spm-intro-btn.create {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  border-color: transparent;
+  box-shadow: 0 16px 32px rgba(200,255,0,0.18);
+}
+
+.spm-intro-btn.fav {
+  background: linear-gradient(180deg, rgba(24, 27, 38, 0.94) 0%, rgba(14, 16, 24, 0.94) 100%);
+  box-shadow: var(--shadow);
+}
+
+.spm-intro-btn-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+}
+
+.spm-intro-btn.create .spm-intro-btn-num {
+  color: rgba(11,13,10,0.5);
+}
+
+.spm-intro-btn.fav .spm-intro-btn-num {
+  color: var(--text-3);
+}
+
+.spm-intro-btn-title {
+  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.spm-intro-btn.create .spm-intro-btn-title {
+  color: #0B0D0A;
+}
+
+.spm-intro-btn.fav .spm-intro-btn-title {
+  color: var(--text);
+}
+
+.spm-intro-btn-desc {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.spm-intro-btn.create .spm-intro-btn-desc {
+  color: rgba(11,13,10,0.62);
+}
+
+.spm-intro-btn.fav .spm-intro-btn-desc {
+  color: var(--text-2);
+}
+
+/* ── 즐겨찾기 목록 ──────────────────────────────────────── */
+
+.spm-favlist {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.spm-favlist-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.spm-favlist-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.spm-favlist-back:hover {
+  border-color: var(--line-3);
+  color: var(--text);
+}
+
+.spm-favlist-title {
+  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.spm-favlist-count {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+}
+
+.spm-fav-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 0;
+}
+
+.spm-fav-empty-ico {
+  font-size: 48px;
+  opacity: 0.18;
+}
+
+.spm-fav-empty-txt {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.spm-fav-list-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spm-fav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(20,23,33,0.94) 0%, rgba(13,15,23,0.94) 100%);
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  text-align: left;
+}
+
+.spm-fav-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(200,255,0,0.2);
+  box-shadow: 0 12px 24px rgba(200,255,0,0.06);
+}
+
+.spm-fav-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.spm-fav-label {
+  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spm-fav-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spm-fav-del {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.spm-fav-del:hover {
+  border-color: rgba(255, 80, 80, 0.4);
+  color: rgba(255, 80, 80, 0.8);
+  background: rgba(255, 80, 80, 0.06);
+}
+
+.spm-fav-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spm-fav-skel {
+  height: 76px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.04);
+  animation: spm-skel-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes spm-skel-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+/* ── 저장 모달 ──────────────────────────────────────────── */
+
+.spm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(4,5,9,0.72);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 12px 24px;
+  animation: spm-backdrop-in 0.2s ease both;
+}
+
+@keyframes spm-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.spm-modal {
+  width: 100%;
+  max-width: 492px;
+  padding: 28px 24px 24px;
+  border: 1px solid var(--line-2);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(22,25,36,0.98) 0%, rgba(13,15,22,0.98) 100%);
+  box-shadow: 0 -4px 40px rgba(0,0,0,0.4);
+  animation: spm-modal-up 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes spm-modal-up {
+  from { transform: translateY(32px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.spm-modal-title {
+  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.spm-modal-sub {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.spm-modal-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+  margin-bottom: 16px;
+  transition: border-color 0.18s ease;
+}
+
+.spm-modal-input:focus {
+  border-color: var(--accent-line);
+}
+
+.spm-modal-input::placeholder {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.spm-modal-row {
+  display: flex;
+  gap: 10px;
+}
+
+.spm-modal-cancel {
+  flex: 1;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.spm-modal-cancel:hover {
+  border-color: var(--line-3);
+  color: var(--text);
+}
+
+.spm-modal-save {
+  flex: 2;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  color: #0B0D0A;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 10px 20px rgba(200,255,0,0.14);
+}
+
+.spm-modal-save:hover {
+  transform: translateY(-1px);
+}
+
+.spm-modal-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── 4단계 풋터 별 버튼 ─────────────────────────────────── */
+
+.spm-btn-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--line-2);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.spm-btn-star:hover {
+  border-color: rgba(200,255,0,0.3);
+  color: var(--accent);
+  background: rgba(200,255,0,0.06);
+  transform: scale(1.06);
+}
+
+/* ── 인라인 토스트 ──────────────────────────────────────── */
+
+.spm-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  z-index: 60;
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--line-2);
+  background: rgba(18, 20, 30, 0.92);
+  backdrop-filter: blur(12px);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  animation: spm-toast-in 0.22s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.spm-toast.ok {
+  border-color: rgba(200,255,0,0.28);
+  color: var(--accent-2);
+}
+
+.spm-toast.err {
+  border-color: rgba(255,80,80,0.28);
+  color: #FF8080;
+}
+
+@keyframes spm-toast-in {
+  from { transform: translateX(-50%) translateY(10px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);   opacity: 1; }
+}
+
+.spm-countdown-num {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(160px, 38vw, 320px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+  text-shadow: 0 0 80px rgba(200,255,0,0.3), 0 14px 26px rgba(0,0,0,0.18);
+  animation: spm-cd-pop 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes spm-cd-pop {
+  0%   { transform: scale(1.3);  opacity: 0.2; }
+  30%  { transform: scale(0.96); opacity: 1; }
+  70%  { transform: scale(0.98); opacity: 1; }
+  100% { transform: scale(0.92); opacity: 0.5; }
+}
+
+.spm-countdown-label {
+  position: absolute;
+  bottom: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.22);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .spm-inter {
   min-height: 100vh;
   width: 100%;
@@ -1172,11 +1691,53 @@ function pickRandom<T>(list: T[]): T {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+function stimuliEqual(a: Stimulus | null, b: Stimulus | null): boolean {
+  if (!a || !b || a.type !== b.type) return false;
+  if (a.type === 'color' && b.type === 'color') return a.val === b.val;
+  if (a.type === 'arrow' && b.type === 'arrow') return a.val === b.val;
+  if (a.type === 'number' && b.type === 'number') return a.val === b.val;
+  if (a.type === 'stroop' && b.type === 'stroop') {
+    return a.colorVal === b.colorVal && a.fgType === b.fgType && a.fgVal === b.fgVal;
+  }
+  return false;
+}
+
 type Stimulus =
   | { type: 'stroop'; colorVal: string; fgType: 'arrow' | 'number'; fgVal: string | number }
   | { type: 'color'; val: string }
   | { type: 'arrow'; val: string }
   | { type: 'number'; val: number };
+
+interface SpmPayload {
+  selColors: string[];
+  selArrows: string[];
+  selNums: number[];
+  stroop: boolean;
+  trans: 'touch' | 'time';
+  dispT: number;
+  blankT: number;
+  durMode: 'round' | 'countdown';
+  cdTime: number;
+  rounds: number;
+  sets: number;
+}
+
+interface FavoriteItem {
+  id: string;
+  label: string;
+  payload: SpmPayload;
+  created_at: string;
+}
+
+function buildPayloadMeta(p: SpmPayload): string {
+  const parts: string[] = [];
+  if (p.selColors.length) parts.push(`색 ${p.selColors.length}`);
+  if (p.selArrows.length) parts.push(`화살 ${p.selArrows.length}`);
+  if (p.selNums.length) parts.push(`숫자 ${p.selNums.length}`);
+  const time = p.durMode === 'countdown' ? formatTime(p.cdTime) : `${p.rounds}rnd`;
+  parts.push(`${time} × ${p.sets}set`);
+  return parts.join(' · ');
+}
 
 function TopBar({ step }: { step: number }) {
   return (
@@ -1283,6 +1844,173 @@ function ResultScreen({
   );
 }
 
+function IntroScreen({
+  onCreate,
+  onFavorite,
+}: {
+  onCreate: () => void;
+  onFavorite: () => void;
+}) {
+  return (
+    <ScreenShell>
+      <div className="spm-intro">
+        <div className="spm-intro-top">
+          <div className="spm-intro-eyebrow">SPOMOVE</div>
+          <div className="spm-intro-title">시각<br />훈련</div>
+          <p className="spm-intro-sub">자극 유형과 전환 방식을 설정해<br />맞춤 시지각 훈련을 시작하세요.</p>
+        </div>
+        <div className="spm-intro-cards">
+          <button className="spm-intro-btn create" onClick={onCreate}>
+            <div className="spm-intro-btn-num">01</div>
+            <div className="spm-intro-btn-title">Create</div>
+            <div className="spm-intro-btn-desc">새 프로그램을 단계별로 설정합니다.</div>
+          </button>
+          <button className="spm-intro-btn fav" onClick={onFavorite}>
+            <div className="spm-intro-btn-num">02</div>
+            <div className="spm-intro-btn-title">Favorite</div>
+            <div className="spm-intro-btn-desc">저장된 설정을 불러와 바로 시작합니다.</div>
+          </button>
+        </div>
+      </div>
+    </ScreenShell>
+  );
+}
+
+function FavoriteListScreen({
+  onBack,
+  onSelect,
+}: {
+  onBack: () => void;
+  onSelect: (payload: SpmPayload) => void;
+}) {
+  const [items, setItems] = React.useState<FavoriteItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
+
+  const loadFavorites = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/teacher/spomove/favorites');
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || '불러오기 실패');
+      setItems(json.data as FavoriteItem[]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadFavorites(); }, [loadFavorites]);
+
+  const handleDelete = useCallback(async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/teacher/spomove/favorites/${id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch {
+      // silent fail — 재시도 없이 목록 유지
+    }
+  }, []);
+
+  return (
+    <ScreenShell>
+      <div className="spm-favlist">
+        <div className="spm-favlist-head">
+          <button className="spm-favlist-back" onClick={onBack} aria-label="뒤로">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <span className="spm-favlist-title">Favorite</span>
+          {!loading && <span className="spm-favlist-count">{items.length} / 10</span>}
+        </div>
+
+        {loading && (
+          <div className="spm-fav-loading">
+            {[1, 2, 3].map((i) => <div key={i} className="spm-fav-skel" />)}
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="spm-fav-empty">
+            <div className="spm-fav-empty-ico">⚠</div>
+            <div className="spm-fav-empty-txt">{error}</div>
+          </div>
+        )}
+
+        {!loading && !error && items.length === 0 && (
+          <div className="spm-fav-empty">
+            <div className="spm-fav-empty-ico">★</div>
+            <div className="spm-fav-empty-txt">저장된 프로그램이 없습니다.<br />4단계에서 별 버튼으로 저장하세요.</div>
+          </div>
+        )}
+
+        {!loading && !error && items.length > 0 && (
+          <div className="spm-fav-list-inner">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="spm-fav-item"
+                onClick={() => onSelect(item.payload)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && onSelect(item.payload)}
+              >
+                <div className="spm-fav-item-body">
+                  <div className="spm-fav-label">{item.label}</div>
+                  <div className="spm-fav-meta">{buildPayloadMeta(item.payload)}</div>
+                </div>
+                <button
+                  className="spm-fav-del"
+                  onClick={(e) => handleDelete(item.id, e)}
+                  aria-label="삭제"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </ScreenShell>
+  );
+}
+
+function CountdownScreen({ onDone }: { onDone: () => void }) {
+  const [count, setCount] = useState(3);
+
+  useEffect(() => {
+    if (count <= 0) {
+      onDone();
+      return;
+    }
+    const id = window.setTimeout(() => setCount((c) => c - 1), 1000);
+    return () => window.clearTimeout(id);
+  }, [count, onDone]);
+
+  return (
+    <ScreenShell>
+      <div className="spm-game" style={{ background: DEFAULT_GAME_BG }}>
+        <div className="spm-g-vignette" />
+        <div className="spm-g-grid" />
+        <div className="spm-g-stage">
+          <span key={count} className="spm-countdown-num">{count}</span>
+        </div>
+        <div className="spm-countdown-label">ready</div>
+      </div>
+    </ScreenShell>
+  );
+}
+
 function GameScreen({
   trans,
   curSet,
@@ -1338,9 +2066,18 @@ function GameScreen({
 }
 
 export default function SpomovePage() {
-  const [screen, setScreen] = useState('settings');
+  const [screen, setScreen] = useState('intro');
   const [step, setStep] = useState(1);
   const [tab, setTab] = useState('basic');
+
+  // 저장 모달
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [saveLabel, setSaveLabel] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // 인라인 토스트
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
 
   const [selColors, setSelColors] = useState<string[]>([]);
   const [selArrows, setSelArrows] = useState<string[]>([]);
@@ -1368,6 +2105,7 @@ export default function SpomovePage() {
 
   const pendingTimeoutsRef = useRef<number[]>([]);
   const touchCooldownRef = useRef(false);
+  const lastStimulusRef = useRef<Stimulus | null>(null);
 
   const queueTimeout = useCallback((callback: () => void, delay: number) => {
     const id = window.setTimeout(() => {
@@ -1397,37 +2135,46 @@ export default function SpomovePage() {
 
     if (!hasColors && !hasArrows && !hasNumbers) return null;
 
-    if (stroop && hasColors && (hasArrows || hasNumbers)) {
-      const fgPool: ('arrow' | 'number')[] = [
-        ...(hasArrows ? (['arrow'] as const) : []),
-        ...(hasNumbers ? (['number'] as const) : []),
+    const generateOnce = (): Stimulus => {
+      if (stroop && hasColors && (hasArrows || hasNumbers)) {
+        const fgPool: ('arrow' | 'number')[] = [
+          ...(hasArrows ? (['arrow'] as const) : []),
+          ...(hasNumbers ? (['number'] as const) : []),
+        ];
+        const fgType = pickRandom(fgPool);
+        return {
+          type: 'stroop',
+          colorVal: pickRandom(selColors),
+          fgType,
+          fgVal: fgType === 'arrow' ? pickRandom(selArrows) : pickRandom(selNums),
+        };
+      }
+
+      const typePool = [
+        ...(hasColors ? ['color'] : []),
+        ...(hasArrows ? ['arrow'] : []),
+        ...(hasNumbers ? ['number'] : []),
       ];
-      const fgType = pickRandom(fgPool);
-      return {
-        type: 'stroop',
-        colorVal: pickRandom(selColors),
-        fgType,
-        fgVal: fgType === 'arrow' ? pickRandom(selArrows) : pickRandom(selNums),
-      };
+      const type = pickRandom(typePool);
+
+      if (type === 'color') return { type: 'color', val: pickRandom(selColors) };
+      if (type === 'arrow') return { type: 'arrow', val: pickRandom(selArrows) };
+      return { type: 'number', val: pickRandom(selNums) };
+    };
+
+    const candidate = generateOnce();
+    // 직전 자극과 동일하면 한 번 재추첨 → 연속 중복 확률 약 50% 감소
+    if (stimuliEqual(candidate, lastStimulusRef.current)) {
+      return generateOnce();
     }
-
-    const typePool = [
-      ...(hasColors ? ['color'] : []),
-      ...(hasArrows ? ['arrow'] : []),
-      ...(hasNumbers ? ['number'] : []),
-    ];
-    const type = pickRandom(typePool);
-
-    if (type === 'color') return { type: 'color', val: pickRandom(selColors) };
-    if (type === 'arrow') return { type: 'arrow', val: pickRandom(selArrows) };
-    return { type: 'number', val: pickRandom(selNums) };
+    return candidate;
   }, [selColors, selArrows, selNums, stroop]);
 
   const resetToSettings = useCallback(() => {
     clearPendingTimeouts();
     setStimulus(null);
     setVisible(false);
-    setScreen('settings');
+    setScreen('intro');
     setStep(1);
   }, [clearPendingTimeouts]);
 
@@ -1445,7 +2192,9 @@ export default function SpomovePage() {
       endSet();
       return;
     }
-    setStimulus(generateStimulus());
+    const newStim = generateStimulus();
+    lastStimulusRef.current = newStim;
+    setStimulus(newStim);
     setVisible(true);
     if (dm === 'round') {
       setCurRound((p) => p + 1);
@@ -1500,9 +2249,9 @@ export default function SpomovePage() {
     setStimulus(null);
     setVisible(false);
     setTimeLeft(durMode === 'countdown' ? cdTime : 0);
-    setScreen('game');
-    queueTimeout(() => advanceRef.current?.(), 50);
-  }, [clearPendingTimeouts, durMode, cdTime, queueTimeout]);
+    lastStimulusRef.current = null;
+    setScreen('countdown');
+  }, [clearPendingTimeouts, durMode, cdTime]);
 
   const startSet = useCallback((nextSet: number) => {
     clearPendingTimeouts();
@@ -1511,9 +2260,66 @@ export default function SpomovePage() {
     setStimulus(null);
     setVisible(false);
     setTimeLeft(durMode === 'countdown' ? cdTime : 0);
+    lastStimulusRef.current = null;
+    setScreen('countdown');
+  }, [clearPendingTimeouts, durMode, cdTime]);
+
+  const handleCountdownDone = useCallback(() => {
     setScreen('game');
     queueTimeout(() => advanceRef.current?.(), 50);
-  }, [clearPendingTimeouts, durMode, cdTime, queueTimeout]);
+  }, [queueTimeout]);
+
+  const showToast = useCallback((msg: string, ok: boolean) => {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    setToast({ msg, ok });
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 2600);
+  }, []);
+
+  const hydrateFromFavorite = useCallback((payload: SpmPayload) => {
+    setSelColors(payload.selColors);
+    setSelArrows(payload.selArrows);
+    setSelNums(payload.selNums);
+    setStroop(payload.stroop);
+    setTrans(payload.trans);
+    setDispT(payload.dispT);
+    setBlankT(payload.blankT);
+    setDurMode(payload.durMode);
+    setCdTime(payload.cdTime);
+    setRounds(payload.rounds);
+    setSets(payload.sets);
+    setStep(4);
+    setScreen('settings');
+  }, []);
+
+  const handleSaveFavorite = useCallback(async () => {
+    setSaving(true);
+    const payload: SpmPayload = {
+      selColors, selArrows, selNums, stroop,
+      trans: trans as 'touch' | 'time',
+      dispT, blankT,
+      durMode: durMode as 'round' | 'countdown',
+      cdTime, rounds, sets,
+    };
+    try {
+      const res = await fetch('/api/teacher/spomove/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: saveLabel.trim() || '이름 없음', payload }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        showToast(json.message ?? json.error ?? '저장 실패', false);
+      } else {
+        showToast('즐겨찾기에 저장되었습니다.', true);
+        setSaveModalOpen(false);
+        setSaveLabel('');
+      }
+    } catch {
+      showToast('네트워크 오류가 발생했습니다.', false);
+    } finally {
+      setSaving(false);
+    }
+  }, [selColors, selArrows, selNums, stroop, trans, dispT, blankT, durMode, cdTime, rounds, sets, saveLabel, showToast]);
 
   const summary = useMemo(() => ([
     {
@@ -1576,6 +2382,28 @@ export default function SpomovePage() {
       content: <span className="spm-s-num">{stimulus.val}</span>,
     };
   }, [visible, stimulus]);
+
+  if (screen === 'intro') {
+    return (
+      <IntroScreen
+        onCreate={() => { setStep(1); setScreen('settings'); }}
+        onFavorite={() => setScreen('favoriteList')}
+      />
+    );
+  }
+
+  if (screen === 'favoriteList') {
+    return (
+      <FavoriteListScreen
+        onBack={() => setScreen('intro')}
+        onSelect={hydrateFromFavorite}
+      />
+    );
+  }
+
+  if (screen === 'countdown') {
+    return <CountdownScreen onDone={handleCountdownDone} />;
+  }
 
   if (screen === 'game') {
     return (
@@ -1835,12 +2663,56 @@ export default function SpomovePage() {
               next {R}
             </button>
           ) : (
-            <button className="spm-btn-next" onClick={startGame}>
-              Start {PlayIco}
-            </button>
+            <>
+              <button
+                className="spm-btn-star"
+                onClick={() => { setSaveLabel(''); setSaveModalOpen(true); }}
+                title="즐겨찾기에 저장"
+                aria-label="즐겨찾기에 저장"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </button>
+              <button className="spm-btn-next" onClick={startGame}>
+                Start {PlayIco}
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {/* 저장 모달 */}
+      {saveModalOpen && (
+        <div className="spm-modal-backdrop" onClick={() => setSaveModalOpen(false)}>
+          <div className="spm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="spm-modal-title">즐겨찾기 저장</div>
+            <div className="spm-modal-sub">이 설정에 이름을 붙여 저장합니다.<br />같은 네트워크에서 최대 10개까지 가능합니다.</div>
+            <input
+              className="spm-modal-input"
+              placeholder="이름 없음"
+              value={saveLabel}
+              maxLength={60}
+              onChange={(e) => setSaveLabel(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !saving) handleSaveFavorite(); }}
+              autoFocus
+            />
+            <div className="spm-modal-row">
+              <button className="spm-modal-cancel" onClick={() => setSaveModalOpen(false)}>취소</button>
+              <button className="spm-modal-save" onClick={handleSaveFavorite} disabled={saving}>
+                {saving ? '저장 중…' : '저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 인라인 토스트 */}
+      {toast && (
+        <div className={`spm-toast ${toast.ok ? 'ok' : 'err'}`}>
+          {toast.msg}
+        </div>
+      )}
     </ScreenShell>
   );
 }
