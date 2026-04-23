@@ -46,7 +46,7 @@ class CameraErrorBoundary extends Component<
 
 export default function CameraAppPage() {
   return (
-    <div className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden">
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <div className="shrink-0 border-b border-slate-700 bg-slate-900 px-4 py-2">
         <Link
           href="/admin/iiwarmup/spomove"

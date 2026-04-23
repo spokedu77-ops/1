@@ -50,9 +50,14 @@ export const NUMBER_RULES = [
   { id: 'big_clap', label: '5 이상 → 박수 / 5 미만 → 만세' },
 ];
 
-export const MODES: Record<string, { id: string; title: string; en: string; icon: string; accent: string; tag: string; desc: string; levels: Array<{ id: number; name: string; enName: string; desc: string }> }> = {
+/**
+ * coreCode: Core 5 분류에서 이 mode가 속하는 Series 코드.
+ * 엔진 id(문자열 키)는 절대 바꾸지 않는다 — Core5Catalog에서 (mode, level)로 매핑.
+ */
+export const MODES: Record<string, { id: string; title: string; en: string; icon: string; accent: string; tag: string; desc: string; coreCode?: string; levels: Array<{ id: number; name: string; enName: string; desc: string }> }> = {
   basic: {
     id: 'basic', title: '반응 인지', en: 'Reactive Cognition', icon: '⚡', accent: '#3B82F6',
+    coreCode: 'SR',
     tag: '순발력 · 지각 훈련',
     desc: '화면 신호를 보는 순간, 판단하고 즉시 움직입니다.',
     levels: [
@@ -67,6 +72,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   stroop: {
     id: 'stroop', title: '스트룹 과제', en: 'Stroop Task', icon: '🧠', accent: '#A855F7',
+    coreCode: 'IC',
     tag: '억제 제어 · 인지 유연성',
     desc: '배경은 기본 흰색입니다. 화살표·글자 과제에서 규칙에 따라 방향·색·의미를 말합니다.',
     levels: [
@@ -79,6 +85,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   simon: {
     id: 'simon', title: '사이먼 효과', en: 'Simon Effect', icon: '◈', accent: '#EC4899',
+    coreCode: 'IC',
     tag: '공간 위치 · 색 반응',
     desc: '원·삼각형·사각형이 화면 어디에나 하나씩 나타납니다. 안을 채운 색에 맞는 콘으로 이동합니다.',
     levels: [
@@ -88,6 +95,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   flanker: {
     id: 'flanker', title: '플랭커', en: 'Flanker', icon: '◎', accent: '#6366F1',
+    coreCode: 'IC',
     tag: '방해 자극 · 목표 색 선택',
     desc: '가로로 나란히 다섯 개의 원이 보입니다. 가운데(세 번째) 원의 색에 맞는 콘으로만 이동합니다.',
     levels: [
@@ -101,6 +109,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   gonogo: {
     id: 'gonogo', title: 'Go / No-Go', en: 'Go / No-Go', icon: '⏯', accent: '#14B8A6',
+    coreCode: 'IC',
     tag: '반응 억제 · Go와 멈춤',
     desc: '신호에 따라 이동(Go)할지 제자리(No-Go)할지 곧바로 구분합니다. 난이도마다 규칙(색·도형·동작·이중)이 다릅니다.',
     levels: [
@@ -112,6 +121,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   taskswitch: {
     id: 'taskswitch', title: 'Task Switching', en: 'Task Switching', icon: '🔀', accent: '#A3E635',
+    coreCode: 'RS',
     tag: '과제 전환 · 규칙 cue',
     desc: '색·위치·반대로 세 가지 규칙이 바뀔 때마다 cue에 맞춰 반응합니다. 난이도는 cue 표현(글자·아이콘·테두리)만 다릅니다.',
     levels: [
@@ -122,6 +132,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   spatial: {
     id: 'spatial', title: '순차 기억', en: 'Sequential Memory', icon: '🎨', accent: '#22C55E',
+    coreCode: 'SM',
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
@@ -134,6 +145,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   dual: {
     id: 'dual', title: '이중 과제', en: 'Dual Task', icon: '🔀', accent: '#F97316',
+    coreCode: 'RS',
     tag: '분산 주의 · 복합 실행',
     desc: '두 가지 정보를 동시에 처리해 하나의 통합된 행동을 수행합니다.',
     levels: [
@@ -143,6 +155,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   flow: {
     id: 'flow', title: '플로우', en: 'Flow Mode', icon: '🌌', accent: '#06B6D4',
+    coreCode: 'RC',
     tag: '몰입 러닝 · 반응 전환',
     desc: '우주 러닝 FLOW를 SPOMOVE에서 바로 실행합니다.',
     levels: [
@@ -151,6 +164,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   challenge: {
     id: 'challenge', title: '챌린지', en: 'Challenge', icon: '🥁', accent: '#14B8A6',
+    coreCode: 'RC',
     tag: '리듬 · 방향 반응',
     desc: '스튜디오에서 설정한 BGM·그리드 기준 리듬 챌린지를 SPOMOVE에서 실행합니다.',
     levels: [
@@ -159,6 +173,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   reactTrain: {
     id: 'reactTrain', title: '시지각 반응', en: 'Visual Reaction', icon: '◆', accent: '#E11D48',
+    coreCode: 'SR',
     tag: '시지각 · 반응 훈련',
     desc: '색 자극이 떨어질 때 해당 색 콘으로 밟는 시지각·반응 훈련입니다.',
     levels: [

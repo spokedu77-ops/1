@@ -46,6 +46,9 @@ function isChallengeActive(pathname: string): boolean {
 function isFlowActive(pathname: string): boolean {
   return pathname === `${BASE}/flow` || pathname.startsWith(`${BASE}/flow/`);
 }
+function isTrainingActive(pathname: string): boolean {
+  return pathname === `${BASE}/spomove/training` || pathname.startsWith(`${BASE}/spomove/training/`);
+}
 
 export default function TeacherAppIiwarmupLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
@@ -90,11 +93,14 @@ export default function TeacherAppIiwarmupLayout({ children }: { children: React
               <Link className={subNavClass(isFlowActive(pathname))} href={`${BASE}/flow`}>
                 Flow
               </Link>
+              <Link className={subNavClass(isTrainingActive(pathname))} href={`${BASE}/spomove/training`}>
+                Training
+              </Link>
               <Link className={subNavClass(false)} href="/admin/camera">
                 카메라 앱
               </Link>
               <Link className={subNavClass(false)} href="/admin/memory-game">
-                SPOMOVE 트레이닝
+                트레이닝 (기존)
               </Link>
             </nav>
           )}

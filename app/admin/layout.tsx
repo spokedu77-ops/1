@@ -70,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         isFullscreenRoute
           ? 'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0F172A] text-gray-900 relative'
           : isGameRoute
-          ? 'flex-1 min-h-screen text-gray-900'
+          ? 'flex-1 flex flex-col min-h-0 overflow-hidden text-gray-900'
           : 'flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900'
       }
     >

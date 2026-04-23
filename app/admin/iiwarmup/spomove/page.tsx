@@ -55,6 +55,15 @@ export default function SpomoveHubPage() {
           <p className="mt-2 text-sm text-neutral-400">N-back·시그널 · 반응 인지 등 수업용 인지·신체 트레이닝</p>
           <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
         </Link>
+
+        <Link
+          href="/admin/iiwarmup/spomove/training"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">SPOMOVE Training</h3>
+          <p className="mt-2 text-sm text-neutral-400">Core 5 · 5 Series · 30 Programs — 시리즈·프로그램·스테이지 탐색 후 바로 실행</p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
+        </Link>
       </section>
     </div>
   );

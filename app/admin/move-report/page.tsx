@@ -35,8 +35,6 @@ type SummaryWindow = {
 
 type WindowKey = 'today' | 'days7' | 'days30';
 
-type IpLimitRow = { ip: string; count: number; updated_at: string };
-
 function formatPercentSafe(num: number, den: number) {
   if (!den) return '-';
   return `${((num / den) * 100).toFixed(1)}%`;
@@ -59,26 +57,9 @@ export default function AdminMoveReportPage() {
   const [windowKey, setWindowKey] = useState<WindowKey>('today');
   const [summaryLoadedAt, setSummaryLoadedAt] = useState<string | null>(null);
 
-  const [ipLimitSummary, setIpLimitSummary] = useState<{
-    totalIps: number;
-    ipsAtLimit: number;
-    rows: IpLimitRow[];
-  } | null>(null);
-  const [ipLimitLoading, setIpLimitLoading] = useState(true);
-  const [ipLimitError, setIpLimitError] = useState<string | null>(null);
-  const [ipClearAllBusy, setIpClearAllBusy] = useState(false);
-  const [ipResetInput, setIpResetInput] = useState('');
-  const [ipResetting, setIpResetting] = useState(false);
-
-  const [bypassUrl, setBypassUrl] = useState<string | null>(null);
-  const [bypassConfigured, setBypassConfigured] = useState<boolean | null>(null);
-  const [bypassError, setBypassError] = useState<string | null>(null);
-  const [bypassRegenerating, setBypassRegenerating] = useState(false);
-
   const [attrTop, setAttrTop] = useState<{ source: string; count: number }[] | null>(null);
   const [attrLoading, setAttrLoading] = useState(true);
   const [attrError, setAttrError] = useState<string | null>(null);
-  const [funnelResetting, setFunnelResetting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -159,107 +140,6 @@ export default function AdminMoveReportPage() {
 
   useEffect(() => {
     void loadAttributionTop();
-  }, []);
-
-  const resetFunnelEvents = async () => {
-    const ok = window.confirm(
-      '퍼널 KPI 원본(move_report_events)의 모든 행을 삭제합니다. 복구할 수 없습니다. 테스트 데이터만 있을 때 사용하세요. 계속할까요?',
-    );
-    if (!ok) return;
-    setFunnelResetting(true);
-    try {
-      const res = await fetch('/api/admin/move-report/events-reset', { method: 'POST', credentials: 'include' });
-      const json = (await res.json()) as { ok?: boolean; deleted?: number; error?: string };
-      if (!res.ok || !json.ok) {
-        window.alert(json.error ?? '삭제에 실패했습니다.');
-        return;
-      }
-      window.alert(`삭제했습니다. (${json.deleted ?? 0}건)`);
-      void loadSummary();
-      void loadAttributionTop();
-    } catch {
-      window.alert('네트워크 오류가 발생했습니다.');
-    } finally {
-      setFunnelResetting(false);
-    }
-  };
-
-  const loadIpLimits = async () => {
-    setIpLimitLoading(true);
-    setIpLimitError(null);
-    try {
-      const res = await fetch('/api/admin/move-report/ip-limits', { credentials: 'include' });
-      const json = (await res.json()) as {
-        ok?: boolean;
-        totalIps?: number;
-        ipsAtLimit?: number;
-        rows?: IpLimitRow[];
-        error?: string;
-      };
-      if (!json.ok) {
-        setIpLimitError(json.error ?? '이용 제한 현황을 불러오지 못했습니다.');
-        setIpLimitSummary(null);
-        return;
-      }
-      setIpLimitSummary({
-        totalIps: json.totalIps ?? 0,
-        ipsAtLimit: json.ipsAtLimit ?? 0,
-        rows: Array.isArray(json.rows) ? json.rows : [],
-      });
-    } catch {
-      setIpLimitError('이용 제한 현황 네트워크 오류가 발생했습니다.');
-      setIpLimitSummary(null);
-    } finally {
-      setIpLimitLoading(false);
-    }
-  };
-
-  const loadBypassLink = async () => {
-    setBypassError(null);
-    try {
-      const res = await fetch('/api/admin/move-report/bypass-link', { credentials: 'include' });
-      const json = (await res.json()) as {
-        ok?: boolean;
-        configured?: boolean;
-        url?: string | null;
-        error?: string;
-      };
-      if (!json.ok) {
-        setBypassConfigured(false);
-        setBypassUrl(null);
-        setBypassError(json.error ?? '체육관 링크를 불러오지 못했습니다.');
-        return;
-      }
-      setBypassConfigured(!!json.configured);
-      setBypassUrl(typeof json.url === 'string' ? json.url : null);
-    } catch {
-      setBypassConfigured(false);
-      setBypassUrl(null);
-      setBypassError('체육관 링크 네트워크 오류가 발생했습니다.');
-    }
-  };
-
-  const issueOrRegenerateGymKey = async () => {
-    if (!window.confirm('새 체육관용 키를 발급할까요? 이전에 나눠준 링크는 더 이상 제한 해제에 쓰이지 않습니다.')) return;
-    setBypassRegenerating(true);
-    try {
-      const res = await fetch('/api/admin/move-report/gym-key', { method: 'POST', credentials: 'include' });
-      const json = (await res.json()) as { ok?: boolean; url?: string; error?: string };
-      if (!res.ok || !json.ok) {
-        window.alert(json.error ?? '발급에 실패했습니다.');
-        return;
-      }
-      await loadBypassLink();
-    } catch {
-      window.alert('네트워크 오류가 발생했습니다.');
-    } finally {
-      setBypassRegenerating(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadIpLimits();
-    void loadBypassLink();
   }, []);
 
   const profileOptions = useMemo(() => {
@@ -403,8 +283,6 @@ export default function AdminMoveReportPage() {
                 void load();
                 void loadSummary();
                 void loadAttributionTop();
-                void loadIpLimits();
-                void loadBypassLink();
               }}
               className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
             >
@@ -421,7 +299,7 @@ export default function AdminMoveReportPage() {
               CSV 다운로드
             </button>
             <Link
-              href={bypassUrl ?? '/move-report'}
+              href="/move-report"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -441,15 +319,7 @@ export default function AdminMoveReportPage() {
                 {summaryLoadedAt ? ` · 갱신 ${summaryLoadedAt}` : ''}
               </div>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-1">
-              <button
-                type="button"
-                onClick={() => void resetFunnelEvents()}
-                disabled={funnelResetting}
-                className="rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer border border-red-200 text-red-700 bg-white hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed mr-1"
-              >
-                {funnelResetting ? '삭제 중…' : '퍼널 이벤트 비우기'}
-              </button>
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setWindowKey('today')}
@@ -551,7 +421,7 @@ export default function AdminMoveReportPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
             <div className="lg:col-span-2">
               <label className="text-xs text-slate-500">검색</label>
               <div className="mt-1 relative">
@@ -591,243 +461,6 @@ export default function AdminMoveReportPage() {
                 ))}
               </select>
             </div>
-          </div>
-        </div>
-
-        <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-          <div className="text-sm font-semibold text-slate-800 mb-1">MOVE 리포트 이용 제한 (IP)</div>
-          <p className="text-[11px] text-slate-500 mb-3">
-            서버에 기록된 IP별 완료 횟수입니다. 아래 목록에서 바로 리셋하거나, 테스트만 했다면「전체 비우기」를 쓰면 됩니다.
-          </p>
-          {ipLimitLoading ? (
-            <div className="text-sm text-slate-500">로딩 중...</div>
-          ) : ipLimitError ? (
-            <div className="text-sm text-red-600">{ipLimitError}</div>
-          ) : ipLimitSummary ? (
-            <>
-              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-700 mb-3">
-                <div>
-                  총 완료 IP: <span className="font-bold text-slate-900">{ipLimitSummary.totalIps}</span>개
-                </div>
-                <div>
-                  3회 한도 소진 IP: <span className="font-bold text-slate-900">{ipLimitSummary.ipsAtLimit}</span>개
-                </div>
-                <button
-                  type="button"
-                  disabled={ipClearAllBusy || ipResetting || (ipLimitSummary.rows?.length ?? 0) === 0}
-                  onClick={async () => {
-                    if (
-                      !window.confirm(
-                        '모든 IP의 완료 카운트 기록을 삭제합니다. 복구할 수 없습니다. 테스트 정리·초기화용입니다. 계속할까요?',
-                      )
-                    ) {
-                      return;
-                    }
-                    setIpClearAllBusy(true);
-                    try {
-                      const res = await fetch('/api/admin/move-report/ip-limits', {
-                        method: 'POST',
-                        credentials: 'include',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ clearAll: true }),
-                      });
-                      const json = (await res.json()) as { ok?: boolean; deleted?: number; error?: string };
-                      if (!res.ok || !json.ok) {
-                        window.alert(json.error ?? '삭제에 실패했습니다.');
-                        return;
-                      }
-                      window.alert(`IP 기록을 비웠습니다. (${json.deleted ?? 0}건)`);
-                      void loadIpLimits();
-                    } catch {
-                      window.alert('네트워크 오류가 발생했습니다.');
-                    } finally {
-                      setIpClearAllBusy(false);
-                    }
-                  }}
-                  className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {ipClearAllBusy ? '처리 중…' : '전체 IP 기록 비우기'}
-                </button>
-              </div>
-              {ipLimitSummary.rows && ipLimitSummary.rows.length > 0 ? (
-                <div className="mb-1 text-[10px] text-slate-400">
-                  목록은 완료 횟수 순 최대 300건입니다. 그 외 IP는 직접 입력해 리셋할 수 있습니다.
-                </div>
-              ) : null}
-              {ipLimitSummary.rows && ipLimitSummary.rows.length > 0 ? (
-                <div className="mb-4 max-h-56 overflow-y-auto rounded-lg border border-slate-100">
-                  <table className="w-full text-left text-xs">
-                    <thead className="sticky top-0 bg-slate-50 text-slate-500 border-b border-slate-100">
-                      <tr>
-                        <th className="py-2 px-2 font-medium">IP</th>
-                        <th className="py-2 px-2 font-medium text-right">완료 횟수</th>
-                        <th className="py-2 px-2 font-medium">최종 갱신</th>
-                        <th className="py-2 px-2 w-20" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ipLimitSummary.rows.map((row) => (
-                        <tr key={row.ip} className="border-b border-slate-50 last:border-0">
-                          <td className="py-1.5 px-2 font-mono text-slate-800 break-all">{row.ip}</td>
-                          <td className="py-1.5 px-2 text-right tabular-nums text-slate-800">{row.count}</td>
-                          <td className="py-1.5 px-2 text-slate-600 whitespace-nowrap">
-                            {row.updated_at ? new Date(row.updated_at).toLocaleString('ko-KR') : '—'}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            <button
-                              type="button"
-                              disabled={ipResetting || ipClearAllBusy}
-                              onClick={async () => {
-                                if (!window.confirm(`이 IP의 완료 기록을 삭제할까요?\n${row.ip}`)) return;
-                                setIpResetting(true);
-                                try {
-                                  const res = await fetch('/api/admin/move-report/ip-limits', {
-                                    method: 'DELETE',
-                                    credentials: 'include',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ ip: row.ip }),
-                                  });
-                                  const json = (await res.json()) as { ok?: boolean; error?: string };
-                                  if (!res.ok || !json.ok) {
-                                    window.alert(json.error ?? '삭제에 실패했습니다.');
-                                    return;
-                                  }
-                                  void loadIpLimits();
-                                } catch {
-                                  window.alert('네트워크 오류가 발생했습니다.');
-                                } finally {
-                                  setIpResetting(false);
-                                }
-                              }}
-                              className="text-red-600 hover:underline font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              리셋
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-xs text-slate-500 mb-3">등록된 IP 기록이 없습니다.</div>
-              )}
-            </>
-          ) : null}
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-xs text-slate-500">IP 직접 입력 후 리셋 (목록에 없을 때)</label>
-              <input
-                value={ipResetInput}
-                onChange={(e) => setIpResetInput(e.target.value)}
-                placeholder="예: 203.255.255.1"
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-              />
-            </div>
-            <button
-              type="button"
-              disabled={ipResetting || ipClearAllBusy || !ipResetInput.trim()}
-              onClick={async () => {
-                const ip = ipResetInput.trim();
-                if (!ip) return;
-                if (!window.confirm(`이 IP의 완료 기록을 삭제할까요?\n${ip}`)) return;
-                setIpResetting(true);
-                try {
-                  const res = await fetch('/api/admin/move-report/ip-limits', {
-                    method: 'DELETE',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ip }),
-                  });
-                  const json = (await res.json()) as { ok?: boolean; error?: string };
-                  if (!res.ok || !json.ok) {
-                    window.alert(json.error ?? '삭제에 실패했습니다.');
-                    return;
-                  }
-                  setIpResetInput('');
-                  void loadIpLimits();
-                } catch {
-                  window.alert('네트워크 오류가 발생했습니다.');
-                } finally {
-                  setIpResetting(false);
-                }
-              }}
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              리셋
-            </button>
-          </div>
-          <div className="mt-4 pt-4 border-t border-slate-100">
-            <div className="text-xs font-semibold text-slate-600 mb-1">체육관·단체용 링크 (제한 없음, DB 저장)</div>
-            {bypassConfigured === null ? (
-              <div className="text-sm text-slate-500">로딩 중...</div>
-            ) : bypassError ? (
-              <div className="space-y-2">
-                <p className="text-sm text-red-600">{bypassError}</p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void loadBypassLink()}
-                    className="inline-flex min-h-[36px] items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
-                  >
-                    다시 불러오기
-                  </button>
-                  <button
-                    type="button"
-                    disabled={bypassRegenerating}
-                    onClick={() => void issueOrRegenerateGymKey()}
-                    className="inline-flex min-h-[36px] items-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
-                  >
-                    키 발급
-                  </button>
-                </div>
-              </div>
-            ) : !bypassConfigured ? (
-              <div className="space-y-2">
-                <p className="text-sm text-slate-600">
-                  아직 DB에 체육관용 키가 없습니다. Supabase 마이그레이션을 적용했는지 확인한 뒤, 아래에서 키를 발급하세요.
-                </p>
-                <button
-                  type="button"
-                  disabled={bypassRegenerating}
-                  onClick={() => void issueOrRegenerateGymKey()}
-                  className="inline-flex min-h-[36px] items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
-                >
-                  {bypassRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                  키 발급
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                <code className="text-xs break-all rounded-lg bg-slate-50 border border-slate-200 px-2 py-1.5 text-slate-800 max-w-full flex-1 min-w-0">
-                  {bypassUrl}
-                </code>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!bypassUrl) return;
-                      const ok = await copyToClipboard(bypassUrl);
-                      if (ok) window.alert('링크를 복사했습니다.');
-                      else window.alert('복사에 실패했습니다.');
-                    }}
-                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    복사
-                  </button>
-                  <button
-                    type="button"
-                    disabled={bypassRegenerating}
-                    onClick={() => void issueOrRegenerateGymKey()}
-                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 cursor-pointer"
-                  >
-                    {bypassRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                    키 재발급
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -994,4 +627,3 @@ export default function AdminMoveReportPage() {
     </div>
   );
 }
-

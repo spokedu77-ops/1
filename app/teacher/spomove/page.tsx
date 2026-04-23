@@ -2533,7 +2533,7 @@ export default function SpomovePage() {
                   <p>화면 터치 시 다음 자극으로 전환됩니다.</p>
                 </button>
                 <button className={`spm-opt ${trans === 'time' ? 'on' : ''}`} onClick={() => setTrans('time')}>
-                  <h4>Auto</h4>
+                  <h4>Time</h4>
                   <p>지정한 시간 간격으로 자동 전환됩니다.</p>
                 </button>
               </div>
