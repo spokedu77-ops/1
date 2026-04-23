@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SLOW_CHECK_MS = 3000;
@@ -67,12 +68,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <main
       className={
         isFullscreenRoute
-          ? 'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0F172A] text-gray-900'
+          ? 'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0F172A] text-gray-900 relative'
           : isGameRoute
           ? 'flex-1 min-h-screen text-gray-900'
           : 'flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900'
       }
     >
+      {isFullscreenRoute && (
+        <div className="pointer-events-auto absolute left-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[200] sm:left-3">
+          <LanguageSwitcher variant="dark" className="max-w-[130px]" />
+        </div>
+      )}
       {children}
     </main>
   );

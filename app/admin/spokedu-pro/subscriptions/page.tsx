@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslator } from '@/app/providers/I18nProvider';
 
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired';
 type Plan = 'free' | 'basic' | 'pro';
@@ -57,6 +58,7 @@ function textOrDash(value: unknown): string {
 }
 
 export default function AdminSpokeduProSubscriptionsPage() {
+  const t = useTranslator();
   const [rows, setRows] = useState<SubscriptionRow[]>([]);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,7 +157,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
   const submitPatch = useCallback(async () => {
     if (!editing) return;
     if (!reason.trim()) {
-      alert('변경 사유를 입력해 주세요.');
+      alert(t('변경 사유를 입력해 주세요.'));
       return;
     }
     setPatching(true);
@@ -176,16 +178,16 @@ export default function AdminSpokeduProSubscriptionsPage() {
         body: JSON.stringify(payload),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-      if (!res.ok || !data.ok) throw new Error(data.error ?? '상태 변경에 실패했습니다.');
+      if (!res.ok || !data.ok) throw new Error(data.error ?? t('상태 변경에 실패했습니다.'));
       closeEditor();
       await reloadAll();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : '상태 변경에 실패했습니다.';
+      const msg = e instanceof Error ? e.message : t('상태 변경에 실패했습니다.');
       alert(msg);
     } finally {
       setPatching(false);
     }
-  }, [closeEditor, editing, nextMaxClasses, nextPeriodEnd, nextPlan, nextStatus, nextTrialEnd, reason, reloadAll]);
+  }, [closeEditor, editing, nextMaxClasses, nextPeriodEnd, nextPlan, nextStatus, nextTrialEnd, reason, reloadAll, t]);
 
   const allChecked = rows.length > 0 && rows.every((row) => selectedIds.includes(row.centerId));
 
@@ -204,7 +206,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
   const applyBulkStatus = useCallback(async (confirmed = false) => {
     if (selectedIds.length === 0) return;
     if (!bulkReason.trim()) {
-      alert('대량 변경 사유를 입력해 주세요.');
+      alert(t('대량 변경 사유를 입력해 주세요.'));
       return;
     }
     if (bulkDryRun) {
@@ -214,7 +216,9 @@ export default function AdminSpokeduProSubscriptionsPage() {
         .map((r) => r.centerName ?? r.centerId);
       const more = selectedIds.length > 10 ? ` 외 ${selectedIds.length - 10}개` : '';
       setLastBulkMessage(
-        `[DRY-RUN] ${selectedIds.length}개 센터가 ${STATUS_LABEL[bulkStatus]} / ${bulkPlan} 로 변경됩니다. 대상: ${names.join(', ')}${more}`
+        t(
+          `[DRY-RUN] ${selectedIds.length}개 센터가 ${STATUS_LABEL[bulkStatus]} / ${bulkPlan} 로 변경됩니다. 대상: ${names.join(', ')}${more}`
+        )
       );
       return;
     }
@@ -246,27 +250,27 @@ export default function AdminSpokeduProSubscriptionsPage() {
       const failed = results.filter((r) => !r.ok);
       setFailedBulkIds(failed.map((f) => f.centerId));
       if (failed.length > 0) {
-        setLastBulkMessage(`대량 변경 중 ${failed.length}건 실패했습니다. 실패 항목만 재시도할 수 있습니다.`);
+        setLastBulkMessage(t(`대량 변경 중 ${failed.length}건 실패했습니다. 실패 항목만 재시도할 수 있습니다.`));
       } else {
-        setLastBulkMessage(`${results.length}건 상태 변경이 완료되었습니다.`);
+        setLastBulkMessage(t(`${results.length}건 상태 변경이 완료되었습니다.`));
       }
       setSelectedIds([]);
       setBulkReason('');
       await reloadAll();
       setShowBulkPreview(false);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : '대량 상태 변경에 실패했습니다.';
+      const msg = e instanceof Error ? e.message : t('대량 상태 변경에 실패했습니다.');
       alert(msg);
     } finally {
       setBulkApplying(false);
     }
-  }, [bulkDryRun, bulkPlan, bulkReason, bulkStatus, reloadAll, rows, selectedIds]);
+  }, [bulkDryRun, bulkPlan, bulkReason, bulkStatus, reloadAll, rows, selectedIds, t]);
 
   const retryFailedBulk = useCallback(async () => {
     if (failedBulkIds.length === 0) return;
     setSelectedIds(failedBulkIds);
-    setLastBulkMessage(`실패 항목 ${failedBulkIds.length}개를 재선택했습니다. 일괄 적용 버튼으로 재시도하세요.`);
-  }, [failedBulkIds]);
+    setLastBulkMessage(t(`실패 항목 ${failedBulkIds.length}개를 재선택했습니다. 일괄 적용 버튼으로 재시도하세요.`));
+  }, [failedBulkIds, t]);
 
   const jumpToCenter = useCallback(
     async (centerId: string) => {
@@ -306,33 +310,33 @@ export default function AdminSpokeduProSubscriptionsPage() {
     setSelectedIds(target);
     setBulkStatus('expired');
     setBulkPlan('free');
-    setLastBulkMessage(`만료된 trial ${target.length}건을 선택했습니다.`);
-  }, [rows]);
+    setLastBulkMessage(t(`만료된 trial ${target.length}건을 선택했습니다.`));
+  }, [rows, t]);
 
   const selectPastDueTargets = useCallback(() => {
     const target = rows.filter((r) => r.status === 'past_due').map((r) => r.centerId);
     setSelectedIds(target);
     setBulkStatus('active');
-    setLastBulkMessage(`past_due ${target.length}건을 선택했습니다.`);
-  }, [rows]);
+    setLastBulkMessage(t(`past_due ${target.length}건을 선택했습니다.`));
+  }, [rows, t]);
 
   return (
     <section className="px-4 md:px-8 py-6 space-y-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">스포키듀 구독 운영</h1>
-          <p className="text-sm text-slate-500">센터별 구독 상태 조회/수정 및 변경 이력 확인</p>
+          <h1 className="text-2xl font-black text-slate-900">{t('스포키듀 구독 운영')}</h1>
+          <p className="text-sm text-slate-500">{t('센터별 구독 상태 조회/수정 및 변경 이력 확인')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/admin/spokedu-pro" className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-bold text-slate-700 hover:bg-slate-100">
-            스포키듀 편집으로
+            {t('스포키듀 편집으로')}
           </Link>
           <button
             type="button"
             onClick={() => void reloadAll()}
             className="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-slate-800"
           >
-            새로고침
+            {t('새로고침')}
           </button>
         </div>
       </header>
@@ -352,10 +356,10 @@ export default function AdminSpokeduProSubscriptionsPage() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-3 py-2 rounded-lg border border-slate-300 text-sm"
         >
-          <option value="">전체 상태</option>
+          <option value="">{t('전체 상태')}</option>
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
-              {STATUS_LABEL[s]}
+              {t(STATUS_LABEL[s])}
             </option>
           ))}
         </select>
@@ -363,7 +367,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           list="center-suggestions"
-          placeholder="센터명/centerId 검색"
+          placeholder={t('센터명/centerId 검색')}
           className="px-3 py-2 rounded-lg border border-slate-300 text-sm md:w-72"
         />
         <datalist id="center-suggestions">
@@ -376,7 +380,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
           onClick={() => void reloadAll()}
           className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700"
         >
-          조회
+          {t('조회')}
         </button>
       </div>
 
@@ -386,20 +390,20 @@ export default function AdminSpokeduProSubscriptionsPage() {
           onClick={() => void selectExpiredTrialTargets()}
           className="px-3 py-2 rounded-lg border border-amber-300 text-amber-900 text-sm font-bold hover:bg-amber-50"
         >
-          만료 trial 자동 선택
+          {t('만료 trial 자동 선택')}
         </button>
         <button
           type="button"
           onClick={() => void selectPastDueTargets()}
           className="px-3 py-2 rounded-lg border border-violet-300 text-violet-900 text-sm font-bold hover:bg-violet-50"
         >
-          past_due 자동 선택
+          {t('past_due 자동 선택')}
         </button>
       </div>
 
       {selectedIds.length > 0 && (
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
-          <p className="text-sm font-bold text-blue-900">선택된 {selectedIds.length}개 센터 대량 상태 변경</p>
+          <p className="text-sm font-bold text-blue-900">{t(`선택된 ${selectedIds.length}개 센터 대량 상태 변경`)}</p>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
             <select
               value={bulkStatus}
@@ -408,7 +412,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
             >
               {STATUS_OPTIONS.map((s) => (
                 <option key={s} value={s}>
-                  {STATUS_LABEL[s]}
+                  {t(STATUS_LABEL[s])}
                 </option>
               ))}
             </select>
@@ -426,7 +430,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
             <input
               value={bulkReason}
               onChange={(e) => setBulkReason(e.target.value)}
-              placeholder="대량 변경 사유 (필수)"
+              placeholder={t('대량 변경 사유 (필수)')}
               className="px-3 py-2 rounded-lg border border-blue-300 text-sm bg-white md:col-span-2"
             />
           </div>
@@ -436,7 +440,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
               checked={bulkDryRun}
               onChange={(e) => setBulkDryRun(e.target.checked)}
             />
-            드라이런 모드(실제 변경 없이 대상/결과만 미리보기)
+            {t('드라이런 모드(실제 변경 없이 대상/결과만 미리보기)')}
           </label>
           <div className="flex items-center gap-2">
             <button
@@ -445,7 +449,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
               disabled={bulkApplying}
               className="px-3 py-2 rounded-lg bg-blue-700 text-white text-sm font-bold hover:bg-blue-800 disabled:opacity-50"
             >
-              {bulkApplying ? '대량 처리 중...' : bulkDryRun ? '드라이런 실행' : '선택 항목 일괄 적용'}
+              {bulkApplying ? t('대량 처리 중...') : bulkDryRun ? t('드라이런 실행') : t('선택 항목 일괄 적용')}
             </button>
             {!bulkDryRun && (
               <button
@@ -453,7 +457,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
                 onClick={() => setShowBulkPreview(true)}
                 className="px-3 py-2 rounded-lg border border-blue-300 text-blue-900 text-sm font-bold hover:bg-blue-100"
               >
-                변경 미리보기
+                {t('변경 미리보기')}
               </button>
             )}
             <button
@@ -461,7 +465,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
               onClick={() => setSelectedIds([])}
               className="px-3 py-2 rounded-lg border border-blue-300 text-blue-900 text-sm font-bold hover:bg-blue-100"
             >
-              선택 해제
+              {t('선택 해제')}
             </button>
             {failedBulkIds.length > 0 && (
               <button
@@ -469,7 +473,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
                 onClick={() => void retryFailedBulk()}
                 className="px-3 py-2 rounded-lg border border-amber-300 text-amber-900 text-sm font-bold hover:bg-amber-100"
               >
-                실패 항목 재선택 ({failedBulkIds.length})
+                {t(`실패 항목 재선택 (${failedBulkIds.length})`)}
               </button>
             )}
           </div>
@@ -491,19 +495,19 @@ export default function AdminSpokeduProSubscriptionsPage() {
               <th className="text-left px-3 py-2">
                 <input type="checkbox" checked={allChecked} onChange={toggleAll} />
               </th>
-              <th className="text-left px-3 py-2">센터</th>
-              <th className="text-left px-3 py-2">플랜</th>
-              <th className="text-left px-3 py-2">상태</th>
-              <th className="text-left px-3 py-2">체험/갱신일</th>
-              <th className="text-left px-3 py-2">업데이트</th>
-              <th className="text-left px-3 py-2">동작</th>
+              <th className="text-left px-3 py-2">{t('센터')}</th>
+              <th className="text-left px-3 py-2">{t('플랜')}</th>
+              <th className="text-left px-3 py-2">{t('상태')}</th>
+              <th className="text-left px-3 py-2">{t('체험/갱신일')}</th>
+              <th className="text-left px-3 py-2">{t('업데이트')}</th>
+              <th className="text-left px-3 py-2">{t('동작')}</th>
             </tr>
           </thead>
           <tbody>
             {!loading && rows.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-3 py-6 text-center text-slate-400">
-                  조회 결과가 없습니다.
+                  {t('조회 결과가 없습니다.')}
                 </td>
               </tr>
             )}
@@ -517,11 +521,11 @@ export default function AdminSpokeduProSubscriptionsPage() {
                   />
                 </td>
                 <td className="px-3 py-2">
-                  <p className="font-semibold text-slate-800">{row.centerName ?? '(이름 없음)'}</p>
+                  <p className="font-semibold text-slate-800">{row.centerName ?? t('(이름 없음)')}</p>
                   <p className="text-xs text-slate-500">{row.centerId}</p>
                 </td>
                 <td className="px-3 py-2 font-semibold capitalize">{row.plan}</td>
-                <td className="px-3 py-2">{STATUS_LABEL[row.status]}</td>
+                <td className="px-3 py-2">{t(STATUS_LABEL[row.status])}</td>
                 <td className="px-3 py-2">
                   <p className="text-xs text-slate-700">trial: {formatDate(row.trialEnd)}</p>
                   <p className="text-xs text-slate-700">period: {formatDate(row.currentPeriodEnd)}</p>
@@ -533,7 +537,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
                     onClick={() => openEditor(row)}
                     className="px-2.5 py-1.5 rounded-md bg-slate-800 text-white text-xs font-bold hover:bg-slate-700"
                   >
-                    상태 변경
+                    {t('상태 변경')}
                   </button>
                 </td>
               </tr>
@@ -543,9 +547,9 @@ export default function AdminSpokeduProSubscriptionsPage() {
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="text-base font-black text-slate-900 mb-3">최근 상태 변경 이력</h2>
+        <h2 className="text-base font-black text-slate-900 mb-3">{t('최근 상태 변경 이력')}</h2>
         <div className="space-y-2">
-          {events.length === 0 && <p className="text-sm text-slate-400">기록이 없습니다.</p>}
+          {events.length === 0 && <p className="text-sm text-slate-400">{t('기록이 없습니다.')}</p>}
           {events.map((ev) => (
             <div key={ev.id} className="rounded-lg border border-slate-200 px-3 py-3">
               <p className="text-xs text-slate-500">{formatDate(ev.created_at)}</p>
@@ -628,15 +632,15 @@ export default function AdminSpokeduProSubscriptionsPage() {
         <div className="fixed inset-0 z-[300] bg-black/50 flex items-center justify-center p-4">
           <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl border border-slate-200 p-5 space-y-4">
             <div>
-              <h3 className="text-lg font-black text-slate-900">구독 상태 변경</h3>
+              <h3 className="text-lg font-black text-slate-900">{t('구독 상태 변경')}</h3>
               <p className="text-xs text-slate-500 mt-1">
-                {editing.centerName ?? '(이름 없음)'} · {editing.centerId}
+                {editing.centerName ?? t('(이름 없음)')} · {editing.centerId}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <label className="text-sm text-slate-700 space-y-1">
-                <span className="font-semibold">상태</span>
+                <span className="font-semibold">{t('상태')}</span>
                 <select
                   value={nextStatus}
                   onChange={(e) => setNextStatus(e.target.value as SubscriptionStatus)}
@@ -644,14 +648,14 @@ export default function AdminSpokeduProSubscriptionsPage() {
                 >
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s} value={s}>
-                      {STATUS_LABEL[s]}
+                      {t(STATUS_LABEL[s])}
                     </option>
                   ))}
                 </select>
               </label>
 
               <label className="text-sm text-slate-700 space-y-1">
-                <span className="font-semibold">플랜</span>
+                <span className="font-semibold">{t('플랜')}</span>
                 <select
                   value={nextPlan}
                   onChange={(e) => setNextPlan(e.target.value as Plan)}
@@ -688,24 +692,24 @@ export default function AdminSpokeduProSubscriptionsPage() {
             </div>
 
             <label className="text-sm text-slate-700 space-y-1 block">
-              <span className="font-semibold">max_classes (선택)</span>
+              <span className="font-semibold">{t('max_classes (선택)')}</span>
               <input
                 type="number"
                 value={nextMaxClasses}
                 onChange={(e) => setNextMaxClasses(e.target.value)}
-                placeholder="입력하지 않으면 기존값 유지"
+                placeholder={t('입력하지 않으면 기존값 유지')}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300"
               />
             </label>
 
             <label className="text-sm text-slate-700 space-y-1 block">
-              <span className="font-semibold">변경 사유 (필수)</span>
+              <span className="font-semibold">{t('변경 사유 (필수)')}</span>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                placeholder="예: 결제 확인 지연, 해지 요청 접수 등"
+                placeholder={t('예: 결제 확인 지연, 해지 요청 접수 등')}
               />
             </label>
 
@@ -715,7 +719,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
                 onClick={closeEditor}
                 className="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-100"
               >
-                취소
+                {t('취소')}
               </button>
               <button
                 type="button"
@@ -723,7 +727,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
                 onClick={() => void submitPatch()}
                 className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50"
               >
-                {patching ? '처리 중...' : '저장'}
+                {patching ? t('처리 중...') : t('저장')}
               </button>
             </div>
           </div>
@@ -734,16 +738,16 @@ export default function AdminSpokeduProSubscriptionsPage() {
         <div className="fixed inset-0 z-[310] bg-black/50 flex items-center justify-center p-4">
           <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl border border-slate-200 p-5 space-y-4">
             <div>
-              <h3 className="text-lg font-black text-slate-900">대량 변경 미리보기</h3>
+              <h3 className="text-lg font-black text-slate-900">{t('대량 변경 미리보기')}</h3>
               <p className="text-xs text-slate-500 mt-1">
-                선택 {selectedIds.length}건 · 상태 {STATUS_LABEL[bulkStatus]} · 플랜 {bulkPlan}
+                {t(`선택 ${selectedIds.length}건 · 상태 ${STATUS_LABEL[bulkStatus]} · 플랜 ${bulkPlan}`)}
               </p>
             </div>
             <div className="max-h-[45vh] overflow-auto rounded-lg border border-slate-200">
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>
-                    <th className="text-left px-3 py-2">센터</th>
+                    <th className="text-left px-3 py-2">{t('센터')}</th>
                     <th className="text-left px-3 py-2">Before</th>
                     <th className="text-left px-3 py-2">After</th>
                   </tr>
@@ -756,12 +760,12 @@ export default function AdminSpokeduProSubscriptionsPage() {
                         <p className="text-xs text-slate-500">{r.centerId}</p>
                       </td>
                       <td className="px-3 py-2">
-                        <p>status: {STATUS_LABEL[r.beforeStatus]}</p>
+                        <p>{t(`status: ${STATUS_LABEL[r.beforeStatus]}`)}</p>
                         <p>plan: {r.beforePlan}</p>
                       </td>
                       <td className="px-3 py-2">
                         <p className={r.beforeStatus !== r.afterStatus ? 'font-bold text-emerald-700' : ''}>
-                          status: {STATUS_LABEL[r.afterStatus]}
+                          {t(`status: ${STATUS_LABEL[r.afterStatus]}`)}
                         </p>
                         <p className={r.beforePlan !== r.afterPlan ? 'font-bold text-emerald-700' : ''}>
                           plan: {r.afterPlan}
@@ -778,7 +782,7 @@ export default function AdminSpokeduProSubscriptionsPage() {
                 onClick={() => setShowBulkPreview(false)}
                 className="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-100"
               >
-                닫기
+                {t('닫기')}
               </button>
               <button
                 type="button"
@@ -786,12 +790,12 @@ export default function AdminSpokeduProSubscriptionsPage() {
                 onClick={() => void applyBulkStatus(true)}
                 className="px-3 py-2 rounded-lg bg-blue-700 text-white text-sm font-bold hover:bg-blue-800 disabled:opacity-50"
               >
-                {bulkApplying ? '적용 중...' : '이대로 일괄 적용'}
+                {bulkApplying ? t('적용 중...') : t('이대로 일괄 적용')}
               </button>
             </div>
             {bulkDryRun && (
               <p className="text-xs text-amber-700">
-                드라이런 모드가 켜져 있어 실제 적용할 수 없습니다. 체크 해제 후 진행해 주세요.
+                {t('드라이런 모드가 켜져 있어 실제 적용할 수 없습니다. 체크 해제 후 진행해 주세요.')}
               </p>
             )}
           </div>

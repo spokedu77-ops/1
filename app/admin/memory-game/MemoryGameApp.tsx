@@ -20,6 +20,7 @@ import { MemoryGameLevel4 } from './components/MemoryGameLevel4';
 import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
 import { VisualReactionTraining, type ReactTrainCompleteStats } from './components/VisualReactionTraining';
 import { DiagonalReactionTraining } from './components/DiagonalReactionTraining';
+import { DeepReactionTraining } from './components/DeepReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { ChallengeSpomoveSetupPanel } from './components/ChallengeSpomoveSetupPanel';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
@@ -1002,7 +1003,14 @@ export default function MemoryGameApp({
     return (
       <div ref={visualReactionContainerRef} style={{ position: 'fixed', inset: 0, zIndex: 320 }}>
         <style>{CSS}</style>
-        {settings.level === 4 ? (
+        {settings.level === 5 ? (
+          <DeepReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={mapSpomoveSpeedToReactTrainSpd(settings.speed)}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : settings.level === 4 ? (
           <DiagonalReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={mapSpomoveSpeedToReactTrainSpd(settings.speed)}

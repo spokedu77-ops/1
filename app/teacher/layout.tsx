@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Home, BookOpen, Calendar, Package, MoreHorizontal, Receipt, X, LogOut } from 'lucide-react';
+import { Home, BookOpen, Calendar, Package, MoreHorizontal, Receipt, X, LogOut, Zap } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
@@ -93,6 +93,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
           {([
             { id: '/teacher', label: '메인', icon: Home },
             { id: '/teacher/curriculum', label: '프로그램', icon: BookOpen },
+            { id: '/teacher/spomove', label: 'SPOMOVE', icon: Zap },
             { id: '/teacher/my-classes', label: '일정', icon: Calendar },
           ] as const).map((item) => (
             <button 
