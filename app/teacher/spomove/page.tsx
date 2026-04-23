@@ -1365,21 +1365,26 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
+  gap: 6px;
+  padding: 0 16px;
   height: 48px;
   border-radius: 14px;
   border: 1px solid var(--line-2);
   background: rgba(255,255,255,0.04);
   color: var(--text-3);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   cursor: pointer;
   transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  white-space: nowrap;
 }
 
 .spm-btn-star:hover {
   border-color: rgba(200,255,0,0.3);
   color: var(--accent);
   background: rgba(200,255,0,0.06);
-  transform: scale(1.06);
+  transform: translateY(-1px);
 }
 
 /* ── 인라인 토스트 ──────────────────────────────────────── */
@@ -2670,9 +2675,10 @@ export default function SpomovePage() {
                 title="즐겨찾기에 저장"
                 aria-label="즐겨찾기에 저장"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
+                저장
               </button>
               <button className="spm-btn-next" onClick={startGame}>
                 Start {PlayIco}

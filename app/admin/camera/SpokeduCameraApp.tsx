@@ -82,6 +82,7 @@ export default function SpokeduCameraApp() {
   const stateRef = useRef<GameState>({ ...initialGameState });
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const poseLandmarkerRef = useRef<{ detectForVideo: (video: HTMLVideoElement, time: number, cb: (r: { landmarks?: unknown[] }) => void) => void } | null>(null);
   const lastVideoTimeRef = useRef(-1);
   const rafIdRef = useRef<number | null>(null);
@@ -267,18 +268,17 @@ export default function SpokeduCameraApp() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const root = rootRef.current;
+    if (!canvas || !root) return;
 
-    /** iPad/Safari: 100vh·innerHeight 불일치로 캔버스 비트맵과 표시 크기가 어긋나 하단이 잘리거나 ‘겹쳐 보이는’ 현상 방지 */
+    /**
+     * 캔버스 비트맵을 레이아웃 박스와 1:1로 맞춘다.
+     * 캔버스가 position:absolute로 .root를 가득 채우달로,
+     * root.offsetWidth/Height가 가장 신뢰할 수 있는 크기 소스다.
+     */
     const syncCanvasBitmap = () => {
-      const rect = canvas.getBoundingClientRect();
-      let w = Math.max(1, Math.round(rect.width));
-      let h = Math.max(1, Math.round(rect.height));
-      if (w <= 1 || h <= 1) {
-        const vv = window.visualViewport;
-        w = Math.max(1, Math.round(vv?.width ?? window.innerWidth));
-        h = Math.max(1, Math.round(vv?.height ?? window.innerHeight));
-      }
+      const w = Math.max(1, root.offsetWidth);
+      const h = Math.max(1, root.offsetHeight);
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w;
         canvas.height = h;
@@ -287,18 +287,15 @@ export default function SpokeduCameraApp() {
 
     syncCanvasBitmap();
     const ro = new ResizeObserver(() => syncCanvasBitmap());
-    ro.observe(canvas);
+    ro.observe(root);
+    window.addEventListener('orientationchange', syncCanvasBitmap);
     const vv = window.visualViewport;
     vv?.addEventListener('resize', syncCanvasBitmap);
-    vv?.addEventListener('scroll', syncCanvasBitmap);
-    window.addEventListener('orientationchange', syncCanvasBitmap);
-    requestAnimationFrame(() => syncCanvasBitmap());
 
     return () => {
       ro.disconnect();
-      vv?.removeEventListener('resize', syncCanvasBitmap);
-      vv?.removeEventListener('scroll', syncCanvasBitmap);
       window.removeEventListener('orientationchange', syncCanvasBitmap);
+      vv?.removeEventListener('resize', syncCanvasBitmap);
     };
   }, []);
 
@@ -700,7 +697,7 @@ export default function SpokeduCameraApp() {
   }, [renderReport]);
 
   return (
-    <div className={styles.root}>
+    <div ref={rootRef} className={styles.root}>
       <video id="videoEl" ref={videoRef} autoPlay playsInline muted />
       <canvas id="gameCanvas" ref={canvasRef} />
       <div id="combo-flash" />
