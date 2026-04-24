@@ -204,8 +204,8 @@ export async function POST(request: NextRequest) {
 
   const supabase = getServiceSupabase();
   const { data, error } = await supabase.from('spokedu_pro_programs').insert(body as object).select().single();
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || data == null) {
+    return NextResponse.json({ error: error?.message ?? 'Insert returned no row' }, { status: 500 });
   }
 
   return NextResponse.json({ data }, { status: 201 });
@@ -241,7 +241,13 @@ export async function PATCH(request: NextRequest) {
     .single();
 
   if (error) {
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({ error: 'Program not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  if (data == null) {
+    return NextResponse.json({ error: 'Update returned no row' }, { status: 500 });
   }
 
   return NextResponse.json({ data });

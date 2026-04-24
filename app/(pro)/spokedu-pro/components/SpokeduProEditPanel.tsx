@@ -15,6 +15,8 @@ import {
 
 export type { ProgramDetail };
 
+type SaveDraftResult = { ok: true; version: number } | { ok: false; error?: string };
+
 /** 프로그램 상세: 새 분류(기능·테마·인원) + 영상·체크리스트·교구·활동방법·팁 */
 function ProgramDetailForm({
   content,
@@ -24,7 +26,7 @@ function ProgramDetailForm({
 }: {
   content: Record<string, BlockEntry>;
   saving: boolean;
-  onSaveContent: (key: string, value: unknown, version: number) => Promise<void>;
+  onSaveContent: (key: string, value: unknown, version: number) => Promise<SaveDraftResult>;
   onToast?: (msg: string) => void;
 }) {
   const tr = useTranslator();
@@ -84,8 +86,8 @@ function ProgramDetailForm({
       activityMethod: activityMethod.trim() || undefined,
       activityTip: activityTip.trim() || undefined,
     };
-    await onSaveContent('program_details', next, version);
-    onToast?.(tr('저장되었습니다.'));
+    const r = await onSaveContent('program_details', next, version);
+    if (r.ok) onToast?.(tr('저장되었습니다.'));
   }, [programId, title, videoUrl, functionType, mainTheme, groupSize, checklist, equipment, activityMethod, activityTip, draft, version, onSaveContent, onToast, tr]);
 
   return (
@@ -220,7 +222,7 @@ function ScreenplayTagMappingForm({
 }: {
   content: Record<string, BlockEntry>;
   saving: boolean;
-  onSaveContent: (key: string, value: unknown, version: number) => Promise<void>;
+  onSaveContent: (key: string, value: unknown, version: number) => Promise<SaveDraftResult>;
   onToast?: (msg: string) => void;
 }) {
   const tr = useTranslator();
@@ -237,8 +239,8 @@ function ScreenplayTagMappingForm({
   }, [draft]);
 
   const handleSave = useCallback(async () => {
-    await onSaveContent('screenplay_tag_mapping_v1', mapping, version);
-    onToast?.(tr('스포무브 태그 매핑이 저장되었습니다.'));
+    const r = await onSaveContent('screenplay_tag_mapping_v1', mapping, version);
+    if (r.ok) onToast?.(tr('스포무브 태그 매핑이 저장되었습니다.'));
   }, [mapping, onSaveContent, version, onToast, tr]);
 
   return (
@@ -350,9 +352,13 @@ export default function SpokeduProEditPanel({ onToast }: { onToast?: (msg: strin
   const handleSaveContent = useCallback(
     async (key: string, value: unknown, version: number) => {
       const result = await saveContentDraft(key, value, version);
-      if (!result.ok) onToast?.(tr(`저장 실패: ${error ?? ''}`));
+      if (!result.ok) {
+        const msg = result.error ?? '';
+        onToast?.(tr(`저장 실패: ${msg}`));
+      }
+      return result;
     },
-    [saveContentDraft, onToast, error, tr]
+    [saveContentDraft, onToast, tr]
   );
 
   return (

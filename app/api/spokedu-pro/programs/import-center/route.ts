@@ -108,14 +108,17 @@ export async function POST(req: NextRequest) {
       if (videoUrl) keptIdByVideoUrl.set(videoUrl, matchId);
     } else {
       const { data: ins, error } = await supabase.from('spokedu_pro_programs').insert(payload).select('id,video_url').single();
-      if (error) errors.push({ curriculumId: row.id, message: error.message });
-      else inserted += 1;
-      const v = (ins?.video_url ?? '').trim();
-      if (v) {
-        keptIdByVideoUrl.set(v, ins.id as number);
-        const list = byVideoUrl.get(v) ?? [];
-        list.push(ins.id as number);
-        byVideoUrl.set(v, list);
+      if (error) {
+        errors.push({ curriculumId: row.id, message: error.message });
+      } else {
+        inserted += 1;
+        const v = (ins?.video_url ?? '').trim();
+        if (v && ins) {
+          keptIdByVideoUrl.set(v, ins.id as number);
+          const list = byVideoUrl.get(v) ?? [];
+          list.push(ins.id as number);
+          byVideoUrl.set(v, list);
+        }
       }
     }
   }
