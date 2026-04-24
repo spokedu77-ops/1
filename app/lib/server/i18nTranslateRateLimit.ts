@@ -23,8 +23,10 @@ export function getClientIp(req: NextRequest): string {
 
 /** true = 허용, false = 차단 */
 export function allowI18nTranslateRequest(req: NextRequest): boolean {
+  // 개발 환경(로컬)에서는 번역 호출이 한번에 몰릴 수 있어 429를 내지 않도록 완화
+  if (process.env.NODE_ENV !== 'production') return true;
   const ip = getClientIp(req);
-  if (ip === 'unknown') {
+  if (ip === 'unknown' || ip === '127.0.0.1' || ip === '::1') {
     // 로컬/프록시 없음: 완화 (남용 시 CSP/배포 환경에서 보완)
     return true;
   }

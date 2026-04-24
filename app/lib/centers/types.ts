@@ -20,11 +20,15 @@ export interface InstructorsDefault {
   backup: string[];
 }
 
-/** next_actions 1항목 (centers.next_actions jsonb) */
-export interface NextActionItem {
+/** 센터 운영/수업 히스토리 1행 */
+export interface CenterHistoryEntry {
   id: string;
-  text: string;
-  done: boolean;
+  center_id: string;
+  created_at: string;
+  body: string;
+  created_by: string | null;
+  /** 조인 시에만 */
+  author_name?: string | null;
 }
 
 /** 강사 선택 목록 항목 */
@@ -41,18 +45,22 @@ export interface Center {
   access_note: string | null;
   contact_name: string | null;
   contact_phone: string | null;
+  contact_email: string | null;
   contact_role: string | null;
   status: CenterStatus;
   contract_start: string | null;
   contract_end: string | null;
   session_fee: number | null;
   main_teacher_id: string | null;
+  main_teacher_2_id: string | null;
+  main_teacher_3_id: string | null;
   weekly_schedule: WeeklyScheduleSlot[];
   instructors_default: InstructorsDefault;
   highlights: string | null;
-  next_actions: NextActionItem[];
   created_at: string;
   updated_at: string;
   /** 조인 결과: getCenters/getCenterById 에서만 채워짐 */
   main_teacher_name?: string | null;
+  main_teacher_2_name?: string | null;
+  main_teacher_3_name?: string | null;
 }

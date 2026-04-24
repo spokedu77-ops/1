@@ -3,6 +3,9 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTranslator } from '@/app/providers/I18nProvider';
+import { toast } from 'sonner';
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 const SpokeduProClient = dynamic(() => import('@/app/(pro)/spokedu-pro/SpokeduProClient'), { ssr: false });
 
@@ -13,29 +16,65 @@ const SpokeduProClient = dynamic(() => import('@/app/(pro)/spokedu-pro/SpokeduPr
  */
 export default function AdminSpokeduProPage() {
   const t = useTranslator();
+  const [syncing, setSyncing] = useState(false);
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex-shrink-0 flex items-center justify-end gap-2 px-4 py-2 bg-slate-900 border-b border-slate-800">
-        <Link
-          href="/admin/spokedu-pro/subscriptions"
-          className="px-4 py-2 bg-emerald-700 text-white rounded-lg text-sm font-bold hover:bg-emerald-600"
+        <button
+          type="button"
+          disabled={syncing}
+          onClick={async () => {
+            if (syncing) return;
+            setSyncing(true);
+            try {
+              const res = await fetch('/api/spokedu-pro/programs/import-center?hardDelete=1', {
+                method: 'POST',
+                credentials: 'include',
+              });
+              const j = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                toast.error(t(`동기화 실패: ${j.error ?? `HTTP ${res.status}`}`));
+              } else {
+                toast.success(t(`센터 커리큘럼 동기화 완료 (updated ${j.updated ?? 0}, inserted ${j.inserted ?? 0})`));
+              }
+            } catch {
+              toast.error(t('동기화 실패: 네트워크 오류'));
+            } finally {
+              setSyncing(false);
+            }
+          }}
+          className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold hover:bg-amber-500 disabled:opacity-50"
         >
-          {t('구독 운영')}
-        </Link>
-        <Link
-          href="/admin/spokedu-pro/upload"
-          className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-bold hover:bg-slate-600"
-        >
-          {t('프로그램 업로드')}
-        </Link>
-        <Link
-          href="/spokedu-pro"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700"
-        >
-          {t('구독자 보기 (새 탭)')}
-        </Link>
+          {syncing ? t('동기화 중…') : t('센터 커리큘럼 동기화(찌꺼기 삭제)')}
+        </button>
+        <details className="relative">
+          <summary className="list-none cursor-pointer px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-bold hover:bg-slate-600 inline-flex items-center gap-2">
+            {t('더보기')}
+            <ChevronDown className="w-4 h-4" />
+          </summary>
+          <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden z-50">
+            <Link
+              href="/spokedu-pro"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block px-4 py-3 text-sm font-bold text-white hover:bg-slate-800"
+            >
+              {t('구독자 보기 (새 탭)')}
+            </Link>
+            <Link
+              href="/admin/spokedu-pro/subscriptions"
+              className="block px-4 py-3 text-sm font-bold text-slate-200 hover:bg-slate-800"
+            >
+              {t('구독 운영')}
+            </Link>
+            <Link
+              href="/admin/spokedu-pro/upload"
+              className="block px-4 py-3 text-sm font-bold text-slate-200 hover:bg-slate-800"
+            >
+              {t('프로그램 업로드')}
+            </Link>
+          </div>
+        </details>
       </div>
       <div className="flex-1 min-h-0">
         <SpokeduProClient isEditMode />

@@ -35,6 +35,23 @@ import styles from './spokedu-camera.module.css';
 const MEDIAPIPE_VISION_WASM_BASE =
   'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm';
 
+/** iOS Safari / 모바일 여부 감지 (GPU 델리게이트 미지원) */
+function isIOSorSafari(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  return /iPad|iPhone|iPod/.test(ua) || (/Safari/.test(ua) && !/Chrome/.test(ua));
+}
+
+/** GPU 델리게이트 시도에 타임아웃을 건다 — iOS에서 WebGL이 hung 상태로 빠지는 경우 대비 */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 const initialGameState: GameState = {
   mode: null,
   diff: DEFAULT_SETTINGS.diff,
@@ -236,18 +253,39 @@ export default function SpokeduCameraApp() {
         const wasmFileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_VISION_WASM_BASE);
         if (runId !== loadMediaPipeRunIdRef.current) return;
 
-        const lm = await PoseLandmarker.createFromOptions(wasmFileset, {
-          baseOptions: {
-            modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',
-            delegate: 'GPU',
-          },
-          runningMode: 'VIDEO',
-          numPoses: 3,
-          minPoseDetectionConfidence: 0.55,
-          minPosePresenceConfidence: 0.55,
-          minTrackingConfidence: 0.55,
-        });
+        const mobile = isIOSorSafari();
+
+        // 모바일/iOS는 lite 모델 + CPU, 데스크톱은 full 모델 + GPU 우선
+        const modelPath = mobile
+          ? 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task'
+          : 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task';
+
+        const buildOptions = (delegate: 'GPU' | 'CPU') =>
+          PoseLandmarker.createFromOptions(wasmFileset, {
+            baseOptions: { modelAssetPath: modelPath, delegate },
+            runningMode: 'VIDEO',
+            numPoses: 3,
+            minPoseDetectionConfidence: 0.55,
+            minPosePresenceConfidence: 0.55,
+            minTrackingConfidence: 0.55,
+          });
+
+        let lm: Awaited<ReturnType<typeof buildOptions>>;
+
+        if (mobile) {
+          // iOS Safari는 GPU 델리게이트가 hung 상태가 되므로 CPU로 바로 시작
+          lm = await buildOptions('CPU');
+        } else {
+          // 데스크톱: GPU 우선, 30초 내 실패 시 CPU로 재시도
+          try {
+            lm = await withTimeout(buildOptions('GPU'), 30_000);
+          } catch {
+            if (runId !== loadMediaPipeRunIdRef.current) return;
+            setCalibStatus({ text: 'GPU 초기화 실패, CPU 모드로 재시도 중...', className: 'calib-wait' });
+            lm = await buildOptions('CPU');
+          }
+        }
+
         if (runId !== loadMediaPipeRunIdRef.current) return;
         poseLandmarkerRef.current = lm;
         stateRef.current.camReady = true;

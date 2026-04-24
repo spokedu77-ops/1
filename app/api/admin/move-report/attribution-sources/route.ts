@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 
 type MetaRow = { meta: unknown };
+type AttrType = 'utm_source' | 'referrer_host' | 'none';
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -21,18 +22,35 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: '출처 요약 조회 중 오류가 발생했어요.' }, { status: 500 });
     }
 
-    const counts = new Map<string, number>();
+    const counts = new Map<string, { count: number; type: AttrType }>();
+
     for (const row of (data ?? []) as MetaRow[]) {
       const m = row.meta as { attribution?: Record<string, string> } | null | undefined;
-      const src = (m?.attribution?.utm_source ?? '').trim();
-      const key = src || '(utm_source 없음)';
-      counts.set(key, (counts.get(key) ?? 0) + 1);
+      const utmSrc = m?.attribution?.utm_source?.trim() ?? '';
+      const refHost = m?.attribution?.referrer_host?.trim() ?? '';
+
+      let key: string;
+      let type: AttrType;
+
+      if (utmSrc) {
+        key = utmSrc;
+        type = 'utm_source';
+      } else if (refHost) {
+        key = refHost;
+        type = 'referrer_host';
+      } else {
+        key = '(직접 접속)';
+        type = 'none';
+      }
+
+      const prev = counts.get(key);
+      counts.set(key, { count: (prev?.count ?? 0) + 1, type });
     }
 
     const top = [...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => b[1].count - a[1].count)
       .slice(0, 25)
-      .map(([source, count]) => ({ source, count }));
+      .map(([source, { count, type }]) => ({ source, type, count }));
 
     return NextResponse.json({
       ok: true,

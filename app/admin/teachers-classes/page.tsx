@@ -707,6 +707,12 @@ function FeedbackReviewTab({
 
   const checkDuplicateFeedback = async (currentSession: Session) => {
     if (!supabase) return { isDuplicate: false };
+    if (
+      currentSession.session_type === 'regular_center' ||
+      currentSession.session_type === 'one_day_center'
+    ) {
+      return { isDuplicate: false };
+    }
     try {
       const { data: recentSessions } = await supabase
         .from('sessions')

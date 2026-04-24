@@ -22,6 +22,9 @@ import { translationCacheKey } from '@/app/lib/i18n/cacheKey';
 
 const MAX_SOURCE_CHARS = 500;
 const MAX_CACHED_ENTRIES_MEMORY = 2000;
+const TRANSLATE_BACKOFF_MS = 60_000;
+// 번역 기능 토글: 제대로 준비되기 전에는 OFF (요청)
+const TRANSLATION_ENABLED = false;
 
 type CachedEntry = { source: string; text: string };
 
@@ -78,6 +81,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useStateSafeLocale();
   const memoryRef = useRef<Map<string, string>>(new Map());
   const inflightRef = useRef<Set<string>>(new Set());
+  const blockedUntilRef = useRef<number>(0);
   const listenersRef = useRef<Set<() => void>>(new Set());
 
   const notify = useCallback(() => {
@@ -133,6 +137,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     async (loc: UiLocale, source: string) => {
       const trimmed = source.trim();
       if (!trimmed || loc === 'ko') return;
+      if (!TRANSLATION_ENABLED) return;
+      // 429 등으로 막혔으면 쿨다운 동안 번역 호출 자체를 중단
+      if (Date.now() < blockedUntilRef.current) return;
 
       const memKey = getMemoryKey(loc, trimmed);
       const dedupeKey = `${loc}:${translationCacheKey(loc, source)}`;
@@ -154,7 +161,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         });
         window.clearTimeout(timer);
 
-        const json = (await res.json().catch(() => ({}))) as { ok?: boolean; text?: string };
+        // 429면 더 이상 폭주하지 않도록 일정 시간 번역 요청 중단
+        if (res.status === 429) {
+          blockedUntilRef.current = Date.now() + TRANSLATE_BACKOFF_MS;
+          return;
+        }
+        const json = (await res.json().catch(() => ({}))) as { ok?: boolean; text?: string; error?: string };
+        // 번역 자체가 구성되지 않았으면(로컬에서 키 없음 등) 굳이 계속 두드리지 않도록 백오프
+        if (res.status === 503 && json?.error === 'translate_unconfigured') {
+          blockedUntilRef.current = Date.now() + TRANSLATE_BACKOFF_MS;
+          return;
+        }
         if (!res.ok || !json.ok || typeof json.text !== 'string' || !json.text.trim()) {
           return;
         }
@@ -181,6 +198,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const t = useCallback(
     (source: string, _stableKey?: string) => {
       if (locale === 'ko') return source;
+      if (!TRANSLATION_ENABLED) return source;
       const cached = getCached(locale, source);
       if (cached) return cached;
       void runTranslate(locale, source);

@@ -9,8 +9,9 @@
  *   └─ Core5Program (6×5 = 30)
  *      └─ Core5Stage (n, 실제 engine level과 1:1 또는 N:1 매핑)
  *
- * engine: { mode, level } → /admin/memory-game?mode=X&level=Y 로 라우팅
- * engine.mode = null 이거나 engine.level = null 이면 "준비 중" 처리
+ * engine: { mode, level } → Training에서 Memory Game 엔진으로 연결
+ * engine = null 이면 카탈로그에서 "준비 중"(비활성)
+ * 같은 program 안에서 동일 (mode, level)이 2개 이상이면 전부 null로 정리(nullifyDuplicateEnginesPerProgram)
  */
 
 export type SeriesCode = 'SR' | 'IC' | 'RS' | 'SM' | 'RC';
@@ -20,6 +21,8 @@ export type Core5Stage = {
   label: string;
   /** 엔진 키: mode + level. null이면 아직 미구현 */
   engine: { mode: string; level: number } | null;
+  /** Training 설정 — 스테이지 제목 아래 YouTube (watch / youtu.be) */
+  settingsVideoUrl?: string;
 };
 
 export type Core5Program = {
@@ -34,12 +37,46 @@ export type Core5Series = {
   subtitle: string;
   icon: string;
   accent: string;
+  /** Training 설정 화면 상단 — 시리즈(큰 테마) 안내 (엔진 매핑과 별개의 에디토리얼) */
+  settingsIntro?: string;
+  /** Training 설정 — 시리즈 안내 펼침 영역 YouTube (watch / youtu.be) */
+  settingsVideoUrl?: string;
   programs: Core5Program[];
 };
 
 export type Core5Catalog = Core5Series[];
 
-const catalog: Core5Catalog = [
+/** program 단위: (mode, level) 중복 스테이지 → 준비 중(null) */
+function nullifyDuplicateEnginesPerProgram(seed: Core5Catalog): Core5Catalog {
+  return seed.map((series) => ({
+    ...series,
+    programs: series.programs.map((program) => {
+      const counts = new Map<string, number>();
+      for (const st of program.stages) {
+        const e = st.engine;
+        if (!e) continue;
+        const k = `${e.mode}:${e.level}`;
+        counts.set(k, (counts.get(k) ?? 0) + 1);
+      }
+      const dup = new Set<string>();
+      for (const [k, n] of counts) {
+        if (n > 1) dup.add(k);
+      }
+      return {
+        ...program,
+        stages: program.stages.map((st) => {
+          const e = st.engine;
+          if (!e) return st;
+          const k = `${e.mode}:${e.level}`;
+          if (dup.has(k)) return { ...st, engine: null };
+          return st;
+        }),
+      };
+    }),
+  }));
+}
+
+const catalogSeed: Core5Catalog = [
   /* ══════════════════════════════════════════
    * SR — Spatial Reaction
    * ══════════════════════════════════════════ */
@@ -49,6 +86,8 @@ const catalog: Core5Catalog = [
     subtitle: '공간 반응',
     icon: 'SR',
     accent: '#3B82F6',
+    settingsIntro:
+      'Spatial Reaction(공간 반응)은 화면의 위치·색·방향 신호를 보고 몸으로 곧바로 반응하는 훈련 묶음입니다. 사분할·전면 색·조건 숫자 같은 패턴은 주로 반응 인지(basic) 엔진에서 다루고, 방향·극단 배치는 사이먼(simon), 낙하·유성 자극은 시지각 반응(reactTrain) 등으로 이어질 수 있습니다. 아래 프로그램·스테이지 이름은 수업 설계용이며, 실제 신호·난이도는 선택한 엔진 모드·번에 맞춰 실행됩니다.',
     programs: [
       {
         programId: 'SR-01',
@@ -124,6 +163,8 @@ const catalog: Core5Catalog = [
     subtitle: '간섭 제어',
     icon: 'IC',
     accent: '#A855F7',
+    settingsIntro:
+      'Interference Control(간섭 제어)은 글자·배경·주변 자극이 겹칠 때 목표만 고르거나 억제하는 과제를 모았습니다. 스트룹·플랭커·고노고 등 엔진마다 “무엇을 봐야 하는지”가 달라지므로, 같은 스테이지라도 모드·번에 맞는 상세 가이드를 함께 확인하면 수업 안내가 수월합니다.',
     programs: [
       {
         programId: 'IC-01',
@@ -199,6 +240,8 @@ const catalog: Core5Catalog = [
     subtitle: '규칙 전환',
     icon: 'RS',
     accent: '#A3E635',
+    settingsIntro:
+      'Rule Switching(규칙 전환)은 cue가 바뀔 때마다 적용 규칙이 달라지는 과제를 다룹니다. 고노고·과제 전환·이중 과제 등으로 “지금은 어떤 규칙인지”를 빠르게 읽는 연습이며, 스테이지 라벨은 커리큘럼 표기이고 실제 규칙 텍스트는 엔진 설정·가이드의 해당 번 설명을 따릅니다.',
     programs: [
       {
         programId: 'RS-01',
@@ -272,6 +315,8 @@ const catalog: Core5Catalog = [
     subtitle: '순차 기억',
     icon: 'SM',
     accent: '#22C55E',
+    settingsIntro:
+      'Sequence Memory(순차 기억)은 색 순서·조합을 기억했다가 재현하는 spatial 엔진 중심 시리즈입니다. 항목 수·지연·역순·선택 회상 등은 난이도(번)에 따라 화면 흐름이 달라집니다.',
     programs: [
       {
         programId: 'SM-01',
@@ -337,6 +382,8 @@ const catalog: Core5Catalog = [
 
   /* ══════════════════════════════════════════
    * RC — Rhythm Coordination
+   * 각 스테이지의 engine은 훈련 포털에서 열 모드(challenge | flow)만 가리킵니다.
+   * 스테이지 라벨 ↔ 챌린지 템플릿 자동 매핑은 없고, 임베드는 저장된 공용 설정 한 벌을 씁니다(MemoryGameApp).
    * ══════════════════════════════════════════ */
   {
     code: 'RC',
@@ -344,6 +391,8 @@ const catalog: Core5Catalog = [
     subtitle: '리듬 협응',
     icon: 'RC',
     accent: '#14B8A6',
+    settingsIntro:
+      'Rhythm Coordination(리듬 협응)은 챌린지·플로우 임베드로 연습합니다. 아래 카탈로그의 스테이지 이름은 수업·로드맵용이며, 챌린지 스튜디오 템플릿과 자동으로 바뀌지는 않습니다. 음원·그리드는 iframe 쪽 설정을 따르며, 이 화면의 신호 속도·분량과 항상 1:1은 아닙니다.',
     programs: [
       {
         programId: 'RC-01',
@@ -408,6 +457,8 @@ const catalog: Core5Catalog = [
     ],
   },
 ];
+
+const catalog: Core5Catalog = nullifyDuplicateEnginesPerProgram(catalogSeed);
 
 export default catalog;
 

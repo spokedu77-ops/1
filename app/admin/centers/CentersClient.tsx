@@ -197,7 +197,6 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
             </div>
           ) : (
             centers.map((c) => {
-              const pendingCount = (c.next_actions ?? []).filter((a) => !a.done).length;
               const schedule = (c.weekly_schedule ?? []);
               return (
                 <div key={c.id} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
@@ -209,11 +208,6 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                       {c.name}
                     </Link>
                     <div className="flex items-center gap-1 shrink-0">
-                      {pendingCount > 0 && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                          대기 {pendingCount}
-                        </span>
-                      )}
                       <Link href={`/admin/centers/${c.id}`} className="text-slate-400 hover:text-indigo-600">
                         <ChevronRight className="h-4 w-4" />
                       </Link>
@@ -233,16 +227,26 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                       <option value="paused">일시중지</option>
                       <option value="ended">종료</option>
                     </select>
-                    {c.main_teacher_name && (
-                      <span className="text-xs text-slate-600 font-medium">{c.main_teacher_name} T</span>
-                    )}
-                    {!c.main_teacher_name && (
+                    {[c.main_teacher_name, c.main_teacher_2_name, c.main_teacher_3_name].some(Boolean) ? (
+                      <span className="text-xs text-slate-600 font-medium line-clamp-2">
+                        {[
+                          c.main_teacher_name && `1.${c.main_teacher_name}`,
+                          c.main_teacher_2_name && `2.${c.main_teacher_2_name}`,
+                          c.main_teacher_3_name && `3.${c.main_teacher_3_name}`,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    ) : (
                       <span className={EMPTY_BADGE}>강사 미배정</span>
                     )}
                   </div>
-                  {c.contact_name && (
+                  {(c.contact_name || c.contact_email || c.contact_phone) && (
                     <p className="text-xs text-slate-500 mb-1">
-                      {c.contact_name}{c.contact_role ? ` (${c.contact_role})` : ''}{c.contact_phone ? ` · ${c.contact_phone}` : ''}
+                      {c.contact_name ?? ''}
+                      {c.contact_role ? ` (${c.contact_role})` : ''}
+                      {c.contact_email ? ` · ${c.contact_email}` : ''}
+                      {c.contact_phone ? ` · ${c.contact_phone}` : ''}
                     </p>
                   )}
                   {schedule.length > 0 ? (
@@ -288,16 +292,14 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">센터명</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">지역</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">상태</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">메인 강사</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-36">메인 강사</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">담당자</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">시간표</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">액션</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">삭제</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {centers.map((c) => {
-                    const pendingCount = (c.next_actions ?? []).filter((a) => !a.done).length;
                     const schedule = (c.weekly_schedule ?? []);
                     return (
                       <tr
@@ -331,8 +333,18 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                           </select>
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700 font-medium">
-                          {c.main_teacher_name ? (
-                            `${c.main_teacher_name} T`
+                          {[c.main_teacher_name, c.main_teacher_2_name, c.main_teacher_3_name].some(Boolean) ? (
+                            <span className="text-xs leading-relaxed space-y-0.5 block">
+                              {c.main_teacher_name && (
+                                <span className="block">1. {c.main_teacher_name}</span>
+                              )}
+                              {c.main_teacher_2_name && (
+                                <span className="block">2. {c.main_teacher_2_name}</span>
+                              )}
+                              {c.main_teacher_3_name && (
+                                <span className="block">3. {c.main_teacher_3_name}</span>
+                              )}
+                            </span>
                           ) : (
                             <span className={EMPTY_BADGE}>미배정</span>
                           )}
@@ -340,6 +352,9 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                         <td className="px-4 py-3 text-sm text-slate-600">
                           <div className="flex flex-col gap-0.5">
                             <span>{c.contact_name ?? '-'}</span>
+                            {c.contact_email && (
+                              <span className="text-xs text-slate-400 break-all">{c.contact_email}</span>
+                            )}
                             {c.contact_phone && <span className="text-xs text-slate-400">{c.contact_phone}</span>}
                           </div>
                         </td>
@@ -351,15 +366,6 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
                               {schedule.slice(0, 2).map((s) => `${DAY_LABELS[s.day] ?? s.day} ${s.start}`).join(' / ')}
                               {schedule.length > 2 ? ` +${schedule.length - 2}` : ''}
                             </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {pendingCount > 0 ? (
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                              대기 {pendingCount}
-                            </span>
-                          ) : (
-                            <span className={EMPTY_BADGE}>없음</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">

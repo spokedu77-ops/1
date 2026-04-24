@@ -2,10 +2,11 @@
 
 import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useEffect, useRef } from 'react';
-import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb, Play, ListChecks, Gamepad2 } from 'lucide-react';
+import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb, Gamepad2 } from 'lucide-react';
 import type { ProgramDetail } from '../types';
 import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
 import { getYouTubeId } from '@/app/(pro)/spokedu-pro/utils/youtube';
+import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 
 export default function SpokeduProDrawer({
   open,
@@ -43,6 +44,7 @@ export default function SpokeduProDrawer({
     title: '',
     subtitle: '',
     videoUrl: '',
+    functionTypes: [] as string[],
     functionType: '',
     mainTheme: '',
     groupSize: '',
@@ -59,6 +61,8 @@ export default function SpokeduProDrawer({
       title: d?.title ?? `프로그램 #${programId}`,
       subtitle: d?.subtitle ?? '',
       videoUrl: d?.videoUrl ?? '',
+      functionTypes:
+        (Array.isArray(d?.functionTypes) ? d?.functionTypes : d?.functionType ? [d.functionType] : []) ?? [],
       functionType: d?.functionType ?? '',
       mainTheme: d?.mainTheme ?? '',
       groupSize: d?.groupSize ?? '',
@@ -85,10 +89,13 @@ export default function SpokeduProDrawer({
 
   if (!open) return null;
 
-  const title = d?.title ?? editForm.title ?? `프로그램 #${programId ?? ''}`;
+  const title = stripMonthWeekPrefix(d?.title ?? editForm.title ?? `프로그램 #${programId ?? ''}`);
   const subtitle = d?.subtitle ?? editForm.subtitle ?? '';
   const videoUrl = d?.videoUrl ?? editForm.videoUrl ?? '';
-  const functionType = d?.functionType ?? editForm.functionType;
+  const functionTypes = (d?.functionTypes && d.functionTypes.length > 0)
+    ? d.functionTypes
+    : (editForm.functionTypes.length > 0 ? editForm.functionTypes : (d?.functionType ? [d.functionType] : (editForm.functionType ? [editForm.functionType] : [])));
+  const functionType = d?.functionType ?? editForm.functionType; // legacy fallback
   const mainTheme = d?.mainTheme ?? editForm.mainTheme;
   const groupSize = d?.groupSize ?? editForm.groupSize;
   const checklist = d?.checklist ?? editForm.checklist;
@@ -97,7 +104,7 @@ export default function SpokeduProDrawer({
   const activityTip = d?.activityTip ?? editForm.activityTip;
   const videoId = getYouTubeId(videoUrl);
 
-  const tags = [functionType, mainTheme, groupSize].filter(Boolean);
+  const tags = [...functionTypes, mainTheme, groupSize].filter(Boolean).slice(0, 3);
 
   const closeEditModal = () => {
     setIsEditModalOpen(false);
@@ -105,6 +112,8 @@ export default function SpokeduProDrawer({
       title: d?.title ?? '',
       subtitle: d?.subtitle ?? '',
       videoUrl: d?.videoUrl ?? '',
+      functionTypes:
+        (Array.isArray(d?.functionTypes) ? d?.functionTypes : d?.functionType ? [d.functionType] : []) ?? [],
       functionType: d?.functionType ?? '',
       mainTheme: d?.mainTheme ?? '',
       groupSize: d?.groupSize ?? '',
@@ -126,6 +135,7 @@ export default function SpokeduProDrawer({
           title: editForm.title.trim() || undefined,
           subtitle: editForm.subtitle.trim() || undefined,
           videoUrl: editForm.videoUrl.trim() || undefined,
+          functionTypes: editForm.functionTypes.length > 0 ? editForm.functionTypes : undefined,
           functionType: editForm.functionType.trim() || undefined,
           mainTheme: editForm.mainTheme.trim() || undefined,
           groupSize: editForm.groupSize.trim() || undefined,
@@ -148,6 +158,9 @@ export default function SpokeduProDrawer({
       title: d?.title ?? title,
       subtitle: d?.subtitle ?? subtitle,
       videoUrl: d?.videoUrl ?? videoUrl,
+      functionTypes: Array.isArray(d?.functionTypes)
+        ? d?.functionTypes ?? []
+        : (d?.functionType ? [d.functionType] : (functionTypes ?? [])),
       functionType: d?.functionType ?? functionType ?? '',
       mainTheme: d?.mainTheme ?? mainTheme ?? '',
       groupSize: d?.groupSize ?? groupSize ?? '',
@@ -218,11 +231,11 @@ export default function SpokeduProDrawer({
                 <p className="text-slate-400 text-sm font-medium mt-2 mb-3 whitespace-pre-wrap">{subtitle}</p>
               ) : null}
               {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {tags.map((tagVal) => (
                     <span
                       key={tagVal}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                      className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900/35 text-slate-200/80 border border-white/10"
                     >
                       {tr(String(tagVal))}
                     </span>
@@ -239,27 +252,6 @@ export default function SpokeduProDrawer({
                   >
                     <Gamepad2 className="w-4 h-4" />
                     {tr('SPOMOVE 실행')}
-                  </button>
-                )}
-                {videoUrl && (
-                  <a
-                    href={videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-colors"
-                  >
-                    <Play className="w-4 h-4" />
-                    {tr('영상 보기')}
-                  </a>
-                )}
-                {checklist && (
-                  <button
-                    type="button"
-                    onClick={() => checklistSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold transition-colors"
-                  >
-                    <ListChecks className="w-4 h-4" />
-                    {tr('체크리스트 보기')}
                   </button>
                 )}
               </div>
@@ -381,16 +373,35 @@ export default function SpokeduProDrawer({
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">{tr('기능 종류')}</label>
-                <select
-                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
-                  value={editForm.functionType}
-                  onChange={(e) => setEditForm((f) => ({ ...f, functionType: e.target.value }))}
-                >
-                  <option value="">{tr('선택')}</option>
-                  {FUNCTION_TYPES.map((ft) => (
-                    <option key={ft} value={ft}>{tr(ft)}</option>
-                  ))}
-                </select>
+                <div className="flex flex-wrap gap-2">
+                  {FUNCTION_TYPES.map((ft) => {
+                    const selected = editForm.functionTypes.includes(ft);
+                    return (
+                      <button
+                        key={ft}
+                        type="button"
+                        onClick={() =>
+                          setEditForm((f) => {
+                            const next = new Set(f.functionTypes);
+                            if (next.has(ft)) next.delete(ft);
+                            else next.add(ft);
+                            return { ...f, functionTypes: Array.from(next) };
+                          })
+                        }
+                        className={`px-3 py-2 rounded-xl text-xs font-black border transition-colors ${
+                          selected
+                            ? 'bg-emerald-600 text-white border-emerald-400/50'
+                            : 'bg-slate-800 text-slate-300 border-slate-600 hover:border-slate-500'
+                        }`}
+                      >
+                        {tr(ft)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  {tr('복수 선택 가능')}
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">{tr('메인테마')}</label>
@@ -398,6 +409,7 @@ export default function SpokeduProDrawer({
                   className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
                   value={editForm.mainTheme}
                   onChange={(e) => setEditForm((f) => ({ ...f, mainTheme: e.target.value }))}
+                  style={{ colorScheme: 'dark' }}
                 >
                   <option value="">{tr('선택')}</option>
                   {MAIN_THEMES.map((mt) => (
@@ -411,6 +423,7 @@ export default function SpokeduProDrawer({
                   className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
                   value={editForm.groupSize}
                   onChange={(e) => setEditForm((f) => ({ ...f, groupSize: e.target.value }))}
+                  style={{ colorScheme: 'dark' }}
                 >
                   <option value="">{tr('선택')}</option>
                   {GROUP_SIZES.map((gs) => (

@@ -11,13 +11,21 @@ export type GetCentersFilters = {
 };
 
 type MainTeacherJoin = { id: string; name: string } | { id: string; name: string }[] | null;
-type CenterRowWithTeacher = Partial<Center> & { main_teacher?: MainTeacherJoin };
+
+type CenterRowWithTeacher = Partial<Center> & {
+  main_teacher?: MainTeacherJoin;
+  mt2?: MainTeacherJoin;
+  mt3?: MainTeacherJoin;
+  next_actions?: unknown;
+};
+
+function teacherJoinName(j: MainTeacherJoin | undefined): string | null {
+  if (j == null) return null;
+  return Array.isArray(j) ? j[0]?.name ?? null : j.name ?? null;
+}
 
 function normalizeCenterRow(row: CenterRowWithTeacher): Center {
-  const { main_teacher, ...baseRow } = row;
-  const mainTeacherName = Array.isArray(main_teacher)
-    ? main_teacher[0]?.name ?? null
-    : main_teacher?.name ?? null;
+  const { main_teacher, mt2, mt3, next_actions: _omitNext, ...baseRow } = row;
 
   return {
     id: baseRow.id as string,
@@ -27,22 +35,33 @@ function normalizeCenterRow(row: CenterRowWithTeacher): Center {
     access_note: (baseRow.access_note as string | null) ?? null,
     contact_name: (baseRow.contact_name as string | null) ?? null,
     contact_phone: (baseRow.contact_phone as string | null) ?? null,
+    contact_email: (baseRow.contact_email as string | null) ?? null,
     contact_role: (baseRow.contact_role as string | null) ?? null,
     status: (baseRow.status as Center['status']) ?? 'active',
     contract_start: (baseRow.contract_start as string | null) ?? null,
     contract_end: (baseRow.contract_end as string | null) ?? null,
     session_fee: (baseRow.session_fee as number | null) ?? null,
     main_teacher_id: (baseRow.main_teacher_id as string | null) ?? null,
+    main_teacher_2_id: (baseRow.main_teacher_2_id as string | null) ?? null,
+    main_teacher_3_id: (baseRow.main_teacher_3_id as string | null) ?? null,
     weekly_schedule: (baseRow.weekly_schedule as Center['weekly_schedule']) ?? [],
     instructors_default:
       (baseRow.instructors_default as Center['instructors_default']) ?? { main: null, sub: null, backup: [] },
     highlights: (baseRow.highlights as string | null) ?? null,
-    next_actions: (baseRow.next_actions as Center['next_actions']) ?? [],
     created_at: (baseRow.created_at as string) ?? new Date().toISOString(),
     updated_at: (baseRow.updated_at as string) ?? new Date().toISOString(),
-    main_teacher_name: mainTeacherName,
+    main_teacher_name: teacherJoinName(main_teacher),
+    main_teacher_2_name: teacherJoinName(mt2),
+    main_teacher_3_name: teacherJoinName(mt3),
   };
 }
+
+const CENTER_SELECT_WITH_TEACHERS = `
+  *,
+  main_teacher:main_teacher_id(id, name),
+  mt2:main_teacher_2_id(id, name),
+  mt3:main_teacher_3_id(id, name)
+`;
 
 export async function getCenters(filters: GetCentersFilters = {}): Promise<Center[]> {
   const supabase = await createServerSupabaseClient();
@@ -55,14 +74,16 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
         region_tag,
         contact_name,
         contact_phone,
+        contact_email,
         contact_role,
         status,
         weekly_schedule,
         highlights,
-        next_actions,
         created_at,
         updated_at,
-        main_teacher:main_teacher_id(id, name)
+        main_teacher:main_teacher_id(id, name),
+        mt2:main_teacher_2_id(id, name),
+        mt3:main_teacher_3_id(id, name)
       `
     )
     .order('name');
@@ -75,7 +96,9 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
   }
   if (filters.search?.trim()) {
     const term = filters.search.trim();
-    q = q.or(`name.ilike.%${term}%,address.ilike.%${term}%,contact_name.ilike.%${term}%`);
+    q = q.or(
+      `name.ilike.%${term}%,address.ilike.%${term}%,contact_name.ilike.%${term}%,contact_email.ilike.%${term}%`
+    );
   }
 
   const { data, error } = await q;
@@ -88,7 +111,7 @@ export async function getCenterById(id: string): Promise<Center | null> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('centers')
-    .select('*, main_teacher:main_teacher_id(id, name)')
+    .select(CENTER_SELECT_WITH_TEACHERS)
     .eq('id', id)
     .single();
   if (error) {
@@ -126,18 +149,21 @@ export async function createCenter(input: unknown): Promise<{ data?: Center; err
       access_note: parsed.data.access_note ?? null,
       contact_name: parsed.data.contact_name ?? null,
       contact_phone: parsed.data.contact_phone ?? null,
+      contact_email: parsed.data.contact_email ?? null,
       contact_role: parsed.data.contact_role ?? null,
       status: parsed.data.status,
       contract_start: parsed.data.contract_start ?? null,
       contract_end: parsed.data.contract_end ?? null,
       session_fee: parsed.data.session_fee ?? null,
       main_teacher_id: parsed.data.main_teacher_id ?? null,
+      main_teacher_2_id: parsed.data.main_teacher_2_id ?? null,
+      main_teacher_3_id: parsed.data.main_teacher_3_id ?? null,
       weekly_schedule: parsed.data.weekly_schedule ?? [],
       instructors_default: parsed.data.instructors_default ?? { main: null, sub: null, backup: [] },
       highlights: parsed.data.highlights ?? null,
-      next_actions: parsed.data.next_actions ?? [],
+      next_actions: [],
     })
-    .select('*, main_teacher:main_teacher_id(id, name)')
+    .select(CENTER_SELECT_WITH_TEACHERS)
     .single();
   if (error) return { error: error.message };
   return { data: normalizeCenterRow(data as CenterRowWithTeacher) };
@@ -159,22 +185,24 @@ export async function updateCenter(
   if (parsed.data.access_note !== undefined) payload.access_note = parsed.data.access_note;
   if (parsed.data.contact_name !== undefined) payload.contact_name = parsed.data.contact_name;
   if (parsed.data.contact_phone !== undefined) payload.contact_phone = parsed.data.contact_phone;
+  if (parsed.data.contact_email !== undefined) payload.contact_email = parsed.data.contact_email;
   if (parsed.data.contact_role !== undefined) payload.contact_role = parsed.data.contact_role;
   if (parsed.data.status !== undefined) payload.status = parsed.data.status;
   if (parsed.data.contract_start !== undefined) payload.contract_start = parsed.data.contract_start;
   if (parsed.data.contract_end !== undefined) payload.contract_end = parsed.data.contract_end;
   if (parsed.data.session_fee !== undefined) payload.session_fee = parsed.data.session_fee;
   if (parsed.data.main_teacher_id !== undefined) payload.main_teacher_id = parsed.data.main_teacher_id;
+  if (parsed.data.main_teacher_2_id !== undefined) payload.main_teacher_2_id = parsed.data.main_teacher_2_id;
+  if (parsed.data.main_teacher_3_id !== undefined) payload.main_teacher_3_id = parsed.data.main_teacher_3_id;
   if (parsed.data.weekly_schedule !== undefined) payload.weekly_schedule = parsed.data.weekly_schedule;
   if (parsed.data.instructors_default !== undefined) payload.instructors_default = parsed.data.instructors_default;
   if (parsed.data.highlights !== undefined) payload.highlights = parsed.data.highlights;
-  if (parsed.data.next_actions !== undefined) payload.next_actions = parsed.data.next_actions;
 
   const { data, error } = await supabase
     .from('centers')
     .update(payload)
     .eq('id', id)
-    .select('*, main_teacher:main_teacher_id(id, name)')
+    .select(CENTER_SELECT_WITH_TEACHERS)
     .single();
   if (error) return { error: error.message };
   return { data: normalizeCenterRow(data as CenterRowWithTeacher) };

@@ -6,8 +6,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCenterById } from '../actions/center-detail';
 import { updateCenter, deleteCenter, getActiveTeachers } from '../actions/centers';
-import { updateCenterNextActions } from '../actions/next-actions';
-import type { Center, CenterStatus, NextActionItem, WeeklyScheduleSlot, InstructorsDefault, TeacherOption } from '@/app/lib/centers/types';
+import { getCenterHistory, addCenterHistoryEntry } from '../actions/center-history';
+import type {
+  Center,
+  CenterHistoryEntry,
+  CenterStatus,
+  WeeklyScheduleSlot,
+  InstructorsDefault,
+  TeacherOption,
+} from '@/app/lib/centers/types';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   ArrowLeft,
@@ -17,16 +24,15 @@ import {
   Trash2,
   X,
   Plus,
-  CheckSquare,
-  Square,
   MapPin,
   Phone,
+  Mail,
   Calendar,
   Clock,
   Users,
-  FileText,
   AlertCircle,
   BadgeJapaneseYen,
+  History,
 } from 'lucide-react';
 
 const STATUS_STYLES: Record<CenterStatus, string> = {
@@ -59,12 +65,15 @@ type EditForm = {
   access_note: string;
   contact_name: string;
   contact_phone: string;
+  contact_email: string;
   contact_role: string;
   status: CenterStatus;
   contract_start: string;
   contract_end: string;
   session_fee: string;
   main_teacher_id: string;
+  main_teacher_2_id: string;
+  main_teacher_3_id: string;
   highlights: string;
   weekly_schedule: WeeklyScheduleSlot[];
   instructors_default: InstructorsDefault;
@@ -77,12 +86,15 @@ const DEFAULT_EDIT_FORM: EditForm = {
   access_note: '',
   contact_name: '',
   contact_phone: '',
+  contact_email: '',
   contact_role: '',
   status: 'active',
   contract_start: '',
   contract_end: '',
   session_fee: '',
   main_teacher_id: '',
+  main_teacher_2_id: '',
+  main_teacher_3_id: '',
   highlights: '',
   weekly_schedule: [],
   instructors_default: { main: null, sub: null, backup: [] },
@@ -98,7 +110,10 @@ export function CenterDetailClient({ id }: { id: string }) {
   const [editError, setEditError] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
-  const [newActionText, setNewActionText] = useState('');
+  const [history, setHistory] = useState<CenterHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyDraft, setHistoryDraft] = useState('');
+  const [historySaving, setHistorySaving] = useState(false);
 
   const loadCenter = useCallback(async () => {
     setLoading(true);
@@ -119,35 +134,44 @@ export function CenterDetailClient({ id }: { id: string }) {
       .catch((err) => devLogger.error(err));
   }, [loadCenter]);
 
-  const handleNextActionToggle = async (item: NextActionItem) => {
-    if (!center) return;
-    const next = center.next_actions.map((a) =>
-      a.id === item.id ? { ...a, done: !a.done } : a
-    );
-    const result = await updateCenterNextActions(center.id, { next_actions: next });
-    if (!result.error) setCenter((c) => (c ? { ...c, next_actions: next } : null));
-  };
-
-  const handleNextActionAdd = async () => {
-    if (!center || !newActionText.trim()) return;
-    const newItem: NextActionItem = {
-      id: crypto.randomUUID(),
-      text: newActionText.trim(),
-      done: false,
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setHistoryLoading(true);
+      try {
+        const rows = await getCenterHistory(id);
+        if (!cancelled) setHistory(rows);
+      } catch (e) {
+        devLogger.error(e);
+        if (!cancelled) setHistory([]);
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
-    const next = [...center.next_actions, newItem];
-    const result = await updateCenterNextActions(center.id, { next_actions: next });
-    if (!result.error) {
-      setCenter((c) => (c ? { ...c, next_actions: next } : null));
-      setNewActionText('');
-    }
-  };
+  }, [id]);
 
-  const handleNextActionRemove = async (itemId: string) => {
-    if (!center) return;
-    const next = center.next_actions.filter((a) => a.id !== itemId);
-    const result = await updateCenterNextActions(center.id, { next_actions: next });
-    if (!result.error) setCenter((c) => (c ? { ...c, next_actions: next } : null));
+  const handleAddHistory = async () => {
+    if (!historyDraft.trim()) {
+      toast.error('히스토리 내용을 입력해 주세요.');
+      return;
+    }
+    setHistorySaving(true);
+    try {
+      const res = await addCenterHistoryEntry(id, historyDraft);
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+      setHistoryDraft('');
+      const rows = await getCenterHistory(id);
+      setHistory(rows);
+      toast.success('히스토리를 추가했습니다.');
+    } finally {
+      setHistorySaving(false);
+    }
   };
 
   const openEditModal = () => {
@@ -159,12 +183,15 @@ export function CenterDetailClient({ id }: { id: string }) {
       access_note: center.access_note ?? '',
       contact_name: center.contact_name ?? '',
       contact_phone: center.contact_phone ?? '',
+      contact_email: center.contact_email ?? '',
       contact_role: center.contact_role ?? '',
       status: center.status,
       contract_start: center.contract_start ?? '',
       contract_end: center.contract_end ?? '',
       session_fee: center.session_fee != null ? String(center.session_fee) : '',
       main_teacher_id: center.main_teacher_id ?? '',
+      main_teacher_2_id: center.main_teacher_2_id ?? '',
+      main_teacher_3_id: center.main_teacher_3_id ?? '',
       highlights: center.highlights ?? '',
       weekly_schedule: center.weekly_schedule ?? [],
       instructors_default: center.instructors_default ?? { main: null, sub: null, backup: [] },
@@ -192,12 +219,15 @@ export function CenterDetailClient({ id }: { id: string }) {
         access_note: editForm.access_note.trim() || null,
         contact_name: editForm.contact_name.trim() || null,
         contact_phone: editForm.contact_phone.trim() || null,
+        contact_email: editForm.contact_email.trim() || null,
         contact_role: editForm.contact_role.trim() || null,
         status: editForm.status,
         contract_start: editForm.contract_start.trim() || null,
         contract_end: editForm.contract_end.trim() || null,
         session_fee: (parsedFee != null && !isNaN(parsedFee)) ? parsedFee : null,
         main_teacher_id: editForm.main_teacher_id.trim() || null,
+        main_teacher_2_id: editForm.main_teacher_2_id.trim() || null,
+        main_teacher_3_id: editForm.main_teacher_3_id.trim() || null,
         highlights: editForm.highlights.trim() || null,
         weekly_schedule: editForm.weekly_schedule,
         instructors_default: editForm.instructors_default,
@@ -276,8 +306,6 @@ export function CenterDetailClient({ id }: { id: string }) {
 
   const schedule = center.weekly_schedule ?? [];
   const instructors = center.instructors_default ?? { main: null, sub: null, backup: [] };
-  const nextActions = center.next_actions ?? [];
-  const pendingCount = nextActions.filter((a) => !a.done).length;
 
   return (
     <div className="flex-1 min-h-screen bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]">
@@ -308,11 +336,6 @@ export function CenterDetailClient({ id }: { id: string }) {
                 {center.region_tag && (
                   <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
                     {center.region_tag}
-                  </span>
-                )}
-                {pendingCount > 0 && (
-                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                    할 일 {pendingCount}
                   </span>
                 )}
               </div>
@@ -361,11 +384,26 @@ export function CenterDetailClient({ id }: { id: string }) {
               <Phone className="h-3.5 w-3.5" />
               담당자
             </div>
-            {center.contact_name ? (
-              <div className="text-sm text-slate-700">
-                <span className="font-medium">{center.contact_name}</span>
-                {center.contact_role && <span className="text-slate-500 ml-1">({center.contact_role})</span>}
-                {center.contact_phone && <p className="text-slate-500 mt-0.5">{center.contact_phone}</p>}
+            {center.contact_name || center.contact_email || center.contact_phone ? (
+              <div className="text-sm text-slate-700 space-y-1">
+                {center.contact_name && (
+                  <p>
+                    <span className="font-medium">{center.contact_name}</span>
+                    {center.contact_role && <span className="text-slate-500 ml-1">({center.contact_role})</span>}
+                  </p>
+                )}
+                {center.contact_email && (
+                  <p className="flex items-center gap-1.5 text-slate-600">
+                    <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                    <span>{center.contact_email}</span>
+                  </p>
+                )}
+                {center.contact_phone && (
+                  <p className="flex items-center gap-1.5 text-slate-600">
+                    <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                    <span>{center.contact_phone}</span>
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-sm text-slate-400">미설정</p>
@@ -401,10 +439,18 @@ export function CenterDetailClient({ id }: { id: string }) {
               <Users className="h-3.5 w-3.5" />
               메인 강사 / 수업료
             </div>
-            <p className="text-sm text-slate-700">
-              강사: <span className="font-medium">{center.main_teacher_name ?? '-'}</span>
-            </p>
-            <p className="text-sm text-slate-700 mt-0.5">
+            <ul className="text-sm text-slate-700 space-y-0.5">
+              <li>
+                메인 1: <span className="font-medium">{center.main_teacher_name ?? '-'}</span>
+              </li>
+              <li>
+                메인 2: <span className="font-medium">{center.main_teacher_2_name ?? '-'}</span>
+              </li>
+              <li>
+                메인 3: <span className="font-medium">{center.main_teacher_3_name ?? '-'}</span>
+              </li>
+            </ul>
+            <p className="text-sm text-slate-700 mt-2">
               회당:{' '}
               {center.session_fee != null
                 ? <span className="font-medium">{center.session_fee.toLocaleString()}원</span>
@@ -440,71 +486,44 @@ export function CenterDetailClient({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* Next Actions */}
+        {/* 수업 / 운영 히스토리 */}
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
-            <FileText className="h-3.5 w-3.5" />
-            Next Actions
-            {pendingCount > 0 && (
-              <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
-                {pendingCount}
-              </span>
-            )}
+            <History className="h-3.5 w-3.5" />
+            수업 / 운영 히스토리
           </div>
-          <ul className="space-y-1.5 mb-3">
-            {nextActions.length === 0 && (
-              <li className="text-sm text-slate-400">등록된 액션 없음</li>
-            )}
-            {nextActions.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleNextActionToggle(item)}
-                  className="shrink-0 text-slate-400 hover:text-indigo-600"
-                >
-                  {item.done ? (
-                    <CheckSquare className="h-4 w-4 text-indigo-500" />
-                  ) : (
-                    <Square className="h-4 w-4" />
-                  )}
-                </button>
-                <span className={`flex-1 text-sm ${item.done ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
-                  {item.text}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleNextActionRemove(item.id)}
-                  className="shrink-0 rounded p-1 text-slate-300 hover:bg-red-50 hover:text-red-500"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="새 액션 입력"
-              value={newActionText}
-              onChange={(e) => setNewActionText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleNextActionAdd();
-                }
-              }}
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+          {historyLoading ? (
+            <p className="text-sm text-slate-400 py-2">불러오는 중…</p>
+          ) : history.length === 0 ? (
+            <p className="text-sm text-slate-400 mb-3">등록된 히스토리가 없습니다.</p>
+          ) : (
+            <ul className="space-y-3 mb-4 max-h-72 overflow-y-auto">
+              {history.map((h) => (
+                <li key={h.id} className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                    {new Date(h.created_at).toLocaleString('ko-KR')}
+                  </p>
+                  <p className="text-sm text-slate-800 whitespace-pre-wrap mt-0.5">{h.body}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="space-y-2">
+            <textarea
+              rows={3}
+              placeholder="수업·계약·특이사항 등 기록을 남기세요."
+              value={historyDraft}
+              onChange={(e) => setHistoryDraft(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
             />
             <button
               type="button"
-              onClick={handleNextActionAdd}
-              className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 cursor-pointer"
+              disabled={historySaving}
+              onClick={() => void handleAddHistory()}
+              className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
             >
               <Plus className="h-4 w-4" />
-              추가
+              히스토리 추가
             </button>
           </div>
         </div>
@@ -634,10 +653,36 @@ export function CenterDetailClient({ id }: { id: string }) {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사 1</label>
                       <select
                         value={editForm.main_teacher_id}
                         onChange={(e) => setEditForm((f) => ({ ...f, main_teacher_id: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
+                      >
+                        <option value="">미선택</option>
+                        {teachers.map((t) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사 2</label>
+                      <select
+                        value={editForm.main_teacher_2_id}
+                        onChange={(e) => setEditForm((f) => ({ ...f, main_teacher_2_id: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
+                      >
+                        <option value="">미선택</option>
+                        {teachers.map((t) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사 3</label>
+                      <select
+                        value={editForm.main_teacher_3_id}
+                        onChange={(e) => setEditForm((f) => ({ ...f, main_teacher_3_id: e.target.value }))}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="">미선택</option>
@@ -683,7 +728,7 @@ export function CenterDetailClient({ id }: { id: string }) {
                 {/* 담당자 */}
                 <fieldset className="space-y-3">
                   <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">담당자</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">이름</label>
                       <input
@@ -694,20 +739,31 @@ export function CenterDetailClient({ id }: { id: string }) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">연락처</label>
-                      <input
-                        type="text"
-                        value={editForm.contact_phone}
-                        onChange={(e) => setEditForm((f) => ({ ...f, contact_phone: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">역할</label>
                       <input
                         type="text"
                         value={editForm.contact_role}
                         onChange={(e) => setEditForm((f) => ({ ...f, contact_role: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">이메일</label>
+                      <input
+                        type="email"
+                        autoComplete="email"
+                        value={editForm.contact_email}
+                        onChange={(e) => setEditForm((f) => ({ ...f, contact_email: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">전화번호</label>
+                      <input
+                        type="tel"
+                        autoComplete="tel"
+                        value={editForm.contact_phone}
+                        onChange={(e) => setEditForm((f) => ({ ...f, contact_phone: e.target.value }))}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>

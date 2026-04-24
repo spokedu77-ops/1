@@ -2,7 +2,7 @@
 
 import { useTranslator } from '@/app/providers/I18nProvider';
 import { useEffect, useState, useCallback } from 'react';
-import { Zap, Star, ChevronRight, RefreshCw, Play, ClipboardList } from 'lucide-react';
+import { Zap, Star, ChevronRight, RefreshCw } from 'lucide-react';
 import { useSpokeduProDashboard } from '../hooks/useSpokeduProDashboard';
 import {
   DEFAULT_DASHBOARD_V4,
@@ -53,46 +53,11 @@ function ProgramCardRow1({
   const title = programDetail?.title ?? getProgramTitle(programId);
   const tags = tag2.slice(0, 2);
   const thumbnailUrl = programDetail?.videoUrl ? getYouTubeThumbnailUrl(programDetail.videoUrl) : null;
-  const rawVideo = programDetail?.videoUrl?.trim();
-  const showVideoBtn = !!rawVideo && isHttpUrl(rawVideo);
-  const showPrepBtn = !!(programDetail?.checklist?.trim() || programDetail?.equipment?.trim());
   return (
     <div
       className="media-card relative w-full aspect-[4/3] rounded-2xl overflow-hidden group cursor-pointer"
       onClick={onOpenProgram}
     >
-      {(showVideoBtn || showPrepBtn) && (
-        <div className="absolute top-2 right-2 z-20 flex gap-1.5 pointer-events-auto">
-          {showVideoBtn && rawVideo ? (
-            <button
-              type="button"
-              aria-label={tr('영상 보기')}
-              title={tr('영상 보기')}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(rawVideo, '_blank', 'noopener,noreferrer');
-              }}
-              className="p-2 rounded-lg bg-black/55 hover:bg-black/75 text-white border border-white/10 transition-colors"
-            >
-              <Play className="w-4 h-4 fill-current" />
-            </button>
-          ) : null}
-          {showPrepBtn ? (
-            <button
-              type="button"
-              aria-label={tr('준비·체크리스트')}
-              title={tr('준비·체크리스트')}
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenProgram();
-              }}
-              className="p-2 rounded-lg bg-black/55 hover:bg-black/75 text-white border border-white/10 transition-colors"
-            >
-              <ClipboardList className="w-4 h-4" />
-            </button>
-          ) : null}
-        </div>
-      )}
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
@@ -107,10 +72,10 @@ function ProgramCardRow1({
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/40 to-transparent p-5 flex flex-col justify-end">
-        <div className="flex gap-1.5 mb-2">
+        <div className="flex gap-1.5 mb-2 opacity-75">
           <span className="text-[10px] font-black uppercase text-white px-2 py-0.5 bg-black/60 rounded">{tr(role)}</span>
           {tags.map((tag) => (
-            <span key={tag} className="text-[10px] font-black text-slate-300 px-2 py-0.5 bg-slate-800/60 rounded">
+            <span key={tag} className="text-[10px] font-black text-slate-300/90 px-2 py-0.5 bg-slate-900/35 border border-white/10 rounded">
               {tr(tag)}
             </span>
           ))}

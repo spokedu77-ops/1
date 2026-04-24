@@ -35,6 +35,7 @@ import {
   screenplayDetailStorageKey,
   type ScreenplayMeta,
 } from './utils/spomoveLaunch';
+import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 
 export default function SpokeduProClient({
   isEditMode = false,
@@ -101,6 +102,18 @@ export default function SpokeduProClient({
     role?: string;
     themeKey?: string;
     screenplay?: boolean;
+    row?: {
+      id?: number;
+      title?: string;
+      video_url?: string | null;
+      function_type?: string | null;
+      function_types?: string[] | null;
+      main_theme?: string | null;
+      group_size?: string | null;
+      mode_id?: string | null;
+      preset_ref?: string | null;
+      thumbnail_url?: string | null;
+    };
   } | null>(null);
   const [screenplayById, setScreenplayById] = useState<Record<number, ScreenplayMeta>>({});
   const [libraryPreset, setLibraryPreset] = useState<{ themeKey?: string; preset?: string } | null>(null);
@@ -171,23 +184,27 @@ export default function SpokeduProClient({
     activity_method?: string | null;
     activity_tip?: string | null;
   }>>([]);
+  const [programsRefreshToken, setProgramsRefreshToken] = useState(0);
+  const refreshProgramsFromApi = useCallback(async () => {
+    try {
+      const res = await fetch('/api/spokedu-pro/programs?limit=200', { credentials: 'include' });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(json?.data)) setProgramsFromApi(json.data);
+      else setProgramsFromApi([]);
+    } catch {
+      setProgramsFromApi([]);
+    }
+  }, []);
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const res = await fetch('/api/spokedu-pro/programs?limit=200');
-        const json = await res.json().catch(() => ({}));
-        if (cancelled) return;
-        if (res.ok && Array.isArray(json?.data)) setProgramsFromApi(json.data);
-        else setProgramsFromApi([]);
-      } catch {
-        if (!cancelled) setProgramsFromApi([]);
-      }
+      if (cancelled) return;
+      await refreshProgramsFromApi();
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshProgramsFromApi]);
 
   useEffect(() => {
     let cancelled = false;
@@ -234,9 +251,14 @@ export default function SpokeduProClient({
   const programDetailsFromApi = useMemo(() => {
     const out: Record<string, ProgramDetail> = {};
     programsFromApi.forEach((row) => {
+      const functionTypes =
+        Array.isArray((row as { function_types?: unknown }).function_types)
+          ? ((row as { function_types?: string[] }).function_types ?? []).filter((x) => typeof x === 'string' && x.trim())
+          : (row.function_type ? [row.function_type] : []);
       out[String(row.id)] = {
-        title: row.title,
+        title: stripMonthWeekPrefix(row.title),
         videoUrl: row.video_url ?? undefined,
+        functionTypes: functionTypes.length > 0 ? functionTypes : undefined,
         functionType: row.function_type ?? undefined,
         mainTheme: row.main_theme ?? undefined,
         groupSize: row.group_size ?? undefined,
@@ -252,8 +274,13 @@ export default function SpokeduProClient({
   const programDetails = (contentData?.program_details?.value ?? {}) as Record<string, ProgramDetail>;
   const adminProgramDetails = (adminContent?.program_details?.draft_value ?? {}) as Record<string, ProgramDetail>;
   const contentDetails = isEditMode ? adminProgramDetails : programDetails;
+  /**
+   * DB(프로그램 API)가 최신 소스이므로, catalog content(program_details)는 "보완용"으로만 사용.
+   * - 센터 커리큘럼 import 등으로 DB가 갱신되면 즉시 반영되어야 함
+   * - 과거에 content로 덮어쓴 값이 남아 업데이트가 안 된 것처럼 보이는 문제 방지
+   */
   const programDetailsForDrawer = useMemo(
-    () => ({ ...programDetailsFromApi, ...contentDetails }),
+    () => ({ ...contentDetails, ...programDetailsFromApi }),
     [programDetailsFromApi, contentDetails]
   );
   const libraryDrawerOpen = viewId === 'library' && libraryDrawerProgramId !== null;
@@ -271,11 +298,28 @@ export default function SpokeduProClient({
       const sp = screenplayById[resolvedDrawerProgramId];
       return mergeScreenplayProgramDetailForDrawer(sp, libraryScreenplayDetail);
     }
-    return programDetailsForDrawer[String(resolvedDrawerProgramId)] ?? null;
+    const fromMap = programDetailsForDrawer[String(resolvedDrawerProgramId)] ?? null;
+    if (fromMap) return fromMap;
+    const snap = libraryDrawerContext?.row;
+    if (!snap) return null;
+    // 목록에서 넘긴 row로 최소한의 상세를 구성해 placeholder(프로그램 #id) 방지
+    const fnTypes =
+      Array.isArray(snap.function_types) && snap.function_types.length > 0
+        ? snap.function_types.filter((x) => typeof x === 'string' && x.trim())
+        : (snap.function_type ? [snap.function_type] : []);
+    return {
+      title: snap.title ?? undefined,
+      videoUrl: snap.video_url ?? undefined,
+      functionTypes: fnTypes.length > 0 ? fnTypes : undefined,
+      functionType: snap.function_type ?? undefined,
+      mainTheme: snap.main_theme ?? undefined,
+      groupSize: snap.group_size ?? undefined,
+    };
   }, [
     resolvedDrawerProgramId,
     libraryDrawerOpen,
     libraryDrawerContext?.screenplay,
+    libraryDrawerContext?.row,
     screenplayById,
     libraryScreenplayDetail,
     programDetailsForDrawer,
@@ -283,21 +327,61 @@ export default function SpokeduProClient({
 
   const handleSaveProgramDetail = useCallback(
     async (programId: number, detail: ProgramDetail, opts?: { screenplay?: boolean }) => {
-      const entry = adminContent?.program_details;
-      const current = (entry?.draft_value ?? {}) as Record<string, ProgramDetail>;
-      const key = opts?.screenplay ? screenplayDetailStorageKey(programId) : String(programId);
-      const next = { ...current, [key]: detail };
-      const version = entry?.version ?? 0;
-      const result = await saveContentDraft('program_details', next, version);
-      if (result.ok) {
-        toast.success(tr('수정되었습니다.'));
-        await fetchContent();
-        await fetchBlocks();
-      } else {
-        toast.error(tr(`저장 실패: ${result.error ?? '알 수 없는 오류'}`));
+      // 스크린플레이는 content(블록)로 저장, 프로그램(펑셔널 무브)은 DB로 저장한다.
+      if (opts?.screenplay) {
+        const entry = adminContent?.program_details;
+        const current = (entry?.draft_value ?? {}) as Record<string, ProgramDetail>;
+        const key = screenplayDetailStorageKey(programId);
+        const next = { ...current, [key]: detail };
+        const version = entry?.version ?? 0;
+        const result = await saveContentDraft('program_details', next, version);
+        if (result.ok) {
+          toast.success(tr('수정되었습니다.'));
+          await fetchContent();
+          await fetchBlocks();
+        } else {
+          toast.error(tr(`저장 실패: ${result.error ?? '알 수 없는 오류'}`));
+        }
+        return;
       }
+
+      // DB 저장 (spokedu_pro_programs)
+      const fnTypes = Array.isArray(detail.functionTypes)
+        ? detail.functionTypes.map((x) => String(x).trim()).filter(Boolean)
+        : [];
+      const fallbackFnType = detail.functionType?.trim();
+      const primaryFnType = fnTypes[0] ?? fallbackFnType;
+      const payload = {
+        title: detail.title,
+        video_url: detail.videoUrl,
+        function_types: fnTypes.length > 0 ? fnTypes : undefined,
+        function_type: primaryFnType || undefined,
+        main_theme: detail.mainTheme,
+        group_size: detail.groupSize,
+        checklist: detail.checklist,
+        equipment: detail.equipment,
+        activity_method: detail.activityMethod,
+        activity_tip: detail.activityTip,
+      };
+      const res = await fetch(`/api/spokedu-pro/programs?id=${encodeURIComponent(String(programId))}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(tr(`저장 실패: ${j.error ?? `HTTP ${res.status}`}`));
+        return;
+      }
+      toast.success(tr('수정되었습니다.'));
+      // DB가 곧바로 최신 소스이므로, 화면 반영을 위해 다시 fetch
+      await fetchContent();
+      await fetchBlocks();
+      await refreshProgramsFromApi();
+      setProgramsRefreshToken((t) => t + 1);
     },
-    [adminContent?.program_details, saveContentDraft, fetchContent, fetchBlocks, tr]
+    [adminContent?.program_details, saveContentDraft, fetchContent, fetchBlocks, tr, refreshProgramsFromApi]
   );
 
   const openDrawer = useCallback((id: number, context?: { role?: string; themeKey?: string }) => {
@@ -456,6 +540,7 @@ export default function SpokeduProClient({
             programDetails={programDetailsForDrawer}
             functionalCap={isEditMode ? 144 : undefined}
             libraryMode={libraryMode}
+            refreshToken={programsRefreshToken}
           />
         </div>
         <div className={`view-content ${viewId === 'data-center' ? 'active' : ''}`}>

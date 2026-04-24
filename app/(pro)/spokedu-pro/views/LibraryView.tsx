@@ -14,6 +14,7 @@ import { screenplayDetailStorageKey } from '../utils/spomoveLaunch';
 import { useSpokeduProContent } from '../hooks/useSpokeduProContent';
 import { resolveScreenplayTagMappingV1, getScreenplayLevelTag } from '../utils/screenplayTagMapping';
 import type { ProgramDetail } from '../types';
+import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 
 type ProgramRow = {
   id: number;
@@ -66,7 +67,7 @@ const ProgramCard = memo(function ProgramCard({
             {tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] font-bold text-emerald-200 px-2 py-0.5 bg-emerald-500/25 rounded-md border border-emerald-500/30"
+                className="text-[10px] font-bold text-slate-300/90 px-2 py-0.5 bg-slate-900/35 rounded-md border border-white/10"
               >
                 {tr(tag)}
               </span>
@@ -91,10 +92,20 @@ export default function LibraryView({
   compact = false,
   functionalCap,
   libraryMode = 'program',
+  refreshToken,
 }: {
-  onOpenDetail: (id: number, context?: { role?: string; themeKey?: string; screenplay?: boolean }) => void;
+  onOpenDetail: (
+    id: number,
+    context?: {
+      role?: string;
+      themeKey?: string;
+      screenplay?: boolean;
+      /** 목록에서 전달하는 스냅샷(상세 맵에 없을 때 placeholder 방지) */
+      row?: Partial<ProgramRow>;
+    }
+  ) => void;
   /** 설정 시 카드 클릭으로 프로그램 선택(드로어 대신). */
-  onSelectProgram?: (id: number) => void;
+  onSelectProgram?: (id: number, row?: Partial<ProgramRow>) => void;
   initialPreset?: { themeKey?: string; preset?: string } | null;
   programDetails?: Record<string, ProgramDetail>;
   /** 슬라이드 패널 등 좁은 영역용(헤더·필터 일부 축소). */
@@ -103,6 +114,8 @@ export default function LibraryView({
   functionalCap?: number;
   /** 라이브러리 데이터 소스 강제 모드 */
   libraryMode?: 'program' | 'screenplay';
+  /** 상위에서 저장 후 목록을 강제 새로고침하기 위한 토큰 */
+  refreshToken?: number;
 }) {
   const tr = useTranslator();
   const [functionType, setFunctionType] = useState<string>('');
@@ -114,6 +127,7 @@ export default function LibraryView({
   const [programsFromApi, setProgramsFromApi] = useState<ProgramRow[] | null>(null);
   const [fetchError, setFetchError] = useState(false);
   const isScreenplayPreset = libraryMode === 'screenplay' || initialPreset?.themeKey === 'cognitive';
+  const isFunctionalPreset = initialPreset?.themeKey === 'co-op';
 
   // 스포무브(스크린플레이) 카드 태그: 인지영역/과제유형/레벨
   const { data: tagMappingContent, fetchContent: fetchTagMapping } = useSpokeduProContent('catalog', [
@@ -144,7 +158,6 @@ export default function LibraryView({
       // 사이드바 프리셋(펑셔널/스포무브) 진입 시 이전 수동 필터 잔존으로 0개가 보이는 상황을 방지
       setFunctionType('');
       setGroupSize('');
-      setSearch('');
       const bank = THEME_KEY_TO_BANK_THEME[tk as ThemeKey];
       // 프리셋 라벨과 실제 DB main_theme 분류가 다를 수 있어, 유효한 분류값일 때만 테마 필터를 적용
       if (bank && (MAIN_THEMES as readonly string[]).includes(bank)) {
@@ -184,7 +197,7 @@ export default function LibraryView({
                 presetRef?: string;
                 thumbnailUrl?: string;
               }) => ({
-                id: Number(s.id) || 0,
+                id: Number(s.id),
                 title: s.title ?? '',
                 function_type: s.modeId ?? null,
                 main_theme: null,
@@ -195,6 +208,7 @@ export default function LibraryView({
                 thumbnail_url: s.thumbnailUrl ?? null,
               })
             )
+            .filter((s: ProgramRow) => Number.isFinite(s.id) && s.id > 0)
             .filter((s: ProgramRow) => (q ? s.title.toLowerCase().includes(q) : true));
           setProgramsFromApi(mapped);
           setFetchError(false);
@@ -205,6 +219,15 @@ export default function LibraryView({
     } else {
       const params = new URLSearchParams();
       params.set('limit', '200');
+      // 펑셔널 무브(협동 놀이) 기본 진입: 센터 커리큘럼 Import 대상만 먼저 노출
+      // 수동 필터/검색을 시작하면 전체 프로그램 뱅크로 확장
+      const hasManualFiltersLocal =
+        functionType !== '' || mainTheme !== '' || groupSize !== '' || search.trim() !== '';
+      if (isFunctionalPreset && !hasManualFiltersLocal) {
+        params.set('function_type', '협응력');
+        params.set('main_theme', '협동형');
+        params.set('group_size', '소그룹');
+      }
       if (functionType) params.set('function_type', functionType);
       if (mainTheme) params.set('main_theme', mainTheme);
       if (groupSize) params.set('group_size', groupSize);
@@ -227,11 +250,10 @@ export default function LibraryView({
         });
     }
     return () => { cancelled = true; };
-  }, [functionType, mainTheme, groupSize, debouncedSearch, isScreenplayPreset]);
+  }, [functionType, mainTheme, groupSize, debouncedSearch, isScreenplayPreset, isFunctionalPreset, search, refreshToken]);
 
   const isLoading = programsFromApi === null;
   const filteredPrograms = programsFromApi ?? [];
-  const isFunctionalPreset = initialPreset?.themeKey === 'co-op';
   const hasManualFilters =
     functionType !== '' || mainTheme !== '' || groupSize !== '' || search.trim() !== '';
   const visiblePrograms = useMemo(() => {
@@ -241,11 +263,49 @@ export default function LibraryView({
     }
     return filteredPrograms;
   }, [isFunctionalPreset, hasManualFilters, filteredPrograms, functionalCap]);
+
+  /**
+   * 검색어(q)는 서버에서도 걸지만, 실제 표시 타이틀은 programDetails(편집/보강)로 덮일 수 있어
+   * 화면에서 "최종 표시 타이틀" 기준으로 한 번 더 필터링한다.
+   * (요청: 톱니바퀴 검색 시 유령 카드가 섞이는 문제 방지)
+   */
+  const displayFilteredPrograms = useMemo(() => {
+    // 화면 표시 필터는 "즉시 입력값(search)" 기준으로 처리해서
+    // 디바운스(서버 fetch용) 타이밍 때문에 잠깐 옛 결과가 보이는 깜빡임을 방지한다.
+    const q = search.trim().toLowerCase();
+    const getDisplayTitle = (p: ProgramRow) => {
+      if (isScreenplayPreset) {
+        const screenplayDetail = programDetails[screenplayDetailStorageKey(p.id)];
+        return stripMonthWeekPrefix(screenplayDetail?.title ?? p.title ?? '').trim();
+      }
+      const detail = programDetails[String(p.id)];
+      return stripMonthWeekPrefix(detail?.title ?? p.title ?? '').trim();
+    };
+
+    const filtered = q
+      ? visiblePrograms.filter((p) => getDisplayTitle(p).toLowerCase().includes(q))
+      : visiblePrograms;
+
+    // 요청: 검색 시 같은 제목이 여러 줄로 존재(월/주, 중복 입력 등)하면 "유령"처럼 보이므로,
+    // 표시 제목 기준으로 중복을 숨겨 실제 카드만 남긴다.
+    if (!q) return filtered;
+    const seen = new Set<string>();
+    const deduped: ProgramRow[] = [];
+    for (const p of filtered) {
+      const key = getDisplayTitle(p).toLowerCase();
+      if (!key) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(p);
+    }
+    return deduped;
+  }, [visiblePrograms, search, programDetails, isScreenplayPreset]);
   const clearFilters = () => {
     setFunctionType('');
     setMainTheme('');
     setGroupSize('');
     setSearch('');
+    setDebouncedSearch('');
   };
   const hasActiveFilters = hasManualFilters;
 
@@ -258,7 +318,7 @@ export default function LibraryView({
           <h2 className={compact ? 'text-xl font-black text-white tracking-tight' : 'text-3xl md:text-4xl font-black text-white tracking-tight'}>
             {selectionMode ? tr('프로그램 선택') : tr('프로그램 뱅크')}
           </h2>
-          <span className="text-slate-400 text-sm font-medium">{visiblePrograms.length}{tr('개')}</span>
+          <span className="text-slate-400 text-sm font-medium">{displayFilteredPrograms.length}{tr('개')}</span>
         </div>
 
         {!compact && !isScreenplayPreset && (
@@ -332,7 +392,10 @@ export default function LibraryView({
             {search && (
               <button
                 type="button"
-                onClick={() => setSearch('')}
+                onClick={() => {
+                  setSearch('');
+                  setDebouncedSearch('');
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
                 aria-label={tr('지우기')}
               >
@@ -370,7 +433,7 @@ export default function LibraryView({
         </div>
       )}
 
-      {!isLoading && !fetchError && visiblePrograms.length === 0 && (
+      {!isLoading && !fetchError && displayFilteredPrograms.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
           <span className="text-5xl">🔍</span>
           <p className="text-white font-black text-lg">{tr('검색 결과가 없습니다')}</p>
@@ -380,7 +443,7 @@ export default function LibraryView({
         </div>
       )}
 
-      {!isLoading && visiblePrograms.length > 0 && (
+      {!isLoading && displayFilteredPrograms.length > 0 && (
         <div
           className={
             compact
@@ -388,7 +451,7 @@ export default function LibraryView({
               : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6'
           }
         >
-          {visiblePrograms.map((p) => {
+          {displayFilteredPrograms.map((p) => {
                 const screenplayDetail = isScreenplayPreset ? programDetails[screenplayDetailStorageKey(p.id)] : undefined;
                 const detail = programDetails[String(p.id)];
                 const videoUrl = isScreenplayPreset
@@ -409,20 +472,22 @@ export default function LibraryView({
                   : [p.function_type, p.main_theme, p.group_size].filter(Boolean) as string[];
                 return (
                   <ProgramCard
-                    key={p.id}
-                    title={isScreenplayPreset ? (screenplayDetail?.title ?? p.title) : (detail?.title ?? p.title)}
+                    key={`${isScreenplayPreset ? 'screenplay' : 'program'}-${p.id}`}
+                    title={stripMonthWeekPrefix(
+                      isScreenplayPreset ? (screenplayDetail?.title ?? p.title) : (detail?.title ?? p.title)
+                    )}
                     tags={tags}
                     thumbnailUrl={thumbnailUrl}
                     onClick={() => {
                       if (selectionMode) {
-                        onSelectProgram!(p.id);
+                        onSelectProgram!(p.id, p);
                         return;
                       }
                       if (isScreenplayPreset) {
-                        onOpenDetail(p.id, { screenplay: true });
+                        onOpenDetail(p.id, { screenplay: true, row: p });
                         return;
                       }
-                      onOpenDetail(p.id, undefined);
+                      onOpenDetail(p.id, { row: p });
                     }}
                   />
                 );

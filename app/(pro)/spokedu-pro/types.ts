@@ -4,7 +4,9 @@ export type ProgramDetail = {
   /** 한 줄 부제(스크린플레이 DB subtitle 등) */
   subtitle?: string;
   videoUrl?: string;
-  /** 기능 종류 */
+  /** 기능 종류(복수 선택) */
+  functionTypes?: string[];
+  /** 기능 종류(구버전/호환) */
   functionType?: string;
   /** 메인테마 */
   mainTheme?: string;

@@ -22,17 +22,26 @@ export default function RootLayout({
   const hideSidebar = isFullscreenPath(pathname);
   const [isDesktopOpen, setIsDesktopOpen] = useState(true);
   const fullscreenWrapStyle = hideSidebar
-    ? { minHeight: 'var(--viewport-height-px, 100vh)', height: 'var(--viewport-height-px, 100vh)', width: '100vw', maxWidth: '100%' }
+    ? { minHeight: 'var(--viewport-height-px, 100dvh)', height: 'var(--viewport-height-px, 100dvh)', width: '100vw', maxWidth: '100%' }
+    : undefined;
+
+  const mainFullscreenStyle = hideSidebar
+    ? { height: 'var(--viewport-height-px, 100dvh)' }
     : undefined;
 
   // viewport-height-px는 hydration 이후에만 설정해 서버/클라이언트 HTML 불일치(hydration error) 방지
   useEffect(() => {
     const setViewportHeight = () => {
-      document.documentElement.style.setProperty('--viewport-height-px', `${window.innerHeight}px`);
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty('--viewport-height-px', `${h}px`);
     };
     setViewportHeight();
     window.addEventListener('resize', setViewportHeight);
-    return () => window.removeEventListener('resize', setViewportHeight);
+    window.visualViewport?.addEventListener('resize', setViewportHeight);
+    return () => {
+      window.removeEventListener('resize', setViewportHeight);
+      window.visualViewport?.removeEventListener('resize', setViewportHeight);
+    };
   }, []);
 
   return (
@@ -47,7 +56,7 @@ export default function RootLayout({
           <I18nProvider>
           <Toaster position="top-center" richColors closeButton />
           <div
-            className={`flex min-h-screen ${hideSidebar ? 'w-full overflow-x-hidden' : ''}`}
+            className={`flex ${hideSidebar ? 'w-full overflow-x-hidden' : 'min-h-screen'}`}
             style={fullscreenWrapStyle}
           >
             {/* 사이드바 조건부 렌더링 */}
@@ -58,7 +67,8 @@ export default function RootLayout({
               />
             )}
 
-            <main 
+            <main
+              style={mainFullscreenStyle}
               className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                 hideSidebar
                   ? 'flex flex-col min-h-0 pr-0 mr-0 overflow-x-hidden'
