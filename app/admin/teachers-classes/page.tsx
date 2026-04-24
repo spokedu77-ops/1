@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback, useMemo, useRef, type MouseEvent } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type MouseEventHandler } from 'react';
 import { ADMIN_NAMES } from '@/app/admin/classes-shared/constants/admins';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -223,18 +223,45 @@ function parseTotalBytesFromContentRangeHeader(cr: string | null): number | null
   return null;
 }
 
-/**
- * 서버는 3MB 단위로만 응답(Vercel 등 4.5MB 제한 회피) — 클라이언트가 이어붙인 뒤
- * `displayNameForDownload` 한글 파일명으로만 저장한다.
- */
-async function downloadCenterSessionFileAsKoreanName(params: {
+/** 한 청크 + 본문(blob)까지 합쳐서 무한 대기 방지 */
+async function fetchCenterSessionFileChunk(
+  body: { sessionId: string; fileIndex: number; byteStart: number; byteEnd: number },
+  timeoutMs: number,
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = window.setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch('/api/admin/storage/center-session-file', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+  } finally {
+    window.clearTimeout(t);
+  }
+}
+
+async function blobWithTimeout(res: Response, timeoutMs: number): Promise<Blob> {
+  return await Promise.race([
+    res.blob(),
+    new Promise<never>((_, reject) => {
+      window.setTimeout(() => reject(new Error('파일 데이터 수신 시간이 초과되었습니다.')), timeoutMs);
+    }),
+  ]);
+}
+
+/** Vercel 응답 한도 회피용 느린 경로 — 직접 스트리밍 실패 시만 사용 */
+async function downloadCenterSessionFileChunked(params: {
   sessionId: string;
   fileIndex: number;
-  fileStorageUrl: string;
-  centerDocumentNames: string[] | null | undefined;
+  filename: string;
 }): Promise<void> {
-  const { sessionId, fileIndex, fileStorageUrl, centerDocumentNames } = params;
-  const filename = displayNameForDownload(fileStorageUrl, fileIndex, centerDocumentNames ?? null);
+  const { sessionId, fileIndex, filename } = params;
+
+  const chunkFetchMs = 120_000;
+  const chunkBlobMs = 120_000;
 
   let offset = 0;
   let total: number | null = null;
@@ -252,12 +279,18 @@ async function downloadCenterSessionFileAsKoreanName(params: {
         ? offset + CENTER_FILE_CHUNK_BYTES - 1
         : Math.min(offset + CENTER_FILE_CHUNK_BYTES - 1, total - 1);
 
-    const res = await fetch('/api/admin/storage/center-session-file', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId, fileIndex, byteStart: offset, byteEnd: end }),
-    });
+    let res: Response;
+    try {
+      res = await fetchCenterSessionFileChunk(
+        { sessionId, fileIndex, byteStart: offset, byteEnd: end },
+        chunkFetchMs,
+      );
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        throw new Error('서버 응답이 너무 느립니다. 잠시 후 다시 시도해 주세요.');
+      }
+      throw err;
+    }
     if (!res.ok) {
       const payload = (await res.json().catch(() => ({}))) as { error?: string };
       throw new Error(payload.error || `다운로드 실패 (${res.status})`);
@@ -268,7 +301,7 @@ async function downloadCenterSessionFileAsKoreanName(params: {
       total = parsed;
     }
 
-    const part = await res.blob();
+    const part = await blobWithTimeout(res, chunkBlobMs);
     parts.push(part);
     offset += part.size;
 
@@ -286,6 +319,54 @@ async function downloadCenterSessionFileAsKoreanName(params: {
   downloadBlobWithFilename(new Blob(parts), filename);
 }
 
+/**
+ * 1) 서버에서 서명 URL만 받고 → 브라우저가 Supabase로 직접 받음 (빠름)
+ * 2) CORS 등으로 실패 시 → 기존 청크 프록시 폴백
+ */
+async function downloadCenterSessionFileAsKoreanName(params: {
+  sessionId: string;
+  fileIndex: number;
+  fileStorageUrl: string;
+  centerDocumentNames: string[] | null | undefined;
+}): Promise<void> {
+  const { sessionId, fileIndex, fileStorageUrl, centerDocumentNames } = params;
+  const filenameFallback = displayNameForDownload(fileStorageUrl, fileIndex, centerDocumentNames ?? null);
+
+  const linkRes = await fetch('/api/admin/storage/center-session-file-link', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, fileIndex }),
+  });
+  if (!linkRes.ok) {
+    const payload = (await linkRes.json().catch(() => ({}))) as { error?: string };
+    throw new Error(payload.error || `다운로드 준비 실패 (${linkRes.status})`);
+  }
+  const json = (await linkRes.json()) as { signedUrl?: string; filename?: string };
+  const signedUrl = typeof json.signedUrl === 'string' ? json.signedUrl.trim() : '';
+  if (!signedUrl) {
+    throw new Error('다운로드 URL을 받지 못했습니다.');
+  }
+  const filename =
+    typeof json.filename === 'string' && json.filename.trim().length > 0 ? json.filename.trim() : filenameFallback;
+
+  const directMs = 15 * 60_000;
+  const ctrl = new AbortController();
+  const directTimer = window.setTimeout(() => ctrl.abort(), directMs);
+  try {
+    const blobRes = await fetch(signedUrl, { mode: 'cors', signal: ctrl.signal });
+    if (!blobRes.ok) {
+      throw new Error(`스토리지 응답 ${blobRes.status}`);
+    }
+    const blob = await blobWithTimeout(blobRes, directMs);
+    downloadBlobWithFilename(blob, filename);
+  } catch {
+    await downloadCenterSessionFileChunked({ sessionId, fileIndex, filename });
+  } finally {
+    window.clearTimeout(directTimer);
+  }
+}
+
 // 피드백 검수 탭
 function FeedbackReviewTab({
   coaches,
@@ -298,28 +379,41 @@ function FeedbackReviewTab({
 }) {
   const [downloadingCenterFileIndex, setDownloadingCenterFileIndex] = useState<number | null>(null);
 
-  const handleCenterFileOpenOrDownload = async (
-    e: MouseEvent<HTMLAnchorElement>,
-    url: string,
-    index: number,
-    centerNames: string[] | null | undefined,
-    sessionId: string,
-  ) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+  const handleCenterFileOpenOrDownload: MouseEventHandler<HTMLButtonElement> = async (e) => {
+    const url = e.currentTarget.dataset.fileUrl ?? '';
+    const index = Number(e.currentTarget.dataset.fileIndex ?? '0');
+    const sessionId = e.currentTarget.dataset.sessionId ?? '';
+    if (!url || !sessionId || !Number.isFinite(index)) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
     e.preventDefault();
+    e.currentTarget.blur();
     if (downloadingCenterFileIndex !== null) return;
     setDownloadingCenterFileIndex(index);
+    const centerNames = feedbackFields.center_document_names;
+    const wholeMs = 12 * 60_000;
     try {
-      await downloadCenterSessionFileAsKoreanName({
-        sessionId,
-        fileIndex: index,
-        fileStorageUrl: url,
-        centerDocumentNames: centerNames,
-      });
+      await Promise.race([
+        downloadCenterSessionFileAsKoreanName({
+          sessionId,
+          fileIndex: index,
+          fileStorageUrl: url,
+          centerDocumentNames: centerNames,
+        }),
+        new Promise<never>((_, reject) => {
+          window.setTimeout(
+            () => reject(new Error('전체 다운로드 시간이 초과되었습니다. 네트워크를 확인해 주세요.')),
+            wholeMs,
+          );
+        }),
+      ]);
     } catch (err) {
       devLogger.warn('[FeedbackReviewTab] center file download', err);
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(msg);
+      window.open(url, '_blank', 'noopener,noreferrer');
     } finally {
       setDownloadingCenterFileIndex(null);
     }
@@ -1086,28 +1180,23 @@ function FeedbackReviewTab({
                     <div className="bg-white p-5 rounded-[24px] border border-indigo-100 space-y-3">
                   <p className="text-[10px] font-black text-indigo-400 uppercase">파일</p>
                   {fileUrls.length > 0 ? fileUrls.map((url, i) => (
-                    <a
+                    <button
                       key={i}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) =>
-                        handleCenterFileOpenOrDownload(
-                          e,
-                          url,
-                          i,
-                          feedbackFields.center_document_names,
-                          selectedEvent.id,
-                        )
-                      }
-                      className={`flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl hover:bg-indigo-100 cursor-pointer ${downloadingCenterFileIndex === i ? 'opacity-60 pointer-events-none' : ''}`}
+                      type="button"
+                      data-file-url={url}
+                      data-file-index={String(i)}
+                      data-session-id={selectedEvent.id}
+                      aria-busy={downloadingCenterFileIndex === i}
+                      disabled={downloadingCenterFileIndex !== null}
+                      onClick={handleCenterFileOpenOrDownload}
+                      className={`w-full text-left flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl hover:bg-indigo-100 cursor-pointer border-0 disabled:opacity-60 disabled:cursor-wait ${downloadingCenterFileIndex === i ? 'ring-2 ring-indigo-300' : ''}`}
                     >
                       <FileText size={18} className="text-indigo-500 shrink-0" />
                       <span className="text-sm font-bold text-slate-600 truncate">
                         {sessionFileDisplayName(url, i, feedbackFields.center_document_names ?? null)}
                       </span>
                       <ExternalLink size={14} className="ml-auto text-indigo-300 shrink-0" />
-                    </a>
+                    </button>
                   )) : <p className="text-slate-400 text-sm py-4 text-center">업로드된 파일이 없습니다</p>}
                     </div>
                   ) : null;
