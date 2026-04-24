@@ -19,6 +19,13 @@
   }
 }
 
+/* iOS Safari에서 flex 높이 체인(height:100%/flex-1)이 동작하려면
+   html과 body에 명시적 height가 필요함 (WebKit 동작 방식) */
+html,
+body {
+  height: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
