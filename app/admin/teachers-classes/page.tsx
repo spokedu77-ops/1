@@ -210,7 +210,7 @@ function downloadBlobWithFilename(blob: Blob, filename: string): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(objectUrl);
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 15_000);
 }
 
 /** `/api/admin/storage/center-session-file`의 MAX_BYTES_PER_CHUNK(3MB)와 동일 */

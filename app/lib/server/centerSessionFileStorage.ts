@@ -4,6 +4,46 @@ import type { FeedbackFields } from '@/app/lib/feedbackValidation';
 export const CENTER_SESSION_FILES_BUCKET = 'session-files';
 const CENTER_TYPES = new Set(['regular_center', 'one_day_center']);
 
+/** NEXT_PUBLIC_SUPABASE_URL이 커스텀 도메인이어도 DB의 file_url은 projectref.supabase.co일 수 있음 → 동일 프로젝트면 허용 */
+function getSupabaseProjectRefFromEnv(): string | null {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (base) {
+    try {
+      const h = new URL(base.trim()).hostname;
+      const m = h.match(/^([^.]+)\.supabase\.co$/i);
+      if (m?.[1]) return m[1];
+    } catch {
+      /* ignore */
+    }
+  }
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key?.includes('.')) return null;
+  try {
+    const payload = key.split('.')[1];
+    if (!payload) return null;
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const json = JSON.parse(Buffer.from(b64, 'base64').toString('utf8')) as { ref?: string };
+    return typeof json.ref === 'string' && json.ref.length > 0 ? json.ref : null;
+  } catch {
+    return null;
+  }
+}
+
+function isAllowedStorageUrlHost(urlHost: string): boolean {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return false;
+  let expectedHost: string;
+  try {
+    expectedHost = new URL(base.trim()).host;
+  } catch {
+    return false;
+  }
+  if (urlHost === expectedHost) return true;
+  const ref = getSupabaseProjectRefFromEnv();
+  if (ref && urlHost.toLowerCase() === `${ref.toLowerCase()}.supabase.co`) return true;
+  return false;
+}
+
 function decodeObjectPath(pathFromUrl: string): string {
   return pathFromUrl
     .split('/')
@@ -17,14 +57,12 @@ function decodeObjectPath(pathFromUrl: string): string {
     .join('/');
 }
 
-/** Supabase Storage 공개/서명 URL에서 버킷·객체 경로만 추출 (호스트 일치 검증) */
+/** Supabase Storage 공개/서명/인증 URL에서 버킷·객체 경로만 추출 (동일 프로젝트 호스트만) */
 export function parseSessionFilesStorageRef(url: string): { bucket: string; objectPath: string } | null {
   try {
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!base) return null;
-    const expectedHost = new URL(base).host;
-    const u = new URL(url);
-    if (u.host !== expectedHost) return null;
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
+    const u = new URL(url.trim());
+    if (!isAllowedStorageUrlHost(u.host)) return null;
 
     const p = u.pathname;
     const publicMatch = p.match(/^\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
@@ -34,6 +72,10 @@ export function parseSessionFilesStorageRef(url: string): { bucket: string; obje
     const signMatch = p.match(/^\/storage\/v1\/object\/sign\/([^/]+)\/(.+)$/);
     if (signMatch?.[1] && signMatch?.[2]) {
       return { bucket: signMatch[1], objectPath: decodeObjectPath(signMatch[2]) };
+    }
+    const authMatch = p.match(/^\/storage\/v1\/object\/authenticated\/([^/]+)\/(.+)$/);
+    if (authMatch?.[1] && authMatch?.[2]) {
+      return { bucket: authMatch[1], objectPath: decodeObjectPath(authMatch[2]) };
     }
     return null;
   } catch {
@@ -86,7 +128,7 @@ export async function resolveCenterSessionFileForAdmin(
     return { error: '파일 인덱스가 유효하지 않습니다.', status: 400 };
   }
 
-  const fileUrl = fileUrls[fileIndex]!;
+  const fileUrl = fileUrls[fileIndex]!.trim();
   const ref = parseSessionFilesStorageRef(fileUrl);
   if (!ref || ref.bucket !== CENTER_SESSION_FILES_BUCKET) {
     return { error: '허용되지 않은 저장소 URL입니다.', status: 400 };

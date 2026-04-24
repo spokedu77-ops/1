@@ -100,15 +100,29 @@ const defaultSettings: Settings = {
   variantColorTheme: 'fruit',
 };
 
+export type MemoryGameAutoLaunch = {
+  speed?: number;
+  timeMode?: 'time' | 'reps';
+  duration?: number;
+  targetReps?: number;
+  warmup?: number;
+  accel?: boolean;
+};
+
 export default function MemoryGameApp({
   initialMode,
   initialLevel,
+  autoLaunch,
 }: {
   initialMode?: string;
   initialLevel?: number;
+  /** 제공 시 설정 화면을 건너뛰고 이 설정으로 훈련을 즉시 시작 */
+  autoLaunch?: MemoryGameAutoLaunch;
 }) {
   const [screen, setScreen] = useState<Screen>('home');
   const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [pendingAutoStart, setPendingAutoStart] = useState(false);
+  const autoLaunchCfgRef = useRef<Settings | null>(null);
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const t = parseStoredVariantTheme(localStorage.getItem(SPOMOVE_VARIANT_THEME_LS_KEY));
@@ -221,9 +235,23 @@ export default function MemoryGameApp({
       typeof initialLevel === 'number' && modeDef.levels.some((lv) => lv.id === initialLevel)
         ? initialLevel
         : modeDef.levels[0]?.id ?? 1;
-    setSettings((s) => ({ ...s, mode: initialMode, level: targetLevel }));
-    setScreen('setup');
-  }, [initialMode, initialLevel]);
+
+    if (autoLaunch) {
+      const merged: Settings = {
+        ...defaultSettings,
+        mode: initialMode,
+        level: targetLevel,
+        ...autoLaunch,
+      };
+      autoLaunchCfgRef.current = merged;
+      setSettings(merged);
+      // setScreen('setup') 호출 생략 — home 화면도 렌더하지 않도록 early-return이 처리
+      setPendingAutoStart(true);
+    } else {
+      setSettings((s) => ({ ...s, mode: initialMode, level: targetLevel }));
+      setScreen('setup');
+    }
+  }, [initialMode, initialLevel, autoLaunch]);
 
   const set = useCallback((key: keyof Settings, value: unknown) => {
     setSettings((s) => {
@@ -487,6 +515,16 @@ export default function MemoryGameApp({
     [settings, spomoveBgmList, spomoveBgmLoading]
   );
 
+  /** autoLaunch: 마운트 직후 startSession을 ref-cfg로 즉시 호출 (setup 화면 경유 없음) */
+  useEffect(() => {
+    if (!pendingAutoStart) return;
+    const cfg = autoLaunchCfgRef.current;
+    if (!cfg) return;
+    setPendingAutoStart(false);
+    autoLaunchCfgRef.current = null;
+    startSession(cfg);
+  }, [pendingAutoStart, startSession]);
+
   useEffect(() => {
     const pending = pendingBgmStartRef.current;
     if (!pending?.mode) return;
@@ -583,6 +621,12 @@ export default function MemoryGameApp({
 
   const M = MODES[settings.mode];
   if (!M) return null;
+
+  // autoLaunch 모드: home/setup 화면을 렌더하지 않고 검정 대기 화면만 표시
+  // (pendingAutoStart → startSession이 실행되면 바로 훈련 화면으로 전환됨)
+  if (autoLaunch && (screen === 'home' || screen === 'setup')) {
+    return <div style={{ position: 'fixed', inset: 0, background: '#020617' }} aria-hidden />;
+  }
 
   // ── HOME ──
   if (screen === 'home') {
