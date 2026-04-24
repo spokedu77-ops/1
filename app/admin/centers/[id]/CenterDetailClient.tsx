@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getCenterById } from '../actions/center-detail';
+import { getCenterById } from '../actions/centers';
 import { updateCenter, deleteCenter, getActiveTeachers } from '../actions/centers';
 import { getCenterHistory, addCenterHistoryEntry } from '../actions/center-history';
 import type {
