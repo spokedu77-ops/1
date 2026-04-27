@@ -225,7 +225,7 @@ class Tile {
     this.sparkTimer = 0;
   }
 
-  update(L: LayoutState, g: GameState, tryStim: (ci: number, x: number, y: number) => boolean) {
+  update(L: LayoutState, g: GameState, enqueueStim: (ci: number, x: number, y: number) => void) {
     this.trail.push({ x: this.x, y: this.y });
     if (this.trail.length > this.trailMax) this.trail.shift();
     this.x += this.vx * this.speed;
@@ -238,16 +238,10 @@ class Tile {
     const dy = this.ty - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (!this.fired && dist < this.speed + this.size * 1.2) {
-      // 연쇄적으로 너무 빠르게 터지지 않도록, 반응 간격이 확보될 때까지 "대기"시킨다.
-      const ok = tryStim(this.ci, this.tx, this.ty);
-      if (ok) {
-        this.fired = true;
-        this.dead = true;
-      } else {
-        // 목표 지점에 고정해서 다음 허용 타이밍에 바로 트리거되도록 한다.
-        this.x = this.tx;
-        this.y = this.ty;
-      }
+      // 반응 간격은 큐 소비에서 보장한다. 타일은 도달 즉시 dead 처리하여 진행이 막히지 않게 한다.
+      enqueueStim(this.ci, this.tx, this.ty);
+      this.fired = true;
+      this.dead = true;
     }
   }
 
@@ -467,11 +461,14 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       cv.height = h;
     };
 
+    const stimQueue: Array<{ ci: number; x: number; y: number }> = [];
     let lastStimAtMs = -Infinity;
-    const tryStim = (ci: number, x: number, y: number): boolean => {
-      const now = performance.now();
-      if (now - lastStimAtMs < REACT_TRAIN_MIN_STIM_GAP_MS) return false;
-      lastStimAtMs = now;
+
+    const enqueueStim = (ci: number, x: number, y: number) => {
+      stimQueue.push({ ci, x, y });
+    };
+
+    const emitStim = (ci: number, x: number, y: number): void => {
       g.stims++;
       g.combo++;
       if (g.combo > g.maxCombo) {
@@ -482,7 +479,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
       g.padPulse[ci] = 1;
       const L = LRef.current;
-      if (!L) return false;
+      if (!L) return;
       const col = C[ci];
       g.shockwaves.push({
         x,
@@ -540,9 +537,9 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
         200: '200 COMBO!',
       };
       const msg = MAP[g.combo] ?? (g.combo > 200 && g.combo % 100 === 0 ? `${g.combo} STREAK!` : null);
-      if (!msg) return true;
+      if (!msg) return;
       const root = milestoneRootRef.current;
-      if (!root) return true;
+      if (!root) return;
       const m = document.createElement('div');
       m.className = 'drt-ms';
       m.style.top = '30%';
@@ -550,7 +547,16 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       m.textContent = msg;
       root.appendChild(m);
       setTimeout(() => m.remove(), 900 * REACT_TRAIN_SLOW_FACTOR);
-      return true;
+    };
+
+    const consumeStimQueue = () => {
+      if (stimQueue.length === 0) return;
+      const now = performance.now();
+      if (now - lastStimAtMs < REACT_TRAIN_MIN_STIM_GAP_MS) return;
+      const next = stimQueue.shift();
+      if (!next) return;
+      lastStimAtMs = now;
+      emitStim(next.ci, next.x, next.y);
     };
 
     const applyAccel = () => {
@@ -701,10 +707,11 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
         const t = g.tiles[i]!;
         const Ln = LRef.current;
         if (!Ln) break;
-        t.update(Ln, g, tryStim);
+        t.update(Ln, g, enqueueStim);
         t.draw(ctx2);
         if (t.dead) g.tiles.splice(i, 1);
       }
+      consumeStimQueue();
       updateShockwaves(ctx2);
       for (let i = g.particles.length - 1; i >= 0; i--) {
         const p = g.particles[i]!;

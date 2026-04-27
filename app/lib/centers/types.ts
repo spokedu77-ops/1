@@ -20,6 +20,12 @@ export interface InstructorsDefault {
   backup: string[];
 }
 
+/** 범죄경력조회 첨부 파일 1건 (centers.criminal_check_files jsonb) */
+export interface CriminalCheckFile {
+  name: string;
+  path: string;
+}
+
 /** 센터 운영/수업 히스토리 1행 */
 export interface CenterHistoryEntry {
   id: string;
@@ -57,6 +63,9 @@ export interface Center {
   weekly_schedule: WeeklyScheduleSlot[];
   instructors_default: InstructorsDefault;
   highlights: string | null;
+  criminal_check_facility_id: string | null;
+  criminal_check_facility_password: string | null;
+  criminal_check_files: CriminalCheckFile[];
   created_at: string;
   updated_at: string;
   /** 조인 결과: getCenters/getCenterById 에서만 채워짐 */

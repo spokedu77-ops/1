@@ -48,6 +48,9 @@ function normalizeCenterRow(row: CenterRowWithTeacher): Center {
     instructors_default:
       (baseRow.instructors_default as Center['instructors_default']) ?? { main: null, sub: null, backup: [] },
     highlights: (baseRow.highlights as string | null) ?? null,
+    criminal_check_facility_id: (baseRow.criminal_check_facility_id as string | null) ?? null,
+    criminal_check_facility_password: (baseRow.criminal_check_facility_password as string | null) ?? null,
+    criminal_check_files: (baseRow.criminal_check_files as Center['criminal_check_files']) ?? [],
     created_at: (baseRow.created_at as string) ?? new Date().toISOString(),
     updated_at: (baseRow.updated_at as string) ?? new Date().toISOString(),
     main_teacher_name: teacherJoinName(main_teacher),
@@ -161,6 +164,9 @@ export async function createCenter(input: unknown): Promise<{ data?: Center; err
       weekly_schedule: parsed.data.weekly_schedule ?? [],
       instructors_default: parsed.data.instructors_default ?? { main: null, sub: null, backup: [] },
       highlights: parsed.data.highlights ?? null,
+      criminal_check_facility_id: parsed.data.criminal_check_facility_id ?? null,
+      criminal_check_facility_password: parsed.data.criminal_check_facility_password ?? null,
+      criminal_check_files: parsed.data.criminal_check_files ?? [],
       next_actions: [],
     })
     .select(CENTER_SELECT_WITH_TEACHERS)
@@ -197,6 +203,13 @@ export async function updateCenter(
   if (parsed.data.weekly_schedule !== undefined) payload.weekly_schedule = parsed.data.weekly_schedule;
   if (parsed.data.instructors_default !== undefined) payload.instructors_default = parsed.data.instructors_default;
   if (parsed.data.highlights !== undefined) payload.highlights = parsed.data.highlights;
+  if (parsed.data.criminal_check_facility_id !== undefined) {
+    payload.criminal_check_facility_id = parsed.data.criminal_check_facility_id;
+  }
+  if (parsed.data.criminal_check_facility_password !== undefined) {
+    payload.criminal_check_facility_password = parsed.data.criminal_check_facility_password;
+  }
+  if (parsed.data.criminal_check_files !== undefined) payload.criminal_check_files = parsed.data.criminal_check_files;
 
   const { data, error } = await supabase
     .from('centers')

@@ -11,11 +11,13 @@ import type {
   Center,
   CenterHistoryEntry,
   CenterStatus,
+  CriminalCheckFile,
   WeeklyScheduleSlot,
   InstructorsDefault,
   TeacherOption,
 } from '@/app/lib/centers/types';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { uploadToStorageSigned, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import {
   ArrowLeft,
   Building2,
@@ -33,6 +35,8 @@ import {
   AlertCircle,
   BadgeJapaneseYen,
   History,
+  FileUp,
+  FileText,
 } from 'lucide-react';
 
 const STATUS_STYLES: Record<CenterStatus, string> = {
@@ -77,6 +81,9 @@ type EditForm = {
   highlights: string;
   weekly_schedule: WeeklyScheduleSlot[];
   instructors_default: InstructorsDefault;
+  criminal_check_facility_id: string;
+  criminal_check_facility_password: string;
+  criminal_check_files: CriminalCheckFile[];
 };
 
 const DEFAULT_EDIT_FORM: EditForm = {
@@ -98,6 +105,9 @@ const DEFAULT_EDIT_FORM: EditForm = {
   highlights: '',
   weekly_schedule: [],
   instructors_default: { main: null, sub: null, backup: [] },
+  criminal_check_facility_id: '',
+  criminal_check_facility_password: '',
+  criminal_check_files: [],
 };
 
 export function CenterDetailClient({ id }: { id: string }) {
@@ -114,6 +124,7 @@ export function CenterDetailClient({ id }: { id: string }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyDraft, setHistoryDraft] = useState('');
   const [historySaving, setHistorySaving] = useState(false);
+  const [criminalUploading, setCriminalUploading] = useState(false);
 
   const loadCenter = useCallback(async () => {
     setLoading(true);
@@ -176,6 +187,11 @@ export function CenterDetailClient({ id }: { id: string }) {
 
   const openEditModal = () => {
     if (!center) return;
+    const existingSub = center.instructors_default?.sub?.trim() || '';
+    const existingBackup = center.instructors_default?.backup ?? [];
+    const mergedBackup = Array.from(
+      new Set([existingSub, ...existingBackup].map((s) => (s || '').trim()).filter(Boolean))
+    );
     setEditForm({
       name: center.name,
       region_tag: center.region_tag ?? '',
@@ -194,10 +210,53 @@ export function CenterDetailClient({ id }: { id: string }) {
       main_teacher_3_id: center.main_teacher_3_id ?? '',
       highlights: center.highlights ?? '',
       weekly_schedule: center.weekly_schedule ?? [],
-      instructors_default: center.instructors_default ?? { main: null, sub: null, backup: [] },
+      // "보조/백업"이 중복이라 하나로 운영: 기존 sub+backup을 합쳐서 backup 배열에 보존
+      instructors_default: {
+        ...(center.instructors_default ?? { main: null, sub: null, backup: [] }),
+        sub: null,
+        backup: mergedBackup,
+      },
+      criminal_check_facility_id: center.criminal_check_facility_id ?? '',
+      criminal_check_facility_password: center.criminal_check_facility_password ?? '',
+      criminal_check_files: center.criminal_check_files ?? [],
     });
     setEditError('');
     setIsEditOpen(true);
+  };
+
+  const sanitizeFileName = (name: string) =>
+    name.replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, ' ').trim();
+
+  const handleCriminalFilesAdd = async (files: FileList | null) => {
+    if (!center) return;
+    const list = files ? Array.from(files) : [];
+    if (list.length === 0) return;
+
+    setCriminalUploading(true);
+    try {
+      for (const file of list) {
+        const safeName = sanitizeFileName(file.name || 'file');
+        const path = `centers/${center.id}/criminal-check/${Date.now()}_${safeName}`;
+        const uploadedPath = await uploadToStorageSigned(path, file, file.type || undefined);
+        setEditForm((f) => ({
+          ...f,
+          criminal_check_files: [...(f.criminal_check_files ?? []), { name: safeName, path: uploadedPath }],
+        }));
+      }
+      toast.success('파일을 업로드했습니다.');
+    } catch (err) {
+      devLogger.error(err);
+      toast.error(err instanceof Error ? err.message : '파일 업로드에 실패했습니다.');
+    } finally {
+      setCriminalUploading(false);
+    }
+  };
+
+  const removeCriminalFile = (idx: number) => {
+    setEditForm((f) => ({
+      ...f,
+      criminal_check_files: (f.criminal_check_files ?? []).filter((_, i) => i !== idx),
+    }));
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -230,7 +289,11 @@ export function CenterDetailClient({ id }: { id: string }) {
         main_teacher_3_id: editForm.main_teacher_3_id.trim() || null,
         highlights: editForm.highlights.trim() || null,
         weekly_schedule: editForm.weekly_schedule,
-        instructors_default: editForm.instructors_default,
+        // "보조/백업" 단일 운영: sub는 null 고정, backup 배열만 저장
+        instructors_default: { ...editForm.instructors_default, sub: null },
+        criminal_check_facility_id: editForm.criminal_check_facility_id.trim() || null,
+        criminal_check_facility_password: editForm.criminal_check_facility_password || null,
+        criminal_check_files: editForm.criminal_check_files ?? [],
       });
       if (result.error) {
         setEditError(result.error);
@@ -376,6 +439,12 @@ export function CenterDetailClient({ id }: { id: string }) {
                 ? `${center.contract_start ?? '?'} ~ ${center.contract_end ?? '?'}`
                 : <span className="text-slate-400">미설정</span>}
             </p>
+            <p className="text-sm text-slate-700 mt-2">
+              회당:{' '}
+              {center.session_fee != null
+                ? <span className="font-medium">{center.session_fee.toLocaleString()}원</span>
+                : <span className="text-slate-400">미설정</span>}
+            </p>
           </div>
 
           {/* 담당자 */}
@@ -433,11 +502,11 @@ export function CenterDetailClient({ id }: { id: string }) {
             </div>
           )}
 
-          {/* 메인 강사 / 수업료 */}
+          {/* 메인 강사 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
               <Users className="h-3.5 w-3.5" />
-              메인 강사 / 수업료
+              메인 강사
             </div>
             <ul className="text-sm text-slate-700 space-y-0.5">
               <li>
@@ -450,17 +519,48 @@ export function CenterDetailClient({ id }: { id: string }) {
                 메인 3: <span className="font-medium">{center.main_teacher_3_name ?? '-'}</span>
               </li>
             </ul>
-            <p className="text-sm text-slate-700 mt-2">
-              회당:{' '}
-              {center.session_fee != null
-                ? <span className="font-medium">{center.session_fee.toLocaleString()}원</span>
-                : <span className="text-slate-400">미설정</span>}
-            </p>
-            {(instructors.sub || (instructors.backup && instructors.backup.length > 0)) && (
+            {instructors.backup && instructors.backup.length > 0 && (
               <p className="text-xs text-slate-400 mt-1">
-                보조: {instructors.sub ?? '-'} / 백업: {instructors.backup?.join(', ') || '-'}
+                보조/백업: {instructors.backup.join(', ')}
               </p>
             )}
+          </div>
+
+          {/* 범죄경력조회 */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              <FileText className="h-3.5 w-3.5" />
+              범죄경력조회
+            </div>
+            <div className="text-sm text-slate-700 space-y-1">
+              <p>
+                시설 ID: <span className="font-medium">{center.criminal_check_facility_id ?? '-'}</span>
+              </p>
+              <p>
+                시설 PW: <span className="text-slate-400">{center.criminal_check_facility_password ? '설정됨' : '미설정'}</span>
+              </p>
+              {(center.criminal_check_files?.length ?? 0) > 0 ? (
+                <ul className="mt-2 space-y-1">
+                  {(center.criminal_check_files ?? []).slice(0, 3).map((f, i) => (
+                    <li key={`${f.path}-${i}`} className="text-xs text-slate-500">
+                      <a
+                        href={getPublicUrl(f.path)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:underline"
+                      >
+                        {f.name}
+                      </a>
+                    </li>
+                  ))}
+                  {(center.criminal_check_files?.length ?? 0) > 3 && (
+                    <li className="text-xs text-slate-400">+ {center.criminal_check_files.length - 3}개</li>
+                  )}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate-400 mt-2">첨부 없음</p>
+              )}
+            </div>
           </div>
 
           {/* 주간 시간표 */}
@@ -630,14 +730,7 @@ export function CenterDetailClient({ id }: { id: string }) {
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
-                  </div>
-                </fieldset>
-
-                {/* 운영 정보 */}
-                <fieldset className="space-y-3">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">운영 정보</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
+                    <div className="sm:col-span-3">
                       <label className="block text-xs font-medium text-slate-600 mb-1">회당 수업료 (원)</label>
                       <div className="relative">
                         <BadgeJapaneseYen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -652,6 +745,13 @@ export function CenterDetailClient({ id }: { id: string }) {
                         />
                       </div>
                     </div>
+                  </div>
+                </fieldset>
+
+                {/* 운영 정보 */}
+                <fieldset className="space-y-3">
+                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">운영 정보</legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사 1</label>
                       <select
@@ -692,21 +792,7 @@ export function CenterDetailClient({ id }: { id: string }) {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">보조 강사</label>
-                      <input
-                        type="text"
-                        value={editForm.instructors_default.sub ?? ''}
-                        onChange={(e) =>
-                          setEditForm((f) => ({
-                            ...f,
-                            instructors_default: { ...f.instructors_default, sub: e.target.value || null },
-                          }))
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">백업 강사 (쉼표 구분)</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">보조/백업 강사 (쉼표 구분)</label>
                       <input
                         type="text"
                         value={editForm.instructors_default.backup?.join(', ') ?? ''}
@@ -715,12 +801,81 @@ export function CenterDetailClient({ id }: { id: string }) {
                             ...f,
                             instructors_default: {
                               ...f.instructors_default,
+                              sub: null,
                               backup: e.target.value ? e.target.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
                             },
                           }))
                         }
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
+                    </div>
+                  </div>
+                </fieldset>
+
+                {/* 범죄경력조회 */}
+                <fieldset className="space-y-3">
+                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">범죄경력조회</legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">시설 아이디</label>
+                      <input
+                        type="text"
+                        value={editForm.criminal_check_facility_id}
+                        onChange={(e) => setEditForm((f) => ({ ...f, criminal_check_facility_id: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">시설 비밀번호</label>
+                      <input
+                        type="password"
+                        value={editForm.criminal_check_facility_password}
+                        onChange={(e) => setEditForm((f) => ({ ...f, criminal_check_facility_password: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">첨부 (한글/워드)</label>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
+                          <FileUp className="h-4 w-4 text-slate-500" />
+                          {criminalUploading ? '업로드 중…' : '파일 추가'}
+                          <input
+                            type="file"
+                            multiple
+                            accept=".hwp,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            disabled={criminalUploading}
+                            onChange={(e) => void handleCriminalFilesAdd(e.target.files)}
+                            className="hidden"
+                          />
+                        </label>
+                        <p className="text-xs text-slate-400">추가로 업로드하면 기존 첨부에 누적됩니다.</p>
+                      </div>
+                      {(editForm.criminal_check_files?.length ?? 0) === 0 ? (
+                        <p className="text-xs text-slate-400 mt-2">첨부 없음</p>
+                      ) : (
+                        <ul className="mt-2 space-y-1">
+                          {(editForm.criminal_check_files ?? []).map((f, i) => (
+                            <li key={`${f.path}-${i}`} className="flex items-center justify-between gap-2">
+                              <a
+                                href={getPublicUrl(f.path)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-indigo-600 hover:underline break-all"
+                              >
+                                {f.name}
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => removeCriminalFile(i)}
+                                className="text-xs text-slate-400 hover:text-red-600 cursor-pointer"
+                              >
+                                제거
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
                 </fieldset>

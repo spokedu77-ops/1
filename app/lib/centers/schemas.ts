@@ -18,6 +18,11 @@ const instructorsDefaultSchema = z.object({
   backup: z.array(z.string()),
 });
 
+const criminalCheckFileSchema = z.object({
+  name: z.string().min(1),
+  path: z.string().min(1),
+});
+
 export const centerStatusSchema = z.enum(['active', 'paused', 'ended']);
 
 export const createCenterSchema = z.object({
@@ -39,6 +44,9 @@ export const createCenterSchema = z.object({
   weekly_schedule: z.array(weeklySlotSchema).optional().default([]),
   instructors_default: instructorsDefaultSchema.optional().default({ main: null, sub: null, backup: [] }),
   highlights: z.string().optional().nullable(),
+  criminal_check_facility_id: z.string().optional().nullable(),
+  criminal_check_facility_password: z.string().optional().nullable(),
+  criminal_check_files: z.array(criminalCheckFileSchema).optional().default([]),
 });
 
 export const updateCenterSchema = createCenterSchema.partial();

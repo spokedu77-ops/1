@@ -22,6 +22,8 @@ const REACT_TRAIN_MIN_STIM_GAP_MS = 1000;
 
 // Lv.2(FLASH)용: "너무 느리진 않게" 겹침만 적당히 제한
 const FLASH_MAX_ALIVE_BUBBLES = 3;
+// Lv.2(FLASH): 터짐 위치를 하단 패드 근처가 아니라 화면 중간~하단 사이로 올림
+const FLASH_TRIGGER_Y_RATIO = 0.72;
 
 export type ReactTrainCompleteStats = {
   stims: number;
@@ -185,7 +187,10 @@ class FlashBubble {
     this.t++;
     this.y += this.speed;
     this.x += Math.sin(this.t * 0.04 + this.wobble) * 0.8;
-    const triggerY = cv.height - PAD_H - this.r;
+    const triggerY = Math.min(
+      cv.height - PAD_H - this.r,
+      Math.floor(cv.height * FLASH_TRIGGER_Y_RATIO)
+    );
     if (!this.fired && this.y >= triggerY) {
       const ok = tryBubbleStim(this.lane, this.x, this.y);
       if (ok) {
@@ -362,6 +367,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
   const spName = SPD_NAMES[lv - 1] ?? '보통';
 
   const lastStimAtMsRef = useRef<number>(-Infinity);
+  const pendingPatternLanesRef = useRef<number[]>([]);
 
   const endGame = useCallback(() => {
     const g = gRef.current;
@@ -417,24 +423,27 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       g.laneCount[lane]++;
       if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
 
-      const el = laneExplRefs.current[lane];
-      if (el) {
-        el.style.transition = 'none';
-        el.style.opacity = '1';
-        clearTimeout((el as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
-        (el as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => {
-          el.style.transition = `opacity ${0.3 * REACT_TRAIN_SLOW_FACTOR}s ease-out`;
-          el.style.opacity = '0';
-        }, 110 * REACT_TRAIN_SLOW_FACTOR);
-      }
-      const pad = padRefs.current[lane];
-      if (pad) {
-        pad.classList.add('lit');
-        clearTimeout((pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
-        (pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(
-          () => pad.classList.remove('lit'),
-          260 * REACT_TRAIN_SLOW_FACTOR
-        );
+      // FLASH(2단계): 터지는 색 자체가 피드백이므로 하단 패드/레인 강조는 최소화
+      if (g.mode !== 'flash') {
+        const el = laneExplRefs.current[lane];
+        if (el) {
+          el.style.transition = 'none';
+          el.style.opacity = '1';
+          clearTimeout((el as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
+          (el as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => {
+            el.style.transition = `opacity ${0.3 * REACT_TRAIN_SLOW_FACTOR}s ease-out`;
+            el.style.opacity = '0';
+          }, 110 * REACT_TRAIN_SLOW_FACTOR);
+        }
+        const pad = padRefs.current[lane];
+        if (pad) {
+          pad.classList.add('lit');
+          clearTimeout((pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
+          (pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(
+            () => pad.classList.remove('lit'),
+            260 * REACT_TRAIN_SLOW_FACTOR
+          );
+        }
       }
 
       const c = RT_COLORS[lane].main;
@@ -499,12 +508,38 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
     [triggerStim]
   );
 
+  const flushPatternIfReady = useCallback(() => {
+    const g = gRef.current;
+    const cv = cvRef.current;
+    if (!g || !cv) return;
+    if (g.mode !== 'pattern') return;
+    const lanes = pendingPatternLanesRef.current;
+    if (lanes.length < 2) return;
+
+    const now = performance.now();
+    if (now - lastStimAtMsRef.current < REACT_TRAIN_MIN_STIM_GAP_MS) return;
+    lastStimAtMsRef.current = now;
+
+    const [a, b] = lanes.splice(0, 2);
+    const cxA = a * g.lw + g.lw / 2;
+    const cxB = b * g.lw + g.lw / 2;
+    // 3단계(pattern): 2개를 같은 프레임에 연속 트리거해 "동시에 터지는" 느낌을 보장
+    triggerStim(a, cxA, g.hitY);
+    triggerStim(b, cxB, g.hitY);
+  }, [triggerStim]);
+
   const tryStimLane = useCallback(
     (lane: number) => {
       const g = gRef.current;
       const cv = cvRef.current;
       if (!g || !cv) return false;
       const cx = lane * g.lw + g.lw / 2;
+      if (g.mode === 'pattern') {
+        const pending = pendingPatternLanesRef.current;
+        if (!pending.includes(lane)) pending.push(lane);
+        // 타일은 제거(진행은 계속)하고, 실제 터짐은 flushPatternIfReady에서 세트로 처리
+        return true;
+      }
       return tryTriggerStim(lane, cx, g.hitY);
     },
     [tryTriggerStim]
@@ -674,6 +709,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       drawGrid(ctx2);
       spawnObjs(now);
       updateObjs(ctx2);
+      flushPatternIfReady();
       drawHitLine(ctx2);
       updateParticles(ctx2);
       drawTopFade(ctx2);
@@ -728,7 +764,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, lv, tryStimLane, tryStimBubble, variant]);
+  }, [durationSec, endGame, lv, tryStimLane, tryStimBubble, flushPatternIfReady, variant]);
 
   const uid = useId();
   return (

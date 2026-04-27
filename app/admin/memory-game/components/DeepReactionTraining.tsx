@@ -3,11 +3,11 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 
-/** 0=RED(TL) 1=GREEN(TR) 2=BLUE(BL) 3=YELLOW(BR) — 원본 HTML 순서 유지 */
+/** 0=RED(TL) 1=BLUE(TR) 2=GREEN(BL) 3=YELLOW(BR) */
 const C = [
   { main: '#FF3D6B', rgb: '255,61,107',  name: 'RED'    },
-  { main: '#00FFB2', rgb: '0,255,178',   name: 'GREEN'  },
   { main: '#2B8EFF', rgb: '43,142,255',  name: 'BLUE'   },
+  { main: '#00FFB2', rgb: '0,255,178',   name: 'GREEN'  },
   { main: '#FFE033', rgb: '255,224,51',  name: 'YELLOW' },
 ] as const;
 
