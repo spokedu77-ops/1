@@ -728,7 +728,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, lv, onStim, onStimBubble, variant]);
+  }, [durationSec, endGame, lv, tryStimLane, tryStimBubble, variant]);
 
   const uid = useId();
   return (
