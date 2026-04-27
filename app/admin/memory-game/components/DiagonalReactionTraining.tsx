@@ -468,7 +468,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
     };
 
     let lastStimAtMs = -Infinity;
-    const tryStim = (ci: number, x: number, y: number) => {
+    const tryStim = (ci: number, x: number, y: number): boolean => {
       const now = performance.now();
       if (now - lastStimAtMs < REACT_TRAIN_MIN_STIM_GAP_MS) return false;
       lastStimAtMs = now;
@@ -482,7 +482,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
       g.padPulse[ci] = 1;
       const L = LRef.current;
-      if (!L) return;
+      if (!L) return false;
       const col = C[ci];
       g.shockwaves.push({
         x,
@@ -540,9 +540,9 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
         200: '200 COMBO!',
       };
       const msg = MAP[g.combo] ?? (g.combo > 200 && g.combo % 100 === 0 ? `${g.combo} STREAK!` : null);
-      if (!msg) return;
+      if (!msg) return true;
       const root = milestoneRootRef.current;
-      if (!root) return;
+      if (!root) return true;
       const m = document.createElement('div');
       m.className = 'drt-ms';
       m.style.top = '30%';
