@@ -558,12 +558,15 @@ export default function NoticePage() {
         photo_urls: wbForm.photo_urls,
         feedback_session_id: wbForm.feedback_session_id || null,
       };
-      const { error } = editingWeeklyBestId
-        ? await supabase.from('weekly_best').update(payload).eq('id', editingWeeklyBestId)
-        : await supabase.from('weekly_best').insert([payload]);
-      if (error) {
-        const msg = typeof (error as { message?: string }).message === 'string' ? (error as { message: string }).message : JSON.stringify(error);
-        toast.error('저장 실패: ' + msg);
+      const res = await fetch('/api/admin/weekly-best', {
+        method: editingWeeklyBestId ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingWeeklyBestId ? { id: editingWeeklyBestId, ...payload } : payload),
+        credentials: 'same-origin',
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error('저장 실패: ' + (body.error ?? res.statusText));
         return;
       }
       toast.success(editingWeeklyBestId ? '주간베스트가 수정되었습니다.' : '주간베스트가 등록되었습니다.');
@@ -677,14 +680,28 @@ export default function NoticePage() {
         inline_images: null,
       };
       if (editingId) {
-        const { error } = await supabase.from('notices').update(payload).eq('id', editingId);
-        if (error) throw error;
+        const res = await fetch('/api/admin/notices', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingId, ...payload }),
+          credentials: 'same-origin',
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error ?? res.statusText);
+        }
         toast.success('수정되었습니다.');
       } else {
-        const { error } = await supabase
-          .from('notices')
-          .insert([{ ...payload, author: '운영진', created_at: new Date().toISOString() }]);
-        if (error) throw error;
+        const res = await fetch('/api/admin/notices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          credentials: 'same-origin',
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error ?? res.statusText);
+        }
         toast.success('등록되었습니다.');
       }
 
@@ -724,9 +741,13 @@ export default function NoticePage() {
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!supabase || !confirm('정말 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('notices').delete().eq('id', id);
-    if (error) {
-      toast.error('삭제 실패: ' + (error.message || '알 수 없는 오류'));
+    const res = await fetch(`/api/admin/notices/${id}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error('삭제 실패: ' + (body.error ?? res.statusText));
       return;
     }
     setNotices((prev) => prev.filter((n) => n.id !== id));
@@ -735,9 +756,13 @@ export default function NoticePage() {
 
   const handleDeleteWeeklyBest = async (id: string) => {
     if (!supabase || !confirm('이 주간베스트를 삭제할까요?')) return;
-    const { error } = await supabase.from('weekly_best').delete().eq('id', id);
-    if (error) {
-      toast.error('삭제 실패: ' + (error.message || '알 수 없는 오류'));
+    const res = await fetch(`/api/admin/weekly-best/${id}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error('삭제 실패: ' + (body.error ?? res.statusText));
       return;
     }
     setWeeklyBestList((prev) => prev.filter((w) => w.id !== id));
