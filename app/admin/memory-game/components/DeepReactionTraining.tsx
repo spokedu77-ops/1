@@ -15,9 +15,8 @@ type ColorEntry = (typeof C)[number];
 
 const REACT_TRAIN_SLOW_FACTOR = 2;
 
-// NOTE: 시지각 반응 5단계(심층)는 "게임 진행 속도"는 원래대로 유지한다.
-// (이펙트 지속시간만 2배로 늘린 상태)
-const REACT_TRAIN_GAME_SLOW_FACTOR = 1;
+// 시지각 반응 5단계(심층): 게임 진행만 1.5배 느리게 (이펙트 지속시간은 별도 2배 스케일 유지)
+const REACT_TRAIN_GAME_SLOW_FACTOR = 1.5;
 const REACT_TRAIN_MIN_STIM_GAP_MS = 1000;
 
 type LayoutState = {

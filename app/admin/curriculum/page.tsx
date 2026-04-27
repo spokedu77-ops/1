@@ -40,7 +40,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2,
-  CheckSquare, Box, ListOrdered, Play, AlertCircle, ArrowLeft, ChevronRight, GripVertical
+  CheckSquare, Box, ListOrdered, Play, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, GripVertical
 } from 'lucide-react';
 
 export type MainCurriculumTab = 'personal' | 'center';
@@ -218,6 +218,27 @@ export default function AdminCurriculumPage() {
     const tabs = getSubTabsForCategory('신체 기능향상 8회기');
     return tabs[0] ?? '';
   });
+
+  const personalCategories = useMemo(() => {
+    // 3행 × 4열(12개) 고정: 개인 수업 카테고리 12개(= 기존 11 + SPOMOVE)
+    const all = [...PERSONAL_CATEGORIES_ROW1, ...PERSONAL_CATEGORIES_ROW2];
+    const rest = all.filter((c) => c !== 'SPOMOVE');
+    return ['SPOMOVE', ...rest];
+  }, []);
+
+  const categoryDisplayLabel = useCallback((c: string) => {
+    if (c === '신체 기능향상 8회기') return '첫 8회기 루틴';
+    return c;
+  }, []);
+
+  const subTabDisplayLabel = useCallback((category: string, st: string) => {
+    return st;
+  }, []);
+
+  const isGridDirectCategory = useCallback((c: string) => {
+    // 기존 UI와 동일하게: 8회기/유아체육은 카테고리만 선택하면 바로 슬롯 UI로 진입
+    return c === '신체 기능향상 8회기' || c === '유아체육';
+  }, []);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedWeek, setSelectedWeek] = useState(() => getCurrentWeekOfMonth());
@@ -247,6 +268,69 @@ export default function AdminCurriculumPage() {
   const [editing8huiSubTab, setEditing8huiSubTab] = useState<string | null>(null);
   const [editing8huiId, setEditing8huiId] = useState<number | null>(null);
   const [eightHuiForm, setEightHuiForm] = useState({ title: '', detailText: '', url: '', url2: '', url3: '', url4: '' });
+
+  const VideoPager = useCallback(
+    ({ links, safeIndex }: { links: string[]; safeIndex: number }) => {
+      if (links.length <= 1) return null;
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center justify-center gap-1.5">
+            {links.map((_, idx) => (
+              <span
+                key={`video-dot-${idx}`}
+                className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="이전 영상"
+              className="h-11 w-11 rounded-xl bg-[#2F2F2F] border border-slate-600 text-slate-200 disabled:opacity-40 flex items-center justify-center"
+              onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))}
+              disabled={safeIndex === 0}
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <div className="flex-1 flex gap-2">
+              {links.map((_, idx) => {
+                const active = idx === safeIndex;
+                return (
+                  <button
+                    key={`video-jump-${idx}`}
+                    type="button"
+                    onClick={() => setActiveVideoIndex(idx)}
+                    className={`min-h-[44px] flex-1 rounded-xl border text-sm font-black transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400/70
+                      ${active ? 'bg-white text-black border-white shadow-md' : 'bg-[#2F2F2F] text-slate-200 border-slate-600 hover:border-slate-400'}`}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              aria-label="다음 영상"
+              className="h-11 w-11 rounded-xl bg-[#2F2F2F] border border-slate-600 text-slate-200 disabled:opacity-40 flex items-center justify-center"
+              onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))}
+              disabled={safeIndex >= links.length - 1}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+            <span>영상 선택</span>
+            <span>
+              {safeIndex + 1} / {links.length}
+            </span>
+          </div>
+        </div>
+      );
+    },
+    [setActiveVideoIndex]
+  );
 
   const [centerIsSub, setCenterIsSub] = useState(false);
   const [equipmentTagFilter, setEquipmentTagFilter] = useState<number | null>(null);
@@ -1198,16 +1282,54 @@ export default function AdminCurriculumPage() {
 
              {mainTab === 'personal' ? (
                <>
-                 <CurriculumCategoryPicker
-                   category={categoryTab}
-                   subTab={subTab}
-                   onSelect={handleCategorySelect}
-                   open={categoryPickerOpen}
-                   onOpenChange={(open) => {
-                     if (open) setCategoryPickerOpen(true);
-                     else dismissCurriculumOverlay();
-                   }}
-                 />
+                 {/* 개인 수업 카테고리: 3행 × 4열 그리드 (총 12개) */}
+                 <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4">
+                   <div className="grid grid-cols-4 gap-2">
+                     {personalCategories.map((c) => {
+                       const active = c === categoryTab;
+                       return (
+                         <button
+                           key={c}
+                           type="button"
+                           onClick={() => {
+                             if (isGridDirectCategory(c)) {
+                               handleCategorySelect(c, getSubTabsForCategory(c)[0] ?? '');
+                               return;
+                             }
+                             const first = getSubTabsForCategory(c)[0] ?? '';
+                             handleCategorySelect(c, first);
+                           }}
+                           className={`min-h-[44px] rounded-xl border text-xs sm:text-sm font-black transition-colors touch-manipulation
+                             ${active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-200'}`}
+                         >
+                           {categoryDisplayLabel(c)}
+                         </button>
+                       );
+                     })}
+                   </div>
+
+                   {/* 하위 탭(=세부 항목) 선택: 텍스트 탭으로 납작하게 */}
+                   {!isGridDirectCategory(categoryTab) && getSubTabsForCategory(categoryTab).length > 1 && (
+                     <div className="mt-3 border-t border-slate-100 pt-3">
+                       <div className="flex flex-wrap gap-2">
+                         {getSubTabsForCategory(categoryTab).map((st) => {
+                           const active = st === subTab;
+                           return (
+                             <button
+                               key={st}
+                               type="button"
+                               onClick={() => handleCategorySelect(categoryTab, st)}
+                               className={`px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-colors touch-manipulation
+                                 ${active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200'}`}
+                             >
+                               {subTabDisplayLabel(categoryTab, st)}
+                             </button>
+                           );
+                         })}
+                       </div>
+                     </div>
+                   )}
+                 </div>
                  {/* 개인 수업 목록 (8회기는 카드 8개 + 전용 모달) */}
                  {personalLoading ? (
                    <div className="flex justify-center py-12">
@@ -1679,34 +1801,7 @@ export default function AdminCurriculumPage() {
                                 </div>
                               )}
                             </div>
-                            {links.length > 1 ? (
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-center gap-1.5">
-                                  {links.map((_, idx) => (
-                                    <span
-                                      key={`video-dot-${idx}`}
-                                      className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
-                                    />
-                                  ))}
-                                </div>
-                                <div className="grid grid-cols-4 gap-2">
-                                  {links.map((_, idx) => (
-                                    <button
-                                      key={`video-jump-${idx}`}
-                                      type="button"
-                                      className={`min-h-[44px] rounded-xl border text-sm font-black transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400/70 ${idx === safeIndex ? 'bg-indigo-500 text-white border-indigo-300 shadow-md shadow-indigo-500/25' : 'bg-[#383838] text-slate-200 border-slate-600 hover:border-slate-400'}`}
-                                      onClick={() => setActiveVideoIndex(idx)}
-                                    >
-                                      {idx + 1}
-                                    </button>
-                                  ))}
-                                </div>
-                                <div className="flex gap-2">
-                                  <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>이전 영상</button>
-                                  <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))} disabled={safeIndex >= links.length - 1}>다음 영상</button>
-                                </div>
-                              </div>
-                            ) : null}
+                            <VideoPager links={links} safeIndex={safeIndex} />
                           </div>
                         );
                       })()}
@@ -1763,34 +1858,7 @@ export default function AdminCurriculumPage() {
                             </div>
                           )}
                         </div>
-                        {links.length > 1 ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-center gap-1.5">
-                              {links.map((_, idx) => (
-                                <span
-                                  key={`video-dot-${idx}`}
-                                  className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
-                                />
-                              ))}
-                            </div>
-                            <div className="grid grid-cols-4 gap-2">
-                              {links.map((_, idx) => (
-                                <button
-                                  key={`video-jump-${idx}`}
-                                  type="button"
-                                  className={`min-h-[44px] rounded-xl border text-sm font-black transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400/70 ${idx === safeIndex ? 'bg-indigo-500 text-white border-indigo-300 shadow-md shadow-indigo-500/25' : 'bg-[#383838] text-slate-200 border-slate-600 hover:border-slate-400'}`}
-                                  onClick={() => setActiveVideoIndex(idx)}
-                                >
-                                  {idx + 1}
-                                </button>
-                              ))}
-                            </div>
-                            <div className="flex gap-2">
-                              <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>이전 영상</button>
-                              <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))} disabled={safeIndex >= links.length - 1}>다음 영상</button>
-                            </div>
-                          </div>
-                        ) : null}
+                        <VideoPager links={links} safeIndex={safeIndex} />
                       </div>
                     );
                   })()

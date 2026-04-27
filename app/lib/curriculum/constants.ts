@@ -15,6 +15,7 @@ export const PERSONAL_CATEGORIES_ROW2 = [
   '농구',
   '배드민턴',
   '수행평가',
+  'SPOMOVE',
 ] as const;
 
 /** 개인 수업 초기 선택 카테고리 */
@@ -42,6 +43,7 @@ export const PERSONAL_SUB_TABS: Record<string, string[]> = {
   배드민턴: ['배드민턴'],
   수행평가: ['수행평가'],
   유아체육: ['1차시', '2차시', '3차시', '4차시', '5차시', '6차시'],
+  SPOMOVE: ['SPOMOVE'],
 };
 
 export type PersonalCategoryRow1 = (typeof PERSONAL_CATEGORIES_ROW1)[number];

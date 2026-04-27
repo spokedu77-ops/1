@@ -16,11 +16,11 @@ const C = [
 
 const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간 빠름', '빠름', '매우 빠름'];
 
-// NOTE: 시지각 반응 4단계(대각)는 "게임 진행 속도"는 원래대로 유지한다.
-// (이펙트 지속시간만 2배로 늘린 상태)
+// 이펙트 지속시간(콤보/마일스톤 등)은 2배 스케일 유지
 const REACT_TRAIN_SLOW_FACTOR = 2;
 
-const REACT_TRAIN_GAME_SLOW_FACTOR = 1;
+// 시지각 반응 4단계(대각): 게임 진행만 1.5배 느리게
+const REACT_TRAIN_GAME_SLOW_FACTOR = 1.5;
 const REACT_TRAIN_MIN_STIM_GAP_MS = 1000;
 
 type LayoutState = {
