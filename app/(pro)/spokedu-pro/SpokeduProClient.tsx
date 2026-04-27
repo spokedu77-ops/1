@@ -4,7 +4,7 @@ import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, X, Gamepad2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import './styles/spokedu-pro.css';
 import { useSpokeduProUI, type ViewId } from './hooks/useSpokeduProUI';
@@ -35,6 +35,7 @@ import {
   screenplayDetailStorageKey,
   type ScreenplayMeta,
 } from './utils/spomoveLaunch';
+import { resolveScreenplayTagMappingV1, getScreenplayLevelTag } from './utils/screenplayTagMapping';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 
 export default function SpokeduProClient({
@@ -116,19 +117,33 @@ export default function SpokeduProClient({
     };
   } | null>(null);
   const [screenplayById, setScreenplayById] = useState<Record<number, ScreenplayMeta>>({});
+  const [screenplaysRefreshToken, setScreenplaysRefreshToken] = useState(0);
   const [libraryPreset, setLibraryPreset] = useState<{ themeKey?: string; preset?: string } | null>(null);
   const [libraryMode, setLibraryMode] = useState<'program' | 'screenplay'>('program');
   const [showCurationDrawer, setShowCurationDrawer] = useState(false);
   const [postClassGroup, setPostClassGroup] = useState<string | null>(null);
   const [aiInitialStudentId, setAiInitialStudentId] = useState<string | null>(null);
   const [toolsFocusToken, setToolsFocusToken] = useState(0);
-  const [memoryGameModal, setMemoryGameModal] = useState<{ open: boolean; mode: string; level: number }>({
+  const [memoryGameModal, setMemoryGameModal] = useState<{
+    open: boolean;
+    mode: string;
+    level: number;
+    headline?: string;
+    subtitleLine?: string;
+    body?: string;
+    modeIdLabel?: string;
+    /** 라이브러리 카드와 동일: 인지영역·과제·레벨 */
+    tagChips?: string[];
+  }>({
     open: false,
     mode: 'basic',
     level: 1,
   });
 
-  const { data: contentData, fetchContent } = useSpokeduProContent('catalog', ['program_details']);
+  const { data: contentData, fetchContent } = useSpokeduProContent('catalog', [
+    'program_details',
+    'screenplay_tag_mapping_v1',
+  ]);
   const { content: adminContent, fetchBlocks, saveContentDraft } = useSpokeduProAdminBlocks();
 
   useEffect(() => {
@@ -246,7 +261,22 @@ export default function SpokeduProClient({
     return () => {
       cancelled = true;
     };
+  }, [screenplaysRefreshToken]);
+
+  useEffect(() => {
+    const bump = () => setScreenplaysRefreshToken((t) => t + 1);
+    window.addEventListener('spokedu-pro-screenplays-synced', bump);
+    return () => window.removeEventListener('spokedu-pro-screenplays-synced', bump);
   }, []);
+
+  useEffect(() => {
+    if (!memoryGameModal.open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMemoryGameModal((m) => ({ ...m, open: false }));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [memoryGameModal.open]);
 
   const programDetailsFromApi = useMemo(() => {
     const out: Record<string, ProgramDetail> = {};
@@ -283,6 +313,10 @@ export default function SpokeduProClient({
     () => ({ ...contentDetails, ...programDetailsFromApi }),
     [programDetailsFromApi, contentDetails]
   );
+  const screenplayTagMappingForDrawer = useMemo(
+    () => resolveScreenplayTagMappingV1(contentData?.screenplay_tag_mapping_v1?.value),
+    [contentData?.screenplay_tag_mapping_v1?.value]
+  );
   const libraryDrawerOpen = viewId === 'library' && libraryDrawerProgramId !== null;
   const globalDrawerOpen = drawerProgramId !== null;
   const resolvedDrawerProgramId = libraryDrawerOpen ? libraryDrawerProgramId : drawerProgramId;
@@ -291,6 +325,42 @@ export default function SpokeduProClient({
     libraryDrawerOpen && libraryDrawerContext?.screenplay && libraryDrawerProgramId != null
       ? programDetailsForDrawer[screenplayDetailStorageKey(libraryDrawerProgramId)]
       : undefined;
+
+  const computeScreenplayDisplayTags = useCallback(
+    (
+      sp: ScreenplayMeta | undefined,
+      row?: {
+        mode_id?: string | null;
+        preset_ref?: string | null;
+      } | null
+    ) => {
+      const modeId = String(sp?.modeId ?? row?.mode_id ?? '');
+      const presetRef = sp?.presetRef ?? row?.preset_ref ?? null;
+      const entry = screenplayTagMappingForDrawer.modeIdMap[modeId];
+      const domainTag = entry?.domainLabel ?? tr('인지영역');
+      const taskTag = entry?.taskLabel ?? (modeId || tr('과제유형'));
+      const levelTag = getScreenplayLevelTag(presetRef, screenplayTagMappingForDrawer.levelLabelTemplate);
+      return [domainTag, taskTag, levelTag].filter(Boolean) as string[];
+    },
+    [screenplayTagMappingForDrawer, tr]
+  );
+
+  const screenplayDrawerTags = useMemo(() => {
+    if (!libraryDrawerOpen || !libraryDrawerContext?.screenplay || resolvedDrawerProgramId == null) {
+      return undefined;
+    }
+    const sp = screenplayById[resolvedDrawerProgramId];
+    const row = libraryDrawerContext.row ?? undefined;
+    const chips = computeScreenplayDisplayTags(sp, row);
+    return chips.length > 0 ? chips : undefined;
+  }, [
+    libraryDrawerOpen,
+    libraryDrawerContext?.screenplay,
+    libraryDrawerContext?.row,
+    resolvedDrawerProgramId,
+    screenplayById,
+    computeScreenplayDisplayTags,
+  ]);
 
   const drawerProgramDetail = useMemo(() => {
     if (resolvedDrawerProgramId == null) return null;
@@ -541,6 +611,8 @@ export default function SpokeduProClient({
             functionalCap={isEditMode ? 144 : undefined}
             libraryMode={libraryMode}
             refreshToken={programsRefreshToken}
+            isEditMode={isEditMode}
+            screenplaysRefreshToken={screenplaysRefreshToken}
           />
         </div>
         <div className={`view-content ${viewId === 'data-center' ? 'active' : ''}`}>
@@ -584,6 +656,7 @@ export default function SpokeduProClient({
         isEditMode={isEditMode}
         onSaveProgramDetail={isEditMode ? handleSaveProgramDetail : undefined}
         detailKind={libraryDrawerOpen && libraryDrawerContext?.screenplay ? 'screenplay' : 'program'}
+        screenplayTags={screenplayDrawerTags}
         onLaunchMemoryGame={
           libraryDrawerOpen &&
           libraryDrawerContext?.screenplay &&
@@ -594,7 +667,17 @@ export default function SpokeduProClient({
                 if (id == null) return;
                 const sp = screenplayById[id];
                 const { mode, level } = getSpomoveLaunchParams(sp.modeId, sp.presetRef);
-                setMemoryGameModal({ open: true, mode, level });
+                const tagChips = computeScreenplayDisplayTags(sp, libraryDrawerContext?.row ?? undefined);
+                setMemoryGameModal({
+                  open: true,
+                  mode,
+                  level,
+                  headline: sp.title?.trim() || undefined,
+                  subtitleLine: sp.subtitle?.trim() || undefined,
+                  body: sp.description?.trim() || undefined,
+                  modeIdLabel: tagChips.length > 0 ? undefined : sp.modeId?.trim() || undefined,
+                  tagChips: tagChips.length > 0 ? tagChips : undefined,
+                });
               }
             : undefined
         }
@@ -621,32 +704,96 @@ export default function SpokeduProClient({
       />
 
       {memoryGameModal.open && (
-        <>
+        <div className="fixed inset-0 z-[80] flex flex-col justify-end md:justify-center md:py-6 pointer-events-none">
           <div
             role="presentation"
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] transition-opacity cursor-pointer"
+            aria-hidden
+            className="pointer-events-auto fixed inset-0 bg-slate-950/85 backdrop-blur-md"
             onClick={() => setMemoryGameModal((m) => ({ ...m, open: false }))}
           />
-          <div className="fixed inset-0 z-[80] p-2 md:p-4">
-            <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 shadow-2xl">
-              <div className="h-12 px-4 flex items-center justify-between border-b border-slate-700 bg-slate-950/80">
-                <p className="text-sm font-bold text-slate-200">{tr('SPOMOVE 실행')}</p>
-                <button
-                  type="button"
-                  onClick={() => setMemoryGameModal((m) => ({ ...m, open: false }))}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold"
-                >
-                  {tr('닫기')}
-                </button>
+          <div className="pointer-events-auto relative z-10 mx-auto flex w-full max-w-6xl flex-1 min-h-0 flex-col px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 md:max-h-[min(96vh,920px)] md:flex-none md:px-4 md:pb-4">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="spomove-embed-title"
+              className="flex max-h-[92dvh] min-h-0 flex-1 flex-col overflow-hidden rounded-t-[1.35rem] border border-orange-500/25 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 shadow-[0_28px_90px_-14px_rgba(0,0,0,0.75)] ring-1 ring-orange-400/10 md:max-h-none md:h-[min(96vh,920px)] md:rounded-3xl"
+            >
+              <header className="shrink-0 space-y-2 border-b border-slate-800/90 bg-slate-950/60 px-4 pb-3 pt-3 md:px-5 md:pb-3.5 md:pt-4">
+                <div className="mx-auto mb-1 h-1 w-10 shrink-0 rounded-full bg-slate-600/80 md:hidden" aria-hidden />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/35 bg-orange-500/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-orange-100">
+                        <Sparkles className="h-3 w-3 text-amber-300" aria-hidden />
+                        {tr('브레인체육 · SPOMOVE')}
+                      </span>
+                      <span className="rounded-md border border-slate-600/70 bg-slate-900/80 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-300">
+                        {memoryGameModal.mode} · L{memoryGameModal.level}
+                      </span>
+                      {memoryGameModal.modeIdLabel ? (
+                        <span className="rounded-md border border-slate-600/50 bg-slate-900/60 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
+                          {memoryGameModal.modeIdLabel}
+                        </span>
+                      ) : null}
+                      {memoryGameModal.tagChips?.map((chip, i) => (
+                        <span
+                          key={`${chip}-${i}`}
+                          className="rounded-md border border-orange-400/25 bg-orange-950/40 px-2 py-0.5 text-[10px] font-bold text-orange-100/90"
+                        >
+                          {tr(chip)}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Gamepad2 className="mt-0.5 h-5 w-5 shrink-0 text-orange-400/90" aria-hidden />
+                      <div className="min-w-0">
+                        <h2
+                          id="spomove-embed-title"
+                          className="text-base font-black leading-snug tracking-tight text-white md:text-lg"
+                        >
+                          {memoryGameModal.headline?.trim()
+                            ? memoryGameModal.headline.trim()
+                            : tr('SPOMOVE 인터랙티브')}
+                        </h2>
+                        {memoryGameModal.subtitleLine?.trim() ? (
+                          <p className="mt-1 text-xs font-medium text-slate-400 md:text-sm">
+                            {memoryGameModal.subtitleLine.trim()}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                    {memoryGameModal.body?.trim() ? (
+                      <div className="max-h-24 overflow-y-auto rounded-xl border border-slate-700/60 bg-slate-900/50 px-3 py-2 text-xs leading-relaxed text-slate-300 custom-scroll">
+                        {memoryGameModal.body.trim()}
+                      </div>
+                    ) : null}
+                    <p className="text-[11px] leading-relaxed text-slate-500">
+                      {tr(
+                        '전체 화면에서 진행합니다. 배경을 누르거나 ESC로 닫을 수 있어요. 수업 중에는 탭 전환을 최소화해 주세요.'
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMemoryGameModal((m) => ({ ...m, open: false }))}
+                    className="shrink-0 rounded-xl border border-slate-600/70 bg-slate-800/90 p-2 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+                    aria-label={tr('닫기')}
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </header>
+              <div className="relative min-h-0 flex-1 bg-black">
+                <iframe
+                  title={tr('SPOMOVE')}
+                  className="absolute inset-0 h-full w-full border-0 bg-slate-950"
+                  src={`/admin/memory-game?mode=${encodeURIComponent(memoryGameModal.mode)}&level=${encodeURIComponent(String(memoryGameModal.level))}&embed=1`}
+                  allow="autoplay; fullscreen"
+                />
               </div>
-              <iframe
-                title="SPOMOVE"
-                className="w-full h-[calc(100%-3rem)] bg-slate-900"
-                src={`/admin/memory-game?mode=${encodeURIComponent(memoryGameModal.mode)}&level=${encodeURIComponent(String(memoryGameModal.level))}&embed=1`}
-              />
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {showCurationDrawer && (

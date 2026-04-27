@@ -8,6 +8,7 @@ export type ScreenplayTagMappingV1 = {
 export const SCREENPLAY_MODE_IDS = [
   'FLOW',
   '반응인지',
+  '시지각반응',
   '순차기억',
   '스트룹',
   '사이먼효과',
@@ -23,6 +24,7 @@ export type ScreenplayModeId = (typeof SCREENPLAY_MODE_IDS)[number];
 const DEFAULT_MODE_ID_MAP: Record<ScreenplayModeId, { domainLabel: string; taskLabel: string }> = {
   FLOW: { domainLabel: '주의', taskLabel: 'FLOW' },
   '반응인지': { domainLabel: '주의', taskLabel: '반응인지' },
+  시지각반응: { domainLabel: '주의', taskLabel: '시지각반응' },
   '순차기억': { domainLabel: '기억', taskLabel: '순차기억' },
   스트룹: { domainLabel: '억제', taskLabel: '스트룹' },
   '사이먼효과': { domainLabel: '주의', taskLabel: '사이먼효과' },

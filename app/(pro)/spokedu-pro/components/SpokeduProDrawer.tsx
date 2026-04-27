@@ -18,6 +18,8 @@ export default function SpokeduProDrawer({
   onFabClick,
   detailKind = 'program',
   onLaunchMemoryGame,
+  /** 스크린플레이: 라이브러리 카드와 동일한 인지 태그(영역·과제·레벨). 없으면 기존 태그 로직 사용 */
+  screenplayTags,
 }: {
   open: boolean;
   programId: number | null;
@@ -35,6 +37,7 @@ export default function SpokeduProDrawer({
   /** 스크린플레이(스포무브): 센터 설명 모달과 별도로 게임 실행 */
   detailKind?: 'program' | 'screenplay';
   onLaunchMemoryGame?: () => void;
+  screenplayTags?: string[];
 }) {
   const tr = useTranslator();
   const checklistSectionRef = useRef<HTMLElement | null>(null);
@@ -105,6 +108,10 @@ export default function SpokeduProDrawer({
   const videoId = getYouTubeId(videoUrl);
 
   const tags = [...functionTypes, mainTheme, groupSize].filter(Boolean).slice(0, 3);
+  const tagChips =
+    detailKind === 'screenplay' && Array.isArray(screenplayTags) && screenplayTags.length > 0
+      ? screenplayTags.slice(0, 3)
+      : tags;
 
   const closeEditModal = () => {
     setIsEditModalOpen(false);
@@ -230,16 +237,43 @@ export default function SpokeduProDrawer({
               {subtitle ? (
                 <p className="text-slate-400 text-sm font-medium mt-2 mb-3 whitespace-pre-wrap">{subtitle}</p>
               ) : null}
-              {tags.length > 0 && (
+              {tagChips.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {tags.map((tagVal) => (
+                  {tagChips.map((tagVal, i) => (
                     <span
-                      key={tagVal}
-                      className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900/35 text-slate-200/80 border border-white/10"
+                      key={`${tagVal}-${i}`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                        detailKind === 'screenplay'
+                          ? 'bg-orange-950/35 text-orange-100/90 border-orange-400/20'
+                          : 'bg-slate-900/35 text-slate-200/80 border-white/10'
+                      }`}
                     >
                       {tr(String(tagVal))}
                     </span>
                   ))}
+                </div>
+              )}
+              {detailKind === 'screenplay' && (
+                <div className="mt-4 rounded-2xl border border-orange-500/25 bg-gradient-to-br from-orange-950/40 via-slate-900/30 to-slate-950/40 p-4 md:p-5 space-y-3">
+                  <div className="flex items-center gap-2 text-orange-200">
+                    <Gamepad2 className="w-5 h-5 shrink-0" aria-hidden />
+                    <span className="text-xs font-black uppercase tracking-wider">
+                      {tr('스포무브(브레인체육) 이렇게 쓰면 돼요')}
+                    </span>
+                  </div>
+                  <ol className="list-decimal space-y-2 pl-4 text-xs leading-relaxed text-slate-300 [&>li]:pl-1">
+                    <li>
+                      {tr(
+                        '아래 「SPOMOVE 실행」으로 전체 화면을 띄우면, 과제·신호·난이도는 화면 안내를 따르면 됩니다.'
+                      )}
+                    </li>
+                    <li>
+                      {tr('위 제목·부제는 수업 도입 멘트·학부모 안내용으로 활용해 보세요.')}
+                    </li>
+                    <li>
+                      {tr('끝나면 우측 상단 X로 돌아오면 됩니다. (전체 화면은 ESC로도 닫을 수 있어요)')}
+                    </li>
+                  </ol>
                 </div>
               )}
               {/* 수업에서 바로 쓰는 액션 */}
@@ -298,7 +332,13 @@ export default function SpokeduProDrawer({
             )}
 
             {!checklist && !equipment && !activityMethod && !activityTip && !subtitle && (
-              <p className="text-slate-500 text-sm py-4">{tr('등록된 상세가 없습니다.')}</p>
+              <p className="text-slate-500 text-sm py-4">
+                {detailKind === 'screenplay'
+                  ? tr(
+                      '텍스트형 체크리스트·교구 목록은 비어 있을 수 있어요. 인지 과제 본문은 「SPOMOVE 실행」화면에서 이어집니다. (관리자는 program_details로 보강 가능)'
+                    )
+                  : tr('등록된 상세가 없습니다.')}
+              </p>
             )}
 
             {isEditMode && (

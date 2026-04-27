@@ -1,31 +1,19 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { MODES } from '@/app/admin/memory-game/constants';
-
-type ModeToScreenplay = {
-  modeKey: string;
-  modeId: string;
-  sortBase: number;
-};
-
-const MODE_MAP: ModeToScreenplay[] = [
-  { modeKey: 'basic',      modeId: '반응인지',   sortBase: 1000 },
-  { modeKey: 'stroop',     modeId: '스트룹',     sortBase: 2000 },
-  { modeKey: 'simon',      modeId: '사이먼효과', sortBase: 2500 },
-  { modeKey: 'flanker',    modeId: '플랭커',     sortBase: 2600 },
-  { modeKey: 'gonogo',     modeId: 'GoNoGo',    sortBase: 2650 },
-  { modeKey: 'taskswitch', modeId: 'TaskSwitching', sortBase: 2675 },
-  { modeKey: 'spatial',    modeId: '순차기억',   sortBase: 3000 },
-  { modeKey: 'dual',       modeId: '이중과제',   sortBase: 4000 },
-  { modeKey: 'flow',       modeId: 'FLOW',      sortBase: 5000 },
-  { modeKey: 'reactTrain', modeId: '시지각반응', sortBase: 5100 },
-];
+import { buildSpomoveScreenplayRowsFromMemoryModes } from '@/app/lib/spomove/spomoveScreenplaysFromMemoryModes';
 
 export async function POST() {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
-  const supabase = getServiceSupabase();
+  let supabase;
+  try {
+    supabase = getServiceSupabase();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Supabase service client init failed';
+    return NextResponse.json({ error: msg }, { status: 503 });
+  }
+
   const errors: Array<{ key: string; message: string }> = [];
   let inserted = 0;
   let updated = 0;
@@ -40,58 +28,43 @@ export async function POST() {
     return NextResponse.json({ error: hideError.message }, { status: 500 });
   }
 
-  for (const map of MODE_MAP) {
-    const mode = MODES[map.modeKey];
-    if (!mode) continue;
+  const rows = buildSpomoveScreenplayRowsFromMemoryModes();
+  if (rows.length === 0) {
+    return NextResponse.json(
+      { error: 'Built 0 screenplay rows (MODES import failed or empty).', built: 0 },
+      { status: 500 }
+    );
+  }
 
-    for (const level of mode.levels) {
-      const title = `${mode.title} ${level.name}`;
-      const subtitle = `${mode.title} · ${level.enName}`;
-      const description = level.desc ?? mode.desc ?? null;
-      const presetRef = String(level.id);
-      const sortOrder = map.sortBase + level.id;
+  for (const payload of rows) {
+    const { data: found, error: findError } = await supabase
+      .from('spokedu_pro_screenplays')
+      .select('id')
+      .eq('mode_id', payload.mode_id)
+      .eq('preset_ref', payload.preset_ref)
+      .limit(1);
 
-      const { data: existing, error: findError } = await supabase
-        .from('spokedu_pro_screenplays')
-        .select('id')
-        .eq('mode_id', map.modeId)
-        .eq('title', title)
-        .maybeSingle();
+    if (findError) {
+      errors.push({ key: `${payload.mode_id}:${payload.preset_ref}`, message: findError.message });
+      continue;
+    }
 
-      if (findError) {
-        errors.push({ key: `${map.modeId}:${title}`, message: findError.message });
-        continue;
-      }
+    const existingId = found?.[0]?.id;
 
-      const payload = {
-        mode_id: map.modeId,
-        title,
-        subtitle,
-        description,
-        sort_order: sortOrder,
-        preset_ref: presetRef,
-        thumbnail_url: null,
-        is_published: true,
-        core_series: MODES[map.modeKey]?.coreCode ?? null,
-      };
-
-      if (existing?.id) {
-        const { error } = await supabase
-          .from('spokedu_pro_screenplays')
-          .update(payload)
-          .eq('id', existing.id);
-        if (error) errors.push({ key: `${map.modeId}:${title}`, message: error.message });
-        else updated += 1;
-      } else {
-        const { error } = await supabase.from('spokedu_pro_screenplays').insert(payload);
-        if (error) errors.push({ key: `${map.modeId}:${title}`, message: error.message });
-        else inserted += 1;
-      }
+    if (existingId != null) {
+      const { error } = await supabase.from('spokedu_pro_screenplays').update(payload).eq('id', existingId);
+      if (error) errors.push({ key: `${payload.mode_id}:${payload.preset_ref}`, message: error.message });
+      else updated += 1;
+    } else {
+      const { error } = await supabase.from('spokedu_pro_screenplays').insert(payload);
+      if (error) errors.push({ key: `${payload.mode_id}:${payload.preset_ref}`, message: error.message });
+      else inserted += 1;
     }
   }
 
   return NextResponse.json({
     ok: true,
+    built: rows.length,
     inserted,
     updated,
     failed: errors.length,

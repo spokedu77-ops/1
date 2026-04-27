@@ -96,6 +96,15 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
     };
   }, [loading]);
 
+  useEffect(() => {
+    if (!libraryPickerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLibraryPickerOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [libraryPickerOpen]);
+
   const save = async () => {
     setSaving(true);
     setMessage(null);
@@ -413,27 +422,51 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
       </div>
 
       {libraryPickerOpen && (
-        <>
+        <div className="fixed inset-0 z-[90] flex flex-col justify-end md:justify-center md:py-8 pointer-events-none">
           <div
             role="presentation"
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[90] transition-opacity cursor-pointer"
+            aria-hidden
+            className="pointer-events-auto fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
             onClick={() => setLibraryPickerOpen(false)}
           />
-          <div className="fixed inset-0 z-[90] p-2 md:p-4">
-            <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 shadow-2xl flex flex-col">
-              <div className="h-12 px-4 flex items-center justify-between border-b border-slate-700 bg-slate-950/80">
-                <p className="text-sm font-black text-slate-200">
-                  {tr(`Row1 ${activeRow1Slot + 1}번 프로그램 선택`)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setLibraryPickerOpen(false)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold"
-                >
-                  {tr('닫기')}
-                </button>
+          <div className="pointer-events-auto relative z-10 mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 md:max-h-[min(92vh,900px)] md:flex-none md:px-4 md:pb-4">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="row1-library-picker-title"
+              className="flex max-h-[88dvh] min-h-0 flex-1 flex-col overflow-hidden rounded-t-[1.35rem] border border-slate-600/50 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 shadow-[0_28px_90px_-14px_rgba(0,0,0,0.72)] ring-1 ring-white/[0.06] md:max-h-none md:flex-none md:h-[min(92vh,900px)] md:rounded-3xl"
+            >
+              <div className="shrink-0 border-b border-slate-800/90 bg-slate-950/55 px-4 pb-3 pt-3 md:px-5 md:pb-3.5 md:pt-4">
+                <div className="mx-auto mb-1 hidden h-1 w-10 shrink-0 rounded-full bg-slate-600/80 md:hidden" aria-hidden />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-amber-500/35 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-amber-200/95">
+                        Row1 · {activeRow1Slot + 1}
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-500">{tr('프로그램 뱅크')}</span>
+                    </div>
+                    <h2
+                      id="row1-library-picker-title"
+                      className="text-base font-black tracking-tight text-white md:text-lg"
+                    >
+                      {tr('이번 주 슬롯에 넣을 활동을 고르세요')}
+                    </h2>
+                    <p className="max-w-xl text-xs leading-relaxed text-slate-400">
+                      {tr('카드를 한 번 누르면 이 슬롯에 저장되고 창이 닫힙니다. 바깥 어두운 영역을 눌러도 닫힙니다.')}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryPickerOpen(false)}
+                    className="shrink-0 rounded-xl border border-slate-600/70 bg-slate-800/90 p-2 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+                    aria-label={tr('닫기')}
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-y-auto custom-scroll bg-slate-950/25">
                 <LibraryView
                   onOpenDetail={() => {}}
                   onSelectProgram={(id, row) => {
@@ -453,7 +486,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

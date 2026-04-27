@@ -2,7 +2,8 @@
 
 import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useMemo, memo, useEffect, useRef } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
 import {
   THEME_KEYS,
@@ -84,6 +85,16 @@ function SkeletonCard() {
   return <div className="w-full aspect-[4/3] rounded-2xl bg-slate-800 animate-pulse" />;
 }
 
+function programFilterChipClass(active: boolean): string {
+  return [
+    'shrink-0 rounded-full px-2.5 py-1 text-[11px] sm:px-3 sm:py-1.5 sm:text-xs font-semibold transition-colors border',
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40',
+    active
+      ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-100 shadow-sm shadow-emerald-900/20'
+      : 'border-slate-600/45 bg-slate-950/35 text-slate-400 hover:border-slate-500 hover:bg-slate-800/55 hover:text-slate-100',
+  ].join(' ');
+}
+
 export default function LibraryView({
   onOpenDetail,
   onSelectProgram,
@@ -93,6 +104,8 @@ export default function LibraryView({
   functionalCap,
   libraryMode = 'program',
   refreshToken,
+  isEditMode = false,
+  screenplaysRefreshToken = 0,
 }: {
   onOpenDetail: (
     id: number,
@@ -116,8 +129,13 @@ export default function LibraryView({
   libraryMode?: 'program' | 'screenplay';
   /** 상위에서 저장 후 목록을 강제 새로고침하기 위한 토큰 */
   refreshToken?: number;
+  /** 관리자(/admin/spokedu-pro) 편집 모드에서만 스크린플레이 동기화 UI 노출 */
+  isEditMode?: boolean;
+  /** 스크린플레이 목록 강제 재조회 */
+  screenplaysRefreshToken?: number;
 }) {
   const tr = useTranslator();
+  const [syncingScreenplays, setSyncingScreenplays] = useState(false);
   const [functionType, setFunctionType] = useState<string>('');
   const [mainTheme, setMainTheme] = useState<string>('');
   const [groupSize, setGroupSize] = useState<string>('');
@@ -175,7 +193,7 @@ export default function LibraryView({
     let cancelled = false;
     setFetchError(false);
     if (isScreenplayPreset) {
-      fetch('/api/spokedu-pro/screenplays')
+      fetch('/api/spokedu-pro/screenplays', { credentials: 'include' })
         .then((res) => res.json().then((json) => ({ res, json })))
         .then(({ res, json }) => {
           if (cancelled || !res.ok || !Array.isArray(json?.screenplays)) {
@@ -250,7 +268,17 @@ export default function LibraryView({
         });
     }
     return () => { cancelled = true; };
-  }, [functionType, mainTheme, groupSize, debouncedSearch, isScreenplayPreset, isFunctionalPreset, search, refreshToken]);
+  }, [
+    functionType,
+    mainTheme,
+    groupSize,
+    debouncedSearch,
+    isScreenplayPreset,
+    isFunctionalPreset,
+    search,
+    refreshToken,
+    screenplaysRefreshToken,
+  ]);
 
   const isLoading = programsFromApi === null;
   const filteredPrograms = programsFromApi ?? [];
@@ -318,101 +346,200 @@ export default function LibraryView({
           <h2 className={compact ? 'text-xl font-black text-white tracking-tight' : 'text-3xl md:text-4xl font-black text-white tracking-tight'}>
             {selectionMode ? tr('프로그램 선택') : tr('프로그램 뱅크')}
           </h2>
-          <span className="text-slate-400 text-sm font-medium">{displayFilteredPrograms.length}{tr('개')}</span>
+          <span className="text-slate-400 text-sm font-medium tabular-nums">
+            {displayFilteredPrograms.length}
+            {tr('개')}
+          </span>
         </div>
 
-        {!compact && !isScreenplayPreset && (
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">{tr('기능')}</span>
-          {FUNCTION_TYPES.map((ft) => (
+        {isScreenplayPreset && isEditMode && (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-950/25 px-3 py-2.5">
             <button
-              key={ft}
               type="button"
-              onClick={() => setFunctionType(functionType === ft ? '' : ft)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                functionType === ft
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-              }`}
+              disabled={syncingScreenplays}
+              onClick={async () => {
+                setSyncingScreenplays(true);
+                try {
+                  const res = await fetch('/api/spokedu-pro/screenplays/import-memory-game', {
+                    method: 'POST',
+                    credentials: 'include',
+                  });
+                  const j = await res.json().catch(() => ({}));
+                  if (!res.ok) {
+                    const hint =
+                      Array.isArray(j.errors) && j.errors[0]?.message
+                        ? ` — ${j.errors[0].message}`
+                        : '';
+                    toast.error(String(j.error ?? `HTTP ${res.status}`) + hint);
+                    return;
+                  }
+                  const built = typeof j.built === 'number' ? j.built : null;
+                  const failed = typeof j.failed === 'number' ? j.failed : 0;
+                  if (failed > 0) {
+                    const first = Array.isArray(j.errors) && j.errors[0]?.message ? j.errors[0].message : '';
+                    toast.error(
+                      tr(
+                        `동기화 실패 ${failed}건 (생성 ${j.inserted ?? 0}, 수정 ${j.updated ?? 0}${built != null ? `, 대상 ${built}` : ''})${first ? `: ${first}` : ''}`
+                      )
+                    );
+                    return;
+                  }
+                  toast.success(
+                    tr(
+                      `동기화 완료 (추가 ${j.inserted ?? 0}, 수정 ${j.updated ?? 0}${built != null ? `, 대상 ${built}` : ''})`
+                    )
+                  );
+                  window.dispatchEvent(new CustomEvent('spokedu-pro-screenplays-synced'));
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : tr('동기화 실패'));
+                } finally {
+                  setSyncingScreenplays(false);
+                }
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-600/90 text-white text-xs font-black hover:bg-amber-500 disabled:opacity-50 border border-amber-400/40"
             >
-              {tr(ft)}
+              <RefreshCw className={`w-3.5 h-3.5 ${syncingScreenplays ? 'animate-spin' : ''}`} />
+              {syncingScreenplays ? tr('동기화 중…') : tr('스크린플레이 DB 동기화')}
             </button>
-          ))}
-        </div>
-        )}
-        {!compact && !isScreenplayPreset && (
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">{tr('테마')}</span>
-          {MAIN_THEMES.map((mt) => (
-            <button
-              key={mt}
-              type="button"
-              onClick={() => setMainTheme(mainTheme === mt ? '' : mt)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                mainTheme === mt
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-              }`}
-            >
-              {tr(mt)}
-            </button>
-          ))}
-        </div>
-        )}
-        {!compact && !isScreenplayPreset && (
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">{tr('인원')}</span>
-          {GROUP_SIZES.map((gs) => (
-            <button
-              key={gs}
-              type="button"
-              onClick={() => setGroupSize(groupSize === gs ? '' : gs)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                groupSize === gs
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-              }`}
-            >
-              {tr(gs)}
-            </button>
-          ))}
-        </div>
+            <p className="text-[11px] text-slate-400 leading-snug max-w-xl">
+              {tr('Memory Game MODES → DB. 플랫폼 관리자만 실행 가능. 완료 후 목록이 자동으로 갱신됩니다.')}
+            </p>
+          </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={tr('프로그램명 검색...')}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white text-sm pl-10 pr-10 py-2.5 focus:outline-none focus:border-emerald-500"
-            />
-            {search && (
+        {!isScreenplayPreset ? (
+          <div
+            className={
+              compact
+                ? 'rounded-xl border border-slate-700/60 bg-slate-950/25 p-3 space-y-3'
+                : 'rounded-2xl border border-slate-700/50 bg-slate-950/20 p-4 sm:p-5 space-y-4'
+            }
+          >
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3">
+              <div className="relative flex-1 min-w-0 sm:max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={tr('프로그램명 검색...')}
+                  className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl text-white text-sm pl-10 pr-10 py-2.5 focus:outline-none focus:border-emerald-500/70 focus:ring-1 focus:ring-emerald-500/30"
+                />
+                {search ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch('');
+                      setDebouncedSearch('');
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white p-0.5 rounded-md hover:bg-slate-800"
+                    aria-label={tr('지우기')}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                ) : null}
+              </div>
+              {hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-600/70 text-slate-300 bg-slate-900/40 hover:bg-slate-800 hover:text-white"
+                >
+                  {tr('필터 초기화')}
+                </button>
+              ) : null}
+            </div>
+
+            <div className={compact ? 'space-y-2.5' : 'space-y-4'}>
+              <div className="space-y-1.5 min-w-0">
+                <p className="text-[11px] font-semibold text-slate-500">{tr('기능')}</p>
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 custom-scroll">
+                  {FUNCTION_TYPES.map((ft) => (
+                    <button
+                      key={ft}
+                      type="button"
+                      onClick={() => setFunctionType(functionType === ft ? '' : ft)}
+                      className={programFilterChipClass(functionType === ft)}
+                    >
+                      {tr(ft)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px bg-slate-700/50" aria-hidden />
+
+              <div className="space-y-1.5 min-w-0">
+                <p className="text-[11px] font-semibold text-slate-500">{tr('테마')}</p>
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 custom-scroll">
+                  {MAIN_THEMES.map((mt) => (
+                    <button
+                      key={mt}
+                      type="button"
+                      onClick={() => setMainTheme(mainTheme === mt ? '' : mt)}
+                      className={programFilterChipClass(mainTheme === mt)}
+                    >
+                      {tr(mt)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px bg-slate-700/50" aria-hidden />
+
+              <div className="space-y-1.5 min-w-0">
+                <p className="text-[11px] font-semibold text-slate-500">{tr('인원')}</p>
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 custom-scroll">
+                  {GROUP_SIZES.map((gs) => (
+                    <button
+                      key={gs}
+                      type="button"
+                      onClick={() => setGroupSize(groupSize === gs ? '' : gs)}
+                      className={programFilterChipClass(groupSize === gs)}
+                    >
+                      {tr(gs)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={tr('프로그램명 검색...')}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white text-sm pl-10 pr-10 py-2.5 focus:outline-none focus:border-emerald-500"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('');
+                    setDebouncedSearch('');
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                  aria-label={tr('지우기')}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {hasActiveFilters && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearch('');
-                  setDebouncedSearch('');
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
-                aria-label={tr('지우기')}
+                onClick={clearFilters}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-600 text-slate-400 hover:bg-slate-800 hover:text-white"
               >
-                <X className="w-4 h-4" />
+                {tr('필터 초기화')}
               </button>
             )}
           </div>
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-600 text-slate-400 hover:bg-slate-800 hover:text-white"
-            >
-              {tr('필터 초기화')}
-            </button>
-          )}
-        </div>
+        )}
       </header>
 
       {isLoading && (

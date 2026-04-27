@@ -210,6 +210,12 @@ export default function RoadmapView({
   }, [fetchDashboard]);
 
   useEffect(() => {
+    const handler = () => setScreenplaysFetchKey((k) => k + 1);
+    window.addEventListener('spokedu-pro-screenplays-synced', handler);
+    return () => window.removeEventListener('spokedu-pro-screenplays-synced', handler);
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     setScreenplaysLoading(true);
     setScreenplaysError(null);

@@ -47,6 +47,7 @@ export function getSpomoveLaunchParams(
     TaskSwitching: 'taskswitch',
     이중과제: 'dual',
     CHALLENGE: 'challenge',
+    시지각반응: 'reactTrain',
   };
   const mode = modeMap[String(modeId ?? '')] ?? 'basic';
   const targetLevel = Number.isFinite(level) && level > 0 ? level : 1;
