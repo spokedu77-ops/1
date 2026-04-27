@@ -21,7 +21,7 @@ const REACT_TRAIN_SLOW_FACTOR = 2;
 const REACT_TRAIN_MIN_STIM_GAP_MS = 1000;
 
 // Lv.2(FLASH)용: "너무 느리진 않게" 겹침만 적당히 제한
-const FLASH_MAX_ALIVE_BUBBLES = 2;
+const FLASH_MAX_ALIVE_BUBBLES = 3;
 
 export type ReactTrainCompleteStats = {
   stims: number;
