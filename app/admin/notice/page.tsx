@@ -6,7 +6,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { Plus, Trash2, X, Pin, ChevronDown, RefreshCw, Edit3, Image as ImageIcon, FileText, Camera, MessageSquare } from 'lucide-react';
-import { uploadToStorageDirect, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
+import { uploadToStorageSigned, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { parseTemplateToFields, isFieldValid } from '@/app/lib/feedbackValidation';
 import type { FeedbackFields } from '@/app/lib/feedbackValidation';
@@ -531,7 +531,7 @@ export default function NoticePage() {
         // 원본이 커도 업로드 되도록 WebP 변환 + 리사이즈(비율 유지)
         const webp = await optimizeToWebP(file, { maxW: 1920, maxH: 1920, quality: 0.9 });
         const path = `weekly_best/${Date.now()}_${i}_${Math.random().toString(36).slice(2, 10)}_${baseName}.webp`;
-        await uploadToStorageDirect(path, webp, 'image/webp');
+        await uploadToStorageSigned(path, webp, 'image/webp');
         urls.push(getPublicUrl(path));
       }
       setWbForm((prev) => ({ ...prev, photo_urls: [...prev.photo_urls, ...urls] }));
@@ -597,7 +597,7 @@ export default function NoticePage() {
         // 공지 인라인 이미지도 원본 용량에 상관없이 올라가도록 WebP로 변환/리사이즈
         const webp = await optimizeToWebP(file, { maxW: 1920, maxH: 1920, quality: 0.9 });
         const path = `notices/${Date.now()}_${i}_${baseName}.webp`;
-        await uploadToStorageDirect(path, webp, 'image/webp');
+        await uploadToStorageSigned(path, webp, 'image/webp');
         urls.push(getPublicUrl(path));
       }
     } catch (err) {

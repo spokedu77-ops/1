@@ -67,6 +67,46 @@ export async function uploadToStorageDirect(
 }
 
 /**
+ * 대용량 업로드 + Storage RLS 회피:
+ * 1) admin API로 signed upload URL 발급 (Service Role)
+ * 2) 브라우저에서 Storage로 직접 PUT 업로드
+ *
+ * 주간베스트 사진처럼 파일이 크거나,
+ * 관리자 계정이더라도 Storage RLS 정책이 빡빡해서 direct upload가 막힐 때 사용합니다.
+ */
+export async function uploadToStorageSigned(
+  path: string,
+  file: File,
+  contentType?: string
+): Promise<string> {
+  const res = await fetch('/api/admin/storage/signed-upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path, upsert: true }),
+    credentials: 'same-origin',
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? res.statusText);
+  }
+  const body = (await res.json().catch(() => null)) as { signedUrl?: string; path?: string } | null;
+  const signedUrl = typeof body?.signedUrl === 'string' ? body.signedUrl : '';
+  if (!signedUrl) throw new Error('signedUrl을 받지 못했습니다.');
+
+  const put = await fetch(signedUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType ?? (file.type || 'application/octet-stream') },
+    body: file,
+  });
+  if (!put.ok) {
+    const txt = await put.text().catch(() => '');
+    throw new Error(`Storage 업로드 실패: ${put.status} ${put.statusText}${txt ? ` - ${txt}` : ''}`);
+  }
+
+  return typeof body?.path === 'string' && body.path ? body.path : path;
+}
+
+/**
  * Storage 경로에서 Public URL 생성
  * @param path Storage 경로
  * @returns Public URL

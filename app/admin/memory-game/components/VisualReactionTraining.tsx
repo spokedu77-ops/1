@@ -17,6 +17,8 @@ const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간
 
 export type ReactTrainVariant = 'flow' | 'flash' | 'pattern';
 
+const REACT_TRAIN_SLOW_FACTOR = 2;
+
 export type ReactTrainCompleteStats = {
   stims: number;
   maxCombo: number;
@@ -300,7 +302,7 @@ const css = `
 #vrt .vrt-hc.vrt-cen{flex:1;align-items:center;border-right:none}
 #vrt .vrt-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
 #vrt .vrt-hv{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
-#vrt #vrt-mtime.warn{animation:vrtw .5s ease-in-out infinite}
+#vrt #vrt-mtime.warn{animation:vrtw 1s ease-in-out infinite}
 @keyframes vrtw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
 #vrt #vrt-badge{font-size:clamp(12px,2vw,16px);letter-spacing:.18em;color:rgba(255,255,255,.35);font-family:Bebas Neue,sans-serif}
 #vrt .vrt-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;display:flex;align-items:center;gap:6px}
@@ -310,7 +312,7 @@ const css = `
 #vrt .vrt-cn{font-family:Bebas Neue,sans-serif;font-size:clamp(70px,14vw,128px);letter-spacing:.02em;color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
 #vrt .vrt-cw{font-size:clamp(10px,1.8vw,15px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.45)}
 @keyframes vrtms{0%{opacity:0;transform:translateX(-50%) scale(.5)}20%{opacity:1;transform:translateX(-50%) scale(1.12)}70%{opacity:1;transform:translateX(-50%) scale(1) translateY(-8px)}100%{opacity:0;transform:translateX(-50%) scale(.9) translateY(-48px)}}
-#vrt .vrt-ms{position:absolute;left:50%;z-index:65;pointer-events:none;font-family:Bebas Neue,sans-serif;font-size:clamp(26px,5.5vw,52px);letter-spacing:.1em;white-space:nowrap;text-shadow:0 0 24px currentColor;animation:vrtms .85s ease-out forwards}
+#vrt .vrt-ms{position:absolute;left:50%;z-index:65;pointer-events:none;font-family:Bebas Neue,sans-serif;font-size:clamp(26px,5.5vw,52px);letter-spacing:.1em;white-space:nowrap;text-shadow:0 0 24px currentColor;animation:vrtms 1.7s ease-out forwards}
 `;
 
 type Props = {
@@ -400,15 +402,18 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
         el.style.opacity = '1';
         clearTimeout((el as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
         (el as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => {
-          el.style.transition = 'opacity .3s ease-out';
+          el.style.transition = `opacity ${0.3 * REACT_TRAIN_SLOW_FACTOR}s ease-out`;
           el.style.opacity = '0';
-        }, 110);
+        }, 110 * REACT_TRAIN_SLOW_FACTOR);
       }
       const pad = padRefs.current[lane];
       if (pad) {
         pad.classList.add('lit');
         clearTimeout((pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
-        (pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => pad.classList.remove('lit'), 260);
+        (pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(
+          () => pad.classList.remove('lit'),
+          260 * REACT_TRAIN_SLOW_FACTOR
+        );
       }
 
       const c = RT_COLORS[lane].main;
@@ -425,7 +430,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
               pop.classList.add('show');
               const po = pop as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> };
               clearTimeout(po._t);
-              po._t = setTimeout(() => pop.classList.remove('show'), 650);
+              po._t = setTimeout(() => pop.classList.remove('show'), 650 * REACT_TRAIN_SLOW_FACTOR);
             })
           );
         }
@@ -449,7 +454,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       m.style.color = col;
       m.textContent = msg;
       root.appendChild(m);
-      setTimeout(() => m.remove(), 900);
+      setTimeout(() => m.remove(), 900 * REACT_TRAIN_SLOW_FACTOR);
     },
     []
   );
@@ -639,7 +644,8 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
     const computeSpawnInt = () => {
       const base = Math.max(320, 1380 - (lv - 1) * 150);
       /* PATTERN(3번): 페어 출현 간격을 FLOW·FLASH 대비 2배 */
-      return variant === 'pattern' ? base * 2 : base;
+      const variantAdjusted = variant === 'pattern' ? base * 2 : base;
+      return variantAdjusted * REACT_TRAIN_SLOW_FACTOR;
     };
 
     const onWinResize = () => {
@@ -648,7 +654,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       resizeCv(play);
       calcLayout();
       const pps = (cv.clientHeight / 2.6) * (0.55 + (lv - 1) * 0.17);
-      g.baseSpd = pps / 60;
+      g.baseSpd = pps / 60 / REACT_TRAIN_SLOW_FACTOR;
       g.spawnInt = computeSpawnInt();
     };
 
@@ -658,7 +664,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
         resizeCv(play);
         calcLayout();
         const pps = (cv.clientHeight / 2.6) * (0.55 + (lv - 1) * 0.17);
-        g.baseSpd = pps / 60;
+        g.baseSpd = pps / 60 / REACT_TRAIN_SLOW_FACTOR;
         g.spawnInt = computeSpawnInt();
       }
       g.lastSpawn = performance.now();

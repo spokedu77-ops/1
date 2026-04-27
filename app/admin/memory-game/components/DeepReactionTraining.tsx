@@ -13,6 +13,8 @@ const C = [
 
 type ColorEntry = (typeof C)[number];
 
+const REACT_TRAIN_SLOW_FACTOR = 2;
+
 type LayoutState = {
   W: number; H: number; cx: number; cy: number; pad: number; inset: number;
   corners: { x: number; y: number }[];
@@ -440,7 +442,10 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     requestAnimationFrame(() => requestAnimationFrame(() => {
       pop.classList.add('dr-show');
       clearTimeout((pop as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
-      (pop as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => pop.classList.remove('dr-show'), 650);
+      (pop as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(
+        () => pop.classList.remove('dr-show'),
+        650 * REACT_TRAIN_SLOW_FACTOR
+      );
     }));
   }, []);
 
@@ -454,7 +459,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     el.style.color = C[n % 4].main;
     el.textContent = msg;
     gameScreenRef.current.appendChild(el);
-    setTimeout(() => el.remove(), 900);
+    setTimeout(() => el.remove(), 900 * REACT_TRAIN_SLOW_FACTOR);
   }, []);
 
   /* ─── onStim ─── */
@@ -469,7 +474,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
     g.cornerPulse[ci] = 1.0;
 
-    [0, 5, 11].forEach(delay => {
+    [0, 5, 11].map((d) => d * REACT_TRAIN_SLOW_FACTOR).forEach((delay) => {
       g.ripples.push({ x, y, r: 0, maxR: L.current.pad * 2.6, color: C[ci].main, rgb: C[ci].rgb, life: 1, delay });
     });
     for (let i = 0; i < 22; i++) g.particles.push(new BurstBubble(x, y, C[ci].main, C[ci].rgb));
@@ -490,7 +495,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       hudTimeRef.current.style.textShadow = '0 0 14px #00FFB2';
       setTimeout(() => {
         if (hudTimeRef.current) { hudTimeRef.current.style.color = ''; hudTimeRef.current.style.textShadow = ''; }
-      }, 500);
+      }, 500 * REACT_TRAIN_SLOW_FACTOR);
     }
   }, []);
 
@@ -584,9 +589,9 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       timeLeft: durationSec, elapsed: 0,
       stims: 0, combo: 0, maxCombo: 0,
       laneCount: [0, 0, 0, 0],
-      spawnInt: Math.max(300, 1350 - (speedLevel - 1) * 150),
-      lastSpawn: performance.now() - Math.max(300, 1350 - (speedLevel - 1) * 150),
-      baseSpeedMult: 1,
+      spawnInt: Math.max(300, 1350 - (speedLevel - 1) * 150) * REACT_TRAIN_SLOW_FACTOR,
+      lastSpawn: performance.now() - Math.max(300, 1350 - (speedLevel - 1) * 150) * REACT_TRAIN_SLOW_FACTOR,
+      baseSpeedMult: 1 / REACT_TRAIN_SLOW_FACTOR,
       raf: null, timer: null,
       cornerPulse: [0, 0, 0, 0],
       waveOffset: 0,
@@ -639,7 +644,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
         .dr-combo-n { font-family:'Bebas Neue',cursive; font-size:clamp(60px,12vw,110px); color:#fff; text-shadow:0 0 30px rgba(43,142,255,.8); line-height:1; }
         .dr-combo-w { font-size:clamp(10px,1.8vw,14px); font-weight:700; letter-spacing:.35em; color:rgba(255,255,255,.4); font-family:'Barlow Condensed',sans-serif; }
         @keyframes dr-ms { 0%{opacity:0;transform:translateX(-50%) scale(.5);}18%{opacity:1;transform:translateX(-50%) scale(1.1);}65%{opacity:1;transform:translateX(-50%) scale(1) translateY(-6px);}100%{opacity:0;transform:translateX(-50%) scale(.9) translateY(-44px);} }
-        .dr-ms { position:absolute; left:50%; z-index:65; pointer-events:none; font-family:'Bebas Neue',cursive; font-size:clamp(22px,4.5vw,44px); letter-spacing:.1em; white-space:nowrap; text-shadow:0 0 20px currentColor; animation:dr-ms .85s ease-out forwards; }
+        .dr-ms { position:absolute; left:50%; z-index:65; pointer-events:none; font-family:'Bebas Neue',cursive; font-size:clamp(22px,4.5vw,44px); letter-spacing:.1em; white-space:nowrap; text-shadow:0 0 20px currentColor; animation:dr-ms 1.7s ease-out forwards; }
       `}</style>
 
       {/* HUD */}

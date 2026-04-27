@@ -16,6 +16,8 @@ const C = [
 
 const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간 빠름', '빠름', '매우 빠름'];
 
+const REACT_TRAIN_SLOW_FACTOR = 2;
+
 type LayoutState = {
   W: number;
   H: number;
@@ -325,9 +327,9 @@ const css = `
 #drt .drt-cn{font-family:Bebas Neue,sans-serif;font-size:clamp(60px,13vw,120px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
 #drt .drt-cw{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.4)}
 @keyframes drtw{0%,100%{color:#ef4444;text-shadow:0 0 14px #ef4444}50%{color:#fff;text-shadow:none}}
-#drt #drt-mtime.warn{animation:drtw .5s ease-in-out infinite}
+#drt #drt-mtime.warn{animation:drtw 1s ease-in-out infinite}
 @keyframes drtms{0%{opacity:0;transform:translateX(-50%) scale(.5)}18%{opacity:1;transform:translateX(-50%) scale(1.12)}65%{opacity:1;transform:translateX(-50%) scale(1) translateY(-6px)}100%{opacity:0;transform:translateX(-50%) scale(.9) translateY(-44px)}}
-#drt .drt-ms{position:absolute;left:50%;z-index:65;pointer-events:none;font-family:Bebas Neue,sans-serif;font-size:clamp(24px,5vw,48px);letter-spacing:.1em;white-space:nowrap;text-shadow:0 0 22px currentColor;animation:drtms .85s ease-out forwards}
+#drt .drt-ms{position:absolute;left:50%;z-index:65;pointer-events:none;font-family:Bebas Neue,sans-serif;font-size:clamp(24px,5vw,48px);letter-spacing:.1em;white-space:nowrap;text-shadow:0 0 22px currentColor;animation:drtms 1.7s ease-out forwards}
 `;
 
 type Props = {
@@ -407,7 +409,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       spawnInt: 600,
       lastSpawn: 0,
       elapsed: 0,
-      baseSpeedMult: 1,
+      baseSpeedMult: 1 / REACT_TRAIN_SLOW_FACTOR,
       raf: null,
       timer: null,
       padPulse: [0, 0, 0, 0],
@@ -509,7 +511,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
               pop.classList.add('show');
               const po = pop as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> };
               clearTimeout(po._t);
-              po._t = setTimeout(() => pop.classList.remove('show'), 650);
+              po._t = setTimeout(() => pop.classList.remove('show'), 650 * REACT_TRAIN_SLOW_FACTOR);
             })
           );
         }
@@ -531,7 +533,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       m.style.color = C[g.combo % 4].main;
       m.textContent = msg;
       root.appendChild(m);
-      setTimeout(() => m.remove(), 900);
+      setTimeout(() => m.remove(), 900 * REACT_TRAIN_SLOW_FACTOR);
     };
 
     const applyAccel = () => {
@@ -543,7 +545,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
         el.style.color = '#FFD600';
         setTimeout(() => {
           el.style.color = '';
-        }, 400);
+        }, 400 * REACT_TRAIN_SLOW_FACTOR);
       }
     };
 
@@ -702,7 +704,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (!play) return;
       resizeCv(play);
       calcLayout();
-      g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155);
+      g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155) * REACT_TRAIN_SLOW_FACTOR;
     };
 
     const startId = window.setTimeout(() => {
@@ -710,7 +712,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (play) {
         resizeCv(play);
         calcLayout();
-        g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155);
+        g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155) * REACT_TRAIN_SLOW_FACTOR;
       }
       g.lastSpawn = performance.now();
       updateHudTime();
