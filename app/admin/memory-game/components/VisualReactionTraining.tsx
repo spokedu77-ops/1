@@ -18,6 +18,10 @@ const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간
 export type ReactTrainVariant = 'flow' | 'flash' | 'pattern';
 
 const REACT_TRAIN_SLOW_FACTOR = 2;
+const REACT_TRAIN_MIN_STIM_GAP_MS = 1000;
+
+// Lv.2(FLASH)용: "너무 느리진 않게" 겹침만 적당히 제한
+const FLASH_MAX_ALIVE_BUBBLES = 2;
 
 export type ReactTrainCompleteStats = {
   stims: number;
@@ -107,12 +111,17 @@ class FlowTile {
     this.dead = false;
   }
 
-  update(g: GameState, cv: HTMLCanvasElement, onLaneStim: (lane: number) => void) {
+  update(g: GameState, cv: HTMLCanvasElement, tryLaneStim: (lane: number) => boolean) {
     this.y += this.speed;
     if (!this.fired && this.y + this.h >= g.hitY) {
-      this.fired = true;
-      this.dead = true;
-      onLaneStim(this.lane);
+      const ok = tryLaneStim(this.lane);
+      if (ok) {
+        this.fired = true;
+        this.dead = true;
+      } else {
+        // 판정선 직전에서 대기
+        this.y = g.hitY - this.h;
+      }
     }
   }
 
@@ -171,16 +180,21 @@ class FlashBubble {
   update(
     g: GameState,
     cv: HTMLCanvasElement,
-    onBubbleStim: (lane: number, x: number, y: number) => void
+    tryBubbleStim: (lane: number, x: number, y: number) => boolean
   ) {
     this.t++;
     this.y += this.speed;
     this.x += Math.sin(this.t * 0.04 + this.wobble) * 0.8;
     const triggerY = cv.height - PAD_H - this.r;
     if (!this.fired && this.y >= triggerY) {
-      this.fired = true;
-      this.dead = true;
-      onBubbleStim(this.lane, this.x, this.y);
+      const ok = tryBubbleStim(this.lane, this.x, this.y);
+      if (ok) {
+        this.fired = true;
+        this.dead = true;
+      } else {
+        // 트리거 지점에서 대기
+        this.y = triggerY;
+      }
     }
   }
 
@@ -189,26 +203,16 @@ class FlashBubble {
     if (this.y - this.r > cv.height) return;
     ctx.save();
     ctx.shadowColor = this.color.main;
-    ctx.shadowBlur = 30;
+    // 렉 완화: 매 프레임 radialGradient 생성은 비용이 커서, 단순 fill로 대체
+    ctx.shadowBlur = 18;
     ctx.strokeStyle = this.color.main;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.shadowBlur = 20;
-    const grd = ctx.createRadialGradient(
-      this.x - this.r * 0.25,
-      this.y - this.r * 0.25,
-      this.r * 0.05,
-      this.x,
-      this.y,
-      this.r
-    );
-    grd.addColorStop(0, 'rgba(255,255,255,.9)');
-    grd.addColorStop(0.2, `${this.color.main}cc`);
-    grd.addColorStop(1, `${this.color.main}55`);
-    ctx.fillStyle = grd;
-    ctx.globalAlpha = 0.85;
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = this.color.main;
+    ctx.globalAlpha = 0.55;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
     ctx.fill();
@@ -262,6 +266,21 @@ class Particle {
     ctx.fill();
     ctx.restore();
   }
+}
+
+function hasAliveFlashBubble(objs: GameState['objs']): boolean {
+  for (const o of objs) {
+    if (o instanceof FlashBubble && !o.fired && !o.dead) return true;
+  }
+  return false;
+}
+
+function countAliveFlashBubbles(objs: GameState['objs']): number {
+  let n = 0;
+  for (const o of objs) {
+    if (o instanceof FlashBubble && !o.fired && !o.dead) n++;
+  }
+  return n;
 }
 
 function randomPair(): [number, number] {
@@ -342,6 +361,8 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
   const lv = Math.max(1, Math.min(7, speedLevel));
   const spName = SPD_NAMES[lv - 1] ?? '보통';
 
+  const lastStimAtMsRef = useRef<number>(-Infinity);
+
   const endGame = useCallback(() => {
     const g = gRef.current;
     if (!g) return;
@@ -417,8 +438,16 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       }
 
       const c = RT_COLORS[lane].main;
-      for (let i = 0; i < 38; i++) g.particles.push(new Particle(x, y, c));
-      for (let i = 0; i < 8; i++) g.particles.push(new Particle(x, y, '#ffffff'));
+      // 파티클은 누적되면 프레임 드랍이 커서 상한을 둠 (시각적 느낌은 유지)
+      const MAX_PARTICLES = 420;
+      const remaining = Math.max(0, MAX_PARTICLES - g.particles.length);
+      const wantColored = 38;
+      const wantWhite = 8;
+      const colored = Math.min(wantColored, remaining);
+      for (let i = 0; i < colored; i++) g.particles.push(new Particle(x, y, c));
+      const remaining2 = Math.max(0, MAX_PARTICLES - g.particles.length);
+      const white = Math.min(wantWhite, remaining2);
+      for (let i = 0; i < white; i++) g.particles.push(new Particle(x, y, '#ffffff'));
       if (g.combo >= 5 && g.combo % 5 === 0) {
         const pop = comboRef.current;
         const nEl = comboNRef.current;
@@ -459,22 +488,31 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
     []
   );
 
-  const onStim = useCallback(
-    (lane: number) => {
-      const g = gRef.current;
-      const cv = cvRef.current;
-      if (!g || !cv) return;
-      const cx = lane * g.lw + g.lw / 2;
-      triggerStim(lane, cx, g.hitY);
+  const tryTriggerStim = useCallback(
+    (lane: number, x: number, y: number) => {
+      const now = performance.now();
+      if (now - lastStimAtMsRef.current < REACT_TRAIN_MIN_STIM_GAP_MS) return false;
+      lastStimAtMsRef.current = now;
+      triggerStim(lane, x, y);
+      return true;
     },
     [triggerStim]
   );
 
-  const onStimBubble = useCallback(
-    (lane: number, x: number, y: number) => {
-      triggerStim(lane, x, y);
+  const tryStimLane = useCallback(
+    (lane: number) => {
+      const g = gRef.current;
+      const cv = cvRef.current;
+      if (!g || !cv) return false;
+      const cx = lane * g.lw + g.lw / 2;
+      return tryTriggerStim(lane, cx, g.hitY);
     },
-    [triggerStim]
+    [tryTriggerStim]
+  );
+
+  const tryStimBubble = useCallback(
+    (lane: number, x: number, y: number) => tryTriggerStim(lane, x, y),
+    [tryTriggerStim]
   );
 
   useEffect(() => {
@@ -594,7 +632,8 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
         } while (lane === lastLane && Math.random() > 0.3);
         g.objs.push(new FlowTile(g, cv, lane));
       } else if (g.mode === 'flash') {
-        g.objs.push(new FlashBubble(g, cv));
+        // Lv.2(FLASH): 연쇄 폭발은 막되, 너무 느려지지 않게 "동시 존재 수"만 제한
+        if (countAliveFlashBubbles(g.objs) < FLASH_MAX_ALIVE_BUBBLES) g.objs.push(new FlashBubble(g, cv));
       } else {
         const pair = randomPair();
         g.objs.push(new FlowTile(g, cv, pair[0], true));
@@ -607,10 +646,10 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       for (let i = g.objs.length - 1; i >= 0; i--) {
         const o = g.objs[i];
         if (o instanceof FlowTile) {
-          o.update(g, cv, onStim);
+          o.update(g, cv, tryStimLane);
           o.draw(ctx, g, cv);
         } else if (o instanceof FlashBubble) {
-          o.update(g, cv, onStimBubble);
+          o.update(g, cv, tryStimBubble);
           o.draw(ctx, g, cv);
         }
         if (o.dead || o.y > cv.height + 100) g.objs.splice(i, 1);

@@ -16,7 +16,12 @@ const C = [
 
 const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간 빠름', '빠름', '매우 빠름'];
 
+// NOTE: 시지각 반응 4단계(대각)는 "게임 진행 속도"는 원래대로 유지한다.
+// (이펙트 지속시간만 2배로 늘린 상태)
 const REACT_TRAIN_SLOW_FACTOR = 2;
+
+const REACT_TRAIN_GAME_SLOW_FACTOR = 1;
+const REACT_TRAIN_MIN_STIM_GAP_MS = 1000;
 
 type LayoutState = {
   W: number;
@@ -220,7 +225,7 @@ class Tile {
     this.sparkTimer = 0;
   }
 
-  update(L: LayoutState, g: GameState, onStim: (ci: number, x: number, y: number) => void) {
+  update(L: LayoutState, g: GameState, tryStim: (ci: number, x: number, y: number) => boolean) {
     this.trail.push({ x: this.x, y: this.y });
     if (this.trail.length > this.trailMax) this.trail.shift();
     this.x += this.vx * this.speed;
@@ -233,9 +238,16 @@ class Tile {
     const dy = this.ty - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (!this.fired && dist < this.speed + this.size * 1.2) {
-      this.fired = true;
-      this.dead = true;
-      onStim(this.ci, this.tx, this.ty);
+      // 연쇄적으로 너무 빠르게 터지지 않도록, 반응 간격이 확보될 때까지 "대기"시킨다.
+      const ok = tryStim(this.ci, this.tx, this.ty);
+      if (ok) {
+        this.fired = true;
+        this.dead = true;
+      } else {
+        // 목표 지점에 고정해서 다음 허용 타이밍에 바로 트리거되도록 한다.
+        this.x = this.tx;
+        this.y = this.ty;
+      }
     }
   }
 
@@ -409,7 +421,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       spawnInt: 600,
       lastSpawn: 0,
       elapsed: 0,
-      baseSpeedMult: 1 / REACT_TRAIN_SLOW_FACTOR,
+      baseSpeedMult: 1 / REACT_TRAIN_GAME_SLOW_FACTOR,
       raf: null,
       timer: null,
       padPulse: [0, 0, 0, 0],
@@ -455,7 +467,11 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       cv.height = h;
     };
 
-    const onStim = (ci: number, x: number, y: number) => {
+    let lastStimAtMs = -Infinity;
+    const tryStim = (ci: number, x: number, y: number) => {
+      const now = performance.now();
+      if (now - lastStimAtMs < REACT_TRAIN_MIN_STIM_GAP_MS) return false;
+      lastStimAtMs = now;
       g.stims++;
       g.combo++;
       if (g.combo > g.maxCombo) {
@@ -534,6 +550,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       m.textContent = msg;
       root.appendChild(m);
       setTimeout(() => m.remove(), 900 * REACT_TRAIN_SLOW_FACTOR);
+      return true;
     };
 
     const applyAccel = () => {
@@ -684,7 +701,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
         const t = g.tiles[i]!;
         const Ln = LRef.current;
         if (!Ln) break;
-        t.update(Ln, g, onStim);
+        t.update(Ln, g, tryStim);
         t.draw(ctx2);
         if (t.dead) g.tiles.splice(i, 1);
       }
@@ -704,7 +721,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (!play) return;
       resizeCv(play);
       calcLayout();
-      g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155) * REACT_TRAIN_SLOW_FACTOR;
+      g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155) * REACT_TRAIN_GAME_SLOW_FACTOR;
     };
 
     const startId = window.setTimeout(() => {
@@ -712,7 +729,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (play) {
         resizeCv(play);
         calcLayout();
-        g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155) * REACT_TRAIN_SLOW_FACTOR;
+        g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155) * REACT_TRAIN_GAME_SLOW_FACTOR;
       }
       g.lastSpawn = performance.now();
       updateHudTime();

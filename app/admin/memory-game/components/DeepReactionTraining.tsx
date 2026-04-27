@@ -15,6 +15,11 @@ type ColorEntry = (typeof C)[number];
 
 const REACT_TRAIN_SLOW_FACTOR = 2;
 
+// NOTE: 시지각 반응 5단계(심층)는 "게임 진행 속도"는 원래대로 유지한다.
+// (이펙트 지속시간만 2배로 늘린 상태)
+const REACT_TRAIN_GAME_SLOW_FACTOR = 1;
+const REACT_TRAIN_MIN_STIM_GAP_MS = 1000;
+
 type LayoutState = {
   W: number; H: number; cx: number; cy: number; pad: number; inset: number;
   corners: { x: number; y: number }[];
@@ -465,6 +470,10 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
   /* ─── onStim ─── */
   const onStim = useCallback((ci: number, x: number, y: number) => {
     const g = G.current; if (!g) return;
+    const now = performance.now();
+    const last = (g as GameRef & { lastStimAtMs?: number }).lastStimAtMs ?? -Infinity;
+    if (now - last < REACT_TRAIN_MIN_STIM_GAP_MS) return;
+    (g as GameRef & { lastStimAtMs: number }).lastStimAtMs = now;
     g.stims++; g.combo++;
     if (g.combo > g.maxCombo) {
       g.maxCombo = g.combo;
@@ -541,8 +550,11 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       const j = g.jellies[i];
       j.update(g); j.draw(ctx);
       if (j.dead) {
+        // 반응 간격이 확보되지 않으면, 제거하지 않고 "대기"시켜 다음 허용 타이밍에 터지게 한다.
+        const before = (g as GameRef & { lastStimAtMs?: number }).lastStimAtMs ?? -Infinity;
         onStim(j.ci, j.tx, j.ty);
-        g.jellies.splice(i, 1);
+        const after = (g as GameRef & { lastStimAtMs?: number }).lastStimAtMs ?? -Infinity;
+        if (after !== before) g.jellies.splice(i, 1);
       }
     }
 
@@ -589,9 +601,9 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       timeLeft: durationSec, elapsed: 0,
       stims: 0, combo: 0, maxCombo: 0,
       laneCount: [0, 0, 0, 0],
-      spawnInt: Math.max(300, 1350 - (speedLevel - 1) * 150) * REACT_TRAIN_SLOW_FACTOR,
-      lastSpawn: performance.now() - Math.max(300, 1350 - (speedLevel - 1) * 150) * REACT_TRAIN_SLOW_FACTOR,
-      baseSpeedMult: 1 / REACT_TRAIN_SLOW_FACTOR,
+      spawnInt: Math.max(300, 1350 - (speedLevel - 1) * 150) * REACT_TRAIN_GAME_SLOW_FACTOR,
+      lastSpawn: performance.now() - Math.max(300, 1350 - (speedLevel - 1) * 150) * REACT_TRAIN_GAME_SLOW_FACTOR,
+      baseSpeedMult: 1 / REACT_TRAIN_GAME_SLOW_FACTOR,
       raf: null, timer: null,
       cornerPulse: [0, 0, 0, 0],
       waveOffset: 0,
