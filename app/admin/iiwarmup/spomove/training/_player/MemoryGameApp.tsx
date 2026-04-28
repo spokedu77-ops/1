@@ -107,6 +107,13 @@ export type MemoryGameAutoLaunch = {
   targetReps?: number;
   warmup?: number;
   accel?: boolean;
+  intervalMode?: boolean;
+  /** 이중과제 2-1번만 */
+  dual21Advance?: 'default' | 'touch';
+  /** 반응 인지 7번만 */
+  numberRule?: string;
+  /** 반응 인지 3·4·5번만 */
+  variantColorTheme?: SpomoveColorThemeId;
 };
 
 export default function MemoryGameApp({
@@ -131,9 +138,21 @@ export default function MemoryGameApp({
   const autoLaunchCfgRef = useRef<Settings | null>(null);
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    // autoLaunch(Training 포털)로 테마가 전달되면, 그 값을 우선 적용하고 localStorage에도 동기화한다.
+    // 그렇지 않으면 저장된 테마(localStorage)를 불러와 기본값을 맞춘다.
+    const fromAuto = autoLaunch?.variantColorTheme;
+    if (typeof fromAuto === 'string' && fromAuto.trim()) {
+      try {
+        localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, fromAuto);
+      } catch {
+        /* ignore */
+      }
+      setSettings((s) => ({ ...s, variantColorTheme: fromAuto }));
+      return;
+    }
     const t = parseStoredVariantTheme(localStorage.getItem(SPOMOVE_VARIANT_THEME_LS_KEY));
     setSettings((s) => ({ ...s, variantColorTheme: t }));
-  }, []);
+  }, [autoLaunch?.variantColorTheme]);
   const { students, add: addStudent, remove: removeStudent, rename: renameStudent } = useStudents();
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);

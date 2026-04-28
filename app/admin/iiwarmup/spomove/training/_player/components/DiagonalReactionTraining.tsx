@@ -353,6 +353,8 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
   onCompleteRef.current = onComplete;
 
   const lv = Math.max(1, Math.min(7, speedLevel));
+  // 시지각 반응 4번(대각선): 전체 체감 속도(이동 + 스폰)를 확실히 낮춘다.
+  const SLOW_FACTOR = 1.5;
   const spName = SPD_NAMES[lv - 1] ?? '보통';
 
   const endGame = useCallback(() => {
@@ -404,10 +406,10 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       combo: 0,
       maxCombo: 0,
       laneCount: [0, 0, 0, 0],
-      spawnInt: 600,
+      spawnInt: Math.floor(600 * SLOW_FACTOR),
       lastSpawn: 0,
       elapsed: 0,
-      baseSpeedMult: 1,
+      baseSpeedMult: 1 / SLOW_FACTOR,
       raf: null,
       timer: null,
       padPulse: [0, 0, 0, 0],
@@ -702,7 +704,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (!play) return;
       resizeCv(play);
       calcLayout();
-      g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155);
+      g.spawnInt = Math.max(280, Math.floor((1300 - (lv - 1) * 155) * SLOW_FACTOR));
     };
 
     const startId = window.setTimeout(() => {
@@ -710,7 +712,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (play) {
         resizeCv(play);
         calcLayout();
-        g.spawnInt = Math.max(280, 1300 - (lv - 1) * 155);
+        g.spawnInt = Math.max(280, Math.floor((1300 - (lv - 1) * 155) * SLOW_FACTOR));
       }
       g.lastSpawn = performance.now();
       updateHudTime();

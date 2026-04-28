@@ -311,17 +311,17 @@ function MyClassesContent() {
   };
 
   const handleResetStatus = async () => {
-    if (!supabase || !selectedEvent || !confirm('초기화하시겠습니까? (작성된 피드백이 삭제됩니다)')) return;
+    if (!selectedEvent || !confirm('초기화하시겠습니까? (작성된 피드백이 삭제됩니다)')) return;
     setUploading(true);
     try {
-      const { error } = await supabase.from('sessions').update({ 
-        status: 'pending', 
-        students_text: null,
-        feedback_fields: {},
-        photo_url: [], 
-        file_url: [] 
-      }).eq('id', selectedEvent.id);
-      if (error) throw error;
+      const res = await fetch('/api/teacher/session-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ sessionId: selectedEvent.id }),
+      });
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(payload.error || '초기화에 실패했습니다.');
       setIsModalOpen(false);
       getMySchedule();
     } catch (err: unknown) {
@@ -407,15 +407,21 @@ function MyClassesContent() {
     if (!supabase || !selectedEvent) return;
     setLessonPlanSaving(true);
     try {
-      if (currentSessionLessonPlanId) {
-        const { error } = await supabase.from('lesson_plans').update({ content: lessonPlanContent, updated_at: new Date().toISOString() }).eq('id', currentSessionLessonPlanId);
-        if (error) throw error;
-        toast.success('수업안이 수정되었습니다.');
-      } else {
-        const { error } = await supabase.from('lesson_plans').insert({ session_id: selectedEvent.id, content: lessonPlanContent });
-        if (error) throw error;
-        toast.success('수업안이 저장되었습니다.');
-      }
+      const res = await fetch('/api/teacher/lesson-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'save',
+          sessionId: selectedEvent.id,
+          lessonPlanId: currentSessionLessonPlanId,
+          content: lessonPlanContent,
+        }),
+      });
+      const payload = (await res.json().catch(() => ({}))) as { error?: string; lessonPlanId?: string };
+      if (!res.ok) throw new Error(payload.error || '저장에 실패했습니다.');
+      if (!currentSessionLessonPlanId && payload.lessonPlanId) setCurrentSessionLessonPlanId(payload.lessonPlanId);
+      toast.success(currentSessionLessonPlanId ? '수업안이 수정되었습니다.' : '수업안이 저장되었습니다.');
       setIsLessonPlanModalOpen(false);
       getMySchedule();
     } catch (err: unknown) {
@@ -430,8 +436,18 @@ function MyClassesContent() {
     if (!supabase || !selectedEvent || !currentSessionLessonPlanId || !confirm('정말 삭제하시겠습니까?')) return;
     setLessonPlanSaving(true);
     try {
-      const { error } = await supabase.from('lesson_plans').delete().eq('id', currentSessionLessonPlanId);
-      if (error) throw error;
+      const res = await fetch('/api/teacher/lesson-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'delete',
+          sessionId: selectedEvent.id,
+          lessonPlanId: currentSessionLessonPlanId,
+        }),
+      });
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(payload.error || '삭제에 실패했습니다.');
       toast.success('삭제되었습니다.');
       setCurrentSessionLessonPlanId(null);
       setLessonPlanContent(LESSON_PLAN_DEFAULT_TEMPLATE);

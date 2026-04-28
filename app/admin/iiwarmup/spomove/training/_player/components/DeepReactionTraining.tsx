@@ -292,6 +292,8 @@ export type DeepReactionProps = {
 
 /* ══ Component ══ */
 export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComplete }: DeepReactionProps) {
+  // 시지각 반응 5번(심해): 전체 체감 속도(이동 + 스폰)를 확실히 낮춘다.
+  const SLOW_FACTOR = 1.5;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hudTimeRef = useRef<HTMLDivElement>(null);
   const hudStimsRef = useRef<HTMLDivElement>(null);
@@ -584,9 +586,9 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       timeLeft: durationSec, elapsed: 0,
       stims: 0, combo: 0, maxCombo: 0,
       laneCount: [0, 0, 0, 0],
-      spawnInt: Math.max(300, 1350 - (speedLevel - 1) * 150),
-      lastSpawn: performance.now() - Math.max(300, 1350 - (speedLevel - 1) * 150),
-      baseSpeedMult: 1,
+      spawnInt: Math.max(300, Math.floor((1350 - (speedLevel - 1) * 150) * SLOW_FACTOR)),
+      lastSpawn: performance.now() - Math.max(300, Math.floor((1350 - (speedLevel - 1) * 150) * SLOW_FACTOR)),
+      baseSpeedMult: 1 / SLOW_FACTOR,
       raf: null, timer: null,
       cornerPulse: [0, 0, 0, 0],
       waveOffset: 0,

@@ -650,47 +650,6 @@ function FeedbackReviewTab({
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? 'bulk_approve_failed');
 
-      // 수업 카운팅: 일괄 검수 승인 시 session_count_logs 반영
-      const toCount = sessions.filter((s) => ids.includes(s.id));
-      for (const session of toCount) {
-        if (session.created_by && String(session.created_by).trim()) {
-          await supabase
-            .from('session_count_logs')
-            .insert({
-              teacher_id: session.created_by,
-              session_id: session.id,
-              session_title: session.title ?? null,
-              count_change: 1,
-              reason: '검수 완료',
-            })
-            .then(({ error: logErr }: { error: { code?: string } | null }) => {
-              if (logErr && logErr.code !== '23505' && logErr.code !== '23503') {
-                devLogger.error('수업 카운팅 로그 저장 실패:', logErr);
-              }
-            });
-        }
-        if (session.memo?.includes('EXTRA_TEACHERS:')) {
-          const { extraTeachers } = parseExtraTeachers(session.memo);
-          for (const ex of extraTeachers) {
-            if (!ex.id) continue;
-            await supabase
-              .from('session_count_logs')
-              .insert({
-                teacher_id: ex.id,
-                session_id: session.id,
-                session_title: session.title ?? null,
-                count_change: 1,
-                reason: '검수 완료 (보조)',
-              })
-              .then(({ error: exLog }: { error: { code?: string } | null }) => {
-                if (exLog && exLog.code !== '23505' && exLog.code !== '23503') {
-                  devLogger.error('수업 카운팅 로그(보조) 저장 실패:', exLog);
-                }
-              });
-          }
-        }
-      }
-
       toast.success(`${selectedSessions.size}개의 리포트가 승인되었습니다.`);
       clearSelection();
       fetchListData();
@@ -809,39 +768,6 @@ function FeedbackReviewTab({
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? 'save_failed');
-
-      // 수업 카운팅: finished/verified 시 session_count_logs에 반영 (이미 있으면 23505 스킵)
-      if (newStatus === 'finished' || newStatus === 'verified') {
-        const reason = newStatus === 'verified' ? '검수 완료' : '작성 완료';
-        if (selectedEvent.created_by && String(selectedEvent.created_by).trim()) {
-          const { error: logErr } = await supabase.from('session_count_logs').insert({
-            teacher_id: selectedEvent.created_by,
-            session_id: selectedEvent.id,
-            session_title: selectedEvent.title ?? null,
-            count_change: 1,
-            reason,
-          });
-          if (logErr && logErr.code !== '23505' && logErr.code !== '23503') {
-            devLogger.error('수업 카운팅 로그 저장 실패:', logErr);
-          }
-        }
-        if (selectedEvent.memo?.includes('EXTRA_TEACHERS:')) {
-          const { extraTeachers } = parseExtraTeachers(selectedEvent.memo);
-          for (const ex of extraTeachers) {
-            if (!ex.id) continue;
-            const { error: exLog } = await supabase.from('session_count_logs').insert({
-              teacher_id: ex.id,
-              session_id: selectedEvent.id,
-              session_title: selectedEvent.title ?? null,
-              count_change: 1,
-              reason: `${reason} (보조)`,
-            });
-            if (exLog && exLog.code !== '23505' && exLog.code !== '23503') {
-              devLogger.error('수업 카운팅 로그(보조) 저장 실패:', exLog);
-            }
-          }
-        }
-      }
 
       toast.success(newStatus === 'verified' ? '검수 승인 완료!' : '수정 요청 완료!');
       setIsModalOpen(false);

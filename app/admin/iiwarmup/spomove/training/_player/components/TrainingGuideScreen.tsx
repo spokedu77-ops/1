@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { CSS, S } from '../styles';
-import { GUIDE_BLOCKS, TRAINING_GUIDE_PAGE_INTRO, TRAINING_PREP_CARD } from '@/app/admin/memory-game/trainingGuideContent';
+import { GUIDE_BLOCKS, TRAINING_GUIDE_PAGE_INTRO, TRAINING_PREP_CARD } from '../trainingGuideContent';
 
 export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
   return (

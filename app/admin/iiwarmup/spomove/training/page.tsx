@@ -1,21 +1,24 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import catalog, {
-  type Core5Series,
-  type Core5Program,
-  type Core5Stage,
-  type SeriesCode,
-} from '@/app/lib/spomove/core5Catalog';
-import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
-import { TRAINING_ENGINE_GUIDE_VIDEOS } from '@/app/lib/spomove/trainingEngineGuideVideos';
-import { MODES } from '@/app/admin/memory-game/constants';
-import { GUIDE_BLOCKS } from '@/app/admin/memory-game/trainingGuideContent';
-import type { MemoryGameAutoLaunch } from './_player/MemoryGameApp';
 
-/* ─── MemoryGameApp (Training 전용 복제본): SSR 비활성, 클라이언트 전용 ─── */
+import { TRAINING_ENGINE_GUIDE_VIDEOS } from '@/app/lib/spomove/trainingEngineGuideVideos';
+import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
+
+import { MODES, NUMBER_RULES } from './_player/constants';
+import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
+import type { MemoryGameAutoLaunch } from './_player/MemoryGameApp';
+import { ChallengeSpomoveSetupPanel } from './_player/components/ChallengeSpomoveSetupPanel';
+import { SpeedSelector } from './_player/components/SpeedSelector';
+import {
+  SPOMOVE_COLOR_THEME_LABELS,
+  SPOMOVE_COLOR_THEME_ORDER,
+  type SpomoveColorThemeId,
+} from './_player/lib/spomoveVariantThemeConfig';
+
+/* ─── MemoryGameApp (Training 전용): SSR 비활성, 클라이언트 전용 ─── */
 const MemoryGameApp = dynamic(
   () => import('./_player/MemoryGameApp').then((m) => m.default),
   {
@@ -26,7 +29,7 @@ const MemoryGameApp = dynamic(
         background: '#020617', color: 'rgba(255,255,255,0.35)',
         fontFamily: 'sans-serif', fontSize: 12, letterSpacing: '0.14em', fontWeight: 600,
       }}>
-        LOADING…
+        로딩 중…
       </div>
     ),
   },
@@ -44,40 +47,59 @@ const T = {
   textDim:     'rgba(255,255,255,0.48)',
 };
 
-/** Training 설정: 메인 앱 「홈→모드 선택」 흐름과 겹치는 prep 문장 제외 */
-function filterGuidePrepItemsForTraining(items: string[]): string[] {
-  return items.filter((line) => {
-    if (/홈\s*에서|홈\s*그리드|트레이닝\s*설정\s*카드|흐름:\s*홈/.test(line)) return false;
-    return true;
-  });
+type SeriesCode = 'SR' | 'IC' | 'RS' | 'SM' | 'RC';
+type TabCode = SeriesCode | 'ALL';
+
+const TABS: { code: TabCode; label: string }[] = [
+  { code: 'ALL', label: '전체' },
+  { code: 'SR', label: '공간 반응' },
+  { code: 'IC', label: '간섭 제어' },
+  { code: 'RS', label: '규칙 전환' },
+  { code: 'SM', label: '순차 기억' },
+  { code: 'RC', label: '리듬 협응' },
+];
+
+function levelLabel(modeId: string, levelId: number): string {
+  if (modeId === 'dual' && levelId === 2) return '2-1번';
+  return `${levelId}번`;
 }
 
-function guidePhaseNumForEngine(mode: string, level: number): string {
-  if (mode === 'dual' && level === 2) return '2-1번';
-  return `${level}번`;
+function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
+  return modeId === 'reactTrain' ? 'time' : 'reps';
 }
 
-/** Training 설정 상단 한 줄 (TRAINING_GUIDE_PAGE_INTRO 대체) */
-const TRAINING_SETTINGS_LEAD =
-  '이 화면에서 자극 속도·횟수(또는 시간)를 맞춘 뒤 시작하면 됩니다. 아래 가이드를 펼치면 상세 가이드와 수업 포인트를 볼 수 있습니다.';
+type LaunchSettings = {
+  speed: number;
+  timeMode: 'time' | 'reps';
+  duration: number;
+  targetReps: number;
+  warmup: number;
+  accel: boolean;
+  intervalMode: boolean;
+  dual21Advance: 'default' | 'touch';
+  numberRule: string;
+  variantColorTheme: SpomoveColorThemeId;
+};
 
-/** RC: 카탈로그 스테이지명 ≠ 임베드 템플릿 자동 매핑 — UI에서 Memory Game 가이드 블록을 붙이지 않기 위한 구분 */
-const RHYTHM_COORDINATION_SERIES_CODE = 'RC' as const;
+const DEFAULT_LAUNCH: LaunchSettings = {
+  speed: 2.0,
+  timeMode: 'reps',
+  duration: 60,
+  targetReps: 20,
+  warmup: 3,
+  accel: false,
+  intervalMode: false,
+  dual21Advance: 'default',
+  numberRule: 'odd_left',
+  variantColorTheme: 'fruit',
+};
 
-const STAGE_VIDEO_LS_PREFIX = 'spomove-training-stage-video:';
+type PagePhase =
+  | { tag: 'catalog' }
+  | { tag: 'settings'; modeId: string }
+  | { tag: 'training'; modeId: string; levelId: number; launch: LaunchSettings };
 
-function stageVideoStorageKey(seriesCode: string, programId: string, stageNum: number) {
-  return `${STAGE_VIDEO_LS_PREFIX}${seriesCode}:${programId}:${stageNum}`;
-}
-
-/** YouTube watch / youtu.be / shorts / embed URL이면 iframe으로 재생, 아니면 렌더 생략 */
-function SettingsGuideVideoIframe({
-  videoUrl,
-  accent,
-}: {
-  videoUrl?: string | null;
-  accent: string;
-}) {
+function SettingsGuideVideoIframe({ videoUrl, accent }: { videoUrl?: string | null; accent: string }) {
   const src = videoUrl?.trim() ? youtubeWatchOrShareToEmbedSrc(videoUrl) : null;
   if (!src) return null;
   return (
@@ -106,167 +128,30 @@ function SettingsGuideVideoIframe({
   );
 }
 
-/** 스테이지 제목 아래: 링크 입력 + (유효 시) 임베드 / (없을 때) 빈 영상 칸 안내 */
-function StageYouTubeGuideBlock({
-  accent,
-  inputValue,
-  effectiveUrl,
-  invalid,
-  onChange,
-  onBlur,
-}: {
-  accent: string;
-  inputValue: string;
-  effectiveUrl: string;
-  invalid: boolean;
-  onChange: (v: string) => void;
-  onBlur: () => void;
-}) {
-  const src = effectiveUrl.trim() ? youtubeWatchOrShareToEmbedSrc(effectiveUrl) : null;
-  return (
-    <div
-      style={{
-        marginTop: 16,
-        padding: 14,
-        borderRadius: 12,
-        border: `1px solid ${T.border}`,
-        background: T.surface,
-        boxSizing: 'border-box',
-      }}
-    >
-      <p
-        style={{
-          margin: '0 0 10px',
-          fontSize: 12,
-          fontWeight: 800,
-          color: T.text,
-          letterSpacing: '0.04em',
-        }}
-      >
-        가이드 영상 (YouTube)
-      </p>
-      <label
-        htmlFor="spomove-stage-youtube-url"
-        style={{
-          display: 'block',
-          fontSize: 10,
-          fontWeight: 800,
-          color: T.muted,
-          letterSpacing: '0.12em',
-          marginBottom: 6,
-        }}
-      >
-        영상 링크
-      </label>
-      <input
-        id="spomove-stage-youtube-url"
-        type="text"
-        inputMode="url"
-        autoComplete="off"
-        spellCheck={false}
-        placeholder="https://www.youtube.com/watch?v=… 또는 youtu.be/…"
-        value={inputValue}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
-        style={{
-          width: '100%',
-          boxSizing: 'border-box',
-          padding: '10px 12px',
-          borderRadius: 8,
-          border: `1px solid ${T.border}`,
-          background: T.card,
-          color: T.text,
-          fontFamily: 'inherit',
-          fontSize: 13,
-          outline: 'none',
-          WebkitAppearance: 'none' as const,
-          appearance: 'none' as const,
-        }}
-      />
-      {invalid ? (
-        <p style={{ margin: '8px 0 0', fontSize: 11, color: 'rgba(248,113,113,0.92)', lineHeight: 1.45 }}>
-          인식할 수 없는 링크입니다. watch, youtu.be, shorts, embed 주소를 넣어 주세요.
-        </p>
-      ) : null}
-      <div
-        style={{
-          marginTop: 12,
-          width: '100%',
-          aspectRatio: '16 / 9',
-          maxHeight: 220,
-          borderRadius: 10,
-          overflow: 'hidden',
-          border: src ? `1px solid ${accent}55` : `1px dashed ${accent}44`,
-          background: src ? '#000' : 'rgba(255,255,255,0.03)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {src ? (
-          <iframe
-            title="YouTube 가이드 영상"
-            src={src}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-            loading="lazy"
-            style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-          />
-        ) : (
-          <span
-            style={{
-              padding: '0 16px',
-              textAlign: 'center',
-              fontSize: 11,
-              fontWeight: 600,
-              color: 'rgba(255,255,255,0.28)',
-              letterSpacing: '0.06em',
-              lineHeight: 1.5,
-            }}
-          >
-            위에 YouTube 링크를 붙여넣으면
-            <br />
-            여기에서 재생됩니다
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── 훈련 설정 타입 ─── */
-type LaunchSettings = {
-  speed: number;
-  timeMode: 'time' | 'reps';
-  duration: number;
-  targetReps: number;
-};
-
-/* ─── 페이지 단계 ─── */
-type PagePhase =
-  | { tag: 'catalog' }
-  | { tag: 'settings'; stage: Core5Stage; program: Core5Program; series: Core5Series }
-  | { tag: 'training'; engine: { mode: string; level: number }; launch: LaunchSettings };
-
-/* ══ TrainingPortal ── autoLaunch로 바로 훈련 시작 ══ */
 function TrainingPortal({
-  engine,
+  modeId,
+  levelId,
   launch,
   onClose,
 }: {
-  engine: { mode: string; level: number };
+  modeId: string;
+  levelId: number;
   launch: LaunchSettings;
   onClose: () => void;
 }) {
-  // dynamic({ ssr: false }) 뒤에는 항상 브라우저이므로 mounted 게이트 없이 바로 포털을 연다.
   if (typeof document === 'undefined') return null;
 
   const autoLaunch: MemoryGameAutoLaunch = {
-    speed:      launch.speed,
-    timeMode:   launch.timeMode,
-    duration:   launch.duration,
+    speed: launch.speed,
+    timeMode: launch.timeMode,
+    duration: launch.duration,
     targetReps: launch.targetReps,
-    warmup:     3,
+    warmup: launch.warmup,
+    accel: launch.accel,
+    intervalMode: launch.intervalMode,
+    dual21Advance: launch.dual21Advance,
+    numberRule: launch.numberRule,
+    variantColorTheme: launch.variantColorTheme,
   };
 
   return createPortal(
@@ -276,14 +161,14 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${engine.mode}-${engine.level}-${launch.speed}-${launch.duration}-${launch.targetReps}`}
-        initialMode={engine.mode}
-        initialLevel={engine.level}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.dual21Advance}-${launch.numberRule}-${launch.variantColorTheme}`}
+        initialMode={modeId}
+        initialLevel={levelId}
         autoLaunch={autoLaunch}
         onExit={onClose}
         onUnavailable={onClose}
       />
-      {/* 종료 버튼: 훈련 중 항상 접근 가능하도록 좌상단 고정 */}
+
       <button
         type="button"
         onClick={onClose}
@@ -299,11 +184,11 @@ function TrainingPortal({
           cursor: 'pointer', letterSpacing: '0.06em',
           transition: 'background 0.15s, color 0.15s',
         }}
-        onMouseEnter={e => {
+        onMouseEnter={(e) => {
           (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.85)';
           (e.currentTarget as HTMLButtonElement).style.color = '#fff';
         }}
-        onMouseLeave={e => {
+        onMouseLeave={(e) => {
           (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.55)';
           (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.55)';
         }}
@@ -315,303 +200,243 @@ function TrainingPortal({
   );
 }
 
-/* ══ SettingsPanel ── 새 UI로 훈련 설정 ══ */
-function SettingsPanel({
-  stage, program, series,
-  onStart, onBack,
+function CatalogModeCard({
+  modeId,
+  onPick,
 }: {
-  stage: Core5Stage;
-  program: Core5Program;
-  series: Core5Series;
-  onStart: (s: LaunchSettings) => void;
-  onBack: () => void;
+  modeId: string;
+  onPick: (modeId: string) => void;
 }) {
-  const engine = stage.engine;
-  const isReactTrain = engine?.mode === 'reactTrain';
+  const m = MODES[modeId];
+  if (!m) return null;
 
-  const [speed,      setSpeed]      = useState(2.0);
-  const [timeMode,   setTimeMode]   = useState<'time' | 'reps'>(isReactTrain ? 'time' : 'reps');
-  const [duration,   setDuration]   = useState(60);
-  const [targetReps, setTargetReps] = useState(20);
-  const [seriesGuideOpen, setSeriesGuideOpen] = useState(false);
-  const [engineGuideOpen, setEngineGuideOpen] = useState(false);
-  const [stageVideoInput, setStageVideoInput] = useState('');
-
-  const stageVideoLsKey = useMemo(
-    () => stageVideoStorageKey(series.code, program.programId, stage.stage),
-    [series.code, program.programId, stage.stage],
-  );
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    let stored = '';
-    try {
-      stored = localStorage.getItem(stageVideoLsKey) ?? '';
-    } catch {
-      /* ignore */
-    }
-    const catalogDefault = stage.settingsVideoUrl?.trim() ?? '';
-    setStageVideoInput(stored.trim() ? stored.trim() : catalogDefault);
-  }, [stageVideoLsKey, stage.settingsVideoUrl]);
-
-  const persistStageVideoLink = useCallback(() => {
-    if (typeof window === 'undefined' || !engine) return;
-    try {
-      const v = stageVideoInput.trim();
-      if (v) localStorage.setItem(stageVideoLsKey, v);
-      else localStorage.removeItem(stageVideoLsKey);
-    } catch {
-      /* ignore */
-    }
-  }, [engine, stageVideoInput, stageVideoLsKey]);
-
-  const stageVideoEffective =
-    stageVideoInput.trim() || stage.settingsVideoUrl?.trim() || '';
-  const stageVideoInvalid =
-    Boolean(stageVideoInput.trim()) && !youtubeWatchOrShareToEmbedSrc(stageVideoInput);
-
-  const guideBlock = useMemo(() => {
-    if (!engine) return null;
-    return GUIDE_BLOCKS.find((b) => b.id === engine.mode) ?? null;
-  }, [engine]);
-
-  const guidePhase = useMemo(() => {
-    if (!engine || !guideBlock) return null;
-    const num = guidePhaseNumForEngine(engine.mode, engine.level);
-    return guideBlock.phases.find((p) => p.num === num) ?? null;
-  }, [engine, guideBlock]);
-
-  const prepFiltered = useMemo(() => {
-    if (!guideBlock) return [];
-    return filterGuidePrepItemsForTraining(guideBlock.prep.items);
-  }, [guideBlock]);
-
-  const modeDef = useMemo(() => {
-    if (!engine) return null;
-    return MODES[engine.mode] ?? null;
-  }, [engine]);
-
-  const engineGuideVideoUrl = engine
-    ? (TRAINING_ENGINE_GUIDE_VIDEOS[engine.mode] ?? null)
-    : null;
-
-  const speedLabel = useMemo(() => {
-    if (speed <= 2)     return '빠름';
-    if (speed <= 4)     return '보통';
-    if (speed <= 6)     return '약간 느림';
-    return '느림';
-  }, [speed]);
-
-  const timePills  = [30, 60, 90, 120, 180];
-  const repsPills  = [10, 20, 30, 50];
-
-  const handleStart = useCallback(() => {
-    onStart({ speed, timeMode, duration, targetReps });
-  }, [speed, timeMode, duration, targetReps, onStart]);
-
-  if (!engine) {
-    return (
-      <div style={{ background: T.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <header style={{
-          height: 52, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12,
-          padding: '0 24px', borderBottom: `1px solid ${T.border}`, background: T.bg,
-        }}>
-          <button
-            type="button"
-            onClick={onBack}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8,
-              border: `1px solid ${T.border}`, background: 'transparent', color: T.muted,
-              fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em',
-            }}
-          >
-            ← 목록
-          </button>
-        </header>
-        <div style={{ padding: 48, color: T.textDim, fontSize: 14, maxWidth: 480, margin: '0 auto' }}>
-          이 스테이지는 아직 연결된 훈련 엔진이 없습니다.
-        </div>
-      </div>
-    );
-  }
+  const levelRangeLabel = m.levels.length === 1 ? '1단계' : `${m.levels.length}단계`;
+  const levelRangeSub = m.levels.length === 1 ? '1번' : `1 ~ ${m.levels.length}번`;
 
   return (
-    <div style={{
-      background: T.bg, minHeight: '100vh',
-      display: 'flex', flexDirection: 'column',
+    <button
+      type="button"
+      onClick={() => onPick(modeId)}
+      className="spmt-card"
+      style={{
+        position: 'relative',
+        border: `1px solid ${T.border}`,
+        borderRadius: 18,
+        background: `linear-gradient(180deg, ${m.accent}12 0%, rgba(255,255,255,0.02) 22%, rgba(255,255,255,0.00) 100%)`,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 236,
+        cursor: 'pointer',
+        textAlign: 'left',
+        fontFamily: 'inherit',
+        padding: 0,
+        boxShadow: '0 10px 28px rgba(0,0,0,0.35)',
+        transform: 'translateY(0px)',
+        transition: 'transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
     }}>
-      {/* 상단 바 */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: `radial-gradient(650px 220px at 22% 0%, ${m.accent}22 0%, transparent 60%)`,
+          pointerEvents: 'none',
+        }}
+      />
+      <div style={{ padding: '14px 16px 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
+          <span
+            aria-hidden
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: `${m.accent}18`,
+              border: `1px solid ${m.accent}33`,
+              boxShadow: `0 6px 18px ${m.accent}22`,
+              fontSize: 18,
+              flexShrink: 0,
+            }}
+          >
+            {m.icon}
+          </span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 950, color: T.text, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+              {m.title}
+            </div>
+            <div style={{ fontSize: 11, color: T.textDim, marginTop: 3, fontWeight: 700 }}>
+              {m.en}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+            <span style={{
+              padding: '4px 10px',
+              borderRadius: 999,
+              background: `${m.accent}16`,
+              border: `1px solid ${m.accent}35`,
+              color: m.accent,
+              fontSize: 11,
+              fontWeight: 900,
+              letterSpacing: '0.02em',
+            }}>
+              {levelRangeLabel}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: T.textDim, letterSpacing: '0.02em' }}>
+              {levelRangeSub}
+            </span>
+          </div>
+        </div>
+        <p style={{ margin: '12px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
+          {m.desc}
+        </p>
+      </div>
+
+      <div style={{ padding: '0 16px 16px', marginTop: 'auto' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          padding: '12px 12px',
+          borderRadius: 14,
+          border: `1px solid ${T.border}`,
+          background: 'rgba(0,0,0,0.28)',
+          backdropFilter: 'blur(10px)',
+        }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: T.text, letterSpacing: '0.02em' }}>
+              난이도 선택
+            </div>
+            <div style={{ marginTop: 2, fontSize: 11, fontWeight: 700, color: T.textDim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {levelRangeSub}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: `${m.accent}cc` }}>설정으로</span>
+            <span style={{
+              width: 26,
+              height: 26,
+              borderRadius: 10,
+              background: `${m.accent}18`,
+              border: `1px solid ${m.accent}35`,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: m.accent,
+              fontSize: 12,
+              fontWeight: 950,
+            }}>
+              ▶
+            </span>
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function SettingsScreen({
+  modeId,
+  initial,
+  onStart,
+  onBack,
+}: {
+  modeId: string;
+  initial: LaunchSettings;
+  onStart: (levelId: number, launch: LaunchSettings) => void;
+  onBack: () => void;
+}) {
+  const m = MODES[modeId];
+  const accent = m?.accent ?? '#F97316';
+
+  const [levelId, setLevelId] = useState<number>(() => m?.levels?.[0]?.id ?? 1);
+  const [launch, setLaunch] = useState<LaunchSettings>(initial);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const guideBlock = useMemo(
+    () => GUIDE_BLOCKS.find((b) => b.id === modeId) ?? null,
+    [modeId],
+  );
+
+  const engineGuideVideoUrl = useMemo(
+    () => TRAINING_ENGINE_GUIDE_VIDEOS[modeId] ?? null,
+    [modeId],
+  );
+
+  const guidePhase = useMemo(() => {
+    if (!guideBlock) return null;
+    const num = levelLabel(modeId, levelId);
+    return guideBlock.phases.find((p) => p.num === num) ?? null;
+  }, [guideBlock, modeId, levelId]);
+
+  const isDual21 = modeId === 'dual' && levelId === 2;
+  const isReactTrain = modeId === 'reactTrain';
+  const isSpatial = modeId === 'spatial';
+  const isFlowOrChallenge = modeId === 'flow' || modeId === 'challenge';
+
+  return (
+    <div style={{ background: T.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header style={{
-        height: 52, flexShrink: 0,
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '0 24px',
-        borderBottom: `1px solid ${T.border}`,
-        background: T.bg,
+        height: 52, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12,
+        padding: '0 24px', borderBottom: `1px solid ${T.border}`, background: T.bg,
       }}>
         <button
           type="button"
           onClick={onBack}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '5px 12px', borderRadius: 8,
-            border: `1px solid ${T.border}`,
-            background: 'transparent', color: T.muted,
-            fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
-            cursor: 'pointer', letterSpacing: '0.06em',
-            transition: 'border-color 0.15s, color 0.15s',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = T.borderHover;
-            (e.currentTarget as HTMLButtonElement).style.color = T.text;
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = T.border;
-            (e.currentTarget as HTMLButtonElement).style.color = T.muted;
+            display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8,
+            border: `1px solid ${T.border}`, background: 'transparent', color: T.muted,
+            fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em',
           }}
         >
           ← 목록
         </button>
-        <span style={{ fontSize: 11, color: T.muted, letterSpacing: '0.12em', fontWeight: 600 }}>
-          {series.code} · {program.programId} · STAGE {stage.stage}
+        <span style={{ fontSize: 12, color: T.text, fontWeight: 800 }}>
+          {m?.icon} {m?.title ?? modeId} · {levelLabel(modeId, levelId)}
         </span>
       </header>
 
-      {/* 설정 카드 */}
-      <div style={{
-        flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-        padding: '48px 24px 80px',
-        overflowY: 'auto',
-      }}>
-        <div style={{
-          width: '100%', maxWidth: 480,
-          display: 'flex', flexDirection: 'column', gap: 0,
-        }}>
-
-          {/* 스테이지 헤더 */}
-          <div style={{ marginBottom: 32 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <span style={{
-                padding: '3px 9px', borderRadius: 6,
-                background: `${series.accent}18`, border: `1px solid ${series.accent}35`,
-                fontSize: 10, fontWeight: 800, color: series.accent, letterSpacing: '0.1em',
-              }}>
-                {series.code}
-              </span>
-              <span style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: '0.06em' }}>
-                {program.title}
-              </span>
-            </div>
-            <h1 style={{
-              fontSize: 22, fontWeight: 900, color: T.text,
-              margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2,
-            }}>
-              {stage.label}
-            </h1>
-            <p style={{ fontSize: 12, color: T.textDim, margin: '8px 0 0', letterSpacing: '0.03em' }}>
-              STAGE {stage.stage} · {program.programId}
-            </p>
-            <StageYouTubeGuideBlock
-              accent={series.accent}
-              inputValue={stageVideoInput}
-              effectiveUrl={stageVideoEffective}
-              invalid={stageVideoInvalid}
-              onChange={setStageVideoInput}
-              onBlur={persistStageVideoLink}
-            />
-          </div>
-
-          {/* 구분선 */}
-          <div style={{ height: 1, background: T.border, marginBottom: 28 }} />
-
-          {/* ── Training 상단 가이드 (시리즈 + 상세 가이드 발췌) ── */}
-          <p style={{ fontSize: 12, color: T.textDim, lineHeight: 1.65, margin: '0 0 20px', letterSpacing: '0.02em' }}>
-            {TRAINING_SETTINGS_LEAD}
+      <div style={{ flex: 1, padding: '42px 24px 80px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ width: '100%', maxWidth: 520 }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
+            트레이닝 설정
+          </h1>
+          <p style={{ margin: '10px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
+            자극 속도·분량(또는 시간)을 맞춘 뒤 시작하세요. 아래에서 상세 가이드를 펼칠 수 있습니다.
           </p>
 
-          {series.settingsIntro ? (
-            <div style={{ marginBottom: 14, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
-              <button
-                type="button"
-                onClick={() => setSeriesGuideOpen((v) => !v)}
-                style={{
-                  width: '100%', textAlign: 'left', padding: '12px 14px',
-                  background: T.card, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', gap: 10, color: T.text,
-                }}
-              >
-                <span style={{ color: series.accent, fontSize: 11, fontWeight: 800, width: 18 }}>{seriesGuideOpen ? '▼' : '▶'}</span>
-                <span style={{ fontSize: 13, fontWeight: 700 }}>시리즈 안내 · {series.title}</span>
-              </button>
-              {seriesGuideOpen ? (
-                <div style={{ padding: '12px 14px 16px', borderTop: `1px solid ${T.border}`, background: 'rgba(255,255,255,0.02)' }}>
-                  <SettingsGuideVideoIframe accent={series.accent} videoUrl={series.settingsVideoUrl} />
-                  <p style={{ margin: '10px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.7, letterSpacing: '0.02em' }}>
-                    {series.settingsIntro}
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div style={{ marginBottom: 22, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          {/* 가이드 */}
+          <div style={{ marginTop: 18, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
             <button
               type="button"
-              onClick={() => setEngineGuideOpen((v) => !v)}
+              onClick={() => setGuideOpen((v) => !v)}
               style={{
                 width: '100%', textAlign: 'left', padding: '12px 14px',
                 background: T.card, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', gap: 10, color: T.text,
               }}
             >
-              <span style={{ color: guideBlock?.accent ?? series.accent, fontSize: 11, fontWeight: 800, width: 18 }}>
-                {engineGuideOpen ? '▼' : '▶'}
-              </span>
+              <span style={{ color: accent, fontSize: 11, fontWeight: 800, width: 18 }}>{guideOpen ? '▼' : '▶'}</span>
               <span style={{ fontSize: 13, fontWeight: 700 }}>
-                {series.code === RHYTHM_COORDINATION_SERIES_CODE ? (
-                  <>
-                    리듬 임베드 안내
-                    <span style={{ fontWeight: 600, color: T.muted }}> · 공용 챌린지/플로우 (스테이지 자동 매핑 없음)</span>
-                  </>
-                ) : (
-                  <>
-                    엔진 · 난이도 안내
-                    {guideBlock ? ` · ${guideBlock.title}` : modeDef ? ` · ${modeDef.title}` : ` · ${engine.mode}`}
-                    {' '}
-                    <span style={{ fontWeight: 600, color: T.muted }}>({engine.mode} · {engine.level}번)</span>
-                  </>
-                )}
+                엔진 · 난이도 안내 {guideBlock ? `· ${guideBlock.title}` : ''}
+                <span style={{ fontWeight: 600, color: T.muted }}> ({modeId} · {levelLabel(modeId, levelId)})</span>
               </span>
             </button>
-            {engineGuideOpen ? (
+            {guideOpen ? (
               <div style={{ padding: '12px 14px 16px', borderTop: `1px solid ${T.border}`, background: 'rgba(255,255,255,0.02)' }}>
-                {series.code === RHYTHM_COORDINATION_SERIES_CODE ? (
+                <SettingsGuideVideoIframe accent={accent} videoUrl={engineGuideVideoUrl} />
+                {guideBlock ? (
                   <>
-                    <SettingsGuideVideoIframe accent={series.accent} videoUrl={engineGuideVideoUrl} />
-                    <p style={{ margin: '10px 0 10px', fontSize: 11, color: T.muted, fontWeight: 700, letterSpacing: '0.12em' }}>
-                      Rhythm Coordination · 임베드만 사용
-                    </p>
-                    <p style={{ margin: '0 0 10px', fontSize: 12, color: T.textDim, lineHeight: 1.7 }}>
-                      카탈로그의 스테이지 이름(예: Slow Beat, Key Rhythm)은 <strong style={{ color: T.text }}>수업·로드맵용 라벨</strong>이며,
-                      Memory Game 안의 난이도 번호나 단계별 가이드 문단과 <strong style={{ color: T.text }}>1:1로 연결되어 있지 않습니다</strong>.
-                    </p>
-                    <p style={{ margin: '0 0 10px', fontSize: 12, color: T.textDim, lineHeight: 1.7 }}>
-                      훈련 시작 시에는 <strong style={{ color: T.text }}>챌린지·플로우 iframe</strong>이 열리고,
-                      그 안의 BGM·템플릿·그리드는 <strong style={{ color: T.text }}>Challenge/Flow 쪽에 저장된 설정 한 벌</strong>을 공유합니다.
-                      스테이지마다 다른 템플릿으로 자동 전환하는 매핑은 <strong style={{ color: T.text }}>아직 없습니다</strong>.
-                    </p>
-                    <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.7 }}>
-                      이 화면의 자극 속도·횟수(또는 시간)는 SPOMOVE 반응 인지 계열과 동일한 UI이지만,
-                      리듬 임베드 내부 페이스와 <strong style={{ color: T.text }}>항상 같이 움직이지 않을 수 있습니다</strong>.
-                    </p>
-                  </>
-                ) : guideBlock ? (
-                  <>
-                    <SettingsGuideVideoIframe accent={guideBlock.accent ?? series.accent} videoUrl={engineGuideVideoUrl} />
                     <p style={{ margin: '10px 0 10px', fontSize: 11, color: T.muted, fontWeight: 700, letterSpacing: '0.12em' }}>{guideBlock.tag}</p>
                     <p style={{ margin: '0 0 14px', fontSize: 12, color: T.text, lineHeight: 1.65 }}>{guideBlock.intro}</p>
                     {guidePhase ? (
                       <div style={{ marginBottom: 14 }}>
-                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: series.accent, letterSpacing: '0.08em' }}>
+                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: accent, letterSpacing: '0.08em' }}>
                           {guidePhase.num} {guidePhase.name}
                         </p>
                         <p style={{ margin: '0 0 6px', fontSize: 12, color: T.textDim, lineHeight: 1.6 }}><strong style={{ color: T.text }}>목표</strong> {guidePhase.goal}</p>
@@ -620,555 +445,559 @@ function SettingsPanel({
                         <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.6 }}><strong style={{ color: T.text }}>코치</strong> {guidePhase.coach}</p>
                       </div>
                     ) : (
-                      <p style={{ margin: '0 0 12px', fontSize: 12, color: T.muted }}>이 모드·번에 해당하는 단계별 상세 문단은 가이드에 없습니다. MODES 설명을 참고하세요.</p>
+                      <p style={{ margin: '0 0 12px', fontSize: 12, color: T.muted }}>
+                        이 모드·난이도에 해당하는 단계별 상세 문단은 가이드에 없습니다.
+                      </p>
                     )}
-                    {prepFiltered.length > 0 ? (
-                      <div style={{ marginBottom: 0 }}>
-                        <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.1em' }}>{guideBlock.prep.title}</p>
-                        <ul style={{ margin: 0, paddingLeft: 18, color: T.textDim, fontSize: 11, lineHeight: 1.65 }}>
-                          {prepFiltered.map((item, idx) => (
-                            <li key={idx} style={{ marginBottom: 6 }}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
                   </>
                 ) : (
-                  <>
-                    <SettingsGuideVideoIframe accent={series.accent} videoUrl={engineGuideVideoUrl} />
-                    <p style={{ margin: '10px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
-                      {modeDef?.desc ?? '가이드 블록이 없는 모드입니다.'}
-                    </p>
-                  </>
+                  <p style={{ margin: '10px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
+                    가이드 블록이 없는 모드입니다.
+                  </p>
                 )}
               </div>
             ) : null}
           </div>
 
-          <div style={{ height: 1, background: T.border, marginBottom: 28 }} />
+          <div style={{ height: 1, background: T.border, margin: '22px 0 26px' }} />
 
-          {/* ── 자극 속도 ── */}
-          <section style={{ marginBottom: 30 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
-              <label style={{
-                fontSize: 11, fontWeight: 800, color: T.muted,
-                letterSpacing: '0.14em', textTransform: 'uppercase',
-              }}>
-                자극 속도
-              </label>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                <span style={{ fontSize: 22, fontWeight: 800, color: series.accent, fontVariantNumeric: 'tabular-nums' }}>
-                  {speed.toFixed(1)}
-                </span>
-                <span style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>초 / 자극</span>
-                <span style={{
-                  marginLeft: 6,
-                  padding: '2px 8px', borderRadius: 5,
-                  background: `${series.accent}18`, border: `1px solid ${series.accent}30`,
-                  fontSize: 10, fontWeight: 700, color: series.accent, letterSpacing: '0.06em',
-                }}>
-                  {speedLabel}
-                </span>
+          {/* 난이도 */}
+          <section style={{ marginBottom: 22 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+              <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
+                {levelLabel(modeId, levelId)}
               </div>
             </div>
-
-            {/* 슬라이더 */}
-            <div style={{ position: 'relative' }}>
-              <style>{`
-                .spmt-slider {
-                  -webkit-appearance: none;
-                  width: 100%;
-                  height: 4px;
-                  border-radius: 2px;
-                  outline: none;
-                  cursor: pointer;
-                  background: linear-gradient(
-                    to right,
-                    ${series.accent} 0%,
-                    ${series.accent} ${((speed - 1) / 7) * 100}%,
-                    rgba(255,255,255,0.1) ${((speed - 1) / 7) * 100}%,
-                    rgba(255,255,255,0.1) 100%
-                  );
-                }
-                .spmt-slider::-webkit-slider-thumb {
-                  -webkit-appearance: none;
-                  width: 20px; height: 20px;
-                  border-radius: 50%;
-                  background: #fff;
-                  box-shadow: 0 0 0 3px ${series.accent}60, 0 2px 8px rgba(0,0,0,0.5);
-                  cursor: pointer;
-                  transition: box-shadow 0.15s;
-                }
-                .spmt-slider::-webkit-slider-thumb:hover {
-                  box-shadow: 0 0 0 5px ${series.accent}50, 0 2px 12px rgba(0,0,0,0.6);
-                }
-              `}</style>
-              <input
-                type="range"
-                className="spmt-slider"
-                min={1} max={8} step={0.5}
-                value={speed}
-                onChange={e => setSpeed(parseFloat(e.target.value))}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>빠름</span>
-                <span style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>느림</span>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(m?.levels ?? []).map((lv) => {
+                const active = levelId === lv.id;
+                return (
+                  <button
+                    key={lv.id}
+                    type="button"
+                    onClick={() => setLevelId(lv.id)}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      border: `1.5px solid ${active ? accent : T.border}`,
+                      background: active ? `${accent}16` : T.card,
+                      fontFamily: 'inherit',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 900, color: active ? accent : T.text }}>
+                      {lv.name}
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: active ? `${accent}cc` : T.textDim }}>
+                      {lv.enName}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </section>
 
-          {/* ── 횟수 (시지각 반응은 시간 모드일 때 초 선택) ── */}
-          <section style={{ marginBottom: 36 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <label style={{
-                fontSize: 11, fontWeight: 800, color: T.muted,
-                letterSpacing: '0.14em', textTransform: 'uppercase',
-              }}>
-                횟수
-              </label>
-
-              {/* 시간 / 횟수 토글 — reactTrain만 표시 */}
-              {isReactTrain && (
-                <div style={{
-                  display: 'flex', gap: 2,
-                  background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 3,
-                }}>
-                  {(['time', 'reps'] as const).map(m => (
+          {/* 2-1 진행방식 */}
+          {isDual21 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>2-1번 진행 방식</label>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {([
+                  { id: 'default' as const, label: '기본형', desc: '설정한 속도로 자동 진행' },
+                  { id: 'touch' as const, label: '터치형', desc: '화면을 누르면 다음 신호' },
+                ]).map((o) => {
+                  const active = launch.dual21Advance === o.id;
+                  return (
                     <button
-                      key={m}
+                      key={o.id}
                       type="button"
-                      onClick={() => setTimeMode(m)}
+                      onClick={() => setLaunch((s) => ({ ...s, dual21Advance: o.id, intervalMode: o.id === 'touch' ? false : s.intervalMode }))}
                       style={{
-                        padding: '4px 12px', borderRadius: 6,
-                        background: timeMode === m ? 'rgba(255,255,255,0.12)' : 'transparent',
-                        border: 'none', color: timeMode === m ? T.text : T.muted,
-                        fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
-                        cursor: 'pointer', letterSpacing: '0.06em',
-                        transition: 'background 0.15s, color 0.15s',
+                        flex: '1 1 180px',
+                        padding: '12px 12px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.text,
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                        textAlign: 'left',
                       }}
                     >
-                      {m === 'time' ? '시간' : '횟수'}
+                      <div style={{ fontWeight: 900, fontSize: 13 }}>{o.label}</div>
+                      <div style={{ marginTop: 3, fontWeight: 600, fontSize: 11, color: active ? `${accent}cc` : T.textDim }}>
+                        {o.desc}
+                      </div>
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            {isReactTrain && timeMode === 'time' ? (
-              <p style={{ fontSize: 10, color: T.muted, margin: '0 0 10px', letterSpacing: '0.02em' }}>
-                아래는 진행 시간(초)입니다. 토글에서 「횟수」를 고르면 반복 회수를 고릅니다.
-              </p>
-            ) : null}
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
 
-            {/* 횟수·시간 선택 pills */}
-            {(isReactTrain ? timeMode === 'time' : false) ? (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {timePills.map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setDuration(s)}
-                    style={{
-                      flex: '1 1 auto', minWidth: 70,
-                      padding: '11px 8px', borderRadius: 10,
-                      border: `1.5px solid ${duration === s ? series.accent : T.border}`,
-                      background: duration === s ? `${series.accent}16` : T.card,
-                      color: duration === s ? series.accent : T.muted,
-                      fontFamily: 'inherit', fontSize: 13, fontWeight: duration === s ? 800 : 500,
-                      cursor: 'pointer', letterSpacing: '0.02em',
-                      transition: 'border-color 0.15s, background 0.15s, color 0.15s',
-                    }}
-                  >
-                    {s}초
-                  </button>
-                ))}
+          {/* 속도 */}
+          <section style={{ marginBottom: 26 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>신호 속도</label>
+              <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
+                {launch.speed.toFixed(1)}초 / 자극
               </div>
+            </div>
+            {isDual21 && launch.dual21Advance === 'touch' ? (
+              <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>
+                터치형에서는 신호 속도를 사용하지 않습니다.
+              </p>
             ) : (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {repsPills.map(r => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setTargetReps(r)}
-                    style={{
-                      flex: '1 1 auto', minWidth: 70,
-                      padding: '11px 8px', borderRadius: 10,
-                      border: `1.5px solid ${targetReps === r ? series.accent : T.border}`,
-                      background: targetReps === r ? `${series.accent}16` : T.card,
-                      color: targetReps === r ? series.accent : T.muted,
-                      fontFamily: 'inherit', fontSize: 13, fontWeight: targetReps === r ? 800 : 500,
-                      cursor: 'pointer', letterSpacing: '0.02em',
-                      transition: 'border-color 0.15s, background 0.15s, color 0.15s',
-                    }}
-                  >
-                    {r}회
-                  </button>
-                ))}
-              </div>
+              <SpeedSelector
+                value={launch.speed}
+                onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
+                showPresets={false}
+              />
             )}
           </section>
 
-          {/* ── 시작 버튼 ── */}
+          {/* 분량/시간 */}
+          {!isFlowOrChallenge ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
+                  {isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
+                </label>
+              </div>
+
+              {isReactTrain ? (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[30, 60, 120, 180].map((sec) => {
+                    const active = launch.duration === sec;
+                    return (
+                      <button
+                        key={sec}
+                        type="button"
+                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'time', duration: sec }))}
+                        style={{
+                          flex: '1 1 90px',
+                          padding: '11px 10px',
+                          borderRadius: 12,
+                          border: `1.5px solid ${active ? accent : T.border}`,
+                          background: active ? `${accent}16` : T.card,
+                          color: active ? accent : T.textDim,
+                          fontFamily: 'inherit',
+                          fontSize: 13,
+                          fontWeight: active ? 900 : 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {sec < 60 ? `${sec}초` : sec === 60 ? '1분' : sec === 120 ? '2분' : '3분'}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : isSpatial ? (
+                <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>
+                  순차 기억은 설정 후 전용 메모리 화면에서 진행됩니다.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[10, 20, 30, 40].map((r) => {
+                    const active = launch.targetReps === r;
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))}
+                        style={{
+                          flex: '1 1 90px',
+                          padding: '11px 10px',
+                          borderRadius: 12,
+                          border: `1.5px solid ${active ? accent : T.border}`,
+                          background: active ? `${accent}16` : T.card,
+                          color: active ? accent : T.textDim,
+                          fontFamily: 'inherit',
+                          fontSize: 13,
+                          fontWeight: active ? 900 : 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {r}회
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          ) : null}
+
+          {/* 반응인지 7번 규칙 */}
+          {modeId === 'basic' && levelId === 7 ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>판단 규칙</label>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {NUMBER_RULES.map((r) => {
+                  const active = launch.numberRule === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, numberRule: r.id }))}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 12,
+                        fontWeight: active ? 900 : 600,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      {active ? '✓ ' : ''}{r.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 변형 색지각 테마 */}
+          {modeId === 'basic' && (levelId === 3 || levelId === 4 || levelId === 5) ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>변형 색지각 이미지 테마</label>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {SPOMOVE_COLOR_THEME_ORDER.map((tid) => {
+                  const active = launch.variantColorTheme === tid;
+                  return (
+                    <button
+                      key={tid}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, variantColorTheme: tid }))}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 12,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {active ? '✓ ' : ''}{SPOMOVE_COLOR_THEME_LABELS[tid]}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 챌린지 설정 */}
+          {modeId === 'challenge' ? (
+            <section style={{ marginBottom: 26 }}>
+              <ChallengeSpomoveSetupPanel />
+            </section>
+          ) : null}
+
+          {/* 고급 설정 */}
+          {!isFlowOrChallenge ? (
+            <section style={{ marginBottom: 26 }}>
+              <button
+                type="button"
+                onClick={() => setAdvancedOpen((o) => !o)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: '100%',
+                  padding: '10px 0',
+                  background: 'transparent',
+                  border: 'none',
+                  color: T.muted,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  fontWeight: 900,
+                }}
+              >
+                <span style={{ width: 18, color: accent }}>{advancedOpen ? '▼' : '▶'}</span>
+                고급 설정
+              </button>
+              {advancedOpen ? (
+                <div style={{ border: `1px solid ${T.border}`, borderRadius: 12, padding: 12, background: 'rgba(255,255,255,0.02)' }}>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: T.text, marginBottom: 8 }}>워밍업 카운트다운</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {[0, 3, 5].map((n) => {
+                        const active = launch.warmup === n;
+                        return (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setLaunch((s) => ({ ...s, warmup: n }))}
+                            style={{
+                              padding: '9px 12px',
+                              borderRadius: 10,
+                              border: `1.5px solid ${active ? accent : T.border}`,
+                              background: active ? `${accent}16` : T.card,
+                              color: active ? accent : T.textDim,
+                              fontFamily: 'inherit',
+                              fontSize: 12,
+                              fontWeight: active ? 900 : 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {n === 0 ? '없음' : `${n}초`}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: T.text, marginBottom: 8 }}>인터벌 모드 (Tabata)</div>
+                    <button
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, intervalMode: !s.intervalMode }))}
+                      disabled={isDual21 && launch.dual21Advance === 'touch'}
+                      style={{
+                        padding: '9px 12px',
+                        borderRadius: 10,
+                        border: `1.5px solid ${launch.intervalMode ? accent : T.border}`,
+                        background: launch.intervalMode ? `${accent}16` : T.card,
+                        color: launch.intervalMode ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 12,
+                        fontWeight: 900,
+                        cursor: (isDual21 && launch.dual21Advance === 'touch') ? 'not-allowed' : 'pointer',
+                        opacity: (isDual21 && launch.dual21Advance === 'touch') ? 0.45 : 1,
+                      }}
+                    >
+                      {launch.intervalMode ? '켜짐' : '끔'}
+                    </button>
+                    {isDual21 && launch.dual21Advance === 'touch' ? (
+                      <p style={{ margin: '8px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                        2-1 터치형에서는 인터벌 모드를 사용할 수 없습니다.
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: T.text, marginBottom: 8 }}>점진 가속 (accel)</div>
+                    <button
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, accel: !s.accel }))}
+                      style={{
+                        padding: '9px 12px',
+                        borderRadius: 10,
+                        border: `1.5px solid ${launch.accel ? accent : T.border}`,
+                        background: launch.accel ? `${accent}16` : T.card,
+                        color: launch.accel ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 12,
+                        fontWeight: 900,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {launch.accel ? '켜짐' : '끔'}
+                    </button>
+                    <p style={{ margin: '8px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                      세션 진행률에 따라 신호 간격이 빨라집니다. 인터벌 모드에서는 적용되지 않습니다.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
           <button
             type="button"
-            onClick={handleStart}
+            onClick={() => onStart(levelId, launch)}
             style={{
-              width: '100%', padding: '17px 24px',
-              borderRadius: 14, border: 'none',
-              background: series.accent,
+              width: '100%',
+              padding: '17px 24px',
+              borderRadius: 14,
+              border: 'none',
+              background: accent,
               color: '#000',
-              fontFamily: 'inherit', fontSize: 15, fontWeight: 900,
-              cursor: 'pointer', letterSpacing: '0.08em',
-              boxShadow: `0 4px 24px ${series.accent}50`,
+              fontFamily: 'inherit',
+              fontSize: 15,
+              fontWeight: 900,
+              cursor: 'pointer',
+              letterSpacing: '0.08em',
+              boxShadow: `0 4px 24px ${accent}50`,
               transition: 'opacity 0.15s, transform 0.12s, box-shadow 0.15s',
             }}
-            onMouseEnter={e => {
+            onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.opacity = '0.88';
               (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
             }}
-            onMouseLeave={e => {
+            onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.opacity = '1';
               (e.currentTarget as HTMLButtonElement).style.transform = 'none';
-            }}
-            onMouseDown={e => {
-              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0px) scale(0.98)';
-            }}
-            onMouseUp={e => {
-              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
             }}
           >
             훈련 시작 ▶
           </button>
-
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── SeriesBadge ─── */
-function SeriesBadge({ code, accent }: { code: string; accent: string }) {
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      width: 40, height: 40, borderRadius: 10,
-      background: `${accent}18`, border: `1px solid ${accent}40`,
-      color: accent, fontWeight: 800, fontSize: 11, letterSpacing: '0.08em',
-      flexShrink: 0,
-    }}>
-      {code}
-    </span>
-  );
-}
-
-/* ─── StageChip ─── */
-function StageChip({
-  stage, label, engine, settingsVideoUrl, accent,
-  onSelect,
-}: Core5Stage & { accent: string; onSelect: (s: Core5Stage) => void }) {
-  const ready = engine !== null;
-  return (
-    <button
-      type="button"
-      disabled={!ready}
-      onClick={() => {
-        if (!ready) return;
-        onSelect({ stage, label, engine, settingsVideoUrl });
-      }}
-      style={{
-        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-        padding: '10px 14px', borderRadius: 10,
-        background: T.card, border: `1px solid ${T.border}`,
-        cursor: ready ? 'pointer' : 'default',
-        opacity: ready ? 1 : 0.4,
-        transition: 'border-color 0.15s, background 0.15s',
-        fontFamily: 'inherit',
-      }}
-      onMouseEnter={e => {
-        if (!ready) return;
-        (e.currentTarget as HTMLButtonElement).style.borderColor = `${accent}60`;
-        (e.currentTarget as HTMLButtonElement).style.background  = `${accent}0a`;
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLButtonElement).style.borderColor = T.border;
-        (e.currentTarget as HTMLButtonElement).style.background  = T.card;
-      }}
-    >
-      <span style={{
-        width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-        background: ready ? `${accent}22` : 'rgba(255,255,255,0.06)',
-        border: `1px solid ${ready ? `${accent}40` : T.border}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'var(--font-mono, monospace)', fontSize: 10, fontWeight: 700,
-        color: ready ? accent : T.muted,
-      }}>
-        {stage}
-      </span>
-      <span style={{
-        fontSize: 13, color: T.text, fontWeight: 500,
-        flex: 1, lineHeight: 1.35, textAlign: 'left',
-      }}>
-        {label}
-      </span>
-      {ready ? (
-        <span style={{ fontSize: 11, color: accent, opacity: 0.7, letterSpacing: '0.06em', fontWeight: 600 }}>▶</span>
-      ) : (
-        <span style={{ fontSize: 10, color: T.muted, letterSpacing: '0.08em' }}>준비 중</span>
-      )}
-    </button>
-  );
-}
-
-/* ─── ProgramCard ─── */
-function ProgramCard({
-  program, accent, series,
-  onSelect,
-}: {
-  program: Core5Program;
-  accent: string;
-  series: Core5Series;
-  onSelect: (stage: Core5Stage, program: Core5Program, series: Core5Series) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{
-      border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden',
-      background: T.surface, transition: 'border-color 0.15s',
-    }}
-      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = T.borderHover)}
-      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = T.border)}
-    >
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 14,
-          padding: '16px 18px', background: 'transparent', border: 0,
-          cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-        }}
-      >
-        <span style={{
-          width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-          background: `${accent}14`, border: `1px solid ${accent}30`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 10, fontWeight: 800, color: accent, letterSpacing: '0.05em',
-        }}>
-          {program.programId.split('-')[1]}
-        </span>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 12, color: T.muted, letterSpacing: '0.1em', marginBottom: 2, fontWeight: 600 }}>
-            {program.programId}
-          </p>
-          <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0, lineHeight: 1.3 }}>
-            {program.title}
-          </p>
-        </div>
-        <span style={{
-          width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: T.muted, fontSize: 12, transition: 'transform 0.2s',
-          transform: open ? 'rotate(180deg)' : 'none',
-        }}>▾</span>
-      </button>
-
-      {open && (
-        <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {program.stages.map(s => (
-            <StageChip
-              key={s.stage}
-              {...s}
-              accent={accent}
-              onSelect={stage => onSelect(stage, program, series)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─── SeriesPanel ─── */
-function SeriesPanel({
-  series,
-  onSelect,
-}: {
-  series: Core5Series;
-  onSelect: (stage: Core5Stage, program: Core5Program, series: Core5Series) => void;
-}) {
-  return (
-    <section>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <SeriesBadge code={series.code} accent={series.accent} />
-        <div>
-          <p style={{ fontSize: 11, letterSpacing: '0.14em', color: T.muted, fontWeight: 700, marginBottom: 1 }}>
-            {series.code}
-          </p>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: T.text, margin: 0, letterSpacing: '-0.01em' }}>
-            {series.title}
-          </h2>
-          <p style={{ fontSize: 12, color: T.textDim, margin: 0 }}>{series.subtitle}</p>
-        </div>
-        <span style={{
-          marginLeft: 'auto', padding: '3px 10px', borderRadius: 100,
-          background: `${series.accent}14`, border: `1px solid ${series.accent}30`,
-          fontSize: 11, fontWeight: 700, color: series.accent, letterSpacing: '0.06em',
-        }}>
-          {series.programs.length} PROGRAMS
-        </span>
-      </div>
-
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-        gap: 10,
-      }}>
-        {series.programs.map(p => (
-          <ProgramCard
-            key={p.programId}
-            program={p}
-            accent={series.accent}
-            series={series}
-            onSelect={onSelect}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ─── Series tab bar ─── */
-const TABS: { code: SeriesCode | 'ALL'; label: string }[] = [
-  { code: 'ALL', label: 'All'          },
-  { code: 'SR',  label: 'Spatial'      },
-  { code: 'IC',  label: 'Interference' },
-  { code: 'RS',  label: 'Rule'         },
-  { code: 'SM',  label: 'Memory'       },
-  { code: 'RC',  label: 'Rhythm'       },
-];
-
-/* ══ Page ══ */
 export default function SpomoveTrainingPage() {
-  const [activeTab, setActiveTab] = useState<SeriesCode | 'ALL'>('ALL');
+  const [activeTab, setActiveTab] = useState<TabCode>('ALL');
   const [phase, setPhase] = useState<PagePhase>({ tag: 'catalog' });
 
-  const visibleSeries = useMemo(
-    () => (activeTab === 'ALL' ? catalog : catalog.filter(s => s.code === activeTab)),
-    [activeTab],
-  );
+  const modeIdsByTab = useMemo(() => {
+    const ids = Object.values(MODES).map((m) => m.id);
+    const byCore = new Map<TabCode, string[]>();
+    for (const tab of TABS) byCore.set(tab.code, []);
+    byCore.set('ALL', []);
+    for (const id of ids) {
+      const m = MODES[id];
+      if (!m) continue;
+      const core = (m.coreCode ?? 'ALL') as TabCode;
+      byCore.get('ALL')!.push(id);
+      if (byCore.has(core)) byCore.get(core)!.push(id);
+    }
+    return byCore;
+  }, []);
 
-  const totalPrograms = catalog.reduce((s, c) => s + c.programs.length, 0);
-  const totalStages   = catalog.reduce(
-    (s, c) => s + c.programs.reduce((a, p) => a + p.stages.length, 0), 0,
-  );
+  const visibleModeIds = useMemo(() => {
+    const list = modeIdsByTab.get(activeTab) ?? [];
+    // 안정적인 순서를 위해 고정 정렬(타이틀 기준)
+    return [...list].sort((a, b) => (MODES[a]?.title ?? a).localeCompare((MODES[b]?.title ?? b), 'ko'));
+  }, [activeTab, modeIdsByTab]);
 
-  const handleSelect = useCallback(
-    (stage: Core5Stage, program: Core5Program, series: Core5Series) => {
-      setPhase({ tag: 'settings', stage, program, series });
-    },
-    [],
-  );
+  const handlePick = useCallback((modeId: string) => {
+    setPhase({ tag: 'settings', modeId });
+  }, []);
 
-  const handleStart = useCallback((launch: LaunchSettings) => {
-    setPhase(prev => {
-      if (prev.tag !== 'settings' || !prev.stage.engine) return prev;
-      return { tag: 'training', engine: prev.stage.engine, launch };
+  const handleStart = useCallback((levelId: number, launch: LaunchSettings) => {
+    setPhase((prev) => {
+      if (prev.tag !== 'settings') return prev;
+      return { tag: 'training', modeId: prev.modeId, levelId, launch };
     });
   }, []);
 
-  /* ── 설정 패널 ── */
   if (phase.tag === 'settings') {
+    const modeId = phase.modeId;
+    const initial: LaunchSettings = {
+      ...DEFAULT_LAUNCH,
+      timeMode: pickDefaultTimeMode(modeId),
+      // reactTrain은 time 기본
+      duration: 60,
+      // 나머지는 reps 기본
+      targetReps: 20,
+    };
     return (
-      <SettingsPanel
-        stage={phase.stage}
-        program={phase.program}
-        series={phase.series}
+      <SettingsScreen
+        modeId={modeId}
+        initial={initial}
         onStart={handleStart}
         onBack={() => setPhase({ tag: 'catalog' })}
       />
     );
   }
 
-  /* ── 훈련 포털 (카탈로그 위에 오버레이) ── */
   return (
     <>
       {phase.tag === 'training' && (
         <TrainingPortal
-          engine={phase.engine}
+          modeId={phase.modeId}
+          levelId={phase.levelId}
           launch={phase.launch}
           onClose={() => setPhase({ tag: 'catalog' })}
         />
       )}
 
-      {/* ── 카탈로그 뷰 ── */}
       <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 80 }}>
-        <style>{`
-          @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { transition: none !important; }
-          }
-          .spmt-tab:hover { background: rgba(255,255,255,0.06) !important; }
-        `}</style>
-
-        {/* header */}
         <header style={{
-          borderBottom: `1px solid ${T.border}`, padding: '24px 32px 20px',
-          position: 'sticky', top: 0, background: T.bg, zIndex: 20,
-          backdropFilter: 'blur(20px)',
+          borderBottom: `1px solid ${T.border}`,
+          padding: '18px 24px 14px',
+          position: 'sticky',
+          top: 0,
+          background: 'rgba(10,10,10,0.72)',
+          zIndex: 20,
+          backdropFilter: 'blur(18px)',
         }}>
           <div style={{ maxWidth: 960, margin: '0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
-                <p style={{ fontSize: 10, letterSpacing: '0.2em', color: T.muted, fontWeight: 700, marginBottom: 4 }}>
-                  SPOMOVE
-                </p>
-                <h1 style={{
-                  fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 900, color: T.text,
-                  margin: 0, letterSpacing: '-0.025em', lineHeight: 1,
-                }}>
-                  Training
-                </h1>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                {([
-                  { n: '5',                   label: 'SERIES'   },
-                  { n: String(totalPrograms), label: 'PROGRAMS' },
-                  { n: String(totalStages),   label: 'STAGES'   },
-                ] as const).map(({ n, label }) => (
-                  <div key={label} style={{
-                    padding: '5px 12px', borderRadius: 100,
-                    background: 'rgba(255,255,255,0.05)', border: `1px solid ${T.border}`,
-                    display: 'flex', alignItems: 'baseline', gap: 6,
-                  }}>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: T.text }}>{n}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: T.muted, letterSpacing: '0.12em' }}>{label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 14,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: `1px solid ${T.border}`,
+                      color: T.text,
+                      fontWeight: 950,
+                      letterSpacing: '-0.02em',
+                      boxShadow: '0 10px 22px rgba(0,0,0,0.35)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    S
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <p style={{ fontSize: 10, letterSpacing: '0.22em', color: T.muted, fontWeight: 800, margin: 0 }}>
+                      SPOKEDU · SPOMOVE
+                    </p>
+                    <h1 style={{
+                      fontSize: 'clamp(20px, 2.6vw, 28px)',
+                      fontWeight: 950,
+                      color: T.text,
+                      margin: 0,
+                      letterSpacing: '-0.03em',
+                      lineHeight: 1.05,
+                    }}>
+                      트레이닝
+                    </h1>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
 
-            {/* tabs */}
-            <nav style={{ display: 'flex', gap: 4, marginTop: 18, overflowX: 'auto' }}>
-              {TABS.map(tab => {
-                const series   = tab.code !== 'ALL' ? catalog.find(s => s.code === tab.code) : null;
-                const accent   = series?.accent ?? 'rgba(255,255,255,0.6)';
+            <nav style={{ display: 'flex', gap: 6, marginTop: 12, overflowX: 'auto', paddingBottom: 2 }}>
+              {TABS.map((tab) => {
                 const isActive = activeTab === tab.code;
+                const accent = tab.code === 'ALL' ? 'rgba(255,255,255,0.65)' : (Object.values(MODES).find((m) => m.coreCode === tab.code)?.accent ?? 'rgba(255,255,255,0.65)');
                 return (
                   <button
                     key={tab.code}
                     type="button"
-                    className="spmt-tab"
                     onClick={() => setActiveTab(tab.code)}
                     style={{
-                      padding: '7px 16px', borderRadius: 9, border: 'none',
-                      background: isActive
-                        ? (series ? `${accent}20` : 'rgba(255,255,255,0.1)')
-                        : 'transparent',
-                      color: isActive ? (series ? accent : T.text) : T.muted,
-                      fontWeight: isActive ? 700 : 500, fontSize: 13,
-                      cursor: 'pointer', whiteSpace: 'nowrap', letterSpacing: '0.01em',
-                      outline: isActive
-                        ? `1.5px solid ${series ? `${accent}50` : 'rgba(255,255,255,0.2)'}`
-                        : 'none',
-                      outlineOffset: 0,
-                      transition: 'background 0.15s, color 0.15s',
+                      padding: '8px 14px',
+                      borderRadius: 999,
+                      border: `1px solid ${isActive ? `${accent}55` : T.border}`,
+                      background: isActive ? `${accent}18` : 'rgba(255,255,255,0.03)',
+                      color: isActive ? (tab.code === 'ALL' ? T.text : accent) : T.muted,
+                      fontWeight: isActive ? 900 : 700,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      letterSpacing: '0.02em',
+                      outline: 'none',
                       fontFamily: 'inherit',
+                      boxShadow: isActive ? `0 10px 24px ${accent}14` : 'none',
+                      transition: 'background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease',
                     }}
                   >
                     {tab.label}
@@ -1179,11 +1008,19 @@ export default function SpomoveTrainingPage() {
           </div>
         </header>
 
-        {/* catalog */}
-        <main style={{ maxWidth: 960, margin: '0 auto', padding: '36px 32px 0' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
-            {visibleSeries.map(series => (
-              <SeriesPanel key={series.code} series={series} onSelect={handleSelect} />
+        <main style={{ maxWidth: 960, margin: '0 auto', padding: '28px 24px 0' }}>
+          <style>{`
+            .spmt-card:hover { transform: translateY(-2px) !important; border-color: rgba(255,255,255,0.16) !important; box-shadow: 0 16px 38px rgba(0,0,0,0.45) !important; }
+            .spmt-card:active { transform: translateY(-1px) scale(0.99) !important; }
+            @media (prefers-reduced-motion: reduce) {
+              .spmt-card { transition: none !important; }
+              .spmt-card:hover { transform: none !important; }
+              .spmt-card:active { transform: none !important; }
+            }
+          `}</style>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}>
+            {visibleModeIds.map((modeId) => (
+              <CatalogModeCard key={modeId} modeId={modeId} onPick={handlePick} />
             ))}
           </div>
         </main>
@@ -1191,3 +1028,4 @@ export default function SpomoveTrainingPage() {
     </>
   );
 }
+

@@ -589,7 +589,11 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
         } while (lane === lastLane && Math.random() > 0.3);
         g.objs.push(new FlowTile(g, cv, lane));
       } else if (g.mode === 'flash') {
-        g.objs.push(new FlashBubble(g, cv));
+        // FLASH(2번): 한 번에 너무 많이 떨어지지 않도록 동시 낙하 개수를 제한한다(1~2개 수준 유지).
+        const activeFlash = g.objs.filter((o) => o instanceof FlashBubble && !o.dead).length;
+        if (activeFlash < 2) {
+          g.objs.push(new FlashBubble(g, cv));
+        }
       } else {
         const pair = randomPair();
         g.objs.push(new FlowTile(g, cv, pair[0], true));
