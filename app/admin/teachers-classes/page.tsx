@@ -636,14 +636,19 @@ function FeedbackReviewTab({
   const clearSelection = () => setSelectedSessions(new Set());
 
   const handleBulkApprove = async () => {
-    if (!supabase || selectedSessions.size === 0) return toast.success('승인할 리포트를 선택해주세요.');
+    if (selectedSessions.size === 0) return toast.success('승인할 리포트를 선택해주세요.');
     if (!confirm(`선택한 ${selectedSessions.size}개의 리포트를 일괄 승인하시겠습니까?`)) return;
     
     setBulkActionLoading(true);
     try {
       const ids = Array.from(selectedSessions);
-      const { error } = await supabase.from('sessions').update({ status: 'verified', updated_at: new Date().toISOString() }).in('id', ids);
-      if (error) throw error;
+      const res = await fetch('/api/admin/teachers-classes/bulk-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'bulk_approve_failed');
 
       // 수업 카운팅: 일괄 검수 승인 시 session_count_logs 반영
       const toCount = sessions.filter((s) => ids.includes(s.id));
@@ -790,16 +795,20 @@ function FeedbackReviewTab({
     }
     try {
       const updatedText = fieldsToTemplateText(feedbackFields);
-      const updateData: Record<string, unknown> = { 
-        status: newStatus,
-        students_text: updatedText,
-        feedback_fields: feedbackFields,
-        photo_url: photoUrls,
-        file_url: fileUrls,
-        updated_at: new Date().toISOString()
-      };
-      const { error } = await supabase.from('sessions').update(updateData).eq('id', selectedEvent.id);
-      if (error) throw error;
+      const res = await fetch('/api/admin/teachers-classes/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: selectedEvent.id,
+          status: newStatus,
+          students_text: updatedText,
+          feedback_fields: feedbackFields,
+          photo_url: photoUrls,
+          file_url: fileUrls,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'save_failed');
 
       // 수업 카운팅: finished/verified 시 session_count_logs에 반영 (이미 있으면 23505 스킵)
       if (newStatus === 'finished' || newStatus === 'verified') {
