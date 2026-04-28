@@ -30,8 +30,7 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = (await req.json().catch(() => ({}))) as Body;
-    const action = (body as { action?: unknown }).action;
-    if (action !== 'save' && action !== 'delete') {
+    if (body.action !== 'save' && body.action !== 'delete') {
       return NextResponse.json({ error: 'invalid_action' }, { status: 400 });
     }
 
@@ -54,7 +53,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '이 수업을 수정할 권한이 없습니다.' }, { status: 403 });
     }
 
-    if (action === 'delete') {
+    if (body.action === 'delete') {
       const lessonPlanId = typeof body.lessonPlanId === 'string' ? body.lessonPlanId.trim() : '';
       if (!lessonPlanId) return NextResponse.json({ error: 'lessonPlanId이 필요합니다.' }, { status: 400 });
 
