@@ -11,6 +11,8 @@ type CurriculumRow = {
   expert_tip: string | null;
   month: number | null;
   week: number | null;
+  /** true면 센터 UI의 SUB 탭 전용 — Pro 프로그램 뱅크에 넣지 않음 */
+  is_sub?: boolean | null;
 };
 
 function toMultiline(value: string[] | null): string | null {
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   const { data: curriculumRows, error: curriculumError } = await supabase
     .from('curriculum')
-    .select('id,title,url,check_list,equipment,steps,expert_tip,month,week')
+    .select('id,title,url,check_list,equipment,steps,expert_tip,month,week,is_sub')
     .order('month', { ascending: true })
     .order('week', { ascending: true })
     .order('id', { ascending: true });
@@ -80,6 +82,27 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
+    // SUB 탭 전용 커리큘럼: Pro 뱅크에 넣지 않음. 과거 동기화로 들어간 동일 제목·URL 행은 비공개(+가능하면 SUB 플래그).
+    if (row.is_sub === true) {
+      const patchFull = { is_published: false, center_curriculum_is_sub: true };
+      const patchMin = { is_published: false };
+      const tryHide = async (patch: typeof patchFull | typeof patchMin) => {
+        if (videoUrl) {
+          return supabase.from('spokedu_pro_programs').update(patch).eq('title', title).eq('video_url', videoUrl);
+        }
+        const r0 = await supabase.from('spokedu_pro_programs').update(patch).eq('title', title).is('video_url', null);
+        if (r0.error) return r0;
+        return supabase.from('spokedu_pro_programs').update(patch).eq('title', title).eq('video_url', '');
+      };
+      let { error: hideErr } = await tryHide(patchFull);
+      if (hideErr && /center_curriculum_is_sub|column/i.test(String(hideErr.message))) {
+        ({ error: hideErr } = await tryHide(patchMin));
+      }
+      if (hideErr) errors.push({ curriculumId: row.id, message: hideErr.message });
+      skipped += 1;
+      continue;
+    }
+
     const key = `${title}|${videoUrl}`;
     const payload = {
       title,
@@ -93,6 +116,8 @@ export async function POST(req: NextRequest) {
       activity_method: toMultiline(row.steps),
       activity_tip: row.expert_tip?.trim() || null,
       is_published: true,
+      /** curriculum.id — SUB로 바뀌거나 삭제된 뒤 동기화 시 Pro에서 빼기 위해 유지 */
+      source_center_curriculum_id: row.id,
     };
 
     // 제목 변경으로 기존 row가 남는 문제 방지:
@@ -102,12 +127,20 @@ export async function POST(req: NextRequest) {
     const matchByKey = byTitleAndUrl.get(key)?.id ?? null;
     const matchId = matchByUrl ?? matchByKey;
     if (matchId) {
-      const { error } = await supabase.from('spokedu_pro_programs').update(payload).eq('id', matchId);
+      let { error } = await supabase.from('spokedu_pro_programs').update(payload).eq('id', matchId);
+      if (error && /source_center_curriculum_id|42703|column/i.test(String(error.message))) {
+        const { source_center_curriculum_id: _s, ...rest } = payload;
+        ({ error } = await supabase.from('spokedu_pro_programs').update(rest).eq('id', matchId));
+      }
       if (error) errors.push({ curriculumId: row.id, message: error.message });
       else updated += 1;
       if (videoUrl) keptIdByVideoUrl.set(videoUrl, matchId);
     } else {
-      const { data: ins, error } = await supabase.from('spokedu_pro_programs').insert(payload).select('id,video_url').single();
+      let { data: ins, error } = await supabase.from('spokedu_pro_programs').insert(payload).select('id,video_url').single();
+      if (error && /source_center_curriculum_id|42703|column/i.test(String(error.message))) {
+        const { source_center_curriculum_id: _s, ...rest } = payload;
+        ({ data: ins, error } = await supabase.from('spokedu_pro_programs').insert(rest).select('id,video_url').single());
+      }
       if (error) {
         errors.push({ curriculumId: row.id, message: error.message });
       } else {
@@ -137,6 +170,21 @@ export async function POST(req: NextRequest) {
       : await supabase.from('spokedu_pro_programs').update({ is_published: false }).in('id', others);
     if (error) {
       errors.push({ curriculumId: -1, message: `dedupe(${v}) ${error.message}` });
+    }
+  }
+
+  // SUB로 옮긴 curriculum 행을 가리키는 Pro 프로그램은 비공개(드래그로 SUB 전환 후에도 낚시 등이 남는 문제 방지)
+  const subCurriculumIds = source.filter((r) => r.is_sub === true).map((r) => r.id);
+  if (subCurriculumIds.length > 0) {
+    const patchSub = { is_published: false, center_curriculum_is_sub: true };
+    const { error: subLinkErr } = await supabase
+      .from('spokedu_pro_programs')
+      .update(patchSub)
+      .in('source_center_curriculum_id', subCurriculumIds);
+    if (subLinkErr && /source_center_curriculum_id|center_curriculum_is_sub|42703|column/i.test(String(subLinkErr.message))) {
+      await supabase.from('spokedu_pro_programs').update({ is_published: false }).in('source_center_curriculum_id', subCurriculumIds);
+    } else if (subLinkErr) {
+      errors.push({ curriculumId: -1, message: `sub_curriculum_link: ${subLinkErr.message}` });
     }
   }
 

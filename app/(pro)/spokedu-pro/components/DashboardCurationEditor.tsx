@@ -75,7 +75,7 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/spokedu-pro/programs?limit=200', { credentials: 'include' });
+        const res = await fetch('/api/spokedu-pro/programs?limit=200&only_curriculum=1', { credentials: 'include' });
         const j = await res.json().catch(() => ({}));
         if (!res.ok || !Array.isArray(j?.data)) return;
         const next: Record<number, string> = {};
@@ -86,7 +86,9 @@ export default function DashboardCurationEditor({ onClose }: { onClose?: () => v
           if (!title) continue;
           next[id] = title;
         }
-        if (!cancelled) setProgramTitleById((prev) => ({ ...prev, ...next }));
+        // API에 없는 id는 prev 병합으로 남지 않게 한다(삭제·비공개 후에도 옛 제목이 슬롯에 붙는 문제 방지).
+        // 라이브러리에서 고른 직후 제목은 onSelectProgram에서만 다시 넣는다.
+        if (!cancelled) setProgramTitleById(next);
       } catch {
         // ignore
       }

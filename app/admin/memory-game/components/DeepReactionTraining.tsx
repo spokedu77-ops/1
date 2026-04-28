@@ -1,7 +1,21 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import {
+  getReactTrainPerfProfile,
+  perfParticleBudget,
+  perfShadowMul,
+  perfUseBackdropBlur,
+  type ReactTrainPerfProfile,
+} from '../lib/reactTrainPerf';
+
+let DEEP_SHADOW_MUL = 1;
+let DEEP_PERF: ReactTrainPerfProfile = 'high';
+let DEEP_JELLY_BUB_CAP = 250;
+let DEEP_AMBIENT_PROB = 0.06;
+let DEEP_AMBIENT_CAP = 30;
+let DEEP_AMBIENT_START = 18;
 
 /** 0=RED(TL) 1=BLUE(TR) 2=GREEN(BL) 3=YELLOW(BR) */
 const C = [
@@ -91,7 +105,7 @@ class AmbientBubble {
     ctx.save();
     ctx.globalAlpha = this.life;
     ctx.strokeStyle = 'rgba(150,210,255,0.7)'; ctx.lineWidth = 0.8;
-    ctx.shadowColor = 'rgba(43,142,255,0.5)'; ctx.shadowBlur = 4;
+    ctx.shadowColor = 'rgba(43,142,255,0.5)'; ctx.shadowBlur = Math.max(0, Math.round(4 * DEEP_SHADOW_MUL));
     ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = this.life * 0.6; ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.shadowBlur = 0;
     ctx.beginPath(); ctx.arc(this.x - this.r * 0.3, this.y - this.r * 0.3, this.r * 0.25, 0, Math.PI * 2); ctx.fill();
@@ -112,7 +126,7 @@ class JellyBubble {
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save(); ctx.globalAlpha = Math.max(0, this.life) * 0.6;
     ctx.strokeStyle = this.color; ctx.lineWidth = 0.8;
-    ctx.shadowColor = this.color; ctx.shadowBlur = 4;
+    ctx.shadowColor = this.color; ctx.shadowBlur = Math.max(0, Math.round(4 * DEEP_SHADOW_MUL));
     ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
@@ -132,7 +146,7 @@ class BurstBubble {
   update() { this.x += this.vx; this.y += this.vy; this.vy += 0.12; this.vx *= 0.97; this.vy *= 0.97; this.life -= this.dec; }
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save(); ctx.globalAlpha = Math.max(0, this.life);
-    ctx.shadowColor = this.color; ctx.shadowBlur = 10;
+    ctx.shadowColor = this.color; ctx.shadowBlur = Math.max(0, Math.round(10 * DEEP_SHADOW_MUL));
     if (this.isRing) {
       ctx.strokeStyle = this.color; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.stroke();
@@ -191,7 +205,7 @@ class Jellyfish {
     this.x += this.vx * this.speed;
     this.y += this.vy * this.speed;
     this.bubbleTimer++;
-    if (this.bubbleTimer % 4 === 0 && G.particles.length < 250) {
+    if (this.bubbleTimer % 4 === 0 && G.particles.length < DEEP_JELLY_BUB_CAP) {
       G.particles.push(new JellyBubble(this.x, this.y, this.color.main));
     }
     const dx = this.tx - this.x, dy = this.ty - this.y;
@@ -226,13 +240,13 @@ class Jellyfish {
       const tx1 = tx0 + wave, ty1 = ty0 + t.len * (0.9 + Math.sin(t.phase * 0.5) * 0.1);
       ctx.save();
       ctx.globalAlpha = 0.75 + pulse * 0.15;
-      ctx.strokeStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 14;
+      ctx.strokeStyle = col; ctx.shadowColor = col; ctx.shadowBlur = Math.max(0, Math.round(14 * DEEP_SHADOW_MUL));
       ctx.lineWidth = 2.2; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(tx0, ty0);
       ctx.bezierCurveTo(tx0 + wave * 0.5, ty0 + t.len * 0.35, tx1 - wave * 0.3, ty0 + t.len * 0.7, tx1, ty1);
       ctx.stroke();
       ctx.globalAlpha = (0.75 + pulse * 0.15) * 0.7;
-      ctx.fillStyle = col; ctx.shadowBlur = 6;
+      ctx.fillStyle = col; ctx.shadowBlur = Math.max(0, Math.round(6 * DEEP_SHADOW_MUL));
       ctx.beginPath(); ctx.arc(tx1, ty1, 3, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     });
@@ -241,7 +255,7 @@ class Jellyfish {
     ctx.save();
     ctx.scale(scaleX, scaleY);
 
-    ctx.shadowColor = col; ctx.shadowBlur = bw * 2.2;
+    ctx.shadowColor = col; ctx.shadowBlur = Math.max(0, Math.round(bw * 2.2 * DEEP_SHADOW_MUL));
     const outerGlow = ctx.createRadialGradient(0, 0, bw * 0.3, 0, 0, bw * 1.4);
     outerGlow.addColorStop(0, `rgba(${rgb},0.0)`);
     outerGlow.addColorStop(0.7, `rgba(${rgb},0.35)`);
@@ -269,11 +283,11 @@ class Jellyfish {
     ctx.quadraticCurveTo(-bw * 0.72, bh * 0.55, -bw, 0);
     ctx.fill();
 
-    ctx.shadowColor = col; ctx.shadowBlur = bw * 1.6;
+    ctx.shadowColor = col; ctx.shadowBlur = Math.max(0, Math.round(bw * 1.6 * DEEP_SHADOW_MUL));
     ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.ellipse(0, 0, bw, bh, 0, Math.PI, 0, true); ctx.stroke();
 
-    ctx.shadowBlur = bw * 0.8; ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.globalAlpha = 0.5;
+    ctx.shadowBlur = Math.max(0, Math.round(bw * 0.8 * DEEP_SHADOW_MUL)); ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.globalAlpha = 0.5;
     ctx.beginPath(); ctx.ellipse(0, 0, bw * 1.05, bh * 1.05, 0, Math.PI, 0, true); ctx.stroke();
 
     ctx.globalAlpha = 0.18; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1; ctx.shadowBlur = 0;
@@ -313,6 +327,11 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
   const onExitRef = useRef(onExit);
   useEffect(() => { onExitRef.current = onExit; }, [onExit]);
 
+  const perfProfile = useMemo(() => getReactTrainPerfProfile(), []);
+  const perfShadowMulVal = useMemo(() => perfShadowMul(perfProfile), [perfProfile]);
+  const perfBurst = useMemo(() => perfParticleBudget(perfProfile), [perfProfile]);
+  const hudBackdropBlur = useMemo(() => perfUseBackdropBlur(perfProfile), [perfProfile]);
+
   /* layout */
   const calcLayout = useCallback(() => {
     const cv = canvasRef.current;
@@ -347,8 +366,14 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     grd.addColorStop(0.7, '#011830'); grd.addColorStop(1, '#010E1E');
     ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
 
+    const ellipses = DEEP_PERF === 'low' ? 4 : DEEP_PERF === 'mid' ? 6 : 9;
+    const beams = DEEP_PERF === 'low' ? 0 : DEEP_PERF === 'mid' ? 4 : 7;
+    const sparks = DEEP_PERF === 'low' ? 10 : DEEP_PERF === 'mid' ? 18 : 28;
+    const gridRows = DEEP_PERF === 'low' ? 4 : DEEP_PERF === 'mid' ? 6 : 8;
+    const gridStep = DEEP_PERF === 'low' ? 10 : DEEP_PERF === 'mid' ? 8 : 6;
+
     ctx.save();
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < ellipses; i++) {
       const bx = W * (0.05 + i * 0.12) + Math.sin(waveOffset * 0.008 + i * 0.7) * W * 0.04;
       const by = H * 0.05 + Math.cos(waveOffset * 0.006 + i * 0.9) * H * 0.06;
       const bw2 = W * 0.04 + Math.sin(waveOffset * 0.015 + i) * W * 0.018;
@@ -359,37 +384,40 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     }
     ctx.restore();
 
-    ctx.save(); ctx.globalCompositeOperation = 'screen';
-    for (let i = 0; i < 7; i++) {
-      const rx = W * (0.05 + i * 0.15) + Math.sin(waveOffset * 0.007 + i * 1.3) * W * 0.025;
-      const rw = W * (0.025 + Math.sin(waveOffset * 0.011 + i) * 0.012);
-      const gr3 = ctx.createLinearGradient(rx, 0, rx + rw * 0.5, H * 0.85);
-      gr3.addColorStop(0, 'rgba(40,120,255,0.11)'); gr3.addColorStop(0.4, 'rgba(20,80,200,0.06)'); gr3.addColorStop(1, 'transparent');
-      ctx.fillStyle = gr3;
-      ctx.beginPath(); ctx.moveTo(rx - rw, 0); ctx.lineTo(rx + rw * 2, 0);
-      ctx.lineTo(rx + rw * 3, H * 0.85); ctx.lineTo(rx - rw * 2, H * 0.85); ctx.closePath(); ctx.fill();
+    if (beams > 0) {
+      ctx.save(); ctx.globalCompositeOperation = 'screen';
+      for (let i = 0; i < beams; i++) {
+        const rx = W * (0.05 + i * 0.15) + Math.sin(waveOffset * 0.007 + i * 1.3) * W * 0.025;
+        const rw = W * (0.025 + Math.sin(waveOffset * 0.011 + i) * 0.012);
+        const gr3 = ctx.createLinearGradient(rx, 0, rx + rw * 0.5, H * 0.85);
+        gr3.addColorStop(0, 'rgba(40,120,255,0.11)'); gr3.addColorStop(0.4, 'rgba(20,80,200,0.06)'); gr3.addColorStop(1, 'transparent');
+        ctx.fillStyle = gr3;
+        ctx.beginPath(); ctx.moveTo(rx - rw, 0); ctx.lineTo(rx + rw * 2, 0);
+        ctx.lineTo(rx + rw * 3, H * 0.85); ctx.lineTo(rx - rw * 2, H * 0.85); ctx.closePath(); ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.restore();
     }
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.restore();
 
     ctx.save();
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < sparks; i++) {
       const px = (Math.sin(i * 127.4 + waveOffset * 0.005) * 0.5 + 0.5) * W;
       const py = (Math.cos(i * 93.7 + waveOffset * 0.003) * 0.5 + 0.5) * H;
       const pr = 0.6 + Math.sin(i * 31 + waveOffset * 0.04) * 0.4;
       const pa = 0.08 + Math.sin(i * 17 + waveOffset * 0.06) * 0.05;
       ctx.globalAlpha = Math.max(0, pa);
-      ctx.fillStyle = 'rgba(120,200,255,1)'; ctx.shadowColor = 'rgba(80,180,255,1)'; ctx.shadowBlur = 4;
+      ctx.fillStyle = 'rgba(120,200,255,1)'; ctx.shadowColor = 'rgba(80,180,255,1)';
+      ctx.shadowBlur = Math.max(0, Math.round(4 * DEEP_SHADOW_MUL));
       ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1; ctx.shadowBlur = 0;
     ctx.restore();
 
     ctx.save(); ctx.globalAlpha = 0.06; ctx.strokeStyle = 'rgba(60,140,255,1)'; ctx.lineWidth = 1;
-    for (let row = 0; row < 8; row++) {
-      const baseY = (H / 8) * row + H / 16;
+    for (let row = 0; row < gridRows; row++) {
+      const baseY = (H / gridRows) * row + H / (gridRows * 2);
       ctx.beginPath(); let first = true;
-      for (let x = 0; x <= W; x += 6) {
+      for (let x = 0; x <= W; x += gridStep) {
         const y = baseY + Math.sin(x * (0.012 + row * 0.002) + waveOffset * 0.025 + row * 0.8) * 8
           + Math.sin(x * (0.007 + row * 0.001) - waveOffset * 0.018 + row * 1.4) * 4;
         if (first) { ctx.moveTo(x, y); first = false; } else ctx.lineTo(x, y);
@@ -409,10 +437,10 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       const pulse = cornerPulse[i];
       cornerPulse[i] = Math.max(0, pulse - 0.045);
       ctx.save();
-      if (pulse > 0.01) { ctx.shadowColor = C[i].main; ctx.shadowBlur = 50 * pulse; }
+      if (pulse > 0.01) { ctx.shadowColor = C[i].main; ctx.shadowBlur = Math.max(0, Math.round(50 * pulse * DEEP_SHADOW_MUL)); }
       ctx.fillStyle = `rgba(${C[i].rgb},${0.12 + pulse * 0.55})`;
       ctx.beginPath(); roundRect(ctx, c.x - pad / 2, c.y - pad / 2, pad, pad, pad * 0.2); ctx.fill();
-      ctx.shadowBlur = pulse > 0.1 ? 20 * pulse : 0;
+      ctx.shadowBlur = pulse > 0.1 ? Math.max(0, Math.round(20 * pulse * DEEP_SHADOW_MUL)) : 0;
       ctx.strokeStyle = `rgba(${C[i].rgb},${0.3 + pulse * 0.7})`;
       ctx.lineWidth = 1.5 + pulse * 2.5;
       ctx.beginPath(); roundRect(ctx, c.x - pad / 2, c.y - pad / 2, pad, pad, pad * 0.2); ctx.stroke();
@@ -485,12 +513,19 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     [0, 5, 11].map((d) => d * REACT_TRAIN_SLOW_FACTOR).forEach((delay) => {
       g.ripples.push({ x, y, r: 0, maxR: L.current.pad * 2.6, color: C[ci].main, rgb: C[ci].rgb, life: 1, delay });
     });
-    for (let i = 0; i < 22; i++) g.particles.push(new BurstBubble(x, y, C[ci].main, C[ci].rgb));
-    for (let i = 0; i < 10; i++) g.particles.push(new BurstBubble(x, y, '#ffffff', '255,255,255'));
+    const MAX_PARTICLES = Math.min(320, perfBurst.maxParticles);
+    const burstColored = perfProfile === 'low' ? 9 : perfProfile === 'mid' ? 15 : 22;
+    const burstWhite = perfProfile === 'low' ? 3 : perfProfile === 'mid' ? 6 : 10;
+    const remaining = Math.max(0, MAX_PARTICLES - g.particles.length);
+    const cN = Math.min(burstColored, remaining);
+    for (let i = 0; i < cN; i++) g.particles.push(new BurstBubble(x, y, C[ci].main, C[ci].rgb));
+    const remaining2 = Math.max(0, MAX_PARTICLES - g.particles.length);
+    const wN = Math.min(burstWhite, remaining2);
+    for (let i = 0; i < wN; i++) g.particles.push(new BurstBubble(x, y, '#ffffff', '255,255,255'));
 
     if (g.combo >= 5 && g.combo % 5 === 0) showComboPop(g.combo);
     checkMilestone(g.combo);
-  }, [showComboPop, checkMilestone]);
+  }, [checkMilestone, perfBurst.maxParticles, perfProfile, showComboPop]);
 
   /* ─── applyAccel ─── */
   const applyAccel = useCallback(() => {
@@ -527,7 +562,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     drawDeepBg(ctx, g.waveOffset);
 
     // ambient bubbles
-    if (Math.random() < 0.06 && g.bubbles.length < 30) g.bubbles.push(new AmbientBubble(L.current));
+    if (Math.random() < DEEP_AMBIENT_PROB && g.bubbles.length < DEEP_AMBIENT_CAP) g.bubbles.push(new AmbientBubble(L.current));
     g.bubbles.forEach(b => { b.update(); b.draw(ctx); });
 
     drawCornerPads(ctx, g.cornerPulse as unknown as number[]);
@@ -564,7 +599,8 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       rp.r += rp.maxR * 0.07; rp.life -= 0.055;
       if (rp.life <= 0) { g.ripples.splice(i, 1); continue; }
       ctx.save(); ctx.globalAlpha = rp.life * 0.75;
-      ctx.strokeStyle = rp.color; ctx.shadowColor = rp.color; ctx.shadowBlur = 18 * rp.life;
+      ctx.strokeStyle = rp.color; ctx.shadowColor = rp.color;
+      ctx.shadowBlur = Math.max(0, Math.round(18 * rp.life * DEEP_SHADOW_MUL));
       ctx.lineWidth = 2.5 * rp.life;
       ctx.beginPath();
       for (let a = 0; a <= Math.PI * 2; a += 0.12) {
@@ -595,6 +631,25 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     const cv = canvasRef.current; if (!cv) return;
     resizeCv(); calcLayout();
 
+    DEEP_PERF = perfProfile;
+    DEEP_SHADOW_MUL = perfShadowMulVal;
+    if (perfProfile === 'low') {
+      DEEP_JELLY_BUB_CAP = 120;
+      DEEP_AMBIENT_PROB = 0.018;
+      DEEP_AMBIENT_CAP = 14;
+      DEEP_AMBIENT_START = 8;
+    } else if (perfProfile === 'mid') {
+      DEEP_JELLY_BUB_CAP = 190;
+      DEEP_AMBIENT_PROB = 0.035;
+      DEEP_AMBIENT_CAP = 22;
+      DEEP_AMBIENT_START = 12;
+    } else {
+      DEEP_JELLY_BUB_CAP = 250;
+      DEEP_AMBIENT_PROB = 0.06;
+      DEEP_AMBIENT_CAP = 30;
+      DEEP_AMBIENT_START = 18;
+    }
+
     const g: GameRef = {
       running: true,
       timeLeft: durationSec, elapsed: 0,
@@ -607,7 +662,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       cornerPulse: [0, 0, 0, 0],
       waveOffset: 0,
       jellies: [], particles: [], ripples: [],
-      bubbles: Array.from({ length: 18 }, () => new AmbientBubble(L.current, true)),
+      bubbles: Array.from({ length: DEEP_AMBIENT_START }, () => new AmbientBubble(L.current, true)),
     };
     G.current = g;
 
@@ -625,8 +680,8 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     const handleResize = () => { resizeCv(); calcLayout(); };
     window.addEventListener('resize', handleResize);
     return () => {
-      gg: {
-        const gg = G.current; if (!gg) break gg;
+      const gg = G.current;
+      if (gg) {
         gg.running = false;
         if (gg.timer) clearInterval(gg.timer);
         if (gg.raf) cancelAnimationFrame(gg.raf);
@@ -643,7 +698,9 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     >
       <style>{`
         :root { --dr-red:#FF3D6B; --dr-green:#00FFB2; --dr-blue:#2B8EFF; --dr-yellow:#FFE033; }
-        .dr-hud { position:absolute; top:0; left:0; right:0; height:60px; z-index:50; display:flex; align-items:stretch; background:rgba(2,11,24,.92); backdrop-filter:blur(20px); border-bottom:1px solid rgba(43,142,255,.12); padding:0 clamp(10px,2vw,26px); font-family:'Barlow Condensed',sans-serif; }
+        .dr-hud { position:absolute; top:0; left:0; right:0; height:60px; z-index:50; display:flex; align-items:stretch; background:rgba(2,11,24,.92); ${
+          hudBackdropBlur ? 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);' : ''
+        } border-bottom:1px solid rgba(43,142,255,.12); padding:0 clamp(10px,2vw,26px); font-family:'Barlow Condensed',sans-serif; }
         .dr-hud-cell { display:flex; flex-direction:column; justify-content:center; padding:0 clamp(8px,1.8vw,20px); border-right:1px solid rgba(255,255,255,.05); }
         .dr-hud-cell.grow { flex:1; align-items:center; border-right:none; }
         .dr-hud-key { font-size:9px; font-weight:700; letter-spacing:.2em; color:rgba(255,255,255,.25); text-transform:uppercase; }

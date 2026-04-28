@@ -6,7 +6,9 @@
 SELECT '🔧 warmup_programs_composite RLS 전용 수정...' as status;
 
 -- rls_is_admin() 없으면 정의 (이미 있으면 교체)
-CREATE OR REPLACE FUNCTION public.rls_is_admin()
+CREATE SCHEMA IF NOT EXISTS private;
+
+CREATE OR REPLACE FUNCTION private.rls_is_admin()
 RETURNS boolean
 LANGUAGE sql
 STABLE
@@ -44,19 +46,19 @@ CREATE POLICY "warmup_composite_select_one" ON warmup_programs_composite
   FOR SELECT TO authenticated
   USING (
     (is_active = true AND (SELECT auth.uid()) IS NOT NULL)
-    OR (SELECT public.rls_is_admin())
+    OR (SELECT private.rls_is_admin())
   );
 
 CREATE POLICY "warmup_composite_insert_one" ON warmup_programs_composite
   FOR INSERT TO authenticated
-  WITH CHECK ((SELECT public.rls_is_admin()));
+  WITH CHECK ((SELECT private.rls_is_admin()));
 
 CREATE POLICY "warmup_composite_update_one" ON warmup_programs_composite
   FOR UPDATE TO authenticated
-  USING ((SELECT public.rls_is_admin())) WITH CHECK ((SELECT public.rls_is_admin()));
+  USING ((SELECT private.rls_is_admin())) WITH CHECK ((SELECT private.rls_is_admin()));
 
 CREATE POLICY "warmup_composite_delete_one" ON warmup_programs_composite
   FOR DELETE TO authenticated
-  USING ((SELECT public.rls_is_admin()));
+  USING ((SELECT private.rls_is_admin()));
 
 SELECT '✅ warmup_programs_composite 정책 적용 (SELECT/INSERT/UPDATE/DELETE 각 1개)' as status;

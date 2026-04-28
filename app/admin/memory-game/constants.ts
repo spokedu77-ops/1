@@ -182,6 +182,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 3, name: '3번', enName: 'PATTERN', desc: '두 색이 동시에 낙하 — 양발로 두 색 콘을 동시에 밟습니다.' },
       { id: 4, name: '4번', enName: 'Diagonal', desc: '모서리에서 중앙 2×2 패드로 날아오는 유성 자극 — 색에 맞는 콘으로 밟습니다. 30초 후 가속이 들어갑니다.' },
       { id: 5, name: '5번', enName: 'Deep Reaction', desc: '심해에서 중앙을 향해 헤엄치는 해파리 — 모서리 패드에 닿기 전에 해당 색 콘을 밟습니다. 30초 후 주기적으로 가속됩니다.' },
+      { id: 6, name: '6번', enName: 'Eclipse', desc: '코너에서 색이 잠식되듯 퍼집니다. 자극이 기준 지점에 도달하면 해당 색 콘으로 반응합니다.' },
     ],
   },
 };

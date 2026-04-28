@@ -6,7 +6,9 @@
 SELECT '🔧 Chat RLS 전용 수정...' as status;
 
 -- rls_is_admin() 없으면 정책에서 사용 불가하므로 정의 (이미 있으면 교체)
-CREATE OR REPLACE FUNCTION public.rls_is_admin()
+CREATE SCHEMA IF NOT EXISTS private;
+
+CREATE OR REPLACE FUNCTION private.rls_is_admin()
 RETURNS boolean
 LANGUAGE sql
 STABLE
@@ -50,14 +52,14 @@ END $$;
 -- 테이블당 정책 1개: admin만 접근 (auth 1회 평가)
 CREATE POLICY "chat_rooms_one" ON chat_rooms
   FOR ALL TO authenticated
-  USING ((SELECT public.rls_is_admin())) WITH CHECK ((SELECT public.rls_is_admin()));
+  USING ((SELECT private.rls_is_admin())) WITH CHECK ((SELECT private.rls_is_admin()));
 
 CREATE POLICY "chat_messages_one" ON chat_messages
   FOR ALL TO authenticated
-  USING ((SELECT public.rls_is_admin())) WITH CHECK ((SELECT public.rls_is_admin()));
+  USING ((SELECT private.rls_is_admin())) WITH CHECK ((SELECT private.rls_is_admin()));
 
 CREATE POLICY "chat_participants_one" ON chat_participants
   FOR ALL TO authenticated
-  USING ((SELECT public.rls_is_admin())) WITH CHECK ((SELECT public.rls_is_admin()));
+  USING ((SELECT private.rls_is_admin())) WITH CHECK ((SELECT private.rls_is_admin()));
 
 SELECT '✅ Chat 정책 적용 (테이블당 1개, rls_is_admin)' as status;

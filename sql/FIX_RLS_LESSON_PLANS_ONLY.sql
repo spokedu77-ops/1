@@ -6,7 +6,9 @@
 SELECT '🔧 lesson_plans RLS 전용 수정...' as status;
 
 -- ========== STABLE 헬퍼 (Auth 경고 감소) ==========
-CREATE OR REPLACE FUNCTION public.rls_is_admin()
+CREATE SCHEMA IF NOT EXISTS private;
+
+CREATE OR REPLACE FUNCTION private.rls_is_admin()
 RETURNS boolean
 LANGUAGE sql
 STABLE
@@ -43,7 +45,7 @@ CREATE POLICY "lesson_plans_select_one" ON lesson_plans
   FOR SELECT TO authenticated
   USING (
     EXISTS (SELECT 1 FROM sessions s WHERE s.id = lesson_plans.session_id AND s.created_by = (SELECT auth.uid()))
-    OR (SELECT public.rls_is_admin())
+    OR (SELECT private.rls_is_admin())
   );
 
 CREATE POLICY "lesson_plans_teacher_insert" ON lesson_plans FOR INSERT TO authenticated

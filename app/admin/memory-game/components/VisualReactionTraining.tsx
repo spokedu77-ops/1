@@ -1,6 +1,16 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  getReactTrainPerfProfile,
+  perfFlashMaxAliveBubbles,
+  perfParticleBudget,
+  perfShadowMul,
+  perfUseBackdropBlur,
+} from '../lib/reactTrainPerf';
+
+/** 캔버스 클래스 draw에서 공유(프로필은 마운트 시 1회 고정) */
+let VRT_SHADOW_MUL = 1;
 
 const HUD_H = 72;
 const PAD_H = 76;
@@ -20,8 +30,6 @@ export type ReactTrainVariant = 'flow' | 'flash' | 'pattern';
 const REACT_TRAIN_SLOW_FACTOR = 2;
 const REACT_TRAIN_MIN_STIM_GAP_MS = 1000;
 
-// Lv.2(FLASH)용: "너무 느리진 않게" 겹침만 적당히 제한
-const FLASH_MAX_ALIVE_BUBBLES = 3;
 // Lv.2(FLASH): 터짐 위치를 하단 패드 근처가 아니라 화면 중간~하단 사이로 올림
 const FLASH_TRIGGER_Y_RATIO = 0.72;
 
@@ -136,7 +144,7 @@ class FlowTile {
 
     ctx.save();
     ctx.shadowColor = this.color.main;
-    ctx.shadowBlur = 24;
+    ctx.shadowBlur = Math.max(0, Math.round(24 * VRT_SHADOW_MUL));
     const grd = ctx.createLinearGradient(0, top, 0, top + dh);
     grd.addColorStop(0, '#ffffff');
     grd.addColorStop(0.22, this.color.main);
@@ -209,13 +217,13 @@ class FlashBubble {
     ctx.save();
     ctx.shadowColor = this.color.main;
     // 렉 완화: 매 프레임 radialGradient 생성은 비용이 커서, 단순 fill로 대체
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = Math.max(0, Math.round(18 * VRT_SHADOW_MUL));
     ctx.strokeStyle = this.color.main;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = Math.max(0, Math.round(12 * VRT_SHADOW_MUL));
     ctx.fillStyle = this.color.main;
     ctx.globalAlpha = 0.55;
     ctx.beginPath();
@@ -241,17 +249,18 @@ class Particle {
   dec: number;
   r: number;
   grav: number;
-  constructor(x: number, y: number, color: string) {
+  constructor(x: number, y: number, color: string, scale = 1) {
     this.x = x;
     this.y = y;
     this.color = color;
     const a = Math.random() * Math.PI * 2;
-    const s = Math.random() * 10 + 3;
+    const sc = Math.max(0.5, Math.min(3, scale));
+    const s = (Math.random() * 10 + 3) * sc;
     this.vx = Math.cos(a) * s;
-    this.vy = Math.sin(a) * s - 2;
+    this.vy = Math.sin(a) * s - 2 * sc;
     this.life = 1;
     this.dec = Math.random() * 0.03 + 0.02;
-    this.r = Math.random() * 5 + 2;
+    this.r = (Math.random() * 5 + 2) * sc;
     this.grav = 0.2;
   }
   update() {
@@ -264,7 +273,7 @@ class Particle {
     ctx.save();
     ctx.globalAlpha = Math.max(0, this.life);
     ctx.shadowColor = this.color;
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = Math.max(0, Math.round(12 * VRT_SHADOW_MUL));
     ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
@@ -366,6 +375,12 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
   const lv = Math.max(1, Math.min(7, speedLevel));
   const spName = SPD_NAMES[lv - 1] ?? '보통';
 
+  const perfProfile = useMemo(() => getReactTrainPerfProfile(), []);
+  const perfShadowMulVal = useMemo(() => perfShadowMul(perfProfile), [perfProfile]);
+  const perfParticles = useMemo(() => perfParticleBudget(perfProfile), [perfProfile]);
+  const perfFlashMax = useMemo(() => perfFlashMaxAliveBubbles(perfProfile), [perfProfile]);
+  const hudBackdropBlur = useMemo(() => perfUseBackdropBlur(perfProfile), [perfProfile]);
+
   const lastStimAtMsRef = useRef<number>(-Infinity);
   const pendingPatternLanesRef = useRef<number[]>([]);
 
@@ -448,15 +463,16 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
 
       const c = RT_COLORS[lane].main;
       // 파티클은 누적되면 프레임 드랍이 커서 상한을 둠 (시각적 느낌은 유지)
-      const MAX_PARTICLES = 420;
+      const MAX_PARTICLES = perfParticles.maxParticles;
       const remaining = Math.max(0, MAX_PARTICLES - g.particles.length);
-      const wantColored = 38;
-      const wantWhite = 8;
+      const wantColored = perfParticles.burstColored;
+      const wantWhite = perfParticles.burstWhite;
+      const boomScale = g.mode === 'flash' ? 2 : 1;
       const colored = Math.min(wantColored, remaining);
-      for (let i = 0; i < colored; i++) g.particles.push(new Particle(x, y, c));
+      for (let i = 0; i < colored; i++) g.particles.push(new Particle(x, y, c, boomScale));
       const remaining2 = Math.max(0, MAX_PARTICLES - g.particles.length);
       const white = Math.min(wantWhite, remaining2);
-      for (let i = 0; i < white; i++) g.particles.push(new Particle(x, y, '#ffffff'));
+      for (let i = 0; i < white; i++) g.particles.push(new Particle(x, y, '#ffffff', boomScale));
       if (g.combo >= 5 && g.combo % 5 === 0) {
         const pop = comboRef.current;
         const nEl = comboNRef.current;
@@ -494,7 +510,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       root.appendChild(m);
       setTimeout(() => m.remove(), 900 * REACT_TRAIN_SLOW_FACTOR);
     },
-    []
+    [perfParticles]
   );
 
   const tryTriggerStim = useCallback(
@@ -553,6 +569,8 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
   useEffect(() => {
     const cv = cvRef.current;
     if (!cv) return;
+
+    VRT_SHADOW_MUL = perfShadowMulVal;
 
     const g: GameState = {
       running: true,
@@ -620,7 +638,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       const y = g.hitY;
       ctx.save();
       ctx.shadowColor = '#fff';
-      ctx.shadowBlur = 18;
+      ctx.shadowBlur = Math.max(0, Math.round(18 * perfShadowMulVal));
       ctx.fillStyle = 'rgba(255,255,255,.85)';
       ctx.fillRect(0, y - 1, cv.width, 2);
       ctx.shadowBlur = 0;
@@ -633,7 +651,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
         const cx = i * g.lw + g.lw / 2;
         ctx.save();
         ctx.shadowColor = c.main;
-        ctx.shadowBlur = 22;
+        ctx.shadowBlur = Math.max(0, Math.round(22 * perfShadowMulVal));
         ctx.fillStyle = c.main;
         ctx.beginPath();
         ctx.moveTo(cx, y - 11);
@@ -668,7 +686,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
         g.objs.push(new FlowTile(g, cv, lane));
       } else if (g.mode === 'flash') {
         // Lv.2(FLASH): 연쇄 폭발은 막되, 너무 느려지지 않게 "동시 존재 수"만 제한
-        if (countAliveFlashBubbles(g.objs) < FLASH_MAX_ALIVE_BUBBLES) g.objs.push(new FlashBubble(g, cv));
+        if (countAliveFlashBubbles(g.objs) < perfFlashMax) g.objs.push(new FlashBubble(g, cv));
       } else {
         const pair = randomPair();
         g.objs.push(new FlowTile(g, cv, pair[0], true));
@@ -764,7 +782,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, lv, tryStimLane, tryStimBubble, flushPatternIfReady, variant]);
+  }, [durationSec, endGame, flushPatternIfReady, lv, perfFlashMax, perfShadowMulVal, tryStimBubble, tryStimLane, variant]);
 
   const uid = useId();
   return (
@@ -775,6 +793,9 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
         }}
       />
       <style>{css}</style>
+      {!hudBackdropBlur ? (
+        <style>{`#vrt #vrt-hud{backdrop-filter:none;-webkit-backdrop-filter:none}`}</style>
+      ) : null}
       <div id="vrt-hud">
         <div className="vrt-hc">
           <div className="vrt-hk">Time</div>

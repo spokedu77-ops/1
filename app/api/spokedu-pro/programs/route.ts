@@ -15,8 +15,41 @@ import {
   isMainTheme,
   isGroupSize,
 } from '@/app/lib/spokedu-pro/programClassification';
+import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 
 const DB_READY = process.env.SPOKEDU_PRO_PROGRAMS_DB_READY === 'true';
+
+/** 본편 curriculum과 동일 제목·URL(정규화) 키 — Pro 뱅크 찌꺼기(커리큘럼에 없는 행) 검색 제외용 */
+function programCurriculumKey(title: string, videoUrl: string | null | undefined): string {
+  const t = stripMonthWeekPrefix(String(title ?? '').trim());
+  const u = String(videoUrl ?? '').trim();
+  return `${t}|${u}`;
+}
+
+/** only_curriculum=1: 본편 curriculum(title,url,id)과 맞는 프로그램만 남김 */
+async function filterProgramsToMainCurriculum(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  rows: Array<Record<string, unknown>>
+): Promise<Array<Record<string, unknown>>> {
+  const { data: curr, error } = await supabase.from('curriculum').select('id,title,url').eq('is_sub', false);
+  if (error) return rows;
+  if (!curr?.length) return [];
+  const keySet = new Set<string>();
+  const idSet = new Set<number>();
+  for (const r of curr as Array<{ id: number; title?: string | null; url?: string | null }>) {
+    idSet.add(Number(r.id));
+    const t = stripMonthWeekPrefix(String(r.title ?? '').trim());
+    if (t) keySet.add(programCurriculumKey(t, r.url ?? ''));
+  }
+  return rows.filter((row) => {
+    const title = String(row.title ?? '');
+    const url = row.video_url as string | null | undefined;
+    if (keySet.has(programCurriculumKey(title, url))) return true;
+    const sid = Number(row.source_center_curriculum_id);
+    if (Number.isFinite(sid) && idSet.has(sid)) return true;
+    return false;
+  });
+}
 
 /** DB 미적용 시 목 데이터 (새 스키마 형태) */
 function getFallbackPrograms() {
@@ -51,6 +84,7 @@ export async function GET(request: NextRequest) {
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const limit = Math.min(Number(searchParams.get('limit') ?? '100'), 200);
   const offset = Number(searchParams.get('offset') ?? '0');
+  const onlyCurriculum = searchParams.get('only_curriculum') === '1';
   const debug = searchParams.get('debug') === '1' && process.env.NODE_ENV !== 'production';
 
   if (!DB_READY) {
@@ -59,7 +93,8 @@ export async function GET(request: NextRequest) {
     const supabase = getServiceSupabase();
     const { data, error } = await supabase
       .from('curriculum')
-      .select('id,title,url,check_list,equipment,steps,expert_tip,display_order,month,week')
+      .select('id,title,url,check_list,equipment,steps,expert_tip,display_order,month,week,is_sub')
+      .eq('is_sub', false)
       .order('display_order', { ascending: true, nullsFirst: false })
       .order('id', { ascending: false });
 
@@ -91,7 +126,7 @@ export async function GET(request: NextRequest) {
     // import-center와 동일한 기본 분류(펑셔널 무브 기준)
     const mapped = rows
       .map((r) => {
-        const title = (r.title ?? '').trim();
+        const title = stripMonthWeekPrefix((r.title ?? '').trim());
         return {
           id: r.id,
           title,
@@ -132,6 +167,7 @@ export async function GET(request: NextRequest) {
     .from('spokedu_pro_programs')
     .select('*', { count: 'exact' })
     .eq('is_published', true)
+    .eq('center_curriculum_is_sub', false)
     // 최신 변경이 먼저 보이도록 정렬(센터 커리큘럼 업데이트가 즉시 눈에 띄게)
     .order('updated_at', { ascending: false, nullsFirst: false })
     .order('id', { ascending: false })
@@ -154,6 +190,26 @@ export async function GET(request: NextRequest) {
   }
 
   let { data, count, error } = await query;
+  // center_curriculum_is_sub 컬럼이 아직 없는 DB는 SUB 제외 조건 없이 재시도
+  if (error && /center_curriculum_is_sub|42703|column/i.test(String(error.message))) {
+    let q2 = supabase
+      .from('spokedu_pro_programs')
+      .select('*', { count: 'exact' })
+      .eq('is_published', true)
+      .order('updated_at', { ascending: false, nullsFirst: false })
+      .order('id', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (wantedFunctionType) {
+      q2 = q2.or(`function_type.eq.${wantedFunctionType},function_types.cs.{${wantedFunctionType}}`);
+    }
+    if (mainTheme && isMainTheme(mainTheme)) q2 = q2.eq('main_theme', mainTheme);
+    if (groupSize && isGroupSize(groupSize)) q2 = q2.eq('group_size', groupSize);
+    if (q) q2 = q2.ilike('title', `%${q}%`);
+    const second = await q2;
+    data = second.data;
+    count = second.count;
+    error = second.error;
+  }
   // DB 마이그레이션이 아직 적용되지 않은 환경(컬럼 없음)에서는 function_types 조건이 실패할 수 있으므로
   // 기존 단일 컬럼(function_type)만으로 즉시 폴백한다.
   if (error && wantedFunctionType && /function_types|column .*function_types/i.test(error.message)) {
@@ -177,9 +233,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  let rawRows = (data ?? []) as Array<Record<string, unknown> & { title?: string }>;
+  if (onlyCurriculum && DB_READY) {
+    rawRows = await filterProgramsToMainCurriculum(supabase, rawRows);
+  }
+
+  const normalized = rawRows.map((row) => ({
+    ...row,
+    title: stripMonthWeekPrefix(String(row.title ?? '')),
+  }));
+
+  const totalOut = onlyCurriculum && DB_READY ? normalized.length : count ?? 0;
+
   return NextResponse.json({
-    data: data ?? [],
-    total: count ?? 0,
+    data: normalized,
+    total: totalOut,
     limit,
     offset,
     source: 'db',

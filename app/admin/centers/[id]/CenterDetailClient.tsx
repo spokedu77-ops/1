@@ -6,7 +6,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCenterById } from '../actions/centers';
 import { updateCenter, deleteCenter, getActiveTeachers } from '../actions/centers';
-import { getCenterHistory, addCenterHistoryEntry } from '../actions/center-history';
+import {
+  getCenterHistory,
+  addCenterHistoryEntry,
+  updateCenterHistoryEntry,
+  deleteCenterHistoryEntry,
+} from '../actions/center-history';
 import type {
   Center,
   CenterHistoryEntry,
@@ -124,6 +129,10 @@ export function CenterDetailClient({ id }: { id: string }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyDraft, setHistoryDraft] = useState('');
   const [historySaving, setHistorySaving] = useState(false);
+  const [historyEditingId, setHistoryEditingId] = useState<string | null>(null);
+  const [historyEditBody, setHistoryEditBody] = useState('');
+  const [historyUpdating, setHistoryUpdating] = useState(false);
+  const [historyDeletingId, setHistoryDeletingId] = useState<string | null>(null);
   const [criminalUploading, setCriminalUploading] = useState(false);
 
   const loadCenter = useCallback(async () => {
@@ -185,8 +194,47 @@ export function CenterDetailClient({ id }: { id: string }) {
     }
   };
 
+  const handleDeleteHistoryEntry = async (entryId: string) => {
+    if (!confirm('이 히스토리를 삭제할까요?')) return;
+    setHistoryDeletingId(entryId);
+    try {
+      const res = await deleteCenterHistoryEntry(entryId);
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+      // 서버 재조회가 늦거나 캐시가 남아도 UX가 흔들리지 않도록 선제적으로 제거
+      setHistory((prev) => prev.filter((x) => x.id !== entryId));
+      const rows = await getCenterHistory(id);
+      setHistory(rows);
+      toast.success('삭제했습니다.');
+    } finally {
+      setHistoryDeletingId(null);
+    }
+  };
+
+  const handleSaveHistoryEdit = async (entryId: string) => {
+    setHistoryUpdating(true);
+    try {
+      const res = await updateCenterHistoryEntry(entryId, historyEditBody);
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+      setHistoryEditingId(null);
+      setHistoryEditBody('');
+      const rows = await getCenterHistory(id);
+      setHistory(rows);
+      toast.success('히스토리를 수정했습니다.');
+    } finally {
+      setHistoryUpdating(false);
+    }
+  };
+
   const openEditModal = () => {
     if (!center) return;
+    setHistoryEditingId(null);
+    setHistoryEditBody('');
     const existingSub = center.instructors_default?.sub?.trim() || '';
     const existingBackup = center.instructors_default?.backup ?? [];
     const mergedBackup = Array.from(
@@ -224,8 +272,30 @@ export function CenterDetailClient({ id }: { id: string }) {
     setIsEditOpen(true);
   };
 
-  const sanitizeFileName = (name: string) =>
-    name.replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, ' ').trim();
+  const sanitizeFileName = (name: string) => {
+    const raw = (name || '').trim();
+    const idx = raw.lastIndexOf('.');
+    const base = idx > 0 ? raw.slice(0, idx) : raw;
+    const ext = idx > 0 ? raw.slice(idx + 1) : '';
+
+    // Supabase Storage(S3 호환) object key에서 안전한 문자만 허용되도록 정리
+    // - 한글/특수문자는 '_'로 치환
+    // - 공백은 '_'로 통일
+    // - 확장자는 영숫자만 허용
+    const safeBase = base
+      .replace(/[\\/:*?"<>|]+/g, '_')
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9._-]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    const safeExt = ext
+      .replace(/[^a-zA-Z0-9]+/g, '')
+      .toLowerCase();
+
+    const finalBase = safeBase || 'file';
+    return safeExt ? `${finalBase}.${safeExt}` : finalBase;
+  };
 
   const handleCriminalFilesAdd = async (files: FileList | null) => {
     if (!center) return;
@@ -238,10 +308,13 @@ export function CenterDetailClient({ id }: { id: string }) {
         const safeName = sanitizeFileName(file.name || 'file');
         const path = `centers/${center.id}/criminal-check/${Date.now()}_${safeName}`;
         const uploadedPath = await uploadToStorageSigned(path, file, file.type || undefined);
-        setEditForm((f) => ({
-          ...f,
-          criminal_check_files: [...(f.criminal_check_files ?? []), { name: safeName, path: uploadedPath }],
-        }));
+        const nextFiles = [...(center.criminal_check_files ?? []), { name: safeName, path: uploadedPath }];
+        const res = await updateCenter(center.id, { criminal_check_files: nextFiles });
+        if (res.error) {
+          toast.error(res.error);
+          return;
+        }
+        if (res.data) setCenter(res.data);
       }
       toast.success('파일을 업로드했습니다.');
     } catch (err) {
@@ -252,11 +325,16 @@ export function CenterDetailClient({ id }: { id: string }) {
     }
   };
 
-  const removeCriminalFile = (idx: number) => {
-    setEditForm((f) => ({
-      ...f,
-      criminal_check_files: (f.criminal_check_files ?? []).filter((_, i) => i !== idx),
-    }));
+  const removeCriminalFile = async (idx: number) => {
+    if (!center) return;
+    const nextFiles = (center.criminal_check_files ?? []).filter((_, i) => i !== idx);
+    const res = await updateCenter(center.id, { criminal_check_files: nextFiles });
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    if (res.data) setCenter(res.data);
+    toast.success('첨부를 제거했습니다.');
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -297,9 +375,11 @@ export function CenterDetailClient({ id }: { id: string }) {
       });
       if (result.error) {
         setEditError(result.error);
+        toast.error(result.error);
       } else if (result.data) {
         setCenter(result.data);
         setIsEditOpen(false);
+        toast.success('센터 정보를 저장했습니다.');
       }
     } finally {
       setEditSubmitting(false);
@@ -526,18 +606,23 @@ export function CenterDetailClient({ id }: { id: string }) {
             )}
           </div>
 
-          {/* 범죄경력조회 */}
+          {/* 수업 일지 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
               <FileText className="h-3.5 w-3.5" />
-              범죄경력조회
+              수업 일지
             </div>
             <div className="text-sm text-slate-700 space-y-1">
               <p>
                 시설 ID: <span className="font-medium">{center.criminal_check_facility_id ?? '-'}</span>
               </p>
               <p>
-                시설 PW: <span className="text-slate-400">{center.criminal_check_facility_password ? '설정됨' : '미설정'}</span>
+                시설 PW:{' '}
+                <span className="font-medium break-all">
+                  {center.criminal_check_facility_password?.length
+                    ? center.criminal_check_facility_password
+                    : <span className="text-slate-400 font-normal">미설정</span>}
+                </span>
               </p>
               {(center.criminal_check_files?.length ?? 0) > 0 ? (
                 <ul className="mt-2 space-y-1">
@@ -600,10 +685,71 @@ export function CenterDetailClient({ id }: { id: string }) {
             <ul className="space-y-3 mb-4 max-h-72 overflow-y-auto">
               {history.map((h) => (
                 <li key={h.id} className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                    {new Date(h.created_at).toLocaleString('ko-KR')}
-                  </p>
-                  <p className="text-sm text-slate-800 whitespace-pre-wrap mt-0.5">{h.body}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <span />
+                    {historyEditingId !== h.id && (
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={historyDeletingId === h.id || historyUpdating}
+                          onClick={() => {
+                            setHistoryEditingId(h.id);
+                            setHistoryEditBody(h.body);
+                          }}
+                          className="rounded p-1 text-slate-500 hover:bg-white hover:text-indigo-600 disabled:opacity-50 cursor-pointer"
+                          title="수정"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={historyDeletingId === h.id || historyUpdating}
+                          onClick={() => void handleDeleteHistoryEntry(h.id)}
+                          className="rounded p-1 text-slate-500 hover:bg-white hover:text-red-600 disabled:opacity-50 cursor-pointer"
+                          title="삭제"
+                        >
+                          {historyDeletingId === h.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {historyEditingId === h.id ? (
+                    <div className="mt-2 space-y-2">
+                      <textarea
+                        rows={4}
+                        value={historyEditBody}
+                        onChange={(e) => setHistoryEditBody(e.target.value)}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled={historyUpdating}
+                          onClick={() => {
+                            setHistoryEditingId(null);
+                            setHistoryEditBody('');
+                          }}
+                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-white cursor-pointer"
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="button"
+                          disabled={historyUpdating}
+                          onClick={() => void handleSaveHistoryEdit(h.id)}
+                          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
+                        >
+                          {historyUpdating ? '저장 중…' : '저장'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-800 whitespace-pre-wrap mt-0.5">{h.body}</p>
+                  )}
                 </li>
               ))}
             </ul>
@@ -626,6 +772,58 @@ export function CenterDetailClient({ id }: { id: string }) {
               히스토리 추가
             </button>
           </div>
+        </div>
+
+        {/* 히스토리 하단: 수업 일지 첨부 파일(누적) */}
+        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <FileText className="h-3.5 w-3.5" />
+              수업 일지 첨부
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400">{(center.criminal_check_files?.length ?? 0)}개</span>
+              <label className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer">
+                <FileUp className="h-3.5 w-3.5 text-slate-500" />
+                {criminalUploading ? '업로드 중…' : '추가'}
+                <input
+                  type="file"
+                  multiple
+                  accept=".hwp,.doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
+                  disabled={criminalUploading}
+                  onChange={(e) => void handleCriminalFilesAdd(e.target.files)}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+          {(center.criminal_check_files?.length ?? 0) === 0 ? (
+            <p className="text-sm text-slate-400 mt-2">첨부 없음</p>
+          ) : (
+            <ul className="mt-2 space-y-1">
+              {(center.criminal_check_files ?? []).map((f, i) => (
+                <li key={`${f.path}-${i}`} className="flex items-center justify-between gap-2">
+                  <a
+                    href={getPublicUrl(f.path)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-indigo-600 hover:underline break-all"
+                  >
+                    {f.name}
+                  </a>
+                  <button
+                    type="button"
+                    disabled={criminalUploading}
+                    onClick={() => void removeCriminalFile(i)}
+                    className="rounded p-1 text-slate-500 hover:bg-white hover:text-red-600 disabled:opacity-50 cursor-pointer"
+                    title="삭제"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
@@ -812,9 +1010,9 @@ export function CenterDetailClient({ id }: { id: string }) {
                   </div>
                 </fieldset>
 
-                {/* 범죄경력조회 */}
+                {/* 수업 일지 */}
                 <fieldset className="space-y-3">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">범죄경력조회</legend>
+                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">수업 일지</legend>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">시설 아이디</label>
@@ -828,54 +1026,12 @@ export function CenterDetailClient({ id }: { id: string }) {
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">시설 비밀번호</label>
                       <input
-                        type="password"
+                        type="text"
+                        autoComplete="off"
                         value={editForm.criminal_check_facility_password}
                         onChange={(e) => setEditForm((f) => ({ ...f, criminal_check_facility_password: e.target.value }))}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-medium text-slate-600 mb-1">첨부 (한글/워드)</label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
-                          <FileUp className="h-4 w-4 text-slate-500" />
-                          {criminalUploading ? '업로드 중…' : '파일 추가'}
-                          <input
-                            type="file"
-                            multiple
-                            accept=".hwp,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                            disabled={criminalUploading}
-                            onChange={(e) => void handleCriminalFilesAdd(e.target.files)}
-                            className="hidden"
-                          />
-                        </label>
-                        <p className="text-xs text-slate-400">추가로 업로드하면 기존 첨부에 누적됩니다.</p>
-                      </div>
-                      {(editForm.criminal_check_files?.length ?? 0) === 0 ? (
-                        <p className="text-xs text-slate-400 mt-2">첨부 없음</p>
-                      ) : (
-                        <ul className="mt-2 space-y-1">
-                          {(editForm.criminal_check_files ?? []).map((f, i) => (
-                            <li key={`${f.path}-${i}`} className="flex items-center justify-between gap-2">
-                              <a
-                                href={getPublicUrl(f.path)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-xs text-indigo-600 hover:underline break-all"
-                              >
-                                {f.name}
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => removeCriminalFile(i)}
-                                className="text-xs text-slate-400 hover:text-red-600 cursor-pointer"
-                              >
-                                제거
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
                     </div>
                   </div>
                 </fieldset>

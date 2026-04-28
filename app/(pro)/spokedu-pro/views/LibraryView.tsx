@@ -237,18 +237,16 @@ export default function LibraryView({
     } else {
       const params = new URLSearchParams();
       params.set('limit', '200');
-      // 펑셔널 무브(협동 놀이) 기본 진입: 센터 커리큘럼 Import 대상만 먼저 노출
-      // 수동 필터/검색을 시작하면 전체 프로그램 뱅크로 확장
-      const hasManualFiltersLocal =
-        functionType !== '' || mainTheme !== '' || groupSize !== '' || search.trim() !== '';
-      if (isFunctionalPreset && !hasManualFiltersLocal) {
-        params.set('function_type', '협응력');
-        params.set('main_theme', '협동형');
-        params.set('group_size', '소그룹');
-      }
-      if (functionType) params.set('function_type', functionType);
-      if (mainTheme) params.set('main_theme', mainTheme);
-      if (groupSize) params.set('group_size', groupSize);
+      // 펑셔널 무브(co-op): 검색 시에도 기본 3종(협응력·협동형·소그룹)을 유지한다.
+      // 예전에는 검색만 켜질 때 이 조건이 빠져 DB 전체에서 q만 걸려, 목록 144밖 '찌꺼기' 행만 검색에 잡히는 문제가 있었다.
+      const effFunctionType = isFunctionalPreset && !functionType ? '협응력' : functionType;
+      const effMainTheme = isFunctionalPreset && !mainTheme ? '협동형' : mainTheme;
+      const effGroupSize = isFunctionalPreset && !groupSize ? '소그룹' : groupSize;
+      if (effFunctionType) params.set('function_type', effFunctionType);
+      if (effMainTheme) params.set('main_theme', effMainTheme);
+      if (effGroupSize) params.set('group_size', effGroupSize);
+      // 펑셔널 무브: 커리큘럼 본편에 없는 spokedu 행은 검색에도 나오지 않게(예: 후프 낚시 잔상)
+      if (isFunctionalPreset) params.set('only_curriculum', '1');
       if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
       fetch(`/api/spokedu-pro/programs?${params}`)
         .then((res) => res.json().then((json) => ({ res, json })))
@@ -275,7 +273,6 @@ export default function LibraryView({
     debouncedSearch,
     isScreenplayPreset,
     isFunctionalPreset,
-    search,
     refreshToken,
     screenplaysRefreshToken,
   ]);
@@ -285,12 +282,17 @@ export default function LibraryView({
   const hasManualFilters =
     functionType !== '' || mainTheme !== '' || groupSize !== '' || search.trim() !== '';
   const visiblePrograms = useMemo(() => {
-    // 펑셔널 무브 기본 진입 시에는 센터 커리큘럼 카드 144개만 우선 노출합니다.
-    if (isFunctionalPreset && !hasManualFilters && typeof functionalCap === 'number' && functionalCap > 0) {
+    // 펑셔널 무브: 검색어가 비어 있을 때만 상한(예: 144). 검색 중에는 같은 필터 풀 안에서만 넓힘.
+    if (
+      isFunctionalPreset &&
+      !search.trim() &&
+      typeof functionalCap === 'number' &&
+      functionalCap > 0
+    ) {
       return filteredPrograms.slice(0, functionalCap);
     }
     return filteredPrograms;
-  }, [isFunctionalPreset, hasManualFilters, filteredPrograms, functionalCap]);
+  }, [isFunctionalPreset, search, filteredPrograms, functionalCap]);
 
   /**
    * 검색어(q)는 서버에서도 걸지만, 실제 표시 타이틀은 programDetails(편집/보강)로 덮일 수 있어
@@ -334,6 +336,7 @@ export default function LibraryView({
     setGroupSize('');
     setSearch('');
     setDebouncedSearch('');
+    setProgramsFromApi(null);
   };
   const hasActiveFilters = hasManualFilters;
 
@@ -421,7 +424,15 @@ export default function LibraryView({
                 <input
                   type="text"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setSearch(v);
+                    // 비우는 순간: debouncedSearch 즉시 동기 + 목록 비움 → 스켈레톤 후 기본 목록만 다시 채움(찌꺼기 잔상 방지)
+                    if (!v.trim()) {
+                      setDebouncedSearch('');
+                      setProgramsFromApi(null);
+                    }
+                  }}
                   placeholder={tr('프로그램명 검색...')}
                   className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl text-white text-sm pl-10 pr-10 py-2.5 focus:outline-none focus:border-emerald-500/70 focus:ring-1 focus:ring-emerald-500/30"
                 />
@@ -431,6 +442,7 @@ export default function LibraryView({
                     onClick={() => {
                       setSearch('');
                       setDebouncedSearch('');
+                      setProgramsFromApi(null);
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white p-0.5 rounded-md hover:bg-slate-800"
                     aria-label={tr('지우기')}
@@ -511,7 +523,14 @@ export default function LibraryView({
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setSearch(v);
+                  if (!v.trim()) {
+                    setDebouncedSearch('');
+                    setProgramsFromApi(null);
+                  }
+                }}
                 placeholder={tr('프로그램명 검색...')}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white text-sm pl-10 pr-10 py-2.5 focus:outline-none focus:border-emerald-500"
               />
@@ -521,6 +540,7 @@ export default function LibraryView({
                   onClick={() => {
                     setSearch('');
                     setDebouncedSearch('');
+                    setProgramsFromApi(null);
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
                   aria-label={tr('지우기')}

@@ -5,7 +5,9 @@
 
 SELECT '🔧 sessions RLS 전용 수정...' as status;
 
-CREATE OR REPLACE FUNCTION public.rls_is_admin()
+CREATE SCHEMA IF NOT EXISTS private;
+
+CREATE OR REPLACE FUNCTION private.rls_is_admin()
 RETURNS boolean
 LANGUAGE sql
 STABLE
@@ -39,19 +41,19 @@ END $$;
 
 CREATE POLICY "sessions_select_one" ON sessions
   FOR SELECT TO authenticated
-  USING (created_by = (SELECT auth.uid()) OR (SELECT public.rls_is_admin()));
+  USING (created_by = (SELECT auth.uid()) OR (SELECT private.rls_is_admin()));
 
 CREATE POLICY "sessions_insert_one" ON sessions
   FOR INSERT TO authenticated
-  WITH CHECK (created_by = (SELECT auth.uid()) OR (SELECT public.rls_is_admin()));
+  WITH CHECK (created_by = (SELECT auth.uid()) OR (SELECT private.rls_is_admin()));
 
 CREATE POLICY "sessions_update_one" ON sessions
   FOR UPDATE TO authenticated
-  USING (created_by = (SELECT auth.uid()) OR (SELECT public.rls_is_admin()))
-  WITH CHECK (created_by = (SELECT auth.uid()) OR (SELECT public.rls_is_admin()));
+  USING (created_by = (SELECT auth.uid()) OR (SELECT private.rls_is_admin()))
+  WITH CHECK (created_by = (SELECT auth.uid()) OR (SELECT private.rls_is_admin()));
 
 CREATE POLICY "sessions_delete_one" ON sessions
   FOR DELETE TO authenticated
-  USING ((SELECT public.rls_is_admin()));
+  USING ((SELECT private.rls_is_admin()));
 
 SELECT '✅ sessions 정책 적용 (SELECT/INSERT/UPDATE/DELETE 각 1개)' as status;

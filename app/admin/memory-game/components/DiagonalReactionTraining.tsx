@@ -1,7 +1,17 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import {
+  getReactTrainPerfProfile,
+  perfParticleBudget,
+  perfShadowMul,
+  perfUseBackdropBlur,
+} from '../lib/reactTrainPerf';
+
+let DRT_SHADOW_MUL = 1;
+let DRT_TRAIL_MAX = 20;
+let DRT_SPARK_CAP = 180;
 
 const HUD_H = 64;
 const BG = '#06060E';
@@ -133,7 +143,7 @@ class MeteorSpark {
     ctx.save();
     ctx.globalAlpha = Math.max(0, this.life);
     ctx.shadowColor = this.color;
-    ctx.shadowBlur = 6;
+    ctx.shadowBlur = Math.max(0, Math.round(6 * DRT_SHADOW_MUL));
     ctx.fillStyle = this.life > 0.5 ? '#ffffff' : this.color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
@@ -175,7 +185,7 @@ class Particle {
     ctx.save();
     ctx.globalAlpha = Math.max(0, this.life);
     ctx.shadowColor = this.color;
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = Math.max(0, Math.round(12 * DRT_SHADOW_MUL));
     ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
@@ -221,7 +231,7 @@ class Tile {
     this.fired = false;
     this.dead = false;
     this.trail = [];
-    this.trailMax = 20;
+    this.trailMax = DRT_TRAIL_MAX;
     this.sparkTimer = 0;
   }
 
@@ -231,7 +241,7 @@ class Tile {
     this.x += this.vx * this.speed;
     this.y += this.vy * this.speed;
     this.sparkTimer++;
-    if (this.sparkTimer % 3 === 0 && g.particles.length < 180) {
+    if (this.sparkTimer % 3 === 0 && g.particles.length < DRT_SPARK_CAP) {
       g.particles.push(new MeteorSpark(this.x, this.y, this.color.main));
     }
     const dx = this.tx - this.x;
@@ -266,7 +276,7 @@ class Tile {
       ctx.lineWidth = lw;
       ctx.lineCap = 'round';
       ctx.shadowColor = col;
-      ctx.shadowBlur = lw * 2.5;
+      ctx.shadowBlur = Math.max(0, Math.round(lw * 2.5 * DRT_SHADOW_MUL));
       ctx.stroke();
     }
     const tailStart = this.trail[Math.max(0, tlen - 12)]!;
@@ -277,7 +287,7 @@ class Tile {
     ctx.globalAlpha = 0.55;
     ctx.lineWidth = this.size * 0.45;
     ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = this.size * 1.5;
+    ctx.shadowBlur = Math.max(0, Math.round(this.size * 1.5 * DRT_SHADOW_MUL));
     ctx.stroke();
     ctx.restore();
     ctx.save();
@@ -294,7 +304,7 @@ class Tile {
     ctx.arc(hx, hy, hr * 3.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowColor = col;
-    ctx.shadowBlur = hr * 4;
+    ctx.shadowBlur = Math.max(0, Math.round(hr * 4 * DRT_SHADOW_MUL));
     const mid = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr * 1.4);
     mid.addColorStop(0, `rgba(${rgb},0.9)`);
     mid.addColorStop(0.6, col);
@@ -303,7 +313,7 @@ class Tile {
     ctx.beginPath();
     ctx.arc(hx, hy, hr * 1.4, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = hr * 2;
+    ctx.shadowBlur = Math.max(0, Math.round(hr * 2 * DRT_SHADOW_MUL));
     ctx.shadowColor = '#ffffff';
     const core = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr * 0.55);
     core.addColorStop(0, '#ffffff');
@@ -363,6 +373,11 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
   const lv = Math.max(1, Math.min(7, speedLevel));
   const spName = SPD_NAMES[lv - 1] ?? '보통';
 
+  const perfProfile = useMemo(() => getReactTrainPerfProfile(), []);
+  const perfShadowMulVal = useMemo(() => perfShadowMul(perfProfile), [perfProfile]);
+  const perfParticles = useMemo(() => perfParticleBudget(perfProfile), [perfProfile]);
+  const hudBackdropBlur = useMemo(() => perfUseBackdropBlur(perfProfile), [perfProfile]);
+
   const endGame = useCallback(() => {
     const g = gRef.current;
     if (!g) return;
@@ -400,6 +415,18 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
   useEffect(() => {
     const cv = cvRef.current;
     if (!cv) return;
+
+    DRT_SHADOW_MUL = perfShadowMulVal;
+    if (perfProfile === 'low') {
+      DRT_TRAIL_MAX = 10;
+      DRT_SPARK_CAP = 110;
+    } else if (perfProfile === 'mid') {
+      DRT_TRAIL_MAX = 14;
+      DRT_SPARK_CAP = 150;
+    } else {
+      DRT_TRAIL_MAX = 20;
+      DRT_SPARK_CAP = 180;
+    }
 
     const g: GameState = {
       running: true,
@@ -511,8 +538,13 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
         life: 0.5,
         delay: 8,
       });
-      for (let i = 0; i < 30; i++) g.particles.push(new Particle(x, y, col.main));
-      for (let i = 0; i < 8; i++) g.particles.push(new Particle(x, y, '#ffffff'));
+      const MAX_PARTICLES = perfParticles.maxParticles;
+      const remaining = Math.max(0, MAX_PARTICLES - g.particles.length);
+      const colored = Math.min(perfParticles.burstColored, remaining);
+      for (let i = 0; i < colored; i++) g.particles.push(new Particle(x, y, col.main));
+      const remaining2 = Math.max(0, MAX_PARTICLES - g.particles.length);
+      const white = Math.min(perfParticles.burstWhite, remaining2);
+      for (let i = 0; i < white; i++) g.particles.push(new Particle(x, y, '#ffffff'));
       if (g.combo >= 5 && g.combo % 5 === 0) {
         const pop = comboRef.current;
         const nEl = comboNRef.current;
@@ -606,7 +638,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
         ctx.save();
         if (pulse > 0.01) {
           ctx.shadowColor = C[i].main;
-          ctx.shadowBlur = 40 * pulse;
+          ctx.shadowBlur = Math.max(0, Math.round(40 * pulse * perfShadowMulVal));
         }
         const alpha = 0.18 + pulse * 0.65;
         ctx.fillStyle = `rgba(${C[i].rgb},${alpha})`;
@@ -668,7 +700,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
         ctx.globalAlpha = s.life * 0.85;
         ctx.strokeStyle = s.color;
         ctx.shadowColor = s.color;
-        ctx.shadowBlur = 28 * s.life;
+        ctx.shadowBlur = Math.max(0, Math.round(28 * s.life * perfShadowMulVal));
         ctx.lineWidth = 4 * s.life;
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
@@ -765,7 +797,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, lv, onExit]);
+  }, [durationSec, endGame, lv, onExit, perfParticles, perfProfile, perfShadowMulVal]);
 
   return (
     <div className="drt" id="drt">
@@ -775,6 +807,9 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
         }}
       />
       <style>{css}</style>
+      {!hudBackdropBlur ? (
+        <style>{`#drt #drt-hud{backdrop-filter:none;-webkit-backdrop-filter:none}`}</style>
+      ) : null}
       <div id="drt-hud">
         <div className="drt-hc">
           <div className="drt-hk">Time</div>

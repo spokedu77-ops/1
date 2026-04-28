@@ -13,7 +13,9 @@
 
 -- 1) is_admin() 이 LOWER(role) + is_admin 컬럼 반영하도록 통일 (선택 사항이지만 권장)
 --    기존에 role = 'ADMIN' 만 보는 버전이 있으면 아래로 통일.
-CREATE OR REPLACE FUNCTION public.is_admin()
+CREATE SCHEMA IF NOT EXISTS private;
+
+CREATE OR REPLACE FUNCTION private.is_admin()
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -34,11 +36,11 @@ CREATE POLICY "users_update_admin_or_self" ON public.users
   FOR UPDATE TO authenticated
   USING (
     id = (SELECT auth.uid())
-    OR (SELECT public.is_admin())
+    OR (SELECT private.is_admin())
   )
   WITH CHECK (
     id = (SELECT auth.uid())
-    OR (SELECT public.is_admin())
+    OR (SELECT private.is_admin())
   );
 
 -- SELECT 정책은 그대로 두거나, 이미 auth.uid() 만 쓰고 있으면 변경 없음
