@@ -126,7 +126,10 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
   const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const teacherMap = useMemo(() => {
     const map: Record<string, string> = {};
-    teachers.forEach((t) => (map[t.id] = t.name ?? ''));
+    teachers.forEach((t) => {
+      if (!t?.id) return;
+      map[t.id] = t.name ?? '';
+    });
     return map;
   }, [teachers]);
   const [bulkTeacherId, setBulkTeacherId] = useState<string>('');

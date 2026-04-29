@@ -271,7 +271,10 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const bundleBulkRef = useRef({ teacher: {} as Record<string, string>, price: {} as Record<string, string> });
   const teacherMap = useMemo(() => {
     const map: Record<string, string> = {};
-    teachers.forEach((t) => (map[t.id] = t.name));
+    teachers.forEach((t) => {
+      if (!t?.id) return;
+      map[t.id] = t.name ?? "";
+    });
     return map;
   }, [teachers]);
 
