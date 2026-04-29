@@ -95,8 +95,36 @@ export default function SpokeduProClient({
   }, [searchParams, switchView, refresh]);
 
   const [toolkitOpen, setToolkitOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (toolkitOpen) {
+      document.documentElement.setAttribute('data-sp-toolkit-open', '1');
+    } else {
+      document.documentElement.removeAttribute('data-sp-toolkit-open');
+    }
+    return () => {
+      document.documentElement.removeAttribute('data-sp-toolkit-open');
+    };
+  }, [toolkitOpen]);
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
-  const [drawerContext, setDrawerContext] = useState<{ role?: string; themeKey?: string } | null>(null);
+  const [drawerContext, setDrawerContext] = useState<{
+    role?: string;
+    themeKey?: string;
+    screenplay?: boolean;
+    row?: {
+      id?: number;
+      title?: string;
+      video_url?: string | null;
+      function_type?: string | null;
+      function_types?: string[] | null;
+      main_theme?: string | null;
+      group_size?: string | null;
+      mode_id?: string | null;
+      preset_ref?: string | null;
+      thumbnail_url?: string | null;
+    };
+  } | null>(null);
   /** 라이브러리(프로그램 뱅크) 탭 전용 상세 모달 — 로드맵 등과 분리 */
   const [libraryDrawerProgramId, setLibraryDrawerProgramId] = useState<number | null>(null);
   const [libraryDrawerContext, setLibraryDrawerContext] = useState<{
@@ -291,7 +319,6 @@ export default function SpokeduProClient({
         functionTypes: functionTypes.length > 0 ? functionTypes : undefined,
         functionType: row.function_type ?? undefined,
         mainTheme: row.main_theme ?? undefined,
-        groupSize: row.group_size ?? undefined,
         checklist: row.checklist ?? undefined,
         equipment: row.equipment ?? undefined,
         activityMethod: row.activity_method ?? undefined,
@@ -319,11 +346,14 @@ export default function SpokeduProClient({
   );
   const libraryDrawerOpen = viewId === 'library' && libraryDrawerProgramId !== null;
   const globalDrawerOpen = drawerProgramId !== null;
+  const globalScreenplayDrawer = drawerProgramId !== null && drawerContext?.screenplay === true;
   const resolvedDrawerProgramId = libraryDrawerOpen ? libraryDrawerProgramId : drawerProgramId;
   const resolvedDrawerContext = libraryDrawerOpen ? libraryDrawerContext : drawerContext;
-  const libraryScreenplayDetail =
-    libraryDrawerOpen && libraryDrawerContext?.screenplay && libraryDrawerProgramId != null
-      ? programDetailsForDrawer[screenplayDetailStorageKey(libraryDrawerProgramId)]
+  const drawerIsScreenplay =
+    (libraryDrawerOpen && libraryDrawerContext?.screenplay === true) || globalScreenplayDrawer;
+  const screenplayOverlayDetail =
+    drawerIsScreenplay && resolvedDrawerProgramId != null
+      ? programDetailsForDrawer[screenplayDetailStorageKey(resolvedDrawerProgramId)]
       : undefined;
 
   const computeScreenplayDisplayTags = useCallback(
@@ -346,17 +376,18 @@ export default function SpokeduProClient({
   );
 
   const screenplayDrawerTags = useMemo(() => {
-    if (!libraryDrawerOpen || !libraryDrawerContext?.screenplay || resolvedDrawerProgramId == null) {
+    if (!drawerIsScreenplay || resolvedDrawerProgramId == null) {
       return undefined;
     }
     const sp = screenplayById[resolvedDrawerProgramId];
-    const row = libraryDrawerContext.row ?? undefined;
-    const chips = computeScreenplayDisplayTags(sp, row);
+    const row = libraryDrawerOpen ? libraryDrawerContext?.row : drawerContext?.row;
+    const chips = computeScreenplayDisplayTags(sp, row ?? undefined);
     return chips.length > 0 ? chips : undefined;
   }, [
+    drawerIsScreenplay,
     libraryDrawerOpen,
-    libraryDrawerContext?.screenplay,
     libraryDrawerContext?.row,
+    drawerContext?.row,
     resolvedDrawerProgramId,
     screenplayById,
     computeScreenplayDisplayTags,
@@ -364,9 +395,9 @@ export default function SpokeduProClient({
 
   const drawerProgramDetail = useMemo(() => {
     if (resolvedDrawerProgramId == null) return null;
-    if (libraryDrawerOpen && libraryDrawerContext?.screenplay) {
+    if (drawerIsScreenplay) {
       const sp = screenplayById[resolvedDrawerProgramId];
-      return mergeScreenplayProgramDetailForDrawer(sp, libraryScreenplayDetail);
+      return mergeScreenplayProgramDetailForDrawer(sp, screenplayOverlayDetail);
     }
     const fromMap = programDetailsForDrawer[String(resolvedDrawerProgramId)] ?? null;
     if (fromMap) return fromMap;
@@ -383,15 +414,14 @@ export default function SpokeduProClient({
       functionTypes: fnTypes.length > 0 ? fnTypes : undefined,
       functionType: snap.function_type ?? undefined,
       mainTheme: snap.main_theme ?? undefined,
-      groupSize: snap.group_size ?? undefined,
     };
   }, [
     resolvedDrawerProgramId,
+    drawerIsScreenplay,
     libraryDrawerOpen,
-    libraryDrawerContext?.screenplay,
     libraryDrawerContext?.row,
     screenplayById,
-    libraryScreenplayDetail,
+    screenplayOverlayDetail,
     programDetailsForDrawer,
   ]);
 
@@ -427,7 +457,6 @@ export default function SpokeduProClient({
         function_types: fnTypes.length > 0 ? fnTypes : undefined,
         function_type: primaryFnType || undefined,
         main_theme: detail.mainTheme,
-        group_size: detail.groupSize,
         checklist: detail.checklist,
         equipment: detail.equipment,
         activity_method: detail.activityMethod,
@@ -454,16 +483,38 @@ export default function SpokeduProClient({
     [adminContent?.program_details, saveContentDraft, fetchContent, fetchBlocks, tr, refreshProgramsFromApi]
   );
 
-  const openDrawer = useCallback((id: number, context?: { role?: string; themeKey?: string }) => {
-    trackSpokeduProEvent('spokedu_pro_week_card_open', {
-      programId: id,
-      source: 'dashboard_drawer',
-      role: context?.role,
-      themeKey: context?.themeKey,
-    });
-    setDrawerProgramId(id);
-    setDrawerContext(context ?? null);
-  }, []);
+  const openDrawer = useCallback(
+    (
+      id: number,
+      context?: {
+        role?: string;
+        themeKey?: string;
+        screenplay?: boolean;
+        row?: {
+          id?: number;
+          title?: string;
+          video_url?: string | null;
+          function_type?: string | null;
+          function_types?: string[] | null;
+          main_theme?: string | null;
+          group_size?: string | null;
+          mode_id?: string | null;
+          preset_ref?: string | null;
+          thumbnail_url?: string | null;
+        };
+      }
+    ) => {
+      trackSpokeduProEvent('spokedu_pro_week_card_open', {
+        programId: id,
+        source: context?.screenplay ? 'dashboard_screenplay_drawer' : 'dashboard_drawer',
+        role: context?.role,
+        themeKey: context?.themeKey,
+      });
+      setDrawerProgramId(id);
+      setDrawerContext(context ?? null);
+    },
+    []
+  );
   const openLibraryProgramDetail = useCallback(
     (id: number, context?: { role?: string; themeKey?: string; screenplay?: boolean }) => {
       trackSpokeduProEvent('spokedu_pro_week_card_open', {
@@ -640,6 +691,7 @@ export default function SpokeduProClient({
           <SettingsView />
         </div>
       </main>
+      </div>
 
       <SpokeduProToolkit
         open={toolkitOpen}
@@ -655,19 +707,17 @@ export default function SpokeduProClient({
         themeKey={resolvedDrawerContext?.themeKey}
         isEditMode={isEditMode}
         onSaveProgramDetail={isEditMode ? handleSaveProgramDetail : undefined}
-        detailKind={libraryDrawerOpen && libraryDrawerContext?.screenplay ? 'screenplay' : 'program'}
+        detailKind={drawerIsScreenplay ? 'screenplay' : 'program'}
         screenplayTags={screenplayDrawerTags}
         onLaunchMemoryGame={
-          libraryDrawerOpen &&
-          libraryDrawerContext?.screenplay &&
-          resolvedDrawerProgramId != null &&
-          screenplayById[resolvedDrawerProgramId]
+          drawerIsScreenplay && resolvedDrawerProgramId != null && screenplayById[resolvedDrawerProgramId]
             ? () => {
                 const id = resolvedDrawerProgramId;
                 if (id == null) return;
                 const sp = screenplayById[id];
                 const { mode, level } = getSpomoveLaunchParams(sp.modeId, sp.presetRef);
-                const tagChips = computeScreenplayDisplayTags(sp, libraryDrawerContext?.row ?? undefined);
+                const rowSnap = libraryDrawerOpen ? libraryDrawerContext?.row : drawerContext?.row;
+                const tagChips = computeScreenplayDisplayTags(sp, rowSnap ?? undefined);
                 setMemoryGameModal({
                   open: true,
                   mode,
@@ -809,7 +859,6 @@ export default function SpokeduProClient({
         </>
       )}
 
-      </div>
       </SpokeduProErrorBoundary>
     </div>
   );

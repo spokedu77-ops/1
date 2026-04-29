@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { DEFAULT_DASHBOARD_V4 } from '@/app/lib/spokedu-pro/dashboardDefaults';
+import { mergePublishedDashboardV4 } from '@/app/lib/spokedu-pro/dashboardDefaults';
 import { getCurrentWeekLabel } from '@/app/lib/spokedu-pro/weekUtils';
 
 async function getUserId(): Promise<string | null> {
@@ -35,8 +35,8 @@ export async function GET() {
   const value = row?.published_value ?? null;
   const data =
     value && typeof value === 'object' && !Array.isArray(value) && 'weekTheme' in value && 'row2' in value
-      ? (value as typeof DEFAULT_DASHBOARD_V4)
-      : DEFAULT_DASHBOARD_V4;
+      ? mergePublishedDashboardV4(value)
+      : mergePublishedDashboardV4(null);
 
   const weekLabel = getCurrentWeekLabel();
   return NextResponse.json({ data, weekLabel });

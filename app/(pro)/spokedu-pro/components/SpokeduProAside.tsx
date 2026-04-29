@@ -204,11 +204,7 @@ export default function SpokeduProAside({
           <button
             key={id}
             type="button"
-            onClick={() =>
-              id === 'library'
-                ? onOpenLibraryAll()
-                : onSwitchView(id)
-            }
+            onClick={() => (id === 'library' ? onOpenLibraryAll() : onSwitchView(id))}
             aria-label={t(label)}
             aria-current={viewId === id ? 'page' : undefined}
             className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${

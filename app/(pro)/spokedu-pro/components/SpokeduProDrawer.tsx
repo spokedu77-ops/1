@@ -4,7 +4,7 @@ import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useEffect, useRef } from 'react';
 import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb, Gamepad2 } from 'lucide-react';
 import type { ProgramDetail } from '../types';
-import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
+import { FUNCTION_TYPES, MAIN_THEMES, extractEquipmentDisplayTags } from '@/app/lib/spokedu-pro/programClassification';
 import { getYouTubeId } from '@/app/(pro)/spokedu-pro/utils/youtube';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 
@@ -50,7 +50,6 @@ export default function SpokeduProDrawer({
     functionTypes: [] as string[],
     functionType: '',
     mainTheme: '',
-    groupSize: '',
     checklist: '',
     equipment: '',
     activityMethod: '',
@@ -68,7 +67,6 @@ export default function SpokeduProDrawer({
         (Array.isArray(d?.functionTypes) ? d?.functionTypes : d?.functionType ? [d.functionType] : []) ?? [],
       functionType: d?.functionType ?? '',
       mainTheme: d?.mainTheme ?? '',
-      groupSize: d?.groupSize ?? '',
       checklist: d?.checklist ?? '',
       equipment: d?.equipment ?? '',
       activityMethod: d?.activityMethod ?? '',
@@ -83,7 +81,6 @@ export default function SpokeduProDrawer({
     d?.videoUrl,
     d?.functionType,
     d?.mainTheme,
-    d?.groupSize,
     d?.checklist,
     d?.equipment,
     d?.activityMethod,
@@ -100,14 +97,14 @@ export default function SpokeduProDrawer({
     : (editForm.functionTypes.length > 0 ? editForm.functionTypes : (d?.functionType ? [d.functionType] : (editForm.functionType ? [editForm.functionType] : [])));
   const functionType = d?.functionType ?? editForm.functionType; // legacy fallback
   const mainTheme = d?.mainTheme ?? editForm.mainTheme;
-  const groupSize = d?.groupSize ?? editForm.groupSize;
   const checklist = d?.checklist ?? editForm.checklist;
   const equipment = d?.equipment ?? editForm.equipment;
   const activityMethod = d?.activityMethod ?? editForm.activityMethod;
   const activityTip = d?.activityTip ?? editForm.activityTip;
   const videoId = getYouTubeId(videoUrl);
 
-  const tags = [...functionTypes, mainTheme, groupSize].filter(Boolean).slice(0, 3);
+  const tags =
+    detailKind === 'program' ? extractEquipmentDisplayTags(equipment) : [...functionTypes, mainTheme].filter(Boolean).slice(0, 3);
   const tagChips =
     detailKind === 'screenplay' && Array.isArray(screenplayTags) && screenplayTags.length > 0
       ? screenplayTags.slice(0, 3)
@@ -123,7 +120,6 @@ export default function SpokeduProDrawer({
         (Array.isArray(d?.functionTypes) ? d?.functionTypes : d?.functionType ? [d.functionType] : []) ?? [],
       functionType: d?.functionType ?? '',
       mainTheme: d?.mainTheme ?? '',
-      groupSize: d?.groupSize ?? '',
       checklist: d?.checklist ?? '',
       equipment: d?.equipment ?? '',
       activityMethod: d?.activityMethod ?? '',
@@ -145,7 +141,6 @@ export default function SpokeduProDrawer({
           functionTypes: editForm.functionTypes.length > 0 ? editForm.functionTypes : undefined,
           functionType: editForm.functionType.trim() || undefined,
           mainTheme: editForm.mainTheme.trim() || undefined,
-          groupSize: editForm.groupSize.trim() || undefined,
           checklist: editForm.checklist.trim() || undefined,
           equipment: editForm.equipment.trim() || undefined,
           activityMethod: editForm.activityMethod.trim() || undefined,
@@ -170,7 +165,6 @@ export default function SpokeduProDrawer({
         : (d?.functionType ? [d.functionType] : (functionTypes ?? [])),
       functionType: d?.functionType ?? functionType ?? '',
       mainTheme: d?.mainTheme ?? mainTheme ?? '',
-      groupSize: d?.groupSize ?? groupSize ?? '',
       checklist: d?.checklist ?? checklist ?? '',
       equipment: d?.equipment ?? equipment ?? '',
       activityMethod: d?.activityMethod ?? activityMethod ?? '',
@@ -412,7 +406,7 @@ export default function SpokeduProDrawer({
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">{tr('기능 종류')}</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">{tr('신체 기능')}</label>
                 <div className="flex flex-wrap gap-2">
                   {FUNCTION_TYPES.map((ft) => {
                     const selected = editForm.functionTypes.includes(ft);
@@ -444,7 +438,7 @@ export default function SpokeduProDrawer({
                 </p>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">{tr('메인테마')}</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">{tr('활동 테마')}</label>
                 <select
                   className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
                   value={editForm.mainTheme}
@@ -454,20 +448,6 @@ export default function SpokeduProDrawer({
                   <option value="">{tr('선택')}</option>
                   {MAIN_THEMES.map((mt) => (
                     <option key={mt} value={mt}>{tr(mt)}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">{tr('인원구성')}</label>
-                <select
-                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
-                  value={editForm.groupSize}
-                  onChange={(e) => setEditForm((f) => ({ ...f, groupSize: e.target.value }))}
-                  style={{ colorScheme: 'dark' }}
-                >
-                  <option value="">{tr('선택')}</option>
-                  {GROUP_SIZES.map((gs) => (
-                    <option key={gs} value={gs}>{tr(gs)}</option>
                   ))}
                 </select>
               </div>

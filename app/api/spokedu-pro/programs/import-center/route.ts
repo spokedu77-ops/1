@@ -1,3 +1,8 @@
+/**
+ * 센터 curriculum → spokedu_pro_programs 동기화.
+ * - UPDATE: URL·체크리스트·교구·활동 단계·팁 + curriculum 행 연결만 반영 (제목·분류 등 Pro 독립 필드는 덮어쓰지 않음)
+ * - INSERT: 신규 행은 제목·본문·기본 분류·발행까지 한 번에 생성
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 
@@ -19,6 +24,18 @@ function toMultiline(value: string[] | null): string | null {
   if (!Array.isArray(value) || value.length === 0) return null;
   const lines = value.map((v) => String(v ?? '').trim()).filter(Boolean);
   return lines.length > 0 ? lines.join('\n') : null;
+}
+
+/** 기존 Pro 행 UPDATE 전용 — 커리큘럼에서 동기화하는 본문 5종 + 행 연결 */
+function buildCurriculumSyncBody(row: CurriculumRow, videoUrl: string) {
+  return {
+    video_url: videoUrl || null,
+    checklist: toMultiline(row.check_list),
+    equipment: toMultiline(row.equipment),
+    activity_method: toMultiline(row.steps),
+    activity_tip: row.expert_tip?.trim() || null,
+    source_center_curriculum_id: row.id,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -47,16 +64,28 @@ export async function POST(req: NextRequest) {
 
   const { data: existingRows, error: existingError } = await supabase
     .from('spokedu_pro_programs')
-    .select('id,title,video_url,is_published');
+    .select('id,title,video_url,is_published,source_center_curriculum_id');
 
   if (existingError) {
     return NextResponse.json({ error: existingError.message }, { status: 500 });
   }
 
-  const existing = (existingRows ?? []) as Array<{ id: number; title: string | null; video_url: string | null; is_published?: boolean | null }>;
+  const existing = (existingRows ?? []) as Array<{
+    id: number;
+    title: string | null;
+    video_url: string | null;
+    is_published?: boolean | null;
+    source_center_curriculum_id?: number | null;
+  }>;
+  /** 커리큘럼 행 id → Pro 행 id (URL·제목이 바뀌어도 동일 프로그램으로 업데이트되게) */
+  const byCenterCurriculumId = new Map<number, number>();
   const byTitleAndUrl = new Map<string, { id: number }>();
   const byVideoUrl = new Map<string, number[]>();
   for (const row of existing) {
+    const cid = Number(row.source_center_curriculum_id);
+    if (Number.isFinite(cid) && cid > 0 && !byCenterCurriculumId.has(cid)) {
+      byCenterCurriculumId.set(cid, row.id);
+    }
     const t = (row.title ?? '').trim();
     const v = (row.video_url ?? '').trim();
     const key = `${t}|${v}`;
@@ -104,41 +133,53 @@ export async function POST(req: NextRequest) {
     }
 
     const key = `${title}|${videoUrl}`;
-    const payload = {
+    const updatePayload = buildCurriculumSyncBody(row, videoUrl);
+    const insertPayload = {
       title,
       video_url: videoUrl || null,
-      // 센터 커리큘럼 기본 매핑(펑셔널 무브 기준)
       function_type: '협응력',
       main_theme: '협동형',
       group_size: '소그룹',
-      checklist: toMultiline(row.check_list),
-      equipment: toMultiline(row.equipment),
-      activity_method: toMultiline(row.steps),
-      activity_tip: row.expert_tip?.trim() || null,
+      checklist: updatePayload.checklist,
+      equipment: updatePayload.equipment,
+      activity_method: updatePayload.activity_method,
+      activity_tip: updatePayload.activity_tip,
       is_published: true,
-      /** curriculum.id — SUB로 바뀌거나 삭제된 뒤 동기화 시 Pro에서 빼기 위해 유지 */
       source_center_curriculum_id: row.id,
     };
 
-    // 제목 변경으로 기존 row가 남는 문제 방지:
-    // 1) video_url이 있으면 video_url로 먼저 매칭(같은 영상은 동일 프로그램으로 간주)
-    // 2) 없으면 title+url로 매칭(기존 방식)
+    // 매칭 우선순위:
+    // 1) source_center_curriculum_id = curriculum.id — URL을 인스타→유튜브로 바꿔도 동일 Pro 행을 갱신
+    // 2) video_url 동일(같은 영상 공유)
+    // 3) title|video_url 키(레거시·최초 동기화 전 행)
+    // 4) 제목이 Pro에서 딱 1건이고, 다른 커리큘럼에 이미 연결되지 않았으면 URL 교체·구마이그레이션 행으로 간주
+    const matchByCurriculumId = byCenterCurriculumId.get(row.id) ?? null;
     const matchByUrl = videoUrl ? (byVideoUrl.get(videoUrl)?.[0] ?? null) : null;
     const matchByKey = byTitleAndUrl.get(key)?.id ?? null;
-    const matchId = matchByUrl ?? matchByKey;
+    let matchByLoneTitle: number | null = null;
+    if (matchByCurriculumId == null && matchByUrl == null && matchByKey == null) {
+      const hits = existing.filter((e) => (e.title ?? '').trim() === title);
+      if (hits.length === 1) {
+        const sid = hits[0].source_center_curriculum_id;
+        if (sid == null || sid === row.id) {
+          matchByLoneTitle = hits[0].id;
+        }
+      }
+    }
+    const matchId = matchByCurriculumId ?? matchByUrl ?? matchByKey ?? matchByLoneTitle;
     if (matchId) {
-      let { error } = await supabase.from('spokedu_pro_programs').update(payload).eq('id', matchId);
+      let { error } = await supabase.from('spokedu_pro_programs').update(updatePayload).eq('id', matchId);
       if (error && /source_center_curriculum_id|42703|column/i.test(String(error.message))) {
-        const { source_center_curriculum_id: _s, ...rest } = payload;
+        const { source_center_curriculum_id: _s, ...rest } = updatePayload;
         ({ error } = await supabase.from('spokedu_pro_programs').update(rest).eq('id', matchId));
       }
       if (error) errors.push({ curriculumId: row.id, message: error.message });
       else updated += 1;
       if (videoUrl) keptIdByVideoUrl.set(videoUrl, matchId);
     } else {
-      let { data: ins, error } = await supabase.from('spokedu_pro_programs').insert(payload).select('id,video_url').single();
+      let { data: ins, error } = await supabase.from('spokedu_pro_programs').insert(insertPayload).select('id,video_url').single();
       if (error && /source_center_curriculum_id|42703|column/i.test(String(error.message))) {
-        const { source_center_curriculum_id: _s, ...rest } = payload;
+        const { source_center_curriculum_id: _s, ...rest } = insertPayload;
         ({ data: ins, error } = await supabase.from('spokedu_pro_programs').insert(rest).select('id,video_url').single());
       }
       if (error) {

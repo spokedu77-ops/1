@@ -56,9 +56,17 @@ export interface Row2Block {
   items: DashboardItemRow2[];
 }
 
+/** 로드맵 하단: 카탈로그 교구 1종 기준 프로그램 4개 추천(API 조회). null이면 섹션 숨김 */
+export interface EquipmentSpotlightConfig {
+  equipmentCatalogItem: string;
+  /** 비우면 로드맵에서 교구명 기반 기본 제목 사용 */
+  sectionTitle?: string;
+}
+
 export interface DashboardV4 {
   weekTheme: WeekTheme;
   row2: Row2Block;
+  equipmentSpotlight: EquipmentSpotlightConfig | null;
 }
 
 const defaultWeekTheme: WeekTheme = {
@@ -90,7 +98,48 @@ const defaultRow2: Row2Block = {
 export const DEFAULT_DASHBOARD_V4: DashboardV4 = {
   weekTheme: defaultWeekTheme,
   row2: defaultRow2,
+  equipmentSpotlight: {
+    equipmentCatalogItem: '후프',
+  },
 };
+
+/** tenant/API에 저장된 객체를 기본값과 병합(구버전 payload에 equipmentSpotlight 없을 때 대비) */
+export function mergePublishedDashboardV4(stored: unknown): DashboardV4 {
+  const b = DEFAULT_DASHBOARD_V4;
+  if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
+    return b;
+  }
+  const s = stored as Partial<DashboardV4>;
+  if (!s.weekTheme || !s.row2) {
+    return b;
+  }
+  const weekTheme: WeekTheme = {
+    ...b.weekTheme,
+    ...s.weekTheme,
+    items: Array.isArray(s.weekTheme.items) && s.weekTheme.items.length > 0 ? s.weekTheme.items : b.weekTheme.items,
+  };
+  const row2: Row2Block = {
+    ...b.row2,
+    ...s.row2,
+    items: Array.isArray(s.row2.items) && s.row2.items.length > 0 ? s.row2.items : b.row2.items,
+  };
+  let equipmentSpotlight: DashboardV4['equipmentSpotlight'];
+  if (s.equipmentSpotlight === null) {
+    equipmentSpotlight = null;
+  } else if (
+    s.equipmentSpotlight &&
+    typeof s.equipmentSpotlight === 'object' &&
+    typeof (s.equipmentSpotlight as EquipmentSpotlightConfig).equipmentCatalogItem === 'string'
+  ) {
+    equipmentSpotlight = {
+      ...(b.equipmentSpotlight ?? { equipmentCatalogItem: '후프' }),
+      ...s.equipmentSpotlight,
+    };
+  } else {
+    equipmentSpotlight = b.equipmentSpotlight;
+  }
+  return { weekTheme, row2, equipmentSpotlight };
+}
 
 /** Admin/뷰 공용: programId → 표시용 메타. 1~100 더미. 실제 연동 시 catalog 교체 */
 const THEMES = ['인트로 프로그램', '협동 놀이체육', '스피드리액션', '인지 발달', '챌린지', '술래 대결', '변형스포츠'];

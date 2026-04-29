@@ -12,6 +12,7 @@ import {
 } from '../../utils/todayClassStorage';
 
 const WEEKDAYS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+const CARD_SPACING = 'space-y-4 md:space-y-5';
 
 export default function TodayClassCard({
   weekThemeKey,
@@ -80,7 +81,7 @@ export default function TodayClassCard({
 
   if (classes.length === 0) {
     return (
-      <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 space-y-4">
+      <div className={`rounded-2xl bg-slate-800 border border-slate-700 p-5 md:p-6 ${CARD_SPACING}`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-slate-400 text-sm font-bold">{dateLabel}</p>
         </div>
@@ -99,11 +100,11 @@ export default function TodayClassCard({
   }
 
   return (
-    <div className="rounded-2xl bg-slate-800 border border-slate-700 p-5 md:p-6 space-y-5">
+    <div className={`rounded-2xl bg-slate-800 border border-slate-700 p-5 md:p-6 ${CARD_SPACING}`}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <p className="text-slate-400 text-sm font-bold">{dateLabel}</p>
-          <h3 className="text-lg font-black text-white mt-1">{t('오늘의 수업')}</h3>
+          <p className="text-slate-400 text-xs md:text-[13px] lg:text-sm font-bold">{dateLabel}</p>
+          <h3 className="text-base md:text-[1.02rem] lg:text-lg font-black text-white mt-1">{t('오늘의 수업')}</h3>
         </div>
         <div className="relative min-w-[160px]">
           <label className="sr-only" htmlFor="today-class-select">
@@ -113,7 +114,7 @@ export default function TodayClassCard({
             id="today-class-select"
             value={selectedClass?.id ?? ''}
             onChange={(e) => updatePersisted({ selectedClassId: e.target.value || null })}
-            className="w-full appearance-none bg-slate-900 border border-slate-600 rounded-xl pl-4 pr-10 py-2.5 text-white text-sm font-bold focus:outline-none focus:border-amber-500/60"
+            className="w-full appearance-none bg-slate-900 border border-slate-600 rounded-xl pl-4 pr-10 py-2.5 text-white text-xs md:text-[13px] lg:text-sm font-bold focus:outline-none focus:border-amber-500/60"
           >
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
@@ -125,7 +126,7 @@ export default function TodayClassCard({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 sm:gap-2">
+      <div className="flex items-center gap-1 md:gap-1.5 lg:gap-2">
         {(['준비 완료', '수업 중', '수업 마무리'] as const).map((label, i) => {
           const labelTr = t(label);
           const done = i < filledBars;
@@ -133,7 +134,7 @@ export default function TodayClassCard({
           return (
             <div key={label} className="flex-1 flex items-center gap-2 min-w-0">
               <div
-                className={`h-2 flex-1 rounded-full transition-colors ${
+                className={`h-1.5 md:h-2 flex-1 rounded-full transition-colors ${
                   done ? 'bg-amber-400' : current ? 'bg-amber-400/50 ring-1 ring-amber-400/40' : 'bg-slate-700'
                 }`}
               />

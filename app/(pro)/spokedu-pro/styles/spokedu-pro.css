@@ -92,6 +92,18 @@
   z-index: 10;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
 }
+.spokedu-pro .thumb-grade {
+  filter: saturate(0.82) contrast(1.05) brightness(0.92);
+}
+@media (max-width: 767px) {
+  .spokedu-pro .media-card:hover {
+    transform: none;
+    box-shadow: 0 16px 22px -14px rgba(0, 0, 0, 0.7);
+  }
+  .spokedu-pro .thumb-grade {
+    filter: saturate(0.86) contrast(1.04) brightness(0.95);
+  }
+}
 
 /* 패널은 항상 absolute — 툴킷 컨테이너가 FAB 크기만 차지해 스크롤/레이아웃이 줄어들지 않음 */
 .spokedu-pro .tool-panel {
@@ -149,4 +161,13 @@
 .spokedu-pro input:not([type="button"]):not([type="submit"]):not([type="reset"]),
 .spokedu-pro textarea {
   cursor: text;
+}
+
+/* 모바일: 수업 보조 툴킷 패널 열림 시 언어 pill 숨김(레이아웃은 layout.tsx — 전역 선택자) */
+@media (max-width: 767px) {
+  html[data-sp-toolkit-open='1'] .spokedu-pro-lang-switcher {
+    visibility: hidden;
+    pointer-events: none;
+    opacity: 0;
+  }
 }

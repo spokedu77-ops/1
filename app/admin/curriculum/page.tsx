@@ -1207,18 +1207,22 @@ export default function AdminCurriculumPage() {
     details: string[];
   };
 
+  /** 선행 탭·공백은 유지하고, 첫 `-` / `:` 목록 마커와 그 뒤 공백만 제거 */
+  const stripYuaDetailBulletMarker = (line: string): string => {
+    return line.replace(/^(\s*)[-:]\s*/, (_, indent: string) => indent).replace(/\s+$/, '');
+  };
+
   const parseYuaThemeParts = (steps?: string[]): YuaThemePart[] => {
     if (!steps || steps.length === 0) return [];
     const parts: YuaThemePart[] = [];
     let currentPart: YuaThemePart | null = null;
 
     for (const raw of steps) {
-      const line = raw.trim();
-      if (!line) continue;
+      if (!raw.trim()) continue;
 
-      const isDetailLine = line.startsWith('-') || line.startsWith(':');
+      const isDetailLine = /^\s*[-:]/.test(raw);
       if (!isDetailLine) {
-        currentPart = { title: line, details: [] };
+        currentPart = { title: raw.replace(/\s+$/, ''), details: [] };
         parts.push(currentPart);
         continue;
       }
@@ -1227,7 +1231,7 @@ export default function AdminCurriculumPage() {
         currentPart = { title: '세부 내용', details: [] };
         parts.push(currentPart);
       }
-      currentPart.details.push(line.replace(/^[-:]\s*/, '').trim());
+      currentPart.details.push(stripYuaDetailBulletMarker(raw));
     }
 
     return parts.filter((part) => part.title || part.details.length > 0);
@@ -1913,12 +1917,15 @@ export default function AdminCurriculumPage() {
                             <div className="space-y-3">
                               {parseYuaThemeParts(selectedItem.steps).map((part, i) => (
                                 <section key={`${part.title}-${i}`} className="space-y-2 rounded-2xl border border-slate-600/80 bg-[#323232] p-4">
-                                  <h4 className="text-sm font-black text-white">{part.title}</h4>
+                                  <h4 className="text-sm font-black text-white whitespace-pre-wrap [tab-size:4]">{part.title}</h4>
                                   {part.details.length > 0 ? (
-                                    <ul className="space-y-2">
+                                    <ul className="space-y-2 list-none pl-0">
                                       {part.details.map((detail, j) => (
-                                        <li key={`${detail}-${j}`} className="text-sm font-bold text-slate-200 leading-relaxed">
-                                          - {detail}
+                                        <li key={`yua-d-${i}-${j}`} className="flex gap-2 items-start text-sm font-bold text-slate-200 leading-relaxed">
+                                          <span className="text-slate-400 flex-shrink-0 select-none pt-0.5" aria-hidden>
+                                            -
+                                          </span>
+                                          <span className="min-w-0 flex-1 whitespace-pre-wrap [tab-size:4]">{detail}</span>
                                         </li>
                                       ))}
                                     </ul>
@@ -2161,8 +2168,13 @@ export default function AdminCurriculumPage() {
                 <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="네 번째 영상 링크 (선택)" value={personalPost.url4} onChange={e => setPersonalPost({ ...personalPost, url4: e.target.value })} />
               </div>
               <div className="space-y-2 text-left">
-                <label className="text-xs font-black text-slate-400 uppercase text-left">Activity Steps (엔터로 구분)</label>
-                <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-32 resize-none text-sm" placeholder="1. 준비 2. 이동 3. 마무리" value={personalPost.stepsText} onChange={e => setPersonalPost({ ...personalPost, stepsText: e.target.value })} />
+                <label className="text-xs font-black text-slate-400 uppercase text-left">Activity Steps (엔터로 구분{personalPost.category === '유아체육' ? ' · 탭·들여쓰기 유지' : ''})</label>
+                <textarea
+                  className={`w-full bg-slate-100 p-4 rounded-2xl outline-none h-32 resize-none text-sm ${personalPost.category === '유아체육' ? 'whitespace-pre-wrap [tab-size:4]' : ''}`}
+                  placeholder={personalPost.category === '유아체육' ? '섹션 제목\n  - 들여쓴 항목\n\t탭 들여쓰기' : '1. 준비 2. 이동 3. 마무리'}
+                  value={personalPost.stepsText}
+                  onChange={e => setPersonalPost({ ...personalPost, stepsText: e.target.value })}
+                />
               </div>
               <div className="space-y-2 text-left">
                 <label className="text-xs font-black text-slate-400 uppercase text-left">Expert Tip</label>

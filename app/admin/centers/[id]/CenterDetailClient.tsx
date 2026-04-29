@@ -44,6 +44,19 @@ import {
   FileText,
 } from 'lucide-react';
 
+function formatCenterHistoryDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 const STATUS_STYLES: Record<CenterStatus, string> = {
   active: 'bg-indigo-100 text-indigo-800',
   paused: 'bg-amber-100 text-amber-800',
@@ -606,11 +619,11 @@ export function CenterDetailClient({ id }: { id: string }) {
             )}
           </div>
 
-          {/* 수업 일지 */}
+          {/* 회보서 관련 정보 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
               <FileText className="h-3.5 w-3.5" />
-              수업 일지
+              회보서 관련 정보
             </div>
             <div className="text-sm text-slate-700 space-y-1">
               <p>
@@ -682,13 +695,31 @@ export function CenterDetailClient({ id }: { id: string }) {
           ) : history.length === 0 ? (
             <p className="text-sm text-slate-400 mb-3">등록된 히스토리가 없습니다.</p>
           ) : (
-            <ul className="space-y-3 mb-4 max-h-72 overflow-y-auto">
-              {history.map((h) => (
-                <li key={h.id} className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <span />
+            <ul className="space-y-3 mb-4 max-h-[28rem] overflow-y-auto pr-1">
+              {history.map((h, idx) => (
+                <li
+                  key={h.id}
+                  className="rounded-xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-900/5 overflow-hidden"
+                >
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50/90 px-3 py-2.5 sm:px-4">
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-600">
+                        <span className="inline-flex items-center gap-1 font-medium text-slate-700">
+                          <Clock className="h-3.5 w-3.5 shrink-0 text-indigo-500" aria-hidden />
+                          <time dateTime={h.created_at}>{formatCenterHistoryDate(h.created_at)}</time>
+                        </span>
+                        {idx === 0 && (
+                          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-800">
+                            최신
+                          </span>
+                        )}
+                      </div>
+                      {h.author_name ? (
+                        <p className="text-[11px] text-slate-500">작성: {h.author_name}</p>
+                      ) : null}
+                    </div>
                     {historyEditingId !== h.id && (
-                      <div className="flex shrink-0 items-center gap-1">
+                      <div className="flex shrink-0 items-center gap-0.5 rounded-lg border border-slate-200/80 bg-white p-0.5">
                         <button
                           type="button"
                           disabled={historyDeletingId === h.id || historyUpdating}
@@ -696,8 +727,9 @@ export function CenterDetailClient({ id }: { id: string }) {
                             setHistoryEditingId(h.id);
                             setHistoryEditBody(h.body);
                           }}
-                          className="rounded p-1 text-slate-500 hover:bg-white hover:text-indigo-600 disabled:opacity-50 cursor-pointer"
+                          className="rounded-md p-1.5 text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-50 cursor-pointer"
                           title="수정"
+                          aria-label="히스토리 수정"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
@@ -705,8 +737,9 @@ export function CenterDetailClient({ id }: { id: string }) {
                           type="button"
                           disabled={historyDeletingId === h.id || historyUpdating}
                           onClick={() => void handleDeleteHistoryEntry(h.id)}
-                          className="rounded p-1 text-slate-500 hover:bg-white hover:text-red-600 disabled:opacity-50 cursor-pointer"
+                          className="rounded-md p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-50 cursor-pointer"
                           title="삭제"
+                          aria-label="히스토리 삭제"
                         >
                           {historyDeletingId === h.id ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -717,44 +750,52 @@ export function CenterDetailClient({ id }: { id: string }) {
                       </div>
                     )}
                   </div>
-                  {historyEditingId === h.id ? (
-                    <div className="mt-2 space-y-2">
-                      <textarea
-                        rows={4}
-                        value={historyEditBody}
-                        onChange={(e) => setHistoryEditBody(e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          disabled={historyUpdating}
-                          onClick={() => {
-                            setHistoryEditingId(null);
-                            setHistoryEditBody('');
-                          }}
-                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-white cursor-pointer"
-                        >
-                          취소
-                        </button>
-                        <button
-                          type="button"
-                          disabled={historyUpdating}
-                          onClick={() => void handleSaveHistoryEdit(h.id)}
-                          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
-                        >
-                          {historyUpdating ? '저장 중…' : '저장'}
-                        </button>
+                  <div className="px-3 py-3 sm:px-4 sm:py-3.5">
+                    {historyEditingId === h.id ? (
+                      <div className="space-y-2">
+                        <p className="text-[11px] text-slate-500">
+                          등록 시각: {formatCenterHistoryDate(h.created_at)}
+                        </p>
+                        <textarea
+                          rows={4}
+                          value={historyEditBody}
+                          onChange={(e) => setHistoryEditBody(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            disabled={historyUpdating}
+                            onClick={() => {
+                              setHistoryEditingId(null);
+                              setHistoryEditBody('');
+                            }}
+                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+                          >
+                            취소
+                          </button>
+                          <button
+                            type="button"
+                            disabled={historyUpdating}
+                            onClick={() => void handleSaveHistoryEdit(h.id)}
+                            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
+                          >
+                            {historyUpdating ? '저장 중…' : '저장'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-800 whitespace-pre-wrap mt-0.5">{h.body}</p>
-                  )}
+                    ) : h.body.trim() ? (
+                      <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{h.body}</p>
+                    ) : (
+                      <p className="text-sm italic text-slate-400">내용이 비어 있습니다.</p>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
           )}
-          <div className="space-y-2">
+          <div className="mt-4 border-t border-slate-100 pt-4 space-y-2">
+            <p className="text-xs font-semibold text-slate-500">새 기록 추가</p>
             <textarea
               rows={3}
               placeholder="수업·계약·특이사항 등 기록을 남기세요."
@@ -774,12 +815,12 @@ export function CenterDetailClient({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* 히스토리 하단: 수업 일지 첨부 파일(누적) */}
+        {/* 히스토리 하단: 관련 파일 첨부(누적) */}
         <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
               <FileText className="h-3.5 w-3.5" />
-              수업 일지 첨부
+              관련 파일 첨부
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-400">{(center.criminal_check_files?.length ?? 0)}개</span>
@@ -1010,9 +1051,9 @@ export function CenterDetailClient({ id }: { id: string }) {
                   </div>
                 </fieldset>
 
-                {/* 수업 일지 */}
+                {/* 회보서 관련 정보 */}
                 <fieldset className="space-y-3">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">수업 일지</legend>
+                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">회보서 관련 정보</legend>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">시설 아이디</label>

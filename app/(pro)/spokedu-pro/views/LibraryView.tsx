@@ -4,7 +4,12 @@ import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useMemo, memo, useEffect, useRef } from 'react';
 import { Search, X, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
+import {
+  FUNCTION_TYPES,
+  MAIN_THEMES,
+  EQUIPMENT_CATALOG,
+  extractEquipmentDisplayTags,
+} from '@/app/lib/spokedu-pro/programClassification';
 import {
   THEME_KEYS,
   THEME_KEY_TO_BANK_THEME,
@@ -21,68 +26,149 @@ type ProgramRow = {
   id: number;
   title: string;
   function_type?: string | null;
+  function_types?: string[] | null;
   main_theme?: string | null;
   group_size?: string | null;
+  equipment?: string | null;
   video_url?: string | null;
   mode_id?: string | null;
   preset_ref?: string | null;
   thumbnail_url?: string | null;
 };
 
+type ProgramCardMetaSlot = { label: string; value: string };
+
+function buildProgramBankMetaSlots(p: ProgramRow, detail: ProgramDetail | undefined): ProgramCardMetaSlot[] {
+  const theme = String(detail?.mainTheme ?? p.main_theme ?? '').trim();
+  const fnFromDetail = Array.isArray(detail?.functionTypes) ? detail.functionTypes.filter(Boolean) : [];
+  const fnFromRow =
+    Array.isArray(p.function_types) && p.function_types.length > 0
+      ? p.function_types.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
+      : p.function_type
+        ? [p.function_type]
+        : [];
+  const fnFirst = (fnFromDetail[0] ?? fnFromRow[0] ?? '').trim();
+  const eqFirst = extractEquipmentDisplayTags(detail?.equipment ?? p.equipment ?? '')[0]?.trim() ?? '';
+  const dash = '—';
+  return [
+    { label: '활동 테마', value: theme || dash },
+    { label: '신체 기능', value: fnFirst || dash },
+    { label: '활용 교구', value: eqFirst || dash },
+  ];
+}
+
+/** 스트리밍 앱형: 포스터(16:9) + 하단 제목·메타 3칸 (넷플릭스/디즈니+류 레이아웃) */
 const ProgramCard = memo(function ProgramCard({
   title,
-  tags,
   thumbnailUrl,
+  metaSlots,
   onClick,
+  compact: compactCard = false,
 }: {
   title: string;
-  tags: string[];
   thumbnailUrl?: string | null;
+  metaSlots: ProgramCardMetaSlot[];
   onClick: () => void;
+  compact?: boolean;
 }) {
   const tr = useTranslator();
+  const slots = metaSlots.slice(0, 3);
   return (
-    <div
-      className="media-card relative w-full aspect-[4/3] rounded-2xl overflow-hidden group cursor-pointer border border-slate-700/80"
+    <button
+      type="button"
+      className={[
+        'group flex w-full flex-col overflow-hidden rounded-xl border text-left transition-all duration-300',
+        'border-slate-700/60 bg-slate-900/50 shadow-lg shadow-black/25',
+        'hover:-translate-y-1 hover:border-slate-500/70 hover:shadow-xl hover:shadow-black/35',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/45',
+      ].join(' ')}
       onClick={onClick}
-      role="button"
-      tabIndex={0}
       aria-label={tr(title)}
-      onKeyDown={(e) => e.key === 'Enter' && onClick()}
     >
-      {thumbnailUrl ? (
-        <img
-          src={thumbnailUrl}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-800 opacity-90 group-hover:opacity-100 flex items-center justify-center">
-          <span className="text-5xl text-white/80">▶</span>
-        </div>
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent p-4 flex flex-col justify-end">
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="text-[10px] font-bold text-slate-300/90 px-2 py-0.5 bg-slate-900/35 rounded-md border border-white/10"
-              >
-                {tr(tag)}
-              </span>
-            ))}
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-slate-800">
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
+            <span className="text-4xl text-white/40">▶</span>
           </div>
         )}
-        <h4 className="text-white font-black text-base line-clamp-2">{title}</h4>
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10"
+          aria-hidden
+        />
       </div>
-    </div>
+      <div
+        className={
+          compactCard
+            ? 'flex min-h-0 flex-1 flex-col border-t border-slate-800/90 bg-slate-950 px-2.5 py-2'
+            : 'flex min-h-0 flex-1 flex-col border-t border-slate-800/90 bg-slate-950 px-3 py-2.5 sm:px-3.5 sm:py-3'
+        }
+      >
+        <h4
+          className={
+            compactCard
+              ? 'line-clamp-2 text-left text-[13px] font-bold leading-snug tracking-tight text-white'
+              : 'line-clamp-2 text-left text-[15px] font-bold leading-snug tracking-tight text-white sm:text-base'
+          }
+        >
+          {title}
+        </h4>
+        <div
+          className={
+            compactCard
+              ? 'mt-2 grid grid-cols-3 gap-1.5 border-t border-slate-800/80 pt-2'
+              : 'mt-2.5 grid grid-cols-3 gap-2 border-t border-slate-800/80 pt-2.5'
+          }
+        >
+          {slots.map((slot, i) => (
+            <div key={`${slot.label}-${i}`} className="min-w-0">
+              <p className="truncate text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                {tr(slot.label)}
+              </p>
+              <p
+                className={
+                  compactCard
+                    ? 'mt-0.5 truncate text-[10px] font-semibold text-slate-200'
+                    : 'mt-0.5 truncate text-[11px] font-semibold text-slate-200 sm:text-xs'
+                }
+                title={slot.value === '—' ? undefined : tr(slot.value)}
+              >
+                {slot.value === '—' ? '—' : tr(slot.value)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </button>
   );
 });
 
-function SkeletonCard() {
-  return <div className="w-full aspect-[4/3] rounded-2xl bg-slate-800 animate-pulse" />;
+function SkeletonCard({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 animate-pulse">
+      <div className="aspect-video bg-slate-800" />
+      <div className={compact ? 'space-y-2 p-2' : 'space-y-2 p-3'}>
+        <div className="h-4 w-[72%] rounded bg-slate-800" />
+        <div
+          className={
+            compact
+              ? 'grid grid-cols-3 gap-1.5 border-t border-slate-800/80 pt-2'
+              : 'grid grid-cols-3 gap-2 border-t border-slate-800/80 pt-2'
+          }
+        >
+          <div className="h-7 rounded bg-slate-800/90" />
+          <div className="h-7 rounded bg-slate-800/90" />
+          <div className="h-7 rounded bg-slate-800/90" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function programFilterChipClass(active: boolean): string {
@@ -136,9 +222,9 @@ export default function LibraryView({
 }) {
   const tr = useTranslator();
   const [syncingScreenplays, setSyncingScreenplays] = useState(false);
-  const [functionType, setFunctionType] = useState<string>('');
+  const [selectedFunctionTypes, setSelectedFunctionTypes] = useState<string[]>([]);
   const [mainTheme, setMainTheme] = useState<string>('');
-  const [groupSize, setGroupSize] = useState<string>('');
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [isReady, setIsReady] = useState(false);
@@ -174,8 +260,8 @@ export default function LibraryView({
     const tk = initialPreset?.themeKey;
     if (tk && (THEME_KEYS as readonly string[]).includes(tk)) {
       // 사이드바 프리셋(펑셔널/스포무브) 진입 시 이전 수동 필터 잔존으로 0개가 보이는 상황을 방지
-      setFunctionType('');
-      setGroupSize('');
+      setSelectedFunctionTypes([]);
+      setSelectedEquipment([]);
       const bank = THEME_KEY_TO_BANK_THEME[tk as ThemeKey];
       // 프리셋 라벨과 실제 DB main_theme 분류가 다를 수 있어, 유효한 분류값일 때만 테마 필터를 적용
       if (bank && (MAIN_THEMES as readonly string[]).includes(bank)) {
@@ -239,12 +325,15 @@ export default function LibraryView({
       params.set('limit', '200');
       // 펑셔널 무브(co-op): 검색 시에도 기본 3종(협응력·협동형·소그룹)을 유지한다.
       // 예전에는 검색만 켜질 때 이 조건이 빠져 DB 전체에서 q만 걸려, 목록 144밖 '찌꺼기' 행만 검색에 잡히는 문제가 있었다.
-      const effFunctionType = isFunctionalPreset && !functionType ? '협응력' : functionType;
+      const effFunc =
+        isFunctionalPreset && selectedFunctionTypes.length === 0 ? ['협응력'] : selectedFunctionTypes;
       const effMainTheme = isFunctionalPreset && !mainTheme ? '협동형' : mainTheme;
-      const effGroupSize = isFunctionalPreset && !groupSize ? '소그룹' : groupSize;
-      if (effFunctionType) params.set('function_type', effFunctionType);
+      if (effFunc.length === 1) params.set('function_type', effFunc[0]);
+      else if (effFunc.length > 1) params.set('function_types', effFunc.join(','));
       if (effMainTheme) params.set('main_theme', effMainTheme);
-      if (effGroupSize) params.set('group_size', effGroupSize);
+      if (isFunctionalPreset) params.set('group_size', '소그룹');
+      if (selectedEquipment.length === 1) params.set('equipment', selectedEquipment[0]);
+      else if (selectedEquipment.length > 1) params.set('equipment', selectedEquipment.join(','));
       // 펑셔널 무브: 커리큘럼 본편에 없는 spokedu 행은 검색에도 나오지 않게(예: 후프 낚시 잔상)
       if (isFunctionalPreset) params.set('only_curriculum', '1');
       if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
@@ -267,9 +356,9 @@ export default function LibraryView({
     }
     return () => { cancelled = true; };
   }, [
-    functionType,
+    selectedFunctionTypes,
     mainTheme,
-    groupSize,
+    selectedEquipment,
     debouncedSearch,
     isScreenplayPreset,
     isFunctionalPreset,
@@ -280,7 +369,10 @@ export default function LibraryView({
   const isLoading = programsFromApi === null;
   const filteredPrograms = programsFromApi ?? [];
   const hasManualFilters =
-    functionType !== '' || mainTheme !== '' || groupSize !== '' || search.trim() !== '';
+    selectedFunctionTypes.length > 0 ||
+    mainTheme !== '' ||
+    selectedEquipment.length > 0 ||
+    search.trim() !== '';
   const visiblePrograms = useMemo(() => {
     // 펑셔널 무브: 검색어가 비어 있을 때만 상한(예: 144). 검색 중에는 같은 필터 풀 안에서만 넓힘.
     if (
@@ -318,22 +410,30 @@ export default function LibraryView({
 
     // 요청: 검색 시 같은 제목이 여러 줄로 존재(월/주, 중복 입력 등)하면 "유령"처럼 보이므로,
     // 표시 제목 기준으로 중복을 숨겨 실제 카드만 남긴다.
-    if (!q) return filtered;
-    const seen = new Set<string>();
-    const deduped: ProgramRow[] = [];
-    for (const p of filtered) {
-      const key = getDisplayTitle(p).toLowerCase();
-      if (!key) continue;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      deduped.push(p);
+    let out: ProgramRow[];
+    if (!q) {
+      out = filtered;
+    } else {
+      const seen = new Set<string>();
+      const deduped: ProgramRow[] = [];
+      for (const p of filtered) {
+        const key = getDisplayTitle(p).toLowerCase();
+        if (!key) continue;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped.push(p);
+      }
+      out = deduped;
     }
-    return deduped;
+
+    return [...out].sort((a, b) =>
+      getDisplayTitle(a).localeCompare(getDisplayTitle(b), 'ko-KR', { sensitivity: 'base' })
+    );
   }, [visiblePrograms, search, programDetails, isScreenplayPreset]);
   const clearFilters = () => {
-    setFunctionType('');
+    setSelectedFunctionTypes([]);
     setMainTheme('');
-    setGroupSize('');
+    setSelectedEquipment([]);
     setSearch('');
     setDebouncedSearch('');
     setProgramsFromApi(null);
@@ -464,25 +564,7 @@ export default function LibraryView({
 
             <div className={compact ? 'space-y-2.5' : 'space-y-4'}>
               <div className="space-y-1.5 min-w-0">
-                <p className="text-[11px] font-semibold text-slate-500">{tr('기능')}</p>
-                <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 custom-scroll">
-                  {FUNCTION_TYPES.map((ft) => (
-                    <button
-                      key={ft}
-                      type="button"
-                      onClick={() => setFunctionType(functionType === ft ? '' : ft)}
-                      className={programFilterChipClass(functionType === ft)}
-                    >
-                      {tr(ft)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="h-px bg-slate-700/50" aria-hidden />
-
-              <div className="space-y-1.5 min-w-0">
-                <p className="text-[11px] font-semibold text-slate-500">{tr('테마')}</p>
+                <p className="text-[11px] font-semibold text-slate-500">{tr('활동 테마')}</p>
                 <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 custom-scroll">
                   {MAIN_THEMES.map((mt) => (
                     <button
@@ -500,18 +582,54 @@ export default function LibraryView({
               <div className="h-px bg-slate-700/50" aria-hidden />
 
               <div className="space-y-1.5 min-w-0">
-                <p className="text-[11px] font-semibold text-slate-500">{tr('인원')}</p>
+                <p className="text-[11px] font-semibold text-slate-500">
+                  {tr('신체 기능 (중복 선택 가능)')}
+                </p>
                 <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 custom-scroll">
-                  {GROUP_SIZES.map((gs) => (
-                    <button
-                      key={gs}
-                      type="button"
-                      onClick={() => setGroupSize(groupSize === gs ? '' : gs)}
-                      className={programFilterChipClass(groupSize === gs)}
-                    >
-                      {tr(gs)}
-                    </button>
-                  ))}
+                  {FUNCTION_TYPES.map((ft) => {
+                    const on = selectedFunctionTypes.includes(ft);
+                    return (
+                      <button
+                        key={ft}
+                        type="button"
+                        onClick={() =>
+                          setSelectedFunctionTypes((prev) =>
+                            on ? prev.filter((x) => x !== ft) : [...prev, ft]
+                          )
+                        }
+                        className={programFilterChipClass(on)}
+                      >
+                        {tr(ft)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="h-px bg-slate-700/50" aria-hidden />
+
+              <div className="space-y-1.5 min-w-0">
+                <p className="text-[11px] font-semibold text-slate-500">
+                  {tr('활용 교구 (중복 선택 가능)')}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {EQUIPMENT_CATALOG.map((eq) => {
+                    const on = selectedEquipment.includes(eq);
+                    return (
+                      <button
+                        key={eq}
+                        type="button"
+                        onClick={() =>
+                          setSelectedEquipment((prev) =>
+                            on ? prev.filter((x) => x !== eq) : [...prev, eq]
+                          )
+                        }
+                        className={programFilterChipClass(on)}
+                      >
+                        {tr(eq)}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -567,10 +685,12 @@ export default function LibraryView({
           className={
             compact
               ? 'grid grid-cols-2 gap-3'
-              : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6'
+              : 'grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4'
           }
         >
-          {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
+          {Array.from({ length: 10 }).map((_, i) => (
+            <SkeletonCard key={i} compact={compact} />
+          ))}
         </div>
       )}
 
@@ -595,7 +715,7 @@ export default function LibraryView({
           className={
             compact
               ? 'grid grid-cols-2 gap-3'
-              : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6'
+              : 'grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4'
           }
         >
           {displayFilteredPrograms.map((p) => {
@@ -607,24 +727,29 @@ export default function LibraryView({
                 const thumbnailUrl = isScreenplayPreset
                   ? (p.thumbnail_url ?? (videoUrl ? getYouTubeThumbnailUrl(videoUrl) : null))
                   : (p.thumbnail_url ?? (videoUrl ? getYouTubeThumbnailUrl(videoUrl) : null));
-                const tags = isScreenplayPreset
+                const metaSlots: ProgramCardMetaSlot[] = isScreenplayPreset
                   ? (() => {
                       const modeId = String(p.mode_id ?? p.function_type ?? '');
                       const entry = screenplayTagMapping.modeIdMap[modeId];
                       const domainTag = entry?.domainLabel ?? tr('인지영역');
                       const taskTag = entry?.taskLabel ?? (modeId || tr('과제유형'));
                       const levelTag = getScreenplayLevelTag(p.preset_ref, screenplayTagMapping.levelLabelTemplate);
-                      return [domainTag, taskTag, levelTag].filter(Boolean) as string[];
+                      return [
+                        { label: '인지영역', value: domainTag },
+                        { label: '과제유형', value: taskTag },
+                        { label: '레벨', value: levelTag || '—' },
+                      ];
                     })()
-                  : [p.function_type, p.main_theme, p.group_size].filter(Boolean) as string[];
+                  : buildProgramBankMetaSlots(p, detail);
                 return (
                   <ProgramCard
                     key={`${isScreenplayPreset ? 'screenplay' : 'program'}-${p.id}`}
                     title={stripMonthWeekPrefix(
                       isScreenplayPreset ? (screenplayDetail?.title ?? p.title) : (detail?.title ?? p.title)
                     )}
-                    tags={tags}
+                    metaSlots={metaSlots}
                     thumbnailUrl={thumbnailUrl}
+                    compact={compact}
                     onClick={() => {
                       if (selectionMode) {
                         onSelectProgram!(p.id, p);

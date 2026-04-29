@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { FileEdit, Download, Video, FileText } from 'lucide-react';
 import { useSpokeduProAdminBlocks, type BlockEntry } from '../hooks/useSpokeduProContent';
 import type { ProgramDetail } from '../types';
-import { FUNCTION_TYPES, MAIN_THEMES, GROUP_SIZES } from '@/app/lib/spokedu-pro/programClassification';
+import { FUNCTION_TYPES, MAIN_THEMES } from '@/app/lib/spokedu-pro/programClassification';
 import {
   DEFAULT_SCREENPLAY_TAG_MAPPING_V1,
   SCREENPLAY_MODE_IDS,
@@ -17,7 +17,7 @@ export type { ProgramDetail };
 
 type SaveDraftResult = { ok: true; version: number } | { ok: false; error?: string };
 
-/** 프로그램 상세: 새 분류(기능·테마·인원) + 영상·체크리스트·교구·활동방법·팁 */
+/** 프로그램 상세: 신체 기능·활동 테마 + 영상·체크리스트·교구·활동방법·팁 */
 function ProgramDetailForm({
   content,
   saving,
@@ -39,7 +39,6 @@ function ProgramDetailForm({
   const [videoUrl, setVideoUrl] = useState('');
   const [functionType, setFunctionType] = useState('');
   const [mainTheme, setMainTheme] = useState('');
-  const [groupSize, setGroupSize] = useState('');
   const [checklist, setChecklist] = useState('');
   const [equipment, setEquipment] = useState('');
   const [activityMethod, setActivityMethod] = useState('');
@@ -54,7 +53,6 @@ function ProgramDetailForm({
       setVideoUrl(cur.videoUrl ?? '');
       setFunctionType(cur.functionType ?? '');
       setMainTheme(cur.mainTheme ?? '');
-      setGroupSize(cur.groupSize ?? '');
       setChecklist(cur.checklist ?? '');
       setEquipment(cur.equipment ?? '');
       setActivityMethod(cur.activityMethod ?? '');
@@ -64,7 +62,6 @@ function ProgramDetailForm({
       setVideoUrl('');
       setFunctionType('');
       setMainTheme('');
-      setGroupSize('');
       setChecklist('');
       setEquipment('');
       setActivityMethod('');
@@ -80,7 +77,6 @@ function ProgramDetailForm({
       videoUrl: videoUrl.trim() || undefined,
       functionType: functionType.trim() || undefined,
       mainTheme: mainTheme.trim() || undefined,
-      groupSize: groupSize.trim() || undefined,
       checklist: checklist.trim() || undefined,
       equipment: equipment.trim() || undefined,
       activityMethod: activityMethod.trim() || undefined,
@@ -88,13 +84,13 @@ function ProgramDetailForm({
     };
     const r = await onSaveContent('program_details', next, version);
     if (r.ok) onToast?.(tr('저장되었습니다.'));
-  }, [programId, title, videoUrl, functionType, mainTheme, groupSize, checklist, equipment, activityMethod, activityTip, draft, version, onSaveContent, onToast, tr]);
+  }, [programId, title, videoUrl, functionType, mainTheme, checklist, equipment, activityMethod, activityTip, draft, version, onSaveContent, onToast, tr]);
 
   return (
     <div className="bg-slate-800/80 rounded-xl border border-slate-600 p-4 space-y-4">
       <h4 className="text-sm font-bold text-white flex items-center gap-2">
         <Video className="w-4 h-4 text-blue-400" />
-        {tr('프로그램 상세 (기능·테마·인원 · 영상 · 체크리스트 · 교구 · 활동방법 · 팁)')}
+        {tr('프로그램 상세 (신체 기능·활동 테마 · 영상 · 체크리스트 · 교구 · 활동방법 · 팁)')}
       </h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
@@ -128,7 +124,7 @@ function ProgramDetailForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1">{tr('기능 종류')}</label>
+          <label className="block text-xs font-bold text-slate-400 mb-1">{tr('신체 기능')}</label>
           <select
             value={functionType}
             onChange={(e) => setFunctionType(e.target.value)}
@@ -139,7 +135,7 @@ function ProgramDetailForm({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1">{tr('메인테마')}</label>
+          <label className="block text-xs font-bold text-slate-400 mb-1">{tr('활동 테마')}</label>
           <select
             value={mainTheme}
             onChange={(e) => setMainTheme(e.target.value)}
@@ -147,17 +143,6 @@ function ProgramDetailForm({
           >
             <option value="">{tr('선택')}</option>
             {MAIN_THEMES.map((mt) => <option key={mt} value={mt}>{tr(mt)}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1">{tr('인원구성')}</label>
-          <select
-            value={groupSize}
-            onChange={(e) => setGroupSize(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-          >
-            <option value="">{tr('선택')}</option>
-            {GROUP_SIZES.map((gs) => <option key={gs} value={gs}>{tr(gs)}</option>)}
           </select>
         </div>
         <div className="sm:col-span-2 lg:col-span-3">

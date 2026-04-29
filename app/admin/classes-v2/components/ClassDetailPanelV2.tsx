@@ -5,7 +5,8 @@ import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import type { EditableSession } from '@/app/admin/classes-shared/types';
+import type { EditableSession, TeacherInput } from '@/app/admin/classes-shared/types';
+import { parseExtraTeachers, buildMemoWithExtras } from '@/app/admin/classes-shared/lib/sessionUtils';
 import { postponeCascade, undoPostponeCascade } from '@/app/admin/classes-shared/lib/postponeUtils';
 import { extendClass } from '@/app/admin/classes-shared/lib/roundExtendUtils';
 import { omitSessionIdentityForInsertClone } from '@/app/admin/classes-shared/lib/sessionInsertClone';
@@ -16,6 +17,14 @@ import {
   mergeSessionScheduleDraft,
   type SessionScheduleDraft,
 } from '../lib/sessionScheduleDraftUtils';
+import {
+  dominantSessionType,
+  resolveDefaultSessionPrice,
+  shiftSessionToWeekday,
+  type TeacherFeeRow,
+} from '../lib/bulkSessionDefaults';
+import { cloneTierFeeMap, HARD_CODED_TIER_FEES, type TierFeeMap } from '@/app/lib/teacherTierSchedule';
+import { fetchTeacherTierFeeMap } from '@/app/lib/teacherTierFeesStore';
 
 interface ClassDetailPanelProps {
   groupId: string | null;
@@ -53,20 +62,37 @@ function toDateInputValueLocal(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
-/** 일괄 적용 대상: 취소/삭제 제외, 시간상 완료(end 이전) 제외 — 예정·진행·연기(미종료) */
+/**
+ * 일괄 적용 대상: 번들 모달「진행·예정 (연기 제외)」과 동일.
+ * 취소·삭제·연기·시간상 완료 회차는 제외합니다.
+ */
 function isSessionBulkTarget(s: { start_at: string; end_at: string; status: string | null }) {
   const end = new Date(s.end_at);
   const nowMs = Date.now();
   const isPostponed = s.status === "postponed";
   const isCancelled = s.status === "cancelled";
   const isDeleted = s.status === "deleted";
-  if (isCancelled || isDeleted) return false;
-  const isCompletedByTime =
-    !isPostponed && !isCancelled && !isDeleted && nowMs > end.getTime();
+  if (isCancelled || isDeleted || isPostponed) return false;
+  const isCompletedByTime = !isCancelled && !isDeleted && nowMs > end.getTime();
   return !isCompletedByTime;
 }
 
 /** 로컬 날짜 유지, 시·분만 변경. 수업 길이(ms) 유지 */
+function extraTeachersFromMemo(memo: string | null | undefined): TeacherInput[] {
+  const { extraTeachers } = parseExtraTeachers(memo || '');
+  return extraTeachers.slice(0, 2);
+}
+
+function persistMemoExtras(rowMemo: string | null | undefined, extras: TeacherInput[]): string {
+  const { cleanMemo } = parseExtraTeachers(rowMemo || '');
+  const list = extras.slice(0, 2).map((e) => ({
+    id: e.id || '',
+    price: Number(e.price) || 0,
+  }));
+  if (list.length === 0) return cleanMemo;
+  return buildMemoWithExtras(cleanMemo, list);
+}
+
 function applyLocalTimeKeepDuration(startAtIso: string, endAtIso: string, timeHHmm: string) {
   const [hh, mm] = timeHHmm.split(":").map(Number);
   const start = new Date(startAtIso);
@@ -96,14 +122,17 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     typeof window !== 'undefined' ? getSupabaseBrowserClient() : null
   );
   const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
+  const [teachers, setTeachers] = useState<TeacherFeeRow[]>([]);
+  const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const teacherMap = useMemo(() => {
     const map: Record<string, string> = {};
-    teachers.forEach((t) => (map[t.id] = t.name));
+    teachers.forEach((t) => (map[t.id] = t.name ?? ''));
     return map;
   }, [teachers]);
   const [bulkTeacherId, setBulkTeacherId] = useState<string>('');
   const [bulkStartTime, setBulkStartTime] = useState<string>('');
+  const [bulkDayOfWeek, setBulkDayOfWeek] = useState<string>('');
+  const [bulkPrice, setBulkPrice] = useState<string>('');
   const [bulkTeacherApplying, setBulkTeacherApplying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [extendCount, setExtendCount] = useState(1);
@@ -136,19 +165,44 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     if (!supabase || !groupId) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('sessions')
-        .select(
-          'id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number, memo, session_type, mileage_option'
-        )
-        .eq('group_id', groupId)
-        .order('start_at', { ascending: true });
+      const [sessionsRes, usersRes, tierRes] = await Promise.all([
+        supabase
+          .from('sessions')
+          .select(
+            'id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number, memo, session_type, mileage_option'
+          )
+          .eq('group_id', groupId)
+          .order('start_at', { ascending: true }),
+        supabase
+          .from('users')
+          .select(
+            'id, name, session_count, fee_private, fee_group, fee_center_main, fee_center_assist'
+          )
+          .eq('is_active', true)
+          .order('name', { ascending: true }),
+        fetchTeacherTierFeeMap(supabase),
+      ]);
+
+      if (usersRes.error) devLogger.error(usersRes.error);
+      const teacherRows = (usersRes.data || []) as TeacherFeeRow[];
+      setTeachers(teacherRows);
+      setTierFeeMap(tierRes.map);
+
+      const { data, error } = sessionsRes;
       if (error) throw error;
       const list = (data || []) as SessionRow[];
       setSessions(list);
       setTitleDraft(list[0]?.title ?? '');
       setRestartCount(list.length);
-      setBulkTeacherId(list.find((s) => s.created_by)?.created_by ?? '');
+      const tid = String(list.find((s) => s.created_by)?.created_by ?? '').trim();
+      setBulkTeacherId(tid);
+      const teacher = teacherRows.find((t) => t.id === tid);
+      setBulkPrice(
+        teacher && list.length
+          ? String(resolveDefaultSessionPrice(teacher, dominantSessionType(list), tierRes.map))
+          : ''
+      );
+      setBulkDayOfWeek('');
 
       // 사이클 재시작 기본값: 마지막 회차 다음 주(기본 7일 후), 동일 시간
       const last = list[list.length - 1];
@@ -173,23 +227,6 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
   useEffect(() => {
     setScheduleDraftBySessionId({});
   }, [groupId]);
-
-  useEffect(() => {
-    if (!supabase) return;
-    const fetchTeachers = async () => {
-      try {
-        const { data } = await supabase
-          .from('users')
-          .select('id, name')
-          .eq('is_active', true)
-          .order('name', { ascending: true });
-        if (data) setTeachers(data as { id: string; name: string }[]);
-      } catch (err) {
-        devLogger.error(err);
-      }
-    };
-    fetchTeachers();
-  }, [supabase]);
 
   const handleInlineUpdate = async (idx: number, patch: Partial<EditableSession>) => {
     if (!supabase) return;
@@ -533,23 +570,31 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     if (!supabase || !groupId) return;
     const nextTeacherId = String(bulkTeacherId || '').trim();
     const timeStr = String(bulkStartTime || '').trim();
-    if (!nextTeacherId && !timeStr) {
-      return toast.error('선생님 또는 시작 시간 중 하나 이상 입력해주세요.');
+    const dowRaw = String(bulkDayOfWeek || '').trim();
+    const wantsDow = dowRaw !== '' && Number.isFinite(Number(dowRaw));
+    const priceStr = String(bulkPrice || '').trim();
+    const wantsPrice = priceStr !== '' && Number.isFinite(Number(priceStr));
+    const priceNum = wantsPrice ? Math.max(0, Math.floor(Number(priceStr))) : 0;
+
+    if (!nextTeacherId && !timeStr && !wantsDow && !wantsPrice) {
+      return toast.error('선생님·요일·시작 시간·수업료 중 최소 한 항목을 지정해 주세요.');
     }
 
     const targets = sessions.filter(isSessionBulkTarget);
     if (targets.length === 0) {
       return toast.error(
-        '변경할 수 있는 회차가 없습니다. (종료된 회차만 있거나 취소·삭제만 있습니다.)'
+        '변경할 수 있는 회차가 없습니다. (진행·예정(연기 제외)에 해당하는 회차가 없거나, 취소·삭제·연기·시간 완료만 있습니다.)'
       );
     }
 
     const parts: string[] = [];
     if (nextTeacherId) parts.push('메인 강사');
+    if (wantsDow) parts.push(`요일(${DAYS.find((d) => String(d.value) === dowRaw)?.label ?? dowRaw})`);
     if (timeStr) parts.push('시작 시간');
+    if (wantsPrice) parts.push(`수업료(${priceNum.toLocaleString('ko-KR')}원)`);
     if (
       !confirm(
-        `종료되지 않은 회차 ${targets.length}건만 ${parts.join('·')}을(를) 변경할까요?`
+        `진행·예정(연기 제외) 회차 ${targets.length}건만 ${parts.join('·')}을(를) 변경할까요? (보조는 메인과 겹치면 제외됩니다.)`
       )
     ) {
       return;
@@ -558,12 +603,31 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     setBulkTeacherApplying(true);
     try {
       for (const s of targets) {
-        const patch: Record<string, string> = {};
-        if (nextTeacherId) patch.created_by = nextTeacherId;
+        const patch: Record<string, unknown> = {};
+        if (nextTeacherId) {
+          const extras = extraTeachersFromMemo(s.memo).filter((t) => t.id && t.id !== nextTeacherId);
+          const memo = persistMemoExtras(s.memo, extras);
+          patch.created_by = nextTeacherId;
+          patch.memo = memo;
+        }
+        let startAt = s.start_at;
+        let endAt = s.end_at;
+        if (wantsDow) {
+          const sh = shiftSessionToWeekday(startAt, endAt, Number(dowRaw));
+          startAt = sh.start_at;
+          endAt = sh.end_at;
+        }
         if (timeStr) {
-          const { start_at, end_at } = applyLocalTimeKeepDuration(s.start_at, s.end_at, timeStr);
-          patch.start_at = start_at;
-          patch.end_at = end_at;
+          const t = applyLocalTimeKeepDuration(startAt, endAt, timeStr);
+          startAt = t.start_at;
+          endAt = t.end_at;
+        }
+        if (wantsDow || timeStr) {
+          patch.start_at = startAt;
+          patch.end_at = endAt;
+        }
+        if (wantsPrice) {
+          patch.price = priceNum;
         }
         const { error } = await supabase.from('sessions').update(patch).eq('id', s.id);
         if (error) throw error;
@@ -774,42 +838,83 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                 <h3 className="text-sm font-black text-slate-800">그룹 설정</h3>
                 <p className="text-xs text-slate-500 font-bold mt-1">
                   수업명은 위에서 전체 변경. 아래 일괄 적용은{' '}
-                  <span className="text-slate-700">종료되지 않은 회차</span>에만 메인 강사·시작 시간을 반영합니다.
+                  <span className="text-slate-700">진행·예정 (연기 제외)</span>에 해당하는 회차에만 메인 강사·요일·시작
+                  시간·수업료를 반영합니다. 수업료는 선택한 강사의{' '}
+                  <span className="text-slate-700">등급·DB 기본 수업료</span>로 자동 채워지며 숫자로 수정할 수 있습니다.
                 </p>
                 <p className="text-[11px] text-slate-500 font-bold mt-2">
                   전체 {statusCounts.total} · 연기 {statusCounts.postponed} · 취소 {statusCounts.cancelled} · 삭제 {statusCounts.deleted}
                 </p>
               </div>
-              <div className="flex items-center gap-2 flex-wrap justify-end">
-                <select
-                  className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold"
-                  value={bulkTeacherId}
-                  onChange={(e) => setBulkTeacherId(e.target.value)}
-                >
-                  <option value="">선생님 선택</option>
-                  {teachers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} T
-                    </option>
-                  ))}
-                </select>
-                <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
-                  시작
-                  <input
-                    type="time"
-                    className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold"
-                    value={bulkStartTime}
-                    onChange={(e) => setBulkStartTime(e.target.value)}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => void handleBulkApplyGroup()}
-                  disabled={bulkTeacherApplying}
-                  className="px-3 py-2 rounded-full text-xs font-black bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
-                >
-                  {bulkTeacherApplying ? '적용 중...' : '일괄 적용'}
-                </button>
+              <div className="flex flex-col gap-2 items-end w-full min-w-0">
+                <div className="flex items-center gap-2 flex-wrap justify-end w-full">
+                  <select
+                    className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold min-w-[120px]"
+                    value={bulkTeacherId}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setBulkTeacherId(v);
+                      const teacher = teachers.find((t) => t.id === v);
+                      if (teacher && sessions.length) {
+                        const st = dominantSessionType(sessions);
+                        setBulkPrice(String(resolveDefaultSessionPrice(teacher, st, tierFeeMap)));
+                      } else if (!v) {
+                        setBulkPrice('');
+                      }
+                    }}
+                  >
+                    <option value="">선생님 선택</option>
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name ?? ''} T
+                      </option>
+                    ))}
+                  </select>
+                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                    요일
+                    <select
+                      className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold min-w-[5.5rem]"
+                      value={bulkDayOfWeek}
+                      onChange={(e) => setBulkDayOfWeek(e.target.value)}
+                    >
+                      <option value="">유지</option>
+                      {DAYS.map((d) => (
+                        <option key={d.value} value={String(d.value)}>
+                          {d.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                    시작
+                    <input
+                      type="time"
+                      className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold"
+                      value={bulkStartTime}
+                      onChange={(e) => setBulkStartTime(e.target.value)}
+                    />
+                  </label>
+                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                    수업료(원)
+                    <input
+                      type="number"
+                      min={0}
+                      step={1000}
+                      className="w-[100px] bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-right"
+                      placeholder="등급 기본"
+                      value={bulkPrice}
+                      onChange={(e) => setBulkPrice(e.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void handleBulkApplyGroup()}
+                    disabled={bulkTeacherApplying}
+                    className="px-3 py-2 rounded-full text-xs font-black bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    {bulkTeacherApplying ? '적용 중...' : '일괄 적용'}
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={handleRestoreDeleted}

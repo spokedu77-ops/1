@@ -341,18 +341,22 @@ useEffect(() => {
    details: string[];
  };
 
+ /** 선행 탭·공백은 유지하고, 첫 `-` / `:` 목록 마커와 그 뒤 공백만 제거 */
+ const stripYuaDetailBulletMarker = (line: string): string => {
+   return line.replace(/^(\s*)[-:]\s*/, (_, indent: string) => indent).replace(/\s+$/, '');
+ };
+
  const parseYuaThemeParts = (steps?: string[]): YuaThemePart[] => {
    if (!steps || steps.length === 0) return [];
    const parts: YuaThemePart[] = [];
    let currentPart: YuaThemePart | null = null;
 
    for (const raw of steps) {
-     const line = raw.trim();
-     if (!line) continue;
+     if (!raw.trim()) continue;
 
-     const isDetailLine = line.startsWith('-') || line.startsWith(':');
+     const isDetailLine = /^\s*[-:]/.test(raw);
      if (!isDetailLine) {
-       currentPart = { title: line, details: [] };
+       currentPart = { title: raw.replace(/\s+$/, ''), details: [] };
        parts.push(currentPart);
        continue;
      }
@@ -361,7 +365,7 @@ useEffect(() => {
        currentPart = { title: '세부 내용', details: [] };
        parts.push(currentPart);
      }
-     currentPart.details.push(line.replace(/^[-:]\s*/, '').trim());
+     currentPart.details.push(stripYuaDetailBulletMarker(raw));
    }
 
    return parts.filter((part) => part.title || part.details.length > 0);
@@ -955,12 +959,15 @@ useEffect(() => {
                             <div className="space-y-3">
                               {parseYuaThemeParts(selectedItem.steps).map((part, i) => (
                                 <section key={`${part.title}-${i}`} className="space-y-2 rounded-2xl border border-slate-600/80 bg-[#323232] p-4">
-                                  <h4 className="text-sm font-black text-white">{part.title}</h4>
+                                  <h4 className="text-sm font-black text-white whitespace-pre-wrap [tab-size:4]">{part.title}</h4>
                                   {part.details.length > 0 ? (
-                                    <ul className="space-y-2">
+                                    <ul className="space-y-2 list-none pl-0">
                                       {part.details.map((detail, j) => (
-                                        <li key={`${detail}-${j}`} className="text-sm font-bold text-slate-200 leading-relaxed">
-                                          - {detail}
+                                        <li key={`yua-d-${i}-${j}`} className="flex gap-2 items-start text-sm font-bold text-slate-200 leading-relaxed">
+                                          <span className="text-slate-400 flex-shrink-0 select-none pt-0.5" aria-hidden>
+                                            -
+                                          </span>
+                                          <span className="min-w-0 flex-1 whitespace-pre-wrap [tab-size:4]">{detail}</span>
                                         </li>
                                       ))}
                                     </ul>

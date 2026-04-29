@@ -1,7 +1,7 @@
 /**
  * 스포키듀 프로그램 뱅크 API.
- * 분류: 기능 종류, 메인테마, 인원구성 (PTG는 슬로건).
- * GET: 인증된 사용자. 필터 function_type, main_theme, group_size, q.
+ * 분류: 신체 기능(function_type / function_types), 활동 테마(main_theme), 인원(group_size), 활용 교구(equipment).
+ * GET: 인증된 사용자. 필터 function_type | function_types, main_theme, group_size, equipment, q.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -14,6 +14,7 @@ import {
   isFunctionType,
   isMainTheme,
   isGroupSize,
+  isEquipmentCatalogItem,
 } from '@/app/lib/spokedu-pro/programClassification';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 
@@ -70,6 +71,34 @@ function getFallbackPrograms() {
   }));
 }
 
+/** function_types=순발력,민첩성 우선, 없으면 단일 function_type */
+function resolveFunctionTypesForFilter(searchParams: URLSearchParams): string[] {
+  const fromMulti = (searchParams.get('function_types') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter(isFunctionType);
+  if (fromMulti.length) return fromMulti;
+  const single = searchParams.get('function_type') ?? '';
+  return single && isFunctionType(single) ? [single] : [];
+}
+
+function resolveEquipmentTokens(searchParams: URLSearchParams): string[] {
+  return (searchParams.get('equipment') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter(isEquipmentCatalogItem);
+}
+
+function functionTypeOrClause(types: string[]): string {
+  return types.flatMap((t) => [`function_type.eq.${t}`, `function_types.cs.{${t}}`]).join(',');
+}
+
+function equipmentOrClause(tokens: string[]): string {
+  return tokens.map((t) => `equipment.ilike.%${t}%`).join(',');
+}
+
 export async function GET(request: NextRequest) {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
@@ -78,7 +107,8 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const functionType = searchParams.get('function_type') ?? '';
+  const resolvedFunctionTypes = resolveFunctionTypesForFilter(searchParams);
+  const equipmentTokens = resolveEquipmentTokens(searchParams);
   const mainTheme = searchParams.get('main_theme') ?? '';
   const groupSize = searchParams.get('group_size') ?? '';
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
@@ -146,9 +176,17 @@ export async function GET(request: NextRequest) {
       .filter((p) => (q ? p.title.toLowerCase().includes(q) : true));
 
     let results = mapped;
-    if (functionType && isFunctionType(functionType)) results = results.filter((p) => p.function_type === functionType);
+    if (resolvedFunctionTypes.length) {
+      results = results.filter((p) => resolvedFunctionTypes.includes(String(p.function_type)));
+    }
     if (mainTheme && isMainTheme(mainTheme)) results = results.filter((p) => p.main_theme === mainTheme);
     if (groupSize && isGroupSize(groupSize)) results = results.filter((p) => p.group_size === groupSize);
+    if (equipmentTokens.length) {
+      results = results.filter((p) => {
+        const eqText = String(p.equipment ?? '');
+        return equipmentTokens.some((tok) => eqText.includes(tok));
+      });
+    }
 
     const total = results.length;
     const page = results.slice(offset, offset + limit);
@@ -173,17 +211,20 @@ export async function GET(request: NextRequest) {
     .order('id', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  const wantedFunctionType = functionType && isFunctionType(functionType) ? functionType : '';
-  if (wantedFunctionType) {
-    // 다중(function_types) + 단일(function_type) 모두 필터에 걸리도록 OR
-    // PostgREST: cs = contains, 배열은 "{value}" 문법
-    query = query.or(`function_type.eq.${wantedFunctionType},function_types.cs.{${wantedFunctionType}}`);
+  if (resolvedFunctionTypes.length) {
+    // 다중(function_types) + 단일(function_type) 모두 필터에 걸리도록 OR (복수 타입은 타입별 OR)
+    query = query.or(functionTypeOrClause(resolvedFunctionTypes));
   }
   if (mainTheme && isMainTheme(mainTheme)) {
     query = query.eq('main_theme', mainTheme);
   }
   if (groupSize && isGroupSize(groupSize)) {
     query = query.eq('group_size', groupSize);
+  }
+  if (equipmentTokens.length === 1) {
+    query = query.ilike('equipment', `%${equipmentTokens[0]}%`);
+  } else if (equipmentTokens.length > 1) {
+    query = query.or(equipmentOrClause(equipmentTokens));
   }
   if (q) {
     query = query.ilike('title', `%${q}%`);
@@ -199,11 +240,13 @@ export async function GET(request: NextRequest) {
       .order('updated_at', { ascending: false, nullsFirst: false })
       .order('id', { ascending: false })
       .range(offset, offset + limit - 1);
-    if (wantedFunctionType) {
-      q2 = q2.or(`function_type.eq.${wantedFunctionType},function_types.cs.{${wantedFunctionType}}`);
+    if (resolvedFunctionTypes.length) {
+      q2 = q2.or(functionTypeOrClause(resolvedFunctionTypes));
     }
     if (mainTheme && isMainTheme(mainTheme)) q2 = q2.eq('main_theme', mainTheme);
     if (groupSize && isGroupSize(groupSize)) q2 = q2.eq('group_size', groupSize);
+    if (equipmentTokens.length === 1) q2 = q2.ilike('equipment', `%${equipmentTokens[0]}%`);
+    else if (equipmentTokens.length > 1) q2 = q2.or(equipmentOrClause(equipmentTokens));
     if (q) q2 = q2.ilike('title', `%${q}%`);
     const second = await q2;
     data = second.data;
@@ -212,17 +255,23 @@ export async function GET(request: NextRequest) {
   }
   // DB 마이그레이션이 아직 적용되지 않은 환경(컬럼 없음)에서는 function_types 조건이 실패할 수 있으므로
   // 기존 단일 컬럼(function_type)만으로 즉시 폴백한다.
-  if (error && wantedFunctionType && /function_types|column .*function_types/i.test(error.message)) {
+  if (error && resolvedFunctionTypes.length && /function_types|column .*function_types/i.test(error.message)) {
     let fallback = supabase
       .from('spokedu_pro_programs')
       .select('*', { count: 'exact' })
       .eq('is_published', true)
       .order('updated_at', { ascending: false, nullsFirst: false })
       .order('id', { ascending: false })
-      .range(offset, offset + limit - 1)
-      .eq('function_type', wantedFunctionType);
+      .range(offset, offset + limit - 1);
+    if (resolvedFunctionTypes.length === 1) {
+      fallback = fallback.eq('function_type', resolvedFunctionTypes[0]);
+    } else {
+      fallback = fallback.or(resolvedFunctionTypes.map((t) => `function_type.eq.${t}`).join(','));
+    }
     if (mainTheme && isMainTheme(mainTheme)) fallback = fallback.eq('main_theme', mainTheme);
     if (groupSize && isGroupSize(groupSize)) fallback = fallback.eq('group_size', groupSize);
+    if (equipmentTokens.length === 1) fallback = fallback.ilike('equipment', `%${equipmentTokens[0]}%`);
+    else if (equipmentTokens.length > 1) fallback = fallback.or(equipmentOrClause(equipmentTokens));
     if (q) fallback = fallback.ilike('title', `%${q}%`);
     const again = await fallback;
     data = again.data;

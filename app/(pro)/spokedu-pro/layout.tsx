@@ -37,8 +37,12 @@ export default function SpokeduProLayout({
       className="relative w-full max-w-full min-w-0 overflow-hidden bg-[#0F172A] flex flex-col flex-1"
       style={{ minHeight: 'var(--viewport-height-px, 100vh)', height: 'var(--viewport-height-px, 100vh)' }}
     >
-      <div className="pointer-events-auto absolute right-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[200] sm:right-3">
-        <LanguageSwitcher variant="dark" className="max-w-[130px]" />
+      {/* 데스크톱: 우상단. 모바일: 하단 탭 위 플로팅 pill (콘텐츠·툴킷과 겹침 최소화) */}
+      <div className="spokedu-pro-lang-switcher pointer-events-auto fixed right-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[200] md:absolute md:right-3 md:top-[max(0.5rem,env(safe-area-inset-top))] md:bottom-auto md:left-auto">
+        <LanguageSwitcher
+          variant="dark"
+          className="max-w-[118px] md:max-w-[130px] rounded-full border-slate-600/90 bg-slate-900/90 px-2.5 py-1 text-[11px] shadow-lg backdrop-blur-sm md:rounded-lg md:px-2 md:py-1.5 md:shadow-none"
+        />
       </div>
       {children}
     </div>

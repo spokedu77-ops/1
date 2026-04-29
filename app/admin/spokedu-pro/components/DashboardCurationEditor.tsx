@@ -9,11 +9,13 @@ import {
   PROGRAM_BANK,
   getProgramTitle,
   DEFAULT_DASHBOARD_V4,
+  mergePublishedDashboardV4,
   type DashboardV4,
   type ThemeKey,
   type DashboardItemRow1,
   type DashboardItemRow2,
 } from '@/app/lib/spokedu-pro/dashboardDefaults';
+import { EQUIPMENT_CATALOG } from '@/app/lib/spokedu-pro/programClassification';
 
 const ROW1_ROLE_OPTIONS = ROW1_ROLES as unknown as string[];
 
@@ -101,8 +103,9 @@ export default function DashboardCurationEditor() {
         'weekTheme' in raw &&
         'row2' in raw
       ) {
-        setData(raw as DashboardV4);
-        setSavedData(raw as DashboardV4);
+        const merged = mergePublishedDashboardV4(raw);
+        setData(merged);
+        setSavedData(merged);
       } else {
         setData(DEFAULT_DASHBOARD_V4);
         setSavedData(DEFAULT_DASHBOARD_V4);
@@ -141,7 +144,7 @@ export default function DashboardCurationEditor() {
         credentials: 'include',
         body: JSON.stringify({
           key: 'dashboard_v4',
-          value: { weekTheme: data.weekTheme, row2: data.row2 },
+          value: { weekTheme: data.weekTheme, row2: data.row2, equipmentSpotlight: data.equipmentSpotlight },
         }),
       });
       if (!res.ok) {
@@ -421,6 +424,68 @@ export default function DashboardCurationEditor() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-2 rounded-lg border border-slate-700/80 bg-slate-900/40 p-3 mt-4">
+        <h3 className="text-sm font-bold text-slate-300">로드맵 · 교구 추천 행</h3>
+        <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={data.equipmentSpotlight !== null}
+            onChange={(e) =>
+              setData((p) => ({
+                ...p,
+                equipmentSpotlight: e.target.checked
+                  ? (p.equipmentSpotlight ?? DEFAULT_DASHBOARD_V4.equipmentSpotlight)
+                  : null,
+              }))
+            }
+            className="rounded border-slate-600"
+          />
+          <span>교구 기반 추천 4종 표시</span>
+        </label>
+        {data.equipmentSpotlight !== null && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+            <label className="block rounded-lg bg-slate-800/80 border border-slate-700 p-2">
+              <span className="block text-xs text-slate-500 mb-0.5">교구(카탈로그)</span>
+              <select
+                value={data.equipmentSpotlight.equipmentCatalogItem}
+                onChange={(e) =>
+                  setData((p) => ({
+                    ...p,
+                    equipmentSpotlight:
+                      p.equipmentSpotlight === null
+                        ? { equipmentCatalogItem: e.target.value }
+                        : { ...p.equipmentSpotlight, equipmentCatalogItem: e.target.value },
+                  }))
+                }
+                className="w-full bg-slate-900 border border-slate-700 text-white rounded px-2 py-1.5 text-sm focus:outline-none"
+              >
+                {EQUIPMENT_CATALOG.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block rounded-lg bg-slate-800/80 border border-slate-700 p-2">
+              <span className="block text-xs text-slate-500 mb-0.5">섹션 제목(선택)</span>
+              <input
+                type="text"
+                value={data.equipmentSpotlight.sectionTitle ?? ''}
+                onChange={(e) =>
+                  setData((p) => ({
+                    ...p,
+                    equipmentSpotlight:
+                      p.equipmentSpotlight === null ? null : { ...p.equipmentSpotlight, sectionTitle: e.target.value },
+                  }))
+                }
+                className="w-full bg-slate-900 border border-slate-700 text-white rounded px-2 py-1.5 text-sm focus:outline-none"
+                placeholder="비우면 기본 문구"
+              />
+            </label>
+          </div>
+        )}
       </div>
     </div>
   );
