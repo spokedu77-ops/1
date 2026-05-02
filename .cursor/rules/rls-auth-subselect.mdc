@@ -1,0 +1,11 @@
+---
+description: Supabase/Postgres RLS에서 auth.* 호출 최적화 (advisor 알람 방지)
+alwaysApply: true
+---
+
+# RLS 정책의 `auth.role()` / `auth.uid()` 표기
+
+- 새 RLS 정책·마이그레이션에서는 **`auth.role()` 대신 `(SELECT auth.role())`**, **`auth.uid()` 대신 `(SELECT auth.uid())`** 를 쓴다.
+- 이유: 행마다 `auth.*()`가 재평가되며 Supabase 성능/보안 advisor가 경고한다. 서브쿼리 형태는 **문(statement)당 한 번** 평가되는 패턴으로 권장된다.
+- `current_setting(...)`도 동일 이슈가 있으면 `(SELECT current_setting(...))` 형태를 검토한다.
+- 기존 마이그레이션을 고칠 때는, 이미 배포된 DB용으로 **DROP POLICY → CREATE POLICY** 보정 마이그레이션을 추가하는 방식을 우선한다.

@@ -1,6 +1,9 @@
 'use client';
 
 import { MOVE_REPORT_ATTRIBUTION_QUERY_KEYS } from './attributionSchema';
+import { isValidCoachSlugFormat, normalizeCoachSlugInput } from './coachSlug';
+
+const MR_SOURCE_ALLOWED = new Set(['parent_direct', 'shared', 'coach_link', 'educator_campaign']);
 
 const STORAGE_KEY = 'move_report_attribution_v1';
 const MAX_LEN = 256;
@@ -23,6 +26,30 @@ export function captureMoveReportAttribution(): void {
       if (v) {
         const s = sanitizeQueryValue(v);
         if (s) out[key] = s;
+      }
+    }
+
+    if (out.mr_source && !MR_SOURCE_ALLOWED.has(out.mr_source)) {
+      delete out.mr_source;
+    }
+
+    if (!out.mr_source) {
+      const path = window.location.pathname;
+      const coachRaw = sp.get('coach');
+      const coachNorm = coachRaw ? normalizeCoachSlugInput(coachRaw) : '';
+      const hasD = Boolean(sp.get('d')?.trim());
+      const utmSrc = (sp.get('utm_source') || '').trim().toLowerCase();
+
+      if (path.includes('/move-report/shared')) {
+        out.mr_source = 'shared';
+      } else if (utmSrc === 'educator_campaign') {
+        out.mr_source = 'educator_campaign';
+      } else if (coachNorm && isValidCoachSlugFormat(coachNorm)) {
+        out.mr_source = 'coach_link';
+      } else if (hasD) {
+        out.mr_source = 'shared';
+      } else if (path.startsWith('/move-report')) {
+        out.mr_source = 'parent_direct';
       }
     }
 

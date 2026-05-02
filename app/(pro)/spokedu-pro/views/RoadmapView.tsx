@@ -1,9 +1,20 @@
 'use client';
 
 import { useTranslator } from '@/app/providers/I18nProvider';
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { Zap, RefreshCw, Package, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import {
+  Zap,
+  RefreshCw,
+  Package,
+  ChevronRight,
+  ChevronLeft,
+  MonitorPlay,
+  TrendingUp,
+  LayoutGrid,
+  Users,
+} from 'lucide-react';
 import { useSpokeduProDashboard } from '../hooks/useSpokeduProDashboard';
+import { useClassStore } from '../hooks/useClassStore';
 import {
   DEFAULT_DASHBOARD_V4,
   getProgramTitle,
@@ -11,10 +22,12 @@ import {
   DASHBOARD_ROW1_GROUP_LABEL,
   type ThemeKey,
 } from '@/app/lib/spokedu-pro/dashboardDefaults';
+import { OttB2bRoadmapShell } from './roadmap/OttB2bRoadmapShell';
+import type { OttFeaturedProgram, OttMetric } from './roadmap/OttB2bRoadmapShell';
 import { getYouTubeThumbnailUrl } from '../utils/youtube';
 import type { ProgramDetail } from '../types';
 import TodayClassCard from './roadmap/TodayClassCard';
-import { isEquipmentCatalogItem } from '@/app/lib/spokedu-pro/programClassification';
+import { extractEquipmentDisplayTags, isEquipmentCatalogItem } from '@/app/lib/spokedu-pro/programClassification';
 
 type ScreenplayRow = {
   id: number | string;
@@ -24,8 +37,30 @@ type ScreenplayRow = {
   thumbnailUrl?: string;
 };
 
-const SECTION_BLOCK = 'space-y-6 rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-900/55 to-slate-950/35 p-4 md:p-5';
-const HEADER_TO_ROW_GAP = 'space-y-4';
+const SCREENPLAYS_TTL_MS = 2 * 60 * 1000;
+let screenplaysCache:
+  | { ts: number; data: ScreenplayRow[]; error: string | null }
+  | null = null;
+
+const SPOTLIGHT_TTL_MS = 2 * 60 * 1000;
+let spotlightCache:
+  | {
+      ts: number;
+      equipment: string;
+      data: SpotlightApiRow[];
+      error: string | null;
+    }
+  | null = null;
+
+function scheduleIdle(fn: () => void) {
+  if (typeof window === 'undefined') return;
+  const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+  if (typeof w.requestIdleCallback === 'function') {
+    w.requestIdleCallback(fn, { timeout: 1200 });
+    return;
+  }
+  window.setTimeout(fn, 200);
+}
 
 function SectionHeader({
   icon,
@@ -74,118 +109,6 @@ function SectionHeader({
   );
 }
 
-function ProgramCardRow1({
-  programId,
-  role,
-  tag2,
-  programDetail,
-  onOpenProgram,
-}: {
-  programId: number;
-  role: string;
-  tag2: string[];
-  programDetail?: ProgramDetail | null;
-  onOpenProgram: () => void;
-}) {
-  const tr = useTranslator();
-  const prog = PROGRAM_BANK.find((p) => p.id === programId);
-  const gradient = prog?.gradient ?? 'from-orange-500 to-red-600';
-  const title = programDetail?.title ?? getProgramTitle(programId);
-  const thumbnailUrl = programDetail?.videoUrl ? getYouTubeThumbnailUrl(programDetail.videoUrl) : null;
-  return (
-    <div
-      className="media-card relative w-full aspect-[16/9] md:aspect-[4/3] lg:aspect-[16/9] overflow-hidden group cursor-pointer rounded-[1rem] border border-slate-700/70 bg-slate-900/55 shadow-[0_16px_34px_-20px_rgba(0,0,0,0.85)] ring-1 ring-white/[0.04]"
-      onClick={onOpenProgram}
-    >
-      {thumbnailUrl ? (
-        <img
-          src={thumbnailUrl}
-          alt=""
-          className="thumb-grade absolute inset-0 w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500"
-        />
-      ) : (
-        <div
-          className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-70 group-hover:opacity-100 transition-opacity flex items-center justify-center`}
-        >
-          <span className="text-6xl text-white/90">▶</span>
-        </div>
-      )}
-      <div className="relative absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/52 to-transparent p-4 md:p-5 flex flex-col justify-end">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_42%)] opacity-40" />
-        <div className="mb-2 opacity-90">
-          <span className="text-[10px] font-black uppercase text-white px-2 py-0.5 rounded-full bg-black/65 border border-white/15">
-            {tr(role)}
-          </span>
-        </div>
-        <h4 className="relative text-white font-black text-[1.02rem] md:text-[1.06rem] lg:text-[1.15rem] leading-tight line-clamp-2">
-          {tr(title)}
-        </h4>
-        <div className="pointer-events-none hidden md:flex absolute bottom-4 right-4 opacity-0 md:group-hover:opacity-100 transition-opacity">
-          <span className="inline-flex items-center gap-2 rounded-full bg-slate-950/70 border border-white/10 px-3 py-1.5 text-[11px] font-bold text-slate-100 shadow-sm">
-            <span className="text-slate-200">▶</span> {tr('열기')}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ScreenplayCard({
-  title,
-  subtitle,
-  thumbnailUrl,
-  onClick,
-}: {
-  title: string;
-  subtitle?: string;
-  thumbnailUrl?: string;
-  onClick: () => void;
-}) {
-  const tr = useTranslator();
-  return (
-    <div
-      className="media-card relative w-full aspect-[16/9] md:aspect-[4/3] lg:aspect-[16/9] overflow-hidden group cursor-pointer rounded-[1rem] border border-slate-700/70 bg-slate-900/55 shadow-[0_16px_34px_-20px_rgba(0,0,0,0.85)] ring-1 ring-white/[0.04]"
-      onClick={onClick}
-    >
-      {thumbnailUrl ? (
-        <img
-          src={thumbnailUrl}
-          alt=""
-          className="thumb-grade absolute inset-0 w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500"
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-sky-600 to-cyan-700 opacity-80 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <span className="text-5xl text-white/90">S</span>
-        </div>
-      )}
-      <div className="relative absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/58 to-transparent p-4 md:p-5 flex flex-col justify-end">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_42%)] opacity-35" />
-        {subtitle ? (
-          <div className="mb-2">
-            <span className="text-[10px] font-black text-slate-100 px-2 py-0.5 rounded-full bg-slate-900/70 border border-slate-400/30">
-              {tr(subtitle)}
-            </span>
-          </div>
-        ) : null}
-        <h4 className="relative text-white font-black text-[1.02rem] md:text-[1.06rem] lg:text-[1.15rem] leading-tight line-clamp-2">{tr(title)}</h4>
-        <div className="pointer-events-none hidden md:flex absolute bottom-4 right-4 opacity-0 md:group-hover:opacity-100 transition-opacity">
-          <span className="inline-flex items-center gap-2 rounded-full bg-slate-950/70 border border-white/10 px-3 py-1.5 text-[11px] font-bold text-slate-100 shadow-sm">
-            <span className="text-slate-200">▶</span> {tr('열기')}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EmptyGuideSlot({ message }: { message: string }) {
-  return (
-    <div className="relative w-full aspect-[16/9] md:aspect-[4/3] lg:aspect-[16/9] rounded-[1rem] border border-dashed border-slate-600/80 bg-slate-900/40 flex flex-col items-center justify-center gap-2 px-4 text-center">
-      <p className="text-sm font-bold text-slate-400">{message}</p>
-    </div>
-  );
-}
-
 /** 모바일=넷플릭스형 가로 스냅, 웹=4열 고정 그리드 */
 function DashboardPosterRow({
   ariaLabel,
@@ -206,8 +129,8 @@ function DashboardPosterRow({
   return (
     <div className="-mx-6 lg:-mx-12 px-6 lg:px-12 relative" role="region" aria-label={ariaLabel}>
       {/* 좌우 페이드 마스크: 모바일에서만 */}
-      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#0F172A] to-transparent md:hidden" />
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#0F172A] to-transparent md:hidden" />
+      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[var(--sp-pro-bg)] to-transparent md:hidden" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[var(--sp-pro-bg)] to-transparent md:hidden" />
 
       <button
         type="button"
@@ -270,6 +193,8 @@ function SpotlightProgramCard({
         <img
           src={thumbnailUrl}
           alt=""
+          loading="lazy"
+          decoding="async"
           className="thumb-grade absolute inset-0 w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500"
         />
       ) : (
@@ -306,6 +231,9 @@ export default function RoadmapView({
   onGoToAIReportFromToday,
   onAddClassFromToday,
   onGoToAssistantTools,
+  onOpenPlanBilling,
+  programLibraryCount = 0,
+  programLibraryReady = false,
 }: {
   onOpenDetail: (
     id: number,
@@ -330,9 +258,14 @@ export default function RoadmapView({
   onGoToAIReportFromToday?: () => void;
   onAddClassFromToday?: () => void;
   onGoToAssistantTools?: () => void;
+  onOpenPlanBilling?: () => void;
+  /** 상위에서 이미 불러온 본편 프로그램 목록 길이(중복 fetch 방지) */
+  programLibraryCount?: number;
+  programLibraryReady?: boolean;
 }) {
   const tr = useTranslator();
-  const { data, weekLabel, loading, error, fetchDashboard } = useSpokeduProDashboard();
+  const { data, loading, error, fetchDashboard } = useSpokeduProDashboard();
+  const { classes, loaded: classesLoaded } = useClassStore();
   const [screenplays, setScreenplays] = useState<ScreenplayRow[]>([]);
   const [screenplaysError, setScreenplaysError] = useState<string | null>(null);
   const [screenplaysLoading, setScreenplaysLoading] = useState(true);
@@ -355,35 +288,48 @@ export default function RoadmapView({
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    const cached = screenplaysCache;
+    if (cached && Date.now() - cached.ts < SCREENPLAYS_TTL_MS) {
+      setScreenplays(cached.data);
+      setScreenplaysError(cached.error);
+      setScreenplaysLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
     setScreenplaysLoading(true);
     setScreenplaysError(null);
-    fetch('/api/spokedu-pro/screenplays', { credentials: 'include' })
-      .then(async (res) => {
-        const json = (await res.json().catch(() => ({}))) as { screenplays?: unknown; error?: string };
-        if (cancelled) return;
-        if (!res.ok) {
+
+    scheduleIdle(() => {
+      fetch('/api/spokedu-pro/screenplays', { credentials: 'include', signal: controller.signal })
+        .then(async (res) => {
+          const json = (await res.json().catch(() => ({}))) as { screenplays?: unknown; error?: string };
+          if (controller.signal.aborted) return;
+          if (!res.ok) {
+            const err = json.error ?? `HTTP ${res.status}`;
+            setScreenplays([]);
+            setScreenplaysError(err);
+            screenplaysCache = { ts: Date.now(), data: [], error: err };
+            return;
+          }
+          const rows = Array.isArray(json.screenplays) ? (json.screenplays as ScreenplayRow[]) : [];
+          setScreenplays(rows);
+          setScreenplaysError(null);
+          screenplaysCache = { ts: Date.now(), data: rows, error: null };
+        })
+        .catch((e: unknown) => {
+          if (controller.signal.aborted) return;
+          const msg = e instanceof Error ? e.message : 'Network error';
           setScreenplays([]);
-          setScreenplaysError(json.error ?? `HTTP ${res.status}`);
-          return;
-        }
-        if (Array.isArray(json.screenplays)) {
-          setScreenplays(json.screenplays as ScreenplayRow[]);
-        } else {
-          setScreenplays([]);
-        }
-      })
-      .catch((e: Error) => {
-        if (cancelled) return;
-        setScreenplays([]);
-        setScreenplaysError(e.message || 'Network error');
-      })
-      .finally(() => {
-        if (!cancelled) setScreenplaysLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+          setScreenplaysError(msg);
+          screenplaysCache = { ts: Date.now(), data: [], error: msg };
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setScreenplaysLoading(false);
+        });
+    });
+
+    return () => controller.abort();
   }, [screenplaysFetchKey]);
 
   const retryScreenplays = useCallback(() => {
@@ -411,7 +357,20 @@ export default function RoadmapView({
       setSpotlightError(null);
       return;
     }
-    let cancelled = false;
+
+    const cached = spotlightCache;
+    if (
+      cached &&
+      cached.equipment === spotlightEquipment &&
+      Date.now() - cached.ts < SPOTLIGHT_TTL_MS
+    ) {
+      setSpotlightPrograms(cached.data);
+      setSpotlightError(cached.error);
+      setSpotlightLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
     setSpotlightLoading(true);
     setSpotlightError(null);
     const params = new URLSearchParams();
@@ -421,280 +380,343 @@ export default function RoadmapView({
     params.set('main_theme', '협동형');
     params.set('group_size', '소그룹');
     params.set('equipment', spotlightEquipment);
-    fetch(`/api/spokedu-pro/programs?${params.toString()}`, { credentials: 'include' })
-      .then(async (res) => {
-        const json = (await res.json().catch(() => ({}))) as { data?: unknown; error?: string };
-        if (cancelled) return;
-        if (!res.ok) {
-          setSpotlightPrograms([]);
-          setSpotlightError(json.error ?? `HTTP ${res.status}`);
-          return;
-        }
-        const rows = Array.isArray(json.data) ? (json.data as SpotlightApiRow[]) : [];
-        setSpotlightPrograms(rows.slice(0, 4));
+
+    scheduleIdle(() => {
+      fetch(`/api/spokedu-pro/programs?${params.toString()}`, {
+        credentials: 'include',
+        signal: controller.signal,
       })
-      .catch((e: Error) => {
-        if (!cancelled) {
+        .then(async (res) => {
+          const json = (await res.json().catch(() => ({}))) as { data?: unknown; error?: string };
+          if (controller.signal.aborted) return;
+          if (!res.ok) {
+            const err = json.error ?? `HTTP ${res.status}`;
+            setSpotlightPrograms([]);
+            setSpotlightError(err);
+            spotlightCache = { ts: Date.now(), equipment: spotlightEquipment, data: [], error: err };
+            return;
+          }
+          const rows = Array.isArray(json.data) ? (json.data as SpotlightApiRow[]) : [];
+          const sliced = rows.slice(0, 4);
+          setSpotlightPrograms(sliced);
+          setSpotlightError(null);
+          spotlightCache = { ts: Date.now(), equipment: spotlightEquipment, data: sliced, error: null };
+        })
+        .catch((e: unknown) => {
+          if (controller.signal.aborted) return;
+          const msg = e instanceof Error ? e.message : 'Network error';
           setSpotlightPrograms([]);
-          setSpotlightError(e.message || 'Network error');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setSpotlightLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+          setSpotlightError(msg);
+          spotlightCache = { ts: Date.now(), equipment: spotlightEquipment, data: [], error: msg };
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setSpotlightLoading(false);
+        });
+    });
+
+    return () => controller.abort();
   }, [spotlightConfig, spotlightEquipment, spotlightFetchKey]);
 
   const openWithContext = (programId: number, role?: string, themeKey?: string) => {
     onOpenDetail(programId, { role, themeKey });
   };
 
-  const row1Programs = weekTheme.items.slice(0, 3);
-  const paddedPrograms: (typeof weekTheme.items[0] | null)[] = [0, 1, 2].map((i) => row1Programs[i] ?? null);
   const firstScreenplay = screenplays[0];
   const numericScreenplayId =
     firstScreenplay != null ? Number(firstScreenplay.id) : NaN;
   const canOpenScreenplay = Number.isFinite(numericScreenplayId) && numericScreenplayId > 0;
 
-  const openFirstScreenplay = () => {
-    if (!firstScreenplay) return;
-    if (canOpenScreenplay) {
-      onOpenDetail(numericScreenplayId, {
-        screenplay: true,
-        themeKey: 'cognitive',
-        row: {
-          id: numericScreenplayId,
-          title: firstScreenplay.title,
-          mode_id: firstScreenplay.modeId ?? null,
-          thumbnail_url: firstScreenplay.thumbnailUrl ?? null,
-        },
+  const screenplaysMetricReady = !screenplaysLoading;
+  const curationMetricReady = data !== null;
+  const curationItemTotal =
+    data !== null ? data.weekTheme.items.length + data.row2.items.length : 0;
+
+  const POSTER_PALETTES = [
+    { accent: 'from-fuchsia-400 to-cyan-300', gradient: 'from-fuchsia-600/80 via-indigo-700/70 to-cyan-500/70' },
+    { accent: 'from-emerald-300 to-lime-300', gradient: 'from-emerald-600/80 via-teal-700/70 to-lime-500/70' },
+    { accent: 'from-orange-300 to-rose-300', gradient: 'from-orange-600/80 via-red-700/70 to-rose-500/70' },
+    { accent: 'from-sky-300 to-violet-300', gradient: 'from-sky-600/80 via-blue-700/70 to-violet-500/70' },
+    { accent: 'from-yellow-300 to-orange-300', gradient: 'from-yellow-500/80 via-amber-700/70 to-orange-500/70' },
+  ] as const;
+
+  const fmtMetric = (ready: boolean, n: number) => (!ready ? '—' : String(n));
+
+  const buildFunctionalMoveMetaSlots = useCallback(
+    (programId: number) => {
+      const d = programDetails[String(programId)];
+      const theme = String(d?.mainTheme ?? '').trim();
+      const fnFirst = (Array.isArray(d?.functionTypes) ? d.functionTypes.filter(Boolean) : [d?.functionType])
+        .filter((x): x is string => typeof x === 'string' && Boolean(String(x).trim()))[0];
+      const eqFirst = extractEquipmentDisplayTags(d?.equipment ?? '')[0]?.trim() ?? '';
+      const dash = '—';
+      return [
+        { label: tr('활동 테마'), value: theme || dash },
+        { label: tr('신체 기능'), value: fnFirst?.trim() || dash },
+        { label: tr('활용 교구'), value: eqFirst || dash },
+      ];
+    },
+    [programDetails, tr]
+  );
+
+  const ottMetrics: OttMetric[] = useMemo(
+    () => [
+      {
+        label: tr('본편 카탈로그'),
+        value: fmtMetric(programLibraryReady, programLibraryCount),
+        change: '+0%',
+        icon: MonitorPlay,
+      },
+      {
+        label: tr('운영 중인 반'),
+        value: fmtMetric(classesLoaded, classes.length),
+        change: '+0명',
+        icon: Users,
+      },
+      {
+        label: tr('이번 주 큐레이션'),
+        value: fmtMetric(curationMetricReady, curationItemTotal),
+        change: '+0%',
+        icon: TrendingUp,
+      },
+      {
+        label: tr('스크린플레이'),
+        value: fmtMetric(screenplaysMetricReady, screenplays.length),
+        change: '+0',
+        icon: LayoutGrid,
+      },
+    ],
+    [
+      tr,
+      programLibraryReady,
+      programLibraryCount,
+      classesLoaded,
+      classes.length,
+      curationMetricReady,
+      curationItemTotal,
+      screenplaysMetricReady,
+      screenplays.length,
+    ]
+  );
+
+  /** 기존 대시보드와 동일: Row1 상위 3슬롯 + 스크린플레이 1슬롯(최대 4). 교구 스포트라이트는 하단 전용 섹션. */
+  const featuredOttPrograms: OttFeaturedProgram[] = useMemo(() => {
+    const out: OttFeaturedProgram[] = [];
+    let idx = 0;
+    const row1 = weekTheme.items.slice(0, 3);
+    for (const item of row1) {
+      const pal = POSTER_PALETTES[idx % POSTER_PALETTES.length];
+      const rawTitle = programDetails[String(item.programId)]?.title ?? getProgramTitle(item.programId);
+      const videoUrl = programDetails[String(item.programId)]?.videoUrl ?? null;
+      const thumbnailUrl = videoUrl ? getYouTubeThumbnailUrl(String(videoUrl)) : null;
+      out.push({
+        id: item.programId,
+        title: tr(rawTitle),
+        category: tr(item.role),
+        metaSlots: buildFunctionalMoveMetaSlots(item.programId),
+        tag: idx === 0 ? tr(weekTheme.badge) : tr(item.role),
+        accent: pal.accent,
+        gradient: pal.gradient,
+        thumbnailUrl,
       });
-      return;
+      idx++;
     }
-    onGoToLibrary?.('cognitive');
-  };
+    if (firstScreenplay && canOpenScreenplay) {
+      const pal = POSTER_PALETTES[idx % POSTER_PALETTES.length];
+      const screenplayVideoUrl =
+        programDetails[String(numericScreenplayId)]?.videoUrl ?? null;
+      const screenplayThumbnailUrl =
+        firstScreenplay.thumbnailUrl ??
+        (screenplayVideoUrl ? getYouTubeThumbnailUrl(String(screenplayVideoUrl)) : null);
+      out.push({
+        id: numericScreenplayId,
+        title: tr(firstScreenplay.title ?? 'SPOMOVE'),
+        category: tr('스포무브'),
+        metaSlots: [
+          { label: tr('인지영역'), value: tr('인지') },
+          { label: tr('과제유형'), value: tr(String(firstScreenplay.modeId ?? '스포무브')) },
+          { label: tr('레벨'), value: tr(String(firstScreenplay.subtitle ?? '—')) },
+        ],
+        tag: tr('브레인체육'),
+        accent: pal.accent,
+        gradient: pal.gradient,
+        thumbnailUrl: screenplayThumbnailUrl,
+        isScreenplay: true,
+      });
+    }
+    return out;
+  }, [
+    weekTheme.items,
+    weekTheme.badge,
+    programDetails,
+    tr,
+    firstScreenplay,
+    canOpenScreenplay,
+    numericScreenplayId,
+    classes.length,
+    buildFunctionalMoveMetaSlots,
+  ]);
+
+  const spotlightOttPrograms: OttFeaturedProgram[] = useMemo(() => {
+    if (!spotlightConfig || !spotlightEquipment) return [];
+    return spotlightPrograms
+      .flatMap((row, idx) => {
+        const id = Number(row.id);
+        if (!Number.isFinite(id) || id <= 0) return [];
+        const pal = POSTER_PALETTES[idx % POSTER_PALETTES.length];
+        const rawTitle = programDetails[String(id)]?.title ?? String(row.title ?? '').trim() ?? getProgramTitle(id);
+        const videoUrl = programDetails[String(id)]?.videoUrl ?? row.video_url ?? null;
+        const thumbnailUrl = videoUrl ? getYouTubeThumbnailUrl(String(videoUrl)) : null;
+        const item: OttFeaturedProgram = {
+          id,
+          title: tr(rawTitle),
+          category: tr('교구 추천'),
+          metaSlots: buildFunctionalMoveMetaSlots(id),
+          tag: spotlightEquipment,
+          accent: pal.accent,
+          gradient: pal.gradient,
+          thumbnailUrl,
+        };
+        return [item];
+      })
+      .slice(0, 4);
+  }, [
+    spotlightConfig,
+    spotlightEquipment,
+    spotlightPrograms,
+    programDetails,
+    tr,
+    classes.length,
+    buildFunctionalMoveMetaSlots,
+  ]);
+
+  const onOpenFeatured = useCallback(
+    (p: OttFeaturedProgram) => {
+      if (p.isScreenplay && canOpenScreenplay && firstScreenplay) {
+        onOpenDetail(numericScreenplayId, {
+          screenplay: true,
+          themeKey: 'cognitive',
+          row: {
+            id: numericScreenplayId,
+            title: firstScreenplay.title,
+            mode_id: firstScreenplay.modeId ?? null,
+            thumbnail_url: firstScreenplay.thumbnailUrl ?? null,
+          },
+        });
+        return;
+      }
+      onOpenDetail(p.id, { themeKey: 'co-op' });
+    },
+    [canOpenScreenplay, firstScreenplay, numericScreenplayId, onOpenDetail]
+  );
+
+  // 요청: "오늘의 수업" 블록은 일단 숨김
+  const todaySlot = null;
 
   return (
     <section className="pb-32 pt-0 mt-0">
-      {(onStartTodayClass && onOpenPostClass && onGoToAIReportFromToday && onAddClassFromToday && onGoToLibrary) && (
-        <div className="px-6 lg:px-12 pt-6 lg:pt-8 pb-2">
-          <div className="w-full lg:w-2/3 lg:max-w-3xl">
-            <TodayClassCard
-              weekThemeKey={dashboard.weekTheme.themeKey}
-              onGoToLibrary={(tk) => onGoToLibrary(tk)}
-              onStartClass={onStartTodayClass}
-              onOpenPostClass={onOpenPostClass}
-              onGoToAIReport={onGoToAIReportFromToday}
-              onAddClass={onAddClassFromToday}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="px-6 lg:px-12 mt-6 space-y-8">
-        {error && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-sm text-red-300">
+      {error ? (
+        <div className="px-5 py-4 lg:px-8">
+          <div className="mx-auto flex max-w-[1600px] flex-col gap-3 rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-sm text-red-200 sm:flex-row sm:items-center">
             <span className="flex-1">{tr('이번 주 추천을 불러오지 못했어요.')}</span>
             <button
               type="button"
               onClick={() => fetchDashboard()}
-              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors shrink-0"
+              className="shrink-0 rounded-lg bg-red-600 px-4 py-2 font-bold text-white transition-colors hover:bg-red-500"
             >
               {tr('다시 시도')}
             </button>
           </div>
-        )}
-        {loading && !data && (
-          <div className="text-slate-400 font-medium">{tr('대시보드 불러오는 중...')}</div>
+        </div>
+      ) : null}
+
+      {loading && !data ? (
+        <div className="px-5 py-6 text-center text-zinc-400 lg:px-8">{tr('대시보드 불러오는 중...')}</div>
+      ) : null}
+
+      {!error ? (
+        <OttB2bRoadmapShell
+          metrics={ottMetrics}
+          featuredPrograms={featuredOttPrograms}
+          spotlightTitle={
+            spotlightConfig?.sectionTitle?.trim()
+              ? spotlightConfig.sectionTitle.trim()
+              : spotlightEquipment
+                ? `${spotlightEquipment}${tr('로 하는 추천 프로그램')}`
+                : undefined
+          }
+          spotlightPrograms={spotlightOttPrograms}
+          onOpenSpotlight={(p) => openWithContext(p.id, undefined, 'co-op')}
+          lineupEyebrow={tr(DASHBOARD_ROW1_GROUP_LABEL)}
+          lineupTitle={tr('이번 주 수업 가이드')}
+          nowPlayingTitle={tr(dashboard.weekTheme.title)}
+          heroBadge={tr(dashboard.weekTheme.badge)}
+          heroSubtitle={tr(dashboard.weekTheme.subtitle)}
+          onBrowsePremium={() => onGoToLibrary?.('co-op')}
+          onOpenPlanBilling={onOpenPlanBilling}
+          onOpenFeatured={onOpenFeatured}
+          onMarketReport={() => onGoToLibrary?.('co-op')}
+          onSendToClass={() => onGoToAssistantTools?.()}
+          belowHeader={todaySlot}
+        />
+      ) : null}
+
+      {!error &&
+        data &&
+        featuredOttPrograms.length === 0 &&
+        screenplays.length === 0 &&
+        !screenplaysError &&
+        !screenplaysLoading && (
+          <div className="mx-auto max-w-[1600px] px-5 py-10 text-center text-zinc-400 lg:px-8">
+            <p className="font-medium">{tr('이번 주 추천이 아직 없어요.')}</p>
+            <p className="mt-1 text-sm">{tr('나머지 추천은 곧 채워질 예정이에요.')}</p>
+          </div>
         )}
 
-        {!error &&
-          data &&
-          dashboard.weekTheme.items.length === 0 &&
-          screenplays.length === 0 &&
-          !screenplaysError &&
-          !screenplaysLoading && (
-            <div className="py-12 text-center text-slate-400">
-              <p className="font-medium">{tr('이번 주 추천이 아직 없어요.')}</p>
-              <p className="text-sm mt-1">{tr('나머지 추천은 곧 채워질 예정이에요.')}</p>
+      {!error ? (
+        <div className="mx-auto mt-8 max-w-[1600px] space-y-6 px-5 text-white lg:px-8">
+          {screenplaysError ? (
+            <div className="flex flex-col gap-3 rounded-[2rem] border border-red-500/30 bg-red-950/30 p-4 text-sm text-red-200 sm:flex-row sm:items-center">
+              <span className="flex-1">{tr('스포무브 목록을 불러오지 못했어요.')}</span>
+              <button
+                type="button"
+                onClick={() => retryScreenplays()}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl bg-red-600 px-3 py-2 text-xs font-bold text-white hover:bg-red-500"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                {tr('다시 시도')}
+              </button>
             </div>
-          )}
+          ) : null}
 
-        {!error &&
-          (loading ? !!data : true) &&
-          (dashboard.weekTheme.items.length > 0 ||
-            screenplays.length > 0 ||
-            !!screenplaysError ||
-            screenplaysLoading) && (
-            <>
-              <div className={SECTION_BLOCK}>
-                <div className={HEADER_TO_ROW_GAP}>
-                  <SectionHeader
-                    icon={<Zap className="h-4 w-4 text-yellow-300" />}
-                    title={tr('이번 주 수업 가이드')}
-                    sub={weekLabel ? tr(weekLabel) : null}
-                    badge={tr(DASHBOARD_ROW1_GROUP_LABEL)}
-                  />
+          {/* 교구 추천은 상단 셸의 "교구 큐레이션" 영역으로 이동 */}
 
-                {screenplaysError ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-sm text-red-200">
-                    <span className="flex-1">{tr('스포무브 목록을 불러오지 못했어요.')}</span>
-                    <button
-                      type="button"
-                      onClick={() => retryScreenplays()}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shrink-0"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      {tr('다시 시도')}
-                    </button>
-                  </div>
+          <details className="rounded-[1.5rem] border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-400">
+            <summary className="cursor-pointer list-none font-bold text-zinc-200 [&::-webkit-details-marker]:hidden">
+              {tr('지난 주·다음 주 안내')}
+            </summary>
+            <div className="ml-1 mt-2 space-y-2 border-l border-white/10 pl-6">
+              <p>{tr('이번 주 추천은 월요일 시작 캘린더 주 기준으로 갱신됩니다. 탭을 켜 둔 채로 날짜가 바뀌면 자동으로 다시 불러옵니다.')}</p>
+              <p>
+                {tr('지난 구성은 라이브러리에서 테마별로 다시 열 수 있어요.')}{' '}
+                {onGoToLibrary ? (
+                  <button
+                    type="button"
+                    className="font-bold text-amber-400 hover:underline"
+                    onClick={() => onGoToLibrary('co-op')}
+                  >
+                    {tr('라이브러리로 이동')}
+                  </button>
                 ) : null}
-
-                  <DashboardPosterRow ariaLabel={tr('이번 주 수업 가이드')}>
-                  {paddedPrograms.map((item, idx) => (
-                    <div key={`guide-wrap-${idx}`} className={POSTER_CELL}>
-                      {item ? (
-                        <ProgramCardRow1
-                          programId={item.programId}
-                          role={item.role}
-                          tag2={item.tag2 ?? []}
-                          programDetail={programDetails[String(item.programId)] ?? null}
-                          onOpenProgram={() => openWithContext(item.programId, item.role, 'co-op')}
-                        />
-                      ) : (
-                        <EmptyGuideSlot message={tr('추천 준비 중')} />
-                      )}
-                    </div>
-                  ))}
-                  <div className={POSTER_CELL}>
-                    {screenplaysLoading && screenplays.length === 0 ? (
-                      <div className="relative w-full aspect-[16/9] md:aspect-[4/3] lg:aspect-[16/9] rounded-[1rem] border border-slate-700 bg-slate-900/50 flex items-center justify-center">
-                        <p className="text-sm font-medium text-slate-500">{tr('스포무브 목록 불러오는 중...')}</p>
-                      </div>
-                    ) : firstScreenplay ? (
-                      <ScreenplayCard
-                        title={firstScreenplay.title ?? `Screenplay #${firstScreenplay.id}`}
-                        subtitle={firstScreenplay.subtitle ?? firstScreenplay.modeId}
-                        thumbnailUrl={firstScreenplay.thumbnailUrl}
-                        onClick={openFirstScreenplay}
-                      />
-                    ) : (
-                      <EmptyGuideSlot message={tr('스포무브(브레인체육) 추천 준비 중')} />
-                    )}
-                  </div>
-                  </DashboardPosterRow>
-                </div>
-
-                {spotlightConfig !== null && spotlightEquipment ? (
-                  <div className="space-y-4 pt-4 border-t border-slate-800/70">
-                    <SectionHeader
-                      icon={<Package className="h-4 w-4 text-amber-300" />}
-                      title={
-                        spotlightConfig.sectionTitle?.trim()
-                          ? spotlightConfig.sectionTitle.trim()
-                          : `${spotlightEquipment}${tr('로 하는 추천 프로그램')}`
-                      }
-                      badge={tr('교구 큐레이션')}
-                      action={
-                        onGoToLibrary
-                          ? {
-                              label: tr('라이브러리에서 더 보기'),
-                              onClick: () => onGoToLibrary('co-op'),
-                            }
-                          : undefined
-                      }
-                    />
-                    {spotlightError ? (
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-sm text-red-200">
-                        <span className="flex-1">{tr('교구 추천을 불러오지 못했어요.')}</span>
-                        <button
-                          type="button"
-                          onClick={() => setSpotlightFetchKey((k) => k + 1)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shrink-0"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          {tr('다시 시도')}
-                        </button>
-                      </div>
-                    ) : spotlightLoading ? (
-                      <div className="text-slate-500 text-sm font-medium">{tr('추천 불러오는 중...')}</div>
-                    ) : spotlightPrograms.length === 0 ? (
-                      <div className="rounded-2xl border border-slate-700 bg-slate-900/40 px-4 py-6 text-sm text-slate-400">
-                        {tr('이 교구에 맞는 본편 프로그램이 아직 없어요.')}
-                      </div>
-                    ) : (
-                      <DashboardPosterRow
-                        ariaLabel={
-                          spotlightConfig.sectionTitle?.trim() ?? `${spotlightEquipment} ${tr('추천 프로그램')}`
-                        }
-                      >
-                        {spotlightPrograms.map((row, idx) => {
-                          const id = Number(row.id);
-                          if (!Number.isFinite(id) || id <= 0) return null;
-                          const title = String(row.title ?? '').trim() || getProgramTitle(id);
-                          return (
-                            <div key={`spotlight-${spotlightEquipment}-${idx}-${id}`} className={POSTER_CELL}>
-                              <SpotlightProgramCard
-                                programId={id}
-                                title={title}
-                                videoUrl={row.video_url}
-                                equipmentLabel={spotlightEquipment}
-                                programDetail={programDetails[String(id)] ?? null}
-                                onOpen={() => openWithContext(id, undefined, 'co-op')}
-                              />
-                            </div>
-                          );
-                        })}
-                      </DashboardPosterRow>
-                    )}
-                  </div>
-                ) : null}
-
-                {onGoToAssistantTools && (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-900/50 px-4 py-3">
-                    <p className="text-slate-300 text-sm font-medium">
-                      {tr('수업 중 술래·팀 나누기·타이머가 필요하면')}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={onGoToAssistantTools}
-                      className="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold transition-colors"
-                    >
-                      {tr('수업 보조도구 열기')}
-                    </button>
-                  </div>
+              </p>
+              <p>
+                {tr(
+                  '「다음 주」 미리보기 API는 없습니다. 월요일이 지나 캘린더 주가 바뀌면, 이번 주 추천이 한 주 밀려 자동으로 갱신됩니다.'
                 )}
-                <details className="rounded-xl border border-slate-700/80 bg-slate-900/30 px-4 py-2 text-sm text-slate-400">
-                  <summary className="cursor-pointer font-bold text-slate-300 list-none [&::-webkit-details-marker]:hidden">
-                    {tr('지난 주·다음 주 안내')}
-                  </summary>
-                  <div className="mt-2 pl-6 space-y-2 border-l border-slate-700 ml-1">
-                    <p>{tr('이번 주 추천은 월요일 시작 캘린더 주 기준으로 갱신됩니다. 탭을 켜 둔 채로 날짜가 바뀌면 자동으로 다시 불러옵니다.')}</p>
-                    <p>
-                      {tr('지난 구성은 라이브러리에서 테마별로 다시 열 수 있어요.')}{' '}
-                      {onGoToLibrary ? (
-                        <button
-                          type="button"
-                          className="text-amber-400 font-bold hover:underline"
-                          onClick={() => onGoToLibrary('co-op')}
-                        >
-                          {tr('라이브러리로 이동')}
-                        </button>
-                      ) : null}
-                    </p>
-                    <p>
-                      {tr(
-                        '「다음 주」 미리보기 API는 없습니다. 월요일이 지나 캘린더 주가 바뀌면, 이번 주 추천이 한 주 밀려 자동으로 갱신됩니다.'
-                      )}
-                    </p>
-                  </div>
-                </details>
-              </div>
-            </>
-          )}
-      </div>
+              </p>
+            </div>
+          </details>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { RefreshCw, X, Gamepad2, Sparkles } from 'lucide-react';
@@ -12,19 +13,8 @@ import { useSpokeduProContent } from './hooks/useSpokeduProContent';
 import { useSpokeduProAdminBlocks } from './hooks/useSpokeduProContent';
 import type { ProgramDetail } from './types';
 import SpokeduProAside from './components/SpokeduProAside';
-import SpokeduProToolkit from './components/SpokeduProToolkit';
-import SpokeduProDrawer from './components/SpokeduProDrawer';
-import DashboardCurationEditor from './components/DashboardCurationEditor';
 import RoadmapView from './views/RoadmapView';
 import type { ThemeKey } from '@/app/lib/spokedu-pro/dashboardDefaults';
-import LibraryView from './views/LibraryView';
-import DataCenterView from './views/DataCenterView';
-import AIReportView from './views/AIReportView';
-import AssistantToolsView from './views/AssistantToolsView';
-import SettingsView from './views/SettingsView';
-import LessonPlanView from './views/LessonPlanView';
-import OnboardingWizard from './components/OnboardingWizard';
-import PostClassModal from './components/PostClassModal';
 import { SpokeduProErrorBoundary } from './components/SpokeduProErrorBoundary';
 import { useProContext } from './hooks/useProContext';
 import { trackSpokeduProEvent } from './utils/spokeduProAnalytics';
@@ -37,6 +27,18 @@ import {
 } from './utils/spomoveLaunch';
 import { resolveScreenplayTagMappingV1, getScreenplayLevelTag } from './utils/screenplayTagMapping';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
+
+const SpokeduProToolkit = dynamic(() => import('./components/SpokeduProToolkit'), { ssr: false });
+const SpokeduProDrawer = dynamic(() => import('./components/SpokeduProDrawer'), { ssr: false });
+const DashboardCurationEditor = dynamic(() => import('./components/DashboardCurationEditor'), { ssr: false });
+const LibraryView = dynamic(() => import('./views/LibraryView'), { ssr: false });
+const DataCenterView = dynamic(() => import('./views/DataCenterView'), { ssr: false });
+const AIReportView = dynamic(() => import('./views/AIReportView'), { ssr: false });
+const AssistantToolsView = dynamic(() => import('./views/AssistantToolsView'), { ssr: false });
+const SettingsView = dynamic(() => import('./views/SettingsView'), { ssr: false });
+const LessonPlanView = dynamic(() => import('./views/LessonPlanView'), { ssr: false });
+const OnboardingWizard = dynamic(() => import('./components/OnboardingWizard'), { ssr: false });
+const PostClassModal = dynamic(() => import('./components/PostClassModal'), { ssr: false });
 
 export default function SpokeduProClient({
   isEditMode = false,
@@ -51,6 +53,9 @@ export default function SpokeduProClient({
   const { viewId, switchView } = useSpokeduProUI('roadmap');
   const { ctx, loading: ctxLoading, refresh } = useProContext();
   const loginSuccessTracked = useRef(false);
+  const [mountedViews, setMountedViews] = useState<Record<ViewId, true>>(
+    () => ({ roadmap: true } as Record<ViewId, true>)
+  );
   const [onboardingDismissed, setOnboardingDismissed] = useState(
     () => typeof window !== 'undefined' && !!localStorage.getItem('onboardingDismissed')
   );
@@ -60,6 +65,14 @@ export default function SpokeduProClient({
     ctx.dbReady !== false &&
     ctx.activeCenterId === null &&
     !onboardingDismissed;
+
+  const switchViewWithMount = useCallback(
+    (next: ViewId) => {
+      setMountedViews((prev) => (prev[next] ? prev : { ...prev, [next]: true }));
+      switchView(next);
+    },
+    [switchView]
+  );
 
   useEffect(() => {
     const checkout = searchParams.get('checkout');
@@ -82,7 +95,7 @@ export default function SpokeduProClient({
   useEffect(() => {
     const v = searchParams.get('view');
     if (v !== 'settings') return;
-    switchView('settings');
+    switchViewWithMount('settings');
     void refresh();
     try {
       const url = new URL(window.location.href);
@@ -92,7 +105,7 @@ export default function SpokeduProClient({
     } catch {
       /* ignore */
     }
-  }, [searchParams, switchView, refresh]);
+  }, [searchParams, switchViewWithMount, refresh]);
 
   const [toolkitOpen, setToolkitOpen] = useState(false);
 
@@ -178,8 +191,20 @@ export default function SpokeduProClient({
     fetchContent();
   }, [fetchContent]);
   useEffect(() => {
-    if (isEditMode) fetchBlocks();
+    if (isEditMode) {
+      scheduleIdle(() => void fetchBlocks());
+    }
   }, [isEditMode, fetchBlocks]);
+
+  const scheduleIdle = useCallback((fn: () => void) => {
+    if (typeof window === 'undefined') return;
+    const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+    if (typeof w.requestIdleCallback === 'function') {
+      w.requestIdleCallback(fn, { timeout: 1500 });
+      return;
+    }
+    window.setTimeout(fn, 250);
+  }, []);
 
   useEffect(() => {
     if (viewId !== 'library') {
@@ -228,6 +253,7 @@ export default function SpokeduProClient({
     activity_tip?: string | null;
   }>>([]);
   const [programsRefreshToken, setProgramsRefreshToken] = useState(0);
+  const [programsListReady, setProgramsListReady] = useState(false);
   const refreshProgramsFromApi = useCallback(async () => {
     try {
       const res = await fetch('/api/spokedu-pro/programs?limit=200', { credentials: 'include' });
@@ -236,60 +262,65 @@ export default function SpokeduProClient({
       else setProgramsFromApi([]);
     } catch {
       setProgramsFromApi([]);
+    } finally {
+      setProgramsListReady(true);
     }
   }, []);
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    scheduleIdle(() => {
       if (cancelled) return;
-      await refreshProgramsFromApi();
-    })();
+      void refreshProgramsFromApi();
+    });
     return () => {
       cancelled = true;
     };
-  }, [refreshProgramsFromApi]);
+  }, [refreshProgramsFromApi, scheduleIdle]);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/spokedu-pro/screenplays', { credentials: 'include' });
-        const json = await res.json().catch(() => ({}));
-        if (cancelled) return;
-        if (!res.ok || !Array.isArray(json?.screenplays)) {
-          setScreenplayById({});
-          return;
+    scheduleIdle(() => {
+      if (cancelled) return;
+      (async () => {
+        try {
+          const res = await fetch('/api/spokedu-pro/screenplays', { credentials: 'include' });
+          const json = await res.json().catch(() => ({}));
+          if (cancelled) return;
+          if (!res.ok || !Array.isArray(json?.screenplays)) {
+            setScreenplayById({});
+            return;
+          }
+          const next: Record<number, ScreenplayMeta> = {};
+          for (const s of json.screenplays as Array<{
+            id: number;
+            modeId?: string;
+            title?: string;
+            subtitle?: string;
+            description?: string;
+            presetRef?: string;
+            thumbnailUrl?: string;
+          }>) {
+            const id = Number(s.id);
+            if (!Number.isFinite(id)) continue;
+            next[id] = {
+              title: s.title ?? `Screenplay #${id}`,
+              modeId: s.modeId,
+              subtitle: s.subtitle,
+              description: s.description,
+              presetRef: s.presetRef,
+              thumbnailUrl: s.thumbnailUrl,
+            };
+          }
+          setScreenplayById(next);
+        } catch {
+          if (!cancelled) setScreenplayById({});
         }
-        const next: Record<number, ScreenplayMeta> = {};
-        for (const s of json.screenplays as Array<{
-          id: number;
-          modeId?: string;
-          title?: string;
-          subtitle?: string;
-          description?: string;
-          presetRef?: string;
-          thumbnailUrl?: string;
-        }>) {
-          const id = Number(s.id);
-          if (!Number.isFinite(id)) continue;
-          next[id] = {
-            title: s.title ?? `Screenplay #${id}`,
-            modeId: s.modeId,
-            subtitle: s.subtitle,
-            description: s.description,
-            presetRef: s.presetRef,
-            thumbnailUrl: s.thumbnailUrl,
-          };
-        }
-        setScreenplayById(next);
-      } catch {
-        if (!cancelled) setScreenplayById({});
-      }
-    })();
+      })();
+    });
     return () => {
       cancelled = true;
     };
-  }, [screenplaysRefreshToken]);
+  }, [screenplaysRefreshToken, scheduleIdle]);
 
   useEffect(() => {
     const bump = () => setScreenplaysRefreshToken((t) => t + 1);
@@ -540,26 +571,30 @@ export default function SpokeduProClient({
     (themeKey?: string, preset?: string) => {
       setLibraryPreset(themeKey != null || preset != null ? { themeKey, preset } : null);
       setLibraryMode(themeKey === 'cognitive' ? 'screenplay' : 'program');
-      switchView('library');
+      switchViewWithMount('library');
     },
-    [switchView]
+    [switchViewWithMount]
   );
   const openLibraryAll = useCallback(() => {
     setLibraryPreset(null);
     setLibraryMode('program');
-    switchView('library');
-  }, [switchView]);
+    switchViewWithMount('library');
+  }, [switchViewWithMount]);
   const goToLibraryTheme = useCallback(
     (themeKey: ThemeKey) => {
       setLibraryPreset({ themeKey });
       setLibraryMode(themeKey === 'cognitive' ? 'screenplay' : 'program');
-      switchView('library');
+      switchViewWithMount('library');
     },
-    [switchView]
+    [switchViewWithMount]
   );
 
   return (
-    <div ref={rootRef} className="spokedu-pro flex flex-col h-full w-full overflow-hidden bg-[#0F172A] text-[#F8FAFC]">
+    <div
+      ref={rootRef}
+      className="spokedu-pro relative flex flex-col h-full w-full overflow-hidden bg-[var(--sp-pro-bg)] text-[#F8FAFC]"
+    >
+      <div className="sp-pro-bg-mesh" aria-hidden />
       {showOnboarding && (
         <OnboardingWizard
           onComplete={() => {
@@ -571,21 +606,21 @@ export default function SpokeduProClient({
             if (typeof window !== 'undefined') localStorage.setItem('onboardingDismissed', '1');
             setOnboardingDismissed(true);
           }}
-          onSwitchView={switchView}
+          onSwitchView={switchViewWithMount}
         />
       )}
       <SpokeduProErrorBoundary>
-      <div className="flex flex-1 min-h-0">
+      <div className="relative z-10 flex flex-1 min-h-0 w-full max-w-none">
       <SpokeduProAside
         viewId={viewId}
-        onSwitchView={switchView}
+        onSwitchView={switchViewWithMount}
         onOpenLibraryAll={openLibraryAll}
         onGoToLibraryTheme={goToLibraryTheme}
         libraryActiveThemeKey={libraryPreset?.themeKey ?? null}
         isEditMode={isEditMode}
         onOpenCurationDrawer={isEditMode ? () => setShowCurationDrawer(true) : undefined}
       />
-      <main className="flex-1 w-full max-w-full min-w-0 h-full overflow-y-auto overflow-x-hidden custom-scroll relative bg-[#0F172A] z-0 min-h-0 pr-0 mr-0">
+      <main className="flex-1 w-full max-w-full min-w-0 h-full overflow-y-auto overflow-x-hidden custom-scroll relative bg-transparent min-h-0 pr-0 mr-0">
         {!ctxLoading && !ctx.contextLoadError && ctx.entitlement.status === 'past_due' && (
           <div className="sticky top-0 z-[25] flex flex-wrap items-center gap-3 px-4 py-3 bg-rose-950/95 border-b border-rose-700/50 text-rose-50 text-sm">
             <p className="flex-1 min-w-[200px] font-medium">
@@ -638,65 +673,80 @@ export default function SpokeduProClient({
             onOpenDetail={openDrawer}
             onGoToLibrary={goToLibrary}
             programDetails={programDetailsForDrawer}
+            programLibraryCount={programsFromApi.length}
+            programLibraryReady={programsListReady}
+            onOpenPlanBilling={() => switchViewWithMount('settings')}
             onStartTodayClass={() => {
               setToolsFocusToken((t) => t + 1);
-              switchView('tools');
+              switchViewWithMount('tools');
             }}
             onOpenPostClass={(name) => setPostClassGroup(name)}
-            onGoToAIReportFromToday={() => switchView('ai')}
-            onAddClassFromToday={() => switchView('data-center')}
+            onGoToAIReportFromToday={() => switchViewWithMount('ai')}
+            onAddClassFromToday={() => switchViewWithMount('data-center')}
             onGoToAssistantTools={() => {
               setToolsFocusToken((t) => t + 1);
-              switchView('tools');
+              switchViewWithMount('tools');
             }}
           />
         </div>
-        <div className={`view-content ${viewId === 'lesson-plan' ? 'active' : ''}`}>
-          <LessonPlanView programDetails={programDetailsForDrawer} />
-        </div>
-        <div className={`view-content ${viewId === 'library' ? 'active' : ''}`}>
-          <LibraryView
-            onOpenDetail={openLibraryProgramDetail}
-            initialPreset={libraryPreset}
-            programDetails={programDetailsForDrawer}
-            functionalCap={isEditMode ? 144 : undefined}
-            libraryMode={libraryMode}
-            refreshToken={programsRefreshToken}
-            isEditMode={isEditMode}
-            screenplaysRefreshToken={screenplaysRefreshToken}
-          />
-        </div>
-        <div className={`view-content ${viewId === 'data-center' ? 'active' : ''}`}>
-          <DataCenterView
-            onOpenSettings={() => switchView('settings')}
-            onGoToAssistantTools={() => {
-              setToolsFocusToken((t) => t + 1);
-              switchView('tools');
-            }}
-          />
-        </div>
-        <div className={`view-content ${viewId === 'ai' ? 'active' : ''}`}>
-          <AIReportView
-            initialStudentId={aiInitialStudentId}
-            onConsumeInitialStudent={() => setAiInitialStudentId(null)}
-          />
-        </div>
-        <div className={`view-content ${viewId === 'tools' ? 'active' : ''}`}>
-          <AssistantToolsView
-            focusStopwatchToken={toolsFocusToken}
-            onGoToDataCenter={() => switchView('data-center')}
-          />
-        </div>
-        <div className={`view-content ${viewId === 'settings' ? 'active' : ''}`}>
-          <SettingsView />
-        </div>
+        {mountedViews['lesson-plan'] && (
+          <div className={`view-content ${viewId === 'lesson-plan' ? 'active' : ''}`}>
+            <LessonPlanView programDetails={programDetailsForDrawer} />
+          </div>
+        )}
+        {mountedViews['library'] && (
+          <div className={`view-content ${viewId === 'library' ? 'active' : ''}`}>
+            <LibraryView
+              onOpenDetail={openLibraryProgramDetail}
+              initialPreset={libraryPreset}
+              programDetails={programDetailsForDrawer}
+              functionalCap={isEditMode ? 144 : undefined}
+              libraryMode={libraryMode}
+              refreshToken={programsRefreshToken}
+              isEditMode={isEditMode}
+              screenplaysRefreshToken={screenplaysRefreshToken}
+            />
+          </div>
+        )}
+        {mountedViews['data-center'] && (
+          <div className={`view-content ${viewId === 'data-center' ? 'active' : ''}`}>
+            <DataCenterView
+              onOpenSettings={() => switchViewWithMount('settings')}
+              onGoToAssistantTools={() => {
+                setToolsFocusToken((t) => t + 1);
+                switchViewWithMount('tools');
+              }}
+            />
+          </div>
+        )}
+        {mountedViews['ai'] && (
+          <div className={`view-content ${viewId === 'ai' ? 'active' : ''}`}>
+            <AIReportView
+              initialStudentId={aiInitialStudentId}
+              onConsumeInitialStudent={() => setAiInitialStudentId(null)}
+            />
+          </div>
+        )}
+        {mountedViews['tools'] && (
+          <div className={`view-content ${viewId === 'tools' ? 'active' : ''}`}>
+            <AssistantToolsView
+              focusStopwatchToken={toolsFocusToken}
+              onGoToDataCenter={() => switchViewWithMount('data-center')}
+            />
+          </div>
+        )}
+        {mountedViews['settings'] && (
+          <div className={`view-content ${viewId === 'settings' ? 'active' : ''}`}>
+            <SettingsView />
+          </div>
+        )}
       </main>
       </div>
 
       <SpokeduProToolkit
         open={toolkitOpen}
         onToggle={() => setToolkitOpen((o) => !o)}
-        onOpenToolsView={() => switchView('tools')}
+        onOpenToolsView={() => switchViewWithMount('tools')}
       />
 
       <SpokeduProDrawer
@@ -745,7 +795,7 @@ export default function SpokeduProClient({
           setTodayClassPhase('done');
           setAiInitialStudentId(id);
           setPostClassGroup(null);
-          switchView('ai');
+          switchViewWithMount('ai');
         }}
         onDoneLater={() => {
           setTodayClassPhase('done');

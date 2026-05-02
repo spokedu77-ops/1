@@ -27,13 +27,20 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
         return {
           name,
           profileName: profile.char,
+          catchcopy: profile.catchcopy,
         };
       })();
 
-  const title = payload ? `${payload.name}의 MOVE 리포트 결과` : '공유된 MOVE 리포트 결과';
+  const title = payload
+    ? `${payload.name}의 MOVE REPORT · ${payload.profileName} 유형`
+    : 'SPOKEDU MOVE REPORT — 공유 카드';
   const description = payload
-    ? `${payload.profileName} 유형 결과를 확인하고, 나도 MOVE 리포트를 해보세요.`
-    : '공유받은 MOVE 리포트 결과를 확인하고, 나도 테스트해보세요.';
+    ? (() => {
+        const line = `「${payload.profileName}」${payload.catchcopy}`.replace(/\s+/g, ' ').trim();
+        const clipped = line.length > 118 ? `${line.slice(0, 115)}…` : line;
+        return `${payload.name}의 움직임 성향 — ${clipped} 나도 MOVE REPORT를 시작해 보세요.`;
+      })()
+    : '공유받은 MOVE REPORT 카드를 열거나, 새로 테스트를 시작해 보세요.';
   const baseUrl = await getMoveReportMetadataBaseUrl();
   const pathWithQuery = raw ? `/move-report/shared?d=${encodeURIComponent(raw)}` : '/move-report/shared';
   /** 카카오 등 크롤러 안정성 + 기대 미리보기: 메인 MOVE와 동일한 정적 OG 이미지(소개 카드). 제목/설명만 결과 기준 개인화. */
@@ -54,7 +61,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       title,
       description,
       url: pageUrlAbsolute,
-      images: [{ url: ogImageAbsolute, width: 1200, height: 630, alt: 'MOVE 리포트 공유 이미지' }],
+      images: [{ url: ogImageAbsolute, width: 1200, height: 630, alt: 'SPOKEDU MOVE REPORT 미리보기' }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -67,18 +74,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
 function SharedFallback() {
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        background: '#0D0D0D',
-        color: '#A2A2A2',
-        padding: '24px',
-        display: 'grid',
-        placeItems: 'center',
-        fontSize: 14,
-        fontWeight: 700,
-      }}
-    >
+    <main className="mr-page" style={{ display: 'grid', placeItems: 'center', minHeight: '100dvh', padding: '24px', color: '#a2a2a2', fontSize: 14, fontWeight: 700 }}>
       불러오는 중…
     </main>
   );

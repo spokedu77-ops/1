@@ -58,9 +58,9 @@ export default function SpokeduProAside({
 
   return (
     <>
-      <aside className="hidden md:flex w-20 lg:w-64 bg-[#0B1120] border-r border-slate-800 flex-col justify-between z-40 shrink-0">
+      <aside className="hidden md:flex w-20 lg:w-64 shrink-0 z-40 flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.06] shadow-2xl shadow-black/20 backdrop-blur-xl md:my-3 md:ml-3 md:mr-2 lg:mr-3">
         <div>
-          <div className="h-20 flex items-center px-6 border-b border-slate-800">
+          <div className="h-20 flex items-center px-4 lg:px-6 border-b border-white/10">
             <div className="flex items-center gap-3 w-full">
               <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white shrink-0">
                 <span className="text-yellow-300">⚡</span>
@@ -182,7 +182,7 @@ export default function SpokeduProAside({
             )}
           </nav>
         </div>
-        <div className="p-6 bg-slate-900/50 border-t border-slate-800">
+        <div className="p-4 lg:p-6 border-t border-white/10 bg-white/[0.04] rounded-b-3xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center border border-slate-600 shrink-0">
               <span className="text-white text-lg">👤</span>

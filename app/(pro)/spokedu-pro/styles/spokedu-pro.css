@@ -6,8 +6,60 @@
   --sp-pro-brand: #3b82f6;
   --sp-pro-orange: #f97316;
   --sp-pro-green: #10b981;
+  /* OTT 스킨 토큰 */
+  --sp-ott-radius-xl: 1.5rem;
+  --sp-ott-radius-2xl: 2rem;
+  --sp-ott-glass-bg: rgba(15, 23, 42, 0.58);
+  --sp-ott-glass-border: rgba(148, 163, 184, 0.14);
+  --sp-ott-glow-fuchsia: rgba(192, 38, 211, 0.1);
+  --sp-ott-glow-cyan: rgba(6, 182, 212, 0.09);
+  --sp-ott-glow-indigo: rgba(99, 102, 241, 0.07);
   padding-right: 0;
   margin-right: 0;
+}
+
+/* 전면 배경 메시(글로우 + 약한 그리드). pointer-events 없음 */
+.spokedu-pro .sp-pro-bg-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--sp-pro-bg);
+  background-image:
+    radial-gradient(ellipse 85% 55% at 50% -18%, var(--sp-ott-glow-fuchsia), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 100% 35%, var(--sp-ott-glow-cyan), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 0% 85%, var(--sp-ott-glow-indigo), transparent 45%),
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+}
+
+@media (max-width: 767px) {
+  .spokedu-pro .sp-pro-bg-mesh {
+    background-image:
+      radial-gradient(ellipse 100% 45% at 50% -12%, var(--sp-ott-glow-fuchsia), transparent 50%),
+      radial-gradient(ellipse 70% 40% at 100% 60%, var(--sp-ott-glow-cyan), transparent 55%),
+      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  }
+}
+
+.spokedu-pro .sp-pro-glass-panel {
+  background: var(--sp-ott-glass-bg);
+  border: 1px solid var(--sp-ott-glass-border);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.spokedu-pro .sp-pro-today-card {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid var(--sp-ott-glass-border);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 18px 40px -28px rgba(0, 0, 0, 0.75);
 }
 
 /* 대시보드 상단·우측 불필요한 여백 제거, 스크롤 영역이 뷰포트 오른쪽 끝까지 붙도록 */

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { compute } from '@/app/move-report/lib/compute';
+import { normalizeCoachSlugInput, isValidCoachSlugFormat } from '@/app/move-report/lib/coachSlug';
 import { normalizeMoveReportAttribution } from '@/app/move-report/lib/attributionSchema';
 import type { AgeGroup } from '@/app/move-report/types';
 
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
           profileTitle?: unknown;
           surveyResponses?: unknown;
           attribution?: unknown;
+          coachSlug?: unknown;
         }
       | null;
 
@@ -54,7 +56,35 @@ export async function POST(req: NextRequest) {
 
     const attribution = normalizeMoveReportAttribution(body?.attribution);
 
+    const rawCoach = typeof body?.coachSlug === 'string' ? normalizeCoachSlugInput(body.coachSlug) : '';
+    let coachSlug: string | null = null;
+    if (rawCoach) {
+      if (!isValidCoachSlugFormat(rawCoach)) {
+        return NextResponse.json({ ok: false, error: '전용 링크 주소가 올바르지 않습니다.' }, { status: 400 });
+      }
+      coachSlug = rawCoach;
+    }
+
     const supabase = getServiceSupabase();
+
+    if (coachSlug) {
+      const { data: linkRow, error: linkErr } = await supabase
+        .from('move_report_coach_links')
+        .select('slug, is_active')
+        .eq('slug', coachSlug)
+        .maybeSingle();
+      if (linkErr) {
+        console.error('[move-report/submissions] coach lookup', linkErr);
+        return NextResponse.json({ ok: false, error: '전용 링크 확인 중 오류가 발생했어요.' }, { status: 500 });
+      }
+      if (!linkRow || linkRow.is_active === false) {
+        return NextResponse.json(
+          { ok: false, error: '등록되지 않았거나 비활성화된 전용 링크예요.' },
+          { status: 400 },
+        );
+      }
+    }
+
     const { error } = await supabase.from('move_report_submissions').insert({
       session_id: sessionId,
       age_group: age,
@@ -63,6 +93,7 @@ export async function POST(req: NextRequest) {
       survey_responses: responses,
       source: 'move_report',
       attribution,
+      coach_slug: coachSlug,
     });
 
     if (error) {

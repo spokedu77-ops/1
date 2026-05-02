@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import type { ComputeResult } from '../types';
 import Radar from './Radar';
 import AxisRow from './AxisRow';
-import ShareAndCollect from './ShareAndCollect';
+import ResultShareActions from './ResultShareActions';
+import { axisLabelsJoined } from '../lib/profileAxisLabels';
 
 export type ResultTab = 'report' | 'solution';
 
@@ -13,8 +14,9 @@ interface ResultProps {
   tab: ResultTab;
   onTab: (t: ResultTab) => void;
   onReset: () => void;
-  onShare: () => void | Promise<void>;
   flash: (msg: string) => void;
+  /** false: 코치·shared 유입 등 — 교육자 CTA(선생님 링크·베타) 숨김 */
+  showEducatorCta?: boolean;
 }
 
 function DescAccordion({ desc, col, revealed }: { desc: string; col: string; revealed: boolean }) {
@@ -52,8 +54,8 @@ export default function Result({
   tab,
   onTab,
   onReset,
-  onShare,
   flash,
+  showEducatorCta = true,
 }: ResultProps) {
   const { profile: p, bd, displayName, key } = result;
   const [revealed, setRevealed] = useState(false);
@@ -67,13 +69,6 @@ export default function Result({
     const t = window.setTimeout(() => setRevealed(true), 100);
     return () => window.clearTimeout(t);
   }, []);
-
-  const codeLabels = [
-    { code: key[0], label: key[0] === 'C' ? '협동형' : '독립형' },
-    { code: key[1], label: key[1] === 'R' ? '규칙 친화' : '탐구 지향' },
-    { code: key[2], label: key[2] === 'P' ? '과정 중시' : '목표 지향' },
-    { code: key[3], label: key[3] === 'D' ? '동적 에너지' : '정적 에너지' },
-  ];
 
   return (
     <div style={{ background: '#0D0D0D', minHeight: '100vh' }}>
@@ -156,68 +151,32 @@ export default function Result({
           />
 
           <div style={{ position: 'relative', zIndex: 2, padding: '56px 24px 24px' }}>
-            <div className={revealed ? 'anim-stamp' : ''} style={{ marginBottom: '14px' }}>
-              <div style={{ display: 'inline-flex', gap: '5px', alignItems: 'center' }}>
-                {key.split('').map((c, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      fontFamily: 'Bebas Neue,sans-serif',
-                      fontSize: '22px',
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '9px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: `${p.col}22`,
-                      border: `1.5px solid ${p.col}60`,
-                      color: p.col,
-                      boxShadow: `0 0 10px ${p.col}30`,
-                    }}
-                  >
-                    {c}
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div className={revealed ? 'anim-rise' : ''} style={{ marginBottom: '20px' }}>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {codeLabels.map((item, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      padding: '5px 10px',
-                      borderRadius: '8px',
-                      background: `${p.col}18`,
-                      border: `1px solid ${p.col}35`,
-                    }}
-                  >
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {axisLabelsJoined(key).split(' · ').map((label, i, arr) => (
+                  <span key={label + i} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                     <span
                       style={{
-                        fontFamily: 'Bebas Neue,sans-serif',
-                        fontSize: '15px',
-                        color: p.col,
-                        lineHeight: 1,
-                      }}
-                    >
-                      {item.code}
-                    </span>
-                    <span
-                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '5px 10px',
+                        borderRadius: '8px',
+                        background: `${p.col}18`,
+                        border: `1px solid ${p.col}35`,
                         fontSize: '11px',
-                        color: 'rgba(255,255,255,.7)',
                         fontWeight: 600,
+                        color: 'rgba(255,255,255,.88)',
                         letterSpacing: '.01em',
                       }}
                     >
-                      {item.label}
+                      {label}
                     </span>
-                  </div>
+                    {i < arr.length - 1 ? (
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,.35)' }} aria-hidden>
+                        ·
+                      </span>
+                    ) : null}
+                  </span>
                 ))}
               </div>
             </div>
@@ -599,12 +558,11 @@ export default function Result({
                 </div>
               ) : null}
 
-              <ShareAndCollect
-                p={p}
-                displayName={displayName}
+              <ResultShareActions
                 profileKey={key}
                 graphCode={`${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`}
                 flash={flash}
+                showEducatorCta={showEducatorCta}
               />
             </div>
           )}

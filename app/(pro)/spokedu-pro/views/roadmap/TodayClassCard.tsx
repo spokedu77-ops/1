@@ -75,13 +75,13 @@ export default function TodayClassCard({
 
   if (!loaded) {
     return (
-      <div className="rounded-2xl bg-slate-800 border border-slate-700 p-6 animate-pulse min-h-[140px]" />
+      <div className="sp-pro-today-card min-h-[140px] animate-pulse rounded-[var(--sp-ott-radius-2xl,2rem)] p-6" />
     );
   }
 
   if (classes.length === 0) {
     return (
-      <div className={`rounded-2xl bg-slate-800 border border-slate-700 p-5 md:p-6 ${CARD_SPACING}`}>
+      <div className={`sp-pro-today-card rounded-[var(--sp-ott-radius-2xl,2rem)] p-5 md:p-6 ${CARD_SPACING}`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-slate-400 text-sm font-bold">{dateLabel}</p>
         </div>
@@ -100,7 +100,7 @@ export default function TodayClassCard({
   }
 
   return (
-    <div className={`rounded-2xl bg-slate-800 border border-slate-700 p-5 md:p-6 ${CARD_SPACING}`}>
+    <div className={`sp-pro-today-card rounded-[var(--sp-ott-radius-2xl,2rem)] p-5 md:p-6 ${CARD_SPACING}`}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <p className="text-slate-400 text-xs md:text-[13px] lg:text-sm font-bold">{dateLabel}</p>

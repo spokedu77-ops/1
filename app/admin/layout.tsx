@@ -7,10 +7,35 @@ import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
 const CACHE_TTL = 5 * 60 * 1000;
 const SLOW_CHECK_MS = 3000;
 let cache: { admin: boolean; ts: number } | null = null;
+const STORAGE_KEY = 'admin_check_cache_v1';
+
+function readStorageCache(): { admin: boolean; ts: number } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { admin?: unknown; ts?: unknown };
+    if (typeof parsed?.admin !== 'boolean') return null;
+    if (typeof parsed?.ts !== 'number') return null;
+    return { admin: parsed.admin, ts: parsed.ts };
+  } catch {
+    return null;
+  }
+}
+
+function writeStorageCache(next: { admin: boolean; ts: number }) {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  // sessionStorage/모듈 캐시로 초기값을 true로 두면 SSR은 false·클라이언트는 true가 되어 hydration mismatch가 난다.
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkSlow, setCheckSlow] = useState(false);
   const isFullscreenRoute = pathname != null && pathname.startsWith('/admin/spokedu-pro');
@@ -26,8 +51,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const check = async () => {
       const now = Date.now();
-      if (cache && now - cache.ts < CACHE_TTL) {
-        if (cache.admin) setIsAdmin(true);
+      const mem = cache;
+      if (mem && now - mem.ts < CACHE_TTL) {
+        if (mem.admin) setIsAdmin(true);
+        else router.replace('/teacher/my-classes');
+        return;
+      }
+      const stored = readStorageCache();
+      if (stored && now - stored.ts < CACHE_TTL) {
+        if (stored.admin) setIsAdmin(true);
         else router.replace('/teacher/my-classes');
         return;
       }
@@ -42,6 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
 
       cache = { admin: !!json.admin, ts: Date.now() };
+      writeStorageCache(cache);
 
       if (json.admin) {
         setIsAdmin(true);

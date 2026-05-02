@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { compute } from './lib/compute';
-import { captureMoveReportAttribution, getMoveReportAttribution, pickAttributionForShareUrl } from './lib/attribution';
+import { captureMoveReportAttribution, getMoveReportAttribution } from './lib/attribution';
+import { normalizeCoachSlugInput, isValidCoachSlugFormat } from './lib/coachSlug';
 import { getMoveReportSessionId, trackMoveReportEvent } from './lib/events';
-import { appendMoveReportAttributionToUrl, buildMoveReportShareUrl } from './lib/shareLink';
 import { Qs } from './data/questions';
 import type { AgeGroup, ComputeResult } from './types';
 import Intro from './components/Intro';
@@ -16,6 +17,22 @@ import Result, { type ResultTab } from './components/Result';
 type Screen = 'intro' | 'setup' | 'survey' | 'loading' | 'result';
 
 export default function MoveReportClient() {
+  const searchParams = useSearchParams();
+  const coachSlugForSubmit = useMemo(() => {
+    const c = searchParams.get('coach');
+    if (!c) return null;
+    const n = normalizeCoachSlugInput(c);
+    return isValidCoachSlugFormat(n) ? n : null;
+  }, [searchParams]);
+
+  /** 코치·shared 유입 학부모에게는 교육자 CTA 숨김 (direct / educator_campaign 만 표시) */
+  const showEducatorCta = useMemo(() => {
+    if (coachSlugForSubmit) return false;
+    const mr = getMoveReportAttribution().mr_source;
+    if (mr === 'shared' || mr === 'coach_link') return false;
+    return true;
+  }, [coachSlugForSubmit]);
+
   const [sc, setSc] = useState<Screen>('intro');
   const [age, setAge] = useState<AgeGroup>('preschool');
   const [name, setName] = useState('');
@@ -30,6 +47,7 @@ export default function MoveReportClient() {
   const questions = useMemo(() => Qs[age], [age]);
   const toastTimer = useRef<number | null>(null);
   const introTrackedRef = useRef(false);
+  const coachLandingTrackedRef = useRef(false);
   const stepTimer = useRef<number | null>(null);
   const computeTimer = useRef<number | null>(null);
   const resultTimer = useRef<number | null>(null);
@@ -54,9 +72,19 @@ export default function MoveReportClient() {
   }, []);
 
   useEffect(() => {
+    if (!coachSlugForSubmit || coachLandingTrackedRef.current) return;
+    coachLandingTrackedRef.current = true;
+    void trackMoveReportEvent({
+      eventName: 'move_report_coach_link_landing',
+      meta: { coachSlug: coachSlugForSubmit },
+    });
+  }, [coachSlugForSubmit]);
+
+  useEffect(() => {
     if (introTrackedRef.current) return;
     introTrackedRef.current = true;
     void trackMoveReportEvent({ eventName: 'intro_started', shareKey });
+    void trackMoveReportEvent({ eventName: 'move_report_started', shareKey });
   }, [shareKey]);
 
   useEffect(() => {
@@ -92,28 +120,6 @@ export default function MoveReportClient() {
     go('intro');
   }, [go]);
 
-  const handleShare = useCallback(async () => {
-    let url = window.location.href;
-    if (result) {
-      const bd = result.bd;
-      const graphCode = `${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`;
-      const built = buildMoveReportShareUrl(window.location.origin, {
-        v: 5,
-        profileKey: result.key,
-        graphCode,
-        displayName: result.displayName !== '아이' ? result.displayName : undefined,
-      });
-      url = appendMoveReportAttributionToUrl(built, pickAttributionForShareUrl(getMoveReportAttribution()));
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      flash('결과 링크를 복사했어요.');
-      void trackMoveReportEvent({ eventName: 'share_clicked', shareKey });
-    } catch {
-      flash('링크 복사를 지원하지 않는 환경이에요.');
-    }
-  }, [flash, result, shareKey]);
-
   const onAnswer = useCallback(
     (v: string) => {
       if (answering) return;
@@ -133,6 +139,7 @@ export default function MoveReportClient() {
         const r = compute(nr, age, name);
         setResult(r);
         void trackMoveReportEvent({ eventName: 'survey_completed', shareKey });
+        void trackMoveReportEvent({ eventName: 'move_report_completed', shareKey });
         // Save anonymous survey payload for analysis; never block UX on failure.
         void fetch('/api/move-report/submissions', {
           method: 'POST',
@@ -144,8 +151,18 @@ export default function MoveReportClient() {
             profileTitle: r.profile.char,
             surveyResponses: nr,
             attribution: getMoveReportAttribution(),
+            ...(coachSlugForSubmit ? { coachSlug: coachSlugForSubmit } : {}),
           }),
-        }).catch(() => undefined);
+        })
+          .then(async (res) => {
+            if (!res.ok) return;
+            void trackMoveReportEvent({
+              eventName: 'move_report_coach_submission_completed',
+              shareKey,
+              meta: coachSlugForSubmit ? { coachSlug: coachSlugForSubmit } : {},
+            });
+          })
+          .catch(() => undefined);
         go('loading');
         resultTimer.current = window.setTimeout(() => {
           resultTimer.current = null;
@@ -155,7 +172,7 @@ export default function MoveReportClient() {
         computeTimer.current = null;
       }, 200);
     },
-    [age, answering, go, name, qi, questions.length, resps, shareKey]
+    [age, answering, coachSlugForSubmit, go, name, qi, questions.length, resps, shareKey]
   );
 
   const surveyBack = () => {
@@ -171,7 +188,7 @@ export default function MoveReportClient() {
 
   return (
     <main className="mr-page" style={{ padding: 0 }}>
-      {sc === 'intro' && <Intro onStart={() => go('setup')} />}
+      {sc === 'intro' && <Intro onStart={() => go('setup')} coachLinkActive={Boolean(coachSlugForSubmit)} />}
       {sc === 'setup' && (
         <div className="mr-page-inner" style={{ paddingTop: '28px', paddingBottom: '120px' }}>
           <Setup
@@ -194,14 +211,7 @@ export default function MoveReportClient() {
       )}
       {sc === 'loading' && <Loading />}
       {sc === 'result' && result && (
-        <Result
-          result={result}
-          tab={tab}
-          onTab={setTab}
-          onReset={reset}
-          onShare={handleShare}
-          flash={flash}
-        />
+        <Result result={result} tab={tab} onTab={setTab} onReset={reset} flash={flash} showEducatorCta={showEducatorCta} />
       )}
       {toast ? (
         <div className="toast-bar toast-bar--top" role="status">

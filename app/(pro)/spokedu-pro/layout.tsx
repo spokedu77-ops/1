@@ -38,10 +38,10 @@ export default function SpokeduProLayout({
       style={{ minHeight: 'var(--viewport-height-px, 100vh)', height: 'var(--viewport-height-px, 100vh)' }}
     >
       {/* 데스크톱: 우상단. 모바일: 하단 탭 위 플로팅 pill (콘텐츠·툴킷과 겹침 최소화) */}
-      <div className="spokedu-pro-lang-switcher pointer-events-auto fixed right-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[200] md:absolute md:right-3 md:top-[max(0.5rem,env(safe-area-inset-top))] md:bottom-auto md:left-auto">
+      <div className="spokedu-pro-lang-switcher pointer-events-auto fixed right-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[195] md:absolute md:right-3 md:top-[max(0.5rem,env(safe-area-inset-top))] md:bottom-auto md:left-auto">
         <LanguageSwitcher
           variant="dark"
-          className="max-w-[118px] md:max-w-[130px] rounded-full border-slate-600/90 bg-slate-900/90 px-2.5 py-1 text-[11px] shadow-lg backdrop-blur-sm md:rounded-lg md:px-2 md:py-1.5 md:shadow-none"
+          className="max-w-[118px] md:max-w-[130px] rounded-full border-cyan-500/15 bg-slate-950/88 px-2.5 py-1 text-[11px] shadow-lg shadow-cyan-950/20 ring-1 ring-fuchsia-500/10 backdrop-blur-md md:rounded-lg md:px-2 md:py-1.5 md:shadow-md"
         />
       </div>
       {children}

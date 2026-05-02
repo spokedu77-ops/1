@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * TODO(리드 UX): 학부모 전화 리드 수집용 전체 화면 폼.
+ * - 현재 MoveReportClient 플로우에서는 미연결(결과 전 리드 스킵).
+ * - 교육자 베타는 `EducatorBetaForm` / `EducatorBetaModal` + `/api/move-report/educator-leads`로 별도 관리.
+ * - 향후 전화 리드를 다시 켤 때 이 컴포넌트를 연동하거나, 필드가 겹치면 EducatorBetaForm과 공통 필드만 추출해 리팩터 검토.
+ */
+
 import { useState } from 'react';
 import { formatMoveReportPhone, normalizeMoveReportPhone } from '../lib/phone';
 

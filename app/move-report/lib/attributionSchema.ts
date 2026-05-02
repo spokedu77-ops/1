@@ -1,5 +1,6 @@
 /** URL·제출·이벤트 meta에 실을 수 있는 attribution 키 (referrer_host는 캡처 전용, 공유 URL에는 붙이지 않음) */
 export const MOVE_REPORT_ATTRIBUTION_QUERY_KEYS = [
+  'mr_source',
   'utm_source',
   'utm_medium',
   'utm_campaign',

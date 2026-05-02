@@ -10,6 +10,7 @@ import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
 import { MODES, NUMBER_RULES } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch } from './_player/MemoryGameApp';
+import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
 import { ChallengeSpomoveSetupPanel } from './_player/components/ChallengeSpomoveSetupPanel';
 import { SpeedSelector } from './_player/components/SpeedSelector';
 import {
@@ -922,6 +923,7 @@ export default function SpomoveTrainingPage() {
       )}
 
       <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 80 }}>
+        <SpomoveCatalogHero />
         <header style={{
           borderBottom: `1px solid ${T.border}`,
           padding: '18px 24px 14px',

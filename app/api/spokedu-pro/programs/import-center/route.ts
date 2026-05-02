@@ -5,6 +5,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 
 type CurriculumRow = {
   id: number;
@@ -81,12 +82,14 @@ export async function POST(req: NextRequest) {
   const byCenterCurriculumId = new Map<number, number>();
   const byTitleAndUrl = new Map<string, { id: number }>();
   const byVideoUrl = new Map<string, number[]>();
+  const byNormalizedTitle = new Map<string, number[]>();
   for (const row of existing) {
     const cid = Number(row.source_center_curriculum_id);
     if (Number.isFinite(cid) && cid > 0 && !byCenterCurriculumId.has(cid)) {
       byCenterCurriculumId.set(cid, row.id);
     }
-    const t = (row.title ?? '').trim();
+    const tRaw = (row.title ?? '').trim();
+    const t = stripMonthWeekPrefix(tRaw).trim();
     const v = (row.video_url ?? '').trim();
     const key = `${t}|${v}`;
     if (!byTitleAndUrl.has(key)) byTitleAndUrl.set(key, { id: row.id });
@@ -95,6 +98,11 @@ export async function POST(req: NextRequest) {
       list.push(row.id);
       byVideoUrl.set(v, list);
     }
+    if (t) {
+      const list = byNormalizedTitle.get(t) ?? [];
+      list.push(row.id);
+      byNormalizedTitle.set(t, list);
+    }
   }
 
   let inserted = 0;
@@ -102,9 +110,15 @@ export async function POST(req: NextRequest) {
   let skipped = 0;
   const errors: Array<{ curriculumId: number; message: string }> = [];
   const keptIdByVideoUrl = new Map<string, number>();
+  const keptIdByNormalizedTitle = new Map<string, number>();
+  const videoUrlById = new Map<number, string>();
+  for (const row of existing) {
+    videoUrlById.set(row.id, String(row.video_url ?? '').trim());
+  }
 
   for (const row of source) {
-    const title = (row.title ?? '').trim();
+    const titleRaw = (row.title ?? '').trim();
+    const title = stripMonthWeekPrefix(titleRaw).trim();
     const videoUrl = (row.url ?? '').trim();
     if (!title) {
       skipped += 1;
@@ -158,12 +172,12 @@ export async function POST(req: NextRequest) {
     const matchByKey = byTitleAndUrl.get(key)?.id ?? null;
     let matchByLoneTitle: number | null = null;
     if (matchByCurriculumId == null && matchByUrl == null && matchByKey == null) {
-      const hits = existing.filter((e) => (e.title ?? '').trim() === title);
+      const hits = byNormalizedTitle.get(title) ?? [];
       if (hits.length === 1) {
-        const sid = hits[0].source_center_curriculum_id;
-        if (sid == null || sid === row.id) {
-          matchByLoneTitle = hits[0].id;
-        }
+        const onlyId = hits[0];
+        const onlyRow = existing.find((e) => e.id === onlyId);
+        const sid = onlyRow?.source_center_curriculum_id;
+        if (sid == null || sid === row.id) matchByLoneTitle = onlyId;
       }
     }
     const matchId = matchByCurriculumId ?? matchByUrl ?? matchByKey ?? matchByLoneTitle;
@@ -176,6 +190,7 @@ export async function POST(req: NextRequest) {
       if (error) errors.push({ curriculumId: row.id, message: error.message });
       else updated += 1;
       if (videoUrl) keptIdByVideoUrl.set(videoUrl, matchId);
+      if (title) keptIdByNormalizedTitle.set(title, matchId);
     } else {
       let { data: ins, error } = await supabase.from('spokedu_pro_programs').insert(insertPayload).select('id,video_url').single();
       if (error && /source_center_curriculum_id|42703|column/i.test(String(error.message))) {
@@ -187,6 +202,16 @@ export async function POST(req: NextRequest) {
       } else {
         inserted += 1;
         const v = (ins?.video_url ?? '').trim();
+        const insId = ins?.id as number | undefined;
+        if (typeof insId === 'number' && Number.isFinite(insId)) {
+          videoUrlById.set(insId, v);
+          if (title) {
+            const list = byNormalizedTitle.get(title) ?? [];
+            list.push(insId);
+            byNormalizedTitle.set(title, list);
+            keptIdByNormalizedTitle.set(title, insId);
+          }
+        }
         if (v && ins) {
           keptIdByVideoUrl.set(v, ins.id as number);
           const list = byVideoUrl.get(v) ?? [];
@@ -211,6 +236,26 @@ export async function POST(req: NextRequest) {
       : await supabase.from('spokedu_pro_programs').update({ is_published: false }).in('id', others);
     if (error) {
       errors.push({ curriculumId: -1, message: `dedupe(${v}) ${error.message}` });
+    }
+  }
+
+  // video_url이 비어있는(null/빈문자) 중복은 URL 기준 dedupe가 안 걸리므로,
+  // 정규화된 제목(stripMonthWeekPrefix) 기준으로도 한 번 더 정리한다.
+  for (const [t, ids] of byNormalizedTitle) {
+    if (!t) continue;
+    if (ids.length <= 1) continue;
+    const keep = keptIdByNormalizedTitle.get(t);
+    if (!keep) continue;
+    const keepUrl = videoUrlById.get(keep) ?? '';
+    // URL이 있는 타이틀은 url-based dedupe가 우선이므로 여기서는 스킵
+    if (keepUrl) continue;
+    const others = ids.filter((id) => id !== keep).filter((id) => !(videoUrlById.get(id) ?? ''));
+    if (others.length === 0) continue;
+    const { error } = hardDelete
+      ? await supabase.from('spokedu_pro_programs').delete().in('id', others)
+      : await supabase.from('spokedu_pro_programs').update({ is_published: false }).in('id', others);
+    if (error) {
+      errors.push({ curriculumId: -1, message: `dedupe_title(${t}) ${error.message}` });
     }
   }
 

@@ -1,190 +1,132 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ShareResultCard from '../components/ShareResultCard';
 import { captureMoveReportAttribution, getMoveReportAttribution, pickAttributionForShareUrl } from '../lib/attribution';
 import { appendMoveReportAttributionToUrl, parseMoveReportSharePayload } from '../lib/shareLink';
+import { copyTextToClipboard } from '../lib/shareCard';
 import { P } from '../data/profiles';
 import { trackMoveReportEvent } from '../lib/events';
 
-const CARD_W = 1080;
-const CARD_H = 1420;
+function useMoveReportStartHref(basePath: string) {
+  const [href, setHref] = useState(basePath);
+
+  useLayoutEffect(() => {
+    captureMoveReportAttribution();
+    try {
+      const url = appendMoveReportAttributionToUrl(new URL(basePath, window.location.origin).href, pickAttributionForShareUrl(getMoveReportAttribution()));
+      const u = new URL(url);
+      setHref(`${u.pathname}${u.search}`);
+    } catch {
+      setHref(basePath);
+    }
+  }, [basePath]);
+
+  return href;
+}
 
 export default function MoveReportSharedContent() {
   const searchParams = useSearchParams();
   const raw = searchParams.get('d');
   const parsed = useMemo(() => parseMoveReportSharePayload(raw), [raw]);
   const moveReportBasePath = raw ? `/move-report?d=${encodeURIComponent(raw)}` : '/move-report';
-  const [moveReportHref, setMoveReportHref] = useState(moveReportBasePath);
-  const profileCode = parsed?.profileKey ?? null;
+  const moveReportHref = useMoveReportStartHref(moveReportBasePath);
+  const restartHref = useMoveReportStartHref('/move-report');
 
   const payload = useMemo(() => {
     if (!parsed) return null;
     const profile = P[parsed.profileKey];
     if (!profile) return null;
-    const name = parsed.displayName || '우리 아이';
-    return { name, profile };
+    /** shared 표면에는 URL에 이름이 있어도 실명을 노출하지 않음 */
+    return { displayLabel: '우리 아이', profile };
   }, [parsed]);
 
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0.38);
+  const [toast, setToast] = useState('');
+  const toastTimer = useRef<number | null>(null);
+  const pageViewedRef = useRef(false);
+
+  const flash = useCallback((msg: string) => {
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = window.setTimeout(() => {
+      setToast('');
+      toastTimer.current = null;
+    }, 2600);
+  }, []);
 
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  useLayoutEffect(() => {
-    captureMoveReportAttribution();
-    try {
-      const url = appendMoveReportAttributionToUrl(
-        new URL(moveReportBasePath, window.location.origin).href,
-        pickAttributionForShareUrl(getMoveReportAttribution()),
-      );
-      const u = new URL(url);
-      setMoveReportHref(`${u.pathname}${u.search}`);
-    } catch {
-      setMoveReportHref(moveReportBasePath);
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!payload || !raw || pageViewedRef.current) return;
+    pageViewedRef.current = true;
+    void trackMoveReportEvent({ eventName: 'move_report_shared_page_viewed', shareKey: raw });
+  }, [payload, raw]);
+
+  const shareKey = raw;
+
+  const onCopyPageLink = useCallback(async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    if (!url) return;
+    const ok = await copyTextToClipboard(url);
+    if (ok) {
+      flash('링크가 복사되었어요');
+      void trackMoveReportEvent({ eventName: 'move_report_shared_page_link_copied', shareKey });
+    } else {
+      flash('복사에 실패했어요. 주소창의 링크를 길게 눌러 복사해 보세요.');
     }
-  }, [moveReportBasePath]);
+  }, [flash, shareKey]);
 
-  useEffect(() => {
-    if (!raw) return;
-    void trackMoveReportEvent({ eventName: 'shared_entry_opened', shareKey: raw });
-  }, [raw]);
+  const onStartClick = useCallback(() => {
+    void trackMoveReportEvent({ eventName: 'move_report_shared_page_start_clicked', shareKey });
+  }, [shareKey]);
 
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el || !payload) return;
-    const apply = () => setScale(Math.min(1, el.clientWidth / CARD_W));
-    apply();
-    const ro = new ResizeObserver(apply);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [payload]);
-
-  if (!payload || !parsed || !profileCode) {
+  if (!payload || !parsed) {
     return (
-      <main style={{ minHeight: '100vh', background: '#0D0D0D', color: '#fff', padding: '24px', display: 'grid', placeItems: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 420, borderRadius: 18, border: '1px solid #2A2A2A', background: '#171717', padding: 20 }}>
-          <h1 style={{ fontSize: 22, marginBottom: 10, fontWeight: 800 }}>공유 결과를 불러올 수 없어요</h1>
-          <p style={{ color: '#B9B9B9', fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
-            링크가 만료되었거나 형식이 올바르지 않습니다.
-          </p>
-          <Link
-            href={moveReportHref}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              padding: '12px 16px',
-              borderRadius: 10,
-              background: '#FEE500',
-              color: '#3C1E1E',
-              textDecoration: 'none',
-              fontWeight: 800,
-            }}
-          >
-            나도 MOVE 리포트 해보기
-          </Link>
+      <main className="mr-page mr-shared-page">
+        <div className="mr-page-inner mr-content-max mr-shared-error">
+          <div className="mr-shared-error-card mr-shared-error-card--simple">
+            <h1 className="mr-shared-error-title">결과를 불러오지 못했어요</h1>
+            <p className="mr-shared-error-body">MOVE REPORT를 다시 시작해 주세요.</p>
+            <Link href={restartHref} className="btn-fire mr-shared-error-cta" onClick={onStartClick}>
+              MOVE REPORT 시작하기
+            </Link>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: '#0D0D0D', color: '#fff', padding: '16px 16px 40px' }}>
-      <div ref={wrapRef} style={{ width: '100%', maxWidth: 430, margin: '0 auto' }}>
-        <div style={{ height: CARD_H * scale, position: 'relative' }}>
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: '50%',
-              transform: `translateX(-50%) scale(${scale})`,
-              transformOrigin: 'top center',
-              width: CARD_W,
-            }}
-          >
-            <ShareResultCard
-              displayName={payload.name}
-              profileCode={profileCode}
-              p={payload.profile}
-            />
+    <main className="mr-page mr-shared-page">
+      <div className="mr-shared-poster-page">
+        <div className="mr-shared-poster-shell">
+          <ShareResultCard variant="viralShare" displayName={payload.displayLabel} profileCode={parsed.profileKey} p={payload.profile} />
+          <div className="mr-shared-poster-footer">
+            <Link href={moveReportHref} className="mr-shared-poster-cta" onClick={onStartClick}>
+              나도 MOVE REPORT 해보기
+            </Link>
+            <button type="button" className="mr-shared-poster-copy" onClick={() => void onCopyPageLink()}>
+              링크 복사
+            </button>
           </div>
         </div>
       </div>
 
-      <div style={{ width: '100%', maxWidth: 430, margin: '20px auto 0' }}>
-        <a
-          href="https://www.instagram.com/spokedu_kids?igsh=M2ZmYWZxMzRxenVt&utm_source=qr"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'block',
-            textDecoration: 'none',
-            background: 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)',
-            borderRadius: '16px',
-            padding: '2px',
-            marginBottom: 12,
-          }}
-        >
-          <div
-            style={{
-              background: '#111',
-              borderRadius: '14px',
-              padding: '18px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div
-                style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  flexShrink: 0,
-                  background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <i className="fa-brands fa-instagram" style={{ fontSize: '22px', color: '#fff' }} aria-hidden />
-              </div>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginBottom: '3px' }}>스포키듀 인스타그램</div>
-                <div style={{ fontSize: '12px', color: '#AAAAAA' }}>@spokedu_kids · 수업 현장 영상 보러가기 →</div>
-              </div>
-            </div>
-          </div>
-        </a>
-        <Link
-          href={moveReportHref}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-            padding: '13px 16px',
-            borderRadius: 12,
-            background: '#FEE500',
-            color: '#3C1E1E',
-            textDecoration: 'none',
-            fontWeight: 900,
-            fontSize: 15,
-          }}
-        >
-          나도 MOVE 리포트 해보기
-        </Link>
-        <p style={{ margin: '12px 4px 0', color: '#8F8F8F', fontSize: 11, lineHeight: 1.45, textAlign: 'center' }}>
-          본 결과는 관찰형 유형 리포트이며, 의료적 진단을 대체하지 않습니다.
-        </p>
-      </div>
+      {toast ? (
+        <div className="toast-bar toast-bar--top" role="status">
+          {toast}
+        </div>
+      ) : null}
     </main>
   );
 }

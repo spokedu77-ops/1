@@ -19,7 +19,7 @@ function lastCharForParticle(name: string): string {
  */
 export function personalizeMoveReportQuestion(text: string, displayName: string): string {
   const raw = (displayName ?? '').trim();
-  if (!raw || raw === '아이') return text;
+  if (!raw || raw === '아이' || raw === '우리 아이') return text;
 
   const last = lastCharForParticle(raw);
   const batchim = hangulSyllableHasBatchim(last);

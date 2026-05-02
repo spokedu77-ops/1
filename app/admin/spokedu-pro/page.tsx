@@ -7,7 +7,17 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-const SpokeduProClient = dynamic(() => import('@/app/(pro)/spokedu-pro/SpokeduProClient'), { ssr: false });
+const SpokeduProClient = dynamic(() => import('@/app/(pro)/spokedu-pro/SpokeduProClient'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full flex items-center justify-center bg-[#0F172A]">
+      <div className="flex items-center gap-3 text-slate-300">
+        <div className="w-5 h-5 border-2 border-slate-600 border-t-cyan-300 rounded-full animate-spin" />
+        <p className="text-sm font-bold">화면 준비 중...</p>
+      </div>
+    </div>
+  ),
+});
 
 /**
  * 스포키듀 구독 Admin 편집 페이지.

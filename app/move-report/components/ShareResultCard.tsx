@@ -1,26 +1,72 @@
 'use client';
 
 import type { Profile } from '../types';
+import { axisLabelsFromProfileKey } from '../lib/profileAxisLabels';
+
+export type ShareResultCardVariant = 'default' | 'viralShare';
+
+/** default 캡처용 카드 높이 참고(px). viralShare는 반응형 포스터로 고정 높이 미사용 */
+export function getShareResultCardOuterHeight(variant: ShareResultCardVariant): number {
+  return variant === 'viralShare' ? 0 : 1420;
+}
 
 interface ShareResultCardProps {
   displayName: string;
   profileCode: string;
   p: Profile;
+  /** default: 기존 캡처용 레이아웃. viralShare: 공유 전용 바이럴 카드 */
+  variant?: ShareResultCardVariant;
 }
 
-export default function ShareResultCard({ displayName, profileCode, p }: ShareResultCardProps) {
-  const codeLabels = [
-    { code: profileCode[0] ?? '', label: profileCode[0] === 'C' ? '협동형' : '독립형' },
-    { code: profileCode[1] ?? '', label: profileCode[1] === 'R' ? '규칙 친화' : '탐구 지향' },
-    { code: profileCode[2] ?? '', label: profileCode[2] === 'P' ? '과정 중시' : '목표 지향' },
-    { code: profileCode[3] ?? '', label: profileCode[3] === 'D' ? '동적 에너지' : '정적 에너지' },
-  ];
+const VIRAL_POSTER_DESC_FALLBACK = '아이의 움직임 성향을 긍정적으로 보여주는 MOVE REPORT 결과입니다.';
+
+/** shared 바이럴 카드용 설명: `desc` 원문은 읽기만 하고, 완결된 1~2문장만 사용(말줄임·substring 금지). */
+function viralPosterDisplayDesc(rawDesc: string): string {
+  const t = rawDesc.trim();
+  if (!t) return VIRAL_POSTER_DESC_FALLBACK;
+
+  const MAX_TOTAL = 118;
+
+  const segments = t
+    .split(/\.\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const sentences =
+    segments.length === 0
+      ? [t]
+      : segments.map((s, i) => {
+          if (i < segments.length - 1) {
+            return s.endsWith('.') ? s : `${s}.`;
+          }
+          return s.endsWith('.') || s.endsWith('!') || s.endsWith('?') ? s : `${s}.`;
+        });
+
+  const first = sentences[0] ?? '';
+  if (!first) return VIRAL_POSTER_DESC_FALLBACK;
+  if (first.length > MAX_TOTAL) return VIRAL_POSTER_DESC_FALLBACK;
+
+  if (sentences.length === 1) {
+    return first;
+  }
+
+  const second = sentences[1] ?? '';
+  const combined = `${first} ${second}`.replace(/\s+/g, ' ').trim();
+  if (combined.length <= MAX_TOTAL) {
+    return combined;
+  }
+
+  return first;
+}
+
+function DefaultShareResultCard({ displayName, profileCode, p }: Omit<ShareResultCardProps, 'variant'>) {
+  const axisLabels = axisLabelsFromProfileKey(profileCode) ?? [];
 
   return (
     <div
       data-share-card="move-report"
       style={{
         width: 1080,
+        minHeight: 1420,
         background: '#0A0A0A',
         color: '#fff',
         fontFamily: 'Noto Sans KR, sans-serif',
@@ -30,7 +76,6 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
         padding: '90px 80px 70px',
       }}
     >
-      {/* 배경 장식 */}
       <div
         style={{
           position: 'absolute',
@@ -65,7 +110,6 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
       />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* SPOKEDU 우상단 브랜딩 */}
         <div
           style={{
             position: 'absolute',
@@ -80,45 +124,8 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
           SPOKEDU
         </div>
 
-        {/* 유형코드 뱃지 — transform 가운데 정렬이 html2canvas에서 table/flex보다 안정적 */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 36, alignItems: 'center' }}>
-          {profileCode.split('').map((c, i) => (
-            <div
-              key={i}
-              style={{
-                position: 'relative',
-                width: 86,
-                height: 86,
-                flexShrink: 0,
-                borderRadius: 20,
-                background: `${p.col}22`,
-                border: `2px solid ${p.col}60`,
-                boxShadow: `0 0 20px ${p.col}30`,
-                overflow: 'hidden',
-              }}
-            >
-              <span
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  fontFamily: 'Bebas Neue, sans-serif',
-                  fontSize: 50,
-                  lineHeight: 1,
-                  color: p.col,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {c}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* 코드 라벨 뱃지 — inline-flex + alignItems로 한 줄 세로 중앙(캡처 엔진과 화면 정합) */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 48, alignItems: 'center' }}>
-          {codeLabels.map((item, i) => (
+          {axisLabels.map((label, i) => (
             <div
               key={i}
               style={{
@@ -132,24 +139,20 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
                 border: `1.5px solid ${p.col}35`,
               }}
             >
-              <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 28, lineHeight: 1, color: p.col }}>
-                {item.code}
-              </span>
               <span
                 style={{
                   fontSize: 22,
                   lineHeight: 1.25,
-                  color: 'rgba(255,255,255,.7)',
-                  fontWeight: 600,
+                  color: 'rgba(255,255,255,.85)',
+                  fontWeight: 700,
                 }}
               >
-                {item.label}
+                {label}
               </span>
             </div>
           ))}
         </div>
 
-        {/* 캐치카피 */}
         <div
           style={{
             marginBottom: 48,
@@ -174,7 +177,6 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
           </p>
         </div>
 
-        {/* 이모지 + 유형명 섹션 */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 40, marginBottom: 40 }}>
           <div
             style={{
@@ -224,7 +226,6 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
           </div>
         </div>
 
-        {/* 키워드 태그 */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 40, alignItems: 'center' }}>
           {p.kw.map((k, i) => (
             <span
@@ -249,7 +250,6 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
           ))}
         </div>
 
-        {/* 설명 텍스트 */}
         <div
           style={{
             background: 'rgba(0,0,0,.5)',
@@ -275,4 +275,73 @@ export default function ShareResultCard({ displayName, profileCode, p }: ShareRe
       </div>
     </div>
   );
+}
+
+function ViralShareResultCard({ displayName, p }: Omit<ShareResultCardProps, 'variant' | 'profileCode'>) {
+  const keywords = p.kw.slice(0, 4);
+  const tipText = typeof p.shortTip === 'string' ? p.shortTip.trim() : '';
+  const posterDesc = viralPosterDisplayDesc(p.desc);
+
+  return (
+    <div
+      data-share-card="move-report"
+      data-share-variant="poster"
+      className="mr-poster-card"
+      aria-label={`${displayName || '우리 아이'}의 MOVE REPORT`}
+      style={{
+        ['--poster-accent' as string]: p.col,
+        fontFamily: "'Noto Sans KR', sans-serif",
+      }}
+    >
+      <div className="mr-poster-card-glow" aria-hidden />
+      <div className="mr-poster-card-grain" aria-hidden />
+
+      <div className="mr-poster-card-inner">
+        <header className="mr-poster-head">
+          <div className="mr-poster-brand-sm">SPOKEDU</div>
+          <div className="mr-poster-brand-lg">MOVE REPORT</div>
+          <p className="mr-poster-sub">우리 아이의 움직임 성향</p>
+        </header>
+
+        <div className="mr-poster-hero">
+          <div className="mr-poster-emoji" aria-hidden>
+            {p.em}
+          </div>
+          <div className="mr-poster-hero-text">
+            <h1 className="mr-poster-type-name">{p.char}</h1>
+            <p className="mr-poster-catchcopy">
+              <span aria-hidden>{'\u201c'}</span>
+              {p.catchcopy}
+              <span aria-hidden>{'\u201d'}</span>
+            </p>
+            <p className="mr-poster-type-meta">{p.title}</p>
+          </div>
+        </div>
+
+        <ul className="mr-poster-pills" aria-label="성향 키워드">
+          {keywords.map((k, i) => (
+            <li key={i} className="mr-poster-pill">
+              {k}
+            </li>
+          ))}
+        </ul>
+
+        <p className="mr-poster-desc">{posterDesc}</p>
+
+        {tipText ? (
+          <div className="mr-poster-tip">
+            <span className="mr-poster-tip-label">이 아이에게 잘 통하는 말</span>
+            <p className="mr-poster-tip-text">{tipText}</p>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+export default function ShareResultCard({ displayName, profileCode, p, variant = 'default' }: ShareResultCardProps) {
+  if (variant === 'viralShare') {
+    return <ViralShareResultCard displayName={displayName} p={p} />;
+  }
+  return <DefaultShareResultCard displayName={displayName} profileCode={profileCode} p={p} />;
 }

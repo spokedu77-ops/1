@@ -2,12 +2,14 @@
 
 interface IntroProps {
   onStart: () => void;
+  /** /move-report?coach=… 전용 링크 유입 시 안내 배너 */
+  coachLinkActive?: boolean;
 }
 
 const INTRO_FIXED_LINE = '연세대 체육교육학과 출신 개발 · 무료 테스트';
 
 /** 인트로: 브랜딩 + 고정 안내 띠(비스크롤) + CTA */
-export default function Intro({ onStart }: IntroProps) {
+export default function Intro({ onStart, coachLinkActive }: IntroProps) {
   return (
     <div className="page mr-intro-page" style={{ background: '#0D0D0D', position: 'relative', overflow: 'hidden', minHeight: '100dvh' }}>
       <div
@@ -45,6 +47,25 @@ export default function Intro({ onStart }: IntroProps) {
       />
 
       <div className="mr-content-max" style={{ position: 'relative', zIndex: 1, padding: '0 24px', paddingTop: '40px', paddingBottom: '200px' }}>
+        {coachLinkActive ? (
+          <div
+            className="anim-rise"
+            style={{
+              marginBottom: '20px',
+              padding: '12px 14px',
+              borderRadius: '12px',
+              border: '1px solid #2A3A4A',
+              background: 'rgba(30,144,255,.12)',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#B8D4FF',
+              lineHeight: 1.55,
+              wordBreak: 'keep-all',
+            }}
+          >
+            선생님 전용 링크로 참여 중이에요. 응답은 유형만 익명 집계되며, 개별 이름은 저장되지 않습니다.
+          </div>
+        ) : null}
         {/* 브랜드: 영문 워드마크만 */}
         <div className="anim-rise" style={{ marginBottom: '36px', textAlign: 'center' }}>
           <div

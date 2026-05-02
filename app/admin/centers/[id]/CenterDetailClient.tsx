@@ -23,6 +23,7 @@ import type {
 } from '@/app/lib/centers/types';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { uploadToStorageSigned, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
+import { optimizeToWebP, validateImageFormat } from '@/app/lib/admin/assets/imageOptimizer';
 import {
   ArrowLeft,
   Building2,
@@ -318,9 +319,14 @@ export function CenterDetailClient({ id }: { id: string }) {
     setCriminalUploading(true);
     try {
       for (const file of list) {
-        const safeName = sanitizeFileName(file.name || 'file');
+        const isRasterImage = validateImageFormat(file).valid;
+        const uploadBlob: File = isRasterImage
+          ? await optimizeToWebP(file, { maxW: 1920, maxH: 1920, quality: 0.9 })
+          : file;
+        const safeName = sanitizeFileName(uploadBlob.name || file.name || 'file');
         const path = `centers/${center.id}/criminal-check/${Date.now()}_${safeName}`;
-        const uploadedPath = await uploadToStorageSigned(path, file, file.type || undefined);
+        const contentType = isRasterImage ? 'image/webp' : uploadBlob.type || file.type || undefined;
+        const uploadedPath = await uploadToStorageSigned(path, uploadBlob, contentType);
         const nextFiles = [...(center.criminal_check_files ?? []), { name: safeName, path: uploadedPath }];
         const res = await updateCenter(center.id, { criminal_check_files: nextFiles });
         if (res.error) {
@@ -830,7 +836,7 @@ export function CenterDetailClient({ id }: { id: string }) {
                 <input
                   type="file"
                   multiple
-                  accept=".hwp,.doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
+                  accept=".hwp,.doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                   disabled={criminalUploading}
                   onChange={(e) => void handleCriminalFilesAdd(e.target.files)}
                   className="hidden"

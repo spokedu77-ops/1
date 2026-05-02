@@ -45,6 +45,8 @@ export default function MoveReportLayout({ children }: { children: React.ReactNo
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
+      {/* App Router 레이아웃에서 세그먼트 폰트 로드 — pages/_document 미사용 */}
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
         href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700;900&family=Bebas+Neue&family=DM+Serif+Display:ital@1&display=swap"
         rel="stylesheet"
