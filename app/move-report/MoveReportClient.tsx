@@ -25,14 +25,6 @@ export default function MoveReportClient() {
     return isValidCoachSlugFormat(n) ? n : null;
   }, [searchParams]);
 
-  /** 코치·shared 유입 학부모에게는 교육자 CTA 숨김 (direct / educator_campaign 만 표시) */
-  const showEducatorCta = useMemo(() => {
-    if (coachSlugForSubmit) return false;
-    const mr = getMoveReportAttribution().mr_source;
-    if (mr === 'shared' || mr === 'coach_link') return false;
-    return true;
-  }, [coachSlugForSubmit]);
-
   const [sc, setSc] = useState<Screen>('intro');
   const [age, setAge] = useState<AgeGroup>('preschool');
   const [name, setName] = useState('');
@@ -211,7 +203,7 @@ export default function MoveReportClient() {
       )}
       {sc === 'loading' && <Loading />}
       {sc === 'result' && result && (
-        <Result result={result} tab={tab} onTab={setTab} onReset={reset} flash={flash} showEducatorCta={showEducatorCta} />
+        <Result result={result} tab={tab} onTab={setTab} onReset={reset} flash={flash} showEducatorCta={false} />
       )}
       {toast ? (
         <div className="toast-bar toast-bar--top" role="status">

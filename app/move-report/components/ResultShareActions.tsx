@@ -25,7 +25,7 @@ function extractShareKey(shareUrl: string): string | null {
   }
 }
 
-export default function ResultShareActions({ profileKey, graphCode, flash, showEducatorCta = true }: ResultShareActionsProps) {
+export default function ResultShareActions({ profileKey, graphCode, flash, showEducatorCta = false }: ResultShareActionsProps) {
   const [copyBusy, setCopyBusy] = useState(false);
   const [educatorModalOpen, setEducatorModalOpen] = useState(false);
 
@@ -113,29 +113,30 @@ export default function ResultShareActions({ profileKey, graphCode, flash, showE
       </section>
 
       {showEducatorCta ? (
-        <section className="mr-result-share-educator" aria-labelledby="mr-result-share-edu-title">
-          <h3 id="mr-result-share-edu-title" className="mr-result-share-edu-title">
-            체육 선생님이신가요?
-          </h3>
-          <p className="mr-result-share-edu-body">
-            우리 반, 센터, 기관 전용 MOVE REPORT 링크를 만들고 아이들의 움직임 성향 분포를 확인해보세요.
-          </p>
-          <div className="mr-result-share-educator-actions">
-            <Link
-              href="/move-report/coach/new"
-              className="mr-result-share-btn mr-result-share-edu-coach mr-result-share-edu-coach--secondary"
-              onClick={onEducatorCoachClick}
-            >
-              선생님 전용 링크 만들기
-            </Link>
-            <button type="button" className="mr-result-share-edu-beta-link" onClick={() => setEducatorModalOpen(true)}>
-              교육자 베타 신청
-            </button>
-          </div>
-        </section>
+        <>
+          <section className="mr-result-share-educator" aria-labelledby="mr-result-share-edu-title">
+            <h3 id="mr-result-share-edu-title" className="mr-result-share-edu-title">
+              체육 선생님이신가요?
+            </h3>
+            <p className="mr-result-share-edu-body">
+              우리 반, 센터, 기관 전용 MOVE REPORT 링크를 만들고 아이들의 움직임 성향 분포를 확인해보세요.
+            </p>
+            <div className="mr-result-share-educator-actions">
+              <Link
+                href="/move-report/coach/new"
+                className="mr-result-share-btn mr-result-share-edu-coach mr-result-share-edu-coach--secondary"
+                onClick={onEducatorCoachClick}
+              >
+                선생님 전용 링크 만들기
+              </Link>
+              <button type="button" className="mr-result-share-edu-beta-link" onClick={() => setEducatorModalOpen(true)}>
+                교육자 베타 신청
+              </button>
+            </div>
+          </section>
+          <EducatorBetaModal open={educatorModalOpen} onClose={() => setEducatorModalOpen(false)} shareKey={shareKey} />
+        </>
       ) : null}
-
-      <EducatorBetaModal open={educatorModalOpen} onClose={() => setEducatorModalOpen(false)} shareKey={shareKey} />
     </div>
   );
 }

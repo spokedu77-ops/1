@@ -124,6 +124,17 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
         <div className="anim-rise d2" style={{ marginBottom: '24px' }}>
           <p
             style={{
+              margin: '0 0 12px 0',
+              fontSize: '12px',
+              fontWeight: 700,
+              letterSpacing: '.06em',
+              color: '#FFB020',
+            }}
+          >
+            약 3분 · 12문항 · 16가지 유형 · 무료 테스트
+          </p>
+          <p
+            style={{
               fontSize: '15px',
               fontWeight: 500,
               color: '#DDDDDD',
@@ -131,7 +142,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
               wordBreak: 'keep-all',
               borderLeft: '2px solid #FF4B1F55',
               paddingLeft: '14px',
-              marginTop: '16px',
+              marginTop: '0',
             }}
           >
             아이마다 몸이 빛나는 순간이 <span style={{ color: '#FF4B1F', fontWeight: 700 }}>다릅니다.</span>
@@ -276,7 +287,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
               <i className="fa-solid fa-chevron-right" style={{ fontSize: '10px' }} />
             </span>
           </button>
-          <p style={{ textAlign: 'center', fontSize: '11px', color: '#AAAAAA', marginTop: '8px', fontWeight: 500 }}>약 3분 · 12문항</p>
+          <p style={{ textAlign: 'center', fontSize: '11px', color: '#AAAAAA', marginTop: '8px', fontWeight: 500 }}>약 3분 · 12문항 · 16가지 유형 · 무료</p>
         </div>
       </div>
     </div>

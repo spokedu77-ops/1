@@ -15,7 +15,7 @@ interface ResultProps {
   onTab: (t: ResultTab) => void;
   onReset: () => void;
   flash: (msg: string) => void;
-  /** false: 코치·shared 유입 등 — 교육자 CTA(선생님 링크·베타) 숨김 */
+  /** true: 내부 실험용(교육자 섹션). 공개 `/move-report`는 항상 false로 고정 */
   showEducatorCta?: boolean;
 }
 
@@ -55,7 +55,7 @@ export default function Result({
   onTab,
   onReset,
   flash,
-  showEducatorCta = true,
+  showEducatorCta = false,
 }: ResultProps) {
   const { profile: p, bd, displayName, key } = result;
   const [revealed, setRevealed] = useState(false);

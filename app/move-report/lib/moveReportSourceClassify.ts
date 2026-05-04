@@ -26,6 +26,7 @@ export function classifyMoveReportEventSource(meta: unknown, eventName?: string)
   if (mr === 'shared') return { label: 'shared', bucket: 'shared' };
   if (mr === 'parent_direct') return { label: 'parent_direct', bucket: 'mr_source' };
   if (mr === 'educator_campaign') return { label: 'educator_campaign', bucket: 'mr_source' };
+  if (mr === 'direct_unknown') return { label: 'direct_unknown', bucket: 'mr_source' };
   if (mr) return { label: `mr_source:${mr}`, bucket: 'mr_source' };
 
   const utm = attr.utm_source?.trim();

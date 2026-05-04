@@ -3,7 +3,7 @@
 import { MOVE_REPORT_ATTRIBUTION_QUERY_KEYS } from './attributionSchema';
 import { isValidCoachSlugFormat, normalizeCoachSlugInput } from './coachSlug';
 
-const MR_SOURCE_ALLOWED = new Set(['parent_direct', 'shared', 'coach_link', 'educator_campaign']);
+const MR_SOURCE_ALLOWED = new Set(['parent_direct', 'shared', 'coach_link', 'educator_campaign', 'direct_unknown']);
 
 const STORAGE_KEY = 'move_report_attribution_v1';
 const MAX_LEN = 256;

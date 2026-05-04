@@ -98,7 +98,7 @@ export default function MoveReportSharedContent() {
             <h1 className="mr-shared-error-title">결과를 불러오지 못했어요</h1>
             <p className="mr-shared-error-body">MOVE REPORT를 다시 시작해 주세요.</p>
             <Link href={restartHref} className="btn-fire mr-shared-error-cta" onClick={onStartClick}>
-              MOVE REPORT 시작하기
+              나도 MOVE REPORT 해보기
             </Link>
           </div>
         </div>
