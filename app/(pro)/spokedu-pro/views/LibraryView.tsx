@@ -28,12 +28,7 @@ import {
   normalizePackageKeysFromDb,
   type LessonPackageKeyId,
 } from '@/app/lib/spokedu-pro/lessonPackageKeys';
-
-type ProgramLessonDetailLite = {
-  isFeaturedLesson?: boolean;
-  summary?: string | null;
-  packageKeys?: unknown;
-};
+import type { ProgramLessonDetailLite } from '@/app/lib/spokedu-pro/programLessonDetail';
 
 type ProgramRow = {
   id: number;

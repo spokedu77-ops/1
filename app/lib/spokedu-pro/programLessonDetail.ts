@@ -131,6 +131,13 @@ export function buildLessonDetailAutoTexts(input: LessonDetailAutoTextInput): {
   return { parentNote, safetyNotesLines, coachScript };
 }
 
+/** 프로그램 뱅크·라이브러리 목록에 붙는 최소 스냅샷 (전체 `ProgramLessonDetail` 아님) */
+export type ProgramLessonDetailLite = {
+  isFeaturedLesson?: boolean;
+  summary?: string | null;
+  packageKeys?: unknown;
+};
+
 export type ProgramLessonDetail = {
   curriculumId: number;
   /** DB lesson row 갱신 시각(선택, 표시용) */

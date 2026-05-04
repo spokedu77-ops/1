@@ -7,7 +7,7 @@ import type { ProgramDetail } from '../types';
 import { FUNCTION_TYPES, MAIN_THEMES, extractEquipmentDisplayTags } from '@/app/lib/spokedu-pro/programClassification';
 import { getYouTubeId } from '@/app/(pro)/spokedu-pro/utils/youtube';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
-import type { ProgramLessonDetail } from '@/app/lib/spokedu-pro/programLessonDetail';
+import type { ProgramLessonDetail, ProgramLessonDetailLite } from '@/app/lib/spokedu-pro/programLessonDetail';
 
 function stringifyJsonArray(arr: unknown[]): string {
   try {
@@ -74,8 +74,8 @@ export default function SpokeduProDrawer({
   detailKind?: 'program' | 'screenplay';
   onLaunchMemoryGame?: () => void;
   screenplayTags?: string[];
-  /** curriculum.id 기준 program_lesson_detail (펑셔널 프로그램만) */
-  lessonDetail?: ProgramLessonDetail | null;
+  /** curriculum.id 기준 program_lesson_detail (펑셔널 프로그램만). 목록 스냅샷은 Lite일 수 있음 */
+  lessonDetail?: ProgramLessonDetail | ProgramLessonDetailLite | null;
   onSaveLessonDetail?: (detail: ProgramLessonDetail) => Promise<void>;
 }) {
   const tr = useTranslator();

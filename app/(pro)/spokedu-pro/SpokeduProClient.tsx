@@ -27,7 +27,9 @@ import {
 } from './utils/spomoveLaunch';
 import { resolveScreenplayTagMappingV1, getScreenplayLevelTag } from './utils/screenplayTagMapping';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
-import type { ProgramLessonDetail } from '@/app/lib/spokedu-pro/programLessonDetail';
+import type { ProgramLessonDetail, ProgramLessonDetailLite } from '@/app/lib/spokedu-pro/programLessonDetail';
+
+type ProgramLessonDetailInList = ProgramLessonDetail | ProgramLessonDetailLite | null;
 
 const SpokeduProToolkit = dynamic(() => import('./components/SpokeduProToolkit'), { ssr: false });
 const SpokeduProDrawer = dynamic(() => import('./components/SpokeduProDrawer'), { ssr: false });
@@ -156,7 +158,7 @@ export default function SpokeduProClient({
       mode_id?: string | null;
       preset_ref?: string | null;
       thumbnail_url?: string | null;
-      lesson_detail?: ProgramLessonDetail | null;
+      lesson_detail?: ProgramLessonDetailInList;
     };
   } | null>(null);
   const [screenplayById, setScreenplayById] = useState<Record<number, ScreenplayMeta>>({});
@@ -260,7 +262,7 @@ export default function SpokeduProClient({
       equipment?: string | null;
       activity_method?: string | null;
       activity_tip?: string | null;
-      lesson_detail?: ProgramLessonDetail | null;
+      lesson_detail?: ProgramLessonDetailInList;
     }>
   >([]);
   const [programsRefreshToken, setProgramsRefreshToken] = useState(0);
@@ -585,7 +587,7 @@ export default function SpokeduProClient({
           mode_id?: string | null;
           preset_ref?: string | null;
           thumbnail_url?: string | null;
-          lesson_detail?: ProgramLessonDetail | null;
+          lesson_detail?: ProgramLessonDetailInList;
         };
       }
     ) => {
@@ -649,7 +651,7 @@ export default function SpokeduProClient({
           mode_id?: string | null;
           preset_ref?: string | null;
           thumbnail_url?: string | null;
-          lesson_detail?: ProgramLessonDetail | null;
+          lesson_detail?: ProgramLessonDetailInList;
         };
       }
     ) => {
