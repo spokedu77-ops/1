@@ -29,6 +29,7 @@ import {
   type LessonPackageKeyId,
 } from '@/app/lib/spokedu-pro/lessonPackageKeys';
 import type { ProgramLessonDetailLite } from '@/app/lib/spokedu-pro/programLessonDetail';
+import type { SpokeduProOpenDetailContext } from '../programDrawerContext';
 
 type ProgramRow = {
   id: number;
@@ -302,16 +303,8 @@ export default function LibraryView({
   isEditMode = false,
   screenplaysRefreshToken = 0,
 }: {
-  onOpenDetail: (
-    id: number,
-    context?: {
-      role?: string;
-      themeKey?: string;
-      screenplay?: boolean;
-      /** 목록에서 전달하는 스냅샷(상세 맵에 없을 때 placeholder 방지) */
-      row?: Partial<ProgramRow>;
-    }
-  ) => void;
+  /** 상위 드로어(`SpokeduProClient`)와 동일한 context 스키마 */
+  onOpenDetail: (id: number, context?: SpokeduProOpenDetailContext) => void;
   /** 설정 시 카드 클릭으로 프로그램 선택(드로어 대신). */
   onSelectProgram?: (id: number, row?: Partial<ProgramRow>) => void;
   initialPreset?: { themeKey?: string; preset?: string } | null;

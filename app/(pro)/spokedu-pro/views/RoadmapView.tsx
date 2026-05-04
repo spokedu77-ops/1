@@ -36,6 +36,7 @@ import {
   type LessonPackageKeyId,
 } from '@/app/lib/spokedu-pro/lessonPackageKeys';
 import type { ProgramLessonDetail } from '@/app/lib/spokedu-pro/programLessonDetail';
+import type { SpokeduProOpenDetailContext } from '../programDrawerContext';
 
 type FeaturedProgramApiRow = {
   id: number;
@@ -255,22 +256,7 @@ export default function RoadmapView({
   programLibraryCount = 0,
   programLibraryReady = false,
 }: {
-  onOpenDetail: (
-    id: number,
-    context?: {
-      role?: string;
-      themeKey?: string;
-      screenplay?: boolean;
-      row?: {
-        id?: number;
-        title?: string;
-        video_url?: string | null;
-        mode_id?: string | null;
-        preset_ref?: string | null;
-        thumbnail_url?: string | null;
-      };
-    }
-  ) => void;
+  onOpenDetail: (id: number, context?: SpokeduProOpenDetailContext) => void;
   onGoToLibrary?: (
     themeKey?: ThemeKey,
     preset?: string,

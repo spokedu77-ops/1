@@ -27,9 +27,8 @@ import {
 } from './utils/spomoveLaunch';
 import { resolveScreenplayTagMappingV1, getScreenplayLevelTag } from './utils/screenplayTagMapping';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
-import type { ProgramLessonDetail, ProgramLessonDetailLite } from '@/app/lib/spokedu-pro/programLessonDetail';
-
-type ProgramLessonDetailInList = ProgramLessonDetail | ProgramLessonDetailLite | null;
+import type { ProgramLessonDetail } from '@/app/lib/spokedu-pro/programLessonDetail';
+import type { ProgramLessonDetailInList, SpokeduProOpenDetailContext } from './programDrawerContext';
 
 const SpokeduProToolkit = dynamic(() => import('./components/SpokeduProToolkit'), { ssr: false });
 const SpokeduProDrawer = dynamic(() => import('./components/SpokeduProDrawer'), { ssr: false });
@@ -124,43 +123,10 @@ export default function SpokeduProClient({
     };
   }, [toolkitOpen]);
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
-  const [drawerContext, setDrawerContext] = useState<{
-    role?: string;
-    themeKey?: string;
-    screenplay?: boolean;
-    row?: {
-      id?: number;
-      title?: string;
-      video_url?: string | null;
-      function_type?: string | null;
-      function_types?: string[] | null;
-      main_theme?: string | null;
-      group_size?: string | null;
-      mode_id?: string | null;
-      preset_ref?: string | null;
-      thumbnail_url?: string | null;
-    };
-  } | null>(null);
+  const [drawerContext, setDrawerContext] = useState<SpokeduProOpenDetailContext | null>(null);
   /** 라이브러리(프로그램 뱅크) 탭 전용 상세 모달 — 로드맵 등과 분리 */
   const [libraryDrawerProgramId, setLibraryDrawerProgramId] = useState<number | null>(null);
-  const [libraryDrawerContext, setLibraryDrawerContext] = useState<{
-    role?: string;
-    themeKey?: string;
-    screenplay?: boolean;
-    row?: {
-      id?: number;
-      title?: string;
-      video_url?: string | null;
-      function_type?: string | null;
-      function_types?: string[] | null;
-      main_theme?: string | null;
-      group_size?: string | null;
-      mode_id?: string | null;
-      preset_ref?: string | null;
-      thumbnail_url?: string | null;
-      lesson_detail?: ProgramLessonDetailInList;
-    };
-  } | null>(null);
+  const [libraryDrawerContext, setLibraryDrawerContext] = useState<SpokeduProOpenDetailContext | null>(null);
   const [screenplayById, setScreenplayById] = useState<Record<number, ScreenplayMeta>>({});
   const [screenplaysRefreshToken, setScreenplaysRefreshToken] = useState(0);
   const [libraryPreset, setLibraryPreset] = useState<{ themeKey?: string; preset?: string } | null>(null);
@@ -570,27 +536,7 @@ export default function SpokeduProClient({
   }, [drawerIsScreenplay, resolvedDrawerProgramId, programsFromApi]);
 
   const openDrawer = useCallback(
-    (
-      id: number,
-      context?: {
-        role?: string;
-        themeKey?: string;
-        screenplay?: boolean;
-        row?: {
-          id?: number;
-          title?: string;
-          video_url?: string | null;
-          function_type?: string | null;
-          function_types?: string[] | null;
-          main_theme?: string | null;
-          group_size?: string | null;
-          mode_id?: string | null;
-          preset_ref?: string | null;
-          thumbnail_url?: string | null;
-          lesson_detail?: ProgramLessonDetailInList;
-        };
-      }
-    ) => {
+    (id: number, context?: SpokeduProOpenDetailContext) => {
       trackSpokeduProEvent('spokedu_pro_week_card_open', {
         programId: id,
         source: context?.screenplay ? 'dashboard_screenplay_drawer' : 'dashboard_drawer',
@@ -634,27 +580,7 @@ export default function SpokeduProClient({
     [mergeProgramsFromResponse]
   );
   const openLibraryProgramDetail = useCallback(
-    (
-      id: number,
-      context?: {
-        role?: string;
-        themeKey?: string;
-        screenplay?: boolean;
-        row?: {
-          id?: number;
-          title?: string;
-          video_url?: string | null;
-          function_type?: string | null;
-          function_types?: string[] | null;
-          main_theme?: string | null;
-          group_size?: string | null;
-          mode_id?: string | null;
-          preset_ref?: string | null;
-          thumbnail_url?: string | null;
-          lesson_detail?: ProgramLessonDetailInList;
-        };
-      }
-    ) => {
+    (id: number, context?: SpokeduProOpenDetailContext) => {
       trackSpokeduProEvent('spokedu_pro_week_card_open', {
         programId: id,
         source: context?.screenplay ? 'library_screenplay_drawer' : 'library_program_drawer',
