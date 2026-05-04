@@ -335,7 +335,10 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
   const padRefs = useRef<(HTMLDivElement | null)[]>([]);
   const milestoneRootRef = useRef<HTMLDivElement>(null);
   const [hudTimeWarn, setHudTimeWarn] = useState(false);
-  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const lv = Math.max(1, Math.min(7, speedLevel));
   const spName = SPD_NAMES[lv - 1] ?? '보통';

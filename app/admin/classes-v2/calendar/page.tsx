@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useLayoutEffect, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useClassManagement } from "@/app/admin/classes-shared/hooks/useClassManagement";
@@ -69,6 +69,21 @@ function formatTimeShort(d: Date) {
 function startOfLocalDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
+
+/** 같은 로컬 달력 날짜인지 (오늘 칸 / 오늘이 속한 주 찾기) */
+function isSameLocalCalendarDay(a: Date, b: Date) {
+  return startOfLocalDay(a).getTime() === startOfLocalDay(b).getTime();
+}
+
+/** 스크롤 컨테이너가 실제로 overflow 될 때만 유효 (그 외에는 문서가 스크롤되므로 window 경로 사용) */
+function alignRowWithScrollContainerTop(scrollParent: HTMLElement, row: HTMLElement) {
+  const p = scrollParent.getBoundingClientRect();
+  const r = row.getBoundingClientRect();
+  const nextTop = scrollParent.scrollTop + (r.top - p.top);
+  scrollParent.scrollTop = Math.max(0, nextTop);
+}
+
+const VIEWPORT_GAP_BELOW_TOOLBAR = 6;
 
 function isPastCalendarDay(cell: Date) {
   return startOfLocalDay(cell).getTime() < startOfLocalDay(new Date()).getTime();
@@ -169,10 +184,21 @@ export default function ClassManagementCalendarV2() {
   });
   /** 모바일 3일 뷰: 가운데 날짜(로컬 자정). ◀/▶ 로 이동, 「오늘」로 리셋 */
   const [threeDayCenter, setThreeDayCenter] = useState<Date>(() => startOfLocalDay(new Date()));
-  /** SSR(UTC)과 브라우저 로컬 날짜 차이 방지: 마운트 후 로컬 기준 오늘·이번 달로 고정 */
+  /** 로컬 오늘 뱃지용 — useLayoutEffect에서 채워 SSR/CSR 불일치 방지 */
   const [localToday, setLocalToday] = useState<Date | null>(null);
+  /** 데스크톱: 오늘이 포함된 주 행 — 월 초 패딩 때문에 1행이 이전 달이어도 이 행을 맨 위로 스크롤 */
+  const todayWeekRowRef = useRef<HTMLDivElement | null>(null);
+  /** 메인 세로 스크롤(목록·월간 그리드 공통) — 실제 overflow 시에만 scrollTop 적용 */
+  const calendarScrollAreaRef = useRef<HTMLDivElement | null>(null);
+  /** 페이지 상단 툴바 — window 스크롤 시 오늘 주를 이 아래에 맞춤 */
+  const pageToolbarRef = useRef<HTMLElement | null>(null);
+  /**
+   * 스크롤 후에는 툴바 rect.bottom이 뷰포트 기준으로 줄어들거나 음수가 되어,
+   * 매번 읽으면 delta가 누적되어 문서 맨 아래까지 밀린다. 첫 레이아웃에서만 측정한 뷰포트 Y(px)를 고정한다.
+   */
+  const viewportAlignBelowToolbarPxRef = useRef<number | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const now = new Date();
     const sod = startOfLocalDay(now);
     setLocalToday(sod);
@@ -256,10 +282,65 @@ export default function ClassManagementCalendarV2() {
 
   const monthWeekRows = useMemo(() => chunkWeeks(monthInfo.cells), [monthInfo.cells]);
 
+  const scrollDesktopToTodayWeek = useCallback(() => {
+    if (typeof window !== "undefined" && window.matchMedia && !window.matchMedia("(min-width: 768px)").matches) {
+      return;
+    }
+    const row = todayWeekRowRef.current;
+    if (!row) return;
+    const sod = startOfLocalDay(new Date());
+    if (monthInfo.y !== sod.getFullYear() || monthInfo.m !== sod.getMonth()) return;
+
+    const container = calendarScrollAreaRef.current;
+    const innerActuallyScrolls =
+      container != null && container.scrollHeight > container.clientHeight + 2;
+
+    if (innerActuallyScrolls && container) {
+      alignRowWithScrollContainerTop(container, row);
+      return;
+    }
+
+    if (viewportAlignBelowToolbarPxRef.current == null && pageToolbarRef.current) {
+      viewportAlignBelowToolbarPxRef.current =
+        pageToolbarRef.current.getBoundingClientRect().bottom + VIEWPORT_GAP_BELOW_TOOLBAR;
+    }
+    const alignY = viewportAlignBelowToolbarPxRef.current ?? 100;
+
+    const r = row.getBoundingClientRect();
+    const nextTop = window.scrollY + r.top - alignY;
+    if (Math.abs(r.top - alignY) < 2) return;
+    window.scrollTo({ top: Math.max(0, nextTop), left: 0, behavior: "instant" });
+  }, [monthInfo.y, monthInfo.m]);
+
+  /** 레이아웃·페인트 반영 후 한 번만 (연속 scrollBy/중복 측정으로 맨 아래까지 가는 것 방지) */
+  useLayoutEffect(() => {
+    let innerRaf = 0;
+    const outerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(() => {
+        scrollDesktopToTodayWeek();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outerRaf);
+      cancelAnimationFrame(innerRaf);
+    };
+  }, [scrollDesktopToTodayWeek, monthInfo.cells.length, filteredEvents.length]);
+
+  /** 데이터 로드 후 행 높이가 커지면서 위치가 어긋날 수 있어 한 번 더 정렬 */
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      scrollDesktopToTodayWeek();
+    }, 120);
+    return () => clearTimeout(t);
+  }, [scrollDesktopToTodayWeek, filteredEvents.length]);
+
   return (
     <div className="flex min-h-screen bg-white text-slate-900 w-full min-w-0">
       <div className="flex-1 flex flex-col min-w-0">
-        <nav className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-white flex flex-wrap justify-between items-center gap-2 z-10">
+        <nav
+          ref={pageToolbarRef}
+          className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-white flex flex-wrap justify-between items-center gap-2 z-10 shrink-0"
+        >
           <div className="flex items-center gap-2 sm:gap-4 flex-wrap min-w-0">
             <h1 className="text-base sm:text-lg font-black italic uppercase text-slate-950 flex items-center gap-2 shrink-0">
               <CalendarIcon size={18} className="text-blue-600" /> SPOKEDU (V2)
@@ -385,7 +466,7 @@ export default function ClassManagementCalendarV2() {
           </div>
         </nav>
 
-        <div className="flex-1 min-h-0 overflow-auto bg-slate-50">
+        <div ref={calendarScrollAreaRef} className="flex-1 min-h-0 overflow-auto bg-slate-50">
           <div className="p-3 w-full max-w-[1600px] mx-auto min-w-0">
             <div className="md:hidden space-y-3">
               {mobileThreeDays.map((cell) => {
@@ -453,10 +534,14 @@ export default function ClassManagementCalendarV2() {
                 ))}
               </div>
 
-              {monthWeekRows.map((weekCells, wIdx) => (
+              {monthWeekRows.map((weekCells, wIdx) => {
+                const now = new Date();
+                const weekHasToday = weekCells.some((c) => c && isSameLocalCalendarDay(c, now));
+                return (
                 <div
                   key={`week-${wIdx}`}
-                  className="grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300 last:border-b-0 items-stretch"
+                  ref={weekHasToday ? todayWeekRowRef : undefined}
+                  className="scroll-mt-2 grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300 last:border-b-0 items-stretch"
                 >
                   {weekCells.map((cell, dIdx) => {
                     if (!cell) {
@@ -470,7 +555,7 @@ export default function ClassManagementCalendarV2() {
                     const key = dayMapKey(cell);
                     const dayEvents = eventsByMonthDay.get(key) || [];
                     const t = new Date();
-                    const isToday = t.toDateString() === cell.toDateString();
+                    const isToday = isSameLocalCalendarDay(cell, t);
                     const isPastDay = isPastCalendarDay(cell);
                     const headerLabel = cell.toLocaleDateString("ko-KR", {
                       month: "long",
@@ -516,15 +601,15 @@ export default function ClassManagementCalendarV2() {
                     );
                   })}
                 </div>
-              ))}
+                );
+              })}
             </div>
             <div className="mt-3 text-[11px] font-bold text-slate-500 md:hidden">
               모바일: 가운데 날짜 기준 전날·당일·다음날만 표시합니다. ◀ ▶ 로 하루씩 이동할 수 있습니다. 항목을 누르면 V2
               번들 모달이 열립니다.
             </div>
             <div className="mt-3 text-[11px] font-bold text-slate-500 hidden md:block">
-              월간(엑셀형): 같은 주의 행 높이는 가장 많은 일정이 있는 요일에 맞춰 늘어나며, 각 칸에는 일정을 모두
-              나열합니다. 항목을 누르면 V2 번들 모달이 열립니다. 마지막 회차는 빨간 FIN 배지로 표시합니다.
+              월간(엑셀형): 진입 시 «오늘이 속한 주» 행이 먼저 보이도록 스크롤됩니다. 같은 주의 행 높이는 일정이 가장 많은 요일에 맞춰 늘어나며, 항목을 누르면 V2 번들 모달이 열립니다. 마지막 회차는 빨간 FIN 배지로 표시합니다.
             </div>
           </div>
         </div>

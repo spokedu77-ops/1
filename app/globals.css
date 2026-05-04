@@ -114,15 +114,6 @@ body {
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
-/* BridgeOverlay 호흡 원 */
-@keyframes bridge-breathe {
-  0%, 100% { transform: scale(0.85); opacity: 0.6; }
-  50% { transform: scale(1); opacity: 1; }
-}
-.bridge-breathe {
-  animation: bridge-breathe 3s ease-in-out infinite;
-}
-
 /* Flow Phase (legacy Space Flow) */
 .speed-line-2d {
   position: absolute;

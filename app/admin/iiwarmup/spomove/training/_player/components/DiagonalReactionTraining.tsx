@@ -350,7 +350,10 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
   const comboNRef = useRef<HTMLDivElement>(null);
   const milestoneRootRef = useRef<HTMLDivElement>(null);
   const [hudTimeWarn, setHudTimeWarn] = useState(false);
-  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const lv = Math.max(1, Math.min(7, speedLevel));
   // 시지각 반응 4번(대각선): 전체 체감 속도(이동 + 스폰)를 확실히 낮춘다.

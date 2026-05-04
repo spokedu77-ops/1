@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Download, ExternalLink, Loader2, RefreshCw, Trash2, X } from 'lucide-react';
+import { ExternalLink, Loader2, RefreshCw, Trash2, X } from 'lucide-react';
 
 type SubmissionRow = {
   id: string;
@@ -21,7 +21,40 @@ type FunnelKpiBlock = {
   percent: number | null;
 };
 
+type SourceBreakdownRow = {
+  channelKey: string;
+  visits: number;
+  started: number;
+  completed: number;
+  completionRateDisplay: string;
+  resultCardOpened: number;
+  sharedRestart: number;
+};
+
+type ProfileDistributionRow = {
+  profileKey: string;
+  profileTitle: string;
+  completed: number;
+  pctDisplay: string;
+  resultCardOpened: number;
+};
+
+type ViralBlock = {
+  visitUnique: number;
+  startedUnique: number;
+  completedUnique: number;
+  completionRate: FunnelKpiBlock;
+  resultCardOpenedUnique: number;
+  shareRate: FunnelKpiBlock;
+  sharedPageViewedUnique: number;
+  sharedStartClickedUnique: number;
+  sharedRestartRate: FunnelKpiBlock;
+  sharedInboundCompletedUnique: number;
+  sharedReentryRate: FunnelKpiBlock;
+};
+
 type SummaryWindow = {
+  viral: ViralBlock;
   completion: FunnelKpiBlock;
   share: FunnelKpiBlock;
   sharedReentry: FunnelKpiBlock;
@@ -30,38 +63,11 @@ type SummaryWindow = {
     orphanResultCardOpenedSessions: number;
     orphanSharedCompletedSessions: number;
   };
-  rawEventTotals: Record<string, number>;
-  parentViral: {
-    startedUnique: number;
-    completedUnique: number;
-    resultCardOpenedUnique: number;
-    sharedPageViewedUnique: number;
-    sharedStartClickedUnique: number;
-  };
-  educatorDistribution: {
-    coachLinkCreated: number;
-    coachLinkLanding: number;
-    coachSubmissionCompleted: number;
-    coachDashboardViewed: number;
-    coachCsvDownloaded: number;
-  };
+  sourceBreakdown: SourceBreakdownRow[];
+  profileDistribution: ProfileDistributionRow[];
 };
 
 type WindowKey = 'today' | 'days7' | 'days30';
-
-type EducatorLeadRow = {
-  id: string;
-  name: string;
-  contact: string;
-  role: string;
-  organization: string | null;
-  target_age_group: string;
-  needed_feature: string;
-  source: string;
-  consent: boolean;
-  meta: unknown;
-  created_at: string;
-};
 
 function kpiLine(k: FunnelKpiBlock, numLabel: string, denLabel: string) {
   return (
@@ -75,6 +81,16 @@ function kpiLine(k: FunnelKpiBlock, numLabel: string, denLabel: string) {
       </div>
     </>
   );
+}
+
+function channelLabel(key: string): string {
+  if (key === 'parent_direct') return 'parent_direct';
+  if (key === 'educator_campaign') return 'educator_campaign';
+  if (key === 'shared') return 'shared';
+  if (key === 'direct_unknown') return 'direct_unknown';
+  if (key.startsWith('utm:')) return `utm · ${key.slice(4)}`;
+  if (key.startsWith('ref:')) return `referrer · ${key.slice(4)}`;
+  return key;
 }
 
 export default function AdminMoveReportPage() {
@@ -92,20 +108,7 @@ export default function AdminMoveReportPage() {
   const [windowKey, setWindowKey] = useState<WindowKey>('today');
   const [summaryLoadedAt, setSummaryLoadedAt] = useState<string | null>(null);
 
-  const [attrTop, setAttrTop] = useState<
-    { source: string; count: number; bucket: 'mr_source' | 'utm' | 'coach_link' | 'shared' | 'ref' | 'direct' }[] | null
-  >(null);
-  const [attrLoading, setAttrLoading] = useState(true);
-  const [attrError, setAttrError] = useState<string | null>(null);
-
   const [funnelResetting, setFunnelResetting] = useState(false);
-
-  const [educatorRows, setEducatorRows] = useState<EducatorLeadRow[]>([]);
-  const [educatorLoading, setEducatorLoading] = useState(true);
-  const [educatorError, setEducatorError] = useState<string | null>(null);
-  const [coachDisableSlug, setCoachDisableSlug] = useState('');
-  const [coachDisableReason, setCoachDisableReason] = useState('');
-  const [coachDisabling, setCoachDisabling] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -160,137 +163,6 @@ export default function AdminMoveReportPage() {
     void loadSummary();
   }, []);
 
-  const loadAttributionTop = async () => {
-    setAttrLoading(true);
-    setAttrError(null);
-    try {
-      const res = await fetch('/api/admin/move-report/attribution-sources', { credentials: 'include' });
-      const json = (await res.json()) as {
-        ok?: boolean;
-        top?: { source: string; count: number; bucket: 'mr_source' | 'utm' | 'coach_link' | 'shared' | 'ref' | 'direct' }[];
-        error?: string;
-      };
-      if (!json.ok) {
-        setAttrError(json.error ?? 'utm 출처 요약을 불러오지 못했습니다.');
-        setAttrTop(null);
-        return;
-      }
-      setAttrTop(json.top ?? []);
-    } catch {
-      setAttrError('utm 출처 요약 네트워크 오류가 발생했습니다.');
-      setAttrTop(null);
-    } finally {
-      setAttrLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadAttributionTop();
-  }, []);
-
-  const loadEducatorLeads = async () => {
-    setEducatorLoading(true);
-    setEducatorError(null);
-    try {
-      const res = await fetch('/api/admin/move-report/educator-leads', { credentials: 'include' });
-      const json = (await res.json()) as { ok?: boolean; leads?: EducatorLeadRow[]; error?: string };
-      if (!json.ok) {
-        setEducatorError(json.error ?? '교육자 베타 신청 목록을 불러오지 못했습니다.');
-        setEducatorRows([]);
-        return;
-      }
-      setEducatorRows(json.leads ?? []);
-    } catch {
-      setEducatorError('교육자 베타 신청 목록 네트워크 오류가 발생했습니다.');
-      setEducatorRows([]);
-    } finally {
-      setEducatorLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadEducatorLeads();
-  }, []);
-
-  const exportEducatorLeadsCsv = () => {
-    if (!educatorRows.length) return;
-    const header = [
-      'created_at',
-      'name',
-      'contact',
-      'role',
-      'organization',
-      'target_age_group',
-      'needed_feature',
-      'source',
-      'status',
-    ];
-    const escapeCell = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const lines = [
-      header.join(','),
-      ...educatorRows.map((r) =>
-        [
-          new Date(r.created_at).toISOString(),
-          r.name,
-          r.contact,
-          r.role,
-          r.organization ?? '',
-          r.target_age_group,
-          r.needed_feature,
-          r.source,
-          'new',
-        ]
-          .map((c) => escapeCell(String(c)))
-          .join(','),
-      ),
-    ];
-    const bom = '\uFEFF';
-    const blob = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
-    a.href = url;
-    a.download = `move_report_educator_leads_${stamp}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const submitCoachLinkDisable = async () => {
-    const slug = coachDisableSlug.trim().toLowerCase().replace(/_/g, '-');
-    if (!slug) {
-      window.alert('비활성화할 링크 주소(slug)를 입력해 주세요.');
-      return;
-    }
-    if (!window.confirm(`이 코치 링크를 비활성화할까요?\n${slug}`)) return;
-    setCoachDisabling(true);
-    try {
-      const res = await fetch('/api/admin/move-report/coach-link-status', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug,
-          active: false,
-          reason: coachDisableReason.trim() || '관리자 비활성화',
-        }),
-      });
-      const json = (await res.json()) as { ok?: boolean; error?: string };
-      if (!json.ok) {
-        window.alert(json.error ?? '처리에 실패했습니다.');
-        return;
-      }
-      window.alert('비활성화되었습니다. 제출·대시보드에서 제외됩니다.');
-      setCoachDisableSlug('');
-      setCoachDisableReason('');
-    } catch {
-      window.alert('네트워크 오류가 발생했습니다.');
-    } finally {
-      setCoachDisabling(false);
-    }
-  };
-
   const resetFunnelEvents = async () => {
     if (!window.confirm('퍼널 이벤트 데이터를 전체 삭제할까요?\n(테스트 데이터 정리용 — 복구 불가)')) return;
     setFunnelResetting(true);
@@ -306,7 +178,6 @@ export default function AdminMoveReportPage() {
       }
       window.alert(`이벤트 ${json.deleted ?? 0}건 삭제 완료`);
       void loadSummary();
-      void loadAttributionTop();
     } catch {
       window.alert('네트워크 오류가 발생했습니다.');
     } finally {
@@ -361,7 +232,7 @@ export default function AdminMoveReportPage() {
           r.attribution?.ref ?? '',
         ]
           .map((v) => escapeCell(String(v)))
-          .join(',')
+          .join(','),
       ),
     ];
 
@@ -378,36 +249,29 @@ export default function AdminMoveReportPage() {
     URL.revokeObjectURL(url);
   };
 
+  const v = activeSummary?.viral;
+
   return (
     <div className="flex-1 min-h-screen bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]">
       <div className="p-4 sm:p-6 md:p-8 min-w-0 max-w-6xl mx-auto">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">MOVE 리포트</h1>
-            <p className="text-sm text-slate-500 mt-1">설문 제출 내역 및 퍼널 KPI</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">MOVE REPORT 바이럴 대시보드</h1>
+            <p className="text-sm text-slate-500 mt-1 max-w-xl">
+              무료 MOVE REPORT가 어디서 유입되고, 얼마나 완료되고, shared 카드로 다시 퍼지는지 확인합니다.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => {
                 void load();
                 void loadSummary();
-                void loadAttributionTop();
-                void loadEducatorLeads();
               }}
               className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
             >
               <RefreshCw className="h-4 w-4" />
               새로고침
-            </button>
-            <button
-              type="button"
-              onClick={exportCsv}
-              disabled={filteredRows.length === 0}
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <Download className="h-4 w-4" />
-              CSV 다운로드
             </button>
             <Link
               href="/move-report"
@@ -415,23 +279,23 @@ export default function AdminMoveReportPage() {
               rel="noopener noreferrer"
               className="inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
-              MOVE 리포트 새창 열기
+              MOVE REPORT 열기
               <ExternalLink className="h-4 w-4" />
             </Link>
           </div>
         </div>
 
-        {/* 퍼널 KPI */}
+        {/* 핵심 퍼널 */}
         <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <div className="text-sm font-semibold text-slate-800">퍼널 KPI</div>
+              <div className="text-sm font-semibold text-slate-800">핵심 퍼널</div>
               <div className="text-[11px] text-slate-500 mt-0.5">
                 기준: {windowKey === 'today' ? '오늘 00:00~현재' : windowKey === 'days7' ? '최근 7일' : '최근 30일'}
                 {summaryLoadedAt ? ` · 갱신 ${summaryLoadedAt}` : ''}
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               <button
                 type="button"
                 onClick={() => setWindowKey('today')}
@@ -463,199 +327,146 @@ export default function AdminMoveReportPage() {
                 type="button"
                 onClick={() => void resetFunnelEvents()}
                 disabled={funnelResetting}
-                className="ml-2 rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+                className="ml-1 rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
               >
                 {funnelResetting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                KPI 리셋
+                이벤트 초기화
               </button>
             </div>
           </div>
+
           {summaryLoading ? (
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">요약 로딩 중...</div>
           ) : summaryError ? (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-600">{summaryError}</div>
-          ) : activeSummary ? (
+          ) : activeSummary && v ? (
             <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <div className="text-xs text-slate-500">완료율 (세션 유니크)</div>
-                {kpiLine(activeSummary.completion, '시작한 세션 중 완료', '시작 세션')}
-                <div className="mt-1 text-[10px] text-slate-400">
-                  분자: 완료 ∩ 시작 · 분모: intro_started ∪ move_report_started (session_id)
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">방문 수</div>
+                  <div className="mt-1 text-xl font-bold text-slate-900">{v.visitUnique}</div>
+                  <div className="mt-1 text-[10px] text-slate-400">intro_started 유니크 세션</div>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">테스트 시작</div>
+                  <div className="mt-1 text-xl font-bold text-slate-900">{v.startedUnique}</div>
+                  <div className="mt-1 text-[10px] text-slate-400">intro ∪ move_report_started</div>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">테스트 완료</div>
+                  <div className="mt-1 text-xl font-bold text-slate-900">{v.completedUnique}</div>
+                  <div className="mt-1 text-[10px] text-slate-400">survey / move_report 완료</div>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">완료율</div>
+                  {kpiLine(v.completionRate, '완료 ∩ 시작', '시작 세션')}
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">결과 카드 보기</div>
+                  <div className="mt-1 text-xl font-bold text-slate-900">{v.resultCardOpenedUnique}</div>
+                  <div className="mt-1 text-[10px] text-slate-400">move_report_result_card_opened</div>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">결과 카드 보기율</div>
+                  {kpiLine(v.shareRate, '카드 열림 ∩ 결과 조회', '결과 화면 조회')}
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">shared 페이지 방문</div>
+                  <div className="mt-1 text-xl font-bold text-slate-900">{v.sharedPageViewedUnique}</div>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">shared에서 다시 시작 클릭</div>
+                  <div className="mt-1 text-xl font-bold text-slate-900">{v.sharedStartClickedUnique}</div>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">shared 재시작률</div>
+                  {kpiLine(v.sharedRestartRate, 'shared 시작 클릭', 'shared 페이지 조회')}
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">shared 유입 완료</div>
+                  <div className="mt-1 text-xl font-bold text-slate-900">{v.sharedInboundCompletedUnique}</div>
+                  <div className="mt-1 text-[10px] text-slate-400">mr_source=shared 등 분류</div>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 sm:col-span-2">
+                  <div className="text-xs text-slate-500">shared 유입 → 재완료 (참고)</div>
+                  {kpiLine(v.sharedReentryRate, 'shared 시작 후 shared 출처 완료', 'shared 시작 클릭')}
                 </div>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <div className="text-xs text-slate-500">공유 카드 열림 (세션 유니크)</div>
-                {kpiLine(activeSummary.share, '결과 조회 세션 중 카드 열림', '결과 화면 조회')}
-                <div className="mt-1 text-[10px] text-slate-400">
-                  분자: result_card_opened ∩ result_viewed · 분모: result_viewed
-                </div>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <div className="text-xs text-slate-500">공유 유입 재완료 (세션 유니크)</div>
-                {kpiLine(activeSummary.sharedReentry, 'shared 시작 클릭 세션 중 공유 유입 완료', 'shared 시작 클릭')}
-                <div className="mt-1 text-[10px] text-slate-400">
-                  공유 유입 완료: 완료 이벤트 메타에서 mr_source=shared 또는 출처 분류 shared
-                </div>
-              </div>
-            </div>
-            {activeSummary.dataQuality &&
-            ((activeSummary.dataQuality.orphanCompletedSessions ?? 0) > 0 ||
-              (activeSummary.dataQuality.orphanResultCardOpenedSessions ?? 0) > 0 ||
-              (activeSummary.dataQuality.orphanSharedCompletedSessions ?? 0) > 0) ? (
-              <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50/90 px-3 py-2 text-[11px] text-amber-950 space-y-1">
-                <div className="font-semibold text-amber-900">데이터 품질 안내</div>
-                {(activeSummary.dataQuality.orphanCompletedSessions ?? 0) > 0 ? (
-                  <div>
-                    시작 이벤트 없이 완료만 기록된 세션 {activeSummary.dataQuality.orphanCompletedSessions}건
-                  </div>
-                ) : null}
-                {(activeSummary.dataQuality.orphanResultCardOpenedSessions ?? 0) > 0 ? (
-                  <div>
-                    결과 화면 조회 없이 결과 카드만 연 세션 {activeSummary.dataQuality.orphanResultCardOpenedSessions}건
-                  </div>
-                ) : null}
-                {(activeSummary.dataQuality.orphanSharedCompletedSessions ?? 0) > 0 ? (
-                  <div>
-                    shared 페이지에서 시작 클릭 없이 공유 유입 완료만 기록된 세션{' '}
-                    {activeSummary.dataQuality.orphanSharedCompletedSessions}건
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
-              <div className="rounded-lg border border-slate-100 bg-white p-3">
-                <div className="text-xs font-semibold text-slate-700 mb-1">부모 바이럴 (유니크 세션·건수)</div>
-                <ul className="text-[11px] text-slate-600 space-y-0.5 tabular-nums">
-                  <li>시작: {activeSummary.parentViral.startedUnique}</li>
-                  <li>완료: {activeSummary.parentViral.completedUnique}</li>
-                  <li>결과 카드 열림: {activeSummary.parentViral.resultCardOpenedUnique}</li>
-                  <li>shared 조회: {activeSummary.parentViral.sharedPageViewedUnique}</li>
-                  <li>shared에서 시작 클릭: {activeSummary.parentViral.sharedStartClickedUnique}</li>
-                </ul>
-              </div>
-              <div className="rounded-lg border border-slate-100 bg-white p-3">
-                <div className="text-xs font-semibold text-slate-700 mb-1">교육자 배포 (이벤트 건수)</div>
-                <ul className="text-[11px] text-slate-600 space-y-0.5 tabular-nums">
-                  <li>링크 생성: {activeSummary.educatorDistribution.coachLinkCreated}</li>
-                  <li>코치 링크 랜딩: {activeSummary.educatorDistribution.coachLinkLanding}</li>
-                  <li>제출 완료(코치): {activeSummary.educatorDistribution.coachSubmissionCompleted}</li>
-                  <li>대시보드 조회: {activeSummary.educatorDistribution.coachDashboardViewed}</li>
-                  <li>CSV 다운로드: {activeSummary.educatorDistribution.coachCsvDownloaded}</li>
-                </ul>
-              </div>
-            </div>
+              <p className="text-[10px] text-slate-400 mb-3">
+                채널 표에서 내부 실험용 링크 유입(coach)은 제외됩니다. coach 관련 API·데이터는 서버에 보존됩니다.
+              </p>
             </>
           ) : null}
+        </div>
 
-          {/* 유입 출처 분포 */}
-          <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50/80 p-3">
-            <div className="text-xs font-semibold text-slate-700 mb-1">유입 출처 분포 (최근 30일)</div>
+        {/* 채널별 성과 */}
+        {activeSummary && !summaryLoading && !summaryError ? (
+          <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+            <div className="text-sm font-semibold text-slate-800 mb-2">채널별 성과</div>
             <p className="text-[11px] text-slate-500 mb-2">
-              mr_source → utm → coach_link → shared 이벤트 → referrer → 직접 순으로 분류합니다.
+              세션의 첫 방문/시작 이벤트 기준 채널입니다. parent_direct · educator_campaign · shared · direct_unknown 및 utm / referrer
+              조합을 포함합니다.
             </p>
-            {attrLoading ? (
-              <div className="text-xs text-slate-500">로딩 중…</div>
-            ) : attrError ? (
-              <div className="text-xs text-red-600">{attrError}</div>
-            ) : attrTop && attrTop.length > 0 ? (
-              <div className="max-h-40 overflow-y-auto text-xs">
+            {activeSummary.sourceBreakdown.length === 0 ? (
+              <div className="text-xs text-slate-500 py-2">해당 기간에 표시할 채널 데이터가 없습니다.</div>
+            ) : (
+              <div className="overflow-x-auto text-xs">
+                <table className="w-full text-left border-collapse min-w-[720px]">
+                  <thead>
+                    <tr className="text-slate-500 border-b border-slate-200">
+                      <th className="py-2 pr-2 font-medium">채널</th>
+                      <th className="py-2 pr-2 font-medium text-right">방문</th>
+                      <th className="py-2 pr-2 font-medium text-right">시작</th>
+                      <th className="py-2 pr-2 font-medium text-right">완료</th>
+                      <th className="py-2 pr-2 font-medium text-right">완료율</th>
+                      <th className="py-2 pr-2 font-medium text-right">결과 카드</th>
+                      <th className="py-2 font-medium text-right">shared 재시작</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeSummary.sourceBreakdown.map((row) => (
+                      <tr key={row.channelKey} className="border-b border-slate-100 last:border-0">
+                        <td className="py-2 pr-2 text-slate-800">{channelLabel(row.channelKey)}</td>
+                        <td className="py-2 pr-2 text-right tabular-nums">{row.visits}</td>
+                        <td className="py-2 pr-2 text-right tabular-nums">{row.started}</td>
+                        <td className="py-2 pr-2 text-right tabular-nums">{row.completed}</td>
+                        <td className="py-2 pr-2 text-right tabular-nums">{row.completionRateDisplay}</td>
+                        <td className="py-2 pr-2 text-right tabular-nums">{row.resultCardOpened}</td>
+                        <td className="py-2 text-right tabular-nums">{row.sharedRestart}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {/* 결과 유형 분포 */}
+        {activeSummary && !summaryLoading && !summaryError ? (
+          <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+            <div className="text-sm font-semibold text-slate-800 mb-2">결과 유형 분포</div>
+            <p className="text-[11px] text-slate-500 mb-2">동일 기간 설문 제출 건수 기준입니다.</p>
+            {activeSummary.profileDistribution.length === 0 ? (
+              <div className="text-xs text-slate-500 py-2">제출 데이터가 없습니다.</div>
+            ) : (
+              <div className="overflow-x-auto text-xs">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="text-slate-500 border-b border-slate-200">
-                      <th className="py-1 pr-2 font-medium">출처</th>
-                      <th className="py-1 pr-2 font-medium">구분</th>
-                      <th className="py-1 font-medium text-right">이벤트 수</th>
+                      <th className="py-2 pr-2 font-medium">유형명</th>
+                      <th className="py-2 pr-2 font-medium text-right">완료 수</th>
+                      <th className="py-2 pr-2 font-medium text-right">비율</th>
+                      <th className="py-2 font-medium text-right">결과 카드 보기</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {attrTop.map((row) => (
-                      <tr key={row.source} className="border-b border-slate-100 last:border-0">
-                        <td className="py-1 pr-2 text-slate-800 break-all">{row.source}</td>
-                        <td className="py-1 pr-2">
-                          {row.bucket === 'utm' ? (
-                            <span className="rounded px-1.5 py-0.5 bg-blue-50 text-blue-600 font-medium">utm</span>
-                          ) : row.bucket === 'ref' ? (
-                            <span className="rounded px-1.5 py-0.5 bg-green-50 text-green-600 font-medium">ref</span>
-                          ) : row.bucket === 'mr_source' ? (
-                            <span className="rounded px-1.5 py-0.5 bg-violet-50 text-violet-700 font-medium">mr</span>
-                          ) : row.bucket === 'coach_link' ? (
-                            <span className="rounded px-1.5 py-0.5 bg-orange-50 text-orange-700 font-medium">coach</span>
-                          ) : row.bucket === 'shared' ? (
-                            <span className="rounded px-1.5 py-0.5 bg-pink-50 text-pink-700 font-medium">shared</span>
-                          ) : (
-                            <span className="rounded px-1.5 py-0.5 bg-slate-100 text-slate-500 font-medium">direct</span>
-                          )}
-                        </td>
-                        <td className="py-1 text-right tabular-nums text-slate-700">{row.count}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-xs text-slate-500">데이터가 없습니다.</div>
-            )}
-          </div>
-        </div>
-
-        <div className="mb-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-            <div className="text-sm font-semibold text-slate-800 mb-1">교육자 베타 신청</div>
-            <p className="text-[11px] text-slate-500 mb-2">move_report_educator_leads · 동의·역할·연락처 등 운영 확인용</p>
-            <div className="flex flex-wrap gap-2 mb-2">
-              <button
-                type="button"
-                onClick={() => void loadEducatorLeads()}
-                className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-              >
-                목록 새로고침
-              </button>
-              <button
-                type="button"
-                onClick={exportEducatorLeadsCsv}
-                disabled={educatorRows.length === 0}
-                className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >
-                CSV보내기
-              </button>
-            </div>
-            {educatorLoading ? (
-              <div className="text-xs text-slate-500 py-2">로딩 중…</div>
-            ) : educatorError ? (
-              <div className="text-xs text-red-600 py-2">{educatorError}</div>
-            ) : educatorRows.length === 0 ? (
-              <div className="text-xs text-slate-500 py-2">신청 내역이 없습니다.</div>
-            ) : (
-              <div className="max-h-56 overflow-auto text-xs border border-slate-100 rounded-lg">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="text-slate-500 border-b border-slate-200 bg-slate-50">
-                      <th className="py-1 px-2 font-medium">시각</th>
-                      <th className="py-1 px-2 font-medium">이름</th>
-                      <th className="py-1 px-2 font-medium">연락처</th>
-                      <th className="py-1 px-2 font-medium">역할</th>
-                      <th className="py-1 px-2 font-medium">소속</th>
-                      <th className="py-1 px-2 font-medium">연령</th>
-                      <th className="py-1 px-2 font-medium">기능</th>
-                      <th className="py-1 px-2 font-medium">source</th>
-                      <th className="py-1 px-2 font-medium">상태</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {educatorRows.map((r) => (
-                      <tr key={r.id} className="border-b border-slate-100 last:border-0">
-                        <td className="py-1 px-2 text-slate-600 whitespace-nowrap">
-                          {new Date(r.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="py-1 px-2 text-slate-800">{r.name}</td>
-                        <td className="py-1 px-2 text-slate-700 break-all max-w-[120px]">{r.contact}</td>
-                        <td className="py-1 px-2 text-slate-600">{r.role}</td>
-                        <td className="py-1 px-2 text-slate-600 break-all max-w-[100px]">{r.organization ?? '—'}</td>
-                        <td className="py-1 px-2 text-slate-600">{r.target_age_group}</td>
-                        <td className="py-1 px-2 text-slate-600">{r.needed_feature}</td>
-                        <td className="py-1 px-2 text-slate-600">{r.source}</td>
-                        <td className="py-1 px-2 text-slate-500">new</td>
+                    {activeSummary.profileDistribution.map((row) => (
+                      <tr key={row.profileKey} className="border-b border-slate-100 last:border-0">
+                        <td className="py-2 pr-2 text-slate-800">{row.profileTitle}</td>
+                        <td className="py-2 pr-2 text-right tabular-nums">{row.completed}</td>
+                        <td className="py-2 pr-2 text-right tabular-nums">{row.pctDisplay}</td>
+                        <td className="py-2 text-right tabular-nums">{row.resultCardOpened}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -663,39 +474,37 @@ export default function AdminMoveReportPage() {
               </div>
             )}
           </div>
+        ) : null}
 
-          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-            <div className="text-sm font-semibold text-slate-800 mb-1">코치 전용 링크 비활성화</div>
-            <p className="text-[11px] text-slate-500 mb-2">남용·오해 소지 시 slug로 차단합니다. DB 마이그레이션(is_active) 적용 후 동작합니다.</p>
-            <div className="flex flex-col gap-2 max-w-md">
-              <input
-                type="text"
-                value={coachDisableSlug}
-                onChange={(e) => setCoachDisableSlug(e.target.value)}
-                placeholder="slug (예: rainbow-gym)"
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              />
-              <input
-                type="text"
-                value={coachDisableReason}
-                onChange={(e) => setCoachDisableReason(e.target.value)}
-                placeholder="사유 (선택)"
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => void submitCoachLinkDisable()}
-                disabled={coachDisabling}
-                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 w-fit"
-              >
-                {coachDisabling ? '처리 중…' : '비활성화'}
-              </button>
+        {/* 데이터 품질 — 접힘 · KPI보다 작게 */}
+        {activeSummary?.dataQuality ? (
+          <details className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-700">
+            <summary className="cursor-pointer font-medium text-slate-600 py-1">데이터 품질 안내</summary>
+            <div className="space-y-1 pt-2 pb-1 text-slate-600">
+              <div>시작 이벤트 없이 완료만 기록된 세션 {(activeSummary.dataQuality.orphanCompletedSessions ?? 0)}건</div>
+              <div>
+                결과 화면 조회 없이 결과 카드만 연 세션 {(activeSummary.dataQuality.orphanResultCardOpenedSessions ?? 0)}건
+              </div>
+              <div>
+                shared 시작 클릭 없이 shared 출처 완료만 기록된 세션 {(activeSummary.dataQuality.orphanSharedCompletedSessions ?? 0)}건
+              </div>
             </div>
-          </div>
-        </div>
+          </details>
+        ) : null}
 
-        {/* 필터 */}
+        {/* 필터 · 설문 목록 — 운영 확인용 (바이럴 보조) */}
         <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
+            <div className="text-sm font-semibold text-slate-800">최근 제출 로그</div>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={filteredRows.length === 0}
+              className="text-xs font-medium text-slate-600 underline underline-offset-2 hover:text-slate-900 disabled:opacity-40 disabled:no-underline"
+            >
+              필터 결과 CSV 저장
+            </button>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label className="text-xs text-slate-500">유입 분류</label>
@@ -747,7 +556,6 @@ export default function AdminMoveReportPage() {
           필터 결과 <span className="font-semibold text-slate-700">{filteredRows.length}</span>건
         </div>
 
-        {/* 설문 제출 목록 */}
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
           {loading ? (
             <div className="flex items-center justify-center py-16 text-slate-400">
@@ -805,7 +613,6 @@ export default function AdminMoveReportPage() {
           )}
         </div>
 
-        {/* 상세 모달 */}
         {selected ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
             <div className="w-full max-w-lg rounded-2xl bg-white border border-slate-200 shadow-xl">
