@@ -210,6 +210,9 @@ export const LESSON_DETAIL_COMPLETION_KEYS = [
   'parentNote',
 ] as const;
 
+/** `as const` 배열의 `.length`는 튜플 길이 리터럴로 잡혀 `=== 0` 분기가 무의미해지므로 분모는 항상 number로 둔다 */
+const LESSON_DETAIL_COMPLETION_TOTAL: number = LESSON_DETAIL_COMPLETION_KEYS.length;
+
 export type LessonDetailCompletionKey = (typeof LESSON_DETAIL_COMPLETION_KEYS)[number];
 
 export function isLessonDetailFieldFilled(ld: ProgramLessonDetail, key: LessonDetailCompletionKey): boolean {
@@ -226,12 +229,12 @@ export function getLessonDetailCompletion(ld: ProgramLessonDetail | null | undef
   total: number;
   percent: number;
 } {
-  if (!ld) return { filled: 0, total: LESSON_DETAIL_COMPLETION_KEYS.length, percent: 0 };
+  if (!ld) return { filled: 0, total: LESSON_DETAIL_COMPLETION_TOTAL, percent: 0 };
   let filled = 0;
   for (const k of LESSON_DETAIL_COMPLETION_KEYS) {
     if (isLessonDetailFieldFilled(ld, k)) filled += 1;
   }
-  const total = LESSON_DETAIL_COMPLETION_KEYS.length;
+  const total = LESSON_DETAIL_COMPLETION_TOTAL;
   const percent = total === 0 ? 0 : Math.round((filled / total) * 100);
   return { filled, total, percent };
 }
