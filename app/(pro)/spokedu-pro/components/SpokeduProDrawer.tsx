@@ -1,13 +1,19 @@
 'use client';
 
 import { useTranslator } from '@/app/providers/I18nProvider';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Edit2, FileText, ClipboardList, Package, BookOpen, Lightbulb, Gamepad2 } from 'lucide-react';
 import type { ProgramDetail } from '../types';
 import { FUNCTION_TYPES, MAIN_THEMES, extractEquipmentDisplayTags } from '@/app/lib/spokedu-pro/programClassification';
 import { getYouTubeId } from '@/app/(pro)/spokedu-pro/utils/youtube';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 import type { ProgramLessonDetail, ProgramLessonDetailLite } from '@/app/lib/spokedu-pro/programLessonDetail';
+
+function isProgramLessonDetailFull(
+  d: ProgramLessonDetail | ProgramLessonDetailLite | null | undefined
+): d is ProgramLessonDetail {
+  return d != null && typeof (d as ProgramLessonDetail).curriculumId === 'number';
+}
 
 function stringifyJsonArray(arr: unknown[]): string {
   try {
@@ -148,28 +154,36 @@ export default function SpokeduProDrawer({
   ]);
 
   const ld = lessonDetail && detailKind === 'program' ? lessonDetail : null;
+  const lessonDetailFull = isProgramLessonDetailFull(ld) ? ld : null;
+
+  const lessonPackageKeysArr = useMemo((): unknown[] => {
+    if (!ld) return [];
+    if (lessonDetailFull) return lessonDetailFull.packageKeys ?? [];
+    return Array.isArray(ld.packageKeys) ? ld.packageKeys : [];
+  }, [ld, lessonDetailFull]);
 
   const openLessonEditModal = () => {
     if (programId == null) return;
-    const base = ld;
+    const full = lessonDetailFull;
+    const snap = ld;
     setLessonForm({
-      isFeaturedLesson: base?.isFeaturedLesson ?? false,
-      summary: base?.summary ?? '',
-      recommendedAge: base?.recommendedAge ?? '',
-      recommendedPlayers: base?.recommendedPlayers ?? '',
-      duration: base?.duration ?? '',
-      space: base?.space ?? '',
-      objective: base?.objective ?? '',
-      developmentFocus: base?.developmentFocus ?? '',
-      coachScript: base?.coachScript ?? '',
-      parentNote: base?.parentNote ?? '',
-      stepsJson: stringifyJsonArray(base?.steps ?? []),
-      fieldTipsJson: stringifyJsonArray(base?.fieldTips ?? []),
-      variationsJson: stringifyJsonArray(base?.variations ?? []),
-      safetyNotesJson: stringifyJsonArray(base?.safetyNotes ?? []),
-      relatedProgramIdsJson: stringifyJsonArray(base?.relatedProgramIds ?? []),
-      relatedSpomoveIdsJson: stringifyJsonArray(base?.relatedSpomoveIds ?? []),
-      packageKeysJson: stringifyJsonArray(base?.packageKeys ?? []),
+      isFeaturedLesson: snap?.isFeaturedLesson ?? false,
+      summary: snap?.summary ?? '',
+      recommendedAge: full?.recommendedAge ?? '',
+      recommendedPlayers: full?.recommendedPlayers ?? '',
+      duration: full?.duration ?? '',
+      space: full?.space ?? '',
+      objective: full?.objective ?? '',
+      developmentFocus: full?.developmentFocus ?? '',
+      coachScript: full?.coachScript ?? '',
+      parentNote: full?.parentNote ?? '',
+      stepsJson: stringifyJsonArray(full?.steps ?? []),
+      fieldTipsJson: stringifyJsonArray(full?.fieldTips ?? []),
+      variationsJson: stringifyJsonArray(full?.variations ?? []),
+      safetyNotesJson: stringifyJsonArray(full?.safetyNotes ?? []),
+      relatedProgramIdsJson: stringifyJsonArray(full?.relatedProgramIds ?? []),
+      relatedSpomoveIdsJson: stringifyJsonArray(full?.relatedSpomoveIds ?? []),
+      packageKeysJson: stringifyJsonArray(lessonPackageKeysArr),
     });
     setLessonEditOpen(true);
   };
@@ -181,7 +195,10 @@ export default function SpokeduProDrawer({
     try {
       const next: ProgramLessonDetail = {
         curriculumId: programId,
-        status: lessonDetail?.status === 'reviewed' ? 'reviewed' : 'draft',
+        status:
+          isProgramLessonDetailFull(lessonDetail) && lessonDetail.status === 'reviewed'
+            ? 'reviewed'
+            : 'draft',
         isFeaturedLesson: lessonForm.isFeaturedLesson,
         summary: lessonForm.summary.trim() || null,
         recommendedAge: lessonForm.recommendedAge.trim() || null,
@@ -559,83 +576,110 @@ export default function SpokeduProDrawer({
                     </details>
                   )
                 ) : null}
-                {(ld.recommendedAge || ld.recommendedPlayers || ld.duration || ld.space) ? (
+                {(lessonDetailFull?.recommendedAge ||
+                  lessonDetailFull?.recommendedPlayers ||
+                  lessonDetailFull?.duration ||
+                  lessonDetailFull?.space) ? (
                   <section className="space-y-2">
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('기본 정보')}</h3>
                     <ul className="text-sm text-slate-200 space-y-1 list-disc list-inside">
-                      {ld.recommendedAge ? <li>{tr('추천 연령')}: {ld.recommendedAge}</li> : null}
-                      {ld.recommendedPlayers ? <li>{tr('권장 인원')}: {ld.recommendedPlayers}</li> : null}
-                      {ld.duration ? <li>{tr('수업 시간')}: {ld.duration}</li> : null}
-                      {ld.space ? <li>{tr('공간')}: {ld.space}</li> : null}
+                      {lessonDetailFull?.recommendedAge ? (
+                        <li>
+                          {tr('추천 연령')}: {lessonDetailFull.recommendedAge}
+                        </li>
+                      ) : null}
+                      {lessonDetailFull?.recommendedPlayers ? (
+                        <li>
+                          {tr('권장 인원')}: {lessonDetailFull.recommendedPlayers}
+                        </li>
+                      ) : null}
+                      {lessonDetailFull?.duration ? <li>{tr('수업 시간')}: {lessonDetailFull.duration}</li> : null}
+                      {lessonDetailFull?.space ? <li>{tr('공간')}: {lessonDetailFull.space}</li> : null}
                     </ul>
                   </section>
                 ) : null}
-                {ld.objective ? (
+                {lessonDetailFull?.objective ? (
                   <section className="space-y-2">
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('수업 목표')}</h3>
-                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{ld.objective}</p>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{lessonDetailFull.objective}</p>
                   </section>
                 ) : null}
-                {ld.developmentFocus ? (
+                {lessonDetailFull?.developmentFocus ? (
                   <section className="space-y-2">
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('발달 요소')}</h3>
-                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{ld.developmentFocus}</p>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{lessonDetailFull.developmentFocus}</p>
                   </section>
                 ) : null}
-                {ld.steps.length > 0 ? (
+                {(lessonDetailFull?.steps?.length ?? 0) > 0 ? (
                   <section className="space-y-2">
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('진행 방법')}</h3>
-                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{formatArrayForDisplay(ld.steps)}</p>
-                  </section>
-                ) : null}
-                {ld.coachScript ? (
-                  <section className="space-y-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('강사 멘트')}</h3>
-                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{ld.coachScript}</p>
-                  </section>
-                ) : null}
-                {ld.fieldTips.length > 0 ? (
-                  <section className="space-y-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('현장 팁')}</h3>
-                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{formatArrayForDisplay(ld.fieldTips)}</p>
-                  </section>
-                ) : null}
-                {ld.variations.length > 0 ? (
-                  <section className="space-y-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('변형 방법')}</h3>
-                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{formatArrayForDisplay(ld.variations)}</p>
-                  </section>
-                ) : null}
-                {ld.safetyNotes.length > 0 ? (
-                  <section className="space-y-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-rose-300/90">{tr('안전 주의')}</h3>
-                    <p className="text-rose-50/90 text-sm leading-relaxed whitespace-pre-wrap">{formatArrayForDisplay(ld.safetyNotes)}</p>
-                  </section>
-                ) : null}
-                {(ld.relatedProgramIds.length > 0 || ld.relatedSpomoveIds.length > 0) ? (
-                  <section className="space-y-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('연계 활동')}</h3>
-                    <p className="text-slate-200 text-sm font-mono break-all">
-                      {ld.relatedProgramIds.length > 0 ? `${tr('프로그램 ID')}: ${stringifyJsonArray(ld.relatedProgramIds)}` : null}
-                      {ld.relatedProgramIds.length > 0 && ld.relatedSpomoveIds.length > 0 ? ' · ' : null}
-                      {ld.relatedSpomoveIds.length > 0 ? `${tr('SPOMOVE ID')}: ${stringifyJsonArray(ld.relatedSpomoveIds)}` : null}
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">
+                      {formatArrayForDisplay(lessonDetailFull?.steps ?? [])}
                     </p>
                   </section>
                 ) : null}
-                {ld.parentNote ? (
+                {lessonDetailFull?.coachScript ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('강사 멘트')}</h3>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{lessonDetailFull.coachScript}</p>
+                  </section>
+                ) : null}
+                {(lessonDetailFull?.fieldTips?.length ?? 0) > 0 ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('현장 팁')}</h3>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">
+                      {formatArrayForDisplay(lessonDetailFull?.fieldTips ?? [])}
+                    </p>
+                  </section>
+                ) : null}
+                {(lessonDetailFull?.variations?.length ?? 0) > 0 ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('변형 방법')}</h3>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">
+                      {formatArrayForDisplay(lessonDetailFull?.variations ?? [])}
+                    </p>
+                  </section>
+                ) : null}
+                {(lessonDetailFull?.safetyNotes?.length ?? 0) > 0 ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-rose-300/90">{tr('안전 주의')}</h3>
+                    <p className="text-rose-50/90 text-sm leading-relaxed whitespace-pre-wrap">
+                      {formatArrayForDisplay(lessonDetailFull?.safetyNotes ?? [])}
+                    </p>
+                  </section>
+                ) : null}
+                {((lessonDetailFull?.relatedProgramIds?.length ?? 0) > 0 ||
+                  (lessonDetailFull?.relatedSpomoveIds?.length ?? 0) > 0) ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('연계 활동')}</h3>
+                    <p className="text-slate-200 text-sm font-mono break-all">
+                      {(lessonDetailFull?.relatedProgramIds?.length ?? 0) > 0
+                        ? `${tr('프로그램 ID')}: ${stringifyJsonArray(lessonDetailFull?.relatedProgramIds ?? [])}`
+                        : null}
+                      {(lessonDetailFull?.relatedProgramIds?.length ?? 0) > 0 &&
+                      (lessonDetailFull?.relatedSpomoveIds?.length ?? 0) > 0
+                        ? ' · '
+                        : null}
+                      {(lessonDetailFull?.relatedSpomoveIds?.length ?? 0) > 0
+                        ? `${tr('SPOMOVE ID')}: ${stringifyJsonArray(lessonDetailFull?.relatedSpomoveIds ?? [])}`
+                        : null}
+                    </p>
+                  </section>
+                ) : null}
+                {lessonDetailFull?.parentNote ? (
                   <details className="rounded-xl border border-slate-700/50 bg-slate-950/40">
                     <summary className="cursor-pointer list-none px-3 py-2.5 text-[11px] font-bold text-slate-400 hover:text-slate-200 [&::-webkit-details-marker]:hidden">
                       {tr('학부모 설명 문구')}
                     </summary>
                     <div className="border-t border-slate-800/80 px-3 py-3">
-                      <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{ld.parentNote}</p>
+                      <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{lessonDetailFull.parentNote}</p>
                     </div>
                   </details>
                 ) : null}
-                {isEditMode && ld.packageKeys.length > 0 ? (
+                {isEditMode && lessonPackageKeysArr.length > 0 ? (
                   <section className="space-y-2">
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('패키지 키')}</h3>
-                    <p className="text-slate-200 text-xs font-mono whitespace-pre-wrap">{stringifyJsonArray(ld.packageKeys)}</p>
+                    <p className="text-slate-200 text-xs font-mono whitespace-pre-wrap">{stringifyJsonArray(lessonPackageKeysArr)}</p>
                   </section>
                 ) : null}
                 </div>
