@@ -73,6 +73,7 @@ export default function Result({
   return (
     <div style={{ background: '#0D0D0D', minHeight: '100vh' }}>
       <div
+        className="mr-result-page"
         style={{
           maxWidth: 430,
           margin: '0 auto',
@@ -150,7 +151,7 @@ export default function Result({
             }}
           />
 
-          <div style={{ position: 'relative', zIndex: 2, padding: '56px 24px 24px' }}>
+          <div className="mr-result-hero-block" style={{ position: 'relative', zIndex: 2, padding: '56px 24px 24px' }}>
             <div className={revealed ? 'anim-rise' : ''} style={{ marginBottom: '20px' }}>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                 {axisLabelsJoined(key).split(' · ').map((label, i, arr) => (
@@ -207,9 +208,8 @@ export default function Result({
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
                 <div
+                  className="mr-result-hero-emoji"
                   style={{
-                    fontSize: '72px',
-                    lineHeight: 1,
                     filter: `drop-shadow(0 0 24px ${p.col}80)`,
                     animation: 'floatY 3s ease-in-out infinite',
                   }}
@@ -229,14 +229,9 @@ export default function Result({
                     {displayName}의 MOVE 유형
                   </div>
                   <h1
+                    className="mr-result-hero-type"
                     style={{
-                      fontFamily: 'Black Han Sans,sans-serif',
-                      fontSize: '34px',
-                      color: '#fff',
-                      lineHeight: 1.1,
-                      letterSpacing: '-.01em',
                       textShadow: `0 0 30px ${p.col}50`,
-                      margin: 0,
                     }}
                   >
                     {p.char}

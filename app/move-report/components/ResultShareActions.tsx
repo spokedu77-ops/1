@@ -102,7 +102,7 @@ export default function ResultShareActions({ profileKey, graphCode, flash, showE
           )}
           <button
             type="button"
-            className="btn-ghost mr-result-share-btn"
+            className="btn-ghost mr-result-share-btn mr-result-share-btn--secondary"
             onClick={() => void onCopyLinkClick()}
             disabled={!shareUrl || copyBusy}
           >

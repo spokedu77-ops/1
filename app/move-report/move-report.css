@@ -1022,7 +1022,36 @@ a.mr-result-share-card-link {
 }
 
 .mr-result-share-btn--primary {
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 800;
+  min-height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ff5a2e 0%, var(--mr-fire) 48%, #e63d12 100%);
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.2),
+    0 12px 32px rgba(255, 75, 31, 0.36);
+}
+
+.mr-result-share-btn--primary:hover:not(:disabled) {
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.2),
+    0 16px 40px rgba(255, 75, 31, 0.42);
+}
+
+.mr-result-share-btn--secondary.btn-ghost {
+  background: transparent;
+  color: var(--mr-muted);
+  border: 1.5px solid var(--mr-border);
+  box-shadow: none;
+  font-weight: 600;
+  font-size: 14px;
+  min-height: 48px;
+}
+
+.mr-result-share-btn--secondary:hover:not(:disabled) {
+  color: #fff;
+  border-color: #3a3a3a;
+  background: #141414;
 }
 
 .mr-result-share-educator {
@@ -2164,4 +2193,381 @@ a.mr-result-share-card-link {
   gap: 8px;
   text-decoration: none;
   color: inherit;
+}
+
+/* ─── MOVE REPORT mobile viral polish (≤430px iPhone / 일반 모바일) ─── */
+.mr-result-hero-emoji {
+  font-size: clamp(56px, 16vw, 72px);
+  line-height: 1;
+}
+
+.mr-result-hero-type {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(30px, 7.5vw, 40px);
+  color: #fff;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.mr-survey-q {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(22px, 5.5vw, 26px);
+  font-weight: 600;
+  color: #e8e8e8;
+  line-height: 1.65;
+  word-break: keep-all;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.mr-mid-msg-text {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.mr-survey-opt-title {
+  font-size: clamp(16px, 4vw, 18px);
+  font-weight: 700;
+  word-break: keep-all;
+  line-height: 1.35;
+  margin-bottom: 3px;
+  color: #c8c8c8;
+}
+
+.survey-html-opt.sel .mr-survey-opt-title {
+  color: #fff;
+}
+
+.mr-survey-opt-desc {
+  font-size: clamp(14px, 3.5vw, 16px);
+  font-weight: 500;
+  word-break: keep-all;
+  line-height: 1.45;
+  color: #a8a8a8;
+}
+
+.mr-setup-step {
+  font-size: clamp(12px, 3.2vw, 13px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #ff4b1f;
+  margin-bottom: 8px;
+}
+
+.mr-setup-title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(28px, 7vw, 32px);
+  color: #fff;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.mr-setup-lead {
+  font-size: clamp(14px, 3.8vw, 15px);
+  color: #999;
+  margin-top: 6px;
+}
+
+.mr-setup-label {
+  display: block;
+  font-size: clamp(13px, 3.4vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #a8a8a8;
+  margin-bottom: 10px;
+}
+
+.mr-setup-age-label {
+  font-size: clamp(16px, 4vw, 17px);
+}
+
+.mr-setup-age-hint {
+  font-size: clamp(14px, 3.5vw, 15px);
+}
+
+.mr-intro-copy {
+  font-size: clamp(15px, 3.8vw, 16px);
+}
+
+.mr-intro-fineprint {
+  font-size: clamp(13px, 3.4vw, 14px);
+}
+
+.mr-intro-lead {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ccc;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+
+.mr-intro-display {
+  font-size: clamp(44px, 12vw, 68px);
+}
+
+.mr-intro-meta {
+  font-size: 15px;
+}
+
+.mr-intro-product-lockup {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(17px, 4.5vw, 22px);
+  letter-spacing: 0.42em;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: center;
+  margin-bottom: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.mr-intro-stat-label {
+  font-size: 11px;
+}
+
+.mr-intro-strip {
+  font-size: 11px;
+}
+
+.mr-intro-foot-hint {
+  font-size: 11px;
+}
+
+@media (max-width: 430px) {
+  .mr-page-inner {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-top: 1.5rem;
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+
+  .page:not(.mr-intro-page) {
+    max-width: none;
+    width: 100%;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  .btn-fire {
+    min-height: 52px;
+    font-size: 1rem;
+    font-weight: 800;
+    border-radius: 1rem;
+    padding: 1rem 1.15rem;
+  }
+
+  .btn-ghost {
+    min-height: 48px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    border-radius: 1rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .survey-html-opt {
+    padding: 17px 18px;
+    min-height: 52px;
+  }
+
+  .survey-html-opt-num {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  /* 결과 하단 공유: primary CTA vs 보조 링크 복사 */
+  .mr-result-share-actions {
+    gap: 12px;
+  }
+
+  .mr-result-share-lead-title {
+    font-size: clamp(18px, 4.6vw, 20px);
+  }
+
+  .mr-result-share-lead-body {
+    font-size: clamp(14px, 3.6vw, 15px);
+  }
+
+  a.mr-result-share-card-link.mr-result-share-btn--primary,
+  .mr-result-share-btn--primary.btn-fire {
+    min-height: 54px;
+    font-size: clamp(16px, 4.2vw, 17px);
+    letter-spacing: -0.02em;
+    box-shadow:
+      0 4px 0 rgba(0, 0, 0, 0.22),
+      0 14px 36px rgba(255, 75, 31, 0.42);
+  }
+
+  a.mr-result-share-card-link.mr-result-share-btn--primary:hover,
+  .mr-result-share-btn--primary.btn-fire:hover:not(:disabled) {
+    box-shadow:
+      0 4px 0 rgba(0, 0, 0, 0.22),
+      0 18px 44px rgba(255, 75, 31, 0.48);
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #ff6a3e 0%, #ff5528 50%, #ef4518 100%);
+  }
+
+  .mr-result-share-btn--secondary.btn-ghost {
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  /* shared 바이럴 포스터 */
+  .mr-shared-poster-page {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  .mr-shared-poster-shell {
+    max-width: min(430px, calc(100vw - 32px));
+    gap: clamp(18px, 4vw, 24px);
+  }
+
+  .mr-poster-card-inner {
+    padding: clamp(26px, 6vw, 30px) clamp(20px, 5vw, 26px) clamp(28px, 6vw, 32px);
+    gap: clamp(18px, 4.5vw, 22px);
+  }
+
+  .mr-poster-brand-sm {
+    font-size: clamp(13px, 3.4vw, 15px);
+    letter-spacing: 0.32em;
+  }
+
+  .mr-poster-brand-lg {
+    font-size: clamp(2.85rem, 13vw, 3.45rem);
+  }
+
+  .mr-poster-sub {
+    font-size: clamp(13px, 3.4vw, 14px);
+  }
+
+  .mr-poster-emoji {
+    font-size: clamp(4.25rem, 24vw, 5.75rem);
+  }
+
+  .mr-poster-type-name {
+    font-size: clamp(2rem, 10vw, 2.5rem);
+  }
+
+  .mr-poster-catchcopy {
+    font-size: clamp(15px, 4vw, 17px);
+    margin-top: 10px;
+  }
+
+  .mr-poster-type-meta {
+    font-size: clamp(13px, 3.4vw, 14px);
+  }
+
+  .mr-poster-pill {
+    padding: 8px 14px;
+    font-size: clamp(12px, 3.2vw, 13px);
+  }
+
+  .mr-poster-desc {
+    font-size: clamp(14px, 3.6vw, 15px);
+  }
+
+  .mr-poster-tip {
+    padding: 14px 16px;
+    border-radius: 16px;
+  }
+
+  .mr-poster-tip-label {
+    font-size: clamp(12px, 3.2vw, 13px);
+    margin-bottom: 8px;
+  }
+
+  .mr-poster-tip-text {
+    font-size: clamp(14px, 3.6vw, 15px);
+    line-height: 1.55;
+  }
+
+  .mr-shared-poster-cta {
+    min-height: 54px;
+    font-size: clamp(16px, 4.2vw, 17px);
+    border-radius: 16px;
+  }
+
+  .mr-shared-poster-copy {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 6px;
+  }
+
+  /* shared 오류 */
+  .mr-shared-error-card {
+    padding: clamp(26px, 6vw, 28px) clamp(20px, 5vw, 24px);
+    max-width: calc(100vw - 32px);
+  }
+
+  .mr-shared-error-title {
+    font-size: clamp(22px, 5.5vw, 24px);
+  }
+
+  .mr-shared-error-body {
+    font-size: clamp(15px, 3.8vw, 16px);
+  }
+
+  .mr-shared-error-cta.btn-fire {
+    min-height: 54px;
+    font-size: 1rem;
+  }
+
+  /* 인트로 첫 화면 */
+  .mr-intro-page .mr-intro-lead {
+    font-size: clamp(15px, 4vw, 16px);
+  }
+
+  .mr-intro-page .mr-intro-display {
+    font-size: clamp(40px, 13.5vw, 64px);
+  }
+
+  .mr-intro-page .mr-intro-meta {
+    font-size: clamp(14px, 3.8vw, 15px);
+  }
+
+  .mr-intro-page .mr-intro-copy {
+    font-size: 16px;
+  }
+
+  .mr-intro-page .mr-intro-stat-label {
+    font-size: 12px;
+  }
+
+  .mr-intro-page .mr-intro-strip,
+  .mr-intro-page .mr-intro-foot-hint {
+    font-size: 12px;
+  }
+
+  .mr-intro-coach-banner {
+    font-size: 14px !important;
+  }
+
+  .mr-btn-fire-html.btn-fire {
+    min-height: 54px;
+    font-size: clamp(16px, 4vw, 17px);
+    border-radius: 16px;
+  }
+
+  /* 결과 히어로 상단 패딩 — 첫 화면 정보 밀도 */
+  .mr-result-hero-block {
+    padding-left: max(16px, env(safe-area-inset-left)) !important;
+    padding-right: max(16px, env(safe-area-inset-right)) !important;
+    padding-top: 52px !important;
+    padding-bottom: 20px !important;
+  }
+
+  .mr-result-page {
+    max-width: none !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  .mr-survey-page .mr-content-max {
+    padding-top: 20px;
+  }
+
+  .mr-mid-msg-text {
+    font-size: clamp(14px, 3.6vw, 15px);
+  }
 }

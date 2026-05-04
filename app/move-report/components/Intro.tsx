@@ -46,17 +46,19 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
         }}
       />
 
-      <div className="mr-content-max" style={{ position: 'relative', zIndex: 1, padding: '0 24px', paddingTop: '40px', paddingBottom: '200px' }}>
+      <div
+        className="mr-content-max mr-intro-scroll"
+        style={{ position: 'relative', zIndex: 1, padding: '0 max(20px, env(safe-area-inset-left))', paddingTop: '36px', paddingBottom: 'min(200px, 28vh)' }}
+      >
         {coachLinkActive ? (
           <div
-            className="anim-rise"
+            className="anim-rise mr-intro-coach-banner"
             style={{
               marginBottom: '20px',
               padding: '12px 14px',
               borderRadius: '12px',
               border: '1px solid #2A3A4A',
               background: 'rgba(30,144,255,.12)',
-              fontSize: '13px',
               fontWeight: 600,
               color: '#B8D4FF',
               lineHeight: 1.55,
@@ -94,12 +96,14 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
           </div>
         </div>
 
+        <div className="mr-intro-product-lockup anim-rise">MOVE REPORT</div>
+
         <div className="anim-rise d1" style={{ marginBottom: '8px' }}>
-          <p style={{ fontSize: '13px', fontWeight: 600, color: '#CCCCCC', letterSpacing: '.06em', marginBottom: '12px' }}>우리 아이 움직임 유형은?</p>
+          <p className="mr-intro-lead">우리 아이는 어떤 움직임 타입일까요?</p>
           <h1
+            className="mr-intro-display"
             style={{
               fontFamily: 'Black Han Sans,sans-serif',
-              fontSize: '68px',
               lineHeight: 0.95,
               color: '#fff',
               letterSpacing: '-.02em',
@@ -123,19 +127,19 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
 
         <div className="anim-rise d2" style={{ marginBottom: '24px' }}>
           <p
+            className="mr-intro-meta"
             style={{
               margin: '0 0 12px 0',
-              fontSize: '12px',
               fontWeight: 700,
               letterSpacing: '.06em',
               color: '#FFB020',
             }}
           >
-            약 3분 · 12문항 · 16가지 유형 · 무료 테스트
+            3분 · 12문항 · 16가지 유형 · 무료 테스트
           </p>
           <p
+            className="mr-intro-copy"
             style={{
-              fontSize: '15px',
               fontWeight: 500,
               color: '#DDDDDD',
               lineHeight: 1.65,
@@ -209,13 +213,15 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
           ].map((s, i) => (
             <div key={i} style={{ background: '#161616', padding: '18px 12px', textAlign: 'center' }}>
               <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: '30px', color: '#fff', lineHeight: 1 }}>{s.n}</div>
-              <div style={{ fontSize: '10px', fontWeight: 600, color: '#A8A8A8', marginTop: '4px', letterSpacing: '.04em' }}>{s.l}</div>
+              <div className="mr-intro-stat-label" style={{ fontWeight: 600, color: '#A8A8A8', marginTop: '4px', letterSpacing: '.04em' }}>
+                {s.l}
+              </div>
             </div>
           ))}
         </div>
 
         <div className="anim-rise d4" style={{ textAlign: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', color: '#777', fontWeight: 500, letterSpacing: '.04em' }}>
+          <span className="mr-intro-fineprint" style={{ color: '#777', fontWeight: 500, letterSpacing: '.04em' }}>
             스포키듀 현장 수업 경험을 담은 관찰형 테스트
           </span>
         </div>
@@ -244,9 +250,9 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
           }}
         >
           <p
+            className="mr-intro-strip"
             style={{
               margin: 0,
-              fontSize: '11px',
               fontWeight: 600,
               color: '#9A9A9A',
               lineHeight: 1.55,
@@ -272,7 +278,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
       >
         <div className="mr-content-max" style={{ margin: '0 auto' }}>
           <button type="button" onClick={onStart} className="btn-fire mr-btn-fire-html">
-            <span>분석 시작하기</span>
+            <span>3분 테스트 시작하기</span>
             <span
               style={{
                 width: '26px',
@@ -287,7 +293,9 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
               <i className="fa-solid fa-chevron-right" style={{ fontSize: '10px' }} />
             </span>
           </button>
-          <p style={{ textAlign: 'center', fontSize: '11px', color: '#AAAAAA', marginTop: '8px', fontWeight: 500 }}>약 3분 · 12문항 · 16가지 유형 · 무료</p>
+          <p className="mr-intro-foot-hint" style={{ textAlign: 'center', color: '#AAAAAA', marginTop: '8px', fontWeight: 500 }}>
+            3분 · 12문항 · 16가지 유형 · 무료
+          </p>
         </div>
       </div>
     </div>

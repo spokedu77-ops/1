@@ -33,7 +33,7 @@ export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, an
         : null;
 
   return (
-    <div className="page" style={{ background: '#0D0D0D', display: 'flex', flexDirection: 'column', minHeight: '100dvh', padding: '0 20px' }}>
+    <div className="page mr-survey-page" style={{ background: '#0D0D0D', display: 'flex', flexDirection: 'column', minHeight: '100dvh', padding: '0 max(16px, env(safe-area-inset-left))' }}>
       <div
         className="mr-content-max"
         style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', margin: '0 auto', paddingTop: '24px', paddingBottom: '24px' }}
@@ -96,8 +96,10 @@ export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, an
                 border: '1px solid #2A2A2A',
               }}
             >
-              <span style={{ fontSize: '16px' }}>{midMsg.em}</span>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#CCCCCC' }}>{midMsg.text}</span>
+              <span style={{ fontSize: '18px' }}>{midMsg.em}</span>
+              <span className="mr-mid-msg-text" style={{ fontWeight: 600, color: '#CCCCCC' }}>
+                {midMsg.text}
+              </span>
             </div>
           ) : null}
         </div>
@@ -143,18 +145,7 @@ export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, an
                 Q{qi + 1}
               </span>
             </div>
-            <h2
-              style={{
-                fontSize: '17px',
-                fontWeight: 600,
-                color: '#E8E8E8',
-                lineHeight: 1.65,
-                wordBreak: 'keep-all',
-                fontFamily: 'Noto Sans KR,sans-serif',
-                letterSpacing: '-.01em',
-                margin: 0,
-              }}
-            >
+            <h2 className="mr-survey-q">
               {lines.map((l, i) => (
                 <span key={i}>
                   {l}
@@ -189,19 +180,8 @@ export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, an
                     {sel ? <i className="fa-solid fa-check" style={{ fontSize: '12px' }} /> : String.fromCharCode(65 + i)}
                   </div>
                   <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: 700,
-                        color: sel ? '#fff' : '#C8C8C8',
-                        wordBreak: 'keep-all',
-                        lineHeight: 1.35,
-                        marginBottom: '3px',
-                      }}
-                    >
-                      {optTitle}
-                    </div>
-                    <div style={{ fontSize: '12px', fontWeight: 500, color: '#A8A8A8', wordBreak: 'keep-all', lineHeight: 1.4 }}>{optDesc}</div>
+                    <div className="mr-survey-opt-title">{optTitle}</div>
+                    <div className="mr-survey-opt-desc">{optDesc}</div>
                   </div>
                   {sel ? <div style={{ fontSize: '18px' }}>{opt.e}</div> : null}
                 </button>
