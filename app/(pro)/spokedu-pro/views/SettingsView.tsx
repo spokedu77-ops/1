@@ -40,6 +40,18 @@ const PLANS: PlanDef[] = PLAN_UI_ORDER.map((id) => ({
   icon: PLAN_ICON[id],
 }));
 
+const PLAN_TIER: Record<Plan, number> = { free: 0, basic: 1, pro: 2 };
+
+function planTierCompare(planId: Plan, current: Plan): number {
+  return PLAN_TIER[planId] - PLAN_TIER[current];
+}
+
+function planUpgradeCtaLabel(planId: Plan): string {
+  if (planId === 'basic') return 'Library 시작하기';
+  if (planId === 'pro') return 'All-in-One 도입 문의';
+  return '도입 문의';
+}
+
 // ── Trial 배너 ───────────────────────────────────────────────────────────────
 function TrialBanner({ trialEndAt }: { trialEndAt: string }) {
   const t = useTranslator();
@@ -48,12 +60,20 @@ function TrialBanner({ trialEndAt }: { trialEndAt: string }) {
     Math.ceil((new Date(trialEndAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
   );
   return (
-    <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-blue-500/10 border border-violet-500/20 text-sm">
-      <Timer className="w-4 h-4 text-violet-400 shrink-0" />
-      <span className="text-violet-300 font-bold">
-        {t(`14일 무료 체험 중 · AI 리포트 20회 · D-${daysLeft}`)}
-      </span>
-      <span className="text-slate-400 text-xs ml-auto">{t('체험 종료 후 Free 전환')}</span>
+    <div className="rounded-xl border border-violet-400/25 bg-gradient-to-br from-violet-500/12 to-slate-900/40 px-4 py-4 sm:px-5">
+      <div className="flex gap-3">
+        <Timer className="w-5 h-5 text-violet-400 shrink-0 mt-0.5" aria-hidden />
+        <div className="min-w-0 space-y-2">
+          <p className="text-[15px] font-bold leading-snug text-white sm:text-base">{t('현재 14일 프리미엄 체험 중')}</p>
+          <p className="text-sm leading-relaxed text-violet-100/90">
+            {t('놀이체육 라이브러리와 SPOMOVE를 바로 써보세요.')}
+            <span className="mt-1 block text-xs font-semibold tabular-nums text-violet-200/80">D-{daysLeft}</span>
+          </p>
+          <p className="text-xs leading-relaxed text-slate-400 border-t border-white/10 pt-2">
+            {t('체험 종료 후 체험 플랜으로 전환')}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -66,6 +86,8 @@ function UsageBar({
   icon: Icon,
   colorClass,
   warningThreshold = 0.8,
+  neutralZero = false,
+  zeroHint,
 }: {
   used: number;
   limit: number | null;
@@ -73,12 +95,16 @@ function UsageBar({
   icon: React.ElementType;
   colorClass: string;
   warningThreshold?: number;
+  /** 한도 0·사용 0일 때 경고 톤 대신 안내용(예: 체험 계정) */
+  neutralZero?: boolean;
+  zeroHint?: string;
 }) {
   const t = useTranslator();
   const isUnlimited = limit === null;
   const pct = isUnlimited ? 0 : Math.min((used / limit!) * 100, 100);
-  const isWarning = !isUnlimited && pct >= warningThreshold * 100;
-  const isFull = !isUnlimited && used >= limit!;
+  const zeroBand = neutralZero && !isUnlimited && limit === 0 && used === 0;
+  const isWarning = !zeroBand && !isUnlimited && pct >= warningThreshold * 100;
+  const isFull = !zeroBand && !isUnlimited && used >= limit!;
 
   return (
     <div className="space-y-2">
@@ -87,7 +113,11 @@ function UsageBar({
           <Icon className="w-4 h-4 text-slate-400" />
           {t(label)}
         </div>
-        <span className={`font-bold tabular-nums ${isFull ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-slate-300'}`}>
+        <span
+          className={`font-bold tabular-nums ${
+            zeroBand ? 'text-slate-500 font-semibold' : isFull ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-slate-300'
+          }`}
+        >
           {isUnlimited ? (
             <span className="text-emerald-400 text-xs font-bold">{t('무제한')}</span>
           ) : (
@@ -95,7 +125,7 @@ function UsageBar({
           )}
         </span>
       </div>
-      {!isUnlimited && (
+      {!isUnlimited && !zeroBand && (
         <div className="h-2 bg-slate-700/60 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
@@ -105,7 +135,8 @@ function UsageBar({
           />
         </div>
       )}
-      {isFull && (
+      {zeroBand && zeroHint ? <p className="text-xs text-slate-500 leading-relaxed">{zeroHint}</p> : null}
+      {isFull && !zeroBand && (
         <p className="flex items-center gap-1 text-xs text-red-400">
           <AlertTriangle className="w-3 h-3" />
           {t('한도 초과 — 업그레이드가 필요합니다')}
@@ -121,81 +152,96 @@ function PlanCard({
   current,
   onUpgrade,
   upgrading,
+  compareCompact = false,
 }: {
   plan: PlanDef;
   current: Plan;
   onUpgrade: (p: Plan) => void;
   upgrading: boolean;
+  compareCompact?: boolean;
 }) {
   const t = useTranslator();
   const isCurrent = plan.id === current;
-  const isUpgrade = plan.id !== 'free' && plan.id !== current;
+  const tierDelta = planTierCompare(plan.id, current);
+  /** 현재보다 상위 플랜 카드: basic / pro 만 결제·문의 CTA (free는 항상 최하위) */
+  const isUpgradeTarget = !isCurrent && tierDelta > 0 && (plan.id === 'basic' || plan.id === 'pro');
   const Icon = plan.icon;
+  const featureRows = compareCompact ? plan.features.slice(0, 3) : plan.features;
 
   return (
     <div
-      className={`relative flex flex-col rounded-2xl border p-5 gap-4 transition-all ${
+      className={`relative flex flex-col rounded-xl border transition-all ${
+        compareCompact ? 'p-4 gap-3' : 'p-5 gap-4'
+      } ${
         isCurrent
-          ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/20'
+          ? 'border-slate-600/80 bg-slate-800/40 ring-0'
           : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
       }`}
     >
-      {plan.badge && (
+      {plan.badge && !compareCompact ? (
         <span className={`absolute -top-3 left-5 ${plan.badgeColor} text-white text-xs font-bold px-3 py-1 rounded-full shadow`}>
           {plan.badge ? t(plan.badge) : null}
         </span>
-      )}
+      ) : null}
 
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Icon className={`w-4 h-4 ${isCurrent ? 'text-blue-400' : 'text-slate-400'}`} />
-            <span className="text-base font-black text-white">{t(plan.label)}</span>
+          <div className="flex items-center gap-2 mb-0.5">
+            <Icon className={`w-4 h-4 ${isCurrent ? 'text-slate-300' : 'text-slate-400'}`} />
+            <span className={compareCompact ? 'text-sm font-black text-white' : 'text-base font-black text-white'}>
+              {t(plan.label)}
+            </span>
           </div>
-          <p className="text-xs text-slate-400">{t(plan.description)}</p>
+          <p className="text-[11px] text-slate-500 line-clamp-2">{t(plan.description)}</p>
         </div>
         <div className="text-right shrink-0">
           {plan.priceKrw === 0 ? (
-            <span className="text-xl font-black text-white">{t('무료')}</span>
+            <span className={compareCompact ? 'text-lg font-black text-white' : 'text-xl font-black text-white'}>
+              {t('무료')}
+            </span>
           ) : (
             <>
-              <span className="text-xl font-black text-white">₩{plan.priceKrw.toLocaleString()}</span>
+              <span className={compareCompact ? 'text-lg font-black text-white' : 'text-xl font-black text-white'}>
+                ₩{plan.priceKrw.toLocaleString()}
+              </span>
               <span className="text-xs text-slate-500 ml-0.5">{t('/월')}</span>
             </>
           )}
         </div>
       </div>
 
-      <ul className="space-y-1.5 flex-1">
-        {plan.features.map((f) => (
-          <li key={f} className="flex items-start gap-1.5 text-sm text-slate-300">
-            <CheckCircle className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-            {t(f)}
+      <ul className={compareCompact ? 'space-y-1 flex-1' : 'space-y-1.5 flex-1'}>
+        {featureRows.map((f) => (
+          <li key={f} className="flex items-start gap-2 text-xs text-slate-300 leading-snug">
+            <CheckCircle className="w-3.5 h-3.5 text-emerald-500/85 mt-0.5 shrink-0" />
+            <span>{t(f)}</span>
           </li>
         ))}
       </ul>
 
       {isCurrent ? (
-        <div className="flex items-center gap-2 justify-center py-2 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm font-bold">
+        <div className="flex items-center gap-2 justify-center py-1.5 rounded-lg bg-slate-700/50 border border-slate-600/50 text-slate-300 text-xs font-bold">
           <CheckCircle className="w-3.5 h-3.5" />
           {t('현재 플랜')}
         </div>
-      ) : isUpgrade ? (
+      ) : isUpgradeTarget ? (
         <button
           type="button"
           disabled={upgrading}
           onClick={() => onUpgrade(plan.id)}
-          className="flex items-center gap-1.5 justify-center py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
+          className="flex items-center gap-1.5 justify-center py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors"
         >
           {upgrading ? (
             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
           ) : (
             <ChevronRight className="w-3.5 h-3.5" />
           )}
-          {t(`${plan.label} 도입 문의`)}
+          {t(planUpgradeCtaLabel(plan.id))}
         </button>
       ) : (
-        <div className="h-9" />
+        <div className="flex items-center justify-center py-1.5 px-2 rounded-lg bg-slate-700/30 border border-slate-600/40 text-slate-500 text-[11px] font-semibold text-center leading-snug">
+          {t('현재 이용 중인 플랜에 포함됨')}
+        </div>
       )}
     </div>
   );
@@ -207,6 +253,7 @@ export default function SettingsView() {
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeMsg, setUpgradeMsg] = useState<string | null>(null);
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [bootstrapTrialGate, setBootstrapTrialGate] = useState(false);
   const [checkoutEnabled, setCheckoutEnabled] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -339,22 +386,35 @@ export default function SettingsView() {
   const handleBootstrap = async () => {
     setBootstrapping(true);
     setUpgradeMsg(null);
+    setBootstrapTrialGate(false);
     try {
       const res = await fetch('/api/spokedu-pro/context/bootstrap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      const data = await res.json();
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        bootstrapped?: boolean;
+        centerName?: string;
+        error?: string;
+        message?: string;
+      };
+      if (res.status === 403 && data.error === 'trial_not_approved') {
+        setBootstrapTrialGate(true);
+        return;
+      }
       if (data.ok) {
         await refresh();
         setUpgradeMsg(
           data.bootstrapped
-            ? `센터 "${data.centerName}"가 생성되었습니다. 14일 무료 체험이 시작됩니다.`
+            ? `센터 "${data.centerName}"가 생성되었습니다. 14일 프리미엄 체험이 시작됩니다.`
             : '이미 센터가 설정되어 있습니다.'
         );
       } else {
-        setUpgradeMsg('센터 생성에 실패했습니다: ' + (data.error ?? '알 수 없는 오류'));
+        setUpgradeMsg(
+          '센터 생성에 실패했습니다: ' + (typeof data.message === 'string' ? data.message : data.error ?? '알 수 없는 오류')
+        );
       }
     } catch {
       setUpgradeMsg('네트워크 오류가 발생했습니다.');
@@ -395,7 +455,7 @@ export default function SettingsView() {
             <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               <span className="font-bold text-rose-100">{t('결제 지연')}</span>
-              {t(' — 카드 정보를 확인하거나 아래에서 Stripe 결제를 다시 시도해 주세요. 계속 문제가 있으면')}{' '}
+              {t(' — 카드 정보를 확인하거나 아래에서 정기결제를 다시 시도해 주세요. 계속 문제가 있으면')}{' '}
               <a href="mailto:contact@spokedu.co.kr" className="text-rose-200 font-bold underline underline-offset-2">
                 {t('이메일')}
               </a>
@@ -417,27 +477,67 @@ export default function SettingsView() {
         </div>
       )}
 
+      {isTrialing && ctx.billing.currentPeriodEndAt && (
+        <TrialBanner trialEndAt={ctx.billing.currentPeriodEndAt} />
+      )}
+
+      <div className="rounded-xl border border-slate-700/70 bg-slate-900/40 px-4 py-4 sm:px-5 space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t('플랜')}</p>
+            <p className="mt-0.5 text-sm font-bold text-white">{t(PLAN_UI_META[currentPlan].label)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t('상태')}</p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-200">
+              {statusLabel[ctx.entitlement.status] ?? ctx.entitlement.status}
+            </p>
+          </div>
+        </div>
+        <div className="border-t border-slate-700/60 pt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t('센터')}</p>
+          <p className="mt-0.5 text-sm text-slate-200 leading-snug break-words">
+            {ctx.activeCenterId ? ctx.centers[0]?.name ?? t('내 센터') : t('연결 전(선택)')}
+          </p>
+        </div>
+        {ctx.billing.currentPeriodEndAt ? (
+          <p className="text-xs text-slate-500 leading-relaxed">
+            {isTrialing ? t('체험 종료: ') : t('갱신일: ')}
+            {new Date(ctx.billing.currentPeriodEndAt).toLocaleDateString('ko-KR')}
+          </p>
+        ) : null}
+      </div>
+
       <div className="rounded-2xl border border-blue-500/25 bg-blue-500/10 px-5 py-4 text-sm text-slate-200 leading-relaxed">
         <p className="font-bold text-blue-200 mb-1">{t('결제 안내')}</p>
         {checkoutEnabled ? (
           <p className="text-slate-300">
-            {t('Stripe Checkout으로 카드 정기결제를 진행할 수 있습니다. 문제가 있으면')}{' '}
+            {t(
+              '카드 정기결제로 바로 시작할 수 있습니다. 도입 과정에서 도움이 필요하시면 이메일로 문의해 주세요.'
+            )}{' '}
             <a href="mailto:contact@spokedu.co.kr" className="text-blue-400 font-bold underline underline-offset-2">
-              {t('이메일')}
+              contact@spokedu.co.kr
             </a>
-            {t('로 문의해 주세요.')}
           </p>
         ) : (
-          <p className="text-slate-300">
-            {t('현재 자동 결제(카드·정기결제)는 미지원입니다. 플랜 변경은')}{' '}
-            <a href="mailto:contact@spokedu.co.kr" className="text-blue-400 font-bold underline underline-offset-2">
-              {t('이메일')}
-            </a>
-            {t('문의로 수동 전환 안내를 드립니다.')}
-            <span className="block mt-2 text-slate-500 text-xs">
-              {t('서버에 Stripe 키를 방금 넣었다면, 아래를 눌러 이 화면에서 결제 버튼 표시를 다시 불러오세요.')}
-            </span>
-          </p>
+          <>
+            <p className="text-slate-300">
+              {t(
+                '현재는 운영팀을 통해 수동으로 플랜 전환을 도와드리고 있습니다. 도입을 원하시면 이메일로 문의해 주세요.'
+              )}{' '}
+              <a href="mailto:contact@spokedu.co.kr" className="text-blue-400 font-bold underline underline-offset-2">
+                contact@spokedu.co.kr
+              </a>
+            </p>
+            <details className="mt-2 text-slate-500 text-xs">
+              <summary className="cursor-pointer font-bold text-slate-400 hover:text-slate-300">
+                {t('결제 연동을 방금 켠 경우(운영)')}
+              </summary>
+              <p className="mt-2 pl-1 border-l border-slate-600/80">
+                {t('아래를 눌러 이 화면에서 결제 버튼 표시를 다시 불러오세요.')}
+              </p>
+            </details>
+          </>
         )}
         {checkoutEnabled && (
           <div id="spokedu-stripe-checkout-actions" className="flex flex-col gap-2 mt-3 scroll-mt-24">
@@ -448,7 +548,7 @@ export default function SettingsView() {
                 onClick={() => void handleStripeCheckout('basic')}
                 className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-xs font-bold text-white hover:bg-slate-700 disabled:opacity-50"
               >
-                {checkoutLoading ? t('처리 중...') : t('Basic — Stripe 결제')}
+                {checkoutLoading ? t('처리 중...') : t('Library 카드 정기결제')}
               </button>
               <button
                 type="button"
@@ -456,7 +556,7 @@ export default function SettingsView() {
                 onClick={() => void handleStripeCheckout('pro')}
                 className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-xs font-bold text-white hover:bg-slate-700 disabled:opacity-50"
               >
-                {checkoutLoading ? t('처리 중...') : t('Pro — Stripe 결제')}
+                {checkoutLoading ? t('처리 중...') : t('All-in-One 카드 정기결제')}
               </button>
             </div>
             <p className="text-slate-500 text-xs">
@@ -471,7 +571,9 @@ export default function SettingsView() {
             </button>
             {ctx.billing.stripeCustomerId && (
               <div className="pt-3 mt-2 border-t border-blue-500/20">
-                <p className="text-slate-400 text-xs mb-2">{t('카드 갱신·청구 내역·구독 변경은 Stripe 고객 포털에서 할 수 있어요.')}</p>
+                <p className="text-slate-400 text-xs mb-2">
+                  {t('카드 갱신·청구 내역·구독 변경은 고객 포털에서 할 수 있어요.')}
+                </p>
                 <button
                   type="button"
                   disabled={portalLoading || checkoutLoading}
@@ -483,7 +585,7 @@ export default function SettingsView() {
                   ) : (
                     <ExternalLink className="w-4 h-4 shrink-0" />
                   )}
-                  {portalLoading ? t('처리 중...') : t('Stripe에서 결제·구독 관리')}
+                  {portalLoading ? t('처리 중...') : t('카드·구독 관리 열기')}
                 </button>
               </div>
             )}
@@ -505,67 +607,6 @@ export default function SettingsView() {
         </p>
       </div>
 
-      {/* Trial 배너 */}
-      {isTrialing && ctx.billing.currentPeriodEndAt && (
-        <TrialBanner trialEndAt={ctx.billing.currentPeriodEndAt} />
-      )}
-
-      {/* 현재 상태 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1.5">
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{t('현재 센터')}</p>
-          {ctx.activeCenterId ? (
-            <>
-              <p className="text-base font-bold text-white">{ctx.centers[0]?.name ?? t('내 센터')}</p>
-              <p className="text-xs text-slate-400">
-                {t('역할:')} <span className="text-slate-300 font-medium">{ctx.role ?? 'owner'}</span>
-              </p>
-            </>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-sm text-slate-400">{t('센터가 설정되지 않았습니다.')}</p>
-              <button
-                type="button"
-                onClick={handleBootstrap}
-                disabled={bootstrapping}
-                className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 flex items-center gap-1"
-              >
-                {bootstrapping ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <ChevronRight className="w-3.5 h-3.5" />
-                )}
-                {bootstrapping ? t('생성 중...') : t('14일 무료 체험 시작')}
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="p-5 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1.5">
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{t('현재 플랜')}</p>
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-white capitalize">{currentPlan}</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                isTrialing
-                  ? 'bg-violet-500/20 text-violet-400'
-                  : ctx.entitlement.status === 'active'
-                  ? 'bg-emerald-500/20 text-emerald-400'
-                  : 'bg-amber-500/20 text-amber-400'
-              }`}
-            >
-              {statusLabel[ctx.entitlement.status] ?? ctx.entitlement.status}
-            </span>
-          </div>
-          {ctx.billing.currentPeriodEndAt && (
-            <p className="text-xs text-slate-400">
-              {isTrialing ? t('체험 종료: ') : t('갱신일: ')}
-              {new Date(ctx.billing.currentPeriodEndAt).toLocaleDateString('ko-KR')}
-            </p>
-          )}
-        </div>
-      </div>
-
       {/* 사용량 */}
       <div className="p-5 rounded-2xl bg-slate-800/40 border border-slate-700 space-y-5">
         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('이번 달 사용량')}</p>
@@ -583,6 +624,8 @@ export default function SettingsView() {
           label="AI 리포트 (이번 달)"
           icon={Bot}
           colorClass="bg-violet-500"
+          neutralZero={usage.aiReportMonthlyLimit === 0 && usage.aiReportThisMonth === 0}
+          zeroHint={t('체험 계정에서는 리포트 기능 확인이 제한될 수 있습니다')}
         />
       </div>
 
@@ -596,8 +639,8 @@ export default function SettingsView() {
 
       {/* 플랜 카드 */}
       <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">{t('플랜 비교')}</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">{t('플랜 비교')}</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {PLANS.map((plan) => (
             <PlanCard
               key={plan.id}
@@ -605,10 +648,70 @@ export default function SettingsView() {
               current={currentPlan}
               onUpgrade={handleUpgrade}
               upgrading={upgrading}
+              compareCompact
             />
           ))}
         </div>
       </div>
+
+      {!ctx.activeCenterId ? (
+        <details className="rounded-xl border border-slate-700/60 bg-slate-900/30 px-4 py-3 text-sm text-slate-400">
+          <summary className="cursor-pointer list-none font-bold text-slate-300 hover:text-white [&::-webkit-details-marker]:hidden">
+            {t('센터 연결·체험 시작(선택)')}
+          </summary>
+          <div className="mt-3 space-y-3 border-t border-slate-700/50 pt-3">
+            <p className="text-xs leading-relaxed text-slate-500">
+              {t('라이브러리·SPOMOVE 수업 준비는 센터 없이도 이용할 수 있어요. 기관 단위로 쓰실 때만 아래에서 센터를 만들면 됩니다.')}
+            </p>
+            {bootstrapTrialGate ? (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-950/25 px-4 py-3 text-sm text-amber-100 space-y-3">
+                <p className="leading-relaxed">
+                  SPOKEDU PRO 체험은 베타 관장단 신청 후 운영팀 승인으로 제공됩니다.
+                  <br />
+                  아직 신청하지 않으셨다면 베타 관장단 신청을 먼저 진행해 주세요.
+                  <br />
+                  <br />
+                  이미 신청하셨다면, 신청한 이메일과 현재 로그인한 이메일이 같은지 확인해 주세요.
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Link
+                    href="/pro/apply"
+                    className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-center text-sm font-black text-white hover:bg-amber-500"
+                  >
+                    베타 관장단 신청하기
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setBootstrapTrialGate(false)}
+                    className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-amber-500/40 px-4 py-2.5 text-sm font-bold text-amber-200 hover:bg-amber-950/40"
+                  >
+                    다시 시도
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleBootstrap()}
+                disabled={bootstrapping}
+                className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 inline-flex items-center gap-1"
+              >
+                {bootstrapping ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5" />
+                )}
+                {bootstrapping ? t('생성 중...') : t('14일 프리미엄 체험 시작')}
+              </button>
+            )}
+          </div>
+        </details>
+      ) : (
+        <div className="rounded-lg border border-slate-800/80 bg-slate-900/25 px-4 py-2.5 text-xs text-slate-500">
+          {t('역할:')}{' '}
+          <span className="font-medium text-slate-300">{ctx.role ?? 'owner'}</span>
+        </div>
+      )}
 
       {/* 문의 */}
       <div className="flex items-center justify-center gap-2 text-sm text-slate-500 pt-2">

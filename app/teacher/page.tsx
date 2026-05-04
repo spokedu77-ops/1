@@ -42,6 +42,8 @@ interface TodaySession {
   title: string;
   start_at: string;
   session_type: string;
+  status: string;
+  created_by?: string | null;
 }
 
 const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
@@ -207,6 +209,7 @@ export default function TeacherMainPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [expandedWbId, setExpandedWbId] = useState<string | null>(null);
   const [todaySessions, setTodaySessions] = useState<TodaySession[]>([]);
+  const [todayUserId, setTodayUserId] = useState<string | null>(null);
   const [todayLoading, setTodayLoading] = useState(true);
   const [noticeFetchError, setNoticeFetchError] = useState<string | null>(null);
   const [todayFetchError, setTodayFetchError] = useState<string | null>(null);
@@ -243,19 +246,32 @@ export default function TeacherMainPage() {
       setTodayFetchError(null);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
-      const userData = { user: session.user };
+      setTodayUserId(session.user.id);
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('id, title, start_at, session_type')
-        .eq('created_by', userData.user.id)
-        .gte('start_at', start.toISOString())
-        .lte('start_at', end.toISOString())
-        .order('start_at', { ascending: true });
-      if (error) throw error;
-      setTodaySessions((data as TodaySession[]) ?? []);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      const res = await fetch(
+        `/api/teacher/my-schedule?from=${encodeURIComponent(start.toISOString())}&to=${encodeURIComponent(end.toISOString())}`,
+        { credentials: 'include' },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as { data?: Record<string, unknown>[] };
+      const rows = json.data || [];
+      const mapped: TodaySession[] = rows
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(String(a.start_at)).getTime() - new Date(String(b.start_at)).getTime(),
+        )
+        .map((r) => ({
+          id: String(r.id),
+          title: String(r.title ?? ''),
+          start_at: String(r.start_at),
+          session_type: String(r.session_type ?? ''),
+          status: String(r.status ?? ''),
+          created_by: r.created_by != null ? String(r.created_by) : null,
+        }));
+      setTodaySessions(mapped);
     } catch (err) {
       devLogger.error('Today sessions fetch error:', err);
       setTodayFetchError('오늘 수업을 불러오지 못했습니다.');
@@ -337,6 +353,10 @@ export default function TeacherMainPage() {
             {todaySessions.map((s) => {
               const start = new Date(s.start_at);
               const timeStr = start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+              const status = String(s.status || '');
+              const isAssist =
+                !!todayUserId &&
+                String(s.created_by || '').trim() !== String(todayUserId).trim();
               return (
                 <button
                   key={s.id}
@@ -349,9 +369,20 @@ export default function TeacherMainPage() {
                     <span className="text-base font-black leading-none">{timeStr}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
-                      {(s.session_type === 'regular_center' || s.session_type === 'one_day_center') ? '센터' : '방문'}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
+                        {(s.session_type === 'regular_center' || s.session_type === 'one_day_center') ? '센터' : '방문'}
+                      </span>
+                      {isAssist ? (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-amber-100 text-amber-800">보조</span>
+                      ) : null}
+                      {status === 'postponed' ? (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-purple-100 text-purple-700">연기</span>
+                      ) : null}
+                      {status === 'cancelled' ? (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-rose-100 text-rose-600">취소</span>
+                      ) : null}
+                    </div>
                     <p className="text-sm font-black text-slate-800 truncate mt-1">{s.title || '제목 없음'}</p>
                   </div>
                   <ChevronRight size={18} className="text-slate-300 shrink-0" />

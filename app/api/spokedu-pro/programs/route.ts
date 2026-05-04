@@ -17,39 +17,23 @@ import {
   isEquipmentCatalogItem,
 } from '@/app/lib/spokedu-pro/programClassification';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
+import {
+  mapLessonDetailRowToClient,
+  type ProgramLessonDetailRow,
+} from '@/app/lib/spokedu-pro/programLessonDetail';
+import { isLessonPackageKeyId } from '@/app/lib/spokedu-pro/lessonPackageKeys';
 
 const DB_READY = process.env.SPOKEDU_PRO_PROGRAMS_DB_READY === 'true';
 
-/** 본편 curriculum과 동일 제목·URL(정규화) 키 — Pro 뱅크 찌꺼기(커리큘럼에 없는 행) 검색 제외용 */
-function programCurriculumKey(title: string, videoUrl: string | null | undefined): string {
-  const t = stripMonthWeekPrefix(String(title ?? '').trim());
-  const u = String(videoUrl ?? '').trim();
-  return `${t}|${u}`;
-}
-
-/** only_curriculum=1: 본편 curriculum(title,url,id)과 맞는 프로그램만 남김 */
-async function filterProgramsToMainCurriculum(
-  supabase: ReturnType<typeof getServiceSupabase>,
-  rows: Array<Record<string, unknown>>
-): Promise<Array<Record<string, unknown>>> {
-  const { data: curr, error } = await supabase.from('curriculum').select('id,title,url').eq('is_sub', false);
-  if (error) return rows;
-  if (!curr?.length) return [];
-  const keySet = new Set<string>();
-  const idSet = new Set<number>();
-  for (const r of curr as Array<{ id: number; title?: string | null; url?: string | null }>) {
-    idSet.add(Number(r.id));
-    const t = stripMonthWeekPrefix(String(r.title ?? '').trim());
-    if (t) keySet.add(programCurriculumKey(t, r.url ?? ''));
-  }
-  return rows.filter((row) => {
-    const title = String(row.title ?? '');
-    const url = row.video_url as string | null | undefined;
-    if (keySet.has(programCurriculumKey(title, url))) return true;
-    const sid = Number(row.source_center_curriculum_id);
-    if (Number.isFinite(sid) && idSet.has(sid)) return true;
-    return false;
-  });
+/** URL `curriculumIds=1,2,3` — curriculum.id 기준으로 목록 제한(드로어 하이드레이션 등) */
+function parseCurriculumIdsParam(searchParams: URLSearchParams): number[] | null {
+  const raw = (searchParams.get('curriculumIds') ?? '').trim();
+  if (!raw) return null;
+  const ids = raw
+    .split(',')
+    .map((s) => Number(String(s).trim()))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  return ids.length > 0 ? ids.slice(0, 120) : null;
 }
 
 /** DB 미적용 시 목 데이터 (새 스키마 형태) */
@@ -91,17 +75,10 @@ function resolveEquipmentTokens(searchParams: URLSearchParams): string[] {
     .filter(isEquipmentCatalogItem);
 }
 
-function functionTypeOrClause(types: string[]): string {
-  return types.flatMap((t) => [`function_type.eq.${t}`, `function_types.cs.{${t}}`]).join(',');
-}
-
-function equipmentOrClause(tokens: string[]): string {
-  return tokens.map((t) => `equipment.ilike.%${t}%`).join(',');
-}
-
 export async function GET(request: NextRequest) {
   const serverSupabase = await createServerSupabaseClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
+  const authResult = await serverSupabase.auth.getUser();
+  const user = authResult.data?.user ?? null;
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -114,193 +91,247 @@ export async function GET(request: NextRequest) {
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const limit = Math.min(Number(searchParams.get('limit') ?? '100'), 200);
   const offset = Number(searchParams.get('offset') ?? '0');
-  const onlyCurriculum = searchParams.get('only_curriculum') === '1';
   const debug = searchParams.get('debug') === '1' && process.env.NODE_ENV !== 'production';
+  const wantFeaturedLesson = searchParams.get('featuredLesson') === '1';
+  const wantHasLessonDetail = searchParams.get('hasLessonDetail') === '1';
+  const packageKeyRaw = (searchParams.get('packageKey') ?? '').trim();
+  const packageKeyFilter =
+    packageKeyRaw && isLessonPackageKeyId(packageKeyRaw) ? packageKeyRaw : null;
+  const curriculumIdsParam = parseCurriculumIdsParam(searchParams);
 
-  if (!DB_READY) {
-    // 로컬/마이그레이션 전에도 "센터 커리큘럼"이 바로 보이도록 curriculum 테이블을 읽어 프로그램 형태로 제공
-    // (import-center를 돌리기 전에도 /spokedu-pro가 최신 커리큘럼을 반영해야 함)
-    const supabase = getServiceSupabase();
-    const { data, error } = await supabase
-      .from('curriculum')
-      .select('id,title,url,check_list,equipment,steps,expert_tip,display_order,month,week,is_sub')
-      .eq('is_sub', false)
-      .order('display_order', { ascending: true, nullsFirst: false })
-      .order('id', { ascending: false });
+  const lessonDetailFilterActive =
+    wantFeaturedLesson || wantHasLessonDetail || packageKeyFilter != null;
 
-    if (error) {
-      // fallback이더라도 페이지는 살아야 하므로, 최소 더미를 반환
-      const dummy = getFallbackPrograms();
-      return NextResponse.json({
-        data: dummy.slice(0, limit),
-        total: dummy.length,
-        limit,
-        offset,
-        source: 'dummy',
-        debug: debug ? { sample: dummy.slice(0, 50).map((x) => ({ id: x.id, title: x.title })) } : undefined,
-      });
+  // 구독자 프로그램 뱅크 GET: 항상 센터 본편 커리큘럼(curriculum, is_sub=false).
+  // spokedu_pro_programs는 import-center·관리자 POST/PATCH(DB_READY)용이며 목록 소스로 쓰지 않는다.
+  const supabase = getServiceSupabase();
+
+  /**
+   * lesson_detail 기반 curriculum.id 제한.
+   * - 쿼리 실패 시: 목록 깨짐 방지를 위해 제한 없음(전체 커리큘럼)으로 폴백.
+   * - 성공 시 빈 배열: 요청한 lesson 필터에 해당하는 프로그램 없음 → 빈 응답.
+   */
+  let lessonTableCurriculumIds: number[] | null = null;
+  let lessonTableQueryResolved = false;
+  if (lessonDetailFilterActive) {
+    let ldQuery = supabase.from('spokedu_pro_program_lesson_details').select('curriculum_id');
+    if (wantFeaturedLesson) {
+      ldQuery = ldQuery.eq('is_featured_lesson', true);
     }
-
-    const rows = (data ?? []) as Array<{
-      id: number;
-      title: string | null;
-      url: string | null;
-      check_list: string[] | null;
-      equipment: string[] | null;
-      steps: string[] | null;
-      expert_tip: string | null;
-      month: number | null;
-      week: number | null;
-    }>;
-
-    // import-center와 동일한 기본 분류(펑셔널 무브 기준)
-    const mapped = rows
-      .map((r) => {
-        const title = stripMonthWeekPrefix((r.title ?? '').trim());
-        return {
-          id: r.id,
-          title,
-          video_url: (r.url ?? '').trim() || null,
-          function_type: '협응력',
-          main_theme: '협동형',
-          group_size: '소그룹',
-          checklist: Array.isArray(r.check_list) ? r.check_list.filter(Boolean).join('\n') : null,
-          equipment: Array.isArray(r.equipment) ? r.equipment.filter(Boolean).join('\n') : null,
-          activity_method: Array.isArray(r.steps) ? r.steps.filter(Boolean).join('\n') : null,
-          activity_tip: r.expert_tip?.trim() || null,
-          is_published: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-      })
-      .filter((p) => (q ? p.title.toLowerCase().includes(q) : true));
-
-    let results = mapped;
-    if (resolvedFunctionTypes.length) {
-      results = results.filter((p) => resolvedFunctionTypes.includes(String(p.function_type)));
+    if (packageKeyFilter) {
+      ldQuery = ldQuery.contains('package_keys', [packageKeyFilter]);
     }
-    if (mainTheme && isMainTheme(mainTheme)) results = results.filter((p) => p.main_theme === mainTheme);
-    if (groupSize && isGroupSize(groupSize)) results = results.filter((p) => p.group_size === groupSize);
-    if (equipmentTokens.length) {
-      results = results.filter((p) => {
-        const eqText = String(p.equipment ?? '');
-        return equipmentTokens.some((tok) => eqText.includes(tok));
-      });
+    // hasLessonDetail만 단독이면 테이블에 행이 있는 curriculum만 (추가 where 없음)
+    const { data: ldRows, error: ldErr } = await ldQuery;
+    if (ldErr) {
+      lessonTableCurriculumIds = null;
+      lessonTableQueryResolved = false;
+    } else {
+      lessonTableCurriculumIds = [
+        ...new Set(
+          (ldRows ?? [])
+            .map((r: { curriculum_id?: number }) => r.curriculum_id)
+            .filter((n): n is number => typeof n === 'number' && Number.isFinite(n) && n > 0)
+        ),
+      ];
+      lessonTableQueryResolved = true;
     }
+  }
 
-    const total = results.length;
-    const page = results.slice(offset, offset + limit);
+  if (lessonDetailFilterActive && lessonTableQueryResolved && (lessonTableCurriculumIds?.length ?? 0) === 0) {
     return NextResponse.json({
-      data: page,
-      total,
+      data: [],
+      total: 0,
       limit,
       offset,
       source: 'curriculum',
-      debug: debug ? { sample: page.slice(0, 50).map((x) => ({ id: x.id, title: x.title })) } : undefined,
+      debug: debug ? { sample: [], lessonDetailFilter: true } : undefined,
     });
   }
 
-  const supabase = getServiceSupabase();
-  let query = supabase
-    .from('spokedu_pro_programs')
-    .select('*', { count: 'exact' })
-    .eq('is_published', true)
-    .eq('center_curriculum_is_sub', false)
-    // 최신 변경이 먼저 보이도록 정렬(센터 커리큘럼 업데이트가 즉시 눈에 띄게)
-    .order('updated_at', { ascending: false, nullsFirst: false })
-    .order('id', { ascending: false })
-    .range(offset, offset + limit - 1);
+  let restrictCurriculumIds: number[] | null =
+    lessonDetailFilterActive && lessonTableQueryResolved ? lessonTableCurriculumIds : null;
 
-  if (resolvedFunctionTypes.length) {
-    // 다중(function_types) + 단일(function_type) 모두 필터에 걸리도록 OR (복수 타입은 타입별 OR)
-    query = query.or(functionTypeOrClause(resolvedFunctionTypes));
-  }
-  if (mainTheme && isMainTheme(mainTheme)) {
-    query = query.eq('main_theme', mainTheme);
-  }
-  if (groupSize && isGroupSize(groupSize)) {
-    query = query.eq('group_size', groupSize);
-  }
-  if (equipmentTokens.length === 1) {
-    query = query.ilike('equipment', `%${equipmentTokens[0]}%`);
-  } else if (equipmentTokens.length > 1) {
-    query = query.or(equipmentOrClause(equipmentTokens));
-  }
-  if (q) {
-    query = query.ilike('title', `%${q}%`);
-  }
-
-  let { data, count, error } = await query;
-  // center_curriculum_is_sub 컬럼이 아직 없는 DB는 SUB 제외 조건 없이 재시도
-  if (error && /center_curriculum_is_sub|42703|column/i.test(String(error.message))) {
-    let q2 = supabase
-      .from('spokedu_pro_programs')
-      .select('*', { count: 'exact' })
-      .eq('is_published', true)
-      .order('updated_at', { ascending: false, nullsFirst: false })
-      .order('id', { ascending: false })
-      .range(offset, offset + limit - 1);
-    if (resolvedFunctionTypes.length) {
-      q2 = q2.or(functionTypeOrClause(resolvedFunctionTypes));
-    }
-    if (mainTheme && isMainTheme(mainTheme)) q2 = q2.eq('main_theme', mainTheme);
-    if (groupSize && isGroupSize(groupSize)) q2 = q2.eq('group_size', groupSize);
-    if (equipmentTokens.length === 1) q2 = q2.ilike('equipment', `%${equipmentTokens[0]}%`);
-    else if (equipmentTokens.length > 1) q2 = q2.or(equipmentOrClause(equipmentTokens));
-    if (q) q2 = q2.ilike('title', `%${q}%`);
-    const second = await q2;
-    data = second.data;
-    count = second.count;
-    error = second.error;
-  }
-  // DB 마이그레이션이 아직 적용되지 않은 환경(컬럼 없음)에서는 function_types 조건이 실패할 수 있으므로
-  // 기존 단일 컬럼(function_type)만으로 즉시 폴백한다.
-  if (error && resolvedFunctionTypes.length && /function_types|column .*function_types/i.test(error.message)) {
-    let fallback = supabase
-      .from('spokedu_pro_programs')
-      .select('*', { count: 'exact' })
-      .eq('is_published', true)
-      .order('updated_at', { ascending: false, nullsFirst: false })
-      .order('id', { ascending: false })
-      .range(offset, offset + limit - 1);
-    if (resolvedFunctionTypes.length === 1) {
-      fallback = fallback.eq('function_type', resolvedFunctionTypes[0]);
+  if (curriculumIdsParam != null && curriculumIdsParam.length > 0) {
+    const setUrl = new Set(curriculumIdsParam);
+    if (restrictCurriculumIds != null) {
+      restrictCurriculumIds = restrictCurriculumIds.filter((id) => setUrl.has(id));
     } else {
-      fallback = fallback.or(resolvedFunctionTypes.map((t) => `function_type.eq.${t}`).join(','));
+      restrictCurriculumIds = curriculumIdsParam;
     }
-    if (mainTheme && isMainTheme(mainTheme)) fallback = fallback.eq('main_theme', mainTheme);
-    if (groupSize && isGroupSize(groupSize)) fallback = fallback.eq('group_size', groupSize);
-    if (equipmentTokens.length === 1) fallback = fallback.ilike('equipment', `%${equipmentTokens[0]}%`);
-    else if (equipmentTokens.length > 1) fallback = fallback.or(equipmentOrClause(equipmentTokens));
-    if (q) fallback = fallback.ilike('title', `%${q}%`);
-    const again = await fallback;
-    data = again.data;
-    count = again.count;
-    error = again.error;
   }
+
+  if (
+    restrictCurriculumIds != null &&
+    restrictCurriculumIds.length === 0 &&
+    (lessonDetailFilterActive || (curriculumIdsParam != null && curriculumIdsParam.length > 0))
+  ) {
+    return NextResponse.json({
+      data: [],
+      total: 0,
+      limit,
+      offset,
+      source: 'curriculum',
+      debug: debug ? { sample: [], filtered: true } : undefined,
+    });
+  }
+
+  let curriculumQuery = supabase
+    .from('curriculum')
+    .select('id,title,url,check_list,equipment,steps,expert_tip,display_order,month,week,is_sub')
+    .eq('is_sub', false);
+  if (restrictCurriculumIds != null && restrictCurriculumIds.length > 0) {
+    curriculumQuery = curriculumQuery.in('id', restrictCurriculumIds);
+  }
+  const { data: curriculumRowsRaw, error } = await curriculumQuery
+    .order('display_order', { ascending: true, nullsFirst: false })
+    .order('id', { ascending: false });
+
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // fallback이더라도 페이지는 살아야 하므로, 최소 더미를 반환
+    const dummy = getFallbackPrograms();
+    return NextResponse.json({
+      data: dummy.slice(0, limit),
+      total: dummy.length,
+      limit,
+      offset,
+      source: 'dummy',
+      debug: debug ? { sample: dummy.slice(0, 50).map((x) => ({ id: x.id, title: x.title })) } : undefined,
+    });
   }
 
-  let rawRows = (data ?? []) as Array<Record<string, unknown> & { title?: string }>;
-  if (onlyCurriculum && DB_READY) {
-    rawRows = await filterProgramsToMainCurriculum(supabase, rawRows);
+  const rows = (curriculumRowsRaw ?? []) as Array<{
+    id: number;
+    title: string | null;
+    url: string | null;
+    check_list: string[] | null;
+    equipment: string[] | null;
+    steps: string[] | null;
+    expert_tip: string | null;
+    month: number | null;
+    week: number | null;
+  }>;
+
+  const curriculumIds = rows.map((r) => r.id).filter((n) => Number.isFinite(n));
+  type ProgramOverlay = {
+    source_center_curriculum_id: number | null;
+    title: string | null;
+    video_url: string | null;
+    function_type: string | null;
+    function_types: string[] | null;
+    main_theme: string | null;
+    group_size: string | null;
+    checklist: string | null;
+    equipment: string | null;
+    activity_method: string | null;
+    activity_tip: string | null;
+    updated_at: string | null;
+  };
+  const overlayByCurriculumId = new Map<number, ProgramOverlay>();
+  if (curriculumIds.length > 0) {
+    const { data: overlayRows } = await supabase
+      .from('spokedu_pro_programs')
+      .select(
+        'source_center_curriculum_id,title,video_url,function_type,function_types,main_theme,group_size,checklist,equipment,activity_method,activity_tip,updated_at'
+      )
+      .in('source_center_curriculum_id', curriculumIds);
+    for (const o of (overlayRows ?? []) as ProgramOverlay[]) {
+      const cid = o.source_center_curriculum_id;
+      if (cid == null) continue;
+      const prev = overlayByCurriculumId.get(cid);
+      if (!prev) {
+        overlayByCurriculumId.set(cid, o);
+        continue;
+      }
+      const prevT = prev.updated_at ? Date.parse(prev.updated_at) : 0;
+      const nextT = o.updated_at ? Date.parse(o.updated_at) : 0;
+      if (nextT >= prevT) overlayByCurriculumId.set(cid, o);
+    }
   }
 
-  const normalized = rawRows.map((row) => ({
-    ...row,
-    title: stripMonthWeekPrefix(String(row.title ?? '')),
+  // import-center와 동일한 기본 분류(펑셔널 무브 기준) + spokedu_pro_programs 오버레이
+  const mapped = rows
+    .map((r) => {
+      const title = stripMonthWeekPrefix((r.title ?? '').trim());
+      const ov = overlayByCurriculumId.get(r.id);
+      const baseChecklist = Array.isArray(r.check_list) ? r.check_list.filter(Boolean).join('\n') : null;
+      const baseEquipment = Array.isArray(r.equipment) ? r.equipment.filter(Boolean).join('\n') : null;
+      const baseMethod = Array.isArray(r.steps) ? r.steps.filter(Boolean).join('\n') : null;
+      const baseTip = r.expert_tip?.trim() || null;
+      const fnTypes =
+        Array.isArray(ov?.function_types) && ov.function_types.length > 0
+          ? ov.function_types.filter((x) => typeof x === 'string' && x.trim())
+          : null;
+      const primaryFn = (ov?.function_type ?? '').trim() || (fnTypes?.[0] ?? '') || '협응력';
+      return {
+        id: r.id,
+        title: (ov?.title ?? '').trim() || title,
+        video_url: ((ov?.video_url ?? r.url) ?? '').trim() || null,
+        function_type: primaryFn,
+        function_types: fnTypes ?? undefined,
+        main_theme: (ov?.main_theme ?? '').trim() || '협동형',
+        group_size: (ov?.group_size ?? '').trim() || '소그룹',
+        checklist: ov?.checklist != null && String(ov.checklist).trim() ? ov.checklist : baseChecklist,
+        equipment: ov?.equipment != null && String(ov.equipment).trim() ? ov.equipment : baseEquipment,
+        activity_method:
+          ov?.activity_method != null && String(ov.activity_method).trim()
+            ? ov.activity_method
+            : baseMethod,
+        activity_tip: ov?.activity_tip != null && String(ov.activity_tip).trim() ? ov.activity_tip : baseTip,
+        is_published: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    })
+    .filter((p) => (q ? p.title.toLowerCase().includes(q) : true));
+
+  let results = mapped;
+  if (resolvedFunctionTypes.length) {
+    results = results.filter((p) => {
+      const multi = Array.isArray(p.function_types) ? p.function_types : [];
+      return resolvedFunctionTypes.some(
+        (ft) => ft === String(p.function_type) || multi.includes(ft)
+      );
+    });
+  }
+  if (mainTheme && isMainTheme(mainTheme)) results = results.filter((p) => p.main_theme === mainTheme);
+  if (groupSize && isGroupSize(groupSize)) results = results.filter((p) => p.group_size === groupSize);
+  if (equipmentTokens.length) {
+    results = results.filter((p) => {
+      const eqText = String(p.equipment ?? '');
+      return equipmentTokens.some((tok) => eqText.includes(tok));
+    });
+  }
+
+  const total = results.length;
+  const page = results.slice(offset, offset + limit);
+
+  const lessonByCurriculumId = new Map<number, ReturnType<typeof mapLessonDetailRowToClient>>();
+  const pageIds = page.map((p) => p.id).filter((n) => Number.isFinite(n));
+  if (pageIds.length > 0) {
+    const { data: lessonRows, error: lessonErr } = await supabase
+      .from('spokedu_pro_program_lesson_details')
+      .select('*')
+      .in('curriculum_id', pageIds);
+    if (!lessonErr && Array.isArray(lessonRows)) {
+      for (const r of lessonRows as ProgramLessonDetailRow[]) {
+        lessonByCurriculumId.set(r.curriculum_id, mapLessonDetailRowToClient(r));
+      }
+    }
+  }
+
+  const programs = page.map((p) => ({
+    ...p,
+    lesson_detail: lessonByCurriculumId.get(p.id) ?? null,
   }));
 
-  const totalOut = onlyCurriculum && DB_READY ? normalized.length : count ?? 0;
-
   return NextResponse.json({
-    data: normalized,
-    total: totalOut,
+    data: programs,
+    total,
     limit,
     offset,
-    source: 'db',
-    debug: debug ? { sample: (data ?? []).slice(0, 50).map((x: { id?: number; title?: string }) => ({ id: x.id, title: x.title })) } : undefined,
+    source: 'curriculum',
+    debug: debug ? { sample: programs.slice(0, 50).map((x) => ({ id: x.id, title: x.title })) } : undefined,
   });
 }
 
@@ -337,10 +368,9 @@ export async function PATCH(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-  if (!id) {
-    return NextResponse.json({ error: 'id required' }, { status: 400 });
-  }
+  const programRowIdRaw = (searchParams.get('programRowId') ?? '').trim();
+  const programRowId =
+    programRowIdRaw !== '' ? Number(programRowIdRaw) : Number.NaN;
 
   let body: unknown;
   try {
@@ -349,23 +379,93 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
+  const patch = (typeof body === 'object' && body !== null ? body : {}) as Record<string, unknown>;
+  delete patch.id;
+
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from('spokedu_pro_programs')
-    .update(body as object)
-    .eq('id', id)
-    .select()
-    .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return NextResponse.json({ error: 'Program not found' }, { status: 404 });
+  /** spokedu_pro_programs PK로만 갱신(선택). GET 목록 id는 curriculum.id이므로 기본 PATCH는 이 경로를 쓰지 않는다. */
+  if (Number.isFinite(programRowId) && programRowId > 0) {
+    const { data: byPk, error: errPk } = await supabase
+      .from('spokedu_pro_programs')
+      .update(patch)
+      .eq('id', programRowId)
+      .select();
+
+    if (errPk) {
+      return NextResponse.json({ error: errPk.message }, { status: 500 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  if (data == null) {
-    return NextResponse.json({ error: 'Update returned no row' }, { status: 500 });
+    if (byPk && byPk.length > 0) {
+      return NextResponse.json({ data: byPk[0] });
+    }
+    return NextResponse.json({ error: 'Program row not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ data });
+  const id = searchParams.get('id');
+  if (!id) {
+    return NextResponse.json({ error: 'id required' }, { status: 400 });
+  }
+
+  const numericId = Number(id);
+  if (!Number.isFinite(numericId) || numericId <= 0) {
+    return NextResponse.json({ error: 'invalid id' }, { status: 400 });
+  }
+
+  // 기본: id = curriculum.id → source_center_curriculum_id로 오버레이 행을 찾는다.
+  const { data: bySource, error: errSource } = await supabase
+    .from('spokedu_pro_programs')
+    .update(patch)
+    .eq('source_center_curriculum_id', numericId)
+    .select();
+
+  if (errSource) {
+    return NextResponse.json({ error: errSource.message }, { status: 500 });
+  }
+  if (bySource && bySource.length > 0) {
+    return NextResponse.json({ data: bySource[0] });
+  }
+
+  // 오버레이 행이 없으면 커리큘럼 본편에 맞춰 새 행을 만든다 (GET 목록 id = curriculum.id 유지).
+  const { data: curr, error: currErr } = await supabase
+    .from('curriculum')
+    .select('id,title,url')
+    .eq('id', numericId)
+    .eq('is_sub', false)
+    .maybeSingle();
+
+  if (currErr) {
+    return NextResponse.json({ error: currErr.message }, { status: 500 });
+  }
+  if (curr == null) {
+    return NextResponse.json({ error: 'Program not found' }, { status: 404 });
+  }
+
+  const defaultTitle = stripMonthWeekPrefix((curr.title ?? '').trim()) || `커리큘럼 #${numericId}`;
+  const defaultVideo = (curr.url ?? '').trim() || null;
+  const insertRow: Record<string, unknown> = {
+    ...patch,
+    title: typeof patch.title === 'string' && patch.title.trim() ? patch.title.trim() : defaultTitle,
+    video_url:
+      typeof patch.video_url === 'string' && patch.video_url.trim()
+        ? patch.video_url.trim()
+        : defaultVideo,
+    source_center_curriculum_id: numericId,
+    is_published: true,
+  };
+  delete insertRow.id;
+
+  const { data: inserted, error: insErr } = await supabase
+    .from('spokedu_pro_programs')
+    .insert(insertRow)
+    .select()
+    .maybeSingle();
+
+  if (insErr) {
+    return NextResponse.json({ error: insErr.message }, { status: 500 });
+  }
+  if (inserted == null) {
+    return NextResponse.json({ error: 'Insert returned no row' }, { status: 500 });
+  }
+
+  return NextResponse.json({ data: inserted });
 }

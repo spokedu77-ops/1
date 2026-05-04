@@ -21,6 +21,11 @@ export default function SpokeduProSubscriptionLegalPage() {
         <section className="space-y-3 rounded-2xl border border-slate-700 bg-slate-800/40 p-5">
           <h2 className="text-lg font-black text-white">1. 구독 및 결제</h2>
           <p className="text-sm leading-relaxed text-slate-300">
+            SPOKEDU PRO는 태권도장 등 센터의 <strong className="text-slate-200">유아·초등부 수업 운영</strong>을 돕는 구독 서비스입니다. 제공 범위는 플랜에 따라 달라지며, 대표적으로{' '}
+            <strong className="text-white">체험 플랜</strong>(제한 이용), <strong className="text-white">Library</strong>(놀이체육 라이브러리 중심),{' '}
+            <strong className="text-white">All-in-One</strong>(놀이체육 라이브러리·SPOMOVE 반응훈련·이번 주 추천 루틴·원생 성장 리포트 등 풀 패키지)으로 구분됩니다.
+          </p>
+          <p className="text-sm leading-relaxed text-slate-300">
             현재 앱 내 자동 결제(카드 정기결제)는 제공하지 않을 수 있으며, 플랜 전환은 운영팀 안내에 따라 이메일 또는 별도 절차로 진행될 수 있습니다.
             요금표는 앱 내 <strong className="text-white">플랜 &amp; 결제</strong> 화면 및 운영팀 공지와 함께 확인해 주세요.
           </p>

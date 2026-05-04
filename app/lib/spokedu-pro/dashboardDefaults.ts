@@ -72,7 +72,8 @@ export interface DashboardV4 {
 const defaultWeekTheme: WeekTheme = {
   badge: '이번 주 테마',
   title: '스피드리액션',
-  subtitle: '장비 부담 없이 바로 시작하는 4가지 구성. 웜업/리드업/놀이체육 파이를 책임집니다.',
+  subtitle:
+    '놀이체육 라이브러리 150개+와 SPOMOVE 스크린 반응훈련을 한 곳에서.\n수업 준비는 줄이고, 아이들의 몰입도는 높이세요.',
   themeKey: 'speed-reaction',
   items: [
     { programId: 1, role: 'Intro', tag2: ['준비물없음', '집중유도'] },
@@ -160,13 +161,13 @@ export const THEME_KEY_TO_BANK_THEME: Record<ThemeKey, string> = {
 
 /** 사이드바 라이브러리: 펑셔널 · 스포무브만 (나머지 테마는 라이브러리 화면 필터) */
 export const LIBRARY_SIDEBAR_ITEMS: { themeKey: ThemeKey; label: string }[] = [
-  { themeKey: 'co-op', label: '펑셔널 무브 (놀이체육)' },
-  { themeKey: 'cognitive', label: '스포무브 (브레인체육)' },
+  { themeKey: 'co-op', label: '놀이체육 라이브러리' },
+  { themeKey: 'cognitive', label: 'SPOMOVE 반응훈련' },
 ];
 
 /** 대시보드 추천 Row1(위 4칸) / Row2(아래 4칸) 묶음명 — 구독자 RoadmapView 고정 표시용 */
-export const DASHBOARD_ROW1_GROUP_LABEL = '펑셔널 무브 (놀이체육)';
-export const DASHBOARD_ROW2_GROUP_LABEL = '스포무브 (브레인체육)';
+export const DASHBOARD_ROW1_GROUP_LABEL = '놀이체육 라이브러리';
+export const DASHBOARD_ROW2_GROUP_LABEL = 'SPOMOVE 반응훈련';
 
 export interface ProgramBankItem {
   id: number;

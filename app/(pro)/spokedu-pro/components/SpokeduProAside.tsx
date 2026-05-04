@@ -10,6 +10,7 @@ import {
   Settings2,
   CreditCard,
   CalendarDays,
+  Gamepad2,
 } from 'lucide-react';
 import type { ViewId } from '../hooks/useSpokeduProUI';
 import { LIBRARY_SIDEBAR_ITEMS, type ThemeKey } from '@/app/lib/spokedu-pro/dashboardDefaults';
@@ -39,6 +40,8 @@ export default function SpokeduProAside({
   onOpenLibraryAll,
   onGoToLibraryTheme,
   libraryActiveThemeKey,
+  libraryMode = 'program',
+  onOpenSpomove,
   isEditMode,
   onOpenCurationDrawer,
 }: {
@@ -48,6 +51,10 @@ export default function SpokeduProAside({
   onOpenLibraryAll: () => void;
   onGoToLibraryTheme: (themeKey: ThemeKey) => void;
   libraryActiveThemeKey?: string | null;
+  /** 구독자: SPOMOVE(스크린플레이) 활성 판별 */
+  libraryMode?: 'program' | 'screenplay';
+  /** 구독자: SPOMOVE 라이브러리 진입 */
+  onOpenSpomove?: () => void;
   isEditMode?: boolean;
   onOpenCurationDrawer?: () => void;
 }) {
@@ -55,6 +62,10 @@ export default function SpokeduProAside({
   let lastGroup = '';
 
   const isLibraryView = viewId === 'library';
+  const programLibraryActive = isLibraryView && libraryMode === 'program';
+  const spomoveActive = isLibraryView && libraryMode === 'screenplay';
+
+  const subscriberMode = !isEditMode;
 
   return (
     <>
@@ -79,7 +90,7 @@ export default function SpokeduProAside({
               return (
                 <div key={id}>
                   {showGroup && (
-                    <div className="hidden lg:block px-4 pb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    <div className="hidden lg:block px-4 pb-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                       {t(group)}
                     </div>
                   )}
@@ -93,54 +104,124 @@ export default function SpokeduProAside({
                     }`}
                   >
                     <Icon className={`w-5 h-5 shrink-0 ${iconClass ?? 'text-slate-400'}`} />
-                    <span className="hidden lg:block font-medium">{t(label)}</span>
+                    <span className="hidden lg:block font-medium leading-snug">{t(label)}</span>
                   </button>
                 </div>
               );
             })}
 
-            {/* 라이브러리 (테마 하위) */}
+            {/* 라이브러리 */}
             <div>
-              <div className="hidden lg:block px-4 pb-2 pt-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                {t('라이브러리')}
+              <div className="hidden lg:block px-4 pb-2 pt-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                {t('수업 준비')}
               </div>
-              <div className="hidden lg:flex flex-col gap-0.5 pl-0">
-                {LIBRARY_SIDEBAR_ITEMS.map(({ themeKey, label }) => {
-                  const active = isLibraryView && libraryActiveThemeKey === themeKey;
-                  return (
+              {subscriberMode ? (
+                <>
+                  <div className="hidden lg:flex flex-col gap-0.5 pl-0">
                     <button
-                      key={themeKey}
                       type="button"
-                      onClick={() => onGoToLibraryTheme(themeKey)}
-                      aria-label={t(label)}
-                      aria-current={active ? 'page' : undefined}
+                      onClick={() => onOpenLibraryAll()}
+                      aria-label={t('프로그램 라이브러리')}
+                      aria-current={programLibraryActive ? 'page' : undefined}
                       className={`nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-left ${
-                        active ? 'nav-active' : ''
+                        programLibraryActive ? 'nav-active' : ''
                       }`}
                     >
                       <Grid className="w-4 h-4 shrink-0 text-emerald-400/90" />
-                      <span className="font-medium leading-snug">{t(label)}</span>
+                      <span className="text-[13px] font-medium leading-snug">{t('프로그램 라이브러리')}</span>
                     </button>
-                  );
-                })}
-              </div>
-              {/* md~lg 축소: 라이브러리 단일 아이콘 */}
-              <button
-                type="button"
-                onClick={() => onOpenLibraryAll()}
-                className={`lg:hidden nav-item w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm ${
-                  isLibraryView ? 'nav-active' : ''
-                }`}
-                aria-label={t('프로그램 라이브러리')}
-              >
-                <Grid className="w-5 h-5 shrink-0 text-emerald-400" />
-              </button>
+                    {onOpenSpomove ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenSpomove()}
+                        aria-label={t('SPOMOVE')}
+                        aria-current={spomoveActive ? 'page' : undefined}
+                        className={`nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-left ${
+                          spomoveActive ? 'nav-active' : ''
+                        }`}
+                      >
+                        <Gamepad2 className="w-4 h-4 shrink-0 text-cyan-400/90" />
+                        <span className="text-[13px] font-medium leading-snug">{t('SPOMOVE')}</span>
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="lg:hidden flex flex-col gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => onOpenLibraryAll()}
+                      className={`nav-item w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm ${
+                        programLibraryActive ? 'nav-active' : ''
+                      }`}
+                      aria-label={t('프로그램 라이브러리')}
+                    >
+                      <Grid className="w-5 h-5 shrink-0 text-emerald-400" />
+                    </button>
+                    {onOpenSpomove ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenSpomove()}
+                        className={`nav-item w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm ${
+                          spomoveActive ? 'nav-active' : ''
+                        }`}
+                        aria-label={t('SPOMOVE')}
+                      >
+                        <Gamepad2 className="w-5 h-5 shrink-0 text-cyan-400" />
+                      </button>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="hidden lg:flex flex-col gap-0.5 pl-0">
+                    {LIBRARY_SIDEBAR_ITEMS.map(({ themeKey, label }) => {
+                      const active = isLibraryView && libraryActiveThemeKey === themeKey;
+                      return (
+                        <button
+                          key={themeKey}
+                          type="button"
+                          onClick={() => onGoToLibraryTheme(themeKey)}
+                          aria-label={t(label)}
+                          aria-current={active ? 'page' : undefined}
+                          className={`nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-left ${
+                            active ? 'nav-active' : ''
+                          }`}
+                        >
+                          <Grid className="w-4 h-4 shrink-0 text-emerald-400/90" />
+                          <span className="text-[13px] font-medium leading-snug">{t(label)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onOpenLibraryAll()}
+                    className={`lg:hidden nav-item w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm ${
+                      isLibraryView ? 'nav-active' : ''
+                    }`}
+                    aria-label={t('프로그램 라이브러리')}
+                  >
+                    <Grid className="w-5 h-5 shrink-0 text-emerald-400" />
+                  </button>
+                </>
+              )}
             </div>
 
-            {/* 나머지 메인 네비 (수업 계획·원생·리포트 등) */}
-            {MAIN_NAV.filter((x) => x.id !== 'roadmap').map(({ id, label, icon: Icon, group, iconClass }) => {
+            {/* 나머지 메인 네비 */}
+            {MAIN_NAV.filter((x) => {
+              if (x.id === 'roadmap') return false;
+              if (subscriberMode) {
+                return x.id === 'ai' || x.id === 'settings';
+              }
+              return true;
+            }).map(({ id, label, icon: Icon, group, iconClass }) => {
               const showGroup = group && group !== lastGroup;
               if (showGroup) lastGroup = group || '';
+              const displayLabel =
+                subscriberMode && id === 'ai'
+                  ? t('성장 리포트')
+                  : subscriberMode && id === 'settings'
+                    ? t('플랜/결제')
+                    : t(label);
               return (
                 <div key={id}>
                   {showGroup && (
@@ -151,14 +232,14 @@ export default function SpokeduProAside({
                   <button
                     type="button"
                     onClick={() => onSwitchView(id)}
-                    aria-label={t(label)}
+                    aria-label={displayLabel}
                     aria-current={viewId === id ? 'page' : undefined}
                     className={`nav-item w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm ${
                       viewId === id ? 'nav-active' : ''
                     }`}
                   >
                     <Icon className={`w-5 h-5 shrink-0 ${iconClass ?? 'text-slate-400'}`} />
-                    <span className="hidden lg:block font-medium">{t(label)}</span>
+                    <span className="hidden lg:block text-[13px] font-medium leading-snug">{displayLabel}</span>
                   </button>
                 </div>
               );
@@ -166,7 +247,7 @@ export default function SpokeduProAside({
 
             {isEditMode && onOpenCurationDrawer && (
               <div className="pt-2 mt-2 border-t border-slate-800">
-                <div className="hidden lg:block px-4 pb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                <div className="hidden lg:block px-4 pb-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                   {t('편집')}
                 </div>
                 <button
@@ -200,21 +281,88 @@ export default function SpokeduProAside({
         role="navigation"
         aria-label={t('하단 탐색')}
       >
-        {MOBILE_TABS.map(({ id, label, icon: Icon, iconClass }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => (id === 'library' ? onOpenLibraryAll() : onSwitchView(id))}
-            aria-label={t(label)}
-            aria-current={viewId === id ? 'page' : undefined}
-            className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${
-              viewId === id ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            <Icon className={`w-5 h-5 ${viewId === id ? 'text-blue-400' : iconClass ?? 'text-slate-500'}`} />
-            <span className="text-[10px] font-bold leading-none line-clamp-2 text-center">{t(label)}</span>
-          </button>
-        ))}
+        {subscriberMode ? (
+          <>
+            <button
+              type="button"
+              onClick={() => onSwitchView('roadmap')}
+              aria-label={t('대시보드')}
+              aria-current={viewId === 'roadmap' ? 'page' : undefined}
+              className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${
+                viewId === 'roadmap' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <LayoutDashboard className={`w-5 h-5 ${viewId === 'roadmap' ? 'text-blue-400' : ''}`} />
+              <span className="text-[11px] font-semibold leading-tight line-clamp-2 text-center">{t('대시보드')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenLibraryAll()}
+              aria-label={t('프로그램 라이브러리')}
+              aria-current={programLibraryActive ? 'page' : undefined}
+              className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${
+                programLibraryActive ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <Grid className={`w-5 h-5 ${programLibraryActive ? 'text-blue-400' : 'text-emerald-400'}`} />
+              <span className="text-[11px] font-semibold leading-tight line-clamp-2 text-center">{t('라이브러리')}</span>
+            </button>
+            {onOpenSpomove ? (
+              <button
+                type="button"
+                onClick={() => onOpenSpomove()}
+                aria-label={t('SPOMOVE')}
+                aria-current={spomoveActive ? 'page' : undefined}
+                className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${
+                  spomoveActive ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <Gamepad2 className={`w-5 h-5 ${spomoveActive ? 'text-blue-400' : 'text-cyan-400'}`} />
+                <span className="text-[11px] font-semibold leading-tight line-clamp-2 text-center">{t('SPOMOVE')}</span>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => onSwitchView('ai')}
+              aria-label={t('성장 리포트')}
+              aria-current={viewId === 'ai' ? 'page' : undefined}
+              className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${
+                viewId === 'ai' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <Bot className={`w-5 h-5 ${viewId === 'ai' ? 'text-blue-400' : 'text-purple-400'}`} />
+              <span className="text-[10px] font-bold leading-none line-clamp-2 text-center">{t('리포트')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onSwitchView('settings')}
+              aria-label={t('플랜/결제')}
+              aria-current={viewId === 'settings' ? 'page' : undefined}
+              className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${
+                viewId === 'settings' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <CreditCard className="w-5 h-5" />
+              <span className="text-[11px] font-semibold leading-tight line-clamp-2 text-center">{t('플랜')}</span>
+            </button>
+          </>
+        ) : (
+          MOBILE_TABS.map(({ id, label, icon: Icon, iconClass }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => (id === 'library' ? onOpenLibraryAll() : onSwitchView(id))}
+              aria-label={t(label)}
+              aria-current={viewId === id ? 'page' : undefined}
+              className={`flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] transition-colors ${
+                viewId === id ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <Icon className={`w-5 h-5 ${viewId === id ? 'text-blue-400' : iconClass ?? 'text-slate-500'}`} />
+              <span className="text-[11px] font-semibold leading-tight line-clamp-2 text-center">{t(label)}</span>
+            </button>
+          ))
+        )}
         {isEditMode && onOpenCurationDrawer && (
           <button
             type="button"
@@ -223,7 +371,7 @@ export default function SpokeduProAside({
             className="flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl flex-1 min-h-[52px] max-w-[4.5rem] text-amber-500 hover:text-amber-400 transition-colors"
           >
             <Settings2 className="w-5 h-5" />
-            <span className="text-[10px] font-bold leading-none">{t('편집')}</span>
+            <span className="text-[11px] font-semibold leading-tight">{t('편집')}</span>
           </button>
         )}
       </nav>

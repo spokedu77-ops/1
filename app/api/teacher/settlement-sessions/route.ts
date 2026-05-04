@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 
 type ExtraTeacher = { id: string; price?: number };
 
@@ -23,12 +24,9 @@ type SessionRow = {
 function getExtraTeachersFromSession(s: { students_text?: string | null; memo?: string | null }): ExtraTeacher[] {
   for (const raw of [s.memo, s.students_text]) {
     if (!raw?.includes('EXTRA_TEACHERS:')) continue;
-    try {
-      const arr = JSON.parse(raw.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
-      if (Array.isArray(arr) && arr.length > 0) return arr;
-    } catch {
-      // ignore
-    }
+    const { extraTeachers } = parseExtraTeachers(raw);
+    const withId = extraTeachers.filter((e) => String(e.id || '').trim());
+    if (withId.length > 0) return withId as ExtraTeacher[];
   }
   return [];
 }
@@ -44,11 +42,26 @@ export async function GET() {
     const svc = getServiceSupabase();
     const selectCols = 'id, title, price, start_at, status, students_text, memo';
     const statusFilter = ['finished', 'verified'] as const;
+    const uid = String(user.id).trim();
 
     const [mainRes, extraMemoRes, extraStudentsRes] = await Promise.all([
       svc.from('sessions').select(selectCols).eq('created_by', user.id).in('status', statusFilter).order('start_at', { ascending: false }).limit(500),
-      svc.from('sessions').select(selectCols).in('status', statusFilter).ilike('memo', '%EXTRA_TEACHERS%').order('start_at', { ascending: false }).limit(500),
-      svc.from('sessions').select(selectCols).in('status', statusFilter).ilike('students_text', '%EXTRA_TEACHERS%').order('start_at', { ascending: false }).limit(500),
+      svc
+        .from('sessions')
+        .select(selectCols)
+        .in('status', statusFilter)
+        .ilike('memo', '%EXTRA_TEACHERS:%')
+        .ilike('memo', `%${uid}%`)
+        .order('start_at', { ascending: false })
+        .limit(500),
+      svc
+        .from('sessions')
+        .select(selectCols)
+        .in('status', statusFilter)
+        .ilike('students_text', '%EXTRA_TEACHERS:%')
+        .ilike('students_text', `%${uid}%`)
+        .order('start_at', { ascending: false })
+        .limit(500),
     ]);
 
     const mainList = (mainRes.data || []).map((s) => ({

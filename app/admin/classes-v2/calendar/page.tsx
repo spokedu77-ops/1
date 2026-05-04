@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useClassManagement } from "@/app/admin/classes-shared/hooks/useClassManagement";
@@ -162,9 +162,23 @@ export default function ClassManagementCalendarV2() {
     setFilterTeacher,
   } = useClassManagement();
 
-  const [monthAnchor, setMonthAnchor] = useState<Date>(() => new Date());
+  /** 월 그리드용: 해당 월의 1일(로컬). 표시 월만 쓰임 */
+  const [monthAnchor, setMonthAnchor] = useState<Date>(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
   /** 모바일 3일 뷰: 가운데 날짜(로컬 자정). ◀/▶ 로 이동, 「오늘」로 리셋 */
   const [threeDayCenter, setThreeDayCenter] = useState<Date>(() => startOfLocalDay(new Date()));
+  /** SSR(UTC)과 브라우저 로컬 날짜 차이 방지: 마운트 후 로컬 기준 오늘·이번 달로 고정 */
+  const [localToday, setLocalToday] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const now = new Date();
+    const sod = startOfLocalDay(now);
+    setLocalToday(sod);
+    setThreeDayCenter(sod);
+    setMonthAnchor(new Date(now.getFullYear(), now.getMonth(), 1));
+  }, []);
 
   const [bundleOpen, setBundleOpen] = useState(false);
   const [bundleTitle, setBundleTitle] = useState("");
@@ -267,7 +281,10 @@ export default function ClassManagementCalendarV2() {
               </button>
               <button
                 type="button"
-                onClick={() => setMonthAnchor(new Date())}
+                onClick={() => {
+                  const n = new Date();
+                  setMonthAnchor(new Date(n.getFullYear(), n.getMonth(), 1));
+                }}
                 className="px-2 sm:px-3 py-1 text-xs font-black rounded-md hover:bg-white transition-all"
               >
                 이번 달
@@ -288,6 +305,19 @@ export default function ClassManagementCalendarV2() {
             </div>
 
             <div className="text-xs font-black text-slate-600 hidden md:block">{monthInfo.monthLabel}</div>
+
+            {localToday ? (
+              <div className="hidden md:flex items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-1 border border-blue-200 shrink-0">
+                <span className="text-[10px] font-black uppercase tracking-wide text-blue-800">오늘</span>
+                <span className="text-xs font-black text-blue-950 tabular-nums">
+                  {localToday.toLocaleDateString("ko-KR", {
+                    month: "numeric",
+                    day: "numeric",
+                    weekday: "long",
+                  })}
+                </span>
+              </div>
+            ) : null}
 
             <div className="flex md:hidden items-center gap-1 bg-slate-100 rounded-lg p-0.5 shrink-0">
               <button

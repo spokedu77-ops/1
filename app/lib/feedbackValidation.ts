@@ -118,10 +118,10 @@ export interface SessionWithFeedback {
 }
 
 /**
- * 필드가 유효한지 체크 (최소 5자 이상)
+ * 필드가 유효한지 체크 (공백 제외 최소 5자 — `/api/teacher/session-feedback`·선생님 UI와 동일)
  */
 export function isFieldValid(value?: string): boolean {
-  return !!value && value.trim().length > 5;
+  return !!value && value.trim().length >= 5;
 }
 
 /**

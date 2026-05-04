@@ -67,12 +67,12 @@ export async function POST(req: NextRequest) {
     .limit(1);
   const centerName = centers?.[0]?.name ?? '(센터 미생성)';
 
-  const planLabel = plan === 'basic' ? 'Basic' : 'Pro';
+  const planLabel = plan === 'basic' ? 'Library' : 'All-in-One';
   const subject = `[SPOKEDU PRO] ${planLabel} 도입 문의`;
   const text = [
     '스포키듀 PRO 플랜 업그레이드 문의(앱 내 버튼)',
     '',
-    `요청 플랜: ${planLabel}`,
+    `요청 플랜(표시명): ${planLabel} (내부 id: ${plan})`,
     `사용자 ID: ${user.id}`,
     `이메일: ${user.email ?? '(없음)'}`,
     `센터(추정): ${centerName}`,

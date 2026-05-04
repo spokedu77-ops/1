@@ -7,6 +7,40 @@ import type { ProgramDetail } from '../types';
 import { FUNCTION_TYPES, MAIN_THEMES, extractEquipmentDisplayTags } from '@/app/lib/spokedu-pro/programClassification';
 import { getYouTubeId } from '@/app/(pro)/spokedu-pro/utils/youtube';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
+import type { ProgramLessonDetail } from '@/app/lib/spokedu-pro/programLessonDetail';
+
+function stringifyJsonArray(arr: unknown[]): string {
+  try {
+    return JSON.stringify(arr, null, 2);
+  } catch {
+    return '[]';
+  }
+}
+
+function parseJsonArrayField(raw: string, fallback: unknown[]): unknown[] {
+  const t = raw.trim();
+  if (!t) return fallback;
+  try {
+    const v = JSON.parse(t) as unknown;
+    return Array.isArray(v) ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function formatArrayForDisplay(items: unknown[]): string {
+  if (!items.length) return '';
+  return items
+    .map((item, i) => {
+      if (typeof item === 'string') return `${i + 1}. ${item}`;
+      try {
+        return `${i + 1}. ${JSON.stringify(item)}`;
+      } catch {
+        return `${i + 1}.`;
+      }
+    })
+    .join('\n');
+}
 
 export default function SpokeduProDrawer({
   open,
@@ -20,6 +54,8 @@ export default function SpokeduProDrawer({
   onLaunchMemoryGame,
   /** 스크린플레이: 라이브러리 카드와 동일한 인지 태그(영역·과제·레벨). 없으면 기존 태그 로직 사용 */
   screenplayTags,
+  lessonDetail,
+  onSaveLessonDetail,
 }: {
   open: boolean;
   programId: number | null;
@@ -38,10 +74,34 @@ export default function SpokeduProDrawer({
   detailKind?: 'program' | 'screenplay';
   onLaunchMemoryGame?: () => void;
   screenplayTags?: string[];
+  /** curriculum.id 기준 program_lesson_detail (펑셔널 프로그램만) */
+  lessonDetail?: ProgramLessonDetail | null;
+  onSaveLessonDetail?: (detail: ProgramLessonDetail) => Promise<void>;
 }) {
   const tr = useTranslator();
   const checklistSectionRef = useRef<HTMLElement | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [lessonEditOpen, setLessonEditOpen] = useState(false);
+  const [lessonSaving, setLessonSaving] = useState(false);
+  const [lessonForm, setLessonForm] = useState({
+    isFeaturedLesson: false,
+    summary: '',
+    recommendedAge: '',
+    recommendedPlayers: '',
+    duration: '',
+    space: '',
+    objective: '',
+    developmentFocus: '',
+    coachScript: '',
+    parentNote: '',
+    stepsJson: '[]',
+    fieldTipsJson: '[]',
+    variationsJson: '[]',
+    safetyNotesJson: '[]',
+    relatedProgramIdsJson: '[]',
+    relatedSpomoveIdsJson: '[]',
+    packageKeysJson: '[]',
+  });
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({
     title: '',
@@ -86,6 +146,66 @@ export default function SpokeduProDrawer({
     d?.activityMethod,
     d?.activityTip,
   ]);
+
+  const ld = lessonDetail && detailKind === 'program' ? lessonDetail : null;
+
+  const openLessonEditModal = () => {
+    if (programId == null) return;
+    const base = ld;
+    setLessonForm({
+      isFeaturedLesson: base?.isFeaturedLesson ?? false,
+      summary: base?.summary ?? '',
+      recommendedAge: base?.recommendedAge ?? '',
+      recommendedPlayers: base?.recommendedPlayers ?? '',
+      duration: base?.duration ?? '',
+      space: base?.space ?? '',
+      objective: base?.objective ?? '',
+      developmentFocus: base?.developmentFocus ?? '',
+      coachScript: base?.coachScript ?? '',
+      parentNote: base?.parentNote ?? '',
+      stepsJson: stringifyJsonArray(base?.steps ?? []),
+      fieldTipsJson: stringifyJsonArray(base?.fieldTips ?? []),
+      variationsJson: stringifyJsonArray(base?.variations ?? []),
+      safetyNotesJson: stringifyJsonArray(base?.safetyNotes ?? []),
+      relatedProgramIdsJson: stringifyJsonArray(base?.relatedProgramIds ?? []),
+      relatedSpomoveIdsJson: stringifyJsonArray(base?.relatedSpomoveIds ?? []),
+      packageKeysJson: stringifyJsonArray(base?.packageKeys ?? []),
+    });
+    setLessonEditOpen(true);
+  };
+
+  const handleLessonSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (programId == null || !onSaveLessonDetail) return;
+    setLessonSaving(true);
+    try {
+      const next: ProgramLessonDetail = {
+        curriculumId: programId,
+        status: lessonDetail?.status === 'reviewed' ? 'reviewed' : 'draft',
+        isFeaturedLesson: lessonForm.isFeaturedLesson,
+        summary: lessonForm.summary.trim() || null,
+        recommendedAge: lessonForm.recommendedAge.trim() || null,
+        recommendedPlayers: lessonForm.recommendedPlayers.trim() || null,
+        duration: lessonForm.duration.trim() || null,
+        space: lessonForm.space.trim() || null,
+        objective: lessonForm.objective.trim() || null,
+        developmentFocus: lessonForm.developmentFocus.trim() || null,
+        coachScript: lessonForm.coachScript.trim() || null,
+        parentNote: lessonForm.parentNote.trim() || null,
+        steps: parseJsonArrayField(lessonForm.stepsJson, []),
+        fieldTips: parseJsonArrayField(lessonForm.fieldTipsJson, []),
+        variations: parseJsonArrayField(lessonForm.variationsJson, []),
+        safetyNotes: parseJsonArrayField(lessonForm.safetyNotesJson, []),
+        relatedProgramIds: parseJsonArrayField(lessonForm.relatedProgramIdsJson, []),
+        relatedSpomoveIds: parseJsonArrayField(lessonForm.relatedSpomoveIdsJson, []),
+        packageKeys: parseJsonArrayField(lessonForm.packageKeysJson, []),
+      };
+      await onSaveLessonDetail(next);
+      setLessonEditOpen(false);
+    } finally {
+      setLessonSaving(false);
+    }
+  };
 
   if (!open) return null;
 
@@ -182,9 +302,9 @@ export default function SpokeduProDrawer({
           <div className="relative w-full aspect-video bg-slate-950">
             {videoId ? (
               <iframe
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                src={`https://www.youtube.com/embed/${videoId}`}
                 className="w-full h-full"
-                allow="autoplay; encrypted-media"
+                allow="encrypted-media; fullscreen"
                 allowFullScreen
                 title={tr('프로그램 영상')}
               />
@@ -225,15 +345,33 @@ export default function SpokeduProDrawer({
           </div>
 
           {/* 스크롤 콘텐츠 */}
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+          <div className="flex-1 overflow-y-auto p-5 md:p-7 space-y-5">
             <div>
               <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">{title}</h2>
               {subtitle ? (
-                <p className="text-slate-400 text-sm font-medium mt-2 mb-3 whitespace-pre-wrap">{subtitle}</p>
+                isEditMode ? (
+                  <p className="text-slate-400 text-sm font-medium mt-2 mb-2 whitespace-pre-wrap">{subtitle}</p>
+                ) : subtitle.trim().length > 160 ? (
+                  <details className="mt-2 rounded-lg border border-slate-700/50 bg-slate-950/30">
+                    <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800/40 [&::-webkit-details-marker]:hidden">
+                      {tr('부가 설명 보기')}
+                    </summary>
+                    <div className="border-t border-slate-800/80 px-3 py-3">
+                      <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{subtitle}</p>
+                    </div>
+                  </details>
+                ) : (
+                  <p className="text-slate-400 text-sm font-normal mt-2 mb-1 leading-relaxed whitespace-pre-wrap">
+                    {subtitle}
+                  </p>
+                )
+              ) : null}
+              {tagChips.length > 0 && detailKind === 'program' && isEditMode ? (
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{tr('핵심 정보')}</p>
               ) : null}
               {tagChips.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {tagChips.map((tagVal, i) => (
+                <div className={`flex flex-wrap gap-1.5 ${detailKind === 'program' ? 'mt-1' : 'mt-2'}`}>
+                  {(isEditMode ? tagChips : tagChips.slice(0, 2)).map((tagVal, i) => (
                     <span
                       key={`${tagVal}-${i}`}
                       className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
@@ -247,29 +385,46 @@ export default function SpokeduProDrawer({
                   ))}
                 </div>
               )}
-              {detailKind === 'screenplay' && (
-                <div className="mt-4 rounded-2xl border border-orange-500/25 bg-gradient-to-br from-orange-950/40 via-slate-900/30 to-slate-950/40 p-4 md:p-5 space-y-3">
-                  <div className="flex items-center gap-2 text-orange-200">
-                    <Gamepad2 className="w-5 h-5 shrink-0" aria-hidden />
-                    <span className="text-xs font-black uppercase tracking-wider">
-                      {tr('스포무브(브레인체육) 이렇게 쓰면 돼요')}
-                    </span>
+              {detailKind === 'screenplay' &&
+                (isEditMode ? (
+                  <div className="mt-4 rounded-2xl border border-orange-500/25 bg-gradient-to-br from-orange-950/40 via-slate-900/30 to-slate-950/40 p-4 md:p-5 space-y-3">
+                    <div className="flex items-center gap-2 text-orange-200">
+                      <Gamepad2 className="w-5 h-5 shrink-0" aria-hidden />
+                      <span className="text-xs font-black uppercase tracking-wider">
+                        {tr('SPOMOVE 반응훈련, 이렇게 쓰면 돼요')}
+                      </span>
+                    </div>
+                    <ol className="list-decimal space-y-2 pl-4 text-xs leading-relaxed text-slate-300 [&>li]:pl-1">
+                      <li>
+                        {tr(
+                          '아래 「SPOMOVE 실행」으로 전체 화면을 띄우면, 과제·신호·난이도는 화면 안내를 따르면 됩니다.'
+                        )}
+                      </li>
+                      <li>
+                        {tr('위 제목·부제는 수업 도입 멘트·학부모 안내용으로 활용해 보세요.')}
+                      </li>
+                      <li>
+                        {tr('끝나면 우측 상단 X로 돌아오면 됩니다. (전체 화면은 ESC로도 닫을 수 있어요)')}
+                      </li>
+                    </ol>
                   </div>
-                  <ol className="list-decimal space-y-2 pl-4 text-xs leading-relaxed text-slate-300 [&>li]:pl-1">
-                    <li>
-                      {tr(
-                        '아래 「SPOMOVE 실행」으로 전체 화면을 띄우면, 과제·신호·난이도는 화면 안내를 따르면 됩니다.'
-                      )}
-                    </li>
-                    <li>
-                      {tr('위 제목·부제는 수업 도입 멘트·학부모 안내용으로 활용해 보세요.')}
-                    </li>
-                    <li>
-                      {tr('끝나면 우측 상단 X로 돌아오면 됩니다. (전체 화면은 ESC로도 닫을 수 있어요)')}
-                    </li>
-                  </ol>
-                </div>
-              )}
+                ) : (
+                  <details className="mt-3 rounded-xl border border-orange-500/25 bg-orange-950/20">
+                    <summary className="cursor-pointer list-none px-3 py-2.5 text-left text-sm font-medium text-orange-100 hover:bg-orange-950/35 [&::-webkit-details-marker]:hidden flex items-center gap-2">
+                      <Gamepad2 className="w-4 h-4 shrink-0" aria-hidden />
+                      {tr('SPOMOVE 활용 안내')}
+                    </summary>
+                    <ol className="list-decimal space-y-2.5 border-t border-orange-500/20 px-4 py-3 pl-7 text-sm leading-relaxed text-slate-200 [&>li]:pl-1">
+                      <li>
+                        {tr(
+                          '아래 「SPOMOVE 실행」으로 전체 화면을 띄우면, 과제·신호·난이도는 화면 안내를 따르면 됩니다.'
+                        )}
+                      </li>
+                      <li>{tr('위 제목·부제는 수업 도입 멘트·학부모 안내용으로 활용해 보세요.')}</li>
+                      <li>{tr('끝나면 우측 상단 X로 돌아오면 됩니다. (전체 화면은 ESC로도 닫을 수 있어요)')}</li>
+                    </ol>
+                  </details>
+                ))}
               {/* 수업에서 바로 쓰는 액션 */}
               <div className="flex flex-wrap gap-2 mt-4">
                 {detailKind === 'screenplay' && onLaunchMemoryGame && (
@@ -285,47 +440,209 @@ export default function SpokeduProDrawer({
               </div>
             </div>
 
-            {checklist && (
-              <section ref={checklistSectionRef} className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
-                <div className="flex items-center gap-2 mb-3 text-amber-400">
-                  <ClipboardList size={18} />
-                  <span className="text-xs font-black uppercase tracking-wider">{tr('사전 체크리스트')}</span>
-                </div>
-                <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{checklist}</p>
-              </section>
+            {isEditMode ? (
+              <>
+                {activityMethod && (
+                  <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
+                    <div className="flex items-center gap-2 mb-3 text-violet-400">
+                      <BookOpen size={18} />
+                      <span className="text-xs font-black uppercase tracking-wider">{tr('진행 방법')}</span>
+                    </div>
+                    <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{activityMethod}</p>
+                  </section>
+                )}
+                {activityTip && (
+                  <section className="rounded-2xl bg-gradient-to-br from-amber-950/40 to-orange-950/30 border border-amber-500/20 p-5">
+                    <div className="flex items-center gap-2 mb-3 text-amber-300">
+                      <Lightbulb size={18} />
+                      <span className="text-xs font-black uppercase tracking-wider">{tr('현장 팁')}</span>
+                    </div>
+                    <p className="text-amber-100/90 text-sm leading-relaxed whitespace-pre-wrap">{activityTip}</p>
+                  </section>
+                )}
+                {checklist && (
+                  <section ref={checklistSectionRef} className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
+                    <div className="flex items-center gap-2 mb-3 text-amber-400">
+                      <ClipboardList size={18} />
+                      <span className="text-xs font-black uppercase tracking-wider">{tr('사전 체크리스트')}</span>
+                    </div>
+                    <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{checklist}</p>
+                  </section>
+                )}
+                {equipment && (
+                  <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
+                    <div className="flex items-center gap-2 mb-3 text-blue-400">
+                      <Package size={18} />
+                      <span className="text-xs font-black uppercase tracking-wider">{tr('준비물')}</span>
+                    </div>
+                    <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{equipment}</p>
+                  </section>
+                )}
+              </>
+            ) : (
+              <>
+                {equipment && (
+                  <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-4 md:p-5">
+                    <div className="flex items-center gap-2 mb-2.5 text-blue-400">
+                      <Package size={18} />
+                      <span className="text-xs font-bold tracking-wide text-blue-300/95">{tr('준비물')}</span>
+                    </div>
+                    <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{equipment}</p>
+                  </section>
+                )}
+                {activityMethod && (
+                  <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-4 md:p-5">
+                    <div className="flex items-center gap-2 mb-2.5 text-violet-400">
+                      <BookOpen size={18} />
+                      <span className="text-xs font-bold tracking-wide text-violet-300/95">{tr('진행 방법')}</span>
+                    </div>
+                    <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{activityMethod}</p>
+                  </section>
+                )}
+                {activityTip && (
+                  <section className="rounded-2xl bg-gradient-to-br from-amber-950/40 to-orange-950/30 border border-amber-500/20 p-4 md:p-5">
+                    <div className="flex items-center gap-2 mb-2.5 text-amber-300">
+                      <Lightbulb size={18} />
+                      <span className="text-xs font-bold tracking-wide text-amber-200/95">{tr('현장 팁')}</span>
+                    </div>
+                    <p className="text-amber-100/95 text-sm leading-relaxed whitespace-pre-wrap">{activityTip}</p>
+                  </section>
+                )}
+                {checklist ? (
+                  <details className="rounded-2xl border border-slate-700/70 bg-slate-900/40 overflow-hidden">
+                    <summary className="cursor-pointer list-none px-4 py-3 text-left text-xs font-black tracking-wide text-slate-200 hover:bg-slate-800/50 [&::-webkit-details-marker]:hidden flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-2 text-amber-400/95">
+                        <ClipboardList size={16} />
+                        {tr('추가 활용 팁')}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500 normal-case">{tr('펼치기')}</span>
+                    </summary>
+                    <div className="border-t border-slate-700/60 px-4 py-3">
+                      <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{checklist}</p>
+                    </div>
+                  </details>
+                ) : null}
+              </>
             )}
 
-            {equipment && (
-              <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
-                <div className="flex items-center gap-2 mb-3 text-blue-400">
-                  <Package size={18} />
-                  <span className="text-xs font-black uppercase tracking-wider">{tr('필요 교구리스트')}</span>
+            {ld && (
+              <details
+                className="rounded-2xl border border-slate-700/70 bg-slate-900/40 p-0 overflow-hidden"
+                open={Boolean(isEditMode)}
+              >
+                <summary className="cursor-pointer list-none px-4 py-3 md:px-5 md:py-3.5 text-left text-xs font-black tracking-wide text-slate-200 hover:bg-slate-800/50 [&::-webkit-details-marker]:hidden flex items-center justify-between gap-2">
+                  <span>{isEditMode ? tr('수업이 더 잘 굴러가는 팁') : tr('추가 활용 팁')}</span>
+                  <span className="text-[10px] font-bold text-slate-500 normal-case">{tr('펼치기')}</span>
+                </summary>
+                <div className="border-t border-slate-700/60 px-4 py-4 md:px-5 md:pb-5 space-y-5 bg-gradient-to-b from-slate-900/50 to-slate-950/60">
+                <div className="flex flex-wrap items-center gap-2">
+                  {isEditMode && ld.isFeaturedLesson ? (
+                    <span className="rounded-full bg-cyan-500/20 text-cyan-100 text-[10px] font-black px-2 py-0.5 border border-cyan-500/25">
+                      {tr('대표')}
+                    </span>
+                  ) : null}
                 </div>
-                <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{equipment}</p>
-              </section>
+                {ld.summary ? (
+                  isEditMode ? (
+                    <section className="space-y-2">
+                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('요약')}</h3>
+                      <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{ld.summary}</p>
+                    </section>
+                  ) : (
+                    <details className="rounded-xl border border-slate-700/50 bg-slate-950/40">
+                      <summary className="cursor-pointer list-none px-3 py-2 text-[11px] font-bold text-slate-400 hover:text-slate-200 [&::-webkit-details-marker]:hidden">
+                        {tr('한눈 요약')}
+                      </summary>
+                      <div className="border-t border-slate-800/80 px-3 py-2.5">
+                        <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{ld.summary}</p>
+                      </div>
+                    </details>
+                  )
+                ) : null}
+                {(ld.recommendedAge || ld.recommendedPlayers || ld.duration || ld.space) ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('기본 정보')}</h3>
+                    <ul className="text-sm text-slate-200 space-y-1 list-disc list-inside">
+                      {ld.recommendedAge ? <li>{tr('추천 연령')}: {ld.recommendedAge}</li> : null}
+                      {ld.recommendedPlayers ? <li>{tr('권장 인원')}: {ld.recommendedPlayers}</li> : null}
+                      {ld.duration ? <li>{tr('수업 시간')}: {ld.duration}</li> : null}
+                      {ld.space ? <li>{tr('공간')}: {ld.space}</li> : null}
+                    </ul>
+                  </section>
+                ) : null}
+                {ld.objective ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('수업 목표')}</h3>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{ld.objective}</p>
+                  </section>
+                ) : null}
+                {ld.developmentFocus ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('발달 요소')}</h3>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{ld.developmentFocus}</p>
+                  </section>
+                ) : null}
+                {ld.steps.length > 0 ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('진행 방법')}</h3>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{formatArrayForDisplay(ld.steps)}</p>
+                  </section>
+                ) : null}
+                {ld.coachScript ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('강사 멘트')}</h3>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{ld.coachScript}</p>
+                  </section>
+                ) : null}
+                {ld.fieldTips.length > 0 ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('현장 팁')}</h3>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{formatArrayForDisplay(ld.fieldTips)}</p>
+                  </section>
+                ) : null}
+                {ld.variations.length > 0 ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('변형 방법')}</h3>
+                    <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap">{formatArrayForDisplay(ld.variations)}</p>
+                  </section>
+                ) : null}
+                {ld.safetyNotes.length > 0 ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-rose-300/90">{tr('안전 주의')}</h3>
+                    <p className="text-rose-50/90 text-sm leading-relaxed whitespace-pre-wrap">{formatArrayForDisplay(ld.safetyNotes)}</p>
+                  </section>
+                ) : null}
+                {(ld.relatedProgramIds.length > 0 || ld.relatedSpomoveIds.length > 0) ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('연계 활동')}</h3>
+                    <p className="text-slate-200 text-sm font-mono break-all">
+                      {ld.relatedProgramIds.length > 0 ? `${tr('프로그램 ID')}: ${stringifyJsonArray(ld.relatedProgramIds)}` : null}
+                      {ld.relatedProgramIds.length > 0 && ld.relatedSpomoveIds.length > 0 ? ' · ' : null}
+                      {ld.relatedSpomoveIds.length > 0 ? `${tr('SPOMOVE ID')}: ${stringifyJsonArray(ld.relatedSpomoveIds)}` : null}
+                    </p>
+                  </section>
+                ) : null}
+                {ld.parentNote ? (
+                  <details className="rounded-xl border border-slate-700/50 bg-slate-950/40">
+                    <summary className="cursor-pointer list-none px-3 py-2.5 text-[11px] font-bold text-slate-400 hover:text-slate-200 [&::-webkit-details-marker]:hidden">
+                      {tr('학부모 설명 문구')}
+                    </summary>
+                    <div className="border-t border-slate-800/80 px-3 py-3">
+                      <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{ld.parentNote}</p>
+                    </div>
+                  </details>
+                ) : null}
+                {isEditMode && ld.packageKeys.length > 0 ? (
+                  <section className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">{tr('패키지 키')}</h3>
+                    <p className="text-slate-200 text-xs font-mono whitespace-pre-wrap">{stringifyJsonArray(ld.packageKeys)}</p>
+                  </section>
+                ) : null}
+                </div>
+              </details>
             )}
 
-            {activityMethod && (
-              <section className="rounded-2xl bg-slate-800/60 border border-slate-700/80 p-5">
-                <div className="flex items-center gap-2 mb-3 text-violet-400">
-                  <BookOpen size={18} />
-                  <span className="text-xs font-black uppercase tracking-wider">{tr('활동방법')}</span>
-                </div>
-                <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">{activityMethod}</p>
-              </section>
-            )}
-
-            {activityTip && (
-              <section className="rounded-2xl bg-gradient-to-br from-amber-950/40 to-orange-950/30 border border-amber-500/20 p-5">
-                <div className="flex items-center gap-2 mb-3 text-amber-300">
-                  <Lightbulb size={18} />
-                  <span className="text-xs font-black uppercase tracking-wider">{tr('활동 팁')}</span>
-                </div>
-                <p className="text-amber-100/90 text-sm leading-relaxed whitespace-pre-wrap">{activityTip}</p>
-              </section>
-            )}
-
-            {!checklist && !equipment && !activityMethod && !activityTip && !subtitle && (
+            {!checklist && !equipment && !activityMethod && !activityTip && !subtitle && !ld && (
               <p className="text-slate-500 text-sm py-4">
                 {detailKind === 'screenplay'
                   ? tr(
@@ -333,6 +650,18 @@ export default function SpokeduProDrawer({
                     )
                   : tr('등록된 상세가 없습니다.')}
               </p>
+            )}
+
+            {isEditMode && detailKind === 'program' && onSaveLessonDetail && (
+              <div className="flex justify-end pt-2 border-t border-slate-700/60 mt-2">
+                <button
+                  type="button"
+                  onClick={openLessonEditModal}
+                  className="px-6 py-3 rounded-xl bg-cyan-900/60 hover:bg-cyan-700 text-cyan-50 font-bold text-sm transition-colors border border-cyan-500/30"
+                >
+                  {tr('수업 운영 팁 편집')}
+                </button>
+              </div>
             )}
 
             {isEditMode && (
@@ -495,6 +824,95 @@ export default function SpokeduProDrawer({
               className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm transition-colors disabled:opacity-50"
             >
               {saving ? tr('저장 중…') : tr('저장')}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {lessonEditOpen && (
+        <div className="fixed inset-0 z-[85] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
+            onClick={() => !lessonSaving && setLessonEditOpen(false)}
+          />
+          <form
+            onSubmit={handleLessonSubmit}
+            className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-slate-900 border border-cyan-700/40 shadow-2xl p-6 md:p-8 space-y-4 text-left"
+          >
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-black text-white">{tr('수업 운영 팁 편집')}</h2>
+              <button
+                type="button"
+                disabled={lessonSaving}
+                onClick={() => setLessonEditOpen(false)}
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-50"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-cyan-100 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={lessonForm.isFeaturedLesson}
+                onChange={(e) => setLessonForm((f) => ({ ...f, isFeaturedLesson: e.target.checked }))}
+                className="rounded border-slate-500"
+              />
+              {tr('대표 수업안')}
+            </label>
+            {[
+              ['summary', tr('요약'), 'textarea'],
+              ['recommendedAge', tr('추천 연령'), 'input'],
+              ['recommendedPlayers', tr('권장 인원'), 'input'],
+              ['duration', tr('수업 시간'), 'input'],
+              ['space', tr('공간'), 'input'],
+              ['objective', tr('수업 목표'), 'textarea'],
+              ['developmentFocus', tr('발달 요소'), 'textarea'],
+              ['coachScript', tr('강사 멘트'), 'textarea'],
+              ['parentNote', tr('학부모 설명'), 'textarea'],
+            ].map(([key, label, kind]) => (
+              <div key={key as string}>
+                <label className="block text-xs font-bold text-slate-400 mb-1">{label}</label>
+                {kind === 'textarea' ? (
+                  <textarea
+                    className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm min-h-[72px]"
+                    value={lessonForm[key as keyof typeof lessonForm] as string}
+                    onChange={(e) => setLessonForm((f) => ({ ...f, [key]: e.target.value }))}
+                  />
+                ) : (
+                  <input
+                    className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm"
+                    value={lessonForm[key as keyof typeof lessonForm] as string}
+                    onChange={(e) => setLessonForm((f) => ({ ...f, [key]: e.target.value }))}
+                  />
+                )}
+              </div>
+            ))}
+            {(
+              [
+                ['stepsJson', tr('진행 순서 (JSON 배열)')],
+                ['fieldTipsJson', tr('현장 팁 (JSON 배열)')],
+                ['variationsJson', tr('변형 방법 (JSON 배열)')],
+                ['safetyNotesJson', tr('안전 주의 (JSON 배열)')],
+                ['relatedProgramIdsJson', tr('연계 프로그램 curriculum id (JSON 배열)')],
+                ['relatedSpomoveIdsJson', tr('SPOMOVE 연계 ID (JSON 배열)')],
+                ['packageKeysJson', tr('패키지 키 (JSON 배열)')],
+              ] as const
+            ).map(([k, lab]) => (
+              <div key={k}>
+                <label className="block text-xs font-bold text-slate-400 mb-1">{lab}</label>
+                <textarea
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white font-mono text-xs min-h-[80px]"
+                  value={lessonForm[k]}
+                  onChange={(e) => setLessonForm((f) => ({ ...f, [k]: e.target.value }))}
+                />
+              </div>
+            ))}
+            <button
+              type="submit"
+              disabled={lessonSaving}
+              className="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-sm disabled:opacity-50"
+            >
+              {lessonSaving ? tr('저장 중…') : tr('수업안 저장')}
             </button>
           </form>
         </div>

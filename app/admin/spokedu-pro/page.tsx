@@ -78,10 +78,22 @@ export default function AdminSpokeduProPage() {
               {t('구독 운영')}
             </Link>
             <Link
+              href="/admin/spokedu-pro/leads"
+              className="block px-4 py-3 text-sm font-bold text-slate-200 hover:bg-slate-800"
+            >
+              {t('리드 관리')}
+            </Link>
+            <Link
               href="/admin/spokedu-pro/upload"
               className="block px-4 py-3 text-sm font-bold text-slate-200 hover:bg-slate-800"
             >
               {t('프로그램 업로드')}
+            </Link>
+            <Link
+              href="/admin/spokedu-pro/lesson-details"
+              className="block px-4 py-2.5 text-xs font-semibold text-slate-400 hover:bg-slate-800/80 border-t border-slate-800"
+            >
+              {t('수업안 보조정보 관리')}
             </Link>
           </div>
         </details>

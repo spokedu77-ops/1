@@ -26,8 +26,27 @@ import { OttB2bRoadmapShell } from './roadmap/OttB2bRoadmapShell';
 import type { OttFeaturedProgram, OttMetric } from './roadmap/OttB2bRoadmapShell';
 import { getYouTubeThumbnailUrl } from '../utils/youtube';
 import type { ProgramDetail } from '../types';
+import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
 import TodayClassCard from './roadmap/TodayClassCard';
 import { extractEquipmentDisplayTags, isEquipmentCatalogItem } from '@/app/lib/spokedu-pro/programClassification';
+import {
+  LESSON_PACKAGE_KEY_LABELS,
+  LESSON_PACKAGE_KEY_ORDER,
+  isLessonPackageKeyId,
+  type LessonPackageKeyId,
+} from '@/app/lib/spokedu-pro/lessonPackageKeys';
+import type { ProgramLessonDetail } from '@/app/lib/spokedu-pro/programLessonDetail';
+
+type FeaturedProgramApiRow = {
+  id: number;
+  title: string;
+  video_url?: string | null;
+  function_type?: string | null;
+  function_types?: string[] | null;
+  main_theme?: string | null;
+  group_size?: string | null;
+  lesson_detail?: ProgramLessonDetail | null;
+};
 
 type ScreenplayRow = {
   id: number | string;
@@ -225,6 +244,7 @@ function SpotlightProgramCard({
 export default function RoadmapView({
   onOpenDetail,
   onGoToLibrary,
+  isEditMode = false,
   programDetails = {},
   onStartTodayClass,
   onOpenPostClass,
@@ -251,7 +271,12 @@ export default function RoadmapView({
       };
     }
   ) => void;
-  onGoToLibrary?: (themeKey?: ThemeKey, preset?: string) => void;
+  onGoToLibrary?: (
+    themeKey?: ThemeKey,
+    preset?: string,
+    extra?: { packageKey?: string; featuredLesson?: boolean }
+  ) => void;
+  isEditMode?: boolean;
   programDetails?: Record<string, ProgramDetail>;
   onStartTodayClass?: () => void;
   onOpenPostClass?: (className: string) => void;
@@ -274,6 +299,72 @@ export default function RoadmapView({
   const [spotlightLoading, setSpotlightLoading] = useState(false);
   const [spotlightError, setSpotlightError] = useState<string | null>(null);
   const [spotlightFetchKey, setSpotlightFetchKey] = useState(0);
+  const [featuredPrograms, setFeaturedPrograms] = useState<FeaturedProgramApiRow[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [featuredFetchErr, setFeaturedFetchErr] = useState(false);
+  const [packageTotals, setPackageTotals] = useState<Partial<Record<LessonPackageKeyId, number>>>({});
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setFeaturedLoading(true);
+    setFeaturedFetchErr(false);
+    scheduleIdle(() => {
+      fetch('/api/spokedu-pro/programs?featuredLesson=1&limit=6', {
+        credentials: 'include',
+        signal: controller.signal,
+      })
+        .then((res) => res.json().then((json) => ({ res, json })))
+        .then(({ res, json }) => {
+          if (controller.signal.aborted) return;
+          if (!res.ok || !Array.isArray(json?.data)) {
+            setFeaturedPrograms([]);
+            setFeaturedFetchErr(true);
+            return;
+          }
+          setFeaturedPrograms(json.data as FeaturedProgramApiRow[]);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setFeaturedPrograms([]);
+            setFeaturedFetchErr(true);
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setFeaturedLoading(false);
+        });
+    });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (isEditMode) {
+      setPackageTotals({});
+      return;
+    }
+    let cancelled = false;
+    scheduleIdle(() => {
+      void Promise.all(
+        LESSON_PACKAGE_KEY_ORDER.map(async (id) => {
+          try {
+            const res = await fetch(`/api/spokedu-pro/programs?packageKey=${encodeURIComponent(id)}&limit=1`, {
+              credentials: 'include',
+            });
+            const json = (await res.json().catch(() => ({}))) as { total?: number };
+            const total = typeof json.total === 'number' ? json.total : 0;
+            return [id, total] as const;
+          } catch {
+            return [id, 0] as const;
+          }
+        })
+      ).then((pairs) => {
+        if (cancelled) return;
+        setPackageTotals(Object.fromEntries(pairs) as Partial<Record<LessonPackageKeyId, number>>);
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditMode]);
 
   useEffect(() => {
     const handler = () => fetchDashboard();
@@ -461,7 +552,7 @@ export default function RoadmapView({
   const ottMetrics: OttMetric[] = useMemo(
     () => [
       {
-        label: tr('본편 카탈로그'),
+        label: tr('프로그램 라이브러리'),
         value: fmtMetric(programLibraryReady, programLibraryCount),
         change: '+0%',
         icon: MonitorPlay,
@@ -473,13 +564,13 @@ export default function RoadmapView({
         icon: Users,
       },
       {
-        label: tr('이번 주 큐레이션'),
+        label: tr('주간 추천 구성'),
         value: fmtMetric(curationMetricReady, curationItemTotal),
         change: '+0%',
         icon: TrendingUp,
       },
       {
-        label: tr('스크린플레이'),
+        label: tr('SPOMOVE 반응훈련'),
         value: fmtMetric(screenplaysMetricReady, screenplays.length),
         change: '+0',
         icon: LayoutGrid,
@@ -530,13 +621,13 @@ export default function RoadmapView({
       out.push({
         id: numericScreenplayId,
         title: tr(firstScreenplay.title ?? 'SPOMOVE'),
-        category: tr('스포무브'),
+        category: tr('SPOMOVE 반응훈련'),
         metaSlots: [
           { label: tr('인지영역'), value: tr('인지') },
-          { label: tr('과제유형'), value: tr(String(firstScreenplay.modeId ?? '스포무브')) },
+          { label: tr('과제유형'), value: tr(String(firstScreenplay.modeId ?? 'SPOMOVE')) },
           { label: tr('레벨'), value: tr(String(firstScreenplay.subtitle ?? '—')) },
         ],
-        tag: tr('브레인체육'),
+        tag: tr('SPOMOVE'),
         accent: pal.accent,
         gradient: pal.gradient,
         thumbnailUrl: screenplayThumbnailUrl,
@@ -612,6 +703,63 @@ export default function RoadmapView({
   // 요청: "오늘의 수업" 블록은 일단 숨김
   const todaySlot = null;
 
+  const visiblePackageKeysAdmin: LessonPackageKeyId[] = [...LESSON_PACKAGE_KEY_ORDER];
+
+  /** 관리자: 대표 수업안 블록 표시 여부 */
+  const showFeaturedBlock = isEditMode || featuredPrograms.length > 0;
+
+  const threeAxisCards = !isEditMode ? (
+    <div className="space-y-4">
+      <p className="mx-auto max-w-xl text-center text-sm font-medium leading-relaxed text-slate-300 sm:text-base px-2">
+        {tr('오늘 수업 준비는 아래 세 가지에서 시작하면 돼요.')}
+      </p>
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="flex flex-col rounded-2xl border border-emerald-500/20 bg-slate-950/60 p-4 shadow-lg shadow-black/20 md:p-5">
+          <h3 className="text-base font-black text-white md:text-lg">{tr('프로그램 라이브러리')}</h3>
+          <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-400 md:text-sm">
+            {tr('영상과 핵심 진행법 중심으로 수업 프로그램을 빠르게 확인하세요.')}
+          </p>
+          <button
+            type="button"
+            onClick={() => onGoToLibrary?.('co-op')}
+            className="mt-4 w-full rounded-xl bg-emerald-600 py-2.5 text-center text-xs font-black text-white transition hover:bg-emerald-500 md:text-sm"
+          >
+            {tr('라이브러리 보기')}
+          </button>
+        </div>
+        <div className="flex flex-col rounded-2xl border border-cyan-500/20 bg-slate-950/60 p-4 shadow-lg shadow-black/20 md:p-5">
+          <h3 className="text-base font-black text-white md:text-lg">{tr('SPOMOVE 반응훈련')}</h3>
+          <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-400 md:text-sm">
+            {tr('수업 전 집중 전환이나 반응훈련이 필요할 때 화면을 띄워 바로 실행하세요.')}
+          </p>
+          <button
+            type="button"
+            onClick={() => onGoToLibrary?.('cognitive')}
+            className="mt-4 w-full rounded-xl border border-cyan-500/40 bg-cyan-950/50 py-2.5 text-center text-xs font-black text-cyan-50 transition hover:bg-cyan-900/60 md:text-sm"
+          >
+            {tr('SPOMOVE 모음 보기')}
+          </button>
+        </div>
+        <div className="flex flex-col rounded-2xl border border-violet-500/20 bg-slate-950/60 p-4 shadow-lg shadow-black/20 md:p-5">
+          <h3 className="text-base font-black text-white md:text-lg">{tr('성장 리포트')}</h3>
+          <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-400 md:text-sm">
+            {tr('수업 가치를 학부모·기관에 설명할 때 활용해 보세요.')}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (onGoToAIReportFromToday) onGoToAIReportFromToday();
+              else onGoToAssistantTools?.();
+            }}
+            className="mt-4 w-full rounded-xl bg-violet-600 py-2.5 text-center text-xs font-black text-white transition hover:bg-violet-500 md:text-sm"
+          >
+            {tr('성장 리포트 열기')}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <section className="pb-32 pt-0 mt-0">
       {error ? (
@@ -633,6 +781,148 @@ export default function RoadmapView({
         <div className="px-5 py-6 text-center text-zinc-400 lg:px-8">{tr('대시보드 불러오는 중...')}</div>
       ) : null}
 
+      {!error && threeAxisCards ? (
+        <div className="mx-auto max-w-[1600px] space-y-3 px-5 pb-4 text-white lg:px-8">{threeAxisCards}</div>
+      ) : null}
+
+      {!error && isEditMode && showFeaturedBlock ? (
+        <div className="mx-auto max-w-[1600px] space-y-3 px-5 pb-6 text-white lg:px-8">
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-950/15 px-4 py-4 md:px-5 md:py-5">
+            <h2 className="text-lg font-black tracking-tight text-white md:text-xl">{tr('대표 수업안')}</h2>
+            <p className="mt-1 text-sm text-slate-300/95">
+              {tr('영상·진행법·현장 팁 등 보조 정보가 붙은 프로그램입니다. (관리자 확인용)')}
+            </p>
+            {featuredLoading ? (
+              <p className="mt-4 text-sm text-slate-500">{tr('불러오는 중…')}</p>
+            ) : featuredFetchErr ? (
+              <p className="mt-4 text-sm text-red-300">{tr('대표 수업안 목록을 불러오지 못했습니다.')}</p>
+            ) : featuredPrograms.length === 0 ? (
+              <p className="mt-4 text-sm text-amber-100/90">
+                {tr('대표 수업안이 아직 없습니다. 수업안 보조정보 관리에서 지정해 주세요.')}
+              </p>
+            ) : (
+              <div
+                className={[
+                  'mt-4 grid gap-4 justify-items-stretch',
+                  featuredPrograms.length === 1
+                    ? 'grid-cols-1 max-w-md'
+                    : featuredPrograms.length === 2
+                      ? 'grid-cols-1 sm:grid-cols-2 sm:max-w-3xl'
+                      : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+                ].join(' ')}
+              >
+                {featuredPrograms.map((row) => {
+                  const detail = programDetails[String(row.id)];
+                  const title = stripMonthWeekPrefix(detail?.title ?? row.title ?? '').trim();
+                  const video = detail?.videoUrl ?? row.video_url ?? null;
+                  const thumb = video ? getYouTubeThumbnailUrl(String(video)) : null;
+                  const ld = row.lesson_detail;
+                  const summary =
+                    typeof ld?.summary === 'string' && ld.summary.trim() ? ld.summary.trim() : '';
+                  return (
+                    <div
+                      key={row.id}
+                      className="flex flex-col overflow-hidden rounded-xl border border-slate-700/70 bg-slate-950/50 shadow-lg"
+                    >
+                      <div className="relative aspect-video w-full shrink-0 bg-slate-800">
+                        {thumb ? (
+                          <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-4xl text-white/35">
+                            ▶
+                          </div>
+                        )}
+                        <div className="absolute left-2 top-2 flex flex-wrap gap-1">
+                          <span className="rounded-full border border-amber-400/50 bg-black/50 px-2 py-0.5 text-[10px] font-black text-amber-100">
+                            {tr('대표 수업안')}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-1 flex-col gap-2 p-3">
+                        <h3 className="line-clamp-2 text-base font-black leading-snug text-white">{tr(title)}</h3>
+                        {summary ? (
+                          <p className="line-clamp-2 text-xs leading-relaxed text-slate-400">{tr(summary)}</p>
+                        ) : null}
+                        <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
+                          {(Array.isArray(ld?.packageKeys) ? ld?.packageKeys : [])
+                            .filter((x): x is string => typeof x === 'string' && isLessonPackageKeyId(x))
+                            .slice(0, 2)
+                            .map((k) => (
+                              <span
+                                key={k}
+                                className="rounded-full border border-sky-500/30 bg-slate-900/80 px-2 py-0.5 text-[10px] font-bold text-sky-100"
+                              >
+                                {tr(LESSON_PACKAGE_KEY_LABELS[k as LessonPackageKeyId])}
+                              </span>
+                            ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onOpenDetail(row.id, {
+                              themeKey: 'co-op',
+                              row: {
+                                id: row.id,
+                                title: row.title,
+                                video_url: row.video_url ?? null,
+                                function_type: row.function_type ?? null,
+                                function_types: row.function_types ?? undefined,
+                                main_theme: row.main_theme ?? null,
+                                group_size: row.group_size ?? null,
+                                lesson_detail: row.lesson_detail ?? undefined,
+                              },
+                            })
+                          }
+                          className="mt-1 w-full rounded-lg bg-emerald-600 py-2.5 text-center text-sm font-black text-white hover:bg-emerald-500"
+                        >
+                          {tr('수업안 보기')}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {!error && isEditMode ? (
+        <div className="mx-auto max-w-[1600px] space-y-3 px-5 pb-8 text-white lg:px-8">
+          <div className="rounded-2xl border border-slate-700/60 bg-slate-950/30 px-4 py-4 md:px-5 md:py-5">
+            <h2 className="text-lg font-black tracking-tight md:text-xl">{tr('상황별 수업 패키지')}</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              {tr('라이브러리 필터 보조용. 관리자에서 구성 현황을 확인합니다.')}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {visiblePackageKeysAdmin.map((key) => {
+                const count = packageTotals[key] ?? 0;
+                const emptyAdmin = count === 0;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => onGoToLibrary?.('co-op', undefined, { packageKey: key })}
+                    className="flex flex-col rounded-xl border border-slate-600/60 bg-slate-900/60 px-3 py-3 text-left text-xs font-bold text-slate-100 transition-colors hover:border-emerald-500/40 hover:bg-slate-800/80 md:text-[13px]"
+                  >
+                    <span className="line-clamp-2 pr-1">{tr(LESSON_PACKAGE_KEY_LABELS[key])}</span>
+                    {emptyAdmin ? (
+                      <span className="mt-1.5 inline-flex w-fit rounded-full border border-slate-500/50 bg-slate-950/80 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
+                        {tr('미구성')}
+                      </span>
+                    ) : count > 0 ? (
+                      <span className="mt-1 text-[10px] font-semibold tabular-nums text-slate-500">
+                        {count} {tr('개')}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {!error ? (
         <OttB2bRoadmapShell
           metrics={ottMetrics}
@@ -641,22 +931,32 @@ export default function RoadmapView({
             spotlightConfig?.sectionTitle?.trim()
               ? spotlightConfig.sectionTitle.trim()
               : spotlightEquipment
-                ? `${spotlightEquipment}${tr('로 하는 추천 프로그램')}`
+                ? tr('추천 활동')
                 : undefined
           }
           spotlightPrograms={spotlightOttPrograms}
           onOpenSpotlight={(p) => openWithContext(p.id, undefined, 'co-op')}
           lineupEyebrow={tr(DASHBOARD_ROW1_GROUP_LABEL)}
-          lineupTitle={tr('이번 주 수업 가이드')}
+          lineupTitle={tr('이번 주 추천')}
           nowPlayingTitle={tr(dashboard.weekTheme.title)}
           heroBadge={tr(dashboard.weekTheme.badge)}
           heroSubtitle={tr(dashboard.weekTheme.subtitle)}
           onBrowsePremium={() => onGoToLibrary?.('co-op')}
+          onHeroSpomove={() => onGoToLibrary?.('cognitive')}
           onOpenPlanBilling={onOpenPlanBilling}
           onOpenFeatured={onOpenFeatured}
           onMarketReport={() => onGoToLibrary?.('co-op')}
           onSendToClass={() => onGoToAssistantTools?.()}
+          onHeroReportTools={
+            onGoToAIReportFromToday || onGoToAssistantTools
+              ? () => {
+                  if (onGoToAIReportFromToday) onGoToAIReportFromToday();
+                  else onGoToAssistantTools?.();
+                }
+              : undefined
+          }
           belowHeader={todaySlot}
+          subscriberHome={!isEditMode}
         />
       ) : null}
 

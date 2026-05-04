@@ -72,7 +72,11 @@ export async function POST(req: NextRequest) {
 
   if (!owned?.id) {
     return NextResponse.json(
-      { ok: false, error: 'no_center', message: '센터를 먼저 만든 뒤 결제를 진행해 주세요.' },
+      {
+        ok: false,
+        error: 'no_center',
+        message: '도장(센터)을 먼저 설정한 뒤 결제를 진행해 주세요.',
+      },
       { status: 400 }
     );
   }
@@ -90,7 +94,7 @@ export async function POST(req: NextRequest) {
       {
         ok: false,
         error: 'no_subscription_row',
-        message: '구독 정보가 없습니다. 앱에서 센터·체험 설정을 완료한 뒤 다시 시도해 주세요.',
+        message: '구독 정보가 없습니다. 앱에서 도장(센터)과 체험 설정을 완료한 뒤 다시 시도해 주세요.',
       },
       { status: 400 }
     );

@@ -6,18 +6,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 
 type ExtraTeacher = { id: string; price?: number };
 
 function getExtraTeachersFromSession(s: { students_text?: string | null; memo?: string | null }): ExtraTeacher[] {
   for (const raw of [s.memo, s.students_text]) {
     if (!raw?.includes('EXTRA_TEACHERS:')) continue;
-    try {
-      const arr = JSON.parse(raw.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
-      if (Array.isArray(arr) && arr.length > 0) return arr;
-    } catch {
-      // ignore
-    }
+    const { extraTeachers } = parseExtraTeachers(raw);
+    const withId = extraTeachers.filter((e) => String(e.id || '').trim());
+    if (withId.length > 0) return withId as ExtraTeacher[];
   }
   return [];
 }
@@ -39,20 +37,30 @@ export async function GET(req: NextRequest) {
     }
 
     const svc = getServiceSupabase();
+    const uid = String(user.id).trim();
+    /** 해당 강사가 보조로 들어 있는 세션만 좁혀 조회(행 제한·다른 테넌트 스캔 완화) */
+    const assistMemo = svc
+      .from('sessions')
+      .select('*')
+      .gte('start_at', from)
+      .lte('start_at', to)
+      .ilike('memo', '%EXTRA_TEACHERS:%')
+      .ilike('memo', `%${uid}%`);
+    const assistStudents = svc
+      .from('sessions')
+      .select('*')
+      .gte('start_at', from)
+      .lte('start_at', to)
+      .ilike('students_text', '%EXTRA_TEACHERS:%')
+      .ilike('students_text', `%${uid}%`);
 
     const [mainRes, extraMemoRes, extraStudentsRes] = await Promise.all([
       svc.from('sessions').select('*')
         .eq('created_by', user.id)
         .gte('start_at', from)
         .lte('start_at', to),
-      svc.from('sessions').select('*')
-        .ilike('memo', '%EXTRA_TEACHERS%')
-        .gte('start_at', from)
-        .lte('start_at', to),
-      svc.from('sessions').select('*')
-        .ilike('students_text', '%EXTRA_TEACHERS%')
-        .gte('start_at', from)
-        .lte('start_at', to),
+      assistMemo,
+      assistStudents,
     ]);
 
     const mainList = mainRes.data || [];

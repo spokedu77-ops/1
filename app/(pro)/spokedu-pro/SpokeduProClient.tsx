@@ -27,6 +27,7 @@ import {
 } from './utils/spomoveLaunch';
 import { resolveScreenplayTagMappingV1, getScreenplayLevelTag } from './utils/screenplayTagMapping';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
+import type { ProgramLessonDetail } from '@/app/lib/spokedu-pro/programLessonDetail';
 
 const SpokeduProToolkit = dynamic(() => import('./components/SpokeduProToolkit'), { ssr: false });
 const SpokeduProDrawer = dynamic(() => import('./components/SpokeduProDrawer'), { ssr: false });
@@ -155,11 +156,17 @@ export default function SpokeduProClient({
       mode_id?: string | null;
       preset_ref?: string | null;
       thumbnail_url?: string | null;
+      lesson_detail?: ProgramLessonDetail | null;
     };
   } | null>(null);
   const [screenplayById, setScreenplayById] = useState<Record<number, ScreenplayMeta>>({});
   const [screenplaysRefreshToken, setScreenplaysRefreshToken] = useState(0);
   const [libraryPreset, setLibraryPreset] = useState<{ themeKey?: string; preset?: string } | null>(null);
+  /** 라이브러리 진입 시 대표/패키지 빠른 필터(대시보드 패키지 카드 등) */
+  const [libraryLessonNav, setLibraryLessonNav] = useState<{
+    featuredLesson?: boolean;
+    packageKey?: string;
+  } | null>(null);
   const [libraryMode, setLibraryMode] = useState<'program' | 'screenplay'>('program');
   const [showCurationDrawer, setShowCurationDrawer] = useState(false);
   const [postClassGroup, setPostClassGroup] = useState<string | null>(null);
@@ -209,6 +216,7 @@ export default function SpokeduProClient({
   useEffect(() => {
     if (viewId !== 'library') {
       setLibraryPreset(null);
+      setLibraryLessonNav(null);
       setLibraryMode('program');
       setLibraryDrawerProgramId(null);
       setLibraryDrawerContext(null);
@@ -240,18 +248,21 @@ export default function SpokeduProClient({
     if (name) trackSpokeduProEvent(name, { viewId });
   }, [ctxLoading, viewId]);
 
-  const [programsFromApi, setProgramsFromApi] = useState<Array<{
-    id: number;
-    title: string;
-    video_url?: string | null;
-    function_type?: string | null;
-    main_theme?: string | null;
-    group_size?: string | null;
-    checklist?: string | null;
-    equipment?: string | null;
-    activity_method?: string | null;
-    activity_tip?: string | null;
-  }>>([]);
+  const [programsFromApi, setProgramsFromApi] = useState<
+    Array<{
+      id: number;
+      title: string;
+      video_url?: string | null;
+      function_type?: string | null;
+      main_theme?: string | null;
+      group_size?: string | null;
+      checklist?: string | null;
+      equipment?: string | null;
+      activity_method?: string | null;
+      activity_tip?: string | null;
+      lesson_detail?: ProgramLessonDetail | null;
+    }>
+  >([]);
   const [programsRefreshToken, setProgramsRefreshToken] = useState(0);
   const [programsListReady, setProgramsListReady] = useState(false);
   const refreshProgramsFromApi = useCallback(async () => {
@@ -266,6 +277,22 @@ export default function SpokeduProClient({
       setProgramsListReady(true);
     }
   }, []);
+
+  const mergeProgramsFromResponse = useCallback(
+    (rows: Array<(typeof programsFromApi)[number]>) => {
+      if (!Array.isArray(rows) || rows.length === 0) return;
+      setProgramsFromApi((prev) => {
+        const map = new Map(prev.map((r) => [r.id, { ...r }]));
+        for (const row of rows) {
+          if (typeof row?.id !== 'number' || !Number.isFinite(row.id)) continue;
+          const cur = map.get(row.id);
+          map.set(row.id, { ...(cur ?? ({} as (typeof programsFromApi)[number])), ...row });
+        }
+        return Array.from(map.values());
+      });
+    },
+    []
+  );
   useEffect(() => {
     let cancelled = false;
     scheduleIdle(() => {
@@ -514,6 +541,32 @@ export default function SpokeduProClient({
     [adminContent?.program_details, saveContentDraft, fetchContent, fetchBlocks, tr, refreshProgramsFromApi]
   );
 
+  const handleSaveLessonDetail = useCallback(
+    async (detail: ProgramLessonDetail) => {
+      const res = await fetch('/api/admin/spokedu-pro/program-lesson-details', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(detail),
+      });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !j.ok) {
+        toast.error(tr(`수업안 저장 실패: ${j.error ?? `HTTP ${res.status}`}`));
+        return;
+      }
+      toast.success(tr('수업안이 저장되었습니다.'));
+      await refreshProgramsFromApi();
+      setProgramsRefreshToken((t) => t + 1);
+    },
+    [tr, refreshProgramsFromApi]
+  );
+
+  const drawerLessonDetail = useMemo(() => {
+    if (drawerIsScreenplay || resolvedDrawerProgramId == null) return null;
+    const row = programsFromApi.find((r) => r.id === resolvedDrawerProgramId);
+    return row?.lesson_detail ?? null;
+  }, [drawerIsScreenplay, resolvedDrawerProgramId, programsFromApi]);
+
   const openDrawer = useCallback(
     (
       id: number,
@@ -532,6 +585,7 @@ export default function SpokeduProClient({
           mode_id?: string | null;
           preset_ref?: string | null;
           thumbnail_url?: string | null;
+          lesson_detail?: ProgramLessonDetail | null;
         };
       }
     ) => {
@@ -543,11 +597,62 @@ export default function SpokeduProClient({
       });
       setDrawerProgramId(id);
       setDrawerContext(context ?? null);
+      if (!context?.screenplay) {
+        if (context?.row?.lesson_detail) {
+          mergeProgramsFromResponse([
+            {
+              id,
+              title: String(context.row.title ?? ''),
+              video_url: context.row.video_url ?? null,
+              function_type: context.row.function_type ?? null,
+              function_types: context.row.function_types ?? undefined,
+              main_theme: context.row.main_theme ?? null,
+              group_size: context.row.group_size ?? null,
+              lesson_detail: context.row.lesson_detail,
+            } as (typeof programsFromApi)[number],
+          ]);
+        } else {
+          void (async () => {
+            try {
+              const res = await fetch(
+                `/api/spokedu-pro/programs?curriculumIds=${encodeURIComponent(String(id))}&limit=5`,
+                { credentials: 'include' }
+              );
+              const json = (await res.json().catch(() => ({}))) as { data?: unknown };
+              if (res.ok && Array.isArray(json.data) && json.data.length > 0) {
+                mergeProgramsFromResponse(json.data as (typeof programsFromApi)[number][]);
+              }
+            } catch {
+              /* drawer는 기존 데이터로 열림 */
+            }
+          })();
+        }
+      }
     },
-    []
+    [mergeProgramsFromResponse]
   );
   const openLibraryProgramDetail = useCallback(
-    (id: number, context?: { role?: string; themeKey?: string; screenplay?: boolean }) => {
+    (
+      id: number,
+      context?: {
+        role?: string;
+        themeKey?: string;
+        screenplay?: boolean;
+        row?: {
+          id?: number;
+          title?: string;
+          video_url?: string | null;
+          function_type?: string | null;
+          function_types?: string[] | null;
+          main_theme?: string | null;
+          group_size?: string | null;
+          mode_id?: string | null;
+          preset_ref?: string | null;
+          thumbnail_url?: string | null;
+          lesson_detail?: ProgramLessonDetail | null;
+        };
+      }
+    ) => {
       trackSpokeduProEvent('spokedu_pro_week_card_open', {
         programId: id,
         source: context?.screenplay ? 'library_screenplay_drawer' : 'library_program_drawer',
@@ -556,8 +661,39 @@ export default function SpokeduProClient({
       });
       setLibraryDrawerProgramId(id);
       setLibraryDrawerContext(context ?? null);
+      if (!context?.screenplay) {
+        if (context?.row?.lesson_detail) {
+          mergeProgramsFromResponse([
+            {
+              id,
+              title: String(context.row.title ?? ''),
+              video_url: context.row.video_url ?? null,
+              function_type: context.row.function_type ?? null,
+              function_types: context.row.function_types ?? undefined,
+              main_theme: context.row.main_theme ?? null,
+              group_size: context.row.group_size ?? null,
+              lesson_detail: context.row.lesson_detail,
+            } as (typeof programsFromApi)[number],
+          ]);
+        } else {
+          void (async () => {
+            try {
+              const res = await fetch(
+                `/api/spokedu-pro/programs?curriculumIds=${encodeURIComponent(String(id))}&limit=5`,
+                { credentials: 'include' }
+              );
+              const json = (await res.json().catch(() => ({}))) as { data?: unknown };
+              if (res.ok && Array.isArray(json.data) && json.data.length > 0) {
+                mergeProgramsFromResponse(json.data as (typeof programsFromApi)[number][]);
+              }
+            } catch {
+              /* drawer는 기존 데이터로 열림 */
+            }
+          })();
+        }
+      }
     },
-    []
+    [mergeProgramsFromResponse]
   );
   const closeProgramDrawer = useCallback(() => {
     setDrawerProgramId(null);
@@ -568,20 +704,33 @@ export default function SpokeduProClient({
     setLibraryDrawerContext(null);
   }, []);
   const goToLibrary = useCallback(
-    (themeKey?: string, preset?: string) => {
-      setLibraryPreset(themeKey != null || preset != null ? { themeKey, preset } : null);
-      setLibraryMode(themeKey === 'cognitive' ? 'screenplay' : 'program');
+    (
+      themeKey?: string,
+      preset?: string,
+      extra?: { packageKey?: string; featuredLesson?: boolean }
+    ) => {
+      const hasLessonNav = Boolean(extra?.packageKey || extra?.featuredLesson);
+      const effectiveTheme = themeKey ?? (hasLessonNav ? 'co-op' : undefined);
+      setLibraryPreset(effectiveTheme != null || preset != null ? { themeKey: effectiveTheme, preset } : null);
+      setLibraryLessonNav(
+        hasLessonNav
+          ? { packageKey: extra?.packageKey, featuredLesson: extra?.featuredLesson }
+          : null
+      );
+      setLibraryMode((effectiveTheme ?? 'co-op') === 'cognitive' ? 'screenplay' : 'program');
       switchViewWithMount('library');
     },
     [switchViewWithMount]
   );
   const openLibraryAll = useCallback(() => {
     setLibraryPreset(null);
+    setLibraryLessonNav(null);
     setLibraryMode('program');
     switchViewWithMount('library');
   }, [switchViewWithMount]);
   const goToLibraryTheme = useCallback(
     (themeKey: ThemeKey) => {
+      setLibraryLessonNav(null);
       setLibraryPreset({ themeKey });
       setLibraryMode(themeKey === 'cognitive' ? 'screenplay' : 'program');
       switchViewWithMount('library');
@@ -617,6 +766,8 @@ export default function SpokeduProClient({
         onOpenLibraryAll={openLibraryAll}
         onGoToLibraryTheme={goToLibraryTheme}
         libraryActiveThemeKey={libraryPreset?.themeKey ?? null}
+        libraryMode={libraryMode}
+        onOpenSpomove={isEditMode ? undefined : () => goToLibraryTheme('cognitive')}
         isEditMode={isEditMode}
         onOpenCurationDrawer={isEditMode ? () => setShowCurationDrawer(true) : undefined}
       />
@@ -672,6 +823,7 @@ export default function SpokeduProClient({
           <RoadmapView
             onOpenDetail={openDrawer}
             onGoToLibrary={goToLibrary}
+            isEditMode={isEditMode}
             programDetails={programDetailsForDrawer}
             programLibraryCount={programsFromApi.length}
             programLibraryReady={programsListReady}
@@ -699,6 +851,8 @@ export default function SpokeduProClient({
             <LibraryView
               onOpenDetail={openLibraryProgramDetail}
               initialPreset={libraryPreset}
+              libraryLessonNav={libraryLessonNav}
+              onClearLibraryLessonNav={() => setLibraryLessonNav(null)}
               programDetails={programDetailsForDrawer}
               functionalCap={isEditMode ? 144 : undefined}
               libraryMode={libraryMode}
@@ -757,6 +911,8 @@ export default function SpokeduProClient({
         themeKey={resolvedDrawerContext?.themeKey}
         isEditMode={isEditMode}
         onSaveProgramDetail={isEditMode ? handleSaveProgramDetail : undefined}
+        lessonDetail={drawerLessonDetail}
+        onSaveLessonDetail={isEditMode ? handleSaveLessonDetail : undefined}
         detailKind={drawerIsScreenplay ? 'screenplay' : 'program'}
         screenplayTags={screenplayDrawerTags}
         onLaunchMemoryGame={
@@ -825,7 +981,7 @@ export default function SpokeduProClient({
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/35 bg-orange-500/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-orange-100">
                         <Sparkles className="h-3 w-3 text-amber-300" aria-hidden />
-                        {tr('브레인체육 · SPOMOVE')}
+                        {tr('SPOMOVE 반응훈련')}
                       </span>
                       <span className="rounded-md border border-slate-600/70 bg-slate-900/80 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-300">
                         {memoryGameModal.mode} · L{memoryGameModal.level}

@@ -25,7 +25,11 @@ export default function SpokeduProLayout({
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
-        router.replace('/login');
+        const full =
+          typeof window !== 'undefined'
+            ? `${window.location.pathname}${window.location.search ?? ''}`
+            : '/spokedu-pro';
+        router.replace(`/login?next=${encodeURIComponent(full)}`);
         return;
       }
     };

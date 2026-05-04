@@ -13,6 +13,7 @@ import {
   sessionFileDisplayName,
   alignCenterDocumentNamesWithUrls,
   FEEDBACK_TEXT_FIELD_KEYS,
+  isFieldValid,
 } from '@/app/lib/feedbackValidation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -90,6 +91,8 @@ function MyClassesContent() {
   const [previousPlans, setPreviousPlans] = useState<PreviousLessonPlan[]>([]);
   const [previousPlansExpandedId, setPreviousPlansExpandedId] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+  /** 일정 API 기준 로그인 사용자 — `created_by`와 다르면 보조로 들어간 수업 */
+  const [scheduleUserId, setScheduleUserId] = useState<string | null>(null);
 
   const getBaseTitle = (title: string): string => {
     const original = title;
@@ -157,6 +160,7 @@ function MyClassesContent() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
+      setScheduleUserId(session.user.id);
 
       const { monday, sunday } = getWeekRange(new Date(currentDate));
 
@@ -196,6 +200,17 @@ function MyClassesContent() {
   }, [currentDate]);
 
   const handleItemClick = (session: Session) => {
+    if (session.status === 'postponed') {
+      toast.info(
+        '이 시간대는 연기 처리된 기록입니다. 같은 수업은 일정이 밀린 날짜에 표시되니, 주간 일정에서 해당 날짜를 확인해 주세요.',
+      );
+      return;
+    }
+    if (session.status === 'cancelled') {
+      toast.info('취소된 수업입니다.');
+      return;
+    }
+
     const feedbackFieldsKeyCount = session.feedback_fields ? Object.keys(session.feedback_fields).length : 0;
     const nextFeedbackFields: FeedbackFields =
       session.feedback_fields && feedbackFieldsKeyCount > 0
@@ -527,20 +542,35 @@ function MyClassesContent() {
               
               // 간소화된 상태 판별
               const feedbackFields = session.feedback_fields || parseTemplateToFields(session.students_text || '');
-              const isValid = (v?: string) => !!v && v.trim().length > 5;
               const isCenterType =
                 session.session_type === 'regular_center' ||
                 session.session_type === 'one_day_center';
               const hasContent = isCenterType
                 ? (Array.isArray(session.file_url) ? session.file_url.length > 0 : false)
-                : isValid(feedbackFields.main_activity) &&
-                  isValid(feedbackFields.strengths) &&
-                  isValid(feedbackFields.improvements) &&
-                  isValid(feedbackFields.next_goals) &&
-                  isValid(feedbackFields.condition_notes);
+                : isFieldValid(feedbackFields.main_activity) &&
+                  isFieldValid(feedbackFields.strengths) &&
+                  isFieldValid(feedbackFields.improvements) &&
+                  isFieldValid(feedbackFields.next_goals) &&
+                  isFieldValid(feedbackFields.condition_notes);
               
               const isVerified = session.status === 'verified';
+              const isPostponed = session.status === 'postponed';
+              const isCancelled = session.status === 'cancelled';
               const isActuallyDone = hasContent;
+              const isAssistantSession =
+                !!scheduleUserId &&
+                String(session.created_by || '').trim() !== String(scheduleUserId).trim();
+
+              const statusPill =
+                isVerified
+                  ? { label: 'Verified', className: 'bg-blue-50 text-blue-500' }
+                  : isPostponed
+                    ? { label: '연기', className: 'bg-purple-50 text-purple-700' }
+                    : isCancelled
+                      ? { label: '취소', className: 'bg-rose-50 text-rose-600' }
+                      : isActuallyDone
+                        ? { label: 'Done', className: 'bg-emerald-50 text-emerald-500' }
+                        : { label: 'Wait', className: 'bg-slate-50 text-slate-300' };
 
               return (
                 <div
@@ -557,20 +587,20 @@ function MyClassesContent() {
                       <span className="text-lg font-black leading-none">{timeDisplay}</span>
                     </div>
                     <div className="text-left">
-                      <div className="flex gap-2 mb-1">
+                      <div className="flex gap-2 mb-1 flex-wrap">
                         <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${isCenterType ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>{isCenterType ? 'Center' : 'Visit'}</span>
+                        {isAssistantSession ? (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-amber-100 text-amber-800">보조</span>
+                        ) : null}
+                        {isPostponed ? (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-purple-100 text-purple-700">연기됨</span>
+                        ) : null}
                       </div>
                       <h3 className="text-base md:text-lg font-black text-slate-800 tracking-tight line-clamp-1">{session.title || 'Untitled'}</h3>
                     </div>
                   </div>
-                  <div className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
-                    isVerified
-                      ? 'bg-blue-50 text-blue-500'
-                      : isActuallyDone
-                      ? 'bg-emerald-50 text-emerald-500' 
-                      : 'bg-slate-50 text-slate-300'
-                  }`}>
-                    {isVerified ? 'Verified' : isActuallyDone ? 'Done' : 'Wait'}
+                  <div className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${statusPill.className}`}>
+                    {statusPill.label}
                   </div>
                 </div>
               );

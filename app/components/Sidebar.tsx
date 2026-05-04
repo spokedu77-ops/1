@@ -24,6 +24,8 @@ import {
   PanelLeftOpen,
   PanelLeftClose,
   MessageSquare,
+  Inbox,
+  ScrollText,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -85,7 +87,14 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       items: [
         { name: "커리큘럼", href: "/admin/curriculum", icon: BookOpen },
         { name: "선생님 APP", href: "/admin/iiwarmup", icon: Medal },
-        { name: "스포키듀 구독", href: "/admin/spokedu-pro", icon: Sparkles },
+      ]
+    },
+    {
+      group: "스포키듀 Pro",
+      items: [
+        { name: "구독·대시보드", href: "/admin/spokedu-pro", icon: Sparkles },
+        { name: "리드 관리", href: "/admin/spokedu-pro/leads", icon: Inbox },
+        { name: "수업안 보조정보", href: "/admin/spokedu-pro/lesson-details", icon: ScrollText },
       ]
     },
     {

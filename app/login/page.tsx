@@ -6,6 +6,7 @@ import { Lock, User, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { isRefreshTokenError } from '@/app/lib/supabase/auth';
+import { parseSafeNextRedirect } from '@/app/lib/auth/safeNextRedirect';
 
 function LoginContent() {
   const [id, setId] = useState('');
@@ -15,9 +16,12 @@ function LoginContent() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // URL에서 접속 유형(teacher/admin) 파악
   const type = searchParams.get('type') || 'teacher';
+  const nextSafe = parseSafeNextRedirect(searchParams.get('next'));
+  const showSpokeduProNextHint =
+    nextSafe === '/spokedu-pro' || (nextSafe != null && nextSafe.startsWith('/spokedu-pro/'));
 
   // 페이지 로드 시 리프레시 토큰이 무효한 경우에만 세션 클리어
   // 3초 타임아웃: getSession()이 토큰 갱신 네트워크 호출로 auth lock을 점유해
@@ -90,7 +94,9 @@ function LoginContent() {
           .eq('id', loggedInUser.id)
           .single();
 
-        if (profile?.role === 'admin' || profile?.role === 'master') {
+        if (nextSafe) {
+          router.push(nextSafe);
+        } else if (profile?.role === 'admin' || profile?.role === 'master') {
           router.push('/admin');
         } else {
           router.push('/teacher/my-classes');
@@ -123,8 +129,18 @@ function LoginContent() {
           <p className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.3em] mt-4">
             {type === 'admin' ? 'System Administrator' : 'Physical Education Expert'}
           </p>
+          {showSpokeduProNextHint && (
+            <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/90 px-4 py-3 text-left text-sm text-blue-950 space-y-1.5">
+              <p className="font-bold leading-snug">
+                SPOKEDU PRO 체험은 신청하신 이메일로 로그인해야 연결됩니다.
+              </p>
+              <p className="text-xs font-medium text-blue-900/85 leading-relaxed">
+                다른 이메일로 로그인하면 체험 권한이 연결되지 않을 수 있습니다.
+              </p>
+            </div>
+          )}
         </div>
-        
+
         <div className="space-y-5">
           {/* 아이디 입력란 */}
           <div className="relative">

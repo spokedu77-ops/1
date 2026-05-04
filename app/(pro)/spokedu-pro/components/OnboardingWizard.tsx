@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslator } from '@/app/providers/I18nProvider';
+import Link from 'next/link';
 import { useState, useCallback } from 'react';
 import { Building2, UserPlus, Sparkles, ChevronRight, Loader2 } from 'lucide-react';
 import { useProContext } from '../hooks/useProContext';
@@ -25,23 +26,36 @@ export default function OnboardingWizard({
   const [studentRows, setStudentRows] = useState<{ name: string }[]>([{ name: '' }, { name: '' }, { name: '' }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [trialNotApproved, setTrialNotApproved] = useState(false);
 
   const handleStep1 = useCallback(async () => {
     const name = centerName.trim() || '내 센터';
     setLoading(true);
     setError(null);
+    setTrialNotApproved(false);
     try {
       const res = await fetch('/api/spokedu-pro/context/bootstrap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ centerName: name }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? '센터 생성 실패');
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+      };
+      if (res.status === 403 && data.error === 'trial_not_approved') {
+        setTrialNotApproved(true);
+        return;
+      }
+      if (!res.ok || !data.ok) {
+        setError(typeof data.message === 'string' ? data.message : data.error ?? '센터 생성 실패');
+        return;
+      }
       await refresh();
       setStep(2);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
+    } catch {
+      setError('네트워크 오류가 발생했습니다. 연결을 확인한 뒤 다시 시도해 주세요.');
     } finally {
       setLoading(false);
     }
@@ -119,11 +133,32 @@ export default function OnboardingWizard({
               <input
                 type="text"
                 value={centerName}
-                onChange={(e) => setCenterName(e.target.value)}
+                onChange={(e) => {
+                  setCenterName(e.target.value);
+                  setTrialNotApproved(false);
+                }}
                 placeholder={t('예: OO 체육관')}
                 className="w-full bg-slate-900 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 placeholder:text-slate-500"
               />
-              {error && <p className="text-red-400 text-sm">{t(error)}</p>}
+              {trialNotApproved ? (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-950/25 px-4 py-3 text-sm text-amber-100 space-y-3">
+                  <p className="leading-relaxed">
+                    SPOKEDU PRO 체험은 베타 관장단 신청 후 운영팀 승인으로 제공됩니다.
+                    <br />
+                    아직 신청하지 않으셨다면 베타 관장단 신청을 먼저 진행해 주세요.
+                    <br />
+                    <br />
+                    이미 신청하셨다면, 신청한 이메일과 현재 로그인한 이메일이 같은지 확인해 주세요.
+                  </p>
+                  <Link
+                    href="/pro/apply"
+                    className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-black text-white hover:bg-amber-500"
+                  >
+                    베타 관장단 신청하기
+                  </Link>
+                </div>
+              ) : null}
+              {error && !trialNotApproved ? <p className="text-red-400 text-sm">{error}</p> : null}
               <div className="flex gap-3">
                 <button
                   type="button"
