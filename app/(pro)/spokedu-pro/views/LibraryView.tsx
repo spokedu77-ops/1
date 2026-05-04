@@ -53,7 +53,7 @@ function buildProgramBankMetaSlots(p: ProgramRow, detail: ProgramDetail | undefi
   const fnFromDetail = Array.isArray(detail?.functionTypes) ? detail.functionTypes.filter(Boolean) : [];
   const fnFromRow =
     Array.isArray(p.function_types) && p.function_types.length > 0
-      ? p.function_types.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
+      ? p.function_types.filter((x): x is string => typeof x === 'string' && x.trim() !== '')
       : p.function_type
         ? [p.function_type]
         : [];

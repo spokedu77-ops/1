@@ -523,7 +523,7 @@ export default function RoadmapView({
       const d = programDetails[String(programId)];
       const theme = String(d?.mainTheme ?? '').trim();
       const fnFirst = (Array.isArray(d?.functionTypes) ? d.functionTypes.filter(Boolean) : [d?.functionType])
-        .filter((x): x is string => typeof x === 'string' && Boolean(String(x).trim()))[0];
+        .filter((x): x is string => typeof x === 'string' && String(x).trim() !== '')[0];
       const eqFirst = extractEquipmentDisplayTags(d?.equipment ?? '')[0]?.trim() ?? '';
       const dash = '—';
       return [

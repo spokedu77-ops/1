@@ -32,8 +32,8 @@ function loadSlots(weekLabel: string): LessonPlanSlot[] {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
       (x): x is LessonPlanSlot =>
-        x &&
         typeof x === 'object' &&
+        x !== null &&
         typeof (x as LessonPlanSlot).slotId === 'string' &&
         DAY_ORDER.includes((x as LessonPlanSlot).dayOfWeek)
     );

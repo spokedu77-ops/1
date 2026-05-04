@@ -337,7 +337,9 @@ export default function SpokeduProClient({
     programsFromApi.forEach((row) => {
       const functionTypes =
         Array.isArray((row as { function_types?: unknown }).function_types)
-          ? ((row as { function_types?: string[] }).function_types ?? []).filter((x) => typeof x === 'string' && x.trim())
+          ? ((row as { function_types?: string[] }).function_types ?? []).filter(
+              (x): x is string => typeof x === 'string' && x.trim() !== ''
+            )
           : (row.function_type ? [row.function_type] : []);
       out[String(row.id)] = {
         title: stripMonthWeekPrefix(row.title),
@@ -432,7 +434,7 @@ export default function SpokeduProClient({
     // 목록에서 넘긴 row로 최소한의 상세를 구성해 placeholder(프로그램 #id) 방지
     const fnTypes =
       Array.isArray(snap.function_types) && snap.function_types.length > 0
-        ? snap.function_types.filter((x) => typeof x === 'string' && x.trim())
+        ? snap.function_types.filter((x): x is string => typeof x === 'string' && x.trim() !== '')
         : (snap.function_type ? [snap.function_type] : []);
     return {
       title: snap.title ?? undefined,

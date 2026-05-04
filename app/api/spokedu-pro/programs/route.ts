@@ -260,7 +260,7 @@ export async function GET(request: NextRequest) {
       const baseTip = r.expert_tip?.trim() || null;
       const fnTypes =
         Array.isArray(ov?.function_types) && ov.function_types.length > 0
-          ? ov.function_types.filter((x) => typeof x === 'string' && x.trim())
+          ? ov.function_types.filter((x): x is string => typeof x === 'string' && x.trim() !== '')
           : null;
       const primaryFn = (ov?.function_type ?? '').trim() || (fnTypes?.[0] ?? '') || '협응력';
       return {

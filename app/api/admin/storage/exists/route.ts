@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ exists: {} });
     }
 
-    const uniquePaths = [...new Set(paths)].filter((p) => typeof p === 'string' && p.trim());
+    const uniquePaths = [...new Set(paths)].filter((p): p is string => typeof p === 'string' && p.trim() !== '');
     const supabase = await createServerSupabaseClient();
 
     // 폴더별로 그룹: folder -> [path]

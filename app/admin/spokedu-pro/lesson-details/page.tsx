@@ -111,7 +111,9 @@ async function fetchAllPrograms(): Promise<ProgramApiRow[]> {
 
 function packageKeysList(ld: ProgramLessonDetail | null | undefined): string[] {
   if (!ld?.packageKeys || !Array.isArray(ld.packageKeys)) return [];
-  return ld.packageKeys.filter((x): x is string => typeof x === 'string' && x.trim()).map((s) => s.trim());
+  return ld.packageKeys
+    .filter((x): x is string => typeof x === 'string' && x.trim() !== '')
+    .map((s) => s.trim());
 }
 
 function hasPackageKey(ld: ProgramLessonDetail | null | undefined, key: LessonPackageKeyId): boolean {
