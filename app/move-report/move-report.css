@@ -1022,9 +1022,9 @@ a.mr-result-share-card-link {
 }
 
 .mr-result-share-btn--primary {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
-  min-height: 52px;
+  min-height: 56px;
   border-radius: 16px;
   background: linear-gradient(135deg, #ff5a2e 0%, var(--mr-fire) 48%, #e63d12 100%);
   box-shadow:
@@ -1044,8 +1044,8 @@ a.mr-result-share-card-link {
   border: 1.5px solid var(--mr-border);
   box-shadow: none;
   font-weight: 600;
-  font-size: 14px;
-  min-height: 48px;
+  font-size: 15px;
+  min-height: 52px;
 }
 
 .mr-result-share-btn--secondary:hover:not(:disabled) {
@@ -1158,12 +1158,14 @@ a.mr-result-share-card-link {
 
 .mr-shared-poster-shell {
   width: 100%;
-  max-width: 390px;
+  /* 모바일 Safari: 390px 고정 캡 제거 — 뷰포트에 맞게 넓힘(최대 430) */
+  max-width: min(430px, calc(100vw - 28px));
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 18px;
+  box-sizing: border-box;
 }
 
 /* —— 포스터 카드 —— */
@@ -2197,13 +2199,13 @@ a.mr-result-share-card-link {
 
 /* ─── MOVE REPORT mobile viral polish (≤430px iPhone / 일반 모바일) ─── */
 .mr-result-hero-emoji {
-  font-size: clamp(56px, 16vw, 72px);
+  font-size: clamp(76px, 22vw, 102px);
   line-height: 1;
 }
 
 .mr-result-hero-type {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: clamp(30px, 7.5vw, 40px);
+  font-size: clamp(34px, 10vw, 52px);
   color: #fff;
   line-height: 1.1;
   letter-spacing: -0.01em;
@@ -2333,35 +2335,70 @@ a.mr-result-share-card-link {
   font-size: 11px;
 }
 
-@media (max-width: 430px) {
+/* 첫 화면 하단 CTA — Safari safe-area */
+.mr-intro-cta-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: linear-gradient(to top, #0d0d0d 80%, transparent);
+  padding: 18px max(16px, env(safe-area-inset-left)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+  box-sizing: border-box;
+}
+
+.mr-result-desc-p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* 모바일·QR 유입 (Safari 포함): 430px만이 아닌 전 구간 동일 기준 */
+@media (max-width: 767px) {
+  .mr-page {
+    width: 100%;
+    max-width: none;
+  }
+
+  .mr-content-max,
   .mr-page-inner {
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mr-intro-page .mr-content-max {
+    max-width: 100%;
+  }
+
+  .mr-page-inner {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
     padding-top: 1.5rem;
-    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
   }
 
   .page:not(.mr-intro-page) {
-    max-width: none;
+    max-width: none !important;
     width: 100%;
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
+    box-sizing: border-box;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
   }
 
   .btn-fire {
-    min-height: 52px;
-    font-size: 1rem;
+    min-height: 56px;
+    font-size: 1.0625rem;
     font-weight: 800;
     border-radius: 1rem;
     padding: 1rem 1.15rem;
   }
 
   .btn-ghost {
-    min-height: 48px;
-    font-size: 0.9375rem;
+    min-height: 52px;
+    font-size: 1rem;
     font-weight: 600;
     border-radius: 1rem;
-    padding: 0.85rem 1rem;
+    padding: 0.88rem 1rem;
   }
 
   .survey-html-opt {
@@ -2390,8 +2427,8 @@ a.mr-result-share-card-link {
 
   a.mr-result-share-card-link.mr-result-share-btn--primary,
   .mr-result-share-btn--primary.btn-fire {
-    min-height: 54px;
-    font-size: clamp(16px, 4.2vw, 17px);
+    min-height: 56px;
+    font-size: clamp(16px, 4.2vw, 18px);
     letter-spacing: -0.02em;
     box-shadow:
       0 4px 0 rgba(0, 0, 0, 0.22),
@@ -2408,19 +2445,23 @@ a.mr-result-share-card-link {
   }
 
   .mr-result-share-btn--secondary.btn-ghost {
-    min-height: 48px;
-    font-size: 14px;
+    min-height: 52px;
+    font-size: 15px;
   }
 
   /* shared 바이럴 포스터 */
   .mr-shared-poster-page {
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
+    min-height: 100svh;
+    min-height: 100dvh;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
 
   .mr-shared-poster-shell {
-    max-width: min(430px, calc(100vw - 32px));
-    gap: clamp(18px, 4vw, 24px);
+    width: min(100%, calc(100vw - 28px));
+    max-width: min(430px, calc(100vw - 28px));
+    gap: clamp(20px, 4vw, 26px);
   }
 
   .mr-poster-card-inner {
@@ -2483,9 +2524,11 @@ a.mr-result-share-card-link {
   }
 
   .mr-shared-poster-cta {
-    min-height: 54px;
-    font-size: clamp(16px, 4.2vw, 17px);
+    width: 100%;
+    min-height: 56px;
+    font-size: clamp(16px, 4.2vw, 18px);
     border-radius: 16px;
+    box-sizing: border-box;
   }
 
   .mr-shared-poster-copy {
@@ -2509,7 +2552,7 @@ a.mr-result-share-card-link {
   }
 
   .mr-shared-error-cta.btn-fire {
-    min-height: 54px;
+    min-height: 56px;
     font-size: 1rem;
   }
 
@@ -2544,9 +2587,42 @@ a.mr-result-share-card-link {
   }
 
   .mr-btn-fire-html.btn-fire {
-    min-height: 54px;
-    font-size: clamp(16px, 4vw, 17px);
+    min-height: 56px;
+    font-size: clamp(16px, 4vw, 18px);
     border-radius: 16px;
+  }
+
+  .mr-intro-page {
+    min-height: 100svh;
+    min-height: 100dvh;
+  }
+
+  .mr-intro-cta-bar {
+    padding-top: 14px !important;
+    padding-bottom: max(28px, env(safe-area-inset-bottom)) !important;
+    padding-left: max(12px, env(safe-area-inset-left)) !important;
+    padding-right: max(12px, env(safe-area-inset-right)) !important;
+  }
+
+  .mr-result-main-pad {
+    padding-left: max(12px, env(safe-area-inset-left)) !important;
+    padding-right: max(12px, env(safe-area-inset-right)) !important;
+    padding-top: 16px !important;
+    padding-bottom: max(56px, calc(48px + env(safe-area-inset-bottom))) !important;
+  }
+
+  .mr-result-desc-p {
+    font-size: 16px !important;
+    line-height: 1.65 !important;
+  }
+
+  .mr-result-tabs-wrap {
+    padding-left: max(12px, env(safe-area-inset-left)) !important;
+    padding-right: max(12px, env(safe-area-inset-right)) !important;
+  }
+
+  .radar-wrap {
+    max-width: 100%;
   }
 
   /* 결과 히어로 상단 패딩 — 첫 화면 정보 밀도 */

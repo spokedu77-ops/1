@@ -33,11 +33,10 @@ function DescAccordion({ desc, col, revealed }: { desc: string; col: string; rev
         }}
       >
         <p
+          className="mr-result-desc-p"
           style={{
-            fontSize: '14px',
             fontWeight: 500,
             color: '#CCCCCC',
-            lineHeight: 1.65,
             wordBreak: 'keep-all',
             margin: 0,
           }}
@@ -337,6 +336,7 @@ export default function Result({
 
         {/* 탭 */}
         <div
+          className="mr-result-tabs-wrap"
           style={{
             position: 'sticky',
             top: 0,
@@ -366,7 +366,7 @@ export default function Result({
           </div>
         </div>
 
-        <div style={{ padding: '16px 20px 60px' }}>
+        <div className="mr-result-main-pad" style={{ padding: '16px 20px 60px' }}>
           {tab === 'report' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }} className="anim-fade">
               <div className="card mr-card-html">

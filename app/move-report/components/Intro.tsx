@@ -265,17 +265,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
         </div>
       </div>
 
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: '20px 24px 36px',
-          background: 'linear-gradient(to top,#0D0D0D 80%,transparent)',
-          zIndex: 10,
-        }}
-      >
+      <div className="mr-intro-cta-bar">
         <div className="mr-content-max" style={{ margin: '0 auto' }}>
           <button type="button" onClick={onStart} className="btn-fire mr-btn-fire-html">
             <span>3분 테스트 시작하기</span>
