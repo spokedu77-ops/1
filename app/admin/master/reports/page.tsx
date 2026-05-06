@@ -59,6 +59,19 @@ type ReportTeacher = {
   adjs: SettlementRow[];
 };
 
+function assertSupabaseOk(error: { message: string } | null | undefined) {
+  if (error) throw error;
+}
+
+function assertMutationRow<T>(
+  data: T | null,
+  error: { message: string } | null | undefined
+): T {
+  if (error) throw error;
+  if (!data) throw new Error('변경이 반영되지 않았습니다. 권한 또는 RLS 정책을 확인해 주세요.');
+  return data;
+}
+
 export default function UltimateSettlementPage() {
   const router = useRouter();
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
@@ -136,24 +149,27 @@ export default function UltimateSettlementPage() {
       const startDate = `${year}-${String(month).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
       const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-      const { data: teachers } = await supabase
+      const { data: teachers, error: teachersError } = await supabase
         .from('users')
         .select('id, name')
         .eq('role', 'teacher')
         .eq('is_active', true);
+      assertSupabaseOk(teachersError);
 
       // 정산 대상: finished + verified (검수 승인 포함). 강사 앱·진단 SQL과 동일 기준.
-      const { data: sessions } = await supabase
+      const { data: sessions, error: sessionsError } = await supabase
         .from('sessions')
         .select('id, created_by, price, students_text, memo, start_at, title')
         .in('status', ['finished', 'verified'])
         .gte('start_at', `${startDate}T00:00:00`)
         .lte('start_at', `${endDate}T23:59:59`);
+      assertSupabaseOk(sessionsError);
 
-      const { data: dbAdjs } = await supabase
+      const { data: dbAdjs, error: dbAdjsError } = await supabase
         .from('settlements')
         .select('*')
         .eq('year', year).eq('month', month).eq('period', period);
+      assertSupabaseOk(dbAdjsError);
 
       // 수업료 총합(지급액): 세션의 price는 주강사 지급액, EXTRA_TEACHERS 각 price는 보조 지급액 → 세션별 주+보조 합산
       const sessionsList = sessions || [];
@@ -213,6 +229,7 @@ export default function UltimateSettlementPage() {
       setReportData(calculatedData);
     } catch (error) {
       devLogger.error('Data load error:', error);
+      toast.error(error instanceof Error ? error.message : '정산 데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -230,23 +247,26 @@ export default function UltimateSettlementPage() {
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
       const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-      const { data: teachers } = await supabase
+      const { data: teachers, error: teachersError } = await supabase
         .from('users')
         .select('id, name, is_active')
         .eq('role', 'teacher');
+      assertSupabaseOk(teachersError);
 
-      const { data: sessions } = await supabase
+      const { data: sessions, error: sessionsError } = await supabase
         .from('sessions')
         .select('id, created_by, price, students_text, memo')
         .in('status', ['finished', 'verified'])
         .gte('start_at', `${startDate}T00:00:00`)
         .lte('start_at', `${endDate}T23:59:59`);
+      assertSupabaseOk(sessionsError);
 
-      const { data: dbAdjs } = await supabase
+      const { data: dbAdjs, error: dbAdjsError } = await supabase
         .from('settlements')
         .select('*')
         .eq('year', year)
         .eq('month', month);
+      assertSupabaseOk(dbAdjsError);
 
       const sessionsList = sessions || [];
       const calculated = (teachers || []).map((teacher: TeacherRow & { is_active?: boolean }) => {
@@ -328,13 +348,36 @@ export default function UltimateSettlementPage() {
   const addAdjItem = async (teacherId: string) => {
     const target = inputStates[teacherId];
     if (!target?.amount || !target?.reason) return toast.error('금액과 사유를 입력하세요.');
-    await supabase.from('settlements').insert({ teacher_id: teacherId, amount: Number(target.amount), reason: target.reason, year, month, period });
-    setInputStates({...inputStates, [teacherId]: { amount: '', reason: '' }});
-    fetchReport();
+    try {
+      const { data, error } = await supabase
+        .from('settlements')
+        .insert({ teacher_id: teacherId, amount: Number(target.amount), reason: target.reason, year, month, period })
+        .select('id')
+        .maybeSingle();
+      assertMutationRow(data, error);
+      setInputStates({...inputStates, [teacherId]: { amount: '', reason: '' }});
+      fetchReport();
+    } catch (err) {
+      devLogger.error('Settlement adjustment insert error:', err);
+      toast.error(err instanceof Error ? err.message : '정산 항목 추가에 실패했습니다.');
+    }
   };
 
   const removeAdjItem = async (adjId: string) => {
-    if (confirm('정말 삭제하시겠습니까?')) { await supabase.from('settlements').delete().eq('id', adjId); fetchReport(); }
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      const { data, error } = await supabase
+        .from('settlements')
+        .delete()
+        .eq('id', adjId)
+        .select('id')
+        .maybeSingle();
+      assertMutationRow(data, error);
+      fetchReport();
+    } catch (err) {
+      devLogger.error('Settlement adjustment delete error:', err);
+      toast.error(err instanceof Error ? err.message : '정산 항목 삭제에 실패했습니다.');
+    }
   };
 
   if (!isAdmin) return null;

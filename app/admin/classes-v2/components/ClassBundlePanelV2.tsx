@@ -10,7 +10,7 @@ import { undoPostponeCascade } from "@/app/admin/classes-shared/lib/postponeUtil
 import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
 import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/lib/sessionInsertClone";
 import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
-import { resolvePlannedTotal } from "@/app/admin/classes-v2/lib/plannedRoundTotal";
+import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-v2/lib/plannedRoundTotal";
 import {
   isSessionScheduleDraftDirty,
   isoRangeFromDateTimeInputs,
@@ -852,7 +852,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     setReindexingByGroup((prev) => ({ ...prev, [gid]: true }));
     try {
       const sorted = active;
-      const total = sorted.length;
+      const total = resolvePlannedTotal(sessions);
       await Promise.all(
         sorted.map((row, i) => {
           return supabase
@@ -881,20 +881,24 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     if (!supabase) return;
     if (!sessionId) return;
     if (deletingSessionId === sessionId) return;
-    if (!confirm("해당 회차를 DB에서 영구 삭제할까요?")) return;
+    if (!confirm("해당 회차를 취소 처리할까요? 수업료는 정산되지 않습니다.")) return;
 
     setDeletingSessionId(sessionId);
     try {
-      const { error: delErr } = await supabase.from("sessions").delete().eq("id", sessionId);
-      if (delErr) throw delErr;
-      // 재정렬 없이 삭제만 — 재정렬 시 cancelled 제외 active 수로 round_total이 줄어
-      // 7·8회차가 5·6회차로 바뀌어 사라져 보이는 문제 방지.
-      toast.success("회차가 삭제되었습니다.");
+      const { data: cancelledRow, error: cancelErr } = await supabase
+        .from("sessions")
+        .update({ status: "cancelled", price: 0 })
+        .eq("id", sessionId)
+        .select("id")
+        .maybeSingle();
+      if (cancelErr) throw cancelErr;
+      if (!cancelledRow?.id) throw new Error("BUNDLE_SESSION_NOT_CANCELLED");
+      toast.success("회차가 취소 처리되었습니다.");
       await loadAll();
       onChanged?.();
     } catch (err) {
       devLogger.error(err);
-      toast.error("회차 삭제에 실패했습니다.");
+      toast.error("회차 취소 처리에 실패했습니다.");
     } finally {
       setDeletingSessionId(null);
     }
@@ -1024,9 +1028,13 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       const { error: delErr } = await supabase.from("sessions").delete().in("id", idsToDelete);
       if (delErr) throw delErr;
 
+      const total = resolvePlannedTotalAfterDeleting(sessions, idsToDelete.length);
       const remaining = active.filter((s) => !idsToDelete.includes(s.id));
+      const remainingActiveIds = new Set(remaining.map((s) => s.id));
+      const remainingTotalRows = sessions.filter(
+        (s) => !idsToDelete.includes(s.id) && !remainingActiveIds.has(s.id) && s.status !== "deleted"
+      );
       if (remaining.length > 0) {
-        const total = remaining.length;
         await Promise.all(
           remaining.map((row, i) =>
             supabase
@@ -1039,6 +1047,19 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
               })
               .eq("id", row.id)
           )
+        );
+      }
+      if (remainingTotalRows.length > 0) {
+        await Promise.all(
+          remainingTotalRows.map((row) => {
+            const patch = {
+              round_total: total,
+              ...(typeof row.round_index === "number"
+                ? { round_display: `${Math.min(row.round_index, total)}/${total}` }
+                : {}),
+            };
+            return supabase.from("sessions").update(patch).eq("id", row.id);
+          })
         );
       }
       toast.success("회차가 축소되었습니다.");
@@ -1680,7 +1701,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                               disabled={deletingSessionId === r.id || !s.isActiveByTime}
                                               onClick={() => void handleDeleteSession(gid, r.id)}
                                             >
-                                              {deletingSessionId === r.id ? "삭제 중..." : "삭제"}
+                                              {deletingSessionId === r.id ? "취소 중..." : "취소"}
                                             </button>
                                           </div>
                                         )}
@@ -2230,4 +2251,3 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     </div>
   );
 }
-

@@ -5,6 +5,7 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
 import { Calendar, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Interfaces ---
 interface IClassSession {
@@ -34,6 +35,15 @@ interface Teacher {
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
+async function readApiError(res: Response, fallback: string) {
+  try {
+    const json = (await res.json()) as { error?: unknown };
+    return typeof json.error === 'string' && json.error.trim() ? json.error : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 // --- 인라인 미니 캘린더 ---
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -153,13 +163,14 @@ export default function SpokeduHQDashboard() {
     setPostponeLoading(true);
     try {
       const res = await fetch('/api/admin/postpone-notices?limit=10&offset=0');
-      if (!res.ok) return;
+      if (!res.ok) throw new Error(await readApiError(res, 'Failed to load postpone notices.'));
       const json = await res.json();
       const notices: PostponeNotice[] = json.notices ?? [];
       setPostponeNotices(notices);
       setPostponeTotal(typeof json.total === 'number' ? json.total : notices.length);
     } catch (err) {
       devLogger.error('Postpone notices fetch error:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to load postpone notices.');
     } finally {
       setPostponeLoading(false);
     }
@@ -180,6 +191,8 @@ export default function SpokeduHQDashboard() {
         .gte('start_at', startOfDay)
         .lte('start_at', endOfDay)
         .order('start_at', { ascending: true });
+
+      if (classesRes.error) throw classesRes.error;
 
       const rawClasses = classesRes.data || [];
 
@@ -251,12 +264,12 @@ export default function SpokeduHQDashboard() {
     if (teachers.length === 0) {
       try {
         const res = await fetch('/api/admin/postpone-notices/teachers');
-        if (res.ok) {
-          const json = await res.json();
-          setTeachers(json.teachers ?? []);
-        }
+        if (!res.ok) throw new Error(await readApiError(res, 'Failed to load teachers.'));
+        const json = await res.json();
+        setTeachers(json.teachers ?? []);
       } catch (err) {
         devLogger.error('Teachers fetch error:', err);
+        setNoticeError(err instanceof Error ? err.message : 'Failed to load teachers.');
       }
     }
   };
@@ -306,11 +319,13 @@ export default function SpokeduHQDashboard() {
   const handleDeleteNotice = async (id: string) => {
     setDeletingNoticeId(id);
     try {
-      await fetch(`/api/admin/postpone-notices/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/postpone-notices/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await readApiError(res, 'Failed to delete postpone notice.'));
       setPostponeNotices((prev) => prev.filter((n) => n.id !== id));
       setPostponeTotal((prev) => Math.max(prev - 1, 0));
     } catch (err) {
       devLogger.error(err);
+      toast.error(err instanceof Error ? err.message : 'Failed to delete postpone notice.');
     } finally {
       setDeletingNoticeId(null);
     }

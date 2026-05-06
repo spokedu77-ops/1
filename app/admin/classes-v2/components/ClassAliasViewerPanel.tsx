@@ -8,7 +8,7 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { postponeCascade, undoPostponeCascade } from '@/app/admin/classes-shared/lib/postponeUtils';
 import { extendClass } from '@/app/admin/classes-shared/lib/roundExtendUtils';
 import { omitSessionIdentityForInsertClone } from '@/app/admin/classes-shared/lib/sessionInsertClone';
-import { resolvePlannedTotal } from '../lib/plannedRoundTotal';
+import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from '../lib/plannedRoundTotal';
 import {
   isSessionScheduleDraftDirty,
   isoRangeFromDateTimeInputs,
@@ -39,6 +39,21 @@ function toDateInputValueLocal(d: Date) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+function assertMutationRow(data: { id?: string } | null, error: unknown, fallback: string) {
+  if (error) throw error;
+  if (!data?.id) throw new Error(fallback);
+}
+
+function assertMutationRows(
+  data: Array<{ id?: string }> | null,
+  error: unknown,
+  expectedCount: number,
+  fallback: string
+) {
+  if (error) throw error;
+  if (!Array.isArray(data) || data.length !== expectedCount) throw new Error(fallback);
 }
 
 type Props = {
@@ -262,8 +277,13 @@ export default function ClassAliasViewerPanel({
     if (!supabase) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from('sessions').update(patch).eq('id', sessionId);
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('sessions')
+        .update(patch)
+        .eq('id', sessionId)
+        .select('id')
+        .maybeSingle();
+      assertMutationRow(data, error, 'ALIAS_SESSION_NOT_UPDATED');
       toast.success('저장되었습니다.');
       if (patch.start_at && patch.end_at) {
         setScheduleDraftBySessionId((prev) => {
@@ -378,10 +398,10 @@ export default function ClassAliasViewerPanel({
     setReindexing(true);
     try {
       const sorted = current;
-      const total = sorted.length;
+      const total = resolvePlannedTotal(baseRows);
       await Promise.all(
-        sorted.map((row, i) => {
-          return supabase
+        sorted.map(async (row, i) => {
+          const { data, error } = await supabase
             .from('sessions')
             .update({
               round_index: i + 1,
@@ -389,7 +409,10 @@ export default function ClassAliasViewerPanel({
               sequence_number: i + 1,
               round_display: `${i + 1}/${total}`,
             })
-            .eq('id', row.id);
+            .eq('id', row.id)
+            .select('id')
+            .maybeSingle();
+          assertMutationRow(data, error, 'ALIAS_SESSION_ROUND_NOT_UPDATED');
         })
       );
       toast.success('회차가 재정렬되었습니다.');
@@ -419,18 +442,23 @@ export default function ClassAliasViewerPanel({
     setShrinking(true);
     try {
       const idsToDelete = toRemove.map((s) => s.id);
-      const { error: delErr } = await supabase
+      const { data: deletedRows, error: delErr } = await supabase
         .from('sessions')
         .delete()
-        .in('id', idsToDelete);
-      if (delErr) throw delErr;
+        .in('id', idsToDelete)
+        .select('id');
+      assertMutationRows(deletedRows, delErr, idsToDelete.length, 'ALIAS_SESSIONS_NOT_DELETED');
 
+      const total = resolvePlannedTotalAfterDeleting(baseRows, idsToDelete.length);
       const remaining = active.filter((s) => !idsToDelete.includes(s.id));
+      const remainingActiveIds = new Set(remaining.map((s) => s.id));
+      const remainingTotalRows = baseRows.filter(
+        (s) => !idsToDelete.includes(s.id) && !remainingActiveIds.has(s.id) && s.status !== 'deleted'
+      );
       if (remaining.length > 0) {
-        const total = remaining.length;
         await Promise.all(
-          remaining.map((row, i) =>
-            supabase
+          remaining.map(async (row, i) => {
+            const { data, error } = await supabase
               .from('sessions')
               .update({
                 round_index: i + 1,
@@ -439,7 +467,29 @@ export default function ClassAliasViewerPanel({
                 round_display: `${i + 1}/${total}`,
               })
               .eq('id', row.id)
-          )
+              .select('id')
+              .maybeSingle();
+            assertMutationRow(data, error, 'ALIAS_SESSION_ROUND_NOT_UPDATED');
+          })
+        );
+      }
+      if (remainingTotalRows.length > 0) {
+        await Promise.all(
+          remainingTotalRows.map(async (row) => {
+            const patch = {
+              round_total: total,
+              ...(typeof row.round_index === 'number'
+                ? { round_display: `${Math.min(row.round_index, total)}/${total}` }
+                : {}),
+            };
+            const { data, error } = await supabase
+              .from('sessions')
+              .update(patch)
+              .eq('id', row.id)
+              .select('id')
+              .maybeSingle();
+            assertMutationRow(data, error, 'ALIAS_SESSION_TOTAL_NOT_UPDATED');
+          })
         );
       }
       toast.success('회차가 축소되었습니다.');
@@ -456,19 +506,22 @@ export default function ClassAliasViewerPanel({
     if (!supabase) return;
     if (!groupId || !sessionId) return;
     if (deletingSessionId === sessionId) return;
-    if (!confirm("해당 회차를 DB에서 영구 삭제할까요?")) return;
+    if (!confirm("해당 회차를 취소 처리할까요? 수업료는 정산되지 않습니다.")) return;
 
     setDeletingSessionId(sessionId);
     try {
-      const { error: delErr } = await supabase.from('sessions').delete().eq('id', sessionId);
-      if (delErr) throw delErr;
-      // 재정렬 없이 삭제만 — 재정렬 시 cancelled 제외 active 수로 round_total이 줄어
-      // 7·8회차가 5·6회차로 바뀌어 사라져 보이는 문제 방지.
-      toast.success('회차가 삭제되었습니다.');
+      const { data: cancelledRow, error: cancelErr } = await supabase
+        .from('sessions')
+        .update({ status: 'cancelled', price: 0 })
+        .eq('id', sessionId)
+        .select('id')
+        .maybeSingle();
+      assertMutationRow(cancelledRow, cancelErr, 'ALIAS_SESSION_NOT_CANCELLED');
+      toast.success('회차가 취소 처리되었습니다.');
       void load();
     } catch (err) {
       devLogger.error(err);
-      toast.error('회차 삭제에 실패했습니다.');
+      toast.error('회차 취소 처리에 실패했습니다.');
     } finally {
       setDeletingSessionId(null);
     }
@@ -846,7 +899,7 @@ export default function ClassAliasViewerPanel({
                                   disabled={deletingSessionId === r.id || statusLabel === '완료'}
                                   onClick={() => void handleDeleteSession(r.group_id, r.id)}
                                 >
-                                  {deletingSessionId === r.id ? '삭제 중...' : '삭제'}
+                                  {deletingSessionId === r.id ? '취소 중...' : '취소'}
                                 </button>
                               )}
                             </div>
@@ -1011,4 +1064,3 @@ export default function ClassAliasViewerPanel({
     </div>
   );
 }
-

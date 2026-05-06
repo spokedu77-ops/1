@@ -10,7 +10,7 @@ import { parseExtraTeachers, buildMemoWithExtras } from '@/app/admin/classes-sha
 import { postponeCascade, undoPostponeCascade } from '@/app/admin/classes-shared/lib/postponeUtils';
 import { extendClass } from '@/app/admin/classes-shared/lib/roundExtendUtils';
 import { omitSessionIdentityForInsertClone } from '@/app/admin/classes-shared/lib/sessionInsertClone';
-import { resolvePlannedTotal } from '../lib/plannedRoundTotal';
+import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from '../lib/plannedRoundTotal';
 import {
   isSessionScheduleDraftDirty,
   isoRangeFromDateTimeInputs,
@@ -60,6 +60,21 @@ function toDateInputValueLocal(d: Date) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+function assertMutationRow(data: { id?: string } | null, error: unknown, fallback: string) {
+  if (error) throw error;
+  if (!data?.id) throw new Error(fallback);
+}
+
+function assertMutationRows(
+  data: Array<{ id?: string }> | null,
+  error: unknown,
+  expectedCount: number,
+  fallback: string
+) {
+  if (error) throw error;
+  if (!Array.isArray(data) || data.length !== expectedCount) throw new Error(fallback);
 }
 
 /**
@@ -241,7 +256,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     const teacherId = patch.teacherId ?? target.created_by;
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('sessions')
         .update({
           start_at: start.toISOString(),
@@ -249,8 +264,10 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
           price,
           created_by: teacherId,
         })
-        .eq('id', target.id);
-      if (error) throw error;
+        .eq('id', target.id)
+        .select('id')
+        .maybeSingle();
+      assertMutationRow(data, error, 'CLASS_SESSION_NOT_UPDATED');
       toast.success('저장되었습니다.');
       onChanged?.();
       if (patch.startAt && patch.endAt) {
@@ -374,11 +391,11 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     setReindexing(true);
     try {
       const sorted = active;
-      const total = sorted.length;
+      const total = resolvePlannedTotal(sessions);
 
       await Promise.all(
-        sorted.map((row, i) => {
-          return supabase
+        sorted.map(async (row, i) => {
+          const { data, error } = await supabase
             .from('sessions')
             .update({
               round_index: i + 1,
@@ -386,7 +403,10 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
               sequence_number: i + 1,
               round_display: `${i + 1}/${total}`,
             })
-            .eq('id', row.id);
+            .eq('id', row.id)
+            .select('id')
+            .maybeSingle();
+          assertMutationRow(data, error, 'CLASS_SESSION_ROUND_NOT_UPDATED');
         })
       );
 
@@ -416,15 +436,23 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     setShrinking(true);
     try {
       const idsToDelete = toRemove.map((s) => s.id);
-      const { error: delErr } = await supabase.from('sessions').delete().in('id', idsToDelete);
-      if (delErr) throw delErr;
+      const { data: deletedRows, error: delErr } = await supabase
+        .from('sessions')
+        .delete()
+        .in('id', idsToDelete)
+        .select('id');
+      assertMutationRows(deletedRows, delErr, idsToDelete.length, 'CLASS_SESSIONS_NOT_DELETED');
 
+      const total = resolvePlannedTotalAfterDeleting(sessions, idsToDelete.length);
       const remaining = active.filter((s) => !idsToDelete.includes(s.id));
+      const remainingActiveIds = new Set(remaining.map((s) => s.id));
+      const remainingTotalRows = sessions.filter(
+        (s) => !idsToDelete.includes(s.id) && !remainingActiveIds.has(s.id) && s.status !== 'deleted'
+      );
       if (remaining.length > 0) {
-        const total = remaining.length;
         await Promise.all(
-          remaining.map((row, i) =>
-            supabase
+          remaining.map(async (row, i) => {
+            const { data, error } = await supabase
               .from('sessions')
               .update({
                 round_index: i + 1,
@@ -433,7 +461,29 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                 round_display: `${i + 1}/${total}`,
               })
               .eq('id', row.id)
-          )
+              .select('id')
+              .maybeSingle();
+            assertMutationRow(data, error, 'CLASS_SESSION_ROUND_NOT_UPDATED');
+          })
+        );
+      }
+      if (remainingTotalRows.length > 0) {
+        await Promise.all(
+          remainingTotalRows.map(async (row) => {
+            const patch = {
+              round_total: total,
+              ...(typeof row.round_index === 'number'
+                ? { round_display: `${Math.min(row.round_index, total)}/${total}` }
+                : {}),
+            };
+            const { data, error } = await supabase
+              .from('sessions')
+              .update(patch)
+              .eq('id', row.id)
+              .select('id')
+              .maybeSingle();
+            assertMutationRow(data, error, 'CLASS_SESSION_TOTAL_NOT_UPDATED');
+          })
         );
       }
 
@@ -452,20 +502,23 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     if (!supabase || !groupId) return;
     if (!sessionId) return;
     if (deletingSessionId === sessionId) return;
-    if (!confirm("해당 회차를 DB에서 영구 삭제할까요?")) return;
+    if (!confirm("해당 회차를 취소 처리할까요? 수업료는 정산되지 않습니다.")) return;
 
     setDeletingSessionId(sessionId);
     try {
-      const { error: delErr } = await supabase.from('sessions').delete().eq('id', sessionId);
-      if (delErr) throw delErr;
-      // 재정렬 없이 그냥 삭제만 — 재정렬하면 cancelled 제외 후 active 수로 round_total이 줄어
-      // 7·8회차가 5·6회차로 변해버리는 문제가 생긴다.
-      toast.success('회차가 삭제되었습니다.');
+      const { data: cancelledRow, error: cancelErr } = await supabase
+        .from('sessions')
+        .update({ status: 'cancelled', price: 0 })
+        .eq('id', sessionId)
+        .select('id')
+        .maybeSingle();
+      assertMutationRow(cancelledRow, cancelErr, 'CLASS_SESSION_NOT_CANCELLED');
+      toast.success('회차가 취소 처리되었습니다.');
       onChanged?.();
       loadSessions();
     } catch (err) {
       devLogger.error(err);
-      toast.error('회차 삭제에 실패했습니다.');
+      toast.error('회차 취소 처리에 실패했습니다.');
     } finally {
       setDeletingSessionId(null);
     }
@@ -1138,7 +1191,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                                   disabled={deletingSessionId === s.id || statusLabel === '완료'}
                                   onClick={() => void handleDeleteSession(s.id)}
                                 >
-                                  {deletingSessionId === s.id ? '삭제 중...' : '삭제'}
+                                  {deletingSessionId === s.id ? '취소 중...' : '취소'}
                                 </button>
                               )}
                             </div>
@@ -1312,4 +1365,3 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
     </div>
   );
 }
-

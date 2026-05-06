@@ -1,7 +1,5 @@
-import { VARIANT_FRUIT_IMAGE_URLS } from './signals';
-
 /** 변형 색지각: 이미지 URL 목록을 브라우저 캐시에 올립니다. */
-export function preloadVariantFruitImages(urls: readonly string[] = VARIANT_FRUIT_IMAGE_URLS): Promise<void> {
+export function preloadVariantFruitImages(urls: readonly string[] = []): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
   return Promise.all(
     urls.map(

@@ -3,6 +3,11 @@
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import type { CenterHistoryEntry } from '@/app/lib/centers/types';
 
+const HISTORY_BODY_REQUIRED = '히스토리 내용을 입력해 주세요.';
+const SESSION_REQUIRED = '로그인 세션을 확인할 수 없습니다. 다시 로그인해 주세요.';
+const HISTORY_NOT_UPDATED = '히스토리 수정이 반영되지 않았습니다. 권한 또는 RLS 정책을 확인해 주세요.';
+const HISTORY_NOT_DELETED = '히스토리 삭제가 반영되지 않았습니다. 권한 또는 RLS 정책을 확인해 주세요.';
+
 export async function getCenterHistory(centerId: string): Promise<CenterHistoryEntry[]> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
@@ -20,15 +25,18 @@ export async function addCenterHistoryEntry(
   body: string
 ): Promise<{ error?: string }> {
   const trimmed = body.trim();
-  if (!trimmed) return { error: '내용을 입력해 주세요.' };
+  if (!trimmed) return { error: HISTORY_BODY_REQUIRED };
+
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (!user) return { error: SESSION_REQUIRED };
+
   const { error } = await supabase.from('center_history').insert({
     center_id: centerId,
     body: trimmed,
-    created_by: user?.id ?? null,
+    created_by: user.id,
   });
   if (error) return { error: error.message };
   return {};
@@ -39,7 +47,8 @@ export async function updateCenterHistoryEntry(
   body: string
 ): Promise<{ error?: string; updated?: boolean }> {
   const trimmed = body.trim();
-  if (!trimmed) return { error: '내용을 입력해 주세요.' };
+  if (!trimmed) return { error: HISTORY_BODY_REQUIRED };
+
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('center_history')
@@ -48,7 +57,7 @@ export async function updateCenterHistoryEntry(
     .select('id');
   if (error) return { error: error.message };
   if (!data || data.length === 0) {
-    return { error: '수정이 반영되지 않았습니다. (RLS 정책 미적용/캐시 미갱신일 수 있어요 — `center_history` UPDATE/DELETE 정책 적용 후 스키마 캐시 리로드 필요)' };
+    return { error: HISTORY_NOT_UPDATED };
   }
   return { updated: true };
 }
@@ -62,7 +71,7 @@ export async function deleteCenterHistoryEntry(entryId: string): Promise<{ error
     .select('id');
   if (error) return { error: error.message };
   if (!data || data.length === 0) {
-    return { error: '삭제가 반영되지 않았습니다. (RLS 정책 미적용/캐시 미갱신일 수 있어요 — `center_history` UPDATE/DELETE 정책 적용 후 스키마 캐시 리로드 필요)' };
+    return { error: HISTORY_NOT_DELETED };
   }
   return { deleted: true };
 }

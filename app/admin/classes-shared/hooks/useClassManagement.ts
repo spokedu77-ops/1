@@ -7,6 +7,11 @@ import { ADMIN_NAMES } from '../constants/admins';
 import { buildGroupPlannedTotals } from '../lib/plannedRoundTotal';
 import { themeColorHexForSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 
+function assertUpdatedRow(data: { id?: string } | null, error: unknown, fallback: string) {
+  if (error) throw error;
+  if (!data?.id) throw new Error(fallback);
+}
+
 export function useClassManagement() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [allEvents, setAllEvents] = useState<SessionEvent[]>([]);
@@ -43,6 +48,10 @@ export function useClassManagement() {
         .order('name', { ascending: true }),
       sessionsInRange().range(0, PAGE - 1),
     ]);
+
+    if (usersRes.error) {
+      devLogger.error('fetchSessions users error:', usersRes.error);
+    }
 
     const tList = usersRes.data || [];
     setTeacherList(tList);
@@ -162,12 +171,14 @@ export function useClassManagement() {
   const updateMileageOnly = async (sessionId: string, mileageOption: string) => {
     if (!supabase) return false;
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('sessions')
         .update({ mileage_option: mileageOption })
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .select('id')
+        .maybeSingle();
       
-      if (error) throw error;
+      assertUpdatedRow(data, error, 'MILEAGE_SESSION_NOT_UPDATED');
       await fetchSessions();
       return true;
     } catch (err) {

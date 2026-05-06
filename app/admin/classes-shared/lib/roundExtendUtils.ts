@@ -29,6 +29,11 @@ function formatErrorMessage(err: unknown): string {
   return String(err);
 }
 
+function assertMutationApplied(data: { id?: string } | null, error: unknown, fallback: string) {
+  if (error) throw error;
+  if (!data?.id) throw new Error(fallback);
+}
+
 // 그룹 수업 회차 확장 유틸
 export async function extendClass(
   supabase: any,
@@ -134,19 +139,30 @@ export async function extendClass(
 
     // 기존 세션 round_total / round_display 업데이트
     await Promise.all(
-      activeSessions.map((s: any) =>
-        supabase
+      activeSessions.map(async (s: any) => {
+        const { data, error: updateError } = await supabase
           .from('sessions')
           .update({
             round_total: newTotal,
             round_display: `${s.round_index ?? 1}/${newTotal}`,
           })
           .eq('id', s.id)
-      )
+          .select('id')
+          .maybeSingle();
+
+        assertMutationApplied(data, updateError, 'EXTEND_SESSION_ROUND_NOT_UPDATED');
+      })
     );
 
-    const { error: insertError } = await supabase.from('sessions').insert(newSessions);
+    const { data: insertedRows, error: insertError } = await supabase
+      .from('sessions')
+      .insert(newSessions)
+      .select('id');
+
     if (insertError) throw insertError;
+    if (!Array.isArray(insertedRows) || insertedRows.length !== newSessions.length) {
+      throw new Error('EXTEND_SESSIONS_NOT_CREATED');
+    }
 
     toast.success('회차가 성공적으로 확장되었습니다.');
     options?.onAfter?.();

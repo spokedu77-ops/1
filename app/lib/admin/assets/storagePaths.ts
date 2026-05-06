@@ -52,21 +52,21 @@ export function challengeBgmPath(fileName: string): string {
   return `audio/challenge/bgm/${fileName}`;
 }
 
-/** SPOMOVE 반응 인지 — 변형 색지각 과일 슬롯 (0~10), 확장자는 업로드 파일에 맞춤 */
+/** SPOMOVE 반응 인지 — 변형 색지각 과일 슬롯 (0~7 → 8슬롯), 확장자는 업로드 파일에 맞춤 */
 export function spomoveVariantFruitPath(slotIndex: number, ext: string): string {
   const safe = ext.replace(/^\./, '').replace(/[^a-z0-9]/gi, '') || 'webp';
-  const n = Math.max(0, Math.min(10, slotIndex));
+  const n = Math.max(0, Math.min(7, slotIndex));
   return `themes/iiwarmup/spomove_variant_fruits/slot_${String(n).padStart(2, '0')}.${safe}`;
 }
 
-/** SPOMOVE 색지각 — 탈 것·감정·동물 등 테마별 슬롯 (0~3 → slot_01~04) */
+/** SPOMOVE 색지각 — 탈 것·감정·동물 등 테마별 슬롯 (0~7 → slot_01~08) */
 export function spomoveVariantThemedPath(
   subfolder: 'spomove_variant_vehicles' | 'spomove_variant_emotions' | 'spomove_variant_animals',
   slotIndex: number,
   ext: string
 ): string {
   const safe = ext.replace(/^\./, '').replace(/[^a-z0-9]/gi, '') || 'webp';
-  const n = Math.max(0, Math.min(3, slotIndex));
+  const n = Math.max(0, Math.min(7, slotIndex));
   const num = String(n + 1).padStart(2, '0');
   return `themes/iiwarmup/${subfolder}/slot_${num}.${safe}`;
 }

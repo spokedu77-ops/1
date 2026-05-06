@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useSpomoveTrainingBGM, SPOMOVE_TRAINING_BGM_PACK_ID } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
+import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 
 /**
  * Asset Hub — SPOMOVE 훈련 전용 BGM 풀.
@@ -12,6 +13,13 @@ import { useSpomoveTrainingBGM, SPOMOVE_TRAINING_BGM_PACK_ID } from '@/app/lib/a
 export function AssetHubBgmPanel() {
   const { list, loading, error, upload, remove } = useSpomoveTrainingBGM();
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const previewAudioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
+
+  const pauseOtherPreviews = (exceptPath: string) => {
+    for (const [p, el] of Object.entries(previewAudioRefs.current)) {
+      if (p !== exceptPath && el && !el.paused) el.pause();
+    }
+  };
 
   const handleUpload = async () => {
     const file = fileRef.current?.files?.[0];
@@ -61,19 +69,41 @@ export function AssetHubBgmPanel() {
             <div className="flex w-full flex-col gap-2">
               {list.map((path) => {
                 const name = path.split('/').pop() ?? path;
+                let previewSrc = '';
+                try {
+                  previewSrc = getPublicUrl(path);
+                } catch {
+                  previewSrc = '';
+                }
                 return (
                   <div
                     key={path}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neutral-700 px-3 py-2"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-700 px-3 py-2"
                   >
-                    <span className="break-all text-sm text-neutral-300">{name}</span>
-                    <button
-                      type="button"
-                      className="shrink-0 rounded bg-red-900/50 px-2 py-1 text-xs text-red-400 hover:bg-red-900/70"
-                      onClick={() => remove(path)}
-                    >
-                      삭제
-                    </button>
+                    <span className="min-w-0 flex-1 break-all text-sm text-neutral-300">{name}</span>
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      {previewSrc ? (
+                        <audio
+                          ref={(el) => {
+                            previewAudioRefs.current[path] = el;
+                          }}
+                          src={previewSrc}
+                          controls
+                          preload="none"
+                          className="h-9 max-w-[min(260px,55vw)]"
+                          onPlay={() => pauseOtherPreviews(path)}
+                        />
+                      ) : (
+                        <span className="text-xs text-neutral-500">URL 오류</span>
+                      )}
+                      <button
+                        type="button"
+                        className="rounded bg-red-900/50 px-2 py-1 text-xs text-red-400 hover:bg-red-900/70"
+                        onClick={() => remove(path)}
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </div>
                 );
               })}

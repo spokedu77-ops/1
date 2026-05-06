@@ -48,6 +48,13 @@ export default function AdminInventoryPage() {
   const [tempQuantities, setTempQuantities] = useState<{[key: number]: string}>({});
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const assertInventoryMutation = (
+    data: { id: number } | null,
+    error: { message: string } | null
+  ) => {
+    if (error) throw error;
+    if (!data) throw new Error('변경이 반영되지 않았습니다. 권한 또는 RLS 정책을 확인해 주세요.');
+  };
 
   const fetchCatalog = useCallback(async () => {
     if (!supabase) return;
@@ -92,7 +99,12 @@ export default function AdminInventoryPage() {
 
   const addLog = async (userId: string, content: string, type: 'in' | 'out' | 'info' = 'info') => {
     if (!supabase) return;
-    await supabase.from('inventory_logs').insert([{ user_id: userId, content, type }]);
+    const { data: inserted, error: insertError } = await supabase
+      .from('inventory_logs')
+      .insert([{ user_id: userId, content, type }])
+      .select('id')
+      .maybeSingle();
+    assertInventoryMutation(inserted, insertError);
     const { data } = await supabase.from('inventory_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
     if (data) setLogs(data);
   };
@@ -122,10 +134,16 @@ export default function AdminInventoryPage() {
 
     if (existing) {
       const newQty = (existing.quantity || 0) + 1;
-      await supabase.from('inventory').update({ quantity: newQty, updated_at: now }).eq('id', existing.id);
+      const { data, error } = await supabase
+        .from('inventory')
+        .update({ quantity: newQty, updated_at: now })
+        .eq('id', existing.id)
+        .select('id')
+        .maybeSingle();
+      assertInventoryMutation(data, error);
       await addLog(selectedTeacher.id, `${item.name} 1개 추가 배부 (합계: ${newQty}개)`, 'in');
     } else {
-      await supabase.from('inventory').insert([{
+      const { data, error } = await supabase.from('inventory').insert([{
         user_id: selectedTeacher.id,
         name: item.name,
         quantity: 1,
@@ -135,7 +153,10 @@ export default function AdminInventoryPage() {
         key_points: item.key_points,
         usage_examples: item.usage_examples,
         updated_at: now
-      }]);
+      }])
+        .select('id')
+        .maybeSingle();
+      assertInventoryMutation(data, error);
       await addLog(selectedTeacher.id, `${item.name} 1개 신규 배부`, 'in');
     }
     fetchTeacherData(selectedTeacher.id);
@@ -155,7 +176,8 @@ export default function AdminInventoryPage() {
     try {
       const draggedItem = JSON.parse(dataJson);
       await processAddItem(draggedItem);
-    } catch {
+    } catch (err) {
+      devLogger.error('[inventory] drop add item failed:', err);
       toast.error('데이터 처리에 실패했습니다.');
     }
   };
@@ -163,14 +185,25 @@ export default function AdminInventoryPage() {
   const handleDirectAdd = async (e: React.MouseEvent, item: InventoryItem) => {
     e.stopPropagation();
     if (!selectedTeacher) return toast.error('선생님을 먼저 선택해주세요.');
-    await processAddItem(item);
+    try {
+      await processAddItem(item);
+    } catch (err) {
+      devLogger.error('[inventory] direct add item failed:', err);
+      toast.error(err instanceof Error ? err.message : '데이터 처리에 실패했습니다.');
+    }
   };
 
   const handleReturnAll = async (item: InventoryItem) => {
     if (!supabase || !selectedTeacher) return;
     if (confirm(`${item.name ?? ''} 전량을 반납(목록 삭제)하시겠습니까?`)) {
       if (item.id == null) return;
-      await supabase.from('inventory').delete().eq('id', item.id);
+      const { data, error } = await supabase
+        .from('inventory')
+        .delete()
+        .eq('id', item.id)
+        .select('id')
+        .maybeSingle();
+      assertInventoryMutation(data, error);
       await addLog(selectedTeacher.id, `${item.name ?? ''} 전량 반납 완료`, 'out');
       fetchTeacherData(selectedTeacher.id);
     } else {
@@ -190,7 +223,13 @@ export default function AdminInventoryPage() {
 
     const prevQty = item.quantity ?? 0;
     const diff = newQty - prevQty;
-    await supabase.from('inventory').update({ quantity: newQty, updated_at: new Date().toISOString() }).eq('id', item.id);
+    const { data, error } = await supabase
+      .from('inventory')
+      .update({ quantity: newQty, updated_at: new Date().toISOString() })
+      .eq('id', item.id)
+      .select('id')
+      .maybeSingle();
+    assertInventoryMutation(data, error);
     await addLog(selectedTeacher.id, `${item.name ?? ''} 수량 변경 (${prevQty} -> ${newQty})`, diff > 0 ? 'in' : 'out');
     fetchTeacherData(selectedTeacher.id);
   };
@@ -199,12 +238,21 @@ export default function AdminInventoryPage() {
     if (!supabase || !catalogForm.name) return toast.error('교구명을 입력하세요');
     try {
       if (editingCatalogId) {
-        const { error } = await supabase.from('catalog').update(catalogForm).eq('id', editingCatalogId);
-        if (error) throw error;
+        const { data, error } = await supabase
+          .from('catalog')
+          .update(catalogForm)
+          .eq('id', editingCatalogId)
+          .select('id')
+          .maybeSingle();
+        assertInventoryMutation(data, error);
         toast.success('교구 정보가 수정되었습니다.');
       } else {
-        const { error } = await supabase.from('catalog').insert([catalogForm]);
-        if (error) throw error;
+        const { data, error } = await supabase
+          .from('catalog')
+          .insert([catalogForm])
+          .select('id')
+          .maybeSingle();
+        assertInventoryMutation(data, error);
         toast.success('새 교구가 등록되었습니다.');
       }
       await fetchCatalog();
@@ -217,7 +265,18 @@ export default function AdminInventoryPage() {
   const handleDeleteCatalog = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     if (!supabase || !confirm('마스터 DB에서 삭제하시겠습니까?')) return;
-    const { error } = await supabase.from('catalog').delete().eq('id', id);
+    const { data, error } = await supabase
+      .from('catalog')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
+    try {
+      assertInventoryMutation(data, error);
+    } catch (err) {
+      toast.error('삭제 실패: ' + (err instanceof Error ? err.message : String(err)));
+      return;
+    }
     if (error) {
       toast.error('삭제 실패: ' + error.message);
       return;
@@ -376,7 +435,7 @@ export default function AdminInventoryPage() {
                   <div className="h-40 md:h-44 relative overflow-hidden bg-slate-100 flex items-center justify-center">
                     {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : <ImageIcon size={32} className="text-slate-300"/>}
                     <div className="absolute top-3 left-3 md:top-4 md:left-4"><span className="bg-black/60 text-white text-[9px] font-black px-2 py-1 rounded-full backdrop-blur-md uppercase tracking-wider">{item.category}</span></div>
-                    <button onClick={(e) => { e.stopPropagation(); handleReturnAll(item); }} className="absolute top-3 right-3 md:top-4 md:right-4 bg-white/20 hover:bg-rose-600 text-white p-2 rounded-full backdrop-blur-md transition-all cursor-pointer"><Trash2 size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); void handleReturnAll(item).catch((err) => { devLogger.error('[inventory] return all failed:', err); toast.error(err instanceof Error ? err.message : '삭제 실패'); }); }} className="absolute top-3 right-3 md:top-4 md:right-4 bg-white/20 hover:bg-rose-600 text-white p-2 rounded-full backdrop-blur-md transition-all cursor-pointer"><Trash2 size={14} /></button>
                   </div>
                   <div className="p-4 md:p-6" onClick={e => e.stopPropagation()}>
                     <h3 className="text-lg md:text-xl font-black text-slate-800 mb-3 md:mb-4 truncate leading-tight text-left">{item.name}</h3>
@@ -389,7 +448,7 @@ export default function AdminInventoryPage() {
                             />
                         </div>
                         {item.id != null && tempQuantities[item.id] !== (item.quantity?.toString() ?? '0') && (
-                            <button onClick={() => commitQuantity(item)} className="bg-indigo-600 text-white p-3 md:p-3.5 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all animate-in zoom-in-50 cursor-pointer"><Check size={18} strokeWidth={3} /></button>
+                            <button onClick={() => void commitQuantity(item).catch((err) => { devLogger.error('[inventory] commit quantity failed:', err); toast.error(err instanceof Error ? err.message : '수량 변경에 실패했습니다.'); })} className="bg-indigo-600 text-white p-3 md:p-3.5 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all animate-in zoom-in-50 cursor-pointer"><Check size={18} strokeWidth={3} /></button>
                         )}
                     </div>
                   </div>

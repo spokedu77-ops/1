@@ -4,6 +4,8 @@ import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { createCenterSchema } from '@/app/lib/centers/schemas';
 import type { Center, TeacherOption } from '@/app/lib/centers/types';
 
+const CENTER_NOT_FOUND_OR_FORBIDDEN = '센터를 찾을 수 없거나 권한이 없습니다.';
+
 export type GetCentersFilters = {
   search?: string;
   status?: string;
@@ -25,7 +27,7 @@ function teacherJoinName(j: MainTeacherJoin | undefined): string | null {
 }
 
 function normalizeCenterRow(row: CenterRowWithTeacher): Center {
-  const { main_teacher, mt2, mt3, next_actions: _omitNext, ...baseRow } = row;
+  const { main_teacher, mt2, mt3, ...baseRow } = row;
 
   return {
     id: baseRow.id as string,
@@ -216,8 +218,9 @@ export async function updateCenter(
     .update(payload)
     .eq('id', id)
     .select(CENTER_SELECT_WITH_TEACHERS)
-    .single();
+    .maybeSingle();
   if (error) return { error: error.message };
+  if (!data) return { error: CENTER_NOT_FOUND_OR_FORBIDDEN };
   return { data: normalizeCenterRow(data as CenterRowWithTeacher) };
 }
 

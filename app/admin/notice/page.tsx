@@ -344,7 +344,11 @@ export default function NoticePage() {
         .select('*')
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
-      if (!error && data) setNotices(data as Notice[]);
+      if (error) throw error;
+      if (data) setNotices(data as Notice[]);
+    } catch (err) {
+      devLogger.error('[notice] fetch notices error:', err);
+      toast.error(err instanceof Error ? err.message : '공지 목록을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -358,7 +362,11 @@ export default function NoticePage() {
         .from('weekly_best')
         .select('*')
         .order('created_at', { ascending: false });
-      if (!error && data) setWeeklyBestList(data as WeeklyBest[]);
+      if (error) throw error;
+      if (data) setWeeklyBestList(data as WeeklyBest[]);
+    } catch (err) {
+      devLogger.error('[notice] fetch weekly best error:', err);
+      toast.error(err instanceof Error ? err.message : '주간베스트 목록을 불러오지 못했습니다.');
     } finally {
       setWeeklyBestLoading(false);
     }
@@ -411,14 +419,16 @@ export default function NoticePage() {
         .order('start_at', { ascending: false });
       if (wbCoachFilter !== 'all') q = q.eq('created_by', wbCoachFilter);
       const { data, error } = await q;
-      if (!error && data) {
-        const withPlan = (data as { lesson_plans?: { content?: string }[] | { content?: string } }[]).filter((s) => {
-          const lp = s.lesson_plans;
-          const content = Array.isArray(lp) ? lp[0]?.content : (lp as { content?: string } | null)?.content;
-          return !!content;
-        });
-        setLessonSessions(withPlan as typeof lessonSessions);
-      }
+      if (error) throw error;
+      const withPlan = ((data ?? []) as { lesson_plans?: { content?: string }[] | { content?: string } }[]).filter((s) => {
+        const lp = s.lesson_plans;
+        const content = Array.isArray(lp) ? lp[0]?.content : (lp as { content?: string } | null)?.content;
+        return !!content;
+      });
+      setLessonSessions(withPlan as typeof lessonSessions);
+    } catch (err) {
+      devLogger.error('[notice] fetch lesson candidates error:', err);
+      toast.error(err instanceof Error ? err.message : '수업안 후보를 불러오지 못했습니다.');
     } finally {
       setWbStepLoading(false);
     }
@@ -437,13 +447,15 @@ export default function NoticePage() {
         .order('start_at', { ascending: false });
       if (wbCoachFilter !== 'all') q = q.eq('created_by', wbCoachFilter);
       const { data, error } = await q;
-      if (!error && data) {
-        const withFeedback = (data as { feedback_fields?: FeedbackFields; students_text?: string }[]).filter((s) => {
-          const fields = s.feedback_fields ?? parseTemplateToFields(s.students_text || '');
-          return isFieldValid(fields.main_activity) || isFieldValid(fields.strengths) || isFieldValid(fields.next_goals);
-        });
-        setFeedbackSessions(withFeedback as typeof feedbackSessions);
-      }
+      if (error) throw error;
+      const withFeedback = ((data ?? []) as { feedback_fields?: FeedbackFields; students_text?: string }[]).filter((s) => {
+        const fields = s.feedback_fields ?? parseTemplateToFields(s.students_text || '');
+        return isFieldValid(fields.main_activity) || isFieldValid(fields.strengths) || isFieldValid(fields.next_goals);
+      });
+      setFeedbackSessions(withFeedback as typeof feedbackSessions);
+    } catch (err) {
+      devLogger.error('[notice] fetch feedback candidates error:', err);
+      toast.error(err instanceof Error ? err.message : '피드백 후보를 불러오지 못했습니다.');
     } finally {
       setWbStepLoading(false);
     }
@@ -451,9 +463,19 @@ export default function NoticePage() {
 
   useEffect(() => {
     if (showWeeklyBestWizard && wizardStep === 1 && coaches.length === 0 && supabase) {
-      supabase.from('users').select('id, name').eq('is_active', true).order('name').then(({ data }: { data: { id: string; name: string }[] | null }) => {
-        if (data) setCoaches(data);
-      });
+      supabase
+        .from('users')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name')
+        .then(({ data, error }: { data: { id: string; name: string }[] | null; error: { message: string } | null }) => {
+          if (error) throw error;
+          if (data) setCoaches(data);
+        })
+        .catch((err: unknown) => {
+          devLogger.error('[notice] fetch coaches error:', err);
+          toast.error(err instanceof Error ? err.message : '강사 목록을 불러오지 못했습니다.');
+        });
     }
   }, [showWeeklyBestWizard, wizardStep, coaches.length, supabase]);
 

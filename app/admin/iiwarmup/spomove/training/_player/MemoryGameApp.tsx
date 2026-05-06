@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { COLORS, MODES, MEMORY_ROUNDS, NUMBER_RULES } from './constants';
+import { COLORS, MODES, MEMORY_ROUNDS } from './constants';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
@@ -76,7 +76,7 @@ type Settings = {
   accel: boolean;
   /** 이중과제 2-1번만: 기본형(신호 속도 자동) / 터치형(화면 터치 시 다음) */
   dual21Advance: 'default' | 'touch';
-  /** 반응 인지 3·4·5번 변형 색지각 이미지 테마 (Asset Hub 1번 섹션과 localStorage 동기화) */
+  /** 반응 인지 2·3·4번 변형 색지각 이미지 테마 (Asset Hub 1번 섹션과 localStorage 동기화) */
   variantColorTheme: SpomoveColorThemeId;
 };
 
@@ -97,7 +97,7 @@ const defaultSettings: Settings = {
   warmup: 3,
   accel: false,
   dual21Advance: 'default',
-  variantColorTheme: 'fruit',
+  variantColorTheme: 'color',
 };
 
 export type MemoryGameAutoLaunch = {
@@ -110,9 +110,9 @@ export type MemoryGameAutoLaunch = {
   intervalMode?: boolean;
   /** 이중과제 2-1번만 */
   dual21Advance?: 'default' | 'touch';
-  /** 반응 인지 7번만 */
+  /** 반응 인지 6번만 */
   numberRule?: string;
-  /** 반응 인지 3·4·5번만 */
+  /** 반응 인지 2·3·4번만 */
   variantColorTheme?: SpomoveColorThemeId;
 };
 
@@ -226,9 +226,9 @@ export default function MemoryGameApp({
     void preloadVariantFruitImages(variantFruitUrls);
   }, [variantFruitUrls]);
 
-  /** 변형 색지각(basic 3·4·5번): 설정·워밍업·훈련 중 과일 이미지 프리로드 */
+  /** 변형 색지각(basic 2·3·4번): 설정·워밍업·훈련 중 이미지 프리로드 */
   const basicVariantLevel = useMemo(
-    () => settings.mode === 'basic' && (settings.level === 3 || settings.level === 4 || settings.level === 5),
+    () => settings.mode === 'basic' && (settings.level === 2 || settings.level === 3 || settings.level === 4),
     [settings.mode, settings.level]
   );
 
@@ -308,6 +308,16 @@ export default function MemoryGameApp({
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    if (settings.mode !== 'basic' || settings.level !== 3) return;
+    if (settings.variantColorTheme !== 'color') return;
+    // 3번(변형 색상 2패널)은 색상 테마 비허용: 안전하게 과일로 정규화
+    setSettings((s) => ({ ...s, variantColorTheme: 'fruit' }));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, 'fruit');
+    }
+  }, [settings.mode, settings.level, settings.variantColorTheme]);
 
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
@@ -657,11 +667,11 @@ export default function MemoryGameApp({
     autoLaunchCfgRef.current = null;
     bgmPlayerRef.current?.fadeOut(220);
     if (autoLaunch) {
-      // Training 포털(autoLaunch)은 기존 UX 유지: STOP 시 포털 종료(부모 onClose)
+      // training 포털(autoLaunch): 내부 setup이 아니라 포털 바깥 트레이닝 설정 화면으로 복귀
       onExit?.();
       return;
     }
-    // 일반 admin/memory-game은 현재 설정을 유지한 단계 선택(설정) 화면으로 복귀
+    // 일반 admin/memory-game: 현재 설정을 유지한 내부 setup으로 복귀
     setScreen('setup');
   }, [autoLaunch, onExit]);
 
@@ -881,7 +891,6 @@ export default function MemoryGameApp({
     const isDual21 = settings.mode === 'dual' && settings.level === 2;
     const stepSpeed = isDual21 ? 4 : 3;
     const stepReps = isDual21 ? 5 : 4;
-    const stepBasicRule = isDual21 ? 6 : 7;
     return (
       <div style={S.page}>
         <style>{CSS}</style>
@@ -933,14 +942,14 @@ export default function MemoryGameApp({
                   </button>
                 ))}
               </div>
-              {settings.mode === 'basic' && [3, 4, 5].includes(settings.level) && (
+              {settings.mode === 'basic' && [2, 3, 4].includes(settings.level) && (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>변형 색지각 이미지 테마</div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 3·4·5번 신호에 나옵니다.
+                    Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 2·3·4번 신호에 반영됩니다.
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
-                    {SPOMOVE_COLOR_THEME_ORDER.map((tid) => (
+                    {SPOMOVE_COLOR_THEME_ORDER.filter((tid) => !(settings.mode === 'basic' && settings.level === 3 && tid === 'color')).map((tid) => (
                       <button
                         key={tid}
                         type="button"
@@ -1088,19 +1097,6 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 )}
-                {settings.mode === 'basic' && settings.level === 7 && (
-                  <div style={S.sec}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--subtle-bg)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #3B82F6' }}>{stepBasicRule}</div>
-                      <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)' }}>판단 규칙을 정하세요</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {NUMBER_RULES.map((rule) => (
-                        <button key={rule.id} type="button" onClick={() => set('numberRule', rule.id)} style={{ padding: '0.7rem 1rem', borderRadius: '0.85rem', border: `2px solid ${settings.numberRule === rule.id ? '#3B82F6' : 'var(--border)'}`, background: settings.numberRule === rule.id ? '#EFF6FF' : 'var(--card)', color: settings.numberRule === rule.id ? '#1D4ED8' : 'var(--text)', fontWeight: settings.numberRule === rule.id ? 700 : 600, fontSize: '0.91rem', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.12s' }}>{settings.numberRule === rule.id ? '✓ ' : ''}{rule.label}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 <div style={S.sec}>
                   <button type="button" onClick={() => setAdvancedOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.65rem 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.96rem', fontWeight: 700, color: '#64748B' }}>
                     <span>{advancedOpen ? '▼' : '▶'}</span>
@@ -1213,7 +1209,7 @@ export default function MemoryGameApp({
           <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>
             🌌 FLOW 프로그램 실행 중
           </div>
-          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
         </div>
         <iframe
           src="/program/iiwarmup/flow?autoStart=1&memoryPreset=shortFlow5"
@@ -1233,7 +1229,7 @@ export default function MemoryGameApp({
           <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>
             챌린지 프로그램 실행 중
           </div>
-          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
         </div>
         <iframe
           key={challengeIframeSrc}
@@ -1249,7 +1245,6 @@ export default function MemoryGameApp({
   if (screen === 'training') {
     const bg = (signal?.bg as string) ?? '#0F172A';
     const dark = bg === '#0F172A' || bg.startsWith('#0') || bg.startsWith('#1');
-    const currentRule = NUMBER_RULES.find((r) => r.id === settings.numberRule);
     const trainingDual21Touch =
       settings.mode === 'dual' && settings.level === 2 && settings.dual21Advance === 'touch';
     return (
@@ -1304,16 +1299,13 @@ export default function MemoryGameApp({
             }}
           >
             {settings.level === 1 &&
-              '📋 색=보이는 색 콘 · 위치=화살표 방향 콘 · 반대로=색은 짝반대·화살표는 반대 방향'}
+              '📋 색=보이는 색 위치 · 위치=화살표 방향 위치 · 반대로=색은 짝반대·화살표는 반대 방향'}
             {settings.level === 2 && '📋 🎨색 · 📍위치 · ⇄반대(색/화살표는 화면 자극과 동일)'}
             {settings.level === 3 &&
               '📋 흰 실선=색 규칙 · 흰 점선=위치 규칙 · 흰 이중선=반대로(자극은 색 또는 화살표)'}
           </div>
         )}
-        {settings.mode === 'basic' && settings.level === 7 && currentRule && (
-          <div style={{ position: 'absolute', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 20, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', borderRadius: '2rem', padding: '0.5rem 1.2rem', color: 'rgba(255,255,255,0.75)', fontSize: 'clamp(0.72rem,2vw,0.9rem)', fontWeight: 600, whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.12)' }}>📋 규칙: {currentRule.label}</div>
-        )}
-        {settings.mode === 'basic' && [3, 4, 5].includes(settings.level) && (
+        {settings.mode === 'basic' && [2, 3, 4].includes(settings.level) && (
           <div
             style={{
               position: 'absolute',
@@ -1343,7 +1335,7 @@ export default function MemoryGameApp({
             >
               🎨 테마: {SPOMOVE_COLOR_THEME_LABELS[settings.variantColorTheme]}
             </div>
-            {settings.level === 5 && (
+            {settings.level === 3 && (
               <div
                 style={{
                   textAlign: 'center',
@@ -1358,7 +1350,7 @@ export default function MemoryGameApp({
                   border: '1px solid rgba(255,255,255,0.12)',
                 }}
               >
-                두 색 콘을 동시에 한 발씩 밟으세요
+                두 색 위치을 동시에 한 발씩 밟으세요
               </div>
             )}
           </div>
@@ -1367,7 +1359,7 @@ export default function MemoryGameApp({
           <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1.2rem', color: '#fff', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {settings.intervalMode ? <><span style={{ color: intervalPhase === 'work' ? '#FCA5A5' : '#86EFAC' }}>{intervalPhase === 'work' ? '🔥' : '😮‍💨'}</span><span>{intervalLeft}초</span><span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{intervalSet}/{settings.intervalSets}세트</span></> : settings.timeMode === 'time' ? <><span style={{ color: '#FCA5A5' }}>⏱</span> {stats.timeLeft}초</> : <><span style={{ color: '#86EFAC' }}>🎯</span> {stats.repsLeft}회</>}
           </div>
-          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
         </div>
         {settings.intervalMode && intervalPhase === 'rest' && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 25, gap: '1rem' }}>

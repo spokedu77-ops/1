@@ -1,13 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { TRAINING_ENGINE_GUIDE_VIDEOS } from '@/app/lib/spomove/trainingEngineGuideVideos';
 import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
 
-import { MODES, NUMBER_RULES } from './_player/constants';
+import { MODES } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch } from './_player/MemoryGameApp';
 import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
@@ -65,6 +65,73 @@ function levelLabel(modeId: string, levelId: number): string {
   return `${levelId}번`;
 }
 
+function modeLabelKoEn(modeId: string): string {
+  const m = MODES[modeId];
+  if (!m) return modeId;
+  return `${m.title} (${m.en})`;
+}
+
+const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
+  'Quad Color': '사분할 색상',
+  'Full-Screen Color': '전면 색상',
+  'Variant Color (1)': '변형 색상 2패널',
+  'Variant Color (2)': '변형 색상 3패널',
+  'Variant Color (3)': '변형 색상 3',
+  'Spatial Orientation': '공간 방향',
+  'Arrow Stroop / Reverse': '화살표 스트룹/역스트룹',
+  'Arrow + BG Interference': '화살표 + 배경 간섭',
+  'Word Stroop / Reverse': '단어 스트룹/역스트룹',
+  'Word + BG': '단어 + 배경',
+  'Missing Color': '누락 색상 찾기',
+  'Pole Shape & Position': '폴 도형/위치',
+  'Pole Arrows': '폴 화살표',
+  'Uniform Flankers': '동일 플랭커',
+  'Grouped Flankers': '그룹 플랭커',
+  'Random Flankers': '랜덤 플랭커',
+  'Mixed Size & Color': '크기/색 혼합',
+  '3-Circle Extreme Sizes': '3원 극단 크기',
+  '5-Circle Extreme Sizes': '5원 극단 크기',
+  'Color Go/No-Go': '색상 고/노고',
+  'Shape Go/No-Go': '도형 고/노고',
+  'Action Go/No-Go': '동작 고/노고',
+  'Dual Rule': '이중 규칙',
+  'Text Cues': '텍스트 큐',
+  'Icon Cues': '아이콘 큐',
+  'Border Cues': '테두리 큐',
+  '3항 기억': '3항 기억',
+  '5항 기억': '5항 기억',
+  '10항 기억': '10항 기억',
+  '색깔-번호 기억': '색상-번호 기억',
+  '색깔-번호 전체 공개': '색상-번호 전체 공개',
+  'Color-Number Integration': '색상-숫자 통합',
+  'Color & Arrow': '색상 & 화살표',
+  'Flow Program': '플로우 프로그램',
+  'Rhythm Program': '리듬 프로그램',
+  FLOW: '플로우',
+  FLASH: '플래시',
+  PATTERN: '패턴',
+  Diagonal: '대각선 반응',
+  'Deep Reaction': '심해 반응',
+};
+
+function levelNameKo(modeId: string, levelId: number): string {
+  const m = MODES[modeId];
+  const lv = m?.levels.find((x) => x.id === levelId);
+  if (lv?.enName) {
+    const byEn = LEVEL_KO_ALIAS_BY_EN[lv.enName];
+    if (byEn) return byEn;
+  }
+  return lv?.name ?? levelLabel(modeId, levelId);
+}
+
+function levelLabelKoEn(modeId: string, levelId: number): string {
+  const m = MODES[modeId];
+  const lv = m?.levels.find((x) => x.id === levelId);
+  if (!lv) return levelLabel(modeId, levelId);
+  const enDisplay = lv.enName.replace('Variant Color (1)', 'Variant Color 1').replace('Variant Color (2)', 'Variant Color 2');
+  return `${levelLabel(modeId, levelId)} : ${levelNameKo(modeId, levelId)} (${enDisplay})`;
+}
+
 function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
   return modeId === 'reactTrain' ? 'time' : 'reps';
 }
@@ -92,7 +159,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   intervalMode: false,
   dual21Advance: 'default',
   numberRule: 'odd_left',
-  variantColorTheme: 'fruit',
+  variantColorTheme: 'color',
 };
 
 type PagePhase =
@@ -173,7 +240,7 @@ function TrainingPortal({
       <button
         type="button"
         onClick={onClose}
-        aria-label="훈련 종료"
+        aria-label="STOP"
         style={{
           position: 'fixed', top: 10, left: 10, zIndex: 100000,
           display: 'flex', alignItems: 'center', gap: 5,
@@ -194,7 +261,7 @@ function TrainingPortal({
           (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.55)';
         }}
       >
-        ✕ 종료
+        STOP
       </button>
     </div>,
     document.body,
@@ -267,10 +334,7 @@ function CatalogModeCard({
           </span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 18, fontWeight: 950, color: T.text, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              {m.title}
-            </div>
-            <div style={{ fontSize: 11, color: T.textDim, marginTop: 3, fontWeight: 700 }}>
-              {m.en}
+              {modeLabelKoEn(modeId)}
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
@@ -359,6 +423,13 @@ function SettingsScreen({
   const [guideOpen, setGuideOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
+  useEffect(() => {
+    if (modeId !== 'basic' || levelId !== 3) return;
+    if (launch.variantColorTheme !== 'color') return;
+    // 3번(변형 색상 2패널)은 색상 테마 비허용: 꼬임 방지용 자동 정규화
+    setLaunch((s) => ({ ...s, variantColorTheme: 'fruit' }));
+  }, [modeId, levelId, launch.variantColorTheme]);
+
   const guideBlock = useMemo(
     () => GUIDE_BLOCKS.find((b) => b.id === modeId) ?? null,
     [modeId],
@@ -398,7 +469,7 @@ function SettingsScreen({
           ← 목록
         </button>
         <span style={{ fontSize: 12, color: T.text, fontWeight: 800 }}>
-          {m?.icon} {m?.title ?? modeId} · {levelLabel(modeId, levelId)}
+          {m?.icon} {modeLabelKoEn(modeId)} · {levelLabelKoEn(modeId, levelId)}
         </span>
       </header>
 
@@ -424,8 +495,8 @@ function SettingsScreen({
             >
               <span style={{ color: accent, fontSize: 11, fontWeight: 800, width: 18 }}>{guideOpen ? '▼' : '▶'}</span>
               <span style={{ fontSize: 13, fontWeight: 700 }}>
-                엔진 · 난이도 안내 {guideBlock ? `· ${guideBlock.title}` : ''}
-                <span style={{ fontWeight: 600, color: T.muted }}> ({modeId} · {levelLabel(modeId, levelId)})</span>
+                엔진 · 난이도 안내 {guideBlock ? `· ${modeLabelKoEn(modeId)}` : ''}
+                <span style={{ fontWeight: 600, color: T.muted }}> ({levelLabelKoEn(modeId, levelId)})</span>
               </span>
             </button>
             {guideOpen ? (
@@ -467,7 +538,7 @@ function SettingsScreen({
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
               <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
               <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                {levelLabel(modeId, levelId)}
+                {levelLabelKoEn(modeId, levelId)}
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -493,10 +564,7 @@ function SettingsScreen({
                     }}
                   >
                     <span style={{ fontSize: 13, fontWeight: 900, color: active ? accent : T.text }}>
-                      {lv.name}
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: active ? `${accent}cc` : T.textDim }}>
-                      {lv.enName}
+                      {levelLabel(modeId, lv.id)} : {levelNameKo(modeId, lv.id)} ({lv.enName.replace('Variant Color (1)', 'Variant Color 1').replace('Variant Color (2)', 'Variant Color 2')})
                     </span>
                   </button>
                 );
@@ -636,49 +704,14 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 반응인지 7번 규칙 */}
-          {modeId === 'basic' && levelId === 7 ? (
-            <section style={{ marginBottom: 26 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>판단 규칙</label>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {NUMBER_RULES.map((r) => {
-                  const active = launch.numberRule === r.id;
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, numberRule: r.id }))}
-                      style={{
-                        padding: '10px 12px',
-                        borderRadius: 12,
-                        border: `1.5px solid ${active ? accent : T.border}`,
-                        background: active ? `${accent}16` : T.card,
-                        color: active ? accent : T.textDim,
-                        fontFamily: 'inherit',
-                        fontSize: 12,
-                        fontWeight: active ? 900 : 600,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                    >
-                      {active ? '✓ ' : ''}{r.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
           {/* 변형 색지각 테마 */}
-          {modeId === 'basic' && (levelId === 3 || levelId === 4 || levelId === 5) ? (
+          {modeId === 'basic' && (levelId === 2 || levelId === 3 || levelId === 4) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>변형 색지각 이미지 테마</label>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {SPOMOVE_COLOR_THEME_ORDER.map((tid) => {
+                {SPOMOVE_COLOR_THEME_ORDER.filter((tid) => !(modeId === 'basic' && levelId === 3 && tid === 'color')).map((tid) => {
                   const active = launch.variantColorTheme === tid;
                   return (
                     <button
@@ -918,7 +951,7 @@ export default function SpomoveTrainingPage() {
           modeId={phase.modeId}
           levelId={phase.levelId}
           launch={phase.launch}
-          onClose={() => setPhase({ tag: 'catalog' })}
+          onClose={() => setPhase({ tag: 'settings', modeId: phase.modeId })}
         />
       )}
 

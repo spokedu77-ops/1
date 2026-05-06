@@ -124,6 +124,16 @@ export function getPublicUrl(path: string): string {
 }
 
 /**
+ * 같은 Storage 객체 경로를 덮어써도 공개 URL 문자열은 동일해 브라우저가 구버전 이미지를 캐시할 수 있습니다.
+ * 미리보기·훈련 로드 시 `cacheBust`(예: Date.now())를 넘겨 쿼리 버전을 붙입니다.
+ */
+export function withPublicUrlCacheBust(publicUrl: string, cacheBust?: number): string {
+  if (cacheBust == null || !Number.isFinite(cacheBust)) return publicUrl;
+  const sep = publicUrl.includes('?') ? '&' : '?';
+  return `${publicUrl}${sep}v=${cacheBust}`;
+}
+
+/**
  * Storage에서 파일 삭제 (API 경유 → admin 세션으로 RLS 통과)
  * @param path Storage 경로
  */
@@ -131,6 +141,7 @@ export async function deleteFromStorage(path: string): Promise<void> {
   const res = await fetch('/api/admin/storage/delete', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     body: JSON.stringify({ path }),
   });
 
@@ -152,6 +163,7 @@ export async function deleteFromStorageBatch(paths: string[]): Promise<void> {
   const res = await fetch('/api/admin/storage/delete', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     body: JSON.stringify({ paths: unique }),
   });
 

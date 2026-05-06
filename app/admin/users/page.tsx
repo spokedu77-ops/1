@@ -87,6 +87,13 @@ export default function UserDashboardPage() {
   /** 강사 카드별 「적용/기본 수업료」 블록 펼침 (기본 접힘) */
   const [userFeeSectionOpen, setUserFeeSectionOpen] = useState<Record<string, boolean>>({});
   const tierFeeFallbackNotifiedRef = useRef(false);
+  const assertUserMutation = (
+    data: { id: string } | null,
+    error: { message: string } | null
+  ) => {
+    if (error) throw error;
+    if (!data) throw new Error('변경이 반영되지 않았습니다. 권한 또는 RLS 정책을 확인해 주세요.');
+  };
 
   const fetchUsers = useCallback(async () => {
     if (!supabase) return;
@@ -154,7 +161,7 @@ export default function UserDashboardPage() {
   const handleSaveInfo = async (userId: string) => {
     if (!supabase || currentUser?.role !== 'admin') return toast.error('관리자 권한이 없습니다.');
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .update({
           name: editForm.name,
@@ -169,9 +176,11 @@ export default function UserDashboardPage() {
           fee_center_assist: editForm.fee_center_assist ?? null,
           fee_auto_from_tier: editForm.fee_auto_from_tier ?? true,
         })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('id')
+        .maybeSingle();
       
-      if (error) throw error;
+      assertUserMutation(data, error);
       
       setEditingId(null);
       fetchUsers();
@@ -186,8 +195,16 @@ export default function UserDashboardPage() {
     const nextStatus = !user.is_active;
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: nextStatus } : u));
     try {
-      await supabase.from('users').update({ is_active: nextStatus }).eq('id', user.id);
-    } catch {
+      const { data, error } = await supabase
+        .from('users')
+        .update({ is_active: nextStatus })
+        .eq('id', user.id)
+        .select('id')
+        .maybeSingle();
+      assertUserMutation(data, error);
+    } catch (err) {
+      devLogger.error('[users] toggle active status', err);
+      toast.error(err instanceof Error ? err.message : '상태 변경에 실패했습니다.');
       fetchUsers();
     }
   };
@@ -198,8 +215,16 @@ export default function UserDashboardPage() {
     const next = !(user.ending_soon ?? false);
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, ending_soon: next } : u));
     try {
-      await supabase.from('users').update({ ending_soon: next }).eq('id', user.id);
-    } catch {
+      const { data, error } = await supabase
+        .from('users')
+        .update({ ending_soon: next })
+        .eq('id', user.id)
+        .select('id')
+        .maybeSingle();
+      assertUserMutation(data, error);
+    } catch (err) {
+      devLogger.error('[users] toggle ending soon', err);
+      toast.error(err instanceof Error ? err.message : '상태 변경에 실패했습니다.');
       fetchUsers();
     }
   };
@@ -272,7 +297,13 @@ export default function UserDashboardPage() {
         url: publicUrl 
       }];
       
-      await supabase.from('users').update({ documents: updatedDocs }).eq('id', user.id);
+      const { data, error } = await supabase
+        .from('users')
+        .update({ documents: updatedDocs })
+        .eq('id', user.id)
+        .select('id')
+        .maybeSingle();
+      assertUserMutation(data, error);
       fetchUsers();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -324,7 +355,13 @@ export default function UserDashboardPage() {
     if (!confirm('해당 서류를 삭제하시겠습니까?')) return;
     const updatedDocs = (user.documents || []).filter((_, i) => i !== index);
     try {
-      await supabase.from('users').update({ documents: updatedDocs }).eq('id', user.id);
+      const { data, error } = await supabase
+        .from('users')
+        .update({ documents: updatedDocs })
+        .eq('id', user.id)
+        .select('id')
+        .maybeSingle();
+      assertUserMutation(data, error);
       fetchUsers();
     } catch {
       toast.error('삭제 실패');
@@ -337,7 +374,7 @@ export default function UserDashboardPage() {
     const tier = computeTier(total);
     const f = getTierDefaultFees(tier, tierFeeMap);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .update({
           fee_private: f.fee_private,
@@ -346,8 +383,10 @@ export default function UserDashboardPage() {
           fee_center_assist: f.fee_center_assist,
           fee_auto_from_tier: true,
         })
-        .eq('id', user.id);
-      if (error) throw error;
+        .eq('id', user.id)
+        .select('id')
+        .maybeSingle();
+      assertUserMutation(data, error);
       toast.success('현재 누적 회차 기준 등급표 수업료가 저장되었습니다.');
       fetchUsers();
       if (editingId === user.id) {
@@ -362,7 +401,7 @@ export default function UserDashboardPage() {
   const handleResetFeesToTierSchedule = async (user: UserData) => {
     if (!supabase || currentUser?.role !== 'admin') return toast.error('관리자 권한이 없습니다.');
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .update({
           fee_private: null,
@@ -371,8 +410,10 @@ export default function UserDashboardPage() {
           fee_center_assist: null,
           fee_auto_from_tier: true,
         })
-        .eq('id', user.id);
-      if (error) throw error;
+        .eq('id', user.id)
+        .select('id')
+        .maybeSingle();
+      assertUserMutation(data, error);
       toast.success('저장값을 비웠습니다. 화면에는 현재 등급 표가 반영됩니다.');
       fetchUsers();
       if (editingId === user.id) {

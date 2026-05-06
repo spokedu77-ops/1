@@ -27,6 +27,18 @@ export function resolvePlannedTotal(rows: {
   return Math.max(1, baseAll.length || 1);
 }
 
+export function resolvePlannedTotalAfterDeleting(
+  rows: {
+    status?: string | null;
+    round_total?: number | null;
+    round_index?: number | null;
+  }[],
+  deletedCount: number
+): number {
+  const count = Math.max(0, Math.floor(deletedCount));
+  return Math.max(1, resolvePlannedTotal(rows) - count);
+}
+
 /** 세션 행을 group_id별로 모아 각 그룹에 `resolvePlannedTotal` 적용 (캘린더 훅·관리자 대시보드 공통). */
 export function buildGroupPlannedTotals(
   rows: {

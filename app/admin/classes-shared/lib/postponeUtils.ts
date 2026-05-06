@@ -1,5 +1,10 @@
 import { toast } from 'sonner';
 
+function assertMutationApplied(data: { id?: string } | null, error: unknown, fallback: string) {
+  if (error) throw error;
+  if (!data?.id) throw new Error(fallback);
+}
+
 // 기존 page.tsx의 handlePostponeCascade 로직을 그대로 옮긴 순수 함수 버전
 export async function postponeCascade(
   supabase: any,
@@ -59,7 +64,13 @@ export async function postponeCascade(
             : new Date(s.start_at!).getTime() + lastGapMs;
         const ns = new Date(newStartMs).toISOString();
         const ne = new Date(newStartMs + durationMs).toISOString();
-        return supabase.from('sessions').update({ start_at: ns, end_at: ne }).eq('id', s.id);
+        const { data, error } = await supabase
+          .from('sessions')
+          .update({ start_at: ns, end_at: ne })
+          .eq('id', s.id)
+          .select('id')
+          .maybeSingle();
+        assertMutationApplied(data, error, 'POSTPONE_SESSION_SHIFT_NOT_UPDATED');
       })
     );
 
@@ -68,11 +79,13 @@ export async function postponeCascade(
     void _id;
     void _createdAt;
 
-    const { error: insertError } = await supabase
+    const { data: insertedPostpone, error: insertError } = await supabase
       .from('sessions')
-      .insert([{ ...copyData, start_at: curr.start_at, status: 'postponed' }]);
+      .insert([{ ...copyData, start_at: curr.start_at, status: 'postponed' }])
+      .select('id')
+      .maybeSingle();
 
-    if (insertError) throw insertError;
+    assertMutationApplied(insertedPostpone, insertError, 'POSTPONE_SESSION_NOT_CREATED');
 
     toast.success('일정이 성공적으로 연기되었습니다.');
     options?.onAfter?.();
@@ -132,12 +145,23 @@ export async function undoPostponeCascade(
         const newStartMs = i === 0 ? origStartMs : new Date(activeList[i - 1]!.start_at!).getTime();
         const ns = new Date(newStartMs).toISOString();
         const ne = new Date(newStartMs + durationMs).toISOString();
-        return supabase.from('sessions').update({ start_at: ns, end_at: ne }).eq('id', s.id);
+        const { data, error } = await supabase
+          .from('sessions')
+          .update({ start_at: ns, end_at: ne })
+          .eq('id', s.id)
+          .select('id')
+          .maybeSingle();
+        assertMutationApplied(data, error, 'UNDO_POSTPONE_SESSION_SHIFT_NOT_UPDATED');
       })
     );
 
-    const { error: deleteError } = await supabase.from('sessions').delete().eq('id', sessionId);
-    if (deleteError) throw deleteError;
+    const { data: deletedPostpone, error: deleteError } = await supabase
+      .from('sessions')
+      .delete()
+      .eq('id', sessionId)
+      .select('id')
+      .maybeSingle();
+    assertMutationApplied(deletedPostpone, deleteError, 'POSTPONED_SESSION_NOT_DELETED');
 
     toast.success('일정이 성공적으로 복구되었습니다.');
     options?.onAfter?.();

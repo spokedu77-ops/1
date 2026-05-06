@@ -141,25 +141,16 @@ export type VariantPanelContent = {
   slide?: FruitSlide;
 };
 
-/**
- * 변형 색지각(basic 3~5번): 기본은 postimg 직링크. Asset Hub에서 Storage 경로를 넣으면 `buildFruitSlidesFromUrls`로 대체 URL 사용.
- */
-export const VARIANT_FRUIT_IMAGE_URLS: readonly string[] = [
-  'https://i.postimg.cc/T1qR0LG3/APPLE(RED).jpg',
-  'https://i.postimg.cc/h49Pcwm6/BANANA(YELLOW).jpg',
-  'https://i.postimg.cc/44zNsMc0/BLUBERRY(BLUE).jpg',
-  'https://i.postimg.cc/G3khdNDW/GRAPE(BLUE).png',
-  'https://i.postimg.cc/L4z627PQ/KIWI(GREEN).jpg',
-  'https://i.postimg.cc/zX8DBjS5/KOREANMELON(YELLOW).png',
-  'https://i.postimg.cc/PrTfx4zP/LEMON(YELLOW).png',
-  'https://i.postimg.cc/yYs6dPX6/MELON(GREEN).jpg',
-  'https://i.postimg.cc/kXsJtbf4/Pineapple(YELLOW).png',
-  'https://i.postimg.cc/13z903jB/Strawberry(RED).png',
-  'https://i.postimg.cc/52tx52Rn/WATERMELON(GREEN).png',
-];
+/** Asset Hub 과일 슬롯 수(테마 슬롯과 동일 8칸) */
+export const SPOMOVE_VARIANT_FRUIT_SLOT_COUNT = 8 as const;
 
-/** 슬롯 순서는 VARIANT_FRUIT_IMAGE_URLS·FRUIT_SLIDES와 동일 (콘 색 매핑) */
-const VARIANT_SLOT_COLOR_IDS: readonly ('red' | 'yellow' | 'blue' | 'green')[] = [
+/**
+ * 레거시 참조용(런타임 기본 과일 이미지는 쓰지 않음 — 업로드된 슬롯만 반영).
+ */
+export const VARIANT_FRUIT_IMAGE_URLS: readonly string[] = [];
+
+/** 슬롯 순서별 4색 패드 매핑 */
+export const VARIANT_FRUIT_SLOT_COLOR_IDS: readonly ('red' | 'yellow' | 'blue' | 'green')[] = [
   'red',
   'yellow',
   'blue',
@@ -167,16 +158,13 @@ const VARIANT_SLOT_COLOR_IDS: readonly ('red' | 'yellow' | 'blue' | 'green')[] =
   'green',
   'yellow',
   'yellow',
-  'green',
-  'yellow',
-  'red',
   'green',
 ];
 
 export function buildFruitSlidesFromUrls(urls: readonly string[]): FruitSlide[] {
   return urls.map((imageUrl, i) => ({
     imageUrl,
-    color: COLORS.find((c) => c.id === VARIANT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!,
+    color: COLORS.find((c) => c.id === VARIANT_FRUIT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!,
   }));
 }
 
@@ -196,7 +184,8 @@ export function buildVariantSlidesFromThemedUrls(urls: readonly string[]): Fruit
   return out;
 }
 
-export const DEFAULT_FRUIT_SLIDES: FruitSlide[] = buildFruitSlidesFromUrls(VARIANT_FRUIT_IMAGE_URLS);
+/** 업로드 없을 때는 빈 풀 — 신호 생성 시 색만 또는 full_color 폴백 */
+export const DEFAULT_FRUIT_SLIDES: FruitSlide[] = [];
 
 function fruitPoolExcluding(excludeImageUrl: string | null, slides: FruitSlide[]): FruitSlide[] {
   if (!excludeImageUrl) return slides;
@@ -240,7 +229,7 @@ export type GenerateSignalOptions = {
   excludeVariantImageUrl?: string | null;
   /** 3단계: 직전과 동일 과일 쌍(정렬된 url1|url2) 제외 */
   excludeVariantPairKey?: string | null;
-  /** Asset Hub 등에서 주입한 과일 슬롯(미지정 시 DEFAULT_FRUIT_SLIDES) */
+  /** Asset Hub 업로드 반영 슬롯(미지정 시 빈 배열 — 기본 외부 이미지 없음) */
   fruitSlides?: FruitSlide[];
   /** Task Switching 1단계: 직전 trial 규칙(연속 반대로 방지·약 30% 반대로 비율) */
   taskSwitchPrevRule?: 'color' | 'position' | 'reverse' | null;
@@ -272,26 +261,51 @@ export function generateSignal(
       };
     }
     if (level === 2) {
-      const c = r(activeColors);
+      const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
+      const themed =
+        vSlides.length > 0 ? r(vSlides.filter((s) => (s.imageUrl ?? '').trim())) : null;
+      const c = themed?.color ?? r(activeColors);
       return {
         type: 'full_color',
         bg: c.bg,
-        content: { symbol: c.symbol, textColor: c.text, name: c.name },
+        content: { symbol: c.symbol, textColor: c.text, name: c.name, imageUrl: themed?.imageUrl ?? null },
         voice: null,
       };
     }
     if (level === 3) {
-      const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
-      const panels = buildVariantTier1(opts?.excludeVariantImageUrl ?? null, vSlides);
+      const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
+      const pool = rawSlides.filter((s) => (s.imageUrl ?? '').trim());
+      if (pool.length < 2) {
+        const c = r(activeColors);
+        return {
+          type: 'full_color',
+          bg: c.bg,
+          content: { symbol: c.symbol, textColor: c.text, name: c.name, imageUrl: null },
+          voice: null,
+        };
+      }
+      const vSlides = pool;
+      const panels = buildVariantTier3(opts?.excludeVariantPairKey ?? null, vSlides);
       return {
         type: 'basic_variant_color',
         bg: '#000000',
-        content: { variantTier: 1, panels },
+        content: { variantTier: 3, panels },
         voice: null,
       };
     }
     if (level === 4) {
-      const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
+      const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
+      const pool = rawSlides.filter((s) => (s.imageUrl ?? '').trim());
+      if (pool.length === 0) {
+        const c = r(activeColors);
+        return {
+          type: 'full_color',
+          bg: c.bg,
+          content: { symbol: c.symbol, textColor: c.text, name: c.name, imageUrl: null },
+          voice: null,
+        };
+      }
+      const vSlides = pool;
       const panels = buildVariantTier2(opts?.excludeVariantImageUrl ?? null, vSlides);
       return {
         type: 'basic_variant_color',
@@ -301,22 +315,8 @@ export function generateSignal(
       };
     }
     if (level === 5) {
-      const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
-      const panels = buildVariantTier3(opts?.excludeVariantPairKey ?? null, vSlides);
-      return {
-        type: 'basic_variant_color',
-        bg: '#000000',
-        content: { variantTier: 3, panels },
-        voice: null,
-      };
-    }
-    if (level === 6) {
       const a = r(ARROWS);
       return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
-    }
-    if (level === 7) {
-      const n = r(NUMBERS);
-      return { type: 'number', bg: '#0F172A', content: n, voice: null };
     }
   }
 
@@ -878,15 +878,15 @@ export function createBasicSignalGenerator(
   let seqStreak = 0;
   let maxStreak = 0;
   let tripleViolation = false;
-  /** 1·2단계: 직전 대표 과일 URL */
+  /** 2·4단계: 직전 대표 과일 URL */
   let lastVariantImageUrl: string | null = null;
   /** 3단계: 직전 과일 쌍 키 (정렬 url|url) */
   let lastVariantPairKey: string | null = null;
 
   const genOpts = (): GenerateSignalOptions => {
     const o: GenerateSignalOptions = { fruitSlides };
-    if (level === 3 || level === 4) o.excludeVariantImageUrl = lastVariantImageUrl;
-    else if (level === 5) o.excludeVariantPairKey = lastVariantPairKey;
+    if (level === 2 || level === 4) o.excludeVariantImageUrl = lastVariantImageUrl;
+    else if (level === 3) o.excludeVariantPairKey = lastVariantPairKey;
     return o;
   };
 

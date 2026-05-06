@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { uploadToStorage, deleteFromStorage, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
+import {
+  uploadToStorage,
+  deleteFromStorage,
+  getPublicUrl,
+  withPublicUrlCacheBust,
+} from '@/app/lib/admin/assets/storageClient';
 
 export type SpomoveVariantThemedAssetsJson = {
   paths?: (string | null)[];
@@ -17,18 +22,22 @@ export type UseSpomoveVariantThemedPackOptions = {
 
 function normalizePaths(raw: unknown, slotCount: number): (string | null)[] {
   const p = (raw as SpomoveVariantThemedAssetsJson | null)?.paths;
-  if (!Array.isArray(p) || p.length !== slotCount) {
-    return Array.from({ length: slotCount }, () => null);
-  }
-  return p.map((x) => (typeof x === 'string' && x.trim() ? x.trim() : null));
+  if (!Array.isArray(p)) return Array.from({ length: slotCount }, () => null);
+  const sliced = p.slice(0, slotCount);
+  while (sliced.length < slotCount) sliced.push(null);
+  return sliced.map((x) => (typeof x === 'string' && x.trim() ? x.trim() : null));
 }
 
-function pathsToPreviewUrls(paths: (string | null)[], slotCount: number): (string | null)[] {
+function pathsToPreviewUrls(
+  paths: (string | null)[],
+  slotCount: number,
+  cacheBust?: number
+): (string | null)[] {
   const list = paths.length === slotCount ? paths : Array.from({ length: slotCount }, () => null);
   return list.map((p) => {
     if (p == null || typeof p !== 'string' || !p.trim()) return null;
     try {
-      return getPublicUrl(p.trim());
+      return withPublicUrlCacheBust(getPublicUrl(p.trim()), cacheBust);
     } catch {
       return null;
     }
@@ -61,7 +70,7 @@ export function useSpomoveVariantThemedPack({
       }
       const next = normalizePaths(data?.assets_json, slotCount);
       setPaths(next);
-      setPreviewUrls(pathsToPreviewUrls(next, slotCount));
+      setPreviewUrls(pathsToPreviewUrls(next, slotCount, Date.now()));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -90,7 +99,7 @@ export function useSpomoveVariantThemedPack({
         );
         if (upErr) throw new Error(upErr.message);
         setPaths(next);
-        setPreviewUrls(pathsToPreviewUrls(next, slotCount));
+        setPreviewUrls(pathsToPreviewUrls(next, slotCount, Date.now()));
       } catch (err) {
         setError((err as Error).message);
       } finally {

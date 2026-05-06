@@ -112,8 +112,28 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     return (
       <div key={animKey} className="signal-blink" style={C}>
         {content && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', userSelect: 'none' }}>
-            <div style={{ fontSize: 'clamp(80px,18vw,180px)', lineHeight: 1, color: content.textColor as string, opacity: 0.35 }}>{content.symbol as string}</div>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', userSelect: 'none', overflow: 'hidden' }}>
+            {typeof content.imageUrl === 'string' && content.imageUrl ? (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 'clamp(6px, 1.4vmin, 12px)',
+                  border: '1px solid #000',
+                  background: '#000',
+                  overflow: 'hidden',
+                }}
+              >
+                <img
+                  src={content.imageUrl as string}
+                  alt=""
+                  draggable={false}
+                  loading="eager"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', userSelect: 'none' }}
+                />
+              </div>
+            ) : (
+              <div style={{ fontSize: 'clamp(80px,18vw,180px)', lineHeight: 1, color: content.textColor as string, opacity: 0.35 }}>{content.symbol as string}</div>
+            )}
           </div>
         )}
       </div>
