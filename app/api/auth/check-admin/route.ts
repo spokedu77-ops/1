@@ -9,8 +9,12 @@ export async function GET() {
   const auth = await requireAdmin();
   if (!auth.ok) {
     const status = auth.response.status;
+    const reason =
+      status === 401 ? 'no-session' :
+      status === 403 ? 'forbidden' :
+      'server-error';
     return NextResponse.json(
-      { admin: false, reason: status === 401 ? 'no-session' : 'forbidden' },
+      { admin: false, reason },
       { status: 200 } // layout은 항상 JSON을 파싱하므로 200으로 반환
     );
   }

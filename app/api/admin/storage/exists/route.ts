@@ -7,11 +7,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const paths = Array.isArray(body.paths) ? (body.paths as string[]) : [];
@@ -20,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const uniquePaths = [...new Set(paths)].filter((p): p is string => typeof p === 'string' && p.trim() !== '');
-    const supabase = await createServerSupabaseClient();
+    const supabase = getServiceSupabase();
 
     // 폴더별로 그룹: folder -> [path]
     const byFolder = new Map<string, string[]>();

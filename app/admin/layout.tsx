@@ -8,6 +8,10 @@ const CACHE_TTL = 5 * 60 * 1000;
 const SLOW_CHECK_MS = 3000;
 let cache: { admin: boolean; ts: number } | null = null;
 const STORAGE_KEY = 'admin_check_cache_v1';
+type AdminCheckResponse = {
+  admin?: boolean;
+  reason?: 'no-session' | 'forbidden' | 'server-error';
+};
 
 function readStorageCache(): { admin: boolean; ts: number } | null {
   if (typeof window === 'undefined') return null;
@@ -64,12 +68,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return;
       }
 
-      let res: Response, json: {admin?: boolean; reason?: string};
+      let res: Response, json: AdminCheckResponse;
       try {
         res = await fetch('/api/auth/check-admin', { credentials: 'include' });
         json = await res.json();
       } catch {
         router.replace('/login');
+        return;
+      }
+
+      if (json.reason === 'server-error') {
+        setCheckSlow(true);
         return;
       }
 

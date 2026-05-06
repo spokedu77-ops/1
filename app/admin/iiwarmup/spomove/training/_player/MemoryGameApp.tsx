@@ -652,9 +652,18 @@ export default function MemoryGameApp({
     }
     setDupFlashVisible(false);
     setSignal(null);
+    setCountdown(null);
+    setPendingAutoStart(false);
+    autoLaunchCfgRef.current = null;
     bgmPlayerRef.current?.fadeOut(220);
-    setScreen('home');
-  }, []);
+    if (autoLaunch) {
+      // Training 포털(autoLaunch)은 기존 UX 유지: STOP 시 포털 종료(부모 onClose)
+      onExit?.();
+      return;
+    }
+    // 일반 admin/memory-game은 현재 설정을 유지한 단계 선택(설정) 화면으로 복귀
+    setScreen('setup');
+  }, [autoLaunch, onExit]);
 
   const handleFlowComplete = useCallback(() => {
     if (flowCompleteGuardRef.current) return;
@@ -727,7 +736,7 @@ export default function MemoryGameApp({
   // autoLaunch 모드: home/setup/result 화면을 렌더하지 않고 검정 대기 화면만 표시
   // (pendingAutoStart → startSession이 실행되면 바로 훈련 화면으로 전환됨)
   // result 진입 시에는 위의 onExit effect가 부모에게 닫힘을 알려 포털이 곧 언마운트된다.
-  if (autoLaunch && (screen === 'home' || screen === 'setup' || screen === 'result')) {
+  if (autoLaunch && pendingAutoStart && (screen === 'home' || screen === 'setup' || screen === 'result')) {
     return (
       <div
         style={{
@@ -1187,7 +1196,7 @@ export default function MemoryGameApp({
           <VisualReactionTraining
             variant={settings.level === 1 ? 'flow' : settings.level === 2 ? 'flash' : 'pattern'}
             durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={mapSpomoveSpeedToReactTrainSpd(settings.speed)}
+            speedSec={settings.speed}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />

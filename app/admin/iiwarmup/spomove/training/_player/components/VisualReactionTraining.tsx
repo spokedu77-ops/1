@@ -2,8 +2,10 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
-const HUD_H = 72;
-const PAD_H = 76;
+/** 하단 패드(#vrt-pads)는 DOM 분리 — 플레이 캔버스 높이에는 포함되지 않음. 히트 라인은 캔버스 하단에서만 약간 올린다. */
+function playBottomHitY(cvHeight: number): number {
+  return cvHeight - Math.max(cvHeight * 0.035, 16);
+}
 
 /** 인덱스 순서: 빨 → 파 → 초 → 노 (좌→우 하단 패드·레인과 동일) */
 const RT_COLORS = [
@@ -39,6 +41,12 @@ type GameState = {
   baseSpd: number;
   spawnInt: number;
   lastSpawn: number;
+  /** 연속 자극(히트 라인 통과) 사이 최소 시간(ms) — 스폰 간격과 별개로 터짐 간격 확보 */
+  minStimGapMs: number;
+  /** 마지막으로 실제 자극이 발생한 시각(ms) */
+  lastStimWallMs: number;
+  /** 이번 프레임에서 이미 한 건 자극 처리했으면 true (동시 다발 방지) */
+  stimConsumedThisFrame: boolean;
   raf: number | null;
   timer: ReturnType<typeof setInterval> | null;
 };
@@ -98,20 +106,29 @@ class FlowTile {
     this.w = g.lw * 0.7;
     this.x = lane * g.lw + (g.lw - this.w) / 2;
     this.h = Math.max(cv.height * 0.1, 50);
-    /* 플레이 영역 전용 캔버스: 상단 = 원본 캔버스의 HUD_H 위치 */
     this.y = -this.h - 4;
     this.speed = g.baseSpd;
     this.fired = false;
     this.dead = false;
   }
 
-  update(g: GameState, cv: HTMLCanvasElement, onLaneStim: (lane: number) => void) {
+  update(g: GameState, cv: HTMLCanvasElement, nowMs: number, onLaneStim: (lane: number) => void) {
+    if (this.fired) return;
     this.y += this.speed;
-    if (!this.fired && this.y + this.h >= g.hitY) {
-      this.fired = true;
-      this.dead = true;
-      onLaneStim(this.lane);
+    if (this.y + this.h < g.hitY) return;
+    this.y = g.hitY - this.h;
+    const ready =
+      g.mode === 'pattern'
+        ? true
+        : nowMs - g.lastStimWallMs >= g.minStimGapMs && !g.stimConsumedThisFrame;
+    if (!ready) return;
+    this.fired = true;
+    this.dead = true;
+    if (g.mode !== 'pattern') {
+      g.lastStimWallMs = nowMs;
+      g.stimConsumedThisFrame = true;
     }
+    onLaneStim(this.lane);
   }
 
   draw(ctx: CanvasRenderingContext2D, g: GameState, _cv: HTMLCanvasElement) {
@@ -169,16 +186,24 @@ class FlashBubble {
   update(
     g: GameState,
     cv: HTMLCanvasElement,
+    nowMs: number,
     onBubbleStim: (lane: number, x: number, y: number) => void
   ) {
     this.t++;
-    this.y += this.speed;
-    this.x += Math.sin(this.t * 0.04 + this.wobble) * 0.8;
-    const triggerY = cv.height - PAD_H - this.r;
-    if (!this.fired && this.y >= triggerY) {
-      this.fired = true;
-      this.dead = true;
-      onBubbleStim(this.lane, this.x, this.y);
+    if (!this.fired) {
+      this.y += this.speed;
+      this.x += Math.sin(this.t * 0.04 + this.wobble) * 0.8;
+      if (this.y + this.r >= g.hitY) {
+        this.y = g.hitY - this.r;
+        const ready = nowMs - g.lastStimWallMs >= g.minStimGapMs && !g.stimConsumedThisFrame;
+        if (ready) {
+          this.fired = true;
+          this.dead = true;
+          g.lastStimWallMs = nowMs;
+          g.stimConsumedThisFrame = true;
+          onBubbleStim(this.lane, this.x, this.y);
+        }
+      }
     }
   }
 
@@ -316,13 +341,13 @@ const css = `
 type Props = {
   variant: ReactTrainVariant;
   durationSec: number;
-  /** Lv.1(느림) ~ Lv.7(빠름) */
-  speedLevel: number;
+  /** 시지각 전용: 블록/버블이 히트 라인까지 도달하는 목표 시간(초) */
+  speedSec: number;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-export function VisualReactionTraining({ variant, durationSec, speedLevel, onExit, onComplete }: Props) {
+export function VisualReactionTraining({ variant, durationSec, speedSec, onExit, onComplete }: Props) {
   const playAreaRef = useRef<HTMLDivElement>(null);
   const cvRef = useRef<HTMLCanvasElement>(null);
   const gRef = useRef<GameState | null>(null);
@@ -340,7 +365,8 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  const lv = Math.max(1, Math.min(7, speedLevel));
+  const fallTimeSec = Math.max(1, Math.min(6, Number.isFinite(speedSec) ? speedSec : 4));
+  const lv = Math.max(1, Math.min(7, Math.round(7 - ((fallTimeSec - 1) * 6) / 5)));
   const spName = SPD_NAMES[lv - 1] ?? '보통';
 
   const endGame = useCallback(() => {
@@ -495,6 +521,9 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       baseSpd: 0,
       spawnInt: 600,
       lastSpawn: 0,
+      minStimGapMs: 700,
+      lastStimWallMs: -1e15,
+      stimConsumedThisFrame: false,
       raf: null,
       timer: null,
     };
@@ -512,7 +541,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
     const calcLayout = () => {
       if (!cv) return;
       g.lw = cv.width / 4;
-      g.hitY = cv.height - PAD_H - Math.max(cv.height * 0.035, 16);
+      g.hitY = playBottomHitY(cv.height);
     };
 
     const updateHud = () => {
@@ -584,6 +613,9 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
     const spawnObjs = (now: number) => {
       if (now - g.lastSpawn < g.spawnInt) return;
       if (g.mode === 'flow') {
+        const activeFlow = g.objs.filter((o) => o instanceof FlowTile && !(o as FlowTile).fired && !(o as FlowTile).dead).length;
+        const maxFlowOnScreen = 5 + Math.ceil(lv / 2);
+        if (activeFlow >= maxFlowOnScreen) return;
         const activeLanes = g.objs.filter((o) => o instanceof FlowTile && !(o as FlowTile).fired).map((o) => (o as FlowTile).lane);
         const lastLane = activeLanes.length ? activeLanes[activeLanes.length - 1] : -1;
         let lane: number;
@@ -592,9 +624,9 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
         } while (lane === lastLane && Math.random() > 0.3);
         g.objs.push(new FlowTile(g, cv, lane));
       } else if (g.mode === 'flash') {
-        // FLASH(2번): 한 번에 너무 많이 떨어지지 않도록 동시 낙하 개수를 제한한다(1~2개 수준 유지).
+        // FLASH(2번): 버블이 서로 겹치지 않게 동시 낙하를 1개로 제한.
         const activeFlash = g.objs.filter((o) => o instanceof FlashBubble && !o.dead).length;
-        if (activeFlash < 2) {
+        if (activeFlash < 1) {
           g.objs.push(new FlashBubble(g, cv));
         }
       } else {
@@ -605,14 +637,14 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       g.lastSpawn = now;
     };
 
-    const updateObjs = (ctx: CanvasRenderingContext2D) => {
+    const updateObjs = (ctx: CanvasRenderingContext2D, nowMs: number) => {
       for (let i = g.objs.length - 1; i >= 0; i--) {
         const o = g.objs[i];
         if (o instanceof FlowTile) {
-          o.update(g, cv, onStim);
+          o.update(g, cv, nowMs, onStim);
           o.draw(ctx, g, cv);
         } else if (o instanceof FlashBubble) {
-          o.update(g, cv, onStimBubble);
+          o.update(g, cv, nowMs, onStimBubble);
           o.draw(ctx, g, cv);
         }
         if (o.dead || o.y > cv.height + 100) g.objs.splice(i, 1);
@@ -633,10 +665,11 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       const ctx2 = cv.getContext('2d');
       if (!ctx2) return;
       const gg = gRef.current;
+      gg.stimConsumedThisFrame = false;
       ctx2.clearRect(0, 0, cv.width, cv.height);
       drawGrid(ctx2);
       spawnObjs(now);
-      updateObjs(ctx2);
+      updateObjs(ctx2, now);
       drawHitLine(ctx2);
       updateParticles(ctx2);
       drawTopFade(ctx2);
@@ -644,9 +677,22 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
     };
 
     const computeSpawnInt = () => {
-      const base = Math.max(320, 1380 - (lv - 1) * 150);
+      /* 초등 친화: 최소 간격 상향 + 단계별 간격 완화(동시 스폰 체감 완화) */
+      const base = Math.max(420, 1540 - (lv - 1) * 125);
+      /* FLOW: 같은 속도면 스폰 간격 ∝ 블록 사이 세로 거리 — 요청에 따라 FLOW만 2배 간격 */
+      if (variant === 'flow') return base * 2;
+      /* FLASH: 동시 1개는 유지하되, 앞 버블이 터질 즈음 다음 버블이 보이도록 중간값으로 조정 */
+      if (variant === 'flash') return Math.round(base * 1.25);
       /* PATTERN(3번): 페어 출현 간격을 FLOW·FLASH 대비 2배 */
-      return variant === 'pattern' ? base * 2 : base;
+      if (variant === 'pattern') return base * 2;
+      return base;
+    };
+
+    /** 실제 히트 간격: 스폰보다 우선 체감되는 연속 자극 간 최소 시간 */
+    const computeMinStimGapMs = () => {
+      if (variant === 'flow') return Math.max(440, 880 - (lv - 1) * 72);
+      if (variant === 'flash') return Math.max(360, 720 - (lv - 1) * 58);
+      return Math.max(400, 800 - (lv - 1) * 66);
     };
 
     const onWinResize = () => {
@@ -654,9 +700,11 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       if (!play) return;
       resizeCv(play);
       calcLayout();
-      const pps = (cv.clientHeight / 2.6) * (0.55 + (lv - 1) * 0.17);
+      const travelPx = Math.max(60, g.hitY + 4);
+      const pps = travelPx / fallTimeSec;
       g.baseSpd = pps / 60;
       g.spawnInt = computeSpawnInt();
+      g.minStimGapMs = computeMinStimGapMs();
     };
 
     const startId = window.setTimeout(() => {
@@ -664,9 +712,11 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       if (play) {
         resizeCv(play);
         calcLayout();
-        const pps = (cv.clientHeight / 2.6) * (0.55 + (lv - 1) * 0.17);
+        const travelPx = Math.max(60, g.hitY + 4);
+        const pps = travelPx / fallTimeSec;
         g.baseSpd = pps / 60;
         g.spawnInt = computeSpawnInt();
+        g.minStimGapMs = computeMinStimGapMs();
       }
       g.lastSpawn = performance.now();
       g.timer = setInterval(() => {
@@ -690,7 +740,7 @@ export function VisualReactionTraining({ variant, durationSec, speedLevel, onExi
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, lv, onStim, onStimBubble, variant]);
+  }, [durationSec, endGame, fallTimeSec, lv, onStim, onStimBubble, variant]);
 
   const uid = useId();
   return (
