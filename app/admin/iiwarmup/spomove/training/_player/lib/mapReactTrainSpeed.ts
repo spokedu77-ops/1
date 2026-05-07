@@ -8,7 +8,12 @@
 export function mapSpomoveSpeedToReactTrainSpd(speedSec: number): number {
   const s = Number(speedSec);
   if (!Number.isFinite(s)) return 4;
-  const clamped = Math.max(1.5, Math.min(6, s));
-  const lv = Math.round(23 / 3 - (4 / 3) * clamped);
-  return Math.max(1, Math.min(7, lv));
+  const clamped = Math.max(2, Math.min(6, s));
+  if (clamped >= 5.2) return 1;
+  if (clamped >= 4.5) return 2;
+  if (clamped >= 3.8) return 3;
+  if (clamped >= 3.2) return 4;
+  if (clamped >= 2.7) return 5;
+  if (clamped >= 2.3) return 6;
+  return 7;
 }

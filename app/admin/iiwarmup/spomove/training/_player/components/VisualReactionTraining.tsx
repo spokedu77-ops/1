@@ -614,7 +614,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
       if (now - g.lastSpawn < g.spawnInt) return;
       if (g.mode === 'flow') {
         const activeFlow = g.objs.filter((o) => o instanceof FlowTile && !(o as FlowTile).fired && !(o as FlowTile).dead).length;
-        const maxFlowOnScreen = 5 + Math.ceil(lv / 2);
+        const maxFlowOnScreen = 3 + Math.ceil(lv / 2);
         if (activeFlow >= maxFlowOnScreen) return;
         const activeLanes = g.objs.filter((o) => o instanceof FlowTile && !(o as FlowTile).fired).map((o) => (o as FlowTile).lane);
         const lastLane = activeLanes.length ? activeLanes[activeLanes.length - 1] : -1;
@@ -678,21 +678,21 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
 
     const computeSpawnInt = () => {
       /* 초등 친화: 최소 간격 상향 + 단계별 간격 완화(동시 스폰 체감 완화) */
-      const base = Math.max(420, 1540 - (lv - 1) * 125);
+      const base = Math.max(560, 1780 - (lv - 1) * 130);
       /* FLOW: 같은 속도면 스폰 간격 ∝ 블록 사이 세로 거리 — 요청에 따라 FLOW만 2배 간격 */
-      if (variant === 'flow') return base * 2;
+      if (variant === 'flow') return Math.round(base * 2.2);
       /* FLASH: 동시 1개는 유지하되, 앞 버블이 터질 즈음 다음 버블이 보이도록 중간값으로 조정 */
-      if (variant === 'flash') return Math.round(base * 1.25);
+      if (variant === 'flash') return Math.round(base * 1.45);
       /* PATTERN(3번): 페어 출현 간격을 FLOW·FLASH 대비 2배 */
-      if (variant === 'pattern') return base * 2;
+      if (variant === 'pattern') return Math.round(base * 2.3);
       return base;
     };
 
     /** 실제 히트 간격: 스폰보다 우선 체감되는 연속 자극 간 최소 시간 */
     const computeMinStimGapMs = () => {
-      if (variant === 'flow') return Math.max(440, 880 - (lv - 1) * 72);
-      if (variant === 'flash') return Math.max(360, 720 - (lv - 1) * 58);
-      return Math.max(400, 800 - (lv - 1) * 66);
+      if (variant === 'flow') return Math.max(560, 1020 - (lv - 1) * 64);
+      if (variant === 'flash') return Math.max(460, 860 - (lv - 1) * 56);
+      return Math.max(520, 980 - (lv - 1) * 62);
     };
 
     const onWinResize = () => {

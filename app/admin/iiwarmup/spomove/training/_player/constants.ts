@@ -154,6 +154,10 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 3, name: '3번', enName: 'PATTERN', desc: '두 색이 동시에 낙하 — 양발로 두 색 위치을 동시에 밟습니다.' },
       { id: 4, name: '4번', enName: 'Diagonal', desc: '모서리에서 중앙 2×2 패드로 날아오는 유성 자극 — 색에 맞는 색 위치를 밟습니다. 30초 후 가속이 들어갑니다.' },
       { id: 5, name: '5번', enName: 'Deep Reaction', desc: '심해에서 중앙을 향해 헤엄치는 해파리 — 모서리 패드에 닿기 전에 해당 색 위치을 밟습니다. 30초 후 주기적으로 가속됩니다.' },
+      { id: 6, name: '6번', enName: 'Pulse', desc: '중앙 심박 코어에서 링이 퍼져 모서리에 닿는 타이밍 반응 — 해당 색 위치를 즉시 밟습니다.' },
+      { id: 7, name: '7번', enName: 'Blackout', desc: '색 패널이 순서대로 사라진 뒤 마지막 색을 기억해 타이밍 반응하는 순서 기억 반응.' },
+      { id: 8, name: '8번', enName: 'Sweep', desc: '좌→우 타임라인 스윕이 색 밴드를 훑을 때 색 자극에 반응하는 스캔형 반응 훈련.' },
+      { id: 9, name: '9번', enName: 'Rush', desc: '원근 레일을 따라 돌진하는 색 세그먼트를 타이밍에 맞춰 반응하는 러시형 훈련.' },
     ],
   },
   tbd1: {

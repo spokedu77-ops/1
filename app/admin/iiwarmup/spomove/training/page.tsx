@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { TRAINING_ENGINE_GUIDE_VIDEOS } from '@/app/lib/spomove/trainingEngineGuideVideos';
 import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
@@ -60,6 +61,9 @@ const TABS: { code: TabCode; label: string }[] = [
   { code: 'RC', label: '리듬 협응' },
 ];
 
+type TopTab = 'training' | 'teacher';
+const TEACHER_SPOMOVE_URL = 'https://spokedu.vercel.app/teacher/spomove';
+
 function levelLabel(modeId: string, levelId: number): string {
   return `${levelId}번`;
 }
@@ -111,6 +115,10 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   PATTERN: '패턴',
   Diagonal: '대각선 반응',
   'Deep Reaction': '심해 반응',
+  Pulse: '펄스 반응',
+  Blackout: '블랙아웃 반응',
+  Sweep: '스윕 반응',
+  Rush: '러시 반응',
 };
 
 function levelNameKo(modeId: string, levelId: number): string {
@@ -143,6 +151,7 @@ type LaunchSettings = {
   warmup: number;
   accel: boolean;
   intervalMode: boolean;
+  kidsSafeMode: boolean;
   numberRule: string;
   variantColorTheme: SpomoveColorThemeId;
 };
@@ -155,6 +164,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   warmup: 3,
   accel: false,
   intervalMode: false,
+  kidsSafeMode: false,
   numberRule: 'odd_left',
   variantColorTheme: 'color',
 };
@@ -214,6 +224,7 @@ function TrainingPortal({
     warmup: launch.warmup,
     accel: launch.accel,
     intervalMode: launch.intervalMode,
+    kidsSafeMode: launch.kidsSafeMode,
     numberRule: launch.numberRule,
     variantColorTheme: launch.variantColorTheme,
   };
@@ -225,7 +236,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.numberRule}-${launch.variantColorTheme}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -540,6 +551,39 @@ function SettingsScreen({
             </section>
           ) : null}
 
+          {/* 키즈 세이프 모드 (시지각 반응 전용) */}
+          {isReactTrain ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
+                  키즈 세이프 모드
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLaunch((s) => ({ ...s, kidsSafeMode: !s.kidsSafeMode }))}
+                style={{
+                  width: '100%',
+                  padding: '11px 12px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${launch.kidsSafeMode ? accent : T.border}`,
+                  background: launch.kidsSafeMode ? `${accent}16` : T.card,
+                  color: launch.kidsSafeMode ? accent : T.textDim,
+                  fontFamily: 'inherit',
+                  fontSize: 13,
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                {launch.kidsSafeMode ? '켜짐 ✓' : '끔'}
+                <span style={{ marginLeft: 10, fontWeight: 700, opacity: 0.85 }}>
+                  (시지각 반응 전체 속도/스폰 간격 완화)
+                </span>
+              </button>
+            </section>
+          ) : null}
+
           {/* 분량/시간 */}
           {!isFlowOrChallenge ? (
             <section style={{ marginBottom: 26 }}>
@@ -788,8 +832,42 @@ function SettingsScreen({
 }
 
 export default function SpomoveTrainingPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryTab = searchParams.get('tab');
+  const queryTopTab: TopTab = queryTab === 'teacher' ? 'teacher' : 'training';
+  const [topTab, setTopTab] = useState<TopTab>(queryTopTab);
   const [activeTab, setActiveTab] = useState<TabCode>('ALL');
   const [phase, setPhase] = useState<PagePhase>({ tag: 'catalog' });
+
+  useEffect(() => {
+    setTopTab(queryTopTab);
+  }, [queryTopTab]);
+
+  useEffect(() => {
+    if (queryTopTab !== 'teacher') return;
+    if (typeof window === 'undefined') return;
+    window.location.href = TEACHER_SPOMOVE_URL;
+  }, [queryTopTab]);
+
+  const switchTopTab = useCallback(
+    (next: TopTab) => {
+      if (next === 'teacher') {
+        if (typeof window !== 'undefined') {
+          window.location.href = TEACHER_SPOMOVE_URL;
+        }
+        return;
+      }
+      setTopTab(next);
+      setPhase({ tag: 'catalog' });
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('tab');
+      const qs = params.toString();
+      const basePath = '/admin/iiwarmup/spomove/training';
+      router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
+    },
+    [router, searchParams],
+  );
 
   const modeIdsByTab = useMemo(() => {
     const ids = SPOMOVE_CATALOG_SLOT_IDS.filter((id) => id in MODES);
@@ -845,7 +923,7 @@ export default function SpomoveTrainingPage() {
 
   return (
     <>
-      {phase.tag === 'training' && (
+      {topTab === 'training' && phase.tag === 'training' && (
         <TrainingPortal
           modeId={phase.modeId}
           levelId={phase.levelId}
@@ -855,6 +933,40 @@ export default function SpomoveTrainingPage() {
       )}
 
       <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 80 }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '14px 24px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+            {([
+              { id: 'training' as const, label: '1. Training' },
+              { id: 'teacher' as const, label: '2. teacher' },
+            ]).map((t) => {
+              const active = topTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => switchTopTab(t.id)}
+                  style={{
+                    borderRadius: 12,
+                    border: `1px solid ${active ? 'rgba(249,115,22,0.45)' : T.border}`,
+                    background: active ? 'rgba(249,115,22,0.14)' : 'rgba(255,255,255,0.03)',
+                    color: active ? '#F97316' : T.textDim,
+                    fontWeight: active ? 900 : 700,
+                    fontSize: 14,
+                    letterSpacing: '0.02em',
+                    padding: '10px 12px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {topTab === 'training' ? (
+          <>
         <SpomoveCatalogHero />
         <header style={{
           borderBottom: `1px solid ${T.border}`,
@@ -978,6 +1090,8 @@ export default function SpomoveTrainingPage() {
             ))}
           </div>
         </main>
+          </>
+        ) : null}
       </div>
     </>
   );

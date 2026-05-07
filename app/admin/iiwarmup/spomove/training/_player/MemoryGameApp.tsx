@@ -20,6 +20,10 @@ import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
 import { VisualReactionTraining, type ReactTrainCompleteStats } from './components/VisualReactionTraining';
 import { DiagonalReactionTraining } from './components/DiagonalReactionTraining';
 import { DeepReactionTraining } from './components/DeepReactionTraining';
+import { PulseReactionTraining } from './components/PulseReactionTraining';
+import { BlackoutReactionTraining } from './components/BlackoutReactionTraining';
+import { SweepReactionTraining } from './components/SweepReactionTraining';
+import { RushReactionTraining } from './components/RushReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { CSS, S } from './styles';
@@ -69,6 +73,7 @@ type Settings = {
   intervalSets: number;
   warmup: number;
   accel: boolean;
+  kidsSafeMode: boolean;
   /** 반응 인지 2·3·4·5번 변형 색지각 이미지 테마 (Asset Hub 1번 섹션과 localStorage 동기화) */
   variantColorTheme: SpomoveColorThemeId;
 };
@@ -89,6 +94,7 @@ const defaultSettings: Settings = {
   intervalSets: 4,
   warmup: 3,
   accel: false,
+  kidsSafeMode: false,
   variantColorTheme: 'color',
 };
 
@@ -100,6 +106,8 @@ export type MemoryGameAutoLaunch = {
   warmup?: number;
   accel?: boolean;
   intervalMode?: boolean;
+  /** 시지각 반응 전체 속도/스폰 간격 완화 */
+  kidsSafeMode?: boolean;
   /** 반응 인지 7번만 */
   numberRule?: string;
   /** 반응 인지 2·3·4·5번만 */
@@ -954,6 +962,26 @@ export default function MemoryGameApp({
                         </button>
                       ))}
                     </div>
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => set('kidsSafeMode', !settings.kidsSafeMode)}
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem 0.9rem',
+                          borderRadius: '0.75rem',
+                          border: `2px solid ${settings.kidsSafeMode ? '#F97316' : 'var(--border)'}`,
+                          background: settings.kidsSafeMode ? '#FFF7ED' : 'var(--card)',
+                          color: settings.kidsSafeMode ? '#C2410C' : 'var(--text)',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          textAlign: 'left',
+                        }}
+                      >
+                        키즈 세이프 모드 {settings.kidsSafeMode ? '켜짐 ✓' : '끔'}
+                      </button>
+                    </div>
                   </div>
                 )}
                 {settings.mode !== 'spatial' && settings.mode !== 'reactTrain' && (
@@ -1052,6 +1080,13 @@ export default function MemoryGameApp({
   }
 
   if (screen === 'visualReaction') {
+    const rawReactSpeedLevel = mapSpomoveSpeedToReactTrainSpd(settings.speed);
+    const safeReactSpeedLevel = settings.kidsSafeMode
+      ? Math.max(1, rawReactSpeedLevel - 2)
+      : rawReactSpeedLevel;
+    const safeReactSpeedSec = settings.kidsSafeMode
+      ? Math.min(6, settings.speed * 1.25)
+      : settings.speed;
     if (countdown !== null) {
       return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400 }}>
@@ -1063,17 +1098,45 @@ export default function MemoryGameApp({
     return (
       <div ref={visualReactionContainerRef} style={{ position: 'fixed', inset: 0, zIndex: 320 }}>
         <style>{CSS}</style>
-        {settings.level === 5 ? (
+        {settings.level === 9 ? (
+          <RushReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : settings.level === 8 ? (
+          <SweepReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : settings.level === 7 ? (
+          <BlackoutReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : settings.level === 6 ? (
+          <PulseReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : settings.level === 5 ? (
           <DeepReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={mapSpomoveSpeedToReactTrainSpd(settings.speed)}
+            speedLevel={safeReactSpeedLevel}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
         ) : settings.level === 4 ? (
           <DiagonalReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={mapSpomoveSpeedToReactTrainSpd(settings.speed)}
+            speedLevel={safeReactSpeedLevel}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -1081,7 +1144,7 @@ export default function MemoryGameApp({
           <VisualReactionTraining
             variant={settings.level === 1 ? 'flow' : settings.level === 2 ? 'flash' : 'pattern'}
             durationSec={Math.max(1, settings.duration ?? 60)}
-            speedSec={settings.speed}
+            speedSec={safeReactSpeedSec}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />

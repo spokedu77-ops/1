@@ -293,7 +293,7 @@ export type DeepReactionProps = {
 /* ══ Component ══ */
 export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComplete }: DeepReactionProps) {
   // 시지각 반응 5번(심해): 전체 체감 속도(이동 + 스폰)를 확실히 낮춘다.
-  const SLOW_FACTOR = 1.5;
+  const SLOW_FACTOR = 1.8;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hudTimeRef = useRef<HTMLDivElement>(null);
   const hudStimsRef = useRef<HTMLDivElement>(null);
@@ -484,9 +484,9 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
   /* ─── applyAccel ─── */
   const applyAccel = useCallback(() => {
     const g = G.current; if (!g) return;
-    g.spawnInt = Math.max(200, Math.floor(g.spawnInt * 0.88));
-    g.baseSpeedMult *= 1.13;
-    g.jellies.forEach(j => { j.speed *= 1.13; });
+    g.spawnInt = Math.max(320, Math.floor(g.spawnInt * 0.93));
+    g.baseSpeedMult *= 1.08;
+    g.jellies.forEach(j => { j.speed *= 1.08; });
     if (hudTimeRef.current) {
       hudTimeRef.current.style.color = '#00FFB2';
       hudTimeRef.current.style.textShadow = '0 0 14px #00FFB2';
@@ -602,7 +602,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       const gg = G.current; if (!gg || !gg.running) return;
       gg.timeLeft--; gg.elapsed++;
       updateHudTime();
-      if (gg.elapsed >= 30 && gg.elapsed % 10 === 0) applyAccel();
+      if (gg.elapsed >= 45 && gg.elapsed % 15 === 0) applyAccel();
       if (gg.timeLeft <= 0) endGame();
     }, 1000);
 
