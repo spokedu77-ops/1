@@ -12,6 +12,7 @@ import {
 } from '../lib/signals';
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
+import { resolveTrainingEngine } from '../constants';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
 
@@ -66,14 +67,15 @@ export function useIntervalTimer({
       return;
     }
     const fruitOpts = fruitSlides ? { fruitSlides } : undefined;
-    if (mode === 'basic') {
+    const { engineMode, engineLevel } = resolveTrainingEngine(mode, level);
+    if (engineMode === 'basic') {
       genRef.current = createBasicSignalGenerator(level, colors, fruitSlides);
-    } else if (mode === 'simon') {
-      genRef.current = createSimonSignalGenerator(level, colors);
-    } else if (mode === 'taskswitch') {
-      genRef.current = createTaskSwitchSignalGenerator(level, colors, fruitOpts);
-    } else if (mode === 'dual' || mode === 'stroop' || mode === 'flanker' || mode === 'gonogo') {
-      genRef.current = createModeColorDupGenerator(mode, level, colors, fruitOpts);
+    } else if (engineMode === 'simon') {
+      genRef.current = createSimonSignalGenerator(engineLevel, colors);
+    } else if (engineMode === 'taskswitch') {
+      genRef.current = createTaskSwitchSignalGenerator(engineLevel, colors, fruitOpts);
+    } else if (engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo') {
+      genRef.current = createModeColorDupGenerator(engineMode, engineLevel, colors, fruitOpts);
     } else {
       genRef.current = null;
     }
@@ -99,7 +101,7 @@ export function useIntervalTimer({
 
       if (currentSet > sets) {
         ttsClear();
-        const dup = mode === 'basic' ? genRef.current?.getStats() ?? null : null;
+        const dup = engineMode === 'basic' ? genRef.current?.getStats() ?? null : null;
         onFinish(dup);
         return;
       }
@@ -121,15 +123,15 @@ export function useIntervalTimer({
         if (sigIdx > lastSignalRef.current) {
           lastSignalRef.current = sigIdx;
           const sig =
-            mode === 'basic' || mode === 'simon' || mode === 'dual' || mode === 'stroop' || mode === 'flanker' || mode === 'gonogo' || mode === 'taskswitch'
+            engineMode === 'basic' || engineMode === 'simon' || engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo' || engineMode === 'taskswitch'
               ? genRef.current?.next() ?? null
-              : generateSignal(mode, level, colors, fruitSlides ? { fruitSlides } : undefined);
+              : generateSignal(engineMode, engineLevel, colors, fruitSlides ? { fruitSlides } : undefined);
           if (sig) {
             onSignal(sig);
             if (audioMode === 'beep') {
               playBeep(getBeepForSignal(sig) ?? 'mid');
             } else {
-              const voice = getSignalVoice(sig, mode, level, audioMode);
+              const voice = getSignalVoice(sig, engineMode, engineLevel, audioMode);
               if (voice) tts(voice, true);
             }
           }

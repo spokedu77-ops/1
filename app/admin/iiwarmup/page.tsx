@@ -10,7 +10,7 @@ export default function TeacherAppOverviewPage() {
         </p>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Link
           href="/admin/iiwarmup/assets"
           className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
@@ -23,12 +23,34 @@ export default function TeacherAppOverviewPage() {
         </Link>
 
         <Link
-          href="/admin/iiwarmup/spomove"
+          href="/admin/iiwarmup/spomove/training"
           className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >
           <h3 className="text-base font-extrabold">SPOMOVE</h3>
           <p className="mt-2 text-sm text-neutral-400">
-            Think · Challenge · Flow · 카메라 · SPOMOVE 트레이닝 등 도구 모음
+            SPOMOVE 트레이닝으로 바로 진입합니다.
+          </p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
+        </Link>
+
+        <Link
+          href="/admin/iiwarmup/flow"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">Flow</h3>
+          <p className="mt-2 text-sm text-neutral-400">
+            몰입형 Flow 프로그램으로 바로 진입합니다.
+          </p>
+          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
+        </Link>
+
+        <Link
+          href="/admin/camera"
+          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
+        >
+          <h3 className="text-base font-extrabold">카메라 앱</h3>
+          <p className="mt-2 text-sm text-neutral-400">
+            수업용 카메라 앱으로 바로 진입합니다.
           </p>
           <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
         </Link>

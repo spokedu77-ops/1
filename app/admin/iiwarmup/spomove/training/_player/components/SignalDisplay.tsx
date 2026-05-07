@@ -282,13 +282,33 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                 minWidth: 0,
                 minHeight: 0,
                 height: '100%',
-                background: slide ? '#000' : '#fff',
+                background: slide
+                  ? ((slide.imageUrl ?? '').trim() ? '#000' : slide.color.bg)
+                  : '#fff',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              {slide ? <VariantFruitImg slide={slide} /> : null}
+              {slide
+                ? ((slide.imageUrl ?? '').trim()
+                  ? <VariantFruitImg slide={slide} />
+                  : (
+                    <span
+                      style={{
+                        fontSize: 'clamp(72px, 16vw, 180px)',
+                        lineHeight: 1,
+                        color: slide.color.text,
+                        opacity: 0.38,
+                        userSelect: 'none',
+                      }}
+                    >
+                      {slide.color.symbol}
+                    </span>
+                  ))
+                : null}
             </div>
           );
         })}

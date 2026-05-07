@@ -279,11 +279,11 @@ const catalogSeed: Core5Catalog = [
         programId: 'RS-04',
         title: '이중 규칙',
         stages: [
-          { stage: 1, label: '이중 매칭',  engine: { mode: 'dual', level: 1 } },
-          { stage: 2, label: '이중 전환',  engine: { mode: 'dual', level: 2 } },
-          { stage: 3, label: '이중 동작',  engine: { mode: 'dual', level: 2 } },
-          { stage: 4, label: '이중 억제',  engine: { mode: 'dual', level: 2 } },
-          { stage: 5, label: '혼합 이중',  engine: { mode: 'dual', level: 2 } },
+          { stage: 1, label: '이중 매칭',  engine: null },
+          { stage: 2, label: '이중 전환',  engine: null },
+          { stage: 3, label: '이중 동작',  engine: null },
+          { stage: 4, label: '이중 억제',  engine: null },
+          { stage: 5, label: '혼합 이중',  engine: null },
         ],
       },
       {

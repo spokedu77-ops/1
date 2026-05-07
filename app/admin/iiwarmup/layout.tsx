@@ -11,8 +11,6 @@ function isAssetHubActive(pathname: string): boolean {
 
 function isSpomovePrimaryActive(pathname: string): boolean {
   if (pathname === `${BASE}/spomove` || pathname.startsWith(`${BASE}/spomove/`)) return true;
-  if (pathname === `${BASE}/think` || pathname.startsWith(`${BASE}/think/`)) return true;
-  if (pathname === `${BASE}/challenge` || pathname.startsWith(`${BASE}/challenge/`)) return true;
   if (pathname === `${BASE}/flow` || pathname.startsWith(`${BASE}/flow/`)) return true;
   return false;
 }
@@ -37,12 +35,6 @@ function subNavClass(active: boolean): string {
   }`;
 }
 
-function isThinkActive(pathname: string): boolean {
-  return pathname === `${BASE}/think` || pathname.startsWith(`${BASE}/think/`);
-}
-function isChallengeActive(pathname: string): boolean {
-  return pathname === `${BASE}/challenge` || pathname.startsWith(`${BASE}/challenge/`);
-}
 function isFlowActive(pathname: string): boolean {
   return pathname === `${BASE}/flow` || pathname.startsWith(`${BASE}/flow/`);
 }
@@ -74,7 +66,7 @@ export default function TeacherAppIiwarmupLayout({ children }: { children: React
             <Link className={navClass(assetOn)} href={`${BASE}/assets`}>
               Asset Hub
             </Link>
-            <Link className={navClass(spomoveOn)} href={`${BASE}/spomove`}>
+            <Link className={navClass(spomoveOn)} href={`${BASE}/spomove/training`}>
               SPOMOVE
             </Link>
           </nav>
@@ -84,23 +76,8 @@ export default function TeacherAppIiwarmupLayout({ children }: { children: React
               className="flex flex-wrap gap-2 border-t border-neutral-800 pt-4 text-sm"
               aria-label="SPOMOVE 도구"
             >
-              <Link className={subNavClass(isThinkActive(pathname))} href={`${BASE}/think`}>
-                Think
-              </Link>
-              <Link className={subNavClass(isChallengeActive(pathname))} href={`${BASE}/challenge`}>
-                Challenge
-              </Link>
-              <Link className={subNavClass(isFlowActive(pathname))} href={`${BASE}/flow`}>
-                Flow
-              </Link>
               <Link className={subNavClass(isTrainingActive(pathname))} href={`${BASE}/spomove/training`}>
                 Training
-              </Link>
-              <Link className={subNavClass(false)} href="/admin/camera">
-                카메라 앱
-              </Link>
-              <Link className={subNavClass(false)} href="/admin/memory-game">
-                트레이닝 (기존)
               </Link>
             </nav>
           )}

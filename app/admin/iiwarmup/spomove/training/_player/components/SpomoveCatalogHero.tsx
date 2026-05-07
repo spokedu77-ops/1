@@ -20,6 +20,10 @@ const HERO_ANIM_CSS = `
   .spomove-catalog-hero-fadein,
   .spomove-catalog-hero-fadein-1 { animation: none; opacity: 1; transform: none; }
 }
+.spomove-hero-mobile-break { display: inline; }
+@media (max-width: 640px) {
+  .spomove-hero-mobile-break { display: block; margin-top: 0.1rem; }
+}
 `;
 
 /**
@@ -89,132 +93,46 @@ export function SpomoveCatalogHero() {
       >
         <div
           className="spomove-catalog-hero-fadein"
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}
+          style={{
+            margin: '0 auto',
+            width: '100%',
+            maxWidth: 1120,
+            padding: 'clamp(1.1rem,3vw,1.5rem) clamp(1rem,3vw,1.4rem)',
+            borderRadius: 18,
+            border: '1px solid rgba(255,255,255,0.09)',
+            background: 'linear-gradient(180deg, rgba(249,115,22,0.11) 0%, rgba(255,255,255,0.03) 24%, rgba(255,255,255,0.01) 100%)',
+            boxShadow: '0 10px 28px rgba(0,0,0,0.35)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            gap: 'clamp(0.45rem,1.6vw,0.7rem)',
+          }}
         >
-          <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 'clamp(0.6rem,1.5vw,0.72rem)',
-                fontWeight: 700,
-                letterSpacing: '0.22em',
-                color: 'rgba(255,255,255,0.3)',
-                textTransform: 'uppercase',
-                marginBottom: '0.2rem',
-              }}
-            >
-              Cognitive · Physical · Education
-            </div>
-            <div style={{ fontSize: 'clamp(1.35rem,3.8vw,1.85rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>
-              SPOKEDU
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-            <button
-              type="button"
-              onClick={() => setShowStudentModal(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                padding: '0.4rem 0.65rem',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '0.6rem',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                color: 'rgba(255,255,255,0.7)',
-              }}
-            >
-              {(() => {
-                const s = students.find((st) => st.id === selectedStudentId);
-                if (s) {
-                  return (
-                    <>
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: s.color }} />
-                      <span>{s.name}</span>
-                    </>
-                  );
-                }
-                return (
-                  <>
-                    <span>👤</span>
-                    <span>학생 선택</span>
-                  </>
-                );
-              })()}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '0.6rem',
-                background: 'rgba(249,115,22,0.15)',
-                border: '1px solid rgba(249,115,22,0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1rem',
-                flexShrink: 0,
-                cursor: 'pointer',
-              }}
-              aria-label={theme === 'light' ? '다크 모드' : '라이트 모드'}
-            >
-              {theme === 'light' ? '🌙' : '☀️'}
-            </button>
-          </div>
-        </div>
-
-        <div
-          className="spomove-catalog-hero-fadein-1"
-          style={{ marginTop: 'clamp(1rem,3vw,1.35rem)', display: 'flex', flexDirection: 'column', gap: 'clamp(0.65rem,2vw,0.95rem)' }}
-        >
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {(['PLAY', 'THINK', 'FLOW'] as const).map((w, i) => (
-              <React.Fragment key={w}>
-                <span
-                  style={{
-                    fontSize: 'clamp(0.68rem,1.8vw,0.82rem)',
-                    fontWeight: 800,
-                    letterSpacing: '0.15em',
-                    color: i === 0 ? '#F97316' : i === 1 ? '#3B82F6' : '#22C55E',
-                  }}
-                >
-                  {w}
-                </span>
-                {i < 2 && <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.7rem' }}>·</span>}
-              </React.Fragment>
-            ))}
-          </div>
-          <h2
+          <div
             style={{
-              fontSize: 'clamp(1.65rem,6vw,2.75rem)',
+              fontSize: 'clamp(2.2rem,7vw,4rem)',
               fontWeight: 900,
-              letterSpacing: '-0.04em',
-              lineHeight: 1.12,
+              letterSpacing: '-0.045em',
+              lineHeight: 1.04,
               margin: 0,
+              color: '#fff',
             }}
           >
-            몸이 움직이면
-            <br />
-            <span style={{ color: '#F97316' }}>뇌가 깨어납니다</span>
-          </h2>
+            SPOKEDU
+          </div>
           <p
             style={{
-              fontSize: 'clamp(0.88rem,2vw,1.02rem)',
-              color: 'rgba(255,255,255,0.4)',
-              lineHeight: 1.75,
-              fontWeight: 400,
+              fontSize: 'clamp(0.9rem,2vw,1.08rem)',
+              color: 'rgba(255,255,255,0.62)',
+              lineHeight: 1.55,
+              fontWeight: 700,
               margin: 0,
-              maxWidth: '36rem',
+              maxWidth: '56rem',
             }}
           >
-            신체 활동과 인지 트레이닝을 통합한
-            <br />
-            교육 기반 퍼포먼스 도구 — SPOMOVE 트레이닝
+            신체 활동과 인지 트레이닝을 통합한 교육 기반 퍼포먼스 도구
+            <span className="spomove-hero-mobile-break"> — SPOMOVE 트레이닝</span>
           </p>
         </div>
       </div>

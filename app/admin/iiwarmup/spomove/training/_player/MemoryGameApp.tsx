@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { COLORS, MODES, MEMORY_ROUNDS } from './constants';
+import { COLORS, isSpomoveCatalogTbdMode, MODES, normalizeLegacyTrainingMode, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS, MEMORY_ROUNDS } from './constants';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { useStudents } from './hooks/useStudents';
 import { useIntervalTimer } from './hooks/useIntervalTimer';
 import { useTrainingTimer } from './hooks/useTrainingTimer';
-import { useDual21TouchTraining } from './hooks/useDual21TouchTraining';
 import { tts } from './lib/tts';
 import { StudentModal } from './components/StudentModal';
 import { StudentManageScreen } from './components/StudentManageScreen';
@@ -22,9 +21,7 @@ import { VisualReactionTraining, type ReactTrainCompleteStats } from './componen
 import { DiagonalReactionTraining } from './components/DiagonalReactionTraining';
 import { DeepReactionTraining } from './components/DeepReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
-import { ChallengeSpomoveSetupPanel } from './components/ChallengeSpomoveSetupPanel';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
-import { getSpomoveChallengeEmbed } from '@/app/lib/spomove/challengeEmbedStorage';
 import { CSS, S } from './styles';
 import type { DupStats } from './lib/signals';
 import { preloadVariantFruitImages } from './lib/preloadVariantFruitImages';
@@ -38,12 +35,11 @@ import {
   type SpomoveColorThemeId,
 } from './lib/spomoveVariantThemeConfig';
 function modeLevelRangeLabel(modeId: string, levelCount: number): string {
-  if (modeId === 'flow' || modeId === 'challenge') return '1번';
+  if (modeId === 'flow') return '1번';
   return levelCount <= 1 ? '1번' : `1~${levelCount}번`;
 }
 
 function resultLevelLabel(mode: string | undefined, level: number): string {
-  if (mode === 'dual') return level === 1 ? '1번' : '2-1번';
   return `${level}번`;
 }
 
@@ -56,7 +52,6 @@ type Screen =
   | 'memory'
   | 'visualReaction'
   | 'flow'
-  | 'challenge'
   | 'result';
 
 type Settings = {
@@ -74,9 +69,7 @@ type Settings = {
   intervalSets: number;
   warmup: number;
   accel: boolean;
-  /** 이중과제 2-1번만: 기본형(신호 속도 자동) / 터치형(화면 터치 시 다음) */
-  dual21Advance: 'default' | 'touch';
-  /** 반응 인지 2·3·4번 변형 색지각 이미지 테마 (Asset Hub 1번 섹션과 localStorage 동기화) */
+  /** 반응 인지 2·3·4·5번 변형 색지각 이미지 테마 (Asset Hub 1번 섹션과 localStorage 동기화) */
   variantColorTheme: SpomoveColorThemeId;
 };
 
@@ -96,7 +89,6 @@ const defaultSettings: Settings = {
   intervalSets: 4,
   warmup: 3,
   accel: false,
-  dual21Advance: 'default',
   variantColorTheme: 'color',
 };
 
@@ -108,11 +100,9 @@ export type MemoryGameAutoLaunch = {
   warmup?: number;
   accel?: boolean;
   intervalMode?: boolean;
-  /** 이중과제 2-1번만 */
-  dual21Advance?: 'default' | 'touch';
-  /** 반응 인지 6번만 */
+  /** 반응 인지 7번만 */
   numberRule?: string;
-  /** 반응 인지 2·3·4번만 */
+  /** 반응 인지 2·3·4·5번만 */
   variantColorTheme?: SpomoveColorThemeId;
 };
 
@@ -185,7 +175,6 @@ export default function MemoryGameApp({
   const trainingContainerRef = useRef<HTMLDivElement>(null);
   const visualReactionContainerRef = useRef<HTMLDivElement>(null);
   const flowCompleteGuardRef = useRef(false);
-  const challengeCompleteGuardRef = useRef(false);
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   /** startSession 진입 후에만 onExit 허용 — 초기 home·카운트다운 대기 home에서 오동작 방지 */
   const sessionLaunchedRef = useRef(false);
@@ -193,12 +182,6 @@ export default function MemoryGameApp({
   const { list: spomoveBgmList, loading: spomoveBgmLoading } = useSpomoveTrainingBGM();
   const pendingBgmStartRef = useRef<null | { mode: string }>(null);
 
-  const challengeIframeSrc = useMemo(() => {
-    const t = getSpomoveChallengeEmbed()?.templateId?.trim();
-    return t
-      ? `/program/iiwarmup/challenge?autoStart=1&template=${encodeURIComponent(t)}`
-      : '/program/iiwarmup/challenge?autoStart=1';
-  }, [screen]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
@@ -226,9 +209,9 @@ export default function MemoryGameApp({
     void preloadVariantFruitImages(variantFruitUrls);
   }, [variantFruitUrls]);
 
-  /** 변형 색지각(basic 2·3·4번): 설정·워밍업·훈련 중 이미지 프리로드 */
+  /** 변형 색지각(basic 2·3·4·5번): 설정·워밍업·훈련 중 이미지 프리로드 */
   const basicVariantLevel = useMemo(
-    () => settings.mode === 'basic' && (settings.level === 2 || settings.level === 3 || settings.level === 4),
+    () => settings.mode === 'basic' && (settings.level === 2 || settings.level === 3 || settings.level === 4 || settings.level === 5),
     [settings.mode, settings.level]
   );
 
@@ -257,14 +240,15 @@ export default function MemoryGameApp({
   /** initialMode가 MODES에 없으면 부모에게 즉시 알려 빈 화면을 피한다 */
   useEffect(() => {
     if (!initialMode) return;
-    if (initialMode in MODES) return;
+    const normalized = normalizeLegacyTrainingMode(initialMode, typeof initialLevel === 'number' ? initialLevel : 1);
+    if (normalized.mode in MODES) return;
     onUnavailable?.();
-  }, [initialMode, onUnavailable]);
+  }, [initialMode, initialLevel, onUnavailable]);
 
   /** autoLaunch 모드에서 세션이 한 번 시작된 뒤 home/result로 복귀하면 부모에게 닫힘 신호 */
   useEffect(() => {
     if (!autoLaunch) return;
-    if (screen === 'home' || screen === 'result') {
+    if (screen === 'home') {
       if (!sessionLaunchedRef.current) return;
       if (countdown !== null) return;
       onExit?.();
@@ -272,18 +256,20 @@ export default function MemoryGameApp({
   }, [autoLaunch, screen, onExit, countdown]);
 
   useEffect(() => {
-    if (!initialMode || !(initialMode in MODES)) return;
-    const modeDef = MODES[initialMode];
+    if (!initialMode) return;
+    const normalized = normalizeLegacyTrainingMode(initialMode, typeof initialLevel === 'number' ? initialLevel : 1);
+    if (!(normalized.mode in MODES)) return;
+    const modeDef = MODES[normalized.mode];
     if (!modeDef) return;
     const targetLevel =
-      typeof initialLevel === 'number' && modeDef.levels.some((lv) => lv.id === initialLevel)
-        ? initialLevel
+      typeof normalized.level === 'number' && modeDef.levels.some((lv) => lv.id === normalized.level)
+        ? normalized.level
         : modeDef.levels[0]?.id ?? 1;
 
     if (autoLaunch) {
       const merged: Settings = {
         ...defaultSettings,
-        mode: initialMode,
+        mode: normalized.mode,
         level: targetLevel,
         ...autoLaunch,
         /** Training 임베드: 항상 3초 카운트다운 후 시작 (전달값 0이어도 무시) */
@@ -294,7 +280,7 @@ export default function MemoryGameApp({
       // setScreen('setup') 호출 생략 — home 화면도 렌더하지 않도록 early-return이 처리
       setPendingAutoStart(true);
     } else {
-      setSettings((s) => ({ ...s, mode: initialMode, level: targetLevel }));
+      setSettings((s) => ({ ...s, mode: normalized.mode, level: targetLevel }));
       setScreen('setup');
     }
   }, [initialMode, initialLevel, autoLaunch]);
@@ -310,9 +296,9 @@ export default function MemoryGameApp({
   }, []);
 
   useEffect(() => {
-    if (settings.mode !== 'basic' || settings.level !== 3) return;
+    if (settings.mode !== 'basic' || settings.level !== 4) return;
     if (settings.variantColorTheme !== 'color') return;
-    // 3번(변형 색상 2패널)은 색상 테마 비허용: 안전하게 과일로 정규화
+    // 4번은 색상 테마 비허용(과일 고정)
     setSettings((s) => ({ ...s, variantColorTheme: 'fruit' }));
     if (typeof window !== 'undefined') {
       localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, 'fruit');
@@ -345,8 +331,10 @@ export default function MemoryGameApp({
     setSignalKey((k) => k + 1);
   }, []);
 
-  const isDual21Touch =
-    settings.mode === 'dual' && settings.level === 2 && settings.dual21Advance === 'touch';
+  const { engineMode, engineLevel } = useMemo(
+    () => resolveTrainingEngine(settings.mode, settings.level),
+    [settings.mode, settings.level],
+  );
 
   const onFinish = useCallback((dupStats?: DupStats | null) => {
     if (document.fullscreenElement) document.exitFullscreen();
@@ -360,7 +348,7 @@ export default function MemoryGameApp({
   }, [settings, selectedStudentId]);
 
   const { getProgress } = useTrainingTimer({
-    active: isTraining && !settings.intervalMode && !isDual21Touch,
+    active: isTraining && !settings.intervalMode,
     speed: settings.speed,
     accel: settings.accel ?? false,
     timeMode: settings.timeMode,
@@ -375,18 +363,8 @@ export default function MemoryGameApp({
     onFinish,
   });
 
-  const { advance: advanceDual21Touch, getProgress: getDual21TouchProgress } = useDual21TouchTraining({
-    active: isTraining && !settings.intervalMode && isDual21Touch,
-    trainingKey,
-    targetReps: settings.targetReps,
-    colors: COLORS,
-    audioMode: settings.audioMode,
-    onSignal,
-    onFinish: () => onFinish(undefined),
-  });
-
   const { intervalPhase, intervalSet, intervalLeft } = useIntervalTimer({
-    active: isTraining && !!settings.intervalMode && !isDual21Touch,
+    active: isTraining && !!settings.intervalMode,
     workSec: settings.intervalWork,
     restSec: settings.intervalRest,
     sets: settings.intervalSets,
@@ -405,7 +383,7 @@ export default function MemoryGameApp({
     if (!isTraining) return;
     const tick = () =>
       setStats(
-        isDual21Touch && !settings.intervalMode ? getDual21TouchProgress() : getProgress()
+        getProgress()
       );
     const loop = () => {
       tick();
@@ -413,7 +391,7 @@ export default function MemoryGameApp({
     };
     rafStatsRef.current = requestAnimationFrame(loop);
     return () => { if (rafStatsRef.current != null) cancelAnimationFrame(rafStatsRef.current); };
-  }, [isTraining, getProgress, getDual21TouchProgress, isDual21Touch, settings.intervalMode]);
+  }, [isTraining, getProgress]);
 
   useEffect(() => {
     if (!isTraining) return;
@@ -427,7 +405,7 @@ export default function MemoryGameApp({
 
   useEffect(() => {
     // 훈련/메모리 화면 이탈 시 BGM 정지 (요청: 시작 클릭 시만 재생, 훈련/메모리에서만 유지)
-    if (screen === 'training' || screen === 'memory' || screen === 'visualReaction' || screen === 'flow' || screen === 'challenge')
+    if (screen === 'training' || screen === 'memory' || screen === 'visualReaction' || screen === 'flow')
       return;
     bgmPlayerRef.current?.fadeOut(220);
   }, [screen]);
@@ -459,16 +437,13 @@ export default function MemoryGameApp({
   const startSession = useCallback(
     (cfg: Settings = settings) => {
       sessionLaunchedRef.current = true;
+      const resolved = resolveTrainingEngine(cfg.mode, cfg.level);
       // 분량 선택은 횟수만 노출/사용 → 시지각 반응(reactTrain) 제외하고 reps로 고정
       if (cfg.mode !== 'reactTrain' && cfg.timeMode !== 'reps') cfg = { ...cfg, timeMode: 'reps' };
       // 인터벌 세트는 4로 고정
       if (cfg.intervalSets !== 4) cfg = { ...cfg, intervalSets: 4 };
       // 신호별 음성·비프는 사용하지 않음(모든 모드 audioMode off)
       if (cfg.audioMode !== 'off') cfg = { ...cfg, audioMode: 'off' };
-      if (cfg.dual21Advance == null) cfg = { ...cfg, dual21Advance: 'default' };
-      if (cfg.mode === 'dual' && cfg.level === 2 && cfg.dual21Advance === 'touch') {
-        cfg = { ...cfg, intervalMode: false };
-      }
       setSettings(cfg);
       countRef.current = 0;
       setDisplayCount(0);
@@ -498,18 +473,16 @@ export default function MemoryGameApp({
       };
 
       // BGM 정책:
-      // - flow / challenge: iframe 안에서 BGM 재생 — 부모 BgmPlayer로 재생하면 이중 재생됨
+      // - flow: iframe 안에서 BGM 재생 — 부모 BgmPlayer로 재생하면 이중 재생됨
       // - 그 외 SPOMOVE 훈련: Asset Hub 「BGM」풀(spomove_training_bgm_settings) 목록 중 무작위
       const bgmMode = cfg.mode;
       const shouldTryBgmParent =
         bgmMode === 'basic' ||
         bgmMode === 'spatial' ||
-        bgmMode === 'dual' ||
         bgmMode === 'stroop' ||
         bgmMode === 'simon' ||
         bgmMode === 'flanker' ||
-        bgmMode === 'gonogo' ||
-        bgmMode === 'taskswitch' ||
+        bgmMode === 'executive' ||
         bgmMode === 'reactTrain';
       if (shouldTryBgmParent) {
         if (spomoveBgmList.length === 0) {
@@ -520,7 +493,7 @@ export default function MemoryGameApp({
         }
       }
 
-      /** Training 임베드: 최소 3초 카운트다운 (flow/challenge 포함) */
+      /** Training 임베드: 최소 3초 카운트다운 (flow 포함) */
       const warmupSec = Math.max(3, cfg.warmup ?? 0);
 
       if (cfg.mode === 'flow') {
@@ -529,7 +502,8 @@ export default function MemoryGameApp({
           setScreen('flow');
           setCountdown(null);
         } else {
-          setScreen('home');
+          // 홈 화면을 거치면 플리커가 보여서, flow 화면에서 카운트다운을 진행한다.
+          setScreen('flow');
           setCountdown(warmupSec);
           let c = warmupSec;
           timerRef.current = setInterval(() => {
@@ -538,28 +512,6 @@ export default function MemoryGameApp({
               if (timerRef.current) clearInterval(timerRef.current);
               timerRef.current = null;
               setCountdown(null);
-              setScreen('flow');
-            } else {
-              setCountdown(c);
-            }
-          }, 900);
-        }
-      } else if (cfg.mode === 'challenge') {
-        challengeCompleteGuardRef.current = false;
-        if (warmupSec <= 0) {
-          setScreen('challenge');
-          setCountdown(null);
-        } else {
-          setScreen('home');
-          setCountdown(warmupSec);
-          let c = warmupSec;
-          timerRef.current = setInterval(() => {
-            c--;
-            if (c <= 0) {
-              if (timerRef.current) clearInterval(timerRef.current);
-              timerRef.current = null;
-              setCountdown(null);
-              setScreen('challenge');
             } else {
               setCountdown(c);
             }
@@ -628,14 +580,13 @@ export default function MemoryGameApp({
         screen === 'training' ||
         screen === 'memory' ||
         screen === 'visualReaction' ||
-        screen === 'flow' ||
-        screen === 'challenge'
+        screen === 'flow'
       )
     )
       return;
 
     const mode = pending.mode;
-    if (mode === 'flow' || mode === 'challenge') return;
+    if (mode === 'flow') return;
     const pick = spomoveBgmList[Math.floor(Math.random() * spomoveBgmList.length)]!;
     if (!pick) return;
     try {
@@ -685,16 +636,6 @@ export default function MemoryGameApp({
     setScreen('result');
   }, [settings, selectedStudentId]);
 
-  const handleChallengeComplete = useCallback(() => {
-    if (challengeCompleteGuardRef.current) return;
-    challengeCompleteGuardRef.current = true;
-    if (document.fullscreenElement) document.exitFullscreen();
-    const cfg = { ...settings, mode: 'challenge', level: 1 };
-    const completedStages = 4;
-    setResult({ count: completedStages, cfg });
-    setScreen('result');
-  }, [settings]);
-
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
       if (document.fullscreenElement) document.exitFullscreen();
@@ -705,20 +646,15 @@ export default function MemoryGameApp({
   );
 
   useEffect(() => {
-    if (screen !== 'flow' && screen !== 'challenge') return;
+    if (screen !== 'flow') return;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       const messageType = (event.data as { type?: string } | null)?.type;
-      if (screen === 'flow' && (messageType === 'flow-ending' || messageType === 'flow-ended')) {
-        handleFlowComplete();
-      }
-      if (screen === 'challenge' && messageType === 'challenge-ended') {
-        handleChallengeComplete();
-      }
+      if (messageType === 'flow-ending' || messageType === 'flow-ended') handleFlowComplete();
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [screen, handleFlowComplete, handleChallengeComplete]);
+  }, [screen, handleFlowComplete]);
 
   /** Training 포털의 ✕ 종료처럼 부모가 곧바로 언마운트할 때 — fadeOut 전에 끊기면 BGM이 남는 문제 방지 */
   useEffect(() => {
@@ -815,7 +751,9 @@ export default function MemoryGameApp({
             </h1>
             <p style={{ fontSize: 'clamp(0.92rem,2.2vw,1.05rem)', color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, fontWeight: 400 }}>신체 활동과 인지 트레이닝을 통합한<br />교육 기반 퍼포먼스 도구 — SPOMOVE 트레이닝</p>
             <div className="home-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              {Object.values(MODES).map((m) => {
+              {SPOMOVE_CATALOG_SLOT_IDS.filter((id) => !isSpomoveCatalogTbdMode(id)).map((id) => {
+                const m = MODES[id];
+                if (!m) return null;
                 const rgbMap: Record<string, string> = {
                   '#3B82F6': '59,130,246',
                   '#A855F7': '168,85,247',
@@ -824,7 +762,6 @@ export default function MemoryGameApp({
                   '#E11D48': '225,29,72',
                   '#EC4899': '236,72,153',
                   '#06B6D4': '6,182,212',
-                  '#14B8A6': '20,184,166',
                   '#6366F1': '99,102,241',
                 };
                 const rgb = rgbMap[m.accent] ?? '249,115,22';
@@ -888,9 +825,8 @@ export default function MemoryGameApp({
         <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)' }}>{label}</span>
       </div>
     );
-    const isDual21 = settings.mode === 'dual' && settings.level === 2;
-    const stepSpeed = isDual21 ? 4 : 3;
-    const stepReps = isDual21 ? 5 : 4;
+    const stepSpeed = 3;
+    const stepReps = 4;
     return (
       <div style={S.page}>
         <style>{CSS}</style>
@@ -902,7 +838,10 @@ export default function MemoryGameApp({
             <div style={S.sec}>
               {stepNum(1, '어떤 트레이닝을 할까요?')}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
-                {Object.values(MODES).map((m) => (
+                {SPOMOVE_CATALOG_SLOT_IDS.filter((id) => !isSpomoveCatalogTbdMode(id)).map((id) => {
+                  const m = MODES[id];
+                  if (!m) return null;
+                  return (
                   <button
                     key={m.id}
                     type="button"
@@ -922,7 +861,8 @@ export default function MemoryGameApp({
                     <span style={{ fontWeight: 800, fontSize: '0.84rem', color: settings.mode === m.id ? m.accent : 'var(--text)', marginTop: '0.3rem', lineHeight: 1.2 }}>{m.title}</span>
                     <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 500 }}>{m.en}</span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <div style={S.sec}>
@@ -931,7 +871,7 @@ export default function MemoryGameApp({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                 {M.levels.map((lv) => (
                   <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : 'var(--border)'}`, background: settings.level === lv.id ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
-                    <div style={{ ...(M.id === 'dual' ? { minWidth: 52, width: 'auto', padding: '0 0.35rem' } : { minWidth: 40, width: 40 }), height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : `1px solid var(--border)`, flexShrink: 0, marginTop: '0.05rem' }}>{lv.name}</div>
+                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : `1px solid var(--border)`, flexShrink: 0, marginTop: '0.05rem' }}>{lv.name}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text)' }}>{lv.name}</span>
@@ -942,14 +882,20 @@ export default function MemoryGameApp({
                   </button>
                 ))}
               </div>
-              {settings.mode === 'basic' && [2, 3, 4].includes(settings.level) && (
+              {settings.mode === 'basic' && [2, 3, 4, 5].includes(settings.level) && (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>변형 색지각 이미지 테마</div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 2·3·4번 신호에 반영됩니다.
+                    Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 2·3·4·5번 신호에 반영됩니다.
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
-                    {SPOMOVE_COLOR_THEME_ORDER.filter((tid) => !(settings.mode === 'basic' && settings.level === 3 && tid === 'color')).map((tid) => (
+                    {SPOMOVE_COLOR_THEME_ORDER
+                      .slice()
+                      .sort((a, b) =>
+                        SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')
+                      )
+                      .filter((tid) => !(settings.mode === 'basic' && settings.level === 4 && tid === 'color'))
+                      .map((tid) => (
                       <button
                         key={tid}
                         type="button"
@@ -974,68 +920,11 @@ export default function MemoryGameApp({
                 </div>
               )}
             </div>
-            {settings.mode === 'challenge' && <ChallengeSpomoveSetupPanel />}
-            {settings.mode !== 'flow' && settings.mode !== 'challenge' && (
+            {settings.mode !== 'flow' && (
               <>
-                {isDual21 && (
-                  <div style={S.sec}>
-                    {stepNum(3, '2-1번 진행 방식')}
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <button
-                        type="button"
-                        onClick={() => set('dual21Advance', 'default')}
-                        style={{
-                          flex: 1,
-                          minWidth: '8rem',
-                          padding: '0.75rem 1rem',
-                          borderRadius: '0.85rem',
-                          border: `2px solid ${settings.dual21Advance === 'default' ? '#F97316' : 'var(--border)'}`,
-                          background: settings.dual21Advance === 'default' ? '#FFF7ED' : 'var(--card)',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          color: 'var(--text)',
-                        }}
-                      >
-                        기본형
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSettings((s) => ({ ...s, dual21Advance: 'touch', intervalMode: false }));
-                        }}
-                        style={{
-                          flex: 1,
-                          minWidth: '8rem',
-                          padding: '0.75rem 1rem',
-                          borderRadius: '0.85rem',
-                          border: `2px solid ${settings.dual21Advance === 'touch' ? '#F97316' : 'var(--border)'}`,
-                          background: settings.dual21Advance === 'touch' ? '#FFF7ED' : 'var(--card)',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          color: 'var(--text)',
-                        }}
-                      >
-                        터치형
-                      </button>
-                    </div>
-                    <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginTop: '0.65rem', lineHeight: 1.65 }}>
-                      <strong>기본형</strong>: 아래에서 정한 신호 속도로 자동으로 다음 신호로 넘어갑니다.
-                      <br />
-                      <strong>터치형</strong>: 화면을 누를 때마다 다음 신호로 넘어갑니다. 분량(회)만 사용합니다.
-                    </p>
-                  </div>
-                )}
                 <div style={S.sec}>
                   {stepNum(stepSpeed, '신호 속도를 정하세요')}
-                  {isDual21 && settings.dual21Advance === 'touch' ? (
-                    <p style={{ fontSize: '0.92rem', color: '#94A3B8', lineHeight: 1.55 }}>
-                      터치형에서는 신호 속도를 사용하지 않습니다.
-                    </p>
-                  ) : (
-                    <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} showPresets={false} />
-                  )}
+                  <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} showPresets={false} />
                 </div>
 
                 {/* 시지각 반응: 훈련 시간 / 그 외(spatial 제외): 분량(횟수) */}
@@ -1206,38 +1095,24 @@ export default function MemoryGameApp({
       <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 320 }}>
         <style>{CSS}</style>
         <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
-          <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>
-            🌌 FLOW 프로그램 실행 중
+          <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1.2rem', color: '#fff', fontWeight: 700, fontSize: '1.02rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {countdown !== null ? <><span style={{ color: '#FCA5A5' }}>⏱</span> 시작까지 {countdown}초</> : <><span style={{ color: '#86EFAC' }}>🎯</span> 진행 중</>}
           </div>
           <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
         </div>
-        <iframe
-          src="/program/iiwarmup/flow?autoStart=1&memoryPreset=shortFlow5"
-          title="SPOMOVE FLOW Program"
-          style={{ width: '100%', height: '100%', border: 0 }}
-          allow="autoplay"
-        />
-      </div>
-    );
-  }
-
-  if (screen === 'challenge') {
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0c0a09', zIndex: 320 }}>
-        <style>{CSS}</style>
-        <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
-          <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>
-            챌린지 프로그램 실행 중
+        {countdown !== null ? (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30, backdropFilter: 'blur(8px)' }}>
+            <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
-          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
-        </div>
-        <iframe
-          key={challengeIframeSrc}
-          src={challengeIframeSrc}
-          title="SPOMOVE Challenge Program"
-          style={{ width: '100%', height: '100%', border: 0 }}
-          allow="autoplay"
-        />
+        ) : null}
+        {countdown === null ? (
+          <iframe
+            src="/program/iiwarmup/flow?autoStart=1&memoryPreset=shortFlow5"
+            title="SPOMOVE FLOW Program"
+            style={{ width: '100%', height: '100%', border: 0 }}
+            allow="autoplay"
+          />
+        ) : null}
       </div>
     );
   }
@@ -1245,12 +1120,10 @@ export default function MemoryGameApp({
   if (screen === 'training') {
     const bg = (signal?.bg as string) ?? '#0F172A';
     const dark = bg === '#0F172A' || bg.startsWith('#0') || bg.startsWith('#1');
-    const trainingDual21Touch =
-      settings.mode === 'dual' && settings.level === 2 && settings.dual21Advance === 'touch';
     return (
       <div ref={trainingContainerRef} style={{ position: 'fixed', inset: 0, background: bg, overflow: 'hidden', transition: 'background 0.06s' }}>
         <style>{CSS}</style>
-        {settings.mode === 'gonogo' && (
+        {settings.mode === 'executive' && engineMode === 'gonogo' && (
           <div
             style={{
               position: 'absolute',
@@ -1271,13 +1144,13 @@ export default function MemoryGameApp({
               border: '1px solid rgba(255,255,255,0.12)',
             }}
           >
-            {settings.level === 1 && '📋 빨강·파랑·노랑 → 이동(Go) · 초록 → 멈춤(No-Go)'}
-            {settings.level === 2 && '📋 동그라미 → 이동(Go) · 세모 → 멈춤(No-Go)'}
-            {settings.level === 3 && '📋 화살표 → 이동 · ✕ → 멈춤'}
-            {settings.level === 4 && '📋 빨강 동그라미 → 이동(Go) · 빨강 세모 → 멈춤(No-Go)'}
+            {engineLevel === 1 && '📋 빨강·파랑·노랑 → 이동(Go) · 초록 → 멈춤(No-Go)'}
+            {engineLevel === 2 && '📋 동그라미 → 이동(Go) · 세모 → 멈춤(No-Go)'}
+            {engineLevel === 3 && '📋 화살표 → 이동 · ✕ → 멈춤'}
+            {engineLevel === 4 && '📋 빨강 동그라미 → 이동(Go) · 빨강 세모 → 멈춤(No-Go)'}
           </div>
         )}
-        {settings.mode === 'taskswitch' && (
+        {settings.mode === 'executive' && engineMode === 'taskswitch' && (
           <div
             style={{
               position: 'absolute',
@@ -1298,14 +1171,14 @@ export default function MemoryGameApp({
               border: '1px solid rgba(255,255,255,0.12)',
             }}
           >
-            {settings.level === 1 &&
+            {engineLevel === 1 &&
               '📋 색=보이는 색 위치 · 위치=화살표 방향 위치 · 반대로=색은 짝반대·화살표는 반대 방향'}
-            {settings.level === 2 && '📋 🎨색 · 📍위치 · ⇄반대(색/화살표는 화면 자극과 동일)'}
-            {settings.level === 3 &&
+            {engineLevel === 2 && '📋 🎨색 · 📍위치 · ⇄반대(색/화살표는 화면 자극과 동일)'}
+            {engineLevel === 3 &&
               '📋 흰 실선=색 규칙 · 흰 점선=위치 규칙 · 흰 이중선=반대로(자극은 색 또는 화살표)'}
           </div>
         )}
-        {settings.mode === 'basic' && [2, 3, 4].includes(settings.level) && (
+        {settings.mode === 'basic' && [2, 3, 4, 5].includes(settings.level) && (
           <div
             style={{
               position: 'absolute',
@@ -1367,26 +1240,6 @@ export default function MemoryGameApp({
             <div style={{ fontWeight: 900, fontSize: '2rem', color: '#86EFAC' }}>휴식 {intervalLeft}초</div>
           </div>
         )}
-        {trainingDual21Touch && countdown === null && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '0.85rem',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 21,
-              maxWidth: '90%',
-              textAlign: 'center',
-              fontSize: 'clamp(0.78rem, 2.2vw, 0.95rem)',
-              fontWeight: 700,
-              color: 'rgba(255,255,255,0.85)',
-              textShadow: '0 1px 8px rgba(0,0,0,0.45)',
-              pointerEvents: 'none',
-            }}
-          >
-            화면을 터치하면 다음 신호로 넘어갑니다
-          </div>
-        )}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 5, background: 'rgba(255,255,255,0.1)', zIndex: 20 }}>
           <div style={{ height: '100%', width: `${stats.progress * 100}%`, background: dark ? '#F97316' : 'rgba(0,0,0,0.3)', transition: 'width 0.1s linear', borderRadius: '0 2px 2px 0' }} />
         </div>
@@ -1405,24 +1258,6 @@ export default function MemoryGameApp({
               style={{ position: 'absolute', inset: 0, zIndex: 16, pointerEvents: 'none' }}
             />
           ) : null}
-          {countdown === null && trainingDual21Touch && (
-            <div
-              role="presentation"
-              aria-hidden
-              onPointerDown={(e) => {
-                if ((e.target as HTMLElement).closest('button')) return;
-                e.preventDefault();
-                advanceDual21Touch();
-              }}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 12,
-                cursor: 'pointer',
-                touchAction: 'manipulation',
-              }}
-            />
-          )}
         </div>
       </div>
     );
@@ -1431,21 +1266,24 @@ export default function MemoryGameApp({
   if (screen === 'result' && result) {
     const { count, cfg, dupStats } = result;
     const mo = MODES[cfg.mode];
-    const isMem = cfg.mode === 'spatial' || cfg.mode === 'flow' || cfg.mode === 'challenge';
-    const isDual21TouchCfg = cfg.mode === 'dual' && cfg.level === 2 && cfg.dual21Advance === 'touch';
+    const isMem = cfg.mode === 'spatial' || cfg.mode === 'flow';
     const totalSec = isMem
       ? MEMORY_ROUNDS * 5
-      : isDual21TouchCfg
-        ? 0
-        : cfg.timeMode === 'time'
+      : cfg.timeMode === 'time'
           ? (cfg.duration ?? 0)
           : (cfg.targetReps ?? 0) * (cfg.speed ?? 1);
-    const spm = !isMem && !isDual21TouchCfg && totalSec > 0 ? Math.round((count / totalSec) * 60) : null;
+    const spm = !isMem && totalSec > 0 ? Math.round((count / totalSec) * 60) : null;
     const mainVal = spm != null ? `${spm}` : `${count}`;
-    const mainLabel = spm != null ? '분당 신호 수(추정)' : '처리한 신호 횟수';
+    const mainLabel = spm != null ? '처리 속도 지표 (SPM)' : '총 처리 신호 수';
+    const completionRate = cfg.timeMode === 'reps' && (cfg.targetReps ?? 0) > 0
+      ? Math.round((count / (cfg.targetReps ?? 1)) * 100)
+      : null;
+    const consistency = spm != null
+      ? Math.max(0, Math.min(100, Math.round(100 - (Math.abs((cfg.speed > 0 ? 60 / cfg.speed : 0) - spm) * 1.4))))
+      : null;
     const mainHint = spm != null
-      ? '설정한 시간·속도를 기준으로, 1분이면 약 이 정도로 많은 신호를 보신 셈이에요.'
-      : '이번 세션에서 화면에 나온 신호를 모두 세어요.';
+      ? '현재 세션에서 1분 기준으로 처리 가능한 반응량을 보여주는 지표입니다.'
+      : '이번 세션에서 실제 처리한 신호 총량입니다.';
     const mainColor = mo?.accent ?? '#F97316';
     const student = students.find((s) => s.id === selectedStudentId);
     return (
@@ -1464,6 +1302,34 @@ export default function MemoryGameApp({
               <div style={{ fontSize: 'clamp(5rem,20vw,7rem)', fontWeight: 900, lineHeight: 1, color: mainColor, letterSpacing: '-0.03em' }}>{mainVal}</div>
               <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginTop: '0.35rem' }}>{mainLabel}</div>
               <div style={{ fontSize: '0.86rem', fontWeight: 500, color: 'var(--text-muted)', marginTop: '0.45rem', lineHeight: 1.55, maxWidth: '22rem', marginLeft: 'auto', marginRight: 'auto' }}>{mainHint}</div>
+            </div>
+            <div style={{ marginBottom: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
+              <div style={{ border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '0.75rem 0.85rem', background: '#F8FAFC' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 800 }}>총 수행 시간</div>
+                <div style={{ fontSize: '1.05rem', color: '#0F172A', fontWeight: 900, marginTop: '0.2rem' }}>{Math.max(0, Math.round(totalSec))}초</div>
+              </div>
+              <div style={{ border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '0.75rem 0.85rem', background: '#F8FAFC' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 800 }}>평균 반응 밀도</div>
+                <div style={{ fontSize: '1.05rem', color: '#0F172A', fontWeight: 900, marginTop: '0.2rem' }}>{spm != null ? `${spm} SPM` : '-'}</div>
+              </div>
+              <div style={{ border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '0.75rem 0.85rem', background: '#F8FAFC' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 800 }}>목표 달성률</div>
+                <div style={{ fontSize: '1.05rem', color: '#0F172A', fontWeight: 900, marginTop: '0.2rem' }}>{completionRate != null ? `${completionRate}%` : '시간모드'}</div>
+              </div>
+              <div style={{ border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '0.75rem 0.85rem', background: '#F8FAFC' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 800 }}>수행 안정도</div>
+                <div style={{ fontSize: '1.05rem', color: '#0F172A', fontWeight: 900, marginTop: '0.2rem' }}>{consistency != null ? `${consistency}점` : '-'}</div>
+              </div>
+            </div>
+            <div style={{ textAlign: 'left', marginBottom: '1rem', padding: '0.85rem 1rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '0.75rem', color: '#334155' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0F172A', marginBottom: '0.45rem' }}>
+                이번 활동 기대 효과
+              </div>
+              <ul style={{ margin: 0, paddingLeft: '1.05rem', fontSize: '0.82rem', lineHeight: 1.7 }}>
+                <li>반응 전환 속도 향상 및 처리량 증가</li>
+                <li>주의 집중 지속시간 향상</li>
+                <li>규칙 준수 및 억제 제어 정확도 강화</li>
+              </ul>
             </div>
             {cfg.mode === 'basic' && dupStats && (
               <div
@@ -1502,8 +1368,21 @@ export default function MemoryGameApp({
               </div>
             )}
             <div style={{ display: 'flex', gap: '0.6rem' }}>
-              <button type="button" style={{ ...S.btn, ...S.bSecondary, flex: 1 }} onClick={() => setScreen('home')}>🏠 홈</button>
-              <button type="button" style={{ ...S.btn, ...S.bPrimary, flex: 2 }} onClick={() => startSession(cfg)}>▶ 다시</button>
+              <button
+                type="button"
+                style={{ ...S.btn, ...S.bSecondary, flex: 1 }}
+                onClick={() => {
+                  setSettings(cfg);
+                  if (autoLaunch) {
+                    onExit?.();
+                    return;
+                  }
+                  setScreen('setup');
+                }}
+              >
+                목록으로
+              </button>
+              <button type="button" style={{ ...S.btn, ...S.bPrimary, flex: 2 }} onClick={() => startSession(cfg)}>다시</button>
             </div>
           </div>
         </div>

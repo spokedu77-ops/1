@@ -127,11 +127,13 @@ function FlowPhaseContent() {
     >
       <canvas ref={canvasRef} className="block w-full h-full" />
 
-      <div
-        ref={panoDebugHudRef}
-        className="fixed top-2 left-2 z-[3000] rounded bg-black/60 px-2 py-1 font-mono text-xs text-white/90"
-        aria-live="polite"
-      />
+      {isAdminMode ? (
+        <div
+          ref={panoDebugHudRef}
+          className="fixed top-2 left-2 z-[3000] rounded bg-black/60 px-2 py-1 font-mono text-xs text-white/90"
+          aria-live="polite"
+        />
+      ) : null}
       <div
         ref={duckWarningLineRef}
         className="fixed top-0 left-0 right-0 z-[2810] h-1 bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)] pointer-events-none hidden"

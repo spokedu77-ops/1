@@ -1,16 +1,15 @@
 'use client';
 
-export type AssetHubTabId = 'think' | 'flow' | 'spomove' | 'bgm';
+export type AssetHubTabId = 'flow' | 'spomove' | 'bgm';
 
 export interface AssetHubTabsProps {
   activeTab: AssetHubTabId;
   onTabChange: (tab: AssetHubTabId) => void;
 }
 
-const TAB_ORDER: AssetHubTabId[] = ['spomove', 'bgm', 'think', 'flow'];
+const TAB_ORDER: AssetHubTabId[] = ['spomove', 'bgm', 'flow'];
 
 const TAB_LABELS: Record<AssetHubTabId, string> = {
-  think: 'Think Asset',
   flow: 'Flow Asset',
   spomove: 'SPOMOVE · 색지각',
   bgm: 'BGM',

@@ -1188,7 +1188,7 @@ export default function ClassDetailPanelV2({ groupId, onClose, onChanged }: Clas
                                 <button
                                   type="button"
                                   className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50"
-                                  disabled={deletingSessionId === s.id || statusLabel === '완료'}
+                                  disabled={deletingSessionId === s.id}
                                   onClick={() => void handleDeleteSession(s.id)}
                                 >
                                   {deletingSessionId === s.id ? '취소 중...' : '취소'}

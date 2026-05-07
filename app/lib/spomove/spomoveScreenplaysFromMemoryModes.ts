@@ -1,12 +1,12 @@
 /**
  * SPOMOVE 스크린플레이(프로그램 뱅크 · 브레인체육) 발행용 행 생성.
  *
- * 단일 소스: `app/admin/memory-game/constants.ts` 의 MODES (실제 iframe 엔진과 동일).
+ * 단일 소스: `app/admin/iiwarmup/spomove/training/_player/constants.ts` 의 MODES.
  * DB `spokedu_pro_screenplays`는 GET /api/spokedu-pro/screenplays 가 읽는 공식 카탈로그.
  *
  * mode_id 값은 `getSpomoveLaunchParams` 의 역매핑과 일치해야 함.
  */
-import { MODES } from '@/app/admin/memory-game/constants';
+import { MODES } from '@/app/admin/iiwarmup/spomove/training/_player/constants';
 
 export type SpomoveMemoryModeScreenplayMap = {
   modeKey: string;

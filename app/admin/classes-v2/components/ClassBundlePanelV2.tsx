@@ -1698,7 +1698,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                             <button
                                               type="button"
                                               className="px-2.5 py-1.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50"
-                                              disabled={deletingSessionId === r.id || !s.isActiveByTime}
+                                              disabled={deletingSessionId === r.id}
                                               onClick={() => void handleDeleteSession(gid, r.id)}
                                             >
                                               {deletingSessionId === r.id ? "취소 중..." : "취소"}

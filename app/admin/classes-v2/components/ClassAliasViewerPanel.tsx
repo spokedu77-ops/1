@@ -896,7 +896,7 @@ export default function ClassAliasViewerPanel({
                                 <button
                                   type="button"
                                   className="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[10px] font-black rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50"
-                                  disabled={deletingSessionId === r.id || statusLabel === '완료'}
+                                  disabled={deletingSessionId === r.id}
                                   onClick={() => void handleDeleteSession(r.group_id, r.id)}
                                 >
                                   {deletingSessionId === r.id ? '취소 중...' : '취소'}

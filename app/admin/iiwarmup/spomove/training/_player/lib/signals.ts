@@ -187,6 +187,13 @@ export function buildVariantSlidesFromThemedUrls(urls: readonly string[]): Fruit
 /** 업로드 없을 때는 빈 풀 — 신호 생성 시 색만 또는 full_color 폴백 */
 export const DEFAULT_FRUIT_SLIDES: FruitSlide[] = [];
 
+function colorSlidesFromPalette(colors: ColorItem[]): FruitSlide[] {
+  return colors.map((c) => ({
+    imageUrl: '',
+    color: c,
+  }));
+}
+
 function fruitPoolExcluding(excludeImageUrl: string | null, slides: FruitSlide[]): FruitSlide[] {
   if (!excludeImageUrl) return slides;
   const filtered = slides.filter((s) => s.imageUrl !== excludeImageUrl);
@@ -224,11 +231,40 @@ function buildVariantTier3(excludePairKey: string | null, slides: FruitSlide[]):
   return [{ cells: [a!] }, { cells: [b!] }];
 }
 
+/** 4단계: 서로 다른 과일 3패널, 직전과 같은 "칸+이미지" 연속 금지 */
+function buildVariantTier4(excludePanelImageUrls: (string | null)[] | null, slides: FruitSlide[]): VariantPanelContent[] {
+  if (slides.length < 3) {
+    const s = r(slides);
+    return [{ cells: [s] }, { cells: [s] }, { cells: [s] }];
+  }
+  for (let attempt = 0; attempt < 350; attempt++) {
+    const picked = fisherYates([...slides]).slice(0, 3);
+    const colorIds = picked.map((s) => s?.color?.id ?? '').filter(Boolean);
+    if (new Set(colorIds).size < 3) continue;
+    const panelImages = picked.map((x) => x?.imageUrl ?? null);
+    const blocked = (excludePanelImageUrls ?? []).slice(0, 3);
+    while (blocked.length < 3) blocked.push(null);
+    const violates = panelImages.some((url, i) => !!url && url === blocked[i]);
+    if (violates) continue;
+    return picked.map((s) => ({ cells: [s!] }));
+  }
+  // 최후 폴백도 색 3종 강제(가능한 경우)
+  for (let attempt = 0; attempt < 120; attempt++) {
+    const fallback = fisherYates([...slides]).slice(0, 3);
+    const colorIds = fallback.map((s) => s?.color?.id ?? '').filter(Boolean);
+    if (new Set(colorIds).size >= 3) return fallback.map((s) => ({ cells: [s!] }));
+  }
+  const safe = fisherYates([...slides]).slice(0, 3);
+  return safe.map((s) => ({ cells: [s!] }));
+}
+
 export type GenerateSignalOptions = {
   /** 1·2단계: 직전과 동일 과일 URL 제외 */
   excludeVariantImageUrl?: string | null;
   /** 3단계: 직전과 동일 과일 쌍(정렬된 url1|url2) 제외 */
   excludeVariantPairKey?: string | null;
+  /** 5단계: 직전과 동일 패널 위치의 동일 이미지 제외 */
+  excludeVariantPanelImageUrls?: (string | null)[] | null;
   /** Asset Hub 업로드 반영 슬롯(미지정 시 빈 배열 — 기본 외부 이미지 없음) */
   fruitSlides?: FruitSlide[];
   /** Task Switching 1단계: 직전 trial 규칙(연속 반대로 방지·약 30% 반대로 비율) */
@@ -242,6 +278,13 @@ export function generateSignal(
   opts?: GenerateSignalOptions
 ): Record<string, unknown> | null {
   const activeColors = colors.length >= 2 ? colors : COLORS;
+
+  // 실행 조절: UI는 7레벨, 엔진은 gonogo(1~4) + taskswitch(1~3)
+  if (mode === 'executive') {
+    const lv = Math.min(7, Math.max(1, Math.floor(level)));
+    if (lv <= 4) return generateSignal('gonogo', lv, colors, opts);
+    return generateSignal('taskswitch', lv - 4, colors, opts);
+  }
 
   if (mode === 'basic') {
     if (level === 1) {
@@ -275,16 +318,8 @@ export function generateSignal(
     if (level === 3) {
       const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
       const pool = rawSlides.filter((s) => (s.imageUrl ?? '').trim());
-      if (pool.length < 2) {
-        const c = r(activeColors);
-        return {
-          type: 'full_color',
-          bg: c.bg,
-          content: { symbol: c.symbol, textColor: c.text, name: c.name, imageUrl: null },
-          voice: null,
-        };
-      }
-      const vSlides = pool;
+      const vSlides = pool.length >= 2 ? pool : colorSlidesFromPalette(activeColors);
+      if (vSlides.length < 2) return null;
       const panels = buildVariantTier3(opts?.excludeVariantPairKey ?? null, vSlides);
       return {
         type: 'basic_variant_color',
@@ -315,6 +350,19 @@ export function generateSignal(
       };
     }
     if (level === 5) {
+      const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
+      const pool = rawSlides.filter((s) => (s.imageUrl ?? '').trim());
+      const vSlides = pool.length >= 3 ? pool : colorSlidesFromPalette(activeColors);
+      if (vSlides.length < 3) return null;
+      const panels = buildVariantTier4(opts?.excludeVariantPanelImageUrls ?? null, vSlides);
+      return {
+        type: 'basic_variant_color',
+        bg: '#000000',
+        content: { variantTier: 4, panels },
+        voice: null,
+      };
+    }
+    if (level === 6) {
       const a = r(ARROWS);
       return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
     }
@@ -882,11 +930,14 @@ export function createBasicSignalGenerator(
   let lastVariantImageUrl: string | null = null;
   /** 3단계: 직전 과일 쌍 키 (정렬 url|url) */
   let lastVariantPairKey: string | null = null;
+  /** 5단계: 직전 3패널의 슬롯별 이미지 URL */
+  let lastVariantPanelImageUrls: (string | null)[] = [null, null, null];
 
   const genOpts = (): GenerateSignalOptions => {
     const o: GenerateSignalOptions = { fruitSlides };
     if (level === 2 || level === 4) o.excludeVariantImageUrl = lastVariantImageUrl;
     else if (level === 3) o.excludeVariantPairKey = lastVariantPairKey;
+    else if (level === 5) o.excludeVariantPanelImageUrls = lastVariantPanelImageUrls;
     return o;
   };
 
@@ -912,11 +963,24 @@ export function createBasicSignalGenerator(
           .sort();
         lastVariantPairKey = urls.length >= 2 ? `${urls[0]}|${urls[1]}` : urls[0] ?? null;
         lastVariantImageUrl = null;
+        lastVariantPanelImageUrls = [null, null, null];
+      } else if (tier === 4) {
+        const panelUrls = panels
+          .slice(0, 3)
+          .map((p) => {
+            const cells = p.cells ?? (p.slide ? [p.slide] : []);
+            return cells[0]?.imageUrl ?? null;
+          });
+        while (panelUrls.length < 3) panelUrls.push(null);
+        lastVariantPanelImageUrls = panelUrls;
+        lastVariantImageUrl = null;
+        lastVariantPairKey = null;
       } else {
         const withFruit = panels.find((p) => (p.cells ?? (p.slide ? [p.slide] : [])).length > 0);
         const cells = withFruit?.cells ?? (withFruit?.slide ? [withFruit.slide] : []);
         lastVariantImageUrl = cells[0]?.imageUrl ?? null;
         lastVariantPairKey = null;
+        lastVariantPanelImageUrls = [null, null, null];
       }
     }
     return sig;

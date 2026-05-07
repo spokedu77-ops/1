@@ -52,7 +52,7 @@ export const NUMBER_RULES = [
 
 /**
  * coreCode: Core 5 분류에서 이 mode가 속하는 Series 코드.
- * 엔진 id(문자열 키)는 절대 바꾸지 않는다 — Core5Catalog에서 (mode, level)로 매핑.
+ * 카탈로그에 노출되는 mode id는 고정한다.
  */
 export const MODES: Record<string, { id: string; title: string; en: string; icon: string; accent: string; tag: string; desc: string; coreCode?: string; levels: Array<{ id: number; name: string; enName: string; desc: string }> }> = {
   basic: {
@@ -64,8 +64,9 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 1, name: '1번', enName: 'Quad Color', desc: '사분할 색 — Think와 동일 2×2 격자에서 한 칸만 강조됩니다. 강조된 칸 색에 맞는 색 위치로 이동합니다.' },
       { id: 2, name: '2번', enName: 'Full-Screen Color', desc: '전면 색 — 화면 전체 색 신호와 함께 선택한 색지각 이미지 테마가 화면 전체로 표시됩니다. 해당 색 위치로 이동합니다.' },
       { id: 3, name: '3번', enName: 'Variant Color (1)', desc: '변형 색지각 1단계 — 같은 테마. 가로 3칸 중 일부만 이미지(나머지 흰 칸). 색 한 가지로 답합니다.' },
-      { id: 4, name: '4번', enName: 'Variant Color (2)', desc: '변형 색지각 2단계 — 같은 테마에서 서로 다른 이미지 2패널. 두 색 위치을 동시에 한 발씩 밟습니다. 같은 쌍이 연속으로 나오지 않습니다.' },
-      { id: 5, name: '5번', enName: 'Spatial Orientation', desc: '공간 방향 — 화살표 방향을 보고 해당 방향 위치로 즉시 이동합니다.' },
+      { id: 4, name: '4번', enName: 'Variant Color (2)', desc: '변형 색지각 2단계 — 과일 기본 테마. 가로 3칸 중 일부만 이미지(나머지 흰 칸)로 표시되고, 보이는 이미지의 색 위치로 이동합니다.' },
+      { id: 5, name: '5번', enName: '변형 색상 3패널 (Variant 3)', desc: '변형 색상 3패널 (Variant 3) — 가로 3패널에 서로 다른 이미지 3개(색도 모두 다름)가 동시에 표시됩니다. 바로 다음 cue에서 같은 칸에 같은 이미지가 연속으로 나오지 않습니다.' },
+      { id: 6, name: '6번', enName: 'Spatial Orientation', desc: '공간 방향 — 화살표 방향을 보고 해당 방향 위치로 즉시 이동합니다.' },
     ],
   },
   stroop: {
@@ -105,27 +106,19 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 6, name: '6번', enName: '5-Circle Extreme Sizes', desc: '원 5개가 모두 서로 다른 크기로 매우 강하게 표시됩니다. 답은 가운데(3번) 원의 색입니다.' },
     ],
   },
-  gonogo: {
-    id: 'gonogo', title: 'Go / No-Go', en: 'Go / No-Go', icon: '⏯', accent: '#14B8A6',
-    coreCode: 'IC',
-    tag: '반응 억제 · Go와 멈춤',
-    desc: '신호에 따라 이동(Go)할지 제자리(No-Go)할지 곧바로 구분합니다. 난이도마다 규칙(색·도형·동작·이중)이 다릅니다.',
+  executive: {
+    id: 'executive', title: '실행 조절', en: 'Executive Control', icon: '🔀', accent: '#F97316',
+    coreCode: 'EC',
+    tag: '반응 억제 · 규칙 전환',
+    desc: '움직여야 할 때와 멈춰야 할 때를 구분하고, 바뀌는 규칙에 맞춰 반응을 조절합니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Color Go/No-Go', desc: '색 기반 — 빨강·파랑·노랑은 Go(이동), 초록은 No-Go(멈춤).' },
-      { id: 2, name: '2번', enName: 'Shape Go/No-Go', desc: '도형 기반 — 동그라미는 Go, 세모는 No-Go.' },
-      { id: 3, name: '3번', enName: 'Action Go/No-Go', desc: '동작 기반 — 화살표는 이동(Go), X표는 멈춤(No-Go).' },
-      { id: 4, name: '4번', enName: 'Dual Rule', desc: '이중 규칙 — 빨강 동그라미는 Go, 빨강 세모는 No-Go.' },
-    ],
-  },
-  taskswitch: {
-    id: 'taskswitch', title: 'Task Switching', en: 'Task Switching', icon: '🔀', accent: '#A3E635',
-    coreCode: 'RS',
-    tag: '과제 전환 · 규칙 cue',
-    desc: '색·위치·반대로 세 가지 규칙이 바뀔 때마다 cue에 맞춰 반응합니다. 난이도는 cue 표현(글자·아이콘·테두리)만 다릅니다.',
-    levels: [
-      { id: 1, name: '1번', enName: 'Text Cues', desc: '입문 — 한글 cue(색·위치·반대로)로 규칙을 알려 줍니다.' },
-      { id: 2, name: '2번', enName: 'Icon Cues', desc: '중간 — 팔레트·핀·반전 아이콘으로 글자 의존도를 줄입니다.' },
-      { id: 3, name: '3번', enName: 'Border Cues', desc: '고난 — 실선/점선/이중 테두리만으로 규칙을 읽어야 합니다.' },
+      { id: 1, name: '1번', enName: 'Go / No-Go (Color)', desc: 'Go / No-Go — 색 기반. 빨강·파랑·노랑은 Go(이동), 초록은 No-Go(멈춤).' },
+      { id: 2, name: '2번', enName: 'Go / No-Go (Shape)', desc: 'Go / No-Go — 도형 기반. 동그라미는 Go, 세모는 No-Go.' },
+      { id: 3, name: '3번', enName: 'Go / No-Go (Action)', desc: 'Go / No-Go — 동작 기반. 화살표는 이동(Go), X표는 멈춤(No-Go).' },
+      { id: 4, name: '4번', enName: 'Go / No-Go (Dual)', desc: 'Go / No-Go — 이중 규칙. 빨강 동그라미는 Go, 빨강 세모는 No-Go.' },
+      { id: 5, name: '5번', enName: 'Task Switching (Text Cues)', desc: 'Task Switching — 한글 cue(색·위치·반대로)로 규칙을 알려 줍니다.' },
+      { id: 6, name: '6번', enName: 'Task Switching (Icon Cues)', desc: 'Task Switching — 팔레트·핀·반전 아이콘으로 글자 의존도를 줄입니다.' },
+      { id: 7, name: '7번', enName: 'Task Switching (Border Cues)', desc: 'Task Switching — 실선/점선/이중 테두리만으로 규칙을 읽어야 합니다.' },
     ],
   },
   spatial: {
@@ -141,16 +134,6 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 5, name: '5번', enName: '색깔-번호 전체 공개', desc: '색깔 배경에 번호(1~10)가 하나씩 나옵니다. 10번 모두 본 뒤, 전체 정답을 한 화면에 공개합니다.' },
     ],
   },
-  dual: {
-    id: 'dual', title: '이중 과제', en: 'Dual Task', icon: '🔀', accent: '#F97316',
-    coreCode: 'RS',
-    tag: '분산 주의 · 복합 실행',
-    desc: '두 가지 정보를 동시에 처리해 하나의 통합된 행동을 수행합니다.',
-    levels: [
-      { id: 1, name: '1번', enName: 'Color-Number Integration', desc: '색깔·숫자 통합 — 배경 색 위치로 이동한 뒤, 숫자만큼 반복 동작(터치·점프 등)을 합니다.' },
-      { id: 2, name: '2-1번', enName: 'Color & Arrow', desc: '색깔·화살표 — 파랑/빨강 색 위치 이동 후, 화면 좌·우 화살표 방향 위치로 한 번 더 이동합니다. 조합은 무작위입니다.' },
-    ],
-  },
   flow: {
     id: 'flow', title: '플로우', en: 'Flow Mode', icon: '🌌', accent: '#06B6D4',
     coreCode: 'RC',
@@ -158,15 +141,6 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     desc: '우주 러닝 FLOW를 SPOMOVE에서 바로 실행합니다.',
     levels: [
       { id: 1, name: '1번', enName: 'Flow Program', desc: 'FLOW 프로그램 — 시작·레벨·휴식을 포함한 전체 시퀀스를 진행합니다.' },
-    ],
-  },
-  challenge: {
-    id: 'challenge', title: '챌린지', en: 'Challenge', icon: '🥁', accent: '#14B8A6',
-    coreCode: 'RC',
-    tag: '리듬 · 방향 반응',
-    desc: '스튜디오에서 설정한 BGM·그리드 기준 리듬 챌린지를 SPOMOVE에서 실행합니다.',
-    levels: [
-      { id: 1, name: '1번', enName: 'Rhythm Program', desc: '리듬 프로그램 — 4개 구간 리듬 시퀀스를 끝까지 진행합니다.' },
     ],
   },
   reactTrain: {
@@ -182,7 +156,75 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 5, name: '5번', enName: 'Deep Reaction', desc: '심해에서 중앙을 향해 헤엄치는 해파리 — 모서리 패드에 닿기 전에 해당 색 위치을 밟습니다. 30초 후 주기적으로 가속됩니다.' },
     ],
   },
+  tbd1: {
+    id: 'tbd1', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    tag: '보류',
+    desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
+    levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
+  },
+  tbd2: {
+    id: 'tbd2', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    tag: '보류',
+    desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
+    levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
+  },
+  tbd3: {
+    id: 'tbd3', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    tag: '보류',
+    desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
+    levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
+  },
+  tbd4: {
+    id: 'tbd4', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    tag: '보류',
+    desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
+    levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
+  },
 };
+
+/** 트레이닝 카탈로그 12슬롯 고정 순서 (1~8 확정 + 9~12 보류) */
+export const SPOMOVE_CATALOG_SLOT_IDS = [
+  'reactTrain',
+  'basic',
+  'simon',
+  'flanker',
+  'executive',
+  'spatial',
+  'stroop',
+  'flow',
+  'tbd1',
+  'tbd2',
+  'tbd3',
+  'tbd4',
+] as const;
+
+export type SpomoveCatalogSlotId = (typeof SPOMOVE_CATALOG_SLOT_IDS)[number];
+
+export function isSpomoveCatalogTbdMode(modeId: string): boolean {
+  return modeId === 'tbd1' || modeId === 'tbd2' || modeId === 'tbd3' || modeId === 'tbd4';
+}
+
+/** UI 모드·레벨 → 신호 엔진 (내부 gonogo / taskswitch 레벨) */
+export function resolveTrainingEngine(mode: string, level: number): { engineMode: string; engineLevel: number } {
+  if (mode === 'executive') {
+    const lv = Math.min(7, Math.max(1, Math.floor(level)));
+    if (lv <= 4) return { engineMode: 'gonogo', engineLevel: lv };
+    return { engineMode: 'taskswitch', engineLevel: lv - 4 };
+  }
+  return { engineMode: mode, engineLevel: level };
+}
+
+/** 예전 URL·북마크용 모드명을 현재 카탈로그 id로 맞춤 */
+export function normalizeLegacyTrainingMode(
+  mode: string | undefined,
+  level: number,
+): { mode: string; level: number } {
+  if (!mode) return { mode: 'basic', level: 1 };
+  if (mode === 'gonogo') return { mode: 'executive', level: Math.min(4, Math.max(1, level)) };
+  if (mode === 'taskswitch') return { mode: 'executive', level: Math.min(7, Math.max(5, level + 4)) };
+  if (mode === 'dual') return { mode: 'executive', level: 1 };
+  return { mode, level };
+}
 
 export const STUDENTS_KEY = 'spokedu_students_v1';
 export const STUDENT_COLORS = [

@@ -86,7 +86,8 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       group: "콘텐츠",
       items: [
         { name: "커리큘럼", href: "/admin/curriculum", icon: BookOpen },
-        { name: "선생님 APP", href: "/admin/iiwarmup", icon: Medal },
+        { name: "앱 관리", href: "/admin/iiwarmup", icon: Medal },
+        { name: "SPOMOVE", href: "/admin/iiwarmup/spomove/training", icon: Sparkles },
       ]
     },
     {
@@ -203,11 +204,19 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const disabled = 'disabled' in item && item.disabled;
-                  // 해시 링크도 활성화 상태로 인식. 선생님 APP: iiwarmup·memory-game·camera 경로에서 활성
-                  const isTeacherApp = item.href === '/admin/iiwarmup';
+                  const isAppManage = item.href === '/admin/iiwarmup';
+                  const isSpomoveMenu = item.href === '/admin/iiwarmup/spomove/training';
                   const isActive = !disabled && (
                     pathname === item.href ||
-                    (isTeacherApp && (pathname.startsWith('/admin/iiwarmup') || pathname.startsWith('/admin/memory-game') || pathname.startsWith('/admin/camera'))) ||
+                    (isAppManage && (
+                      pathname === '/admin/iiwarmup' ||
+                      pathname.startsWith('/admin/iiwarmup/assets') ||
+                      pathname.startsWith('/admin/iiwarmup/flow')
+                    )) ||
+                    (isSpomoveMenu && (
+                      pathname.startsWith('/admin/iiwarmup/spomove') ||
+                      pathname.startsWith('/admin/iiwarmup/spomove/training/_player')
+                    )) ||
                     (item.href.includes('#') && pathname.startsWith(item.href.split('#')[0]))
                   );
                   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {

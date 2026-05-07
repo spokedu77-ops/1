@@ -973,7 +973,7 @@ export default function SpokeduProClient({
                 <iframe
                   title={tr('SPOMOVE')}
                   className="absolute inset-0 h-full w-full border-0 bg-slate-950"
-                  src={`/admin/memory-game?mode=${encodeURIComponent(memoryGameModal.mode)}&level=${encodeURIComponent(String(memoryGameModal.level))}&embed=1`}
+                  src={`/admin/iiwarmup/spomove/training/_player?mode=${encodeURIComponent(memoryGameModal.mode)}&level=${encodeURIComponent(String(memoryGameModal.level))}&embed=1`}
                   allow="autoplay; fullscreen"
                 />
               </div>

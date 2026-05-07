@@ -6,7 +6,7 @@ export const SPOMOVE_VARIANT_THEME_LS_KEY = 'spomove_variant_training_theme';
 
 export type SpomoveColorThemeId = 'color' | 'fruit' | 'vehicle' | 'emotion' | 'animal';
 
-export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['color', 'fruit', 'vehicle', 'animal', 'emotion'];
+export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['emotion', 'fruit', 'animal', 'color', 'vehicle'];
 
 export const SPOMOVE_COLOR_THEME_LABELS: Record<SpomoveColorThemeId, string> = {
   color: '색상',

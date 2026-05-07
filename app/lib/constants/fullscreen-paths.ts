@@ -9,7 +9,7 @@ export const FULLSCREEN_PATH_PREFIXES = [
   '/program',
   '/info',
   '/admin/camera',
-  '/admin/memory-game',
+  '/admin/iiwarmup/spomove/training/_player',
   '/spokedu-pro',
   '/pro',
   '/admin/spokedu-pro',

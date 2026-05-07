@@ -7,11 +7,10 @@ import { createPortal } from 'react-dom';
 import { TRAINING_ENGINE_GUIDE_VIDEOS } from '@/app/lib/spomove/trainingEngineGuideVideos';
 import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
 
-import { MODES } from './_player/constants';
+import { isSpomoveCatalogTbdMode, MODES, SPOMOVE_CATALOG_SLOT_IDS } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch } from './_player/MemoryGameApp';
 import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
-import { ChallengeSpomoveSetupPanel } from './_player/components/ChallengeSpomoveSetupPanel';
 import { SpeedSelector } from './_player/components/SpeedSelector';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
@@ -48,7 +47,7 @@ const T = {
   textDim:     'rgba(255,255,255,0.48)',
 };
 
-type SeriesCode = 'SR' | 'IC' | 'RS' | 'SM' | 'RC';
+type SeriesCode = 'SR' | 'IC' | 'RS' | 'SM' | 'RC' | 'EC';
 type TabCode = SeriesCode | 'ALL';
 
 const TABS: { code: TabCode; label: string }[] = [
@@ -56,12 +55,12 @@ const TABS: { code: TabCode; label: string }[] = [
   { code: 'SR', label: '공간 반응' },
   { code: 'IC', label: '간섭 제어' },
   { code: 'RS', label: '규칙 전환' },
+  { code: 'EC', label: '실행 조절' },
   { code: 'SM', label: '순차 기억' },
   { code: 'RC', label: '리듬 협응' },
 ];
 
 function levelLabel(modeId: string, levelId: number): string {
-  if (modeId === 'dual' && levelId === 2) return '2-1번';
   return `${levelId}번`;
 }
 
@@ -144,7 +143,6 @@ type LaunchSettings = {
   warmup: number;
   accel: boolean;
   intervalMode: boolean;
-  dual21Advance: 'default' | 'touch';
   numberRule: string;
   variantColorTheme: SpomoveColorThemeId;
 };
@@ -157,7 +155,6 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   warmup: 3,
   accel: false,
   intervalMode: false,
-  dual21Advance: 'default',
   numberRule: 'odd_left',
   variantColorTheme: 'color',
 };
@@ -217,7 +214,6 @@ function TrainingPortal({
     warmup: launch.warmup,
     accel: launch.accel,
     intervalMode: launch.intervalMode,
-    dual21Advance: launch.dual21Advance,
     numberRule: launch.numberRule,
     variantColorTheme: launch.variantColorTheme,
   };
@@ -229,40 +225,13 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.dual21Advance}-${launch.numberRule}-${launch.variantColorTheme}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.numberRule}-${launch.variantColorTheme}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
         onExit={onClose}
         onUnavailable={onClose}
       />
-
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="STOP"
-        style={{
-          position: 'fixed', top: 10, left: 10, zIndex: 100000,
-          display: 'flex', alignItems: 'center', gap: 5,
-          padding: '6px 12px', borderRadius: 8,
-          border: '1px solid rgba(255,255,255,0.14)',
-          background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(12px)',
-          color: 'rgba(255,255,255,0.55)',
-          fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
-          cursor: 'pointer', letterSpacing: '0.06em',
-          transition: 'background 0.15s, color 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.85)';
-          (e.currentTarget as HTMLButtonElement).style.color = '#fff';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.55)';
-          (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.55)';
-        }}
-      >
-        STOP
-      </button>
     </div>,
     document.body,
   );
@@ -277,14 +246,15 @@ function CatalogModeCard({
 }) {
   const m = MODES[modeId];
   if (!m) return null;
-
-  const levelRangeLabel = m.levels.length === 1 ? '1단계' : `${m.levels.length}단계`;
-  const levelRangeSub = m.levels.length === 1 ? '1번' : `1 ~ ${m.levels.length}번`;
+  const isTbd = isSpomoveCatalogTbdMode(modeId);
 
   return (
     <button
       type="button"
-      onClick={() => onPick(modeId)}
+      onClick={() => {
+        if (isTbd) return;
+        onPick(modeId);
+      }}
       className="spmt-card"
       style={{
         position: 'relative',
@@ -294,12 +264,13 @@ function CatalogModeCard({
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 236,
-        cursor: 'pointer',
+        minHeight: 248,
+        cursor: isTbd ? 'not-allowed' : 'pointer',
         textAlign: 'left',
         fontFamily: 'inherit',
         padding: 0,
         boxShadow: '0 10px 28px rgba(0,0,0,0.35)',
+        opacity: isTbd ? 0.55 : 1,
         transform: 'translateY(0px)',
         transition: 'transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
     }}>
@@ -332,69 +303,50 @@ function CatalogModeCard({
           >
             {m.icon}
           </span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 18, fontWeight: 950, color: T.text, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              {modeLabelKoEn(modeId)}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="spmt-title" style={{ fontWeight: 950, color: T.text, lineHeight: 1.16, letterSpacing: '-0.015em', wordBreak: 'keep-all' }}>
+              {m.title} : {m.en}
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-            <span style={{
-              padding: '4px 10px',
-              borderRadius: 999,
-              background: `${m.accent}16`,
-              border: `1px solid ${m.accent}35`,
-              color: m.accent,
-              fontSize: 11,
-              fontWeight: 900,
-              letterSpacing: '0.02em',
-            }}>
-              {levelRangeLabel}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 800, color: T.textDim, letterSpacing: '0.02em' }}>
-              {levelRangeSub}
-            </span>
-          </div>
         </div>
-        <p style={{ margin: '12px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
+        <p className="spmt-desc" style={{ margin: '12px 0 0', color: T.textDim, lineHeight: 1.62, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 78 }}>
           {m.desc}
         </p>
       </div>
 
       <div style={{ padding: '0 16px 16px', marginTop: 'auto' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-          padding: '12px 12px',
-          borderRadius: 14,
-          border: `1px solid ${T.border}`,
-          background: 'rgba(0,0,0,0.28)',
-          backdropFilter: 'blur(10px)',
-        }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: T.text, letterSpacing: '0.02em' }}>
-              난이도 선택
-            </div>
-            <div style={{ marginTop: 2, fontSize: 11, fontWeight: 700, color: T.textDim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {levelRangeSub}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: `${m.accent}cc` }}>설정으로</span>
-            <span style={{
-              width: 26,
-              height: 26,
-              borderRadius: 10,
-              background: `${m.accent}18`,
-              border: `1px solid ${m.accent}35`,
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div
+            style={{
               display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: m.accent,
+              gap: 7,
+              padding: '7px 10px',
+              borderRadius: 999,
+              border: `1px solid ${isTbd ? T.border : `${m.accent}50`}`,
+              background: isTbd ? 'rgba(255,255,255,0.03)' : `${m.accent}14`,
+              color: isTbd ? T.textDim : `${m.accent}ee`,
               fontSize: 12,
-              fontWeight: 950,
-            }}>
+              fontWeight: 900,
+              letterSpacing: '0.02em',
+            }}
+          >
+            <span>설정으로</span>
+            <span
+              aria-hidden
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: '50%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 10,
+                fontWeight: 900,
+                color: isTbd ? 'rgba(255,255,255,0.45)' : '#fff',
+                background: isTbd ? 'rgba(255,255,255,0.12)' : `${m.accent}`,
+              }}
+            >
               ▶
             </span>
           </div>
@@ -424,9 +376,9 @@ function SettingsScreen({
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
-    if (modeId !== 'basic' || levelId !== 3) return;
+    if (modeId !== 'basic' || levelId !== 4) return;
     if (launch.variantColorTheme !== 'color') return;
-    // 3번(변형 색상 2패널)은 색상 테마 비허용: 꼬임 방지용 자동 정규화
+    // 4번은 색상 테마 비허용(과일 고정)
     setLaunch((s) => ({ ...s, variantColorTheme: 'fruit' }));
   }, [modeId, levelId, launch.variantColorTheme]);
 
@@ -446,10 +398,9 @@ function SettingsScreen({
     return guideBlock.phases.find((p) => p.num === num) ?? null;
   }, [guideBlock, modeId, levelId]);
 
-  const isDual21 = modeId === 'dual' && levelId === 2;
   const isReactTrain = modeId === 'reactTrain';
   const isSpatial = modeId === 'spatial';
-  const isFlowOrChallenge = modeId === 'flow' || modeId === 'challenge';
+  const isFlowOrChallenge = modeId === 'flow';
 
   return (
     <div style={{ background: T.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -572,66 +523,22 @@ function SettingsScreen({
             </div>
           </section>
 
-          {/* 2-1 진행방식 */}
-          {isDual21 ? (
-            <section style={{ marginBottom: 22 }}>
+          {/* 속도 (FLOW는 내부 타이밍으로 동작하므로 숨김) */}
+          {!isFlowOrChallenge ? (
+            <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>2-1번 진행 방식</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>신호 속도</label>
+                <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
+                  {launch.speed.toFixed(1)}초 / 자극
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {([
-                  { id: 'default' as const, label: '기본형', desc: '설정한 속도로 자동 진행' },
-                  { id: 'touch' as const, label: '터치형', desc: '화면을 누르면 다음 신호' },
-                ]).map((o) => {
-                  const active = launch.dual21Advance === o.id;
-                  return (
-                    <button
-                      key={o.id}
-                      type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, dual21Advance: o.id, intervalMode: o.id === 'touch' ? false : s.intervalMode }))}
-                      style={{
-                        flex: '1 1 180px',
-                        padding: '12px 12px',
-                        borderRadius: 12,
-                        border: `1.5px solid ${active ? accent : T.border}`,
-                        background: active ? `${accent}16` : T.card,
-                        color: active ? accent : T.text,
-                        fontFamily: 'inherit',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                    >
-                      <div style={{ fontWeight: 900, fontSize: 13 }}>{o.label}</div>
-                      <div style={{ marginTop: 3, fontWeight: 600, fontSize: 11, color: active ? `${accent}cc` : T.textDim }}>
-                        {o.desc}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
-          {/* 속도 */}
-          <section style={{ marginBottom: 26 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>신호 속도</label>
-              <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                {launch.speed.toFixed(1)}초 / 자극
-              </div>
-            </div>
-            {isDual21 && launch.dual21Advance === 'touch' ? (
-              <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>
-                터치형에서는 신호 속도를 사용하지 않습니다.
-              </p>
-            ) : (
               <SpeedSelector
                 value={launch.speed}
                 onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
                 showPresets={false}
               />
-            )}
-          </section>
+            </section>
+          ) : null}
 
           {/* 분량/시간 */}
           {!isFlowOrChallenge ? (
@@ -705,13 +612,19 @@ function SettingsScreen({
           ) : null}
 
           {/* 변형 색지각 테마 */}
-          {modeId === 'basic' && (levelId === 2 || levelId === 3 || levelId === 4) ? (
+          {modeId === 'basic' && (levelId === 2 || levelId === 3 || levelId === 4 || levelId === 5) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>변형 색지각 이미지 테마</label>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {SPOMOVE_COLOR_THEME_ORDER.filter((tid) => !(modeId === 'basic' && levelId === 3 && tid === 'color')).map((tid) => {
+                {SPOMOVE_COLOR_THEME_ORDER
+                  .slice()
+                  .sort((a, b) =>
+                    SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')
+                  )
+                  .filter((tid) => !(modeId === 'basic' && levelId === 4 && tid === 'color'))
+                  .map((tid) => {
                   const active = launch.variantColorTheme === tid;
                   return (
                     <button
@@ -735,13 +648,6 @@ function SettingsScreen({
                   );
                 })}
               </div>
-            </section>
-          ) : null}
-
-          {/* 챌린지 설정 */}
-          {modeId === 'challenge' ? (
-            <section style={{ marginBottom: 26 }}>
-              <ChallengeSpomoveSetupPanel />
             </section>
           ) : null}
 
@@ -802,7 +708,6 @@ function SettingsScreen({
                     <button
                       type="button"
                       onClick={() => setLaunch((s) => ({ ...s, intervalMode: !s.intervalMode }))}
-                      disabled={isDual21 && launch.dual21Advance === 'touch'}
                       style={{
                         padding: '9px 12px',
                         borderRadius: 10,
@@ -812,17 +717,11 @@ function SettingsScreen({
                         fontFamily: 'inherit',
                         fontSize: 12,
                         fontWeight: 900,
-                        cursor: (isDual21 && launch.dual21Advance === 'touch') ? 'not-allowed' : 'pointer',
-                        opacity: (isDual21 && launch.dual21Advance === 'touch') ? 0.45 : 1,
+                    cursor: 'pointer',
                       }}
                     >
                       {launch.intervalMode ? '켜짐' : '끔'}
                     </button>
-                    {isDual21 && launch.dual21Advance === 'touch' ? (
-                      <p style={{ margin: '8px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                        2-1 터치형에서는 인터벌 모드를 사용할 수 없습니다.
-                      </p>
-                    ) : null}
                   </div>
 
                   <div>
@@ -893,7 +792,7 @@ export default function SpomoveTrainingPage() {
   const [phase, setPhase] = useState<PagePhase>({ tag: 'catalog' });
 
   const modeIdsByTab = useMemo(() => {
-    const ids = Object.values(MODES).map((m) => m.id);
+    const ids = SPOMOVE_CATALOG_SLOT_IDS.filter((id) => id in MODES);
     const byCore = new Map<TabCode, string[]>();
     for (const tab of TABS) byCore.set(tab.code, []);
     byCore.set('ALL', []);
@@ -909,8 +808,8 @@ export default function SpomoveTrainingPage() {
 
   const visibleModeIds = useMemo(() => {
     const list = modeIdsByTab.get(activeTab) ?? [];
-    // 안정적인 순서를 위해 고정 정렬(타이틀 기준)
-    return [...list].sort((a, b) => (MODES[a]?.title ?? a).localeCompare((MODES[b]?.title ?? b), 'ko'));
+    const set = new Set(list);
+    return SPOMOVE_CATALOG_SLOT_IDS.filter((id) => set.has(id));
   }, [activeTab, modeIdsByTab]);
 
   const handlePick = useCallback((modeId: string) => {
@@ -1009,7 +908,7 @@ export default function SpomoveTrainingPage() {
               </div>
             </div>
 
-            <nav style={{ display: 'flex', gap: 6, marginTop: 12, overflowX: 'auto', paddingBottom: 2 }}>
+            <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6, marginTop: 12, paddingBottom: 2 }}>
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.code;
                 const accent = tab.code === 'ALL' ? 'rgba(255,255,255,0.65)' : (Object.values(MODES).find((m) => m.coreCode === tab.code)?.accent ?? 'rgba(255,255,255,0.65)');
@@ -1027,7 +926,8 @@ export default function SpomoveTrainingPage() {
                       fontWeight: isActive ? 900 : 700,
                       fontSize: 12,
                       cursor: 'pointer',
-                      whiteSpace: 'nowrap',
+                      whiteSpace: 'normal',
+                      minHeight: 36,
                       letterSpacing: '0.02em',
                       outline: 'none',
                       fontFamily: 'inherit',
@@ -1043,17 +943,36 @@ export default function SpomoveTrainingPage() {
           </div>
         </header>
 
-        <main style={{ maxWidth: 960, margin: '0 auto', padding: '28px 24px 0' }}>
+        <main style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px 0' }}>
           <style>{`
             .spmt-card:hover { transform: translateY(-2px) !important; border-color: rgba(255,255,255,0.16) !important; box-shadow: 0 16px 38px rgba(0,0,0,0.45) !important; }
             .spmt-card:active { transform: translateY(-1px) scale(0.99) !important; }
+            .spmt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+            .spmt-title { font-size: 1.4rem; }
+            .spmt-desc { font-size: 0.95rem; }
+            @media (max-width: 767px) {
+              .spmt-title { font-size: 1.02rem; }
+              .spmt-desc { font-size: 0.84rem; min-height: 68px !important; }
+              .spmt-card { min-height: 220px !important; }
+            }
+            @media (min-width: 768px) and (max-width: 1199px) {
+              .spmt-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+              .spmt-title { font-size: 1.12rem; }
+              .spmt-desc { font-size: 0.88rem; }
+              .spmt-card { min-height: 236px !important; }
+            }
+            @media (min-width: 1200px) {
+              .spmt-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+              .spmt-title { font-size: 1.26rem; }
+              .spmt-desc { font-size: 0.92rem; }
+            }
             @media (prefers-reduced-motion: reduce) {
               .spmt-card { transition: none !important; }
               .spmt-card:hover { transform: none !important; }
               .spmt-card:active { transform: none !important; }
             }
           `}</style>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}>
+          <div className="spmt-grid">
             {visibleModeIds.map((modeId) => (
               <CatalogModeCard key={modeId} modeId={modeId} onPick={handlePick} />
             ))}
