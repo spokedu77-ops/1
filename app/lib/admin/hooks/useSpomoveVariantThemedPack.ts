@@ -23,7 +23,7 @@ export type UseSpomoveVariantThemedPackOptions = {
 function normalizePaths(raw: unknown, slotCount: number): (string | null)[] {
   const p = (raw as SpomoveVariantThemedAssetsJson | null)?.paths;
   if (!Array.isArray(p)) return Array.from({ length: slotCount }, () => null);
-  const sliced = p.slice(0, slotCount);
+  const sliced: (string | null)[] = p.slice(0, slotCount);
   while (sliced.length < slotCount) sliced.push(null);
   return sliced.map((x) => (typeof x === 'string' && x.trim() ? x.trim() : null));
 }

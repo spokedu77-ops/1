@@ -18,7 +18,7 @@ import {
 function normalizeThemedPaths(raw: unknown, slotCount: number): (string | null)[] {
   const p = (raw as { paths?: unknown } | null)?.paths;
   if (!Array.isArray(p)) return Array.from({ length: slotCount }, () => null);
-  const sliced = p.slice(0, slotCount);
+  const sliced: (unknown | null)[] = p.slice(0, slotCount);
   while (sliced.length < slotCount) sliced.push(null);
   return sliced.map((x) => (typeof x === 'string' && x.trim() ? x.trim() : null));
 }

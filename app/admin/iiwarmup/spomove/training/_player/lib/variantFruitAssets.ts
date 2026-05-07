@@ -34,7 +34,7 @@ export type SpomoveVariantAssetsJson = {
 export function normalizeSpomoveVariantFruitPaths(raw: unknown): (string | null)[] {
   const n = SPOMOVE_VARIANT_FRUIT_SLOT_COUNT;
   const mapSlot = (arr: (unknown | null)[]) => {
-    const sliced = arr.slice(0, n);
+    const sliced: (unknown | null)[] = arr.slice(0, n);
     while (sliced.length < n) sliced.push(null);
     return sliced.map((x) => (typeof x === 'string' && x.trim() ? x.trim() : null));
   };

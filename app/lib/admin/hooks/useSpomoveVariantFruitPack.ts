@@ -97,7 +97,7 @@ export function useSpomoveVariantFruitPack() {
         await uploadToStorage(path, file, file.type || 'image/webp');
 
         const prevArr = pathsRef.current;
-        const next = [...prevArr];
+        const next: (string | null)[] = [...prevArr];
         while (next.length < 8) next.push(null);
         const prevPath = next[index];
         next[index] = path;
@@ -127,7 +127,7 @@ export function useSpomoveVariantFruitPack() {
       setError(null);
       try {
         const prevArr = pathsRef.current;
-        const next = [...prevArr];
+        const next: (string | null)[] = [...prevArr];
         while (next.length < 8) next.push(null);
         const prev = next[index];
         next[index] = null;

@@ -242,7 +242,7 @@ function buildVariantTier4(excludePanelImageUrls: (string | null)[] | null, slid
     const colorIds = picked.map((s) => s?.color?.id ?? '').filter(Boolean);
     if (new Set(colorIds).size < 3) continue;
     const panelImages = picked.map((x) => x?.imageUrl ?? null);
-    const blocked = (excludePanelImageUrls ?? []).slice(0, 3);
+    const blocked: (string | null)[] = (excludePanelImageUrls ?? []).slice(0, 3);
     while (blocked.length < 3) blocked.push(null);
     const violates = panelImages.some((url, i) => !!url && url === blocked[i]);
     if (violates) continue;
@@ -965,7 +965,7 @@ export function createBasicSignalGenerator(
         lastVariantImageUrl = null;
         lastVariantPanelImageUrls = [null, null, null];
       } else if (tier === 4) {
-        const panelUrls = panels
+        const panelUrls: (string | null)[] = panels
           .slice(0, 3)
           .map((p) => {
             const cells = p.cells ?? (p.slide ? [p.slide] : []);
