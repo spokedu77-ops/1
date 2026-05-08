@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { CAMERA_MODE_IDS, DIFF } from '@/app/admin/camera/constants';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import type {
+  CameraActivityDeviceInfo,
+  CameraActivityMetrics,
   CameraActivityParticipantDraft,
   CameraActivityResultSummary,
   CameraActivitySavePayload,
   CameraActivitySessionDraft,
   CameraParticipantMode,
+  CameraSettings,
 } from '@/app/admin/camera/types';
 
 export const runtime = 'nodejs';
@@ -35,6 +38,92 @@ function cleanParticipantMode(value: unknown): CameraParticipantMode {
     : 'unknown';
 }
 
+function cleanSettings(
+  value: unknown,
+  fallback: Pick<CameraSettings, 'diff' | 'dur' | 'multiOn'>
+): CameraSettings {
+  if (!isRecord(value)) {
+    return { ...fallback, soundOn: true };
+  }
+
+  const diff = typeof value.diff === 'string' && value.diff in DIFF
+    ? value.diff as CameraSettings['diff']
+    : fallback.diff;
+  const dur = Number.isFinite(Number(value.dur)) ? Number(value.dur) : fallback.dur;
+
+  return {
+    diff,
+    dur,
+    multiOn: typeof value.multiOn === 'boolean' ? value.multiOn : fallback.multiOn,
+    soundOn: typeof value.soundOn === 'boolean' ? value.soundOn : true,
+  };
+}
+
+function cleanMetrics(value: unknown): CameraActivityMetrics {
+  if (!isRecord(value)) {
+    return {
+      totalScore: 0,
+      avgReactionMs: null,
+      hitCount: 0,
+      activeParticipants: 1,
+      modeSpecific: {},
+    };
+  }
+
+  return {
+    totalScore: Math.max(0, Math.round(Number(value.totalScore) || 0)),
+    avgReactionMs: value.avgReactionMs != null && Number.isFinite(Number(value.avgReactionMs))
+      ? Math.max(0, Math.round(Number(value.avgReactionMs)))
+      : null,
+    hitCount: Math.max(0, Math.round(Number(value.hitCount) || 0)),
+    missCount: value.missCount != null && Number.isFinite(Number(value.missCount))
+      ? Math.max(0, Math.round(Number(value.missCount)))
+      : null,
+    comboMax: value.comboMax != null && Number.isFinite(Number(value.comboMax))
+      ? Math.max(0, Math.round(Number(value.comboMax)))
+      : null,
+    activeParticipants: Math.max(1, Math.round(Number(value.activeParticipants) || 1)),
+    lateGameScoreRate: value.lateGameScoreRate != null && Number.isFinite(Number(value.lateGameScoreRate))
+      ? Number(value.lateGameScoreRate)
+      : null,
+    leftRightBalance: isRecord(value.leftRightBalance)
+      ? {
+          leftHits: Math.max(0, Math.round(Number(value.leftRightBalance.leftHits) || 0)),
+          rightHits: Math.max(0, Math.round(Number(value.leftRightBalance.rightHits) || 0)),
+          differenceRate: value.leftRightBalance.differenceRate != null && Number.isFinite(Number(value.leftRightBalance.differenceRate))
+            ? Number(value.leftRightBalance.differenceRate)
+            : null,
+        }
+      : null,
+    modeSpecific: isRecord(value.modeSpecific) ? value.modeSpecific : {},
+  };
+}
+
+function cleanDevice(value: unknown): CameraActivityDeviceInfo | null {
+  if (!isRecord(value)) return null;
+  return {
+    role: value.role === 'controller' ? 'controller' : 'player',
+    viewport: isRecord(value.viewport) ? {
+      width: Math.max(0, Math.round(Number(value.viewport.width) || 0)),
+      height: Math.max(0, Math.round(Number(value.viewport.height) || 0)),
+    } : undefined,
+    screen: isRecord(value.screen) ? {
+      width: Math.max(0, Math.round(Number(value.screen.width) || 0)),
+      height: Math.max(0, Math.round(Number(value.screen.height) || 0)),
+    } : undefined,
+    userAgent: typeof value.userAgent === 'string' ? value.userAgent.slice(0, 500) : undefined,
+    camera: isRecord(value.camera) ? {
+      facingMode: typeof value.camera.facingMode === 'string' ? value.camera.facingMode.slice(0, 80) : undefined,
+      videoWidth: Number.isFinite(Number(value.camera.videoWidth)) ? Math.max(0, Math.round(Number(value.camera.videoWidth))) : undefined,
+      videoHeight: Number.isFinite(Number(value.camera.videoHeight)) ? Math.max(0, Math.round(Number(value.camera.videoHeight))) : undefined,
+    } : undefined,
+    pose: isRecord(value.pose) ? {
+      model: typeof value.pose.model === 'string' ? value.pose.model.slice(0, 120) : undefined,
+      delegate: value.pose.delegate === 'CPU' || value.pose.delegate === 'GPU' ? value.pose.delegate : undefined,
+    } : undefined,
+  };
+}
+
 function validateSession(value: unknown, userId: string): CameraActivitySessionDraft | null {
   if (!isRecord(value)) return null;
   const mode = value.mode;
@@ -44,6 +133,12 @@ function validateSession(value: unknown, userId: string): CameraActivitySessionD
   if (typeof mode !== 'string' || !CAMERA_MODE_IDS.includes(mode as never)) return null;
   if (typeof difficulty !== 'string' || !(difficulty in DIFF)) return null;
   if (!Number.isFinite(durationSec) || durationSec <= 0 || durationSec > 600) return null;
+  const participantMode = cleanParticipantMode(value.participantMode);
+  const fallbackSettings = {
+    diff: difficulty as CameraActivitySessionDraft['difficulty'],
+    dur: durationSec,
+    multiOn: participantMode !== 'solo',
+  };
 
   return {
     centerId: cleanUuid(value.centerId),
@@ -54,20 +149,10 @@ function validateSession(value: unknown, userId: string): CameraActivitySessionD
     mode: mode as CameraActivitySessionDraft['mode'],
     difficulty: difficulty as CameraActivitySessionDraft['difficulty'],
     durationSec,
-    participantMode: cleanParticipantMode(value.participantMode),
-    settings: isRecord(value.settings) ? value.settings as CameraActivitySessionDraft['settings'] : {
-      diff: difficulty as CameraActivitySessionDraft['difficulty'],
-      dur: durationSec,
-      multiOn: cleanParticipantMode(value.participantMode) !== 'solo',
-      soundOn: true,
-    },
-    metrics: isRecord(value.metrics) ? value.metrics as CameraActivitySessionDraft['metrics'] : {
-      totalScore: 0,
-      avgReactionMs: null,
-      hitCount: 0,
-      activeParticipants: 1,
-    },
-    device: isRecord(value.device) ? value.device as CameraActivitySessionDraft['device'] : null,
+    participantMode,
+    settings: cleanSettings(value.settings, fallbackSettings),
+    metrics: cleanMetrics(value.metrics),
+    device: cleanDevice(value.device),
     startedAt: cleanIso(value.startedAt),
     endedAt: cleanIso(value.endedAt),
   };
