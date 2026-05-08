@@ -46,7 +46,7 @@ class CameraErrorBoundary extends Component<
 
 export default function CameraAppPage() {
   return (
-    <div className="fixed inset-0 z-[100] h-[var(--viewport-height-px,100dvh)] w-screen overflow-hidden bg-slate-950 overscroll-none">
+    <div className="fixed inset-0 z-[100] h-[var(--viewport-height-px,100dvh)] max-h-[var(--viewport-height-px,100dvh)] w-screen overflow-hidden bg-slate-950 overscroll-none [touch-action:none]">
       <div className="pointer-events-auto absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-[120] rounded-full border border-white/15 bg-slate-950/70 px-3 py-2 shadow-lg backdrop-blur">
         <Link
           href="/admin/iiwarmup/spomove"
@@ -55,9 +55,9 @@ export default function CameraAppPage() {
           ← SPOMOVE 허브
         </Link>
       </div>
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 h-full max-h-full overflow-hidden">
         <CameraErrorBoundary>
-          <div className="absolute inset-0 h-full w-full overflow-hidden overscroll-none">
+          <div className="absolute inset-0 h-full max-h-full w-full overflow-hidden overscroll-none [touch-action:none]">
             <SpokeduCameraApp />
           </div>
         </CameraErrorBoundary>

@@ -170,6 +170,34 @@ export default function SpokeduCameraApp() {
     }
   }, []);
 
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const syncPlayerViewport = () => {
+      const vv = window.visualViewport;
+      const width = Math.round(vv?.width ?? window.innerWidth);
+      const height = Math.round(vv?.height ?? window.innerHeight);
+      root.style.width = `${Math.max(1, width)}px`;
+      root.style.height = `${Math.max(1, height)}px`;
+      root.style.maxWidth = `${Math.max(1, width)}px`;
+      root.style.maxHeight = `${Math.max(1, height)}px`;
+      document.documentElement.style.setProperty('--viewport-height-px', `${Math.max(1, height)}px`);
+    };
+
+    syncPlayerViewport();
+    window.addEventListener('resize', syncPlayerViewport);
+    window.addEventListener('orientationchange', syncPlayerViewport);
+    window.visualViewport?.addEventListener('resize', syncPlayerViewport);
+    window.visualViewport?.addEventListener('scroll', syncPlayerViewport);
+    return () => {
+      window.removeEventListener('resize', syncPlayerViewport);
+      window.removeEventListener('orientationchange', syncPlayerViewport);
+      window.visualViewport?.removeEventListener('resize', syncPlayerViewport);
+      window.visualViewport?.removeEventListener('scroll', syncPlayerViewport);
+    };
+  }, []);
+
   const feedback = useCallback((msg: string, warn = false) => {
     const el = getEl('game-feedback');
     if (!el) return;
@@ -398,8 +426,12 @@ export default function SpokeduCameraApp() {
     const syncCanvasBitmap = () => {
       const rect = root.getBoundingClientRect();
       const vv = window.visualViewport;
-      const w = Math.max(1, Math.round(rect.width || vv?.width || window.innerWidth));
-      const h = Math.max(1, Math.round(rect.height || vv?.height || window.innerHeight));
+      const visibleWidth = Math.round(vv?.width ?? window.innerWidth);
+      const visibleHeight = Math.round(vv?.height ?? window.innerHeight);
+      const w = Math.max(1, Math.min(Math.round(rect.width || visibleWidth), visibleWidth));
+      const h = Math.max(1, Math.min(Math.round(rect.height || visibleHeight), visibleHeight));
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w;
         canvas.height = h;
@@ -954,9 +986,32 @@ export default function SpokeduCameraApp() {
   }, [applyRemoteCommand, controlSession?.id, getPlayerSnapshot]);
 
   return (
-    <div ref={rootRef} className={styles.root}>
-      <video id="videoEl" ref={videoRef} autoPlay playsInline muted />
-      <canvas id="gameCanvas" ref={canvasRef} />
+    <div ref={rootRef} className={styles.root} data-screen={curScreen}>
+      <video
+        id="videoEl"
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        hidden
+        aria-hidden="true"
+        tabIndex={-1}
+        style={{
+          display: 'none',
+          position: 'fixed',
+          width: 1,
+          height: 1,
+          opacity: 0,
+          pointerEvents: 'none',
+          transform: 'translate(-100vw, -100vh)',
+        }}
+      />
+      <canvas
+        id="gameCanvas"
+        ref={canvasRef}
+        aria-hidden={curScreen !== 'lobby' && curScreen !== 'game'}
+        style={{ display: curScreen === 'lobby' || curScreen === 'game' ? 'block' : 'none' }}
+      />
       <div id="combo-flash" />
       <div className={styles['control-pairing']}>
         <div>
