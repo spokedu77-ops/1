@@ -24,6 +24,7 @@ import { PulseReactionTraining } from './components/PulseReactionTraining';
 import { BlackoutReactionTraining } from './components/BlackoutReactionTraining';
 import { SweepReactionTraining } from './components/SweepReactionTraining';
 import { RushReactionTraining } from './components/RushReactionTraining';
+import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { CSS, S } from './styles';
@@ -1098,7 +1099,14 @@ export default function MemoryGameApp({
     return (
       <div ref={visualReactionContainerRef} style={{ position: 'fixed', inset: 0, zIndex: 320 }}>
         <style>{CSS}</style>
-        {settings.level === 9 ? (
+        {settings.level === 10 ? (
+          <RobloxMoleReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : settings.level === 9 ? (
           <RushReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}

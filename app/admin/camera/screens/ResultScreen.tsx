@@ -9,6 +9,7 @@ interface ResultScreenProps {
   record: HistoryRecord | null;
   multiOn: boolean;
   isNewPB: boolean;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'failed';
   onGoHome: () => void;
   onRestart: () => void;
   onShowReport: () => void;
@@ -20,12 +21,21 @@ export function ResultScreen({
   record,
   multiOn,
   isNewPB,
+  saveStatus,
   onGoHome,
   onRestart,
   onShowReport,
   className = '',
 }: ResultScreenProps) {
   const playerCount = multiOn ? 3 : 1;
+  const saveLabel =
+    saveStatus === 'saving'
+      ? '결과 저장 중'
+      : saveStatus === 'saved'
+        ? '결과 저장 완료'
+        : saveStatus === 'failed'
+          ? '결과 저장 실패'
+          : '';
   return (
     <div id="screen-result" className={`${styles.screen} ${active ? styles.active : ''} ${className}`.trim()}>
       <div className={`${styles.card} ${styles['result-card']}`}>
@@ -52,6 +62,7 @@ export function ResultScreen({
           )).filter(Boolean)}
         </div>
         {isNewPB && <div id="r-pb"><span className={styles['pb-badge']}>🏅 개인 최고기록 갱신!</span></div>}
+        {saveLabel && <div className={`${styles['save-badge']} ${styles[`save-${saveStatus}`]}`}>{saveLabel}</div>}
         <div className={styles['result-acts']}>
           <button type="button" className={`${styles.btn} ${styles['btn-secondary']}`} onClick={onGoHome}>🏠 홈</button>
           <button type="button" className={`${styles.btn} ${styles['btn-secondary']}`} onClick={onRestart}>🔄 다시</button>

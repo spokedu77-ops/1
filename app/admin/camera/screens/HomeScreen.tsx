@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import type { CameraModeId } from '../constants';
 import styles from '../spokedu-camera.module.css';
 
-const MODE_DESCS: Record<string, { title: string; color: string; bg: string; badge: string }> = {
+const MODE_DESCS: Record<CameraModeId, { title: string; color: string; bg: string; badge: string }> = {
   speed:    { title: '스피드 스타',   color: 'var(--spokedu-primary)', bg: '#EFF6FF', badge: 'var(--spokedu-primary-l)' },
   sequence: { title: '넘버 시퀀스',   color: 'var(--spokedu-green)',   bg: '#DCFCE7', badge: 'var(--spokedu-green-l)' },
   shape:    { title: '쉐이프 헌터',   color: 'var(--spokedu-purple)',  bg: '#EDE9FE', badge: 'var(--spokedu-purple-l)' },
@@ -12,7 +13,7 @@ const MODE_DESCS: Record<string, { title: string; color: string; bg: string; bad
   mirror:   { title: '미러 게임',     color: 'var(--spokedu-pink)',   bg: '#FDF2F8', badge: '#FDF2F8' },
 };
 
-const MODE_LIST = [
+const MODE_LIST: Array<{ id: CameraModeId; num: number; icon: string; desc: string; badge: string }> = [
   { id: 'speed',    num: 1, icon: '⚡', desc: '화면에 나타나는 별을 빠르게 터치. 순발력과 자발적 몰입을 극대화합니다.', badge: '⏱ 순발력 · 반응속도' },
   { id: 'sequence', num: 2, icon: '🔢', desc: '숫자를 순서대로 기억하고 터치. 신체활동과 인지 자극을 동시에 경험합니다.', badge: '🧠 기억력 · 협동' },
   { id: 'shape',    num: 3, icon: '🔷', desc: '미션 모양만 정확히 터치하세요. 충동 조절과 판단력을 함께 기릅니다.', badge: '🎯 판단력 · 집중력' },
@@ -23,7 +24,7 @@ const MODE_LIST = [
 
 interface HomeScreenProps {
   active: boolean;
-  onSelectMode: (mode: string) => void;
+  onSelectMode: (mode: CameraModeId) => void;
   onShowReport: () => void;
   className?: string;
 }

@@ -158,6 +158,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 7, name: '7번', enName: 'Blackout', desc: '색 패널이 순서대로 사라진 뒤 마지막 색을 기억해 타이밍 반응하는 순서 기억 반응.' },
       { id: 8, name: '8번', enName: 'Sweep', desc: '좌→우 타임라인 스윕이 색 밴드를 훑을 때 색 자극에 반응하는 스캔형 반응 훈련.' },
       { id: 9, name: '9번', enName: 'Rush', desc: '원근 레일을 따라 돌진하는 색 세그먼트를 타이밍에 맞춰 반응하는 러시형 훈련.' },
+      { id: 10, name: '블록 두더지', enName: 'Mole Simulator', desc: '3×3 구멍에서 올라오는 색 블록 두더지를 관찰하며 시간/횟수 모드로 반응 지속력을 훈련합니다.' },
     ],
   },
   tbd1: {

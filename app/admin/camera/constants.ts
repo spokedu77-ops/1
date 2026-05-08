@@ -10,13 +10,16 @@ export const DIFF = {
 
 export type DiffKey = keyof typeof DIFF;
 
+export const CAMERA_MODE_IDS = ['speed', 'sequence', 'shape', 'moving', 'balance', 'mirror'] as const;
+export type CameraModeId = (typeof CAMERA_MODE_IDS)[number];
+
 export const PLAYER_COLORS = [
   { hex: '#2563EB', rgba: '37,99,235' },
   { hex: '#D97706', rgba: '217,119,6' },
   { hex: '#16A34A', rgba: '22,163,74' },
 ] as const;
 
-export const MODE_META: Record<string, { label: string; emoji: string }> = {
+export const MODE_META: Record<CameraModeId, { label: string; emoji: string }> = {
   speed:    { label: '스피드 스타',  emoji: '⚡' },
   sequence: { label: '넘버 시퀀스',  emoji: '🔢' },
   shape:    { label: '쉐이프 헌터',  emoji: '🔷' },

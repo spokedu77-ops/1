@@ -19,6 +19,8 @@ type BlackoutState = {
   restDur: number;
   diff: number;
   roundTimer: ReturnType<typeof setTimeout> | null;
+  /** vanish 체인용 — roundTimer만으로는 forEach 타이머가 누락되어 이전 라운드 콜백이 남을 수 있음 */
+  roundTimers: ReturnType<typeof setTimeout>[];
   timer: ReturnType<typeof setInterval> | null;
   stims: number;
   combo: number;
@@ -104,6 +106,10 @@ export function BlackoutReactionTraining({ durationSec, speedLevel, onExit, onCo
       clearTimeout(g.roundTimer);
       g.roundTimer = null;
     }
+    if (g.roundTimers?.length) {
+      for (const t of g.roundTimers) clearTimeout(t);
+      g.roundTimers.length = 0;
+    }
   }, []);
 
   const stopGame = useCallback(() => {
@@ -139,11 +145,17 @@ export function BlackoutReactionTraining({ durationSec, speedLevel, onExit, onCo
       restDur: 760,
       diff,
       roundTimer: null,
+      roundTimers: [],
       timer: null,
       stims: 0,
       combo: 0,
       maxCombo: 0,
       laneCount: [0, 0, 0, 0],
+    };
+
+    const pushRoundTimer = (t: ReturnType<typeof setTimeout>) => {
+      g.roundTimers.push(t);
+      g.roundTimer = t;
     };
     gRef.current = g;
 
@@ -223,29 +235,44 @@ export function BlackoutReactionTraining({ durationSec, speedLevel, onExit, onCo
         );
       }
 
-      g.roundTimer = setTimeout(() => {
-        if (!g.running) return;
-        nextRound();
-      }, g.restDur);
+      pushRoundTimer(
+        setTimeout(() => {
+          if (!g.running) return;
+          nextRound();
+        }, g.restDur)
+      );
     };
+
+    /** 4칸 전부 다시 보인 뒤 소거 시작(직전 라운드와 같은 색이 첫 소거여도 한 박자 보이도록) */
+    const fullGridBeforeVanishMs = 420;
 
     const nextRound = () => {
       if (!g.running) return;
+      clearRoundTimer();
       restoreAll();
-      const vanishSeq = shuffle([0, 1, 2, 3]).slice(0, g.diff);
-      updateSeq(vanishSeq);
-      vanishSeq.forEach((lane, idx) => {
-        g.roundTimer = setTimeout(() => {
+      pushRoundTimer(
+        setTimeout(() => {
           if (!g.running) return;
-          quadRefs.current[lane]?.classList.add('gone');
-          if (idx === vanishSeq.length - 1) {
-            g.roundTimer = setTimeout(() => {
-              const target = vanishSeq[vanishSeq.length - 1];
-              if (typeof target === 'number') onStim(target);
-            }, g.holdDur);
-          }
-        }, idx * g.stepDur);
-      });
+          const vanishSeq = shuffle([0, 1, 2, 3]).slice(0, g.diff);
+          updateSeq(vanishSeq);
+          vanishSeq.forEach((lane, idx) => {
+            pushRoundTimer(
+              setTimeout(() => {
+                if (!g.running) return;
+                quadRefs.current[lane]?.classList.add('gone');
+                if (idx === vanishSeq.length - 1) {
+                  pushRoundTimer(
+                    setTimeout(() => {
+                      const target = vanishSeq[vanishSeq.length - 1];
+                      if (typeof target === 'number') onStim(target);
+                    }, g.holdDur)
+                  );
+                }
+              }, idx * g.stepDur)
+            );
+          });
+        }, fullGridBeforeVanishMs)
+      );
     };
 
     setHudTime();
@@ -258,7 +285,7 @@ export function BlackoutReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (g.timeLeft <= 0) endGame();
     }, 1000);
 
-    g.roundTimer = setTimeout(nextRound, 500);
+    pushRoundTimer(setTimeout(nextRound, 500));
 
     return () => {
       g.running = false;

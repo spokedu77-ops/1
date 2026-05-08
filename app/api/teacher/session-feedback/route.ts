@@ -93,18 +93,32 @@ export async function POST(req: Request) {
     const isCenterType =
       sessionType === 'regular_center' || sessionType === 'one_day_center';
 
+    /** 센터 첨부는 항상 1개만 저장(클라이언트가 여러 URL을 내도 마지막만 반영) */
+    let centerFileUrls = fileUrls;
+    let centerFeedbackFields = feedbackFields;
+    if (isCenterType && fileUrls.length > 1) {
+      centerFileUrls = [fileUrls[fileUrls.length - 1]!];
+      const cn = feedbackFields.center_document_names;
+      if (Array.isArray(cn) && cn.length > 0) {
+        centerFeedbackFields = {
+          ...feedbackFields,
+          center_document_names: [String(cn[cn.length - 1]).replace(/\0/g, '').trim().slice(0, 300)],
+        };
+      }
+    }
+
     const prevFf =
       row.feedback_fields && typeof row.feedback_fields === 'object' && !Array.isArray(row.feedback_fields)
         ? (row.feedback_fields as Record<string, unknown>)
         : {};
 
-    let mergedFeedback: FeedbackFields = { ...feedbackFields };
-    if (isCenterType && fileUrls.length > 0) {
+    let mergedFeedback: FeedbackFields = { ...centerFeedbackFields };
+    if (isCenterType && centerFileUrls.length > 0) {
       mergedFeedback = {
         ...mergedFeedback,
         center_document_names: alignCenterDocumentNamesForSave(
-          fileUrls,
-          feedbackFields.center_document_names,
+          centerFileUrls,
+          centerFeedbackFields.center_document_names,
           prevFf.center_document_names,
         ),
       };
@@ -116,7 +130,7 @@ export async function POST(req: Request) {
     }
 
     if (isCenterType) {
-      if (fileUrls.length === 0) {
+      if (centerFileUrls.length === 0) {
         return NextResponse.json({ error: '파일을 최소 1개 업로드해주세요.' }, { status: 400 });
       }
     } else {
@@ -152,7 +166,7 @@ export async function POST(req: Request) {
         feedback_fields: mergedFeedback,
         students_text: fieldsToTemplateText(mergedFeedback),
         photo_url: photoUrls,
-        file_url: fileUrls,
+        file_url: centerFileUrls,
       })
       .eq('id', sessionId)
       .eq('created_by', user.id)

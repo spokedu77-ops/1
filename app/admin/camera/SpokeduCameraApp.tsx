@@ -7,10 +7,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { DIFF, MODE_META, DEFAULT_SETTINGS } from './constants';
-import type { DiffKey } from './constants';
+import type { CameraModeId, DiffKey } from './constants';
 import * as Store from './store';
-import type { HistoryRecord } from './types';
+import type {
+  CameraControlEnvelope,
+  CameraControlPhase,
+  CameraControlSessionDraft,
+  CameraParticipantMode,
+  CameraPlayerStateSnapshot,
+  CameraSettings,
+  HistoryRecord,
+} from './types';
 import { SFX } from './sfx';
+import { buildActivitySavePayloadFromRecord } from './resultModel';
 import {
   clearSmooth,
   clearTrails,
@@ -95,6 +104,10 @@ export default function SpokeduCameraApp() {
   const [durDisplay, setDurDisplay] = useState(DEFAULT_SETTINGS.dur);
   const [multiDisplay, setMultiDisplay] = useState(DEFAULT_SETTINGS.multiOn);
   const [soundDisplay, setSoundDisplay] = useState(DEFAULT_SETTINGS.soundOn);
+  const [controlSession, setControlSession] = useState<CameraControlSessionDraft | null>(null);
+  const [controlStatus, setControlStatus] = useState('모바일 컨트롤러 연결 준비');
+  const [controlBusy, setControlBusy] = useState(false);
+  const [resultSaveStatus, setResultSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
 
   const stateRef = useRef<GameState>({ ...initialGameState });
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -106,8 +119,41 @@ export default function SpokeduCameraApp() {
   const endLockRef = useRef(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadMediaPipeRunIdRef = useRef(0);
+  const lastAppliedCommandIdRef = useRef<string | null>(null);
 
   const getEl = useCallback((id: string) => document.getElementById(id), []);
+
+  const getCurrentSettings = useCallback((): CameraSettings => {
+    const s = stateRef.current;
+    return {
+      diff: s.diff,
+      dur: s.dur,
+      multiOn: s.multiOn,
+      soundOn: s.soundOn,
+    };
+  }, []);
+
+  const getControlPhase = useCallback((): CameraControlPhase => {
+    const s = stateRef.current;
+    if (curScreen === 'result') return 'ended';
+    if (s.playing && s.paused) return 'paused';
+    if (s.playing) return 'running';
+    if (curScreen === 'lobby') return 'ready';
+    return 'idle';
+  }, [curScreen]);
+
+  const getParticipantMode = useCallback((): CameraParticipantMode => {
+    return stateRef.current.multiOn ? 'multi' : 'solo';
+  }, []);
+
+  const getPlayerSnapshot = useCallback((): CameraPlayerStateSnapshot => ({
+    phase: getControlPhase(),
+    mode: stateRef.current.mode,
+    settings: getCurrentSettings(),
+    participantMode: getParticipantMode(),
+    lastResultId: resultRecord ? `${resultRecord.date}-${resultRecord.mode}-${resultRecord.total}` : null,
+    updatedAt: new Date().toISOString(),
+  }), [getControlPhase, getCurrentSettings, getParticipantMode, resultRecord]);
 
   const showScreen = useCallback((name: 'home' | 'lobby' | 'game' | 'result' | 'report') => {
     setCurScreen(name);
@@ -156,6 +202,39 @@ export default function SpokeduCameraApp() {
     }
   }, [comboFlash, feedback]);
 
+  const saveActivityResult = useCallback(async (record: HistoryRecord) => {
+    setResultSaveStatus('saving');
+    const video = videoRef.current;
+    const root = rootRef.current;
+    const payload = buildActivitySavePayloadFromRecord(record, getCurrentSettings(), {
+      teacherId: null,
+      device: {
+        role: 'player',
+        viewport: root ? { width: Math.round(root.clientWidth), height: Math.round(root.clientHeight) } : undefined,
+        screen: typeof window !== 'undefined' ? { width: window.screen.width, height: window.screen.height } : undefined,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+        camera: video ? { videoWidth: video.videoWidth, videoHeight: video.videoHeight } : undefined,
+        pose: { model: 'pose_landmarker_lite', delegate: isIOSorSafari() ? 'CPU' : 'GPU' },
+      },
+      endedAt: new Date().toISOString(),
+    });
+
+    try {
+      const res = await fetch('/api/admin/camera/activity-results', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        setResultSaveStatus('failed');
+        return;
+      }
+      setResultSaveStatus('saved');
+    } catch {
+      setResultSaveStatus('failed');
+    }
+  }, [getCurrentSettings]);
+
   const endGame = useCallback(() => {
     if (endLockRef.current) return;
     endLockRef.current = true;
@@ -179,10 +258,11 @@ export default function SpokeduCameraApp() {
     const avgRt = s.hitTimes.length
       ? Math.round(s.hitTimes.reduce((a, b) => a + b, 0) / s.hitTimes.length)
       : null;
-    const pb = Store.getBest(s.mode ?? '');
+    const mode = s.mode ?? 'speed';
+    const pb = Store.getBest(mode);
     const rec: HistoryRecord = {
       date: label,
-      mode: s.mode ?? 'speed',
+      mode,
       diff: s.diff,
       dur: s.dur,
       scores: [...s.scores],
@@ -191,9 +271,10 @@ export default function SpokeduCameraApp() {
     };
     Store.addRecord(rec);
     setResultRecord(rec);
+    void saveActivityResult(rec);
     setIsNewPB(s.scores[0]! > pb);
     showScreen('result');
-  }, [getEl, showScreen]);
+  }, [getEl, saveActivityResult, showScreen]);
 
   const onStateUpdate = useCallback((patch: Partial<GameState>) => {
     Object.assign(stateRef.current, patch);
@@ -310,13 +391,15 @@ export default function SpokeduCameraApp() {
     if (!canvas || !root) return;
 
     /**
-     * 캔버스 비트맵을 레이아웃 박스와 1:1로 맞춘다.
-     * 캔버스가 position:absolute로 .root를 가득 채우달로,
-     * root.offsetWidth/Height가 가장 신뢰할 수 있는 크기 소스다.
+     * 캔버스 비트맵을 실제로 보이는 루트 박스와 1:1로 맞춘다.
+     * iPad Safari/PWA에서는 offsetHeight가 주소창/viewport 전환 중 낡은 값을 줄 수 있어
+     * getBoundingClientRect와 visualViewport를 같이 본다.
      */
     const syncCanvasBitmap = () => {
-      const w = Math.max(1, root.offsetWidth);
-      const h = Math.max(1, root.offsetHeight);
+      const rect = root.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const w = Math.max(1, Math.round(rect.width || vv?.width || window.innerWidth));
+      const h = Math.max(1, Math.round(rect.height || vv?.height || window.innerHeight));
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w;
         canvas.height = h;
@@ -326,14 +409,18 @@ export default function SpokeduCameraApp() {
     syncCanvasBitmap();
     const ro = new ResizeObserver(() => syncCanvasBitmap());
     ro.observe(root);
+    window.addEventListener('resize', syncCanvasBitmap);
     window.addEventListener('orientationchange', syncCanvasBitmap);
     const vv = window.visualViewport;
     vv?.addEventListener('resize', syncCanvasBitmap);
+    vv?.addEventListener('scroll', syncCanvasBitmap);
 
     return () => {
       ro.disconnect();
+      window.removeEventListener('resize', syncCanvasBitmap);
       window.removeEventListener('orientationchange', syncCanvasBitmap);
       vv?.removeEventListener('resize', syncCanvasBitmap);
+      vv?.removeEventListener('scroll', syncCanvasBitmap);
     };
   }, []);
 
@@ -475,11 +562,11 @@ export default function SpokeduCameraApp() {
     tick();
   }, [initMode, showScreen]);
 
-  const selectMode = useCallback((mode: string) => {
+  const selectMode = useCallback((mode: CameraModeId) => {
     const meta = MODE_META[mode];
     stateRef.current.mode = mode;
     setLobbyTitle((meta?.emoji ?? '') + ' ' + (meta?.label ?? ''));
-    const descs: Record<string, string> = {
+    const descs: Record<CameraModeId, string> = {
       speed: '화면 곳곳 별을 빠르게 터치하세요. 순발력과 자발적 몰입을 극대화합니다.',
       sequence: '숫자를 1부터 순서대로 터치하세요. 팀 협동으로 진행하면 더욱 효과적입니다.',
       shape: '미션 모양만 정확히 터치하세요. 틀린 모양을 건드리면 감점됩니다!',
@@ -490,15 +577,14 @@ export default function SpokeduCameraApp() {
     setLobbyDesc(descs[mode] ?? '');
 
     const sv = Store.getSettings();
-    const def = DEFAULT_SETTINGS;
-    stateRef.current.diff = (sv.diff as DiffKey) ?? def.diff;
-    setDiffDisplay((sv.diff as DiffKey) ?? def.diff);
-    stateRef.current.dur = sv.dur != null ? Number(sv.dur) : def.dur;
-    setDurDisplay(sv.dur != null ? Number(sv.dur) : def.dur);
-    stateRef.current.multiOn = sv.multiOn !== undefined ? Boolean(sv.multiOn) : def.multiOn;
-    setMultiDisplay(sv.multiOn !== undefined ? Boolean(sv.multiOn) : def.multiOn);
-    stateRef.current.soundOn = sv.soundOn !== undefined ? Boolean(sv.soundOn) : def.soundOn;
-    setSoundDisplay(sv.soundOn !== undefined ? Boolean(sv.soundOn) : def.soundOn);
+    stateRef.current.diff = sv.diff;
+    setDiffDisplay(sv.diff);
+    stateRef.current.dur = sv.dur;
+    setDurDisplay(sv.dur);
+    stateRef.current.multiOn = sv.multiOn;
+    setMultiDisplay(sv.multiOn);
+    stateRef.current.soundOn = sv.soundOn;
+    setSoundDisplay(sv.soundOn);
     SFX.setOn(stateRef.current.soundOn);
 
     showScreen('lobby');
@@ -711,6 +797,8 @@ export default function SpokeduCameraApp() {
     renderReport();
   }, [renderReport]);
 
+  void clearHistory;
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
@@ -734,11 +822,152 @@ export default function SpokeduCameraApp() {
     renderReport();
   }, [renderReport]);
 
+  const createControlSession = useCallback(async () => {
+    setControlBusy(true);
+    setControlStatus('연결 코드를 만드는 중...');
+    try {
+      const res = await fetch('/api/admin/camera/control-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          playerState: getPlayerSnapshot(),
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setControlStatus(typeof json?.error === 'string' ? json.error : '코드 생성 실패');
+        return;
+      }
+      setControlSession(json.session as CameraControlSessionDraft);
+      setControlStatus('모바일에서 이 코드를 입력하세요.');
+    } catch {
+      setControlStatus('네트워크 오류로 코드를 만들지 못했습니다.');
+    } finally {
+      setControlBusy(false);
+    }
+  }, [getPlayerSnapshot]);
+
+  const applyRemoteCommand = useCallback((envelope: CameraControlEnvelope) => {
+    const command = envelope.command;
+    if (command.type === 'selectMode') {
+      selectMode(command.mode);
+      return;
+    }
+    if (command.type === 'applyContentPack') {
+      selectMode(command.mode);
+      if (command.settings.diff) setDiff(command.settings.diff);
+      if (typeof command.settings.dur === 'number') setDur(command.settings.dur);
+      if (typeof command.settings.multiOn === 'boolean') setMulti(command.settings.multiOn);
+      if (typeof command.settings.soundOn === 'boolean') setSound(command.settings.soundOn);
+      return;
+    }
+    if (command.type === 'updateSettings') {
+      if (command.settings.diff) setDiff(command.settings.diff);
+      if (typeof command.settings.dur === 'number') setDur(command.settings.dur);
+      if (typeof command.settings.multiOn === 'boolean') setMulti(command.settings.multiOn);
+      if (typeof command.settings.soundOn === 'boolean') setSound(command.settings.soundOn);
+      return;
+    }
+    if (command.type === 'start') {
+      if (curScreen !== 'game') runCountdown();
+      return;
+    }
+    if (command.type === 'pause') {
+      pause();
+      return;
+    }
+    if (command.type === 'resume') {
+      resume();
+      return;
+    }
+    if (command.type === 'end') {
+      endGame();
+      return;
+    }
+    if (command.type === 'reset') {
+      goHome();
+    }
+  }, [curScreen, endGame, goHome, pause, resume, runCountdown, selectMode, setDiff, setDur, setMulti, setSound]);
+
+  useEffect(() => {
+    if (!controlSession?.id) return;
+
+    let cancelled = false;
+    let polling = false;
+
+    const poll = async () => {
+      if (polling || cancelled) return;
+      polling = true;
+      try {
+        const res = await fetch(`/api/admin/camera/control-session?id=${encodeURIComponent(controlSession.id)}`, {
+          cache: 'no-store',
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (!cancelled) setControlStatus(typeof json?.error === 'string' ? json.error : '컨트롤 세션 확인 실패');
+          return;
+        }
+
+        const session = json.session as CameraControlSessionDraft;
+        if (cancelled || !session) return;
+        setControlSession(session);
+
+        const command = session.lastCommand;
+        const commandId = command?.commandId ?? session.lastCommandId;
+        if (command && commandId && commandId !== lastAppliedCommandIdRef.current && commandId !== session.lastAckCommandId) {
+          lastAppliedCommandIdRef.current = commandId;
+          applyRemoteCommand(command);
+
+          const ack = await fetch('/api/admin/camera/control-session', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              action: 'ack',
+              id: session.id,
+              commandId,
+              playerState: getPlayerSnapshot(),
+            }),
+          });
+          if (ack.ok && !cancelled) {
+            const ackJson = await ack.json().catch(() => ({}));
+            if (ackJson.session) setControlSession(ackJson.session as CameraControlSessionDraft);
+          }
+        }
+
+        if (!cancelled) {
+          setControlStatus(session.status === 'paired' || session.status === 'active' ? '모바일 컨트롤러 연결됨' : '모바일에서 코드를 입력하세요.');
+        }
+      } catch {
+        if (!cancelled) setControlStatus('컨트롤 세션 네트워크 확인 실패');
+      } finally {
+        polling = false;
+      }
+    };
+
+    void poll();
+    const id = window.setInterval(() => void poll(), 900);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [applyRemoteCommand, controlSession?.id, getPlayerSnapshot]);
+
   return (
     <div ref={rootRef} className={styles.root}>
       <video id="videoEl" ref={videoRef} autoPlay playsInline muted />
       <canvas id="gameCanvas" ref={canvasRef} />
       <div id="combo-flash" />
+      <div className={styles['control-pairing']}>
+        <div>
+          <span>Controller</span>
+          <strong>{controlSession?.code ?? '-----'}</strong>
+          <p>{controlStatus}</p>
+        </div>
+        <button type="button" onClick={createControlSession} disabled={controlBusy}>
+          {controlBusy ? '생성 중' : controlSession ? '새 코드' : '코드 생성'}
+        </button>
+      </div>
 
       <HomeScreen active={curScreen === 'home'} onSelectMode={selectMode} onShowReport={showReport} />
       <LobbyScreen
@@ -789,6 +1018,7 @@ export default function SpokeduCameraApp() {
         record={resultRecord}
         multiOn={multiDisplay}
         isNewPB={isNewPB}
+        saveStatus={resultSaveStatus}
         onGoHome={goHome}
         onRestart={restartGame}
         onShowReport={showReport}

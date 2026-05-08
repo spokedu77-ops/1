@@ -1,0 +1,522 @@
+.root {
+  min-height: var(--viewport-height-px, 100dvh);
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 .25rem;
+  color: #2563eb;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.playerLink {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  padding: .55rem .9rem;
+  color: #1e40af;
+  font-size: .9rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.connectionPanel,
+.section,
+.runPanel,
+.resultPreview {
+  border: 1px solid #e2e8f0;
+  border-radius: .5rem;
+  background: #fff;
+  padding: 1rem;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
+  margin-bottom: .85rem;
+}
+
+.connectionPanel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .85rem;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.connectionState {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.connectionState strong,
+.connectionState span {
+  display: block;
+}
+
+.connectionState strong {
+  color: #fff;
+  font-size: .98rem;
+}
+
+.connectionState span {
+  margin-top: .15rem;
+  color: #94a3b8;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.codeField {
+  display: grid;
+  gap: .4rem;
+}
+
+.codeField span,
+.controlGroup > span,
+.toggleRow span,
+.resultGrid span {
+  color: #64748b;
+  font-size: .78rem;
+  font-weight: 850;
+}
+
+.codeField input {
+  min-height: 3rem;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: .5rem;
+  background: rgba(255,255,255,.08);
+  padding: 0 .9rem;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  outline: none;
+}
+
+.connectButton {
+  min-height: 3rem;
+  border: 0;
+  border-radius: .5rem;
+  background: #38bdf8;
+  color: #082f49;
+  font-weight: 950;
+}
+
+.connectButton:disabled {
+  opacity: .55;
+}
+
+.connectionMessage {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin-bottom: .8rem;
+  color: #1e40af;
+}
+
+.sectionTitle .refreshButton {
+  margin-left: auto;
+}
+
+.sectionTitle h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.modeGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .55rem;
+}
+
+.packGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .55rem;
+}
+
+.packButton {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: .7rem;
+  min-height: 4rem;
+  border: 1px solid #e2e8f0;
+  border-radius: .5rem;
+  background: #f8fafc;
+  padding: .75rem;
+  color: #0f172a;
+  text-align: left;
+}
+
+.packButton strong,
+.packButton small {
+  display: block;
+}
+
+.packButton strong {
+  font-size: .95rem;
+  font-weight: 950;
+}
+
+.packButton small {
+  margin-top: .18rem;
+  color: #64748b;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
+.selectedPack {
+  border-color: #0f766e;
+  background: #f0fdfa;
+  box-shadow: inset 0 0 0 1px #0f766e;
+}
+
+.packNote {
+  margin: .75rem 0 0;
+  color: #475569;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
+.modeButton {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .7rem;
+  min-height: 4.2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: .5rem;
+  background: #f8fafc;
+  padding: .75rem;
+  color: #0f172a;
+  text-align: left;
+}
+
+.modeButton.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1px #2563eb;
+}
+
+.modeEmoji {
+  display: inline-grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: .5rem;
+  background: #fff;
+  font-size: 1.35rem;
+}
+
+.modeButton strong,
+.modeButton small {
+  display: block;
+}
+
+.modeButton strong {
+  font-size: .96rem;
+  font-weight: 950;
+}
+
+.modeButton small {
+  margin-top: .18rem;
+  color: #64748b;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
+.controlGroup {
+  display: grid;
+  gap: .45rem;
+  margin-bottom: .85rem;
+}
+
+.segment {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .45rem;
+}
+
+.segment button,
+.resetButton {
+  min-height: 2.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  background: #fff;
+  color: #334155;
+  font-weight: 900;
+}
+
+.segment button.on {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.toggleRow {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.toggleRow input {
+  width: 1.35rem;
+  height: 1.35rem;
+  accent-color: #2563eb;
+}
+
+.runPanel {
+  position: sticky;
+  bottom: max(.75rem, env(safe-area-inset-bottom));
+  z-index: 10;
+  border-color: #bfdbfe;
+}
+
+.runSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .85rem;
+}
+
+.runSummary p {
+  margin: 0 0 .15rem;
+  color: #2563eb;
+  font-size: .78rem;
+  font-weight: 950;
+}
+
+.runSummary strong {
+  display: block;
+  color: #0f172a;
+  font-size: .92rem;
+  line-height: 1.35;
+}
+
+.primaryActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .55rem;
+  margin-bottom: .55rem;
+}
+
+.startButton,
+.pauseButton,
+.endButton,
+.resetButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+}
+
+.startButton,
+.pauseButton,
+.endButton {
+  min-height: 3.2rem;
+  border: 0;
+  border-radius: .5rem;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.startButton {
+  grid-column: span 2;
+  background: #16a34a;
+}
+
+.pauseButton {
+  background: #d97706;
+}
+
+.endButton {
+  background: #dc2626;
+}
+
+.resetButton {
+  width: 100%;
+}
+
+.resultGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .65rem;
+}
+
+.resultGrid > div {
+  border-radius: .5rem;
+  background: #f8fafc;
+  padding: .85rem;
+}
+
+.resultGrid strong {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  margin-top: .3rem;
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.note {
+  margin: .8rem 0 0;
+  color: #64748b;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.refreshButton {
+  min-height: 2rem;
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  background: #fff;
+  padding: 0 .65rem;
+  color: #334155;
+  font-size: .76rem;
+  font-weight: 900;
+}
+
+.resultMessage {
+  margin: 0 0 .75rem;
+  color: #64748b;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.recentList {
+  display: grid;
+  gap: .55rem;
+}
+
+.recentItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: .75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: .5rem;
+  background: #f8fafc;
+  padding: .75rem;
+}
+
+.recentItem strong,
+.recentItem span,
+.recentScore strong,
+.recentScore span {
+  display: block;
+}
+
+.recentItem strong {
+  color: #0f172a;
+  font-size: .92rem;
+  font-weight: 950;
+}
+
+.recentItem span,
+.recentScore span {
+  margin-top: .15rem;
+  color: #64748b;
+  font-size: .76rem;
+  line-height: 1.35;
+}
+
+.recentScore {
+  min-width: 3.6rem;
+  text-align: right;
+}
+
+.recentScore strong {
+  color: #16a34a;
+  font-size: 1.25rem;
+  font-weight: 950;
+}
+
+@media (min-width: 700px) {
+  .root {
+    padding-top: 2rem;
+  }
+
+  .connectionPanel {
+    grid-template-columns: 1fr 170px 92px;
+    align-items: end;
+  }
+
+  .connectionMessage {
+    grid-column: 1 / -1;
+  }
+
+  .modeGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .packGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .root {
+    padding-left: .75rem;
+    padding-right: .75rem;
+  }
+
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .playerLink {
+    width: 100%;
+  }
+
+  .segment {
+    grid-template-columns: 1fr;
+  }
+
+  .primaryActions,
+  .resultGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .startButton {
+    grid-column: auto;
+  }
+}
