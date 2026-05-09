@@ -214,13 +214,15 @@ Current behavior:
 - The result screen shows save status: saving, saved, or failed.
 - The same API now supports `GET` for recent saved results.
 - The mobile controller shows a recent-results panel with mode, time, difficulty, participant count, and top score.
+- The API also supports `GET ?id=` for one activity result detail.
+- Selecting a recent result in the mobile controller opens a detail panel with aggregate metrics and participant rows.
 
-Migration note:
+Migration status:
 
-- `20260508113000_camera_activity_results.sql` must be applied to Supabase before backend result saving can work.
-- Until that migration is applied, gameplay and local history still work, but result upload will fail.
+- `20260508113000_camera_activity_results.sql` has been applied to Supabase.
+- Gameplay and local history still save first, so the result screen remains usable even if a backend upload fails.
 
 Next expansion:
 
 - Link results to class/session/student context once the controller has roster selection.
-- Add a dedicated review/detail screen for one activity result.
+- Add coaching notes and class/student linking to the result detail panel.

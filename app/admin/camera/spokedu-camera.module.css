@@ -621,7 +621,8 @@
 }
 
 .root .control-pairing span,
-.root .control-pairing p {
+.root .control-pairing p,
+.root .control-pairing small {
   display: block;
   margin: 0;
   color: #cbd5e1;
@@ -645,6 +646,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.root .control-pairing small {
+  margin-top: .2rem;
+  color: #7dd3fc;
+  font-family: var(--spokedu-fen);
+  letter-spacing: .02em;
 }
 
 .root .control-pairing button {

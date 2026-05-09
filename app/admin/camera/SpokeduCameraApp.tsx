@@ -6,12 +6,13 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { DIFF, MODE_META, DEFAULT_SETTINGS } from './constants';
+import { DIFF, MODE_META, DEFAULT_SETTINGS, MAX_CAMERA_PARTICIPANTS } from './constants';
 import type { CameraModeId, DiffKey } from './constants';
 import * as Store from './store';
 import type {
   CameraControlEnvelope,
   CameraControlPhase,
+  CameraParticipantSlot,
   CameraControlSessionDraft,
   CameraParticipantMode,
   CameraPlayerStateSnapshot,
@@ -120,6 +121,7 @@ export default function SpokeduCameraApp() {
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadMediaPipeRunIdRef = useRef(0);
   const lastAppliedCommandIdRef = useRef<string | null>(null);
+  const participantSlotsRef = useRef<CameraParticipantSlot[]>([]);
 
   const getEl = useCallback((id: string) => document.getElementById(id), []);
 
@@ -130,6 +132,7 @@ export default function SpokeduCameraApp() {
       dur: s.dur,
       multiOn: s.multiOn,
       soundOn: s.soundOn,
+      participantSlots: participantSlotsRef.current,
     };
   }, []);
 
@@ -294,6 +297,7 @@ export default function SpokeduCameraApp() {
       diff: s.diff,
       dur: s.dur,
       scores: [...s.scores],
+      participantSlots: participantSlotsRef.current,
       avgRt,
       total: s.scores.reduce((a, b) => a + b, 0),
     };
@@ -373,7 +377,7 @@ export default function SpokeduCameraApp() {
           PoseLandmarker.createFromOptions(wasmFileset, {
             baseOptions: { modelAssetPath: modelPath, delegate },
             runningMode: 'VIDEO',
-            numPoses: 3,
+            numPoses: MAX_CAMERA_PARTICIPANTS,
             minPoseDetectionConfidence: 0.55,
             minPosePresenceConfidence: 0.55,
             minTrackingConfidence: 0.55,
@@ -617,6 +621,7 @@ export default function SpokeduCameraApp() {
     setMultiDisplay(sv.multiOn);
     stateRef.current.soundOn = sv.soundOn;
     setSoundDisplay(sv.soundOn);
+    participantSlotsRef.current = sv.participantSlots ?? [];
     SFX.setOn(stateRef.current.soundOn);
 
     showScreen('lobby');
@@ -657,6 +662,13 @@ export default function SpokeduCameraApp() {
     SFX.setOn(v);
     if (!Store.saveSettings({ soundOn: v })) {
       toast.error('설정 저장에 실패했습니다. 브라우저 설정을 확인해 주세요.');
+    }
+  }, []);
+
+  const setParticipantSlots = useCallback((slots: CameraParticipantSlot[]) => {
+    participantSlotsRef.current = slots;
+    if (!Store.saveSettings({ participantSlots: slots })) {
+      toast.error('설정 저장에 실패했습니다.');
     }
   }, []);
 
@@ -892,6 +904,7 @@ export default function SpokeduCameraApp() {
       if (typeof command.settings.dur === 'number') setDur(command.settings.dur);
       if (typeof command.settings.multiOn === 'boolean') setMulti(command.settings.multiOn);
       if (typeof command.settings.soundOn === 'boolean') setSound(command.settings.soundOn);
+      if (Array.isArray(command.settings.participantSlots)) setParticipantSlots(command.settings.participantSlots);
       return;
     }
     if (command.type === 'updateSettings') {
@@ -899,6 +912,7 @@ export default function SpokeduCameraApp() {
       if (typeof command.settings.dur === 'number') setDur(command.settings.dur);
       if (typeof command.settings.multiOn === 'boolean') setMulti(command.settings.multiOn);
       if (typeof command.settings.soundOn === 'boolean') setSound(command.settings.soundOn);
+      if (Array.isArray(command.settings.participantSlots)) setParticipantSlots(command.settings.participantSlots);
       return;
     }
     if (command.type === 'start') {
@@ -920,7 +934,7 @@ export default function SpokeduCameraApp() {
     if (command.type === 'reset') {
       goHome();
     }
-  }, [curScreen, endGame, goHome, pause, resume, runCountdown, selectMode, setDiff, setDur, setMulti, setSound]);
+  }, [curScreen, endGame, goHome, pause, resume, runCountdown, selectMode, setDiff, setDur, setMulti, setParticipantSlots, setSound]);
 
   useEffect(() => {
     if (!controlSession?.id) return;
@@ -1015,9 +1029,10 @@ export default function SpokeduCameraApp() {
       <div id="combo-flash" />
       <div className={styles['control-pairing']}>
         <div>
-          <span>Controller</span>
+          <span>Mobile Controller</span>
           <strong>{controlSession?.code ?? '-----'}</strong>
           <p>{controlStatus}</p>
+          <small>/admin/camera/control</small>
         </div>
         <button type="button" onClick={createControlSession} disabled={controlBusy}>
           {controlBusy ? '생성 중' : controlSession ? '새 코드' : '코드 생성'}

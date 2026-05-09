@@ -6,9 +6,10 @@ import type {
   CameraSettings,
   HistoryRecord,
 } from './types';
+import { MAX_CAMERA_PARTICIPANTS } from './constants';
 
 export function buildActivityMetrics(record: HistoryRecord): CameraActivityMetrics {
-  const scores = record.scores.map((score) => Number(score) || 0);
+  const scores = record.scores.slice(0, MAX_CAMERA_PARTICIPANTS).map((score) => Number(score) || 0);
   const activeParticipants = Math.max(1, scores.filter((score) => score > 0).length);
 
   return {
@@ -16,15 +17,19 @@ export function buildActivityMetrics(record: HistoryRecord): CameraActivityMetri
     avgReactionMs: record.avgRt,
     hitCount: record.total,
     activeParticipants,
-    modeSpecific: {},
+    modeSpecific: { maxTrackedParticipants: MAX_CAMERA_PARTICIPANTS },
   };
 }
 
 export function buildActivityParticipants(record: HistoryRecord): CameraActivityParticipantDraft[] {
+  const slots = record.participantSlots ?? [];
   return record.scores
+    .slice(0, MAX_CAMERA_PARTICIPANTS)
     .map((score, index) => ({
+      studentId: slots[index]?.studentId ?? null,
+      teamId: slots[index]?.teamId ?? null,
       slotIndex: index,
-      displayName: `P${index + 1}`,
+      displayName: slots[index]?.displayName || `P${index + 1}`,
       score: Number(score) || 0,
       avgReactionMs: index === 0 ? record.avgRt : null,
       hitCount: Number(score) || 0,

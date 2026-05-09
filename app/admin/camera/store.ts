@@ -2,8 +2,8 @@
  * SPOKEDU 카메라 앱 — localStorage 기반 저장소
  */
 
-import { CAMERA_MODE_IDS, DEFAULT_SETTINGS, DIFF, STORAGE_KEY } from './constants';
-import type { CameraSettings, HistoryRecord } from './types';
+import { ACTIVE_CAMERA_MODE_IDS, DEFAULT_SETTINGS, DIFF, MAX_CAMERA_PARTICIPANTS, STORAGE_KEY } from './constants';
+import type { CameraParticipantSlot, CameraSettings, HistoryRecord } from './types';
 
 export interface StoredData {
   history: HistoryRecord[];
@@ -19,12 +19,26 @@ function normalizeDuration(value: unknown): number {
   return [20, 30, 60].includes(n) ? n : DEFAULT_SETTINGS.dur;
 }
 
+function normalizeParticipantSlots(value: unknown): CameraParticipantSlot[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
+    .slice(0, MAX_CAMERA_PARTICIPANTS)
+    .map((item, index) => ({
+      slotIndex: Number.isFinite(Number(item.slotIndex)) ? Number(item.slotIndex) : index,
+      displayName: typeof item.displayName === 'string' ? item.displayName.trim().slice(0, 40) : '',
+      studentId: typeof item.studentId === 'string' && item.studentId.trim() ? item.studentId.trim() : null,
+      teamId: typeof item.teamId === 'string' && item.teamId.trim() ? item.teamId.trim().slice(0, 80) : null,
+    }));
+}
+
 function normalizeSettings(raw: Partial<CameraSettings> | Record<string, unknown> | null | undefined): CameraSettings {
   return {
     diff: isDiffKey(raw?.diff) ? raw.diff : DEFAULT_SETTINGS.diff,
     dur: normalizeDuration(raw?.dur),
     multiOn: raw?.multiOn !== undefined ? Boolean(raw.multiOn) : DEFAULT_SETTINGS.multiOn,
     soundOn: raw?.soundOn !== undefined ? Boolean(raw.soundOn) : DEFAULT_SETTINGS.soundOn,
+    participantSlots: normalizeParticipantSlots(raw?.participantSlots),
   };
 }
 
@@ -32,13 +46,14 @@ function normalizeHistory(raw: unknown): HistoryRecord[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
-    .filter((item) => typeof item.mode === 'string' && CAMERA_MODE_IDS.includes(item.mode as never))
+    .filter((item) => typeof item.mode === 'string' && ACTIVE_CAMERA_MODE_IDS.includes(item.mode as never))
     .map((item) => ({
       date: typeof item.date === 'string' ? item.date : '',
       mode: item.mode as HistoryRecord['mode'],
       diff: isDiffKey(item.diff) ? item.diff : DEFAULT_SETTINGS.diff,
       dur: typeof item.dur === 'number' ? item.dur : normalizeDuration(item.dur),
-      scores: Array.isArray(item.scores) ? item.scores.map((s) => Number(s) || 0).slice(0, 3) : [0, 0, 0],
+      scores: Array.isArray(item.scores) ? item.scores.map((s) => Number(s) || 0).slice(0, MAX_CAMERA_PARTICIPANTS) : [0, 0, 0],
+      participantSlots: normalizeParticipantSlots(item.participantSlots),
       avgRt: typeof item.avgRt === 'number' ? item.avgRt : null,
       total: typeof item.total === 'number' ? item.total : 0,
     }));

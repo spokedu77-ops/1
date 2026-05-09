@@ -108,8 +108,11 @@ function processLandmarks(
         const tx = t.x * cW;
         const ty = t.y * cH;
         const tr = t.r * Math.min(cW, cH);
+        const hitPadding = state.mode === 'shape' || state.mode === 'sequence'
+          ? Math.min(cW, cH) * 0.025
+          : Math.min(cW, cH) * 0.07;
         const dist = Math.hypot(sp.x - tx, sp.y - ty);
-        if (dist < tr + Math.min(cW, cH) * 0.07) {
+        if (dist < tr + hitPadding) {
           targets.handleHit(state, t, i, pi, now, {
             addScore: callbacks.addScore,
             feedback: callbacks.feedback,

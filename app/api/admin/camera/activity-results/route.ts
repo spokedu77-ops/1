@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
-import { CAMERA_MODE_IDS, DIFF } from '@/app/admin/camera/constants';
+import { CAMERA_MODE_IDS, DIFF, MAX_CAMERA_PARTICIPANTS } from '@/app/admin/camera/constants';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import type {
   CameraActivityDeviceInfo,
   CameraActivityMetrics,
   CameraActivityParticipantDraft,
+  CameraActivityResultDetail,
+  CameraActivityResultParticipant,
   CameraActivityResultSummary,
   CameraActivitySavePayload,
   CameraActivitySessionDraft,
@@ -56,7 +58,21 @@ function cleanSettings(
     dur,
     multiOn: typeof value.multiOn === 'boolean' ? value.multiOn : fallback.multiOn,
     soundOn: typeof value.soundOn === 'boolean' ? value.soundOn : true,
+    participantSlots: cleanParticipantSlots(value.participantSlots),
   };
+}
+
+function cleanParticipantSlots(value: unknown): CameraSettings['participantSlots'] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(isRecord)
+    .slice(0, MAX_CAMERA_PARTICIPANTS)
+    .map((item, index) => ({
+      slotIndex: Number.isFinite(Number(item.slotIndex)) ? Number(item.slotIndex) : index,
+      displayName: typeof item.displayName === 'string' ? item.displayName.trim().slice(0, 80) : '',
+      studentId: cleanUuid(item.studentId),
+      teamId: typeof item.teamId === 'string' && item.teamId.trim() ? item.teamId.trim().slice(0, 80) : null,
+    }));
 }
 
 function cleanMetrics(value: unknown): CameraActivityMetrics {
@@ -162,7 +178,7 @@ function validateParticipants(value: unknown): CameraActivityParticipantDraft[] 
   if (!Array.isArray(value)) return [];
   return value
     .filter(isRecord)
-    .slice(0, 12)
+    .slice(0, MAX_CAMERA_PARTICIPANTS)
     .map((item, index) => ({
       studentId: cleanUuid(item.studentId),
       teamId: typeof item.teamId === 'string' && item.teamId.trim() ? item.teamId.trim().slice(0, 80) : null,
@@ -182,14 +198,49 @@ function validateParticipants(value: unknown): CameraActivityParticipantDraft[] 
 
 type ResultRow = {
   id: string;
+  source?: CameraActivitySessionDraft['source'];
   mode: CameraActivityResultSummary['mode'];
   difficulty: CameraActivityResultSummary['difficulty'];
   duration_sec: number;
   participant_mode: CameraParticipantMode;
+  settings?: CameraSettings;
   metrics: CameraActivityResultSummary['metrics'];
+  device?: CameraActivityDeviceInfo | null;
+  started_at?: string | null;
+  ended_at?: string | null;
   created_at: string;
-  camera_activity_participants?: Array<{ score: number | null }>;
+  camera_activity_participants?: Array<{
+    id?: string;
+    slot_index?: number | null;
+    student_id?: string | null;
+    team_id?: string | null;
+    display_name?: string | null;
+    score: number | null;
+    avg_reaction_ms?: number | null;
+    hit_count?: number | null;
+    miss_count?: number | null;
+    metrics?: Record<string, unknown> | null;
+  }>;
 };
+
+function mapParticipant(row: NonNullable<ResultRow['camera_activity_participants']>[number], index: number): CameraActivityResultParticipant {
+  return {
+    id: row.id ?? `${index}`,
+    slotIndex: Number.isFinite(Number(row.slot_index)) ? Number(row.slot_index) : index,
+    studentId: typeof row.student_id === 'string' ? row.student_id : null,
+    teamId: typeof row.team_id === 'string' ? row.team_id : null,
+    displayName: typeof row.display_name === 'string' && row.display_name ? row.display_name : `P${index + 1}`,
+    score: Math.max(0, Math.round(Number(row.score) || 0)),
+    avgReactionMs: row.avg_reaction_ms != null && Number.isFinite(Number(row.avg_reaction_ms))
+      ? Math.max(0, Math.round(Number(row.avg_reaction_ms)))
+      : null,
+    hitCount: Math.max(0, Math.round(Number(row.hit_count) || 0)),
+    missCount: row.miss_count != null && Number.isFinite(Number(row.miss_count))
+      ? Math.max(0, Math.round(Number(row.miss_count)))
+      : null,
+    metrics: isRecord(row.metrics) ? row.metrics : {},
+  };
+}
 
 function mapResultRow(row: ResultRow): CameraActivityResultSummary {
   const scores = (row.camera_activity_participants ?? []).map((p) => Number(p.score) || 0);
@@ -206,15 +257,79 @@ function mapResultRow(row: ResultRow): CameraActivityResultSummary {
   };
 }
 
+function mapResultDetail(row: ResultRow): CameraActivityResultDetail {
+  const summary = mapResultRow(row);
+  const participants = (row.camera_activity_participants ?? [])
+    .map(mapParticipant)
+    .sort((a, b) => a.slotIndex - b.slotIndex);
+
+  return {
+    ...summary,
+    source: row.source ?? 'player',
+    settings: row.settings ?? {
+      diff: row.difficulty,
+      dur: row.duration_sec,
+      multiOn: row.participant_mode !== 'solo',
+      soundOn: true,
+    },
+    device: row.device ?? null,
+    startedAt: row.started_at ?? null,
+    endedAt: row.ended_at ?? null,
+    participants,
+    participantCount: Math.max(1, participants.length || summary.participantCount),
+    topScore: participants.length ? Math.max(...participants.map((p) => p.score)) : summary.topScore,
+  };
+}
+
 export async function GET(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
   const url = new URL(request.url);
+  const id = url.searchParams.get('id') ?? '';
   const limitParam = Number(url.searchParams.get('limit') ?? 10);
   const limit = Number.isFinite(limitParam) ? Math.min(Math.max(Math.round(limitParam), 1), 30) : 10;
 
   const supabase = getServiceSupabase();
+  if (id) {
+    const { data, error } = await supabase
+      .from('camera_activity_sessions')
+      .select(`
+        id,
+        source,
+        mode,
+        difficulty,
+        duration_sec,
+        participant_mode,
+        settings,
+        metrics,
+        device,
+        started_at,
+        ended_at,
+        created_at,
+        camera_activity_participants(
+          id,
+          slot_index,
+          student_id,
+          team_id,
+          display_name,
+          score,
+          avg_reaction_ms,
+          hit_count,
+          miss_count,
+          metrics
+        )
+      `)
+      .eq('id', id)
+      .eq('created_by', auth.userId)
+      .maybeSingle();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!data) return NextResponse.json({ error: 'Result not found' }, { status: 404 });
+
+    return NextResponse.json({ result: mapResultDetail(data as ResultRow) });
+  }
+
   const { data, error } = await supabase
     .from('camera_activity_sessions')
     .select(`

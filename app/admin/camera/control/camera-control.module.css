@@ -1,9 +1,15 @@
 .root {
+  height: var(--viewport-height-px, 100dvh);
   min-height: var(--viewport-height-px, 100dvh);
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
   padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   background: #f8fafc;
   color: #0f172a;
 }
@@ -301,6 +307,79 @@
   accent-color: #2563eb;
 }
 
+.slotGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .45rem;
+}
+
+.classSelect {
+  min-height: 2.65rem;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  background: #fff;
+  padding: 0 .75rem;
+  color: #0f172a;
+  font-size: .88rem;
+  font-weight: 850;
+  outline: none;
+}
+
+.slotField {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  align-items: center;
+  gap: .5rem;
+}
+
+.slotField span {
+  color: #475569;
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.slotField input {
+  min-height: 2.65rem;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  background: #fff;
+  padding: 0 .75rem;
+  color: #0f172a;
+  font-size: .92rem;
+  font-weight: 800;
+  outline: none;
+}
+
+.slotField select {
+  grid-column: 2;
+  min-height: 2.45rem;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  background: #fff;
+  padding: 0 .7rem;
+  color: #334155;
+  font-size: .82rem;
+  font-weight: 800;
+  outline: none;
+}
+
+.classSelect:focus,
+.slotField input:focus,
+.slotField select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.slotNote {
+  margin: .45rem 0 0;
+  color: #64748b;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
 .runPanel {
   position: sticky;
   bottom: max(.75rem, env(safe-area-inset-bottom));
@@ -431,10 +510,19 @@
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: .75rem;
+  width: 100%;
   border: 1px solid #e2e8f0;
   border-radius: .5rem;
   background: #f8fafc;
   padding: .75rem;
+  color: inherit;
+  text-align: left;
+}
+
+.selectedResult {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1px #2563eb;
 }
 
 .recentItem strong,
@@ -466,6 +554,89 @@
 .recentScore strong {
   color: #16a34a;
   font-size: 1.25rem;
+  font-weight: 950;
+}
+
+.detailPanel {
+  display: grid;
+  gap: .8rem;
+  margin-top: .85rem;
+  border: 1px solid #bfdbfe;
+  border-radius: .5rem;
+  background: #f8fafc;
+  padding: .85rem;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.detailHeader span,
+.detailHeader strong {
+  display: block;
+}
+
+.detailHeader span {
+  color: #64748b;
+  font-size: .76rem;
+  font-weight: 850;
+}
+
+.detailHeader strong {
+  margin-top: .15rem;
+  color: #0f172a;
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.detailMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .55rem;
+}
+
+.detailMetrics > div {
+  border-radius: .5rem;
+  background: #fff;
+  padding: .75rem;
+}
+
+.detailMetrics span,
+.participantItem span {
+  display: block;
+  color: #64748b;
+  font-size: .74rem;
+  font-weight: 850;
+}
+
+.detailMetrics strong {
+  display: block;
+  margin-top: .25rem;
+  color: #0f172a;
+  font-size: 1.12rem;
+  font-weight: 950;
+}
+
+.participantList {
+  display: grid;
+  gap: .45rem;
+}
+
+.participantItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: .55rem;
+}
+
+.participantItem strong {
+  color: #0f172a;
+  font-size: .92rem;
   font-weight: 950;
 }
 
@@ -512,7 +683,8 @@
   }
 
   .primaryActions,
-  .resultGrid {
+  .resultGrid,
+  .detailMetrics {
     grid-template-columns: 1fr;
   }
 

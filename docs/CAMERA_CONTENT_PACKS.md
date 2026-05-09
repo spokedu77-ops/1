@@ -34,11 +34,10 @@ Selecting a pack updates:
 ## Initial Packs
 
 - Reaction warmup: lower elementary, speed mode, 20 seconds, easy, multi.
-- Memory sequence: mixed age, sequence mode, 30 seconds, normal, solo.
+- Sequence follow: mixed age, sequence mode, 30 seconds, normal, solo.
 - Shape attention: preschool, shape mode, 30 seconds, easy, multi.
-- Moving agility: upper elementary, moving mode, 30 seconds, hard, multi.
-- Balance focus: mixed age, balance mode, 30 seconds, normal, solo.
-- Mirror coordination: lower elementary, mirror mode, 30 seconds, normal, multi.
+
+The first production surface intentionally exposes only these three packs. Moving, balance, and mirror remain internal experiments until their pose/tracking behavior is reliable enough for class use.
 
 ## Command Protocol
 

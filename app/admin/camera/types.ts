@@ -9,6 +9,14 @@ export interface CameraSettings {
   dur: number;
   multiOn: boolean;
   soundOn: boolean;
+  participantSlots?: CameraParticipantSlot[];
+}
+
+export interface CameraParticipantSlot {
+  slotIndex: number;
+  displayName: string;
+  studentId?: string | null;
+  teamId?: string | null;
 }
 
 export type CameraActivitySource = 'player' | 'controller' | 'demo' | 'import';
@@ -139,6 +147,28 @@ export interface CameraActivityResultSummary {
   topScore: number;
 }
 
+export interface CameraActivityResultParticipant {
+  id: string;
+  slotIndex: number;
+  studentId?: string | null;
+  teamId?: string | null;
+  displayName: string | null;
+  score: number;
+  avgReactionMs: number | null;
+  hitCount: number;
+  missCount: number | null;
+  metrics?: Record<string, unknown>;
+}
+
+export interface CameraActivityResultDetail extends CameraActivityResultSummary {
+  source: CameraActivitySource;
+  settings: CameraSettings;
+  device: CameraActivityDeviceInfo | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  participants: CameraActivityResultParticipant[];
+}
+
 export interface Target {
   x: number;
   y: number;
@@ -146,6 +176,7 @@ export interface Target {
   fill: string;
   glow?: string;
   label?: string;
+  bonusMultiplier?: number;
   shape?: 'circle' | 'square' | 'triangle';
   number?: number;
   hitLocked?: boolean;
@@ -184,6 +215,7 @@ export interface CameraResultRecord {
   diff: DiffKey;
   dur: number;
   scores: number[];
+  participantSlots?: CameraParticipantSlot[];
   avgRt: number | null;
   total: number;
 }

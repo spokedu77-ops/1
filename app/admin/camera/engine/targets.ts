@@ -1,6 +1,5 @@
 /**
- * SPOKEDU 카메라 앱 — 타겟 스폰·그리기·히트
- * state는 읽기 전용, 변경은 onStateUpdate 콜백으로만 위임
+ * Target spawning, drawing, and hit resolution for SPOKEDU camera games.
  */
 
 import {
@@ -17,17 +16,19 @@ import type { StateUpdate } from './pose';
 function rp(): { x: number; y: number } {
   return { x: 0.1 + Math.random() * 0.8, y: 0.15 + Math.random() * 0.72 };
 }
+
 function rc(): string {
   return COLOR_POOL[Math.floor(Math.random() * COLOR_POOL.length)]!;
 }
 
 const SEQ_POSITIONS = [
-  { x: 0.15, y: 0.2 }, { x: 0.82, y: 0.25 }, { x: 0.2, y: 0.78 },
-  { x: 0.78, y: 0.75 }, { x: 0.5, y: 0.5 }, { x: 0.35, y: 0.45 },
+  { x: 0.16, y: 0.2 }, { x: 0.84, y: 0.22 }, { x: 0.16, y: 0.78 },
+  { x: 0.84, y: 0.78 }, { x: 0.5, y: 0.18 }, { x: 0.5, y: 0.82 },
 ];
+
 const SHAPE_POSITIONS = [
-  { x: 0.2, y: 0.3 }, { x: 0.78, y: 0.3 }, { x: 0.5, y: 0.68 },
-  { x: 0.3, y: 0.6 }, { x: 0.7, y: 0.6 }, { x: 0.5, y: 0.25 },
+  { x: 0.18, y: 0.28 }, { x: 0.82, y: 0.28 }, { x: 0.5, y: 0.74 },
+  { x: 0.18, y: 0.72 }, { x: 0.82, y: 0.72 }, { x: 0.5, y: 0.24 },
 ];
 
 export function drawTarget(
@@ -82,9 +83,16 @@ export function drawTarget(
 export function spawnSpeed(state: Readonly<GameState>, onStateUpdate: StateUpdate): void {
   const p = rp();
   const cfg = DIFF[state.diff];
+  const isBonus = Math.random() < 0.18;
   const newTarget: Target = {
-    x: p.x, y: p.y, r: cfg.r, fill: rc(),
-    glow: 'rgba(250,204,21,0.3)', label: '★', shape: 'circle',
+    x: p.x,
+    y: p.y,
+    r: isBonus ? cfg.r * 1.15 : cfg.r,
+    fill: isBonus ? '#F59E0B' : rc(),
+    glow: isBonus ? 'rgba(245,158,11,0.42)' : 'rgba(250,204,21,0.3)',
+    label: isBonus ? '+2' : '',
+    bonusMultiplier: isBonus ? 2 : 1,
+    shape: 'circle',
     spawnTime: performance.now(),
   };
   onStateUpdate({ targets: [...state.targets, newTarget] });
@@ -95,8 +103,13 @@ export function createMovingTarget(state: Readonly<GameState>): Target {
   const cfg = DIFF[state.diff];
   const sp = cfg.speed;
   return {
-    x: p.x, y: p.y, r: cfg.r, fill: rc(),
-    glow: 'rgba(250,204,21,0.25)', label: '★', shape: 'circle',
+    x: p.x,
+    y: p.y,
+    r: cfg.r,
+    fill: rc(),
+    glow: 'rgba(250,204,21,0.25)',
+    label: '',
+    shape: 'circle',
     vx: (Math.random() - 0.5) * sp * 2,
     vy: (Math.random() - 0.5) * sp * 2,
     spawnTime: performance.now(),
@@ -114,10 +127,14 @@ export function spawnSequence(state: Readonly<GameState>, onStateUpdate: StateUp
   const targets: Target[] = positions.map((pos, i) => {
     const num = i + 1;
     return {
-      x: pos.x, y: pos.y, r: DIFF[state.diff].r,
+      x: pos.x,
+      y: pos.y,
+      r: Math.min(DIFF[state.diff].r, 0.085),
       fill: num === 1 ? '#2563EB' : '#94A3B8',
       glow: num === 1 ? 'rgba(37,99,235,0.3)' : 'rgba(0,0,0,0.05)',
-      label: String(num), shape: 'circle' as const, number: num,
+      label: String(num),
+      shape: 'circle' as const,
+      number: num,
       spawnTime: num === 1 ? now : undefined,
     };
   });
@@ -131,16 +148,23 @@ export function spawnShape(
 ): void {
   const arr = [...SHAPES].sort(() => Math.random() - 0.5);
   const targetShape = arr[0]!;
-  setMissionText(SHAPE_KO[targetShape] + ' 터치하기!');
+  setMissionText(`${SHAPE_KO[targetShape]} 터치하기!`);
   const positions = [...SHAPE_POSITIONS].sort(() => Math.random() - 0.5);
   const now = performance.now();
   const targets: Target[] = [];
-  for (let i = 0; i < 4; i++) {
-    const st = i === 0 ? targetShape : SHAPES[Math.floor(Math.random() * SHAPES.length)]!;
+  const distractors = SHAPES.filter((shape) => shape !== targetShape);
+
+  for (let i = 0; i < 3; i++) {
+    const st = i === 0 ? targetShape : distractors[(i - 1) % distractors.length]!;
     targets.push({
-      x: positions[i]!.x, y: positions[i]!.y, r: DIFF[state.diff].r * 1.1,
+      x: positions[i]!.x,
+      y: positions[i]!.y,
+      r: Math.min(DIFF[state.diff].r, 0.082),
       fill: st === targetShape ? '#7C3AED' : rc(),
-      glow: 'rgba(124,58,237,0.2)', shape: st, shapeType: st, spawnTime: now,
+      glow: 'rgba(124,58,237,0.2)',
+      shape: st,
+      shapeType: st,
+      spawnTime: now,
     });
   }
   onStateUpdate({ targets, targetShape });
@@ -176,7 +200,8 @@ export function handleHit(
   if (state.mode === 'speed') {
     const newTargets = state.targets.filter((_, i) => i !== idx);
     callbacks.onStateUpdate({ targets: newTargets });
-    callbacks.addScore(pi, Math.round(10 * cfg.bonus));
+    callbacks.addScore(pi, Math.round(10 * cfg.bonus * (t.bonusMultiplier ?? 1)));
+    if ((t.bonusMultiplier ?? 1) > 1) callbacks.feedback('Bonus +2!');
     spawnSpeed({ ...state, targets: newTargets }, callbacks.onStateUpdate);
     spawnParticles(t.x, t.y, cW, cH);
   } else if (state.mode === 'moving') {
@@ -198,7 +223,8 @@ export function handleHit(
       callbacks.onStateUpdate({ targets: updated, expectedNum: newExpectedNum });
       callbacks.addScore(pi, Math.round(20 * cfg.bonus));
       if (updated.length === 0) {
-        callbacks.feedback('🤝 완벽한 팀워크!');
+        callbacks.addScore(pi, Math.round(20 * cfg.bonus));
+        callbacks.feedback('Sequence clear bonus!');
         spawnSequence({ ...state, targets: [], expectedNum: 1 }, callbacks.onStateUpdate);
       }
       spawnParticles(t.x, t.y, cW, cH);
@@ -207,15 +233,15 @@ export function handleHit(
     if (t.shapeType === state.targetShape) {
       callbacks.addScore(pi, Math.round(20 * cfg.bonus));
       SFX.combo();
-      callbacks.feedback('✅ 정확한 판단!');
+      callbacks.feedback('Correct!');
       const newTargets = state.targets.filter((_, i) => i !== idx);
       spawnShape({ ...state, targets: newTargets }, callbacks.setMissionText, callbacks.onStateUpdate);
     } else {
       const newScores = [...state.scores];
-      newScores[pi] = Math.max(0, (newScores[pi] ?? 0) - 5);
+      newScores[pi] = Math.max(0, (newScores[pi] ?? 0) - 3);
       callbacks.onStateUpdate({ scores: newScores });
       SFX.miss();
-      callbacks.feedback('❌ 다른 모양이에요!', true);
+      callbacks.feedback('Different shape!', true);
     }
   }
 }

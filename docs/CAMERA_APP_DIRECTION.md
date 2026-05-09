@@ -101,6 +101,7 @@ Those should move into the future controller and result/reporting layers.
 7. Connect the mobile controller to the player.
 8. Add content packs by class goal and age group.
 9. Save results to backend storage.
+10. Link results to participants, teams, and class context.
 
 ## Current Step Status
 
@@ -111,9 +112,11 @@ Those should move into the future controller and result/reporting layers.
 - Step 5 complete: first mobile controller route exists at `/admin/camera/control`.
 - Step 6 complete: player-controller connection method is decided as short-lived session row plus polling.
 - Step 7 implementation complete in code: control-session migration, API, controller join/command flow, player code display, polling, and command application exist.
-- Step 7 DB pending: `camera_control_sessions` must still be applied to Supabase before the connected flow can run against the real backend.
-- Step 8 started: first controller-side content packs exist for age band, class goal, mode, duration, difficulty, and participant setup.
-- Step 9 continued: activity result migration, save API, player auto-save, result save status display, and controller recent-results review exist in code.
+- Step 7 complete: `camera_control_sessions` has been applied to Supabase and the connected controller flow can run against the backend.
+- Step 8 complete for the first production surface: controller-side content packs exist for age band, class goal, mode, duration, difficulty, and participant setup.
+- Step 8 scope tightened: the production surface currently exposes only speed, sequence, and shape. Moving, balance, and mirror are held back until they are reliable.
+- Step 9 complete for the first production surface: activity result migration is applied, save API exists, player auto-save runs, result save status is visible, and controller recent-results review is available.
+- Step 10 started: simultaneous play policy is set to recommended 2 players and maximum 3 tracked players; roster/team assignment is next.
 
 ## Responsive Targets
 

@@ -1,26 +1,64 @@
 'use client';
 
 import Link from 'next/link';
-import type { CameraModeId } from '../constants';
+import { ACTIVE_CAMERA_MODE_IDS, type CameraModeId } from '../constants';
 import styles from '../spokedu-camera.module.css';
 
 const MODE_DESCS: Record<CameraModeId, { title: string; color: string; bg: string; badge: string }> = {
-  speed:    { title: '스피드 스타',   color: 'var(--spokedu-primary)', bg: '#EFF6FF', badge: 'var(--spokedu-primary-l)' },
-  sequence: { title: '넘버 시퀀스',   color: 'var(--spokedu-green)',   bg: '#DCFCE7', badge: 'var(--spokedu-green-l)' },
-  shape:    { title: '쉐이프 헌터',   color: 'var(--spokedu-purple)',  bg: '#EDE9FE', badge: 'var(--spokedu-purple-l)' },
-  moving:   { title: '무빙 캐치',     color: 'var(--spokedu-orange)',  bg: '#FFF7ED', badge: 'var(--spokedu-orange-l)' },
-  balance:  { title: '밸런스 포즈',   color: 'var(--spokedu-cyan)',   bg: '#ECFEFF', badge: '#ECFEFF' },
-  mirror:   { title: '미러 게임',     color: 'var(--spokedu-pink)',   bg: '#FDF2F8', badge: '#FDF2F8' },
+  speed: { title: '반응 깨우기', color: 'var(--spokedu-primary)', bg: '#EFF6FF', badge: 'var(--spokedu-primary-l)' },
+  sequence: { title: '순서 따라가기', color: 'var(--spokedu-green)', bg: '#DCFCE7', badge: 'var(--spokedu-green-l)' },
+  shape: { title: '쉐이프 헌터', color: 'var(--spokedu-purple)', bg: '#EDE9FE', badge: 'var(--spokedu-purple-l)' },
+  moving: { title: '무빙 캐치', color: 'var(--spokedu-orange)', bg: '#FFF7ED', badge: 'var(--spokedu-orange-l)' },
+  balance: { title: '밸런스 포즈', color: 'var(--spokedu-cyan)', bg: '#ECFEFF', badge: '#ECFEFF' },
+  mirror: { title: '미러 게임', color: 'var(--spokedu-pink)', bg: '#FDF2F8', badge: '#FDF2F8' },
 };
 
 const MODE_LIST: Array<{ id: CameraModeId; num: number; icon: string; desc: string; badge: string }> = [
-  { id: 'speed',    num: 1, icon: '⚡', desc: '화면에 나타나는 별을 빠르게 터치. 순발력과 자발적 몰입을 극대화합니다.', badge: '⏱ 순발력 · 반응속도' },
-  { id: 'sequence', num: 2, icon: '🔢', desc: '숫자를 순서대로 기억하고 터치. 신체활동과 인지 자극을 동시에 경험합니다.', badge: '🧠 기억력 · 협동' },
-  { id: 'shape',    num: 3, icon: '🔷', desc: '미션 모양만 정확히 터치하세요. 충동 조절과 판단력을 함께 기릅니다.', badge: '🎯 판단력 · 집중력' },
-  { id: 'moving',   num: 4, icon: '🎯', desc: '통통 튀는 타겟을 끝까지 추적해 잡아내세요. 전신 협응력을 극대화합니다.', badge: '👁 동체시력 · 협응' },
-  { id: 'balance',  num: 5, icon: '🧘', desc: '화면이 요청하는 포즈를 2초간 유지하세요. 균형감각과 집중력을 기릅니다.', badge: '⚖ 균형 · 고유감각' },
-  { id: 'mirror',   num: 6, icon: '🤸', desc: '화면 실루엣 동작을 따라하세요. 시각-운동 협응과 모델링 학습을 경험합니다.', badge: '🤸 모델링 · 운동학습' },
+  {
+    id: 'speed',
+    num: 1,
+    icon: '⚡',
+    desc: '나타나는 타겟을 빠르게 터치합니다. 보너스 타겟이 섞여 있어 짧고 신나게 몰입할 수 있습니다.',
+    badge: '시선 집중 · 반응속도',
+  },
+  {
+    id: 'sequence',
+    num: 2,
+    icon: '🔢',
+    desc: '숫자를 1번부터 차례대로 따라갑니다. 기억 게임보다 순서 실행과 침착함에 초점을 둡니다.',
+    badge: '순서 실행 · 협응',
+  },
+  {
+    id: 'shape',
+    num: 3,
+    icon: '🔷',
+    desc: '미션 모양만 정확히 찾아 터치합니다. 넓어진 간격으로 억울한 감점은 줄이고 판단은 살렸습니다.',
+    badge: '판단력 · 집중력',
+  },
+  {
+    id: 'moving',
+    num: 4,
+    icon: '🎯',
+    desc: '움직이는 타겟을 추적합니다. 현재는 내부 실험 모드입니다.',
+    badge: '동체시력 · 협응',
+  },
+  {
+    id: 'balance',
+    num: 5,
+    icon: '🧘',
+    desc: '화면이 요청하는 포즈를 유지합니다. 현재는 내부 실험 모드입니다.',
+    badge: '균형 · 고유감각',
+  },
+  {
+    id: 'mirror',
+    num: 6,
+    icon: '🤸',
+    desc: '화면 동작을 따라합니다. 현재는 내부 실험 모드입니다.',
+    badge: '모방 · 운동학습',
+  },
 ];
+
+const ACTIVE_MODE_LIST = MODE_LIST.filter((mode) => (ACTIVE_CAMERA_MODE_IDS as readonly CameraModeId[]).includes(mode.id));
 
 interface HomeScreenProps {
   active: boolean;
@@ -38,17 +76,17 @@ export function HomeScreen({ active, onSelectMode, onShowReport, className = '' 
           <div className={styles['logo-sub']}>PLAY · THINK · GROW</div>
         </div>
         <div className={`${styles.flex} ${styles['items-center']} ${styles['gap-2']}`}>
-          <Link href="/admin" className={`${styles.btn} ${styles['btn-secondary']} ${styles['btn-sm']}`}>← Admin</Link>
-          <button type="button" className={`${styles.btn} ${styles['btn-secondary']} ${styles['btn-sm']}`} onClick={onShowReport}>📊 성장 기록</button>
+          <Link href="/admin" className={`${styles.btn} ${styles['btn-secondary']} ${styles['btn-sm']}`}>Admin</Link>
+          <button type="button" className={`${styles.btn} ${styles['btn-secondary']} ${styles['btn-sm']}`} onClick={onShowReport}>성장 기록</button>
         </div>
       </div>
       <div className={`${styles.card} ${styles['hero-panel']}`}>
         <p className={styles['hero-title']}>
-          연세대 체육교육 전문가가 설계한 <strong>AI 포즈 인식 인터랙티브 웜업</strong> 시스템<br />
-          개별 평가 · 다중 인식 · 성장 데이터 분석이 완벽하게 통합되었습니다.
+          큰 화면에서 바로 뛰어드는 <strong>AI 카메라 움직임 게임</strong><br />
+          지금은 잘 작동하는 핵심 3개 모드에 집중합니다.
         </p>
         <div className={styles['mode-grid']}>
-          {MODE_LIST.map((m) => {
+          {ACTIVE_MODE_LIST.map((m) => {
             const style = MODE_DESCS[m.id] ?? { color: '', bg: '#F8FAFC', badge: '#F8FAFC' };
             const mcClass = m.id === 'speed' ? styles['mc-speed'] : m.id === 'sequence' ? styles['mc-seq'] : m.id === 'shape' ? styles['mc-shape'] : m.id === 'moving' ? styles['mc-moving'] : m.id === 'balance' ? styles['mc-balance'] : styles['mc-mirror'];
             return (

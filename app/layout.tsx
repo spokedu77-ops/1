@@ -7,10 +7,11 @@ import Sidebar from './components/Sidebar';
 import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
 import { QueryProvider } from './providers/QueryProvider';
 import { I18nProvider } from './providers/I18nProvider';
-import { Plus_Jakarta_Sans, Noto_Sans_KR } from 'next/font/google';
+import { Plus_Jakarta_Sans, Noto_Sans_KR, Geist } from 'next/font/google';
 import './globals.css';
+import { cn } from "@/lib/utils";
 
-const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans-jakarta', display: 'swap' });
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 const notoSansKR = Noto_Sans_KR({ subsets: ['latin'], variable: '--font-kr', display: 'swap' });
 
 export default function RootLayout({
@@ -45,7 +46,7 @@ export default function RootLayout({
   }, []);
 
   return (
-    <html lang="ko" className={`${plusJakarta.variable} ${notoSansKR.variable}`}>
+    <html lang="ko" className={cn(notoSansKR.variable, "font-sans", geist.variable)}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2563eb" />

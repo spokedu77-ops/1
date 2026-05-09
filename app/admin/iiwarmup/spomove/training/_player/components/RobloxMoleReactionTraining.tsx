@@ -30,10 +30,10 @@ const css = `
 @keyframes rmtw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
 .rmt-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.45);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer}
 .rmt-stop:hover{background:rgba(255,255,255,.07);color:#fff}
-.rmt-play{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:14px}
-.rmt-board{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,1.4vw,18px);background:#545454;padding:clamp(14px,2vw,24px);border-radius:6px;border:4px solid #333;box-shadow:0 14px 0 #1f1f1f,0 24px 30px rgba(0,0,0,.45);background-image:linear-gradient(rgba(255,255,255,.05) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.05) 2px,transparent 2px);background-size:24px 24px;transform:perspective(900px) rotateX(8deg)}
-.rmt-hole{width:min(24vw,118px);height:min(24vw,118px);min-width:86px;min-height:86px;background:#111;border-radius:4px;position:relative;overflow:hidden;border-top:6px solid #1a1a1a;border-left:6px solid #333;border-bottom:2px solid #777;border-right:2px solid #777;box-shadow:inset 0 20px 25px rgba(0,0,0,1)}
-.rmt-mole{width:78%;height:78%;border-radius:4px;position:absolute;left:50%;transform:translateX(-50%);bottom:-88%;transition:bottom .2s cubic-bezier(.175,.885,.32,1.275);display:flex;flex-direction:column;align-items:center;padding-top:14px;box-shadow:inset 4px 4px 0 rgba(255,255,255,.36),inset -4px -4px 0 rgba(0,0,0,.28);border:2px solid rgba(0,0,0,.78)}
+.rmt-play{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px}
+.rmt-board{width:min(96vw,calc(100vh - 104px));height:min(96vw,calc(100vh - 104px));display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:clamp(10px,1.8vw,18px);background:#545454;padding:clamp(12px,1.8vw,22px);border-radius:6px;border:4px solid #333;box-shadow:0 14px 0 #1f1f1f,0 24px 30px rgba(0,0,0,.45);background-image:linear-gradient(rgba(255,255,255,.05) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.05) 2px,transparent 2px);background-size:24px 24px;transform:perspective(900px) rotateX(6deg)}
+.rmt-hole{width:100%;height:100%;background:#111;border-radius:4px;position:relative;overflow:hidden;border-top:6px solid #1a1a1a;border-left:6px solid #333;border-bottom:2px solid #777;border-right:2px solid #777;box-shadow:inset 0 20px 25px rgba(0,0,0,1)}
+.rmt-mole{width:84%;height:84%;border-radius:4px;position:absolute;left:50%;transform:translateX(-50%);bottom:-88%;transition:bottom .2s cubic-bezier(.175,.885,.32,1.275);display:flex;flex-direction:column;align-items:center;padding-top:14px;box-shadow:inset 4px 4px 0 rgba(255,255,255,.36),inset -4px -4px 0 rgba(0,0,0,.28);border:2px solid rgba(0,0,0,.78)}
 .rmt-mole.up{bottom:6px}
 .rmt-eyes{display:flex;gap:14px;margin-bottom:6px}
 .rmt-eye{width:11px;height:11px;background:#111;border-radius:2px}
@@ -54,8 +54,7 @@ export function RobloxMoleReactionTraining({ durationSec, speedLevel, onExit, on
     running: boolean;
     timeLeft: number;
     exposeMs: number;
-    waitMinMs: number;
-    waitMaxMs: number;
+    cadenceMs: number;
     stims: number;
     combo: number;
     maxCombo: number;
@@ -122,15 +121,13 @@ export function RobloxMoleReactionTraining({ durationSec, speedLevel, onExit, on
     const lv = Math.max(1, Math.min(7, Math.round(speedLevel)));
     // 기존 reactTrain 템포 계열(stepDur)과 동일한 속도축을 사용해 등장 주기를 맞춘다.
     const stepDur = Math.max(320, 820 - (lv - 1) * 70);
-    const exposeMs = Math.max(180, Math.round(stepDur * 0.62));
-    const waitCenter = Math.max(140, stepDur - exposeMs);
-    const jitter = Math.max(40, Math.round(stepDur * 0.22));
+    const cadenceMs = 1000;
+    const exposeMs = Math.min(860, Math.max(340, Math.round(stepDur * 0.8)));
     const g = {
       running: true,
       timeLeft: Math.max(1, durationSec),
       exposeMs,
-      waitMinMs: Math.max(90, waitCenter - jitter),
-      waitMaxMs: waitCenter + jitter,
+      cadenceMs,
       stims: 0,
       combo: 0,
       maxCombo: 0,
@@ -187,14 +184,22 @@ export function RobloxMoleReactionTraining({ durationSec, speedLevel, onExit, on
 
       g.hideTimer = setTimeout(() => {
         setHolesUp(Array.from({ length: 9 }, () => false));
-        if (!g.running) return;
-        const wait = g.waitMinMs + Math.floor(Math.random() * Math.max(1, g.waitMaxMs - g.waitMinMs + 1));
-        g.nextTimer = setTimeout(triggerMole, wait);
       }, g.exposeMs);
     };
 
+    const scheduleOnSecond = () => {
+      if (!g.running) return;
+      const now = Date.now();
+      const delay = g.cadenceMs - (now % g.cadenceMs);
+      g.nextTimer = setTimeout(() => {
+        if (!g.running) return;
+        triggerMole();
+        scheduleOnSecond();
+      }, delay);
+    };
+
     setHud();
-    g.nextTimer = setTimeout(triggerMole, 420);
+    scheduleOnSecond();
     g.timer = setInterval(() => {
       g.timeLeft -= 1;
       setHud();

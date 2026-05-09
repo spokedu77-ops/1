@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
-import { CAMERA_MODE_IDS } from '@/app/admin/camera/constants';
+import { ACTIVE_CAMERA_MODE_IDS } from '@/app/admin/camera/constants';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import type {
   CameraControlEnvelope,
@@ -83,8 +83,8 @@ function validateCommand(value: unknown): CameraControllerCommand | null {
   }
   if (type === 'selectMode' && typeof value.mode === 'string') {
     const mode = value.mode;
-    if (CAMERA_MODE_IDS.includes(mode as never)) {
-      return { type, mode: mode as (typeof CAMERA_MODE_IDS)[number] };
+    if (ACTIVE_CAMERA_MODE_IDS.includes(mode as never)) {
+      return { type, mode: mode as (typeof ACTIVE_CAMERA_MODE_IDS)[number] };
     }
   }
   if (
@@ -94,11 +94,11 @@ function validateCommand(value: unknown): CameraControllerCommand | null {
     isRecord(value.settings)
   ) {
     const mode = value.mode;
-    if (CAMERA_MODE_IDS.includes(mode as never)) {
+    if (ACTIVE_CAMERA_MODE_IDS.includes(mode as never)) {
       return {
         type,
         packId: value.packId,
-        mode: mode as (typeof CAMERA_MODE_IDS)[number],
+        mode: mode as (typeof ACTIVE_CAMERA_MODE_IDS)[number],
         settings: value.settings,
       };
     }

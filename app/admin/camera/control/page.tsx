@@ -16,23 +16,26 @@ import {
   Users,
   WifiOff,
 } from 'lucide-react';
-import { CAMERA_MODE_IDS, DEFAULT_SETTINGS, MODE_META } from '../constants';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { ACTIVE_CAMERA_MODE_IDS, DEFAULT_SETTINGS, MAX_CAMERA_PARTICIPANTS, MODE_META } from '../constants';
 import { AGE_BAND_LABELS, CAMERA_CONTENT_PACKS, type CameraContentPack } from '../contentPacks';
 import type { CameraModeId, DiffKey } from '../constants';
 import type {
+  CameraActivityResultDetail,
   CameraActivityResultSummary,
   CameraControlPhase,
   CameraControlSessionDraft,
   CameraControllerCommand,
   CameraParticipantMode,
+  CameraParticipantSlot,
   CameraSettings,
 } from '../types';
 import * as Store from '../store';
 import styles from './camera-control.module.css';
 
 const MODE_HELP: Record<CameraModeId, string> = {
-  speed: '빠른 반응과 순발력',
-  sequence: '순서 기억과 협응',
+  speed: '빠른 반응과 시선 집중',
+  sequence: '순서 실행과 신체 협응',
   shape: '선택 주의와 판단',
   moving: '추적 반응과 민첩성',
   balance: '균형 감각과 자세 유지',
@@ -47,9 +50,15 @@ const DIFF_LABELS: Record<DiffKey, string> = {
 
 const PARTICIPANT_LABELS: Record<CameraParticipantMode, string> = {
   solo: '1명',
-  multi: '여러 명',
+  multi: `여러 명(최대 ${MAX_CAMERA_PARTICIPANTS}명)`,
   team: '팀',
   unknown: '미정',
+};
+
+type CameraRosterStudent = {
+  id: string;
+  name: string;
+  classGroup?: string;
 };
 
 function phaseLabel(phase: CameraControlPhase): string {
@@ -66,8 +75,32 @@ function formatResultTime(value: string): string {
   return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+function createDefaultSlots(): CameraParticipantSlot[] {
+  return Array.from({ length: MAX_CAMERA_PARTICIPANTS }, (_, index) => ({
+    slotIndex: index,
+    displayName: `P${index + 1}`,
+    studentId: null,
+    teamId: null,
+  }));
+}
+
+function mergeParticipantSlots(slots: CameraSettings['participantSlots']): CameraParticipantSlot[] {
+  const defaults = createDefaultSlots();
+  (slots ?? []).forEach((slot) => {
+    if (slot.slotIndex >= 0 && slot.slotIndex < MAX_CAMERA_PARTICIPANTS) {
+      defaults[slot.slotIndex] = {
+        ...defaults[slot.slotIndex]!,
+        ...slot,
+        displayName: slot.displayName || defaults[slot.slotIndex]!.displayName,
+      };
+    }
+  });
+  return defaults;
+}
+
 export default function CameraControlPage() {
   const [settings, setSettings] = useState<CameraSettings>({ ...DEFAULT_SETTINGS });
+  const [participantSlots, setParticipantSlots] = useState<CameraParticipantSlot[]>(() => mergeParticipantSlots(undefined));
   const [mode, setMode] = useState<CameraModeId>('speed');
   const [participantMode, setParticipantMode] = useState<CameraParticipantMode>('solo');
   const [phase, setPhase] = useState<CameraControlPhase>('idle');
@@ -78,10 +111,38 @@ export default function CameraControlPage() {
   const [connecting, setConnecting] = useState(false);
   const [recentResults, setRecentResults] = useState<CameraActivityResultSummary[]>([]);
   const [resultsMessage, setResultsMessage] = useState('저장된 결과를 불러오는 중');
+  const [selectedResult, setSelectedResult] = useState<CameraActivityResultDetail | null>(null);
+  const [detailMessage, setDetailMessage] = useState('');
+  const [rosterStudents, setRosterStudents] = useState<CameraRosterStudent[]>([]);
+  const [rosterMessage, setRosterMessage] = useState('');
+  const [selectedClassGroup, setSelectedClassGroup] = useState('all');
 
   useEffect(() => {
     Store.initStore();
-    setSettings(Store.getSettings());
+    const savedSettings = Store.getSettings();
+    setSettings(savedSettings);
+    setParticipantSlots(mergeParticipantSlots(savedSettings.participantSlots));
+  }, []);
+
+  const loadRosterStudents = async () => {
+    setRosterMessage('');
+    try {
+      const res = await fetch('/api/spokedu-pro/students', { cache: 'no-store' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setRosterMessage(typeof json?.error === 'string' ? json.error : '원생 목록을 불러오지 못했습니다.');
+        return;
+      }
+      const students = Array.isArray(json?.students) ? json.students as CameraRosterStudent[] : [];
+      setRosterStudents(students.filter((student) => student.id && student.name));
+      setRosterMessage(students.length ? '' : '등록된 원생이 없습니다.');
+    } catch {
+      setRosterMessage('네트워크 오류로 원생 목록을 불러오지 못했습니다.');
+    }
+  };
+
+  useEffect(() => {
+    void loadRosterStudents();
   }, []);
 
   const loadRecentResults = async () => {
@@ -101,6 +162,22 @@ export default function CameraControlPage() {
     }
   };
 
+  const loadResultDetail = async (id: string) => {
+    setDetailMessage('상세 결과를 불러오는 중');
+    try {
+      const res = await fetch(`/api/admin/camera/activity-results?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDetailMessage(typeof json?.error === 'string' ? json.error : '상세 결과를 불러오지 못했습니다.');
+        return;
+      }
+      setSelectedResult(json.result as CameraActivityResultDetail);
+      setDetailMessage('');
+    } catch {
+      setDetailMessage('네트워크 오류로 상세 결과를 불러오지 못했습니다.');
+    }
+  };
+
   useEffect(() => {
     void loadRecentResults();
   }, []);
@@ -111,42 +188,26 @@ export default function CameraControlPage() {
   const canPause = phase === 'running';
   const canResume = phase === 'paused';
   const canEnd = phase === 'running' || phase === 'paused';
+  const classGroups = useMemo(
+    () => Array.from(new Set(rosterStudents.map((student) => student.classGroup).filter((group): group is string => Boolean(group)))).sort(),
+    [rosterStudents]
+  );
+  const filteredRosterStudents = useMemo(
+    () => selectedClassGroup === 'all'
+      ? rosterStudents
+      : rosterStudents.filter((student) => student.classGroup === selectedClassGroup),
+    [rosterStudents, selectedClassGroup]
+  );
 
   const summary = useMemo(
     () => [
-      `${selectedMode.label}`,
+      selectedMode.label,
       DIFF_LABELS[settings.diff],
       `${settings.dur}초`,
       PARTICIPANT_LABELS[participantMode],
     ].join(' · '),
     [participantMode, selectedMode.label, settings.diff, settings.dur]
   );
-
-  const updateSettings = (patch: Partial<CameraSettings>) => {
-    const next = { ...settings, ...patch };
-    setSettings(next);
-    Store.saveSettings(next);
-    if (phase === 'idle') setPhase('ready');
-    void sendCommand({ type: 'updateSettings', settings: patch }, next, phase === 'idle' ? 'ready' : phase);
-  };
-
-  const applyContentPack = (pack: CameraContentPack) => {
-    const nextSettings = { ...settings, ...pack.settings };
-    const nextPhase = phase === 'idle' ? 'ready' : phase;
-    setContentPackId(pack.id);
-    setMode(pack.mode);
-    setParticipantMode(pack.participantMode);
-    setSettings(nextSettings);
-    Store.saveSettings(nextSettings);
-    if (phase === 'idle') setPhase('ready');
-    void sendCommand(
-      { type: 'applyContentPack', packId: pack.id, mode: pack.mode, settings: pack.settings },
-      nextSettings,
-      nextPhase,
-      pack.mode,
-      pack.participantMode
-    );
-  };
 
   const controllerState = (
     nextSettings: CameraSettings = settings,
@@ -160,38 +221,6 @@ export default function CameraControlPage() {
     participantMode: nextParticipantMode,
     updatedAt: new Date().toISOString(),
   });
-
-  const joinSession = async () => {
-    const code = sessionCode.trim().toUpperCase();
-    if (!code) {
-      setConnectionMessage('세션 코드를 먼저 입력하세요.');
-      return;
-    }
-    setConnecting(true);
-    setConnectionMessage('플레이어를 찾는 중...');
-    try {
-      const res = await fetch('/api/admin/camera/control-session', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          action: 'join',
-          code,
-          controllerState: controllerState(),
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setConnectionMessage(typeof json?.error === 'string' ? json.error : '연결에 실패했습니다.');
-        return;
-      }
-      setControlSession(json.session as CameraControlSessionDraft);
-      setConnectionMessage('플레이어와 연결되었습니다.');
-    } catch {
-      setConnectionMessage('네트워크 오류로 연결하지 못했습니다.');
-    } finally {
-      setConnecting(false);
-    }
-  };
 
   const sendCommand = async (
     command: CameraControllerCommand,
@@ -224,6 +253,124 @@ export default function CameraControlPage() {
     }
   };
 
+  const updateSettings = (patch: Partial<CameraSettings>) => {
+    const next = { ...settings, ...patch };
+    const nextPhase = phase === 'idle' ? 'ready' : phase;
+    setSettings(next);
+    Store.saveSettings(next);
+    if (phase === 'idle') setPhase('ready');
+    void sendCommand({ type: 'updateSettings', settings: patch }, next, nextPhase);
+  };
+
+  const updateParticipantSlot = (slotIndex: number, displayName: string) => {
+    const nextSlots = participantSlots.map((slot) =>
+      slot.slotIndex === slotIndex
+        ? {
+            ...slot,
+            displayName: displayName.slice(0, 40),
+            teamId: participantMode === 'team' && displayName.trim() ? `team-${slotIndex + 1}` : null,
+            studentId: null,
+          }
+        : slot
+    );
+    const nextSettings = { ...settings, participantSlots: nextSlots };
+    const nextPhase = phase === 'idle' ? 'ready' : phase;
+    setParticipantSlots(nextSlots);
+    setSettings(nextSettings);
+    Store.saveSettings(nextSettings);
+    if (phase === 'idle') setPhase('ready');
+    void sendCommand({ type: 'updateSettings', settings: { participantSlots: nextSlots } }, nextSettings, nextPhase);
+  };
+
+  const assignRosterStudent = (slotIndex: number, studentId: string) => {
+    const student = rosterStudents.find((item) => item.id === studentId);
+    const nextSlots = participantSlots.map((slot) =>
+      slot.slotIndex === slotIndex
+        ? {
+            ...slot,
+            displayName: student?.name ?? slot.displayName,
+            studentId: student?.id ?? null,
+            teamId: null,
+          }
+        : slot
+    );
+    const nextSettings = { ...settings, participantSlots: nextSlots };
+    const nextPhase = phase === 'idle' ? 'ready' : phase;
+    setParticipantSlots(nextSlots);
+    setSettings(nextSettings);
+    Store.saveSettings(nextSettings);
+    if (phase === 'idle') setPhase('ready');
+    void sendCommand({ type: 'updateSettings', settings: { participantSlots: nextSlots } }, nextSettings, nextPhase);
+  };
+
+  const changeClassGroup = (classGroup: string) => {
+    setSelectedClassGroup(classGroup);
+    if (classGroup === 'all') return;
+    const allowed = new Set(rosterStudents.filter((student) => student.classGroup === classGroup).map((student) => student.id));
+    const nextSlots = participantSlots.map((slot) =>
+      slot.studentId && !allowed.has(slot.studentId)
+        ? { ...slot, studentId: null, displayName: `P${slot.slotIndex + 1}` }
+        : slot
+    );
+    if (nextSlots.some((slot, index) => slot !== participantSlots[index])) {
+      const nextSettings = { ...settings, participantSlots: nextSlots };
+      setParticipantSlots(nextSlots);
+      setSettings(nextSettings);
+      Store.saveSettings(nextSettings);
+      void sendCommand({ type: 'updateSettings', settings: { participantSlots: nextSlots } }, nextSettings, phase);
+    }
+  };
+
+  const applyContentPack = (pack: CameraContentPack) => {
+    const nextSettings = { ...settings, ...pack.settings };
+    const nextPhase = phase === 'idle' ? 'ready' : phase;
+    setContentPackId(pack.id);
+    setMode(pack.mode);
+    setParticipantMode(pack.participantMode);
+    setSettings(nextSettings);
+    Store.saveSettings(nextSettings);
+    if (phase === 'idle') setPhase('ready');
+    void sendCommand(
+      { type: 'applyContentPack', packId: pack.id, mode: pack.mode, settings: pack.settings },
+      nextSettings,
+      nextPhase,
+      pack.mode,
+      pack.participantMode
+    );
+  };
+
+  const joinSession = async () => {
+    const code = sessionCode.trim().toUpperCase();
+    if (!code) {
+      setConnectionMessage('세션 코드를 먼저 입력하세요.');
+      return;
+    }
+    setConnecting(true);
+    setConnectionMessage('플레이어를 찾는 중...');
+    try {
+      const res = await fetch('/api/admin/camera/control-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'join',
+          code,
+          controllerState: controllerState(),
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setConnectionMessage(typeof json?.error === 'string' ? json.error : '연결에 실패했습니다.');
+        return;
+      }
+      setControlSession(json.session as CameraControlSessionDraft);
+      setConnectionMessage('플레이어와 연결했습니다.');
+    } catch {
+      setConnectionMessage('네트워크 오류로 연결하지 못했습니다.');
+    } finally {
+      setConnecting(false);
+    }
+  };
+
   const setPhaseAndSend = (nextPhase: CameraControlPhase, command: CameraControllerCommand) => {
     setPhase(nextPhase);
     void sendCommand(command, settings, nextPhase);
@@ -248,8 +395,8 @@ export default function CameraControlPage() {
         <div className={styles.connectionState}>
           <WifiOff size={18} />
           <div>
-            <strong>플레이어 미연결</strong>
-            <span>6단계 결정: 세션 코드와 polling으로 먼저 연결합니다.</span>
+            <strong>{controlSession ? '플레이어 연결됨' : '플레이어 미연결'}</strong>
+            <span>큰 화면에서 코드를 생성한 뒤 이 화면에 입력합니다.</span>
           </div>
         </div>
         <label className={styles.codeField}>
@@ -271,7 +418,7 @@ export default function CameraControlPage() {
       <section className={styles.section} aria-labelledby="pack-title">
         <div className={styles.sectionTitle}>
           <BookOpenCheck size={18} />
-          <h2 id="pack-title">수업 콘텐츠 팩</h2>
+          <h2 id="pack-title">수업 콘텐츠</h2>
         </div>
         <div className={styles.packGrid}>
           {CAMERA_CONTENT_PACKS.map((pack) => {
@@ -293,11 +440,7 @@ export default function CameraControlPage() {
             );
           })}
         </div>
-        {selectedContentPack && (
-          <p className={styles.packNote}>
-            {selectedContentPack.description}
-          </p>
-        )}
+        {selectedContentPack && <p className={styles.packNote}>{selectedContentPack.description}</p>}
       </section>
 
       <section className={styles.section} aria-labelledby="mode-title">
@@ -306,7 +449,7 @@ export default function CameraControlPage() {
           <h2 id="mode-title">활동 선택</h2>
         </div>
         <div className={styles.modeGrid}>
-          {CAMERA_MODE_IDS.map((id) => {
+          {ACTIVE_CAMERA_MODE_IDS.map((id) => {
             const meta = MODE_META[id];
             const selected = id === mode;
             return (
@@ -315,9 +458,10 @@ export default function CameraControlPage() {
                 type="button"
                 className={`${styles.modeButton} ${selected ? styles.selected : ''}`}
                 onClick={() => {
+                  const nextPhase = phase === 'idle' ? 'ready' : phase;
                   setMode(id);
                   if (phase === 'idle') setPhase('ready');
-                  void sendCommand({ type: 'selectMode', mode: id }, settings, phase === 'idle' ? 'ready' : phase, id);
+                  void sendCommand({ type: 'selectMode', mode: id }, settings, nextPhase, id);
                 }}
                 aria-pressed={selected}
               >
@@ -343,12 +487,7 @@ export default function CameraControlPage() {
           <span>난이도</span>
           <div className={styles.segment}>
             {(['easy', 'normal', 'hard'] as const).map((diff) => (
-              <button
-                key={diff}
-                type="button"
-                className={settings.diff === diff ? styles.on : ''}
-                onClick={() => updateSettings({ diff })}
-              >
+              <button key={diff} type="button" className={settings.diff === diff ? styles.on : ''} onClick={() => updateSettings({ diff })}>
                 {DIFF_LABELS[diff]}
               </button>
             ))}
@@ -359,12 +498,7 @@ export default function CameraControlPage() {
           <span>시간</span>
           <div className={styles.segment}>
             {[20, 30, 60].map((dur) => (
-              <button
-                key={dur}
-                type="button"
-                className={settings.dur === dur ? styles.on : ''}
-                onClick={() => updateSettings({ dur })}
-              >
+              <button key={dur} type="button" className={settings.dur === dur ? styles.on : ''} onClick={() => updateSettings({ dur })}>
                 {dur}초
               </button>
             ))}
@@ -383,10 +517,25 @@ export default function CameraControlPage() {
                   const nextSettings = { ...settings, multiOn: value !== 'solo' };
                   const nextPhase = phase === 'idle' ? 'ready' : phase;
                   setParticipantMode(value);
-                  setSettings(nextSettings);
-                  Store.saveSettings(nextSettings);
+                  const renamedSlots = participantSlots.map((slot) => ({
+                    ...slot,
+                    displayName: value === 'team' && /^P[1-3]$/.test(slot.displayName)
+                      ? `팀 ${slot.slotIndex + 1}`
+                      : slot.displayName,
+                    teamId: value === 'team' ? `team-${slot.slotIndex + 1}` : null,
+                    studentId: null,
+                  }));
+                  setSettings({ ...nextSettings, participantSlots: renamedSlots });
+                  setParticipantSlots(renamedSlots);
+                  Store.saveSettings({ ...nextSettings, participantSlots: renamedSlots });
                   if (phase === 'idle') setPhase('ready');
-                  void sendCommand({ type: 'updateSettings', settings: { multiOn: value !== 'solo' } }, nextSettings, nextPhase, mode, value);
+                  void sendCommand(
+                    { type: 'updateSettings', settings: { multiOn: value !== 'solo', participantSlots: renamedSlots } },
+                    { ...nextSettings, participantSlots: renamedSlots },
+                    nextPhase,
+                    mode,
+                    value
+                  );
                 }}
               >
                 {PARTICIPANT_LABELS[value]}
@@ -395,13 +544,53 @@ export default function CameraControlPage() {
           </div>
         </div>
 
+        <div className={styles.controlGroup}>
+          <span>슬롯 이름</span>
+          {participantMode !== 'team' && (
+            <select
+              className={styles.classSelect}
+              value={selectedClassGroup}
+              onChange={(event) => changeClassGroup(event.target.value)}
+              aria-label="반 선택"
+            >
+              <option value="all">전체 반</option>
+              {classGroups.map((group) => (
+                <option key={group} value={group}>{group}</option>
+              ))}
+            </select>
+          )}
+          <div className={styles.slotGrid}>
+            {participantSlots.map((slot) => (
+              <label key={slot.slotIndex} className={styles.slotField}>
+                <span>P{slot.slotIndex + 1}</span>
+                <input
+                  value={slot.displayName}
+                  onChange={(event) => updateParticipantSlot(slot.slotIndex, event.target.value)}
+                  placeholder={participantMode === 'team' ? `팀 ${slot.slotIndex + 1}` : `참여자 ${slot.slotIndex + 1}`}
+                />
+                {participantMode !== 'team' && (
+                  <select
+                    value={slot.studentId ?? ''}
+                    onChange={(event) => assignRosterStudent(slot.slotIndex, event.target.value)}
+                    aria-label={`P${slot.slotIndex + 1} 원생 선택`}
+                  >
+                    <option value="">원생 선택 안 함</option>
+                    {filteredRosterStudents.map((student) => (
+                      <option key={student.id} value={student.id}>
+                        {student.name}{student.classGroup ? ` · ${student.classGroup}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </label>
+            ))}
+          </div>
+          {rosterMessage && <p className={styles.slotNote}>{rosterMessage}</p>}
+        </div>
+
         <label className={styles.toggleRow}>
           <span>효과음</span>
-          <input
-            type="checkbox"
-            checked={settings.soundOn}
-            onChange={(event) => updateSettings({ soundOn: event.target.checked })}
-          />
+          <input type="checkbox" checked={settings.soundOn} onChange={(event) => updateSettings({ soundOn: event.target.checked })} />
         </label>
       </section>
 
@@ -450,7 +639,7 @@ export default function CameraControlPage() {
       <section className={styles.resultPreview} aria-labelledby="result-title">
         <div className={styles.sectionTitle}>
           <BarChart3 size={18} />
-          <h2 id="result-title">결과 미리보기</h2>
+          <h2 id="result-title">현재 설정</h2>
         </div>
         <div className={styles.resultGrid}>
           <div>
@@ -466,7 +655,7 @@ export default function CameraControlPage() {
           </div>
         </div>
         <p className={styles.note}>
-          다음 단계에서 큰 화면 플레이어와 연결하면 이 영역에 실제 점수, 반응속도, 저장 버튼이 들어갑니다.
+          활동이 끝나면 큰 화면 플레이어가 결과를 저장하고, 아래 최근 결과에서 바로 확인할 수 있습니다.
         </p>
       </section>
 
@@ -479,10 +668,26 @@ export default function CameraControlPage() {
           </button>
         </div>
         <p className={styles.resultMessage}>{resultsMessage}</p>
+        {recentResults.length === 0 && resultsMessage === '아직 저장된 결과가 없습니다.' && (
+          <Empty className="border-slate-200 bg-slate-50">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <BarChart3 />
+              </EmptyMedia>
+              <EmptyTitle>저장된 활동 결과가 없습니다</EmptyTitle>
+              <EmptyDescription>활동을 한 번 진행하고 종료하면 결과가 여기에 쌓입니다.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
         {recentResults.length > 0 && (
           <div className={styles.recentList}>
             {recentResults.map((result) => (
-              <article key={result.id} className={styles.recentItem}>
+              <button
+                key={result.id}
+                type="button"
+                className={`${styles.recentItem} ${selectedResult?.id === result.id ? styles.selectedResult : ''}`}
+                onClick={() => void loadResultDetail(result.id)}
+              >
                 <div>
                   <strong>{MODE_META[result.mode]?.label ?? result.mode}</strong>
                   <span>{formatResultTime(result.createdAt)} · {DIFF_LABELS[result.difficulty]} · {result.durationSec}초</span>
@@ -491,8 +696,47 @@ export default function CameraControlPage() {
                   <span>{result.participantCount}명</span>
                   <strong>{result.topScore}</strong>
                 </div>
-              </article>
+              </button>
             ))}
+          </div>
+        )}
+        {detailMessage && <p className={styles.resultMessage}>{detailMessage}</p>}
+        {selectedResult && (
+          <div className={styles.detailPanel}>
+            <div className={styles.detailHeader}>
+              <div>
+                <span>{formatResultTime(selectedResult.createdAt)}</span>
+                <strong>{MODE_META[selectedResult.mode]?.label ?? selectedResult.mode}</strong>
+              </div>
+              <button type="button" className={styles.refreshButton} onClick={() => setSelectedResult(null)}>
+                닫기
+              </button>
+            </div>
+            <div className={styles.detailMetrics}>
+              <div>
+                <span>총점</span>
+                <strong>{selectedResult.metrics.totalScore}</strong>
+              </div>
+              <div>
+                <span>최고점</span>
+                <strong>{selectedResult.topScore}</strong>
+              </div>
+              <div>
+                <span>반응</span>
+                <strong>{selectedResult.metrics.avgReactionMs != null ? `${selectedResult.metrics.avgReactionMs}ms` : '-'}</strong>
+              </div>
+            </div>
+            <div className={styles.participantList}>
+              {selectedResult.participants.map((participant) => (
+                <div key={participant.id} className={styles.participantItem}>
+                  <div>
+                    <strong>{participant.displayName ?? `P${participant.slotIndex + 1}`}</strong>
+                    <span>히트 {participant.hitCount} · 미스 {participant.missCount ?? 0}</span>
+                  </div>
+                  <strong>{participant.score}</strong>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>
