@@ -923,77 +923,216 @@ function FlowStep({ num, title, desc }: { num: string; title: string; desc: stri
 
 function PlanView({ onGo }: { onGo: (view: ViewId) => void }) {
   return (
-    <Screen title="수업 계획" desc="주간 수업과 SPOMOVE 실행 진입점을 한 화면에 둡니다.">
+    <Screen title="수업 계획" desc="구독자가 주간 수업을 준비하고, 관리자 NEW에서는 그 흐름이 잘 이어지는지 점검합니다.">
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <Panel title="주간 일정">
-          <div className="grid gap-3">
-            {LESSONS.map((lesson) => (
-              <div key={lesson.title} className="flex flex-wrap items-center gap-3 rounded-lg border border-[#dfe3ea] p-3">
-                <div className="h-12 w-1.5 rounded-full" style={{ background: lesson.color }} />
-                <div className="min-w-0 flex-1">
-                  <p className="font-black">{lesson.title}</p>
-                  <p className="text-sm font-medium text-[#667085]">{lesson.date} · {lesson.time} · {lesson.group}</p>
-                </div>
-                <button type="button" onClick={() => onGo('spomove')} className="h-9 rounded-lg bg-[#172033] px-3 text-xs font-black text-white">
-                  실행
-                </button>
+        <section className="space-y-5">
+          <div className="rounded-xl border border-[#dfe3ea] bg-white p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-black text-[#1f5eff]">이번 주 운영 보드</p>
+                <h3 className="mt-2 text-2xl font-black tracking-tight">수업안, SPOMOVE, 리포트를 하나의 준비 흐름으로 묶습니다.</h3>
+                <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#667085]">
+                  기존 `/spokedu-pro`의 수업 계획은 localStorage 기반으로 주간 슬롯을 저장합니다. NEW에서는 같은 구조를 더 읽기 쉬운 운영 보드로 검증합니다.
+                </p>
               </div>
+              <Link href="/spokedu-pro" className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#172033] px-4 text-sm font-black text-white">
+                구독자 계획 화면
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {LESSONS.map((lesson, index) => (
+              <PlanLessonCard key={`${lesson.date}-${lesson.title}`} lesson={lesson} index={index} onGo={onGo} />
             ))}
           </div>
-        </Panel>
-        <Panel title="수업 추가">
-          <div className="space-y-3">
-            <Field label="반" value="3학년 A반" />
-            <Field label="프로그램" value="8자 드릴" />
-            <Field label="일정" value="2026.05.11 3교시" />
-            <button type="button" className="h-11 w-full rounded-lg bg-[#1f5eff] text-sm font-black text-white">일정에 추가</button>
-          </div>
-        </Panel>
+
+          <section className="rounded-xl border border-[#dfe3ea] bg-white p-4">
+            <h3 className="font-black">수업 준비 파이프라인</h3>
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <FlowStep num="1" title="수업안 선택" desc="라이브러리에서 목적에 맞는 활동을 고릅니다." />
+              <FlowStep num="2" title="교구 확인" desc="필요 교구와 대체 교구를 확인합니다." />
+              <FlowStep num="3" title="SPOMOVE 연결" desc="도입 또는 집중 전환용 세션을 붙입니다." />
+              <FlowStep num="4" title="리포트 예약" desc="수업 후 공유할 성장 포인트를 남깁니다." />
+            </div>
+          </section>
+        </section>
+
+        <aside className="space-y-5">
+          <Panel title="빠른 수업 추가">
+            <div className="space-y-3">
+              <Field label="반" value="3학년 A반" />
+              <Field label="프로그램" value="8자 드릴" />
+              <Field label="일정" value="2026.05.11 3교시" />
+              <Field label="연계 SPOMOVE" value="스피드 트래킹 Lv.1" />
+              <button type="button" className="h-11 w-full rounded-lg bg-[#1f5eff] text-sm font-black text-white">일정에 추가</button>
+            </div>
+          </Panel>
+
+          <Panel title="관리자 확인 포인트">
+            <div className="space-y-3">
+              <ChecklistItem title="수업안이 충분히 검색되는가" desc="구독자가 첫 수업을 빠르게 찾을 수 있어야 합니다." done />
+              <ChecklistItem title="SPOMOVE 연결이 명확한가" desc="수업안에서 실행 화면으로 넘어가는 CTA가 필요합니다." />
+              <ChecklistItem title="리포트와 이어지는가" desc="수업 후 기록이 성장 리포트 소재로 이어져야 합니다." />
+            </div>
+          </Panel>
+        </aside>
       </div>
     </Screen>
   );
 }
 
+function PlanLessonCard({
+  lesson,
+  index,
+  onGo,
+}: {
+  lesson: { date: string; time: string; group: string; title: string; status: string; color: string };
+  index: number;
+  onGo: (view: ViewId) => void;
+}) {
+  const spomoveReady = lesson.status === 'SPOMOVE' || index === 0;
+  return (
+    <article className="rounded-xl border border-[#dfe3ea] bg-white p-4">
+      <div className="flex items-start gap-3">
+        <div className="h-14 w-1.5 rounded-full" style={{ background: lesson.color }} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#667085]">{lesson.date} · {lesson.time}</p>
+              <h4 className="mt-1 text-lg font-black">{lesson.title}</h4>
+              <p className="mt-1 text-sm font-semibold text-[#667085]">{lesson.group}</p>
+            </div>
+            <span className="rounded-full bg-[#f3f5f8] px-2.5 py-1 text-xs font-black text-[#475467]">{lesson.status}</span>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <MiniAction label="수업안" active onClick={() => onGo('library')} />
+            <MiniAction label="SPOMOVE" active={spomoveReady} onClick={() => onGo('spomove')} />
+            <MiniAction label="리포트" active={index < 2} onClick={() => onGo('report')} />
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function MiniAction({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-9 rounded-lg text-xs font-black ${
+        active ? 'bg-[#edf3ff] text-[#1546d0]' : 'bg-[#f3f5f8] text-[#98a2b3]'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
 function ReportView() {
   return (
-    <Screen title="성장 리포트" desc="학부모에게 공유할 결과와 발송 상태가 먼저 보이도록 구성합니다.">
+    <Screen title="성장 리포트" desc="수업 후 관찰 기록을 학부모 공유 가치로 바꾸는 흐름을 설계합니다.">
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <Panel title="학생별 리포트">
-          <div className="space-y-3">
-            {REPORTS.map((report) => (
-              <div key={report.name} className="rounded-lg border border-[#dfe3ea] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-11 w-11 place-items-center rounded-full bg-[#edf3ff] text-sm font-black text-[#1f5eff]">{report.name[0]}</div>
-                    <div>
-                      <p className="font-black">{report.name}</p>
-                      <p className="text-sm font-medium text-[#667085]">{report.group}</p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-[#f3f5f8] px-3 py-1 text-xs font-black text-[#475467]">{report.state}</span>
-                </div>
-                <div className="mt-4 grid grid-cols-4 gap-2">
-                  <SmallMetric label="평균" value={`${report.avg}ms`} />
-                  <SmallMetric label="최고" value={`${report.best}ms`} />
-                  <SmallMetric label="참여" value={`${report.attendance}%`} />
-                  <SmallMetric label="개선" value={`${report.delta}ms`} />
-                </div>
+        <section className="space-y-5">
+          <div className="rounded-xl border border-[#dfe3ea] bg-white p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-black text-[#1f5eff]">수업 후 3분 정리</p>
+                <h3 className="mt-2 text-2xl font-black tracking-tight">반응 기록, 참여 관찰, 다음 과제를 한 장으로 묶습니다.</h3>
+                <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#667085]">
+                  구독자 화면에서는 수업 직후 학생별 리포트를 작성하고, 관리자 NEW에서는 그 공유 경험이 충분히 명확한지 점검합니다.
+                </p>
               </div>
-            ))}
+              <Link href="/spokedu-pro" className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#172033] px-4 text-sm font-black text-white">
+                구독자 리포트 화면
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
-        </Panel>
-        <Panel title="공유 미리보기">
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <ReportPipelineCard title="1. 수업 기록" desc="SPOMOVE 반응, 참여도, 교사 메모를 모읍니다." icon={Timer} />
+            <ReportPipelineCard title="2. 성장 문장" desc="학부모가 이해할 수 있는 짧은 변화 문장으로 바꿉니다." icon={FileText} />
+            <ReportPipelineCard title="3. 공유 링크" desc="센터 톤에 맞춘 미리보기와 공유 링크를 생성합니다." icon={Share2} />
+          </div>
+
+          <Panel title="학생별 리포트">
+            <div className="space-y-3">
+              {REPORTS.map((report) => (
+                <ReportStudentRow key={report.name} report={report} />
+              ))}
+            </div>
+          </Panel>
+        </section>
+
+        <aside className="space-y-5">
+          <Panel title="공유 미리보기">
           <div className="rounded-xl bg-[#172033] p-5 text-white">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-white/50">Parent report</p>
             <h3 className="mt-4 text-2xl font-black">김하윤 성장 리포트</h3>
             <p className="mt-3 text-sm font-medium leading-6 text-white/70">
               반응속도와 참여율이 모두 개선되었습니다. 다음 주에는 방향 전환 과제를 조금 더 확장합니다.
             </p>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <SmallMetric label="평균" value="328ms" />
+              <SmallMetric label="참여" value="96%" />
+              <SmallMetric label="개선" value="-42ms" />
+            </div>
             <button type="button" className="mt-5 h-11 w-full rounded-lg bg-white text-sm font-black text-[#172033]">공유 링크 만들기</button>
           </div>
         </Panel>
+
+          <Panel title="관리자 확인 포인트">
+            <div className="space-y-3">
+              <ChecklistItem title="리포트 문장이 쉬운가" desc="전문 용어보다 학부모가 이해할 변화 문장이 먼저 보여야 합니다." done />
+              <ChecklistItem title="수업 근거가 보이는가" desc="SPOMOVE 기록과 교사 관찰이 리포트에 연결되어야 합니다." />
+              <ChecklistItem title="공유 전 검토가 가능한가" desc="발송 전 상태와 미리보기가 명확해야 합니다." done />
+            </div>
+          </Panel>
+        </aside>
       </div>
     </Screen>
+  );
+}
+
+function ReportPipelineCard({ title, desc, icon: Icon }: { title: string; desc: string; icon: React.ElementType }) {
+  return (
+    <div className="rounded-xl border border-[#dfe3ea] bg-white p-4">
+      <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#edf3ff] text-[#1f5eff]">
+        <Icon className="h-5 w-5" />
+      </div>
+      <h4 className="mt-4 font-black">{title}</h4>
+      <p className="mt-2 text-sm font-medium leading-6 text-[#667085]">{desc}</p>
+    </div>
+  );
+}
+
+function ReportStudentRow({
+  report,
+}: {
+  report: { name: string; group: string; avg: number; best: number; attendance: number; delta: number; state: string };
+}) {
+  return (
+    <div className="rounded-lg border border-[#dfe3ea] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-[#edf3ff] text-sm font-black text-[#1f5eff]">{report.name[0]}</div>
+          <div>
+            <p className="font-black">{report.name}</p>
+            <p className="text-sm font-medium text-[#667085]">{report.group}</p>
+          </div>
+        </div>
+        <span className="rounded-full bg-[#f3f5f8] px-3 py-1 text-xs font-black text-[#475467]">{report.state}</span>
+      </div>
+      <div className="mt-4 grid grid-cols-4 gap-2">
+        <SmallMetric label="평균" value={`${report.avg}ms`} />
+        <SmallMetric label="최고" value={`${report.best}ms`} />
+        <SmallMetric label="참여" value={`${report.attendance}%`} />
+        <SmallMetric label="개선" value={`${report.delta}ms`} />
+      </div>
+    </div>
   );
 }
 

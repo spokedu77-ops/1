@@ -157,7 +157,7 @@ export function NoteEditor({
   useEffect(() => {
     if (!editor || editor.isFocused) return;
     if (editor.getHTML() !== sourceHtml) {
-      editor.commands.setContent(sourceHtml, false);
+      editor.commands.setContent(sourceHtml, { emitUpdate: false });
     }
   }, [editor, sourceHtml]);
 
