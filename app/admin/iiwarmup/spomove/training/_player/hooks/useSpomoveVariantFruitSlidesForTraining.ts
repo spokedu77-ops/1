@@ -23,7 +23,7 @@ function normalizeThemedPaths(raw: unknown, slotCount: number): (string | null)[
   return sliced.map((x) => (typeof x === 'string' && x.trim() ? x.trim() : null));
 }
 
-/** SPOMOVE 트레이닝: 업로드된 이미지 슬롯만 반영(비어 있으면 빈 풀 → 신호 생성 시 색/폴백) */
+/** SPOMOVE 트레이닝: 업로드된 이미지 슬롯만 반영(비어 있을 때만 신호 생성 시 색/폴백) */
 export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveColorThemeId) {
   const [slides, setSlides] = useState<FruitSlide[]>([]);
 
@@ -56,7 +56,7 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
         }
       });
       const built = buildVariantSlidesFromThemedUrls(urls);
-      setSlides(built.length >= 2 ? built : []);
+      setSlides(built.length > 0 ? built : []);
     } catch {
       setSlides([]);
     }

@@ -65,7 +65,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 2, name: '2번', enName: 'Full-Screen Color', desc: '전면 색 — 화면 전체 색 신호와 함께 선택한 색지각 이미지 테마가 화면 전체로 표시됩니다. 해당 색 위치로 이동합니다.' },
       { id: 3, name: '3번', enName: 'Variant Color (1)', desc: '변형 색지각 1단계 — 같은 테마. 가로 3칸 중 일부만 이미지(나머지 흰 칸). 색 한 가지로 답합니다.' },
       { id: 4, name: '4번', enName: 'Variant Color (2)', desc: '변형 색지각 2단계 — 과일 기본 테마. 가로 3칸 중 일부만 이미지(나머지 흰 칸)로 표시되고, 보이는 이미지의 색 위치로 이동합니다.' },
-      { id: 5, name: '5번', enName: '변형 색상 3패널 (Variant 3)', desc: '변형 색상 3패널 (Variant 3) — 가로 3패널에 서로 다른 이미지 3개(색도 모두 다름)가 동시에 표시됩니다. 바로 다음 cue에서 같은 칸에 같은 이미지가 연속으로 나오지 않습니다.' },
+      { id: 5, name: '변형 색상 3패널', enName: 'Variant 3', desc: '변형 색상 3패널 (Variant 3) — 가로 3패널에 서로 다른 이미지 3개(색도 모두 다름)가 동시에 표시됩니다. 바로 다음 cue에서 같은 칸에 같은 이미지가 연속으로 나오지 않습니다.' },
       { id: 6, name: '6번', enName: 'Spatial Orientation', desc: '공간 방향 — 화살표 방향을 보고 해당 방향 위치로 즉시 이동합니다.' },
     ],
   },

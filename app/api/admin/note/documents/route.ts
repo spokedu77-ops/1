@@ -15,6 +15,34 @@ type NoteDocument = {
   updated_at: string;
 };
 
+async function insertAuditLog({
+  documentId,
+  actorId,
+  action,
+  summary,
+  diff,
+}: {
+  documentId: string;
+  actorId: string;
+  action: string;
+  summary: string;
+  diff?: unknown;
+}) {
+  try {
+    const supabase = getServiceSupabase();
+    const { error } = await supabase.from('note_audit_logs').insert({
+      document_id: documentId,
+      actor_id: actorId,
+      action,
+      summary,
+      diff: diff ?? null,
+    });
+    if (error) devLogger.error('[admin/note/documents] audit log error', error);
+  } catch (err) {
+    devLogger.error('[admin/note/documents] audit log exception', err);
+  }
+}
+
 function parsePositiveInt(value: string | null, fallback: number, max: number): number {
   if (!value) return fallback;
   const parsed = Number.parseInt(value, 10);
@@ -59,17 +87,22 @@ export async function GET(request: NextRequest) {
 
       const escapedTitle = targetTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const backlinkPattern = `%[[${escapedTitle}]]%`;
-      const { data: backlinkBlocks, error: backlinkBlocksError } = await supabase
-        .from('note_blocks')
-        .select('document_id')
-        .ilike('content->>text', backlinkPattern)
-        .limit(300);
+      const backlinkFields = ['text', 'legacyText', 'body', 'legacyBody'];
+      const backlinkResults = await Promise.all(backlinkFields.map((field) =>
+        supabase
+          .from('note_blocks')
+          .select('document_id')
+          .ilike(`content->>${field}`, backlinkPattern)
+          .limit(300),
+      ));
+      const backlinkBlocks = backlinkResults.flatMap(({ data }) => data ?? []);
+      const backlinkBlocksError = backlinkResults.find(({ error }) => error)?.error;
       if (backlinkBlocksError) {
         devLogger.error('[admin/note/documents] GET backlinks blocks error', backlinkBlocksError);
         return NextResponse.json({ error: backlinkBlocksError.message }, { status: 500 });
       }
 
-      const sourceDocIds = [...new Set((backlinkBlocks ?? []).map((b) => b.document_id).filter((id) => id && id !== backlinksFor))];
+      const sourceDocIds = [...new Set(backlinkBlocks.map((b) => b.document_id).filter((id) => id && id !== backlinksFor))];
       if (sourceDocIds.length === 0) {
         return NextResponse.json({ backlinks: [] as NoteDocument[] });
       }
@@ -163,7 +196,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ document: data as NoteDocument });
+    const document = data as NoteDocument;
+    await insertAuditLog({
+      documentId: document.id,
+      actorId: auth.userId,
+      action: 'create_document',
+      summary: '문서 생성',
+      diff: { after: document },
+    });
+
+    return NextResponse.json({ document });
   } catch (err) {
     devLogger.error('[admin/note/documents] POST exception', err);
     return NextResponse.json(
@@ -219,6 +261,16 @@ export async function PATCH(request: NextRequest) {
     const supabase = getServiceSupabase();
     const now = new Date().toISOString();
 
+    const { data: beforeDocument, error: beforeError } = await supabase
+      .from('note_documents')
+      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
+      .eq('id', id)
+      .maybeSingle();
+    if (beforeError) {
+      devLogger.error('[admin/note/documents] PATCH before error', beforeError);
+      return NextResponse.json({ error: beforeError.message }, { status: 500 });
+    }
+
     const { data, error } = await supabase
       .from('note_documents')
       .update({
@@ -235,7 +287,16 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ document: data as NoteDocument });
+    const document = data as NoteDocument;
+    await insertAuditLog({
+      documentId: document.id,
+      actorId: auth.userId,
+      action: 'update_document',
+      summary: '문서 메타 수정',
+      diff: { before: beforeDocument, after: document },
+    });
+
+    return NextResponse.json({ document });
   } catch (err) {
     devLogger.error('[admin/note/documents] PATCH exception', err);
     return NextResponse.json(
@@ -258,6 +319,16 @@ export async function DELETE(request: NextRequest) {
 
     const supabase = getServiceSupabase();
     const now = new Date().toISOString();
+    const { data: beforeDocument, error: beforeError } = await supabase
+      .from('note_documents')
+      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
+      .eq('id', id)
+      .maybeSingle();
+    if (beforeError) {
+      devLogger.error('[admin/note/documents] DELETE before error', beforeError);
+      return NextResponse.json({ error: beforeError.message }, { status: 500 });
+    }
+
     const { error } = await supabase
       .from('note_documents')
       .update({
@@ -272,6 +343,16 @@ export async function DELETE(request: NextRequest) {
     if (error) {
       devLogger.error('[admin/note/documents] DELETE error', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (beforeDocument?.id) {
+      await insertAuditLog({
+        documentId: beforeDocument.id,
+        actorId: auth.userId,
+        action: 'delete_document',
+        summary: '문서 휴지통 이동',
+        diff: { before: beforeDocument, after: { deleted_at: now, deleted_by: auth.userId } },
+      });
     }
 
     return NextResponse.json({ ok: true, softDeleted: true });

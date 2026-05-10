@@ -9,7 +9,10 @@ import {
 } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { parseInlineMarkupToHtml, toggleInlineMark, type InlineMark } from '@/app/lib/note/inlineMarkup';
+import type { InlineMark } from '@/app/lib/note/inlineMarkup';
+import { NoteEditor } from './_components/NoteEditor';
+import { BubbleToolbar } from './_components/BubbleToolbar';
+import { SlashMenu } from './_components/SlashMenu';
 import {
   Plus,
   FileText,
@@ -29,11 +32,6 @@ import {
   Clock,
   Slash,
   GripVertical,
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
-  Strikethrough,
-  Code2,
   ChevronDown,
   MessageSquareQuote,
 } from 'lucide-react';
@@ -75,6 +73,7 @@ type NoteDocument = {
 type NoteBlock = {
   id: string;
   document_id: string;
+  parent_block_id?: string | null;
   type: 'heading' | 'text' | 'todo' | 'divider' | 'image' | 'toggle' | 'callout' | 'page' | string;
   order_index: number;
   content: any;
@@ -111,7 +110,6 @@ function relativeTime(dateStr: string): string {
   if (days < 7) return `${days}일 전`;
   return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
-
 
 /* ─── DocItem ────────────────────────────────────────────────────────────── */
 function DocItem({
@@ -206,49 +204,6 @@ function DocItem({
   );
 }
 
-/* ─── SlashMenu ──────────────────────────────────────────────────────────── */
-function SlashMenu({
-  onSelect, onClose,
-}: {
-  onSelect: (type: NoteBlock['type']) => void;
-  onClose: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [onClose]);
-
-  return (
-    <div
-      ref={ref}
-      className="absolute left-0 top-full z-50 mt-1 min-w-[180px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
-    >
-      <div className="border-b border-slate-100 px-3 py-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">블록 타입 선택</p>
-      </div>
-      {BLOCK_TYPES.map(({ type, label, icon: Icon, desc }) => (
-        <button
-          key={type} type="button"
-          className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-blue-50"
-          onClick={() => { onSelect(type); onClose(); }}
-        >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100">
-            <Icon className="h-4 w-4 text-slate-600" />
-          </span>
-          <span>
-            <p className="text-[13px] font-semibold text-slate-800">{label}</p>
-            <p className="text-[11px] text-slate-400">{desc}</p>
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /* ─── BlockContent ──────────────────────────────────────────────────────── */
 function BlockContent({
   block,
@@ -261,6 +216,7 @@ function BlockContent({
   onHideFormatToolbar,
   isDragging,
   focusedToggleId,
+  uploadImage,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -272,142 +228,12 @@ function BlockContent({
   onHideFormatToolbar?: () => void;
   isDragging?: boolean;
   focusedToggleId?: string | null;
+  uploadImage?: (file: File) => Promise<string>;
 }) {
-  const textRef = useRef<HTMLTextAreaElement>(null);
   const [showSlash, setShowSlash] = useState(false);
-  const [hasSelection, setHasSelection] = useState(false);
-  const [renderMode, setRenderMode] = useState<'formatted' | 'editing'>('formatted');
+  const [slashQuery, setSlashQuery] = useState('');
 
   const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
-  const supportsFormatting = ['text', 'todo', 'heading', 'callout', 'toggle'].includes(block.type);
-
-  const INDENT = '  '; // 2 spaces
-
-  const applyIndent = (direction: 'in' | 'out') => {
-    const el = textRef.current;
-    if (!el) return;
-    const currentText = typeof block.content?.text === 'string' ? block.content.text : '';
-    const rawStart = el.selectionStart ?? 0;
-    const rawEnd = el.selectionEnd ?? 0;
-    const start = Math.min(rawStart, rawEnd);
-    const end = Math.max(rawStart, rawEnd);
-
-    // 선택 영역이 포함된 라인들 기준으로 들여쓰기/내어쓰기
-    const lineStart = currentText.lastIndexOf('\n', start - 1) + 1; // -1이면 0
-    const lineEndBase = currentText.indexOf('\n', end);
-    const lineEnd = lineEndBase === -1 ? currentText.length : lineEndBase;
-    const selectedChunk = currentText.slice(lineStart, lineEnd);
-    const lines: string[] = selectedChunk.split('\n');
-
-    let deltaStart = 0;
-    let deltaEnd = 0;
-
-    const nextLines = lines.map((line: string, idx: number) => {
-      if (direction === 'in') {
-        if (idx === 0) deltaStart += INDENT.length;
-        deltaEnd += INDENT.length;
-        return `${INDENT}${line}`;
-      }
-      // out
-      if (line.startsWith(INDENT)) {
-        if (idx === 0) deltaStart -= INDENT.length;
-        deltaEnd -= INDENT.length;
-        return line.slice(INDENT.length);
-      }
-      if (line.startsWith('\t')) {
-        if (idx === 0) deltaStart -= 1;
-        deltaEnd -= 1;
-        return line.slice(1);
-      }
-      return line;
-    });
-
-    const replaced = nextLines.join('\n');
-    const nextText = `${currentText.slice(0, lineStart)}${replaced}${currentText.slice(lineEnd)}`;
-
-    onUpdate({ ...block.content, text: nextText });
-    requestAnimationFrame(() => {
-      const nextEl = textRef.current;
-      if (!nextEl) return;
-      const nextSelStart = Math.max(0, start + deltaStart);
-      const nextSelEnd = Math.max(nextSelStart, end + deltaEnd);
-      nextEl.focus();
-      nextEl.setSelectionRange(nextSelStart, nextSelEnd);
-    });
-  };
-
-  const handleSelectionChange = () => {
-    const el = textRef.current;
-    const selected = !!el && el.selectionStart !== el.selectionEnd;
-    setHasSelection(selected);
-    if (!supportsFormatting) return;
-    if (selected) onShowFormatToolbar?.(applyMark);
-    else onHideFormatToolbar?.();
-  };
-
-  const applyMark = useCallback((mark: InlineMark) => {
-    if (!textRef.current) return;
-    const start = textRef.current.selectionStart ?? 0;
-    const end = textRef.current.selectionEnd ?? 0;
-    const currentText = typeof block.content?.text === 'string' ? block.content.text : '';
-    const result = toggleInlineMark(currentText, mark, start, end);
-    setRenderMode('formatted');
-    onUpdate({ ...block.content, text: result.text });
-    requestAnimationFrame(() => {
-      // 서식 적용 후 강제 focus 재진입을 막아 raw 토큰(**, __ 등)이 즉시 보이는 현상을 방지
-      setHasSelection(false);
-      onHideFormatToolbar?.();
-    });
-   
-  }, [block.content, onHideFormatToolbar, onUpdate]);
-
-  const autoResize = useCallback(() => {
-    const el = textRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
-  }, []);
-
-  useEffect(() => {
-    // 토글의 body 렌더/확장 직후에도 높이가 즉시 맞춰지도록 다음 프레임에서 재계산
-    requestAnimationFrame(() => autoResize());
-  }, [block.content?.text, block.content?.body, block.content?.collapsed, autoResize]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Escape') { setShowSlash(false); return; }
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      // Tab은 블록 depth가 아니라, 블록 내부 텍스트 들여쓰기/내어쓰기
-      applyIndent(e.shiftKey ? 'out' : 'in');
-      return;
-    }
-    const lower = e.key.toLowerCase();
-    if ((e.metaKey || e.ctrlKey) && supportsFormatting) {
-      if (lower === 'b') { e.preventDefault(); applyMark('bold'); return; }
-      if (lower === 'i') { e.preventDefault(); applyMark('italic'); return; }
-      if (lower === 'u') { e.preventDefault(); applyMark('underline'); return; }
-      if (lower === '`') { e.preventDefault(); applyMark('code'); return; }
-      if (e.shiftKey && lower === 'x') { e.preventDefault(); applyMark('strike'); return; }
-    }
-    if (e.key === 'Enter' && (e.shiftKey || e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      setShowSlash(false);
-      onEnter();
-      return;
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>, field = 'text') => {
-    const val = e.target.value;
-    if (field === 'text') setRenderMode('editing');
-    if (field === 'text' && val === '/' && (block.content?.text ?? '') === '') {
-      setShowSlash(true);
-      return;
-    }
-    setShowSlash(false);
-    onUpdate({ ...block.content, [field]: val });
-    autoResize();
-  };
 
   const renderFormatToolbar = () => null;
 
@@ -415,51 +241,43 @@ function BlockContent({
     text,
     placeholder,
     textClassName,
-    placeholderClassName = 'text-slate-300',
     field = 'text',
   }: {
     text: string;
     placeholder: string;
     textClassName: string;
-    placeholderClassName?: string;
     field?: 'text' | 'body';
   }) => {
-    const hasText = text.length > 0;
-    const formattedMode = true; // 항상 서식 렌더 유지 (WYSIWYG에 가깝게)
+    const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
+    const legacyKey = field === 'body' ? 'legacyBody' : 'legacyText';
 
     return (
       <div className="relative">
-        {/* formatted preview layer (same textarea DOM 유지) */}
-        <div
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 whitespace-pre-wrap break-words ${textClassName} ${
-            formattedMode ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          {hasText ? (
-            <span dangerouslySetInnerHTML={{ __html: parseInlineMarkupToHtml(text) }} />
-          ) : (
-            <span className={placeholderClassName}>{placeholder}</span>
-          )}
-        </div>
-        <textarea
-          ref={textRef}
-          rows={1}
-          className={`relative w-full resize-none overflow-hidden bg-transparent ${textClassName} text-transparent caret-slate-800 selection:bg-blue-200/60 selection:text-transparent outline-none placeholder:transparent`}
-          style={{ WebkitTextFillColor: 'transparent' }}
+        <NoteEditor
+          content={block.content}
+          field={field}
+          text={text}
           placeholder={placeholder}
-          value={text}
-          onChange={(e) => handleChange(e, field)}
-          onKeyDown={handleKeyDown}
-          onSelect={handleSelectionChange}
-          onFocus={() => {
-            setRenderMode('editing');
-            requestAnimationFrame(() => autoResize());
+          className={textClassName}
+          onEnter={onEnter}
+          onSlashChange={(nextShow, nextQuery) => {
+            setShowSlash(nextShow);
+            setSlashQuery(nextQuery);
           }}
-          onBlur={() => {
-            setHasSelection(false);
-            onHideFormatToolbar?.();
-            setRenderMode('formatted');
+          onShowFormatToolbar={onShowFormatToolbar}
+          onHideFormatToolbar={onHideFormatToolbar}
+          uploadImage={uploadImage}
+          onChange={({ text: nextText, html: nextHtml }) => {
+            const nextContent: Record<string, unknown> = {
+              ...block.content,
+              [field]: nextText,
+              [htmlKey]: nextHtml,
+            };
+            const original = block.content?.[field];
+            if (typeof block.content?.[legacyKey] !== 'string' && typeof original === 'string') {
+              nextContent[legacyKey] = original;
+            }
+            onUpdate(nextContent);
           }}
         />
       </div>
@@ -501,8 +319,10 @@ function BlockContent({
           })}
           {showSlash && (
             <SlashMenu
+              commands={BLOCK_TYPES}
+              query={slashQuery}
               onSelect={(type) => { onChangeType(type); }}
-              onClose={() => setShowSlash(false)}
+              onClose={() => { setShowSlash(false); setSlashQuery(''); }}
             />
           )}
         </div>
@@ -527,8 +347,10 @@ function BlockContent({
           })}
           {showSlash && (
             <SlashMenu
+              commands={BLOCK_TYPES}
+              query={slashQuery}
               onSelect={(type) => { onChangeType(type); }}
-              onClose={() => setShowSlash(false)}
+              onClose={() => { setShowSlash(false); setSlashQuery(''); }}
             />
           )}
         </div>
@@ -629,7 +451,6 @@ function BlockContent({
           text,
           placeholder: '강조 메시지를 입력하세요',
           textClassName: 'text-[15px] leading-7 text-slate-800',
-          placeholderClassName: 'text-slate-400',
         })}
       </div>
     );
@@ -684,7 +505,6 @@ function BlockContent({
               text: body,
               placeholder: '토글 본문을 입력하세요',
               textClassName: 'text-[15px] leading-7 text-slate-800',
-              placeholderClassName: 'text-slate-400',
               field: 'body',
             })}
             {toggleImages.length > 0 && (
@@ -742,8 +562,10 @@ function BlockContent({
         })}
         {showSlash && (
           <SlashMenu
+            commands={BLOCK_TYPES}
+            query={slashQuery}
             onSelect={(type) => { onChangeType(type); }}
-            onClose={() => setShowSlash(false)}
+            onClose={() => { setShowSlash(false); setSlashQuery(''); }}
           />
         )}
       </div>
@@ -767,6 +589,7 @@ function SortableBlockRow({
   onHideFormatToolbar,
   focusedToggleId,
   onFocusToggle,
+  uploadImage,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -778,6 +601,7 @@ function SortableBlockRow({
   onHideFormatToolbar?: () => void;
   focusedToggleId?: string | null;
   onFocusToggle?: (blockId: string | null) => void;
+  uploadImage?: (file: File) => Promise<string>;
 }) {
   const {
     attributes,
@@ -832,6 +656,7 @@ function SortableBlockRow({
           onHideFormatToolbar={onHideFormatToolbar}
           isDragging={isDragging}
           focusedToggleId={focusedToggleId}
+          uploadImage={uploadImage}
         />
       </div>
     </div>
@@ -1177,6 +1002,23 @@ export default function AdminNotePage() {
   const hideFormatToolbar = useCallback(() => {
     setFormatToolbar(null);
   }, []);
+
+  const uploadNoteImage = useCallback(async (file: File) => {
+    if (!selectedId) throw new Error('문서를 먼저 선택해야 합니다.');
+    const formData = new FormData();
+    formData.set('documentId', selectedId);
+    formData.set('file', file);
+    const res = await fetch('/api/admin/note/upload', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+    if (!res.ok || !body.url) {
+      throw new Error(body.error ?? '이미지 업로드 실패');
+    }
+    return body.url;
+  }, [selectedId]);
 
   const handleCreateDocument = async (parentId: string | null = null) => {
     try {
@@ -1732,24 +1574,7 @@ export default function AdminNotePage() {
                 <div className="mx-auto flex max-w-3xl items-center gap-1 px-4 py-2 md:px-16">
                   {formatToolbar ? (
                     <>
-                      {([
-                        { mark: 'bold' as const, label: '굵게 (Ctrl+B)', icon: Bold },
-                        { mark: 'italic' as const, label: '기울임 (Ctrl+I)', icon: Italic },
-                        { mark: 'underline' as const, label: '밑줄 (Ctrl+U)', icon: UnderlineIcon },
-                        { mark: 'strike' as const, label: '취소선 (Ctrl+Shift+X)', icon: Strikethrough },
-                        { mark: 'code' as const, label: '코드 (Ctrl+`)', icon: Code2 },
-                      ] as const).map(({ mark, label, icon: Icon }) => (
-                        <button
-                          key={mark}
-                          type="button"
-                          title={label}
-                          className="rounded-lg px-2 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => formatToolbar.applyMark(mark)}
-                        >
-                          <Icon className="h-4 w-4" />
-                        </button>
-                      ))}
+                      <BubbleToolbar applyMark={formatToolbar.applyMark} />
                       <span className="ml-2 text-[11px] font-medium text-slate-400">선택 영역 서식</span>
                     </>
                   ) : (
@@ -1799,16 +1624,18 @@ export default function AdminNotePage() {
                 </div>
                 {backlinks.length > 0 && (
                   <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
-                    <p className="mb-2 text-[12px] font-semibold text-blue-700">백링크 {backlinks.length}</p>
-                    <div className="flex flex-wrap gap-2">
+                    <p className="text-[12px] font-semibold text-blue-700">이 문서를 언급한 곳</p>
+                    <p className="mb-3 mt-0.5 text-[11px] text-blue-500">총 {backlinks.length}개 문서에서 현재 문서를 참조합니다.</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
                       {backlinks.map((doc) => (
                         <button
                           key={doc.id}
                           type="button"
-                          className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-blue-700 shadow-sm hover:bg-blue-100"
+                          className="rounded-lg bg-white px-3 py-2 text-left shadow-sm transition hover:bg-blue-100"
                           onClick={() => handleSelectDocument(doc)}
                         >
-                          {doc.title}
+                          <span className="block truncate text-[13px] font-semibold text-blue-800">{doc.title}</span>
+                          <span className="mt-0.5 block text-[11px] text-blue-400">{relativeTime(doc.updated_at)}</span>
                         </button>
                       ))}
                     </div>
@@ -1842,6 +1669,7 @@ export default function AdminNotePage() {
                         onHideFormatToolbar={hideFormatToolbar}
                         focusedToggleId={focusedToggleId}
                         onFocusToggle={setFocusedToggleId}
+                        uploadImage={uploadNoteImage}
                       />
                     ))}
                   </div>

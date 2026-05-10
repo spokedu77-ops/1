@@ -4,9 +4,9 @@
 
 export const SPOMOVE_VARIANT_THEME_LS_KEY = 'spomove_variant_training_theme';
 
-export type SpomoveColorThemeId = 'color' | 'fruit' | 'vehicle' | 'emotion' | 'animal';
+export type SpomoveColorThemeId = 'color' | 'fruit' | 'vehicle' | 'emotion' | 'animal' | 'nature';
 
-export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['emotion', 'fruit', 'animal', 'color', 'vehicle'];
+export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['emotion', 'fruit', 'animal', 'nature', 'color', 'vehicle'];
 
 export const SPOMOVE_COLOR_THEME_LABELS: Record<SpomoveColorThemeId, string> = {
   color: '색상',
@@ -14,18 +14,21 @@ export const SPOMOVE_COLOR_THEME_LABELS: Record<SpomoveColorThemeId, string> = {
   vehicle: '탈 것',
   emotion: '감정',
   animal: '동물',
+  nature: '자연물',
 };
 
 export const SPOMOVE_VARIANT_VEHICLE_PACK_ID = 'spomove_variant_vehicles';
 export const SPOMOVE_VARIANT_EMOTION_PACK_ID = 'spomove_variant_emotions';
 export const SPOMOVE_VARIANT_ANIMAL_PACK_ID = 'spomove_variant_animals';
+export const SPOMOVE_VARIANT_NATURE_PACK_ID = 'spomove_variant_nature';
 
 export const SPOMOVE_THEMED_SLOT_COUNT = 8 as const;
 
 export type SpomoveThemedStorageSubfolder =
   | 'spomove_variant_vehicles'
   | 'spomove_variant_emotions'
-  | 'spomove_variant_animals';
+  | 'spomove_variant_animals'
+  | 'spomove_variant_nature';
 
 export type SpomoveThemedPackDef = {
   packId: string;
@@ -70,9 +73,16 @@ export const SPOMOVE_THEMED_PACK_BY_THEME: Record<
     slotLabels: ['강아지', '고양이', '토끼', '새', '곰', '펭귄', '사자', '코끼리'],
     intro: '동물 테마 이미지 8슬롯입니다. 업로드·반영 방식은 탈 것 탭과 동일합니다.',
   },
+  nature: {
+    packId: SPOMOVE_VARIANT_NATURE_PACK_ID,
+    packName: 'SPOMOVE 색지각 자연물',
+    subfolder: 'spomove_variant_nature',
+    slotLabels: ['나무', '꽃', '잎', '돌', '구름', '해', '달', '파도'],
+    intro: '자연물 테마 이미지 8슬롯입니다. 업로드·반영 방식은 탈 것 탭과 동일합니다.',
+  },
 };
 
-/** Asset Hub 색지각 — 5개 섹션 (1: 테마·미리보기, 2~5: 자산 편집) */
+/** Asset Hub 색지각 — 6개 섹션 (1: 테마·미리보기, 2~6: 자산 편집) */
 export const SPOMOVE_COLOR_HUB_SECTIONS: {
   id: 'theme' | SpomoveColorThemeId;
   tabLabel: string;
@@ -82,9 +92,10 @@ export const SPOMOVE_COLOR_HUB_SECTIONS: {
   { id: 'vehicle', tabLabel: '3. 탈 것' },
   { id: 'emotion', tabLabel: '4. 감정' },
   { id: 'animal', tabLabel: '5. 동물' },
+  { id: 'nature', tabLabel: '6. 자연물' },
 ];
 
 export function parseStoredVariantTheme(raw: string | null): SpomoveColorThemeId {
-  if (raw === 'color' || raw === 'fruit' || raw === 'vehicle' || raw === 'emotion' || raw === 'animal') return raw;
+  if (raw === 'color' || raw === 'fruit' || raw === 'vehicle' || raw === 'emotion' || raw === 'animal' || raw === 'nature') return raw;
   return 'color';
 }

@@ -5,12 +5,44 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 type NoteBlock = {
   id: string;
   document_id: string;
+  parent_block_id: string | null;
   type: string;
   order_index: number;
   content: unknown;
   created_at: string;
   updated_at: string;
 };
+
+async function insertAuditLog({
+  documentId,
+  blockId,
+  actorId,
+  action,
+  summary,
+  diff,
+}: {
+  documentId: string;
+  blockId?: string | null;
+  actorId: string;
+  action: string;
+  summary: string;
+  diff?: unknown;
+}) {
+  try {
+    const supabase = getServiceSupabase();
+    const { error } = await supabase.from('note_audit_logs').insert({
+      document_id: documentId,
+      block_id: blockId ?? null,
+      actor_id: actorId,
+      action,
+      summary,
+      diff: diff ?? null,
+    });
+    if (error) devLogger.error('[admin/note/blocks] audit log error', error);
+  } catch (err) {
+    devLogger.error('[admin/note/blocks] audit log exception', err);
+  }
+}
 
 function parsePositiveInt(value: string | null, fallback: number, max: number): number {
   if (!value) return fallback;
@@ -33,6 +65,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
+    const parentBlockId = searchParams.get('parentBlockId');
     const limit = parsePositiveInt(searchParams.get('limit'), 300, 1000);
     const offset = parseOffset(searchParams.get('offset'));
     if (!documentId) {
@@ -40,12 +73,18 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = getServiceSupabase();
-    const { data, error } = await supabase
+    const query = supabase
       .from('note_blocks')
-      .select('id, document_id, type, order_index, content, created_at, updated_at')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
       .eq('document_id', documentId)
       .order('order_index', { ascending: true })
       .range(offset, offset + limit - 1);
+    if (parentBlockId === 'null') {
+      query.is('parent_block_id', null);
+    } else if (parentBlockId) {
+      query.eq('parent_block_id', parentBlockId);
+    }
+    const { data, error } = await query;
 
     if (error) {
       devLogger.error('[admin/note/blocks] GET error', error);
@@ -73,6 +112,11 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const documentId = typeof body.documentId === 'string' ? body.documentId : null;
+    const parentBlockId = typeof body.parent_block_id === 'string'
+      ? body.parent_block_id
+      : (typeof body.parentBlockId === 'string'
+        ? body.parentBlockId
+        : (body.parentBlockId === null || body.parent_block_id === null ? null : undefined));
     const type = typeof body.type === 'string' ? body.type : 'text';
     const content = body.content ?? {};
 
@@ -84,13 +128,15 @@ export async function POST(request: NextRequest) {
 
     // 현재 문서의 최소 order_index 계산 (없으면 0부터 시작)
     // 새 블록을 "최상단"에 추가하기 위해 min - 1 값을 사용합니다.
-    const { data: minRow, error: minError } = await supabase
+    const minQuery = supabase
       .from('note_blocks')
       .select('order_index')
       .eq('document_id', documentId)
       .order('order_index', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+    if (parentBlockId === null) minQuery.is('parent_block_id', null);
+    if (typeof parentBlockId === 'string') minQuery.eq('parent_block_id', parentBlockId);
+    const { data: minRow, error: minError } = await minQuery.maybeSingle();
 
     if (minError) {
       devLogger.error('[admin/note/blocks] POST min order error', minError);
@@ -104,6 +150,7 @@ export async function POST(request: NextRequest) {
       .from('note_blocks')
       .insert({
         document_id: documentId,
+        ...(parentBlockId !== undefined ? { parent_block_id: parentBlockId } : {}),
         type,
         order_index: nextOrderIndex,
         content,
@@ -112,7 +159,7 @@ export async function POST(request: NextRequest) {
         created_by: auth.userId,
         updated_by: auth.userId,
       })
-      .select('id, document_id, type, order_index, content, created_at, updated_at')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
       .single();
 
     if (error) {
@@ -120,7 +167,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ block: data as NoteBlock });
+    const block = data as NoteBlock;
+    await insertAuditLog({
+      documentId: block.document_id,
+      blockId: block.id,
+      actorId: auth.userId,
+      action: 'create_block',
+      summary: `${type} 블록 생성`,
+      diff: { after: block },
+    });
+
+    return NextResponse.json({ block });
   } catch (err) {
     devLogger.error('[admin/note/blocks] POST exception', err);
     return NextResponse.json(
@@ -152,8 +209,23 @@ export async function PATCH(request: NextRequest) {
     if (typeof body.order_index === 'number') {
       updates.order_index = body.order_index;
     }
+    if (body.parent_block_id === null || typeof body.parent_block_id === 'string') {
+      updates.parent_block_id = body.parent_block_id;
+    } else if (body.parentBlockId === null || typeof body.parentBlockId === 'string') {
+      updates.parent_block_id = body.parentBlockId;
+    }
 
     const supabase = getServiceSupabase();
+    const { data: beforeBlock, error: beforeError } = await supabase
+      .from('note_blocks')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
+      .eq('id', id)
+      .maybeSingle();
+    if (beforeError) {
+      devLogger.error('[admin/note/blocks] PATCH before error', beforeError);
+      return NextResponse.json({ error: beforeError.message }, { status: 500 });
+    }
+
     // 문서 이동 요청인 경우: 대상 문서 최상단(min-1)으로 들어가게 order_index를 서버에서 계산
     if (nextDocumentId) {
       const { data: minRow, error: minError } = await supabase
@@ -188,7 +260,7 @@ export async function PATCH(request: NextRequest) {
         updated_by: auth.userId,
       })
       .eq('id', id)
-      .select('id, document_id, type, order_index, content, created_at, updated_at')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
       .single();
 
     if (error) {
@@ -196,7 +268,17 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ block: data as NoteBlock });
+    const block = data as NoteBlock;
+    await insertAuditLog({
+      documentId: block.document_id,
+      blockId: block.id,
+      actorId: auth.userId,
+      action: 'update_block',
+      summary: '블록 수정',
+      diff: { before: beforeBlock, after: block },
+    });
+
+    return NextResponse.json({ block });
   } catch (err) {
     devLogger.error('[admin/note/blocks] PATCH exception', err);
     return NextResponse.json(
@@ -224,6 +306,15 @@ export async function PUT(request: NextRequest) {
 
     const supabase = getServiceSupabase();
     const now = new Date().toISOString();
+    const ids = orders
+      .map((order: { id?: unknown }) => (typeof order.id === 'string' ? order.id : null))
+      .filter((id: string | null): id is string => !!id);
+    const { data: beforeRows } = ids.length > 0
+      ? await supabase
+        .from('note_blocks')
+        .select('id, document_id, parent_block_id, order_index')
+        .in('id', ids)
+      : { data: [] };
 
     await Promise.all(
       orders.map(({ id, order_index }: { id: string; order_index: number }) =>
@@ -233,6 +324,15 @@ export async function PUT(request: NextRequest) {
           .eq('id', id),
       ),
     );
+
+    const documentIds = [...new Set((beforeRows ?? []).map((row) => row.document_id).filter(Boolean))];
+    await Promise.all(documentIds.map((documentId) => insertAuditLog({
+      documentId,
+      actorId: auth.userId,
+      action: 'reorder_blocks',
+      summary: '블록 순서 변경',
+      diff: { before: beforeRows, after: orders },
+    })));
 
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -256,11 +356,32 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabase = getServiceSupabase();
+    const { data: beforeBlock, error: beforeError } = await supabase
+      .from('note_blocks')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
+      .eq('id', id)
+      .maybeSingle();
+    if (beforeError) {
+      devLogger.error('[admin/note/blocks] DELETE before error', beforeError);
+      return NextResponse.json({ error: beforeError.message }, { status: 500 });
+    }
+
     const { error } = await supabase.from('note_blocks').delete().eq('id', id);
 
     if (error) {
       devLogger.error('[admin/note/blocks] DELETE error', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (beforeBlock?.document_id) {
+      await insertAuditLog({
+        documentId: beforeBlock.document_id,
+        blockId: beforeBlock.id,
+        actorId: auth.userId,
+        action: 'delete_block',
+        summary: '블록 삭제',
+        diff: { before: beforeBlock },
+      });
     }
 
     return NextResponse.json({ ok: true });

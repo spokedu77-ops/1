@@ -1,4 +1,4 @@
--- SPOMOVE 색지각 — 탈 것·감정·동물 각 8슬롯 (Asset Hub에서 경로 채움; 업로드 없으면 훈련에서 무시)
+-- SPOMOVE 색지각 — 탈 것·감정·동물·자연물 각 8슬롯 (Asset Hub에서 경로 채움; 업로드 없으면 훈련에서 무시)
 INSERT INTO think_asset_packs (id, name, theme, assets_json)
 VALUES
   (
@@ -16,6 +16,12 @@ VALUES
   (
     'spomove_variant_animals',
     'SPOMOVE 색지각 동물',
+    'iiwarmup',
+    '{"paths":[null,null,null,null,null,null,null,null]}'::jsonb
+  ),
+  (
+    'spomove_variant_nature',
+    'SPOMOVE 색지각 자연물',
     'iiwarmup',
     '{"paths":[null,null,null,null,null,null,null,null]}'::jsonb
   )

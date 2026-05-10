@@ -54,7 +54,7 @@ export function SpomoveColorPerceptionPanel() {
           <p className="text-sm text-neutral-400">
             SPOMOVE 반응 인지 <strong className="text-neutral-200">3·4·5번</strong>에서 쓸 이미지 묶음(테마)을 고릅니다. 아래에서
             테마를 선택하면 미리보기가 바뀌고, 트레이닝 설정에도 같은 선택이 반영됩니다. 자산은{' '}
-            <strong className="text-neutral-200">2~5번</strong> 탭에서 슬롯별로 올립니다.
+            <strong className="text-neutral-200">2~6번</strong> 탭에서 슬롯별로 올립니다.
           </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {SPOMOVE_COLOR_THEME_ORDER.map((id) => (
@@ -97,6 +97,7 @@ export function SpomoveColorPerceptionPanel() {
       {section === 'vehicle' && <SpomoveVariantThemedSlotsPanel def={SPOMOVE_THEMED_PACK_BY_THEME.vehicle} />}
       {section === 'emotion' && <SpomoveVariantThemedSlotsPanel def={SPOMOVE_THEMED_PACK_BY_THEME.emotion} />}
       {section === 'animal' && <SpomoveVariantThemedSlotsPanel def={SPOMOVE_THEMED_PACK_BY_THEME.animal} />}
+      {section === 'nature' && <SpomoveVariantThemedSlotsPanel def={SPOMOVE_THEMED_PACK_BY_THEME.nature} />}
     </div>
   );
 }

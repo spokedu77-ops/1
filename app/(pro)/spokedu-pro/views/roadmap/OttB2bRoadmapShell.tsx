@@ -87,7 +87,7 @@ function ProgramPoster({
           onOpen(program);
         }
       }}
-      className="group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.06] shadow-2xl shadow-black/30 backdrop-blur-xl transition-transform duration-300 hover:-translate-y-2 hover:border-white/25"
+      className="media-card group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/15 bg-white/[0.06] shadow-xl shadow-black/30 backdrop-blur-xl"
     >
       <div className={`relative aspect-video w-full bg-gradient-to-br ${program.gradient}`}>
         {program.thumbnailUrl ? (
@@ -113,7 +113,7 @@ function ProgramPoster({
         {!program.thumbnailUrl ? (
           <div className="absolute inset-0 z-10 grid place-items-center">
             <div
-              className={`grid h-28 w-28 place-items-center rounded-[2rem] bg-gradient-to-br ${program.accent} shadow-2xl shadow-black/30`}
+              className={`grid h-28 w-28 place-items-center rounded-3xl bg-gradient-to-br ${program.accent} shadow-2xl shadow-black/30`}
             >
               <Activity className="h-12 w-12 text-black/80" />
             </div>
@@ -121,8 +121,8 @@ function ProgramPoster({
         ) : null}
 
         <div className="absolute bottom-4 left-4 right-4 z-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">{program.category}</p>
-          <h3 className="mt-2 line-clamp-2 text-2xl font-black leading-tight text-white">{program.title}</h3>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">{program.category}</p>
+          <h3 className="mt-2 line-clamp-2 text-lg font-bold leading-snug text-white md:text-xl">{program.title}</h3>
         </div>
       </div>
 
@@ -208,16 +208,14 @@ export function OttB2bRoadmapShell({
 
   return (
     <div className="relative isolate min-h-0 bg-[#050509] text-white selection:bg-fuchsia-500 selection:text-white">
+      {/* 페이지 글로우는 .sp-pro-bg-mesh에서 이미 깔리므로 셸은 마스크 그리드 한 장만 둔다 */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-[-12%] top-[-20%] h-[520px] w-[520px] rounded-full bg-fuchsia-500/20 blur-[120px]" />
-        <div className="absolute right-[-14%] top-[10%] h-[560px] w-[560px] rounded-full bg-cyan-500/20 blur-[130px]" />
-        <div className="absolute bottom-[-18%] left-[30%] h-[520px] w-[520px] rounded-full bg-indigo-500/20 blur-[120px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(circle_at_top,black,transparent_70%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(circle_at_top,black,transparent_70%)]" />
       </div>
 
       <div className="relative z-10 flex w-full max-w-none gap-6 px-5 py-5 lg:px-8">
         <div className="min-w-0 flex-1">
-          <header className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-3 shadow-xl shadow-black/20 backdrop-blur-xl sm:rounded-[2rem] sm:p-4 md:flex-row md:items-center md:justify-between md:gap-4">
+          <header className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-3 shadow-lg shadow-black/20 backdrop-blur-xl sm:rounded-3xl sm:p-4 md:flex-row md:items-center md:justify-between md:gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-200/85 sm:text-xs">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.85)]" />
@@ -260,10 +258,10 @@ export function OttB2bRoadmapShell({
               <section className="mt-5 min-w-0 max-w-full sm:mt-6">
                 <div className="flex min-w-0 max-w-full flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500 sm:text-sm sm:tracking-[0.25em]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:text-xs">
                       {lineupEyebrow}
                     </p>
-                    <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:mt-2 sm:text-2xl md:text-3xl">
+                    <h2 className="mt-1 text-xl font-bold tracking-tight text-white sm:mt-2 sm:text-2xl">
                       {lineupTitle}
                     </h2>
                   </div>
@@ -307,7 +305,7 @@ export function OttB2bRoadmapShell({
                     </section>
                   ) : null}
 
-                  <section className="overflow-hidden rounded-2xl border border-white/10 bg-black/80 shadow-lg shadow-black/30 sm:rounded-[2rem]">
+                  <section className="overflow-hidden rounded-2xl border border-white/10 bg-black/80 shadow-lg shadow-black/30 sm:rounded-3xl">
                     <div className="relative min-h-[200px] bg-[radial-gradient(circle_at_20%_20%,rgba(217,70,239,0.28),transparent_30%),radial-gradient(circle_at_80%_30%,rgba(34,211,238,0.22),transparent_28%),linear-gradient(135deg,#111827_0%,#020617_50%,#000_100%)] p-5 sm:min-h-[220px] sm:p-6 md:p-8">
                       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.55)_45%,rgba(0,0,0,0.2)_100%)]" />
                       <div className="relative z-10 flex max-w-2xl flex-col justify-center py-2 sm:py-4">
@@ -362,18 +360,18 @@ export function OttB2bRoadmapShell({
             </>
           ) : (
             <>
-              <section className="mt-6 overflow-hidden rounded-[2.5rem] border border-white/10 bg-black shadow-2xl shadow-black/40">
-                <div className="relative min-h-[520px] bg-[radial-gradient(circle_at_25%_25%,rgba(217,70,239,0.4),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(34,211,238,0.32),transparent_24%),linear-gradient(135deg,#111827_0%,#020617_45%,#000_100%)] p-6 md:p-10">
-                  <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.68)_34%,rgba(0,0,0,0.12)_100%)]" />
+              <section className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-black shadow-xl shadow-black/30">
+                <div className="relative min-h-[440px] bg-[radial-gradient(circle_at_25%_25%,rgba(217,70,239,0.28),transparent_30%),radial-gradient(circle_at_78%_18%,rgba(34,211,238,0.22),transparent_28%),linear-gradient(135deg,#111827_0%,#020617_45%,#000_100%)] p-6 md:p-10">
+                  <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.5)_45%,rgba(0,0,0,0.1)_100%)]" />
 
-                  <div className="absolute right-8 top-8 hidden h-[390px] w-[520px] rotate-2 overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.06] shadow-2xl shadow-black/40 backdrop-blur-sm lg:block">
+                  <div className="absolute right-8 top-8 hidden h-[390px] w-[520px] rotate-2 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.06] shadow-2xl shadow-black/40 backdrop-blur-sm lg:block">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.14),transparent_32%)]" />
 
                     <div className="grid h-full grid-cols-2 gap-3 p-5">
                       {['bg-fuchsia-400', 'bg-cyan-300', 'bg-lime-300', 'bg-orange-300'].map((color, index) => (
                         <div
                           key={`${color}-${index}`}
-                          className={`${color} animate-pulse rounded-[2rem] shadow-2xl shadow-black/30`}
+                          className={`${color} animate-pulse rounded-2xl shadow-xl shadow-black/30`}
                         />
                       ))}
                     </div>
@@ -395,7 +393,7 @@ export function OttB2bRoadmapShell({
                       {heroBadge}
                     </div>
 
-                    <h2 className="mt-8 text-5xl font-black leading-[1.1] tracking-tight text-white md:text-7xl">
+                    <h2 className="mt-8 text-3xl font-black leading-[1.15] tracking-tight text-white md:text-5xl">
                       {tr('체육 수업 준비·운영·설명을')}
                       <br />
                       <span className="bg-gradient-to-r from-fuchsia-400 to-cyan-300 bg-clip-text text-transparent">
@@ -403,7 +401,7 @@ export function OttB2bRoadmapShell({
                       </span>
                     </h2>
 
-                    <p className="mt-6 max-w-2xl whitespace-pre-line text-base leading-8 text-zinc-300 md:text-lg">
+                    <p className="mt-5 max-w-2xl whitespace-pre-line text-sm leading-7 text-zinc-300 md:text-base">
                       {heroSubtitle}
                     </p>
 
@@ -427,19 +425,7 @@ export function OttB2bRoadmapShell({
                         {onHeroSpomove ? tr('SPOMOVE 바로 실행') : tr('플랜&결제')}
                       </button>
                     </div>
-
-                    <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
-                      {[
-                        [tr('프로그램 라이브러리'), tr('영상과 진행 요약으로 빠르게 고릅니다')],
-                        [tr('SPOMOVE'), tr('스크린 반응훈련으로 몰입을 올립니다')],
-                        [tr('리포트·보조'), tr('학부모·기관에 수업 가치를 설명합니다')],
-                      ].map(([title, desc]) => (
-                        <div key={title} className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-md">
-                          <p className="text-xl font-black text-white">{title}</p>
-                          <p className="mt-1 line-clamp-2 text-xs text-zinc-400">{desc}</p>
-                        </div>
-                      ))}
-                    </div>
+                    {/* 라이브러리/SPOMOVE/리포트 grid 3카드는 좌측 사이드바와 위 CTA에서 동일하게 노출되므로 정보 중복 제거 */}
                   </div>
                 </div>
               </section>
@@ -453,8 +439,8 @@ export function OttB2bRoadmapShell({
               <section className="mt-8 min-w-0 max-w-full">
                 <div className="flex min-w-0 max-w-full flex-col gap-4 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <p className="text-sm font-bold uppercase tracking-[0.25em] text-zinc-500">{lineupEyebrow}</p>
-                    <h2 className="mt-2 text-3xl font-black tracking-tight text-white">{lineupTitle}</h2>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">{lineupEyebrow}</p>
+                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">{lineupTitle}</h2>
                   </div>
                 </div>
 
@@ -471,8 +457,8 @@ export function OttB2bRoadmapShell({
                 <section className="mt-10 min-w-0 max-w-full">
                   <div className="flex min-w-0 max-w-full flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div>
-                      <p className="text-sm font-bold uppercase tracking-[0.25em] text-zinc-500">교구 큐레이션</p>
-                      <h2 className="mt-2 text-3xl font-black tracking-tight text-white">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">교구 큐레이션</p>
+                      <h2 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">
                         {spotlightTitle?.trim() ? spotlightTitle.trim() : tr('추천 활동')}
                       </h2>
                     </div>

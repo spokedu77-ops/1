@@ -168,18 +168,16 @@ export function buildFruitSlidesFromUrls(urls: readonly string[]): FruitSlide[] 
   }));
 }
 
-/** Asset Hub 테마 슬롯(과일 외 4칸 등) — 비어 있지 않은 URL만, 콘 색은 슬롯 순서로 순환 */
+/** Asset Hub 테마 슬롯(과일 외 테마) — 슬롯 고정 색상 매핑을 과일과 동일하게 적용 */
 export function buildVariantSlidesFromThemedUrls(urls: readonly string[]): FruitSlide[] {
   const out: FruitSlide[] = [];
-  let colorIdx = 0;
   for (let i = 0; i < urls.length; i++) {
     const imageUrl = (urls[i] ?? '').trim();
     if (!imageUrl) continue;
     out.push({
       imageUrl,
-      color: COLORS[colorIdx % COLORS.length]!,
+      color: COLORS.find((c) => c.id === VARIANT_FRUIT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!,
     });
-    colorIdx++;
   }
   return out;
 }
@@ -223,39 +221,82 @@ function buildVariantTier2(excludeImageUrl: string | null, slides: FruitSlide[])
 function buildVariantTier3(excludePairKey: string | null, slides: FruitSlide[]): VariantPanelContent[] {
   for (let attempt = 0; attempt < 200; attempt++) {
     const [a, b] = pair(slides);
+    if (!a || !b) continue;
+    if (a.color.id === b.color.id) continue;
+    if ((a.imageUrl ?? '').trim() && a.imageUrl === b.imageUrl) continue;
     const key = [a!.imageUrl, b!.imageUrl].sort().join('|');
     if (excludePairKey && key === excludePairKey) continue;
     return [{ cells: [a!] }, { cells: [b!] }];
   }
-  const [a, b] = pair(slides);
-  return [{ cells: [a!] }, { cells: [b!] }];
+  const byColor: FruitSlide[] = [];
+  const seenColors = new Set<string>();
+  for (const slide of fisherYates([...slides])) {
+    if (seenColors.has(slide.color.id)) continue;
+    seenColors.add(slide.color.id);
+    byColor.push(slide);
+    if (byColor.length >= 2) break;
+  }
+  if (byColor.length < 2) return [];
+  return byColor.map((s) => ({ cells: [s] }));
 }
 
 /** 4단계: 서로 다른 과일 3패널, 직전과 같은 "칸+이미지" 연속 금지 */
 function buildVariantTier4(excludePanelImageUrls: (string | null)[] | null, slides: FruitSlide[]): VariantPanelContent[] {
-  if (slides.length < 3) {
-    const s = r(slides);
-    return [{ cells: [s] }, { cells: [s] }, { cells: [s] }];
-  }
+  if (slides.length < 3) return [];
+  const blocked: (string | null)[] = (excludePanelImageUrls ?? []).slice(0, 3);
+  while (blocked.length < 3) blocked.push(null);
+
   for (let attempt = 0; attempt < 350; attempt++) {
     const picked = fisherYates([...slides]).slice(0, 3);
     const colorIds = picked.map((s) => s?.color?.id ?? '').filter(Boolean);
     if (new Set(colorIds).size < 3) continue;
     const panelImages = picked.map((x) => x?.imageUrl ?? null);
-    const blocked: (string | null)[] = (excludePanelImageUrls ?? []).slice(0, 3);
-    while (blocked.length < 3) blocked.push(null);
     const violates = panelImages.some((url, i) => !!url && url === blocked[i]);
     if (violates) continue;
     return picked.map((s) => ({ cells: [s!] }));
   }
-  // 최후 폴백도 색 3종 강제(가능한 경우)
-  for (let attempt = 0; attempt < 120; attempt++) {
-    const fallback = fisherYates([...slides]).slice(0, 3);
-    const colorIds = fallback.map((s) => s?.color?.id ?? '').filter(Boolean);
-    if (new Set(colorIds).size >= 3) return fallback.map((s) => ({ cells: [s!] }));
+
+  const byColor: FruitSlide[] = [];
+  const seenColors = new Set<string>();
+  for (const slide of fisherYates([...slides])) {
+    if (seenColors.has(slide.color.id)) continue;
+    seenColors.add(slide.color.id);
+    byColor.push(slide);
+    if (byColor.length >= 3) break;
   }
-  const safe = fisherYates([...slides]).slice(0, 3);
-  return safe.map((s) => ({ cells: [s!] }));
+  if (byColor.length < 3) return [];
+
+  const orders = fisherYates([
+    [0, 1, 2],
+    [0, 2, 1],
+    [1, 0, 2],
+    [1, 2, 0],
+    [2, 0, 1],
+    [2, 1, 0],
+  ] as const);
+  for (const order of orders) {
+    const arranged = order.map((i) => byColor[i]!);
+    const violates = arranged.some((slide, i) => !!slide.imageUrl && slide.imageUrl === blocked[i]);
+    if (!violates) return arranged.map((s) => ({ cells: [s] }));
+  }
+
+  return byColor.map((s) => ({ cells: [s] }));
+}
+
+function uniqueSlidesByImageUrl(slides: FruitSlide[]): FruitSlide[] {
+  const seen = new Set<string>();
+  const out: FruitSlide[] = [];
+  for (const slide of slides) {
+    const key = (slide.imageUrl ?? '').trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(slide);
+  }
+  return out;
+}
+
+function hasDistinctSlideColors(slides: FruitSlide[], count: number): boolean {
+  return new Set(slides.map((s) => s.color.id)).size >= count;
 }
 
 export type GenerateSignalOptions = {
@@ -278,6 +319,7 @@ export function generateSignal(
   opts?: GenerateSignalOptions
 ): Record<string, unknown> | null {
   const activeColors = colors.length >= 2 ? colors : COLORS;
+  const usesImageTheme = Array.isArray(opts?.fruitSlides);
 
   // 실행 조절: UI는 7레벨, 엔진은 gonogo(1~4) + taskswitch(1~3)
   if (mode === 'executive') {
@@ -317,10 +359,16 @@ export function generateSignal(
     }
     if (level === 3) {
       const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
-      const pool = rawSlides.filter((s) => (s.imageUrl ?? '').trim());
-      const vSlides = pool.length >= 2 ? pool : colorSlidesFromPalette(activeColors);
-      if (vSlides.length < 2) return null;
+      const pool = uniqueSlidesByImageUrl(rawSlides.filter((s) => (s.imageUrl ?? '').trim()));
+      const vSlides =
+        pool.length >= 2 && hasDistinctSlideColors(pool, 2)
+          ? pool
+          : usesImageTheme
+            ? []
+            : colorSlidesFromPalette(activeColors);
+      if (vSlides.length < 2 || !hasDistinctSlideColors(vSlides, 2)) return null;
       const panels = buildVariantTier3(opts?.excludeVariantPairKey ?? null, vSlides);
+      if (panels.length < 2) return null;
       return {
         type: 'basic_variant_color',
         bg: '#000000',
@@ -330,8 +378,9 @@ export function generateSignal(
     }
     if (level === 4) {
       const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
-      const pool = rawSlides.filter((s) => (s.imageUrl ?? '').trim());
-      if (pool.length === 0) {
+      const pool = uniqueSlidesByImageUrl(rawSlides.filter((s) => (s.imageUrl ?? '').trim()));
+      if (pool.length < 2) {
+        if (usesImageTheme) return null;
         const c = r(activeColors);
         return {
           type: 'full_color',
@@ -351,9 +400,14 @@ export function generateSignal(
     }
     if (level === 5) {
       const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
-      const pool = rawSlides.filter((s) => (s.imageUrl ?? '').trim());
-      const vSlides = pool.length >= 3 ? pool : colorSlidesFromPalette(activeColors);
-      if (vSlides.length < 3) return null;
+      const pool = uniqueSlidesByImageUrl(rawSlides.filter((s) => (s.imageUrl ?? '').trim()));
+      const vSlides =
+        pool.length >= 3 && hasDistinctSlideColors(pool, 3)
+          ? pool
+          : usesImageTheme
+            ? []
+            : colorSlidesFromPalette(activeColors);
+      if (vSlides.length < 3 || !hasDistinctSlideColors(vSlides, 3)) return null;
       const panels = buildVariantTier4(opts?.excludeVariantPanelImageUrls ?? null, vSlides);
       return {
         type: 'basic_variant_color',
@@ -802,7 +856,8 @@ export function createSimonSignalGenerator(level: number, colors: ColorItem[]) {
     colorDupFingerprint,
     () => {
       edgeIdx = (edgeIdx + 1) % 4;
-    }
+    },
+    level === 1 ? Math.max(1, activeColors.length || COLORS.length) : ARROWS.length
   );
 }
 
@@ -910,6 +965,62 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
 
 /** 연속 동일 전환 비율 상한 — basic(전 지문)·사이먼/듀얼/스트룹(색 지문) 공통 */
 const SIGNAL_DUP_RATIO_MAX = 0.2;
+const SIGNAL_COLOR_BALANCE_SLACK = 1;
+
+function colorIdFromHex(hex: unknown): string | null {
+  if (typeof hex !== 'string') return null;
+  const normalized = hex.trim().toLowerCase();
+  return COLORS.find((c) => c.bg.toLowerCase() === normalized)?.id ?? null;
+}
+
+function uniqueColorKeys(keys: (string | null | undefined)[]): string[] {
+  return Array.from(new Set(keys.filter((x): x is string => typeof x === 'string' && x.length > 0)));
+}
+
+function signalColorBalanceKeys(sig: Record<string, unknown>): string[] {
+  const t = sig.type as string;
+  const content = sig.content as Record<string, unknown> | undefined;
+  if (!content) return [];
+
+  if (t === 'full_color') return uniqueColorKeys([colorIdFromHex(sig.bg)]);
+  if (t === 'think_quad') return uniqueColorKeys([content.colorId as string | undefined]);
+  if (t === 'basic_variant_color') {
+    const panels = (content.panels as VariantPanelContent[] | undefined) ?? [];
+    return uniqueColorKeys(
+      panels.flatMap((p) => {
+        const cells = p.cells ?? (p.slide ? [p.slide] : []);
+        return cells.map((s) => s.color?.id);
+      })
+    );
+  }
+  if (t === 'stroop_arrow') return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
+  if (t === 'stroop') return uniqueColorKeys([colorIdFromHex(content.textHex)]);
+  if (t === 'dual_num' || t === 'dual_color_arrow') {
+    const color = content.color as { id?: string } | undefined;
+    return uniqueColorKeys([color?.id]);
+  }
+  if (t === 'simon_shape') return uniqueColorKeys([content.colorId as string | undefined]);
+  if (t === 'flanker_row') return uniqueColorKeys([content.targetColorId as string | undefined]);
+  if (t === 'gonogo_color') return uniqueColorKeys([content.colorId as string | undefined]);
+  if (t === 'gonogo_shape') return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
+  if (t === 'gonogo_dual') return uniqueColorKeys([colorIdFromHex(sig.bg)]);
+  if (t === 'task_switch') return uniqueColorKeys([content.colorId as string | undefined]);
+  return [];
+}
+
+function wouldExceedColorBalance(
+  keys: string[],
+  counts: Map<string, number>,
+  totalColorHits: number,
+  bucketCount: number,
+): boolean {
+  if (keys.length === 0) return false;
+  const nextCounts = new Map(counts);
+  for (const key of keys) nextCounts.set(key, (nextCounts.get(key) ?? 0) + 1);
+  const nextTotal = totalColorHits + keys.length;
+  const maxAllowed = Math.ceil(nextTotal / Math.max(1, bucketCount)) + SIGNAL_COLOR_BALANCE_SLACK;
+  return keys.some((key) => (nextCounts.get(key) ?? 0) > maxAllowed);
+}
 
 /**
  * basic 모드: 연속 3동일 금지, 전환 중복 비율 &lt; 20% (엄격).
@@ -926,6 +1037,9 @@ export function createBasicSignalGenerator(
   let seqStreak = 0;
   let maxStreak = 0;
   let tripleViolation = false;
+  let totalColorHits = 0;
+  const colorCounts = new Map<string, number>();
+  const colorBucketCount = Math.max(1, colors.length || COLORS.length);
   /** 2·4단계: 직전 대표 과일 URL */
   let lastVariantImageUrl: string | null = null;
   /** 3단계: 직전 과일 쌍 키 (정렬 url|url) */
@@ -952,6 +1066,9 @@ export function createBasicSignalGenerator(
     prev2 = prev1;
     prev1 = fp;
     emitted++;
+    const colorKeys = signalColorBalanceKeys(sig);
+    for (const key of colorKeys) colorCounts.set(key, (colorCounts.get(key) ?? 0) + 1);
+    totalColorHits += colorKeys.length;
     if ((sig.type as string) === 'basic_variant_color') {
       const content = sig.content as { variantTier?: number; panels?: VariantPanelContent[] };
       const tier = content.variantTier ?? 1;
@@ -992,6 +1109,8 @@ export function createBasicSignalGenerator(
       const sig = generateSignal('basic', level, colors, genOpts());
       if (!sig) continue;
       const fp = signalFingerprint(sig);
+      const colorKeys = signalColorBalanceKeys(sig);
+      if (wouldExceedColorBalance(colorKeys, colorCounts, totalColorHits, colorBucketCount)) continue;
       if (prev1 !== null && prev2 !== null && fp === prev1 && fp === prev2) continue;
       const wouldDup = prev1 !== null && fp === prev1;
       if (wouldDup && emittedBefore >= 1) {
@@ -1005,6 +1124,8 @@ export function createBasicSignalGenerator(
       const sig = generateSignal('basic', level, colors, genOpts());
       if (!sig) continue;
       const fp = signalFingerprint(sig);
+      const colorKeys = signalColorBalanceKeys(sig);
+      if (wouldExceedColorBalance(colorKeys, colorCounts, totalColorHits, colorBucketCount)) continue;
       if (prev1 !== null && prev2 !== null && fp === prev1 && fp === prev2) continue;
       if (prev1 !== null && fp === prev1) continue;
       return acceptSignal(sig, fp);
@@ -1090,7 +1211,8 @@ export function colorDupFingerprint(sig: Record<string, unknown>): string {
 export function createColorDupConstrainedGenerator(
   emitRaw: () => Record<string, unknown> | null,
   fingerprint: (sig: Record<string, unknown>) => string = colorDupFingerprint,
-  onAfterAccept?: () => void
+  onAfterAccept?: () => void,
+  colorBucketCount = COLORS.length
 ) {
   let prev1: string | null = null;
   let prev2: string | null = null;
@@ -1099,6 +1221,8 @@ export function createColorDupConstrainedGenerator(
   let seqStreak = 0;
   let maxStreak = 0;
   let tripleViolation = false;
+  let totalColorHits = 0;
+  const colorCounts = new Map<string, number>();
 
   const acceptSignal = (sig: Record<string, unknown>, fp: string) => {
     const wouldDup = prev1 !== null && fp === prev1;
@@ -1111,6 +1235,9 @@ export function createColorDupConstrainedGenerator(
     prev2 = prev1;
     prev1 = fp;
     emitted++;
+    const colorKeys = signalColorBalanceKeys(sig);
+    for (const key of colorKeys) colorCounts.set(key, (colorCounts.get(key) ?? 0) + 1);
+    totalColorHits += colorKeys.length;
     onAfterAccept?.();
     return sig;
   };
@@ -1121,6 +1248,8 @@ export function createColorDupConstrainedGenerator(
       const sig = emitRaw();
       if (!sig) continue;
       const fp = fingerprint(sig);
+      const colorKeys = signalColorBalanceKeys(sig);
+      if (wouldExceedColorBalance(colorKeys, colorCounts, totalColorHits, colorBucketCount)) continue;
       if (prev1 !== null && prev2 !== null && fp === prev1 && fp === prev2) continue;
       const wouldDup = prev1 !== null && fp === prev1;
       if (wouldDup && emittedBefore >= 1) {
@@ -1134,6 +1263,8 @@ export function createColorDupConstrainedGenerator(
       const sig = emitRaw();
       if (!sig) continue;
       const fp = fingerprint(sig);
+      const colorKeys = signalColorBalanceKeys(sig);
+      if (wouldExceedColorBalance(colorKeys, colorCounts, totalColorHits, colorBucketCount)) continue;
       if (prev1 !== null && prev2 !== null && fp === prev1 && fp === prev2) continue;
       if (prev1 !== null && fp === prev1) continue;
       return acceptSignal(sig, fp);
@@ -1169,7 +1300,9 @@ export function createModeColorDupGenerator(
 ) {
   return createColorDupConstrainedGenerator(
     () => generateSignal(mode, level, colors, opts),
-    colorDupFingerprint
+    colorDupFingerprint,
+    undefined,
+    Math.max(1, colors.length || COLORS.length)
   );
 }
 
@@ -1180,7 +1313,9 @@ export function createTaskSwitchSignalGenerator(level: number, colors: ColorItem
   let lastRule: 'color' | 'position' | 'reverse' | null = null;
   const base = createColorDupConstrainedGenerator(
     () => generateSignal('taskswitch', level, colors, { ...opts, taskSwitchPrevRule: lastRule }),
-    colorDupFingerprint
+    colorDupFingerprint,
+    undefined,
+    Math.max(1, colors.length || COLORS.length)
   );
   return {
     next(): Record<string, unknown> | null {

@@ -211,6 +211,7 @@ export default function MemoryGameApp({
 
   const { slides: variantFruitSlides } = useSpomoveVariantSlidesForTraining(settings.variantColorTheme);
   const variantFruitUrls = useMemo(() => variantFruitUrlsForPreload(variantFruitSlides), [variantFruitSlides]);
+  const variantSignalSlides = settings.variantColorTheme === 'color' ? undefined : variantFruitSlides;
 
   /** SPOMOVE 진입 직후 과일 이미지 선로딩(설정·난이도 선택 전에도 캐시 채움) */
   useEffect(() => {
@@ -367,7 +368,7 @@ export default function MemoryGameApp({
     level: settings.level,
     audioMode: settings.audioMode,
     colors: COLORS,
-    fruitSlides: variantFruitSlides,
+    fruitSlides: variantSignalSlides,
     onSignal,
     onFinish,
   });
@@ -382,7 +383,7 @@ export default function MemoryGameApp({
     level: settings.level,
     audioMode: settings.audioMode,
     colors: COLORS,
-    fruitSlides: variantFruitSlides,
+    fruitSlides: variantSignalSlides,
     onSignal,
     onFinish,
   });

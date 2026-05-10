@@ -34,6 +34,7 @@ const SpokeduProToolkit = dynamic(() => import('./components/SpokeduProToolkit')
 const SpokeduProDrawer = dynamic(() => import('./components/SpokeduProDrawer'), { ssr: false });
 const DashboardCurationEditor = dynamic(() => import('./components/DashboardCurationEditor'), { ssr: false });
 const LibraryView = dynamic(() => import('./views/LibraryView'), { ssr: false });
+const ShopView = dynamic(() => import('./views/ShopView'), { ssr: false });
 const DataCenterView = dynamic(() => import('./views/DataCenterView'), { ssr: false });
 const AIReportView = dynamic(() => import('./views/AIReportView'), { ssr: false });
 const AssistantToolsView = dynamic(() => import('./views/AssistantToolsView'), { ssr: false });
@@ -209,6 +210,7 @@ export default function SpokeduProClient({
     if (ctxLoading) return;
     const byView: Partial<Record<ViewId, string>> = {
       roadmap: 'spokedu_pro_dashboard_view',
+      shop: 'spokedu_pro_shop_view',
       tools: 'spokedu_pro_assistant_open',
       settings: 'spokedu_pro_settings_view',
     };
@@ -703,22 +705,23 @@ export default function SpokeduProClient({
       />
       <main className="flex-1 w-full max-w-full min-w-0 h-full overflow-y-auto overflow-x-hidden custom-scroll relative bg-transparent min-h-0 pr-0 mr-0">
         {!ctxLoading && !ctx.contextLoadError && ctx.entitlement.status === 'past_due' && (
-          <div className="sticky top-0 z-[25] flex flex-wrap items-center gap-3 px-4 py-3 bg-rose-950/95 border-b border-rose-700/50 text-rose-50 text-sm">
-            <p className="flex-1 min-w-[200px] font-medium">
+          <div className="sticky top-0 z-[25] flex flex-wrap items-center gap-3 px-4 py-3 bg-rose-600 border-b-2 border-rose-400 border-l-4 border-l-rose-200 text-white text-sm shadow-lg shadow-rose-900/40">
+            <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-700/60 ring-1 ring-rose-300/40 text-base font-black">!</span>
+            <p className="flex-1 min-w-[200px] font-semibold leading-snug">
               {tr('결제가 지연된 상태입니다. 플랜 & 결제에서 카드를 갱신하거나 결제를 다시 시도해 주세요.')}
             </p>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => switchView('settings')}
-                className="inline-flex min-h-[44px] items-center px-3 py-2 rounded-lg bg-rose-800 hover:bg-rose-700 text-white text-xs font-bold"
+                className="inline-flex min-h-[40px] items-center px-3 py-2 rounded-lg bg-white text-rose-700 text-xs font-bold hover:bg-rose-50"
               >
                 {tr('플랜 & 결제로 이동')}
               </button>
               <button
                 type="button"
                 onClick={() => void refresh()}
-                className="inline-flex min-h-[44px] items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-900/80 hover:bg-rose-900 text-white text-xs font-bold"
+                className="inline-flex min-h-[40px] items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-800/70 hover:bg-rose-800 text-white text-xs font-bold ring-1 ring-rose-300/30"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 {tr('상태 새로고침')}
@@ -727,13 +730,14 @@ export default function SpokeduProClient({
           </div>
         )}
         {!ctxLoading && ctx.contextLoadError && (
-          <div className="sticky top-0 z-[25] flex flex-wrap items-center gap-3 px-4 py-3 bg-amber-950/95 border-b border-amber-700/50 text-amber-100 text-sm">
-            <p className="flex-1 min-w-[200px] font-medium">{tr(ctx.contextLoadError)}</p>
+          <div className="sticky top-0 z-[25] flex flex-wrap items-center gap-3 px-4 py-3 bg-amber-500 border-b-2 border-amber-300 border-l-4 border-l-amber-100 text-amber-950 text-sm shadow-lg shadow-amber-900/30">
+            <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-600/40 ring-1 ring-amber-700/30 text-base font-black">!</span>
+            <p className="flex-1 min-w-[200px] font-semibold leading-snug">{tr(ctx.contextLoadError)}</p>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => void refresh()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-800 hover:bg-amber-700 text-white text-xs font-bold"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-950 hover:bg-amber-900 text-amber-50 text-xs font-bold"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 {tr('다시 시도')}
@@ -741,7 +745,7 @@ export default function SpokeduProClient({
               {(ctx.contextLoadError?.includes('로그인') ?? false) && (
                 <Link
                   href="/login"
-                  className="text-xs font-bold text-amber-200 underline underline-offset-2"
+                  className="text-xs font-bold text-amber-950 underline underline-offset-2"
                 >
                   {tr('로그인')}
                 </Link>
@@ -790,6 +794,11 @@ export default function SpokeduProClient({
               isEditMode={isEditMode}
               screenplaysRefreshToken={screenplaysRefreshToken}
             />
+          </div>
+        )}
+        {mountedViews['shop'] && (
+          <div className={`view-content ${viewId === 'shop' ? 'active' : ''}`}>
+            <ShopView />
           </div>
         )}
         {mountedViews['data-center'] && (

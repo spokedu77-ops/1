@@ -6,6 +6,7 @@ export type ViewId =
   | 'roadmap'
   | 'lesson-plan'
   | 'library'
+  | 'shop'
   | 'data-center'
   | 'ai'
   | 'tools'

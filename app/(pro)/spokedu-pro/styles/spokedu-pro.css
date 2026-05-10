@@ -6,19 +6,29 @@
   --sp-pro-brand: #3b82f6;
   --sp-pro-orange: #f97316;
   --sp-pro-green: #10b981;
-  /* OTT 스킨 토큰 */
-  --sp-ott-radius-xl: 1.5rem;
-  --sp-ott-radius-2xl: 2rem;
+  /* OTT 스킨 토큰 (Tailwind rounded-2xl=1rem, rounded-3xl=1.5rem과 정렬) */
+  --sp-ott-radius-xl: 1rem;
+  --sp-ott-radius-2xl: 1.5rem;
   --sp-ott-glass-bg: rgba(15, 23, 42, 0.58);
   --sp-ott-glass-border: rgba(148, 163, 184, 0.14);
   --sp-ott-glow-fuchsia: rgba(192, 38, 211, 0.1);
   --sp-ott-glow-cyan: rgba(6, 182, 212, 0.09);
   --sp-ott-glow-indigo: rgba(99, 102, 241, 0.07);
+  /* 디자인 시스템 토큰: 표면/테두리/라디우스 — bg-white/[0.0X] 산발 사용을 점진 치환할 단일 출처. */
+  --sp-surface-1: rgba(255, 255, 255, 0.04); /* 가장 미묘한 패널 */
+  --sp-surface-2: rgba(255, 255, 255, 0.07); /* 카드 기본 */
+  --sp-surface-3: rgba(255, 255, 255, 0.11); /* hover/active */
+  --sp-border-1: rgba(148, 163, 184, 0.16); /* 카드 일반 보더 */
+  --sp-border-2: rgba(148, 163, 184, 0.28); /* 강조 보더(active/focus) */
+  --sp-radius-sm: 0.5rem;   /* 작은 컨트롤(뱃지) */
+  --sp-radius-md: 0.75rem;  /* 버튼 */
+  --sp-radius-lg: 1rem;     /* 카드 */
+  --sp-radius-xl: 1.5rem;   /* 섹션/히어로 */
   padding-right: 0;
   margin-right: 0;
 }
 
-/* 전면 배경 메시(글로우 + 약한 그리드). pointer-events 없음 */
+/* 전면 배경 메시(글로우만). 그리드 라인은 OttB2bRoadmapShell의 mask-grid와 중복되어 제거. pointer-events 없음 */
 .spokedu-pro .sp-pro-bg-mesh {
   position: fixed;
   inset: 0;
@@ -28,20 +38,16 @@
   background-image:
     radial-gradient(ellipse 85% 55% at 50% -18%, var(--sp-ott-glow-fuchsia), transparent 55%),
     radial-gradient(ellipse 55% 45% at 100% 35%, var(--sp-ott-glow-cyan), transparent 50%),
-    radial-gradient(ellipse 45% 35% at 0% 85%, var(--sp-ott-glow-indigo), transparent 45%),
-    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+    radial-gradient(ellipse 45% 35% at 0% 85%, var(--sp-ott-glow-indigo), transparent 45%);
+  background-size: 100% 100%, 100% 100%, 100% 100%;
 }
 
 @media (max-width: 767px) {
   .spokedu-pro .sp-pro-bg-mesh {
     background-image:
       radial-gradient(ellipse 100% 45% at 50% -12%, var(--sp-ott-glow-fuchsia), transparent 50%),
-      radial-gradient(ellipse 70% 40% at 100% 60%, var(--sp-ott-glow-cyan), transparent 55%),
-      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      radial-gradient(ellipse 70% 40% at 100% 60%, var(--sp-ott-glow-cyan), transparent 55%);
+    background-size: 100% 100%, 100% 100%;
   }
 }
 
@@ -120,29 +126,27 @@
 
 .spokedu-pro .nav-item {
   color: #94a3b8;
-  transition: all 0.2s;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   border-left: 3px solid transparent;
 }
 .spokedu-pro .nav-item:hover {
   color: #f8fafc;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--sp-surface-1);
 }
 .spokedu-pro .nav-active {
   color: #f8fafc;
-  font-weight: 700;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-left: 3px solid var(--sp-pro-brand);
+  font-weight: 600;
+  background-color: var(--sp-surface-3);
+  border-left-color: var(--sp-pro-brand);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.18);
 }
 
 .spokedu-pro .media-card {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
-  transform-origin: center center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
 .spokedu-pro .media-card:hover {
-  transform: scale(1.03);
-  z-index: 10;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 18px -10px rgba(0, 0, 0, 0.55);
 }
 .spokedu-pro .thumb-grade {
   filter: saturate(0.82) contrast(1.05) brightness(0.92);

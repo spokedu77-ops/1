@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import {
   uploadToStorage,
@@ -51,6 +51,8 @@ export function useSpomoveVariantThemedPack({
   storagePath,
 }: UseSpomoveVariantThemedPackOptions) {
   const [paths, setPaths] = useState<(string | null)[]>(() => Array.from({ length: slotCount }, () => null));
+  const pathsRef = useRef(paths);
+  pathsRef.current = paths;
   const [previewUrls, setPreviewUrls] = useState<(string | null)[]>(() =>
     Array.from({ length: slotCount }, () => null)
   );
@@ -70,6 +72,7 @@ export function useSpomoveVariantThemedPack({
       }
       const next = normalizePaths(data?.assets_json, slotCount);
       setPaths(next);
+      pathsRef.current = next;
       setPreviewUrls(pathsToPreviewUrls(next, slotCount, Date.now()));
     } catch (err) {
       setError((err as Error).message);
@@ -87,18 +90,21 @@ export function useSpomoveVariantThemedPack({
       setSaving(true);
       setError(null);
       try {
-        const supabase = getSupabaseBrowserClient();
-        const { error: upErr } = await supabase.from('think_asset_packs').upsert(
-          {
+        const res = await fetch('/api/admin/think-asset-pack', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
             id: packId,
             name: packName,
             theme: 'iiwarmup',
             assets_json: { paths: next } satisfies SpomoveVariantThemedAssetsJson,
-          },
-          { onConflict: 'id' }
-        );
-        if (upErr) throw new Error(upErr.message);
+          }),
+        });
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) throw new Error(body.error ?? res.statusText);
         setPaths(next);
+        pathsRef.current = next;
         setPreviewUrls(pathsToPreviewUrls(next, slotCount, Date.now()));
       } catch (err) {
         setError((err as Error).message);
@@ -115,7 +121,8 @@ export function useSpomoveVariantThemedPack({
       const ext = (file.name.split('.').pop() || 'webp').toLowerCase();
       const path = storagePath(index, ext);
       await uploadToStorage(path, file, file.type || 'image/webp');
-      const next = [...paths];
+      const next = [...pathsRef.current];
+      while (next.length < slotCount) next.push(null);
       const prevPath = next[index];
       if (prevPath && prevPath !== path) {
         try {
@@ -127,13 +134,14 @@ export function useSpomoveVariantThemedPack({
       next[index] = path;
       await persistPaths(next);
     },
-    [paths, persistPaths, slotCount, storagePath]
+    [persistPaths, slotCount, storagePath]
   );
 
   const clearAt = useCallback(
     async (index: number) => {
       if (index < 0 || index >= slotCount) return;
-      const next = [...paths];
+      const next = [...pathsRef.current];
+      while (next.length < slotCount) next.push(null);
       const prev = next[index];
       next[index] = null;
       if (prev) {
@@ -145,7 +153,7 @@ export function useSpomoveVariantThemedPack({
       }
       await persistPaths(next);
     },
-    [paths, persistPaths, slotCount]
+    [persistPaths, slotCount]
   );
 
   return {

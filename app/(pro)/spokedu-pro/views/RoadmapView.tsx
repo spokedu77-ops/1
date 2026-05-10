@@ -96,21 +96,19 @@ function SectionHeader({
   action?: { label: string; onClick: () => void };
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-700/80 bg-gradient-to-br from-slate-900 via-slate-900/80 to-slate-950/80 px-4 py-3.5 md:px-5 md:py-4">
-      <div className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-sky-500/12 blur-2xl" />
-      <div className="pointer-events-none absolute -left-6 bottom-0 h-16 w-20 rounded-full bg-violet-500/10 blur-2xl" />
+    <div className="relative overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-900/60 px-4 py-3.5 md:px-5 md:py-4">
       <div className="relative flex flex-wrap items-center justify-between gap-2.5 md:gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-800/90 text-slate-100 ring-1 ring-white/10">
             {icon}
           </span>
           <div className="min-w-0">
-            <h3 className="truncate text-[1.04rem] font-black tracking-tight text-white md:text-[1.08rem] lg:text-[1.16rem]">
+            <h3 className="truncate text-base font-bold tracking-tight text-white md:text-lg">
               {title}
-              {sub ? <span className="ml-2 text-xs md:text-[13px] lg:text-sm font-semibold text-slate-400">· {sub}</span> : null}
+              {sub ? <span className="ml-2 text-xs md:text-sm font-medium text-slate-400">· {sub}</span> : null}
             </h3>
             {badge ? (
-              <p className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{badge}</p>
+              <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{badge}</p>
             ) : null}
           </div>
         </div>
@@ -206,7 +204,7 @@ function SpotlightProgramCard({
   const thumbnailUrl = thumb ? getYouTubeThumbnailUrl(String(thumb)) : null;
   return (
     <div
-      className="media-card relative w-full aspect-[16/9] md:aspect-[4/3] lg:aspect-[16/9] overflow-hidden group cursor-pointer rounded-[1rem] border border-slate-700/70 bg-slate-900/55 shadow-[0_16px_34px_-20px_rgba(0,0,0,0.85)] ring-1 ring-white/[0.04]"
+      className="media-card relative w-full aspect-[16/9] md:aspect-[4/3] lg:aspect-[16/9] overflow-hidden group cursor-pointer rounded-2xl border border-slate-700/70 bg-slate-900/55 shadow-[0_16px_34px_-20px_rgba(0,0,0,0.85)] ring-1 ring-white/[0.04]"
       onClick={onOpen}
     >
       {thumbnailUrl ? (
@@ -701,7 +699,7 @@ export default function RoadmapView({
       </p>
       <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         <div className="flex flex-col rounded-2xl border border-emerald-500/20 bg-slate-950/60 p-4 shadow-lg shadow-black/20 md:p-5">
-          <h3 className="text-base font-black text-white md:text-lg">{tr('프로그램 라이브러리')}</h3>
+          <h3 className="text-base font-bold text-white md:text-lg">{tr('프로그램 라이브러리')}</h3>
           <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-400 md:text-sm">
             {tr('영상과 핵심 진행법 중심으로 수업 프로그램을 빠르게 확인하세요.')}
           </p>
@@ -714,7 +712,7 @@ export default function RoadmapView({
           </button>
         </div>
         <div className="flex flex-col rounded-2xl border border-cyan-500/20 bg-slate-950/60 p-4 shadow-lg shadow-black/20 md:p-5">
-          <h3 className="text-base font-black text-white md:text-lg">{tr('SPOMOVE 반응훈련')}</h3>
+          <h3 className="text-base font-bold text-white md:text-lg">{tr('SPOMOVE 반응훈련')}</h3>
           <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-400 md:text-sm">
             {tr('수업 전 집중 전환이나 반응훈련이 필요할 때 화면을 띄워 바로 실행하세요.')}
           </p>
@@ -727,7 +725,7 @@ export default function RoadmapView({
           </button>
         </div>
         <div className="flex flex-col rounded-2xl border border-violet-500/20 bg-slate-950/60 p-4 shadow-lg shadow-black/20 md:p-5">
-          <h3 className="text-base font-black text-white md:text-lg">{tr('성장 리포트')}</h3>
+          <h3 className="text-base font-bold text-white md:text-lg">{tr('성장 리포트')}</h3>
           <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-400 md:text-sm">
             {tr('수업 가치를 학부모·기관에 설명할 때 활용해 보세요.')}
           </p>
@@ -774,7 +772,7 @@ export default function RoadmapView({
       {!error && isEditMode && showFeaturedBlock ? (
         <div className="mx-auto max-w-[1600px] space-y-3 px-5 pb-6 text-white lg:px-8">
           <div className="rounded-2xl border border-emerald-500/20 bg-emerald-950/15 px-4 py-4 md:px-5 md:py-5">
-            <h2 className="text-lg font-black tracking-tight text-white md:text-xl">{tr('대표 수업안')}</h2>
+            <h2 className="text-lg font-bold tracking-tight text-white md:text-xl">{tr('대표 수업안')}</h2>
             <p className="mt-1 text-sm text-slate-300/95">
               {tr('영상·진행법·현장 팁 등 보조 정보가 붙은 프로그램입니다. (관리자 확인용)')}
             </p>
@@ -876,7 +874,7 @@ export default function RoadmapView({
       {!error && isEditMode ? (
         <div className="mx-auto max-w-[1600px] space-y-3 px-5 pb-8 text-white lg:px-8">
           <div className="rounded-2xl border border-slate-700/60 bg-slate-950/30 px-4 py-4 md:px-5 md:py-5">
-            <h2 className="text-lg font-black tracking-tight md:text-xl">{tr('상황별 수업 패키지')}</h2>
+            <h2 className="text-lg font-bold tracking-tight md:text-xl">{tr('상황별 수업 패키지')}</h2>
             <p className="mt-1 text-sm text-slate-400">
               {tr('라이브러리 필터 보조용. 관리자에서 구성 현황을 확인합니다.')}
             </p>
@@ -961,7 +959,7 @@ export default function RoadmapView({
       {!error ? (
         <div className="mx-auto mt-8 max-w-[1600px] space-y-6 px-5 text-white lg:px-8">
           {screenplaysError ? (
-            <div className="flex flex-col gap-3 rounded-[2rem] border border-red-500/30 bg-red-950/30 p-4 text-sm text-red-200 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 rounded-2xl border border-red-500/30 bg-red-950/30 p-4 text-sm text-red-200 sm:flex-row sm:items-center">
               <span className="flex-1">{tr('스포무브 목록을 불러오지 못했어요.')}</span>
               <button
                 type="button"
@@ -976,7 +974,7 @@ export default function RoadmapView({
 
           {/* 교구 추천은 상단 셸의 "교구 큐레이션" 영역으로 이동 */}
 
-          <details className="rounded-[1.5rem] border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-400">
+          <details className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-400">
             <summary className="cursor-pointer list-none font-bold text-zinc-200 [&::-webkit-details-marker]:hidden">
               {tr('지난 주·다음 주 안내')}
             </summary>

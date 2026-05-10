@@ -59,9 +59,9 @@ export function spomoveVariantFruitPath(slotIndex: number, ext: string): string 
   return `themes/iiwarmup/spomove_variant_fruits/slot_${String(n).padStart(2, '0')}.${safe}`;
 }
 
-/** SPOMOVE 색지각 — 탈 것·감정·동물 등 테마별 슬롯 (0~7 → slot_01~08) */
+/** SPOMOVE 색지각 — 탈 것·감정·동물·자연물 테마별 슬롯 (0~7 → slot_01~08) */
 export function spomoveVariantThemedPath(
-  subfolder: 'spomove_variant_vehicles' | 'spomove_variant_emotions' | 'spomove_variant_animals',
+  subfolder: 'spomove_variant_vehicles' | 'spomove_variant_emotions' | 'spomove_variant_animals' | 'spomove_variant_nature',
   slotIndex: number,
   ext: string
 ): string {

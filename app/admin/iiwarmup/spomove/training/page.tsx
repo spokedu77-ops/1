@@ -16,6 +16,8 @@ import { SpeedSelector } from './_player/components/SpeedSelector';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
   SPOMOVE_COLOR_THEME_ORDER,
+  SPOMOVE_VARIANT_THEME_LS_KEY,
+  parseStoredVariantTheme,
   type SpomoveColorThemeId,
 } from './_player/lib/spomoveVariantThemeConfig';
 
@@ -80,6 +82,7 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Variant Color (1)': '변형 색상 2패널',
   'Variant Color (2)': '변형 색상 3패널',
   'Variant Color (3)': '변형 색상 3',
+  'Variant 3': '변형 색상 3패널',
   'Spatial Orientation': '공간 방향',
   'Arrow Stroop / Reverse': '화살표 스트룹/역스트룹',
   'Arrow + BG Interference': '화살표 + 배경 간섭',
@@ -387,6 +390,12 @@ function SettingsScreen({
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storedTheme = parseStoredVariantTheme(localStorage.getItem(SPOMOVE_VARIANT_THEME_LS_KEY));
+    setLaunch((s) => ({ ...s, variantColorTheme: storedTheme }));
+  }, []);
+
+  useEffect(() => {
     if (modeId !== 'basic' || levelId !== 4) return;
     if (launch.variantColorTheme !== 'color') return;
     // 4번은 색상 테마 비허용(과일 고정)
@@ -674,7 +683,12 @@ function SettingsScreen({
                     <button
                       key={tid}
                       type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, variantColorTheme: tid }))}
+                      onClick={() => {
+                        setLaunch((s) => ({ ...s, variantColorTheme: tid }));
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, tid);
+                        }
+                      }}
                       style={{
                         padding: '10px 12px',
                         borderRadius: 12,
