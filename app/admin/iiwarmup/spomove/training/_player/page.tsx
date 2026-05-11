@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const MemoryGameApp = dynamic(
@@ -9,7 +10,7 @@ const MemoryGameApp = dynamic(
   { ssr: false, loading: () => <div className="flex min-h-screen items-center justify-center bg-slate-900 text-white">SPOMOVE 트레이닝 로딩 중…</div> }
 );
 
-export default function MemoryGamePage() {
+function MemoryGamePageContent() {
   const searchParams = useSearchParams();
   const mode = searchParams.get('mode') ?? undefined;
   const levelRaw = Number(searchParams.get('level') ?? '');
@@ -29,5 +30,27 @@ export default function MemoryGamePage() {
         <MemoryGameApp initialMode={mode} initialLevel={level} />
       </div>
     </div>
+  );
+}
+
+export default function MemoryGamePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col bg-slate-900">
+          <div className="shrink-0 border-b border-slate-700 bg-slate-950 px-4 py-2">
+            <Link
+              href="/admin/iiwarmup/spomove/training"
+              className="text-sm font-semibold text-blue-400 hover:underline"
+            >
+              ← SPOMOVE 트레이닝
+            </Link>
+          </div>
+          <div className="flex min-h-0 flex-1 items-center justify-center text-white">로딩 중…</div>
+        </div>
+      }
+    >
+      <MemoryGamePageContent />
+    </Suspense>
   );
 }

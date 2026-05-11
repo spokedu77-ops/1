@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Check, Maximize, Play, RotateCcw, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DRILLS, SESSION_CUES } from '../../lib/data';
 import { useSession } from '../../hooks/useSession';
@@ -41,7 +41,7 @@ function ResultStat({ label, value, tone }: { label: string; value: string; tone
   );
 }
 
-export default function SpomoveSessionPage() {
+function SpomoveSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedDrillId = searchParams.get('drill') ?? 'speed-track';
@@ -354,5 +354,24 @@ export default function SpomoveSessionPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function SpomoveSessionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="relative h-dvh overflow-hidden select-none"
+          style={{
+            background: 'var(--spm-bg)',
+            color: '#fff',
+            fontFamily: 'var(--spm-font-display)',
+          }}
+        />
+      }
+    >
+      <SpomoveSessionContent />
+    </Suspense>
   );
 }

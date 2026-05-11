@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -781,7 +782,7 @@ function DragPreview({ block }: { block: NoteBlock }) {
 }
 
 /* ─── main page ──────────────────────────────────────────────────────────── */
-export default function AdminNotePage() {
+function AdminNotePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -1866,5 +1867,13 @@ export default function AdminNotePage() {
         </DragOverlay>
       </DndContext>
     </div>
+  );
+}
+
+export default function AdminNotePage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">불러오는 중…</div>}>
+      <AdminNotePageContent />
+    </Suspense>
   );
 }

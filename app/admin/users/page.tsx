@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { 
@@ -53,7 +53,7 @@ interface UserData {
   fee_auto_from_tier?: boolean | null;
 }
 
-export default function UserDashboardPage() {
+function UserDashboardPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
@@ -996,5 +996,13 @@ export default function UserDashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function UserDashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+      <UserDashboardPageContent />
+    </Suspense>
   );
 }

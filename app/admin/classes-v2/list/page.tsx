@@ -1,7 +1,7 @@
 "use client";
 
 import { toast } from 'sonner';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -123,7 +123,7 @@ type TeacherOption = {
   fee_center_assist?: number | null;
 };
 
-export default function ClassListPageV2() {
+function ClassListPageV2Content() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const focusAppliedRef = useRef(false);
@@ -1199,6 +1199,14 @@ export default function ClassListPageV2() {
         onChanged={() => fetchGroups()}
       />
     </div>
+  );
+}
+
+export default function ClassListPageV2() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+      <ClassListPageV2Content />
+    </Suspense>
   );
 }
 

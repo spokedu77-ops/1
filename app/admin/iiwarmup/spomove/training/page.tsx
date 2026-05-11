@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -919,7 +919,7 @@ function SettingsScreen({
   );
 }
 
-export default function SpomoveTrainingPage() {
+function SpomoveTrainingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryTab = searchParams.get('tab');
@@ -1194,6 +1194,33 @@ export default function SpomoveTrainingPage() {
         ) : null}
       </div>
     </>
+  );
+}
+
+export default function SpomoveTrainingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: '100vh',
+            background: T.bg,
+            color: T.muted,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'sans-serif',
+            fontSize: 12,
+            letterSpacing: '0.14em',
+            fontWeight: 600,
+          }}
+        >
+          로딩 중…
+        </div>
+      }
+    >
+      <SpomoveTrainingPageContent />
+    </Suspense>
   );
 }
 
