@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { Award, CalendarDays, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { validateParentPreviewToken } from '../../lib/subscription';
@@ -32,7 +33,7 @@ function InvalidLink({ title, body }: { title: string; body: string }) {
   );
 }
 
-export default function ParentStudentViewPage() {
+function ParentStudentViewContent() {
   const params = useParams<{ studentId: string }>();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -120,5 +121,23 @@ export default function ParentStudentViewPage() {
         </footer>
       </main>
     </div>
+  );
+}
+
+// useSearchParams CSR bailout — 정적 프리렌더/배포 빌드 방지
+export default function ParentStudentViewPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="flex min-h-dvh items-center justify-center"
+          style={{ background: 'var(--spm-bg)', color: 'var(--spm-t3)' }}
+        >
+          <span className="text-[13px] font-semibold">불러오는 중…</span>
+        </div>
+      }
+    >
+      <ParentStudentViewContent />
+    </Suspense>
   );
 }

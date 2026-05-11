@@ -5,6 +5,7 @@ import { AlertTriangle, Check, ChevronRight, ExternalLink, MessageCircle, Play, 
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { PROGRAMS } from '../lib/data';
+import { sendKakaoClassSummary, type KakaoSummaryResult, type RetryQueueItem } from '../lib/serviceContracts';
 import { canCreateClassRecord, canUseMonthlyLimit, createParentPreviewToken } from '../lib/subscription';
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, StudentProfile } from '../types';
@@ -67,6 +68,8 @@ export default function ClassRecordPage() {
   const [checkedSkills, setCheckedSkills] = useState<Record<string, string[]>>({});
   const [kakaoStep, setKakaoStep] = useState<'summary' | 'preview' | 'sending' | 'done'>('summary');
   const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
+  const [kakaoResult, setKakaoResult] = useState<KakaoSummaryResult | null>(null);
+  const [retryQueue, setRetryQueue] = useState<RetryQueueItem[]>([]);
 
   const selectedStudent = students.find((student) => student.id === selectedId);
   const firstPresentStudent = students.find((student) => attendance[student.id] === 'present') ?? students[0];
@@ -93,31 +96,56 @@ export default function ClassRecordPage() {
     setSelectedId(next?.id ?? null);
   };
 
+  const buildRecord = (kakaoSent: boolean) => ({
+    id: savedRecordId ?? Date.now().toString(),
+    lessonTitle: todayLesson?.title ?? program.title,
+    classId: todayLesson?.classId ?? '3학년 A반',
+    programId: program.id,
+    programTitle: program.title,
+    date: new Date().toISOString(),
+    present,
+    absent,
+    focusCount,
+    skillCount: recordedSkills,
+    kakaoSent,
+    students: students.map((student) => ({ studentId: student.id, studentName: student.name, attendance: attendance[student.id] ?? 'pending', focused: !!focused[student.id], skills: checkedSkills[student.id] ?? [] })),
+  });
+
   const persistRecord = (kakaoSent: boolean) => {
     if (!recordStatus.allowed) return;
-    const id = savedRecordId ?? Date.now().toString();
-    saveClassRecord({
-      id,
-      lessonTitle: todayLesson?.title ?? program.title,
-      classId: todayLesson?.classId ?? '3학년 A반',
-      programId: program.id,
-      programTitle: program.title,
-      date: new Date().toISOString(),
-      present,
-      absent,
-      focusCount,
-      skillCount: recordedSkills,
-      kakaoSent,
-      students: students.map((student) => ({ studentId: student.id, studentName: student.name, attendance: attendance[student.id] ?? 'pending', focused: !!focused[student.id], skills: checkedSkills[student.id] ?? [] })),
-    });
-    setSavedRecordId(id);
+    const record = buildRecord(kakaoSent);
+    saveClassRecord(record);
+    setSavedRecordId(record.id);
+    return record;
   };
 
-  const sendKakao = () => {
+  const sendKakao = async () => {
     if (!kakaoStatus.allowed) return;
-    persistRecord(true);
+    const record = persistRecord(true);
+    if (!record) return;
     setKakaoStep('sending');
-    window.setTimeout(() => setKakaoStep('done'), 900);
+    const result = await sendKakaoClassSummary({
+      centerId: profile?.centerId ?? null,
+      senderId: profile?.id ?? 'local',
+      classRecord: record,
+      students,
+    });
+    if (result.ok) {
+      setKakaoResult(result.data);
+      setKakaoStep('done');
+      return;
+    }
+    setRetryQueue((items) => [
+      {
+        id: `kakao-${record.id}`,
+        type: 'kakao-summary',
+        title: `${record.classId} 카카오 요약 발송`,
+        createdAt: new Date().toISOString(),
+        retryable: result.retryable,
+      },
+      ...items,
+    ]);
+    setKakaoStep('preview');
   };
 
   return (
@@ -184,16 +212,22 @@ export default function ClassRecordPage() {
           </div>
         ) : null}
         {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}
-        {kakaoStep === 'sending' ? <p className="mt-4 rounded-[12px] p-3 text-[13px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>학부모 메시지를 발송하는 중입니다...</p> : null}
+        {kakaoStep === 'sending' ? <p className="mt-4 rounded-[12px] p-3 text-[13px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>Cloud Function 계약에 맞춰 학부모 메시지를 발송하는 중입니다...</p> : null}
         {kakaoStep === 'done' ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.13)', color: 'var(--spm-grn)' }}>
-            <p className="text-[13px] font-bold">카카오 요약 발송 완료. 학생 이력에 오늘 기록을 반영했습니다.</p>
+            <p className="text-[13px] font-bold">카카오 요약 {kakaoResult?.sentCount ?? present}건 발송 완료. 학생 이력에 오늘 기록을 반영했습니다.</p>
             {firstPresentStudent ? (
               <Link href={`/spokedu-master/parent/${firstPresentStudent.id}?token=${parentToken}`} className="mt-3 inline-flex items-center gap-1 text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>
                 학부모 링크 미리보기
                 <ExternalLink size={13} />
               </Link>
             ) : null}
+          </div>
+        ) : null}
+        {retryQueue.length > 0 ? (
+          <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>
+            <p className="text-[12px] font-black">재시도 대기 {retryQueue.length}건</p>
+            <p className="mt-1 text-[11px] font-semibold">네트워크 또는 카카오 제공자 오류가 나면 이 목록에서 다시 발송합니다.</p>
           </div>
         ) : null}
         <button type="button" onClick={kakaoStep === 'summary' ? () => setKakaoStep('preview') : sendKakao} disabled={!recordStatus.allowed || !kakaoStatus.allowed || kakaoStep === 'sending' || kakaoStep === 'done'} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>

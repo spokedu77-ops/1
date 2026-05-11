@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Award, ChevronRight, ExternalLink, FileText, MessageCircle, TrendingUp, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
+import { createParentPreviewToken } from '../lib/subscription';
 import { useMasterStore } from '../store';
 
 function SkillBar({ label, value, delta }: { label: string; value: number; delta: string }) {
@@ -25,16 +26,17 @@ export default function StudentsPage() {
   const records = useMasterStore((state) => state.classRecords);
   const [selectedId, setSelectedId] = useState(students[0]?.id ?? null);
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
+  const selectedRecordCount = selected ? records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length : 0;
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>student history</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>강사가 매 수업 남긴 출석, 동작, 관찰 기록이 학생별 성장 이력으로 누적됩니다.</p>
+        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>강사가 매 수업마다 남긴 출석, 동작, 관찰 기록이 학생별 성장 이력으로 누적됩니다.</p>
       </header>
 
-      <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_1fr] lg:px-10">
+      <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
         <section className="space-y-2">
           {students.map((student) => (
             <button key={student.id} type="button" onClick={() => setSelectedId(student.id)} className="flex w-full items-center gap-3 rounded-[15px] p-3 text-left" style={{ background: selectedId === student.id ? 'rgba(99,102,241,0.14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br)' }}>
@@ -59,7 +61,7 @@ export default function StudentsPage() {
                   <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>{selected.group}</p>
                   <h2 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{selected.name}</h2>
                   <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{selected.level}</p>
-                  <p className="mt-2 text-[11px] font-semibold" style={{ color: 'var(--spm-grn)' }}>누적 기록 {records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length}건</p>
+                  <p className="mt-2 text-[11px] font-semibold" style={{ color: 'var(--spm-grn)' }}>누적 기록 {selectedRecordCount}건</p>
                 </div>
                 <span className="grid h-12 w-12 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.14)' }}>
                   <TrendingUp size={20} color="var(--spm-grn)" />
@@ -106,7 +108,7 @@ export default function StudentsPage() {
                   <FileText size={15} />
                   리포트
                 </Link>
-                <Link href={`/spokedu-master/parent/${selected.id}?token=demo-${selected.id}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                <Link href={`/spokedu-master/parent/${selected.id}?token=${createParentPreviewToken(selected.id)}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <ExternalLink size={15} />
                   웹뷰
                 </Link>
