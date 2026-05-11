@@ -58,6 +58,13 @@ export type GrowthReportResult = {
   }>;
 };
 
+export type CenterValidationResult = {
+  centerId: string;
+  centerName: string;
+  plan: 'team';
+  teacherSlots: number;
+};
+
 export const FIREBASE_COLLECTIONS = {
   users: 'users',
   centers: 'centers',
@@ -91,6 +98,28 @@ export function buildRetryQueueItem(type: RetryQueueItem['type'], title: string,
     title,
     createdAt: new Date().toISOString(),
     retryable,
+  };
+}
+
+export async function validateCenterCode(code: string): Promise<ApiResult<CenterValidationResult>> {
+  await wait(450);
+  const normalized = code.trim().toUpperCase();
+  if (normalized.length < 10) {
+    return {
+      ok: false,
+      code: 'permission-denied',
+      message: '센터 코드는 10자 이상이어야 합니다.',
+      retryable: false,
+    };
+  }
+  return {
+    ok: true,
+    data: {
+      centerId: normalized,
+      centerName: normalized.startsWith('SPOMOVE') ? 'SPOMOVE 데모 센터' : '연결된 체육 센터',
+      plan: 'team',
+      teacherSlots: 3,
+    },
   };
 }
 

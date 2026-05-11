@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Activity, AlertTriangle, Check, ExternalLink, FileText, MessageCircle, Share2, UserRound, Zap, type LucideIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { generateGrowthReportBatch, type GrowthReportResult, type RetryQueueItem } from '../lib/serviceContracts';
+import { generateGrowthReportBatch, type GrowthReportResult } from '../lib/serviceContracts';
 import { canUseMonthlyLimit, createParentPreviewToken } from '../lib/subscription';
 import { formatReactionTime } from '../lib/utils';
 import { useMasterStore, useStats } from '../store';
@@ -63,6 +63,8 @@ export default function ReportPage() {
   const sessions = useMasterStore((state) => state.sessions);
   const classRecords = useMasterStore((state) => state.classRecords);
   const students = useMasterStore((state) => state.students);
+  const enqueueRetry = useMasterStore((state) => state.enqueueRetry);
+  const retryQueue = useMasterStore((state) => state.operational.retryQueue);
   const stats = useStats();
   const classes = useMemo(() => Array.from(new Set(students.map((student) => student.group))), [students]);
   const [classFilter, setClassFilter] = useState(classes[0] ?? '3학년 A반');
@@ -71,7 +73,6 @@ export default function ReportPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareStep, setShareStep] = useState<'preview' | 'generating' | 'done'>('preview');
   const [reportResult, setReportResult] = useState<GrowthReportResult | null>(null);
-  const [retryQueue, setRetryQueue] = useState<RetryQueueItem[]>([]);
   const reactionValues = useMemo(() => sessions.map((session) => session.avg).filter((value): value is number => typeof value === 'number'), [sessions]);
   const filteredStudents = students.filter((student) => student.group === classFilter);
   const filteredRecords = classRecords.filter((record) => record.classId === classFilter);
@@ -108,16 +109,7 @@ export default function ReportPage() {
       setShareStep('done');
       return;
     }
-    setRetryQueue((items) => [
-      {
-        id: `pdf-${Date.now()}`,
-        type: 'pdf-report',
-        title: `${classFilter} ${period} 성장 리포트`,
-        createdAt: new Date().toISOString(),
-        retryable: result.retryable,
-      },
-      ...items,
-    ]);
+    enqueueRetry({ id: `pdf-${Date.now()}`, type: 'pdf-report', title: `${classFilter} ${period} 성장 리포트`, createdAt: new Date().toISOString(), retryable: result.retryable });
     setShareStep('preview');
   };
 

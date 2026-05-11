@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, ChevronRight, Lock, Play, Smartphone, UsersRound, Zap } from 'lucide-react';
+import { Bell, ChevronRight, Clock3, Lock, Play, Smartphone, UsersRound, Zap } from 'lucide-react';
 import { DRILLS, PROGRAMS } from '../lib/data';
 import { useIsPro, useMasterStore, useProfile, useStats, useUnreadCount } from '../store';
 
@@ -25,23 +25,14 @@ function KpiCard({ value, label, delta }: { value: string; label: string; delta:
 }
 
 function ThumbGrid({ colors, size = 66 }: { colors: [string, string, string, string]; size?: number }) {
-  return (
-    <div className="grid shrink-0 grid-cols-2 grid-rows-2 gap-0.5 overflow-hidden rounded-[10px]" style={{ width: size, height: size }} aria-hidden>
-      {colors.map((color) => <span key={color} style={{ background: color }} />)}
-    </div>
-  );
+  return <div className="grid shrink-0 grid-cols-2 grid-rows-2 gap-0.5 overflow-hidden rounded-[10px]" style={{ width: size, height: size }} aria-hidden>{colors.map((color) => <span key={color} style={{ background: color }} />)}</div>;
 }
 
 function ProBanner() {
   return (
     <Link href="/spokedu-master/profile" className="mx-[22px] mb-6 flex items-center gap-2.5 rounded-[10px] px-[14px] py-[11px] sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(90deg, rgba(245,158,11,0.08), rgba(245,158,11,0.04))', border: '1px solid rgba(245,158,11,0.18)' }}>
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[7px]" style={{ background: 'rgba(245,158,11,0.15)' }}>
-        <Lock size={14} color="var(--spm-amb)" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <strong className="block text-[12px] font-bold" style={{ color: 'var(--spm-amb)' }}>PRO 업그레이드</strong>
-        <span className="mt-0.5 block text-[10px]" style={{ color: 'rgba(245,158,11,0.65)' }}>전체 프로그램, SPOMOVE 실행, 성장 리포트 기능 해제</span>
-      </span>
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[7px]" style={{ background: 'rgba(245,158,11,0.15)' }}><Lock size={14} color="var(--spm-amb)" /></span>
+      <span className="min-w-0 flex-1"><strong className="block text-[12px] font-bold" style={{ color: 'var(--spm-amb)' }}>PRO 업그레이드</strong><span className="mt-0.5 block text-[10px]" style={{ color: 'rgba(245,158,11,0.65)' }}>전체 프로그램, SPOMOVE 실행, 성장 리포트 기능 해제</span></span>
       <ChevronRight size={16} color="rgba(245,158,11,0.55)" />
     </Link>
   );
@@ -57,14 +48,8 @@ function ServiceIdentityCard() {
           <p className="mt-3 max-w-[640px] text-[13px] font-medium leading-6 md:text-[15px]" style={{ color: 'var(--spm-t2)' }}>수업 준비 30초, 기록 3분. 강사가 남긴 기록은 학생 성장 이력과 학부모 리포트로 이어집니다.</p>
         </div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-1">
-          <Link href="/spokedu-master/library" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-            <Play size={15} fill="#fff" />
-            프로그램 탐색
-          </Link>
-          <Link href="/spokedu-master/spomove" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-            <Smartphone size={15} />
-            웹 실행
-          </Link>
+          <Link href="/spokedu-master/library" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><Play size={15} fill="#fff" />프로그램 탐색</Link>
+          <Link href="/spokedu-master/spomove" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Smartphone size={15} />웹 실행</Link>
         </div>
       </div>
     </section>
@@ -94,16 +79,26 @@ function TodayClassCard() {
             </div>
           </div>
           <div className="grid grid-cols-[1fr_48px] gap-2 md:min-w-[260px]">
-            <Link href="/spokedu-master/class-record" className="flex items-center justify-center gap-2 rounded-[10px] px-[18px] py-[13px] text-[14px] font-semibold text-white active:scale-[0.98]" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)', fontFamily: 'var(--spm-font-display)' }}>
-              <Play size={14} fill="white" />
-              수업 기록하기
-            </Link>
-            <Link href="/spokedu-master/library" className="grid place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="수업 상세 보기">
-              <ChevronRight size={17} color="var(--spm-t2)" />
-            </Link>
+            <Link href="/spokedu-master/class-record" className="flex items-center justify-center gap-2 rounded-[10px] px-[18px] py-[13px] text-[14px] font-semibold text-white active:scale-[0.98]" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)', fontFamily: 'var(--spm-font-display)' }}><Play size={14} fill="white" />수업 기록하기</Link>
+            <Link href="/spokedu-master/library" className="grid place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="수업 상세 보기"><ChevronRight size={17} color="var(--spm-t2)" /></Link>
           </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+function ProgramRecommendationCard() {
+  const classRecords = useMasterStore((state) => state.classRecords);
+  const usedProgramIds = new Set(classRecords.map((record) => record.programId));
+  const recommended = PROGRAMS.find((program) => !usedProgramIds.has(program.id)) ?? PROGRAMS[0]!;
+  return (
+    <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
+      <Link href={`/spokedu-master/library/${recommended.id}`} className="flex items-center gap-3 rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.14)' }}><Clock3 size={19} color="var(--spm-acc)" /></span>
+        <span className="min-w-0 flex-1"><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>다음 추천: {recommended.title}</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>아직 이 반에서 사용하지 않은 프로그램입니다.</span></span>
+        <ChevronRight size={18} color="var(--spm-t3)" />
+      </Link>
     </section>
   );
 }
@@ -112,18 +107,8 @@ function DrillTile({ drill, index }: { drill: (typeof DRILLS)[number]; index: nu
   const gradients = ['linear-gradient(135deg,#312e81,#4f46e5)', 'linear-gradient(135deg,#064e3b,#059669)', 'linear-gradient(135deg,#1e1b4b,#7c3aed)', 'linear-gradient(135deg,#713f12,#be123c)'];
   return (
     <Link href={`/spokedu-master/spomove/session?drill=${drill.id}`} className="relative flex min-h-[112px] flex-col justify-between overflow-hidden rounded-[12px] p-[16px_14px] active:scale-95" style={{ background: gradients[index % gradients.length], border: '1px solid rgba(255,255,255,0.06)' }}>
-      <div className="flex items-center justify-between">
-        <span className="grid h-[30px] w-[30px] place-items-center rounded-[8px]" style={{ background: 'rgba(255,255,255,0.1)' }}>
-          <Zap size={15} color="#fff" />
-        </span>
-        <span className="grid h-6 w-6 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }}>
-          <Play size={10} fill="#fff" color="#fff" />
-        </span>
-      </div>
-      <div>
-        <p className="mb-[3px] text-[9px] font-semibold uppercase tracking-[0.06em] text-white/45">{drill.category}</p>
-        <p className="text-[14px] font-semibold leading-[1.25] text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>{drill.name}</p>
-      </div>
+      <div className="flex items-center justify-between"><span className="grid h-[30px] w-[30px] place-items-center rounded-[8px]" style={{ background: 'rgba(255,255,255,0.1)' }}><Zap size={15} color="#fff" /></span><span className="grid h-6 w-6 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }}><Play size={10} fill="#fff" color="#fff" /></span></div>
+      <div><p className="mb-[3px] text-[9px] font-semibold uppercase tracking-[0.06em] text-white/45">{drill.category}</p><p className="text-[14px] font-semibold leading-[1.25] text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>{drill.name}</p></div>
       {drill.isPro ? <span className="absolute right-2 top-2 rounded-full bg-black/25 px-2 py-0.5 text-[9px] font-bold text-white/70">PRO</span> : null}
     </Link>
   );
@@ -135,7 +120,7 @@ function DirectorSnapshot() {
       <div className="rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg, rgba(29,158,117,0.16), var(--spm-s2))', border: '1px solid rgba(16,185,129,0.24)' }}>
         <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-grn)' }}>director dashboard</p>
         <h2 className="mt-2 text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 운영 신호를 한 화면에서 봅니다</h2>
-        <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>강사 기록율, 이탈 위험 학생, 센터 플랜 사용량을 기준으로 운영 리스크를 조기에 확인합니다.</p>
+        <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>강사 기록률, 이탈 위험 학생, 센터 플랜 사용량을 기준으로 운영 리스크를 조기에 확인합니다.</p>
         <Link href="/spokedu-master/director" className="mt-5 flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>센터 대시보드 열기</Link>
       </div>
     </section>
@@ -153,15 +138,9 @@ export default function DashboardView() {
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="flex items-center justify-between px-[22px] pb-[18px] pt-[22px] sm:px-8 lg:px-10">
-        <div>
-          <p className="mb-1 text-[12px] italic" style={{ color: 'var(--spm-t3)' }}>좋은 아침이에요</p>
-          <h1 className="text-[22px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{profile?.name ?? '선생님'}</h1>
-        </div>
+        <div><p className="mb-1 text-[12px] italic" style={{ color: 'var(--spm-t3)' }}>좋은 아침이에요</p><h1 className="text-[22px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{profile?.name ?? '선생님'}</h1></div>
         <div className="flex items-center gap-2">
-          <button type="button" className="relative grid h-[38px] w-[38px] place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림">
-            <Bell size={18} color="var(--spm-t2)" />
-            {unreadCount > 0 ? <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: 'var(--spm-red)', border: '1.5px solid var(--spm-bg)' }} /> : null}
-          </button>
+          <button type="button" className="relative grid h-[38px] w-[38px] place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림"><Bell size={18} color="var(--spm-t2)" />{unreadCount > 0 ? <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: 'var(--spm-red)', border: '1.5px solid var(--spm-bg)' }} /> : null}</button>
           <Link href="/spokedu-master/profile" className="grid h-10 w-10 place-items-center rounded-full text-[14px] font-bold text-white" style={{ background: profile?.avatarColor ?? '#312e81', fontFamily: 'var(--spm-font-display)' }}>{(profile?.name ?? '선생님').slice(0, 1)}</Link>
         </div>
       </header>
@@ -179,25 +158,19 @@ export default function DashboardView() {
 
       <SectionHeader title="오늘 수업" href="/spokedu-master/plan" />
       <TodayClassCard />
+      <ProgramRecommendationCard />
 
       <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
         <Link href="/spokedu-master/students" className="flex items-center gap-3 rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.13)' }}>
-            <UsersRound size={19} color="var(--spm-grn)" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>학생 성장 이력</strong>
-            <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>배지, 위험 신호, 누적 수업 기록 확인</span>
-          </span>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.13)' }}><UsersRound size={19} color="var(--spm-grn)" /></span>
+          <span className="min-w-0 flex-1"><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>학생 성장 이력</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>배지, 위험 신호, 누적 수업 기록 확인</span></span>
           <ChevronRight size={18} color="var(--spm-t3)" />
         </Link>
       </section>
 
       <section className="mb-7">
         <SectionHeader title="SPOMOVE 웹 실행" href="/spokedu-master/spomove" />
-        <div className="grid grid-cols-2 gap-2 px-[22px] sm:grid-cols-4 sm:px-8 lg:px-10">
-          {DRILLS.slice(0, 4).map((drill, index) => <DrillTile key={drill.id} drill={drill} index={index} />)}
-        </div>
+        <div className="grid grid-cols-2 gap-2 px-[22px] sm:grid-cols-4 sm:px-8 lg:px-10">{DRILLS.slice(0, 4).map((drill, index) => <DrillTile key={drill.id} drill={drill} index={index} />)}</div>
       </section>
     </div>
   );

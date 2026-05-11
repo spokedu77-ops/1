@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, BarChart3, CreditCard, UsersRound } from 'lucide-react';
+import { OperationsPanel } from '../components/operations/OperationsPanel';
 import { useMasterStore, useProfile } from '../store';
 
 function Kpi({ label, value, desc, icon: Icon, tone }: { label: string; value: string; desc: string; icon: typeof BarChart3; tone: string }) {
@@ -76,6 +77,10 @@ export default function DirectorPage() {
           </div>
         </section>
       </div>
+
+      <section className="mx-[22px] mt-5 sm:mx-8 lg:mx-10">
+        <OperationsPanel compact />
+      </section>
 
       <section className="mx-[22px] mt-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.16), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.28)' }}>
         <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>

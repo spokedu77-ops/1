@@ -4,15 +4,53 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { TabBar } from './TabBar';
-import { useProfile } from '../../store';
+import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
+import { isTrialExpired } from '../../lib/subscription';
+
+function OperationsBanner() {
+  const profile = useProfile();
+  const operational = useOperationalStatus();
+  const expired = isTrialExpired(profile);
+  if (operational.online && operational.retryQueue.length === 0 && !expired) return null;
+
+  const label = !operational.online
+    ? '오프라인 모드: 수업 기록은 기기에 임시 저장됩니다.'
+    : expired
+      ? '무료 체험이 만료되어 새 기록 생성이 제한됩니다.'
+      : `재시도 대기 ${operational.retryQueue.length}건: 카카오/PDF 실패 항목을 다시 처리해야 합니다.`;
+
+  return (
+    <div className="mx-[22px] mt-3 rounded-[12px] px-3 py-2 text-[12px] font-bold sm:mx-8 lg:mx-10" style={{ background: expired ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: expired ? 'var(--spm-red)' : 'var(--spm-amb)', border: expired ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(245,158,11,0.25)' }}>
+      {label}
+    </div>
+  );
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const profile = useProfile();
+  const setOnline = useMasterStore((state) => state.setOnline);
   const isSession = pathname.startsWith('/spokedu-master/spomove/session');
   const isOnboarding = pathname.startsWith('/spokedu-master/onboarding');
   const isParentView = pathname.startsWith('/spokedu-master/parent');
+
+  useEffect(() => {
+    const updateOnline = () => setOnline(window.navigator.onLine);
+    updateOnline();
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    return () => {
+      window.removeEventListener('online', updateOnline);
+      window.removeEventListener('offline', updateOnline);
+    };
+  }, [setOnline]);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/spokedu-master-sw.js', { scope: '/spokedu-master/' }).catch(() => undefined);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isSession && !isOnboarding && !isParentView && profile && !profile.onboardingDone) {
@@ -21,24 +59,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [isOnboarding, isParentView, isSession, profile, router]);
 
   if (isSession) {
-    return (
-      <div className="min-h-dvh bg-black" style={{ fontFamily: 'var(--spm-font-body)' }}>
-        {children}
-      </div>
-    );
+    return <div className="min-h-dvh bg-black" style={{ fontFamily: 'var(--spm-font-body)' }}>{children}</div>;
   }
 
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
-      <div
-        className="relative mx-auto flex min-h-dvh w-full max-w-[1180px] flex-col overflow-hidden"
-        style={{
-          background: 'var(--spm-bg)',
-          color: 'var(--spm-t)',
-          fontFamily: 'var(--spm-font-body)',
-        }}
-      >
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1180px] flex-col overflow-hidden" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
         <main className="min-h-0 flex-1 overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
+          {isOnboarding || isParentView ? null : <OperationsBanner />}
           {children}
         </main>
         {isOnboarding || isParentView ? null : <TabBar />}

@@ -5,7 +5,7 @@ import { AlertTriangle, Check, ChevronRight, ExternalLink, MessageCircle, Play, 
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { PROGRAMS } from '../lib/data';
-import { sendKakaoClassSummary, type KakaoSummaryResult, type RetryQueueItem } from '../lib/serviceContracts';
+import { sendKakaoClassSummary, type KakaoSummaryResult } from '../lib/serviceContracts';
 import { canCreateClassRecord, canUseMonthlyLimit, createParentPreviewToken } from '../lib/subscription';
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, StudentProfile } from '../types';
@@ -60,6 +60,8 @@ export default function ClassRecordPage() {
   const students = useMasterStore((state) => state.students);
   const classRecords = useMasterStore((state) => state.classRecords);
   const saveClassRecord = useMasterStore((state) => state.saveClassRecord);
+  const enqueueRetry = useMasterStore((state) => state.enqueueRetry);
+  const retryQueue = useMasterStore((state) => state.operational.retryQueue);
   const todayLesson = lessons[0];
   const program = PROGRAMS.find((item) => todayLesson?.title.includes(item.title.split(':')[0])) ?? PROGRAMS[0]!;
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>(() => Object.fromEntries(students.map((student) => [student.id, 'pending'])));
@@ -69,7 +71,6 @@ export default function ClassRecordPage() {
   const [kakaoStep, setKakaoStep] = useState<'summary' | 'preview' | 'sending' | 'done'>('summary');
   const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
   const [kakaoResult, setKakaoResult] = useState<KakaoSummaryResult | null>(null);
-  const [retryQueue, setRetryQueue] = useState<RetryQueueItem[]>([]);
 
   const selectedStudent = students.find((student) => student.id === selectedId);
   const firstPresentStudent = students.find((student) => attendance[student.id] === 'present') ?? students[0];
@@ -135,16 +136,7 @@ export default function ClassRecordPage() {
       setKakaoStep('done');
       return;
     }
-    setRetryQueue((items) => [
-      {
-        id: `kakao-${record.id}`,
-        type: 'kakao-summary',
-        title: `${record.classId} 카카오 요약 발송`,
-        createdAt: new Date().toISOString(),
-        retryable: result.retryable,
-      },
-      ...items,
-    ]);
+    enqueueRetry({ id: `kakao-${record.id}`, type: 'kakao-summary', title: `${record.classId} 카카오 요약 발송`, createdAt: new Date().toISOString(), retryable: result.retryable });
     setKakaoStep('preview');
   };
 

@@ -3,7 +3,7 @@
   "short_name": "SPOKEDU",
   "description": "아동청소년 체육 프로그램 라이브러리와 SPOMOVE 수업 실행, 기록, 리포트를 연결하는 구독형 PWA",
   "start_url": "/spokedu-master",
-  "scope": "/",
+  "scope": "/spokedu-master/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#050712",

@@ -1,16 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { CheckCircle2, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { PROGRAMS } from '../lib/data';
 import { useMasterStore } from '../store';
 
 const PRODUCTS = [
-  { id: '마커콘', name: '마커콘 세트', desc: '민첩성, 릴레이, 방향 전환 수업 기본 교구', price: 8900, tone: '#f59e0b' },
-  { id: '이미지 카드', name: '움직임 이미지 카드', desc: '유치부와 초등 저학년 상상놀이 수업용', price: 12000, tone: '#10b981' },
-  { id: '미니 허들', name: '미니 허들 6개입', desc: '균형, 점프, 하체 협응 훈련용', price: 24000, tone: '#818cf8' },
-  { id: '배턴', name: '소프트 릴레이 배턴', desc: '팀 릴레이와 협동 수업용', price: 6900, tone: '#fb7185' },
-  { id: '프로젝터', name: '수업용 미니 프로젝터', desc: 'SPOMOVE 전체화면 실행 권장 장비', price: 159000, tone: '#38bdf8' },
+  { id: '마커콘', name: '마커콘 세트', desc: '민첩성, 릴레이, 방향 전환 수업 기본 교구', price: 8900, tone: '#f59e0b', tags: ['8자 드릴', '팀 릴레이'] },
+  { id: '이미지 카드', name: '움직임 이미지 카드', desc: '유치부와 초등 저학년 상상놀이 수업용 카드', price: 12000, tone: '#10b981', tags: ['포레스트'] },
+  { id: '미니 허들', name: '미니 허들 6개입', desc: '균형, 점프, 하체 협응 훈련용', price: 24000, tone: '#818cf8', tags: ['밸런스 로드'] },
+  { id: '바톤', name: '소프트 릴레이 바톤', desc: '팀 릴레이와 협동 수업용 안전 바톤', price: 6900, tone: '#fb7185', tags: ['팀 릴레이'] },
+  { id: '프로젝터', name: '수업용 미니 프로젝터', desc: 'SPOMOVE 전체화면 실행 권장 장비', price: 159000, tone: '#38bdf8', tags: ['SPOMOVE'] },
 ];
+
+const BUNDLES = [
+  { id: 'starter', name: '개인 강사 스타터 키트', desc: '마커콘, 이미지 카드, 바톤으로 바로 수업을 시작하는 구성', items: ['마커콘', '이미지 카드', '바톤'], price: 26800 },
+  { id: 'center', name: '센터 공용 운영 키트', desc: '여러 강사가 함께 쓰는 SPOMOVE 실행과 기본 교구 구성', items: ['마커콘', '미니 허들', '바톤', '프로젝터'], price: 198800 },
+];
+
+function ProductIcon({ tone }: { tone: string }) {
+  return <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px]" style={{ background: `${tone}24` }}><ShoppingBag size={21} color={tone} /></span>;
+}
 
 export default function SpokeduMasterShopPage() {
   const cart = useMasterStore((state) => state.cart);
@@ -18,77 +28,101 @@ export default function SpokeduMasterShopPage() {
   const updateQty = useMasterStore((state) => state.updateQty);
   const clearCart = useMasterStore((state) => state.clearCart);
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const usedEquipment = Array.from(new Set(PROGRAMS.flatMap((program) => program.equipment))).filter((item) => !item.includes('스마트폰') && item !== '프로젝터');
+
+  const addBundle = (bundle: (typeof BUNDLES)[number]) => {
+    addToCart({ id: bundle.id, name: bundle.name, price: bundle.price, qty: 1 });
+  };
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>equipment store</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>교구 샵</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          수업안에 필요한 교구를 바로 담습니다. 프로그램 라이브러리와 연결되는 판매 영역입니다.
-        </p>
+        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>교구 스토어</h1>
+        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>프로그램 라이브러리의 준비물과 연결되는 판매 영역입니다. 학생 이력 저장소와는 분리된 교구 구매 흐름입니다.</p>
       </header>
 
-      <div className="grid gap-7 px-[22px] sm:px-8 lg:grid-cols-[1fr_360px] lg:px-10">
-        <section>
-          <div className="grid gap-3 md:grid-cols-2">
-            {PRODUCTS.map((product) => (
-              <article key={product.id} className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                <div className="flex items-start gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px]" style={{ background: `${product.tone}24` }}>
-                    <ShoppingBag size={21} color={product.tone} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>{product.name}</h2>
-                    <p className="mt-1 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{product.desc}</p>
-                    <p className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{product.price.toLocaleString('ko-KR')}원</p>
+      <section className="mx-[22px] mb-7 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(24,95,165,0.22), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.26)' }}>
+        <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#93c5fd' }}>from library</p>
+        <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업안에서 자주 쓰는 교구</h2>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {usedEquipment.map((item) => <span key={item} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</span>)}
+        </div>
+      </section>
+
+      <div className="grid gap-7 px-[22px] sm:px-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-10">
+        <main className="space-y-7">
+          <section>
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>추천 키트</h2>
+              <span className="text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>수업 준비 시간 단축</span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {BUNDLES.map((bundle) => (
+                <article key={bundle.id} className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px]" style={{ background: 'rgba(16,185,129,0.13)' }}><PackageCheck size={21} color="var(--spm-grn)" /></span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>{bundle.name}</h3>
+                      <p className="mt-1 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{bundle.desc}</p>
+                      <div className="mt-3 flex flex-wrap gap-1.5">{bundle.items.map((item) => <span key={item} className="rounded-full px-2 py-1 text-[10px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</span>)}</div>
+                      <p className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{bundle.price.toLocaleString('ko-KR')}원</p>
+                    </div>
                   </div>
-                </div>
-                <button type="button" onClick={() => addToCart({ id: product.id, name: product.name, price: product.price, qty: 1 })} className="mt-4 h-11 w-full rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                  장바구니 담기
-                </button>
-              </article>
-            ))}
-          </div>
-        </section>
+                  <button type="button" onClick={() => addBundle(bundle)} className="mt-4 h-11 w-full rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>키트 담기</button>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>개별 교구</h2>
+              <Link href="/spokedu-master/library" className="text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>수업안 보기</Link>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {PRODUCTS.map((product) => (
+                <article key={product.id} className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                  <div className="flex items-start gap-3">
+                    <ProductIcon tone={product.tone} />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>{product.name}</h3>
+                      <p className="mt-1 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{product.desc}</p>
+                      <div className="mt-3 flex flex-wrap gap-1.5">{product.tags.map((item) => <span key={item} className="rounded-full px-2 py-1 text-[10px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</span>)}</div>
+                      <p className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{product.price.toLocaleString('ko-KR')}원</p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => addToCart({ id: product.id, name: product.name, price: product.price, qty: 1 })} className="mt-4 h-11 w-full rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>장바구니 담기</button>
+                </article>
+              ))}
+            </div>
+          </section>
+        </main>
 
         <aside className="space-y-4">
-          <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <section className="rounded-[18px] p-5 lg:sticky lg:top-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>장바구니</h2>
-              {cart.length > 0 ? (
-                <button type="button" onClick={clearCart} className="grid h-8 w-8 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label="장바구니 비우기">
-                  <Trash2 size={15} color="var(--spm-red)" />
-                </button>
-              ) : null}
+              {cart.length > 0 ? <button type="button" onClick={clearCart} className="grid h-8 w-8 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label="장바구니 비우기"><Trash2 size={15} color="var(--spm-red)" /></button> : null}
             </div>
             {cart.length > 0 ? (
               <div className="space-y-2">
                 {cart.map((item) => (
                   <div key={item.id} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{item.name}</p>
-                        <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{item.price.toLocaleString('ko-KR')}원</p>
-                      </div>
+                      <div className="min-w-0"><p className="truncate text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{item.name}</p><p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{item.price.toLocaleString('ko-KR')}원</p></div>
                       <div className="flex items-center gap-1">
-                        <button type="button" onClick={() => updateQty(item.id, -1)} className="grid h-7 w-7 place-items-center rounded-[8px]" style={{ background: 'var(--spm-s2)' }} aria-label="수량 감소">
-                          <Minus size={13} color="var(--spm-t2)" />
-                        </button>
+                        <button type="button" onClick={() => updateQty(item.id, -1)} className="grid h-7 w-7 place-items-center rounded-[8px]" style={{ background: 'var(--spm-s2)' }} aria-label="수량 감소"><Minus size={13} color="var(--spm-t2)" /></button>
                         <span className="w-6 text-center text-[12px] font-black" style={{ color: 'var(--spm-t)' }}>{item.qty}</span>
-                        <button type="button" onClick={() => updateQty(item.id, 1)} className="grid h-7 w-7 place-items-center rounded-[8px]" style={{ background: 'var(--spm-s2)' }} aria-label="수량 증가">
-                          <Plus size={13} color="var(--spm-t2)" />
-                        </button>
+                        <button type="button" onClick={() => updateQty(item.id, 1)} className="grid h-7 w-7 place-items-center rounded-[8px]" style={{ background: 'var(--spm-s2)' }} aria-label="수량 증가"><Plus size={13} color="var(--spm-t2)" /></button>
                       </div>
                     </div>
                   </div>
                 ))}
                 <div className="border-t pt-4" style={{ borderColor: 'var(--spm-br2)' }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-bold" style={{ color: 'var(--spm-t2)' }}>합계</span>
-                    <strong className="text-[20px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{total.toLocaleString('ko-KR')}원</strong>
-                  </div>
-                  <button type="button" className="mt-4 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>주문서 만들기</button>
+                  <div className="flex items-center justify-between"><span className="text-[13px] font-bold" style={{ color: 'var(--spm-t2)' }}>합계</span><strong className="text-[20px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{total.toLocaleString('ko-KR')}원</strong></div>
+                  <button type="button" className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><CheckCircle2 size={16} />주문 요청 만들기</button>
+                  <p className="mt-2 text-[11px] leading-5" style={{ color: 'var(--spm-t3)' }}>실제 결제 연동 전에는 견적/주문 요청 단계로 처리합니다.</p>
                 </div>
               </div>
             ) : (
@@ -98,9 +132,6 @@ export default function SpokeduMasterShopPage() {
               </div>
             )}
           </section>
-          <Link href="/spokedu-master/library" className="block rounded-[14px] p-4 text-center text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-            수업안 보러가기
-          </Link>
         </aside>
       </div>
     </div>

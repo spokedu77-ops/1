@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { CartItem, ClassRecord, ClassStudentRecord, Lesson, Notification, Session, StudentProfile, UserProfile } from '../types';
+import type { RetryQueueItem } from '../lib/serviceContracts';
 
 type ActiveSession = {
   drillId: string;
@@ -14,9 +15,20 @@ type ActiveSession = {
   paused: boolean;
 };
 
+type OperationalStatus = {
+  online: boolean;
+  lastSyncAt: string | null;
+  retryQueue: RetryQueueItem[];
+};
+
 interface MasterState {
   profile: UserProfile | null;
   setProfile: (profile: Partial<UserProfile>) => void;
+  operational: OperationalStatus;
+  setOnline: (online: boolean) => void;
+  setLastSyncNow: () => void;
+  enqueueRetry: (item: RetryQueueItem) => void;
+  removeRetry: (id: string) => void;
   sessions: Session[];
   addSession: (session: Session) => void;
   activeSession: ActiveSession | null;
@@ -58,6 +70,12 @@ const defaultProfile: UserProfile = {
   onboardingDone: false,
   trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
   createdAt: new Date().toISOString(),
+};
+
+const defaultOperational: OperationalStatus = {
+  online: true,
+  lastSyncAt: null,
+  retryQueue: [],
 };
 
 const defaultLessons: Lesson[] = [
@@ -243,8 +261,13 @@ export const useMasterStore = create<MasterState>()(
     (set, get) => ({
       profile: defaultProfile,
       setProfile: (profile) => set((state) => ({ profile: state.profile ? { ...state.profile, ...profile } : { ...defaultProfile, ...profile } })),
+      operational: defaultOperational,
+      setOnline: (online) => set((state) => ({ operational: { ...state.operational, online } })),
+      setLastSyncNow: () => set((state) => ({ operational: { ...state.operational, lastSyncAt: new Date().toISOString() } })),
+      enqueueRetry: (item) => set((state) => ({ operational: { ...state.operational, retryQueue: [item, ...state.operational.retryQueue.filter((queued) => queued.id !== item.id)].slice(0, 30) } })),
+      removeRetry: (id) => set((state) => ({ operational: { ...state.operational, retryQueue: state.operational.retryQueue.filter((item) => item.id !== id) } })),
       sessions: [],
-      addSession: (session) => set((state) => ({ sessions: [session, ...state.sessions].slice(0, 200) })),
+      addSession: (session) => set((state) => ({ sessions: [session, ...state.sessions].slice(0, 200), operational: { ...state.operational, lastSyncAt: new Date().toISOString() } })),
       activeSession: null,
       startSession: (drillId, drillName) => set({ activeSession: { drillId, drillName, times: [], cueCount: 0, running: true, paused: false } }),
       recordTime: (ms) => set((state) => (state.activeSession ? { activeSession: { ...state.activeSession, times: [...state.activeSession.times, ms], cueCount: state.activeSession.cueCount + 1 } } : {})),
@@ -290,6 +313,7 @@ export const useMasterStore = create<MasterState>()(
             { id: `record-${record.id}`, type: 'report' as const, title: `${record.classId} 수업 기록 저장`, body: `${record.programTitle} 기록 ${record.skillCount}개가 학생 이력에 반영되었습니다.`, read: false, createdAt: record.date },
             ...state.notifications,
           ].slice(0, 50),
+          operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
         })),
       favorites: [],
       toggleFavorite: (id) => set((state) => ({ favorites: state.favorites.includes(id) ? state.favorites.filter((favorite) => favorite !== id) : [...state.favorites, id] })),
@@ -309,6 +333,7 @@ export const useMasterStore = create<MasterState>()(
       name: 'spokedu-master-store',
       partialize: (state) => ({
         profile: state.profile,
+        operational: state.operational,
         sessions: state.sessions,
         lessons: state.lessons,
         students: state.students,
@@ -322,6 +347,7 @@ export const useMasterStore = create<MasterState>()(
 );
 
 export const useProfile = () => useMasterStore((state) => state.profile);
+export const useOperationalStatus = () => useMasterStore((state) => state.operational);
 export const useIsPro = () => useMasterStore((state) => (state.profile?.plan ?? 'free') !== 'free');
 export const useCartCount = () => useMasterStore((state) => state.cart.reduce((total, item) => total + item.qty, 0));
 export const useUnreadCount = () => useMasterStore((state) => state.notifications.filter((notification) => !notification.read).length);
