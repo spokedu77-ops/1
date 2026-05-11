@@ -1,9 +1,6 @@
 /**
- * v4 대시보드 큐레이션 기본값 및 테마 키.
- * center_content(또는 tenant_content) key: dashboard_v4
- *
- * 주간 4개 선정 풀: PROGRAM_BANK(테마/role 매핑) + 실제 연동 시 catalog API(/api/spokedu-pro/programs) 참고.
- * "매주 4개" 후보는 이 풀에서 선정하며, 큐레이션 편집은 동일 풀 내 선택 제한 정책은 docs 참고.
+ * SPOKEDU PRO 대시보드 큐레이션 기본값.
+ * center_content 또는 tenant_content의 dashboard_v4 payload와 병합해 사용한다.
  */
 
 export const THEME_KEYS = [
@@ -19,12 +16,12 @@ export type ThemeKey = (typeof THEME_KEYS)[number];
 
 export const THEME_LABELS: Record<ThemeKey, string> = {
   intro: '인트로',
-  'co-op': '협동 놀이',
-  'speed-reaction': '스피드리액션',
+  'co-op': '협동 체육',
+  'speed-reaction': '스피드 리액션',
   cognitive: '인지 발달',
   challenge: '챌린지',
-  'tag-duel': '술래 대결',
-  'variant-sports': '변형스포츠',
+  'tag-duel': '꼬리잡기 대결',
+  'variant-sports': '변형 스포츠',
 };
 
 export const ROW1_ROLES = ['Intro', 'Core', 'Play', 'Screen', 'Cooldown'] as const;
@@ -33,8 +30,9 @@ export type Row1Role = (typeof ROW1_ROLES)[number];
 export interface DashboardItemRow1 {
   programId: number;
   role: string;
-  tag2: string[]; // 표시 전용, 최대 2개 사용
+  tag2: string[];
 }
+
 export interface DashboardItemRow2 {
   programId: number;
   tag2: string[];
@@ -56,10 +54,8 @@ export interface Row2Block {
   items: DashboardItemRow2[];
 }
 
-/** 로드맵 하단: 카탈로그 교구 1종 기준 프로그램 4개 추천(API 조회). null이면 섹션 숨김 */
 export interface EquipmentSpotlightConfig {
   equipmentCatalogItem: string;
-  /** 비우면 로드맵에서 교구명 기반 기본 제목 사용 */
   sectionTitle?: string;
 }
 
@@ -71,14 +67,14 @@ export interface DashboardV4 {
 
 const defaultWeekTheme: WeekTheme = {
   badge: '이번 주 테마',
-  title: '스피드리액션',
+  title: '스피드 리액션',
   subtitle:
-    '놀이체육 라이브러리 150개+와 SPOMOVE 스크린 반응훈련을 한 곳에서.\n수업 준비는 줄이고, 아이들의 몰입도는 높이세요.',
+    '놀이체육 라이브러리와 SPOMOVE 반응훈련을 함께 연결해 수업 준비는 줄이고 아이들의 몰입은 높입니다.',
   themeKey: 'speed-reaction',
   items: [
-    { programId: 1, role: 'Intro', tag2: ['준비물없음', '집중유도'] },
-    { programId: 2, role: 'Core', tag2: ['인지발달', '규칙학습'] },
-    { programId: 3, role: 'Play', tag2: ['협동미션', '팀대결'] },
+    { programId: 1, role: 'Intro', tag2: ['준비물 적음', '집중 유도'] },
+    { programId: 2, role: 'Core', tag2: ['인지 발달', '규칙 학습'] },
+    { programId: 3, role: 'Play', tag2: ['협동 미션', '팀 대결'] },
     { programId: 4, role: 'Screen', tag2: ['리액션', '몰입'] },
   ],
   ctaPrimary: { label: '수업 시작', action: 'start_theme' },
@@ -92,7 +88,7 @@ const defaultRow2: Row2Block = {
     { programId: 5, tag2: ['스피드', '순발력'] },
     { programId: 6, tag2: ['협동', '규칙'] },
     { programId: 7, tag2: ['인지', '반응'] },
-    { programId: 8, tag2: ['술래', '대결'] },
+    { programId: 8, tag2: ['꼬리잡기', '대결'] },
   ],
 };
 
@@ -104,68 +100,78 @@ export const DEFAULT_DASHBOARD_V4: DashboardV4 = {
   },
 };
 
-/** tenant/API에 저장된 객체를 기본값과 병합(구버전 payload에 equipmentSpotlight 없을 때 대비) */
 export function mergePublishedDashboardV4(stored: unknown): DashboardV4 {
-  const b = DEFAULT_DASHBOARD_V4;
-  if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
-    return b;
-  }
-  const s = stored as Partial<DashboardV4>;
-  if (!s.weekTheme || !s.row2) {
-    return b;
-  }
+  const defaults = DEFAULT_DASHBOARD_V4;
+  if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return defaults;
+
+  const storedDashboard = stored as Partial<DashboardV4>;
+  if (!storedDashboard.weekTheme || !storedDashboard.row2) return defaults;
+
   const weekTheme: WeekTheme = {
-    ...b.weekTheme,
-    ...s.weekTheme,
-    items: Array.isArray(s.weekTheme.items) && s.weekTheme.items.length > 0 ? s.weekTheme.items : b.weekTheme.items,
+    ...defaults.weekTheme,
+    ...storedDashboard.weekTheme,
+    items:
+      Array.isArray(storedDashboard.weekTheme.items) && storedDashboard.weekTheme.items.length > 0
+        ? storedDashboard.weekTheme.items
+        : defaults.weekTheme.items,
   };
+
   const row2: Row2Block = {
-    ...b.row2,
-    ...s.row2,
-    items: Array.isArray(s.row2.items) && s.row2.items.length > 0 ? s.row2.items : b.row2.items,
+    ...defaults.row2,
+    ...storedDashboard.row2,
+    items:
+      Array.isArray(storedDashboard.row2.items) && storedDashboard.row2.items.length > 0
+        ? storedDashboard.row2.items
+        : defaults.row2.items,
   };
+
   let equipmentSpotlight: DashboardV4['equipmentSpotlight'];
-  if (s.equipmentSpotlight === null) {
+  if (storedDashboard.equipmentSpotlight === null) {
     equipmentSpotlight = null;
   } else if (
-    s.equipmentSpotlight &&
-    typeof s.equipmentSpotlight === 'object' &&
-    typeof (s.equipmentSpotlight as EquipmentSpotlightConfig).equipmentCatalogItem === 'string'
+    storedDashboard.equipmentSpotlight &&
+    typeof storedDashboard.equipmentSpotlight === 'object' &&
+    typeof (storedDashboard.equipmentSpotlight as EquipmentSpotlightConfig).equipmentCatalogItem === 'string'
   ) {
     equipmentSpotlight = {
-      ...(b.equipmentSpotlight ?? { equipmentCatalogItem: '후프' }),
-      ...s.equipmentSpotlight,
+      ...(defaults.equipmentSpotlight ?? { equipmentCatalogItem: '후프' }),
+      ...storedDashboard.equipmentSpotlight,
     };
   } else {
-    equipmentSpotlight = b.equipmentSpotlight;
+    equipmentSpotlight = defaults.equipmentSpotlight;
   }
+
   return { weekTheme, row2, equipmentSpotlight };
 }
 
-/** Admin/뷰 공용: programId → 표시용 메타. 1~100 더미. 실제 연동 시 catalog 교체 */
-const THEMES = ['인트로 프로그램', '협동 놀이체육', '스피드리액션', '인지 발달', '챌린지', '술래 대결', '변형스포츠'];
+const THEMES = [
+  '인트로 프로그램',
+  '협동 체육',
+  '스피드 리액션',
+  '인지 발달',
+  '챌린지',
+  '꼬리잡기 대결',
+  '변형 스포츠',
+];
 const ROLES = ['Intro', 'Lead-up', 'Core', 'Play', 'Screen', 'Cooldown', 'Finisher'];
 const GRADIENTS = ['from-orange-500 to-red-600', 'from-emerald-500 to-teal-600', 'from-purple-500 to-indigo-600'];
 const CATEGORIES = ['Play', 'Think', 'Grow'] as const;
 
-/** ThemeKey → PROGRAM_BANK의 theme 문자열 매핑 */
 export const THEME_KEY_TO_BANK_THEME: Record<ThemeKey, string> = {
   intro: '인트로 프로그램',
-  'co-op': '협동 놀이체육',
-  'speed-reaction': '스피드리액션',
+  'co-op': '협동 체육',
+  'speed-reaction': '스피드 리액션',
   cognitive: '인지 발달',
   challenge: '챌린지',
-  'tag-duel': '술래 대결',
-  'variant-sports': '변형스포츠',
+  'tag-duel': '꼬리잡기 대결',
+  'variant-sports': '변형 스포츠',
 };
 
-/** 사이드바 라이브러리: 펑셔널 · 스포무브만 (나머지 테마는 라이브러리 화면 필터) */
 export const LIBRARY_SIDEBAR_ITEMS: { themeKey: ThemeKey; label: string }[] = [
   { themeKey: 'co-op', label: '놀이체육 라이브러리' },
   { themeKey: 'cognitive', label: 'SPOMOVE 반응훈련' },
 ];
 
-/** 대시보드 추천 Row1(위 4칸) / Row2(아래 4칸) 묶음명 — 구독자 RoadmapView 고정 표시용 */
 export const DASHBOARD_ROW1_GROUP_LABEL = '놀이체육 라이브러리';
 export const DASHBOARD_ROW2_GROUP_LABEL = 'SPOMOVE 반응훈련';
 
@@ -178,19 +184,20 @@ export interface ProgramBankItem {
   category: 'Play' | 'Think' | 'Grow';
 }
 
-export const PROGRAM_BANK: ProgramBankItem[] = Array.from({ length: 100 }, (_, i) => {
-  const idx = (i + 1) % 3;
+export const PROGRAM_BANK: ProgramBankItem[] = Array.from({ length: 100 }, (_, index) => {
+  const id = index + 1;
+  const bucket = id % 3;
   return {
-    id: i + 1,
-    title: `스포키듀 추천 커리큘럼 #${i + 1}`,
-    theme: THEMES[(i + 1) % THEMES.length],
-    role: ROLES[(i + 1) % ROLES.length],
-    gradient: GRADIENTS[idx],
-    category: CATEGORIES[idx],
+    id,
+    title: `스포키듀 추천 커리큘럼 #${id}`,
+    theme: THEMES[id % THEMES.length],
+    role: ROLES[id % ROLES.length],
+    gradient: GRADIENTS[bucket],
+    category: CATEGORIES[bucket],
   };
 });
 
 export function getProgramTitle(programId: number): string {
-  const p = PROGRAM_BANK.find((x) => x.id === programId);
-  return p?.title ?? `커리큘럼 #${programId}`;
+  const program = PROGRAM_BANK.find((item) => item.id === programId);
+  return program?.title ?? `커리큘럼 #${programId}`;
 }

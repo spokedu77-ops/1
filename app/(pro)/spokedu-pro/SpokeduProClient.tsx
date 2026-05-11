@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useTranslator } from '@/app/providers/I18nProvider';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -13,6 +13,7 @@ import { useSpokeduProContent } from './hooks/useSpokeduProContent';
 import { useSpokeduProAdminBlocks } from './hooks/useSpokeduProContent';
 import type { ProgramDetail } from './types';
 import SpokeduProAside from './components/SpokeduProAside';
+import SubscriberWorkspaceBar from './components/SubscriberWorkspaceBar';
 import RoadmapView from './views/RoadmapView';
 import type { ThemeKey } from '@/app/lib/spokedu-pro/dashboardDefaults';
 import { SpokeduProErrorBoundary } from './components/SpokeduProErrorBoundary';
@@ -81,10 +82,10 @@ export default function SpokeduProClient({
     const checkout = searchParams.get('checkout');
     if (!checkout) return;
     if (checkout === 'success') {
-      toast.success(tr('결제가 완료되었습니다. 구독 정보를 갱신합니다.'));
+      toast.success(tr('寃곗젣媛 ?꾨즺?섏뿀?듬땲?? 援щ룆 ?뺣낫瑜?媛깆떊?⑸땲??'));
       void refresh();
     } else if (checkout === 'cancel') {
-      toast.message(tr('결제를 취소했습니다.'));
+      toast.message(tr('寃곗젣瑜?痍⑥냼?덉뒿?덈떎.'));
     }
     try {
       const url = new URL(window.location.href);
@@ -125,13 +126,13 @@ export default function SpokeduProClient({
   }, [toolkitOpen]);
   const [drawerProgramId, setDrawerProgramId] = useState<number | null>(null);
   const [drawerContext, setDrawerContext] = useState<SpokeduProOpenDetailContext | null>(null);
-  /** 라이브러리(프로그램 뱅크) 탭 전용 상세 모달 — 로드맵 등과 분리 */
+  /** ?쇱씠釉뚮윭由??꾨줈洹몃옩 諭낇겕) ???꾩슜 ?곸꽭 紐⑤떖 ??濡쒕뱶留??깃낵 遺꾨━ */
   const [libraryDrawerProgramId, setLibraryDrawerProgramId] = useState<number | null>(null);
   const [libraryDrawerContext, setLibraryDrawerContext] = useState<SpokeduProOpenDetailContext | null>(null);
   const [screenplayById, setScreenplayById] = useState<Record<number, ScreenplayMeta>>({});
   const [screenplaysRefreshToken, setScreenplaysRefreshToken] = useState(0);
   const [libraryPreset, setLibraryPreset] = useState<{ themeKey?: string; preset?: string } | null>(null);
-  /** 라이브러리 진입 시 대표/패키지 빠른 필터(대시보드 패키지 카드 등) */
+  /** ?쇱씠釉뚮윭由?吏꾩엯 ??????⑦궎吏 鍮좊Ⅸ ?꾪꽣(??쒕낫???⑦궎吏 移대뱶 ?? */
   const [libraryLessonNav, setLibraryLessonNav] = useState<{
     featuredLesson?: boolean;
     packageKey?: string;
@@ -149,7 +150,7 @@ export default function SpokeduProClient({
     subtitleLine?: string;
     body?: string;
     modeIdLabel?: string;
-    /** 라이브러리 카드와 동일: 인지영역·과제·레벨 */
+    /** ?쇱씠釉뚮윭由?移대뱶? ?숈씪: ?몄??곸뿭쨌怨쇱젣쨌?덈꺼 */
     tagChips?: string[];
   }>({
     open: false,
@@ -163,15 +164,6 @@ export default function SpokeduProClient({
   ]);
   const { content: adminContent, fetchBlocks, saveContentDraft } = useSpokeduProAdminBlocks();
 
-  useEffect(() => {
-    fetchContent();
-  }, [fetchContent]);
-  useEffect(() => {
-    if (isEditMode) {
-      scheduleIdle(() => void fetchBlocks());
-    }
-  }, [isEditMode, fetchBlocks]);
-
   const scheduleIdle = useCallback((fn: () => void) => {
     if (typeof window === 'undefined') return;
     const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
@@ -181,6 +173,15 @@ export default function SpokeduProClient({
     }
     window.setTimeout(fn, 250);
   }, []);
+
+  useEffect(() => {
+    fetchContent();
+  }, [fetchContent]);
+  useEffect(() => {
+    if (isEditMode) {
+      scheduleIdle(() => void fetchBlocks());
+    }
+  }, [isEditMode, fetchBlocks, scheduleIdle]);
 
   useEffect(() => {
     if (viewId !== 'library') {
@@ -362,9 +363,8 @@ export default function SpokeduProClient({
   const adminProgramDetails = (adminContent?.program_details?.draft_value ?? {}) as Record<string, ProgramDetail>;
   const contentDetails = isEditMode ? adminProgramDetails : programDetails;
   /**
-   * DB(프로그램 API)가 최신 소스이므로, catalog content(program_details)는 "보완용"으로만 사용.
-   * - 센터 커리큘럼 import 등으로 DB가 갱신되면 즉시 반영되어야 함
-   * - 과거에 content로 덮어쓴 값이 남아 업데이트가 안 된 것처럼 보이는 문제 방지
+   * DB(?꾨줈洹몃옩 API)媛 理쒖떊 ?뚯뒪?대?濡? catalog content(program_details)??"蹂댁셿???쇰줈留??ъ슜.
+   * - ?쇳꽣 而ㅻ━?섎읆 import ?깆쑝濡?DB媛 媛깆떊?섎㈃ 利됱떆 諛섏쁺?섏뼱????   * - 怨쇨굅??content濡???뼱??媛믪씠 ?⑥븘 ?낅뜲?댄듃媛 ????寃껋쿂??蹂댁씠??臾몄젣 諛⑹?
    */
   const programDetailsForDrawer = useMemo(
     () => ({ ...contentDetails, ...programDetailsFromApi }),
@@ -397,8 +397,8 @@ export default function SpokeduProClient({
       const modeId = String(sp?.modeId ?? row?.mode_id ?? '');
       const presetRef = sp?.presetRef ?? row?.preset_ref ?? null;
       const entry = screenplayTagMappingForDrawer.modeIdMap[modeId];
-      const domainTag = entry?.domainLabel ?? tr('인지영역');
-      const taskTag = entry?.taskLabel ?? (modeId || tr('과제유형'));
+      const domainTag = entry?.domainLabel ?? tr('?몄??곸뿭');
+      const taskTag = entry?.taskLabel ?? (modeId || tr('怨쇱젣?좏삎'));
       const levelTag = getScreenplayLevelTag(presetRef, screenplayTagMappingForDrawer.levelLabelTemplate);
       return [domainTag, taskTag, levelTag].filter(Boolean) as string[];
     },
@@ -433,7 +433,7 @@ export default function SpokeduProClient({
     if (fromMap) return fromMap;
     const snap = libraryDrawerContext?.row;
     if (!snap) return null;
-    // 목록에서 넘긴 row로 최소한의 상세를 구성해 placeholder(프로그램 #id) 방지
+    // 紐⑸줉?먯꽌 ?섍릿 row濡?理쒖냼?쒖쓽 ?곸꽭瑜?援ъ꽦??placeholder(?꾨줈洹몃옩 #id) 諛⑹?
     const fnTypes =
       Array.isArray(snap.function_types) && snap.function_types.length > 0
         ? snap.function_types.filter((x): x is string => typeof x === 'string' && x.trim() !== '')
@@ -448,7 +448,6 @@ export default function SpokeduProClient({
   }, [
     resolvedDrawerProgramId,
     drawerIsScreenplay,
-    libraryDrawerOpen,
     libraryDrawerContext?.row,
     screenplayById,
     screenplayOverlayDetail,
@@ -457,7 +456,7 @@ export default function SpokeduProClient({
 
   const handleSaveProgramDetail = useCallback(
     async (programId: number, detail: ProgramDetail, opts?: { screenplay?: boolean }) => {
-      // 스크린플레이는 content(블록)로 저장, 프로그램(펑셔널 무브)은 DB로 저장한다.
+      // ?ㅽ겕由고뵆?덉씠??content(釉붾줉)濡???? ?꾨줈洹몃옩(?묒뀛??臾대툕)? DB濡???ν븳??
       if (opts?.screenplay) {
         const entry = adminContent?.program_details;
         const current = (entry?.draft_value ?? {}) as Record<string, ProgramDetail>;
@@ -466,16 +465,16 @@ export default function SpokeduProClient({
         const version = entry?.version ?? 0;
         const result = await saveContentDraft('program_details', next, version);
         if (result.ok) {
-          toast.success(tr('수정되었습니다.'));
+          toast.success(tr('?섏젙?섏뿀?듬땲??'));
           await fetchContent();
           await fetchBlocks();
         } else {
-          toast.error(tr(`저장 실패: ${result.error ?? '알 수 없는 오류'}`));
+          toast.error(tr(`????ㅽ뙣: ${result.error ?? '?????녿뒗 ?ㅻ쪟'}`));
         }
         return;
       }
 
-      // DB 저장 (spokedu_pro_programs)
+      // DB ???(spokedu_pro_programs)
       const fnTypes = Array.isArray(detail.functionTypes)
         ? detail.functionTypes.map((x) => String(x).trim()).filter(Boolean)
         : [];
@@ -500,11 +499,11 @@ export default function SpokeduProClient({
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(tr(`저장 실패: ${j.error ?? `HTTP ${res.status}`}`));
+        toast.error(tr(`????ㅽ뙣: ${j.error ?? `HTTP ${res.status}`}`));
         return;
       }
-      toast.success(tr('수정되었습니다.'));
-      // DB가 곧바로 최신 소스이므로, 화면 반영을 위해 다시 fetch
+      toast.success(tr('?섏젙?섏뿀?듬땲??'));
+      // DB媛 怨㏓컮濡?理쒖떊 ?뚯뒪?대?濡? ?붾㈃ 諛섏쁺???꾪빐 ?ㅼ떆 fetch
       await fetchContent();
       await fetchBlocks();
       await refreshProgramsFromApi();
@@ -523,10 +522,10 @@ export default function SpokeduProClient({
       });
       const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok || !j.ok) {
-        toast.error(tr(`수업안 저장 실패: ${j.error ?? `HTTP ${res.status}`}`));
+        toast.error(tr(`?섏뾽??????ㅽ뙣: ${j.error ?? `HTTP ${res.status}`}`));
         return;
       }
-      toast.success(tr('수업안이 저장되었습니다.'));
+      toast.success(tr('?섏뾽?덉씠 ??λ릺?덉뒿?덈떎.'));
       await refreshProgramsFromApi();
       setProgramsRefreshToken((t) => t + 1);
     },
@@ -575,7 +574,7 @@ export default function SpokeduProClient({
                 mergeProgramsFromResponse(json.data as (typeof programsFromApi)[number][]);
               }
             } catch {
-              /* drawer는 기존 데이터로 열림 */
+              /* drawer??湲곗〈 ?곗씠?곕줈 ?대┝ */
             }
           })();
         }
@@ -619,7 +618,7 @@ export default function SpokeduProClient({
                 mergeProgramsFromResponse(json.data as (typeof programsFromApi)[number][]);
               }
             } catch {
-              /* drawer는 기존 데이터로 열림 */
+              /* drawer??湲곗〈 ?곗씠?곕줈 ?대┝ */
             }
           })();
         }
@@ -708,7 +707,7 @@ export default function SpokeduProClient({
           <div className="sticky top-0 z-[25] flex flex-wrap items-center gap-3 px-4 py-3 bg-rose-600 border-b-2 border-rose-400 border-l-4 border-l-rose-200 text-white text-sm shadow-lg shadow-rose-900/40">
             <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-700/60 ring-1 ring-rose-300/40 text-base font-black">!</span>
             <p className="flex-1 min-w-[200px] font-semibold leading-snug">
-              {tr('결제가 지연된 상태입니다. 플랜 & 결제에서 카드를 갱신하거나 결제를 다시 시도해 주세요.')}
+              {tr('寃곗젣媛 吏?곕맂 ?곹깭?낅땲?? ?뚮옖 & 寃곗젣?먯꽌 移대뱶瑜?媛깆떊?섍굅??寃곗젣瑜??ㅼ떆 ?쒕룄??二쇱꽭??')}
             </p>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
@@ -716,7 +715,7 @@ export default function SpokeduProClient({
                 onClick={() => switchView('settings')}
                 className="inline-flex min-h-[40px] items-center px-3 py-2 rounded-lg bg-white text-rose-700 text-xs font-bold hover:bg-rose-50"
               >
-                {tr('플랜 & 결제로 이동')}
+                {tr('?뚮옖 & 寃곗젣濡??대룞')}
               </button>
               <button
                 type="button"
@@ -752,6 +751,21 @@ export default function SpokeduProClient({
               )}
             </div>
           </div>
+        )}
+        {!isEditMode && (
+          <SubscriberWorkspaceBar
+            activeView={viewId}
+            plan={ctx.entitlement.plan}
+            status={ctx.entitlement.status}
+            programCount={programsFromApi.length}
+            programLibraryReady={programsListReady}
+            onGoToday={() => switchViewWithMount('roadmap')}
+            onGoPlan={() => switchViewWithMount('lesson-plan')}
+            onGoLibrary={openLibraryAll}
+            onGoSpomove={() => goToLibraryTheme('cognitive')}
+            onGoReport={() => switchViewWithMount('ai')}
+            onGoBilling={() => switchViewWithMount('settings')}
+          />
         )}
         <div className={`view-content ${viewId === 'roadmap' ? 'active' : ''}`}>
           <RoadmapView
@@ -920,10 +934,10 @@ export default function SpokeduProClient({
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/35 bg-orange-500/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-orange-100">
                         <Sparkles className="h-3 w-3 text-amber-300" aria-hidden />
-                        {tr('SPOMOVE 반응훈련')}
+                        {tr('SPOMOVE 諛섏쓳?덈젴')}
                       </span>
                       <span className="rounded-md border border-slate-600/70 bg-slate-900/80 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-300">
-                        {memoryGameModal.mode} · L{memoryGameModal.level}
+                        {memoryGameModal.mode} 쨌 L{memoryGameModal.level}
                       </span>
                       {memoryGameModal.modeIdLabel ? (
                         <span className="rounded-md border border-slate-600/50 bg-slate-900/60 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
@@ -964,7 +978,7 @@ export default function SpokeduProClient({
                     ) : null}
                     <p className="text-[11px] leading-relaxed text-slate-500">
                       {tr(
-                        '전체 화면에서 진행합니다. 배경을 누르거나 ESC로 닫을 수 있어요. 수업 중에는 탭 전환을 최소화해 주세요.'
+                        '전체 화면에서 진행합니다. 배경을 누르거나 ESC로 닫을 수 있어요. 수업 중에는 화면 전환을 최소화해 주세요.'
                       )}
                     </p>
                   </div>
@@ -972,7 +986,7 @@ export default function SpokeduProClient({
                     type="button"
                     onClick={() => setMemoryGameModal((m) => ({ ...m, open: false }))}
                     className="shrink-0 rounded-xl border border-slate-600/70 bg-slate-800/90 p-2 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
-                    aria-label={tr('닫기')}
+                    aria-label={tr('?リ린')}
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -1008,3 +1022,5 @@ export default function SpokeduProClient({
     </div>
   );
 }
+
+

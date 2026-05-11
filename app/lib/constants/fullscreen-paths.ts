@@ -13,6 +13,7 @@ export const FULLSCREEN_PATH_PREFIXES = [
   '/spokedu-pro',
   '/pro',
   '/admin/spokedu-pro',
+  '/spokedu-master',
   '/teacher',
   '/move-report',
 ] as const;

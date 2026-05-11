@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -18,12 +18,10 @@ import {
   Menu, 
   X,
   User,
-  Medal,
   Sparkles,
   Building2,
   PanelLeftOpen,
   PanelLeftClose,
-  MessageSquare,
   Inbox,
   ScrollText,
 } from 'lucide-react';
@@ -37,7 +35,6 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [pendingConsultCount, setPendingConsultCount] = useState<number>(0);
 
   useEffect(() => { setIsOpen(false); }, [pathname]);
 
@@ -61,24 +58,15 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       group: "대시보드",
       items: [
         { name: "대시보드", href: "/admin", icon: LayoutDashboard },
+      ]
+    },
+    {
+      group: "운영 관리",
+      items: [
         { name: "노트", href: "/admin/note", icon: ClipboardList },
-        { name: "MOVE 리포트", href: "/admin/move-report", icon: ClipboardList },
-      ]
-    },
-    {
-      group: "운영",
-      items: [
-        { name: "센터 관리", href: "/admin/centers", icon: Building2 },
-        { name: "공지", href: "/admin/notice", icon: ClipboardList },
-        { name: "안내 페이지", href: "/admin/info-pages", icon: BookOpen },
-        { name: "상담 신청", href: "/admin/consult", icon: MessageSquare },
-      ]
-    },
-    {
-      group: "수업",
-      items: [
         { name: "수업 관리", href: "/admin/classes-v2/calendar", icon: Calendar },
         { name: "검수", href: "/admin/teachers-classes", icon: CheckCircle },
+        { name: "센터 관리", href: "/admin/centers", icon: Building2 },
         { name: "교구·재고", href: "/admin/inventory", icon: Box },
       ]
     },
@@ -86,7 +74,6 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       group: "콘텐츠",
       items: [
         { name: "커리큘럼", href: "/admin/curriculum", icon: BookOpen },
-        { name: "앱 관리", href: "/admin/iiwarmup", icon: Medal },
         { name: "SPOMOVE", href: "/admin/iiwarmup/spomove/training", icon: Sparkles },
       ]
     },
@@ -126,39 +113,6 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
 
   const isSubscriber = pathname.startsWith('/billing');
 
-  const loadConsultSummary = useCallback(async () => {
-    if (!isAdmin || isSubscriber) return;
-    try {
-      const res = await fetch('/api/admin/consult/summary', { credentials: 'include' });
-      const json = (await res.json()) as { ok?: boolean; pendingCount?: number };
-      if (!json.ok) return;
-      setPendingConsultCount(typeof json.pendingCount === 'number' ? json.pendingCount : 0);
-    } catch {
-      // ignore network errors for badge polling
-    }
-  }, [isAdmin, isSubscriber]);
-
-  useEffect(() => {
-    if (!isAdmin || isSubscriber) return;
-
-    void loadConsultSummary();
-    const interval = window.setInterval(() => void loadConsultSummary(), 300_000);
-
-    const onVisibility = () => {
-      if (!document.hidden) void loadConsultSummary();
-    };
-    const onFocus = () => void loadConsultSummary();
-
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onVisibility);
-
-    return () => {
-      window.clearInterval(interval);
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [isAdmin, isSubscriber, loadConsultSummary]);
-
   // 관리자도 아니고 구독자 페이지도 아니면 사이드바 숨김 (Hooks 이후에만 return)
   if (!isAdmin && !isSubscriber) return null;
 
@@ -167,7 +121,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
   return (
     <>
       <div className="fixed top-0 left-0 z-[300] flex h-12 w-full items-center justify-between bg-[#1e293b] px-4 pt-[env(safe-area-inset-top)] md:pt-0 md:hidden shadow-lg">
-        <h1 className="text-lg font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
+        <h1 className="text-lg font-semibold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
         <button 
           onClick={() => setIsOpen(!isOpen)}
           className="min-h-[44px] min-w-[44px] rounded-lg bg-slate-800 p-2 text-white outline-none cursor-pointer hover:bg-slate-700 active:bg-slate-600 transition-colors touch-manipulation flex items-center justify-center"
@@ -189,7 +143,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
         ${isDesktopOpen ? 'md:translate-x-0' : 'md:-translate-x-full'}
       `}>
         <div className="p-6 border-b border-slate-700 hidden md:block text-left">
-          <h1 className="text-xl font-bold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
+          <h1 className="text-xl font-semibold text-blue-400 tracking-tighter uppercase italic">SPOKEDU</h1>
           <p className="text-[10px] text-slate-400 mt-1 uppercase font-medium">
             {isAdmin ? 'Admin Portal' : isSubscriber ? 'Warm-up Portal' : 'Teacher Portal'}
           </p>
@@ -198,7 +152,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
         <nav className="flex-1 p-3 space-y-3 overflow-y-auto pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-3 text-left">
           {groups.map((group, gIdx) => (
             <div key={gIdx} className={`space-y-0.5 text-left ${gIdx > 0 ? 'pt-3 mt-3 border-t border-slate-700' : ''}`}>
-              <h3 className="px-2.5 py-1 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">
+              <h3 className="px-2.5 py-1 text-[10px] font-semibold text-slate-500 uppercase tracking-widest text-left">
                 {group.group}
               </h3>
               <div className="space-y-0.5">
@@ -249,7 +203,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
                     return (
                       <div key={item.href} className={baseClass} aria-disabled>
                         <Icon size={18} className="text-slate-500" />
-                        <span className="text-sm font-semibold">{item.name}</span>
+                        <span className="text-sm font-medium">{item.name}</span>
                         <span className="text-[10px] text-slate-500 ml-auto">개발 예정</span>
                       </div>
                     );
@@ -262,12 +216,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
                       className={baseClass}
                     >
                       <Icon size={18} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
-                      <span className="text-sm font-semibold">{item.name}</span>
-                      {item.href === '/admin/consult' && pendingConsultCount > 0 && (
-                        <span className="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-extrabold text-rose-200">
-                          +{pendingConsultCount}
-                        </span>
-                      )}
+                      <span className="text-sm font-medium">{item.name}</span>
                     </Link>
                   );
                 })}
@@ -282,8 +231,8 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
               <User size={16} />
             </div>
             <div className="overflow-hidden text-left">
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight text-left">Account</p>
-              <p className="text-[11px] text-slate-200 font-bold truncate text-left">{userEmail || 'Admin'}</p>
+              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-tight text-left">Account</p>
+              <p className="text-[11px] text-slate-200 font-medium truncate text-left">{userEmail || 'Admin'}</p>
             </div>
           </div>
           <button 
@@ -291,7 +240,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
             className="flex items-center gap-3 w-full p-2 text-slate-500 hover:text-rose-400 transition-colors group cursor-pointer"
           >
             <LogOut size={18} className="group-hover:rotate-12 transition-transform" />
-            <span className="text-sm font-bold">로그아웃</span>
+            <span className="text-sm font-medium">로그아웃</span>
           </button>
         </div>
       </aside>

@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -50,20 +51,17 @@ const T = {
   textDim:     'rgba(255,255,255,0.48)',
 };
 
-type SeriesCode = 'SR' | 'IC' | 'RS' | 'SM' | 'RC' | 'EC';
-type TabCode = SeriesCode | 'ALL';
+type TabCode = 'ALL' | 'VM' | 'IC' | 'EF' | 'WM';
 
-const TABS: { code: TabCode; label: string }[] = [
-  { code: 'ALL', label: '전체' },
-  { code: 'SR', label: '공간 반응' },
-  { code: 'IC', label: '간섭 제어' },
-  { code: 'RS', label: '규칙 전환' },
-  { code: 'EC', label: '실행 조절' },
-  { code: 'SM', label: '순차 기억' },
-  { code: 'RC', label: '리듬 협응' },
+const TABS: { code: TabCode; label: string; sub: string }[] = [
+  { code: 'ALL', label: '전체', sub: '모든 SPOMOVE 프로그램' },
+  { code: 'VM', label: '1. 시지각-운동 반응', sub: '보고 몸으로 반응하기' },
+  { code: 'IC', label: '2. 선택주의와 간섭통제', sub: '헷갈려도 필요한 정보 고르기' },
+  { code: 'EF', label: '3. 실행기능 조절', sub: '멈추고, 바꾸고, 조절하기' },
+  { code: 'WM', label: '4. 작업기억과 지속수행', sub: '기억하고 흐름 이어가기' },
 ];
 
-type TopTab = 'training' | 'teacher';
+type TopTab = 'training' | 'teacher' | 'app';
 const TEACHER_SPOMOVE_URL = 'https://spokedu.vercel.app/teacher/spomove';
 
 function levelLabel(modeId: string, levelId: number): string {
@@ -97,13 +95,13 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Mixed Size & Color': '크기/색 혼합',
   '3-Circle Extreme Sizes': '3원 극단 크기',
   '5-Circle Extreme Sizes': '5원 극단 크기',
-  'Color Go/No-Go': '색상 고/노고',
-  'Shape Go/No-Go': '도형 고/노고',
-  'Action Go/No-Go': '동작 고/노고',
-  'Dual Rule': '이중 규칙',
-  'Text Cues': '텍스트 큐',
-  'Icon Cues': '아이콘 큐',
-  'Border Cues': '테두리 큐',
+  'Go / No-Go (Color)': '색상 고/노고',
+  'Go / No-Go (Shape)': '도형 고/노고',
+  'Go / No-Go (Action)': '동작 고/노고',
+  'Go / No-Go (Dual)': '이중 규칙 고/노고',
+  'Task Switching (Text Cues)': '텍스트 큐 전환',
+  'Task Switching (Icon Cues)': '아이콘 큐 전환',
+  'Task Switching (Border Cues)': '테두리 큐 전환',
   '3항 기억': '3항 기억',
   '5항 기억': '5항 기억',
   '10항 기억': '10항 기억',
@@ -248,6 +246,82 @@ function TrainingPortal({
       />
     </div>,
     document.body,
+  );
+}
+
+function AppManagementTab() {
+  const cards = [
+    {
+      href: '/admin/iiwarmup/assets',
+      title: 'Asset Hub',
+      desc: 'Think / Flow 에셋 업로드·관리 (챌린지는 스튜디오에서 직접)',
+    },
+    {
+      href: '/admin/iiwarmup/spomove/training',
+      title: 'SPOMOVE',
+      desc: 'SPOMOVE 트레이닝으로 바로 진입합니다.',
+    },
+    {
+      href: '/admin/iiwarmup/flow',
+      title: 'Flow',
+      desc: '몰입형 Flow 프로그램으로 바로 진입합니다.',
+    },
+    {
+      href: '/admin/camera',
+      title: '카메라 앱',
+      desc: '수업용 카메라 앱으로 바로 진입합니다.',
+    },
+  ];
+
+  return (
+    <main style={{ maxWidth: 960, margin: '0 auto', padding: '42px 24px 0' }}>
+      <section style={{ marginBottom: 24 }}>
+        <p style={{ margin: 0, fontSize: 10, letterSpacing: '0.22em', color: T.muted, fontWeight: 800 }}>
+          SPOKEDU · APP MANAGEMENT
+        </p>
+        <h1 style={{ margin: '8px 0 0', color: T.text, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 950, letterSpacing: '-0.04em' }}>
+          앱 관리
+        </h1>
+        <p style={{ margin: '8px 0 0', color: T.textDim, fontSize: 14, lineHeight: 1.7 }}>
+          Asset Hub와 SPOMOVE에서 수업용 도구를 관리합니다.
+        </p>
+      </section>
+
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+        {cards.map((card) => (
+          <Link
+            key={card.href}
+            href={card.href}
+            style={{
+              display: 'block',
+              borderRadius: 18,
+              background: T.surface,
+              border: `1px solid ${T.border}`,
+              padding: 20,
+              textDecoration: 'none',
+              transition: 'border-color 160ms ease, transform 160ms ease, background 160ms ease',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = T.borderHover;
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.background = 'rgba(255,255,255,0.055)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = T.border;
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.background = T.surface;
+            }}
+          >
+            <h3 style={{ margin: 0, color: T.text, fontSize: 16, fontWeight: 900 }}>{card.title}</h3>
+            <p style={{ margin: '10px 0 0', color: T.textDim, fontSize: 13, lineHeight: 1.6 }}>{card.desc}</p>
+            <span style={{ marginTop: 14, display: 'inline-block', color: '#60A5FA', fontSize: 13, fontWeight: 700 }}>
+              진입 →
+            </span>
+          </Link>
+        ))}
+      </section>
+    </main>
   );
 }
 
@@ -849,7 +923,7 @@ export default function SpomoveTrainingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryTab = searchParams.get('tab');
-  const queryTopTab: TopTab = queryTab === 'teacher' ? 'teacher' : 'training';
+  const queryTopTab: TopTab = queryTab === 'teacher' ? 'teacher' : queryTab === 'app' ? 'app' : 'training';
   const [topTab, setTopTab] = useState<TopTab>(queryTopTab);
   const [activeTab, setActiveTab] = useState<TabCode>('ALL');
   const [phase, setPhase] = useState<PagePhase>({ tag: 'catalog' });
@@ -875,7 +949,11 @@ export default function SpomoveTrainingPage() {
       setTopTab(next);
       setPhase({ tag: 'catalog' });
       const params = new URLSearchParams(searchParams.toString());
-      params.delete('tab');
+      if (next === 'app') {
+        params.set('tab', 'app');
+      } else {
+        params.delete('tab');
+      }
       const qs = params.toString();
       const basePath = '/admin/iiwarmup/spomove/training';
       router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
@@ -891,9 +969,9 @@ export default function SpomoveTrainingPage() {
     for (const id of ids) {
       const m = MODES[id];
       if (!m) continue;
-      const core = (m.coreCode ?? 'ALL') as TabCode;
+      const core = m.coreCode as TabCode | undefined;
       byCore.get('ALL')!.push(id);
-      if (byCore.has(core)) byCore.get(core)!.push(id);
+      if (core && byCore.has(core)) byCore.get(core)!.push(id);
     }
     return byCore;
   }, []);
@@ -948,10 +1026,11 @@ export default function SpomoveTrainingPage() {
 
       <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 80 }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '14px 24px 0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
             {([
               { id: 'training' as const, label: '1. Training' },
               { id: 'teacher' as const, label: '2. teacher' },
+              { id: 'app' as const, label: '3. 앱 관리' },
             ]).map((t) => {
               const active = topTab === t.id;
               return (
@@ -1037,23 +1116,25 @@ export default function SpomoveTrainingPage() {
             <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6, marginTop: 12, paddingBottom: 2 }}>
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.code;
-                const accent = tab.code === 'ALL' ? 'rgba(255,255,255,0.65)' : (Object.values(MODES).find((m) => m.coreCode === tab.code)?.accent ?? 'rgba(255,255,255,0.65)');
+                const accent = tab.code === 'ALL'
+                  ? 'rgba(255,255,255,0.72)'
+                  : Object.values(MODES).find((m) => m.coreCode === tab.code)?.accent ?? 'rgba(255,255,255,0.65)';
                 return (
                   <button
                     key={tab.code}
                     type="button"
                     onClick={() => setActiveTab(tab.code)}
                     style={{
-                      padding: '8px 14px',
-                      borderRadius: 999,
+                      padding: '9px 12px',
+                      borderRadius: 14,
                       border: `1px solid ${isActive ? `${accent}55` : T.border}`,
                       background: isActive ? `${accent}18` : 'rgba(255,255,255,0.03)',
-                      color: isActive ? (tab.code === 'ALL' ? T.text : accent) : T.muted,
+                      color: isActive ? accent : T.muted,
                       fontWeight: isActive ? 900 : 700,
                       fontSize: 12,
                       cursor: 'pointer',
                       whiteSpace: 'normal',
-                      minHeight: 36,
+                      minHeight: 54,
                       letterSpacing: '0.02em',
                       outline: 'none',
                       fontFamily: 'inherit',
@@ -1061,7 +1142,10 @@ export default function SpomoveTrainingPage() {
                       transition: 'background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease',
                     }}
                   >
-                    {tab.label}
+                    <span style={{ display: 'block', lineHeight: 1.25 }}>{tab.label}</span>
+                    <span style={{ display: 'block', marginTop: 3, color: isActive ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.24)', fontSize: 10, fontWeight: 700, letterSpacing: 0 }}>
+                      {tab.sub}
+                    </span>
                   </button>
                 );
               })}
@@ -1105,6 +1189,8 @@ export default function SpomoveTrainingPage() {
           </div>
         </main>
           </>
+        ) : topTab === 'app' ? (
+          <AppManagementTab />
         ) : null}
       </div>
     </>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -19,6 +19,7 @@ export type NoteEditorChange = {
 };
 
 function legacyTextToEditorHtml(text: string): string {
+  if (text.trim().length === 0) return '<p></p>';
   const html = text.trim().length > 0 ? parseInlineMarkupToHtml(text) : '';
   const lines = html.split('\n');
   return lines.map((line) => `<p>${line || '<br>'}</p>`).join('');
@@ -65,6 +66,13 @@ export function NoteEditor({
   onShowFormatToolbar,
   onHideFormatToolbar,
   uploadImage,
+  enterCreatesBlock = false,
+  autoFocusSignal = 0,
+  onEmptyBackspace,
+  onIndent,
+  onNavigatePrevious,
+  onNavigateNext,
+  resetKey,
 }: {
   content: Record<string, unknown> | null | undefined;
   field?: RichField;
@@ -77,11 +85,40 @@ export function NoteEditor({
   onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
   onHideFormatToolbar?: () => void;
   uploadImage?: (file: File) => Promise<string>;
+  enterCreatesBlock?: boolean;
+  autoFocusSignal?: number;
+  onEmptyBackspace?: () => void;
+  onIndent?: (direction: 'in' | 'out') => void;
+  onNavigatePrevious?: () => void;
+  onNavigateNext?: () => void;
+  resetKey?: string;
 }) {
+  const pendingChangeRef = useRef<NoteEditorChange | null>(null);
+  const changeTimerRef = useRef<number | null>(null);
+  const lastResetKeyRef = useRef<string | undefined>(resetKey);
   const sourceHtml = useMemo(
     () => richTextSourceHtml({ content, field, text }),
     [content, field, text],
   );
+
+  const flushPendingChange = useCallback(() => {
+    if (changeTimerRef.current !== null) {
+      window.clearTimeout(changeTimerRef.current);
+      changeTimerRef.current = null;
+    }
+    const pending = pendingChangeRef.current;
+    if (!pending) return;
+    pendingChangeRef.current = null;
+    onChange(pending);
+  }, [onChange]);
+
+  const scheduleChange = useCallback((change: NoteEditorChange) => {
+    pendingChangeRef.current = change;
+    if (changeTimerRef.current !== null) window.clearTimeout(changeTimerRef.current);
+    changeTimerRef.current = window.setTimeout(() => {
+      flushPendingChange();
+    }, 220);
+  }, [flushPendingChange]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -105,16 +142,57 @@ export function NoteEditor({
     content: sourceHtml,
     editorProps: {
       attributes: {
-        class: `note-rich-editor min-h-[1.75rem] w-full outline-none ${className}`,
+        class: `note-rich-editor min-h-[1.5rem] w-full outline-none ${className}`,
       },
-      handleKeyDown: (_view, event) => {
+      handleKeyDown: (view, event) => {
         if (event.key === 'Escape') {
           onSlashChange?.(false, '');
           return false;
         }
-        if (event.key === 'Enter' && (event.shiftKey || event.metaKey || event.ctrlKey)) {
+        if (event.key === 'Tab' && onIndent) {
+          event.preventDefault();
+          flushPendingChange();
+          onIndent(event.shiftKey ? 'out' : 'in');
+          return true;
+        }
+        if (event.key === 'Backspace' && editor?.isEmpty && onEmptyBackspace) {
+          event.preventDefault();
+          flushPendingChange();
+          onEmptyBackspace();
+          return true;
+        }
+        if (event.key === 'ArrowUp' && onNavigatePrevious) {
+          const { selection } = view.state;
+          if (selection.empty && selection.from <= 1) {
+            event.preventDefault();
+            flushPendingChange();
+            onNavigatePrevious();
+            return true;
+          }
+        }
+        if (event.key === 'ArrowDown' && onNavigateNext) {
+          const { doc, selection } = view.state;
+          if (selection.empty && selection.to >= doc.content.size - 1) {
+            event.preventDefault();
+            flushPendingChange();
+            onNavigateNext();
+            return true;
+          }
+        }
+        if (event.key === 'Enter' && event.shiftKey) {
+          return false;
+        }
+        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
           event.preventDefault();
           onSlashChange?.(false, '');
+          flushPendingChange();
+          onEnter();
+          return true;
+        }
+        if (event.key === 'Enter' && enterCreatesBlock) {
+          event.preventDefault();
+          onSlashChange?.(false, '');
+          flushPendingChange();
           onEnter();
           return true;
         }
@@ -143,28 +221,53 @@ export function NoteEditor({
       const nextText = currentEditor.getText();
       const slashMatch = nextText.match(/^\/([^\n]*)$/);
       onSlashChange?.(!!slashMatch, slashMatch?.[1] ?? '');
-      onChange({ text: nextText, html: currentEditor.getHTML() });
+      scheduleChange({ text: nextText, html: currentEditor.getHTML() });
     },
     onFocus: ({ editor: currentEditor }) => {
       onShowFormatToolbar?.((mark) => applyEditorMark(currentEditor, mark));
     },
     onBlur: () => {
+      flushPendingChange();
       onHideFormatToolbar?.();
       onSlashChange?.(false, '');
     },
   });
 
+  useEffect(() => () => {
+    flushPendingChange();
+  }, [flushPendingChange]);
+
   useEffect(() => {
-    if (!editor || editor.isFocused) return;
-    if (editor.getHTML() !== sourceHtml) {
+    if (!editor) return;
+    const resetKeyChanged = lastResetKeyRef.current !== resetKey;
+    if (resetKeyChanged) lastResetKeyRef.current = resetKey;
+    if (!resetKeyChanged && editor.isFocused) return;
+    if (resetKeyChanged || editor.getHTML() !== sourceHtml) {
+      if (changeTimerRef.current !== null) {
+        window.clearTimeout(changeTimerRef.current);
+        changeTimerRef.current = null;
+      }
+      pendingChangeRef.current = null;
       editor.commands.setContent(sourceHtml, { emitUpdate: false });
     }
   }, [editor, sourceHtml]);
+
+  useEffect(() => {
+    if (!editor || autoFocusSignal <= 0) return;
+    requestAnimationFrame(() => {
+      editor.commands.focus('end');
+    });
+  }, [autoFocusSignal, editor]);
 
   return (
     <>
       <EditorContent editor={editor} />
       <style jsx global>{`
+        .note-rich-editor {
+          max-width: 100%;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
         .note-rich-editor p.is-editor-empty:first-child::before {
           color: rgb(148 163 184);
           content: attr(data-placeholder);
@@ -174,6 +277,9 @@ export function NoteEditor({
         }
         .note-rich-editor p {
           margin: 0;
+        }
+        .note-rich-editor p:empty::after {
+          content: '';
         }
         .note-rich-editor a {
           color: rgb(37 99 235);

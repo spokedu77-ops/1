@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-export type PhysicalLevel = 1 | 2 | 3; // 1=하, 2=중, 3=상
-
+export type PhysicalLevel = 1 | 2 | 3; // 1=낮음, 2=중간, 3=높음
 export type PhysicalFunctions = {
-  coordination: PhysicalLevel; // 협응력
-  agility: PhysicalLevel;      // 순발력
-  endurance: PhysicalLevel;    // 지구력
-  balance: PhysicalLevel;      // 균형감
-  strength: PhysicalLevel;     // 근력
+  coordination: PhysicalLevel;
+  agility: PhysicalLevel;
+  endurance: PhysicalLevel;
+  balance: PhysicalLevel;
+  strength: PhysicalLevel;
 };
 
 export type AttendanceStatus = 'present' | 'absent' | 'late';
@@ -18,7 +17,7 @@ export type Student = {
   id: string;
   name: string;
   classGroup: string;
-  status: AttendanceStatus; // 오늘 출결 (런타임)
+  status: AttendanceStatus;
   physical: PhysicalFunctions;
   note?: string;
 };
@@ -32,50 +31,64 @@ export const PHYSICAL_LABELS: Record<keyof PhysicalFunctions, string> = {
 };
 
 export const LEVEL_LABELS: Record<PhysicalLevel, string> = {
-  1: '하',
-  2: '중',
-  3: '상',
+  1: '낮음',
+  2: '중간',
+  3: '높음',
 };
 
-/** @deprecated CLASS_GROUPS는 고정 상수에서 동적 반 목록(useClassStore)으로 교체됨. */
+/** @deprecated 반 목록은 useClassStore의 동적 데이터로 관리합니다. */
 export const CLASS_GROUPS: string[] = [];
 
-// ── Legacy keys for one-time migration (LS → API) ─────────────────────────
 const LEGACY_STUDENT_KEYS = ['spokedu-pro:students:v2', 'spokedu-pro:students:v1', 'spokedu-pro:students'];
 const ATTENDANCE_MIGRATED_KEY = 'spokedu-pro:attendance:migrated';
+const UNASSIGNED_CLASS = '미분류';
+
+const DEFAULT_PHYSICAL: PhysicalFunctions = {
+  coordination: 2,
+  agility: 2,
+  endurance: 2,
+  balance: 2,
+  strength: 2,
+};
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** 첫 로그인 시 localStorage에 있던 학생 데이터를 API로 올리고, 전부 성공 시에만 LS 삭제 (유실 방지) */
+function normalizeClassGroup(value?: string | null): string {
+  if (!value) return UNASSIGNED_CLASS;
+  if (value === '誘몃텇瑜?' || value.includes('誘몃텇')) return UNASSIGNED_CLASS;
+  return value;
+}
+
 async function migrateStudentsFromLS(): Promise<void> {
   let toMigrate: Omit<Student, 'status'>[] = [];
   for (const key of LEGACY_STUDENT_KEYS) {
     try {
       const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          toMigrate = parsed;
-          break;
-        }
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        toMigrate = parsed;
+        break;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore malformed legacy data */
+    }
   }
   if (toMigrate.length === 0) return;
 
   let allOk = true;
-  for (const s of toMigrate) {
+  for (const student of toMigrate) {
     try {
       const res = await fetch('/api/spokedu-pro/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: s.name?.trim() || '이름없음',
-          classGroup: s.classGroup ?? '미분류',
-          physical: s.physical,
-          note: s.note,
+          name: student.name?.trim() || '이름 없음',
+          classGroup: normalizeClassGroup(student.classGroup),
+          physical: student.physical,
+          note: student.note,
         }),
       });
       if (!res.ok) allOk = false;
@@ -84,14 +97,16 @@ async function migrateStudentsFromLS(): Promise<void> {
     }
   }
   if (!allOk) return;
+
   for (const key of LEGACY_STUDENT_KEYS) {
     try {
       localStorage.removeItem(key);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 }
 
-/** localStorage에 있는 출결 키들을 API로 올리고, 성공한 항목만 LS 삭제·전부 성공 시에만 migrated 플래그 (유실 방지) */
 async function migrateAttendanceFromLS(): Promise<void> {
   if (typeof localStorage === 'undefined') return;
   try {
@@ -102,8 +117,8 @@ async function migrateAttendanceFromLS(): Promise<void> {
 
   const prefix = 'spokedu-pro:attendance:';
   const keysToMigrate: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
     if (key?.startsWith(prefix) && key !== ATTENDANCE_MIGRATED_KEY) keysToMigrate.push(key);
   }
 
@@ -130,12 +145,14 @@ async function migrateAttendanceFromLS(): Promise<void> {
     }
   }
   if (!allOk) return;
+
   try {
     localStorage.setItem(ATTENDANCE_MIGRATED_KEY, '1');
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
-// ── API helpers ────────────────────────────────────────────────────────────
 async function apiFetchStudents(): Promise<Omit<Student, 'status'>[]> {
   const res = await fetch('/api/spokedu-pro/students');
   if (!res.ok) throw new Error('students fetch failed');
@@ -154,7 +171,7 @@ async function apiAddStudent(name: string, classGroup: string): Promise<Omit<Stu
   const res = await fetch('/api/spokedu-pro/students', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, classGroup }),
+    body: JSON.stringify({ name, classGroup: normalizeClassGroup(classGroup) }),
   });
   if (!res.ok) throw new Error('add student failed');
   const data = await res.json();
@@ -184,32 +201,32 @@ async function apiSaveAttendance(date: string, records: Record<string, Attendanc
   if (!res.ok) throw new Error('save attendance failed');
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-const DEFAULT_PHYSICAL: PhysicalFunctions = {
-  coordination: 2, agility: 2, endurance: 2, balance: 2, strength: 2,
-};
-
-function physicalScore(p: PhysicalFunctions): number {
-  return p.coordination + p.agility + p.endurance + p.balance + p.strength;
+function physicalScore(physical: PhysicalFunctions): number {
+  return physical.coordination + physical.agility + physical.endurance + physical.balance + physical.strength;
 }
 
 function mergeStudentsWithAttendance(
   students: Omit<Student, 'status'>[],
   attendance: Record<string, AttendanceStatus>
 ): Student[] {
-  return students.map((s) => ({ ...s, status: attendance[s.id] ?? 'present' }));
+  return students.map((student) => ({
+    ...student,
+    classGroup: normalizeClassGroup(student.classGroup),
+    status: attendance[student.id] ?? 'present',
+  }));
 }
 
-/** 신체 기능 기반 균형 팀 배분 (그리디 교차 배분) */
 export function balanceTeams(students: Student[]): { teamA: Student[]; teamB: Student[] } {
   const sorted = [...students].sort((a, b) => physicalScore(b.physical) - physicalScore(a.physical));
   const teamA: Student[] = [];
   const teamB: Student[] = [];
-  sorted.forEach((s, i) => { if (i % 2 === 0) teamA.push(s); else teamB.push(s); });
+  sorted.forEach((student, index) => {
+    if (index % 2 === 0) teamA.push(student);
+    else teamB.push(student);
+  });
   return { teamA, teamB };
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────
 export function useStudentStore() {
   const today = todayISO();
 
@@ -222,7 +239,6 @@ export function useStudentStore() {
   const attendanceRef = useRef(attendance);
   attendanceRef.current = attendance;
 
-  // ── 초기 로드: 마이그레이션(1회) 후 API에서만 로드 ─────────────────────────
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -231,48 +247,54 @@ export function useStudentStore() {
         await migrateStudentsFromLS();
         await migrateAttendanceFromLS();
         if (cancelled) return;
-        const [students, att] = await Promise.all([
+        const [students, attendanceRecords] = await Promise.all([
           apiFetchStudents(),
           apiFetchAttendance(today),
         ]);
         if (cancelled) return;
         setRawStudents(students);
-        setAttendance(att);
+        setAttendance(attendanceRecords);
         setSyncError(null);
       } catch (err) {
-        if (cancelled) return;
-        setSyncError(err instanceof Error ? err.message : 'sync failed');
+        if (!cancelled) setSyncError(err instanceof Error ? err.message : 'sync failed');
       } finally {
-        if (!cancelled) { setSyncing(false); setLoaded(true); }
+        if (!cancelled) {
+          setSyncing(false);
+          setLoaded(true);
+        }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [today]);
 
   const students: Student[] = mergeStudentsWithAttendance(rawStudents, attendance);
 
-  // ── Mutations ─────────────────────────────────────────────────────────
   const addStudent = useCallback(async (name: string, classGroup: string): Promise<void> => {
     const tempId = crypto.randomUUID();
     const tempStudent: Omit<Student, 'status'> = {
-      id: tempId, name: name.trim(), classGroup, physical: { ...DEFAULT_PHYSICAL },
+      id: tempId,
+      name: name.trim(),
+      classGroup: normalizeClassGroup(classGroup),
+      physical: { ...DEFAULT_PHYSICAL },
     };
     setRawStudents((prev) => [...prev, tempStudent]);
 
     try {
       const created = await apiAddStudent(name, classGroup);
-      setRawStudents((prev) => prev.map((s) => s.id === tempId ? created : s));
+      setRawStudents((prev) => prev.map((student) => (student.id === tempId ? created : student)));
     } catch {
-      setRawStudents((prev) => prev.filter((s) => s.id !== tempId));
+      setRawStudents((prev) => prev.filter((student) => student.id !== tempId));
     }
   }, []);
 
   const removeStudent = useCallback(async (id: string): Promise<void> => {
-    setRawStudents((prev) => prev.filter((s) => s.id !== id));
+    setRawStudents((prev) => prev.filter((student) => student.id !== id));
     try {
       await apiRemoveStudent(id);
     } catch {
-      // Best-effort; student removed from local view
+      // Best-effort; the student is removed from the local view.
     }
   }, []);
 
@@ -289,7 +311,9 @@ export function useStudentStore() {
             /* ignore */
           }
         })
-        .catch(() => { /* ignore */ });
+        .catch(() => {
+          /* ignore */
+        });
       return next;
     });
   }, [today]);
@@ -305,7 +329,9 @@ export function useStudentStore() {
             /* ignore */
           }
         })
-        .catch(() => { /* ignore */ });
+        .catch(() => {
+          /* ignore */
+        });
       return next;
     });
   }, [today]);
@@ -313,7 +339,9 @@ export function useStudentStore() {
   const markAllPresent = useCallback((ids: string[]): void => {
     setAttendance((prev) => {
       const next = { ...prev };
-      ids.forEach((id) => { next[id] = 'present'; });
+      ids.forEach((id) => {
+        next[id] = 'present';
+      });
       apiSaveAttendance(today, next)
         .then(() => {
           try {
@@ -322,32 +350,36 @@ export function useStudentStore() {
             /* ignore */
           }
         })
-        .catch(() => { /* ignore */ });
+        .catch(() => {
+          /* ignore */
+        });
       return next;
     });
   }, [today]);
 
   const updatePhysical = useCallback(async (id: string, key: keyof PhysicalFunctions, value: PhysicalLevel): Promise<void> => {
     setRawStudents((prev) =>
-      prev.map((s) =>
-        s.id === id ? { ...s, physical: { ...s.physical, [key]: value } } : s
+      prev.map((student) =>
+        student.id === id ? { ...student, physical: { ...student.physical, [key]: value } } : student
       )
     );
-    await apiUpdatePhysical(id, { [key]: value }).catch(() => { /* best-effort */ });
+    await apiUpdatePhysical(id, { [key]: value }).catch(() => {
+      /* best-effort */
+    });
   }, []);
 
-  const presentStudents = students.filter((s) => s.status === 'present');
+  const presentStudents = students.filter((student) => student.status === 'present');
 
   const refetch = useCallback(async () => {
     setSyncing(true);
     setSyncError(null);
     try {
-      const [list, att] = await Promise.all([
+      const [list, attendanceRecords] = await Promise.all([
         apiFetchStudents(),
         apiFetchAttendance(today),
       ]);
       setRawStudents(list);
-      setAttendance(att);
+      setAttendance(attendanceRecords);
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'sync failed');
     } finally {
@@ -356,17 +388,17 @@ export function useStudentStore() {
   }, [today]);
 
   useEffect(() => {
-    let t: ReturnType<typeof setTimeout> | undefined;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     const onRemoteAttendance = () => {
-      if (t) clearTimeout(t);
-      t = setTimeout(() => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => {
         refetch();
       }, 250);
     };
     window.addEventListener('spokedu-pro-attendance-updated', onRemoteAttendance);
     return () => {
       window.removeEventListener('spokedu-pro-attendance-updated', onRemoteAttendance);
-      if (t) clearTimeout(t);
+      if (timeout) clearTimeout(timeout);
     };
   }, [refetch]);
 

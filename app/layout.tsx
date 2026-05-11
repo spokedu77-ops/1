@@ -7,12 +7,27 @@ import Sidebar from './components/Sidebar';
 import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
 import { QueryProvider } from './providers/QueryProvider';
 import { I18nProvider } from './providers/I18nProvider';
-import { Plus_Jakarta_Sans, Noto_Sans_KR, Geist } from 'next/font/google';
+import { Geist, Noto_Sans_KR, Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-const notoSansKR = Noto_Sans_KR({ subsets: ['latin'], variable: '--font-kr', display: 'swap' });
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' });
+const notoSansKR = Noto_Sans_KR({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-plus-jakarta',
+  display: 'swap',
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space-grotesk',
+  display: 'swap',
+});
 
 export default function RootLayout({
   children,
@@ -46,7 +61,7 @@ export default function RootLayout({
   }, []);
 
   return (
-    <html lang="ko" className={cn(notoSansKR.variable, "font-sans", geist.variable)}>
+    <html lang="ko" className={cn(notoSansKR.variable, geist.variable, plusJakarta.variable, spaceGrotesk.variable, "font-sans")}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2563eb" />

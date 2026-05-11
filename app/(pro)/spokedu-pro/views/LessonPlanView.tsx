@@ -5,17 +5,18 @@ import { useState, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X, Share2, BookOpenCheck, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import LibraryView from './LibraryView';
-import { useLessonPlan, type LessonPlanDayKo } from '../hooks/useLessonPlan';
+import { useLessonPlan, type LessonPlanDayKo, type LessonPlanSlot } from '../hooks/useLessonPlan';
 import { useClassStore } from '../hooks/useClassStore';
 import { formatWeekLabelFromMonday } from '@/app/lib/spokedu-pro/weekUtils';
 import { getProgramTitle } from '@/app/lib/spokedu-pro/dashboardDefaults';
+import { SubscriberBadge, SubscriberButton } from '../components/SubscriberWorkspacePrimitives';
 import type { ProgramDetail } from '../types';
 
 function dayKoFromMondayOffset(monday: Date, offset: number): LessonPlanDayKo {
-  const d = new Date(monday);
-  d.setDate(monday.getDate() + offset);
+  const date = new Date(monday);
+  date.setDate(monday.getDate() + offset);
   const map: LessonPlanDayKo[] = ['일', '월', '화', '수', '목', '금', '토'];
-  return map[d.getDay()];
+  return map[date.getDay()] ?? '월';
 }
 
 export default function LessonPlanView({
@@ -46,31 +47,27 @@ export default function LessonPlanView({
   const [shareError, setShareError] = useState<string | null>(null);
 
   const weekTitle = useMemo(() => formatWeekLabelFromMonday(monday), [monday]);
-
   const dayColumns = useMemo(
-    () => DAY_ORDER.map((_, i) => ({ day: dayKoFromMondayOffset(monday, i), offset: i })),
+    () => DAY_ORDER.map((_, index) => ({ day: dayKoFromMondayOffset(monday, index), offset: index })),
     [monday, DAY_ORDER]
   );
 
   const buildShareText = useCallback(() => {
-    const lines: string[] = [
-      `[${tr('스포키듀')}] ${tr('수업 계획')} ${tr(weekTitle)} (${tr(weekLabel)})`,
-      '',
-    ];
+    const lines: string[] = [`[${tr('스포키듀')}] ${tr('수업 계획')} ${tr(weekTitle)} (${tr(weekLabel)})`, ''];
     for (const { day } of dayColumns) {
       const slots = slotsByDay[day];
       if (slots.length === 0) continue;
-      lines.push(`■ ${day}${tr('요일')}`);
-      for (const s of slots) {
-        lines.push(`  · ${s.classGroup || tr('(반 미정)')}`);
-        if (s.programIds.length) {
-          s.programIds.forEach((id) => {
-            const t = programDetails[String(id)]?.title ?? getProgramTitle(id);
-            lines.push(`    - ${t}`);
+      lines.push(`${day}요일`);
+      for (const slot of slots) {
+        lines.push(`  - ${slot.classGroup || tr('(반 미정)')}`);
+        if (slot.programIds.length) {
+          slot.programIds.forEach((id) => {
+            const title = programDetails[String(id)]?.title ?? getProgramTitle(id);
+            lines.push(`    · ${title}`);
           });
         }
-        if (s.memo.trim()) lines.push(`    ${tr('메모:')} ${s.memo.trim()}`);
-        lines.push(`    ${s.completed ? tr('✓ 완료') : tr('○ 예정')}`);
+        if (slot.memo.trim()) lines.push(`    ${tr('메모:')} ${slot.memo.trim()}`);
+        lines.push(`    ${slot.completed ? tr('완료') : tr('예정')}`);
       }
       lines.push('');
     }
@@ -92,88 +89,52 @@ export default function LessonPlanView({
   };
 
   return (
-    <div className="relative min-h-full flex flex-col bg-[#0F172A]">
-      <section className="px-4 sm:px-8 lg:px-12 py-8 pb-40 space-y-6 flex-1">
+    <div className="relative flex min-h-full flex-col bg-[#0f172a]">
+      <section className="flex-1 space-y-6 px-4 py-8 pb-40 sm:px-8 lg:px-12">
         {persistError && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-sm text-red-200">
+          <div className="flex flex-col items-start gap-3 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-200 sm:flex-row sm:items-center">
             <span className="flex-1">{persistError}</span>
-            <div className="flex flex-wrap gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => void retryPersist()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <SubscriberButton tone="red" size="sm" icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={() => void retryPersist()}>
                 {tr('다시 시도')}
-              </button>
-              <button
-                type="button"
-                onClick={() => clearPersistError()}
-                className="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-100 text-xs font-bold hover:bg-red-950/40"
-              >
+              </SubscriberButton>
+              <SubscriberButton tone="slate" size="sm" onClick={() => clearPersistError()}>
                 {tr('닫기')}
-              </button>
+              </SubscriberButton>
             </div>
           </div>
         )}
+
         {shareError && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-amber-900/20 border border-amber-500/30 rounded-xl text-sm text-amber-100">
+          <div className="flex flex-col items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-900/20 p-4 text-sm text-amber-100 sm:flex-row sm:items-center">
             <span className="flex-1">{shareError}</span>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shrink-0"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
+            <SubscriberButton tone="amber" size="sm" icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={handleShare}>
               {tr('다시 시도')}
-            </button>
+            </SubscriberButton>
           </div>
         )}
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-6">
+
+        <header className="flex flex-col gap-4 border-b border-slate-800 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <BookOpenCheck className="w-8 h-8 text-sky-400 shrink-0" />
+            <BookOpenCheck className="h-8 w-8 shrink-0 text-sky-400" />
             <div>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">{tr('주간 수업 계획')}</h2>
-              <p className="text-slate-400 text-sm font-medium mt-0.5">{tr(weekTitle)}</p>
+              <h2 className="text-2xl font-black tracking-tight text-white md:text-3xl">{tr('주간 수업 계획')}</h2>
+              <p className="mt-0.5 text-sm font-medium text-slate-400">{tr(weekTitle)}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setWeekOffset((o) => o - 1)}
-              className="p-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 transition-colors"
-              aria-label={tr('이전 주')}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setWeekOffset(0)}
-              className="px-4 py-2.5 rounded-xl font-bold bg-slate-800 border border-slate-600 text-white hover:bg-slate-700 transition-colors text-sm"
-            >
+            <IconButton label={tr('이전 주')} onClick={() => setWeekOffset((offset) => offset - 1)} icon={<ChevronLeft className="h-5 w-5" />} />
+            <SubscriberButton tone="slate" size="sm" onClick={() => setWeekOffset(0)}>
               {tr('이번 주')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setWeekOffset((o) => o + 1)}
-              className="p-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 transition-colors"
-              aria-label={tr('다음 주')}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors text-sm"
-            >
-              <Share2 className="w-4 h-4" />
+            </SubscriberButton>
+            <IconButton label={tr('다음 주')} onClick={() => setWeekOffset((offset) => offset + 1)} icon={<ChevronRight className="h-5 w-5" />} />
+            <SubscriberButton tone="emerald" size="sm" icon={<Share2 className="h-4 w-4" />} onClick={handleShare}>
               {tr('이 계획 공유')}
-            </button>
+            </SubscriberButton>
           </div>
         </header>
 
-        {/* 데스크톱: 7열 */}
-        <div className="hidden xl:grid xl:grid-cols-7 gap-3">
+        <div className="hidden gap-3 xl:grid xl:grid-cols-7">
           {dayColumns.map(({ day }) => (
             <DayColumn
               key={day}
@@ -191,8 +152,7 @@ export default function LessonPlanView({
           ))}
         </div>
 
-        {/* 모바일·태블릿: 세로 */}
-        <div className="xl:hidden space-y-6">
+        <div className="space-y-6 xl:hidden">
           {dayColumns.map(({ day }) => (
             <DayColumn
               key={day}
@@ -211,7 +171,6 @@ export default function LessonPlanView({
         </div>
       </section>
 
-      {/* 라이브러리 슬라이드 패널 */}
       {librarySlotId !== null && (
         <>
           <button
@@ -220,19 +179,19 @@ export default function LessonPlanView({
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
             onClick={() => setLibrarySlotId(null)}
           />
-          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col overflow-hidden">
-            <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-800">
-              <p className="text-white font-black text-sm">{tr('프로그램 추가')}</p>
+          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col overflow-hidden border-l border-slate-800 bg-slate-900 shadow-2xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-4 py-3">
+              <p className="text-sm font-black text-white">{tr('프로그램 추가')}</p>
               <button
                 type="button"
                 onClick={() => setLibrarySlotId(null)}
-                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
                 aria-label={tr('닫기')}
               >
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scroll">
+            <div className="custom-scroll min-h-0 flex-1 overflow-y-auto">
               <LibraryView
                 onOpenDetail={() => {}}
                 onSelectProgram={(id) => {
@@ -250,6 +209,19 @@ export default function LessonPlanView({
   );
 }
 
+function IconButton({ label, icon, onClick }: { label: string; icon: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-xl border border-slate-600 p-2.5 text-slate-300 transition-colors hover:bg-slate-800"
+      aria-label={label}
+    >
+      {icon}
+    </button>
+  );
+}
+
 function DayColumn({
   day,
   slots,
@@ -263,11 +235,11 @@ function DayColumn({
   onOpenLibrary,
 }: {
   day: LessonPlanDayKo;
-  slots: import('../hooks/useLessonPlan').LessonPlanSlot[];
+  slots: LessonPlanSlot[];
   classes: { id: string; name: string }[];
   programDetails: Record<string, ProgramDetail>;
   onAddSlot: () => void;
-  onUpdateSlot: (slotId: string, patch: Partial<import('../hooks/useLessonPlan').LessonPlanSlot>) => void;
+  onUpdateSlot: (slotId: string, patch: Partial<LessonPlanSlot>) => void;
   onRemoveSlot: (slotId: string) => void;
   onMarkDone: (slotId: string, completed: boolean) => void;
   onRemoveProgram: (slotId: string, programId: number) => void;
@@ -275,82 +247,76 @@ function DayColumn({
 }) {
   const tr = useTranslator();
   return (
-    <div className="rounded-2xl bg-slate-800/50 border border-slate-700 p-3 space-y-3 min-h-[120px]">
+    <div className="min-h-[120px] space-y-3 rounded-2xl border border-slate-700 bg-slate-800/50 p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-black text-amber-400">{day}</span>
       </div>
       <div className="space-y-3">
         {slots.map((slot) => (
-          <div key={slot.slotId} className="rounded-xl bg-slate-900/80 border border-slate-600 p-3 space-y-2">
+          <div key={slot.slotId} className="space-y-2 rounded-xl border border-slate-600 bg-slate-900/80 p-3">
             <div className="flex items-start justify-between gap-2">
               <select
                 value={slot.classGroup}
-                onChange={(e) => onUpdateSlot(slot.slotId, { classGroup: e.target.value })}
-                className="flex-1 min-w-0 bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-sky-500/50"
+                onChange={(event) => onUpdateSlot(slot.slotId, { classGroup: event.target.value })}
+                className="min-w-0 flex-1 rounded-lg border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs font-bold text-white focus:border-sky-500/50 focus:outline-none"
               >
                 <option value="">{tr('반 선택')}</option>
-                {classes.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
+                {classes.map((classItem) => (
+                  <option key={classItem.id} value={classItem.name}>
+                    {classItem.name}
                   </option>
                 ))}
               </select>
               <button
                 type="button"
                 onClick={() => onRemoveSlot(slot.slotId)}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-800 shrink-0"
+                className="shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-red-400"
                 aria-label={tr('슬롯 삭제')}
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
-            <button
-              type="button"
-              onClick={() => onOpenLibrary(slot.slotId)}
-              className="w-full py-2 rounded-lg text-xs font-bold bg-sky-600/20 text-sky-300 border border-sky-500/30 hover:bg-sky-600/30 transition-colors"
-            >
+
+            <SubscriberButton tone="cyan" size="sm" wide onClick={() => onOpenLibrary(slot.slotId)}>
               {tr('프로그램 추가')}
-            </button>
+            </SubscriberButton>
+
             {slot.programIds.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {slot.programIds.map((pid) => {
-                  const d = programDetails[String(pid)];
-                  const tag = d?.functionType ?? d?.mainTheme ?? '';
-                  const title = d?.title ?? getProgramTitle(pid);
+                {slot.programIds.map((programId) => {
+                  const detail = programDetails[String(programId)];
+                  const tag = detail?.functionType ?? detail?.mainTheme ?? '';
+                  const title = detail?.title ?? getProgramTitle(programId);
                   return (
-                    <span
-                      key={pid}
-                      className="inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded-lg bg-slate-800 border border-slate-600 text-[10px] font-bold text-white max-w-full"
-                    >
+                    <span key={programId} className="inline-flex max-w-full items-center gap-1 rounded-lg border border-slate-600 bg-slate-800 py-1 pl-2 pr-1 text-[10px] font-bold text-white">
                       <span className="truncate">{title}</span>
-                      {tag ? (
-                        <span className="text-emerald-400 shrink-0 px-1 py-0.5 bg-emerald-500/10 rounded">{tag}</span>
-                      ) : null}
+                      {tag ? <SubscriberBadge tone="emerald">{tag}</SubscriberBadge> : null}
                       <button
                         type="button"
-                        onClick={() => onRemoveProgram(slot.slotId, pid)}
-                        className="p-0.5 rounded text-slate-500 hover:text-white shrink-0"
+                        onClick={() => onRemoveProgram(slot.slotId, programId)}
+                        className="shrink-0 rounded p-0.5 text-slate-500 hover:text-white"
                         aria-label={tr('제거')}
                       >
-                        <X className="w-3 h-3" />
+                        <X className="h-3 w-3" />
                       </button>
                     </span>
                   );
                 })}
               </div>
             )}
+
             <textarea
               value={slot.memo}
-              onChange={(e) => onUpdateSlot(slot.slotId, { memo: e.target.value })}
+              onChange={(event) => onUpdateSlot(slot.slotId, { memo: event.target.value })}
               placeholder={tr('메모')}
               rows={2}
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-white placeholder:text-slate-600 resize-none focus:outline-none focus:border-slate-500"
+              className="w-full resize-none rounded-lg border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white placeholder:text-slate-600 focus:border-slate-500 focus:outline-none"
             />
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-400 cursor-pointer">
+            <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-400">
               <input
                 type="checkbox"
                 checked={slot.completed}
-                onChange={(e) => onMarkDone(slot.slotId, e.target.checked)}
+                onChange={(event) => onMarkDone(slot.slotId, event.target.checked)}
                 className="rounded border-slate-600 text-amber-500"
               />
               {tr('완료')}
@@ -361,9 +327,9 @@ function DayColumn({
       <button
         type="button"
         onClick={onAddSlot}
-        className="w-full flex items-center justify-center gap-1 py-2 rounded-xl border border-dashed border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 text-xs font-bold transition-colors"
+        className="flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-slate-600 py-2 text-xs font-bold text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
       >
-        <Plus className="w-4 h-4" /> {tr('수업 추가')}
+        <Plus className="h-4 w-4" /> {tr('수업 추가')}
       </button>
     </div>
   );

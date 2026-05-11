@@ -3,12 +3,13 @@
 import { useTranslator } from '@/app/providers/I18nProvider';
 import { Loader2, RotateCcw } from 'lucide-react';
 import { formatWeekLabelFromMonday, getMondayOfWeek } from '@/app/lib/spokedu-pro/weekUtils';
+import { SubscriberButton } from '../../components/SubscriberWorkspacePrimitives';
 import type { HistoryReportItem } from './types';
 
 function weekLabelFromCreatedAt(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return formatWeekLabelFromMonday(getMondayOfWeek(d));
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return formatWeekLabelFromMonday(getMondayOfWeek(date));
 }
 
 export default function ReportHistoryPanel({
@@ -36,44 +37,47 @@ export default function ReportHistoryPanel({
       </div>
       {historyLoading ? (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
         </div>
       ) : historyLoadError ? (
         <div className="flex flex-col items-center gap-3 py-8">
-          <p className="text-slate-400 text-sm">{tr(historyLoadError)}</p>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-lg transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
+          <p className="text-sm text-slate-400">{tr(historyLoadError)}</p>
+          <SubscriberButton tone="purple" size="sm" icon={<RotateCcw className="h-4 w-4" />} onClick={onRetry}>
             {tr('다시 시도')}
-          </button>
+          </SubscriberButton>
         </div>
       ) : historyReports.length === 0 && selectedStudentId ? (
-        <div className="py-6 text-center text-slate-500 text-sm">
+        <div className="py-6 text-center text-sm text-slate-500">
           {tr('이전 리포트가 없습니다.')}
         </div>
       ) : (
-        <ul className="space-y-2 max-h-[320px] overflow-y-auto">
+        <ul className="max-h-[320px] space-y-2 overflow-y-auto">
           {historyReports.map((item) => {
-            const wk = weekLabelFromCreatedAt(item.created_at);
+            const weekLabel = weekLabelFromCreatedAt(item.created_at);
             return (
-            <li key={item.id}>
-              <button
-                type="button"
-                onClick={() => onSelectReport(item)}
-                className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${selectedHistoryReport?.id === item.id ? 'bg-violet-600/20 border-violet-500/30 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/20'}`}
-              >
-                <span className="block text-xs text-slate-500">
-                  {new Date(item.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  {wk ? <span className="text-slate-600"> · {wk}</span> : null}
-                </span>
-                <span className="block text-sm font-medium mt-0.5 truncate">
-                  {item.goal ? tr(item.goal) : tr('리포트')}
-                </span>
-              </button>
-            </li>
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelectReport(item)}
+                  className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
+                    selectedHistoryReport?.id === item.id
+                      ? 'border-violet-500/30 bg-violet-600/20 text-white'
+                      : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20'
+                  }`}
+                >
+                  <span className="block text-xs text-slate-500">
+                    {new Date(item.created_at).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                    {weekLabel ? <span className="text-slate-600"> · {weekLabel}</span> : null}
+                  </span>
+                  <span className="mt-0.5 block truncate text-sm font-medium">
+                    {item.goal ? tr(item.goal) : tr('리포트')}
+                  </span>
+                </button>
+              </li>
             );
           })}
         </ul>

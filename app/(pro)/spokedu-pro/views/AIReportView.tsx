@@ -1,18 +1,18 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslator } from '@/app/providers/I18nProvider';
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Bot, Sparkles, User, Loader2, AlertCircle, History, ChevronDown } from 'lucide-react';
-import { useStudentStore, type Student } from '../hooks/useStudentStore';
+import { AlertCircle, Bot, ChevronDown, History, Loader2, Sparkles, User } from 'lucide-react';
 import { useProContext } from '../hooks/useProContext';
-import { getPeriodLabel, OPTION_DARK_CLASS } from './ai-report/constants';
-import type { ReportData, ReportMeta, HistoryReportItem, Tone } from './ai-report/types';
-import AIReportForm from './ai-report/AIReportForm';
-import ReportHistoryPanel from './ai-report/ReportHistoryPanel';
-import { ReportCard, EmptyState } from './ai-report/ReportPreview';
+import { useStudentStore, type Student } from '../hooks/useStudentStore';
+import { SubscriberBadge } from '../components/SubscriberWorkspacePrimitives';
 import { trackSpokeduProEvent } from '../utils/spokeduProAnalytics';
+import AIReportForm from './ai-report/AIReportForm';
+import { getPeriodLabel, OPTION_DARK_CLASS } from './ai-report/constants';
+import ReportHistoryPanel from './ai-report/ReportHistoryPanel';
+import { EmptyState, ReportCard } from './ai-report/ReportPreview';
+import type { HistoryReportItem, ReportData, ReportMeta, Tone } from './ai-report/types';
 
-// ── Main Component ────────────────────────────────────────────────────────────
 export default function AIReportView({
   initialStudentId = null,
   onConsumeInitialStudent,
@@ -29,11 +29,12 @@ export default function AIReportView({
   const monthlyLimit = usage.aiReportMonthlyLimit;
   const isBlocked = plan === 'free';
   const isLimitReached = monthlyLimit !== null && usage.aiReportThisMonth >= monthlyLimit;
+  const remainingReports = monthlyLimit === null ? null : Math.max(monthlyLimit - usage.aiReportThisMonth, 0);
 
   const [tab, setTab] = useState<'create' | 'history'>('create');
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [sessionNotes, setSessionNotes] = useState('');
-  const [developmentGoal, setDevelopmentGoal] = useState('인지적 상황 판단력 향상 (Think)');
+  const [developmentGoal, setDevelopmentGoal] = useState('인지 상황 판단 향상 (Think)');
   const [additionalGoal, setAdditionalGoal] = useState('');
   const [tone, setTone] = useState<Tone>('warm');
 
@@ -42,7 +43,6 @@ export default function AIReportView({
   const [report, setReport] = useState<ReportData | null>(null);
   const [meta, setMeta] = useState<ReportMeta | null>(null);
   const [copied, setCopied] = useState(false);
-  /** 마지막 생성 리포트가 이전 리포트 목록에 저장되었는지 (false면 저장 실패 안내) */
   const [savedToHistory, setSavedToHistory] = useState<boolean | null>(null);
 
   const [historyReports, setHistoryReports] = useState<HistoryReportItem[]>([]);
@@ -50,11 +50,11 @@ export default function AIReportView({
   const [historyLoadError, setHistoryLoadError] = useState<string | null>(null);
   const [historyRetryKey, setHistoryRetryKey] = useState(0);
   const [selectedHistoryReport, setSelectedHistoryReport] = useState<HistoryReportItem | null>(null);
-  /** 이전 리포트 보기에서 표시 중인 report/meta (복사·PDF에 사용) */
   const [viewingReport, setViewingReport] = useState<ReportData | null>(null);
   const [viewingMeta, setViewingMeta] = useState<ReportMeta | null>(null);
 
   const reportRef = useRef<HTMLDivElement>(null);
+  const selectedStudent = students.find((student) => student.id === selectedStudentId) ?? null;
 
   useEffect(() => {
     if (!initialStudentId) return;
@@ -63,13 +63,13 @@ export default function AIReportView({
     onConsumeInitialStudent?.();
   }, [initialStudentId, onConsumeInitialStudent]);
 
-  // 이전 리포트 선택 시 파싱해 viewing 설정
   useEffect(() => {
     if (!selectedHistoryReport) {
       setViewingReport(null);
       setViewingMeta(null);
       return;
     }
+
     try {
       const parsed = JSON.parse(selectedHistoryReport.content) as { report?: ReportData; meta?: ReportMeta };
       setViewingReport(parsed.report ?? null);
@@ -80,7 +80,6 @@ export default function AIReportView({
     }
   }, [selectedHistoryReport]);
 
-  // 이전 리포트 목록 조회 (학생 선택 시 또는 다시 시도)
   useEffect(() => {
     if (tab !== 'history' || !selectedStudentId) {
       setHistoryReports([]);
@@ -88,18 +87,18 @@ export default function AIReportView({
       setHistoryLoadError(null);
       return;
     }
+
     let cancelled = false;
     setHistoryLoading(true);
     setHistoryLoadError(null);
     setSelectedHistoryReport(null);
+
     fetch(`/api/spokedu-pro/ai-report?studentId=${encodeURIComponent(selectedStudentId)}`)
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
         if (cancelled) return;
         if (!res.ok) {
-          setHistoryLoadError(
-            typeof data.error === 'string' ? data.error : `목록을 불러오지 못했어요. (${res.status})`
-          );
+          setHistoryLoadError(typeof data.error === 'string' ? data.error : `목록을 불러오지 못했어요. (${res.status})`);
           setHistoryReports([]);
           return;
         }
@@ -113,11 +112,14 @@ export default function AIReportView({
       .catch(() => {
         if (!cancelled) setHistoryLoadError('목록을 불러오지 못했어요.');
       })
-      .finally(() => { if (!cancelled) setHistoryLoading(false); });
-    return () => { cancelled = true; };
-  }, [tab, selectedStudentId, historyRetryKey]);
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false);
+      });
 
-  const selectedStudent = students.find((s) => s.id === selectedStudentId) ?? null;
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, selectedStudentId, historyRetryKey]);
 
   const handleGenerate = useCallback(async () => {
     if (!selectedStudent) return;
@@ -125,6 +127,7 @@ export default function AIReportView({
     setError(null);
     setReport(null);
     setMeta(null);
+    setSavedToHistory(null);
 
     try {
       const res = await fetch('/api/spokedu-pro/ai-report', {
@@ -151,6 +154,7 @@ export default function AIReportView({
       if (!res.ok || !data.ok) {
         throw new Error(data.error ?? '리포트 생성 실패');
       }
+
       setReport(data.report);
       setMeta(data.meta);
       setSavedToHistory(data.savedToHistory === true);
@@ -170,32 +174,34 @@ export default function AIReportView({
     const sourceReport = tab === 'history' ? viewingReport : report;
     const sourceMeta = tab === 'history' ? viewingMeta : meta;
     if (!sourceReport || !sourceMeta) return;
+
     const period = sourceMeta.period ?? '';
     const text = [
-      `📋 ${sourceMeta.studentName} ${sourceMeta.classGroup} ${tr('수업 리포트')} (${period})`,
+      `${sourceMeta.studentName} ${sourceMeta.classGroup} ${tr('수업 리포트')} (${period})`,
       '',
-      tr('✨ 이번 수업 하이라이트'),
+      tr('이번 수업 하이라이트'),
       sourceReport.highlight,
       '',
-      tr('📈 성장 포인트'),
+      tr('우리 아이 성장 포인트'),
       sourceReport.growth,
       '',
-      tr('🏠 가정 연계 활동'),
+      tr('가정 연계 활동'),
       sourceReport.homeActivity,
       '',
-      tr('💬 코치 한마디'),
+      tr('코치 한마디'),
       sourceReport.coachMessage,
       '',
-      `${tr('🎯 다음 수업 목표:')} ${sourceReport.nextGoal}`,
+      `${tr('다음 수업 목표:')} ${sourceReport.nextGoal}`,
       '',
       `[${tr('스포키듀 AI 리포트')} | ${new Date(sourceMeta.generatedAt).toLocaleDateString('ko-KR')}]`,
     ].join('\n');
+
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError('복사 실패 — 수동으로 선택해 복사해주세요.');
+      setError('복사에 실패했어요. 내용을 직접 선택해 복사해 주세요.');
     }
   }, [tab, report, meta, viewingReport, viewingMeta, tr]);
 
@@ -210,6 +216,7 @@ export default function AIReportView({
     if (!reportRef.current) return;
     const sourceMeta = tab === 'history' ? viewingMeta : meta;
     if (!sourceMeta) return;
+
     try {
       const { default: html2canvas } = await import('html2canvas');
       const { jsPDF } = await import('jspdf');
@@ -223,7 +230,7 @@ export default function AIReportView({
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
       pdf.save(`${sourceMeta.studentName}_${tr('리포트')}.pdf`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'PDF 저장 실패');
+      setError(err instanceof Error ? err.message : 'PDF 저장에 실패했어요.');
     }
   }, [tab, meta, viewingMeta, tr]);
 
@@ -233,143 +240,119 @@ export default function AIReportView({
     if (!sourceReport || !sourceMeta) return;
 
     const text = `${sourceMeta.studentName} ${tr('수업 리포트')}\n\n${sourceReport.highlight}\n\n- ${tr('스포키듀 AI 리포트')}`;
-
-    // 카카오 SDK를 제거했으므로, 버튼 동작은 동일 텍스트를 클립보드에 복사하는 것으로 대체합니다.
     void (async () => {
       try {
         await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
       } catch {
-        setError('복사 실패 — 수동으로 선택해 복사해주세요.');
+        setError('공유 문구 복사에 실패했어요. 내용을 직접 선택해 복사해 주세요.');
       }
     })();
-  }, [tab, report, meta, viewingReport, viewingMeta, setError, tr]);
+  }, [tab, report, meta, viewingReport, viewingMeta, tr]);
 
   const canGenerate = !!selectedStudent && !loading && !isBlocked && !isLimitReached;
 
   return (
-    <section className="min-h-screen px-4 sm:px-6 lg:px-10 py-8 pb-28">
-      <div className="max-w-6xl mx-auto">
-
-        {/* ── Page Header ── */}
+    <section className="min-h-screen px-4 py-8 pb-28 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-6xl">
         <header className="mb-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-violet-600/20 border border-violet-500/30 rounded-2xl flex items-center justify-center shrink-0">
-              <Bot className="w-5 h-5 text-violet-400" />
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-600/20">
+                <Bot className="h-5 w-5 text-violet-400" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black leading-none tracking-tight text-white sm:text-3xl">
+                  {tr('에듀-에코 AI 리포트')}
+                </h1>
+                <p className="mt-1 text-sm text-slate-500">
+                  {tr('수업 메모와 신체 데이터를 학부모용 성장 리포트로 정리합니다.')}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
-                {tr('에듀-에코 AI 리포트')}
-              </h1>
-              <p className="text-slate-500 text-sm mt-0.5">{tr('Gemini 기반 학부모 연계 리포트 자동 생성')}</p>
-            </div>
+            {!isBlocked && monthlyLimit !== null ? (
+              <SubscriberBadge tone={isLimitReached ? 'amber' : 'violet'}>
+                {tr('이번 달')} {usage.aiReportThisMonth} / {monthlyLimit}
+              </SubscriberBadge>
+            ) : null}
           </div>
 
-          {/* 플랜 제한 배너 */}
-          {isBlocked && (
-            <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sm">
-              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-amber-300 font-semibold">{tr('AI 리포트는 Basic 이상 플랜에서 사용 가능합니다.')}</p>
-                <p className="text-amber-400/70 text-xs mt-0.5">{tr('설정 → 플랜 업그레이드 또는 운영팀에 문의해 주세요.')}</p>
-              </div>
-            </div>
-          )}
-          {!isBlocked && !isLimitReached && usage.aiReportThisMonth >= 18 && monthlyLimit !== null && (
-            <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sm">
-              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-amber-300 font-semibold">{tr('이번 달 AI 리포트를 18회 사용했습니다. 2회 남았어요.')}</p>
-                <p className="text-amber-400/70 text-xs mt-0.5">{tr('Pro 업그레이드 시 무제한 생성 가능합니다.')}</p>
-              </div>
-            </div>
-          )}
-          {!isBlocked && isLimitReached && (
-            <div className="flex items-start gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-red-300 font-semibold">{tr(`이번 달 AI 리포트 한도(${monthlyLimit}회)를 모두 사용했습니다.`)}</p>
-                <p className="text-red-400/70 text-xs mt-0.5">{tr('Pro 플랜 업그레이드 시 무제한으로 사용할 수 있습니다.')}</p>
-              </div>
-            </div>
-          )}
-          {!isBlocked && !isLimitReached && monthlyLimit !== null && (
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Bot className="w-3.5 h-3.5" />
-              {tr('이번 달 사용:')} <span className="text-slate-300 font-bold">{usage.aiReportThisMonth} / {monthlyLimit}{tr('회')}</span>
-            </div>
-          )}
+          {isBlocked ? (
+            <StatusBanner
+              tone="amber"
+              title={tr('AI 리포트는 Basic 이상 플랜에서 사용할 수 있습니다.')}
+              description={tr('설정에서 플랜을 업그레이드하거나 운영자에게 문의해 주세요.')}
+            />
+          ) : null}
+          {!isBlocked && !isLimitReached && monthlyLimit !== null && remainingReports !== null && remainingReports <= 2 ? (
+            <StatusBanner
+              tone="amber"
+              title={tr(`이번 달 AI 리포트가 ${remainingReports}회 남았어요.`)}
+              description={tr('필요하면 Pro 플랜에서 더 여유롭게 사용할 수 있습니다.')}
+            />
+          ) : null}
+          {!isBlocked && isLimitReached ? (
+            <StatusBanner
+              tone="red"
+              title={tr(`이번 달 AI 리포트 한도(${monthlyLimit}회)를 모두 사용했습니다.`)}
+              description={tr('다음 달에 다시 생성하거나 플랜 업그레이드를 검토해 주세요.')}
+            />
+          ) : null}
 
-          {/* 탭: 새 리포트 / 이전 리포트 보기 */}
-          <div className="flex gap-2 mt-4 p-1 bg-white/5 border border-white/10 rounded-xl w-fit">
-            <button
-              type="button"
-              onClick={() => setTab('create')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === 'create' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'text-slate-400 hover:text-white'}`}
-            >
-              <Sparkles className="w-4 h-4" />
-              {tr('새 리포트 만들기')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab('history')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === 'history' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'text-slate-400 hover:text-white'}`}
-            >
-              <History className="w-4 h-4" />
-              {tr('이전 리포트 보기')}
-            </button>
+          <div className="mt-4 flex w-fit gap-2 rounded-xl border border-white/10 bg-white/5 p-1">
+            <TabButton active={tab === 'create'} icon={Sparkles} label={tr('새 리포트 만들기')} onClick={() => setTab('create')} />
+            <TabButton active={tab === 'history'} icon={History} label={tr('이전 리포트 보기')} onClick={() => setTab('history')} />
           </div>
         </header>
 
-        {/* ── Main Layout ── */}
-        <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] lg:grid-cols-[400px_1fr] gap-5">
-
-          {/* ── LEFT: Form Panel or History List ── */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-[340px_1fr] lg:grid-cols-[400px_1fr]">
           <div className="space-y-4">
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 space-y-5">
-
-              {/* 수강생 선택 (공통) */}
+            <div className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
               <div className="space-y-2">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-widest">
-                  <User className="w-3.5 h-3.5" /> {tr('수강생 선택')}
+                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-slate-400">
+                  <User className="h-3.5 w-3.5" /> {tr('학생 선택')}
                 </label>
                 {students.length === 0 ? (
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
-                    <p className="text-amber-400 text-xs font-medium">
-                      {tr('수강생 데이터가 없습니다. 출석부에서 먼저 원생을 등록해 주세요.')}
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+                    <p className="text-xs font-medium text-amber-400">
+                      {tr('학생 데이터가 없습니다. 출석부에서 먼저 학생을 등록해 주세요.')}
                     </p>
                   </div>
                 ) : (
                   <div className="relative">
                     <select
                       value={selectedStudentId}
-                      onChange={(e) => setSelectedStudentId(e.target.value)}
-                      className="w-full appearance-none bg-white/5 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/30 font-medium text-sm transition-all cursor-pointer"
+                      onChange={(event) => setSelectedStudentId(event.target.value)}
+                      className="w-full cursor-pointer appearance-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-400/30"
                     >
-                      <option value="" className={OPTION_DARK_CLASS}>{tr('— 학생을 선택하세요 —')}</option>
-                      {students.map((s) => (
-                        <option key={s.id} value={s.id} className={OPTION_DARK_CLASS}>
-                          {s.name} ({s.classGroup})
+                      <option value="" className={OPTION_DARK_CLASS}>
+                        {tr('학생을 선택하세요')}
+                      </option>
+                      {students.map((student) => (
+                        <option key={student.id} value={student.id} className={OPTION_DARK_CLASS}>
+                          {student.name} ({student.classGroup})
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   </div>
                 )}
               </div>
 
-              {tab === 'history' && (
+              {tab === 'history' ? (
                 <ReportHistoryPanel
                   historyReports={historyReports}
                   historyLoading={historyLoading}
                   historyLoadError={historyLoadError}
-                  onRetry={() => setHistoryRetryKey((k) => k + 1)}
+                  onRetry={() => setHistoryRetryKey((key) => key + 1)}
                   selectedHistoryReport={selectedHistoryReport}
                   onSelectReport={setSelectedHistoryReport}
                   selectedStudentId={selectedStudentId}
                 />
-              )}
+              ) : null}
 
-              {tab === 'create' && (
+              {tab === 'create' ? (
                 <AIReportForm
                   selectedStudent={selectedStudent}
                   sessionNotes={sessionNotes}
@@ -384,97 +367,65 @@ export default function AIReportView({
                   loading={loading}
                   canGenerate={canGenerate}
                 />
-              )}
+              ) : null}
             </div>
           </div>
 
-          {/* ── RIGHT: Preview Panel ── */}
-          <div
-            ref={reportRef}
-            className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 min-h-[400px] flex flex-col"
-          >
-            {error && (
-              <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4">
-                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+          <div ref={reportRef} className="flex min-h-[400px] flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            {error ? (
+              <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
+                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
                 <div>
-                  <p className="text-red-300 font-semibold text-sm">{tr('생성 실패')}</p>
-                  <p className="text-red-400/70 text-xs mt-0.5">{tr(error)}</p>
+                  <p className="text-sm font-semibold text-red-300">{tr('생성 실패')}</p>
+                  <p className="mt-0.5 text-xs text-red-400/70">{tr(error)}</p>
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {loading && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12">
-                <div className="w-16 h-16 bg-violet-600/10 border border-violet-500/20 rounded-3xl flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+            {loading ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12">
+                <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-violet-500/20 bg-violet-600/10">
+                  <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
                 </div>
                 <div className="text-center">
-                  <p className="text-white font-bold">{tr('Gemini가 분석 중입니다')}</p>
-                  <p className="text-slate-500 text-sm mt-1">{tr('신체 데이터와 수업 메모를 기반으로 리포트를 작성하고 있어요.')}</p>
+                  <p className="font-bold text-white">{tr('Gemini가 분석 중입니다')}</p>
+                  <p className="mt-1 text-sm text-slate-500">{tr('신체 데이터와 수업 메모를 기반으로 리포트를 작성하고 있어요.')}</p>
                 </div>
-                <div className="flex gap-1.5 mt-2 flex-wrap justify-center">
-                  {['수업 분석', '성장 포인트 도출', '가정 활동 추천'].map((step) => (
-                    <span
-                      key={step}
-                      className="px-2 py-1 bg-white/5 border border-white/10 text-slate-500 text-xs rounded-lg"
-                    >
-                      {tr(step)}
-                    </span>
+                <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+                  {['수업 분석', '성장 포인트 추출', '가정 연계 활동 추천'].map((step) => (
+                    <SubscriberBadge key={step}>{tr(step)}</SubscriberBadge>
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {!loading && !report && !error && tab === 'create' && <EmptyState />}
+            {!loading && !report && !error && tab === 'create' ? <EmptyState /> : null}
 
-            {tab === 'history' && !selectedHistoryReport && selectedStudentId && !historyLoading && (
-              <div className="flex-1 flex flex-col items-center justify-center py-16 text-center px-6">
-                <History className="w-16 h-16 text-slate-600 mb-4" />
-                <p className="text-slate-500 text-sm">{tr('목록에서 볼 리포트를 선택하세요.')}</p>
+            {tab === 'history' && !selectedHistoryReport && selectedStudentId && !historyLoading ? (
+              <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+                <History className="mb-4 h-16 w-16 text-slate-600" />
+                <p className="text-sm text-slate-500">{tr('목록에서 볼 리포트를 선택하세요.')}</p>
               </div>
-            )}
+            ) : null}
 
-            {tab === 'history' && selectedHistoryReport && (() => {
-              try {
-                const parsed = JSON.parse(selectedHistoryReport.content) as { report?: ReportData; meta?: ReportMeta };
-                const histReport = parsed.report;
-                const histMeta = parsed.meta;
-                if (!histReport || !histMeta) return null;
-                const dummyStudent: Student = {
-                  id: '',
-                  name: histMeta.studentName,
-                  classGroup: histMeta.classGroup ?? '',
-                  status: 'present',
-                  physical: { coordination: 2, agility: 2, endurance: 2, balance: 2, strength: 2 },
-                };
-                return (
-                  <ReportCard
-                    report={histReport}
-                    meta={histMeta}
-                    onCopy={handleCopy}
-                    onReset={() => setSelectedHistoryReport(null)}
-                    onDownloadPdf={handleDownloadPdf}
-                    onKakaoShare={handleKakaoShare}
-                    copied={copied}
-                    student={dummyStudent}
-                    showRadar={false}
-                    readOnly
-                  />
-                );
-              } catch {
-                return (
-                  <div className="text-slate-500 text-sm p-4">{tr('리포트를 불러올 수 없습니다.')}</div>
-                );
-              }
-            })()}
+            {tab === 'history' && selectedHistoryReport ? (
+              <HistoryReportPreview
+                selectedHistoryReport={selectedHistoryReport}
+                onCopy={handleCopy}
+                onReset={() => setSelectedHistoryReport(null)}
+                onDownloadPdf={handleDownloadPdf}
+                onKakaoShare={handleKakaoShare}
+                copied={copied}
+              />
+            ) : null}
 
-            {!loading && report && meta && selectedStudent && tab === 'create' && (
+            {!loading && report && meta && selectedStudent && tab === 'create' ? (
               <>
-                {savedToHistory === false && (
-                  <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sm text-amber-200">
-                    {tr('이전 리포트 목록에 저장되지 않았을 수 있습니다. 복사·PDF로 보관해 주세요.')}
+                {savedToHistory === false ? (
+                  <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-200">
+                    {tr('이전 리포트 목록에 저장되지 않았을 수 있습니다. 복사 또는 PDF로 보관해 주세요.')}
                   </div>
-                )}
+                ) : null}
                 <ReportCard
                   report={report}
                   meta={meta}
@@ -486,10 +437,108 @@ export default function AIReportView({
                   student={selectedStudent}
                 />
               </>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function TabButton({
+  active,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: typeof Sparkles;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-all ${
+        active ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'text-slate-400 hover:text-white'
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
+  );
+}
+
+function StatusBanner({ tone, title, description }: { tone: 'amber' | 'red'; title: string; description: string }) {
+  const toneClass =
+    tone === 'red'
+      ? 'border-red-500/20 bg-red-500/10 text-red-300'
+      : 'border-amber-500/20 bg-amber-500/10 text-amber-300';
+  const detailClass = tone === 'red' ? 'text-red-400/70' : 'text-amber-400/70';
+
+  return (
+    <div className={`mb-3 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${toneClass}`}>
+      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+      <div>
+        <p className="font-semibold">{title}</p>
+        <p className={`mt-0.5 text-xs ${detailClass}`}>{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function HistoryReportPreview({
+  selectedHistoryReport,
+  onCopy,
+  onReset,
+  onDownloadPdf,
+  onKakaoShare,
+  copied,
+}: {
+  selectedHistoryReport: HistoryReportItem;
+  onCopy: () => void;
+  onReset: () => void;
+  onDownloadPdf: () => void;
+  onKakaoShare: () => void;
+  copied: boolean;
+}) {
+  const tr = useTranslator();
+  let parsedReport: { report: ReportData; meta: ReportMeta } | null = null;
+
+  try {
+    const parsed = JSON.parse(selectedHistoryReport.content) as { report?: ReportData; meta?: ReportMeta };
+    const historyReport = parsed.report;
+    const historyMeta = parsed.meta;
+    if (historyReport && historyMeta) parsedReport = { report: historyReport, meta: historyMeta };
+  } catch {
+    parsedReport = null;
+  }
+
+  if (!parsedReport) {
+    return <div className="p-4 text-sm text-slate-500">{tr('리포트를 불러올 수 없습니다.')}</div>;
+  }
+
+  const dummyStudent: Student = {
+    id: '',
+    name: parsedReport.meta.studentName,
+    classGroup: parsedReport.meta.classGroup ?? '',
+    status: 'present',
+    physical: { coordination: 2, agility: 2, endurance: 2, balance: 2, strength: 2 },
+  };
+
+  return (
+    <ReportCard
+      report={parsedReport.report}
+      meta={parsedReport.meta}
+      onCopy={onCopy}
+      onReset={onReset}
+      onDownloadPdf={onDownloadPdf}
+      onKakaoShare={onKakaoShare}
+      copied={copied}
+      student={dummyStudent}
+      showRadar={false}
+      readOnly
+    />
   );
 }

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
-import { Calendar, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { BarChart3, BookOpen, Calendar, MessageSquare, Pin, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // --- Interfaces ---
@@ -32,6 +33,37 @@ interface PostponeNotice {
 interface Teacher {
   id: string;
   name: string;
+}
+
+interface NoticePreview {
+  id: number;
+  title: string;
+  category: string;
+  is_pinned: boolean;
+  created_at: string;
+}
+
+interface ConsultSummary {
+  pendingCount: number;
+  latestPending: {
+    parent_name: string;
+    child_age: string | null;
+    consult_type: string;
+    created_at: string;
+  } | null;
+}
+
+interface SessionRow {
+  id: string;
+  start_at: string;
+  end_at: string;
+  title?: string;
+  status?: string;
+  round_display?: string;
+  round_index?: number;
+  round_total?: number;
+  group_id?: string | null;
+  users?: { name?: string };
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -150,6 +182,8 @@ export default function SpokeduHQDashboard() {
   const [postponeNotices, setPostponeNotices] = useState<PostponeNotice[]>([]);
   const [postponeTotal, setPostponeTotal] = useState(0);
   const [postponeLoading, setPostponeLoading] = useState(true);
+  const [upcomingPostponedClasses, setUpcomingPostponedClasses] = useState<IClassSession[]>([]);
+  const [upcomingPostponedLoading, setUpcomingPostponedLoading] = useState(true);
   const [isPostponeModalOpen, setIsPostponeModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
@@ -158,6 +192,12 @@ export default function SpokeduHQDashboard() {
   const [isSubmittingNotice, setIsSubmittingNotice] = useState(false);
   const [noticeError, setNoticeError] = useState('');
   const [deletingNoticeId, setDeletingNoticeId] = useState<string | null>(null);
+  const [noticePreviews, setNoticePreviews] = useState<NoticePreview[]>([]);
+  const [noticePreviewLoading, setNoticePreviewLoading] = useState(true);
+  const [consultSummary, setConsultSummary] = useState<ConsultSummary | null>(null);
+  const [consultSummaryLoading, setConsultSummaryLoading] = useState(true);
+  const [moveReportCount, setMoveReportCount] = useState<number | null>(null);
+  const [moveReportLoading, setMoveReportLoading] = useState(true);
 
   const fetchPostponeNotices = useCallback(async () => {
     setPostponeLoading(true);
@@ -179,6 +219,7 @@ export default function SpokeduHQDashboard() {
   const fetchData = useCallback(async () => {
     if (!supabaseUrl || !supabase) return;
     setLoading(true);
+    setUpcomingPostponedLoading(true);
     setFetchError(null);
     try {
       const now = new Date();
@@ -194,24 +235,30 @@ export default function SpokeduHQDashboard() {
 
       if (classesRes.error) throw classesRes.error;
 
-      const rawClasses = classesRes.data || [];
+      const upcomingPostponedRes = await supabase
+        .from('sessions')
+        .select('*, users:created_by(id, name)')
+        .eq('status', 'postponed')
+        .gte('start_at', startOfDay)
+        .order('start_at', { ascending: true })
+        .limit(8);
+
+      if (upcomingPostponedRes.error) throw upcomingPostponedRes.error;
+
+      const rawClasses = (classesRes.data || []) as SessionRow[];
+      const rawUpcomingPostponedClasses = (upcomingPostponedRes.data || []) as SessionRow[];
 
       const groupPlannedTotals = buildGroupPlannedTotals(
-        rawClasses as {
-          group_id?: string | null;
-          status?: string | null;
-          round_total?: number | null;
-          round_index?: number | null;
-        }[]
+        rawClasses
       );
+      const upcomingPostponedGroupPlannedTotals = buildGroupPlannedTotals(rawUpcomingPostponedClasses);
 
-      const formattedClasses = rawClasses
-        .map((c: { id: string; start_at: string; end_at: string; title?: string; status?: string; round_display?: string; round_index?: number; round_total?: number; users?: { name?: string } }) => {
+      const formatSession = (c: SessionRow, totals: Record<string, number | undefined>) => {
           const endTime = new Date(c.end_at);
           const isPostponed = c.status === 'postponed';
           const isCancelled = c.status === 'cancelled';
           const total =
-            ((c as any).group_id ? groupPlannedTotals[String((c as any).group_id)] : undefined) ?? c.round_total;
+            (c.group_id ? totals[String(c.group_id)] : undefined) ?? c.round_total;
           const roundIndex = typeof c.round_index === 'number' ? c.round_index : undefined;
           const roundDisplay =
             typeof roundIndex === 'number' && Number.isFinite(roundIndex) && typeof total === 'number' && Number.isFinite(total) && total > 0
@@ -230,7 +277,10 @@ export default function SpokeduHQDashboard() {
             status: c.status,
             roundDisplay,
           };
-        })
+        };
+
+      const formattedClasses = rawClasses
+        .map((c) => formatSession(c, groupPlannedTotals))
         .sort((a: IClassSession, b: IClassSession) => {
           const timeA = new Date(a.startAt).getTime();
           const timeB = new Date(b.startAt).getTime();
@@ -240,20 +290,84 @@ export default function SpokeduHQDashboard() {
           return 0;
         });
 
+      const formattedUpcomingPostponedClasses = rawUpcomingPostponedClasses
+        .map((c) => formatSession(c, upcomingPostponedGroupPlannedTotals));
+
       setTodayClasses(formattedClasses);
+      setUpcomingPostponedClasses(formattedUpcomingPostponedClasses);
       setFetchError(null);
     } catch (err) {
       devLogger.error('Fetch Error:', err);
       setFetchError(err instanceof Error ? err.message : '데이터를 불러올 수 없습니다.');
     } finally {
       setLoading(false);
+      setUpcomingPostponedLoading(false);
     }
   }, [supabase]);
+
+  const fetchMoveReportMetric = useCallback(async () => {
+    setMoveReportLoading(true);
+    try {
+      const res = await fetch('/api/admin/move-report/submissions', { credentials: 'include' });
+      const json = (await res.json()) as { ok?: boolean; submissions?: unknown[] };
+      setMoveReportCount(json.ok ? json.submissions?.length ?? 0 : null);
+    } catch (err) {
+      devLogger.error('Move report metric fetch error:', err);
+      setMoveReportCount(null);
+    } finally {
+      setMoveReportLoading(false);
+    }
+  }, []);
+
+  const fetchNoticePreviews = useCallback(async () => {
+    if (!supabase) return;
+    setNoticePreviewLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('notices')
+        .select('id, title, category, is_pinned, created_at')
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setNoticePreviews((data as NoticePreview[]) ?? []);
+    } catch (err) {
+      devLogger.error('[dashboard] notice previews fetch error:', err);
+      setNoticePreviews([]);
+    } finally {
+      setNoticePreviewLoading(false);
+    }
+  }, [supabase]);
+
+  const fetchConsultSummary = useCallback(async () => {
+    setConsultSummaryLoading(true);
+    try {
+      const res = await fetch('/api/admin/consult/summary', { credentials: 'include' });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        pendingCount?: number;
+        latestPending?: ConsultSummary['latestPending'];
+      };
+      setConsultSummary(json.ok ? {
+        pendingCount: typeof json.pendingCount === 'number' ? json.pendingCount : 0,
+        latestPending: json.latestPending ?? null,
+      } : null);
+    } catch (err) {
+      devLogger.error('[dashboard] consult summary fetch error:', err);
+      setConsultSummary(null);
+    } finally {
+      setConsultSummaryLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchData();
     fetchPostponeNotices();
-  }, [fetchData, fetchPostponeNotices]);
+    fetchMoveReportMetric();
+    fetchNoticePreviews();
+    fetchConsultSummary();
+  }, [fetchData, fetchPostponeNotices, fetchMoveReportMetric, fetchNoticePreviews, fetchConsultSummary]);
 
   const openPostponeModal = async () => {
     setSelectedDate('');
@@ -336,6 +450,16 @@ export default function SpokeduHQDashboard() {
     return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
   };
 
+  const getClassDateDisplay = (startAt: string) => {
+    const date = new Date(startAt);
+    return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' });
+  };
+
+  const pinnedNoticePreviews = noticePreviews.filter((notice) => notice.is_pinned);
+  const latestNoticePreviews = [...noticePreviews]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 3);
+
   const isNoticeUrgent = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
     const today = new Date();
@@ -397,7 +521,7 @@ export default function SpokeduHQDashboard() {
           </div>
           <div className="flex gap-2 sm:gap-3">
             <button
-              onClick={() => { fetchData(); fetchPostponeNotices(); }}
+              onClick={() => { fetchData(); fetchPostponeNotices(); fetchMoveReportMetric(); fetchNoticePreviews(); fetchConsultSummary(); }}
               className="min-h-[44px] min-w-[44px] p-3 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all cursor-pointer group touch-manipulation flex items-center justify-center"
               aria-label="새로고침"
             >
@@ -406,8 +530,8 @@ export default function SpokeduHQDashboard() {
           </div>
         </header>
 
-        {/* 1+3. Today Sessions / 수업 연기 알림 — 데스크탑 2열, 모바일 세로 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 w-full min-w-0">
+        {/* Today Sessions / 수업 연기 알림 / MOVE 리포트 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-8 w-full min-w-0">
 
           {/* 1. Today's Sessions */}
           <section className="min-w-0">
@@ -448,6 +572,173 @@ export default function SpokeduHQDashboard() {
                 </div>
               )) : <p className="py-4 text-[11px] text-slate-300 italic">No classes scheduled.</p>}
             </div>
+
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Pin className="h-3.5 w-3.5 text-rose-400" />
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">공지</h3>
+                </div>
+                <Link href="/admin/notice" className="text-[10px] font-semibold text-slate-400 hover:text-slate-700">
+                  전체 보기
+                </Link>
+              </div>
+              {noticePreviewLoading ? (
+                <div className="flex items-center justify-center py-5">
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-300" />
+                </div>
+              ) : pinnedNoticePreviews.length === 0 && latestNoticePreviews.length === 0 ? (
+                <p className="py-3 text-center text-[11px] text-slate-400 italic">등록된 공지 없음</p>
+              ) : (
+                <div className="space-y-3">
+                  {pinnedNoticePreviews.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">고정 · 필독</p>
+                      {pinnedNoticePreviews.map((notice) => (
+                        <Link
+                          key={notice.id}
+                          href="/admin/notice"
+                          className="flex items-center justify-between gap-2 rounded-lg border border-rose-100 bg-white px-3 py-2 hover:bg-rose-50/50"
+                        >
+                          <span className="min-w-0 truncate text-xs font-bold text-slate-800">{notice.title}</span>
+                          <Pin className="h-3 w-3 shrink-0 fill-rose-500 text-rose-500" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {latestNoticePreviews.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">최신 공지</p>
+                      {latestNoticePreviews.map((notice) => (
+                        <Link
+                          key={notice.id}
+                          href="/admin/notice"
+                          className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 hover:bg-slate-100"
+                        >
+                          <span className="min-w-0 truncate text-xs font-bold text-slate-700">{notice.title}</span>
+                          <span className="shrink-0 text-[9px] font-medium text-slate-400">
+                            {new Date(notice.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* MOVE 리포트 */}
+          <section className="min-w-0">
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare size={14} className="text-emerald-500 shrink-0" />
+                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">상담 신청</h2>
+                {typeof consultSummary?.pendingCount === 'number' && consultSummary.pendingCount > 0 && (
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-black text-white">
+                    +{consultSummary.pendingCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] text-slate-400">미처리 상담</span>
+            </div>
+            <Link
+              href="/admin/consult"
+              className="group mb-4 block rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-sm cursor-pointer"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-emerald-700">상담 신청 관리</p>
+                  <p className="mt-1 text-[11px] text-slate-500">새 상담 요청과 처리 상태를 확인합니다.</p>
+                </div>
+                <div className="rounded-xl bg-white p-2 text-emerald-600 shadow-sm">
+                  <MessageSquare className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-6">
+                {consultSummaryLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    불러오는 중
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-3xl font-black tracking-tight text-slate-900">
+                      {consultSummary?.pendingCount?.toLocaleString() ?? '-'}
+                    </p>
+                    <p className="mt-1 text-[11px] font-medium text-slate-400">미처리 상담 수</p>
+                    {consultSummary?.latestPending && (
+                      <p className="mt-3 truncate text-[11px] text-emerald-700">
+                        최근: {consultSummary.latestPending.parent_name}
+                        {consultSummary.latestPending.child_age ? ` · ${consultSummary.latestPending.child_age}` : ''}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+              <p className="mt-5 text-[11px] font-semibold text-emerald-700 transition-colors group-hover:text-emerald-800">
+                상담 신청 열기
+              </p>
+            </Link>
+
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
+              <div className="flex items-center gap-2">
+                <BarChart3 size={14} className="text-blue-400 shrink-0" />
+                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MOVE 리포트</h2>
+              </div>
+              <span className="text-[10px] text-slate-400">최근 제출</span>
+            </div>
+            <Link
+              href="/admin/move-report"
+              className="group block rounded-xl border border-blue-100 bg-blue-50/60 p-4 transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:shadow-sm cursor-pointer"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-blue-600">MOVE 리포트 관리</p>
+                  <p className="mt-1 text-[11px] text-slate-500">결과 제출과 퍼널 지표를 확인합니다.</p>
+                </div>
+                <div className="rounded-xl bg-white p-2 text-blue-600 shadow-sm">
+                  <BarChart3 className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-6">
+                {moveReportLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    불러오는 중
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-3xl font-black tracking-tight text-slate-900">
+                      {moveReportCount === null ? '-' : moveReportCount.toLocaleString()}
+                    </p>
+                    <p className="mt-1 text-[11px] font-medium text-slate-400">최근 제출 수</p>
+                  </>
+                )}
+              </div>
+              <p className="mt-5 text-[11px] font-semibold text-blue-600 transition-colors group-hover:text-blue-700">
+                리포트 대시보드 열기
+              </p>
+            </Link>
+
+            <Link
+              href="/admin/info-pages"
+              className="group mt-3 block rounded-xl border border-slate-200 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm cursor-pointer"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">안내 페이지</p>
+                  <p className="mt-1 text-[11px] text-slate-500">외부 안내용 페이지를 관리합니다.</p>
+                </div>
+                <div className="rounded-xl bg-slate-100 p-2 text-slate-600">
+                  <BookOpen className="h-4 w-4" />
+                </div>
+              </div>
+              <p className="mt-5 text-[11px] font-semibold text-slate-600 transition-colors group-hover:text-slate-900">
+                안내 페이지 관리 열기
+              </p>
+            </Link>
           </section>
 
           {/* 3. 수업 연기 알림 */}
@@ -508,6 +799,43 @@ export default function SpokeduHQDashboard() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3 rounded-xl border border-purple-100 bg-purple-50/50 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="text-[10px] font-black text-purple-500 uppercase tracking-widest">휴강 알림</h3>
+                <span className="text-[10px] text-purple-400">{upcomingPostponedClasses.length}건</span>
+              </div>
+              {upcomingPostponedLoading ? (
+                <div className="flex items-center justify-center py-5">
+                  <Loader2 className="h-4 w-4 animate-spin text-purple-300" />
+                </div>
+              ) : upcomingPostponedClasses.length === 0 ? (
+                <p className="py-3 text-center text-[11px] text-purple-300 italic">오늘 이후 휴강 수업 없음</p>
+              ) : (
+                <div className="space-y-2">
+                  {upcomingPostponedClasses.map((cls) => (
+                    <div key={cls.id} className="rounded-lg border border-purple-100 bg-white/80 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold text-purple-600 shrink-0">
+                          {getClassDateDisplay(cls.startAt)}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 shrink-0">
+                          {cls.time}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <p className="min-w-0 truncate text-xs font-bold text-slate-800">
+                          {(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}
+                        </p>
+                        <span className="shrink-0 text-[9px] font-bold text-slate-400">
+                          {cls.teacher}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

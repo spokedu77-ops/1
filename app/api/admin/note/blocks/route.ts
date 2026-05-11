@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
         : (body.parentBlockId === null || body.parent_block_id === null ? null : undefined));
     const type = typeof body.type === 'string' ? body.type : 'text';
     const content = body.content ?? {};
+    const requestedOrderIndex = typeof body.order_index === 'number' ? body.order_index : null;
 
     if (!documentId) {
       return NextResponse.json({ error: 'documentId required' }, { status: 400 });
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: minError.message }, { status: 500 });
     }
 
-    const nextOrderIndex = typeof minRow?.order_index === 'number' ? minRow.order_index - 1 : 0;
+    const nextOrderIndex = requestedOrderIndex ?? (typeof minRow?.order_index === 'number' ? minRow.order_index - 1 : 0);
     const now = new Date().toISOString();
 
     const { data, error } = await supabase

@@ -7,13 +7,11 @@ export default function ToneChip({
   value,
   current,
   label,
-  emoji,
   onClick,
 }: {
   value: Tone;
   current: Tone;
   label: string;
-  emoji: string;
   onClick: () => void;
 }) {
   const t = useTranslator();
@@ -22,13 +20,12 @@ export default function ToneChip({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+      className={`flex-1 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all ${
         active
-          ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20'
-          : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-300'
+          ? 'border-violet-500 bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+          : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20 hover:text-slate-300'
       }`}
     >
-      <span className="mr-1">{emoji}</span>
       {t(label)}
     </button>
   );

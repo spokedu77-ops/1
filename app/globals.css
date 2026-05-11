@@ -2,6 +2,27 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+:root {
+  --spm-bg: #07070c;
+  --spm-s1: #0d0d14;
+  --spm-s2: #111119;
+  --spm-s3: #18181f;
+  --spm-s4: #222230;
+  --spm-t: #f2f2ff;
+  --spm-t2: #7a7a99;
+  --spm-t3: #3a3a55;
+  --spm-acc: #6366f1;
+  --spm-acc-glow: rgba(99, 102, 241, 0.25);
+  --spm-grn: #10b981;
+  --spm-amb: #f59e0b;
+  --spm-red: #f43f5e;
+  --spm-br: rgba(255, 255, 255, 0.055);
+  --spm-br2: rgba(255, 255, 255, 0.09);
+  --spm-br3: rgba(255, 255, 255, 0.14);
+  --spm-font-body: var(--font-plus-jakarta), system-ui, sans-serif;
+  --spm-font-display: var(--font-space-grotesk), system-ui, sans-serif;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

@@ -7,7 +7,6 @@ import {
   THEME_LABELS,
   ROW1_ROLES,
   PROGRAM_BANK,
-  getProgramTitle,
   DEFAULT_DASHBOARD_V4,
   mergePublishedDashboardV4,
   type DashboardV4,

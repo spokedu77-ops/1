@@ -2,8 +2,9 @@
 
 import { useTranslator } from '@/app/providers/I18nProvider';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Library, Bell, ClipboardCheck, Sparkles, UserPlus } from 'lucide-react';
+import { Bell, ChevronDown, ClipboardCheck, Library, Sparkles, UserPlus } from 'lucide-react';
 import type { ThemeKey } from '@/app/lib/spokedu-pro/dashboardDefaults';
+import { SubscriberButton } from '../../components/SubscriberWorkspacePrimitives';
 import { useClassStore } from '../../hooks/useClassStore';
 import {
   readTodayClassState,
@@ -48,9 +49,7 @@ export default function TodayClassCard({
 
   const selectedClass = useMemo(() => {
     if (!classes.length) return null;
-    const byId = persisted.selectedClassId
-      ? classes.find((c) => c.id === persisted.selectedClassId)
-      : null;
+    const byId = persisted.selectedClassId ? classes.find((item) => item.id === persisted.selectedClassId) : null;
     return byId ?? classes[0];
   }, [classes, persisted.selectedClassId]);
 
@@ -64,47 +63,40 @@ export default function TodayClassCard({
 
   const dateLabel = useMemo(() => {
     const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
     const day = now.getDate();
-    const wd = WEEKDAYS[now.getDay()];
-    return t(`${y}년 ${m}월 ${day}일 ${wd}`);
+    const weekday = WEEKDAYS[now.getDay()];
+    return t(`${year}년 ${month}월 ${day}일 ${weekday}`);
   }, [t]);
 
   const filledBars = phase === 'idle' ? 0 : phase === 'ready' ? 1 : phase === 'in-progress' ? 2 : 3;
 
   if (!loaded) {
-    return (
-      <div className="sp-pro-today-card min-h-[140px] animate-pulse rounded-[var(--sp-ott-radius-2xl,2rem)] p-6" />
-    );
+    return <div className="sp-pro-today-card min-h-[140px] animate-pulse rounded-[var(--sp-ott-radius-2xl,2rem)] p-6" />;
   }
 
   if (classes.length === 0) {
     return (
       <div className={`sp-pro-today-card rounded-[var(--sp-ott-radius-2xl,2rem)] p-5 md:p-6 ${CARD_SPACING}`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-slate-400 text-sm font-bold">{dateLabel}</p>
+          <p className="text-sm font-bold text-slate-400">{dateLabel}</p>
         </div>
         <h3 className="text-xl font-black text-white">{t('오늘 수업 없음')}</h3>
-        <p className="text-slate-400 text-sm">{t('등록된 반이 없어요. 반을 추가하면 오늘의 수업 카드를 쓸 수 있어요.')}</p>
-        <button
-          type="button"
-          onClick={onAddClass}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold bg-sky-600 hover:bg-sky-500 text-white transition-colors"
-        >
-          <UserPlus className="w-5 h-5" />
+        <p className="text-sm text-slate-400">{t('등록된 반이 없어요. 반을 추가하면 오늘 수업 카드를 만들 수 있습니다.')}</p>
+        <SubscriberButton tone="sky" icon={<UserPlus className="h-5 w-5" />} onClick={onAddClass}>
           {t('반 추가하기')}
-        </button>
+        </SubscriberButton>
       </div>
     );
   }
 
   return (
     <div className={`sp-pro-today-card rounded-[var(--sp-ott-radius-2xl,2rem)] p-5 md:p-6 ${CARD_SPACING}`}>
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-slate-400 text-xs md:text-[13px] lg:text-sm font-bold">{dateLabel}</p>
-          <h3 className="text-base md:text-[1.02rem] lg:text-lg font-black text-white mt-1">{t('오늘의 수업')}</h3>
+          <p className="text-xs font-bold text-slate-400 md:text-[13px] lg:text-sm">{dateLabel}</p>
+          <h3 className="mt-1 text-base font-black text-white md:text-[1.02rem] lg:text-lg">{t('오늘의 수업')}</h3>
         </div>
         <div className="relative min-w-[160px]">
           <label className="sr-only" htmlFor="today-class-select">
@@ -113,43 +105,39 @@ export default function TodayClassCard({
           <select
             id="today-class-select"
             value={selectedClass?.id ?? ''}
-            onChange={(e) => updatePersisted({ selectedClassId: e.target.value || null })}
-            className="w-full appearance-none bg-slate-900 border border-slate-600 rounded-xl pl-4 pr-10 py-2.5 text-white text-xs md:text-[13px] lg:text-sm font-bold focus:outline-none focus:border-amber-500/60"
+            onChange={(event) => updatePersisted({ selectedClassId: event.target.value || null })}
+            className="w-full appearance-none rounded-xl border border-slate-600 bg-slate-900 py-2.5 pl-4 pr-10 text-xs font-bold text-white focus:border-amber-500/60 focus:outline-none md:text-[13px] lg:text-sm"
           >
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+            {classes.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
         </div>
       </div>
 
       <div className="flex items-center gap-1 md:gap-1.5 lg:gap-2">
-        {(['준비 완료', '수업 중', '수업 마무리'] as const).map((label, i) => {
-          const labelTr = t(label);
-          const done = i < filledBars;
-          const current = i === filledBars && phase !== 'done';
+        {(['준비 완료', '수업 중', '수업 마무리'] as const).map((label, index) => {
+          const done = index < filledBars;
+          const current = index === filledBars && phase !== 'done';
           return (
-            <div key={label} className="flex-1 flex items-center gap-2 min-w-0">
+            <div key={label} className="flex min-w-0 flex-1 items-center gap-2">
               <div
-                className={`h-1.5 md:h-2 flex-1 rounded-full transition-colors ${
+                className={`h-1.5 flex-1 rounded-full transition-colors md:h-2 ${
                   done ? 'bg-amber-400' : current ? 'bg-amber-400/50 ring-1 ring-amber-400/40' : 'bg-slate-700'
                 }`}
               />
-              <span
-                className={`hidden lg:inline text-[10px] font-bold uppercase tracking-wider shrink-0 ${
-                  done || current ? 'text-amber-400' : 'text-slate-500'
-                }`}
-              >
-                {labelTr}
+              <span className={`hidden shrink-0 text-[10px] font-bold uppercase tracking-wider lg:inline ${done || current ? 'text-amber-400' : 'text-slate-500'}`}>
+                {t(label)}
               </span>
             </div>
           );
         })}
       </div>
-      <div className="flex lg:hidden justify-between text-[10px] font-bold text-slate-500 uppercase gap-1">
+
+      <div className="flex justify-between gap-1 text-[10px] font-bold uppercase text-slate-500 lg:hidden">
         <span className={filledBars >= 1 ? 'text-amber-400' : ''}>{t('준비')}</span>
         <span className={filledBars >= 2 ? 'text-amber-400' : ''}>{t('진행')}</span>
         <span className={filledBars >= 3 ? 'text-amber-400' : ''}>{t('마무리')}</span>
@@ -157,50 +145,40 @@ export default function TodayClassCard({
 
       <div>
         {phase === 'idle' && (
-          <button
-            type="button"
+          <SubscriberButton
+            tone="emerald"
+            wide
+            icon={<Library className="h-5 w-5" />}
             onClick={() => {
               updatePersisted({ phase: 'ready' });
               onGoToLibrary(weekThemeKey);
             }}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
           >
-            <Library className="w-5 h-5" />
             {t('수업 준비 시작')}
-          </button>
+          </SubscriberButton>
         )}
         {phase === 'ready' && (
-          <button
-            type="button"
+          <SubscriberButton
+            tone="amber"
+            wide
+            icon={<Bell className="h-5 w-5" />}
             onClick={() => {
               updatePersisted({ phase: 'in-progress' });
               onStartClass();
             }}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 transition-colors"
           >
-            <Bell className="w-5 h-5" />
-            {t('수업 시작 🔔')}
-          </button>
+            {t('수업 시작')}
+          </SubscriberButton>
         )}
         {phase === 'in-progress' && (
-          <button
-            type="button"
-            onClick={() => onOpenPostClass(className)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors"
-          >
-            <ClipboardCheck className="w-5 h-5" />
+          <SubscriberButton tone="blue" wide icon={<ClipboardCheck className="h-5 w-5" />} onClick={() => onOpenPostClass(className)}>
             {t('수업 마무리')}
-          </button>
+          </SubscriberButton>
         )}
         {phase === 'done' && (
-          <button
-            type="button"
-            onClick={onGoToAIReport}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold bg-purple-600 hover:bg-purple-500 text-white transition-colors"
-          >
-            <Sparkles className="w-5 h-5" />
+          <SubscriberButton tone="purple" wide icon={<Sparkles className="h-5 w-5" />} onClick={onGoToAIReport}>
             {t('리포트 생성하기')}
-          </button>
+          </SubscriberButton>
         )}
       </div>
     </div>

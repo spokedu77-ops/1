@@ -51,13 +51,13 @@ export const NUMBER_RULES = [
 ];
 
 /**
- * coreCode: Core 5 분류에서 이 mode가 속하는 Series 코드.
+ * coreCode: SPOMOVE 카탈로그 대주제 코드.
  * 카탈로그에 노출되는 mode id는 고정한다.
  */
 export const MODES: Record<string, { id: string; title: string; en: string; icon: string; accent: string; tag: string; desc: string; coreCode?: string; levels: Array<{ id: number; name: string; enName: string; desc: string }> }> = {
   basic: {
     id: 'basic', title: '반응 인지', en: 'Reactive Cognition', icon: '⚡', accent: '#3B82F6',
-    coreCode: 'SR',
+    coreCode: 'VM',
     tag: '순발력 · 지각 훈련',
     desc: '화면 신호를 보는 순간, 판단하고 즉시 움직입니다.',
     levels: [
@@ -108,7 +108,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   executive: {
     id: 'executive', title: '실행 조절', en: 'Executive Control', icon: '🔀', accent: '#F97316',
-    coreCode: 'EC',
+    coreCode: 'EF',
     tag: '반응 억제 · 규칙 전환',
     desc: '움직여야 할 때와 멈춰야 할 때를 구분하고, 바뀌는 규칙에 맞춰 반응을 조절합니다.',
     levels: [
@@ -123,7 +123,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   spatial: {
     id: 'spatial', title: '순차 기억', en: 'Sequential Memory', icon: '🎨', accent: '#22C55E',
-    coreCode: 'SM',
+    coreCode: 'WM',
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
@@ -136,7 +136,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   flow: {
     id: 'flow', title: '플로우', en: 'Flow Mode', icon: '🌌', accent: '#06B6D4',
-    coreCode: 'RC',
+    coreCode: 'WM',
     tag: '몰입 러닝 · 반응 전환',
     desc: '우주 러닝 FLOW를 SPOMOVE에서 바로 실행합니다.',
     levels: [
@@ -145,7 +145,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   reactTrain: {
     id: 'reactTrain', title: '시지각 반응', en: 'Visual Reaction', icon: '◆', accent: '#E11D48',
-    coreCode: 'SR',
+    coreCode: 'VM',
     tag: '시지각 · 반응 훈련',
     desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각·반응 훈련입니다.',
     levels: [
@@ -163,24 +163,28 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   tbd1: {
     id: 'tbd1', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    coreCode: 'VM',
     tag: '보류',
     desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
     levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
   },
   tbd2: {
     id: 'tbd2', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    coreCode: 'EF',
     tag: '보류',
     desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
     levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
   },
   tbd3: {
     id: 'tbd3', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    coreCode: 'EF',
     tag: '보류',
     desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
     levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
   },
   tbd4: {
     id: 'tbd4', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    coreCode: 'WM',
     tag: '보류',
     desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
     levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],

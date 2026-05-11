@@ -1,5 +1,6 @@
 'use client';
 
+import type { ElementType } from 'react';
 import { useMemo, useState } from 'react';
 import {
   Check,
@@ -14,6 +15,7 @@ import {
   Truck,
   X,
 } from 'lucide-react';
+import { SubscriberBadge, SubscriberButton } from '../components/SubscriberWorkspacePrimitives';
 
 type CategoryId = 'all' | 'spomove' | 'balance' | 'classroom' | 'device';
 
@@ -46,12 +48,12 @@ const PRODUCTS: Product[] = [
     category: 'spomove',
     price: 28000,
     originalPrice: 35000,
-    badge: '구독자 특가',
+    badge: '구독자 혜택',
     accent: 'from-cyan-300 via-blue-400 to-indigo-500',
     compatible: true,
     featured: true,
     description: '반응속도, 시지각, 순발력 세션에 바로 쓰는 핵심 교구 세트',
-    tags: ['반응속도', '순발력', '인지운동'],
+    tags: ['반응속도', '순발력', '인지 이동'],
   },
   {
     id: 'mini-hurdle',
@@ -62,8 +64,8 @@ const PRODUCTS: Product[] = [
     badge: '베스트',
     accent: 'from-amber-300 via-orange-400 to-rose-500',
     featured: true,
-    description: '균형, 협응, 민첩성 수업을 안정적으로 구성하는 기본 장비',
-    tags: ['밸런스', '민첩성', '협응'],
+    description: '균형, 적응, 민첩성 수업을 안정적으로 구성하는 기본 장비',
+    tags: ['밸런스', '민첩성', '적응'],
   },
   {
     id: 'tripod-holder',
@@ -84,22 +86,22 @@ const PRODUCTS: Product[] = [
     originalPrice: 18000,
     accent: 'from-emerald-300 via-teal-400 to-cyan-500',
     compatible: true,
-    description: '동선, 구역, 난이도 단계를 빠르게 바꾸는 수업 필수품',
-    tags: ['동선', '그룹수업', '난이도'],
+    description: '동선, 구역, 스테이션 단계를 빠르게 바꾸는 수업 필수품',
+    tags: ['동선', '그룹수업', '스테이션'],
   },
   {
     id: 'balance-pad',
-    name: '키즈 밸런스 패드',
+    name: '소프트 밸런스 패드',
     category: 'balance',
     price: 33000,
     badge: '추천',
     accent: 'from-lime-300 via-emerald-400 to-green-500',
-    description: '소근육 안정성과 자세 조절 활동을 위한 안전 패드',
+    description: '발목 안정성과 자세 조절 활동을 위한 안전 패드',
     tags: ['자세조절', '코어', '안정성'],
   },
   {
     id: 'number-cards',
-    name: '인지운동 숫자 카드',
+    name: '인지 이동 숫자 카드',
     category: 'spomove',
     price: 12000,
     accent: 'from-sky-300 via-cyan-400 to-blue-500',
@@ -171,17 +173,12 @@ export default function ShopView() {
               구독 수업안과 바로 연결되는 교구를 고르고, SPOMOVE 호환 장비를 빠르게 준비하세요.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setCartOpen(true)}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:bg-cyan-50"
-          >
-            <ShoppingBag className="h-4 w-4" />
+          <SubscriberButton tone="cyan" icon={<ShoppingBag className="h-4 w-4" />} onClick={() => setCartOpen(true)}>
             장바구니
-            {cartCount > 0 && (
-              <span className="rounded-full bg-cyan-500 px-2 py-0.5 text-xs text-white">{cartCount}</span>
-            )}
-          </button>
+            {cartCount > 0 ? (
+              <span className="rounded-full bg-cyan-400 px-2 py-0.5 text-xs text-slate-950">{cartCount}</span>
+            ) : null}
+          </SubscriberButton>
         </header>
 
         <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
@@ -190,7 +187,7 @@ export default function ShopView() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-black text-cyan-200">
                   <Sparkles className="h-3.5 w-3.5" />
-                  이번 달 구독자 추천 세트
+                  이번 주 구독자 추천 세트
                 </div>
                 <h3 className="mt-4 text-xl font-black text-white">반응속도 집중 패키지</h3>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
@@ -198,24 +195,24 @@ export default function ShopView() {
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {['SPOMOVE 호환', '오늘 수업 추천', '5만원 이상 무료배송'].map((label) => (
-                    <span key={label} className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-200">
+                    <SubscriberBadge key={label} tone="cyan">
                       {label}
-                    </span>
+                    </SubscriberBadge>
                   ))}
                 </div>
               </div>
-              <button
-                type="button"
+              <SubscriberButton
+                tone="sky"
+                wide
+                icon={<ChevronRight className="h-4 w-4" />}
                 onClick={() => {
                   addToCart('reaction-ball-set');
                   addToCart('number-cards');
                   addToCart('tripod-holder');
                 }}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-cyan-400 px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-cyan-300"
               >
                 패키지 담기
-                <ChevronRight className="h-4 w-4" />
-              </button>
+              </SubscriberButton>
             </div>
           </div>
 
@@ -289,7 +286,7 @@ export default function ShopView() {
         {cartCount > 0 ? `${cartCount}개` : '담기'}
       </button>
 
-      {cartOpen && (
+      {cartOpen ? (
         <div className="fixed inset-0 z-[80] flex justify-end bg-slate-950/70 backdrop-blur-sm">
           <button
             type="button"
@@ -371,18 +368,20 @@ export default function ShopView() {
                   <span>{formatPrice(total)}원</span>
                 </div>
               </div>
-              <button
-                type="button"
+              <SubscriberButton
+                tone="sky"
+                wide
                 disabled={cartLines.length === 0}
-                className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-cyan-400 text-sm font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
+                className="mt-4 w-full sm:w-full"
+                icon={<Check className="h-4 w-4" />}
+                onClick={() => undefined}
               >
-                <Check className="h-4 w-4" />
                 주문서로 이동
-              </button>
+              </SubscriberButton>
             </div>
           </aside>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
@@ -396,43 +395,34 @@ function ProductCard({ product, compact = false, onAdd }: { product: Product; co
           <div className="min-w-0 flex-1">
             <div className="flex min-h-6 items-start gap-2">
               <h4 className="min-w-0 flex-1 text-sm font-black leading-5 text-white">{product.name}</h4>
-              {product.badge && (
-                <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-slate-950">
-                  {product.badge}
-                </span>
-              )}
+              {product.badge ? <SubscriberBadge tone="amber">{product.badge}</SubscriberBadge> : null}
             </div>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{product.description}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {product.tags.slice(0, compact ? 2 : 3).map((tag) => (
-                <span key={tag} className="rounded-full bg-slate-950/50 px-2 py-1 text-[10px] font-bold text-slate-300">
-                  {tag}
-                </span>
+                <SubscriberBadge key={tag}>{tag}</SubscriberBadge>
               ))}
             </div>
-            {product.compatible && (
-              <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-cyan-300/10 px-2 py-1 text-[10px] font-black text-cyan-200">
-                <Check className="h-3 w-3" />
-                SPOMOVE 호환
+            {product.compatible ? (
+              <div className="mt-3">
+                <SubscriberBadge tone="cyan">
+                  <Check className="mr-1 h-3 w-3" />
+                  SPOMOVE 호환
+                </SubscriberBadge>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="mt-4 flex items-center justify-between gap-3">
           <div>
             <div className="text-base font-black text-white">{formatPrice(product.price)}원</div>
-            {product.originalPrice && (
+            {product.originalPrice ? (
               <div className="text-xs font-bold text-slate-500 line-through">{formatPrice(product.originalPrice)}원</div>
-            )}
+            ) : null}
           </div>
-          <button
-            type="button"
-            onClick={onAdd}
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-cyan-400 px-3 text-xs font-black text-slate-950 transition hover:bg-cyan-300"
-          >
-            <Plus className="h-3.5 w-3.5" />
+          <SubscriberButton tone="sky" size="sm" icon={<Plus className="h-3.5 w-3.5" />} onClick={onAdd}>
             담기
-          </button>
+          </SubscriberButton>
         </div>
       </div>
     </article>
@@ -454,15 +444,7 @@ function ProductVisual({ product, small = false }: { product: Product; small?: b
   );
 }
 
-function ShopStat({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-}) {
+function ShopStat({ icon: Icon, label, value }: { icon: ElementType; label: string; value: string }) {
   return (
     <div className="flex min-w-0 flex-col items-center justify-center rounded-lg bg-slate-950/50 px-2 py-4 text-center">
       <Icon className="h-5 w-5 text-cyan-300" />

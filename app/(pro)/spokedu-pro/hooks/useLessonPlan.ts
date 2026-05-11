@@ -6,7 +6,7 @@ import {
   getWeekLabelForStorage,
 } from '@/app/lib/spokedu-pro/weekUtils';
 
-export type LessonPlanDayKo = '월' | '화' | '수' | '목' | '금' | '토' | '일';
+export type LessonPlanDayKo = '일' | '월' | '화' | '수' | '목' | '금' | '토';
 
 export type LessonPlanSlot = {
   slotId: string;
@@ -31,11 +31,11 @@ function loadSlots(weekLabel: string): LessonPlanSlot[] {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
-      (x): x is LessonPlanSlot =>
-        typeof x === 'object' &&
-        x !== null &&
-        typeof (x as LessonPlanSlot).slotId === 'string' &&
-        DAY_ORDER.includes((x as LessonPlanSlot).dayOfWeek)
+      (item): item is LessonPlanSlot =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof (item as LessonPlanSlot).slotId === 'string' &&
+        DAY_ORDER.includes((item as LessonPlanSlot).dayOfWeek)
     );
   } catch {
     return [];
@@ -46,15 +46,15 @@ function saveSlots(weekLabel: string, slots: LessonPlanSlot[]): { ok: true } | {
   try {
     localStorage.setItem(storageKey(weekLabel), JSON.stringify(slots));
     return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e };
+  } catch (error) {
+    return { ok: false, error };
   }
 }
 
-function persistFailureMessage(err: unknown): string {
-  const name = err instanceof Error ? err.name : '';
-  const msg = err instanceof Error ? err.message : String(err);
-  if (name === 'QuotaExceededError' || /quota|QuotaExceeded/i.test(msg)) {
+function persistFailureMessage(error: unknown): string {
+  const name = error instanceof Error ? error.name : '';
+  const message = error instanceof Error ? error.message : String(error);
+  if (name === 'QuotaExceededError' || /quota|QuotaExceeded/i.test(message)) {
     return '저장 공간이 부족할 수 있어요. 브라우저 저장소를 비운 뒤 다시 시도해 주세요.';
   }
   return '브라우저에 수업 계획을 저장하지 못했어요.';
@@ -75,7 +75,7 @@ export function useLessonPlan(weekOffset: number) {
   const setSlots = useCallback(
     (next: LessonPlanSlot[] | ((prev: LessonPlanSlot[]) => LessonPlanSlot[])) => {
       setSlotsState((prev) => {
-        const resolved = typeof next === 'function' ? (next as (p: LessonPlanSlot[]) => LessonPlanSlot[])(prev) : next;
+        const resolved = typeof next === 'function' ? (next as (value: LessonPlanSlot[]) => LessonPlanSlot[])(prev) : next;
         const saved = saveSlots(weekLabel, resolved);
         if (!saved.ok) {
           queueMicrotask(() => setPersistError(persistFailureMessage(saved.error)));
@@ -93,8 +93,8 @@ export function useLessonPlan(weekOffset: number) {
       localStorage.setItem(storageKey(weekLabel), JSON.stringify(slots));
       setPersistError(null);
       return true;
-    } catch (e) {
-      setPersistError(persistFailureMessage(e));
+    } catch (error) {
+      setPersistError(persistFailureMessage(error));
       return false;
     }
   }, [weekLabel, slots]);
@@ -116,14 +116,14 @@ export function useLessonPlan(weekOffset: number) {
 
   const updateSlot = useCallback(
     (slotId: string, patch: Partial<Omit<LessonPlanSlot, 'slotId'>>) => {
-      setSlots((prev) => prev.map((s) => (s.slotId === slotId ? { ...s, ...patch } : s)));
+      setSlots((prev) => prev.map((slot) => (slot.slotId === slotId ? { ...slot, ...patch } : slot)));
     },
     [setSlots]
   );
 
   const removeSlot = useCallback(
     (slotId: string) => {
-      setSlots((prev) => prev.filter((s) => s.slotId !== slotId));
+      setSlots((prev) => prev.filter((slot) => slot.slotId !== slotId));
     },
     [setSlots]
   );
@@ -138,11 +138,11 @@ export function useLessonPlan(weekOffset: number) {
   const addProgramToSlot = useCallback(
     (slotId: string, programId: number) => {
       setSlots((prev) =>
-        prev.map((s) => {
-          if (s.slotId !== slotId) return s;
-          if (s.programIds.includes(programId)) return s;
-          if (s.programIds.length >= 5) return s;
-          return { ...s, programIds: [...s.programIds, programId] };
+        prev.map((slot) => {
+          if (slot.slotId !== slotId) return slot;
+          if (slot.programIds.includes(programId)) return slot;
+          if (slot.programIds.length >= 5) return slot;
+          return { ...slot, programIds: [...slot.programIds, programId] };
         })
       );
     },
@@ -152,8 +152,8 @@ export function useLessonPlan(weekOffset: number) {
   const removeProgramFromSlot = useCallback(
     (slotId: string, programId: number) => {
       setSlots((prev) =>
-        prev.map((s) =>
-          s.slotId === slotId ? { ...s, programIds: s.programIds.filter((id) => id !== programId) } : s
+        prev.map((slot) =>
+          slot.slotId === slotId ? { ...slot, programIds: slot.programIds.filter((id) => id !== programId) } : slot
         )
       );
     },
@@ -164,23 +164,29 @@ export function useLessonPlan(weekOffset: number) {
 
   const slotsByDay = useMemo(() => {
     const map: Record<LessonPlanDayKo, LessonPlanSlot[]> = {
-      월: [], 화: [], 수: [], 목: [], 금: [], 토: [], 일: [],
+      월: [],
+      화: [],
+      수: [],
+      목: [],
+      금: [],
+      토: [],
+      일: [],
     };
-    for (const s of slotsForWeek) {
-      map[s.dayOfWeek].push(s);
+    for (const slot of slotsForWeek) {
+      map[slot.dayOfWeek].push(slot);
     }
     return map;
   }, [slotsForWeek]);
 
   const todayKo = useMemo((): LessonPlanDayKo => {
-    const js = new Date().getDay();
+    const day = new Date().getDay();
     const map: LessonPlanDayKo[] = ['일', '월', '화', '수', '목', '금', '토'];
-    return map[js];
+    return map[day] ?? '월';
   }, []);
 
   const todaySlots = useMemo(() => {
     if (weekOffset !== 0) return [];
-    return slotsForWeek.filter((s) => s.dayOfWeek === todayKo);
+    return slotsForWeek.filter((slot) => slot.dayOfWeek === todayKo);
   }, [slotsForWeek, todayKo, weekOffset]);
 
   return {

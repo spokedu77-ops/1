@@ -71,11 +71,13 @@ export function SlashMenu<T extends string>({
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-full z-50 mt-1 min-w-[220px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+      className="absolute left-0 top-full z-50 mt-2 w-[280px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10"
     >
-      <div className="border-b border-slate-100 px-3 py-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">블록 타입 선택</p>
-        {query.trim() ? <p className="mt-0.5 text-[11px] text-slate-400">검색: {query}</p> : null}
+      <div className="border-b border-slate-100 px-3 py-2.5">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Turn into</p>
+        <p className="mt-0.5 text-[11px] text-slate-400">
+          {query.trim() ? `검색: ${query}` : '블록 종류를 선택하세요'}
+        </p>
       </div>
       {filtered.length > 0 ? (
         filtered.map(({ type, label, icon: Icon, desc }, idx) => (
@@ -83,13 +85,13 @@ export function SlashMenu<T extends string>({
             key={type}
             type="button"
             className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
-              idx === activeIndex ? 'bg-blue-50' : 'hover:bg-blue-50'
+              idx === activeIndex ? 'bg-slate-100' : 'hover:bg-slate-50'
             }`}
             onMouseEnter={() => setActiveIndex(idx)}
             onClick={() => { onSelect(type); onClose(); }}
           >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100">
-              <Icon className="h-4 w-4 text-slate-600" />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white shadow-sm">
+              <Icon className="h-4 w-4 text-slate-500" />
             </span>
             <span>
               <p className="text-[13px] font-semibold text-slate-800">{label}</p>

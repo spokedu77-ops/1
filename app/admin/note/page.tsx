@@ -88,15 +88,27 @@ type NoteCollaborator = {
 };
 
 const BLOCK_TYPES: { type: NoteBlock['type']; label: string; icon: React.ElementType; desc: string }[] = [
-  { type: 'heading',  label: '제목',      icon: Type,        desc: '큰 제목 블록' },
-  { type: 'text',     label: '텍스트',    icon: FileText,    desc: '일반 텍스트' },
-  { type: 'todo',     label: '체크리스트', icon: CheckSquare, desc: '할 일 목록' },
-  { type: 'page',     label: '문서',      icon: FileText,    desc: '클릭하면 열리는 문서 링크' },
-  { type: 'toggle',   label: '토글',      icon: ChevronDown, desc: '접고 펼치는 섹션' },
-  { type: 'callout',  label: '콜아웃',    icon: MessageSquareQuote, desc: '강조 메시지' },
-  { type: 'divider',  label: '구분선',    icon: Minus,       desc: '가로 구분선' },
-  { type: 'image',    label: '이미지',    icon: ImageIcon,   desc: 'URL로 이미지 삽입' },
+  { type: 'heading',  label: '제목 1',     icon: Type,        desc: '큰 섹션 제목' },
+  { type: 'text',     label: '텍스트',      icon: FileText,    desc: '일반 문단' },
+  { type: 'todo',     label: '체크리스트',  icon: CheckSquare, desc: '완료 상태를 체크하는 할 일' },
+  { type: 'page',     label: '하위 문서',   icon: FileText,    desc: '클릭하면 열리는 페이지 링크' },
+  { type: 'toggle',   label: '토글',        icon: ChevronDown, desc: '접고 펼치는 섹션' },
+  { type: 'callout',  label: '콜아웃',      icon: MessageSquareQuote, desc: '강조 메시지' },
+  { type: 'code',     label: '코드',        icon: Type,        desc: '고정폭 코드 블록' },
+  { type: 'divider',  label: '구분선',      icon: Minus,       desc: '가로 구분선' },
+  { type: 'image',    label: '이미지',      icon: ImageIcon,   desc: 'URL 또는 붙여넣기 이미지' },
 ];
+
+function defaultBlockContent(type: NoteBlock['type']) {
+  if (type === 'heading') return { text: '' };
+  if (type === 'todo') return { text: '', checked: false };
+  if (type === 'toggle') return { title: '', body: '', collapsed: false, depth: 0, images: [] };
+  if (type === 'callout') return { text: '', icon: '💡', depth: 0 };
+  if (type === 'divider') return {};
+  if (type === 'page') return { page_document_id: '', title: '문서' };
+  if (type === 'code') return { text: '', language: 'plain', depth: 0 };
+  return { text: '', depth: 0 };
+}
 
 /* ─── helpers ───────────────────────────────────────────────────────────── */
 function relativeTime(dateStr: string): string {
@@ -211,9 +223,15 @@ function BlockContent({
   onDelete,
   onChangeType,
   onEnter,
+  onAddBelow,
   onOpenDocument,
   onShowFormatToolbar,
   onHideFormatToolbar,
+  autoFocusSignal,
+  onEmptyBackspace,
+  onIndentChange,
+  onNavigatePrevious,
+  onNavigateNext,
   isDragging,
   focusedToggleId,
   uploadImage,
@@ -223,9 +241,15 @@ function BlockContent({
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
+  onAddBelow: (type?: NoteBlock['type']) => void;
   onOpenDocument?: (documentId: string) => void;
   onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
   onHideFormatToolbar?: () => void;
+  autoFocusSignal?: number;
+  onEmptyBackspace?: () => void;
+  onIndentChange?: (direction: 'in' | 'out') => void;
+  onNavigatePrevious?: () => void;
+  onNavigateNext?: () => void;
   isDragging?: boolean;
   focusedToggleId?: string | null;
   uploadImage?: (file: File) => Promise<string>;
@@ -242,24 +266,37 @@ function BlockContent({
     placeholder,
     textClassName,
     field = 'text',
+    enterCreatesBlock = false,
+    onEditorEnter = onEnter,
+    onEditorBackspace = onEmptyBackspace,
   }: {
     text: string;
     placeholder: string;
     textClassName: string;
     field?: 'text' | 'body';
+    enterCreatesBlock?: boolean;
+    onEditorEnter?: () => void;
+    onEditorBackspace?: () => void;
   }) => {
     const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
     const legacyKey = field === 'body' ? 'legacyBody' : 'legacyText';
 
     return (
-      <div className="relative">
+      <div className="relative min-w-0 max-w-full">
         <NoteEditor
           content={block.content}
           field={field}
           text={text}
+          resetKey={`${block.id}:${block.type}:${field}`}
           placeholder={placeholder}
           className={textClassName}
-          onEnter={onEnter}
+          onEnter={onEditorEnter}
+          enterCreatesBlock={enterCreatesBlock}
+          autoFocusSignal={autoFocusSignal ?? 0}
+          onEmptyBackspace={onEditorBackspace}
+          onIndent={onIndentChange}
+          onNavigatePrevious={onNavigatePrevious}
+          onNavigateNext={onNavigateNext}
           onSlashChange={(nextShow, nextQuery) => {
             setShowSlash(nextShow);
             setSlashQuery(nextQuery);
@@ -287,10 +324,10 @@ function BlockContent({
 
   if (block.type === 'divider') {
     return (
-      <div className="flex items-center gap-3 py-2">
+      <div className="flex items-center gap-3 py-3">
         <div className="flex-1 border-t border-slate-200" />
         <button type="button"
-          className="rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-rose-400"
+          className="rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-500"
           onClick={onDelete}
         ><Trash2 className="h-3.5 w-3.5" /></button>
       </div>
@@ -301,7 +338,7 @@ function BlockContent({
     const checked = !!block.content?.checked;
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div className="flex items-start gap-3 py-1" style={{ marginLeft: `${blockDepth * 20}px` }}>
+      <div className="flex items-start gap-3 py-1.5" style={{ marginLeft: `${blockDepth * 20}px` }}>
         <button type="button"
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
             checked ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 bg-white hover:border-blue-400'
@@ -315,7 +352,9 @@ function BlockContent({
           {renderFormattedTextarea({
             text,
             placeholder: '할 일을 입력하세요',
-            textClassName: `text-[15px] leading-7 ${checked ? 'text-slate-400 line-through' : 'text-slate-800'}`,
+            textClassName: `text-[15px] leading-6 ${checked ? 'text-slate-400 line-through' : 'text-slate-800'}`,
+            enterCreatesBlock: true,
+            onEditorEnter: () => onAddBelow('todo'),
           })}
           {showSlash && (
             <SlashMenu
@@ -327,7 +366,7 @@ function BlockContent({
           )}
         </div>
         <button type="button"
-          className="mt-1 shrink-0 rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-rose-400"
+          className="mt-1 shrink-0 rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-500"
           onClick={onDelete}
         ><Trash2 className="h-3.5 w-3.5" /></button>
       </div>
@@ -337,13 +376,15 @@ function BlockContent({
   if (block.type === 'heading') {
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div className="flex items-start gap-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
+      <div className="flex items-start gap-3 py-3" style={{ marginLeft: `${blockDepth * 20}px` }}>
         <div className="relative flex-1">
           {renderFormatToolbar()}
           {renderFormattedTextarea({
             text,
             placeholder: '제목',
             textClassName: 'text-2xl font-bold leading-tight text-slate-900',
+            enterCreatesBlock: true,
+            onEditorEnter: () => onAddBelow('text'),
           })}
           {showSlash && (
             <SlashMenu
@@ -355,7 +396,7 @@ function BlockContent({
           )}
         </div>
         <button type="button"
-          className="mt-1 shrink-0 rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-rose-400"
+          className="mt-1 shrink-0 rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-500"
           onClick={onDelete}
         ><Trash2 className="h-3.5 w-3.5" /></button>
       </div>
@@ -451,6 +492,29 @@ function BlockContent({
           text,
           placeholder: '강조 메시지를 입력하세요',
           textClassName: 'text-[15px] leading-7 text-slate-800',
+        })}
+      </div>
+    );
+  }
+
+  if (block.type === 'code') {
+    const text = typeof block.content?.text === 'string' ? block.content.text : '';
+    return (
+      <div className="relative rounded-xl border border-slate-200 bg-slate-950 px-4 py-3 shadow-sm" style={{ marginLeft: `${blockDepth * 20}px` }}>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Code</span>
+          <button
+            type="button"
+            className="shrink-0 rounded p-1 text-slate-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rose-500/10 hover:text-rose-300"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        {renderFormattedTextarea({
+          text,
+          placeholder: '코드를 입력하세요',
+          textClassName: 'font-mono text-[13px] leading-6 text-slate-100',
         })}
       </div>
     );
@@ -552,13 +616,15 @@ function BlockContent({
   // text (default)
   const text = typeof block.content?.text === 'string' ? block.content.text : '';
   return (
-    <div className="flex items-start gap-3 py-1" style={{ marginLeft: `${blockDepth * 20}px` }}>
+    <div className="flex items-start gap-3 py-1.5" style={{ marginLeft: `${blockDepth * 20}px` }}>
       <div className="relative flex-1">
         {renderFormatToolbar()}
         {renderFormattedTextarea({
           text,
           placeholder: '내용을 입력하세요… (/ 로 블록 타입 변경)',
           textClassName: 'text-[15px] leading-7 text-slate-800',
+          enterCreatesBlock: true,
+          onEditorEnter: () => onAddBelow('text'),
         })}
         {showSlash && (
           <SlashMenu
@@ -570,7 +636,7 @@ function BlockContent({
         )}
       </div>
       <button type="button"
-        className="mt-1 shrink-0 rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-rose-400"
+        className="mt-1 shrink-0 rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-500"
         onClick={onDelete}
       ><Trash2 className="h-3.5 w-3.5" /></button>
     </div>
@@ -584,9 +650,15 @@ function SortableBlockRow({
   onDelete,
   onChangeType,
   onEnter,
+  onAddBelow,
   onOpenDocument,
   onShowFormatToolbar,
   onHideFormatToolbar,
+  autoFocusSignal,
+  onEmptyBackspace,
+  onIndentChange,
+  onNavigatePrevious,
+  onNavigateNext,
   focusedToggleId,
   onFocusToggle,
   uploadImage,
@@ -596,9 +668,15 @@ function SortableBlockRow({
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
+  onAddBelow: (type?: NoteBlock['type']) => void;
   onOpenDocument?: (documentId: string) => void;
   onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
   onHideFormatToolbar?: () => void;
+  autoFocusSignal?: number;
+  onEmptyBackspace?: () => void;
+  onIndentChange?: (direction: 'in' | 'out') => void;
+  onNavigatePrevious?: () => void;
+  onNavigateNext?: () => void;
   focusedToggleId?: string | null;
   onFocusToggle?: (blockId: string | null) => void;
   uploadImage?: (file: File) => Promise<string>;
@@ -623,20 +701,31 @@ function SortableBlockRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative flex items-start gap-1 rounded-lg px-1 py-0.5 transition-colors ${
-        isDragging ? 'bg-blue-50 ring-1 ring-blue-200' : 'hover:bg-slate-50'
+      className={`group relative flex items-start gap-2 rounded-md px-1 py-0.5 transition-colors ${
+        isDragging ? 'bg-blue-50 ring-1 ring-blue-200' : 'hover:bg-slate-50/80'
       }`}
     >
-      {/* 드래그 핸들 */}
-      <button
-        type="button"
-        className="mt-1.5 flex h-6 w-5 shrink-0 cursor-grab items-center justify-center rounded text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-slate-200 hover:text-slate-500 active:cursor-grabbing"
-        aria-label="드래그하여 순서 변경"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
+      <div className="sticky left-0 mt-1 flex h-7 shrink-0 items-center gap-0.5 rounded-md bg-white/80 opacity-0 shadow-sm ring-1 ring-slate-200/70 backdrop-blur transition-opacity group-hover:opacity-100">
+        <button
+          type="button"
+          className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          aria-label="아래에 새 블록 추가"
+          title="아래에 텍스트 블록 추가"
+          onClick={() => onAddBelow('text')}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="flex h-6 w-5 cursor-grab items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 active:cursor-grabbing"
+          aria-label="드래그하여 순서 변경"
+          title="드래그해서 이동"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </div>
 
       {/* 블록 콘텐츠 */}
       <div
@@ -651,9 +740,15 @@ function SortableBlockRow({
           onDelete={onDelete}
           onChangeType={onChangeType}
           onEnter={onEnter}
+          onAddBelow={onAddBelow}
           onOpenDocument={onOpenDocument}
           onShowFormatToolbar={onShowFormatToolbar}
           onHideFormatToolbar={onHideFormatToolbar}
+          autoFocusSignal={autoFocusSignal}
+          onEmptyBackspace={onEmptyBackspace}
+          onIndentChange={onIndentChange}
+          onNavigatePrevious={onNavigatePrevious}
+          onNavigateNext={onNavigateNext}
           isDragging={isDragging}
           focusedToggleId={focusedToggleId}
           uploadImage={uploadImage}
@@ -705,6 +800,8 @@ export default function AdminNotePage() {
   const [sortKey, setSortKey] = useState<SortKey>('recent');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const [focusedEditorBlockId, setFocusedEditorBlockId] = useState<string | null>(null);
+  const [focusSignal, setFocusSignal] = useState(0);
   /** 상단 '이미지' 블록 추가 시 토글 안에 넣을 대상 (토글 블록 클릭으로 설정) */
   const [focusedToggleId, setFocusedToggleId] = useState<string | null>(null);
   const [formatToolbar, setFormatToolbar] = useState<{ applyMark: (mark: InlineMark) => void } | null>(null);
@@ -730,6 +827,12 @@ export default function AdminNotePage() {
     () => (activeBlockId ? blocks.find((b) => b.id === activeBlockId) ?? null : null),
     [activeBlockId, blocks],
   );
+
+  const focusBlockEditor = useCallback((blockId: string | null) => {
+    if (!blockId) return;
+    setFocusedEditorBlockId(blockId);
+    setFocusSignal((v) => v + 1);
+  }, []);
 
   const filteredDocuments = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -1171,6 +1274,24 @@ export default function AdminNotePage() {
     }, 600);
   }, [triggerSave]);
 
+  const handleIndentBlock = useCallback((block: NoteBlock, direction: 'in' | 'out') => {
+    const content = (block.content ?? {}) as Record<string, unknown>;
+    const currentDepth = Math.max(0, Math.min(6, Number(content.depth ?? 0)));
+    const nextDepth = direction === 'in'
+      ? Math.min(6, currentDepth + 1)
+      : Math.max(0, currentDepth - 1);
+    if (nextDepth === currentDepth) return;
+    handleUpdateBlock(block, { ...content, depth: nextDepth });
+  }, [handleUpdateBlock]);
+
+  const handleNavigateBlock = useCallback((block: NoteBlock, direction: 'previous' | 'next') => {
+    const ordered = [...blocks].sort((a, b) => a.order_index - b.order_index);
+    const idx = ordered.findIndex((b) => b.id === block.id);
+    if (idx < 0) return;
+    const target = direction === 'previous' ? ordered[idx - 1] : ordered[idx + 1];
+    if (target) focusBlockEditor(target.id);
+  }, [blocks, focusBlockEditor]);
+
   const handleAddBlock = useCallback(async (type: NoteBlock['type']) => {
     if (!selectedId) return;
     try {
@@ -1216,49 +1337,85 @@ export default function AdminNotePage() {
         }
         const json = (await res.json()) as { block: NoteBlock };
         setBlocks((prev) => [json.block, ...prev]);
+        focusBlockEditor(json.block.id);
         triggerSave();
         return;
       }
-      const defaultContent =
-        type === 'heading' ? { text: '' }
-        : type === 'todo' ? { text: '', checked: false }
-        : type === 'toggle' ? { title: '', body: '', collapsed: false, depth: 0, images: [] }
-        : type === 'callout' ? { text: '', icon: '💡', depth: 0 }
-        : type === 'divider' ? {}
-        : type === 'page' ? { page_document_id: '', title: '문서' }
-        : { text: '', depth: 0 };
+      const defaultContent = defaultBlockContent(type);
       const res = await fetch('/api/admin/note/blocks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ documentId: selectedId, type, content: defaultContent }) });
       if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 추가 실패'); }
       const json = (await res.json()) as { block: NoteBlock };
       setBlocks((prev) => [json.block, ...prev]);
+      focusBlockEditor(json.block.id);
       triggerSave();
     } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
-  }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock]);
+  }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock, focusBlockEditor]);
+
+  const handleInsertBlockAfter = useCallback(async (afterBlock: NoteBlock, type: NoteBlock['type'] = 'text') => {
+    if (!selectedId) return;
+    try {
+      setLoadingState('saving');
+      const ordered = [...blocks].sort((a, b) => a.order_index - b.order_index);
+      const afterIndex = ordered.findIndex((b) => b.id === afterBlock.id);
+      const insertIndex = afterIndex >= 0 ? afterIndex + 1 : ordered.length;
+      const res = await fetch('/api/admin/note/blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          documentId: selectedId,
+          type,
+          content: defaultBlockContent(type),
+          order_index: insertIndex,
+          parent_block_id: afterBlock.parent_block_id ?? null,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '블록 추가 실패');
+      }
+      const json = (await res.json()) as { block: NoteBlock };
+      const next = [...ordered.slice(0, insertIndex), json.block, ...ordered.slice(insertIndex)]
+        .map((block, index) => ({ ...block, order_index: index }));
+      setBlocks(next);
+      focusBlockEditor(json.block.id);
+      void fetch('/api/admin/note/blocks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ orders: next.map((block) => ({ id: block.id, order_index: block.order_index })) }),
+      }).then(() => triggerSave()).catch((e) => devLogger.error('[Note] normalizeInsertOrder', e));
+    } catch (e) {
+      devLogger.error('[Note] insertBlockAfter', e);
+      setError(e instanceof Error ? e.message : '블록 추가 실패');
+      setLoadingState('idle');
+    }
+  }, [blocks, selectedId, triggerSave, focusBlockEditor]);
 
   const handleChangeBlockType = useCallback(async (block: NoteBlock, type: NoteBlock['type']) => {
-    const defaultContent =
-      type === 'heading' ? { text: '' }
-      : type === 'todo' ? { text: '', checked: false }
-      : type === 'toggle' ? { title: '', body: '', collapsed: false, depth: 0, images: [] }
-      : type === 'callout' ? { text: '', icon: '💡', depth: 0 }
-      : type === 'divider' ? {}
-      : type === 'page' ? { page_document_id: '', title: '문서' }
-      : { text: '', depth: 0 };
+    const defaultContent = defaultBlockContent(type);
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, type, content: defaultContent } : b)));
+    focusBlockEditor(block.id);
     try {
       await fetch('/api/admin/note/blocks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: block.id, type, content: defaultContent }) });
       triggerSave();
     } catch (e) { devLogger.error('[Note] changeBlockType', e); }
-  }, [triggerSave]);
+  }, [focusBlockEditor, triggerSave]);
 
-  const handleDeleteBlock = useCallback(async (block: NoteBlock) => {
+  const handleDeleteBlock = useCallback(async (block: NoteBlock, focusPrevious = false) => {
     const prev = blocks;
+    if (focusPrevious) {
+      const ordered = [...blocks].sort((a, b) => a.order_index - b.order_index);
+      const idx = ordered.findIndex((b) => b.id === block.id);
+      const nextFocus = ordered[idx - 1]?.id ?? ordered[idx + 1]?.id ?? null;
+      if (nextFocus) focusBlockEditor(nextFocus);
+    }
     setBlocks((p) => p.filter((b) => b.id !== block.id));
     try {
       const res = await fetch(`/api/admin/note/blocks?id=${encodeURIComponent(block.id)}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('삭제 실패');
     } catch (e) { devLogger.error('[Note] deleteBlock', e); setBlocks(prev); setError('블록 삭제 실패'); }
-  }, [blocks]);
+  }, [blocks, focusBlockEditor]);
 
   const renderDocumentTree = (doc: NoteDocument, depth = 0): React.ReactNode => {
     const children = childrenByParent.get(doc.id) ?? [];
@@ -1285,7 +1442,7 @@ export default function AdminNotePage() {
 
   /* ── render ── */
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col bg-white md:h-screen md:overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] max-w-full flex-col overflow-x-hidden bg-white md:h-screen md:overflow-hidden">
 
       {/* ── 상단 헤더 ── */}
       <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
@@ -1362,7 +1519,7 @@ export default function AdminNotePage() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 overflow-x-hidden">
 
           {/* ── 사이드바 ── */}
           <div className={`flex flex-col border-r border-slate-100 bg-slate-50 ${
@@ -1537,7 +1694,7 @@ export default function AdminNotePage() {
           </div>
 
           {/* ── 에디터 ── */}
-          <div className={`flex flex-1 flex-col overflow-hidden ${
+          <div className={`min-w-0 flex-1 flex-col overflow-hidden ${
             mobileTab === 'editor' ? 'flex' : 'hidden'
           } md:flex`}>
           {/* 모바일 상단 바 */}
@@ -1569,19 +1726,19 @@ export default function AdminNotePage() {
               <Loader2 className="h-4 w-4 animate-spin" />불러오는 중…
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto">
-              <div className="sticky top-0 z-40 border-b border-slate-100 bg-white/90 backdrop-blur">
-                <div className="mx-auto flex max-w-3xl items-center gap-1 px-4 py-2 md:px-16">
+            <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white">
+              <div className="sticky top-0 z-40 border-b border-slate-100 bg-white/85 backdrop-blur-xl">
+                <div className="mx-auto flex max-w-4xl min-w-0 items-center gap-1 overflow-x-hidden px-4 py-2 md:px-10 lg:px-16">
                   {formatToolbar ? (
                     <>
                       <BubbleToolbar applyMark={formatToolbar.applyMark} />
                       <span className="ml-2 text-[11px] font-medium text-slate-400">선택 영역 서식</span>
                     </>
                   ) : (
-                    <span className="text-[11px] font-medium text-slate-400">텍스트를 드래그하면 서식 툴바가 여기에 표시됩니다</span>
+                    <span className="text-[11px] font-medium text-slate-400">문서 안에서 `/` 입력 · 블록 왼쪽 `+`로 바로 추가</span>
                   )}
                 </div>
-                <div className="mx-auto flex max-w-3xl flex-wrap gap-2 px-4 pb-2 md:px-16">
+                <div className="mx-auto flex max-w-4xl min-w-0 flex-wrap gap-1.5 overflow-x-hidden px-4 pb-2 md:px-10 lg:px-16">
                   {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
                     <button
                       key={type}
@@ -1592,25 +1749,25 @@ export default function AdminNotePage() {
                           : undefined
                       }
                       onClick={() => handleAddBlock(type)}
-                      className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-medium text-slate-600 shadow-sm transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 hover:shadow"
+                      className="flex items-center gap-1.5 rounded-md border border-transparent bg-slate-50 px-2.5 py-1.5 text-[12px] font-medium text-slate-500 transition-all hover:border-slate-200 hover:bg-white hover:text-slate-900 hover:shadow-sm"
                     >
                       <Icon className="h-3.5 w-3.5" />{label}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="mx-auto max-w-3xl px-4 py-10 md:px-16">
+              <div className="mx-auto max-w-4xl overflow-x-hidden px-4 py-12 md:px-10 lg:px-16">
 
                 {/* 문서 큰 제목 */}
                 <textarea
                   ref={titleInputRef}
                   rows={1}
-                  className="mb-2 w-full resize-none overflow-hidden bg-transparent text-[32px] font-extrabold leading-tight text-slate-900 outline-none placeholder:text-slate-300 md:text-[40px]"
+                  className="mb-2 w-full resize-none overflow-hidden bg-transparent text-[36px] font-extrabold leading-[1.08] tracking-tight text-slate-950 outline-none placeholder:text-slate-300 md:text-[48px]"
                   placeholder="제목 없음"
                   value={activeDocument.title === '제목 없음' ? '' : activeDocument.title}
                   onChange={(e) => handleRenameDocument(activeDocument.id, e.target.value || '제목 없음')}
                 />
-                <div className="mb-8 flex flex-wrap items-center gap-3 text-[12px] text-slate-400">
+                <div className="mb-10 flex flex-wrap items-center gap-3 text-[12px] text-slate-400">
                   <span>수정 {relativeTime(activeDocument.updated_at)}</span>
                   {collaborators.length > 0 && (
                     <span className="flex items-center gap-1 text-emerald-500">
@@ -1644,9 +1801,25 @@ export default function AdminNotePage() {
 
                 {/* 빈 문서 */}
                 {blocks.length === 0 && (
-                  <div className="mb-8 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-6 py-8 text-center">
-                    <p className="text-[14px] font-semibold text-slate-400">아직 내용이 없습니다</p>
-                    <p className="mt-1 text-[13px] text-slate-400">아래 버튼으로 첫 번째 블록을 추가해 보세요.</p>
+                  <div className="mb-8 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-10 text-center">
+                    <p className="text-[15px] font-semibold text-slate-600">새 페이지를 시작하세요</p>
+                    <p className="mt-1 text-[13px] text-slate-400">텍스트를 바로 쓰거나 `/`로 제목, 체크리스트, 콜아웃을 선택할 수 있습니다.</p>
+                    <div className="mt-5 flex flex-wrap justify-center gap-2">
+                      <button
+                        type="button"
+                        className="rounded-lg bg-slate-900 px-3 py-2 text-[12px] font-semibold text-white shadow-sm hover:bg-slate-800"
+                        onClick={() => handleAddBlock('text')}
+                      >
+                        빈 텍스트로 시작
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-600 shadow-sm hover:bg-slate-50"
+                        onClick={() => handleAddBlock('heading')}
+                      >
+                        제목 블록 추가
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -1655,7 +1828,7 @@ export default function AdminNotePage() {
                   items={blocks.map((b) => b.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="space-y-0.5">
+                  <div className="space-y-0.5 pb-24">
                     {blocks.map((block) => (
                       <SortableBlockRow
                         key={block.id}
@@ -1663,10 +1836,16 @@ export default function AdminNotePage() {
                         onUpdate={(content) => handleUpdateBlock(block, content)}
                         onDelete={() => handleDeleteBlock(block)}
                         onChangeType={(type) => handleChangeBlockType(block, type)}
-                        onEnter={() => handleAddBlock('text')}
+                        onEnter={() => handleInsertBlockAfter(block, 'text')}
+                        onAddBelow={(type) => handleInsertBlockAfter(block, type ?? 'text')}
                         onOpenDocument={handleOpenDocumentById}
                         onShowFormatToolbar={showFormatToolbar}
                         onHideFormatToolbar={hideFormatToolbar}
+                        autoFocusSignal={focusedEditorBlockId === block.id ? focusSignal : 0}
+                        onEmptyBackspace={() => handleDeleteBlock(block, true)}
+                        onIndentChange={(direction) => handleIndentBlock(block, direction)}
+                        onNavigatePrevious={() => handleNavigateBlock(block, 'previous')}
+                        onNavigateNext={() => handleNavigateBlock(block, 'next')}
                         focusedToggleId={focusedToggleId}
                         onFocusToggle={setFocusedToggleId}
                         uploadImage={uploadNoteImage}
