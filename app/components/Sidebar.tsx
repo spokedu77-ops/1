@@ -22,8 +22,6 @@ import {
   Building2,
   PanelLeftOpen,
   PanelLeftClose,
-  Inbox,
-  ScrollText,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -79,12 +77,10 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     },
     {
       group: "스포키듀 Pro",
-      items: [
-        { name: "구독·대시보드", href: "/admin/spokedu-pro", icon: Sparkles },
-        { name: "스포키듀 구독 NEW", href: "/admin/spokedu-pro/subscription-new", icon: CreditCard },
-        { name: "리드 관리", href: "/admin/spokedu-pro/leads", icon: Inbox },
-        { name: "수업안 보조정보", href: "/admin/spokedu-pro/lesson-details", icon: ScrollText },
-      ]
+        items: [
+          { name: "구독·대시보드", href: "/admin/spokedu-pro", icon: Sparkles },
+          { name: "SPOKEDU MASTER", href: "/spokedu-master", icon: Sparkles },
+        ]
     },
     {
       group: "사람",
@@ -108,6 +104,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
 
   const isAdmin =
     pathname.startsWith('/admin') ||
+    pathname.startsWith('/spokedu-master') ||
     pathname.startsWith('/master') ||
     pathname.startsWith('/class');
 

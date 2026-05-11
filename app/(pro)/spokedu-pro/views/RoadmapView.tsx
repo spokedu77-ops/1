@@ -603,7 +603,7 @@ export default function RoadmapView({
               <p className="mt-4 text-sm text-red-300">{tr('대표 수업안 목록을 불러오지 못했습니다.')}</p>
             ) : featuredPrograms.length === 0 ? (
               <p className="mt-4 text-sm text-amber-100/90">
-                {tr('대표 수업안이 아직 없습니다. 수업안 보조정보 관리에서 지정해 주세요.')}
+                {tr('대표 수업안이 아직 없습니다. MASTER 라이브러리에서 대표 프로그램 구성을 확인해 주세요.')}
               </p>
             ) : (
               <div

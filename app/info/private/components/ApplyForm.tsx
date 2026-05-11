@@ -28,7 +28,7 @@ function formatLearnerBlock(learners: string[]): string {
 }
 
 type ApplyFormProps = {
-  diagnosisSummary: string;
+  reportSummary: string;
   onCopyResult?: (ok: boolean) => void;
   onConsultSubmit?: (result: {
     requiredFilled: boolean;
@@ -39,7 +39,7 @@ type ApplyFormProps = {
 };
 
 export default function ApplyForm({
-  diagnosisSummary,
+  reportSummary,
   onCopyResult,
   onConsultSubmit,
 }: ApplyFormProps) {
@@ -101,9 +101,9 @@ export default function ApplyForm({
       `5. 가능 시간대 : ${safeVal(values.f4)}`,
       `6. 전하고 싶은 말 : ${safeVal(values.f5)}`,
     ];
-    if (diagnosisSummary.trim()) {
-      head.push('', '[SPOKEDU 시스템 사전 진단 내역]');
-      for (const raw of diagnosisSummary.split('\n')) {
+    if (reportSummary.trim()) {
+      head.push('', '[SPOKEDU 사전 리포트 요약]');
+      for (const raw of reportSummary.split('\n')) {
         const line = raw.trimEnd();
         if (line.trim() === '') continue;
         head.push(line);
@@ -111,7 +111,7 @@ export default function ApplyForm({
     }
     head.push('', '위 내용을 바탕으로 맞춤 상담 및 일정 그리고 수업료 안내를 도와드리겠습니다.');
     return head;
-  }, [learners, values, diagnosisSummary]);
+  }, [learners, values, reportSummary]);
 
   const previewText = lines.join('\n');
 

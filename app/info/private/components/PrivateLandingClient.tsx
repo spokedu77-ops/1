@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from './Header';
 import Hero from './Hero';
 import Instructors from './Instructors';
 import ClassFlow from './ClassFlow';
 import Curriculum from './Curriculum';
-import Diagnosis from './Diagnosis';
+import MoveReportPreview, { PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY } from './MoveReportPreview';
 import Reviews from './Reviews';
 import FAQ from './FAQ';
 import ApplyForm from './ApplyForm';
@@ -15,22 +16,37 @@ import Toast from './Toast';
 import { useToast } from '../hooks/useToast';
 
 export default function PrivateLandingClient() {
-  const [diagnosisSummary, setDiagnosisSummary] = useState('');
+  const [reportSummary, setReportSummary] = useState('');
+  const searchParams = useSearchParams();
   const { message, visible, show } = useToast(3000);
 
-  const handleResultChange = useCallback((summary: string) => {
-    setDiagnosisSummary(summary);
+  useEffect(() => {
+    const fromQuery = searchParams.get('reportSummary')?.trim() ?? '';
+    if (fromQuery) {
+      setReportSummary(fromQuery);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY, fromQuery);
+      }
+      return;
+    }
+    if (typeof window === 'undefined') return;
+    const fromStorage = window.localStorage.getItem(PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY) ?? '';
+    if (fromStorage.trim()) {
+      setReportSummary(fromStorage.trim());
+    }
+  }, [searchParams]);
+
+  const handleSummaryChange = useCallback((summary: string) => {
+    setReportSummary(summary);
   }, []);
 
-  const handleAnalyzeResult = useCallback(
-    (result: string) => {
-      if (result === 'required') {
-        show('안내: Q1 문항을 최소 1개 이상 선택해 주세요.');
-      } else if (result === 'success') {
-        show('맞춤 추천 분석이 완료되어 상담 폼에 반영되었습니다.');
-      } else if (result === 'reset') {
-        show('진단 내역이 초기화되었습니다.');
+  const handleSummaryAction = useCallback(
+    (action: 'saved' | 'reset') => {
+      if (action === 'saved') {
+        show('Move report 요약이 상담 폼에 반영되었습니다.');
+        return;
       }
+      show('Move report 요약이 초기화되었습니다.');
     },
     [show]
   );
@@ -74,14 +90,15 @@ export default function PrivateLandingClient() {
         <Instructors />
         <Curriculum />
         <ClassFlow />
-        <Diagnosis
-          onResultChange={handleResultChange}
-          onAnalyzeResult={handleAnalyzeResult}
+        <MoveReportPreview
+          initialSummary={reportSummary}
+          onSummaryChange={handleSummaryChange}
+          onSummaryAction={handleSummaryAction}
         />
         <Reviews />
         <FAQ />
         <ApplyForm
-          diagnosisSummary={diagnosisSummary}
+          reportSummary={reportSummary}
           onCopyResult={handleCopyResult}
           onConsultSubmit={handleConsultSubmit}
         />

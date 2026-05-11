@@ -7,7 +7,7 @@ const NAV_LINKS = [
   { href: '#instructors', label: '소개' },
   { href: '#curriculum', label: '커리큘럼' },
   { href: '#class-flow', label: '수업 현장' },
-  { href: '#diagnosis', label: '성향 진단' },
+  { href: '#move-report', label: 'Move report' },
   { href: '#reviews', label: '후기' },
 ];
 

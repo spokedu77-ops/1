@@ -1,4 +1,5 @@
 export type PlanType = 'free' | 'pro' | 'team';
+export type UserRole = 'teacher' | 'director';
 
 export interface UserProfile {
   id: string;
@@ -7,6 +8,13 @@ export interface UserProfile {
   school: string;
   avatarColor: string;
   plan: PlanType;
+  role: UserRole;
+  centerId: string | null;
+  centerName: string | null;
+  ageGroups: string[];
+  programTypes: string[];
+  onboardingDone: boolean;
+  trialEndsAt: string | null;
   createdAt: string;
 }
 
@@ -57,6 +65,53 @@ export interface Lesson {
   memo?: string;
 }
 
+export type AttendanceStatus = 'pending' | 'present' | 'absent';
+
+export interface StudentSkill {
+  label: string;
+  value: number;
+  delta: string;
+}
+
+export interface StudentProfile {
+  id: string;
+  name: string;
+  group: string;
+  meta: string;
+  level: string;
+  attendance: number;
+  classes: number;
+  streak: number;
+  risk: string | null;
+  skills: StudentSkill[];
+  badges: string[];
+  history: string[];
+}
+
+export interface ClassStudentRecord {
+  studentId: string;
+  studentName: string;
+  attendance: AttendanceStatus;
+  focused: boolean;
+  skills: string[];
+  memo?: string;
+}
+
+export interface ClassRecord {
+  id: string;
+  lessonTitle: string;
+  classId: string;
+  programId: string;
+  programTitle: string;
+  date: string;
+  present: number;
+  absent: number;
+  focusCount: number;
+  skillCount: number;
+  kakaoSent: boolean;
+  students: ClassStudentRecord[];
+}
+
 export interface CartItem {
   id: string;
   name: string;
@@ -88,4 +143,16 @@ export interface Program {
   isPro: boolean;
   isNew: boolean;
   isHot?: boolean;
+  lessonDetail?: {
+    recommendedAge: string;
+    recommendedPlayers: string;
+    objective: string;
+    developmentFocus: string;
+    coachScript: string;
+    parentNote: string;
+    fieldTips: string[];
+    variations: string[];
+    safetyNotes: string[];
+    relatedSpomoveIds: string[];
+  };
 }

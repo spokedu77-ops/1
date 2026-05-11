@@ -28,7 +28,6 @@ import {
 } from './utils/spomoveLaunch';
 import { resolveScreenplayTagMappingV1, getScreenplayLevelTag } from './utils/screenplayTagMapping';
 import { stripMonthWeekPrefix } from '@/app/lib/spokedu-pro/titleSanitizer';
-import type { ProgramLessonDetail } from '@/app/lib/spokedu-pro/programLessonDetail';
 import type { ProgramLessonDetailInList, SpokeduProOpenDetailContext } from './programDrawerContext';
 
 const SpokeduProToolkit = dynamic(() => import('./components/SpokeduProToolkit'), { ssr: false });
@@ -512,26 +511,6 @@ export default function SpokeduProClient({
     [adminContent?.program_details, saveContentDraft, fetchContent, fetchBlocks, tr, refreshProgramsFromApi]
   );
 
-  const handleSaveLessonDetail = useCallback(
-    async (detail: ProgramLessonDetail) => {
-      const res = await fetch('/api/admin/spokedu-pro/program-lesson-details', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(detail),
-      });
-      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-      if (!res.ok || !j.ok) {
-        toast.error(tr(`?섏뾽??????ㅽ뙣: ${j.error ?? `HTTP ${res.status}`}`));
-        return;
-      }
-      toast.success(tr('?섏뾽?덉씠 ??λ릺?덉뒿?덈떎.'));
-      await refreshProgramsFromApi();
-      setProgramsRefreshToken((t) => t + 1);
-    },
-    [tr, refreshProgramsFromApi]
-  );
-
   const drawerLessonDetail = useMemo(() => {
     if (drawerIsScreenplay || resolvedDrawerProgramId == null) return null;
     const row = programsFromApi.find((r) => r.id === resolvedDrawerProgramId);
@@ -865,7 +844,6 @@ export default function SpokeduProClient({
         isEditMode={isEditMode}
         onSaveProgramDetail={isEditMode ? handleSaveProgramDetail : undefined}
         lessonDetail={drawerLessonDetail}
-        onSaveLessonDetail={isEditMode ? handleSaveLessonDetail : undefined}
         detailKind={drawerIsScreenplay ? 'screenplay' : 'program'}
         screenplayTags={screenplayDrawerTags}
         onLaunchMemoryGame={

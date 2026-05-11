@@ -88,7 +88,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     tag: '공간 위치 · 색 반응',
     desc: '원·삼각형·사각형이 화면 어디에나 하나씩 나타납니다. 안을 채운 색에 맞는 색 위치로 이동합니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Pole Shape & Position', desc: '원·삼각형·사각형 중 하나가 좌·우·상·하 양극단을 순서대로 번갈아 배치됩니다(색·도형은 무작위). 약 25% 크기로 채워지며, 채운 색 위치로 이동합니다.' },
+      { id: 1, name: '1번', enName: 'Pole Shape', desc: '원·삼각형·사각형 중 하나가 좌·우·상·하 양극단을 순서대로 번갈아 배치됩니다(색·도형은 무작위). 약 25% 크기로 채워지며, 채운 색 위치로 이동합니다.' },
       { id: 2, name: '2번', enName: 'Pole Arrows', desc: '↑↓←→ 화살표가 양극단을 순서대로 번갈아 나타납니다. 화살표가 가리키는 방향 위치로 이동합니다.' },
     ],
   },

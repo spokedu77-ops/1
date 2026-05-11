@@ -87,7 +87,7 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Word Stroop / Reverse': '단어 스트룹/역스트룹',
   'Word + BG': '단어 + 배경',
   'Missing Color': '누락 색상 찾기',
-  'Pole Shape & Position': '폴 도형/위치',
+  'Pole Shape': '폴 도형',
   'Pole Arrows': '폴 화살표',
   'Uniform Flankers': '동일 플랭커',
   'Grouped Flankers': '그룹 플랭커',

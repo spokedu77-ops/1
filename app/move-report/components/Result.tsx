@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComputeResult } from '../types';
 import Radar from './Radar';
 import AxisRow from './AxisRow';
@@ -59,6 +59,25 @@ export default function Result({
   const { profile: p, bd, displayName, key } = result;
   const [revealed, setRevealed] = useState(false);
   const [reportExpanded, setReportExpanded] = useState(false);
+  const consultSummary = useMemo(
+    () =>
+      [
+        '[MOVE REPORT 요약]',
+        `- 이름: ${displayName}`,
+        `- 유형: ${p.char}`,
+        `- 한 줄 설명: ${p.catchcopy}`,
+        `- 권장 접근: ${p.shortTip}`,
+      ].join('\n'),
+    [displayName, p.char, p.catchcopy, p.shortTip]
+  );
+
+  const handleGoPrivateConsult = useCallback(() => {
+    const href = `/info/private?reportSummary=${encodeURIComponent(consultSummary)}`;
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('private.moveReport.summary', consultSummary);
+      window.location.href = href;
+    }
+  }, [consultSummary]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -724,6 +743,28 @@ export default function Result({
               </p>
             </div>
           )}
+
+          <section
+            style={{
+              marginTop: 18,
+              borderRadius: 14,
+              border: `1px solid ${p.col}44`,
+              background: `${p.col}14`,
+              padding: '16px 14px',
+            }}
+          >
+            <p style={{ margin: '0 0 10px', fontSize: 12, color: '#d4d4d8', lineHeight: 1.6 }}>
+              결과 요약을 상담 폼으로 자동 전달하고, 바로 상담 작성 페이지로 이동합니다.
+            </p>
+            <button
+              type="button"
+              onClick={handleGoPrivateConsult}
+              className="btn-fire"
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              결과 가지고 상담 페이지로 돌아가기
+            </button>
+          </section>
         </div>
       </div>
     </div>

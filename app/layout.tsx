@@ -9,7 +9,7 @@ import { QueryProvider } from './providers/QueryProvider';
 import { I18nProvider } from './providers/I18nProvider';
 import { Geist, Noto_Sans_KR, Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import './globals.css';
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' });
 const notoSansKR = Noto_Sans_KR({
@@ -45,7 +45,7 @@ export default function RootLayout({
     ? { height: 'var(--viewport-height-px, 100dvh)' }
     : undefined;
 
-  // viewport-height-px는 hydration 이후에만 설정해 서버/클라이언트 HTML 불일치(hydration error) 방지
+  // 클라이언트에서만 실제 viewport 높이를 반영해 모바일 브라우저 주소창 변화로 인한 레이아웃 흔들림을 줄입니다.
   useEffect(() => {
     const setViewportHeight = () => {
       const h = window.visualViewport?.height ?? window.innerHeight;
@@ -61,39 +61,39 @@ export default function RootLayout({
   }, []);
 
   return (
-    <html lang="ko" className={cn(notoSansKR.variable, geist.variable, plusJakarta.variable, spaceGrotesk.variable, "font-sans")}>
+    <html lang="ko" className={cn(notoSansKR.variable, geist.variable, plusJakarta.variable, spaceGrotesk.variable, 'font-sans')}>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#2563eb" />
+        <meta name="theme-color" content="#185FA5" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
       <body className="antialiased bg-gray-50 text-slate-900 font-sans">
         <QueryProvider>
           <I18nProvider>
-          <Toaster position="top-center" richColors closeButton />
-          <div
-            className={`flex ${hideSidebar ? 'w-full overflow-x-hidden' : 'min-h-screen'}`}
-            style={fullscreenWrapStyle}
-          >
-            {/* 사이드바 조건부 렌더링 */}
-            {!hideSidebar && (
-              <Sidebar
-                isDesktopOpen={isDesktopOpen}
-                onToggleDesktop={() => setIsDesktopOpen(v => !v)}
-              />
-            )}
-
-            <main
-              style={mainFullscreenStyle}
-              className={`flex-1 w-full min-w-0 transition-all duration-300 ${
-                hideSidebar
-                  ? 'flex flex-col min-h-0 pr-0 mr-0 overflow-x-hidden'
-                  : `pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0${isDesktopOpen ? ' md:ml-64' : ' md:ml-0'}`
-              }`}
+            <Toaster position="top-center" richColors closeButton />
+            <div
+              className={`flex ${hideSidebar ? 'w-full overflow-x-hidden' : 'min-h-screen'}`}
+              style={fullscreenWrapStyle}
             >
-              {children}
-            </main>
-          </div>
+              {/* 전체 화면 경로에서는 글로벌 사이드바를 숨깁니다. */}
+              {!hideSidebar && (
+                <Sidebar
+                  isDesktopOpen={isDesktopOpen}
+                  onToggleDesktop={() => setIsDesktopOpen((value) => !value)}
+                />
+              )}
+
+              <main
+                style={mainFullscreenStyle}
+                className={`flex-1 w-full min-w-0 transition-all duration-300 ${
+                  hideSidebar
+                    ? 'flex flex-col min-h-0 pr-0 mr-0 overflow-x-hidden'
+                    : `pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0${isDesktopOpen ? ' md:ml-64' : ' md:ml-0'}`
+                }`}
+              >
+                {children}
+              </main>
+            </div>
           </I18nProvider>
         </QueryProvider>
       </body>

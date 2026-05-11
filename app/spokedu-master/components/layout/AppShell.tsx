@@ -1,13 +1,24 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
-import { StatusBar } from './StatusBar';
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { TabBar } from './TabBar';
+import { useProfile } from '../../store';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const profile = useProfile();
   const isSession = pathname.startsWith('/spokedu-master/spomove/session');
+  const isOnboarding = pathname.startsWith('/spokedu-master/onboarding');
+  const isParentView = pathname.startsWith('/spokedu-master/parent');
+
+  useEffect(() => {
+    if (!isSession && !isOnboarding && !isParentView && profile && !profile.onboardingDone) {
+      router.replace('/spokedu-master/onboarding');
+    }
+  }, [isOnboarding, isParentView, isSession, profile, router]);
 
   if (isSession) {
     return (
@@ -18,25 +29,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-dvh justify-center bg-black">
+    <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
       <div
-        className="relative flex min-h-dvh w-full flex-col overflow-hidden"
+        className="relative mx-auto flex min-h-dvh w-full max-w-[1180px] flex-col overflow-hidden"
         style={{
-          maxWidth: 390,
           background: 'var(--spm-bg)',
           color: 'var(--spm-t)',
           fontFamily: 'var(--spm-font-body)',
-          boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 40px 100px rgba(0,0,0,0.95)',
         }}
       >
-        <StatusBar />
-        <main
-          className="min-h-0 flex-1 overflow-hidden"
-          style={{ height: 'calc(100dvh - 48px - 68px)', background: 'var(--spm-bg)' }}
-        >
+        <main className="min-h-0 flex-1 overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
           {children}
         </main>
-        <TabBar />
+        {isOnboarding || isParentView ? null : <TabBar />}
       </div>
     </div>
   );

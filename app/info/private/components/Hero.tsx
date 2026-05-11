@@ -86,8 +86,8 @@ export default function Hero() {
             </span>
           </h1>
           <div className="pl-hero-cta">
-            <Link className="pl-btn pl-btn-outline" href="#diagnosis">
-              우리 아이 성향 진단
+            <Link className="pl-btn pl-btn-outline" href="#move-report">
+              Move report 보기
             </Link>
             <Link className="pl-btn pl-btn-primary" href="#apply" style={{ color: '#09090b' }}>
               전문 상담 접수하기
