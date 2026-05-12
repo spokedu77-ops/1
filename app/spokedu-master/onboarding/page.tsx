@@ -8,7 +8,7 @@ import { useMasterStore, useProfile } from '../store';
 import type { UserRole } from '../types';
 
 const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등'];
-const PROGRAM_TYPES = ['놀이체육', 'SPOMOVE', '음악형', '민첩성', '체력'];
+const PROGRAM_TYPES = ['놀이체육', 'SPOMOVE', '협응성', '민첩성', '체력'];
 
 function StepDot({ active, done }: { active: boolean; done: boolean }) {
   return <span className="h-2.5 w-2.5 rounded-full" style={{ background: active ? 'var(--spm-acc)' : done ? 'var(--spm-grn)' : 'var(--spm-s4)' }} />;
@@ -105,7 +105,7 @@ export default function OnboardingPage() {
         <div className="mb-8">
           <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
           <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 준비 30초, 기록 3분으로 시작합니다</h1>
-          <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>강사와 원장의 역할을 먼저 정하고, 개인 체험 또는 센터 플랜으로 MASTER를 시작합니다.</p>
+          <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>강사와 원장이 사용할 범위를 먼저 정하고, 개인 체험 또는 센터 플랜으로 MASTER를 시작합니다.</p>
         </div>
 
         <div className="mb-6 flex gap-2">{[0, 1, 2, 3].map((item) => <StepDot key={item} active={step === item} done={step > item} />)}</div>
@@ -114,8 +114,8 @@ export default function OnboardingPage() {
           {step === 0 ? (
             <div className="space-y-3">
               <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>역할 선택</h2>
-              <ChoiceCard title="강사로 시작" desc="라이브러리, 수업 기록, 학생 이력, 학부모 공유를 사용합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
-              <ChoiceCard title="원장으로 시작" desc="센터 플랜, 강사 기록률, 이탈 학생, 구독 현황을 관리합니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
+              <ChoiceCard title="강사로 시작" desc="라이브러리, 수업 기록, 학생 이력, 보호자 공유를 사용합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
+              <ChoiceCard title="원장으로 시작" desc="센터 플랜, 강사 기록률, 이탈 위험 학생, 구독 현황을 관리합니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
             </div>
           ) : null}
 
@@ -123,7 +123,7 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 연결</h2>
               <div className="grid gap-2 sm:grid-cols-2">
-                <ChoiceCard title="개인으로 시작" desc="14일 무료 체험으로 혼자 먼저 확인합니다." active={centerMode === 'personal'} icon={UserRound} onClick={() => { setCenterMode('personal'); setCenterResult(null); }} />
+                <ChoiceCard title="개인으로 시작" desc="14일 무료 체험으로 먼저 확인합니다." active={centerMode === 'personal'} icon={UserRound} onClick={() => { setCenterMode('personal'); setCenterResult(null); }} />
                 <ChoiceCard title="센터 코드 입력" desc="원장이 발급한 코드로 센터 플랜에 합류합니다." active={centerMode === 'center'} icon={School} onClick={() => setCenterMode('center')} />
               </div>
               {centerMode === 'center' ? (

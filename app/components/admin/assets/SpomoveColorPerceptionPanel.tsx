@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { SpomoveVariantFruitPanel } from '@/app/components/admin/assets/SpomoveVariantFruitPanel';
 import { SpomoveVariantThemedSlotsPanel } from '@/app/components/admin/assets/SpomoveVariantThemedSlotsPanel';
-import { useSpomoveVariantSlidesForTraining } from '@/app/admin/iiwarmup/spomove/training/_player/hooks/useSpomoveVariantFruitSlidesForTraining';
+import { useSpomoveVariantSlidesForTraining } from '@/app/admin/spomove/training/_player/hooks/useSpomoveVariantFruitSlidesForTraining';
 import {
   SPOMOVE_COLOR_HUB_SECTIONS,
   SPOMOVE_COLOR_THEME_LABELS,
@@ -12,7 +12,7 @@ import {
   SPOMOVE_VARIANT_THEME_LS_KEY,
   parseStoredVariantTheme,
   type SpomoveColorThemeId,
-} from '@/app/admin/iiwarmup/spomove/training/_player/lib/spomoveVariantThemeConfig';
+} from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 
 type HubSectionId = (typeof SPOMOVE_COLOR_HUB_SECTIONS)[number]['id'];
 

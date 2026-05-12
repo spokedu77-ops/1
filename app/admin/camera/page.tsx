@@ -49,7 +49,7 @@ export default function CameraAppPage() {
     <div className="fixed inset-0 z-[100] h-[var(--viewport-height-px,100dvh)] max-h-[var(--viewport-height-px,100dvh)] w-screen overflow-hidden bg-slate-950 overscroll-none [touch-action:none]">
       <div className="pointer-events-auto absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-[120] rounded-full border border-white/15 bg-slate-950/70 px-3 py-2 shadow-lg backdrop-blur">
         <Link
-          href="/admin/iiwarmup/spomove"
+          href="/admin/spomove"
           className="text-sm font-semibold text-sky-200 hover:text-white"
         >
           ← SPOMOVE 허브

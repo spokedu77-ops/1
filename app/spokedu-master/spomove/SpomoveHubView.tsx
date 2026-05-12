@@ -106,7 +106,7 @@ export default function SpomoveHubView() {
         <aside className="space-y-7">
           <section className="rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.14), var(--spm-s2))', border: '1px solid rgba(16,185,129,0.24)' }}>
             <Download size={20} color="var(--spm-grn)" />
-            <h2 className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>홈 화면에 추가하면 수업장이 빨라집니다</h2>
+            <h2 className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>홈 화면에 추가하면 수업이 빨라집니다</h2>
             <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
               브라우저 공유 메뉴에서 홈 화면 추가를 선택하면 수업 중 주소창 없이 바로 실행할 수 있습니다.
             </p>
@@ -144,8 +144,8 @@ export default function SpomoveHubView() {
             ) : (
               <Link href="/spokedu-master/spomove/session" className="flex items-center justify-between rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
                 <span>
-                  <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>아직 세션이 없어요</strong>
-                  <span className="mt-1 block text-[12px]" style={{ color: 'var(--spm-t3)' }}>첫 반응훈련을 시작해 기록을 쌓아보세요.</span>
+                  <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>아직 세션이 없습니다</strong>
+                  <span className="mt-1 block text-[12px]" style={{ color: 'var(--spm-t3)' }}>첫 반응 훈련을 시작해 기록을 쌓아보세요.</span>
                 </span>
                 <ChevronRight size={18} color="var(--spm-t3)" />
               </Link>

@@ -5,7 +5,7 @@
   "start_url": "/spokedu-master",
   "scope": "/spokedu-master/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#050712",
   "theme_color": "#185FA5",
   "icons": [

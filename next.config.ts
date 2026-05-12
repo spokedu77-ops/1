@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/admin/iiwarmup/play", destination: "/admin/iiwarmup", permanent: true },
+      { source: "/admin/iiwarmup/spomove", destination: "/admin/spomove/training", permanent: true },
+      { source: "/admin/iiwarmup/spomove/training", destination: "/admin/spomove/training", permanent: true },
+      {
+        source: "/admin/iiwarmup/spomove/training/:path*",
+        destination: "/admin/spomove/training/:path*",
+        permanent: true,
+      },
       { source: "/teacher/notice", destination: "/teacher", permanent: true },
       { source: "/teacher/chat", destination: "/teacher", permanent: true },
       { source: "/admin/chat", destination: "/admin", permanent: true },

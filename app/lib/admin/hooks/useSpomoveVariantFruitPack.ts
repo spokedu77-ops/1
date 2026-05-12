@@ -10,8 +10,8 @@ import {
   SPOMOVE_VARIANT_PACK_ID,
   VARIANT_FRUIT_SLOT_LABELS,
   type SpomoveVariantAssetsJson,
-} from '@/app/admin/iiwarmup/spomove/training/_player/lib/variantFruitAssets';
-import type { FruitSlide } from '@/app/admin/iiwarmup/spomove/training/_player/lib/signals';
+} from '@/app/admin/spomove/training/_player/lib/variantFruitAssets';
+import type { FruitSlide } from '@/app/admin/spomove/training/_player/lib/signals';
 
 const PACK_NAME = 'SPOMOVE 변형 색지각 과일';
 

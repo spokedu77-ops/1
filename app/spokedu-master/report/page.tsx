@@ -73,6 +73,8 @@ export default function ReportPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareStep, setShareStep] = useState<'preview' | 'generating' | 'done'>('preview');
   const [reportResult, setReportResult] = useState<GrowthReportResult | null>(null);
+  const [reportShared, setReportShared] = useState(false);
+  const [pdfSaved, setPdfSaved] = useState(false);
   const reactionValues = useMemo(() => sessions.map((session) => session.avg).filter((value): value is number => typeof value === 'number'), [sessions]);
   const filteredStudents = students.filter((student) => student.group === classFilter);
   const filteredRecords = classRecords.filter((record) => record.classId === classFilter);
@@ -82,14 +84,20 @@ export default function ReportPage() {
   const skillCount = filteredRecords.reduce((sum, record) => sum + record.skillCount, 0);
   const focusCount = filteredRecords.reduce((sum, record) => sum + record.focusCount, 0);
   const previewStudent = filteredStudents.find((student) => selectedReportIds.includes(student.id)) ?? filteredStudents[0];
+  const previewStudentRecord = previewStudent
+    ? filteredRecords.find((record) => record.students.some((student) => student.studentId === previewStudent.id))?.students.find((student) => student.studentId === previewStudent.id)
+    : null;
   const pdfUsed = classRecords.length;
   const pdfStatus = canUseMonthlyLimit(profile?.plan ?? 'free', pdfUsed, 'pdf');
   const kakaoStatus = canUseMonthlyLimit(profile?.plan ?? 'free', classRecords.filter((record) => record.kakaoSent).length, 'kakao');
 
   const toggleReportTarget = (id: string) => setSelectedReportIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
   const openShareFlow = () => {
+    if (filteredStudents.length === 0) return;
     if (selectedReportIds.length === 0) setSelectedReportIds(filteredStudents.map((student) => student.id));
     setShareStep('preview');
+    setReportShared(false);
+    setPdfSaved(false);
     setShareOpen(true);
   };
   const generateReports = async () => {
@@ -135,7 +143,7 @@ export default function ReportPage() {
               </div>
               <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: pdfStatus.allowed ? 'rgba(16,185,129,0.13)' : 'rgba(239,68,68,0.13)', color: pdfStatus.allowed ? 'var(--spm-grn)' : 'var(--spm-red)' }}>PDF {pdfStatus.label}</span>
             </div>
-            <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 기록, SPOMOVE 반응 데이터, 학생별 배지와 관찰 메모를 학부모 상담 자료로 묶습니다.</p>
+            <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 기록, SPOMOVE 반응 데이터, 학생별 배지와 관찰 메모를 보호자 상담 자료로 묶습니다.</p>
             {!pdfStatus.allowed ? <p className="mt-4 flex gap-2 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}><AlertTriangle size={15} />{pdfStatus.reason}</p> : null}
             <div className="mt-5 grid grid-cols-3 gap-2">
               {[
@@ -149,7 +157,7 @@ export default function ReportPage() {
                 </div>
               ))}
             </div>
-            <button type="button" onClick={openShareFlow} disabled={!pdfStatus.allowed} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+            <button type="button" onClick={openShareFlow} disabled={!pdfStatus.allowed || filteredStudents.length === 0} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
               <FileText size={16} />
               {selectedReportIds.length > 0 ? `${selectedReportIds.length}명 리포트 생성` : `${filteredStudents.length}명 일괄 생성`}
             </button>
@@ -161,7 +169,7 @@ export default function ReportPage() {
             <h2 className="text-[17px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>학생 선택</h2>
             <span className="text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>{classFilter}</span>
           </div>
-          <div className="space-y-2">
+          {filteredStudents.length > 0 ? <div className="space-y-2">
             {filteredStudents.map((student) => (
               <div key={student.id} className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
                 <button type="button" onClick={() => toggleReportTarget(student.id)} className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: selectedReportIds.includes(student.id) ? 'var(--spm-acc)' : 'var(--spm-s3)', color: selectedReportIds.includes(student.id) ? '#fff' : 'var(--spm-t3)' }} aria-label={`${student.name} 리포트 선택`}>
@@ -174,7 +182,12 @@ export default function ReportPage() {
                 </span>
               </div>
             ))}
-          </div>
+          </div> : (
+            <div className="rounded-[16px] p-5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <p className="text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>선택한 반에 학생이 없습니다</p>
+              <p className="mt-2 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>수업 기록을 먼저 저장하면 리포트 대상이 자동으로 표시됩니다.</p>
+            </div>
+          )}
         </section>
       </div>
 
@@ -182,18 +195,18 @@ export default function ReportPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>parent share</p>
-            <h2 className="mt-3 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{classFilter} 학부모 리포트</h2>
+            <h2 className="mt-3 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{classFilter} 보호자 리포트</h2>
           </div>
           <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: kakaoStatus.allowed ? 'rgba(16,185,129,0.13)' : 'rgba(239,68,68,0.13)', color: kakaoStatus.allowed ? 'var(--spm-grn)' : 'var(--spm-red)' }}>카카오 {kakaoStatus.label}</span>
         </div>
-        <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>카카오 공유 문장, 학부모 링크, PDF 리포트를 함께 준비합니다.</p>
+        <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>카카오 공유 문장, 보호자 링크, PDF 리포트를 함께 준비합니다.</p>
         {retryQueue.length > 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>PDF 생성 실패 {retryQueue.length}건이 재시도 대기 중입니다.</p> : null}
         <div className="mt-5 grid grid-cols-2 gap-2">
-          <button type="button" onClick={openShareFlow} disabled={!kakaoStatus.allowed || !pdfStatus.allowed} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+          <button type="button" onClick={openShareFlow} disabled={!kakaoStatus.allowed || !pdfStatus.allowed || filteredStudents.length === 0} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
             <Share2 size={15} />
             공유
           </button>
-          <button type="button" onClick={openShareFlow} disabled={!pdfStatus.allowed} className="h-11 rounded-[12px] text-[13px] font-black disabled:opacity-50" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>PDF</button>
+          <button type="button" onClick={openShareFlow} disabled={!pdfStatus.allowed || filteredStudents.length === 0} className="h-11 rounded-[12px] text-[13px] font-black disabled:opacity-50" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>PDF</button>
         </div>
       </section>
 
@@ -235,12 +248,24 @@ export default function ReportPage() {
                         </div>
                       ))}
                     </div>
-                    <p className="mt-5 rounded-[12px] bg-slate-100 p-3 text-[12px] font-semibold leading-5 text-slate-600">{previewStudent.name}은 수업 참여가 안정적이며, 다음 수업에서도 가장 성장 폭이 큰 동작을 중심으로 관찰하겠습니다.</p>
+                    <div className="mt-5 rounded-[12px] bg-slate-100 p-3">
+                      <p className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400">coach note</p>
+                      <p className="mt-2 text-[12px] font-semibold leading-5 text-slate-600">
+                        {previewStudentRecord?.memo
+                          ? previewStudentRecord.memo
+                          : `${previewStudent.name}은 수업 참여가 안정적이며, 다음 수업에서도 가장 성장 폭이 큰 동작을 중심으로 관찰하겠습니다.`}
+                      </p>
+                      {previewStudentRecord?.skills.length ? (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {previewStudentRecord.skills.map((skill) => <span key={skill} className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700">{skill}</span>)}
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
                 <Link href={`/spokedu-master/parent/${previewStudent.id}?token=${createParentPreviewToken(previewStudent.id)}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <ExternalLink size={16} />
-                  학부모 링크 미리보기
+                  보호자 링크 미리보기
                 </Link>
                 <button type="button" onClick={generateReports} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
                   <MessageCircle size={16} />
@@ -251,8 +276,8 @@ export default function ReportPage() {
             {shareStep === 'generating' ? (
               <div className="py-8 text-center">
                 <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-white/10 border-t-indigo-400" />
-                <p className="mt-5 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>리포트를 생성하고 있어요</p>
-                <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>Cloud Function 계약에 맞춰 PDF와 카카오 공유 문장을 준비합니다.</p>
+                <p className="mt-5 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>리포트를 생성하고 있습니다</p>
+                <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>PDF와 카카오 공유 문장을 준비합니다.</p>
               </div>
             ) : null}
             {shareStep === 'done' ? (
@@ -261,11 +286,20 @@ export default function ReportPage() {
                   <Check size={30} color="var(--spm-grn)" />
                 </div>
                 <h3 className="mt-5 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>리포트 준비 완료</h3>
-                <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{reportResult?.pdfCount ?? (selectedReportIds.length || filteredStudents.length)}명의 PDF와 카카오 공유 문장이 생성되었습니다.</p>
+                <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{reportResult?.pdfCount ?? (selectedReportIds.length || filteredStudents.length)}명의 PDF와 카카오 공유 문장을 생성했습니다.</p>
+                {reportShared || pdfSaved ? (
+                  <div className="mt-5 space-y-2 text-left">
+                    {reportShared ? <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>카카오 공유 요청이 준비되었습니다. 보호자 링크 {reportResult?.kakaoReadyCount ?? 0}건이 포함됩니다.</p> : null}
+                    {pdfSaved ? <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(99,102,241,0.14)', color: '#a5b4fc' }}>PDF 저장 요청이 완료되었습니다. 생성 배치 ID: {reportResult?.reportBatchId ?? 'local-report'}</p> : null}
+                  </div>
+                ) : null}
                 <div className="mt-6 grid grid-cols-2 gap-2">
-                  <button type="button" disabled={!kakaoStatus.allowed} className="h-11 rounded-[12px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>카카오 발송</button>
-                  <button type="button" className="h-11 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>PDF 저장</button>
+                  <button type="button" onClick={() => setReportShared(true)} disabled={!kakaoStatus.allowed || reportShared} className="h-11 rounded-[12px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>{reportShared ? '발송 준비 완료' : '카카오 발송'}</button>
+                  <button type="button" onClick={() => setPdfSaved(true)} disabled={pdfSaved} className="h-11 rounded-[12px] text-[13px] font-black disabled:opacity-50" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>{pdfSaved ? '저장 완료' : 'PDF 저장'}</button>
                 </div>
+                {reportResult?.parentLinks[0] ? (
+                  <Link href={`/spokedu-master/parent/${reportResult.parentLinks[0].studentId}?token=${reportResult.parentLinks[0].token}`} className="mt-3 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>보호자 링크 열기</Link>
+                ) : null}
               </div>
             ) : null}
           </div>

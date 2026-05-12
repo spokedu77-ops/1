@@ -1,6 +1,7 @@
 'use client';
 
-import { AlertTriangle, BarChart3, CreditCard, UsersRound } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, BarChart3, CreditCard, FileText, MessageCircle, UsersRound } from 'lucide-react';
 import { OperationsPanel } from '../components/operations/OperationsPanel';
 import { useMasterStore, useProfile } from '../store';
 
@@ -25,6 +26,7 @@ export default function DirectorPage() {
   const riskStudents = students.filter((student) => student.risk);
   const recordRate = records.length > 0 ? 82 : 68;
   const attendance = Math.round(students.reduce((sum, student) => sum + student.attendance, 0) / Math.max(students.length, 1));
+  const centerName = profile?.centerName ?? profile?.school ?? '센터';
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -32,12 +34,12 @@ export default function DirectorPage() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>director dashboard</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 대시보드</h1>
         <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          {profile?.centerName ?? profile?.school ?? '센터'}의 강사 기록률, 학생 이탈 신호, 센터 플랜 사용량을 한 화면에서 봅니다.
+          {centerName}의 강사 기록률, 학생 이탈 신호, 센터 플랜 사용량을 한 화면에서 확인합니다.
         </p>
       </header>
 
       <section className="grid gap-3 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10">
-        <Kpi label="teachers" value="3명" desc="센터 플랜 기본 슬롯" icon={UsersRound} tone="#818cf8" />
+        <Kpi label="teachers" value="3명" desc="센터 플랜 기본 좌석" icon={UsersRound} tone="#818cf8" />
         <Kpi label="students" value={`${students.length}명`} desc="관리 중인 학생" icon={BarChart3} tone="#10b981" />
         <Kpi label="attendance" value={`${attendance}%`} desc="이번 주 평균 출석률" icon={CreditCard} tone="#f59e0b" />
         <Kpi label="record rate" value={`${recordRate}%`} desc={recordRate < 70 ? '기록률 경고 기준 미만' : '안정적인 기록률'} icon={AlertTriangle} tone={recordRate < 70 ? 'var(--spm-red)' : 'var(--spm-grn)'} />
@@ -75,8 +77,24 @@ export default function DirectorPage() {
               </div>
             )) : <p className="rounded-[13px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>현재 위험 신호가 없습니다.</p>}
           </div>
+          <Link href="/spokedu-master/students" className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 이력 확인</Link>
         </section>
       </div>
+
+      <section className="mx-[22px] mt-5 grid gap-3 sm:mx-8 md:grid-cols-3 lg:mx-10">
+        <Link href="/spokedu-master/report" className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <span className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.14)' }}><FileText size={19} color="var(--spm-acc)" /></span>
+          <span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>센터 리포트</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>반별 PDF 일괄 생성</span></span>
+        </Link>
+        <Link href="/spokedu-master/class-record" className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <span className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.14)' }}><MessageCircle size={19} color="var(--spm-grn)" /></span>
+          <span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>카카오 공유</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>수업 종료 요약 발송</span></span>
+        </Link>
+        <Link href="/spokedu-master/profile" className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <span className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'rgba(245,158,11,0.14)' }}><CreditCard size={19} color="var(--spm-amb)" /></span>
+          <span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>센터 플랜</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>좌석과 결제 관리</span></span>
+        </Link>
+      </section>
 
       <section className="mx-[22px] mt-5 sm:mx-8 lg:mx-10">
         <OperationsPanel compact />
@@ -86,8 +104,20 @@ export default function DirectorPage() {
         <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>
         <h2 className="mt-2 text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 플랜 사용 중</h2>
         <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          강사 3명 기본, 카카오 발송 무제한, 원장 대시보드와 이탈 학생 자동 감지를 포함합니다. 현재 수업계획 {lessons.length}개가 운영 중입니다.
+          강사 3명 기본, 카카오 발송 무제한, 원장 대시보드와 이탈 학생 자동 감지를 포함합니다. 현재 수업 계획 {lessons.length}개가 운영 중입니다.
         </p>
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          {[
+            ['좌석', '3/3'],
+            ['카카오', '무제한'],
+            ['리포트', `${records.length || students.length}건`],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>
+              <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
+              <p className="mt-1 text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );

@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import { PROGRAMS } from '../lib/data';
 import { useIsPro, useMasterStore } from '../store';
 
-const CATEGORIES = ['전체', '민첩성', '반응속도', '협응성', '대근육', '체력'];
+const CATEGORIES = ['전체', '민첩성', '반응 속도', '협응성', '기초 체력', '체력'];
 const GRADES = ['전체 학년', '유치부', '초등 저학년', '초등 고학년', '중등'];
 
 function ThumbGrid({ colors, size = 72 }: { colors: [string, string, string, string]; size?: number }) {
@@ -120,7 +120,7 @@ function SearchOverlay({ query, setQuery, onClose }: { query: string; setQuery: 
           </label>
           <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="검색 닫기"><X size={18} color="var(--spm-t2)" /></button>
         </div>
-        <p className="mt-5 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>검색어를 입력하면 라이브러리 목록과 추천 레일에 바로 반영됩니다.</p>
+        <p className="mt-5 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>검색어를 입력하면 라이브러리 목록과 추천 화면에 바로 반영됩니다.</p>
       </div>
     </div>
   );
@@ -178,7 +178,7 @@ export default function LibraryView() {
       <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
         <Link href="/spokedu-master/spomove" className="flex items-center gap-3 rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.14)' }}><Zap size={19} color="var(--spm-acc)" /></span>
-          <span className="min-w-0 flex-1"><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>SPOMOVE 웹 플레이어</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>프로젝터, 태블릿, 모바일에서 바로 실행</span></span>
+          <span className="min-w-0 flex-1"><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>SPOMOVE 플레이어</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>프로젝터, 태블릿, 모바일에서 바로 실행</span></span>
           <Smartphone size={18} color="var(--spm-t3)" />
         </Link>
       </section>

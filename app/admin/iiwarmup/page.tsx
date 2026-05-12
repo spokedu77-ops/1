@@ -23,7 +23,7 @@ export default function TeacherAppOverviewPage() {
         </Link>
 
         <Link
-          href="/admin/iiwarmup/spomove/training"
+          href="/admin/spomove/training"
           className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >
           <h3 className="text-base font-extrabold">SPOMOVE</h3>

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { CalendarDays, Check, ListChecks, Plus, Trash2 } from 'lucide-react';
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -33,20 +34,31 @@ function ProgressCard({ done, total }: { done: number; total: number }) {
   );
 }
 
+function getProgramForLesson(title: string) {
+  return PROGRAMS.find((program) => title.includes(program.title.split(':')[0]) || program.title.includes(title.split(':')[0])) ?? PROGRAMS[0]!;
+}
+
 function LessonItem({ lesson, onToggle, onDelete }: { lesson: ReturnType<typeof useMasterStore.getState>['lessons'][number]; onToggle: () => void; onDelete: () => void }) {
+  const program = getProgramForLesson(lesson.title);
   return (
-    <div className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
-      <span className="h-10 w-1.5 rounded-full" style={{ background: lesson.color }} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-bold" style={{ color: lesson.done ? 'var(--spm-t3)' : 'var(--spm-t)' }}>{lesson.title}</p>
-        <p className="mt-1 text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>{lesson.classId} / {lesson.period}교시 / {lesson.duration}분</p>
+    <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+      <div className="flex items-center gap-3">
+        <span className="h-10 w-1.5 rounded-full" style={{ background: lesson.color }} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-bold" style={{ color: lesson.done ? 'var(--spm-t3)' : 'var(--spm-t)' }}>{lesson.title}</p>
+          <p className="mt-1 text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>{lesson.classId} / {lesson.period}교시 / {lesson.duration}분</p>
+        </div>
+        <button type="button" onClick={onToggle} className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: lesson.done ? 'rgba(16,185,129,0.14)' : 'var(--spm-s3)' }} aria-label="완료 체크">
+          <Check size={17} color={lesson.done ? 'var(--spm-grn)' : 'var(--spm-t3)'} />
+        </button>
+        <button type="button" onClick={onDelete} className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label="삭제">
+          <Trash2 size={16} color="var(--spm-red)" />
+        </button>
       </div>
-      <button type="button" onClick={onToggle} className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: lesson.done ? 'rgba(16,185,129,0.14)' : 'var(--spm-s3)' }} aria-label="완료 체크">
-        <Check size={17} color={lesson.done ? 'var(--spm-grn)' : 'var(--spm-t3)'} />
-      </button>
-      <button type="button" onClick={onDelete} className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label="삭제">
-        <Trash2 size={16} color="var(--spm-red)" />
-      </button>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Link href={`/spokedu-master/library/${program.id}`} className="flex h-9 items-center justify-center rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>수업안</Link>
+        <Link href={`/spokedu-master/class-record?program=${program.id}`} className="flex h-9 items-center justify-center rounded-[10px] text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>기록 시작</Link>
+      </div>
     </div>
   );
 }
@@ -107,7 +119,7 @@ export default function PlanView() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>lesson plan</p>
         <div className="mt-1 flex items-end justify-between gap-3">
-          <h1 className="text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업계획</h1>
+          <h1 className="text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 계획</h1>
           <button type="button" onClick={() => setSheetOpen(true)} className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-acc)' }} aria-label="수업 추가">
             <Plus size={19} color="#fff" />
           </button>
@@ -151,12 +163,16 @@ export default function PlanView() {
         </section>
       ) : (
         <section className="space-y-5 px-[22px] sm:px-8 lg:px-10">
-          {Object.entries(listGroups).map(([date, items]) => (
+          {Object.entries(listGroups).length > 0 ? Object.entries(listGroups).map(([date, items]) => (
             <div key={date}>
               <h2 className="mb-3 text-[14px] font-black" style={{ color: 'var(--spm-t2)' }}>{date}</h2>
               <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">{items.map((lesson) => <LessonItem key={lesson.id} lesson={lesson} onToggle={() => toggleLessonDone(lesson.id)} onDelete={() => deleteLessonById(lesson.id)} />)}</div>
             </div>
-          ))}
+          )) : (
+            <div className="rounded-[14px] p-5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <p className="text-[14px] font-bold" style={{ color: 'var(--spm-t)' }}>등록된 수업 계획이 없습니다.</p>
+            </div>
+          )}
         </section>
       )}
       <AddLessonSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />

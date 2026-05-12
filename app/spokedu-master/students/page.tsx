@@ -25,8 +25,10 @@ export default function StudentsPage() {
   const students = useMasterStore((state) => state.students);
   const records = useMasterStore((state) => state.classRecords);
   const [selectedId, setSelectedId] = useState(students[0]?.id ?? null);
+  const [kakaoReadyId, setKakaoReadyId] = useState<string | null>(null);
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
   const selectedRecordCount = selected ? records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length : 0;
+  const selectedParentToken = selected ? createParentPreviewToken(selected.id) : '';
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -34,12 +36,20 @@ export default function StudentsPage() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>student history</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
         <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          강사가 매 수업마다 남긴 출석, 동작, 관찰 기록을 학생별 성장 이력으로 누적합니다. 이 화면이 학부모 공유와 학기말 리포트의 원본 데이터입니다.
+          매 수업의 출석, 동작, 관찰 기록이 학생별 성장 이력으로 누적됩니다. 이 화면이 보호자 공유와 학기말 리포트의 원본 데이터입니다.
         </p>
       </header>
 
+      {students.length === 0 ? (
+        <section className="mx-[22px] rounded-[18px] p-6 text-center sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <h2 className="text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>아직 등록된 학생이 없습니다</h2>
+          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>첫 수업 기록을 저장하면 학생 이력이 자동으로 쌓이기 시작합니다.</p>
+          <Link href="/spokedu-master/class-record" className="mt-5 inline-flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>수업 기록 시작</Link>
+        </section>
+      ) : null}
+
       <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
-        <section className="space-y-2">
+        {students.length > 0 ? <section className="space-y-2">
           {students.map((student) => (
             <button key={student.id} type="button" onClick={() => setSelectedId(student.id)} className="flex w-full items-center gap-3 rounded-[15px] p-3 text-left" style={{ background: selectedId === student.id ? 'rgba(99,102,241,0.14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br)' }}>
               <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>
@@ -53,7 +63,7 @@ export default function StudentsPage() {
               <ChevronRight size={16} color="var(--spm-t3)" />
             </button>
           ))}
-        </section>
+        </section> : null}
 
         {selected ? (
           <section className="overflow-hidden rounded-[20px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -105,18 +115,24 @@ export default function StudentsPage() {
                 <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>최근 이력</h3>
                 <div className="space-y-2">{selected.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
               </div>
+              {kakaoReadyId === selected.id ? (
+                <div className="rounded-[13px] p-3" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  <p className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>카카오 공유 문장이 준비되었습니다.</p>
+                  <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{selected.name} 보호자에게 최근 성장 기록 링크를 전송할 수 있습니다.</p>
+                </div>
+              ) : null}
               <div className="grid grid-cols-3 gap-2">
                 <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
                   <FileText size={15} />
                   리포트
                 </Link>
-                <Link href={`/spokedu-master/parent/${selected.id}?token=${createParentPreviewToken(selected.id)}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                <Link href={`/spokedu-master/parent/${selected.id}?token=${selectedParentToken}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <ExternalLink size={15} />
                   링크
                 </Link>
-                <button type="button" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                <button type="button" onClick={() => setKakaoReadyId(selected.id)} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: kakaoReadyId === selected.id ? 'rgba(16,185,129,0.13)' : 'var(--spm-s3)', color: kakaoReadyId === selected.id ? 'var(--spm-grn)' : 'var(--spm-t)' }}>
                   <MessageCircle size={15} />
-                  카카오
+                  {kakaoReadyId === selected.id ? '준비됨' : '카카오'}
                 </button>
               </div>
             </div>

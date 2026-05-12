@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { AlertTriangle, Check, ChevronRight, ExternalLink, MessageCircle, Play, Send, Star, UserCheck, UserX } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { PROGRAMS } from '../lib/data';
 import { sendKakaoClassSummary, type KakaoSummaryResult } from '../lib/serviceContracts';
@@ -10,7 +11,7 @@ import { canCreateClassRecord, canUseMonthlyLimit, createParentPreviewToken } fr
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, StudentProfile } from '../types';
 
-const SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
+const SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분히 대기'];
 
 function SummaryPill({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
@@ -70,7 +71,8 @@ function StudentRow({
   );
 }
 
-export default function ClassRecordPage() {
+function ClassRecordContent() {
+  const searchParams = useSearchParams();
   const profile = useMasterStore((state) => state.profile);
   const lessons = useMasterStore((state) => state.lessons);
   const students = useMasterStore((state) => state.students);
@@ -79,17 +81,23 @@ export default function ClassRecordPage() {
   const enqueueRetry = useMasterStore((state) => state.enqueueRetry);
   const retryQueue = useMasterStore((state) => state.operational.retryQueue);
   const todayLesson = lessons[0];
-  const program = PROGRAMS.find((item) => todayLesson?.title.includes(item.title.split(':')[0])) ?? PROGRAMS[0]!;
+  const requestedProgramId = searchParams.get('program');
+  const program = PROGRAMS.find((item) => item.id === requestedProgramId) ?? PROGRAMS.find((item) => todayLesson?.title.includes(item.title.split(':')[0])) ?? PROGRAMS[0]!;
+  const activeClassId = todayLesson?.classId ?? '초등 A반';
+  const activePeriod = todayLesson?.period ?? 3;
+  const activeLessonTitle = requestedProgramId ? program.title : todayLesson?.title ?? program.title;
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>(() => Object.fromEntries(students.map((student) => [student.id, 'pending'])));
   const [focused, setFocused] = useState<Record<string, boolean>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checkedSkills, setCheckedSkills] = useState<Record<string, string[]>>({});
+  const [studentMemos, setStudentMemos] = useState<Record<string, string>>({});
   const [kakaoStep, setKakaoStep] = useState<'summary' | 'preview' | 'sending' | 'done'>('summary');
   const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [kakaoResult, setKakaoResult] = useState<KakaoSummaryResult | null>(null);
 
   const selectedStudent = students.find((student) => student.id === selectedId);
-  const firstPresentStudent = students.find((student) => attendance[student.id] === 'present') ?? students[0];
+  const firstPresentStudent = students.find((student) => attendance[student.id] === 'present');
   const present = Object.values(attendance).filter((value) => value === 'present').length;
   const absent = Object.values(attendance).filter((value) => value === 'absent').length;
   const focusCount = Object.values(focused).filter(Boolean).length;
@@ -98,6 +106,10 @@ export default function ClassRecordPage() {
   const recordStatus = canCreateClassRecord(profile);
   const kakaoUsed = classRecords.filter((record) => record.kakaoSent).length;
   const kakaoStatus = canUseMonthlyLimit(profile?.plan ?? 'free', kakaoUsed, 'kakao');
+  const hasStudents = students.length > 0;
+  const hasAttendance = present + absent > 0;
+  const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance;
+  const canPreviewKakao = canSaveRecord && present > 0;
   const parentToken = firstPresentStudent ? createParentPreviewToken(firstPresentStudent.id) : '';
 
   const toggleSkill = (studentId: string, skill: string) => {
@@ -115,8 +127,8 @@ export default function ClassRecordPage() {
 
   const buildRecord = (kakaoSent: boolean) => ({
     id: savedRecordId ?? Date.now().toString(),
-    lessonTitle: todayLesson?.title ?? program.title,
-    classId: todayLesson?.classId ?? '초등 A반',
+    lessonTitle: activeLessonTitle,
+    classId: activeClassId,
     programId: program.id,
     programTitle: program.title,
     date: new Date().toISOString(),
@@ -131,19 +143,21 @@ export default function ClassRecordPage() {
       attendance: attendance[student.id] ?? 'pending',
       focused: !!focused[student.id],
       skills: checkedSkills[student.id] ?? [],
+      memo: studentMemos[student.id]?.trim() || undefined,
     })),
   });
 
   const persistRecord = (kakaoSent: boolean) => {
-    if (!recordStatus.allowed) return null;
+    if (!canSaveRecord) return null;
     const record = buildRecord(kakaoSent);
     saveClassRecord(record);
     setSavedRecordId(record.id);
+    setSavedOnly(!kakaoSent);
     return record;
   };
 
   const sendKakao = async () => {
-    if (!kakaoStatus.allowed) return;
+    if (!kakaoStatus.allowed || !canPreviewKakao) return;
     const record = persistRecord(true);
     if (!record) return;
     setKakaoStep('sending');
@@ -185,8 +199,8 @@ export default function ClassRecordPage() {
       <section className="mx-[22px] mb-5 overflow-hidden rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.25), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>{todayLesson?.classId ?? '초등 A반'} · {todayLesson?.period ?? 3}교시</p>
-            <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{todayLesson?.title ?? program.title}</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>{activeClassId} · {activePeriod}교시</p>
+            <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{activeLessonTitle}</h2>
             <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>출석은 빠르게, 동작 기록은 학생 이름을 눌러 저장합니다.</p>
           </div>
           <Link href="/spokedu-master/spomove/session?mode=class" className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-acc)' }} aria-label="SPOMOVE 실행">
@@ -205,9 +219,16 @@ export default function ClassRecordPage() {
       </section>
 
       <section className="grid gap-2 px-[22px] sm:px-8 md:grid-cols-2 lg:px-10 xl:grid-cols-3">
-        {students.map((student) => (
-          <StudentRow key={student.id} student={student} attendance={attendance[student.id] ?? 'pending'} focused={!!focused[student.id]} disabled={!recordStatus.allowed} onAttendance={(status) => setAttendance((prev) => ({ ...prev, [student.id]: status }))} onFocus={() => setFocused((prev) => ({ ...prev, [student.id]: !prev[student.id] }))} onOpen={() => setSelectedId(student.id)} />
-        ))}
+        {students.length > 0 ? (
+          students.map((student) => (
+            <StudentRow key={student.id} student={student} attendance={attendance[student.id] ?? 'pending'} focused={!!focused[student.id]} disabled={!recordStatus.allowed} onAttendance={(status) => setAttendance((prev) => ({ ...prev, [student.id]: status }))} onFocus={() => setFocused((prev) => ({ ...prev, [student.id]: !prev[student.id] }))} onOpen={() => setSelectedId(student.id)} />
+          ))
+        ) : (
+          <div className="rounded-[18px] p-5 md:col-span-2 xl:col-span-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>등록된 학생이 없습니다.</p>
+            <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>학생 명단이 있어야 출석, 동작 기록, 보호자 공유까지 이어지는 수업 기록을 만들 수 있습니다.</p>
+          </div>
+        )}
       </section>
 
       <section className="mx-[22px] mt-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -219,13 +240,17 @@ export default function ClassRecordPage() {
           <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: kakaoStatus.allowed ? 'rgba(16,185,129,0.13)' : 'rgba(239,68,68,0.13)', color: kakaoStatus.allowed ? 'var(--spm-grn)' : 'var(--spm-red)' }}>카카오 {kakaoStatus.label}</span>
         </div>
         <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>출석 {present}명, 동작 기록 {recordedSkills}개를 보호자용 카카오 요약으로 변환합니다.</p>
+        {!hasStudents ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>등록된 학생이 없어 수업 기록을 만들 수 없습니다.</p> : null}
+        {hasStudents && !hasAttendance ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>출석 또는 결석을 최소 1명 이상 체크해 주세요.</p> : null}
+        {hasAttendance && present === 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>출석 학생이 있어야 보호자 공유를 보낼 수 있습니다. 결석 기록은 저장만 가능합니다.</p> : null}
         {kakaoStep === 'preview' ? (
           <div className="mt-4 rounded-[16px] p-4" style={{ background: '#fef3c7', color: '#2d1b05' }}>
             <p className="text-[12px] font-black">카카오톡 미리보기</p>
-            <p className="mt-2 text-[13px] font-semibold leading-6">오늘 {todayLesson?.classId ?? '초등 A반'}은 {program.title} 수업을 진행했습니다. 출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장되었습니다.</p>
+            <p className="mt-2 text-[13px] font-semibold leading-6">오늘 {activeClassId}은 {program.title} 수업을 진행했습니다. 출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장되었습니다.</p>
           </div>
         ) : null}
         {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}
+        {savedOnly && kakaoStep !== 'done' ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>수업 기록이 학생 이력에 저장되었습니다. 카카오는 나중에 발송할 수 있습니다.</p> : null}
         {kakaoStep === 'sending' ? <p className="mt-4 rounded-[12px] p-3 text-[13px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>보호자 메시지를 발송하는 중입니다...</p> : null}
         {kakaoStep === 'done' ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.13)', color: 'var(--spm-grn)' }}>
@@ -241,13 +266,19 @@ export default function ClassRecordPage() {
         {retryQueue.length > 0 ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>
             <p className="text-[12px] font-black">재시도 대기 {retryQueue.length}건</p>
-            <p className="mt-1 text-[11px] font-semibold">네트워크 또는 카카오 제공사 오류가 있으면 이 목록에서 다시 발송합니다.</p>
+            <p className="mt-1 text-[11px] font-semibold">네트워크 또는 카카오 제공사 오류가 있으면 운영 상태에서 다시 발송합니다.</p>
           </div>
         ) : null}
-        <button type="button" onClick={kakaoStep === 'summary' ? () => setKakaoStep('preview') : sendKakao} disabled={!recordStatus.allowed || !kakaoStatus.allowed || kakaoStep === 'sending' || kakaoStep === 'done'} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
-          {kakaoStep === 'summary' ? <MessageCircle size={16} /> : <Send size={16} />}
-          {kakaoStep === 'summary' ? '카카오 요약 미리보기' : kakaoStep === 'preview' ? '보호자에게 발송' : kakaoStep === 'done' ? '발송 완료' : '발송 중'}
-        </button>
+        <div className="mt-5 grid gap-2 sm:grid-cols-[0.78fr_1fr]">
+          <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || kakaoStep === 'sending'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+            <Check size={16} />
+            기록만 저장
+          </button>
+          <button type="button" onClick={kakaoStep === 'summary' ? () => setKakaoStep('preview') : sendKakao} disabled={!canPreviewKakao || !kakaoStatus.allowed || kakaoStep === 'sending' || kakaoStep === 'done'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
+            {kakaoStep === 'summary' ? <MessageCircle size={16} /> : <Send size={16} />}
+            {kakaoStep === 'summary' ? '카카오 요약 미리보기' : kakaoStep === 'preview' ? '보호자에게 발송' : kakaoStep === 'done' ? '발송 완료' : '발송 중'}
+          </button>
+        </div>
       </section>
 
       <BottomSheet open={!!selectedStudent} title="학생 동작 기록" onClose={() => setSelectedId(null)}>
@@ -272,11 +303,19 @@ export default function ClassRecordPage() {
                 );
               })}
             </div>
-            <textarea placeholder="수업 중 관찰 메모" className="mt-4 min-h-[86px] w-full rounded-[12px] border bg-transparent p-3 text-[13px] font-semibold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <textarea value={studentMemos[selectedStudent.id] ?? ''} onChange={(event) => setStudentMemos((prev) => ({ ...prev, [selectedStudent.id]: event.target.value }))} placeholder="수업 중 관찰 메모" className="mt-4 min-h-[86px] w-full rounded-[12px] border bg-transparent p-3 text-[13px] font-semibold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
             <button type="button" onClick={saveNext} className="mt-4 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>저장하고 다음 학생</button>
           </div>
         ) : null}
       </BottomSheet>
     </div>
+  );
+}
+
+export default function ClassRecordPage() {
+  return (
+    <Suspense fallback={<div className="h-full" style={{ background: 'var(--spm-bg)' }} />}>
+      <ClassRecordContent />
+    </Suspense>
   );
 }

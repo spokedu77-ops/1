@@ -20,7 +20,7 @@ function MemoryGamePageContent() {
     <div className="flex min-h-screen flex-col">
       <div className="shrink-0 border-b border-slate-700 bg-slate-950 px-4 py-2">
         <Link
-          href="/admin/iiwarmup/spomove/training"
+          href="/admin/spomove/training"
           className="text-sm font-semibold text-blue-400 hover:underline"
         >
           ← SPOMOVE 트레이닝
@@ -40,7 +40,7 @@ export default function MemoryGamePage() {
         <div className="flex min-h-screen flex-col bg-slate-900">
           <div className="shrink-0 border-b border-slate-700 bg-slate-950 px-4 py-2">
             <Link
-              href="/admin/iiwarmup/spomove/training"
+              href="/admin/spomove/training"
               className="text-sm font-semibold text-blue-400 hover:underline"
             >
               ← SPOMOVE 트레이닝

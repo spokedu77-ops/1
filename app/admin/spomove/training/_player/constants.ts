@@ -51,8 +51,8 @@ export const NUMBER_RULES = [
 ];
 
 /**
- * coreCode: SPOMOVE 카탈로그 대주제 코드.
- * 카탈로그에 노출되는 mode id는 고정한다.
+ * coreCode: 트레이닝 3축 필터 (/admin/spomove/training).
+ * VM = 시지각-반응 처리, IC = 선택주의와 간섭통제, EWM = 실행조절과 작업기억
  */
 export const MODES: Record<string, { id: string; title: string; en: string; icon: string; accent: string; tag: string; desc: string; coreCode?: string; levels: Array<{ id: number; name: string; enName: string; desc: string }> }> = {
   basic: {
@@ -106,11 +106,43 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
       { id: 6, name: '6번', enName: '5-Circle Extreme Sizes', desc: '원 5개가 모두 서로 다른 크기로 매우 강하게 표시됩니다. 답은 가운데(3번) 원의 색입니다.' },
     ],
   },
+  gonogo: {
+    id: 'gonogo',
+    title: 'Go / No-Go',
+    en: 'Go / No-Go',
+    icon: '🛑',
+    accent: '#F97316',
+    coreCode: 'EWM',
+    tag: '반응 억제',
+    desc: '움직여야 할 때와 멈춰야 할 때를 구분해 반응을 억제합니다.',
+    levels: [
+      { id: 1, name: '1번', enName: 'Go / No-Go (Color)', desc: 'Go / No-Go — 색 기반. 빨강·파랑·노랑은 Go(이동), 초록은 No-Go(멈춤).' },
+      { id: 2, name: '2번', enName: 'Go / No-Go (Shape)', desc: 'Go / No-Go — 도형 기반. 동그라미는 Go, 세모는 No-Go.' },
+      { id: 3, name: '3번', enName: 'Go / No-Go (Action)', desc: 'Go / No-Go — 동작 기반. 화살표는 이동(Go), X표는 멈춤(No-Go).' },
+      { id: 4, name: '4번', enName: 'Go / No-Go (Dual)', desc: 'Go / No-Go — 이중 규칙. 빨강 동그라미는 Go, 빨강 세모는 No-Go.' },
+    ],
+  },
+  taskswitch: {
+    id: 'taskswitch',
+    title: 'Task Switching',
+    en: 'Task Switching',
+    icon: '🔀',
+    accent: '#EA580C',
+    coreCode: 'EWM',
+    tag: '규칙 전환',
+    desc: 'cue에 따라 「색 / 위치 / 반대로」 규칙을 바꿔 반응합니다.',
+    levels: [
+      { id: 1, name: '1번', enName: 'Task Switching (Text Cues)', desc: 'Task Switching — 한글 cue(색·위치·반대로)로 규칙을 알려 줍니다.' },
+      { id: 2, name: '2번', enName: 'Task Switching (Icon Cues)', desc: 'Task Switching — 팔레트·핀·반전 아이콘으로 글자 의존도를 줄입니다.' },
+      { id: 3, name: '3번', enName: 'Task Switching (Border Cues)', desc: 'Task Switching — 실선/점선/이중 테두리만으로 규칙을 읽어야 합니다.' },
+    ],
+  },
+  /** 예전 URL·북마크용. 카탈로그에는 노출하지 않음 */
   executive: {
-    id: 'executive', title: '실행 조절', en: 'Executive Control', icon: '🔀', accent: '#F97316',
-    coreCode: 'EF',
+    id: 'executive', title: '실행 조절 (통합·레거시)', en: 'Executive Control', icon: '🔀', accent: '#F97316',
+    coreCode: 'EWM',
     tag: '반응 억제 · 규칙 전환',
-    desc: '움직여야 할 때와 멈춰야 할 때를 구분하고, 바뀌는 규칙에 맞춰 반응을 조절합니다.',
+    desc: '레거시 통합 슬롯입니다. 1~4는 Go/No-Go, 5~7은 Task Switching에 해당합니다.',
     levels: [
       { id: 1, name: '1번', enName: 'Go / No-Go (Color)', desc: 'Go / No-Go — 색 기반. 빨강·파랑·노랑은 Go(이동), 초록은 No-Go(멈춤).' },
       { id: 2, name: '2번', enName: 'Go / No-Go (Shape)', desc: 'Go / No-Go — 도형 기반. 동그라미는 Go, 세모는 No-Go.' },
@@ -123,7 +155,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   spatial: {
     id: 'spatial', title: '순차 기억', en: 'Sequential Memory', icon: '🎨', accent: '#22C55E',
-    coreCode: 'WM',
+    coreCode: 'EWM',
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
@@ -136,7 +168,7 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   flow: {
     id: 'flow', title: '플로우', en: 'Flow Mode', icon: '🌌', accent: '#06B6D4',
-    coreCode: 'WM',
+    coreCode: 'VM',
     tag: '몰입 러닝 · 반응 전환',
     desc: '우주 러닝 FLOW를 SPOMOVE에서 바로 실행합니다.',
     levels: [
@@ -170,34 +202,35 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
   },
   tbd2: {
     id: 'tbd2', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
-    coreCode: 'EF',
+    coreCode: 'IC',
     tag: '보류',
     desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
     levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
   },
   tbd3: {
     id: 'tbd3', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
-    coreCode: 'EF',
+    coreCode: 'EWM',
     tag: '보류',
     desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
     levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
   },
   tbd4: {
     id: 'tbd4', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
-    coreCode: 'WM',
+    coreCode: 'VM',
     tag: '보류',
     desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
     levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
   },
 };
 
-/** 트레이닝 카탈로그 12슬롯 고정 순서 (1~8 확정 + 9~12 보류) */
+/** 트레이닝 카탈로그 12슬롯: 실행축은 Go/No-Go·Task Switching 분리 + 실행·작업기억 미정 1슬롯(tbd3) */
 export const SPOMOVE_CATALOG_SLOT_IDS = [
   'reactTrain',
   'basic',
   'simon',
   'flanker',
-  'executive',
+  'gonogo',
+  'taskswitch',
   'spatial',
   'stroop',
   'flow',
@@ -220,6 +253,14 @@ export function resolveTrainingEngine(mode: string, level: number): { engineMode
     if (lv <= 4) return { engineMode: 'gonogo', engineLevel: lv };
     return { engineMode: 'taskswitch', engineLevel: lv - 4 };
   }
+  if (mode === 'gonogo') {
+    const lv = Math.min(4, Math.max(1, Math.floor(level)));
+    return { engineMode: 'gonogo', engineLevel: lv };
+  }
+  if (mode === 'taskswitch') {
+    const lv = Math.min(3, Math.max(1, Math.floor(level)));
+    return { engineMode: 'taskswitch', engineLevel: lv };
+  }
   return { engineMode: mode, engineLevel: level };
 }
 
@@ -229,9 +270,14 @@ export function normalizeLegacyTrainingMode(
   level: number,
 ): { mode: string; level: number } {
   if (!mode) return { mode: 'basic', level: 1 };
-  if (mode === 'gonogo') return { mode: 'executive', level: Math.min(4, Math.max(1, level)) };
-  if (mode === 'taskswitch') return { mode: 'executive', level: Math.min(7, Math.max(5, level + 4)) };
-  if (mode === 'dual') return { mode: 'executive', level: 1 };
+  if (mode === 'gonogo') return { mode: 'gonogo', level: Math.min(4, Math.max(1, level)) };
+  if (mode === 'taskswitch') return { mode: 'taskswitch', level: Math.min(3, Math.max(1, level)) };
+  if (mode === 'executive') {
+    const lv = Math.min(7, Math.max(1, Math.floor(level)));
+    if (lv <= 4) return { mode: 'gonogo', level: lv };
+    return { mode: 'taskswitch', level: lv - 4 };
+  }
+  if (mode === 'dual') return { mode: 'gonogo', level: 1 };
   return { mode, level };
 }
 

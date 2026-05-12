@@ -10,7 +10,7 @@ import { useIsPro, useMasterStore } from '../../store';
 
 function getEquipmentPrice(item: string) {
   if (item.includes('스마트폰') || item.includes('태블릿') || item.includes('프로젝터')) return 0;
-  if (item.includes('마커')) return 8900;
+  if (item.includes('마커콘')) return 8900;
   if (item.includes('카드')) return 12000;
   if (item.includes('허들')) return 24000;
   if (item.includes('바통')) return 6900;
@@ -50,7 +50,9 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
   const addLesson = useMasterStore((state) => state.addLesson);
   const addToCart = useMasterStore((state) => state.addToCart);
+  const cart = useMasterStore((state) => state.cart);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [classId, setClassId] = useState('3학년 A반');
   const [period, setPeriod] = useState(3);
   const [duration, setDuration] = useState(program?.duration ?? 15);
@@ -66,6 +68,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   }
 
   const favorite = favorites.includes(program.id);
+  const cartCount = cart.reduce((total, item) => total + item.qty, 0);
 
   const saveLesson = () => {
     addLesson({ id: Date.now(), title: program.title, classId, date: new Date().toISOString(), period, duration, done: false, color: program.colors[1], memo: `${program.category} / ${program.space}` });
@@ -77,6 +80,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     const price = getEquipmentPrice(item);
     if (price <= 0) return;
     addToCart({ id: item, name: item, price, qty: 1 });
+    setCartNotice(`${item} 장바구니에 담김`);
   };
 
   return (
@@ -84,7 +88,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
       <header className="sticky top-0 z-20 flex items-center justify-between px-[22px] py-3 sm:px-8 lg:px-10" style={{ background: 'rgba(7,7,12,0.86)', backdropFilter: 'blur(18px)' }}>
         <Link href="/spokedu-master/library" className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="뒤로가기"><ArrowLeft size={18} color="var(--spm-t)" /></Link>
         <div className="flex items-center gap-2">
-          <Link href="/spokedu-master/shop" className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="교구 쇼핑"><ShoppingBag size={18} color="var(--spm-t2)" /></Link>
+          <Link href="/spokedu-master/shop" className="relative grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="교구 쇼핑">
+            <ShoppingBag size={18} color="var(--spm-t2)" />
+            {cartCount > 0 ? <span className="absolute -right-1 -top-1 grid h-5 min-w-[20px] place-items-center rounded-full px-1 text-[10px] font-black text-white" style={{ background: 'var(--spm-red)' }}>{cartCount}</span> : null}
+          </Link>
           <button type="button" onClick={() => toggleFavorite(program.id)} className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="즐겨찾기">
             <Heart size={18} color={favorite ? 'var(--spm-red)' : 'var(--spm-t2)'} fill={favorite ? 'var(--spm-red)' : 'none'} />
           </button>
@@ -106,7 +113,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
               <Link href="/spokedu-master/profile" className="mt-7 block rounded-[14px] p-4 text-center" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}><strong className="block text-[14px]" style={{ color: 'var(--spm-amb)' }}>PRO로 업그레이드하고 전체 수업안 열기</strong></Link>
             ) : (
               <div className="mt-7 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <Link href="/spokedu-master/class-record" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={16} fill="#fff" />수업 기록 시작</Link>
+                <Link href={`/spokedu-master/class-record?program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={16} fill="#fff" />수업 기록 시작</Link>
                 <button type="button" onClick={() => setSheetOpen(true)} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><CalendarPlus size={16} />수업 계획 추가</button>
               </div>
             )}
@@ -115,6 +122,12 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
         <section className="mt-7 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <div className="mb-3 flex items-center justify-between"><h2 className="text-[16px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>준비물</h2><Link href="/spokedu-master/shop" className="text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>교구 쇼핑</Link></div>
+          {cartNotice ? (
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.18)' }}>
+              <p className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>{cartNotice}</p>
+              <Link href="/spokedu-master/shop" className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>장바구니 보기</Link>
+            </div>
+          ) : null}
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {program.equipment.map((item) => {
               const price = getEquipmentPrice(item);
@@ -148,7 +161,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
             <DetailPanel title="현장 팁" icon={Lightbulb}><DetailList items={program.lessonDetail.fieldTips} /></DetailPanel>
             <DetailPanel title="변형 수업" icon={Shuffle}><DetailList items={program.lessonDetail.variations} /></DetailPanel>
             <DetailPanel title="안전 체크" icon={ShieldAlert}><DetailList items={program.lessonDetail.safetyNotes} /></DetailPanel>
-            <DetailPanel title="연결 SPOMOVE" icon={Zap}><div className="flex flex-wrap gap-2">{program.lessonDetail.relatedSpomoveIds.map((item) => <Link key={item} href={`/spokedu-master/spomove/session?drill=${item}&mode=class`} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(99,102,241,0.14)', color: '#a5b4fc' }}>{item}</Link>)}</div></DetailPanel>
+            <DetailPanel title="연결 SPOMOVE" icon={Zap}><div className="flex flex-wrap gap-2">{program.lessonDetail.relatedSpomoveIds.map((item) => <Link key={item} href={`/spokedu-master/spomove/session?drill=${item}&mode=class&program=${program.id}`} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(99,102,241,0.14)', color: '#a5b4fc' }}>{item}</Link>)}</div></DetailPanel>
           </div>
         ) : null}
 

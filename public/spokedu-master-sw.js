@@ -1,5 +1,13 @@
-const CACHE_NAME = 'spokedu-master-v1';
-const APP_SHELL = ['/spokedu-master', '/manifest.json'];
+const CACHE_NAME = 'spokedu-master-v2';
+const APP_SHELL = [
+  '/spokedu-master',
+  '/spokedu-master/dashboard',
+  '/spokedu-master/library',
+  '/spokedu-master/spomove',
+  '/spokedu-master/class-record',
+  '/manifest.json',
+  '/spokedu-master-icon.svg',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -19,6 +27,7 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
 
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(

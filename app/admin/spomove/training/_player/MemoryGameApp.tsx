@@ -493,6 +493,8 @@ export default function MemoryGameApp({
         bgmMode === 'simon' ||
         bgmMode === 'flanker' ||
         bgmMode === 'executive' ||
+        bgmMode === 'gonogo' ||
+        bgmMode === 'taskswitch' ||
         bgmMode === 'reactTrain';
       if (shouldTryBgmParent) {
         if (spomoveBgmList.length === 0) {
@@ -1195,7 +1197,7 @@ export default function MemoryGameApp({
     return (
       <div ref={trainingContainerRef} style={{ position: 'fixed', inset: 0, background: bg, overflow: 'hidden', transition: 'background 0.06s' }}>
         <style>{CSS}</style>
-        {settings.mode === 'executive' && engineMode === 'gonogo' && (
+        {engineMode === 'gonogo' && (
           <div
             style={{
               position: 'absolute',
@@ -1222,7 +1224,7 @@ export default function MemoryGameApp({
             {engineLevel === 4 && '📋 빨강 동그라미 → 이동(Go) · 빨강 세모 → 멈춤(No-Go)'}
           </div>
         )}
-        {settings.mode === 'executive' && engineMode === 'taskswitch' && (
+        {engineMode === 'taskswitch' && (
           <div
             style={{
               position: 'absolute',

@@ -55,8 +55,15 @@ export function PwaInstallCard({ compact = false }: { compact?: boolean }) {
     setStandalone(isStandaloneMode());
   };
 
+  const installLabel = standalone ? '설치 완료' : promptEvent ? '설치하기' : '브라우저에서 추가';
+  const installHelp = standalone
+    ? '이미 홈 화면 앱처럼 실행 중입니다.'
+    : promptEvent
+      ? '현재 브라우저에서 바로 설치할 수 있습니다.'
+      : 'iOS Safari는 공유 버튼에서 홈 화면에 추가를 선택하세요.';
+
   return (
-    <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+    <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="PWA 설치 상태">
       <div className="flex items-start gap-3">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px]" style={{ background: 'rgba(99,102,241,0.14)' }}>
           <Smartphone size={20} color="var(--spm-acc)" />
@@ -88,9 +95,10 @@ export function PwaInstallCard({ compact = false }: { compact?: boolean }) {
           style={{ background: 'var(--spm-acc)' }}
         >
           <Download size={15} />
-          {standalone ? '설치 완료' : promptEvent ? '설치하기' : '브라우저 메뉴에서 추가'}
+          {installLabel}
         </button>
       </div>
+      {!compact ? <p className="mt-3 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{installHelp}</p> : null}
     </section>
   );
 }

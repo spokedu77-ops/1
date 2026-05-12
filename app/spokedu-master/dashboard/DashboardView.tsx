@@ -2,10 +2,13 @@
 
 import Link from 'next/link';
 import { Bell, ChevronRight, Clock3, Lock, Play, Smartphone, UsersRound, Zap } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
+import { BottomSheet } from '../components/ui/BottomSheet';
 import { DRILLS, PROGRAMS } from '../lib/data';
 import { getTrialDaysLeft } from '../lib/subscription';
 import { useIsPro, useMasterStore, useOperationalStatus, useProfile, useStats, useUnreadCount } from '../store';
+import type { Notification } from '../types';
 
 function SectionHeader({ title, href }: { title: string; href?: string }) {
   return (
@@ -57,7 +60,7 @@ function ServiceIdentityCard() {
             놀이체육과 SPOMOVE를 구독하는 프로그램 라이브러리
           </h2>
           <p className="mt-3 max-w-[640px] text-[13px] font-medium leading-6 md:text-[15px]" style={{ color: 'var(--spm-t2)' }}>
-            수업안은 넷플릭스처럼 고르고, SPOMOVE는 웹에서 바로 실행하고, 수업 기록은 학생 성장 이력으로 쌓입니다.
+            수업안은 고르고, SPOMOVE는 웹에서 바로 실행하고, 수업 기록은 학생 성장 이력으로 쌓입니다.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-1">
@@ -86,7 +89,7 @@ function TodayClassCard() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h3 className="mb-1 text-[20px] font-bold leading-[1.25]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{todayLesson?.title ?? program.title}</h3>
-                <p className="text-[11px] font-normal" style={{ color: 'var(--spm-t3)' }}>{todayLesson ? `${todayLesson.period}교시 / ${todayLesson.duration}분 / ${program.space}` : '3교시 / 15분 / 좁은 공간'}</p>
+                <p className="text-[11px] font-normal" style={{ color: 'var(--spm-t3)' }}>{todayLesson ? `${todayLesson.period}교시 / ${todayLesson.duration}분 / ${program.space}` : `3교시 / 15분 / ${program.space}`}</p>
               </div>
               <ThumbGrid colors={program.colors} />
             </div>
@@ -167,13 +170,44 @@ function ServiceHealthStrip() {
   );
 }
 
+function NotificationSheet({ open, notifications, onClose, onMarkAll }: { open: boolean; notifications: Notification[]; onClose: () => void; onMarkAll: () => void }) {
+  return (
+    <BottomSheet open={open} title="알림" onClose={onClose}>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>최근 업데이트 {notifications.length}건</p>
+          <button type="button" onClick={onMarkAll} className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>모두 읽음</button>
+        </div>
+        <div className="space-y-2">
+          {notifications.map((item) => (
+            <div key={item.id} className="rounded-[14px] p-4" style={{ background: item.read ? 'var(--spm-s2)' : 'rgba(99,102,241,0.14)', border: item.read ? '1px solid var(--spm-br2)' : '1px solid rgba(99,102,241,0.28)' }}>
+              <div className="flex items-start gap-3">
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: item.read ? 'var(--spm-t3)' : 'var(--spm-acc)' }} />
+                <span className="min-w-0 flex-1">
+                  <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
+                  <span className="mt-1 block text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{item.body}</span>
+                  <span className="mt-2 block text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>{new Date(item.createdAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Link href="/spokedu-master/report" className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>리포트 확인하기</Link>
+      </div>
+    </BottomSheet>
+  );
+}
+
 export default function DashboardView() {
   const profile = useProfile();
   const isPro = useIsPro();
   const stats = useStats();
   const unreadCount = useUnreadCount();
   const lessons = useMasterStore((state) => state.lessons);
-  const activeClasses = new Set(lessons.map((lesson) => lesson.classId)).size;
+  const notifications = useMasterStore((state) => state.notifications);
+  const markAllRead = useMasterStore((state) => state.markAllRead);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const activeClasses = useMemo(() => new Set(lessons.map((lesson) => lesson.classId)).size, [lessons]);
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -183,7 +217,7 @@ export default function DashboardView() {
           <h1 className="text-[22px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{profile?.name ?? '선생님'}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="relative grid h-[38px] w-[38px] place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림">
+          <button type="button" onClick={() => setNotificationOpen(true)} className="relative grid h-[38px] w-[38px] place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림">
             <Bell size={18} color="var(--spm-t2)" />
             {unreadCount > 0 ? <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: 'var(--spm-red)', border: '1.5px solid var(--spm-bg)' }} /> : null}
           </button>
@@ -226,6 +260,7 @@ export default function DashboardView() {
       <section className="px-[22px] sm:px-8 lg:hidden lg:px-10">
         <PwaInstallCard compact />
       </section>
+      <NotificationSheet open={notificationOpen} notifications={notifications} onClose={() => setNotificationOpen(false)} onMarkAll={markAllRead} />
     </div>
   );
 }

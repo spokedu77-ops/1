@@ -15,10 +15,10 @@ function OperationsBanner() {
   if (operational.online && operational.retryQueue.length === 0 && !expired) return null;
 
   const label = !operational.online
-    ? '오프라인 모드: 수업 기록은 기기에 저장됩니다.'
+    ? '오프라인 모드: 수업 기록은 기기에 저장되고 연결 후 다시 처리됩니다.'
     : expired
       ? '무료 체험이 만료되어 새 기록 생성이 제한됩니다.'
-      : `재시도 대기 ${operational.retryQueue.length}건. 카카오/PDF 실패 항목을 다시 처리해야 합니다.`;
+      : `재시도 대기 ${operational.retryQueue.length}건: 카카오/PDF 실패 항목을 다시 처리해야 합니다.`;
 
   return (
     <div
@@ -28,6 +28,7 @@ function OperationsBanner() {
         color: expired ? 'var(--spm-red)' : 'var(--spm-amb)',
         border: expired ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(245,158,11,0.25)',
       }}
+      role="status"
     >
       {label}
     </div>

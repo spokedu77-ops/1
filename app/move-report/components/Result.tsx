@@ -6,6 +6,8 @@ import Radar from './Radar';
 import AxisRow from './AxisRow';
 import ResultShareActions from './ResultShareActions';
 import { axisLabelsJoined } from '../lib/profileAxisLabels';
+import { appendMoveReportAttributionToUrl, buildMoveReportShareUrl } from '../lib/shareLink';
+import { getMoveReportAttribution, pickAttributionForShareUrl } from '../lib/attribution';
 
 export type ResultTab = 'report' | 'solution';
 
@@ -59,6 +61,22 @@ export default function Result({
   const { profile: p, bd, displayName, key } = result;
   const [revealed, setRevealed] = useState(false);
   const [reportExpanded, setReportExpanded] = useState(false);
+  const graphCodeStr = useMemo(
+    () =>
+      `${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`,
+    [bd]
+  );
+
+  const privateConsultShareUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    const built = buildMoveReportShareUrl(window.location.origin, {
+      v: 5,
+      profileKey: key,
+      graphCode: graphCodeStr,
+    });
+    return appendMoveReportAttributionToUrl(built, pickAttributionForShareUrl(getMoveReportAttribution()));
+  }, [key, graphCodeStr]);
+
   const consultSummary = useMemo(
     () =>
       [
@@ -72,12 +90,15 @@ export default function Result({
   );
 
   const handleGoPrivateConsult = useCallback(() => {
-    const href = `/info/private?reportSummary=${encodeURIComponent(consultSummary)}`;
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('private.moveReport.summary', consultSummary);
-      window.location.href = href;
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('private.moveReport.summary', consultSummary);
+    if (privateConsultShareUrl) {
+      window.localStorage.setItem('private.moveReport.shareUrl', privateConsultShareUrl);
+    } else {
+      window.localStorage.removeItem('private.moveReport.shareUrl');
     }
-  }, [consultSummary]);
+    window.location.href = '/info/private#move-report';
+  }, [consultSummary, privateConsultShareUrl]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -574,7 +595,7 @@ export default function Result({
 
               <ResultShareActions
                 profileKey={key}
-                graphCode={`${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`}
+                graphCode={graphCodeStr}
                 flash={flash}
                 showEducatorCta={showEducatorCta}
               />
@@ -754,7 +775,8 @@ export default function Result({
             }}
           >
             <p style={{ margin: '0 0 10px', fontSize: 12, color: '#d4d4d8', lineHeight: 1.6 }}>
-              결과 요약을 상담 폼으로 자동 전달하고, 바로 상담 작성 페이지로 이동합니다.
+              요약 텍스트와 결과 카드 링크를 브라우저에 저장한 뒤, 과외 상담 페이지로 이동합니다. 상담 폼에서 「요약
+              반영」을 누르면 메일 초안에 포함됩니다.
             </p>
             <button
               type="button"

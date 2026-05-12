@@ -3,8 +3,8 @@
 import { useRef } from 'react';
 import { useSpomoveVariantThemedPack } from '@/app/lib/admin/hooks/useSpomoveVariantThemedPack';
 import { spomoveVariantThemedPath } from '@/app/lib/admin/assets/storagePaths';
-import type { SpomoveThemedPackDef } from '@/app/admin/iiwarmup/spomove/training/_player/lib/spomoveVariantThemeConfig';
-import { SPOMOVE_THEMED_SLOT_COUNT } from '@/app/admin/iiwarmup/spomove/training/_player/lib/spomoveVariantThemeConfig';
+import type { SpomoveThemedPackDef } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
+import { SPOMOVE_THEMED_SLOT_COUNT } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 
 export function SpomoveVariantThemedSlotsPanel({ def }: { def: SpomoveThemedPackDef }) {
   const { previewUrls, loading, saving, error, uploadAt, clearAt } = useSpomoveVariantThemedPack({

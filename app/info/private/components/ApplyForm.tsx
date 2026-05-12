@@ -29,6 +29,7 @@ function formatLearnerBlock(learners: string[]): string {
 
 type ApplyFormProps = {
   reportSummary: string;
+  reportShareUrl?: string;
   onCopyResult?: (ok: boolean) => void;
   onConsultSubmit?: (result: {
     requiredFilled: boolean;
@@ -40,6 +41,7 @@ type ApplyFormProps = {
 
 export default function ApplyForm({
   reportSummary,
+  reportShareUrl = '',
   onCopyResult,
   onConsultSubmit,
 }: ApplyFormProps) {
@@ -109,9 +111,14 @@ export default function ApplyForm({
         head.push(line);
       }
     }
+    const shareTrim = reportShareUrl.trim();
+    if (shareTrim) {
+      head.push('', '[MOVE REPORT 결과 카드 링크]');
+      head.push(shareTrim);
+    }
     head.push('', '위 내용을 바탕으로 맞춤 상담 및 일정 그리고 수업료 안내를 도와드리겠습니다.');
     return head;
-  }, [learners, values, reportSummary]);
+  }, [learners, values, reportSummary, reportShareUrl]);
 
   const previewText = lines.join('\n');
 
@@ -380,9 +387,9 @@ export default function ApplyForm({
 
             <div className="pl-preview-box">
               <div className="pl-preview-header">
-                <span>카카오 상담 전송용 폼 (자동 완성)</span>
+                <span>접수 본문 미리보기 (Move report는 자동 포함)</span>
                 <button type="button" className="pl-btn pl-btn-outline pl-btn-compact" onClick={handleCopy}>
-                  내용 복사
+                  카카오에 붙일 때만 복사
                 </button>
               </div>
               <pre className="pl-preview-content">{previewText}</pre>

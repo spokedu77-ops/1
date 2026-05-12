@@ -288,18 +288,20 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
     tip: 'SPOMOVE BGM 풀에서 무작위 재생됩니다.',
   },
   {
-    id: 'executive',
-    icon: '🔀',
-    title: '실행 조절',
-    tag: '반응 억제 · 규칙 전환',
+    id: 'gonogo',
+    icon: '🛑',
+    title: 'Go / No-Go',
+    tag: '반응 억제',
     accent: '#F97316',
     intro:
-      '실행 조절은 Go / No-Go(억제)와 Task Switching(규칙 전환)을 한 슬롯에서 제공합니다. 1~4번은 “이동할지 멈출지”를 즉시 구분하고, 5~7번은 cue를 읽어 “이번 규칙”을 바꿔 반응합니다.',
+      'Go / No-Go는 “이동할지 멈출지”를 즉시 구분하는 실행 억제 과제입니다. 색·도형·동작·이중 규칙 네 가지 난이도로 단계가 나뉩니다.',
     prep: {
-      title: '난이도 구조(7개)',
+      title: '난이도 구조(4개)',
       items: [
-        '1~4번: Go / No-Go — 색·도형·동작·이중 규칙으로 Go(이동) vs No-Go(멈춤) 판단.',
-        '5~7번: Task Switching — cue(글자/아이콘/테두리)로 「색」「위치」「반대로」 규칙 전환.',
+        '1번: 색 기반 — 빨강·파랑·노랑 Go, 초록 No-Go.',
+        '2번: 도형 기반 — 동그라미 Go, 세모 No-Go.',
+        '3번: 동작 기반 — 화살표 Go, ✕ No-Go.',
+        '4번: 이중 규칙 — 빨강 동그라미 Go, 빨강 세모 No-Go.',
       ],
     },
     phases: [
@@ -312,17 +314,37 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         coach: '“멈춤 신호(초록/세모/X)면 아무 데도 안 가요.”',
         pitfall: '빨리 가려는 습관이 No-Go에서 실수로 이어지기 쉽습니다. 신호가 바뀔 때마다 규칙을 한 번만 떠올리게 합니다.',
       },
+    ],
+    tip: 'SPOMOVE BGM 풀에서 무작위 재생됩니다.',
+  },
+  {
+    id: 'taskswitch',
+    icon: '🔀',
+    title: 'Task Switching',
+    tag: '규칙 전환',
+    accent: '#EA580C',
+    intro:
+      'Task Switching은 cue를 읽어 이번 trial의 규칙(색 / 위치 / 반대로)을 바꿔 반응하는 과제입니다. 글자·아이콘·테두리 단서 세 단계로 올라갑니다.',
+    prep: {
+      title: '난이도 구조(3개)',
+      items: [
+        '1번: 한글 cue(색·위치·반대로).',
+        '2번: 팔레트·핀·반전 아이콘 cue.',
+        '3번: 실선/점선/이중 테두리 cue만으로 규칙 판별.',
+      ],
+    },
+    phases: [
       {
-        num: '5~7번',
+        num: '1~3번',
         name: 'Task Switching',
         goal: 'cue가 가리키는 규칙으로만 색 위치를 고릅니다.',
         screen: '상단(또는 테두리)에 규칙 cue가 표시되고, 가운데에 색 또는 화살표가 나옵니다.',
         action: '색=보이는 색 위치, 위치=화살표 방향 위치, 반대로=색·화살표에 따라 짝 반대.',
         coach: '“먼저 이번 규칙부터(색/위치/반대로).”',
-        pitfall: '7번은 테두리 매핑을 외우지 않으면 매 trial마다 멈칫합니다. 수업 전에 한 번만 맵을 말로 고정해 줍니다.',
+        pitfall: '3번(테두리)은 매핑을 외우지 않으면 매 trial마다 멈칫합니다. 수업 전에 한 번만 맵을 말로 고정해 줍니다.',
       },
     ],
-    tip: '초반에는 1~4(억제)와 5~7(전환)을 분리 운영해도 좋습니다.',
+    tip: 'SPOMOVE BGM 풀에서 무작위 재생됩니다.',
   },
   {
     id: 'spatial',

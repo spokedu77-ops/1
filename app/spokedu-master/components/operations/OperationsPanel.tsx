@@ -14,7 +14,7 @@ export function OperationsPanel({ compact = false }: { compact?: boolean }) {
   const setLastSyncNow = useMasterStore((state) => state.setLastSyncNow);
 
   return (
-    <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+    <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="운영 상태">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>operations</p>
@@ -45,7 +45,7 @@ export function OperationsPanel({ compact = false }: { compact?: boolean }) {
         </div>
         <button type="button" onClick={setLastSyncNow} className="rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)' }}>
           <p className="flex items-center gap-1 text-[13px] font-black" style={{ color: 'var(--spm-t)' }}><RefreshCw size={14} /> 수동 동기화</p>
-          <p className="mt-1 text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>계약 호출 준비</p>
+          <p className="mt-1 text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>수업 기록 즉시 반영</p>
         </button>
       </div>
 

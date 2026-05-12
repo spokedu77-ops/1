@@ -23,7 +23,7 @@ const HERO_ANIM_CSS = `
 
 /**
  * MemoryGameApp 홈 상단과 동일한 브랜딩·학생 선택·PLAY/THINK/FLOW·헤드라인 블록.
- * SPOMOVE Training 카탈로그(/admin/iiwarmup/spomove/training) 상단에서 사용.
+ * SPOMOVE Training 카탈로그(/admin/spomove/training) 상단에서 사용.
  */
 export function SpomoveCatalogHero() {
   const { students, add: addStudent, remove: removeStudent, rename: renameStudent } = useStudents();

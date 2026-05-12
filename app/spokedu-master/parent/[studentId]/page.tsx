@@ -8,11 +8,12 @@ import { validateParentPreviewToken } from '../../lib/subscription';
 import { useMasterStore } from '../../store';
 
 function SkillBar({ label, value, delta }: { label: string; value: number; delta: string }) {
+  const tone = delta.startsWith('-') || delta === '정체' ? 'var(--spm-red)' : 'var(--spm-grn)';
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
         <span className="text-[13px] font-bold" style={{ color: 'var(--spm-t)' }}>{label}</span>
-        <span className="text-[11px] font-black" style={{ color: delta.startsWith('-') || delta === '정체' ? 'var(--spm-red)' : 'var(--spm-grn)' }}>{delta}</span>
+        <span className="text-[11px] font-black" style={{ color: tone }}>{delta}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--spm-s4)' }}>
         <div className="h-full rounded-full" style={{ width: `${value}%`, background: 'linear-gradient(90deg,#6366f1,#10b981)' }} />
@@ -43,9 +44,10 @@ function ParentStudentViewContent() {
   const tokenStatus = validateParentPreviewToken(token, params.studentId);
   const studentRecords = records.filter((record) => record.students.some((item) => item.studentId === params.studentId));
   const latestRecord = studentRecords[0];
+  const latestStudentRecord = latestRecord?.students.find((item) => item.studentId === params.studentId);
 
   if (!tokenStatus.allowed) {
-    return <InvalidLink title="링크가 유효하지 않습니다" body={tokenStatus.reason ?? '강사에게 성장 기록 링크 재발송을 요청해주세요.'} />;
+    return <InvalidLink title="링크가 유효하지 않습니다" body={tokenStatus.reason ?? '강사에게 성장 기록 링크 재발급을 요청해 주세요.'} />;
   }
 
   if (!student) {
@@ -58,7 +60,7 @@ function ParentStudentViewContent() {
         <header className="mb-6">
           <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU GROWTH</p>
           <h1 className="mt-3 text-[34px] font-black leading-[1.12]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{student.name} 성장 기록</h1>
-          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>앱 설치 없이 열리는 학부모 전용 읽기 화면입니다. 공유 링크는 7일 동안만 유효합니다.</p>
+          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>앱 설치 없이 보호자에게 공유되는 읽기 전용 화면입니다. 공유 링크는 7일 동안만 유효합니다.</p>
         </header>
 
         <section className="mb-5 overflow-hidden rounded-[22px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(16,185,129,0.12), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.28)' }}>
@@ -92,6 +94,36 @@ function ParentStudentViewContent() {
           <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
             {latestRecord ? `${latestRecord.programTitle} 수업에서 ${student.name}의 참여 기록이 저장되었습니다. 오늘 기록은 다음 성장 리포트에 자동 반영됩니다.` : `${student.name}의 최근 성장 기록을 확인할 수 있습니다. 수업 기록이 쌓일수록 더 구체적인 변화가 표시됩니다.`}
           </p>
+          {latestStudentRecord ? (
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              <div className="rounded-[13px] p-3" style={{ background: 'var(--spm-s3)' }}>
+                <p className="text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>출결</p>
+                <p className="mt-1 text-[14px] font-black" style={{ color: latestStudentRecord.attendance === 'present' ? 'var(--spm-grn)' : latestStudentRecord.attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t)' }}>
+                  {latestStudentRecord.attendance === 'present' ? '출석' : latestStudentRecord.attendance === 'absent' ? '결석' : '미확인'}
+                </p>
+              </div>
+              <div className="rounded-[13px] p-3" style={{ background: 'var(--spm-s3)' }}>
+                <p className="text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>동작 체크</p>
+                <p className="mt-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{latestStudentRecord.skills.length}개</p>
+              </div>
+              <div className="rounded-[13px] p-3" style={{ background: 'var(--spm-s3)' }}>
+                <p className="text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>관찰</p>
+                <p className="mt-1 text-[14px] font-black" style={{ color: latestStudentRecord.focused ? 'var(--spm-amb)' : 'var(--spm-t)' }}>{latestStudentRecord.focused ? '집중 관찰' : '일반'}</p>
+              </div>
+            </div>
+          ) : null}
+          {latestStudentRecord?.skills.length ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {latestStudentRecord.skills.map((skill) => (
+                <span key={skill} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>{skill}</span>
+              ))}
+            </div>
+          ) : null}
+          {latestStudentRecord?.memo ? (
+            <p className="mt-4 rounded-[13px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-t2)' }}>
+              강사 메모: {latestStudentRecord.memo}
+            </p>
+          ) : null}
         </section>
 
         <section className="mb-5 rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>

@@ -47,6 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     pathname != null &&
     (
       pathname.startsWith('/admin/camera') ||
+      pathname.startsWith('/admin/spomove/training/_player') ||
       pathname.startsWith('/admin/iiwarmup/spomove/training/_player')
     );
 

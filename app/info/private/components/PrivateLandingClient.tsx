@@ -7,7 +7,10 @@ import Hero from './Hero';
 import Instructors from './Instructors';
 import ClassFlow from './ClassFlow';
 import Curriculum from './Curriculum';
-import MoveReportPreview, { PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY } from './MoveReportPreview';
+import MoveReportPreview, {
+  PRIVATE_MOVE_REPORT_SHARE_URL_LS_KEY,
+  PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY,
+} from './MoveReportPreview';
 import Reviews from './Reviews';
 import FAQ from './FAQ';
 import ApplyForm from './ApplyForm';
@@ -17,46 +20,61 @@ import { useToast } from '../hooks/useToast';
 
 export default function PrivateLandingClient() {
   const [reportSummary, setReportSummary] = useState('');
+  const [reportShareUrl, setReportShareUrl] = useState('');
   const searchParams = useSearchParams();
   const { message, visible, show } = useToast(3000);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const fromQuery = searchParams.get('reportSummary')?.trim() ?? '';
     if (fromQuery) {
       setReportSummary(fromQuery);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY, fromQuery);
-      }
-      return;
+      window.localStorage.setItem(PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY, fromQuery);
+    } else {
+      const raw = window.localStorage.getItem(PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY) ?? '';
+      setReportSummary(raw);
     }
-    if (typeof window === 'undefined') return;
-    const fromStorage = window.localStorage.getItem(PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY) ?? '';
-    if (fromStorage.trim()) {
-      setReportSummary(fromStorage.trim());
-    }
+    const shareRaw = window.localStorage.getItem(PRIVATE_MOVE_REPORT_SHARE_URL_LS_KEY) ?? '';
+    setReportShareUrl(shareRaw.trim());
   }, [searchParams]);
 
   const handleSummaryChange = useCallback((summary: string) => {
     setReportSummary(summary);
+    if (typeof window === 'undefined') return;
+    if (!summary.trim()) {
+      window.localStorage.removeItem(PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY);
+      return;
+    }
+    window.localStorage.setItem(PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY, summary);
   }, []);
 
-  const handleSummaryAction = useCallback(
-    (action: 'saved' | 'reset') => {
-      if (action === 'saved') {
-        show('Move report 요약이 상담 폼에 반영되었습니다.');
-        return;
-      }
-      show('Move report 요약이 초기화되었습니다.');
-    },
-    [show]
-  );
+  const handleShareUrlChange = useCallback((url: string) => {
+    setReportShareUrl(url);
+    if (typeof window === 'undefined') return;
+    const t = url.trim();
+    if (!t) {
+      window.localStorage.removeItem(PRIVATE_MOVE_REPORT_SHARE_URL_LS_KEY);
+      return;
+    }
+    window.localStorage.setItem(PRIVATE_MOVE_REPORT_SHARE_URL_LS_KEY, t);
+  }, []);
+
+  const handleMoveReportClear = useCallback(() => {
+    setReportSummary('');
+    setReportShareUrl('');
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(PRIVATE_MOVE_REPORT_SUMMARY_LS_KEY);
+      window.localStorage.removeItem(PRIVATE_MOVE_REPORT_SHARE_URL_LS_KEY);
+    }
+    show('Move report 요약·링크를 지웠습니다.');
+  }, [show]);
 
   const handleCopyResult = useCallback(
     (ok: boolean) => {
       show(
         ok
-          ? '복사가 완료되었습니다. 원하시는 곳에 붙여넣기 해주세요.'
-          : '복사에 실패했습니다. 텍스트를 직접 드래그하여 복사해 주세요.'
+          ? '복사되었습니다. 카카오 채널에 직접 올리실 때만 붙여넣기 해 주세요.'
+          : '복사에 실패했습니다. 미리보기 영역을 드래그해 복사해 주세요.'
       );
     },
     [show]
@@ -91,14 +109,17 @@ export default function PrivateLandingClient() {
         <Curriculum />
         <ClassFlow />
         <MoveReportPreview
-          initialSummary={reportSummary}
+          reportSummary={reportSummary}
+          reportShareUrl={reportShareUrl}
           onSummaryChange={handleSummaryChange}
-          onSummaryAction={handleSummaryAction}
+          onShareUrlChange={handleShareUrlChange}
+          onClear={handleMoveReportClear}
         />
         <Reviews />
         <FAQ />
         <ApplyForm
           reportSummary={reportSummary}
+          reportShareUrl={reportShareUrl}
           onCopyResult={handleCopyResult}
           onConsultSubmit={handleConsultSubmit}
         />

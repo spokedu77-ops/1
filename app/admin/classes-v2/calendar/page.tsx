@@ -50,6 +50,12 @@ function dayMapKey(d: Date) {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
+/** filteredEvents에 동일 세션 id가 두 번 들어오는 경우가 있어, 캘린더 칸·React key 중복을 막음 */
+function pushSessionDedupById(arr: SessionEvent[], ev: SessionEvent) {
+  if (arr.some((e) => e.id === ev.id)) return;
+  arr.push(ev);
+}
+
 function chunkWeeks(cells: (Date | null)[]) {
   const rows: (Date | null)[][] = [];
   for (let i = 0; i < cells.length; i += 7) {
@@ -244,7 +250,7 @@ export default function ClassManagementCalendarV2() {
       const s = toDate(ev.start);
       const key = dayMapKey(s);
       if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(ev);
+      pushSessionDedupById(map.get(key)!, ev);
     }
     for (const [, arr] of map) {
       arr.sort((a, b) => toDate(a.start).getTime() - toDate(b.start).getTime());
@@ -272,7 +278,7 @@ export default function ClassManagementCalendarV2() {
       if (s.getFullYear() !== y || s.getMonth() !== m) continue;
       const key = `${y}-${m}-${s.getDate()}`;
       if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(ev);
+      pushSessionDedupById(map.get(key)!, ev);
     }
     for (const [, arr] of map) {
       arr.sort((a, b) => toDate(a.start).getTime() - toDate(b.start).getTime());

@@ -53,7 +53,7 @@ export function canUseMonthlyLimit(plan: PlanType, used: number, kind: 'kakao' |
 
 export function createParentPreviewToken(studentId: string, now = Date.now()): string {
   const expiresAt = now + 7 * 24 * 60 * 60 * 1000;
-  return `demo.${studentId}.${expiresAt}`;
+  return `spm.${studentId}.${expiresAt}`;
 }
 
 export function validateParentPreviewToken(token: string | null, studentId: string): LimitStatus {
@@ -62,7 +62,7 @@ export function validateParentPreviewToken(token: string | null, studentId: stri
   }
   const [prefix, tokenStudentId, expiresAtRaw] = token.split('.');
   const expiresAt = Number(expiresAtRaw);
-  if (prefix !== 'demo' || tokenStudentId !== studentId || !Number.isFinite(expiresAt)) {
+  if (prefix !== 'spm' || tokenStudentId !== studentId || !Number.isFinite(expiresAt)) {
     return { allowed: false, label: '토큰 오류', reason: '학생 정보와 공유 링크가 일치하지 않습니다.' };
   }
   if (expiresAt < Date.now()) {

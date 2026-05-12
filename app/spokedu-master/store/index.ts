@@ -92,7 +92,7 @@ const defaultLessons: Lesson[] = [
   },
   {
     id: 2,
-    title: '숲속 무브먼트',
+    title: '밸런스 무브먼트',
     classId: '3학년 B반',
     date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     period: 4,
@@ -112,14 +112,14 @@ const defaultStudents: StudentProfile[] = [
     attendance: 92,
     classes: 18,
     streak: 4,
-    risk: '차분한 대기 자세 3주 정체',
+    risk: '차분히 대기 자세 3주 정체',
     skills: [
       { label: '균형 유지', value: 74, delta: '+12%' },
       { label: '방향 전환', value: 61, delta: '+6%' },
-      { label: '차분한 대기', value: 42, delta: '정체' },
+      { label: '차분히 대기', value: 42, delta: '정체' },
     ],
     badges: ['균형 마스터', '출석 루틴'],
-    history: ['5.11 8자 드릴 출석', '5.04 차분한 대기 자세 관찰', '4.27 균형 마스터 배지'],
+    history: ['5.11 8자 드릴 출석', '5.04 차분히 대기 자세 관찰', '4.27 균형 마스터 배지'],
   },
   {
     id: 'seoyeon',
@@ -137,7 +137,7 @@ const defaultStudents: StudentProfile[] = [
       { label: '방향 전환', value: 76, delta: '+9%' },
     ],
     badges: ['집중왕', '연속 출석'],
-    history: ['5.11 숲속 무브먼트 우수', '5.04 집중왕 배지', '4.27 리듬 과제 완료'],
+    history: ['5.11 밸런스 무브먼트 우수', '5.04 집중왕 배지', '4.27 리듬 과제 완료'],
   },
   {
     id: 'jiho',
@@ -187,15 +187,15 @@ const defaultStudents: StudentProfile[] = [
     risk: null,
     skills: [
       { label: '방향 전환', value: 73, delta: '+9%' },
-      { label: '차분한 대기', value: 64, delta: '+4%' },
+      { label: '차분히 대기', value: 64, delta: '+4%' },
       { label: '신호 반응', value: 70, delta: '+8%' },
     ],
     badges: ['민첩성 스타'],
-    history: ['5.11 방향 전환 개선', '5.04 차분한 대기 체크', '4.27 민첩성 스타 배지'],
+    history: ['5.11 방향 전환 개선', '5.04 차분히 대기 체크', '4.27 민첩성 스타 배지'],
   },
   {
     id: 'yuna',
-    name: '오유나',
+    name: '한유나',
     group: '3학년 A반',
     meta: '8세 / 1개월차',
     level: 'Lv.2 Starter',
@@ -222,7 +222,11 @@ function applyStudentRecord(student: StudentProfile, record: ClassStudentRecord,
   const skillSet = new Set(record.skills);
   const nextSkills = student.skills.map((skill) => (skillSet.has(skill.label) ? { ...skill, value: Math.min(100, skill.value + 3), delta: '+3%' } : skill));
   const addedSkills = record.skills.filter((skill) => !student.skills.some((item) => item.label === skill)).map<StudentProfile['skills'][number]>((label) => ({ label, value: 44, delta: '+3%' }));
-  const historyLine = record.attendance === 'absent' ? `${today} ${classRecord.programTitle} 결석` : `${today} ${classRecord.programTitle} ${record.skills.length}개 기록${record.focused ? ' / 집중 관찰' : ''}`;
+  const memoSuffix = record.memo ? ` / ${record.memo}` : '';
+  const historyLine =
+    record.attendance === 'absent'
+      ? `${today} ${classRecord.programTitle} 결석${memoSuffix}`
+      : `${today} ${classRecord.programTitle} ${record.skills.length}개 기록${record.focused ? ' / 집중 관찰' : ''}${memoSuffix}`;
   const badgeEarned = nextClasses >= 20 && !student.badges.includes('수업 기록 누적');
 
   return {
@@ -255,6 +259,29 @@ const defaultNotifications: Notification[] = [
     createdAt: new Date(Date.now() - 3600000).toISOString(),
   },
 ];
+
+const brokenTextPattern = /�|諛|湲|由|援|蹂|移댁|寃|臾|留|吏|怨|珥|洹|쨌|ㅽ|ㅼ|쒖|뺤|닿|リ|醫|誘|쇱|섏|숈|댁/;
+
+function hasBrokenText(value: unknown): boolean {
+  if (typeof value === 'string') return brokenTextPattern.test(value);
+  if (Array.isArray(value)) return value.some(hasBrokenText);
+  if (value && typeof value === 'object') return Object.values(value).some(hasBrokenText);
+  return false;
+}
+
+function migrateMasterStore(persisted: unknown): Partial<MasterState> {
+  const state = persisted && typeof persisted === 'object' ? (persisted as Partial<MasterState>) : {};
+  const profile = state.profile && !hasBrokenText(state.profile) ? state.profile : defaultProfile;
+
+  return {
+    ...state,
+    profile,
+    lessons: hasBrokenText(state.lessons) ? defaultLessons : state.lessons ?? defaultLessons,
+    students: hasBrokenText(state.students) ? defaultStudents : state.students ?? defaultStudents,
+    classRecords: hasBrokenText(state.classRecords) ? [] : state.classRecords ?? [],
+    notifications: hasBrokenText(state.notifications) ? defaultNotifications : state.notifications ?? defaultNotifications,
+  };
+}
 
 export const useMasterStore = create<MasterState>()(
   persist(
@@ -310,7 +337,14 @@ export const useMasterStore = create<MasterState>()(
             return studentRecord ? applyStudentRecord(student, studentRecord, record) : student;
           }),
           notifications: [
-            { id: `record-${record.id}`, type: 'report' as const, title: `${record.classId} 수업 기록 저장`, body: `${record.programTitle} 기록 ${record.skillCount}개가 학생 이력에 반영되었습니다.`, read: false, createdAt: record.date },
+            {
+              id: `record-${record.id}`,
+              type: 'report' as const,
+              title: `${record.classId} 수업 기록 저장`,
+              body: `${record.programTitle} 기록 ${record.skillCount}개가 학생 이력에 반영되었습니다.`,
+              read: false,
+              createdAt: record.date,
+            },
             ...state.notifications,
           ].slice(0, 50),
           operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
@@ -331,6 +365,8 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
+      version: 3,
+      migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,
         operational: state.operational,
@@ -349,7 +385,7 @@ export const useMasterStore = create<MasterState>()(
 export const useProfile = () => useMasterStore((state) => state.profile);
 export const useOperationalStatus = () => useMasterStore((state) => state.operational);
 export const useIsPro = () => useMasterStore((state) => (state.profile?.plan ?? 'free') !== 'free');
-export const useCartCount = () => useMasterStore((state) => state.cart.reduce((total, item) => total + item.qty, 0));
+export const useCartCount = () => useMasterStore((state) => state.cart.reduce((total, item) => item.qty + total, 0));
 export const useUnreadCount = () => useMasterStore((state) => state.notifications.filter((notification) => !notification.read).length);
 export const useStats = () =>
   useMasterStore(

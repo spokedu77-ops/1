@@ -51,14 +51,45 @@ const T = {
   textDim:     'rgba(255,255,255,0.48)',
 };
 
-type TabCode = 'ALL' | 'VM' | 'IC' | 'EF' | 'WM';
+type TabCode = 'ALL' | 'VM' | 'IC' | 'EWM';
+
+const TRAINING_MATRIX_HEADERS = ['축', '1단계', '2단계', '3단계', '4단계'] as const;
+
+const TRAINING_MATRIX_ROWS: ReadonlyArray<{
+  axis: string;
+  s1: string;
+  s2: string;
+  s3: string;
+  s4: string;
+}> = [
+  {
+    axis: '시지각-반응 처리',
+    s1: '시지각 반응',
+    s2: '반응 인지',
+    s3: 'Flow Mode / 시각-운동 추적',
+    s4: '미정',
+  },
+  {
+    axis: '선택주의와 간섭통제',
+    s1: '사이먼 효과',
+    s2: '플랭커',
+    s3: '스트룹 과제',
+    s4: '미정',
+  },
+  {
+    axis: '실행조절과 작업기억',
+    s1: 'Go / No-Go',
+    s2: 'Task Switching',
+    s3: '순차 기억',
+    s4: '미정',
+  },
+];
 
 const TABS: { code: TabCode; label: string; sub: string }[] = [
   { code: 'ALL', label: '전체', sub: '모든 SPOMOVE 프로그램' },
-  { code: 'VM', label: '1. 시지각-운동 반응', sub: '보고 몸으로 반응하기' },
-  { code: 'IC', label: '2. 선택주의와 간섭통제', sub: '헷갈려도 필요한 정보 고르기' },
-  { code: 'EF', label: '3. 실행기능 조절', sub: '멈추고, 바꾸고, 조절하기' },
-  { code: 'WM', label: '4. 작업기억과 지속수행', sub: '기억하고 흐름 이어가기' },
+  { code: 'VM', label: '시지각-반응 처리', sub: '시지각 반응 · 반응 인지 · 플로우' },
+  { code: 'IC', label: '선택주의와 간섭통제', sub: '사이먼 · 플랭커 · 스트룹' },
+  { code: 'EWM', label: '실행조절과 작업기억', sub: 'Go/No-Go · Task Switching · 순차 기억' },
 ];
 
 type TopTab = 'training' | 'teacher' | 'app';
@@ -257,7 +288,7 @@ function AppManagementTab() {
       desc: 'Think / Flow 에셋 업로드·관리 (챌린지는 스튜디오에서 직접)',
     },
     {
-      href: '/admin/iiwarmup/spomove/training',
+      href: '/admin/spomove/training',
       title: 'SPOMOVE',
       desc: 'SPOMOVE 트레이닝으로 바로 진입합니다.',
     },
@@ -955,7 +986,7 @@ function SpomoveTrainingPageContent() {
         params.delete('tab');
       }
       const qs = params.toString();
-      const basePath = '/admin/iiwarmup/spomove/training';
+      const basePath = '/admin/spomove/training';
       router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
     },
     [router, searchParams],
@@ -1113,12 +1144,93 @@ function SpomoveTrainingPageContent() {
               </div>
             </div>
 
-            <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6, marginTop: 12, paddingBottom: 2 }}>
+            <div
+              style={{
+                marginTop: 14,
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                borderRadius: 12,
+                border: `1px solid ${T.border}`,
+                background: 'rgba(255,255,255,0.02)',
+              }}
+            >
+              <table
+                style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: 11,
+                  minWidth: 560,
+                  fontFamily: 'inherit',
+                }}
+              >
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    {TRAINING_MATRIX_HEADERS.map((h) => (
+                      <th
+                        key={h}
+                        scope="col"
+                        style={{
+                          padding: '9px 10px',
+                          textAlign: h === '축' ? 'left' : 'center',
+                          borderBottom: `1px solid ${T.border}`,
+                          color: T.text,
+                          fontWeight: 900,
+                          letterSpacing: h === '축' ? '0.02em' : '0.04em',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {TRAINING_MATRIX_ROWS.map((row) => (
+                    <tr key={row.axis}>
+                      <th
+                        scope="row"
+                        style={{
+                          padding: '9px 10px',
+                          fontWeight: 900,
+                          color: T.text,
+                          borderBottom: `1px solid ${T.border}`,
+                          textAlign: 'left',
+                          whiteSpace: 'nowrap',
+                          verticalAlign: 'middle',
+                        }}
+                      >
+                        {row.axis}
+                      </th>
+                      {[row.s1, row.s2, row.s3, row.s4].map((cell, ci) => (
+                        <td
+                          key={`${row.axis}-${ci}`}
+                          style={{
+                            padding: '9px 10px',
+                            color: T.textDim,
+                            borderBottom: `1px solid ${T.border}`,
+                            textAlign: 'center',
+                            fontWeight: 650,
+                            lineHeight: 1.35,
+                          }}
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(148px, 1fr))', gap: 6, marginTop: 12, paddingBottom: 2 }}>
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.code;
-                const accent = tab.code === 'ALL'
-                  ? 'rgba(255,255,255,0.72)'
-                  : Object.values(MODES).find((m) => m.coreCode === tab.code)?.accent ?? 'rgba(255,255,255,0.65)';
+                const accent =
+                  tab.code === 'ALL'
+                    ? 'rgba(255,255,255,0.72)'
+                    : tab.code === 'EWM'
+                      ? MODES.gonogo?.accent ?? '#F97316'
+                      : Object.values(MODES).find((m) => m.coreCode === tab.code)?.accent ?? 'rgba(255,255,255,0.65)';
                 return (
                   <button
                     key={tab.code}

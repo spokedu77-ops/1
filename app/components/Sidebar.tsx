@@ -81,7 +81,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       items: [
         { name: '노트', href: '/admin/note', icon: ClipboardList },
         { name: '수업 관리', href: '/admin/classes-v2/calendar', icon: Calendar },
-        { name: '검증', href: '/admin/teachers-classes', icon: CheckCircle },
+        { name: '피드백 관리', href: '/admin/teachers-classes', icon: CheckCircle },
         { name: '센터 관리', href: '/admin/centers', icon: Building2 },
         { name: '교구·재고', href: '/admin/inventory', icon: Box },
       ],
@@ -90,15 +90,12 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       group: '콘텐츠',
       items: [
         { name: '커리큘럼', href: '/admin/curriculum', icon: BookOpen },
-        { name: 'SPOMOVE', href: '/admin/iiwarmup/spomove/training', icon: Sparkles },
+        { name: 'SPOMOVE', href: '/admin/spomove/training', icon: Sparkles },
       ],
     },
     {
       group: '구독 서비스',
-      items: [
-        { name: 'SPOKEDU MASTER', href: '/admin/spokedu-master', icon: Sparkles },
-        { name: '구독·대시보드', href: '/admin/spokedu-pro', icon: CreditCard },
-      ],
+      items: [{ name: 'SPOKEDU MASTER NEW', href: '/admin/spokedu-master', icon: Sparkles }],
     },
     {
       group: '사람',
@@ -133,8 +130,8 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     if (href === '/admin/spokedu-master') {
       return pathname.startsWith('/admin/spokedu-master') || pathname.startsWith('/spokedu-master');
     }
-    if (href === '/admin/iiwarmup/spomove/training') {
-      return pathname.startsWith('/admin/iiwarmup/spomove');
+    if (href === '/admin/spomove/training') {
+      return pathname.startsWith('/admin/spomove');
     }
     if (href === '/admin/iiwarmup') {
       return pathname === '/admin/iiwarmup' || pathname.startsWith('/admin/iiwarmup/assets') || pathname.startsWith('/admin/iiwarmup/flow');

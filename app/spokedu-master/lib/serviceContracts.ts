@@ -65,26 +65,6 @@ export type CenterValidationResult = {
   teacherSlots: number;
 };
 
-export const FIREBASE_COLLECTIONS = {
-  users: 'users',
-  centers: 'centers',
-  programs: 'programs',
-  classRecords: 'classRecords',
-  students: 'students',
-  reports: 'reports',
-  parentTokens: 'parentTokens',
-  billingEvents: 'billingEvents',
-} as const;
-
-export const CLOUD_FUNCTIONS = {
-  validateCenterCode: 'validateCenterCode',
-  saveClassRecord: 'saveClassRecord',
-  sendKakaoClassSummary: 'sendKakaoClassSummary',
-  createParentShareToken: 'createParentShareToken',
-  generateGrowthReportPdf: 'generateGrowthReportPdf',
-  retryFailedJob: 'retryFailedJob',
-} as const;
-
 function wait(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
