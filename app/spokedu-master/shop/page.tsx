@@ -6,16 +6,16 @@ import { PROGRAMS } from '../lib/data';
 import { useMasterStore } from '../store';
 
 const PRODUCTS = [
-  { id: '마커콘', name: '마커콘 세트', desc: '민첩성, 릴레이, 방향 전환 수업 기본 교구', price: 8900, tone: '#f59e0b', tags: ['8자 드릴', '팀 릴레이'] },
-  { id: '이미지 카드', name: '움직임 이미지 카드', desc: '유치부와 초등 저학년 상상놀이 수업용 카드', price: 12000, tone: '#10b981', tags: ['포레스트'] },
-  { id: '미니 허들', name: '미니 허들 6개입', desc: '균형, 점프, 하체 협응 훈련용', price: 24000, tone: '#818cf8', tags: ['밸런스 로드'] },
-  { id: '바톤', name: '소프트 릴레이 바톤', desc: '팀 릴레이와 협동 수업용 안전 바톤', price: 6900, tone: '#fb7185', tags: ['팀 릴레이'] },
-  { id: '프로젝터', name: '수업용 미니 프로젝터', desc: 'SPOMOVE 전체화면 실행 권장 장비', price: 159000, tone: '#38bdf8', tags: ['SPOMOVE'] },
+  { id: 'marker-cone', name: '마커콘 세트', desc: '민첩성, 릴레이, 방향 전환 수업 기본 교구', price: 8900, tone: '#f59e0b', tags: ['8자 드릴', '팀 릴레이'] },
+  { id: 'image-card', name: '움직임 이미지 카드', desc: '유치부와 초등 저학년 상상 표현 수업 카드', price: 12000, tone: '#10b981', tags: ['포레스트'] },
+  { id: 'mini-hurdle', name: '미니 허들 6개입', desc: '균형, 점프, 하체 적응 훈련용', price: 24000, tone: '#818cf8', tags: ['밸런스 로드'] },
+  { id: 'baton', name: '소프트 릴레이 바톤', desc: '팀 릴레이와 협동 수업용 안전 바톤', price: 6900, tone: '#fb7185', tags: ['팀 릴레이'] },
+  { id: 'projector', name: '수업용 미니 프로젝터', desc: 'SPOMOVE 전체화면 실행 권장 장비', price: 159000, tone: '#38bdf8', tags: ['SPOMOVE'] },
 ];
 
 const BUNDLES = [
-  { id: 'starter', name: '개인 강사 스타터 키트', desc: '마커콘, 이미지 카드, 바톤으로 바로 수업을 시작하는 구성', items: ['마커콘', '이미지 카드', '바톤'], price: 26800 },
-  { id: 'center', name: '센터 공용 운영 키트', desc: '여러 강사가 함께 쓰는 SPOMOVE 실행과 기본 교구 구성', items: ['마커콘', '미니 허들', '바톤', '프로젝터'], price: 198800 },
+  { id: 'starter', name: '개인 강사 스타터 세트', desc: '마커콘, 이미지 카드, 바톤으로 바로 수업을 시작하는 구성', items: ['마커콘', '이미지 카드', '바톤'], price: 26800 },
+  { id: 'center', name: '센터 공용 운영 세트', desc: '여러 강사가 함께 쓰는 SPOMOVE 실행과 기본 교구 구성', items: ['마커콘', '미니 허들', '바톤', '프로젝터'], price: 198800 },
 ];
 
 function ProductIcon({ tone }: { tone: string }) {
@@ -28,7 +28,7 @@ export default function SpokeduMasterShopPage() {
   const updateQty = useMasterStore((state) => state.updateQty);
   const clearCart = useMasterStore((state) => state.clearCart);
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const usedEquipment = Array.from(new Set(PROGRAMS.flatMap((program) => program.equipment))).filter((item) => !item.includes('스마트폰') && item !== '프로젝터');
+  const usedEquipment = Array.from(new Set(PROGRAMS.flatMap((program) => program.equipment))).filter((item) => !item.includes('스마트폰') && !item.includes('태블릿') && !item.includes('프로젝터'));
 
   const addBundle = (bundle: (typeof BUNDLES)[number]) => {
     addToCart({ id: bundle.id, name: bundle.name, price: bundle.price, qty: 1 });
@@ -39,7 +39,7 @@ export default function SpokeduMasterShopPage() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>equipment store</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>교구 스토어</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>프로그램 라이브러리의 준비물과 연결되는 판매 영역입니다. 학생 이력 저장소와는 분리된 교구 구매 흐름입니다.</p>
+        <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>프로그램 라이브러리의 준비물과 연결되는 커머스 영역입니다. 학생 이력 저장소와 분리된 교구 구매 흐름입니다.</p>
       </header>
 
       <section className="mx-[22px] mb-7 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(24,95,165,0.22), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.26)' }}>
@@ -54,7 +54,7 @@ export default function SpokeduMasterShopPage() {
         <main className="space-y-7">
           <section>
             <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>추천 키트</h2>
+              <h2 className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>추천 세트</h2>
               <span className="text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>수업 준비 시간 단축</span>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
@@ -69,7 +69,7 @@ export default function SpokeduMasterShopPage() {
                       <p className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{bundle.price.toLocaleString('ko-KR')}원</p>
                     </div>
                   </div>
-                  <button type="button" onClick={() => addBundle(bundle)} className="mt-4 h-11 w-full rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>키트 담기</button>
+                  <button type="button" onClick={() => addBundle(bundle)} className="mt-4 h-11 w-full rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>세트 담기</button>
                 </article>
               ))}
             </div>

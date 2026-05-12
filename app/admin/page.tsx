@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
-import { BarChart3, BookOpen, Calendar, MessageSquare, Pin, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { BarChart3, Calendar, MessageSquare, Pin, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // --- Interfaces ---
@@ -75,6 +75,18 @@ async function readApiError(res: Response, fallback: string) {
   } catch {
     return fallback;
   }
+}
+
+/** 대시보드 최근 공지 줄에 쓰는 짧은 날짜 (예: 4.27, 5.4, 5.11) */
+function formatNoticeShortMd(iso: string) {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}.${d.getDate()}`;
+}
+
+interface WeeklyBestPreview {
+  id: string;
+  title: string;
+  created_at: string;
 }
 
 // --- 인라인 미니 캘린더 ---
@@ -194,6 +206,8 @@ export default function SpokeduHQDashboard() {
   const [deletingNoticeId, setDeletingNoticeId] = useState<string | null>(null);
   const [noticePreviews, setNoticePreviews] = useState<NoticePreview[]>([]);
   const [noticePreviewLoading, setNoticePreviewLoading] = useState(true);
+  const [weeklyBestPreviews, setWeeklyBestPreviews] = useState<WeeklyBestPreview[]>([]);
+  const [weeklyBestPreviewLoading, setWeeklyBestPreviewLoading] = useState(true);
   const [consultSummary, setConsultSummary] = useState<ConsultSummary | null>(null);
   const [consultSummaryLoading, setConsultSummaryLoading] = useState(true);
   const [moveReportCount, setMoveReportCount] = useState<number | null>(null);
@@ -340,6 +354,26 @@ export default function SpokeduHQDashboard() {
     }
   }, [supabase]);
 
+  const fetchWeeklyBestPreviews = useCallback(async () => {
+    if (!supabase) return;
+    setWeeklyBestPreviewLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('weekly_best')
+        .select('id, title, created_at')
+        .order('created_at', { ascending: false })
+        .limit(12);
+
+      if (error) throw error;
+      setWeeklyBestPreviews((data as WeeklyBestPreview[]) ?? []);
+    } catch (err) {
+      devLogger.error('[dashboard] weekly best previews fetch error:', err);
+      setWeeklyBestPreviews([]);
+    } finally {
+      setWeeklyBestPreviewLoading(false);
+    }
+  }, [supabase]);
+
   const fetchConsultSummary = useCallback(async () => {
     setConsultSummaryLoading(true);
     try {
@@ -366,8 +400,9 @@ export default function SpokeduHQDashboard() {
     fetchPostponeNotices();
     fetchMoveReportMetric();
     fetchNoticePreviews();
+    fetchWeeklyBestPreviews();
     fetchConsultSummary();
-  }, [fetchData, fetchPostponeNotices, fetchMoveReportMetric, fetchNoticePreviews, fetchConsultSummary]);
+  }, [fetchData, fetchPostponeNotices, fetchMoveReportMetric, fetchNoticePreviews, fetchWeeklyBestPreviews, fetchConsultSummary]);
 
   const openPostponeModal = async () => {
     setSelectedDate('');
@@ -456,9 +491,33 @@ export default function SpokeduHQDashboard() {
   };
 
   const pinnedNoticePreviews = noticePreviews.filter((notice) => notice.is_pinned);
-  const latestNoticePreviews = [...noticePreviews]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 3);
+
+  /** 공지 + 주간베스트를 날짜순으로 섞은 뒤 3개. 주간베스트가 DB에 있는데 상위 3개에 없으면 최신 주간베스트를 포함하도록 보정 */
+  const recentDashboardFeed = React.useMemo(() => {
+    type FeedItem = { source: 'notice' | 'weekly_best'; key: string; title: string; created_at: string };
+    const noticeItems: FeedItem[] = noticePreviews.map((n) => ({
+      source: 'notice',
+      key: `n-${n.id}`,
+      title: n.title,
+      created_at: n.created_at,
+    }));
+    const wbItems: FeedItem[] = weeklyBestPreviews.map((w) => ({
+      source: 'weekly_best',
+      key: `wb-${w.id}`,
+      title: w.title,
+      created_at: w.created_at,
+    }));
+    const merged = [...noticeItems, ...wbItems].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    let top = merged.slice(0, 3);
+    const latestWb = wbItems[0];
+    if (latestWb && wbItems.length > 0 && !top.some((t) => t.source === 'weekly_best')) {
+      top = [latestWb, ...merged.filter((x) => x.key !== latestWb.key)].slice(0, 3);
+      top = [...top].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+    return top;
+  }, [noticePreviews, weeklyBestPreviews]);
 
   const isNoticeUrgent = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
@@ -521,7 +580,7 @@ export default function SpokeduHQDashboard() {
           </div>
           <div className="flex gap-2 sm:gap-3">
             <button
-              onClick={() => { fetchData(); fetchPostponeNotices(); fetchMoveReportMetric(); fetchNoticePreviews(); fetchConsultSummary(); }}
+              onClick={() => { fetchData(); fetchPostponeNotices(); fetchMoveReportMetric(); fetchNoticePreviews(); fetchWeeklyBestPreviews(); fetchConsultSummary(); }}
               className="min-h-[44px] min-w-[44px] p-3 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all cursor-pointer group touch-manipulation flex items-center justify-center"
               aria-label="새로고침"
             >
@@ -530,67 +589,171 @@ export default function SpokeduHQDashboard() {
           </div>
         </header>
 
-        {/* Today Sessions / 수업 연기 알림 / MOVE 리포트 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-8 w-full min-w-0">
+        {/* 관리 홈: 패널 2개 — (1) 오늘 수업·연기·휴강 (2) 공지·상담·MOVE·안내 링크 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 w-full min-w-0">
 
-          {/* 1. Today's Sessions */}
-          <section className="min-w-0">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-4">
-              <div className="flex items-center gap-2">
-                <Calendar size={14} className="text-slate-400 shrink-0" />
-                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today Session Summary</h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
-                  완료 {todayClasses.filter(c => isClassFinished(c)).length} /
-                  진행중 {todayClasses.filter(c => !isClassFinished(c) && !c.isPostponed && !c.isCancelled).length} /
-                  연기 {todayClasses.filter(c => c.isPostponed).length}
-                </span>
-              </div>
-            </div>
-            <div className="border-t border-slate-50 divide-y divide-slate-50 overflow-x-auto">
-              {todayClasses.length > 0 ? todayClasses.map((cls) => (
-                <div key={cls.id} className={`py-3 flex flex-wrap items-center justify-between gap-2 min-w-0 ${
-                  isClassFinished(cls) ? 'opacity-20 grayscale' :
-                  cls.isPostponed ? 'bg-purple-50 border-l-4 border-purple-400 pl-3' :
-                  cls.isCancelled ? 'bg-red-50 border-l-4 border-red-400 pl-3 line-through' : ''
-                }`}>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                    <span className="text-[11px] font-bold tabular-nums text-slate-400 w-20 sm:w-24 shrink-0">{cls.time} - {cls.endTime}</span>
-                    {cls.roundDisplay && (
-                      <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded uppercase shrink-0">{cls.roundDisplay}</span>
-                    )}
-                    <span className="text-[12px] font-bold text-slate-800 truncate min-w-0">{(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</span>
-                    {cls.isPostponed && (
-                      <span className="text-[8px] font-black text-purple-600 bg-purple-100 px-2 py-1 rounded uppercase">연기됨</span>
-                    )}
-                    {cls.isCancelled && (
-                      <span className="text-[8px] font-black text-red-600 bg-red-100 px-2 py-1 rounded uppercase">취소됨</span>
-                    )}
-                  </div>
-                  <span className="text-[9px] font-black text-slate-300 uppercase tracking-tighter shrink-0">{cls.teacher}</span>
+          {/* 패널 1 */}
+          <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 space-y-6">
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-4">
+                <div className="flex items-center gap-2">
+                  <Calendar size={14} className="text-slate-400 shrink-0" />
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today Session Summary</h2>
                 </div>
-              )) : <p className="py-4 text-[11px] text-slate-300 italic">No classes scheduled.</p>}
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
+                    완료 {todayClasses.filter(c => isClassFinished(c)).length} /
+                    진행중 {todayClasses.filter(c => !isClassFinished(c) && !c.isPostponed && !c.isCancelled).length} /
+                    연기 {todayClasses.filter(c => c.isPostponed).length}
+                  </span>
+                </div>
+              </div>
+              <div className="border-t border-slate-100 divide-y divide-slate-50 overflow-x-auto rounded-lg border border-slate-100">
+                {todayClasses.length > 0 ? todayClasses.map((cls) => (
+                  <div key={cls.id} className={`py-3 flex flex-wrap items-center justify-between gap-2 min-w-0 px-1 ${
+                    isClassFinished(cls) ? 'opacity-20 grayscale' :
+                    cls.isPostponed ? 'bg-purple-50 border-l-4 border-purple-400 pl-3' :
+                    cls.isCancelled ? 'bg-red-50 border-l-4 border-red-400 pl-3 line-through' : ''
+                  }`}>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                      <span className="text-[11px] font-bold tabular-nums text-slate-400 w-20 sm:w-24 shrink-0">{cls.time} - {cls.endTime}</span>
+                      {cls.roundDisplay && (
+                        <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded uppercase shrink-0">{cls.roundDisplay}</span>
+                      )}
+                      <span className="text-[12px] font-bold text-slate-800 truncate min-w-0">{(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</span>
+                      {cls.isPostponed && (
+                        <span className="text-[8px] font-black text-purple-600 bg-purple-100 px-2 py-1 rounded uppercase">연기됨</span>
+                      )}
+                      {cls.isCancelled && (
+                        <span className="text-[8px] font-black text-red-600 bg-red-100 px-2 py-1 rounded uppercase">취소됨</span>
+                      )}
+                    </div>
+                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-tighter shrink-0">{cls.teacher}</span>
+                  </div>
+                )) : <p className="py-4 text-[11px] text-slate-300 italic px-2">No classes scheduled.</p>}
+              </div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+            <div>
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">수업 연기 알림</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-slate-400">{postponeTotal}건</span>
+                  <button
+                    type="button"
+                    onClick={openPostponeModal}
+                    className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition-colors cursor-pointer"
+                  >
+                    <Plus className="h-3 w-3" />
+                    등록
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+                {postponeLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
+                  </div>
+                ) : postponeNotices.length === 0 ? (
+                  <p className="py-4 text-center text-[11px] text-slate-400 italic">연기 알림 없음</p>
+                ) : (
+                  <div className="space-y-2">
+                    {postponeNotices.map((n) => {
+                      const dateDisplay = getNoticeDateDisplay(n.notice_date);
+                      const urgent = isNoticeUrgent(n.notice_date);
+                      return (
+                        <div key={n.id} className="px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-bold text-slate-800 truncate min-w-0">{n.teacher_name}</span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                  urgent ? 'bg-rose-200 text-rose-800' : 'bg-rose-50 text-rose-600'
+                                }`}
+                              >
+                                {dateDisplay}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteNotice(n.id)}
+                                disabled={deletingNoticeId === n.id}
+                                className="rounded p-0.5 text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 cursor-pointer"
+                              >
+                                {deletingNoticeId === n.id
+                                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  : <X className="h-3.5 w-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+                          {n.memo && (
+                            <p className="text-[11px] text-slate-500 mt-0.5 truncate">{n.memo}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-purple-100 bg-purple-50/50 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="text-[10px] font-black text-purple-500 uppercase tracking-widest">휴강 알림</h3>
+                <span className="text-[10px] text-purple-400">{upcomingPostponedClasses.length}건</span>
+              </div>
+              {upcomingPostponedLoading ? (
+                <div className="flex items-center justify-center py-5">
+                  <Loader2 className="h-4 w-4 animate-spin text-purple-300" />
+                </div>
+              ) : upcomingPostponedClasses.length === 0 ? (
+                <p className="py-3 text-center text-[11px] text-purple-300 italic">오늘 이후 휴강 수업 없음</p>
+              ) : (
+                <div className="space-y-2">
+                  {upcomingPostponedClasses.map((cls) => (
+                    <div key={cls.id} className="rounded-lg border border-purple-100 bg-white/80 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold text-purple-600 shrink-0">
+                          {getClassDateDisplay(cls.startAt)}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 shrink-0">
+                          {cls.time}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <p className="min-w-0 truncate text-xs font-bold text-slate-800">
+                          {(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}
+                        </p>
+                        <span className="shrink-0 text-[9px] font-bold text-slate-400">
+                          {cls.teacher}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* 패널 2 */}
+          <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 space-y-6">
+            <div>
               <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Pin className="h-3.5 w-3.5 text-rose-400" />
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">공지</h3>
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">공지</h2>
                 </div>
                 <Link href="/admin/notice" className="text-[10px] font-semibold text-slate-400 hover:text-slate-700">
                   전체 보기
                 </Link>
               </div>
-              {noticePreviewLoading ? (
+              {noticePreviewLoading || weeklyBestPreviewLoading ? (
                 <div className="flex items-center justify-center py-5">
                   <Loader2 className="h-4 w-4 animate-spin text-slate-300" />
                 </div>
-              ) : pinnedNoticePreviews.length === 0 && latestNoticePreviews.length === 0 ? (
+              ) : pinnedNoticePreviews.length === 0 && recentDashboardFeed.length === 0 ? (
                 <p className="py-3 text-center text-[11px] text-slate-400 italic">등록된 공지 없음</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                   {pinnedNoticePreviews.length > 0 && (
                     <div className="space-y-1.5">
                       <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">고정 · 필독</p>
@@ -607,18 +770,25 @@ export default function SpokeduHQDashboard() {
                     </div>
                   )}
 
-                  {latestNoticePreviews.length > 0 && (
+                  {recentDashboardFeed.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">최신 공지</p>
-                      {latestNoticePreviews.map((notice) => (
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">최근 공지</p>
+                      {recentDashboardFeed.map((row) => (
                         <Link
-                          key={notice.id}
+                          key={row.key}
                           href="/admin/notice"
                           className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 hover:bg-slate-100"
                         >
-                          <span className="min-w-0 truncate text-xs font-bold text-slate-700">{notice.title}</span>
-                          <span className="shrink-0 text-[9px] font-medium text-slate-400">
-                            {new Date(notice.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                          <span className="flex min-w-0 flex-1 items-center gap-2">
+                            {row.source === 'weekly_best' ? (
+                              <span className="shrink-0 rounded border border-amber-100 bg-amber-50 px-1.5 py-0.5 text-[8px] font-black text-amber-700">
+                                주간베스트
+                              </span>
+                            ) : null}
+                            <span className="min-w-0 truncate text-xs font-bold text-slate-700">{row.title}</span>
+                          </span>
+                          <span className="shrink-0 text-[10px] font-bold tabular-nums text-slate-500">
+                            {formatNoticeShortMd(row.created_at)}
                           </span>
                         </Link>
                       ))}
@@ -627,10 +797,7 @@ export default function SpokeduHQDashboard() {
                 </div>
               )}
             </div>
-          </section>
 
-          {/* MOVE 리포트 */}
-          <section className="min-w-0">
             <div className="flex items-center justify-between mb-2 sm:mb-4">
               <div className="flex items-center gap-2">
                 <MessageSquare size={14} className="text-emerald-500 shrink-0" />
@@ -722,126 +889,33 @@ export default function SpokeduHQDashboard() {
               </p>
             </Link>
 
-            <Link
-              href="/admin/info-pages"
-              className="group mt-3 block rounded-xl border border-slate-200 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm cursor-pointer"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold text-slate-800">안내 페이지</p>
-                  <p className="mt-1 text-[11px] text-slate-500">외부 안내용 페이지를 관리합니다.</p>
-                </div>
-                <div className="rounded-xl bg-slate-100 p-2 text-slate-600">
-                  <BookOpen className="h-4 w-4" />
-                </div>
+            <div>
+              <h2 className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">안내 페이지</h2>
+              <div className="grid gap-2">
+                {[
+                  { n: '1', label: '체육관', href: '/info/gym' },
+                  { n: '2', label: '과외', href: '/info/private' },
+                  { n: '3', label: '파견', href: '/info/dispatch' },
+                  { n: '4', label: '구독서비스', href: '/info/curriculum' },
+                ].map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-[13px] font-bold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <span>
+                      {item.n}. {item.label}
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" aria-hidden />
+                  </a>
+                ))}
               </div>
-              <p className="mt-5 text-[11px] font-semibold text-slate-600 transition-colors group-hover:text-slate-900">
-                안내 페이지 관리 열기
-              </p>
-            </Link>
-          </section>
-
-          {/* 3. 수업 연기 알림 */}
-          <section className="min-w-0">
-            <div className="flex items-center justify-between mb-2 sm:mb-4">
-              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">수업 연기 알림</h2>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-400">{postponeTotal}건</span>
-                <button
-                  type="button"
-                  onClick={openPostponeModal}
-                  className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition-colors cursor-pointer"
-                >
-                  <Plus className="h-3 w-3" />
-                  등록
-                </button>
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-3">
-              {postponeLoading ? (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
-                </div>
-              ) : postponeNotices.length === 0 ? (
-                <p className="py-4 text-center text-[11px] text-slate-400 italic">연기 알림 없음</p>
-              ) : (
-                <div className="space-y-2">
-                  {postponeNotices.map((n) => {
-                    const dateDisplay = getNoticeDateDisplay(n.notice_date);
-                    const urgent = isNoticeUrgent(n.notice_date);
-                    return (
-                      <div key={n.id} className="px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-bold text-slate-800 truncate min-w-0">{n.teacher_name}</span>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                                urgent ? 'bg-rose-200 text-rose-800' : 'bg-rose-50 text-rose-600'
-                              }`}
-                            >
-                              {dateDisplay}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteNotice(n.id)}
-                              disabled={deletingNoticeId === n.id}
-                              className="rounded p-0.5 text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 cursor-pointer"
-                            >
-                              {deletingNoticeId === n.id
-                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                : <X className="h-3.5 w-3.5" />}
-                            </button>
-                          </div>
-                        </div>
-                        {n.memo && (
-                          <p className="text-[11px] text-slate-500 mt-0.5 truncate">{n.memo}</p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-3 rounded-xl border border-purple-100 bg-purple-50/50 p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <h3 className="text-[10px] font-black text-purple-500 uppercase tracking-widest">휴강 알림</h3>
-                <span className="text-[10px] text-purple-400">{upcomingPostponedClasses.length}건</span>
-              </div>
-              {upcomingPostponedLoading ? (
-                <div className="flex items-center justify-center py-5">
-                  <Loader2 className="h-4 w-4 animate-spin text-purple-300" />
-                </div>
-              ) : upcomingPostponedClasses.length === 0 ? (
-                <p className="py-3 text-center text-[11px] text-purple-300 italic">오늘 이후 휴강 수업 없음</p>
-              ) : (
-                <div className="space-y-2">
-                  {upcomingPostponedClasses.map((cls) => (
-                    <div key={cls.id} className="rounded-lg border border-purple-100 bg-white/80 px-3 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold text-purple-600 shrink-0">
-                          {getClassDateDisplay(cls.startAt)}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 shrink-0">
-                          {cls.time}
-                        </span>
-                      </div>
-                      <div className="mt-1 flex items-center justify-between gap-2">
-                        <p className="min-w-0 truncate text-xs font-bold text-slate-800">
-                          {(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}
-                        </p>
-                        <span className="shrink-0 text-[9px] font-bold text-slate-400">
-                          {cls.teacher}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </section>
 
-        </div>{/* end 2열 그리드 */}
+        </div>
 
       </div>
 

@@ -3,8 +3,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
-import type { CartItem, ClassRecord, ClassStudentRecord, Lesson, Notification, Session, StudentProfile, UserProfile } from '../types';
 import type { RetryQueueItem } from '../lib/serviceContracts';
+import type { CartItem, ClassRecord, ClassStudentRecord, Lesson, Notification, Session, StudentProfile, UserProfile } from '../types';
 
 type ActiveSession = {
   drillId: string;
@@ -92,7 +92,7 @@ const defaultLessons: Lesson[] = [
   },
   {
     id: 2,
-    title: '스카프 셔틀',
+    title: '숲속 무브먼트',
     classId: '3학년 B반',
     date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     period: 4,
@@ -112,14 +112,14 @@ const defaultStudents: StudentProfile[] = [
     attendance: 92,
     classes: 18,
     streak: 4,
-    risk: '착지 자세 3주 정체',
+    risk: '차분한 대기 자세 3주 정체',
     skills: [
-      { label: '균형 정지', value: 74, delta: '+12%' },
+      { label: '균형 유지', value: 74, delta: '+12%' },
       { label: '방향 전환', value: 61, delta: '+6%' },
-      { label: '착지 자세', value: 42, delta: '정체' },
+      { label: '차분한 대기', value: 42, delta: '정체' },
     ],
     badges: ['균형 마스터', '출석 루틴'],
-    history: ['5.11 8자 드릴 출석', '5.04 착지 자세 관찰', '4.27 균형 마스터 배지'],
+    history: ['5.11 8자 드릴 출석', '5.04 차분한 대기 자세 관찰', '4.27 균형 마스터 배지'],
   },
   {
     id: 'seoyeon',
@@ -133,11 +133,11 @@ const defaultStudents: StudentProfile[] = [
     risk: null,
     skills: [
       { label: '신호 반응', value: 88, delta: '+18%' },
-      { label: '음악 리듬', value: 81, delta: '+10%' },
+      { label: '협응 리듬', value: 81, delta: '+10%' },
       { label: '방향 전환', value: 76, delta: '+9%' },
     ],
     badges: ['집중왕', '연속 출석'],
-    history: ['5.11 스카프 셔틀 우수', '5.04 집중왕 배지', '4.27 리듬 과제 완료'],
+    history: ['5.11 숲속 무브먼트 우수', '5.04 집중왕 배지', '4.27 리듬 과제 완료'],
   },
   {
     id: 'jiho',
@@ -168,12 +168,12 @@ const defaultStudents: StudentProfile[] = [
     streak: 5,
     risk: null,
     skills: [
-      { label: '음악 리듬', value: 82, delta: '+11%' },
-      { label: '균형 정지', value: 72, delta: '+7%' },
+      { label: '협응 리듬', value: 82, delta: '+11%' },
+      { label: '균형 유지', value: 72, delta: '+7%' },
       { label: '신호 반응', value: 66, delta: '+5%' },
     ],
-    badges: ['음악 루틴'],
-    history: ['5.11 음악 과제 완료', '5.04 균형 정지 개선', '4.27 수업 참여 우수'],
+    badges: ['협응 루틴'],
+    history: ['5.11 협응 과제 완료', '5.04 균형 유지 개선', '4.27 수업 참여 우수'],
   },
   {
     id: 'doyun',
@@ -187,11 +187,11 @@ const defaultStudents: StudentProfile[] = [
     risk: null,
     skills: [
       { label: '방향 전환', value: 73, delta: '+9%' },
-      { label: '착지 자세', value: 64, delta: '+4%' },
+      { label: '차분한 대기', value: 64, delta: '+4%' },
       { label: '신호 반응', value: 70, delta: '+8%' },
     ],
     badges: ['민첩성 스타'],
-    history: ['5.11 방향 전환 개선', '5.04 착지 자세 체크', '4.27 민첩성 스타 배지'],
+    history: ['5.11 방향 전환 개선', '5.04 차분한 대기 체크', '4.27 민첩성 스타 배지'],
   },
   {
     id: 'yuna',
@@ -204,7 +204,7 @@ const defaultStudents: StudentProfile[] = [
     streak: 2,
     risk: null,
     skills: [
-      { label: '균형 정지', value: 55, delta: '+6%' },
+      { label: '균형 유지', value: 55, delta: '+6%' },
       { label: '신호 반응', value: 51, delta: '+5%' },
       { label: '방향 전환', value: 48, delta: '+3%' },
     ],

@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { Bell, ChevronRight, Clock3, Lock, Play, Smartphone, UsersRound, Zap } from 'lucide-react';
+import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { DRILLS, PROGRAMS } from '../lib/data';
-import { useIsPro, useMasterStore, useProfile, useStats, useUnreadCount } from '../store';
+import { getTrialDaysLeft } from '../lib/subscription';
+import { useIsPro, useMasterStore, useOperationalStatus, useProfile, useStats, useUnreadCount } from '../store';
 
 function SectionHeader({ title, href }: { title: string; href?: string }) {
   return (
@@ -25,14 +27,21 @@ function KpiCard({ value, label, delta }: { value: string; label: string; delta:
 }
 
 function ThumbGrid({ colors, size = 66 }: { colors: [string, string, string, string]; size?: number }) {
-  return <div className="grid shrink-0 grid-cols-2 grid-rows-2 gap-0.5 overflow-hidden rounded-[10px]" style={{ width: size, height: size }} aria-hidden>{colors.map((color) => <span key={color} style={{ background: color }} />)}</div>;
+  return (
+    <div className="grid shrink-0 grid-cols-2 grid-rows-2 gap-0.5 overflow-hidden rounded-[10px]" style={{ width: size, height: size }} aria-hidden>
+      {colors.map((color) => <span key={color} style={{ background: color }} />)}
+    </div>
+  );
 }
 
 function ProBanner() {
   return (
     <Link href="/spokedu-master/profile" className="mx-[22px] mb-6 flex items-center gap-2.5 rounded-[10px] px-[14px] py-[11px] sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(90deg, rgba(245,158,11,0.08), rgba(245,158,11,0.04))', border: '1px solid rgba(245,158,11,0.18)' }}>
       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[7px]" style={{ background: 'rgba(245,158,11,0.15)' }}><Lock size={14} color="var(--spm-amb)" /></span>
-      <span className="min-w-0 flex-1"><strong className="block text-[12px] font-bold" style={{ color: 'var(--spm-amb)' }}>PRO 업그레이드</strong><span className="mt-0.5 block text-[10px]" style={{ color: 'rgba(245,158,11,0.65)' }}>전체 프로그램, SPOMOVE 실행, 성장 리포트 기능 해제</span></span>
+      <span className="min-w-0 flex-1">
+        <strong className="block text-[12px] font-bold" style={{ color: 'var(--spm-amb)' }}>PRO 업그레이드</strong>
+        <span className="mt-0.5 block text-[10px]" style={{ color: 'rgba(245,158,11,0.65)' }}>전체 프로그램, SPOMOVE 실행, 성장 리포트 기능을 해제합니다.</span>
+      </span>
       <ChevronRight size={16} color="rgba(245,158,11,0.55)" />
     </Link>
   );
@@ -44,8 +53,12 @@ function ServiceIdentityCard() {
       <div className="grid gap-5 overflow-hidden rounded-[18px] p-5 md:grid-cols-[1.35fr_0.65fr] md:p-7" style={{ background: 'linear-gradient(135deg, rgba(24,95,165,0.28), rgba(29,158,117,0.14), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.28)' }}>
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#93c5fd' }}>SPOKEDU MASTER</p>
-          <h2 className="mt-3 max-w-[620px] text-[26px] font-black leading-[1.16] md:text-[34px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>놀이체육과 SPOMOVE를 구독하는 프로그램 라이브러리</h2>
-          <p className="mt-3 max-w-[640px] text-[13px] font-medium leading-6 md:text-[15px]" style={{ color: 'var(--spm-t2)' }}>수업 준비 30초, 기록 3분. 강사가 남긴 기록은 학생 성장 이력과 학부모 리포트로 이어집니다.</p>
+          <h2 className="mt-3 max-w-[620px] text-[26px] font-black leading-[1.16] md:text-[34px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>
+            놀이체육과 SPOMOVE를 구독하는 프로그램 라이브러리
+          </h2>
+          <p className="mt-3 max-w-[640px] text-[13px] font-medium leading-6 md:text-[15px]" style={{ color: 'var(--spm-t2)' }}>
+            수업안은 넷플릭스처럼 고르고, SPOMOVE는 웹에서 바로 실행하고, 수업 기록은 학생 성장 이력으로 쌓입니다.
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-1">
           <Link href="/spokedu-master/library" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><Play size={15} fill="#fff" />프로그램 탐색</Link>
@@ -68,7 +81,7 @@ function TodayClassCard() {
           <div>
             <span className="mb-3 inline-flex items-center gap-[5px] rounded-[6px] px-[9px] py-[3px] text-[10px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--spm-grn)' }}>
               <span className="h-[5px] w-[5px] animate-pulse rounded-full" style={{ background: 'var(--spm-grn)' }} />
-              {todayLesson?.classId ?? '3학년 A반'} 진행 예정
+              {todayLesson?.classId ?? '초등 A반'} 진행 예정
             </span>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -96,7 +109,10 @@ function ProgramRecommendationCard() {
     <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
       <Link href={`/spokedu-master/library/${recommended.id}`} className="flex items-center gap-3 rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.14)' }}><Clock3 size={19} color="var(--spm-acc)" /></span>
-        <span className="min-w-0 flex-1"><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>다음 추천: {recommended.title}</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>아직 이 반에서 사용하지 않은 프로그램입니다.</span></span>
+        <span className="min-w-0 flex-1">
+          <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>다음 추천: {recommended.title}</strong>
+          <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>아직 이 반에서 사용하지 않은 프로그램입니다.</span>
+        </span>
         <ChevronRight size={18} color="var(--spm-t3)" />
       </Link>
     </section>
@@ -127,6 +143,30 @@ function DirectorSnapshot() {
   );
 }
 
+function ServiceHealthStrip() {
+  const profile = useProfile();
+  const operational = useOperationalStatus();
+  const trialDaysLeft = getTrialDaysLeft(profile);
+  const planLabel = profile?.plan === 'team' ? '센터 플랜' : profile?.plan === 'pro' ? '개인 PRO' : `무료 체험 ${trialDaysLeft}일`;
+
+  return (
+    <section className="mb-7 grid gap-2 px-[22px] sm:grid-cols-3 sm:px-8 lg:px-10">
+      <Link href="/spokedu-master/profile" className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <p className="text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>구독 상태</p>
+        <p className="mt-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{planLabel}</p>
+      </Link>
+      <Link href="/spokedu-master/profile" className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <p className="text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>동기화</p>
+        <p className="mt-1 text-[14px] font-black" style={{ color: operational.online ? 'var(--spm-grn)' : 'var(--spm-amb)' }}>{operational.online ? '온라인 정상' : '오프라인 저장'}</p>
+      </Link>
+      <Link href="/spokedu-master/profile" className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <p className="text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>재시도</p>
+        <p className="mt-1 text-[14px] font-black" style={{ color: operational.retryQueue.length ? 'var(--spm-amb)' : 'var(--spm-t)' }}>{operational.retryQueue.length}건 대기</p>
+      </Link>
+    </section>
+  );
+}
+
 export default function DashboardView() {
   const profile = useProfile();
   const isPro = useIsPro();
@@ -138,15 +178,22 @@ export default function DashboardView() {
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="flex items-center justify-between px-[22px] pb-[18px] pt-[22px] sm:px-8 lg:px-10">
-        <div><p className="mb-1 text-[12px] italic" style={{ color: 'var(--spm-t3)' }}>좋은 아침이에요</p><h1 className="text-[22px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{profile?.name ?? '선생님'}</h1></div>
+        <div>
+          <p className="mb-1 text-[12px] italic" style={{ color: 'var(--spm-t3)' }}>좋은 아침이에요</p>
+          <h1 className="text-[22px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{profile?.name ?? '선생님'}</h1>
+        </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="relative grid h-[38px] w-[38px] place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림"><Bell size={18} color="var(--spm-t2)" />{unreadCount > 0 ? <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: 'var(--spm-red)', border: '1.5px solid var(--spm-bg)' }} /> : null}</button>
+          <button type="button" className="relative grid h-[38px] w-[38px] place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림">
+            <Bell size={18} color="var(--spm-t2)" />
+            {unreadCount > 0 ? <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: 'var(--spm-red)', border: '1.5px solid var(--spm-bg)' }} /> : null}
+          </button>
           <Link href="/spokedu-master/profile" className="grid h-10 w-10 place-items-center rounded-full text-[14px] font-bold text-white" style={{ background: profile?.avatarColor ?? '#312e81', fontFamily: 'var(--spm-font-display)' }}>{(profile?.name ?? '선생님').slice(0, 1)}</Link>
         </div>
       </header>
 
       {!isPro ? <ProBanner /> : null}
       <ServiceIdentityCard />
+      <ServiceHealthStrip />
       {profile?.role === 'director' ? <DirectorSnapshot /> : null}
 
       <section className="mb-7 grid grid-cols-2 gap-2 px-[22px] sm:grid-cols-4 sm:px-8 lg:px-10">
@@ -163,7 +210,10 @@ export default function DashboardView() {
       <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
         <Link href="/spokedu-master/students" className="flex items-center gap-3 rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.13)' }}><UsersRound size={19} color="var(--spm-grn)" /></span>
-          <span className="min-w-0 flex-1"><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>학생 성장 이력</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>배지, 위험 신호, 누적 수업 기록 확인</span></span>
+          <span className="min-w-0 flex-1">
+            <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>학생 성장 이력</strong>
+            <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>배지, 위험 신호, 누적 수업 기록을 확인합니다.</span>
+          </span>
           <ChevronRight size={18} color="var(--spm-t3)" />
         </Link>
       </section>
@@ -171,6 +221,10 @@ export default function DashboardView() {
       <section className="mb-7">
         <SectionHeader title="SPOMOVE 웹 실행" href="/spokedu-master/spomove" />
         <div className="grid grid-cols-2 gap-2 px-[22px] sm:grid-cols-4 sm:px-8 lg:px-10">{DRILLS.slice(0, 4).map((drill, index) => <DrillTile key={drill.id} drill={drill} index={index} />)}</div>
+      </section>
+
+      <section className="px-[22px] sm:px-8 lg:hidden lg:px-10">
+        <PwaInstallCard compact />
       </section>
     </div>
   );

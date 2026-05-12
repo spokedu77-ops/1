@@ -97,13 +97,7 @@ export default function ReportPage() {
     const targets = filteredStudents.filter((student) => selectedReportIds.includes(student.id));
     const reportStudents = targets.length > 0 ? targets : filteredStudents;
     setShareStep('generating');
-    const result = await generateGrowthReportBatch({
-      profile,
-      classId: classFilter,
-      period,
-      students: reportStudents,
-      records: filteredRecords,
-    });
+    const result = await generateGrowthReportBatch({ profile, classId: classFilter, period, students: reportStudents, records: filteredRecords });
     if (result.ok) {
       setReportResult(result.data);
       setShareStep('done');
@@ -142,12 +136,7 @@ export default function ReportPage() {
               <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: pdfStatus.allowed ? 'rgba(16,185,129,0.13)' : 'rgba(239,68,68,0.13)', color: pdfStatus.allowed ? 'var(--spm-grn)' : 'var(--spm-red)' }}>PDF {pdfStatus.label}</span>
             </div>
             <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 기록, SPOMOVE 반응 데이터, 학생별 배지와 관찰 메모를 학부모 상담 자료로 묶습니다.</p>
-            {!pdfStatus.allowed ? (
-              <p className="mt-4 flex gap-2 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
-                <AlertTriangle size={15} />
-                {pdfStatus.reason}
-              </p>
-            ) : null}
+            {!pdfStatus.allowed ? <p className="mt-4 flex gap-2 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}><AlertTriangle size={15} />{pdfStatus.reason}</p> : null}
             <div className="mt-5 grid grid-cols-3 gap-2">
               {[
                 ['학생', `${filteredStudents.length}명`],
@@ -197,12 +186,8 @@ export default function ReportPage() {
           </div>
           <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: kakaoStatus.allowed ? 'rgba(16,185,129,0.13)' : 'rgba(239,68,68,0.13)', color: kakaoStatus.allowed ? 'var(--spm-grn)' : 'var(--spm-red)' }}>카카오 {kakaoStatus.label}</span>
         </div>
-        <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>카카오 공유 문장, 학부모 웹뷰 링크, PDF 리포트를 함께 준비합니다.</p>
-        {retryQueue.length > 0 ? (
-          <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>
-            PDF 생성 실패 {retryQueue.length}건이 재시도 대기 중입니다.
-          </p>
-        ) : null}
+        <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>카카오 공유 문장, 학부모 링크, PDF 리포트를 함께 준비합니다.</p>
+        {retryQueue.length > 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>PDF 생성 실패 {retryQueue.length}건이 재시도 대기 중입니다.</p> : null}
         <div className="mt-5 grid grid-cols-2 gap-2">
           <button type="button" onClick={openShareFlow} disabled={!kakaoStatus.allowed || !pdfStatus.allowed} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
             <Share2 size={15} />
@@ -250,7 +235,7 @@ export default function ReportPage() {
                         </div>
                       ))}
                     </div>
-                    <p className="mt-5 rounded-[12px] bg-slate-100 p-3 text-[12px] font-semibold leading-5 text-slate-600">{previewStudent.name}은 수업 참여가 안정적이며, 다음 수업에서는 가장 성장 여지가 큰 동작을 더 세밀하게 관찰하겠습니다.</p>
+                    <p className="mt-5 rounded-[12px] bg-slate-100 p-3 text-[12px] font-semibold leading-5 text-slate-600">{previewStudent.name}은 수업 참여가 안정적이며, 다음 수업에서도 가장 성장 폭이 큰 동작을 중심으로 관찰하겠습니다.</p>
                   </div>
                 </div>
                 <Link href={`/spokedu-master/parent/${previewStudent.id}?token=${createParentPreviewToken(previewStudent.id)}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>

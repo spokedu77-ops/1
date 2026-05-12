@@ -8,19 +8,21 @@ import { BottomSheet } from '../../components/ui/BottomSheet';
 import { PROGRAMS } from '../../lib/data';
 import { useIsPro, useMasterStore } from '../../store';
 
-const EQUIPMENT_PRICES: Record<string, number> = {
-  '마커콘 4개': 8900,
-  마커콘: 8900,
-  '스마트폰 또는 태블릿': 0,
-  '이미지 카드': 12000,
-  스마트폰: 0,
-  프로젝터: 159000,
-  '미니 허들': 24000,
-  바톤: 6900,
-};
+function getEquipmentPrice(item: string) {
+  if (item.includes('스마트폰') || item.includes('태블릿') || item.includes('프로젝터')) return 0;
+  if (item.includes('마커')) return 8900;
+  if (item.includes('카드')) return 12000;
+  if (item.includes('허들')) return 24000;
+  if (item.includes('바통')) return 6900;
+  return 9900;
+}
 
 function ThumbGrid({ colors }: { colors: [string, string, string, string] }) {
-  return <div className="grid h-[220px] grid-cols-2 grid-rows-2 gap-1 overflow-hidden rounded-[18px] md:h-full" aria-hidden>{colors.map((color) => <span key={color} style={{ background: color }} />)}</div>;
+  return (
+    <div className="grid h-[220px] grid-cols-2 grid-rows-2 gap-1 overflow-hidden rounded-[18px] md:h-full" aria-hidden>
+      {colors.map((color) => <span key={color} style={{ background: color }} />)}
+    </div>
+  );
 }
 
 function FieldButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -72,7 +74,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   };
 
   const addEquipment = (item: string) => {
-    const price = EQUIPMENT_PRICES[item] ?? 9900;
+    const price = getEquipmentPrice(item);
     if (price <= 0) return;
     addToCart({ id: item, name: item, price, qty: 1 });
   };
@@ -82,8 +84,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
       <header className="sticky top-0 z-20 flex items-center justify-between px-[22px] py-3 sm:px-8 lg:px-10" style={{ background: 'rgba(7,7,12,0.86)', backdropFilter: 'blur(18px)' }}>
         <Link href="/spokedu-master/library" className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="뒤로가기"><ArrowLeft size={18} color="var(--spm-t)" /></Link>
         <div className="flex items-center gap-2">
-          <Link href="/spokedu-master/shop" className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="교구 샵"><ShoppingBag size={18} color="var(--spm-t2)" /></Link>
-          <button type="button" onClick={() => toggleFavorite(program.id)} className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="즐겨찾기"><Heart size={18} color={favorite ? 'var(--spm-red)' : 'var(--spm-t2)'} fill={favorite ? 'var(--spm-red)' : 'none'} /></button>
+          <Link href="/spokedu-master/shop" className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="교구 쇼핑"><ShoppingBag size={18} color="var(--spm-t2)" /></Link>
+          <button type="button" onClick={() => toggleFavorite(program.id)} className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="즐겨찾기">
+            <Heart size={18} color={favorite ? 'var(--spm-red)' : 'var(--spm-t2)'} fill={favorite ? 'var(--spm-red)' : 'none'} />
+          </button>
         </div>
       </header>
 
@@ -110,23 +114,37 @@ export default function LibraryDetailView({ id }: { id: string }) {
         </section>
 
         <section className="mt-7 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-[16px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>준비물</h2><Link href="/spokedu-master/shop" className="text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>교구 샵</Link></div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{program.equipment.map((item) => {
-            const price = EQUIPMENT_PRICES[item] ?? 9900;
-            return <div key={item} className="flex items-center gap-2 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}><span className="min-w-0 flex-1"><strong className="block text-[12px]" style={{ color: 'var(--spm-t)' }}>{item}</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{price > 0 ? `${price.toLocaleString('ko-KR')}원` : '보유 장비'}</span></span>{price > 0 ? <button type="button" onClick={() => addEquipment(item)} className="h-8 rounded-[10px] px-3 text-[11px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>담기</button> : null}</div>;
-          })}</div>
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-[16px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>준비물</h2><Link href="/spokedu-master/shop" className="text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>교구 쇼핑</Link></div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {program.equipment.map((item) => {
+              const price = getEquipmentPrice(item);
+              return (
+                <div key={item} className="flex items-center gap-2 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
+                  <span className="min-w-0 flex-1"><strong className="block text-[12px]" style={{ color: 'var(--spm-t)' }}>{item}</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{price > 0 ? `${price.toLocaleString('ko-KR')}원` : '보유 장비'}</span></span>
+                  {price > 0 ? <button type="button" onClick={() => addEquipment(item)} className="h-8 rounded-[10px] px-3 text-[11px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>담기</button> : null}
+                </div>
+              );
+            })}
+          </div>
         </section>
 
         {program.lessonDetail ? (
           <div className="mt-7 grid gap-4 lg:grid-cols-2">
-            <section className="grid grid-cols-2 gap-2 lg:col-span-2">{[
-              ['권장 연령', program.lessonDetail.recommendedAge],
-              ['권장 인원', program.lessonDetail.recommendedPlayers],
-              ['수업 목표', program.lessonDetail.objective],
-              ['발달 포인트', program.lessonDetail.developmentFocus],
-            ].map(([label, value]) => <div key={label} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><p className="text-[10px] font-black uppercase tracking-[0.08em]" style={{ color: 'var(--spm-t3)' }}>{label}</p><p className="mt-2 text-[12px] font-bold leading-5" style={{ color: 'var(--spm-t)' }}>{value}</p></div>)}</section>
+            <section className="grid grid-cols-2 gap-2 lg:col-span-2">
+              {[
+                ['권장 연령', program.lessonDetail.recommendedAge],
+                ['권장 인원', program.lessonDetail.recommendedPlayers],
+                ['수업 목표', program.lessonDetail.objective],
+                ['발달 포인트', program.lessonDetail.developmentFocus],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+                  <p className="mt-2 text-[12px] font-bold leading-5" style={{ color: 'var(--spm-t)' }}>{value}</p>
+                </div>
+              ))}
+            </section>
             <DetailPanel title="코치 스크립트" icon={Lightbulb}><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{program.lessonDetail.coachScript}</p></DetailPanel>
-            <DetailPanel title="학부모 공유 문장" icon={MessageCircle}><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{program.lessonDetail.parentNote}</p></DetailPanel>
+            <DetailPanel title="보호자 공유 문장" icon={MessageCircle}><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{program.lessonDetail.parentNote}</p></DetailPanel>
             <DetailPanel title="현장 팁" icon={Lightbulb}><DetailList items={program.lessonDetail.fieldTips} /></DetailPanel>
             <DetailPanel title="변형 수업" icon={Shuffle}><DetailList items={program.lessonDetail.variations} /></DetailPanel>
             <DetailPanel title="안전 체크" icon={ShieldAlert}><DetailList items={program.lessonDetail.safetyNotes} /></DetailPanel>
@@ -136,7 +154,14 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
         <section className="mt-7">
           <h2 className="mb-3 text-[16px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>진행 순서</h2>
-          <div className="grid gap-3 md:grid-cols-3">{program.steps.map((step, index) => <div key={step} className="flex gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>{index + 1}</span><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{step}</p></div>)}</div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {program.steps.map((step, index) => (
+              <div key={step} className="flex gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>{index + 1}</span>
+                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{step}</p>
+              </div>
+            ))}
+          </div>
         </section>
       </main>
 

@@ -7,24 +7,9 @@ export type LimitStatus = {
 };
 
 export const PLAN_LIMITS: Record<PlanType, { kakaoMonthly: number | null; aiMonthly: number | null; pdfMonthly: number | null; canUseDirectorDashboard: boolean }> = {
-  free: {
-    kakaoMonthly: 50,
-    aiMonthly: 5,
-    pdfMonthly: 3,
-    canUseDirectorDashboard: false,
-  },
-  pro: {
-    kakaoMonthly: 200,
-    aiMonthly: 20,
-    pdfMonthly: null,
-    canUseDirectorDashboard: false,
-  },
-  team: {
-    kakaoMonthly: null,
-    aiMonthly: null,
-    pdfMonthly: null,
-    canUseDirectorDashboard: true,
-  },
+  free: { kakaoMonthly: 50, aiMonthly: 5, pdfMonthly: 3, canUseDirectorDashboard: false },
+  pro: { kakaoMonthly: 200, aiMonthly: 20, pdfMonthly: null, canUseDirectorDashboard: false },
+  team: { kakaoMonthly: null, aiMonthly: null, pdfMonthly: null, canUseDirectorDashboard: true },
 };
 
 export function getTrialDaysLeft(profile: UserProfile | null): number {
@@ -55,7 +40,12 @@ export function canUseMonthlyLimit(plan: PlanType, used: number, kind: 'kakao' |
     return {
       allowed: false,
       label: `${used}/${limit}`,
-      reason: kind === 'kakao' ? '카카오 발송 한도를 초과했습니다. 메시지는 재시도 목록에 보관됩니다.' : kind === 'ai' ? 'AI 코멘트 한도를 초과했습니다. 직접 입력은 계속 가능합니다.' : 'PDF 생성 한도를 초과했습니다.',
+      reason:
+        kind === 'kakao'
+          ? '카카오 발송 한도를 초과했습니다. 메시지는 재시도 목록에 보관됩니다.'
+          : kind === 'ai'
+            ? 'AI 코멘트 한도를 초과했습니다. 직접 입력은 계속 사용할 수 있습니다.'
+            : 'PDF 생성 한도를 초과했습니다.',
     };
   }
   return { allowed: true, label: `${used}/${limit}` };

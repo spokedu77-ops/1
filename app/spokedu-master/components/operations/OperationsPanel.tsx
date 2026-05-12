@@ -18,10 +18,17 @@ export function OperationsPanel({ compact = false }: { compact?: boolean }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>operations</p>
-          <h2 className="mt-2 text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>운영 상태</h2>
-          <p className="mt-1 text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>마지막 동기화 {formatSyncTime(operational.lastSyncAt)}</p>
+          <h2 className="mt-2 text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+            운영 상태
+          </h2>
+          <p className="mt-1 text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>
+            마지막 동기화 {formatSyncTime(operational.lastSyncAt)}
+          </p>
         </div>
-        <span className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: operational.online ? 'rgba(16,185,129,0.13)' : 'rgba(245,158,11,0.13)', color: operational.online ? 'var(--spm-grn)' : 'var(--spm-amb)' }}>
+        <span
+          className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-black"
+          style={{ background: operational.online ? 'rgba(16,185,129,0.13)' : 'rgba(245,158,11,0.13)', color: operational.online ? 'var(--spm-grn)' : 'var(--spm-amb)' }}
+        >
           {operational.online ? <Wifi size={13} /> : <WifiOff size={13} />}
           {operational.online ? '온라인' : '오프라인'}
         </span>
@@ -63,7 +70,9 @@ export function OperationsPanel({ compact = false }: { compact?: boolean }) {
           ))}
         </div>
       ) : (
-        <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>대기 중인 실패 항목이 없습니다.</p>
+        <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>
+          대기 중인 실패 항목이 없습니다.
+        </p>
       )}
     </section>
   );

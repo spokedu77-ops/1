@@ -10,7 +10,7 @@ import { canCreateClassRecord, canUseMonthlyLimit, createParentPreviewToken } fr
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, StudentProfile } from '../types';
 
-const SKILLS = ['방향 전환', '균형 정지', '신호 반응', '착지 자세'];
+const SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
 
 function SummaryPill({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
@@ -21,7 +21,23 @@ function SummaryPill({ label, value, tone }: { label: string; value: string; ton
   );
 }
 
-function StudentRow({ student, attendance, focused, onAttendance, onFocus, onOpen, disabled }: { student: StudentProfile; attendance: AttendanceStatus; focused: boolean; onAttendance: (status: AttendanceStatus) => void; onFocus: () => void; onOpen: () => void; disabled: boolean }) {
+function StudentRow({
+  student,
+  attendance,
+  focused,
+  onAttendance,
+  onFocus,
+  onOpen,
+  disabled,
+}: {
+  student: StudentProfile;
+  attendance: AttendanceStatus;
+  focused: boolean;
+  onAttendance: (status: AttendanceStatus) => void;
+  onFocus: () => void;
+  onOpen: () => void;
+  disabled: boolean;
+}) {
   const dot = attendance === 'present' ? 'var(--spm-grn)' : attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)';
   return (
     <div className="rounded-[15px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
@@ -100,7 +116,7 @@ export default function ClassRecordPage() {
   const buildRecord = (kakaoSent: boolean) => ({
     id: savedRecordId ?? Date.now().toString(),
     lessonTitle: todayLesson?.title ?? program.title,
-    classId: todayLesson?.classId ?? '3학년 A반',
+    classId: todayLesson?.classId ?? '초등 A반',
     programId: program.id,
     programTitle: program.title,
     date: new Date().toISOString(),
@@ -109,11 +125,17 @@ export default function ClassRecordPage() {
     focusCount,
     skillCount: recordedSkills,
     kakaoSent,
-    students: students.map((student) => ({ studentId: student.id, studentName: student.name, attendance: attendance[student.id] ?? 'pending', focused: !!focused[student.id], skills: checkedSkills[student.id] ?? [] })),
+    students: students.map((student) => ({
+      studentId: student.id,
+      studentName: student.name,
+      attendance: attendance[student.id] ?? 'pending',
+      focused: !!focused[student.id],
+      skills: checkedSkills[student.id] ?? [],
+    })),
   });
 
   const persistRecord = (kakaoSent: boolean) => {
-    if (!recordStatus.allowed) return;
+    if (!recordStatus.allowed) return null;
     const record = buildRecord(kakaoSent);
     saveClassRecord(record);
     setSavedRecordId(record.id);
@@ -163,7 +185,7 @@ export default function ClassRecordPage() {
       <section className="mx-[22px] mb-5 overflow-hidden rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.25), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>{todayLesson?.classId ?? '3학년 A반'} · {todayLesson?.period ?? 3}교시</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>{todayLesson?.classId ?? '초등 A반'} · {todayLesson?.period ?? 3}교시</p>
             <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{todayLesson?.title ?? program.title}</h2>
             <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>출석은 빠르게, 동작 기록은 학생 이름을 눌러 저장합니다.</p>
           </div>
@@ -196,21 +218,21 @@ export default function ClassRecordPage() {
           </div>
           <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: kakaoStatus.allowed ? 'rgba(16,185,129,0.13)' : 'rgba(239,68,68,0.13)', color: kakaoStatus.allowed ? 'var(--spm-grn)' : 'var(--spm-red)' }}>카카오 {kakaoStatus.label}</span>
         </div>
-        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>출석 {present}명, 동작 기록 {recordedSkills}개를 학부모용 카카오 요약으로 바꿉니다.</p>
+        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>출석 {present}명, 동작 기록 {recordedSkills}개를 보호자용 카카오 요약으로 변환합니다.</p>
         {kakaoStep === 'preview' ? (
           <div className="mt-4 rounded-[16px] p-4" style={{ background: '#fef3c7', color: '#2d1b05' }}>
             <p className="text-[12px] font-black">카카오톡 미리보기</p>
-            <p className="mt-2 text-[13px] font-semibold leading-6">오늘 {todayLesson?.classId ?? '3학년 A반'}은 {program.title} 수업을 진행했습니다. 출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장되었습니다.</p>
+            <p className="mt-2 text-[13px] font-semibold leading-6">오늘 {todayLesson?.classId ?? '초등 A반'}은 {program.title} 수업을 진행했습니다. 출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장되었습니다.</p>
           </div>
         ) : null}
         {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}
-        {kakaoStep === 'sending' ? <p className="mt-4 rounded-[12px] p-3 text-[13px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>Cloud Function 계약에 맞춰 학부모 메시지를 발송하는 중입니다...</p> : null}
+        {kakaoStep === 'sending' ? <p className="mt-4 rounded-[12px] p-3 text-[13px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>보호자 메시지를 발송하는 중입니다...</p> : null}
         {kakaoStep === 'done' ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.13)', color: 'var(--spm-grn)' }}>
-            <p className="text-[13px] font-bold">카카오 요약 {kakaoResult?.sentCount ?? present}건 발송 완료. 학생 이력에 오늘 기록을 반영했습니다.</p>
+            <p className="text-[13px] font-bold">카카오 요약 {kakaoResult?.sentCount ?? present}건 발송 완료. 학생 이력에 오늘 기록이 반영되었습니다.</p>
             {firstPresentStudent ? (
               <Link href={`/spokedu-master/parent/${firstPresentStudent.id}?token=${parentToken}`} className="mt-3 inline-flex items-center gap-1 text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>
-                학부모 링크 미리보기
+                보호자 링크 미리보기
                 <ExternalLink size={13} />
               </Link>
             ) : null}
@@ -219,12 +241,12 @@ export default function ClassRecordPage() {
         {retryQueue.length > 0 ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>
             <p className="text-[12px] font-black">재시도 대기 {retryQueue.length}건</p>
-            <p className="mt-1 text-[11px] font-semibold">네트워크 또는 카카오 제공자 오류가 나면 이 목록에서 다시 발송합니다.</p>
+            <p className="mt-1 text-[11px] font-semibold">네트워크 또는 카카오 제공사 오류가 있으면 이 목록에서 다시 발송합니다.</p>
           </div>
         ) : null}
         <button type="button" onClick={kakaoStep === 'summary' ? () => setKakaoStep('preview') : sendKakao} disabled={!recordStatus.allowed || !kakaoStatus.allowed || kakaoStep === 'sending' || kakaoStep === 'done'} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
           {kakaoStep === 'summary' ? <MessageCircle size={16} /> : <Send size={16} />}
-          {kakaoStep === 'summary' ? '카카오 요약 미리보기' : kakaoStep === 'preview' ? '학부모에게 발송' : kakaoStep === 'done' ? '발송 완료' : '발송 중'}
+          {kakaoStep === 'summary' ? '카카오 요약 미리보기' : kakaoStep === 'preview' ? '보호자에게 발송' : kakaoStep === 'done' ? '발송 완료' : '발송 중'}
         </button>
       </section>
 

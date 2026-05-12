@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { StudentModal } from './StudentModal';
 import { StudentManageScreen } from './StudentManageScreen';
 import { useStudents } from '../hooks/useStudents';
+
+const SPOKEDU_PROMO_BANNER_SRC = '/spokedu/spokedu-promo-banner.png';
 
 const HERO_ANIM_CSS = `
 @keyframes spomoveCatalogHeroFadeUp {
@@ -13,16 +16,8 @@ const HERO_ANIM_CSS = `
 .spomove-catalog-hero-fadein {
   animation: spomoveCatalogHeroFadeUp 0.55s cubic-bezier(0.22,1,0.36,1) both;
 }
-.spomove-catalog-hero-fadein-1 {
-  animation: spomoveCatalogHeroFadeUp 0.55s 0.07s cubic-bezier(0.22,1,0.36,1) both;
-}
 @media (prefers-reduced-motion: reduce) {
-  .spomove-catalog-hero-fadein,
-  .spomove-catalog-hero-fadein-1 { animation: none; opacity: 1; transform: none; }
-}
-.spomove-hero-mobile-break { display: inline; }
-@media (max-width: 640px) {
-  .spomove-hero-mobile-break { display: block; margin-top: 0.1rem; }
+  .spomove-catalog-hero-fadein { animation: none; opacity: 1; transform: none; }
 }
 `;
 
@@ -35,9 +30,31 @@ export function SpomoveCatalogHero() {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [showStudentManage, setShowStudentManage] = useState(false);
+  const [bannerLightboxOpen, setBannerLightboxOpen] = useState(false);
+  const [bannerMounted, setBannerMounted] = useState(false);
   const [theme, setTheme] = useState(() =>
     typeof window !== 'undefined' ? localStorage.getItem('spokedu_theme') || 'light' : 'light',
   );
+
+  useEffect(() => {
+    setBannerMounted(true);
+  }, []);
+
+  const closeBannerLightbox = useCallback(() => setBannerLightboxOpen(false), []);
+
+  useEffect(() => {
+    if (!bannerLightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeBannerLightbox();
+    };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [bannerLightboxOpen, closeBannerLightbox]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
@@ -109,31 +126,38 @@ export function SpomoveCatalogHero() {
             gap: 'clamp(0.45rem,1.6vw,0.7rem)',
           }}
         >
-          <div
+          <button
+            type="button"
+            onClick={() => setBannerLightboxOpen(true)}
+            aria-label="SPOKEDU 배너 전체 화면으로 보기"
             style={{
-              fontSize: 'clamp(2.2rem,7vw,4rem)',
-              fontWeight: 900,
-              letterSpacing: '-0.045em',
-              lineHeight: 1.04,
               margin: 0,
-              color: '#fff',
+              padding: 0,
+              border: 'none',
+              background: 'transparent',
+              cursor: 'zoom-in',
+              width: '100%',
+              maxWidth: 'min(100%, 920px)',
+              borderRadius: 12,
+              overflow: 'hidden',
+              lineHeight: 0,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
             }}
           >
-            SPOKEDU
-          </div>
-          <p
-            style={{
-              fontSize: 'clamp(0.9rem,2vw,1.08rem)',
-              color: 'rgba(255,255,255,0.62)',
-              lineHeight: 1.55,
-              fontWeight: 700,
-              margin: 0,
-              maxWidth: '56rem',
-            }}
-          >
-            신체 활동과 인지 트레이닝을 통합한 교육 기반 퍼포먼스 도구
-            <span className="spomove-hero-mobile-break"> — SPOMOVE 트레이닝</span>
-          </p>
+            <img
+              src={SPOKEDU_PROMO_BANNER_SRC}
+              alt="SPOKEDU — 움직임이 배움이 되다. 아동·청소년 체육교육"
+              width={1600}
+              height={900}
+              style={{
+                width: '100%',
+                height: 'auto',
+                display: 'block',
+              }}
+              loading="eager"
+              decoding="async"
+            />
+          </button>
         </div>
       </div>
 
@@ -171,6 +195,56 @@ export function SpomoveCatalogHero() {
           />
         </div>
       )}
+
+      {bannerMounted && bannerLightboxOpen
+        ? createPortal(
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="SPOKEDU 배너 전체 화면 — 화면을 누르거나 Esc로 닫기"
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 200000,
+                margin: 0,
+                padding: 0,
+                boxSizing: 'border-box',
+                width: '100vw',
+                height: '100vh',
+                maxWidth: '100vw',
+                maxHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#020617',
+                cursor: 'zoom-out',
+              }}
+              onClick={closeBannerLightbox}
+            >
+              <img
+                src={SPOKEDU_PROMO_BANNER_SRC}
+                alt=""
+                width={1600}
+                height={900}
+                style={{
+                  width: '100vw',
+                  height: '100vh',
+                  maxWidth: '100vw',
+                  maxHeight: '100vh',
+                  objectFit: 'contain',
+                  objectPosition: 'center',
+                  display: 'block',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}
+                loading="eager"
+                decoding="async"
+                draggable={false}
+              />
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

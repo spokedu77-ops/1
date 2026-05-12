@@ -24,7 +24,7 @@ function DrillCard({ drill, index, isLocked }: { drill: (typeof DRILLS)[number];
       </div>
       {isLocked ? (
         <div className="absolute inset-0 grid place-items-center rounded-[14px] bg-black/55 backdrop-blur-[3px]">
-          <span className="rounded-[7px] px-3 py-1.5 text-[10px] font-black" style={{ background: 'rgba(245,158,11,0.13)', border: '1px solid rgba(245,158,11,0.28)', color: 'var(--spm-amb)' }}>PRO 요금</span>
+          <span className="rounded-[7px] px-3 py-1.5 text-[10px] font-black" style={{ background: 'rgba(245,158,11,0.13)', border: '1px solid rgba(245,158,11,0.28)', color: 'var(--spm-amb)' }}>PRO 잠금</span>
         </div>
       ) : null}
     </Link>
@@ -67,7 +67,7 @@ export default function SpomoveHubView() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>reaction training</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>SPOMOVE</h1>
         <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          설치 없이 웹에서 실행하고, PWA로 홈 화면에 고정해 수업 중 바로 사용할 수 있습니다.
+          설치 없이 웹에서 바로 실행하고, PWA로 홈 화면에 고정하면 수업 중 주소창 없이 사용할 수 있습니다.
         </p>
       </header>
 
@@ -76,7 +76,7 @@ export default function SpomoveHubView() {
           <section className="grid gap-2 md:grid-cols-3">
             <LaunchCard title="프로젝터 실행" desc="교실/체육관 화면에 띄우는 전체화면 모드" href="/spokedu-master/spomove/session?drill=speed-track&mode=projector" icon={MonitorPlay} tone="#818cf8" />
             <LaunchCard title="모바일 빠른 실행" desc="스마트폰이나 태블릿에서 바로 반응 기록" href="/spokedu-master/spomove/session?drill=speed-track&mode=mobile" icon={Smartphone} tone="#10b981" />
-            <LaunchCard title="수업기록과 실행" desc="세션 종료 후 학생 출석/동작 기록으로 이동" href="/spokedu-master/spomove/session?drill=speed-track&mode=class" icon={ClipboardCheck} tone="#f59e0b" />
+            <LaunchCard title="수업 기록과 실행" desc="세션 종료 후 학생 출석/동작 기록으로 이동" href="/spokedu-master/spomove/session?drill=speed-track&mode=class" icon={ClipboardCheck} tone="#f59e0b" />
           </section>
 
           <section>
@@ -106,7 +106,7 @@ export default function SpomoveHubView() {
         <aside className="space-y-7">
           <section className="rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.14), var(--spm-s2))', border: '1px solid rgba(16,185,129,0.24)' }}>
             <Download size={20} color="var(--spm-grn)" />
-            <h2 className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>홈 화면에 추가하면 앱처럼 열립니다</h2>
+            <h2 className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>홈 화면에 추가하면 수업장이 빨라집니다</h2>
             <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
               브라우저 공유 메뉴에서 홈 화면 추가를 선택하면 수업 중 주소창 없이 바로 실행할 수 있습니다.
             </p>

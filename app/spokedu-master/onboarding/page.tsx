@@ -4,8 +4,8 @@ import { ArrowRight, Check, School, Sparkles, UserRound, UsersRound, type Lucide
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateCenterCode, type CenterValidationResult } from '../lib/serviceContracts';
-import type { UserRole } from '../types';
 import { useMasterStore, useProfile } from '../store';
+import type { UserRole } from '../types';
 
 const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등'];
 const PROGRAM_TYPES = ['놀이체육', 'SPOMOVE', '음악형', '민첩성', '체력'];
@@ -30,11 +30,7 @@ function ChoiceCard({ title, desc, active, icon: Icon, onClick }: { title: strin
 }
 
 function ToggleChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="h-9 rounded-full px-3 text-[12px] font-bold" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s2)', color: active ? '#fff' : 'var(--spm-t2)', border: active ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>
-      {label}
-    </button>
-  );
+  return <button type="button" onClick={onClick} className="h-9 rounded-full px-3 text-[12px] font-bold" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s2)', color: active ? '#fff' : 'var(--spm-t2)', border: active ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>{label}</button>;
 }
 
 export default function OnboardingPage() {
@@ -109,7 +105,7 @@ export default function OnboardingPage() {
         <div className="mb-8">
           <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
           <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 준비 30초, 기록 3분으로 시작합니다</h1>
-          <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>강사와 원장 역할을 먼저 정하고, 개인 체험 또는 센터 플랜으로 MASTER를 시작합니다.</p>
+          <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>강사와 원장의 역할을 먼저 정하고, 개인 체험 또는 센터 플랜으로 MASTER를 시작합니다.</p>
         </div>
 
         <div className="mb-6 flex gap-2">{[0, 1, 2, 3].map((item) => <StepDot key={item} active={step === item} done={step > item} />)}</div>
@@ -147,30 +143,16 @@ export default function OnboardingPage() {
           {step === 2 ? (
             <div className="space-y-4">
               <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>프로필 설정</h2>
-              <label className="block">
-                <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름</span>
-                <input value={name} onChange={(event) => setName(event.target.value.slice(0, 20))} className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>학교/센터</span>
-                <input value={school} onChange={(event) => setSchool(event.target.value)} placeholder="예: 서울초등학교, 무브키즈 센터" className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
-              </label>
-              <div>
-                <p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>담당 연령대</p>
-                <div className="flex flex-wrap gap-2">{AGE_GROUPS.map((item) => <ToggleChip key={item} label={item} active={ageGroups.includes(item)} onClick={() => toggle(item, ageGroups, setAgeGroups)} />)}</div>
-              </div>
-              <div>
-                <p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>주요 프로그램</p>
-                <div className="flex flex-wrap gap-2">{PROGRAM_TYPES.map((item) => <ToggleChip key={item} label={item} active={programTypes.includes(item)} onClick={() => toggle(item, programTypes, setProgramTypes)} />)}</div>
-              </div>
+              <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름</span><input value={name} onChange={(event) => setName(event.target.value.slice(0, 20))} className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} /></label>
+              <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>학교/센터</span><input value={school} onChange={(event) => setSchool(event.target.value)} placeholder="예: 서울초등학교, 무브키즈 센터" className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} /></label>
+              <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>담당 연령대</p><div className="flex flex-wrap gap-2">{AGE_GROUPS.map((item) => <ToggleChip key={item} label={item} active={ageGroups.includes(item)} onClick={() => toggle(item, ageGroups, setAgeGroups)} />)}</div></div>
+              <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>주요 프로그램</p><div className="flex flex-wrap gap-2">{PROGRAM_TYPES.map((item) => <ToggleChip key={item} label={item} active={programTypes.includes(item)} onClick={() => toggle(item, programTypes, setProgramTypes)} />)}</div></div>
             </div>
           ) : null}
 
           {step === 3 ? (
             <div className="space-y-4">
-              <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(16,185,129,0.14)' }}>
-                <Sparkles size={24} color="var(--spm-grn)" />
-              </span>
+              <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(16,185,129,0.14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
               <h2 className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>준비됐습니다</h2>
               <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 라이브러리에서 수업안을 고르고, SPOMOVE를 실행하고, 수업 기록을 학생 성장 이력으로 쌓을 수 있습니다.</p>
               <div className="grid gap-2 sm:grid-cols-3">{['프로그램 추천', '수업 기록', '카카오 공유'].map((item) => <div key={item} className="rounded-[12px] p-3 text-center text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>{item}</div>)}</div>

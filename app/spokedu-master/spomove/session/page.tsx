@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { Check, ClipboardCheck, Maximize, Play, RotateCcw, X } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DRILLS, SESSION_CUES } from '../../lib/data';
 import { useSession } from '../../hooks/useSession';
+import { DRILLS, SESSION_CUES } from '../../lib/data';
 
 type SessionState = 'idle' | 'countdown' | 'running' | 'done' | 'paused';
 
@@ -33,6 +33,12 @@ function ResultStat({ label, value, tone }: { label: string; value: string; tone
       <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/35">{label}</p>
     </div>
   );
+}
+
+function getIdleDescription(launchMode: string) {
+  if (launchMode === 'projector') return '전체화면으로 띄운 뒤 학생들이 신호에 맞춰 움직입니다.';
+  if (launchMode === 'class') return '세션이 끝나면 바로 수업 기록 화면으로 이어집니다.';
+  return '화면의 신호가 바뀌면 최대한 빠르게 화면을 탭하세요.';
 }
 
 function SpomoveSessionContent() {
@@ -74,7 +80,7 @@ function SpomoveSessionContent() {
     const session = end();
     setFinalSession(session);
     setState('done');
-  }, [clearTimer, end]);
+  }, [clearTimer, end, setFinalSession, setState]);
 
   const beginRunning = useCallback(() => {
     start(drill.id, drill.name);
@@ -84,13 +90,13 @@ function SpomoveSessionContent() {
     setCueSerial((serial) => serial + 1);
     setState('running');
     window.setTimeout(markCue, 80);
-  }, [drill.id, drill.name, markCue, start]);
+  }, [drill.id, drill.name, markCue, setCueIndex, setCueSerial, setFinalSession, setLastRT, setState, start]);
 
   const startCountdown = useCallback(() => {
     clearTimer();
     setCountdown('3');
     setState('countdown');
-  }, [clearTimer]);
+  }, [clearTimer, setCountdown, setState]);
 
   useEffect(() => {
     if (state !== 'countdown') return;
@@ -191,9 +197,7 @@ function SpomoveSessionContent() {
             <Play size={38} fill="#fff" />
           </button>
           <p className="mt-6 text-[34px] font-black">START</p>
-          <p className="mt-2 max-w-[280px] text-[13px] font-medium leading-6 text-white/45">
-            {launchMode === 'projector' ? '전체화면으로 띄운 뒤 학생들이 신호에 맞춰 움직입니다.' : launchMode === 'class' ? '세션이 끝나면 바로 수업 기록 화면으로 이어집니다.' : '화면의 신호가 바뀌면 최대한 빠르게 화면을 탭하세요.'}
-          </p>
+          <p className="mt-2 max-w-[320px] text-[13px] font-medium leading-6 text-white/45">{getIdleDescription(launchMode)}</p>
         </div>
       ) : null}
 

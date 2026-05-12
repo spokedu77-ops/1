@@ -1,18 +1,37 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle, Bell, CheckCircle2, ChevronRight, CreditCard, HelpCircle, LogOut, Mail, MonitorPlay, Moon, PauseCircle, Pencil, ShieldCheck, ShoppingBag, Trash2, Volume2, WifiOff, type LucideIcon } from 'lucide-react';
+import {
+  AlertTriangle,
+  Bell,
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
+  HelpCircle,
+  LogOut,
+  Mail,
+  MonitorPlay,
+  Moon,
+  PauseCircle,
+  Pencil,
+  ShieldCheck,
+  ShoppingBag,
+  Trash2,
+  Volume2,
+  WifiOff,
+  type LucideIcon,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { BottomSheet } from '../components/ui/BottomSheet';
 import { OperationsPanel } from '../components/operations/OperationsPanel';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
+import { BottomSheet } from '../components/ui/BottomSheet';
 import { formatReactionTime } from '../lib/utils';
-import type { PlanType } from '../types';
 import { useMasterStore, useProfile, useStats } from '../store';
+import type { PlanType } from '../types';
 
 const PLAN_DETAILS: Record<PlanType, { title: string; price: string; badge: string; kakao: string; ai: string; pdf: string; includes: string[] }> = {
   free: { title: '무료 체험', price: '14일 무료', badge: '시작 검증', kakao: '월 50건', ai: '월 5회', pdf: '개별 3명', includes: ['프로그램 일부 이용', '기본 수업 기록', '기존 데이터 열람'] },
-  pro: { title: '개인 플랜', price: '29,000원/월', badge: '강사 1인', kakao: '월 200건', ai: '월 20회', pdf: '전체 학생', includes: ['153개 프로그램 전체', 'SPOMOVE 웹 실행', '카카오 요약 발송', '성장 리포트 PDF'] },
+  pro: { title: '개인 플랜', price: '29,000원/월', badge: '강사 1명', kakao: '월 200건', ai: '월 20회', pdf: '전체 학생', includes: ['153개 프로그램 전체', 'SPOMOVE 웹 실행', '카카오 요약 발송', '성장 리포트 PDF'] },
   team: { title: '센터 플랜', price: '79,000원/월', badge: '강사 3명 기준', kakao: '무제한', ai: '무제한', pdf: '일괄 생성', includes: ['원장 대시보드', '강사 기록률 관리', '이탈 위험 학생 알림', '센터 단위 리포트'] },
 };
 
@@ -21,7 +40,15 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function MenuRow({ icon: Icon, label, href, danger = false, onClick }: { icon: LucideIcon; label: string; href?: string; danger?: boolean; onClick?: () => void }) {
-  const content = <><span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }}><Icon size={17} color={danger ? 'var(--spm-red)' : 'var(--spm-t2)'} /></span><span className="min-w-0 flex-1 text-left text-[14px] font-bold" style={{ color: danger ? 'var(--spm-red)' : 'var(--spm-t)' }}>{label}</span><ChevronRight size={16} color="var(--spm-t3)" /></>;
+  const content = (
+    <>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }}>
+        <Icon size={17} color={danger ? 'var(--spm-red)' : 'var(--spm-t2)'} />
+      </span>
+      <span className="min-w-0 flex-1 text-left text-[14px] font-bold" style={{ color: danger ? 'var(--spm-red)' : 'var(--spm-t)' }}>{label}</span>
+      <ChevronRight size={16} color="var(--spm-t3)" />
+    </>
+  );
   if (href) return <Link href={href} className="flex items-center gap-3 rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>{content}</Link>;
   return <button type="button" onClick={onClick} className="flex w-full items-center gap-3 rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>{content}</button>;
 }
@@ -32,7 +59,13 @@ function MenuGroup({ title, children }: { title: string; children: React.ReactNo
 
 function TrialJourney({ daysLeft }: { daysLeft: number }) {
   const steps = [['Day 1', '라이브러리에서 실제 수업안 2개 저장'], ['Day 4', 'SPOMOVE 웹 실행 1회 이상'], ['Day 10', '수업 기록과 학생 이력 확인'], ['Day 14', '개인 또는 센터 플랜 전환 판단']];
-  return <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>trial journey</p><h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>무료 체험 {daysLeft}일 남음</h2><div className="mt-4 space-y-2">{steps.map(([day, label], index) => <div key={day} className="flex items-center gap-3 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}><CheckCircle2 size={17} color={index === 0 ? 'var(--spm-grn)' : 'var(--spm-t3)'} /><span className="w-12 shrink-0 text-[11px] font-black" style={{ color: index === 0 ? 'var(--spm-grn)' : 'var(--spm-t3)' }}>{day}</span><span className="text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{label}</span></div>)}</div></section>;
+  return (
+    <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>trial journey</p>
+      <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>무료 체험 {daysLeft}일 남음</h2>
+      <div className="mt-4 space-y-2">{steps.map(([day, label], index) => <div key={day} className="flex items-center gap-3 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}><CheckCircle2 size={17} color={index === 0 ? 'var(--spm-grn)' : 'var(--spm-t3)'} /><span className="w-12 shrink-0 text-[11px] font-black" style={{ color: index === 0 ? 'var(--spm-grn)' : 'var(--spm-t3)' }}>{day}</span><span className="text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{label}</span></div>)}</div>
+    </section>
+  );
 }
 
 function PlanCard({ id, selected, onSelect }: { id: PlanType; selected: boolean; onSelect: () => void }) {
@@ -69,7 +102,7 @@ function CancelDefense({ open, onClose, recordCount, studentCount }: { open: boo
   const [confirmText, setConfirmText] = useState('');
   const canCancel = confirmText.trim() === '해지할게요';
   return (
-    <BottomSheet open={open} title="구독 해지 전 확인" onClose={onClose}>
+    <BottomSheet open={open} title="구독 해지 확인" onClose={onClose}>
       <div className="space-y-4">
         <div className="rounded-[16px] p-4" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.28)' }}><div className="flex items-center gap-2 text-[14px] font-black" style={{ color: 'var(--spm-red)' }}><AlertTriangle size={18} />해지하면 새 기록 생성이 제한됩니다</div><p className="mt-3 text-[13px] leading-6" style={{ color: 'var(--spm-t2)' }}>기존 데이터는 90일 보관되지만, 학생 {studentCount}명의 성장 이력, 수업 기록 {recordCount}건, 카카오 발송 기록과 PDF 리포트 자동 생성은 무료 한도 안에서만 사용할 수 있습니다.</p></div>
         <div className="grid gap-2"><button type="button" className="flex items-center gap-3 rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><PauseCircle size={18} color="var(--spm-amb)" /><span><span className="block text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>1개월 일시정지</span><span className="text-[11px]" style={{ color: 'var(--spm-t3)' }}>비수기에는 데이터 보존만 유지합니다.</span></span></button><button type="button" onClick={() => { setProfile({ plan: 'pro', role: 'teacher' }); onClose(); }} className="flex items-center gap-3 rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><CreditCard size={18} color="var(--spm-acc)" /><span><span className="block text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>개인 플랜으로 다운그레이드</span><span className="text-[11px]" style={{ color: 'var(--spm-t3)' }}>센터 기능만 줄이고 강사 기록 루프는 유지합니다.</span></span></button></div>
@@ -99,11 +132,21 @@ export default function SpokeduMasterProfilePage() {
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
-      <header className="px-[22px] pb-6 pt-[22px] sm:px-8 lg:px-10"><div className="flex items-center gap-4"><div className="grid h-[72px] w-[72px] place-items-center rounded-full text-[26px] font-black text-white" style={{ background: profile?.avatarColor ?? '#312e81', fontFamily: 'var(--spm-font-display)' }}>{(profile?.name ?? '선생님').slice(0, 1)}</div><div className="min-w-0 flex-1"><h1 className="truncate text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{profile?.name ?? '선생님'}</h1><p className="mt-1 truncate text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>{profile?.school || profile?.centerName || '학교/센터를 설정하세요'}</p><p className="mt-1 text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{profile?.role === 'director' ? '원장/센터 관리자' : '강사'} · {planInfo.title}</p></div></div><button type="button" onClick={() => setProfileOpen(true)} className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><Pencil size={15} />프로필 편집</button></header>
+      <header className="px-[22px] pb-6 pt-[22px] sm:px-8 lg:px-10">
+        <div className="flex items-center gap-4"><div className="grid h-[72px] w-[72px] place-items-center rounded-full text-[26px] font-black text-white" style={{ background: profile?.avatarColor ?? '#312e81', fontFamily: 'var(--spm-font-display)' }}>{(profile?.name ?? '선생님').slice(0, 1)}</div><div className="min-w-0 flex-1"><h1 className="truncate text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{profile?.name ?? '선생님'}</h1><p className="mt-1 truncate text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>{profile?.school || profile?.centerName || '학교/센터를 설정하세요'}</p><p className="mt-1 text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{profile?.role === 'director' ? '원장/센터 관리자' : '강사'} · {planInfo.title}</p></div></div>
+        <button type="button" onClick={() => setProfileOpen(true)} className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><Pencil size={15} />프로필 편집</button>
+      </header>
 
       <main className="grid gap-7 px-[22px] sm:px-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:px-10">
         <div className="space-y-7">
-          <section className="overflow-hidden rounded-[18px] p-5" style={{ background: currentPlan === 'free' ? 'linear-gradient(135deg, rgba(245,158,11,0.14), var(--spm-s2))' : 'linear-gradient(135deg, rgba(99,102,241,0.24), var(--spm-s2))', border: currentPlan === 'free' ? '1px solid rgba(245,158,11,0.24)' : '1px solid rgba(99,102,241,0.34)' }}><p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: currentPlan === 'free' ? 'var(--spm-amb)' : '#a5b4fc' }}>{planInfo.badge}</p><div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{planInfo.title}</h2><span className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>{planInfo.price}</span></div><p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>프로그램 라이브러리, SPOMOVE 웹 실행, 수업 기록, 카카오 공유, 리포트 생성을 하나의 구독 루프로 묶습니다.</p><div className="mt-5 h-2 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }}><div className="h-full rounded-full" style={{ width: `${progress}%`, background: currentPlan === 'free' ? 'var(--spm-amb)' : 'var(--spm-acc)' }} /></div><div className="mt-5 grid gap-2 sm:grid-cols-3"><span className="rounded-[10px] p-2 text-center text-[11px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>카카오 {planInfo.kakao}</span><span className="rounded-[10px] p-2 text-center text-[11px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>AI 코멘트 {planInfo.ai}</span><span className="rounded-[10px] p-2 text-center text-[11px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>PDF {planInfo.pdf}</span></div><div className="mt-5 grid gap-2 sm:grid-cols-2"><button type="button" onClick={() => setPaymentOpen(true)} className="h-12 rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>구독 관리</button>{currentPlan !== 'free' ? <button type="button" onClick={() => setCancelOpen(true)} className="h-12 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>해지/일시정지</button> : null}</div></section>
+          <section className="overflow-hidden rounded-[18px] p-5" style={{ background: currentPlan === 'free' ? 'linear-gradient(135deg, rgba(245,158,11,0.14), var(--spm-s2))' : 'linear-gradient(135deg, rgba(99,102,241,0.24), var(--spm-s2))', border: currentPlan === 'free' ? '1px solid rgba(245,158,11,0.24)' : '1px solid rgba(99,102,241,0.34)' }}>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: currentPlan === 'free' ? 'var(--spm-amb)' : '#a5b4fc' }}>{planInfo.badge}</p>
+            <div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{planInfo.title}</h2><span className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>{planInfo.price}</span></div>
+            <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>프로그램 라이브러리, SPOMOVE 웹 실행, 수업 기록, 카카오 공유, 리포트 생성을 하나의 구독 루프로 묶습니다.</p>
+            <div className="mt-5 h-2 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }}><div className="h-full rounded-full" style={{ width: `${progress}%`, background: currentPlan === 'free' ? 'var(--spm-amb)' : 'var(--spm-acc)' }} /></div>
+            <div className="mt-5 grid gap-2 sm:grid-cols-3"><span className="rounded-[10px] p-2 text-center text-[11px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>카카오 {planInfo.kakao}</span><span className="rounded-[10px] p-2 text-center text-[11px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>AI 코멘트 {planInfo.ai}</span><span className="rounded-[10px] p-2 text-center text-[11px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>PDF {planInfo.pdf}</span></div>
+            <div className="mt-5 grid gap-2 sm:grid-cols-2"><button type="button" onClick={() => setPaymentOpen(true)} className="h-12 rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>구독 관리</button>{currentPlan !== 'free' ? <button type="button" onClick={() => setCancelOpen(true)} className="h-12 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>해지/일시정지</button> : null}</div>
+          </section>
           {currentPlan === 'free' ? <TrialJourney daysLeft={daysLeft} /> : null}
           <section className="grid grid-cols-3 gap-2"><Stat label="SPOMOVE 세션" value={String(stats.totalSessions)} /><Stat label="이번 주 수업" value={String(Math.max(stats.thisWeekSessions, 1))} /><Stat label="최고 반응" value={formatReactionTime(stats.bestRT)} /></section>
           <PwaInstallCard />

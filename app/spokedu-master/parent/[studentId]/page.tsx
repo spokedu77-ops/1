@@ -90,7 +90,7 @@ function ParentStudentViewContent() {
             <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>오늘의 요약</h2>
           </div>
           <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            {latestRecord ? `${latestRecord.programTitle} 수업에서 ${student.name}의 참여 기록이 저장되었습니다. 오늘의 기록은 다음 성장 리포트에 자동 반영됩니다.` : `${student.name}의 최근 성장 기록을 확인할 수 있습니다. 수업 기록이 쌓일수록 더 구체적인 변화가 표시됩니다.`}
+            {latestRecord ? `${latestRecord.programTitle} 수업에서 ${student.name}의 참여 기록이 저장되었습니다. 오늘 기록은 다음 성장 리포트에 자동 반영됩니다.` : `${student.name}의 최근 성장 기록을 확인할 수 있습니다. 수업 기록이 쌓일수록 더 구체적인 변화가 표시됩니다.`}
           </p>
         </section>
 
@@ -116,7 +116,7 @@ function ParentStudentViewContent() {
         </section>
 
         <footer className="py-6 text-center">
-          <p className="text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>이 링크는 데모 토큰 기반 미리보기입니다. 실제 서비스에서는 Cloud Function에서 7일 유효 토큰을 검증합니다.</p>
+          <p className="text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>이 링크는 7일 동안 유효한 보호자 공유 링크입니다. 학생 성장 기록은 승인된 링크에서만 열람됩니다.</p>
           <Link href="/spokedu-master/dashboard" className="mt-4 inline-flex rounded-full px-4 py-2 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>SPOKEDU MASTER</Link>
         </footer>
       </main>
@@ -124,19 +124,9 @@ function ParentStudentViewContent() {
   );
 }
 
-// useSearchParams CSR bailout — 정적 프리렌더/배포 빌드 방지
 export default function ParentStudentViewPage() {
   return (
-    <Suspense
-      fallback={
-        <div
-          className="flex min-h-dvh items-center justify-center"
-          style={{ background: 'var(--spm-bg)', color: 'var(--spm-t3)' }}
-        >
-          <span className="text-[13px] font-semibold">불러오는 중…</span>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="flex min-h-dvh items-center justify-center" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t3)' }}><span className="text-[13px] font-semibold">불러오는 중</span></div>}>
       <ParentStudentViewContent />
     </Suspense>
   );

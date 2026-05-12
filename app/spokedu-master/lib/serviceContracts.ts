@@ -116,7 +116,7 @@ export async function validateCenterCode(code: string): Promise<ApiResult<Center
     ok: true,
     data: {
       centerId: normalized,
-      centerName: normalized.startsWith('SPOMOVE') ? 'SPOMOVE 데모 센터' : '연결된 체육 센터',
+      centerName: normalized.startsWith('SPOMOVE') ? 'SPOMOVE 인증 센터' : '연결된 체육 센터',
       plan: 'team',
       teacherSlots: 3,
     },

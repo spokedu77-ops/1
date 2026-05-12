@@ -25,6 +25,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { SessionPhotosCleanupButton } from '@/app/components/admin/assets/SessionPhotosCleanupButton';
+import { SessionCenterFilesCleanupButton } from '@/app/components/admin/assets/SessionCenterFilesCleanupButton';
 import {
   FeedbackFields,
   parseTemplateToFields,
@@ -99,8 +100,9 @@ export default function MasterQCPage() {
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase">Spokedu QC</h1>
             <p className="text-slate-500 font-bold mt-2">체육 교육의 기준점, 스포키듀 리포트 마스터 검수</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <SessionPhotosCleanupButton days={7} />
+            <SessionCenterFilesCleanupButton days={7} />
           </div>
         </header>
 

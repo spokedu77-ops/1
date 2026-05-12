@@ -31,8 +31,8 @@ export default function DirectorPage() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>director dashboard</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 대시보드</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          {profile?.centerName ?? profile?.school ?? '센터'}의 강사 기록율, 학생 이탈 신호, 센터 플랜 사용량을 봅니다.
+        <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+          {profile?.centerName ?? profile?.school ?? '센터'}의 강사 기록률, 학생 이탈 신호, 센터 플랜 사용량을 한 화면에서 봅니다.
         </p>
       </header>
 
@@ -40,12 +40,12 @@ export default function DirectorPage() {
         <Kpi label="teachers" value="3명" desc="센터 플랜 기본 슬롯" icon={UsersRound} tone="#818cf8" />
         <Kpi label="students" value={`${students.length}명`} desc="관리 중인 학생" icon={BarChart3} tone="#10b981" />
         <Kpi label="attendance" value={`${attendance}%`} desc="이번 주 평균 출석률" icon={CreditCard} tone="#f59e0b" />
-        <Kpi label="record rate" value={`${recordRate}%`} desc={recordRate < 70 ? '기록율 경고 기준 미만' : '안정적인 기록율'} icon={AlertTriangle} tone={recordRate < 70 ? 'var(--spm-red)' : 'var(--spm-grn)'} />
+        <Kpi label="record rate" value={`${recordRate}%`} desc={recordRate < 70 ? '기록률 경고 기준 미만' : '안정적인 기록률'} icon={AlertTriangle} tone={recordRate < 70 ? 'var(--spm-red)' : 'var(--spm-grn)'} />
       </section>
 
       <div className="mt-7 grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[1fr_380px] lg:px-10">
         <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>강사 기록율</h2>
+          <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>강사 기록률</h2>
           <div className="mt-5 space-y-3">
             {[
               ['김선생', recordRate],
@@ -68,12 +68,12 @@ export default function DirectorPage() {
         <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>이탈 위험 학생</h2>
           <div className="mt-5 space-y-2">
-            {riskStudents.map((student) => (
+            {riskStudents.length > 0 ? riskStudents.map((student) => (
               <div key={student.id} className="rounded-[13px] p-3" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.18)' }}>
                 <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</p>
                 <p className="mt-1 text-[11px] font-bold" style={{ color: 'var(--spm-red)' }}>{student.risk}</p>
               </div>
-            ))}
+            )) : <p className="rounded-[13px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>현재 위험 신호가 없습니다.</p>}
           </div>
         </section>
       </div>

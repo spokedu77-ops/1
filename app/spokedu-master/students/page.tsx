@@ -33,7 +33,9 @@ export default function StudentsPage() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>student history</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>강사가 매 수업마다 남긴 출석, 동작, 관찰 기록이 학생별 성장 이력으로 누적됩니다.</p>
+        <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+          강사가 매 수업마다 남긴 출석, 동작, 관찰 기록을 학생별 성장 이력으로 누적합니다. 이 화면이 학부모 공유와 학기말 리포트의 원본 데이터입니다.
+        </p>
       </header>
 
       <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
@@ -110,7 +112,7 @@ export default function StudentsPage() {
                 </Link>
                 <Link href={`/spokedu-master/parent/${selected.id}?token=${createParentPreviewToken(selected.id)}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <ExternalLink size={15} />
-                  웹뷰
+                  링크
                 </Link>
                 <button type="button" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <MessageCircle size={15} />

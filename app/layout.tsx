@@ -45,7 +45,7 @@ export default function RootLayout({
     ? { height: 'var(--viewport-height-px, 100dvh)' }
     : undefined;
 
-  // 클라이언트에서만 실제 viewport 높이를 반영해 모바일 브라우저 주소창 변화로 인한 레이아웃 흔들림을 줄입니다.
+  // 모바일 브라우저 주소창 변화까지 반영해 전체 화면 레이아웃 흔들림을 줄입니다.
   useEffect(() => {
     const setViewportHeight = () => {
       const h = window.visualViewport?.height ?? window.innerHeight;

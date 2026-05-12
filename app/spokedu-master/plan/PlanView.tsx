@@ -11,11 +11,7 @@ import { useMasterStore } from '../store';
 type ViewMode = 'calendar' | 'list';
 
 function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="h-8 shrink-0 rounded-full px-3 text-[12px] font-bold" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s2)', color: active ? '#fff' : 'var(--spm-t2)', border: active ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>
-      {label}
-    </button>
-  );
+  return <button type="button" onClick={onClick} className="h-8 shrink-0 rounded-full px-3 text-[12px] font-bold" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s2)', color: active ? '#fff' : 'var(--spm-t2)', border: active ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>{label}</button>;
 }
 
 function ProgressCard({ done, total }: { done: number; total: number }) {
@@ -77,22 +73,9 @@ function AddLessonSheet({ open, onClose }: { open: boolean; onClose: () => void 
             {PROGRAMS.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
           </select>
         </label>
-        <div>
-          <p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반</p>
-          <div className="flex flex-wrap gap-2">
-            {['3학년 A반', '3학년 B반', '4학년 A반'].map((item) => <Chip key={item} label={item} active={classId === item} onClick={() => setClassId(item)} />)}
-          </div>
-        </div>
-        <div>
-          <p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>교시</p>
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4, 5].map((item) => <Chip key={item} label={`${item}교시`} active={period === item} onClick={() => setPeriod(item)} />)}
-          </div>
-        </div>
-        <label className="block">
-          <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>시간</span>
-          <input type="number" min={5} max={60} value={duration} onChange={(event) => setDuration(Number(event.target.value))} className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
-        </label>
+        <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반</p><div className="flex flex-wrap gap-2">{['3학년 A반', '3학년 B반', '4학년 A반'].map((item) => <Chip key={item} label={item} active={classId === item} onClick={() => setClassId(item)} />)}</div></div>
+        <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>교시</p><div className="flex flex-wrap gap-2">{[1, 2, 3, 4, 5].map((item) => <Chip key={item} label={`${item}교시`} active={period === item} onClick={() => setPeriod(item)} />)}</div></div>
+        <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>시간</span><input type="number" min={5} max={60} value={duration} onChange={(event) => setDuration(Number(event.target.value))} className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} /></label>
         <button type="button" onClick={save} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>저장</button>
       </div>
     </BottomSheet>
@@ -130,9 +113,7 @@ export default function PlanView() {
           </button>
         </div>
       </header>
-      <section className="mb-5 flex gap-2 overflow-x-auto px-[22px] sm:px-8 lg:px-10">
-        {classes.map((item) => <Chip key={item} label={item} active={classFilter === item} onClick={() => setClassFilter(item)} />)}
-      </section>
+      <section className="mb-5 flex gap-2 overflow-x-auto px-[22px] sm:px-8 lg:px-10">{classes.map((item) => <Chip key={item} label={item} active={classFilter === item} onClick={() => setClassFilter(item)} />)}</section>
       <ProgressCard done={doneCount} total={filteredLessons.length} />
       <section className="mx-[22px] mb-5 grid grid-cols-2 gap-2 rounded-[14px] p-1 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
         <button type="button" onClick={() => setMode('calendar')} className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: mode === 'calendar' ? 'var(--spm-acc)' : 'transparent', color: mode === 'calendar' ? '#fff' : 'var(--spm-t3)' }}>
@@ -163,7 +144,7 @@ export default function PlanView() {
           <div className="mt-5 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {selectedLessons.length > 0 ? selectedLessons.map((lesson) => <LessonItem key={lesson.id} lesson={lesson} onToggle={() => toggleLessonDone(lesson.id)} onDelete={() => deleteLessonById(lesson.id)} />) : (
               <div className="rounded-[14px] p-5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                <p className="text-[14px] font-bold" style={{ color: 'var(--spm-t)' }}>선택한 날짜에 수업이 없어요</p>
+                <p className="text-[14px] font-bold" style={{ color: 'var(--spm-t)' }}>선택한 날짜에 수업이 없습니다.</p>
               </div>
             )}
           </div>
@@ -173,9 +154,7 @@ export default function PlanView() {
           {Object.entries(listGroups).map(([date, items]) => (
             <div key={date}>
               <h2 className="mb-3 text-[14px] font-black" style={{ color: 'var(--spm-t2)' }}>{date}</h2>
-              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                {items.map((lesson) => <LessonItem key={lesson.id} lesson={lesson} onToggle={() => toggleLessonDone(lesson.id)} onDelete={() => deleteLessonById(lesson.id)} />)}
-              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">{items.map((lesson) => <LessonItem key={lesson.id} lesson={lesson} onToggle={() => toggleLessonDone(lesson.id)} onDelete={() => deleteLessonById(lesson.id)} />)}</div>
             </div>
           ))}
         </section>
