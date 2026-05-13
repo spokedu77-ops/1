@@ -121,30 +121,51 @@ function ExpansionLink({ icon: Icon, label, caption, href }: { icon: LucideIcon;
   );
 }
 
+type NoticeType = 'applied' | 'school' | 'lite' | null;
+
 function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
-  const [notice, setNotice] = useState('');
+  const [noticeType, setNoticeType] = useState<NoticeType>(null);
+  const [noticeText, setNoticeText] = useState('');
   const currentPlan = profile?.plan ?? 'free';
 
   const selectPlan = (plan: PlanInfo) => {
     if (plan.id === 'school' || plan.contact) {
-      setNotice('학교와 기관 플랜은 견적과 도입 범위가 달라 상담 문의로 연결합니다.');
+      setNoticeType('school');
+      setNoticeText('학교와 기관 플랜은 견적과 도입 범위가 달라 개별 상담으로 진행합니다.');
       return;
     }
     if (plan.id === 'lite') {
-      setNotice('Lite 플랜은 현재 준비 중입니다. 관심 등록 후 출시되면 안내드립니다.');
+      setNoticeType('lite');
+      setNoticeText('Lite 플랜은 현재 준비 중입니다. 관심 등록 후 출시되면 먼저 안내드립니다.');
       return;
     }
     setProfile({ plan: plan.id, role: plan.id === 'team' ? 'director' : 'teacher' });
-    setNotice(`${plan.title} 플랜이 적용되었습니다.`);
+    setNoticeType('applied');
+    setNoticeText(`${plan.title} 플랜이 적용되었습니다.`);
   };
 
   return (
     <BottomSheet open={open} title="플랜 선택" onClose={onClose}>
       <div className="space-y-3">
         {PLANS.map((plan) => <PlanCard key={plan.id} plan={plan} current={plan.id === currentPlan} onSelect={() => selectPlan(plan)} />)}
-        {notice ? <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>{notice}</p> : null}
+        {noticeType ? (
+          <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <p className="text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>{noticeText}</p>
+            {noticeType === 'school' ? (
+              <a href="mailto:contact@spokedu.kr?subject=%ED%95%99%EA%B5%90%2F%EA%B8%B0%EA%B4%80%20%ED%94%8C%EB%9E%9C%20%EC%83%81%EB%8B%B4%20%EB%AC%B8%EC%9D%98" className="mt-3 flex h-10 items-center justify-center gap-2 rounded-[10px] text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                <Mail size={14} />
+                상담 이메일 보내기
+              </a>
+            ) : noticeType === 'lite' ? (
+              <a href="mailto:contact@spokedu.kr?subject=Lite+%ED%94%8C%EB%9E%9C+%EA%B4%80%EC%8B%AC+%EB%93%B1%EB%A1%9D" className="mt-3 flex h-10 items-center justify-center gap-2 rounded-[10px] text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                <Mail size={14} />
+                관심 등록 이메일 보내기
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </BottomSheet>
   );

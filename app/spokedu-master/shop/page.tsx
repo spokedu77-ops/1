@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckCircle2, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { CheckCircle2, Clipboard, Mail, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { PROGRAMS } from '../lib/data';
@@ -36,6 +36,9 @@ export default function SpokeduMasterShopPage() {
   const [orderOpen, setOrderOpen] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
   const [orderCount, setOrderCount] = useState(0);
+  const [orderItems, setOrderItems] = useState<typeof cart>([]);
+  const [orderId, setOrderId] = useState('');
+  const [orderCopied, setOrderCopied] = useState(false);
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
   const usedEquipment = useMemo(() => Array.from(new Set(PROGRAMS.flatMap((program) => program.equipment))).slice(0, 10), []);
@@ -46,10 +49,28 @@ export default function SpokeduMasterShopPage() {
 
   const createOrderRequest = () => {
     if (cart.length === 0) return;
+    const id = `SPM-${Date.now().toString().slice(-6)}`;
+    setOrderItems([...cart]);
     setOrderTotal(total);
     setOrderCount(cartCount);
+    setOrderId(id);
     clearCart();
     setOrderOpen(true);
+  };
+
+  const buildOrderText = (items: typeof cart, id: string, tot: number) =>
+    `[SPOKEDU 교구 주문 요청]\n주문 번호: ${id}\n\n` +
+    items.map((item) => `- ${item.name} × ${item.qty}  ${(item.price * item.qty).toLocaleString('ko-KR')}원`).join('\n') +
+    `\n\n합계: ${tot.toLocaleString('ko-KR')}원`;
+
+  const copyOrder = async () => {
+    try {
+      await navigator.clipboard.writeText(buildOrderText(orderItems, orderId, orderTotal));
+      setOrderCopied(true);
+      window.setTimeout(() => setOrderCopied(false), 1800);
+    } catch {
+      setOrderCopied(false);
+    }
   };
 
   return (
@@ -241,24 +262,53 @@ export default function SpokeduMasterShopPage() {
       </div>
 
       <BottomSheet open={orderOpen} title="주문 요청 완료" onClose={() => setOrderOpen(false)}>
-        <div className="py-4 text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.14)' }}>
-            <CheckCircle2 size={30} color="var(--spm-grn)" />
+        <div className="py-2">
+          <div className="flex items-center gap-3">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.14)' }}>
+              <CheckCircle2 size={22} color="var(--spm-grn)" />
+            </div>
+            <div>
+              <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>교구 주문 요청 준비 완료</h2>
+              <p className="mt-0.5 text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>주문 번호: {orderId}</p>
+            </div>
           </div>
-          <h2 className="mt-5 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
-            교구 주문 요청을 만들었습니다.
-          </h2>
-          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            총 {orderCount}개 항목, {orderTotal.toLocaleString('ko-KR')}원 기준으로 견적 요청을 준비했습니다.
+
+          <div className="mt-4 rounded-[14px] p-4" style={{ background: 'var(--spm-s3)' }}>
+            <div className="space-y-2">
+              {orderItems.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-2">
+                  <span className="text-[13px] font-semibold" style={{ color: 'var(--spm-t)' }}>{item.name} × {item.qty}</span>
+                  <span className="shrink-0 text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{(item.price * item.qty).toLocaleString('ko-KR')}원</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--spm-br2)' }}>
+              <span className="text-[13px] font-bold" style={{ color: 'var(--spm-t2)' }}>합계</span>
+              <strong className="text-[18px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{orderTotal.toLocaleString('ko-KR')}원</strong>
+            </div>
+          </div>
+
+          <p className="mt-3 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>
+            아래 버튼으로 주문 내역을 복사하거나 이메일로 보내 견적을 진행하세요. 실제 결제는 확인 후 안내됩니다.
           </p>
-          <div className="mt-6 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setOrderOpen(false)} className="h-11 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-              닫기
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button type="button" onClick={copyOrder} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: orderCopied ? 'rgba(16,185,129,0.14)' : 'var(--spm-s3)', color: orderCopied ? 'var(--spm-grn)' : 'var(--spm-t)' }}>
+              {orderCopied ? <CheckCircle2 size={15} /> : <Clipboard size={15} />}
+              {orderCopied ? '복사 완료' : '내역 복사'}
             </button>
-            <Link href="/spokedu-master/library" className="flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-              수업안으로
-            </Link>
+            <a
+              href={`mailto:contact@spokedu.kr?subject=${encodeURIComponent(`교구 주문 요청 ${orderId}`)}&body=${encodeURIComponent(buildOrderText(orderItems, orderId, orderTotal))}`}
+              className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white"
+              style={{ background: 'var(--spm-acc)' }}
+            >
+              <Mail size={15} />
+              이메일로 보내기
+            </a>
           </div>
+          <button type="button" onClick={() => setOrderOpen(false)} className="mt-2 h-10 w-full rounded-[12px] text-[13px] font-bold" style={{ color: 'var(--spm-t3)' }}>
+            닫기
+          </button>
         </div>
       </BottomSheet>
     </div>

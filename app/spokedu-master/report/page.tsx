@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { BookOpen, Check, Clipboard, ClipboardList, FileText, GraduationCap, Megaphone, MessageCircle, MonitorPlay, Search, UsersRound, type LucideIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PROGRAMS } from '../lib/data';
 
 type Audience = 'parent' | 'center' | 'school' | 'promo';
@@ -139,9 +140,14 @@ function CopyCard({ block, copied, onCopy }: { block: CopyBlock; copied: boolean
 
 const STORAGE_KEY = 'spm-report-last';
 
-export default function ReportPage() {
+function ReportContent() {
+  const searchParams = useSearchParams();
+  const urlProgramId = searchParams.get('program');
   const [audience, setAudience] = useState<Audience>('parent');
-  const [programId, setProgramId] = useState(PROGRAMS[0]?.id ?? '');
+  const [programId, setProgramId] = useState(() => {
+    if (urlProgramId && PROGRAMS.some((p) => p.id === urlProgramId)) return urlProgramId;
+    return PROGRAMS[0]?.id ?? '';
+  });
   const [programSearch, setProgramSearch] = useState('');
   const [copiedKey, setCopiedKey] = useState('');
   const program = PROGRAMS.find((item) => item.id === programId) ?? PROGRAMS[0]!;
@@ -149,6 +155,7 @@ export default function ReportPage() {
   const activeAudience = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0]!;
 
   useEffect(() => {
+    if (urlProgramId) return;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -157,7 +164,7 @@ export default function ReportPage() {
         if (parsed.audience && AUDIENCES.some((a) => a.id === parsed.audience)) setAudience(parsed.audience as Audience);
       }
     } catch { /* ignore */ }
-  }, []);
+  }, [urlProgramId]);
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ programId, audience })); } catch { /* ignore */ }
@@ -250,5 +257,13 @@ export default function ReportPage() {
         </section>
       </main>
     </div>
+  );
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense fallback={<div className="h-full" style={{ background: 'var(--spm-bg)' }} />}>
+      <ReportContent />
+    </Suspense>
   );
 }

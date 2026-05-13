@@ -11,7 +11,17 @@ import { canCreateClassRecord, canUseMonthlyLimit, createParentShareToken } from
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, ClassRecord, StudentProfile } from '../types';
 
-const SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
+const DEFAULT_SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
+
+function getProgramSkills(program: (typeof PROGRAMS)[number]): string[] {
+  const fromDetail = program.lessonDetail?.developmentFocus
+    .split('/')
+    .map((item) => item.trim())
+    .filter(Boolean) ?? [];
+  const fromTags = program.tags.filter((tag) => !['SPOMOVE', '좁은 공간', '준비물 없음'].includes(tag));
+  const combined = [...new Set([...fromDetail, ...fromTags])].slice(0, 6);
+  return combined.length >= 2 ? combined : DEFAULT_SKILLS;
+}
 
 function SummaryPill({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
@@ -358,7 +368,7 @@ function RecordEntryView() {
             </div>
             {selectedStudent.risk ? <p className="mb-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{selectedStudent.risk}</p> : null}
             <div className="grid grid-cols-2 gap-2">
-              {SKILLS.map((skill) => {
+              {getProgramSkills(program).map((skill) => {
                 const checked = checkedSkills[selectedStudent.id]?.includes(skill) ?? false;
                 return (
                   <button key={skill} type="button" onClick={() => toggleSkill(selectedStudent.id, skill)} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: checked ? 'rgba(16,185,129,0.15)' : 'var(--spm-s2)', color: checked ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>
