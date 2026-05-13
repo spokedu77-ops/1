@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ChevronRight, Maximize, MonitorPlay, Play, Smartphone, TimerReset, Zap, type LucideIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { DRILLS, getTodayDrill } from '../lib/data';
 import { formatReactionTime } from '../lib/utils';
 import { useIsPro, useMasterStore, useStats } from '../store';
@@ -54,6 +55,9 @@ export default function SpomoveHubView() {
   const recent = sessions.slice(0, 3);
   const todayDrill = getTodayDrill();
   const todayLocked = todayDrill.isPro && !isPro;
+  const drillCategories = useMemo(() => ['전체', ...Array.from(new Set(DRILLS.map((d) => d.category)))], []);
+  const [drillFilter, setDrillFilter] = useState('전체');
+  const filteredDrills = useMemo(() => drillFilter === '전체' ? DRILLS : DRILLS.filter((d) => d.category === drillFilter), [drillFilter]);
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
@@ -91,8 +95,13 @@ export default function SpomoveHubView() {
             </Link>
           </section>
           <section>
-            <div className="mb-[14px] flex items-baseline justify-between"><h2 className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)' }}>훈련 모드</h2><span className="text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>{DRILLS.length}개</span></div>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">{DRILLS.map((drill, index) => <DrillCard key={drill.id} drill={drill} index={index} isLocked={drill.isPro && !isPro} />)}</div>
+            <div className="mb-3 flex items-baseline justify-between"><h2 className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)' }}>훈련 모드</h2><span className="text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>{filteredDrills.length}/{DRILLS.length}개</span></div>
+            <div className="mb-3 flex gap-2 overflow-x-auto">
+              {drillCategories.map((cat) => (
+                <button key={cat} type="button" onClick={() => setDrillFilter(cat)} className="h-8 shrink-0 rounded-full px-3 text-[12px] font-bold" style={{ background: drillFilter === cat ? 'var(--spm-acc)' : 'var(--spm-s2)', color: drillFilter === cat ? '#fff' : 'var(--spm-t2)', border: drillFilter === cat ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>{cat}</button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">{filteredDrills.map((drill, index) => <DrillCard key={drill.id} drill={drill} index={index} isLocked={drill.isPro && !isPro} />)}</div>
           </section>
         </main>
         <aside className="space-y-7">

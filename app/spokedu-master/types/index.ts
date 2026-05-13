@@ -124,6 +124,7 @@ export interface Notification {
   type: 'program' | 'report' | 'achievement' | 'billing';
   title: string;
   body: string;
+  href?: string;
   read: boolean;
   createdAt: string;
 }

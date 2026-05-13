@@ -131,12 +131,35 @@ function DrillTile({ drill, index }: { drill: (typeof DRILLS)[number]; index: nu
   );
 }
 
-function NotificationSheet({ open, notifications, onClose, onMarkAll }: { open: boolean; notifications: Notification[]; onClose: () => void; onMarkAll: () => void }) {
+function NotificationSheet({ open, notifications, onClose, onMarkAll, onMarkOne }: { open: boolean; notifications: Notification[]; onClose: () => void; onMarkAll: () => void; onMarkOne: (id: string) => void }) {
   return (
     <BottomSheet open={open} title="알림" onClose={onClose}>
       <div className="space-y-4">
-        <div className="flex items-center justify-between"><p className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>최근 업데이트 {notifications.length}건</p><button type="button" onClick={onMarkAll} className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>모두 읽음</button></div>
-        <div className="space-y-2">{notifications.map((item) => <div key={item.id} className="rounded-[14px] p-4" style={{ background: item.read ? 'var(--spm-s2)' : 'rgba(99,102,241,0.14)', border: item.read ? '1px solid var(--spm-br2)' : '1px solid rgba(99,102,241,0.28)' }}><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong><span className="mt-1 block text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{item.body}</span></div>)}</div>
+        <div className="flex items-center justify-between"><p className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>업데이트 {notifications.length}건</p><button type="button" onClick={onMarkAll} className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>모두 읽음</button></div>
+        <div className="space-y-2">
+          {notifications.map((item) => {
+            const inner = (
+              <>
+                <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
+                <span className="mt-1 block text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{item.body}</span>
+                {item.href ? <span className="mt-2 inline-block text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>바로 가기 →</span> : null}
+              </>
+            );
+            const style = { background: item.read ? 'var(--spm-s2)' : 'rgba(99,102,241,0.14)', border: item.read ? '1px solid var(--spm-br2)' : '1px solid rgba(99,102,241,0.28)' };
+            if (item.href) {
+              return (
+                <Link key={item.id} href={item.href} onClick={() => { onMarkOne(item.id); onClose(); }} className="block rounded-[14px] p-4" style={style}>
+                  {inner}
+                </Link>
+              );
+            }
+            return (
+              <div key={item.id} className="rounded-[14px] p-4" style={style}>
+                {inner}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </BottomSheet>
   );
@@ -150,6 +173,7 @@ export default function DashboardView() {
   const favorites = useMasterStore((state) => state.favorites);
   const notifications = useMasterStore((state) => state.notifications);
   const markAllRead = useMasterStore((state) => state.markAllRead);
+  const markRead = useMasterStore((state) => state.markRead);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const usedProgramIds = useMemo(() => new Set(classRecords.map((record) => record.programId)), [classRecords]);
   const featuredPrograms = useMemo(() => {
@@ -238,7 +262,7 @@ export default function DashboardView() {
       </section>
 
       <section className="px-[22px] sm:px-8 lg:hidden lg:px-10"><PwaInstallCard compact /></section>
-      <NotificationSheet open={notificationOpen} notifications={notifications} onClose={() => setNotificationOpen(false)} onMarkAll={markAllRead} />
+      <NotificationSheet open={notificationOpen} notifications={notifications} onClose={() => setNotificationOpen(false)} onMarkAll={markAllRead} onMarkOne={markRead} />
     </div>
   );
 }

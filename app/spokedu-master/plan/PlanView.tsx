@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, Check, ListChecks, Plus, Trash2 } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ListChecks, Plus, Trash2 } from 'lucide-react';
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { PROGRAMS } from '../lib/data';
 import { useMasterStore } from '../store';
@@ -57,21 +57,36 @@ function LessonItem({ lesson, onToggle, onDelete }: { lesson: ReturnType<typeof 
 
 function AddLessonSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const addLesson = useMasterStore((state) => state.addLesson);
+  const existingLessons = useMasterStore((state) => state.lessons);
   const [programId, setProgramId] = useState(PROGRAMS[0]?.id ?? '');
-  const [classId, setClassId] = useState('3학년 A반');
+  const [classId, setClassId] = useState('');
   const [period, setPeriod] = useState(3);
   const [duration, setDuration] = useState(15);
   const program = PROGRAMS.find((item) => item.id === programId) ?? PROGRAMS[0]!;
-  const save = () => { addLesson({ id: Date.now(), title: program.title, classId, date: new Date().toISOString(), period, duration, done: false, color: program.colors[1], memo: program.category }); onClose(); };
+  const existingClasses = useMemo(() => Array.from(new Set(existingLessons.map((l) => l.classId))).slice(0, 4), [existingLessons]);
+  const canSave = classId.trim().length > 0;
+  const save = () => {
+    if (!canSave) return;
+    addLesson({ id: Date.now(), title: program.title, classId: classId.trim(), date: new Date().toISOString(), period, duration, done: false, color: program.colors[1], memo: program.category });
+    onClose();
+  };
 
   return (
     <BottomSheet open={open} title="수업 추가" onClose={onClose}>
       <div className="space-y-5">
         <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>프로그램</span><select value={programId} onChange={(event) => setProgramId(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)', colorScheme: 'dark' }}>{PROGRAMS.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
-        <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반</p><div className="flex flex-wrap gap-2">{['3학년 A반', '3학년 B반', '4학년 A반'].map((item) => <Chip key={item} label={item} active={classId === item} onClick={() => setClassId(item)} />)}</div></div>
+        <div>
+          <p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반 이름</p>
+          {existingClasses.length > 0 ? (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {existingClasses.map((item) => <Chip key={item} label={item} active={classId === item} onClick={() => setClassId(classId === item ? '' : item)} />)}
+            </div>
+          ) : null}
+          <input value={classId} onChange={(e) => setClassId(e.target.value)} placeholder="예: 3학년 A반, 초등 화요일 오전반" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+        </div>
         <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>교시</p><div className="flex flex-wrap gap-2">{[1, 2, 3, 4, 5].map((item) => <Chip key={item} label={`${item}교시`} active={period === item} onClick={() => setPeriod(item)} />)}</div></div>
         <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>시간</span><input type="number" min={5} max={60} value={duration} onChange={(event) => setDuration(Number(event.target.value))} className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} /></label>
-        <button type="button" onClick={save} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>저장</button>
+        <button type="button" onClick={save} disabled={!canSave} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>저장</button>
       </div>
     </BottomSheet>
   );
@@ -85,6 +100,7 @@ export default function PlanView() {
   const [mode, setMode] = useState<ViewMode>('calendar');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [sheetOpen, setSheetOpen] = useState(false);
+  const hasNoLessons = lessons.length === 0;
   const classes = ['전체', ...Array.from(new Set(lessons.map((lesson) => lesson.classId)))];
   const filteredLessons = lessons.filter((lesson) => classFilter === '전체' || lesson.classId === classFilter);
   const selectedLessons = filteredLessons.filter((lesson) => isSameDay(new Date(lesson.date), selectedDate));
@@ -98,8 +114,29 @@ export default function PlanView() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10"><p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>lesson plan</p><div className="mt-1 flex items-end justify-between gap-3"><h1 className="text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 계획</h1><button type="button" onClick={() => setSheetOpen(true)} className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-acc)' }} aria-label="수업 추가"><Plus size={19} color="#fff" /></button></div></header>
       <section className="mb-5 flex gap-2 overflow-x-auto px-[22px] sm:px-8 lg:px-10">{classes.map((item) => <Chip key={item} label={item} active={classFilter === item} onClick={() => setClassFilter(item)} />)}</section>
       <ProgressCard done={doneCount} total={filteredLessons.length} />
-      <section className="mx-[22px] mb-5 grid grid-cols-2 gap-2 rounded-[14px] p-1 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><button type="button" onClick={() => setMode('calendar')} className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: mode === 'calendar' ? 'var(--spm-acc)' : 'transparent', color: mode === 'calendar' ? '#fff' : 'var(--spm-t3)' }}><CalendarDays size={15} />캘린더</button><button type="button" onClick={() => setMode('list')} className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: mode === 'list' ? 'var(--spm-acc)' : 'transparent', color: mode === 'list' ? '#fff' : 'var(--spm-t3)' }}><ListChecks size={15} />목록</button></section>
-      {mode === 'calendar' ? <section className="px-[22px] sm:px-8 lg:px-10"><div className="grid grid-cols-7 gap-1 rounded-[16px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>{weekDays.map((day) => { const dayLessons = filteredLessons.filter((lesson) => isSameDay(new Date(lesson.date), day)); const selected = isSameDay(day, selectedDate); const today = isSameDay(day, new Date()); return <button key={day.toISOString()} type="button" onClick={() => setSelectedDate(day)} className="relative flex h-[58px] flex-col items-center justify-center rounded-[12px] text-[11px] font-bold" style={{ background: selected || today ? 'var(--spm-acc)' : 'transparent', color: selected || today ? '#fff' : 'var(--spm-t3)' }}><span>{format(day, 'E', { locale: ko })}</span><strong className="mt-1 text-[16px]" style={{ fontFamily: 'var(--spm-font-display)' }}>{format(day, 'd')}</strong>{dayLessons.length > 0 ? <span className="absolute bottom-1.5 h-1.5 w-1.5 rounded-full" style={{ background: selected || today ? '#fff' : 'var(--spm-acc)' }} /> : null}</button>; })}</div><div className="mt-5 grid gap-2 md:grid-cols-2 xl:grid-cols-3">{selectedLessons.length > 0 ? selectedLessons.map((lesson) => <LessonItem key={lesson.id} lesson={lesson} onToggle={() => toggleLessonDone(lesson.id)} onDelete={() => deleteLessonById(lesson.id)} />) : <div className="rounded-[14px] p-5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><p className="text-[14px] font-bold" style={{ color: 'var(--spm-t)' }}>선택한 날짜에 수업이 없습니다.</p></div>}</div></section> : <section className="space-y-5 px-[22px] sm:px-8 lg:px-10">{Object.entries(listGroups).length > 0 ? Object.entries(listGroups).map(([date, items]) => <div key={date}><h2 className="mb-3 text-[14px] font-black" style={{ color: 'var(--spm-t2)' }}>{date}</h2><div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">{items.map((lesson) => <LessonItem key={lesson.id} lesson={lesson} onToggle={() => toggleLessonDone(lesson.id)} onDelete={() => deleteLessonById(lesson.id)} />)}</div></div>) : <div className="rounded-[14px] p-5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><p className="text-[14px] font-bold" style={{ color: 'var(--spm-t)' }}>등록된 수업 계획이 없습니다.</p></div>}</section>}
+
+      {hasNoLessons ? (
+        <section className="mx-[22px] mb-7 rounded-[18px] p-6 text-center sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-[14px]" style={{ background: 'rgba(99,102,241,0.14)' }}>
+            <BookOpen size={22} color="var(--spm-acc)" />
+          </span>
+          <h2 className="mt-4 text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>등록된 수업이 없습니다</h2>
+          <p className="mx-auto mt-2 max-w-[440px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업안을 고른 뒤 "계획 추가" 버튼을 누르거나, 위 + 버튼으로 직접 추가하세요.</p>
+          <div className="mt-5 grid grid-cols-2 gap-2 sm:mx-auto sm:max-w-[340px]">
+            <Link href="/spokedu-master/library" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+              <BookOpen size={15} />라이브러리
+            </Link>
+            <button type="button" onClick={() => setSheetOpen(true)} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+              <Plus size={15} />직접 추가
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {!hasNoLessons ? <>
+        <section className="mx-[22px] mb-5 grid grid-cols-2 gap-2 rounded-[14px] p-1 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><button type="button" onClick={() => setMode('calendar')} className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: mode === 'calendar' ? 'var(--spm-acc)' : 'transparent', color: mode === 'calendar' ? '#fff' : 'var(--spm-t3)' }}><CalendarDays size={15} />캘린더</button><button type="button" onClick={() => setMode('list')} className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: mode === 'list' ? 'var(--spm-acc)' : 'transparent', color: mode === 'list' ? '#fff' : 'var(--spm-t3)' }}><ListChecks size={15} />목록</button></section>
+        {mode === 'calendar' ? <section className="px-[22px] sm:px-8 lg:px-10"><div className="grid grid-cols-7 gap-1 rounded-[16px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>{weekDays.map((day) => { const dayLessons = filteredLessons.filter((lesson) => isSameDay(new Date(lesson.date), day)); const selected = isSameDay(day, selectedDate); const today = isSameDay(day, new Date()); return <button key={day.toISOString()} type="button" onClick={() => setSelectedDate(day)} className="relative flex h-[58px] flex-col items-center justify-center rounded-[12px] text-[11px] font-bold" style={{ background: selected || today ? 'var(--spm-acc)' : 'transparent', color: selected || today ? '#fff' : 'var(--spm-t3)' }}><span>{format(day, 'E', { locale: ko })}</span><strong className="mt-1 text-[16px]" style={{ fontFamily: 'var(--spm-font-display)' }}>{format(day, 'd')}</strong>{dayLessons.length > 0 ? <span className="absolute bottom-1.5 h-1.5 w-1.5 rounded-full" style={{ background: selected || today ? '#fff' : 'var(--spm-acc)' }} /> : null}</button>; })}</div><div className="mt-5 grid gap-2 md:grid-cols-2 xl:grid-cols-3">{selectedLessons.length > 0 ? selectedLessons.map((lesson) => <LessonItem key={lesson.id} lesson={lesson} onToggle={() => toggleLessonDone(lesson.id)} onDelete={() => deleteLessonById(lesson.id)} />) : <div className="flex items-center justify-between rounded-[14px] px-4 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><p className="text-[13px] font-bold" style={{ color: 'var(--spm-t2)' }}>이 날짜에 수업이 없습니다.</p><button type="button" onClick={() => setSheetOpen(true)} className="flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><Plus size={13} />추가</button></div>}</div></section> : <section className="space-y-5 px-[22px] sm:px-8 lg:px-10">{Object.entries(listGroups).length > 0 ? Object.entries(listGroups).map(([date, items]) => <div key={date}><h2 className="mb-3 text-[14px] font-black" style={{ color: 'var(--spm-t2)' }}>{date}</h2><div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">{items.map((lesson) => <LessonItem key={lesson.id} lesson={lesson} onToggle={() => toggleLessonDone(lesson.id)} onDelete={() => deleteLessonById(lesson.id)} />)}</div></div>) : null}</section>}
+      </> : null}
       <AddLessonSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
     </div>
   );
