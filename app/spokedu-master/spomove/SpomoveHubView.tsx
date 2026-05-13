@@ -21,8 +21,18 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
   return <div className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><p className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: tone ?? 'var(--spm-t)' }}>{value}</p><p className="mt-1 text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p></div>;
 }
 
-function LaunchCard({ title, desc, href, icon: Icon, tone }: { title: string; desc: string; href: string; icon: LucideIcon; tone: string }) {
-  return <Link href={href} className="flex items-center gap-3 rounded-[14px] p-4 active:scale-[0.98]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]" style={{ background: `${tone}24` }}><Icon size={20} color={tone} /></span><span className="min-w-0 flex-1"><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{title}</strong><span className="mt-1 block text-[11px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{desc}</span></span><ChevronRight size={17} color="var(--spm-t3)" /></Link>;
+function LaunchCard({ title, desc, hint, href, icon: Icon, tone }: { title: string; desc: string; hint?: string; href: string; icon: LucideIcon; tone: string }) {
+  return (
+    <Link href={href} className="flex items-center gap-3 rounded-[14px] p-4 active:scale-[0.98]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]" style={{ background: `${tone}24` }}><Icon size={20} color={tone} /></span>
+      <span className="min-w-0 flex-1">
+        <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{title}</strong>
+        <span className="mt-1 block text-[11px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{desc}</span>
+        {hint ? <span className="mt-2 inline-block rounded-[6px] px-2 py-0.5 text-[10px] font-black" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--spm-t3)', border: '1px solid var(--spm-br2)' }}>{hint}</span> : null}
+      </span>
+      <ChevronRight size={17} color="var(--spm-t3)" />
+    </Link>
+  );
 }
 
 function UseCaseCard({ title, caption, icon: Icon }: { title: string; caption: string; icon: LucideIcon }) {
@@ -57,9 +67,9 @@ export default function SpomoveHubView() {
             <UseCaseCard title="라이브러리와 연결" caption="수업안 상세에서 관련 SPOMOVE를 바로 실행할 수 있습니다." icon={Zap} />
           </section>
           <section className="grid gap-2 md:grid-cols-3">
-            <LaunchCard title="큰 화면 실행" desc="빔, TV, 노트북에서 16:9 화면으로 바로 시작" href="/spokedu-master/spomove/session?drill=speed-track&mode=projector" icon={MonitorPlay} tone="#818cf8" />
-            <LaunchCard title="모바일 빠른 실행" desc="폰이나 태블릿으로 워밍업과 마무리 활동 진행" href="/spokedu-master/spomove/session?drill=speed-track&mode=mobile" icon={Smartphone} tone="#10b981" />
-            <LaunchCard title="Class Mode" desc="학생 전체가 보는 수업용 화면으로 전환" href="/spokedu-master/spomove/session?drill=speed-track&mode=class" icon={Maximize} tone="#f59e0b" />
+            <LaunchCard title="큰 화면 실행" desc="빔, TV, 노트북에서 16:9 화면으로 바로 시작" hint="F 전체화면 · Space 시작" href="/spokedu-master/spomove/session?drill=speed-track&mode=projector" icon={MonitorPlay} tone="#818cf8" />
+            <LaunchCard title="모바일 빠른 실행" desc="폰이나 태블릿으로 워밍업과 마무리 활동 진행" hint="터치 · Space 시작" href="/spokedu-master/spomove/session?drill=speed-track&mode=mobile" icon={Smartphone} tone="#10b981" />
+            <LaunchCard title="Class Mode" desc="학생 전체가 보는 수업용 화면으로 전환" hint="F 전체화면 · Esc 일시정지" href="/spokedu-master/spomove/session?drill=speed-track&mode=class" icon={Maximize} tone="#f59e0b" />
           </section>
           <section>
             <Link href="/spokedu-master/spomove/session?drill=speed-track&mode=projector" className="flex min-h-[132px] items-center justify-between gap-4 overflow-hidden rounded-[18px] p-5 active:scale-[0.99]" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.95), rgba(139,92,246,0.75), rgba(236,72,153,0.58))', boxShadow: '0 18px 42px rgba(99,102,241,0.22)' }}>
@@ -73,7 +83,19 @@ export default function SpomoveHubView() {
           </section>
         </main>
         <aside className="space-y-7">
-          <section className="rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.14), var(--spm-s2))', border: '1px solid rgba(16,185,129,0.24)' }}><MonitorPlay size={20} color="var(--spm-grn)" /><h2 className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 공간에 맞게 실행합니다</h2><p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>모바일은 개인 터치 반응, Projector와 Class Mode는 학생 전체가 함께 보는 큰 화면 활동에 맞춰 UI를 줄입니다.</p></section>
+          <section className="rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.14), var(--spm-s2))', border: '1px solid rgba(16,185,129,0.24)' }}>
+            <MonitorPlay size={20} color="var(--spm-grn)" />
+            <h2 className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 공간에 맞게 실행합니다</h2>
+            <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>모바일은 개인 터치 반응, Projector와 Class Mode는 학생 전체가 함께 보는 큰 화면 활동에 맞춰 UI를 줄입니다.</p>
+            <div className="mt-4 grid grid-cols-3 gap-1.5">
+              {[['F', '전체화면'], ['Space', '시작/기록'], ['Esc', '일시정지']].map(([key, label]) => (
+                <div key={key} className="rounded-[8px] p-2 text-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--spm-br2)' }}>
+                  <p className="text-[11px] font-black" style={{ color: 'var(--spm-t)' }}>{key}</p>
+                  <p className="mt-0.5 text-[9px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
           <section className="grid grid-cols-3 gap-2"><Metric label="세션" value={String(stats.totalSessions)} /><Metric label="평균" value={formatReactionTime(stats.avgRT)} tone="var(--spm-grn)" /><Metric label="최고" value={formatReactionTime(stats.bestRT)} /></section>
           <section>
             <div className="mb-[14px] flex items-baseline justify-between"><h2 className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)' }}>최근 실행</h2><Link href="/spokedu-master/report" className="text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>설명 도구</Link></div>

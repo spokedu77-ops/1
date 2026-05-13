@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Check, Clipboard, FileText, GraduationCap, Megaphone, MessageCircle, MonitorPlay, UsersRound, type LucideIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { BookOpen, Check, Clipboard, ClipboardList, FileText, GraduationCap, Megaphone, MessageCircle, MonitorPlay, UsersRound, type LucideIcon } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { PROGRAMS } from '../lib/data';
 
 type Audience = 'parent' | 'center' | 'school' | 'promo';
@@ -137,6 +137,8 @@ function CopyCard({ block, copied, onCopy }: { block: CopyBlock; copied: boolean
   );
 }
 
+const STORAGE_KEY = 'spm-report-last';
+
 export default function ReportPage() {
   const [audience, setAudience] = useState<Audience>('parent');
   const [programId, setProgramId] = useState(PROGRAMS[0]?.id ?? '');
@@ -144,6 +146,21 @@ export default function ReportPage() {
   const program = PROGRAMS.find((item) => item.id === programId) ?? PROGRAMS[0]!;
   const copyBlocks = useMemo(() => buildCopyBlocks(audience, program), [audience, program]);
   const activeAudience = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0]!;
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as { programId?: string; audience?: string };
+        if (parsed.programId && PROGRAMS.some((p) => p.id === parsed.programId)) setProgramId(parsed.programId);
+        if (parsed.audience && AUDIENCES.some((a) => a.id === parsed.audience)) setAudience(parsed.audience as Audience);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ programId, audience })); } catch { /* ignore */ }
+  }, [programId, audience]);
 
   const copyText = async (key: string, text: string) => {
     try {
@@ -153,6 +170,15 @@ export default function ReportPage() {
     } catch {
       setCopiedKey('');
     }
+  };
+
+  const copyAll = async () => {
+    const combined = copyBlocks.map((b) => `[${b.title}]\n${b.text}`).join('\n\n──\n\n');
+    try {
+      await navigator.clipboard.writeText(combined);
+      setCopiedKey('all');
+      window.setTimeout(() => setCopiedKey(''), 1800);
+    } catch { /* ignore */ }
   };
 
   return (
@@ -199,8 +225,14 @@ export default function ReportPage() {
           <div className="rounded-[18px] p-5" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>{activeAudience.label}</p>
             <h2 className="mt-2 text-[26px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{program.title}</h2>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {[program.grade, `${program.duration}분`, program.space, ...program.tags.slice(0, 2)].map((item) => <span key={item} className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{item}</span>)}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                {[program.grade, `${program.duration}분`, program.space, ...program.tags.slice(0, 2)].map((item) => <span key={item} className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{item}</span>)}
+              </div>
+              <button type="button" onClick={copyAll} className="flex h-9 shrink-0 items-center gap-2 rounded-[11px] px-4 text-[12px] font-black" style={{ background: copiedKey === 'all' ? 'rgba(16,185,129,0.14)' : 'var(--spm-acc)', color: copiedKey === 'all' ? 'var(--spm-grn)' : '#fff' }}>
+                {copiedKey === 'all' ? <Check size={14} /> : <ClipboardList size={14} />}
+                {copiedKey === 'all' ? '복사 완료' : '전체 복사'}
+              </button>
             </div>
           </div>
 
