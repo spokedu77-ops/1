@@ -1,14 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, BookOpen, ChevronRight, FileText, MonitorPlay, Play, Star, Zap } from 'lucide-react';
+import { Bell, BookOpen, ChevronRight, FileText, Play, Star, Zap } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { DRILLS, PROGRAMS } from '../lib/data';
+import { DRILLS, PROGRAMS, getTodayProgram } from '../lib/data';
 import { getTrialDaysLeft } from '../lib/subscription';
 import { useMasterStore, useProfile, useUnreadCount } from '../store';
 import type { Notification, Program } from '../types';
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return '좋은 아침이에요';
+  if (h < 18) return '오후도 힘내세요';
+  return '오늘도 수고하셨어요';
+}
 
 function SectionHeader({ title, href }: { title: string; href?: string }) {
   return (
@@ -49,25 +56,6 @@ function ProgramCard({ program, used }: { program: Program; used: boolean }) {
   );
 }
 
-function Hero() {
-  return (
-    <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
-      <div className="grid gap-5 overflow-hidden rounded-[18px] p-5 md:grid-cols-[1.35fr_0.65fr] md:p-7" style={{ background: 'linear-gradient(135deg, rgba(24,95,165,0.28), rgba(29,158,117,0.14), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.28)' }}>
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#93c5fd' }}>SPOKEDU PRO</p>
-          <h2 className="mt-3 max-w-[680px] text-[26px] font-black leading-[1.16] md:text-[34px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 준비는 쉽게, 수업은 더 몰입감 있게.</h2>
-          <p className="mt-3 max-w-[680px] text-[13px] font-medium leading-6 md:text-[15px]" style={{ color: 'var(--spm-t2)' }}>프로그램 라이브러리로 수업을 고르고, SPOMOVE로 아이들이 움직이게 하고, 설명 도구로 수업의 의미를 남깁니다.</p>
-        </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:grid-cols-1">
-          <Link href="/spokedu-master/library" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><BookOpen size={15} />라이브러리</Link>
-          <Link href="/spokedu-master/spomove" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><MonitorPlay size={15} />SPOMOVE</Link>
-          <Link href="/spokedu-master/report" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={15} />설명 도구</Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 const LOOP_STEPS = [
   { title: '고르기', caption: '오늘 쓸 수업안', href: '/spokedu-master/library', Icon: BookOpen },
   { title: '움직이기', caption: 'SPOMOVE 실행', href: '/spokedu-master/spomove', Icon: Zap },
@@ -105,9 +93,7 @@ function ClassLoop() {
 }
 
 function TodayRecommendation() {
-  const lessons = useMasterStore((state) => state.lessons);
-  const todayLesson = lessons[0];
-  const program = PROGRAMS.find((item) => todayLesson?.title.includes(item.title.split(':')[0])) ?? PROGRAMS[0]!;
+  const program = getTodayProgram();
   return (
     <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
       <div className="relative overflow-hidden rounded-[14px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -170,15 +156,23 @@ export default function DashboardView() {
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
-      <header className="flex items-center justify-between px-[22px] pb-[18px] pt-[22px] sm:px-8 lg:px-10">
-        <div><p className="mb-1 text-[12px] italic" style={{ color: 'var(--spm-t3)' }}>좋은 아침이에요</p><h1 className="text-[22px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{profile?.name ?? '선생님'}</h1></div>
-        <div className="flex items-center gap-2">
-          <PlanChip />
-          <button type="button" onClick={() => setNotificationOpen(true)} className="relative grid h-[38px] w-[38px] place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림"><Bell size={18} color="var(--spm-t2)" />{unreadCount > 0 ? <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: 'var(--spm-red)', border: '1.5px solid var(--spm-bg)' }} /> : null}</button>
+      <header className="px-[22px] pb-[22px] pt-[22px] sm:px-8 lg:px-10">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="mb-0.5 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{getGreeting()}</p>
+            <h1 className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{profile?.name ?? '선생님'}</h1>
+            <p className="mt-1.5 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t2)' }}>수업 준비는 쉽게, 수업은 더 몰입감 있게.</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 pt-1">
+            <PlanChip />
+            <button type="button" onClick={() => setNotificationOpen(true)} className="relative grid h-[38px] w-[38px] place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림">
+              <Bell size={18} color="var(--spm-t2)" />
+              {unreadCount > 0 ? <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: 'var(--spm-red)', border: '1.5px solid var(--spm-bg)' }} /> : null}
+            </button>
+          </div>
         </div>
       </header>
 
-      <Hero />
       <ClassLoop />
       <SectionHeader title="오늘 추천 수업" href="/spokedu-master/library" />
       <TodayRecommendation />

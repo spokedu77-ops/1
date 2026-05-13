@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Bookmark, Lock, Play, Search, Smartphone, X, Zap } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { PROGRAMS } from '../lib/data';
+import { PROGRAMS, getTodayProgram } from '../lib/data';
 import { useIsPro, useMasterStore } from '../store';
 
 const FILTERS = ['전체', '유아', '초등', 'SPOMOVE', '간편 준비', '좁은 공간', '협동', '민첩성'];
@@ -46,7 +46,7 @@ function PosterCard({ program, rank, locked, used, favorite, onFavorite }: { pro
 
 function ProgramListItem({ program, locked, used, favorite, onFavorite }: { program: (typeof PROGRAMS)[number]; locked: boolean; used: boolean; favorite: boolean; onFavorite: () => void }) {
   return (
-    <div className="relative flex h-full gap-3 rounded-[14px] p-3 active:scale-[0.99]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+    <div className="relative flex h-full gap-3 rounded-[14px] p-3 active:scale-[0.99]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <Link href={locked ? '/spokedu-master/profile' : `/spokedu-master/library/${program.id}`} className="absolute inset-0 rounded-[14px]" aria-label={program.title} />
       <ThumbGrid colors={program.colors} />
       <div className="min-w-0 flex-1 py-0.5">
@@ -64,7 +64,7 @@ function ProgramListItem({ program, locked, used, favorite, onFavorite }: { prog
 }
 
 function FeaturedRail() {
-  const featured = PROGRAMS[0]!;
+  const featured = getTodayProgram();
   return (
     <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
       <Link href={`/spokedu-master/library/${featured.id}`} className="grid overflow-hidden rounded-[18px] p-5 active:scale-[0.99] md:grid-cols-[1fr_auto] md:items-end md:p-7" style={{ background: `linear-gradient(135deg, ${featured.colors[0]}, ${featured.colors[1]}, ${featured.colors[2]})`, boxShadow: '0 18px 42px rgba(99,102,241,0.2)' }}>

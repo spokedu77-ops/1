@@ -155,3 +155,8 @@ export const PROGRAMS: Program[] = [
     },
   },
 ];
+
+export function getTodayProgram(): Program {
+  const dayIndex = new Date().getDay();
+  return PROGRAMS[dayIndex % PROGRAMS.length] ?? PROGRAMS[0]!;
+}
