@@ -56,8 +56,8 @@ export function DesktopRail() {
         })}
       </div>
       <div className="mt-6 rounded-[14px] p-3" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(16,185,129,0.12))', border: '1px solid var(--spm-br2)' }}>
-        <p className="text-[11px] font-black" style={{ color: '#a5b4fc' }}>첫 상용 버전</p>
-        <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>라이브러리, SPOMOVE, 수업 설명 도구를 중심으로 운영합니다.</p>
+        <p className="text-[11px] font-black" style={{ color: '#a5b4fc' }}>SPOKEDU PRO</p>
+        <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>수업 준비는 쉽게, 수업은 더 몰입감 있게.</p>
       </div>
     </aside>
   );

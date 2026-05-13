@@ -208,7 +208,7 @@ export default function SpokeduMasterProfilePage() {
           <section className="overflow-hidden rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(16,185,129,0.12), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>current plan</p>
             <div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: expired ? 'var(--spm-amb)' : 'var(--spm-t)', letterSpacing: 0 }}>{planName}</h2><span className="text-[13px] font-black" style={{ color: expired ? 'var(--spm-amb)' : 'var(--spm-t2)' }}>{currentPlan === 'free' ? (expired ? '내 정보에서 플랜을 확인하세요' : `${daysLeft}일 남음`) : '활성화됨'}</span></div>
-            <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>첫 상용 버전은 라이브러리, SPOMOVE, 수업 설명 도구를 중심으로 제공합니다. 기록과 리포트 자동화는 안정화 후 확장합니다.</p>
+            <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리, SPOMOVE, 수업 설명 도구가 포함됩니다. 수업 기록, 학생 이력, 센터 대시보드도 함께 사용할 수 있습니다.</p>
             <button type="button" onClick={() => setPlanOpen(true)} className="mt-5 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>플랜과 도입 방식 보기</button>
           </section>
 
@@ -228,19 +228,19 @@ export default function SpokeduMasterProfilePage() {
           <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-3">
               <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>expansion</p>
-              <h2 className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>운영 확장 프리뷰</h2>
-              <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>기록과 조직 기능은 보존하되, 첫 화면의 핵심 흐름을 흐리지 않도록 이곳에 모았습니다.</p>
+              <h2 className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>추가 기능</h2>
+              <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>수업 기록, 학생 이력, 센터 운영, 교구 스토어를 이곳에서 바로 이동할 수 있습니다.</p>
             </div>
             <div className="grid gap-2">
-              <ExpansionLink icon={ClipboardList} label="수업 기록" caption="출석과 관찰 기록 프리뷰" href="/spokedu-master/class-record" />
-              <ExpansionLink icon={UsersRound} label="학생 이력" caption="누적 성장 기록 프리뷰" href="/spokedu-master/students" />
-              <ExpansionLink icon={Building2} label="센터 운영" caption="센터·강사 운영 프리뷰" href="/spokedu-master/director" />
+              <ExpansionLink icon={ClipboardList} label="수업 기록" caption="출석, 동작 체크, 보호자 안내" href="/spokedu-master/class-record" />
+              <ExpansionLink icon={UsersRound} label="학생 이력" caption="누적 성장 기록과 공유 링크" href="/spokedu-master/students" />
+              <ExpansionLink icon={Building2} label="센터 운영" caption="강사 기록률과 케어 신호 확인" href="/spokedu-master/director" />
               <ExpansionLink icon={ShoppingBag} label="교구 스토어" caption="수업 준비물 견적 요청" href="/spokedu-master/shop" />
             </div>
           </section>
           <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div className="flex items-center gap-2"><ShieldCheck size={17} color="var(--spm-grn)" /><h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>안심 운영 원칙</h2></div>
-            <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>외부 자동 발송, 학생 상세 기록, 센터 대시보드는 검증 전까지 과하게 약속하지 않습니다. 먼저 수업 준비와 몰입 경험을 완성합니다.</p>
+            <div className="flex items-center gap-2"><ShieldCheck size={17} color="var(--spm-grn)" /><h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>데이터 보호 원칙</h2></div>
+            <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>학생 기록은 기기에 저장되며 외부로 자동 전송되지 않습니다. 보호자 공유 링크는 7일 유효한 토큰 방식으로 동작합니다.</p>
           </section>
         </div>
       </main>
@@ -253,7 +253,7 @@ export default function SpokeduMasterProfilePage() {
         </div>
       </BottomSheet>
       <PlanSheet open={planOpen} onClose={() => setPlanOpen(false)} />
-      <div className="px-[22px] pt-6 sm:px-8 lg:px-10"><p className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--spm-t3)' }}><Sparkles size={13} />상용화 첫 버전은 라이브러리와 SPOMOVE의 즉시 가치를 선명하게 보여주는 데 집중합니다.</p></div>
+      <div className="px-[22px] pt-6 sm:px-8 lg:px-10"><p className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--spm-t3)' }}><Sparkles size={13} />SPOKEDU PRO · 수업 준비는 쉽게, 수업은 더 몰입감 있게.</p></div>
     </div>
   );
 }

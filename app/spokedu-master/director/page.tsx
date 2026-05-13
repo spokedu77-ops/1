@@ -51,7 +51,7 @@ export default function DirectorPage() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>director dashboard</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 대시보드</h1>
         <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          {centerName}의 강사 사용 흐름과 학생 케어 신호를 미리 보는 운영 프리뷰입니다. 센터 확장 기능은 실제 기록 데이터가 쌓인 뒤 안정화합니다.
+          {centerName}의 강사 기록률, 출석 흐름, 학생 케어 신호를 한 화면에서 관리합니다.
         </p>
       </header>
 
@@ -105,7 +105,7 @@ export default function DirectorPage() {
         </Link>
         <Link href="/spokedu-master/class-record" className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <span className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.14)' }}><MessageCircle size={19} color="var(--spm-grn)" /></span>
-          <span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>수업 기록</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>출석과 관찰 기록 프리뷰</span></span>
+          <span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>수업 기록</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>출석, 동작 체크, 보호자 안내</span></span>
         </Link>
         <Link href="/spokedu-master/profile" className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <span className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'rgba(245,158,11,0.14)' }}><CreditCard size={19} color="var(--spm-amb)" /></span>
@@ -121,12 +121,12 @@ export default function DirectorPage() {
         <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>
         <h2 className="mt-2 text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 플랜 사용 중</h2>
         <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          Center 플랜은 강사 3명 기본 좌석을 기준으로 검토합니다. 자동 발송과 상세 리포트는 운영 리스크를 검증한 뒤 단계적으로 확장합니다. 현재 수업 계획 {lessons.length}개가 운영 중입니다.
+          강사 3명 기본 좌석으로 시작합니다. 추가 강사 좌석은 플랜 화면에서 확장할 수 있습니다. 현재 수업 계획 {lessons.length}개가 운영 중입니다.
         </p>
         <div className="mt-5 grid grid-cols-3 gap-2">
           {[
             ['좌석', '3/3'],
-            ['공유', '준비 중'],
+            ['공유', records.length > 0 ? '가능' : '-'],
             ['기록', `${records.length || students.length}건`],
           ].map(([label, value]) => (
             <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>

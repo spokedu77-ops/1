@@ -194,7 +194,7 @@ function ReportContent() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>teaching explanation</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 설명 도구</h1>
-        <p className="mt-2 max-w-[780px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>자동 리포트나 외부 발송 기능으로 과장하지 않고, 지금은 수업의 의미를 대상별 문구로 바로 바꾸고 복사하는 데 집중합니다.</p>
+        <p className="mt-2 max-w-[780px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 활동을 학부모·기관·학교·SNS용 문구로 즉시 변환합니다. 복사 한 번으로 수업의 가치를 정확하게 전달하세요.</p>
       </header>
 
       <section className="mb-6 grid gap-2 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10">
@@ -227,7 +227,7 @@ function ReportContent() {
           <section className="rounded-[18px] p-4" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.16), rgba(16,185,129,0.1))', border: '1px solid var(--spm-br2)' }}>
             <MessageCircle size={18} color="#a5b4fc" />
             <h2 className="mt-3 text-[16px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{activeAudience.label} 템플릿</h2>
-            <p className="mt-2 text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t3)' }}>첫 버전에서는 복사 가능한 문구가 결과물입니다. 자동 발송과 PDF는 안정화 이후 붙입니다.</p>
+            <p className="mt-2 text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t3)' }}>대상별 문구를 복사해 메시지, 상담 기록, SNS에 바로 붙여넣으세요.</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <Link href={`/spokedu-master/library/${program.id}`} className="flex h-10 items-center justify-center rounded-[11px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>수업안 보기</Link>
               <Link href={`/spokedu-master/spomove/session?drill=${program.lessonDetail?.relatedSpomoveIds[0] ?? 'speed-track'}&mode=projector&program=${program.id}`} className="flex h-10 items-center justify-center gap-1 rounded-[11px] text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><MonitorPlay size={14} />실행</Link>

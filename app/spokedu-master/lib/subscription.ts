@@ -37,7 +37,7 @@ export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao'
   return {
     allowed: false,
     label,
-    reason: '상용화 첫 버전에서는 외부 자동 발송과 자동 리포트보다 라이브러리, SPOMOVE, 수업 설명 도구를 우선 제공합니다.',
+    reason: '외부 자동 발송은 현재 지원되지 않습니다. 보호자 안내는 수업 설명 도구에서 문구를 복사해 직접 전달하세요.',
   };
 }
 

@@ -88,7 +88,7 @@ function RecordListView() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class records</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>완료된 수업 기록과 미완료 보완 항목을 최신순으로 확인합니다. 첫 상용 버전에서는 기록 저장과 설명 도구 연결을 중심으로 검증합니다.</p>
+        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>출석, 동작 체크, 강사 메모를 기록하고 보호자 안내 문구로 바로 이어집니다. 기록은 학생 이력에 자동 반영됩니다.</p>
       </header>
 
       <section className="mb-5 px-[22px] sm:px-8 lg:px-10">
@@ -344,7 +344,7 @@ function RecordEntryView() {
         {retryQueue.length > 0 ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>
             <p className="text-[12px] font-black">재시도 대기 {retryQueue.length}건</p>
-            <p className="mt-1 text-[11px] font-semibold">외부 발송 연동은 준비 중입니다. 실패 항목은 운영 상태에서 다시 확인합니다.</p>
+            <p className="mt-1 text-[11px] font-semibold">발송에 실패한 항목이 있습니다. 네트워크 연결을 확인한 뒤 다시 시도하세요.</p>
           </div>
         ) : null}
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.78fr_1fr]">
