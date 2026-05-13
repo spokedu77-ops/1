@@ -9,7 +9,7 @@ import { useMasterStore } from '../store';
 
 const PRODUCTS = [
   { id: 'marker-cone', name: '마커콘 세트', desc: '방향 전환, 릴레이, 공간 구분 수업에 바로 쓰는 기본 교구', price: 8900, tone: '#f59e0b', tags: ['공간 구성', '릴레이'] },
-  { id: 'image-card', name: '움직임 이미지 카드', desc: '유아부부터 초등 저학년까지 동작을 빠르게 이해시키는 수업 카드', price: 12000, tone: '#10b981', tags: ['놀이체육', '표현 활동'] },
+  { id: 'image-card', name: '움직임 이미지 카드', desc: '유아부부터 초등 고학년까지 동작을 빠르게 이해시키는 수업 카드', price: 12000, tone: '#10b981', tags: ['대체육', '표현 활동'] },
   { id: 'mini-hurdle', name: '미니 허들 6개입', desc: '균형, 점프, 하체 협응 훈련에 연결하기 좋은 안전 교구', price: 24000, tone: '#818cf8', tags: ['밸런스', '출발 반응'] },
   { id: 'baton', name: '소프트 릴레이 바통', desc: '팀 릴레이와 협동 수업을 위한 부드러운 바통', price: 6900, tone: '#fb7185', tags: ['팀 활동', '협응'] },
   { id: 'projector', name: '수업용 미니 프로젝터', desc: 'SPOMOVE 웹 실행과 대형 화면 수업을 위한 권장 장비', price: 159000, tone: '#38bdf8', tags: ['SPOMOVE', '웹 실행'] },
@@ -153,7 +153,7 @@ export default function SpokeduMasterShopPage() {
                     <CheckCircle2 size={16} />
                     주문 요청 만들기
                   </button>
-                  <p className="mt-2 text-[11px] leading-5" style={{ color: 'var(--spm-t3)' }}>센터 견적과 배송 확인을 거쳐 주문 요청으로 접수됩니다.</p>
+                  <p className="mt-2 text-[11px] leading-5" style={{ color: 'var(--spm-t3)' }}>센터 견적과 배송 확인을 거친 주문 요청으로 접수합니다.</p>
                 </div>
               </div>
             ) : (
@@ -171,7 +171,7 @@ export default function SpokeduMasterShopPage() {
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.14)' }}>
             <CheckCircle2 size={30} color="var(--spm-grn)" />
           </div>
-          <h2 className="mt-5 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>교구 주문 요청이 생성되었습니다.</h2>
+          <h2 className="mt-5 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>교구 주문 요청이 생성되었습니다</h2>
           <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
             총 {orderCount}개 항목, {orderTotal.toLocaleString('ko-KR')}원 기준으로 센터/강사용 견적 요청을 준비했습니다.
           </p>

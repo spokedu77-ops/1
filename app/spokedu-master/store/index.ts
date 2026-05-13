@@ -92,11 +92,11 @@ const defaultLessons: Lesson[] = [
   },
   {
     id: 2,
-    title: '밸런스 무브먼트',
+    title: '밸런스 로드',
     classId: '3학년 B반',
     date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     period: 4,
-    duration: 15,
+    duration: 18,
     done: false,
     color: '#10b981',
   },
@@ -112,14 +112,14 @@ const defaultStudents: StudentProfile[] = [
     attendance: 92,
     classes: 18,
     streak: 4,
-    risk: '차분히 대기 자세 3주 정체',
+    risk: '차분한 대기 자세 3주 정체',
     skills: [
       { label: '균형 유지', value: 74, delta: '+12%' },
       { label: '방향 전환', value: 61, delta: '+6%' },
-      { label: '차분히 대기', value: 42, delta: '정체' },
+      { label: '차분한 대기', value: 42, delta: '정체' },
     ],
     badges: ['균형 마스터', '출석 루틴'],
-    history: ['5.11 8자 드릴 출석', '5.04 차분히 대기 자세 관찰', '4.27 균형 마스터 배지'],
+    history: ['5.11 8자 드릴 출석', '5.04 차분한 대기 자세 관찰', '4.27 균형 마스터 배지'],
   },
   {
     id: 'seoyeon',
@@ -137,7 +137,7 @@ const defaultStudents: StudentProfile[] = [
       { label: '방향 전환', value: 76, delta: '+9%' },
     ],
     badges: ['집중왕', '연속 출석'],
-    history: ['5.11 밸런스 무브먼트 우수', '5.04 집중왕 배지', '4.27 리듬 과제 완료'],
+    history: ['5.11 밸런스 로드 우수', '5.04 집중왕 배지', '4.27 리듬 과제 완료'],
   },
   {
     id: 'jiho',
@@ -187,11 +187,11 @@ const defaultStudents: StudentProfile[] = [
     risk: null,
     skills: [
       { label: '방향 전환', value: 73, delta: '+9%' },
-      { label: '차분히 대기', value: 64, delta: '+4%' },
+      { label: '차분한 대기', value: 64, delta: '+4%' },
       { label: '신호 반응', value: 70, delta: '+8%' },
     ],
     badges: ['민첩성 스타'],
-    history: ['5.11 방향 전환 개선', '5.04 차분히 대기 체크', '4.27 민첩성 스타 배지'],
+    history: ['5.11 방향 전환 개선', '5.04 차분한 대기 체크', '4.27 민첩성 스타 배지'],
   },
   {
     id: 'yuna',
@@ -245,8 +245,8 @@ const defaultNotifications: Notification[] = [
   {
     id: 'n1',
     type: 'program',
-    title: '"밸런스 무브먼트" 새 프로그램 추가',
-    body: '이번 주 신규 프로그램이 라이브러리에 업데이트되었습니다.',
+    title: '"밸런스 로드" 신규 프로그램 추가',
+    body: '이번 주 추천 프로그램이 라이브러리에 업데이트되었습니다.',
     read: false,
     createdAt: new Date().toISOString(),
   },
@@ -260,7 +260,47 @@ const defaultNotifications: Notification[] = [
   },
 ];
 
-const brokenTextPattern = /�|諛|湲|由|援|蹂|移댁|寃|臾|留|吏|怨|珥|洹|쨌|ㅽ|ㅼ|쒖|뺤|닿|リ|醫|誘|쇱|섏|숈|댁/;
+const brokenTextPattern = new RegExp(
+  [
+    '\\u8adb',
+    '\\u6e72',
+    '\\u63f4',
+    '\\u81fe',
+    '\\uf98d',
+    '\\uf9de',
+    '\\u6028',
+    '\\uc9cc',
+    '\\u317d',
+    '\\u317c',
+    '\\uc496',
+    '\\ubee4',
+    '\\ub2ff',
+    '\\u91ab',
+    '\\u8a98',
+    '\\uc1f1',
+    '\\uc12f',
+    '\\uc22b',
+    '\\ub301',
+    '\\u2464',
+    '\\ubd3d',
+    '\\ub4f6',
+    '\\uaf08',
+    '\\uaee3',
+    '\\ub8f7',
+    '\\ub384',
+    '\\ube63',
+    '\\uc73c',
+    '\\u03bb',
+    '\\u3049',
+    '\\ufffd',
+    '\\u00ec',
+    '\\u00eb',
+    '\\u00ed',
+    '\\u00e3',
+    '\\u00c2',
+    '\\u00c3',
+  ].join('|')
+);
 
 function hasBrokenText(value: unknown): boolean {
   if (typeof value === 'string') return brokenTextPattern.test(value);
@@ -365,7 +405,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 3,
+      version: 7,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,

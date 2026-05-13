@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SLOW_CHECK_MS = 3000;
 let cache: { admin: boolean; ts: number } | null = null;
 const STORAGE_KEY = 'admin_check_cache_v1';
+
 type AdminCheckResponse = {
   admin?: boolean;
   reason?: 'no-session' | 'forbidden' | 'server-error';
@@ -32,24 +33,22 @@ function writeStorageCache(next: { admin: boolean; ts: number }) {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
-    // ignore
+    // sessionStorage can be blocked in private browsing or strict browser modes.
   }
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  // sessionStorage/모듈 캐시로 초기값을 true로 두면 SSR은 false·클라이언트는 true가 되어 hydration mismatch가 난다.
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkSlow, setCheckSlow] = useState(false);
-  const isFullscreenRoute = pathname != null && pathname.startsWith('/admin/spokedu-pro');
+  const isFullscreenRoute =
+    pathname != null && (pathname.startsWith('/admin/spokedu-pro') || pathname.startsWith('/admin/spokedu-master'));
   const isGameRoute =
     pathname != null &&
-    (
-      pathname.startsWith('/admin/camera') ||
+    (pathname.startsWith('/admin/camera') ||
       pathname.startsWith('/admin/spomove/training/_player') ||
-      pathname.startsWith('/admin/iiwarmup/spomove/training/_player')
-    );
+      pathname.startsWith('/admin/iiwarmup/spomove/training/_player'));
 
   useEffect(() => {
     const slowTimer = setTimeout(() => setCheckSlow(true), SLOW_CHECK_MS);
@@ -72,10 +71,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return;
       }
 
-      let res: Response, json: AdminCheckResponse;
+      let res: Response;
+      let json: AdminCheckResponse;
       try {
         res = await fetch('/api/auth/check-admin', { credentials: 'include' });
-        json = await res.json();
+        json = (await res.json()) as AdminCheckResponse;
       } catch {
         router.replace('/login');
         return;
@@ -91,18 +91,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       if (json.admin) {
         setIsAdmin(true);
+      } else if (json.reason === 'no-session') {
+        router.replace('/login');
       } else {
-        if (json.reason === 'no-session') router.replace('/login');
-        else router.replace('/teacher/my-classes');
+        router.replace('/teacher/my-classes');
       }
     };
-    check();
+
+    void check();
   }, [router]);
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-2">
-        <p className="text-sm font-bold text-slate-300 animate-pulse">권한 확인 중...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-white">
+        <p className="animate-pulse text-sm font-bold text-slate-300">권한 확인 중...</p>
         {checkSlow && (
           <p className="text-xs text-slate-400">잠시 후 다시 시도해 주세요. 로그인 상태를 확인해 주세요.</p>
         )}
@@ -116,8 +118,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         isFullscreenRoute
           ? 'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0F172A] text-gray-900 relative'
           : isGameRoute
-          ? 'flex-1 flex flex-col min-h-0 overflow-hidden text-gray-900'
-          : 'flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900'
+            ? 'flex-1 flex flex-col min-h-0 overflow-hidden text-gray-900'
+            : 'flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900'
       }
     >
       {isFullscreenRoute && (

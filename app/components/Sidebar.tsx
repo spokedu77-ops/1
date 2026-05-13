@@ -95,7 +95,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     },
     {
       group: '구독 서비스',
-      items: [{ name: 'SPOKEDU MASTER NEW', href: '/admin/spokedu-master', icon: Sparkles }],
+      items: [{ name: '스포키듀 구독 NEW', href: '/admin/spokedu-master', icon: Sparkles }],
     },
     {
       group: '사람',

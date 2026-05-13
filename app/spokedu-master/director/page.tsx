@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle, BarChart3, CreditCard, FileText, MessageCircle, UsersRound } from 'lucide-react';
+import { AlertTriangle, BarChart3, CreditCard, FileText, MessageCircle, UsersRound, type LucideIcon } from 'lucide-react';
 import { OperationsPanel } from '../components/operations/OperationsPanel';
 import { useMasterStore, useProfile } from '../store';
 
-function Kpi({ label, value, desc, icon: Icon, tone }: { label: string; value: string; desc: string; icon: typeof BarChart3; tone: string }) {
+function Kpi({ label, value, desc, icon: Icon, tone }: { label: string; value: string; desc: string; icon: LucideIcon; tone: string }) {
   return (
     <div className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <div className="flex items-center justify-between">

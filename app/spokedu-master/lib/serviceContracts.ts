@@ -1,5 +1,5 @@
 import type { ClassRecord, StudentProfile, UserProfile } from '../types';
-import { createParentPreviewToken } from './subscription';
+import { createParentShareToken } from './subscription';
 
 export type ServiceFailureCode =
   | 'offline'
@@ -107,7 +107,7 @@ export async function sendKakaoClassSummary(request: KakaoSummaryRequest): Promi
   await wait(650);
   const presentStudents = request.students.filter((student) => request.classRecord.students.some((record) => record.studentId === student.id && record.attendance === 'present'));
   const parentLinks = presentStudents.map((student) => {
-    const token = createParentPreviewToken(student.id);
+    const token = createParentShareToken(student.id);
     const expiresAt = new Date(Number(token.split('.')[2])).toISOString();
     return { studentId: student.id, studentName: student.name, token, expiresAt };
   });
@@ -126,7 +126,7 @@ export async function generateGrowthReportBatch(request: GrowthReportRequest): P
   await wait(750);
   const parentLinks = request.students.map((student) => ({
     studentId: student.id,
-    token: createParentPreviewToken(student.id),
+    token: createParentShareToken(student.id),
   }));
 
   return {

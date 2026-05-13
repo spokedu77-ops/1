@@ -23,7 +23,6 @@ import { translationCacheKey } from '@/app/lib/i18n/cacheKey';
 const MAX_SOURCE_CHARS = 500;
 const MAX_CACHED_ENTRIES_MEMORY = 2000;
 const TRANSLATE_BACKOFF_MS = 60_000;
-// 번역 기능 토글: 제대로 준비되기 전에는 OFF (요청)
 const TRANSLATION_ENABLED = false;
 
 type CachedEntry = { source: string; text: string };
@@ -31,9 +30,7 @@ type CachedEntry = { source: string; text: string };
 type I18nContextValue = {
   locale: UiLocale;
   setLocale: (next: UiLocale) => void;
-  /** 한국어가 아니면 캐시/번역 결과, 한국어는 원문 */
   t: (source: string, stableKey?: string) => string;
-  /** 번역 완료 시 구독 컴포넌트 갱신용 */
   subscribe: (cb: () => void) => () => void;
 };
 
@@ -73,7 +70,7 @@ function writeCacheToStorage(locale: UiLocale, source: string, text: string): vo
     const payload: CachedEntry = { source: source.trim(), text };
     window.localStorage.setItem(key, JSON.stringify(payload));
   } catch {
-    // quota 등 무시
+    // ignore quota errors
   }
 }
 
@@ -89,7 +86,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       try {
         fn();
       } catch {
-        // ignore
+        // ignore listener errors
       }
     });
   }, []);
@@ -138,7 +135,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const trimmed = source.trim();
       if (!trimmed || loc === 'ko') return;
       if (!TRANSLATION_ENABLED) return;
-      // 429 등으로 막혔으면 쿨다운 동안 번역 호출 자체를 중단
       if (Date.now() < blockedUntilRef.current) return;
 
       const memKey = getMemoryKey(loc, trimmed);
@@ -161,13 +157,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         });
         window.clearTimeout(timer);
 
-        // 429면 더 이상 폭주하지 않도록 일정 시간 번역 요청 중단
         if (res.status === 429) {
           blockedUntilRef.current = Date.now() + TRANSLATE_BACKOFF_MS;
           return;
         }
         const json = (await res.json().catch(() => ({}))) as { ok?: boolean; text?: string; error?: string };
-        // 번역 자체가 구성되지 않았으면(로컬에서 키 없음 등) 굳이 계속 두드리지 않도록 백오프
         if (res.status === 503 && json?.error === 'translate_unconfigured') {
           blockedUntilRef.current = Date.now() + TRANSLATE_BACKOFF_MS;
           return;
@@ -180,7 +174,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         writeCacheToStorage(loc, trimmed, translated);
         notify();
       } catch {
-        // 실패 시 한국어 유지 (요구사항)
+        // Keep the Korean source text on failure.
       } finally {
         inflightRef.current.delete(dedupeKey);
       }
@@ -196,7 +190,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback(
-    (source: string, _stableKey?: string) => {
+    (source: string, stableKey?: string) => {
+      void stableKey;
       if (locale === 'ko') return source;
       if (!TRANSLATION_ENABLED) return source;
       const cached = getCached(locale, source);
@@ -215,7 +210,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
-/** hydration: 서버와 첫 클라이언트 페인트는 ko, 마운트 후 저장된 locale 복원 */
 function useStateSafeLocale(): [UiLocale, (v: UiLocale) => void] {
   const [locale, setLocale] = useReducer((_: UiLocale, next: UiLocale) => next, DEFAULT_UI_LOCALE);
   const mounted = useRef(false);
@@ -243,18 +237,14 @@ export function useI18n(): I18nContextValue {
   return ctx;
 }
 
-/**
- * 컴포넌트에서 `const t = useTranslator()` 후 `t('한국어 원문')` 사용.
- * 번역이 끝나면 자동으로 리렌더됩니다.
- */
 export function useTranslator(): (source: string, stableKey?: string) => string {
-  const { locale, t, subscribe } = useI18n();
+  const { t, subscribe } = useI18n();
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => subscribe(() => bump()), [subscribe]);
 
   return useCallback(
     (source: string, stableKey?: string) => t(source, stableKey),
-    [t, locale]
+    [t]
   );
 }

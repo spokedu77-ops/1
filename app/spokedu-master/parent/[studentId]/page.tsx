@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { Award, CalendarDays, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { validateParentPreviewToken } from '../../lib/subscription';
+import { validateParentShareToken } from '../../lib/subscription';
 import { useMasterStore } from '../../store';
 
 function SkillBar({ label, value, delta }: { label: string; value: number; delta: string }) {
@@ -41,7 +41,7 @@ function ParentStudentViewContent() {
   const students = useMasterStore((state) => state.students);
   const records = useMasterStore((state) => state.classRecords);
   const student = students.find((item) => item.id === params.studentId);
-  const tokenStatus = validateParentPreviewToken(token, params.studentId);
+  const tokenStatus = validateParentShareToken(token, params.studentId);
   const studentRecords = records.filter((record) => record.students.some((item) => item.studentId === params.studentId));
   const latestRecord = studentRecords[0];
   const latestStudentRecord = latestRecord?.students.find((item) => item.studentId === params.studentId);
@@ -114,16 +114,10 @@ function ParentStudentViewContent() {
           ) : null}
           {latestStudentRecord?.skills.length ? (
             <div className="mt-4 flex flex-wrap gap-2">
-              {latestStudentRecord.skills.map((skill) => (
-                <span key={skill} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>{skill}</span>
-              ))}
+              {latestStudentRecord.skills.map((skill) => <span key={skill} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>{skill}</span>)}
             </div>
           ) : null}
-          {latestStudentRecord?.memo ? (
-            <p className="mt-4 rounded-[13px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-t2)' }}>
-              강사 메모: {latestStudentRecord.memo}
-            </p>
-          ) : null}
+          {latestStudentRecord?.memo ? <p className="mt-4 rounded-[13px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-t2)' }}>강사 메모: {latestStudentRecord.memo}</p> : null}
         </section>
 
         <section className="mb-5 rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -132,18 +126,12 @@ function ParentStudentViewContent() {
         </section>
 
         <section className="mb-5 rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <h2 className="mb-4 flex items-center gap-2 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            <Award size={18} color="var(--spm-amb)" />
-            배지
-          </h2>
+          <h2 className="mb-4 flex items-center gap-2 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}><Award size={18} color="var(--spm-amb)" />배지</h2>
           <div className="flex flex-wrap gap-2">{student.badges.map((badge) => <span key={badge} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.13)', color: 'var(--spm-amb)' }}>{badge}</span>)}</div>
         </section>
 
         <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <h2 className="mb-4 flex items-center gap-2 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            <CalendarDays size={18} color="var(--spm-acc)" />
-            최근 기록
-          </h2>
+          <h2 className="mb-4 flex items-center gap-2 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}><CalendarDays size={18} color="var(--spm-acc)" />최근 기록</h2>
           <div className="space-y-2">{student.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
         </section>
 

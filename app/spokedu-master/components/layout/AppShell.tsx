@@ -15,10 +15,10 @@ function OperationsBanner() {
   if (operational.online && operational.retryQueue.length === 0 && !expired) return null;
 
   const label = !operational.online
-    ? '오프라인 모드: 수업 기록은 기기에 저장되고 연결 후 다시 처리됩니다.'
+    ? '오프라인 모드: 수업 기록은 기기에 저장되고 연결되면 다시 처리합니다.'
     : expired
-      ? '무료 체험이 만료되어 새 기록 생성이 제한됩니다.'
-      : `재시도 대기 ${operational.retryQueue.length}건: 카카오/PDF 실패 항목을 다시 처리해야 합니다.`;
+      ? '무료 체험이 만료되어 새 수업 기록 생성이 제한됩니다.'
+      : `재시도 대기 ${operational.retryQueue.length}건: 카카오 또는 PDF 실패 항목을 다시 처리해야 합니다.`;
 
   return (
     <div
@@ -72,8 +72,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
+    <div className="min-h-dvh" style={{ background: 'linear-gradient(135deg, #07070c 0%, #101426 55%, #07070c 100%)', color: 'var(--spm-t)' }}>
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-white/5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
         {isOnboarding || isParentView ? null : <DesktopRail />}
         <div className="flex min-w-0 flex-1 flex-col">
           {isOnboarding || isParentView ? null : <StatusBar />}

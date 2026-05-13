@@ -49,8 +49,6 @@ export async function POST(req: NextRequest) {
   }
 
   if (!GEMINI_API_KEY) {
-    // 로컬/개발 환경에서는 번역 키가 없을 수 있음.
-    // 503을 내면 클라이언트가 같은 문장을 반복 호출하며 로그가 폭주할 수 있어, 원문을 그대로 반환한다.
     if (process.env.NODE_ENV !== 'production') {
       const body = await req.json().catch(() => null);
       const sourceText = typeof body?.sourceText === 'string' ? body.sourceText : '';
@@ -86,9 +84,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'translation_too_long' }, { status: 502 });
     }
     return NextResponse.json({ ok: true, text });
-  } catch (e) {
-    devLogger.error('[i18n/translate]', e);
-    const message = e instanceof Error ? e.message : 'translate_failed';
+  } catch (error) {
+    devLogger.error('[i18n/translate]', error);
+    const message = error instanceof Error ? error.message : 'translate_failed';
     return NextResponse.json({ ok: false, error: message }, { status: 502 });
   }
 }

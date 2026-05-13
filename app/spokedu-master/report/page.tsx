@@ -5,7 +5,7 @@ import { Activity, AlertTriangle, Check, ExternalLink, FileText, MessageCircle, 
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { generateGrowthReportBatch, type GrowthReportResult } from '../lib/serviceContracts';
-import { canUseMonthlyLimit, createParentPreviewToken } from '../lib/subscription';
+import { canUseMonthlyLimit, createParentShareToken } from '../lib/subscription';
 import { formatReactionTime } from '../lib/utils';
 import { useMasterStore, useStats } from '../store';
 
@@ -87,8 +87,7 @@ export default function ReportPage() {
   const previewStudentRecord = previewStudent
     ? filteredRecords.find((record) => record.students.some((student) => student.studentId === previewStudent.id))?.students.find((student) => student.studentId === previewStudent.id)
     : null;
-  const pdfUsed = classRecords.length;
-  const pdfStatus = canUseMonthlyLimit(profile?.plan ?? 'free', pdfUsed, 'pdf');
+  const pdfStatus = canUseMonthlyLimit(profile?.plan ?? 'free', classRecords.length, 'pdf');
   const kakaoStatus = canUseMonthlyLimit(profile?.plan ?? 'free', classRecords.filter((record) => record.kakaoSent).length, 'kakao');
 
   const toggleReportTarget = (id: string) => setSelectedReportIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
@@ -202,10 +201,7 @@ export default function ReportPage() {
         <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>카카오 공유 문장, 보호자 링크, PDF 리포트를 함께 준비합니다.</p>
         {retryQueue.length > 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>PDF 생성 실패 {retryQueue.length}건이 재시도 대기 중입니다.</p> : null}
         <div className="mt-5 grid grid-cols-2 gap-2">
-          <button type="button" onClick={openShareFlow} disabled={!kakaoStatus.allowed || !pdfStatus.allowed || filteredStudents.length === 0} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
-            <Share2 size={15} />
-            공유
-          </button>
+          <button type="button" onClick={openShareFlow} disabled={!kakaoStatus.allowed || !pdfStatus.allowed || filteredStudents.length === 0} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}><Share2 size={15} />공유</button>
           <button type="button" onClick={openShareFlow} disabled={!pdfStatus.allowed || filteredStudents.length === 0} className="h-11 rounded-[12px] text-[13px] font-black disabled:opacity-50" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>PDF</button>
         </div>
       </section>
@@ -251,55 +247,27 @@ export default function ReportPage() {
                     <div className="mt-5 rounded-[12px] bg-slate-100 p-3">
                       <p className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-400">coach note</p>
                       <p className="mt-2 text-[12px] font-semibold leading-5 text-slate-600">
-                        {previewStudentRecord?.memo
-                          ? previewStudentRecord.memo
-                          : `${previewStudent.name}은 수업 참여가 안정적이며, 다음 수업에서도 가장 성장 폭이 큰 동작을 중심으로 관찰하겠습니다.`}
+                        {previewStudentRecord?.memo ? previewStudentRecord.memo : `${previewStudent.name}은 수업 참여가 안정적이며 다음 수업에서는 가장 성장 여지가 큰 동작을 중심으로 관찰하겠습니다.`}
                       </p>
-                      {previewStudentRecord?.skills.length ? (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {previewStudentRecord.skills.map((skill) => <span key={skill} className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700">{skill}</span>)}
-                        </div>
-                      ) : null}
+                      {previewStudentRecord?.skills.length ? <div className="mt-3 flex flex-wrap gap-1.5">{previewStudentRecord.skills.map((skill) => <span key={skill} className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700">{skill}</span>)}</div> : null}
                     </div>
                   </div>
                 </div>
-                <Link href={`/spokedu-master/parent/${previewStudent.id}?token=${createParentPreviewToken(previewStudent.id)}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-                  <ExternalLink size={16} />
-                  보호자 링크 미리보기
-                </Link>
-                <button type="button" onClick={generateReports} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                  <MessageCircle size={16} />
-                  {selectedReportIds.length > 0 ? `${selectedReportIds.length}명 생성하고 공유` : '일괄 생성하고 공유'}
-                </button>
+                <Link href={`/spokedu-master/parent/${previewStudent.id}?token=${createParentShareToken(previewStudent.id)}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><ExternalLink size={16} />보호자 링크 미리보기</Link>
+                <button type="button" onClick={generateReports} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><MessageCircle size={16} />{selectedReportIds.length > 0 ? `${selectedReportIds.length}명 생성하고 공유` : '일괄 생성하고 공유'}</button>
               </div>
             ) : null}
-            {shareStep === 'generating' ? (
-              <div className="py-8 text-center">
-                <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-white/10 border-t-indigo-400" />
-                <p className="mt-5 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>리포트를 생성하고 있습니다</p>
-                <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>PDF와 카카오 공유 문장을 준비합니다.</p>
-              </div>
-            ) : null}
+            {shareStep === 'generating' ? <div className="py-8 text-center"><div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-white/10 border-t-indigo-400" /><p className="mt-5 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>리포트를 생성하고 있습니다</p><p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>PDF와 카카오 공유 문장을 준비합니다.</p></div> : null}
             {shareStep === 'done' ? (
               <div className="py-6 text-center">
-                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.14)' }}>
-                  <Check size={30} color="var(--spm-grn)" />
-                </div>
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.14)' }}><Check size={30} color="var(--spm-grn)" /></div>
                 <h3 className="mt-5 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>리포트 준비 완료</h3>
                 <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{reportResult?.pdfCount ?? (selectedReportIds.length || filteredStudents.length)}명의 PDF와 카카오 공유 문장을 생성했습니다.</p>
-                {reportShared || pdfSaved ? (
-                  <div className="mt-5 space-y-2 text-left">
-                    {reportShared ? <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>카카오 공유 요청이 준비되었습니다. 보호자 링크 {reportResult?.kakaoReadyCount ?? 0}건이 포함됩니다.</p> : null}
-                    {pdfSaved ? <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(99,102,241,0.14)', color: '#a5b4fc' }}>PDF 저장 요청이 완료되었습니다. 생성 배치 ID: {reportResult?.reportBatchId ?? 'local-report'}</p> : null}
-                  </div>
-                ) : null}
                 <div className="mt-6 grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => setReportShared(true)} disabled={!kakaoStatus.allowed || reportShared} className="h-11 rounded-[12px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>{reportShared ? '발송 준비 완료' : '카카오 발송'}</button>
                   <button type="button" onClick={() => setPdfSaved(true)} disabled={pdfSaved} className="h-11 rounded-[12px] text-[13px] font-black disabled:opacity-50" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>{pdfSaved ? '저장 완료' : 'PDF 저장'}</button>
                 </div>
-                {reportResult?.parentLinks[0] ? (
-                  <Link href={`/spokedu-master/parent/${reportResult.parentLinks[0].studentId}?token=${reportResult.parentLinks[0].token}`} className="mt-3 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>보호자 링크 열기</Link>
-                ) : null}
+                {reportResult?.parentLinks[0] ? <Link href={`/spokedu-master/parent/${reportResult.parentLinks[0].studentId}?token=${reportResult.parentLinks[0].token}`} className="mt-3 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>보호자 링크 열기</Link> : null}
               </div>
             ) : null}
           </div>

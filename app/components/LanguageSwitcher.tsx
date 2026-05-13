@@ -5,7 +5,6 @@ import { useI18n } from '@/app/providers/I18nProvider';
 
 type Props = {
   className?: string;
-  /** 사이드바 다크 배경용 스타일 */
   variant?: 'default' | 'dark';
 };
 
@@ -23,8 +22,8 @@ export function LanguageSwitcher({ className = '', variant = 'default' }: Props)
       value={locale}
       aria-label="언어 선택"
       onChange={(e) => {
-        const v = e.target.value;
-        if (isUiLocale(v)) setLocale(v);
+        const value = e.target.value;
+        if (isUiLocale(value)) setLocale(value);
       }}
     >
       {(SUPPORTED_LOCALES as readonly UiLocale[]).map((loc) => (

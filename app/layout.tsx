@@ -1,13 +1,13 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Toaster } from 'sonner';
+import { Geist, Noto_Sans_KR, Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import Sidebar from './components/Sidebar';
 import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
 import { QueryProvider } from './providers/QueryProvider';
 import { I18nProvider } from './providers/I18nProvider';
-import { Geist, Noto_Sans_KR, Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 
@@ -29,27 +29,19 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
 });
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hideSidebar = isFullscreenPath(pathname);
   const [isDesktopOpen, setIsDesktopOpen] = useState(true);
   const fullscreenWrapStyle = hideSidebar
     ? { minHeight: 'var(--viewport-height-px, 100dvh)', height: 'var(--viewport-height-px, 100dvh)', width: '100vw', maxWidth: '100%' }
     : undefined;
+  const mainFullscreenStyle = hideSidebar ? { height: 'var(--viewport-height-px, 100dvh)' } : undefined;
 
-  const mainFullscreenStyle = hideSidebar
-    ? { height: 'var(--viewport-height-px, 100dvh)' }
-    : undefined;
-
-  // 모바일 브라우저 주소창 변화까지 반영해 전체 화면 레이아웃 흔들림을 줄입니다.
   useEffect(() => {
     const setViewportHeight = () => {
-      const h = window.visualViewport?.height ?? window.innerHeight;
-      document.documentElement.style.setProperty('--viewport-height-px', `${h}px`);
+      const height = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty('--viewport-height-px', `${height}px`);
     };
     setViewportHeight();
     window.addEventListener('resize', setViewportHeight);
@@ -67,15 +59,11 @@ export default function RootLayout({
         <meta name="theme-color" content="#185FA5" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
-      <body className="antialiased bg-gray-50 text-slate-900 font-sans">
+      <body className="bg-gray-50 font-sans text-slate-900 antialiased">
         <QueryProvider>
           <I18nProvider>
             <Toaster position="top-center" richColors closeButton />
-            <div
-              className={`flex ${hideSidebar ? 'w-full overflow-x-hidden' : 'min-h-screen'}`}
-              style={fullscreenWrapStyle}
-            >
-              {/* 전체 화면 경로에서는 글로벌 사이드바를 숨깁니다. */}
+            <div className={`flex ${hideSidebar ? 'w-full overflow-x-hidden' : 'min-h-screen'}`} style={fullscreenWrapStyle}>
               {!hideSidebar && (
                 <Sidebar
                   isDesktopOpen={isDesktopOpen}

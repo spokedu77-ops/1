@@ -70,9 +70,7 @@ export function PwaInstallCard({ compact = false }: { compact?: boolean }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>PWA</p>
-          <h2 className="mt-1 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
-            홈 화면에 추가
-          </h2>
+          <h2 className="mt-1 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>홈 화면에 추가</h2>
           {!compact ? (
             <p className="mt-2 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>
               수업 중 주소창 없이 프로그램 라이브러리와 SPOMOVE 실행 화면을 바로 열 수 있습니다.
@@ -87,13 +85,7 @@ export function PwaInstallCard({ compact = false }: { compact?: boolean }) {
             {swReady ? '오프라인 캐시 준비됨' : '서비스워커 확인 중'}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={install}
-          disabled={!promptEvent || standalone}
-          className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white disabled:opacity-45"
-          style={{ background: 'var(--spm-acc)' }}
-        >
+        <button type="button" onClick={install} disabled={!promptEvent || standalone} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white disabled:opacity-45" style={{ background: 'var(--spm-acc)' }}>
           <Download size={15} />
           {installLabel}
         </button>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Award, ChevronRight, ExternalLink, FileText, MessageCircle, TrendingUp, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
-import { createParentPreviewToken } from '../lib/subscription';
+import { createParentShareToken } from '../lib/subscription';
 import { useMasterStore } from '../store';
 
 function SkillBar({ label, value, delta }: { label: string; value: number; delta: string }) {
@@ -28,7 +28,7 @@ export default function StudentsPage() {
   const [kakaoReadyId, setKakaoReadyId] = useState<string | null>(null);
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
   const selectedRecordCount = selected ? records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length : 0;
-  const selectedParentToken = selected ? createParentPreviewToken(selected.id) : '';
+  const selectedParentToken = selected ? createParentShareToken(selected.id) : '';
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -36,7 +36,7 @@ export default function StudentsPage() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>student history</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
         <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          매 수업의 출석, 동작, 관찰 기록이 학생별 성장 이력으로 누적됩니다. 이 화면이 보호자 공유와 학기말 리포트의 원본 데이터입니다.
+          매 수업의 출석, 동작, 관찰 기록을 학생별 성장 이력으로 누적합니다. 이 화면은 보호자 공유와 학기말 리포트의 원본 데이터입니다.
         </p>
       </header>
 

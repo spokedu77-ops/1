@@ -8,7 +8,7 @@ import { useMasterStore, useProfile } from '../store';
 import type { UserRole } from '../types';
 
 const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등'];
-const PROGRAM_TYPES = ['놀이체육', 'SPOMOVE', '협응성', '민첩성', '체력'];
+const PROGRAM_TYPES = ['대체육', 'SPOMOVE', '협응성', '민첩성', '체력'];
 
 function StepDot({ active, done }: { active: boolean; done: boolean }) {
   return <span className="h-2.5 w-2.5 rounded-full" style={{ background: active ? 'var(--spm-acc)' : done ? 'var(--spm-grn)' : 'var(--spm-s4)' }} />;
@@ -17,9 +17,7 @@ function StepDot({ active, done }: { active: boolean; done: boolean }) {
 function ChoiceCard({ title, desc, active, icon: Icon, onClick }: { title: string; desc: string; active: boolean; icon: LucideIcon; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex w-full items-start gap-3 rounded-[16px] p-4 text-left" style={{ background: active ? 'rgba(99,102,241,0.15)' : 'var(--spm-s2)', border: active ? '1px solid rgba(99,102,241,0.55)' : '1px solid var(--spm-br2)' }}>
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px]" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s3)' }}>
-        <Icon size={20} color={active ? '#fff' : 'var(--spm-t2)'} />
-      </span>
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px]" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s3)' }}><Icon size={20} color={active ? '#fff' : 'var(--spm-t2)'} /></span>
       <span className="min-w-0 flex-1">
         <strong className="block text-[15px]" style={{ color: 'var(--spm-t)' }}>{title}</strong>
         <span className="mt-1 block text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{desc}</span>
@@ -105,7 +103,7 @@ export default function OnboardingPage() {
         <div className="mb-8">
           <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
           <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 준비 30초, 기록 3분으로 시작합니다</h1>
-          <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>강사와 원장이 사용할 범위를 먼저 정하고, 개인 체험 또는 센터 플랜으로 MASTER를 시작합니다.</p>
+          <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>강사와 원장의 사용 범위를 먼저 정하고, 개인 체험 또는 센터 플랜으로 MASTER를 시작합니다.</p>
         </div>
 
         <div className="mb-6 flex gap-2">{[0, 1, 2, 3].map((item) => <StepDot key={item} active={step === item} done={step > item} />)}</div>
@@ -133,7 +131,7 @@ export default function OnboardingPage() {
                     <input value={centerCode} onChange={(event) => { setCenterCode(event.target.value); setCenterResult(null); }} placeholder="예: SPOMOVE2026" className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold uppercase outline-none" style={{ background: 'var(--spm-s2)', borderColor: centerError ? 'var(--spm-red)' : 'var(--spm-br2)', color: 'var(--spm-t)' }} />
                     <button type="button" onClick={validateCenter} disabled={validating} className="h-12 rounded-[12px] px-4 text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>{validating ? '확인 중' : '코드 확인'}</button>
                   </div>
-                  {centerResult ? <p className="mt-2 text-[11px] font-bold" style={{ color: 'var(--spm-grn)' }}>{centerResult.centerName} · 강사 {centerResult.teacherSlots}명 플랜</p> : null}
+                  {centerResult ? <p className="mt-2 text-[11px] font-bold" style={{ color: 'var(--spm-grn)' }}>{centerResult.centerName} / 강사 {centerResult.teacherSlots}명 플랜</p> : null}
                   {centerError ? <p className="mt-2 text-[11px] font-bold" style={{ color: 'var(--spm-red)' }}>{centerError}</p> : null}
                 </label>
               ) : null}
@@ -153,7 +151,7 @@ export default function OnboardingPage() {
           {step === 3 ? (
             <div className="space-y-4">
               <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(16,185,129,0.14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
-              <h2 className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>준비됐습니다</h2>
+              <h2 className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>준비되었습니다</h2>
               <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 라이브러리에서 수업안을 고르고, SPOMOVE를 실행하고, 수업 기록을 학생 성장 이력으로 쌓을 수 있습니다.</p>
               <div className="grid gap-2 sm:grid-cols-3">{['프로그램 추천', '수업 기록', '카카오 공유'].map((item) => <div key={item} className="rounded-[12px] p-3 text-center text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>{item}</div>)}</div>
             </div>

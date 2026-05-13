@@ -26,7 +26,7 @@ export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
     return {
       allowed: false,
       label: '체험 만료',
-      reason: '무료 체험이 끝나 새 수업 기록 생성이 제한됩니다. 기존 학생 이력은 계속 열람할 수 있습니다.',
+      reason: '무료 체험이 종료되어 새 수업 기록 생성이 제한됩니다. 기존 학생 이력은 계속 열람할 수 있습니다.',
     };
   }
   return { allowed: true, label: '기록 가능' };
@@ -51,12 +51,12 @@ export function canUseMonthlyLimit(plan: PlanType, used: number, kind: 'kakao' |
   return { allowed: true, label: `${used}/${limit}` };
 }
 
-export function createParentPreviewToken(studentId: string, now = Date.now()): string {
+export function createParentShareToken(studentId: string, now = Date.now()): string {
   const expiresAt = now + 7 * 24 * 60 * 60 * 1000;
   return `spm.${studentId}.${expiresAt}`;
 }
 
-export function validateParentPreviewToken(token: string | null, studentId: string): LimitStatus {
+export function validateParentShareToken(token: string | null, studentId: string): LimitStatus {
   if (!token) {
     return { allowed: false, label: '토큰 없음', reason: '성장 기록 링크가 없거나 잘못된 주소입니다.' };
   }
@@ -70,3 +70,6 @@ export function validateParentPreviewToken(token: string | null, studentId: stri
   }
   return { allowed: true, label: '유효' };
 }
+
+export const createParentPreviewToken = createParentShareToken;
+export const validateParentPreviewToken = validateParentShareToken;
