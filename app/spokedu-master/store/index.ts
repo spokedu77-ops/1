@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
+import { getTrialDaysLeft } from '../lib/subscription';
 import type { CartItem, ClassRecord, ClassStudentRecord, Lesson, Notification, Session, StudentProfile, UserProfile } from '../types';
 
 type ActiveSession = {
@@ -328,7 +329,12 @@ export const useMasterStore = create<MasterState>()(
 
 export const useProfile = () => useMasterStore((state) => state.profile);
 export const useOperationalStatus = () => useMasterStore((state) => state.operational);
-export const useIsPro = () => useMasterStore((state) => (state.profile?.plan ?? 'free') !== 'free');
+export const useIsPro = () =>
+  useMasterStore((state) => {
+    const plan = state.profile?.plan ?? 'free';
+    if (plan !== 'free') return true;
+    return getTrialDaysLeft(state.profile) > 0;
+  });
 export const useCartCount = () => useMasterStore((state) => state.cart.reduce((total, item) => item.qty + total, 0));
 export const useUnreadCount = () => useMasterStore((state) => state.notifications.filter((notification) => !notification.read).length);
 export const useStats = () =>

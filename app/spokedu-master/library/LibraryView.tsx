@@ -63,8 +63,11 @@ function ProgramListItem({ program, locked, used, favorite, onFavorite }: { prog
   );
 }
 
-function FeaturedRail() {
-  const featured = getTodayProgram();
+function FeaturedRail({ isPro }: { isPro: boolean }) {
+  const todayProgram = getTodayProgram();
+  const featured = (todayProgram.isPro && !isPro)
+    ? (PROGRAMS.find((p) => !p.isPro) ?? todayProgram)
+    : todayProgram;
   return (
     <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
       <Link href={`/spokedu-master/library/${featured.id}`} className="grid overflow-hidden rounded-[18px] p-5 active:scale-[0.99] md:grid-cols-[1fr_auto] md:items-end md:p-7" style={{ background: `linear-gradient(135deg, ${featured.colors[0]}, ${featured.colors[1]}, ${featured.colors[2]})`, boxShadow: '0 18px 42px rgba(99,102,241,0.2)' }}>
@@ -80,26 +83,29 @@ function FeaturedRail() {
   );
 }
 
-function SelectionGuide() {
-  const items = [
-    { title: '오늘 바로 쓸 수업', caption: '추천과 빠른 수업부터 확인', href: '#quick-programs', Icon: Play },
-    { title: '큰 화면과 연결', caption: 'SPOMOVE 연계 수업 모음', href: '#spomove-programs', Icon: Zap },
-    { title: '준비물까지 연결', caption: '상세에서 교구 스토어로 이동', href: '/spokedu-master/shop', Icon: Smartphone },
-  ] as const;
+function scrollToSection(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const scrollable = el.closest('.overflow-y-auto') ?? document.documentElement;
+  const offset = el.getBoundingClientRect().top - scrollable.getBoundingClientRect().top + scrollable.scrollTop - 16;
+  scrollable.scrollTo({ top: offset, behavior: 'smooth' });
+}
 
+function SelectionGuide() {
   return (
     <section className="mb-7 grid gap-2 px-[22px] sm:grid-cols-3 sm:px-8 lg:px-10">
-      {items.map(({ title, caption, href, Icon }) => (
-        <Link key={title} href={href} className="flex min-h-[82px] items-center gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.14)' }}>
-            <Icon size={17} color="var(--spm-acc)" />
-          </span>
-          <span className="min-w-0">
-            <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>{title}</strong>
-            <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>{caption}</span>
-          </span>
-        </Link>
-      ))}
+      <button type="button" onClick={() => scrollToSection('quick-programs')} className="flex min-h-[82px] items-center gap-3 rounded-[14px] p-3 text-left" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.14)' }}><Play size={17} color="var(--spm-acc)" /></span>
+        <span className="min-w-0"><strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>오늘 바로 쓸 수업</strong><span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>추천과 빠른 수업부터 확인</span></span>
+      </button>
+      <button type="button" onClick={() => scrollToSection('spomove-programs')} className="flex min-h-[82px] items-center gap-3 rounded-[14px] p-3 text-left" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.14)' }}><Zap size={17} color="var(--spm-acc)" /></span>
+        <span className="min-w-0"><strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>큰 화면과 연결</strong><span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>SPOMOVE 연계 수업 모음</span></span>
+      </button>
+      <Link href="/spokedu-master/shop" className="flex min-h-[82px] items-center gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.14)' }}><Smartphone size={17} color="var(--spm-acc)" /></span>
+        <span className="min-w-0"><strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>준비물까지 연결</strong><span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>상세에서 교구 스토어로 이동</span></span>
+      </Link>
     </section>
   );
 }
@@ -144,7 +150,8 @@ export default function LibraryView() {
     });
   }, [filter, query]);
   const spomovePrograms = PROGRAMS.filter((program) => program.tags.includes('SPOMOVE') || program.lessonDetail?.relatedSpomoveIds.length).slice(0, 5);
-  const quickPrograms = PROGRAMS.filter((program) => program.duration <= 18).slice(0, 5);
+  const spomoveIds = new Set(spomovePrograms.map((p) => p.id));
+  const quickPrograms = PROGRAMS.filter((program) => program.duration <= 18 && !spomoveIds.has(program.id)).slice(0, 5);
   const favoritePrograms = PROGRAMS.filter((program) => favorites.includes(program.id));
   const resetFilters = () => {
     setFilter('전체');
@@ -157,7 +164,7 @@ export default function LibraryView() {
         <div className="flex items-end justify-between gap-4"><div><p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>program library</p><h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>라이브러리</h1></div><span className="pb-1 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>{PROGRAMS.length}개</span></div>
         <button type="button" onClick={() => setSearchOpen(true)} className="mt-5 flex h-11 w-full items-center gap-3 rounded-[12px] px-3 text-left" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><Search size={17} color="var(--spm-t3)" /><span className="text-[13px] font-semibold" style={{ color: query ? 'var(--spm-t)' : 'var(--spm-t3)' }}>{query || '수업명, 태그, 교구 검색'}</span></button>
       </header>
-      <FeaturedRail />
+      <FeaturedRail isPro={isPro} />
       <SelectionGuide />
       <section className="mb-7 flex gap-2 overflow-x-auto px-[22px] sm:px-8 lg:px-10">{FILTERS.map((item) => <Chip key={item} label={item} active={filter === item} onClick={() => setFilter(item)} />)}</section>
       {favoritePrograms.length > 0 ? <ProgramRail title="즐겨찾기" caption="자주 쓰는 수업" programs={favoritePrograms} isPro={isPro} usedProgramIds={usedProgramIds} favorites={favorites} onFavorite={toggleFavorite} /> : null}

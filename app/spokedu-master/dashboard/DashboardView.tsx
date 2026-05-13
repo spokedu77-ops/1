@@ -179,7 +179,7 @@ export default function DashboardView() {
       <SectionHeader title="오늘 추천 수업" href="/spokedu-master/library" />
       <TodayRecommendation />
 
-      <SectionHeader title="최근 사용과 즐겨찾기" href="/spokedu-master/library" />
+      <SectionHeader title={favorites.length > 0 || usedProgramIds.size > 0 ? '최근 사용과 즐겨찾기' : '프로그램 둘러보기'} href="/spokedu-master/library" />
       <section className="mb-7 grid gap-3 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10">
         {featuredPrograms.map((program) => <ProgramCard key={program.id} program={program} used={usedProgramIds.has(program.id)} />)}
       </section>
