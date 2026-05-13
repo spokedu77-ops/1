@@ -16,17 +16,15 @@ function OperationsBanner() {
 
   const label = !operational.online
     ? '오프라인 상태입니다. 라이브러리와 SPOMOVE 화면은 계속 확인할 수 있습니다.'
-    : expired
-      ? '무료 체험이 종료되었습니다. 내 정보에서 이어서 사용할 플랜을 확인하세요.'
-      : '';
+    : '체험 기간이 끝났습니다. 내 정보에서 플랜을 선택해 계속 사용할 수 있습니다.';
 
   return (
     <div
       className="mx-[22px] mt-3 rounded-[12px] px-3 py-2 text-[12px] font-bold sm:mx-8 lg:mx-10"
       style={{
-        background: expired ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
-        color: expired ? 'var(--spm-red)' : 'var(--spm-amb)',
-        border: expired ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(245,158,11,0.25)',
+        background: 'rgba(245,158,11,0.12)',
+        color: 'var(--spm-amb)',
+        border: '1px solid rgba(245,158,11,0.25)',
       }}
       role="status"
     >

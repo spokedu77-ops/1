@@ -33,8 +33,10 @@ function ThumbGrid({ colors, size = 58 }: { colors: [string, string, string, str
 function PlanChip() {
   const profile = useProfile();
   const daysLeft = getTrialDaysLeft(profile);
-  const label = profile?.plan === 'team' ? 'Center' : profile?.plan === 'pro' ? 'Pro' : `Trial ${daysLeft}일`;
-  return <Link href="/spokedu-master/profile" className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</Link>;
+  const plan = profile?.plan ?? 'free';
+  const label = plan === 'team' ? 'Center' : plan === 'pro' ? 'Pro' : daysLeft > 0 ? `Trial ${daysLeft}일` : '체험 만료';
+  const expired = plan === 'free' && daysLeft === 0;
+  return <Link href="/spokedu-master/profile" className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: expired ? 'rgba(245,158,11,0.13)' : 'var(--spm-s2)', color: expired ? 'var(--spm-amb)' : 'var(--spm-t2)', border: expired ? '1px solid rgba(245,158,11,0.35)' : '1px solid var(--spm-br2)' }}>{label}</Link>;
 }
 
 function ProgramCard({ program, used }: { program: Program; used: boolean }) {

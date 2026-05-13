@@ -5,7 +5,7 @@ import { Building2, CheckCircle2, ClipboardList, CreditCard, HelpCircle, Mail, M
 import { useState } from 'react';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { getTrialDaysLeft } from '../lib/subscription';
+import { getTrialDaysLeft, isTrialExpired } from '../lib/subscription';
 import { useMasterStore, useProfile } from '../store';
 import type { PlanType } from '../types';
 
@@ -159,7 +159,8 @@ export default function SpokeduMasterProfilePage() {
   const [school, setSchool] = useState(profile?.school ?? '');
   const currentPlan = profile?.plan ?? 'free';
   const daysLeft = getTrialDaysLeft(profile);
-  const planName = currentPlan === 'team' ? 'Center' : currentPlan === 'pro' ? 'Pro' : 'Trial';
+  const expired = isTrialExpired(profile);
+  const planName = currentPlan === 'team' ? 'Center' : currentPlan === 'pro' ? 'Pro' : expired ? '체험 만료' : 'Trial';
   const valueCards = [
     ['라이브러리', '오늘 쓸 수업안을 빠르게 찾기'],
     ['SPOMOVE', '웹에서 큰 화면 활동 바로 실행'],
@@ -185,7 +186,7 @@ export default function SpokeduMasterProfilePage() {
         <div className="space-y-7">
           <section className="overflow-hidden rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(16,185,129,0.12), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>current plan</p>
-            <div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{planName}</h2><span className="text-[13px] font-black" style={{ color: 'var(--spm-t2)' }}>{currentPlan === 'free' ? `${daysLeft}일 남음` : '활성화됨'}</span></div>
+            <div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: expired ? 'var(--spm-amb)' : 'var(--spm-t)', letterSpacing: 0 }}>{planName}</h2><span className="text-[13px] font-black" style={{ color: expired ? 'var(--spm-amb)' : 'var(--spm-t2)' }}>{currentPlan === 'free' ? (expired ? '내 정보에서 플랜을 확인하세요' : `${daysLeft}일 남음`) : '활성화됨'}</span></div>
             <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>첫 상용 버전은 라이브러리, SPOMOVE, 수업 설명 도구를 중심으로 제공합니다. 기록과 리포트 자동화는 안정화 후 확장합니다.</p>
             <button type="button" onClick={() => setPlanOpen(true)} className="mt-5 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>플랜과 도입 방식 보기</button>
           </section>
