@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { DRILLS, PROGRAMS, getTodayProgram } from '../lib/data';
-import { getTrialDaysLeft } from '../lib/subscription';
+import { getTrialDaysLeft, isTrialExpired } from '../lib/subscription';
 import { useMasterStore, useProfile, useStats, useUnreadCount } from '../store';
 import type { Notification, Program } from '../types';
 
@@ -176,6 +176,31 @@ export default function DashboardView() {
         </div>
       </header>
 
+      {(() => {
+        const plan = profile?.plan ?? 'free';
+        if (plan !== 'free') return null;
+        const daysLeft = getTrialDaysLeft(profile);
+        const expired = isTrialExpired(profile);
+        if (!expired && daysLeft > 3) return null;
+        return (
+          <section className="mx-[22px] mb-5 overflow-hidden rounded-[16px] sm:mx-8 lg:mx-10" style={{ background: expired ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)', border: expired ? '1px solid rgba(239,68,68,0.28)' : '1px solid rgba(245,158,11,0.28)' }}>
+            <div className="flex items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <p className="text-[13px] font-black" style={{ color: expired ? 'var(--spm-red)' : 'var(--spm-amb)' }}>
+                  {expired ? '체험 기간이 종료되었습니다.' : `체험 ${daysLeft}일 남았습니다.`}
+                </p>
+                <p className="mt-1 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t2)' }}>
+                  {expired ? '라이브러리와 SPOMOVE는 계속 열람할 수 있습니다.' : 'Pro로 업그레이드하면 전체 수업안과 무제한 SPOMOVE를 계속 사용할 수 있습니다.'}
+                </p>
+              </div>
+              <Link href="/spokedu-master/profile" className="shrink-0 rounded-[10px] px-3 py-2.5 text-[12px] font-black text-white" style={{ background: expired ? 'var(--spm-red)' : 'var(--spm-amb)' }}>
+                플랜 보기
+              </Link>
+            </div>
+            {!expired ? <div className="h-1 w-full" style={{ background: 'rgba(245,158,11,0.18)' }}><div className="h-full" style={{ width: `${Math.max(4, (daysLeft / 14) * 100)}%`, background: 'var(--spm-amb)', transition: 'width 0.3s' }} /></div> : null}
+          </section>
+        );
+      })()}
       <ClassLoop />
       {stats.totalSessions > 0 || classRecords.length > 0 ? (
         <section className="mb-7 grid grid-cols-3 gap-2 px-[22px] sm:px-8 lg:px-10">

@@ -15,12 +15,19 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
   return <button type="button" onClick={onClick} className="h-8 shrink-0 rounded-full px-3 text-[12px] font-bold" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s2)', color: active ? '#fff' : 'var(--spm-t2)', border: active ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>{label}</button>;
 }
 
+function getCurrentWeekLabel() {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const weekOfMonth = Math.ceil(now.getDate() / 7);
+  return `${month}월 ${weekOfMonth}주차`;
+}
+
 function ProgressCard({ done, total }: { done: number; total: number }) {
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
   return (
     <section className="mx-[22px] mb-7 rounded-[16px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <div className="flex items-center justify-between">
-        <div><p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>semester progress</p><h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>5월 2주차</h2></div>
+        <div><p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>semester progress</p><h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{getCurrentWeekLabel()}</h2></div>
         <span className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-grn)' }}>{percent}%</span>
       </div>
       <div className="mt-5 h-2 overflow-hidden rounded-full" style={{ background: 'var(--spm-s4)' }}><div className="h-full rounded-full" style={{ width: `${percent}%`, background: 'linear-gradient(90deg,#6366f1,#10b981)' }} /></div>

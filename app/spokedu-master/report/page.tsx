@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Check, Clipboard, ClipboardList, FileText, GraduationCap, Megaphone, MessageCircle, MonitorPlay, UsersRound, type LucideIcon } from 'lucide-react';
+import { BookOpen, Check, Clipboard, ClipboardList, FileText, GraduationCap, Megaphone, MessageCircle, MonitorPlay, Search, UsersRound, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PROGRAMS } from '../lib/data';
 
@@ -142,6 +142,7 @@ const STORAGE_KEY = 'spm-report-last';
 export default function ReportPage() {
   const [audience, setAudience] = useState<Audience>('parent');
   const [programId, setProgramId] = useState(PROGRAMS[0]?.id ?? '');
+  const [programSearch, setProgramSearch] = useState('');
   const [copiedKey, setCopiedKey] = useState('');
   const program = PROGRAMS.find((item) => item.id === programId) ?? PROGRAMS[0]!;
   const copyBlocks = useMemo(() => buildCopyBlocks(audience, program), [audience, program]);
@@ -196,13 +197,19 @@ export default function ReportPage() {
       <main className="grid gap-6 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
         <aside className="space-y-4">
           <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-3 flex items-center gap-2">
               <BookOpen size={17} color="var(--spm-acc)" />
               <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>활동 선택</h2>
             </div>
+            {PROGRAMS.length > 5 ? (
+              <label className="relative mb-3 block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2" color="var(--spm-t3)" />
+                <input value={programSearch} onChange={(e) => setProgramSearch(e.target.value)} placeholder="활동 검색" className="h-9 w-full rounded-[10px] border bg-transparent pl-9 pr-3 text-[12px] font-semibold outline-none" style={{ borderColor: 'var(--spm-br2)', color: 'var(--spm-t)', background: 'var(--spm-s3)' }} />
+              </label>
+            ) : null}
             <div className="space-y-2">
-              {PROGRAMS.map((item) => (
-                <button key={item.id} type="button" onClick={() => setProgramId(item.id)} className="w-full rounded-[13px] p-3 text-left" style={{ background: programId === item.id ? 'rgba(99,102,241,0.16)' : 'var(--spm-s3)', border: programId === item.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid transparent' }}>
+              {PROGRAMS.filter((item) => !programSearch.trim() || item.title.toLowerCase().includes(programSearch.trim().toLowerCase()) || item.category.includes(programSearch.trim())).map((item) => (
+                <button key={item.id} type="button" onClick={() => { setProgramId(item.id); setProgramSearch(''); }} className="w-full rounded-[13px] p-3 text-left" style={{ background: programId === item.id ? 'rgba(99,102,241,0.16)' : 'var(--spm-s3)', border: programId === item.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid transparent' }}>
                   <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
                   <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{item.grade} · {item.duration}분 · {item.space}</span>
                 </button>

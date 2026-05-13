@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { AlertTriangle, BarChart3, CreditCard, FileText, MessageCircle, UsersRound, type LucideIcon } from 'lucide-react';
 import { OperationsPanel } from '../components/operations/OperationsPanel';
 import { useMasterStore, useProfile } from '../store';
+import { isTrialExpired } from '../lib/subscription';
 
 function Kpi({ label, value, desc, icon: Icon, tone }: { label: string; value: string; desc: string; icon: LucideIcon; tone: string }) {
   return (
@@ -27,6 +28,22 @@ export default function DirectorPage() {
   const recordRate = records.length > 0 ? 82 : 68;
   const attendance = Math.round(students.reduce((sum, student) => sum + student.attendance, 0) / Math.max(students.length, 1));
   const centerName = profile?.centerName ?? profile?.school ?? '센터';
+
+  if (profile?.role !== 'director' && !isTrialExpired(profile)) {
+    return (
+      <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
+        <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>director dashboard</p>
+          <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 대시보드</h1>
+        </header>
+        <section className="mx-[22px] rounded-[18px] p-6 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <h2 className="text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>Center 플랜 전용 화면입니다</h2>
+          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>센터 코드로 합류하거나 Center 플랜을 선택하면 강사 기록률, 학생 케어 신호, 센터 운영 현황을 이 화면에서 확인할 수 있습니다.</p>
+          <Link href="/spokedu-master/profile" className="mt-5 inline-flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>플랜과 도입 방식 보기</Link>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>

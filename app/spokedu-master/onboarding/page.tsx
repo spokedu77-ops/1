@@ -153,6 +153,17 @@ export default function OnboardingPage() {
               <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(16,185,129,0.14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
               <h2 className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>준비되었습니다</h2>
               <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 라이브러리에서 수업안을 고르고, SPOMOVE를 실행하고, 수업 설명 문구를 바로 만들 수 있습니다.</p>
+              {centerMode === 'personal' ? (
+                <div className="rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  <p className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>14일 무료 체험이 시작됩니다</p>
+                  <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>전체 수업안과 SPOMOVE를 제한 없이 사용할 수 있습니다. 체험 후 Pro 또는 Center 플랜으로 이어갈 수 있습니다.</p>
+                </div>
+              ) : (
+                <div className="rounded-[12px] p-3" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                  <p className="text-[12px] font-black" style={{ color: '#a5b4fc' }}>Center 플랜으로 시작합니다</p>
+                  <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>센터 코드가 확인되어 팀 플랜이 바로 적용됩니다.</p>
+                </div>
+              )}
               <div className="grid gap-2 sm:grid-cols-3">{['라이브러리', 'SPOMOVE', '설명 도구'].map((item) => <div key={item} className="rounded-[12px] p-3 text-center text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>{item}</div>)}</div>
             </div>
           ) : null}

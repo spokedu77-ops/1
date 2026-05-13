@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Bookmark, CheckCircle2, Clipboard, Lightbulb, Lock, MessageCircle, Play, ShieldAlert, ShoppingBag, Shuffle, Zap, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Bookmark, CalendarPlus, CheckCircle2, Clipboard, Lightbulb, Lock, MessageCircle, Play, ShieldAlert, ShoppingBag, Shuffle, Zap, type LucideIcon } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { PROGRAMS } from '../../lib/data';
 import { useIsPro, useMasterStore } from '../../store';
@@ -33,9 +33,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const favorites = useMasterStore((state) => state.favorites);
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
   const addToCart = useMasterStore((state) => state.addToCart);
+  const addLesson = useMasterStore((state) => state.addLesson);
   const cart = useMasterStore((state) => state.cart);
   const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [planAdded, setPlanAdded] = useState(false);
 
   if (!program) {
     return (
@@ -56,6 +58,12 @@ export default function LibraryDetailView({ id }: { id: string }) {
     if (price <= 0) return;
     addToCart({ id: item, name: item, price, qty: 1 });
     setCartNotice(`${item} 장바구니에 추가`);
+  };
+
+  const addToPlan = () => {
+    addLesson({ id: Date.now(), title: program.title, classId: '내 수업', date: new Date().toISOString(), period: 1, duration: program.duration, done: false, color: program.colors[1], memo: program.category });
+    setPlanAdded(true);
+    window.setTimeout(() => setPlanAdded(false), 1800);
   };
 
   const copyParentNote = async () => {
@@ -87,7 +95,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
             <h1 className="mt-2 text-[30px] font-black leading-[1.12] md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{program.title}</h1>
             <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{program.grade} / {program.duration}분 / {program.space}</p>
             <p className="mt-5 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>{program.description}</p>
-            {locked ? <Link href="/spokedu-master/profile" className="mt-7 block rounded-[14px] p-4 text-center" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}><strong className="block text-[14px]" style={{ color: 'var(--spm-amb)' }}>PRO로 업그레이드하고 전체 수업안 열기</strong></Link> : <div className="mt-7 grid grid-cols-1 gap-2 sm:grid-cols-3"><Link href={`/spokedu-master/spomove/session?drill=${detail?.relatedSpomoveIds[0] ?? 'speed-track'}&mode=projector&program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={16} fill="#fff" />큰 화면 실행</Link><Link href="/spokedu-master/report" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><MessageCircle size={16} />설명 문구</Link><button type="button" onClick={copyParentNote} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)' }}>{copied ? <CheckCircle2 size={16} /> : <Clipboard size={16} />}{copied ? '복사 완료' : '문구 복사'}</button></div>}
+            {locked ? <Link href="/spokedu-master/profile" className="mt-7 block rounded-[14px] p-4 text-center" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}><strong className="block text-[14px]" style={{ color: 'var(--spm-amb)' }}>PRO로 업그레이드하고 전체 수업안 열기</strong></Link> : <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4"><Link href={`/spokedu-master/spomove/session?drill=${detail?.relatedSpomoveIds[0] ?? 'speed-track'}&mode=projector&program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={15} fill="#fff" />큰 화면 실행</Link><Link href="/spokedu-master/report" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><MessageCircle size={15} />설명 문구</Link><button type="button" onClick={copyParentNote} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)' }}>{copied ? <CheckCircle2 size={15} /> : <Clipboard size={15} />}{copied ? '복사 완료' : '문구 복사'}</button><button type="button" onClick={addToPlan} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-bold" style={{ background: planAdded ? 'rgba(16,185,129,0.14)' : 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: planAdded ? 'var(--spm-grn)' : 'var(--spm-t)' }}>{planAdded ? <CheckCircle2 size={15} /> : <CalendarPlus size={15} />}{planAdded ? '추가 완료' : '계획 추가'}</button></div>}
           </div>
         </section>
 
