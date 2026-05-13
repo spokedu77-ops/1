@@ -9,8 +9,8 @@ function formatSyncTime(value: string | null) {
 }
 
 function getRetryTypeLabel(type: string) {
-  if (type === 'kakao-summary') return '카카오 요약';
-  if (type === 'pdf-report') return 'PDF 리포트';
+  if (type === 'kakao-summary') return '보호자 안내 공유';
+  if (type === 'pdf-report') return '자료 생성';
   if (type === 'class-record-sync') return '수업 기록 동기화';
   return type;
 }

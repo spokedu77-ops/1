@@ -12,13 +12,13 @@ function OperationsBanner() {
   const profile = useProfile();
   const operational = useOperationalStatus();
   const expired = isTrialExpired(profile);
-  if (operational.online && operational.retryQueue.length === 0 && !expired) return null;
+  if (operational.online && !expired) return null;
 
   const label = !operational.online
-    ? '오프라인 모드: 수업 기록은 기기에 저장되고 연결되면 다시 처리합니다.'
+    ? '오프라인 상태입니다. 라이브러리와 SPOMOVE 화면은 계속 확인할 수 있습니다.'
     : expired
-      ? '무료 체험이 만료되어 새 수업 기록 생성이 제한됩니다.'
-      : `재시도 대기 ${operational.retryQueue.length}건: 카카오 또는 PDF 실패 항목을 다시 처리해야 합니다.`;
+      ? '무료 체험이 종료되었습니다. 내 정보에서 이어서 사용할 플랜을 확인하세요.'
+      : '';
 
   return (
     <div

@@ -92,7 +92,7 @@ function ParentStudentViewContent() {
             <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>오늘의 요약</h2>
           </div>
           <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            {latestRecord ? `${latestRecord.programTitle} 수업에서 ${student.name}의 참여 기록이 저장되었습니다. 오늘 기록은 다음 성장 리포트에 자동 반영됩니다.` : `${student.name}의 최근 성장 기록을 확인할 수 있습니다. 수업 기록이 쌓일수록 더 구체적인 변화가 표시됩니다.`}
+            {latestRecord ? `${latestRecord.programTitle} 수업에서 ${student.name}의 참여 기록이 저장되었습니다. 오늘 기록은 다음 안내 자료와 성장 기록을 더 구체적으로 만드는 데 활용됩니다.` : `${student.name}의 최근 성장 기록을 확인할 수 있습니다. 수업 기록이 쌓일수록 더 구체적인 변화가 표시됩니다.`}
           </p>
           {latestStudentRecord ? (
             <div className="mt-4 grid gap-2 sm:grid-cols-3">

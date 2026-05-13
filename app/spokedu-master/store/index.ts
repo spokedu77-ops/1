@@ -82,18 +82,18 @@ const defaultLessons: Lesson[] = [
   {
     id: 1,
     title: '8자 드릴: 민첩성 트레이닝',
-    classId: '3학년 A반',
+    classId: '오늘 수업',
     date: new Date().toISOString(),
     period: 3,
     duration: 15,
     done: false,
     color: '#6366f1',
-    memo: 'SPOMOVE 방향 전환 측정 연결',
+    memo: 'SPOMOVE 방향 전환과 연결하기 좋은 추천 수업',
   },
   {
     id: 2,
     title: '밸런스 로드',
-    classId: '3학년 B반',
+    classId: '다음 수업',
     date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     period: 4,
     duration: 18,
@@ -106,25 +106,25 @@ const defaultStudents: StudentProfile[] = [
   {
     id: 'minjun',
     name: '김민준',
-    group: '3학년 A반',
+    group: '초등 A반',
     meta: '8세 / 3개월차',
     level: 'Lv.4 Balance',
     attendance: 92,
     classes: 18,
     streak: 4,
-    risk: '차분한 대기 자세 3주 정체',
+    risk: '다음 수업에서 균형 자세 확인 필요',
     skills: [
       { label: '균형 유지', value: 74, delta: '+12%' },
       { label: '방향 전환', value: 61, delta: '+6%' },
-      { label: '차분한 대기', value: 42, delta: '정체' },
+      { label: '멈춤 반응', value: 42, delta: '유지' },
     ],
     badges: ['균형 마스터', '출석 루틴'],
-    history: ['5.11 8자 드릴 출석', '5.04 차분한 대기 자세 관찰', '4.27 균형 마스터 배지'],
+    history: ['5.11 8자 드릴 출석', '5.04 멈춤 반응 관찰', '4.27 균형 마스터 배지'],
   },
   {
     id: 'seoyeon',
     name: '이서연',
-    group: '3학년 A반',
+    group: '초등 A반',
     meta: '9세 / 5개월차',
     level: 'Lv.5 Focus',
     attendance: 98,
@@ -142,13 +142,13 @@ const defaultStudents: StudentProfile[] = [
   {
     id: 'jiho',
     name: '박지호',
-    group: '3학년 A반',
+    group: '초등 A반',
     meta: '8세 / 2개월차',
     level: 'Lv.3 Agility',
     attendance: 86,
     classes: 13,
     streak: 1,
-    risk: '최근 2회 결석',
+    risk: '최근 결석 기록 확인 필요',
     skills: [
       { label: '방향 전환', value: 69, delta: '+8%' },
       { label: '출발 반응', value: 58, delta: '+4%' },
@@ -157,150 +157,28 @@ const defaultStudents: StudentProfile[] = [
     badges: ['첫 리포트'],
     history: ['5.11 결석', '5.04 결석', '4.27 방향 전환 개선'],
   },
-  {
-    id: 'harin',
-    name: '최하린',
-    group: '3학년 A반',
-    meta: '10세 / 7개월차',
-    level: 'Lv.5 Rhythm',
-    attendance: 94,
-    classes: 21,
-    streak: 5,
-    risk: null,
-    skills: [
-      { label: '협응 리듬', value: 82, delta: '+11%' },
-      { label: '균형 유지', value: 72, delta: '+7%' },
-      { label: '신호 반응', value: 66, delta: '+5%' },
-    ],
-    badges: ['협응 루틴'],
-    history: ['5.11 협응 과제 완료', '5.04 균형 유지 개선', '4.27 수업 참여 우수'],
-  },
-  {
-    id: 'doyun',
-    name: '정도윤',
-    group: '3학년 A반',
-    meta: '9세 / 4개월차',
-    level: 'Lv.4 Agility',
-    attendance: 95,
-    classes: 19,
-    streak: 6,
-    risk: null,
-    skills: [
-      { label: '방향 전환', value: 73, delta: '+9%' },
-      { label: '차분한 대기', value: 64, delta: '+4%' },
-      { label: '신호 반응', value: 70, delta: '+8%' },
-    ],
-    badges: ['민첩성 스타'],
-    history: ['5.11 방향 전환 개선', '5.04 차분한 대기 체크', '4.27 민첩성 스타 배지'],
-  },
-  {
-    id: 'yuna',
-    name: '한유나',
-    group: '3학년 A반',
-    meta: '8세 / 1개월차',
-    level: 'Lv.2 Starter',
-    attendance: 90,
-    classes: 7,
-    streak: 2,
-    risk: null,
-    skills: [
-      { label: '균형 유지', value: 55, delta: '+6%' },
-      { label: '신호 반응', value: 51, delta: '+5%' },
-      { label: '방향 전환', value: 48, delta: '+3%' },
-    ],
-    badges: ['첫 수업'],
-    history: ['5.11 신호 반응 체크', '5.04 첫 수업 배지'],
-  },
 ];
-
-function applyStudentRecord(student: StudentProfile, record: ClassStudentRecord, classRecord: ClassRecord): StudentProfile {
-  const attended = record.attendance === 'present';
-  const missed = record.attendance === 'absent';
-  const nextClasses = attended ? student.classes + 1 : student.classes;
-  const nextAttendance = missed ? Math.max(0, student.attendance - 2) : attended ? Math.min(100, student.attendance + 1) : student.attendance;
-  const today = new Date(classRecord.date).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
-  const skillSet = new Set(record.skills);
-  const nextSkills = student.skills.map((skill) => (skillSet.has(skill.label) ? { ...skill, value: Math.min(100, skill.value + 3), delta: '+3%' } : skill));
-  const addedSkills = record.skills.filter((skill) => !student.skills.some((item) => item.label === skill)).map<StudentProfile['skills'][number]>((label) => ({ label, value: 44, delta: '+3%' }));
-  const memoSuffix = record.memo ? ` / ${record.memo}` : '';
-  const historyLine =
-    record.attendance === 'absent'
-      ? `${today} ${classRecord.programTitle} 결석${memoSuffix}`
-      : `${today} ${classRecord.programTitle} ${record.skills.length}개 기록${record.focused ? ' / 집중 관찰' : ''}${memoSuffix}`;
-  const badgeEarned = nextClasses >= 20 && !student.badges.includes('수업 기록 누적');
-
-  return {
-    ...student,
-    classes: nextClasses,
-    attendance: nextAttendance,
-    streak: attended ? student.streak + 1 : missed ? 0 : student.streak,
-    risk: missed ? '최근 결석 기록 확인 필요' : record.focused ? '다음 수업 집중 관찰 필요' : student.risk,
-    skills: [...nextSkills, ...addedSkills],
-    badges: badgeEarned ? ['수업 기록 누적', ...student.badges] : student.badges,
-    history: [historyLine, ...student.history].slice(0, 8),
-  };
-}
 
 const defaultNotifications: Notification[] = [
   {
     id: 'n1',
     type: 'program',
-    title: '"밸런스 로드" 신규 프로그램 추가',
-    body: '이번 주 추천 프로그램이 라이브러리에 업데이트되었습니다.',
+    title: '이번 주 추천 프로그램이 준비됐습니다.',
+    body: '라이브러리에서 수업 전 바로 쓸 수 있는 추천 수업안을 확인하세요.',
     read: false,
     createdAt: new Date().toISOString(),
   },
   {
     id: 'n2',
-    type: 'report',
-    title: '3학년 A반 리포트 준비',
-    body: '5월 2주차 자동 리포트 초안이 준비되었습니다.',
+    type: 'billing',
+    title: '체험 기간이 활성화되어 있습니다.',
+    body: '첫 상용 버전에서는 라이브러리, SPOMOVE, 수업 설명 도구를 중심으로 사용할 수 있습니다.',
     read: false,
     createdAt: new Date(Date.now() - 3600000).toISOString(),
   },
 ];
 
-const brokenTextPattern = new RegExp(
-  [
-    '\\u8adb',
-    '\\u6e72',
-    '\\u63f4',
-    '\\u81fe',
-    '\\uf98d',
-    '\\uf9de',
-    '\\u6028',
-    '\\uc9cc',
-    '\\u317d',
-    '\\u317c',
-    '\\uc496',
-    '\\ubee4',
-    '\\ub2ff',
-    '\\u91ab',
-    '\\u8a98',
-    '\\uc1f1',
-    '\\uc12f',
-    '\\uc22b',
-    '\\ub301',
-    '\\u2464',
-    '\\ubd3d',
-    '\\ub4f6',
-    '\\uaf08',
-    '\\uaee3',
-    '\\ub8f7',
-    '\\ub384',
-    '\\ube63',
-    '\\uc73c',
-    '\\u03bb',
-    '\\u3049',
-    '\\ufffd',
-    '\\u00ec',
-    '\\u00eb',
-    '\\u00ed',
-    '\\u00e3',
-    '\\u00c2',
-    '\\u00c3',
-  ].join('|')
-);
+const brokenTextPattern = /[\u4E00-\u9FFF\uF900-\uFAFF\uFFFD]/;
 
 function hasBrokenText(value: unknown): boolean {
   if (typeof value === 'string') return brokenTextPattern.test(value);
@@ -320,6 +198,32 @@ function migrateMasterStore(persisted: unknown): Partial<MasterState> {
     students: hasBrokenText(state.students) ? defaultStudents : state.students ?? defaultStudents,
     classRecords: hasBrokenText(state.classRecords) ? [] : state.classRecords ?? [],
     notifications: hasBrokenText(state.notifications) ? defaultNotifications : state.notifications ?? defaultNotifications,
+    cart: hasBrokenText(state.cart) ? [] : state.cart ?? [],
+  };
+}
+
+function applyStudentRecord(student: StudentProfile, record: ClassStudentRecord, classRecord: ClassRecord): StudentProfile {
+  const attended = record.attendance === 'present';
+  const missed = record.attendance === 'absent';
+  const nextClasses = attended ? student.classes + 1 : student.classes;
+  const nextAttendance = missed ? Math.max(0, student.attendance - 2) : attended ? Math.min(100, student.attendance + 1) : student.attendance;
+  const today = new Date(classRecord.date).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  const skillSet = new Set(record.skills);
+  const nextSkills = student.skills.map((skill) => (skillSet.has(skill.label) ? { ...skill, value: Math.min(100, skill.value + 3), delta: '+3%' } : skill));
+  const addedSkills = record.skills.filter((skill) => !student.skills.some((item) => item.label === skill)).map<StudentProfile['skills'][number]>((label) => ({ label, value: 44, delta: '+3%' }));
+  const memoSuffix = record.memo ? ` / ${record.memo}` : '';
+  const historyLine = missed ? `${today} ${classRecord.programTitle} 결석${memoSuffix}` : `${today} ${classRecord.programTitle} ${record.skills.length}개 기록${record.focused ? ' / 집중 관찰' : ''}${memoSuffix}`;
+  const badgeEarned = nextClasses >= 20 && !student.badges.includes('수업 기록 누적');
+
+  return {
+    ...student,
+    classes: nextClasses,
+    attendance: nextAttendance,
+    streak: attended ? student.streak + 1 : missed ? 0 : student.streak,
+    risk: missed ? '최근 결석 기록 확인 필요' : record.focused ? '다음 수업 집중 관찰 필요' : student.risk,
+    skills: [...nextSkills, ...addedSkills],
+    badges: badgeEarned ? ['수업 기록 누적', ...student.badges] : student.badges,
+    history: [historyLine, ...student.history].slice(0, 8),
   };
 }
 
@@ -395,7 +299,7 @@ export const useMasterStore = create<MasterState>()(
       addToCart: (item) =>
         set((state) => {
           const existing = state.cart.find((cartItem) => cartItem.id === item.id);
-          return { cart: existing ? state.cart.map((cartItem) => (cartItem.id === item.id ? { ...cartItem, qty: cartItem.qty + 1 } : cartItem)) : [...state.cart, item] };
+          return { cart: existing ? state.cart.map((cartItem) => (cartItem.id === item.id ? { ...cartItem, qty: cartItem.qty + item.qty } : cartItem)) : [...state.cart, item] };
         }),
       updateQty: (id, delta) => set((state) => ({ cart: state.cart.map((cartItem) => (cartItem.id === id ? { ...cartItem, qty: cartItem.qty + delta } : cartItem)).filter((cartItem) => cartItem.qty > 0) })),
       clearCart: () => set({ cart: [] }),
@@ -405,7 +309,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 7,
+      version: 8,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,

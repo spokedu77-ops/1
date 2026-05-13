@@ -73,7 +73,7 @@ export function PwaInstallCard({ compact = false }: { compact?: boolean }) {
           <h2 className="mt-1 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>홈 화면에 추가</h2>
           {!compact ? (
             <p className="mt-2 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>
-              수업 중 주소창 없이 프로그램 라이브러리와 SPOMOVE 실행 화면을 바로 열 수 있습니다.
+              수업 중 주소창 없이 라이브러리와 SPOMOVE 실행 화면을 빠르게 열 수 있습니다.
             </p>
           ) : null}
         </div>

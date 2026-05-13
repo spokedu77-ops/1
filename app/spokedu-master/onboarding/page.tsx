@@ -8,7 +8,7 @@ import { useMasterStore, useProfile } from '../store';
 import type { UserRole } from '../types';
 
 const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등'];
-const PROGRAM_TYPES = ['대체육', 'SPOMOVE', '협응성', '민첩성', '체력'];
+const PROGRAM_TYPES = ['놀이체육', 'SPOMOVE', '협응성', '민첩성', '체력'];
 
 function StepDot({ active, done }: { active: boolean; done: boolean }) {
   return <span className="h-2.5 w-2.5 rounded-full" style={{ background: active ? 'var(--spm-acc)' : done ? 'var(--spm-grn)' : 'var(--spm-s4)' }} />;
@@ -101,9 +101,9 @@ export default function OnboardingPage() {
     <div className="h-full overflow-y-auto pb-8" style={{ background: 'var(--spm-bg)' }}>
       <main className="mx-auto flex min-h-full w-full max-w-[880px] flex-col justify-center px-[22px] py-8 sm:px-8">
         <div className="mb-8">
-          <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
-          <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 준비 30초, 기록 3분으로 시작합니다</h1>
-          <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>강사와 원장의 사용 범위를 먼저 정하고, 개인 체험 또는 센터 플랜으로 MASTER를 시작합니다.</p>
+          <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU PRO</p>
+          <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 준비는 쉽게, 수업은 더 몰입감 있게</h1>
+          <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>프로그램 라이브러리에서 수업을 고르고, SPOMOVE를 큰 화면으로 실행하고, 수업의 의미를 설명 문구로 남깁니다.</p>
         </div>
 
         <div className="mb-6 flex gap-2">{[0, 1, 2, 3].map((item) => <StepDot key={item} active={step === item} done={step > item} />)}</div>
@@ -111,18 +111,18 @@ export default function OnboardingPage() {
         <section className="rounded-[20px] p-5" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
           {step === 0 ? (
             <div className="space-y-3">
-              <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>역할 선택</h2>
-              <ChoiceCard title="강사로 시작" desc="라이브러리, 수업 기록, 학생 이력, 보호자 공유를 사용합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
-              <ChoiceCard title="원장으로 시작" desc="센터 플랜, 강사 기록률, 이탈 위험 학생, 구독 현황을 관리합니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
+              <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>사용 환경</h2>
+              <ChoiceCard title="개인 강사·교사" desc="라이브러리, SPOMOVE, 수업 설명 도구를 먼저 사용합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
+              <ChoiceCard title="센터·도장 운영" desc="여러 강사가 같은 수업 품질과 교구 흐름을 공유할 준비를 합니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
             </div>
           ) : null}
 
           {step === 1 ? (
             <div className="space-y-4">
-              <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 연결</h2>
+              <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>도입 방식</h2>
               <div className="grid gap-2 sm:grid-cols-2">
                 <ChoiceCard title="개인으로 시작" desc="14일 무료 체험으로 먼저 확인합니다." active={centerMode === 'personal'} icon={UserRound} onClick={() => { setCenterMode('personal'); setCenterResult(null); }} />
-                <ChoiceCard title="센터 코드 입력" desc="원장이 발급한 코드로 센터 플랜에 합류합니다." active={centerMode === 'center'} icon={School} onClick={() => setCenterMode('center')} />
+                <ChoiceCard title="센터 코드 입력" desc="센터에서 발급한 코드로 팀 플랜에 합류합니다." active={centerMode === 'center'} icon={School} onClick={() => setCenterMode('center')} />
               </div>
               {centerMode === 'center' ? (
                 <label className="block">
@@ -152,15 +152,15 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(16,185,129,0.14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
               <h2 className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>준비되었습니다</h2>
-              <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 라이브러리에서 수업안을 고르고, SPOMOVE를 실행하고, 수업 기록을 학생 성장 이력으로 쌓을 수 있습니다.</p>
-              <div className="grid gap-2 sm:grid-cols-3">{['프로그램 추천', '수업 기록', '카카오 공유'].map((item) => <div key={item} className="rounded-[12px] p-3 text-center text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>{item}</div>)}</div>
+              <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 라이브러리에서 수업안을 고르고, SPOMOVE를 실행하고, 수업 설명 문구를 바로 만들 수 있습니다.</p>
+              <div className="grid gap-2 sm:grid-cols-3">{['라이브러리', 'SPOMOVE', '설명 도구'].map((item) => <div key={item} className="rounded-[12px] p-3 text-center text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>{item}</div>)}</div>
             </div>
           ) : null}
 
           <div className="mt-6 grid grid-cols-[auto_1fr] gap-2">
             <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} className="h-12 rounded-[12px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>이전</button>
             <button type="button" onClick={step === 3 ? finish : next} disabled={!canNext || validating} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
-              {step === 3 ? 'MASTER 시작' : '다음'}
+              {step === 3 ? 'SPOKEDU 시작' : '다음'}
               <ArrowRight size={16} />
             </button>
           </div>

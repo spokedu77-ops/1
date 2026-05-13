@@ -1,28 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, CalendarPlus, Heart, Lightbulb, Lock, MessageCircle, Play, ShieldAlert, ShoppingBag, Shuffle, Zap, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Bookmark, CheckCircle2, Clipboard, Lightbulb, Lock, MessageCircle, Play, ShieldAlert, ShoppingBag, Shuffle, Zap, type LucideIcon } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { BottomSheet } from '../../components/ui/BottomSheet';
 import { PROGRAMS } from '../../lib/data';
 import { useIsPro, useMasterStore } from '../../store';
 
 function getEquipmentPrice(item: string) {
-  if (item.includes('스마트폰') || item.includes('태블릿') || item.includes('프로젝터')) return item.includes('프로젝터') ? 159000 : 0;
+  if (item.includes('프로젝터')) return 159000;
   if (item.includes('마커콘')) return 8900;
   if (item.includes('카드')) return 12000;
   if (item.includes('허들')) return 24000;
   if (item.includes('바통')) return 6900;
-  return 9900;
+  return 0;
 }
 
 function ThumbGrid({ colors }: { colors: [string, string, string, string] }) {
   return <div className="grid h-[220px] grid-cols-2 grid-rows-2 gap-1 overflow-hidden rounded-[18px] md:h-full" aria-hidden>{colors.map((color) => <span key={color} style={{ background: color }} />)}</div>;
-}
-
-function FieldButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className="h-9 rounded-full px-3 text-[12px] font-bold" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s2)', color: active ? '#fff' : 'var(--spm-t2)', border: active ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>{label}</button>;
 }
 
 function DetailPanel({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: ReactNode }) {
@@ -34,20 +28,14 @@ function DetailList({ items }: { items: string[] }) {
 }
 
 export default function LibraryDetailView({ id }: { id: string }) {
-  const router = useRouter();
   const program = useMemo(() => PROGRAMS.find((item) => item.id === id), [id]);
   const isPro = useIsPro();
   const favorites = useMasterStore((state) => state.favorites);
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
-  const addLesson = useMasterStore((state) => state.addLesson);
   const addToCart = useMasterStore((state) => state.addToCart);
   const cart = useMasterStore((state) => state.cart);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [cartNotice, setCartNotice] = useState<string | null>(null);
-  const [classId, setClassId] = useState('3학년 A반');
-  const [period, setPeriod] = useState(3);
-  const [duration, setDuration] = useState(program?.duration ?? 15);
-  const locked = !!program?.isPro && !isPro;
+  const [copied, setCopied] = useState(false);
 
   if (!program) {
     return (
@@ -60,12 +48,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   const favorite = favorites.includes(program.id);
   const cartCount = cart.reduce((total, item) => total + item.qty, 0);
-
-  const saveLesson = () => {
-    addLesson({ id: Date.now(), title: program.title, classId, date: new Date().toISOString(), period, duration, done: false, color: program.colors[1], memo: `${program.category} / ${program.space}` });
-    setSheetOpen(false);
-    router.push('/spokedu-master/plan');
-  };
+  const locked = program.isPro && !isPro;
+  const detail = program.lessonDetail;
 
   const addEquipment = (item: string) => {
     const price = getEquipmentPrice(item);
@@ -74,13 +58,24 @@ export default function LibraryDetailView({ id }: { id: string }) {
     setCartNotice(`${item} 장바구니에 추가`);
   };
 
+  const copyParentNote = async () => {
+    const text = detail?.parentNote ?? program.description;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="sticky top-0 z-20 flex items-center justify-between px-[22px] py-3 sm:px-8 lg:px-10" style={{ background: 'rgba(7,7,12,0.86)', backdropFilter: 'blur(18px)' }}>
         <Link href="/spokedu-master/library" className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="뒤로가기"><ArrowLeft size={18} color="var(--spm-t)" /></Link>
         <div className="flex items-center gap-2">
           <Link href="/spokedu-master/shop" className="relative grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="교구 스토어"><ShoppingBag size={18} color="var(--spm-t2)" />{cartCount > 0 ? <span className="absolute -right-1 -top-1 grid h-5 min-w-[20px] place-items-center rounded-full px-1 text-[10px] font-black text-white" style={{ background: 'var(--spm-red)' }}>{cartCount}</span> : null}</Link>
-          <button type="button" onClick={() => toggleFavorite(program.id)} className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="즐겨찾기"><Heart size={18} color={favorite ? 'var(--spm-red)' : 'var(--spm-t2)'} fill={favorite ? 'var(--spm-red)' : 'none'} /></button>
+          <button type="button" onClick={() => toggleFavorite(program.id)} className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="즐겨찾기"><Bookmark size={18} color={favorite ? 'var(--spm-amb)' : 'var(--spm-t2)'} fill={favorite ? 'var(--spm-amb)' : 'none'} /></button>
         </div>
       </header>
 
@@ -92,7 +87,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
             <h1 className="mt-2 text-[30px] font-black leading-[1.12] md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{program.title}</h1>
             <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{program.grade} / {program.duration}분 / {program.space}</p>
             <p className="mt-5 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>{program.description}</p>
-            {locked ? <Link href="/spokedu-master/profile" className="mt-7 block rounded-[14px] p-4 text-center" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}><strong className="block text-[14px]" style={{ color: 'var(--spm-amb)' }}>PRO로 업그레이드하고 전체 수업안 열기</strong></Link> : <div className="mt-7 grid grid-cols-1 gap-2 sm:grid-cols-2"><Link href={`/spokedu-master/class-record?program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={16} fill="#fff" />수업 기록 시작</Link><button type="button" onClick={() => setSheetOpen(true)} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><CalendarPlus size={16} />수업 계획 추가</button></div>}
+            {locked ? <Link href="/spokedu-master/profile" className="mt-7 block rounded-[14px] p-4 text-center" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}><strong className="block text-[14px]" style={{ color: 'var(--spm-amb)' }}>PRO로 업그레이드하고 전체 수업안 열기</strong></Link> : <div className="mt-7 grid grid-cols-1 gap-2 sm:grid-cols-3"><Link href={`/spokedu-master/spomove/session?drill=${detail?.relatedSpomoveIds[0] ?? 'speed-track'}&mode=projector&program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={16} fill="#fff" />큰 화면 실행</Link><Link href="/spokedu-master/report" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><MessageCircle size={16} />설명 문구</Link><button type="button" onClick={copyParentNote} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)' }}>{copied ? <CheckCircle2 size={16} /> : <Clipboard size={16} />}{copied ? '복사 완료' : '문구 복사'}</button></div>}
           </div>
         </section>
 
@@ -102,27 +97,18 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{program.equipment.map((item) => { const price = getEquipmentPrice(item); return <div key={item} className="flex items-center gap-2 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}><span className="min-w-0 flex-1"><strong className="block text-[12px]" style={{ color: 'var(--spm-t)' }}>{item}</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{price > 0 ? `${price.toLocaleString('ko-KR')}원` : '보유 장비'}</span></span>{price > 0 ? <button type="button" onClick={() => addEquipment(item)} className="h-8 rounded-[10px] px-3 text-[11px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>담기</button> : null}</div>; })}</div>
         </section>
 
-        {program.lessonDetail ? <div className="mt-7 grid gap-4 lg:grid-cols-2">
-          <section className="grid grid-cols-2 gap-2 lg:col-span-2">{[['권장 연령', program.lessonDetail.recommendedAge], ['권장 인원', program.lessonDetail.recommendedPlayers], ['수업 목표', program.lessonDetail.objective], ['발달 포인트', program.lessonDetail.developmentFocus]].map(([label, value]) => <div key={label} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><p className="text-[10px] font-black uppercase tracking-[0.08em]" style={{ color: 'var(--spm-t3)' }}>{label}</p><p className="mt-2 text-[12px] font-bold leading-5" style={{ color: 'var(--spm-t)' }}>{value}</p></div>)}</section>
-          <DetailPanel title="코치 스크립트" icon={Lightbulb}><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{program.lessonDetail.coachScript}</p></DetailPanel>
-          <DetailPanel title="보호자 공유 문장" icon={MessageCircle}><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{program.lessonDetail.parentNote}</p></DetailPanel>
-          <DetailPanel title="현장 팁" icon={Lightbulb}><DetailList items={program.lessonDetail.fieldTips} /></DetailPanel>
-          <DetailPanel title="변형 수업" icon={Shuffle}><DetailList items={program.lessonDetail.variations} /></DetailPanel>
-          <DetailPanel title="안전 체크" icon={ShieldAlert}><DetailList items={program.lessonDetail.safetyNotes} /></DetailPanel>
-          <DetailPanel title="연결 SPOMOVE" icon={Zap}><div className="flex flex-wrap gap-2">{program.lessonDetail.relatedSpomoveIds.map((item) => <Link key={item} href={`/spokedu-master/spomove/session?drill=${item}&mode=class&program=${program.id}`} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(99,102,241,0.14)', color: '#a5b4fc' }}>{item}</Link>)}</div></DetailPanel>
+        {detail ? <div className="mt-7 grid gap-4 lg:grid-cols-2">
+          <section className="grid grid-cols-2 gap-2 lg:col-span-2">{[['권장 연령', detail.recommendedAge], ['권장 인원', detail.recommendedPlayers], ['수업 목표', detail.objective], ['발달 포인트', detail.developmentFocus]].map(([label, value]) => <div key={label} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><p className="text-[10px] font-black uppercase tracking-[0.08em]" style={{ color: 'var(--spm-t3)' }}>{label}</p><p className="mt-2 text-[12px] font-bold leading-5" style={{ color: 'var(--spm-t)' }}>{value}</p></div>)}</section>
+          <DetailPanel title="코치 스크립트" icon={Lightbulb}><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{detail.coachScript}</p></DetailPanel>
+          <DetailPanel title="보호자 설명 문구" icon={MessageCircle}><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{detail.parentNote}</p></DetailPanel>
+          <DetailPanel title="현장 팁" icon={Lightbulb}><DetailList items={detail.fieldTips} /></DetailPanel>
+          <DetailPanel title="변형 수업" icon={Shuffle}><DetailList items={detail.variations} /></DetailPanel>
+          <DetailPanel title="안전 체크" icon={ShieldAlert}><DetailList items={detail.safetyNotes} /></DetailPanel>
+          <DetailPanel title="연결 SPOMOVE" icon={Zap}><div className="flex flex-wrap gap-2">{detail.relatedSpomoveIds.map((item) => <Link key={item} href={`/spokedu-master/spomove/session?drill=${item}&mode=class&program=${program.id}`} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(99,102,241,0.14)', color: '#a5b4fc' }}>{item}</Link>)}</div></DetailPanel>
         </div> : null}
 
         <section className="mt-7"><h2 className="mb-3 text-[16px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>진행 순서</h2><div className="grid gap-3 md:grid-cols-3">{program.steps.map((step, index) => <div key={step} className="flex gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>{index + 1}</span><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{step}</p></div>)}</div></section>
       </main>
-
-      <BottomSheet open={sheetOpen} title="수업 계획 추가" onClose={() => setSheetOpen(false)}>
-        <div className="space-y-5">
-          <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반 선택</p><div className="flex flex-wrap gap-2">{['3학년 A반', '3학년 B반', '4학년 A반'].map((item) => <FieldButton key={item} label={item} active={classId === item} onClick={() => setClassId(item)} />)}</div></div>
-          <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>교시</p><div className="flex flex-wrap gap-2">{[1, 2, 3, 4, 5].map((item) => <FieldButton key={item} label={`${item}교시`} active={period === item} onClick={() => setPeriod(item)} />)}</div></div>
-          <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>시간</span><input type="number" min={5} max={60} value={duration} onChange={(event) => setDuration(Number(event.target.value))} className="h-11 w-full rounded-[12px] border bg-transparent px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} /></label>
-          <button type="button" onClick={saveLesson} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>저장하고 계획으로 이동</button>
-        </div>
-      </BottomSheet>
     </div>
   );
 }

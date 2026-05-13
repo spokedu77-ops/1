@@ -7,9 +7,9 @@ export type LimitStatus = {
 };
 
 export const PLAN_LIMITS: Record<PlanType, { kakaoMonthly: number | null; aiMonthly: number | null; pdfMonthly: number | null; canUseDirectorDashboard: boolean }> = {
-  free: { kakaoMonthly: 50, aiMonthly: 5, pdfMonthly: 3, canUseDirectorDashboard: false },
-  pro: { kakaoMonthly: 200, aiMonthly: 20, pdfMonthly: null, canUseDirectorDashboard: false },
-  team: { kakaoMonthly: null, aiMonthly: null, pdfMonthly: null, canUseDirectorDashboard: true },
+  free: { kakaoMonthly: 0, aiMonthly: 0, pdfMonthly: 0, canUseDirectorDashboard: false },
+  pro: { kakaoMonthly: 0, aiMonthly: 0, pdfMonthly: 0, canUseDirectorDashboard: false },
+  team: { kakaoMonthly: 0, aiMonthly: 0, pdfMonthly: 0, canUseDirectorDashboard: false },
 };
 
 export function getTrialDaysLeft(profile: UserProfile | null): number {
@@ -26,29 +26,19 @@ export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
     return {
       allowed: false,
       label: '체험 만료',
-      reason: '무료 체험이 종료되어 새 수업 기록 생성이 제한됩니다. 기존 학생 이력은 계속 열람할 수 있습니다.',
+      reason: '무료 체험이 종료되어 새 수업 기록 생성이 제한됩니다. 기존 데이터는 계속 열람할 수 있습니다.',
     };
   }
-  return { allowed: true, label: '기록 가능' };
+  return { allowed: true, label: '사용 가능' };
 }
 
-export function canUseMonthlyLimit(plan: PlanType, used: number, kind: 'kakao' | 'ai' | 'pdf'): LimitStatus {
-  const limits = PLAN_LIMITS[plan];
-  const limit = kind === 'kakao' ? limits.kakaoMonthly : kind === 'ai' ? limits.aiMonthly : limits.pdfMonthly;
-  if (limit === null) return { allowed: true, label: '무제한' };
-  if (used >= limit) {
-    return {
-      allowed: false,
-      label: `${used}/${limit}`,
-      reason:
-        kind === 'kakao'
-          ? '카카오 발송 한도를 초과했습니다. 메시지는 재시도 목록에 보관됩니다.'
-          : kind === 'ai'
-            ? 'AI 코멘트 한도를 초과했습니다. 직접 입력은 계속 사용할 수 있습니다.'
-            : 'PDF 생성 한도를 초과했습니다.',
-    };
-  }
-  return { allowed: true, label: `${used}/${limit}` };
+export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao' | 'ai' | 'pdf'): LimitStatus {
+  const label = kind === 'kakao' ? '준비 중' : kind === 'ai' ? '준비 중' : '설명 도구 우선';
+  return {
+    allowed: false,
+    label,
+    reason: '상용화 첫 버전에서는 외부 자동 발송과 자동 리포트보다 라이브러리, SPOMOVE, 수업 설명 도구를 우선 제공합니다.',
+  };
 }
 
 export function createParentShareToken(studentId: string, now = Date.now()): string {
@@ -58,7 +48,7 @@ export function createParentShareToken(studentId: string, now = Date.now()): str
 
 export function validateParentShareToken(token: string | null, studentId: string): LimitStatus {
   if (!token) {
-    return { allowed: false, label: '토큰 없음', reason: '성장 기록 링크가 없거나 잘못된 주소입니다.' };
+    return { allowed: false, label: '토큰 없음', reason: '공유 링크가 없거나 주소가 올바르지 않습니다.' };
   }
   const [prefix, tokenStudentId, expiresAtRaw] = token.split('.');
   const expiresAt = Number(expiresAtRaw);
