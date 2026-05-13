@@ -36,7 +36,7 @@ function getProgramForLesson(title: string) {
 function LessonItem({ lesson, onToggle, onDelete }: { lesson: ReturnType<typeof useMasterStore.getState>['lessons'][number]; onToggle: () => void; onDelete: () => void }) {
   const program = getProgramForLesson(lesson.title);
   return (
-    <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+    <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <div className="flex items-center gap-3">
         <span className="h-10 w-1.5 rounded-full" style={{ background: lesson.color }} />
         <div className="min-w-0 flex-1"><p className="truncate text-[14px] font-bold" style={{ color: lesson.done ? 'var(--spm-t3)' : 'var(--spm-t)' }}>{lesson.title}</p><p className="mt-1 text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>{lesson.classId} / {lesson.period}교시 / {lesson.duration}분</p></div>

@@ -51,7 +51,7 @@ export default function StudentsPage() {
       <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
         {students.length > 0 ? <section className="space-y-2">
           {students.map((student) => (
-            <button key={student.id} type="button" onClick={() => setSelectedId(student.id)} className="flex w-full items-center gap-3 rounded-[15px] p-3 text-left" style={{ background: selectedId === student.id ? 'rgba(99,102,241,0.14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br)' }}>
+            <button key={student.id} type="button" onClick={() => setSelectedId(student.id)} className="flex w-full items-center gap-3 rounded-[15px] p-3 text-left" style={{ background: selectedId === student.id ? 'rgba(99,102,241,0.14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
               <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>
                 {student.name.slice(0, 1)}
                 {student.risk ? <span className="absolute right-0 top-0 h-3 w-3 rounded-full" style={{ background: 'var(--spm-red)', border: '2px solid var(--spm-s2)' }} /> : null}
