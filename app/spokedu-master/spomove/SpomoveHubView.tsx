@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ChevronRight, Maximize, MonitorPlay, Play, Smartphone, TimerReset, Zap, type LucideIcon } from 'lucide-react';
-import { DRILLS } from '../lib/data';
+import { DRILLS, getTodayDrill } from '../lib/data';
 import { formatReactionTime } from '../lib/utils';
 import { useIsPro, useMasterStore, useStats } from '../store';
 
@@ -52,6 +52,8 @@ export default function SpomoveHubView() {
   const sessions = useMasterStore((state) => state.sessions);
   const stats = useStats();
   const recent = sessions.slice(0, 3);
+  const todayDrill = getTodayDrill();
+  const todayLocked = todayDrill.isPro && !isPro;
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
@@ -65,6 +67,17 @@ export default function SpomoveHubView() {
             <UseCaseCard title="수업 전 3분 집중 전환" caption="아이들이 화면 신호를 보며 몸과 시선을 수업으로 모읍니다." icon={TimerReset} />
             <UseCaseCard title="16:9 큰 화면 활동" caption="프로젝터, TV, 노트북에서 앱 UI를 덜어낸 신호 화면으로 실행합니다." icon={MonitorPlay} />
             <UseCaseCard title="라이브러리와 연결" caption="수업안 상세에서 관련 SPOMOVE를 바로 실행할 수 있습니다." icon={Zap} />
+          </section>
+          <section className="relative overflow-hidden rounded-[18px]" style={{ background: `linear-gradient(135deg, ${todayDrill.bgColor}, rgba(0,0,0,0.6))`, border: '1px solid rgba(255,255,255,0.07)' }}>
+            <Link href={todayLocked ? '/spokedu-master/profile' : `/spokedu-master/spomove/session?drill=${todayDrill.id}&mode=projector`} className="flex items-center justify-between gap-4 p-5 active:scale-[0.99]">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/45">오늘 추천 드릴</p>
+                <h2 className="mt-2 text-[24px] font-black text-white" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{todayDrill.name}</h2>
+                <p className="mt-1 text-[12px] font-semibold text-white/55">{todayDrill.category} · {todayDrill.cues.length}개 큐</p>
+              </div>
+              <span className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.13)' }}><Play size={22} color="#fff" fill="#fff" /></span>
+            </Link>
+            {todayLocked ? <div className="absolute inset-0 flex items-center justify-center rounded-[18px] bg-black/52 backdrop-blur-[2px]"><span className="rounded-[7px] px-3 py-1.5 text-[11px] font-black" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', color: 'var(--spm-amb)' }}>PRO 업그레이드 필요</span></div> : null}
           </section>
           <section className="grid gap-2 md:grid-cols-3">
             <LaunchCard title="큰 화면 실행" desc="빔, TV, 노트북에서 16:9 화면으로 바로 시작" hint="F 전체화면 · Space 시작" href="/spokedu-master/spomove/session?drill=speed-track&mode=projector" icon={MonitorPlay} tone="#818cf8" />

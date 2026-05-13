@@ -7,7 +7,7 @@ import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { DRILLS, PROGRAMS, getTodayProgram } from '../lib/data';
 import { getTrialDaysLeft } from '../lib/subscription';
-import { useMasterStore, useProfile, useUnreadCount } from '../store';
+import { useMasterStore, useProfile, useStats, useUnreadCount } from '../store';
 import type { Notification, Program } from '../types';
 
 function getGreeting(): string {
@@ -145,6 +145,7 @@ function NotificationSheet({ open, notifications, onClose, onMarkAll }: { open: 
 export default function DashboardView() {
   const profile = useProfile();
   const unreadCount = useUnreadCount();
+  const stats = useStats();
   const classRecords = useMasterStore((state) => state.classRecords);
   const favorites = useMasterStore((state) => state.favorites);
   const notifications = useMasterStore((state) => state.notifications);
@@ -176,6 +177,20 @@ export default function DashboardView() {
       </header>
 
       <ClassLoop />
+      {stats.totalSessions > 0 || classRecords.length > 0 ? (
+        <section className="mb-7 grid grid-cols-3 gap-2 px-[22px] sm:px-8 lg:px-10">
+          {[
+            { label: '이번 주 SPOMOVE', value: String(stats.thisWeekSessions), tone: 'var(--spm-acc)' },
+            { label: '수업 기록', value: String(classRecords.length), tone: 'var(--spm-grn)' },
+            { label: '즐겨찾기', value: String(favorites.length), tone: 'var(--spm-amb)' },
+          ].map(({ label, value, tone }) => (
+            <div key={label} className="rounded-[14px] p-3 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <p className="text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: tone }}>{value}</p>
+              <p className="mt-1 text-[10px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+            </div>
+          ))}
+        </section>
+      ) : null}
       <SectionHeader title="오늘 추천 수업" href="/spokedu-master/library" />
       <TodayRecommendation />
 
