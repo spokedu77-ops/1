@@ -223,8 +223,8 @@ export default function SpokeduMasterProfilePage() {
           <MenuRow icon={MonitorPlay} label="SPOMOVE 큰 화면 실행" caption="수업 공간에서 바로 실행" href="/spokedu-master/spomove/session?mode=projector" />
           <MenuRow icon={Smartphone} label="홈 화면에 추가" caption="PWA로 빠르게 열기" href="/spokedu-master/profile" />
           <MenuRow icon={CreditCard} label="플랜과 도입 방식" caption="Trial, Lite, Pro, Center, School" onClick={() => setPlanOpen(true)} />
-          <MenuRow icon={HelpCircle} label="도입 상담" caption="센터와 학교용 도입 문의" href="mailto:support@spokedu.com" />
-          <MenuRow icon={Mail} label="문의하기" caption="기능 제안과 오류 제보" href="mailto:support@spokedu.com" />
+          <MenuRow icon={HelpCircle} label="도입 상담" caption="센터와 학교용 도입 문의" href="mailto:contact@spokedu.kr?subject=%EB%8F%84%EC%9E%85+%EC%83%81%EB%8B%B4+%EB%AC%B8%EC%9D%98" />
+          <MenuRow icon={Mail} label="문의하기" caption="기능 제안과 오류 제보" href="mailto:contact@spokedu.kr?subject=%EA%B8%B0%EB%8A%A5+%EB%AC%B8%EC%9D%98" />
           <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-3">
               <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>expansion</p>

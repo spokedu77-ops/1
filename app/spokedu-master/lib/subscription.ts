@@ -33,7 +33,7 @@ export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
 }
 
 export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao' | 'ai' | 'pdf'): LimitStatus {
-  const label = kind === 'kakao' ? '준비 중' : kind === 'ai' ? '준비 중' : '설명 도구 우선';
+  const label = kind === 'kakao' ? '문구 복사' : kind === 'ai' ? '준비 중' : '설명 도구 우선';
   return {
     allowed: false,
     label,

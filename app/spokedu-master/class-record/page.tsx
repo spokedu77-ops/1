@@ -56,7 +56,7 @@ function RecordCard({ record }: { record: ClassRecord }) {
           <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{new Date(record.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })} · {record.classId}</p>
           <h2 className="mt-1 text-[18px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0, wordBreak: 'keep-all' }}>{record.programTitle}</h2>
         </div>
-        <span className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: record.kakaoSent ? 'rgba(16,185,129,0.13)' : 'rgba(99,102,241,0.13)', color: record.kakaoSent ? 'var(--spm-grn)' : 'var(--spm-acc)' }}>{record.kakaoSent ? '공유 준비' : '기록 완료'}</span>
+        <span className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: record.kakaoSent ? 'rgba(16,185,129,0.13)' : 'rgba(99,102,241,0.13)', color: record.kakaoSent ? 'var(--spm-grn)' : 'var(--spm-acc)' }}>{record.kakaoSent ? '안내 완료' : '기록 완료'}</span>
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2">
         <SummaryPill label="출석" value={`${record.present}/${total || 0}`} tone="var(--spm-grn)" />
@@ -346,7 +346,7 @@ function RecordEntryView() {
         {kakaoStep === 'sending' ? <p className="mt-4 rounded-[12px] p-3 text-[13px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>보호자 안내를 준비하는 중입니다...</p> : null}
         {kakaoStep === 'done' ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.13)', color: 'var(--spm-grn)' }}>
-            <p className="text-[13px] font-bold">공유 준비 {kakaoResult?.sentCount ?? present}건 완료. 학생 이력에 오늘 기록이 반영되었습니다.</p>
+            <p className="text-[13px] font-bold">안내 문구 {kakaoResult?.sentCount ?? present}건 완료. 학생 이력에 오늘 기록이 반영되었습니다.</p>
             {firstPresentStudent ? <Link href={`/spokedu-master/parent/${firstPresentStudent.id}?token=${parentToken}`} className="mt-3 inline-flex items-center gap-1 text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>보호자 링크 미리보기 <ExternalLink size={13} /></Link> : null}
           </div>
         ) : null}
@@ -360,7 +360,7 @@ function RecordEntryView() {
           <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || kakaoStep === 'sending'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />기록만 저장</button>
           <button type="button" onClick={kakaoStep === 'summary' ? () => setKakaoStep('preview') : sendKakao} disabled={!canPreviewKakao || !kakaoStatus.allowed || kakaoStep === 'sending' || kakaoStep === 'done'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
             {kakaoStep === 'summary' ? <MessageCircle size={16} /> : <Send size={16} />}
-            {kakaoStep === 'summary' ? '보호자 안내 미리보기' : kakaoStep === 'preview' ? '공유 준비' : kakaoStep === 'done' ? '준비 완료' : '준비 중'}
+            {kakaoStep === 'summary' ? '보호자 안내 미리보기' : kakaoStep === 'preview' ? '문구 확인' : kakaoStep === 'done' ? '완료' : '처리 중'}
           </button>
         </div>
       </section>
