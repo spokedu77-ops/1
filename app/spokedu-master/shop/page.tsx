@@ -83,7 +83,7 @@ export default function SpokeduMasterShopPage() {
           교구 스토어
         </h1>
         <p className="mt-2 max-w-[760px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          프로그램 라이브러리와 연결되는 수업 준비 영역입니다. 학생 데이터와 분리된 교구 구매 흐름으로 운영해, 강사와 센터가 필요한 장비를 빠르게 장바구니에 담을 수 있게 합니다.
+          수업에 필요한 교구를 빠르게 장바구니에 담고 견적을 요청하세요. 수업안 상세에서도 준비물을 바로 추가할 수 있습니다.
         </p>
       </header>
 

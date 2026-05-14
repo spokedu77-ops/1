@@ -63,7 +63,7 @@ function RecordCard({ record }: { record: ClassRecord }) {
         <SummaryPill label="관찰" value={String(record.focusCount)} tone="var(--spm-amb)" />
         <SummaryPill label="동작" value={String(record.skillCount)} tone="var(--spm-acc)" />
       </div>
-      <Link href="/spokedu-master/report" className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>설명 도구에서 보기</Link>
+      <Link href={`/spokedu-master/report?program=${record.programId}`} className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>설명 도구에서 보기</Link>
     </article>
   );
 }
