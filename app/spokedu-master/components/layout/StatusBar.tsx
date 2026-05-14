@@ -12,7 +12,7 @@ export function StatusBar() {
     <div className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b px-[22px] sm:px-8 lg:px-10" style={{ background: 'rgba(7,7,12,0.9)', backdropFilter: 'blur(22px)', borderColor: 'var(--spm-br2)' }}>
       <div className="min-w-0">
         <span className="block text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU PRO</span>
-        <span className="hidden text-[12px] font-semibold sm:block" style={{ color: 'var(--spm-t2)' }}>수업 준비와 SPOMOVE 실행을 위한 구독 플랫폼</span>
+        <span className="hidden text-[12px] font-semibold sm:block" style={{ color: 'var(--spm-t2)' }}>수업 준비는 쉽게, 수업은 더 몰입감 있게.</span>
       </div>
       <div className="flex items-center gap-2">
         <span className="hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-black sm:inline-flex" style={{ background: operational.online ? 'rgba(16,185,129,0.13)' : 'rgba(245,158,11,0.13)', color: operational.online ? 'var(--spm-grn)' : 'var(--spm-amb)' }}>

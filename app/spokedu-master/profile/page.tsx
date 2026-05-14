@@ -27,7 +27,7 @@ const PLANS: PlanInfo[] = [
     id: 'free',
     title: 'Trial',
     price: '14일 무료',
-    badge: '시작 검증',
+    badge: '14일 무료',
     description: '라이브러리와 SPOMOVE의 핵심 경험을 확인합니다.',
     includes: ['일부 프로그램 열람', 'SPOMOVE 제한 체험', '수업 설명 도구 체험'],
     target: '처음 확인하는 개인 강사·교사',
@@ -138,7 +138,7 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
     }
     if (plan.id === 'lite') {
       setNoticeType('lite');
-      setNoticeText('Lite 플랜은 현재 준비 중입니다. 관심 등록 후 출시되면 먼저 안내드립니다.');
+      setNoticeText('Lite 플랜은 출시를 준비하고 있습니다. 관심 등록 후 출시 시 먼저 안내드립니다.');
       return;
     }
     setProfile({ plan: plan.id, role: plan.id === 'team' ? 'director' : 'teacher' });
