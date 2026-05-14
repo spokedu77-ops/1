@@ -322,7 +322,7 @@ function RecordEntryView() {
           </div>
           <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: kakaoStatus.allowed ? 'rgba(16,185,129,0.13)' : 'rgba(99,102,241,0.13)', color: kakaoStatus.allowed ? 'var(--spm-grn)' : 'var(--spm-acc)' }}>공유 {kakaoStatus.label}</span>
         </div>
-        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>출석 {present}명, 동작 기록 {recordedSkills}개를 보호자 안내 문구로 정리합니다. 자동 발송은 이후 단계에서 검증합니다.</p>
+        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>출석 {present}명, 동작 기록 {recordedSkills}개를 보호자 안내 문구로 바로 정리합니다.</p>
         {!hasStudents ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>등록된 학생이 없어 수업 기록을 만들 수 없습니다.</p> : null}
         {hasStudents && !hasAttendance ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>출석 또는 결석을 최소 1명 이상 체크해 주세요.</p> : null}
         {hasAttendance && present === 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>출석 학생이 있어야 보호자 공유를 보낼 수 있습니다. 결석 기록은 저장만 가능합니다.</p> : null}
@@ -333,7 +333,16 @@ function RecordEntryView() {
           </div>
         ) : null}
         {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}
-        {savedOnly && kakaoStep !== 'done' ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>수업 기록이 학생 이력에 저장되었습니다. 보호자 안내 문구는 설명 도구에서 이어서 정리할 수 있습니다.</p> : null}
+        {savedOnly && kakaoStep !== 'done' ? (
+          <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <p className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>수업 기록이 저장되었습니다.</p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <Link href="/spokedu-master/students" className="flex h-10 items-center justify-center rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>학생 이력</Link>
+              <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-10 items-center justify-center rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>설명 문구</Link>
+              <Link href="/spokedu-master/library" className="flex h-10 items-center justify-center rounded-[10px] text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>라이브러리</Link>
+            </div>
+          </div>
+        ) : null}
         {kakaoStep === 'sending' ? <p className="mt-4 rounded-[12px] p-3 text-[13px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>보호자 안내를 준비하는 중입니다...</p> : null}
         {kakaoStep === 'done' ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.13)', color: 'var(--spm-grn)' }}>

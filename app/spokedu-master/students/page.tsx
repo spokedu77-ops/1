@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Award, ChevronRight, ExternalLink, FileText, MessageCircle, TrendingUp, TriangleAlert } from 'lucide-react';
+import { Award, CheckCircle2, ChevronRight, ExternalLink, FileText, TrendingUp, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { createParentShareToken } from '../lib/subscription';
 import { useMasterStore } from '../store';
@@ -25,10 +25,21 @@ export default function StudentsPage() {
   const students = useMasterStore((state) => state.students);
   const records = useMasterStore((state) => state.classRecords);
   const [selectedId, setSelectedId] = useState(students[0]?.id ?? null);
-  const [kakaoReadyId, setKakaoReadyId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
   const selectedRecordCount = selected ? records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length : 0;
   const selectedParentToken = selected ? createParentShareToken(selected.id) : '';
+
+  const copyShareLink = async (studentId: string, token: string) => {
+    const url = `${window.location.origin}/spokedu-master/parent/${studentId}?token=${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(studentId);
+      window.setTimeout(() => setCopiedId(null), 1800);
+    } catch {
+      setCopiedId(null);
+    }
+  };
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -115,24 +126,24 @@ export default function StudentsPage() {
                 <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>최근 이력</h3>
                 <div className="space-y-2">{selected.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
               </div>
-              {kakaoReadyId === selected.id ? (
+              {copiedId === selected.id ? (
                 <div className="rounded-[13px] p-3" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                  <p className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>보호자 공유 문구가 준비되었습니다.</p>
-                  <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{selected.name} 학생의 최근 성장 기록을 설명 문구로 정리할 수 있습니다.</p>
+                  <p className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>보호자 공유 링크가 복사되었습니다.</p>
+                  <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>카카오톡, 문자 등에 붙여넣기 하세요. 링크는 7일 동안 유효합니다.</p>
                 </div>
               ) : null}
               <div className="grid grid-cols-3 gap-2">
-                <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                <Link href={`/spokedu-master/report?program=${records.find((r) => r.students.some((s) => s.studentId === selected.id))?.programId ?? ''}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
                   <FileText size={15} />
-                  리포트
+                  설명 문구
                 </Link>
                 <Link href={`/spokedu-master/parent/${selected.id}?token=${selectedParentToken}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <ExternalLink size={15} />
-                  링크
+                  미리보기
                 </Link>
-                <button type="button" onClick={() => setKakaoReadyId(selected.id)} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: kakaoReadyId === selected.id ? 'rgba(16,185,129,0.13)' : 'var(--spm-s3)', color: kakaoReadyId === selected.id ? 'var(--spm-grn)' : 'var(--spm-t)' }}>
-                  <MessageCircle size={15} />
-                  {kakaoReadyId === selected.id ? '준비됨' : '공유'}
+                <button type="button" onClick={() => copyShareLink(selected.id, selectedParentToken)} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: copiedId === selected.id ? 'rgba(16,185,129,0.13)' : 'var(--spm-s3)', color: copiedId === selected.id ? 'var(--spm-grn)' : 'var(--spm-t)' }}>
+                  {copiedId === selected.id ? <CheckCircle2 size={15} /> : <ExternalLink size={15} />}
+                  {copiedId === selected.id ? '복사됨' : '링크 복사'}
                 </button>
               </div>
             </div>
