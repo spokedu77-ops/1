@@ -141,6 +141,11 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       setNoticeText('Lite 플랜은 출시를 준비하고 있습니다. 관심 등록 후 출시 시 먼저 안내드립니다.');
       return;
     }
+    if (plan.id === 'free') {
+      setNoticeType('applied');
+      setNoticeText(isTrialExpired(profile) ? '체험 기간이 종료되었습니다. Pro 플랜으로 업그레이드하면 계속 사용할 수 있습니다.' : '현재 14일 무료 체험 중입니다.');
+      return;
+    }
     setProfile({ plan: plan.id, role: plan.id === 'team' ? 'director' : 'teacher' });
     setNoticeType('applied');
     setNoticeText(`${plan.title} 플랜이 적용되었습니다.`);
@@ -207,7 +212,7 @@ export default function SpokeduMasterProfilePage() {
         <div className="space-y-7">
           <section className="overflow-hidden rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(16,185,129,0.12), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>current plan</p>
-            <div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: expired ? 'var(--spm-amb)' : 'var(--spm-t)', letterSpacing: 0 }}>{planName}</h2><span className="text-[13px] font-black" style={{ color: expired ? 'var(--spm-amb)' : 'var(--spm-t2)' }}>{currentPlan === 'free' ? (expired ? '내 정보에서 플랜을 확인하세요' : `${daysLeft}일 남음`) : '활성화됨'}</span></div>
+            <div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: expired ? 'var(--spm-amb)' : 'var(--spm-t)', letterSpacing: 0 }}>{planName}</h2><span className="text-[13px] font-black" style={{ color: expired ? 'var(--spm-amb)' : 'var(--spm-t2)' }}>{currentPlan === 'free' ? (expired ? '아래 버튼으로 플랜을 선택하세요' : `${daysLeft}일 남음`) : '활성화됨'}</span></div>
             <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리, SPOMOVE, 수업 설명 도구가 포함됩니다. 수업 기록, 학생 이력, 센터 대시보드도 함께 사용할 수 있습니다.</p>
             <button type="button" onClick={() => setPlanOpen(true)} className="mt-5 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>플랜과 도입 방식 보기</button>
           </section>
