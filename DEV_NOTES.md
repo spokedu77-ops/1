@@ -5,6 +5,7 @@
 - 2026-05-13 (세션 1): Phase 1 방향 확정, 데이터 기반 정리, 전체 화면 초기 구현
 - 2026-05-13 (세션 2): 홈 화면 다듬기, 라이브러리 버그 수정, SPOMOVE/플랜 문구 개선
 - 2026-05-14 (세션 3): 상용 문구 전체 교체, 기능 흐름 연결 완성, UX 버그 수정
+- 2026-05-14 (세션 4): SPOMOVE projector 전체화면 자동 전환, 플랜/온보딩 흐름 검토
 
 ---
 
@@ -55,6 +56,10 @@
 - `app/spokedu-master/profile/page.tsx`
 - `app/spokedu-master/lib/subscription.ts`
 - `app/spokedu-master/components/layout/StatusBar.tsx`
+
+### 세션 4 (SPOMOVE 전체화면 UX + 플랜/온보딩 흐름)
+- `app/spokedu-master/spomove/session/page.tsx`
+- `app/spokedu-master/profile/page.tsx`
 
 ---
 
@@ -146,9 +151,9 @@
 
 ## 남은 문제
 
-- **전체화면 UX**
-  - SPOMOVE session 페이지에서 `F키`로 전체화면 전환이 되지만 사용자가 모른다.
-  - Projector 모드로 진입할 때 안내가 충분하지 않다.
+- ~~**전체화면 UX**~~ ✅ 완료 (세션 4)
+  - Projector 모드에서 START 클릭 시 `requestFullscreen` 자동 호출.
+  - idle 화면에 "START를 누르면 전체화면으로 자동 전환됩니다" 안내 문구 추가.
 
 - **샘플 데이터는 실제 운영 데이터가 아님**
   - `lib/data.ts`의 프로그램 5개는 제품 방향을 보여주기 위한 샘플.
@@ -173,16 +178,16 @@
 
 ## 다음 작업 순서
 
-> 1~3번은 완료. 세션 3 작업도 완료. 4번부터 이어간다.
+> 1~4번 완료. 5번부터 이어간다.
 
-4. **SPOMOVE 전체화면/큰 화면 UX 강화** ← **다음 작업**
-   - Projector 모드 진입 시 전체화면 안내 토스트 또는 힌트 배너 추가.
-   - 수업 설명 도구의 "SPOMOVE 실행" 버튼이 `projector` 모드로 연결되게 확인.
-   - 실행 화면(session/page.tsx) idle 상태에서 단축키 힌트(`F 전체화면` 등)가 이미 있으므로 hub 쪽에도 안내 문구 보강.
+4. ~~**SPOMOVE 전체화면/큰 화면 UX 강화**~~ ✅ 완료 (세션 4)
+   - Projector 모드 START 시 `requestFullscreen` 자동 호출.
+   - idle 화면 안내 문구에 자동 전환 명시.
 
-5. **플랜/온보딩 흐름 검토**
-   - Trial 만료 후 흐름이 자연스러운지 확인 (현재 0일 이하로 내려가면 어떻게 되는지 점검).
-   - 온보딩 완료 후 홈으로 가는 흐름이 끊기지 않는지 확인.
+5. ~~**플랜/온보딩 흐름 검토**~~ ✅ 완료 (세션 4)
+   - 전반 흐름 검증: 신규→온보딩→dashboard 정상, Trial 3일 전 배너 노출, 만료 후 라이브러리·SPOMOVE 열람 가능.
+   - 버그: 만료 상태에서 profile 페이지 "내 정보에서 플랜을 확인하세요" → "아래 버튼으로 플랜을 선택하세요".
+   - 버그: Trial 카드 재클릭 시 "Trial 플랜이 적용되었습니다" 오인 메시지 → 만료/체험 중 분기 안내.
 
 6. **최종 반응형 QA** (사용자가 직접 확인)
    - 모바일, 태블릿, 데스크탑에서 텍스트 줄바꿈, 버튼 크기, 카드 밀도, 하단 탭/사이드바 동작.
