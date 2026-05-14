@@ -248,6 +248,17 @@ function RecordEntryView() {
     return record;
   };
 
+  const copyParentLink = async () => {
+    if (!firstPresentStudent || !canPreviewKakao) return;
+    const url = `${window.location.origin}/spokedu-master/parent/${firstPresentStudent.id}?token=${parentToken}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch { /* ignore */ }
+    persistRecord(false);
+    setKakaoResult({ sentCount: present, failedCount: 0, parentLinks: [] });
+    setKakaoStep('done');
+  };
+
   const sendKakao = async () => {
     if (!kakaoStatus.allowed || !canPreviewKakao) return;
     const record = persistRecord(true);
@@ -332,7 +343,7 @@ function RecordEntryView() {
             <p className="mt-2 text-[13px] font-semibold leading-6">오늘 {activeClassId}은 {program.title} 수업을 진행했습니다. 출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장됩니다.</p>
           </div>
         ) : null}
-        {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}
+        {kakaoStep === 'preview' && !kakaoStatus.allowed ? <p className="mt-3 rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--spm-acc)' }}>보호자 링크를 복사해 카카오톡이나 문자로 직접 전달하세요.</p> : null}
         {savedOnly && kakaoStep !== 'done' ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <p className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>수업 기록이 저장되었습니다.</p>
@@ -358,9 +369,9 @@ function RecordEntryView() {
         ) : null}
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.78fr_1fr]">
           <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || kakaoStep === 'sending'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />기록만 저장</button>
-          <button type="button" onClick={kakaoStep === 'summary' ? () => setKakaoStep('preview') : sendKakao} disabled={!canPreviewKakao || !kakaoStatus.allowed || kakaoStep === 'sending' || kakaoStep === 'done'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
-            {kakaoStep === 'summary' ? <MessageCircle size={16} /> : <Send size={16} />}
-            {kakaoStep === 'summary' ? '보호자 안내 미리보기' : kakaoStep === 'preview' ? '문구 확인' : kakaoStep === 'done' ? '완료' : '처리 중'}
+          <button type="button" onClick={kakaoStep === 'summary' ? () => setKakaoStep('preview') : (kakaoStatus.allowed ? sendKakao : copyParentLink)} disabled={!canPreviewKakao || kakaoStep === 'sending' || kakaoStep === 'done'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
+            {kakaoStep === 'summary' ? <MessageCircle size={16} /> : kakaoStep === 'preview' && !kakaoStatus.allowed ? <ExternalLink size={16} /> : <Send size={16} />}
+            {kakaoStep === 'summary' ? '보호자 안내 미리보기' : kakaoStep === 'preview' ? (kakaoStatus.allowed ? '문구 확인' : '링크 복사') : kakaoStep === 'done' ? '완료' : '처리 중'}
           </button>
         </div>
       </section>
