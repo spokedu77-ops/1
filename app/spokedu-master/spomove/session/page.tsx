@@ -25,7 +25,7 @@ function ResultStat({ label, value, tone }: { label: string; value: string; tone
 }
 
 function getIdleDescription(launchMode: string) {
-  if (launchMode === 'projector') return '큰 화면으로 실행하면 학생들이 신호를 보고 함께 움직입니다.';
+  if (launchMode === 'projector') return 'START를 누르면 전체화면으로 자동 전환됩니다. 학생들이 큰 화면 신호에 맞춰 함께 움직입니다.';
   if (launchMode === 'class') return 'Class Mode는 수업용 화면입니다. 결과 저장은 최소화하고 몰입을 우선합니다.';
   return '화면 신호가 바뀌면 최대한 빠르게 화면을 터치하세요.';
 }
@@ -124,9 +124,12 @@ function SpomoveSessionContent() {
 
   const startCountdown = useCallback(() => {
     clearTimer();
+    if (launchMode === 'projector' && !document.fullscreenElement) {
+      void document.documentElement.requestFullscreen?.().catch(() => undefined);
+    }
     setCountdown('3');
     setState('countdown');
-  }, [clearTimer, setCountdown, setState]);
+  }, [clearTimer, launchMode, setCountdown, setState]);
 
   useEffect(() => {
     if (state !== 'countdown') return;
