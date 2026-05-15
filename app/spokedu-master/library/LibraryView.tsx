@@ -143,7 +143,6 @@ export default function LibraryView() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  if (!mounted) return <LibrarySkeleton />;
   const usedProgramIds = useMemo(() => new Set(classRecords.map((record) => record.programId)), [classRecords]);
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -152,6 +151,8 @@ export default function LibraryView() {
       return matchFilter(program, filter) && (!keyword || text.includes(keyword));
     });
   }, [filter, query, programs]);
+
+  if (!mounted) return <LibrarySkeleton />;
   const spomovePrograms = programs.filter((program) => program.tags.includes('SPOMOVE') || program.lessonDetail?.relatedSpomoveIds.length).slice(0, 5);
   const quickPrograms = programs.filter((program) => program.duration <= 18).slice(0, 5);
   const favoritePrograms = programs.filter((program) => favorites.includes(program.id));

@@ -175,12 +175,13 @@ export default function DashboardView() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  if (!mounted) return <DashboardSkeleton />;
   const usedProgramIds = useMemo(() => new Set(classRecords.map((record) => record.programId)), [classRecords]);
   const featuredPrograms = useMemo(() => {
     const favoritePrograms = PROGRAMS.filter((program) => favorites.includes(program.id));
     return [...favoritePrograms, ...PROGRAMS].filter((program, index, list) => list.findIndex((item) => item.id === program.id) === index).slice(0, 4);
   }, [favorites]);
+
+  if (!mounted) return <DashboardSkeleton />;
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
