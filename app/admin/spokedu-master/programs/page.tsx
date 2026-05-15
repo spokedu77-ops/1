@@ -307,7 +307,7 @@ export default function AdminSmProgramsPage() {
     for (const m of (metaRows ?? []) as MetaRow[]) metaMap.set(m.curriculum_id, m);
 
     setItems(
-      (currRows ?? []).map((r) => ({ ...r, meta: metaMap.get(r.id) ?? null })) as ProgramItem[]
+      (currRows ?? []).map((r: CurriculumRow) => ({ ...r, meta: metaMap.get(r.id) ?? null }))
     );
     setLoading(false);
   }, []);
