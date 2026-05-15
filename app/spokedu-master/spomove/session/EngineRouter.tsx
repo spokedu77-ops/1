@@ -90,6 +90,7 @@ export function EngineRouter({ mode, level, onComplete, onExit }: Props) {
         <DiagonalReactionTraining
           durationSec={60 + level * 10}
           speedLevel={Math.min(level, 5)}
+          speedSec={Math.max(0.8, 5.6 - Math.min(level, 5) * 0.8)}
           onExit={onExit}
           onComplete={handleDiagonalComplete}
         />

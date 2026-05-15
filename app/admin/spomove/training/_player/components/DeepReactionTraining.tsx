@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
 
 /** 0=RED(TL) 1=GREEN(TR) 2=BLUE(BL) 3=YELLOW(BR) — 원본 HTML 순서 유지 */
 const C = [
@@ -156,7 +157,7 @@ class Jellyfish {
   bubbleTimer = 0;
   angle: number;
 
-  constructor(colorIdx: number, L: LayoutState, speedLevel: number, baseSpeedMult: number) {
+  constructor(colorIdx: number, L: LayoutState, speedSec: number, baseSpeedMult: number) {
     this.ci = colorIdx;
     this.color = C[colorIdx];
     this.x = L.cx + (Math.random() - 0.5) * 30;
@@ -166,7 +167,7 @@ class Jellyfish {
     const dx = this.tx - this.x, dy = this.ty - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     this.vx = dx / dist; this.vy = dy / dist;
-    this.speed = (Math.min(L.W, L.H) / 2.0 / 60) * (0.55 + (speedLevel - 1) * 0.17) * baseSpeedMult;
+    this.speed = (dist / speedSec / 60) * baseSpeedMult;
     this.bw = Math.min(L.W, L.H) * 0.055;
     this.bh = this.bw * 0.6;
     this.phase = Math.random() * Math.PI * 2;
@@ -286,14 +287,15 @@ class Jellyfish {
 export type DeepReactionProps = {
   durationSec: number;
   speedLevel: number;       // 1~7
+  speedSec: number;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
 /* ══ Component ══ */
-export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComplete }: DeepReactionProps) {
-  // 시지각 반응 5번(심해): 전체 체감 속도(이동 + 스폰)를 확실히 낮춘다.
-  const SLOW_FACTOR = 1.8;
+export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit, onComplete }: DeepReactionProps) {
+  const levelScale = Math.max(1, Math.min(7, Math.round(speedLevel)));
+  const normalizedSpeedSec = normalizeReactSpeedSec(speedSec);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hudTimeRef = useRef<HTMLDivElement>(null);
   const hudStimsRef = useRef<HTMLDivElement>(null);
@@ -485,8 +487,10 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
   const applyAccel = useCallback(() => {
     const g = G.current; if (!g) return;
     g.spawnInt = Math.max(320, Math.floor(g.spawnInt * 0.93));
-    g.baseSpeedMult *= 1.08;
-    g.jellies.forEach(j => { j.speed *= 1.08; });
+    const levelAccel = 1 + (levelScale - 4) * 0.01;
+    const accelFactor = 1.08 * Math.max(0.94, levelAccel);
+    g.baseSpeedMult *= accelFactor;
+    g.jellies.forEach(j => { j.speed *= accelFactor; });
     if (hudTimeRef.current) {
       hudTimeRef.current.style.color = '#00FFB2';
       hudTimeRef.current.style.textShadow = '0 0 14px #00FFB2';
@@ -494,7 +498,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
         if (hudTimeRef.current) { hudTimeRef.current.style.color = ''; hudTimeRef.current.style.textShadow = ''; }
       }, 500);
     }
-  }, []);
+  }, [levelScale]);
 
   /* ─── endGame ─── */
   const endGame = useCallback(() => {
@@ -527,7 +531,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       const avail = [0, 1, 2, 3].filter(i => !active.has(i));
       if (avail.length) {
         const ci = avail[Math.floor(Math.random() * avail.length)];
-        const j = new Jellyfish(ci, L.current, speedLevel, g.baseSpeedMult);
+        const j = new Jellyfish(ci, L.current, normalizedSpeedSec, g.baseSpeedMult);
         g.jellies.push(j);
         g.lastSpawn = now;
       }
@@ -574,7 +578,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
     ctx.fillStyle = grd; ctx.fillRect(0, 0, L.current.W, hudH + 20);
 
     g.raf = requestAnimationFrame(loop);
-  }, [drawDeepBg, drawCornerPads, onStim, speedLevel]);
+  }, [drawDeepBg, drawCornerPads, onStim, normalizedSpeedSec]);
 
   /* ─── mount / start ─── */
   useEffect(() => {
@@ -586,9 +590,9 @@ export function DeepReactionTraining({ durationSec, speedLevel, onExit, onComple
       timeLeft: durationSec, elapsed: 0,
       stims: 0, combo: 0, maxCombo: 0,
       laneCount: [0, 0, 0, 0],
-      spawnInt: Math.max(300, Math.floor((1350 - (speedLevel - 1) * 150) * SLOW_FACTOR)),
-      lastSpawn: performance.now() - Math.max(300, Math.floor((1350 - (speedLevel - 1) * 150) * SLOW_FACTOR)),
-      baseSpeedMult: 1 / SLOW_FACTOR,
+      spawnInt: speedSecToMs(normalizedSpeedSec, { minMs: 500, maxMs: 6000 }),
+      lastSpawn: performance.now() - speedSecToMs(normalizedSpeedSec, { minMs: 500, maxMs: 6000 }),
+      baseSpeedMult: 1,
       raf: null, timer: null,
       cornerPulse: [0, 0, 0, 0],
       waveOffset: 0,

@@ -59,6 +59,20 @@ type ReportTeacher = {
   adjs: SettlementRow[];
 };
 
+/** classes-v2 캘린더/리스트와 동일하게 회차 토큰 제거 후 제목 표시 */
+function displaySessionTitle(title?: string): string {
+  const raw = String(title || '').trim();
+  if (!raw) return '';
+  const cleaned = raw
+    .replace(/\b\d+\s*\/\s*\d+\b/g, ' ')
+    .replace(/\b\d+\s*(회차|회|차)\b/g, ' ')
+    .replace(/[|_]/g, ' ')
+    .replace(/\s*-\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned || raw;
+}
+
 function assertSupabaseOk(error: { message: string } | null | undefined) {
   if (error) throw error;
 }
@@ -587,7 +601,7 @@ export default function UltimateSettlementPage() {
                     return (
                       <div key={s.id} className="flex justify-between items-center p-4 bg-slate-50/50 rounded-2xl text-[11px] font-black group-hover:bg-white transition-colors">
                         <span className="text-slate-300 italic">{(s.start_at || '').slice(8, 10)}일</span>
-                        <span className="flex-1 text-slate-700 truncate mx-4">{s.title}</span>
+                        <span className="flex-1 text-slate-700 truncate mx-4">{displaySessionTitle(s.title)}</span>
                         <span className="text-slate-900">{(fee || 0).toLocaleString()}원</span>
                       </div>
                     );

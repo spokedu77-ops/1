@@ -7,6 +7,36 @@
 - 2026-05-14 (모바일 반응형 QA — safe-area, 터치 타겟, 스크롤 전수 점검)
 - 2026-05-14 (콘텐츠 통합 — 3레이어 아키텍처 구축: SQL 마이그레이션 + API routes + store 동적 로딩 + Admin 편집 UI)
 - 2026-05-15 (SPOMOVE 엔진 통합 — EngineRouter + 세션 페이지 통합 + Admin UI 완성)
+- 2026-05-15 (결제 흐름 완성 — Stripe Checkout + 구독 동기화 + 결제 페이지 UX + 썸네일/대시보드 리디자인)
+- 2026-05-15 (전환율 강화 — Pro 잠금 CTA 전수 결제 직결 + 온보딩/트라이얼 배너 개선 + 라이브러리 상세 히어로 리디자인)
+
+---
+
+## 수정한 파일 (2026-05-15 — 결제 흐름)
+
+- `app/spokedu-master/payment/page.tsx` — import 경로 수정 (`@/app/lib/supabase/browser`)
+- `app/spokedu-master/payment/success/page.tsx` — **신규** 결제 성공 확인 페이지, syncSubscription 호출
+- `app/spokedu-master/payment/cancel/page.tsx` — **신규** 결제 취소 페이지, 재시도 CTA
+- `app/spokedu-master/store/index.ts` — `syncSubscription()` 추가: `/api/spokedu-master/subscription` 호출 후 plan 동기화
+- `app/spokedu-master/components/layout/AppShell.tsx` — payment 경로 chrome 제외 + syncSubscription 마운트 호출
+- `app/spokedu-master/profile/page.tsx` — Pro/Center 플랜 선택 시 `router.push('/spokedu-master/payment?plan=...')` 리다이렉트
+
+### 결제 흐름 요약
+
+1. 사용자가 프로필의 "플랜 선택" 바텀시트에서 Pro 또는 Center를 선택
+2. `/spokedu-master/payment?plan=pro` (또는 `team`)으로 이동
+3. 이메일 OTP 인증 (Supabase magic link)
+4. 인증 완료 후 "카드로 결제하기" → `/api/spokedu-master/payment/create-checkout` POST → Stripe Checkout URL로 이동
+5. Stripe 결제 완료 → `/spokedu-master/payment/success?session_id=...`로 리다이렉트
+6. 성공 페이지에서 `syncSubscription()` 호출 → `/api/spokedu-master/subscription` → Zustand profile.plan 업데이트
+7. Stripe webhook (`/api/spokedu-master/payment/webhook`) → `spokedu_master_subscriptions` 테이블 upsert
+
+### 적용 전 필요 작업 (Supabase/Stripe 설정)
+
+- `sql/71_spokedu_master_subscriptions.sql` Supabase에 적용
+- `.env.local`에 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` 설정
+- Stripe 대시보드에서 webhook endpoint `POST /api/spokedu-master/payment/webhook` 등록
+  - 이벤트: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
 
 ---
 

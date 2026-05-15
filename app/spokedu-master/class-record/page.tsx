@@ -267,7 +267,7 @@ function RecordEntryView() {
             <div>
               <p className="text-[14px] font-black" style={{ color: 'var(--spm-red)' }}>{recordStatus.label}</p>
               <p className="mt-1 text-[12px] leading-5" style={{ color: 'var(--spm-t2)' }}>{recordStatus.reason}</p>
-              <Link href="/spokedu-master/profile" className="mt-3 inline-flex text-[12px] font-black" style={{ color: 'var(--spm-red)' }}>구독 관리로 이동</Link>
+              <Link href="/spokedu-master/payment?plan=pro" className="mt-3 inline-flex text-[12px] font-black" style={{ color: 'var(--spm-red)' }}>Pro로 시작하기</Link>
             </div>
           </div>
         </section>

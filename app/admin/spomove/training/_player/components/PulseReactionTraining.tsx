@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { speedSecToMs } from '../lib/reactTrainTiming';
 
 const COLORS = [
   { main: '#FF1744', name: 'RED' },
@@ -122,11 +123,12 @@ const css = `
 type Props = {
   durationSec: number;
   speedLevel: number;
+  speedSec: number;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-export function PulseReactionTraining({ durationSec, speedLevel, onExit, onComplete }: Props) {
+export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, speedSec, onExit, onComplete }: Props) {
   const uid = useId();
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
@@ -170,8 +172,7 @@ export function PulseReactionTraining({ durationSec, speedLevel, onExit, onCompl
     const ctx = cv.getContext('2d');
     if (!ctx) return;
 
-    const lv = Math.max(1, Math.min(7, Math.round(speedLevel)));
-    const pulsePeriod = Math.max(1200, 2800 - (lv - 1) * 250);
+    const pulsePeriod = speedSecToMs(speedSec, { minMs: 700, maxMs: 6000 });
     const g: PulseGameState = {
       running: true,
       timeLeft: Math.max(1, durationSec),
@@ -387,7 +388,7 @@ export function PulseReactionTraining({ durationSec, speedLevel, onExit, onCompl
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, speedLevel]);
+  }, [durationSec, endGame, speedSec]);
 
   return (
     <div className="prt">

@@ -1132,6 +1132,7 @@ export default function MemoryGameApp({
           <RobloxMoleReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -1139,6 +1140,7 @@ export default function MemoryGameApp({
           <RushReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -1146,6 +1148,7 @@ export default function MemoryGameApp({
           <SweepReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -1153,6 +1156,7 @@ export default function MemoryGameApp({
           <BlackoutReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -1160,6 +1164,7 @@ export default function MemoryGameApp({
           <PulseReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -1167,6 +1172,7 @@ export default function MemoryGameApp({
           <DeepReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -1174,6 +1180,7 @@ export default function MemoryGameApp({
           <DiagonalReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />

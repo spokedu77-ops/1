@@ -81,7 +81,7 @@ export default function OnboardingPage() {
     setStep((value) => Math.min(3, value + 1));
   };
 
-  const finish = () => {
+  const applyProfile = () => {
     setProfile({
       name: name.trim() || '선생님',
       school: school.trim(),
@@ -94,7 +94,16 @@ export default function OnboardingPage() {
       onboardingDone: true,
       trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     });
+  };
+
+  const finish = () => {
+    applyProfile();
     router.replace('/spokedu-master/library');
+  };
+
+  const finishWithPayment = (plan: 'pro' | 'team') => {
+    applyProfile();
+    router.replace(`/spokedu-master/payment?plan=${plan}`);
   };
 
   return (
@@ -175,19 +184,43 @@ export default function OnboardingPage() {
                   </div>
                 ))}
               </div>
-              <p className="rounded-[10px] p-3 text-[11px] font-semibold leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t3)' }}>
-                14일 무료 체험이 시작됩니다. 체험 기간에 전체 흐름을 확인한 뒤 플랜을 선택하면 됩니다.
-              </p>
+              <div className="rounded-[14px] p-4" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.28)' }}>
+                <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: '#a5b4fc' }}>지금 바로 시작</p>
+                <p className="mt-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>Pro — 39,900원/월</p>
+                <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>전체 라이브러리 · SPOMOVE 무제한 · 수업 설명 도구 전체</p>
+                <button
+                  type="button"
+                  onClick={() => finishWithPayment('pro')}
+                  className="mt-3 flex h-10 w-full items-center justify-center rounded-[10px] text-[13px] font-black text-white"
+                  style={{ background: 'var(--spm-acc)', boxShadow: '0 6px 18px rgba(99,102,241,0.32)' }}
+                >
+                  Pro로 시작하기
+                </button>
+                <button
+                  type="button"
+                  onClick={finish}
+                  className="mt-2 w-full text-center text-[11px] font-semibold"
+                  style={{ color: 'var(--spm-t3)' }}
+                >
+                  14일 무료 체험 먼저 해보기
+                </button>
+              </div>
             </div>
           ) : null}
 
-          <div className="mt-6 grid grid-cols-[auto_1fr] gap-2">
-            <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} className="h-12 rounded-[12px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>이전</button>
-            <button type="button" onClick={step === 3 ? finish : next} disabled={!canNext || validating} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
-              {step === 3 ? '라이브러리에서 시작' : '다음'}
-              <ArrowRight size={16} />
-            </button>
-          </div>
+          {step < 3 ? (
+            <div className="mt-6 grid grid-cols-[auto_1fr] gap-2">
+              <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} className="h-12 rounded-[12px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>이전</button>
+              <button type="button" onClick={next} disabled={!canNext || validating} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+                다음
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} className="w-full text-center text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>이전 단계로</button>
+            </div>
+          )}
         </section>
       </main>
     </div>

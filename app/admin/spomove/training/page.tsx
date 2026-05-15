@@ -93,7 +93,7 @@ const TABS: { code: TabCode; label: string; sub: string }[] = [
 ];
 
 type TopTab = 'training' | 'teacher' | 'app';
-const TEACHER_SPOMOVE_URL = 'https://spokedu.vercel.app/teacher/spomove';
+const TEACHER_SPOMOVE_URL = '/teacher/spomove';
 
 function levelLabel(modeId: string, levelId: number): string {
   return `${levelId}번`;
@@ -665,8 +665,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 키즈 세이프 모드 (시지각 반응 전용) */}
-          {isReactTrain ? (
+          {/* 키즈 세이프 모드 (시지각 반응 + 플로우) */}
+          {isReactTrain || isFlowOrChallenge ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
@@ -692,7 +692,9 @@ function SettingsScreen({
               >
                 {launch.kidsSafeMode ? '켜짐 ✓' : '끔'}
                 <span style={{ marginLeft: 10, fontWeight: 700, opacity: 0.85 }}>
-                  (시지각 반응 전체 속도/스폰 간격 완화)
+                  {isFlowOrChallenge
+                    ? '(Flow 3D 체감 속도 완화)'
+                    : '(시지각 반응 전체 속도/스폰 간격 완화)'}
                 </span>
               </button>
             </section>

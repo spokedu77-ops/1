@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { normalizeReactSpeedSec } from '../lib/reactTrainTiming';
 
 const C = [
   { main: '#FF1744', rgb: '255,23,68', name: 'RED' },
@@ -91,6 +92,7 @@ const css = `
 type Props = {
   durationSec: number;
   speedLevel: number;
+  speedSec: number;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
@@ -102,7 +104,7 @@ function project(g: RushState, z: number, laneOffset: number) {
   return { x, y };
 }
 
-export function RushReactionTraining({ durationSec, speedLevel, onExit, onComplete }: Props) {
+export function RushReactionTraining({ durationSec, speedLevel: _speedLevel, speedSec, onExit, onComplete }: Props) {
   const uid = useId();
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
@@ -144,10 +146,10 @@ export function RushReactionTraining({ durationSec, speedLevel, onExit, onComple
     const ctx = cv.getContext('2d');
     if (!ctx) return;
 
-    const lv = Math.max(1, Math.min(7, Math.round(speedLevel)));
-    // 원본 대비 1.5배 느리게: 이동속도 하향 + 기본 스폰 간격 상향
-    const segSpeed = (0.28 + (lv - 1) * 0.055) / 1.5;
-    const spawnInterval = Math.max(0.75, (1.4 - (lv - 1) * 0.15) * 1.5);
+    // z 이동 0.8 구간을 speedSec 동안 통과하도록 맞춘다.
+    const normalizedSpeedSec = normalizeReactSpeedSec(speedSec);
+    const segSpeed = 0.8 / normalizedSpeedSec;
+    const spawnInterval = normalizedSpeedSec;
 
     const g: RushState = {
       running: true,
@@ -413,7 +415,7 @@ export function RushReactionTraining({ durationSec, speedLevel, onExit, onComple
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, speedLevel]);
+  }, [durationSec, endGame, speedSec]);
 
   return (
     <div className="rrt">

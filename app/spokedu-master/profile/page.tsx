@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, ClipboardList, CreditCard, HelpCircle, Mail, MonitorPlay, Pencil, ShieldCheck, ShoppingBag, Smartphone, Sparkles, UsersRound, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
@@ -123,7 +124,7 @@ function ExpansionLink({ icon: Icon, label, caption, href }: { icon: LucideIcon;
 
 function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const profile = useProfile();
-  const setProfile = useMasterStore((state) => state.setProfile);
+  const router = useRouter();
   const [notice, setNotice] = useState('');
   const currentPlan = profile?.plan ?? 'free';
 
@@ -136,8 +137,11 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       setNotice('Lite는 관심 등록 단계입니다. Pro/Center 전환 흐름을 먼저 검증 중이며, 준비되는 대로 안내드립니다.');
       return;
     }
-    setProfile({ plan: plan.id, role: plan.id === 'team' ? 'director' : 'teacher' });
-    setNotice(`${plan.title} 플랜이 적용되었습니다.`);
+    if (plan.id === 'pro' || plan.id === 'team') {
+      onClose();
+      router.push(`/spokedu-master/payment?plan=${plan.id}`);
+      return;
+    }
   };
 
   return (
@@ -231,7 +235,16 @@ export default function SpokeduMasterProfilePage() {
         </div>
       </BottomSheet>
       <PlanSheet open={planOpen} onClose={() => setPlanOpen(false)} />
-      <div className="px-[22px] pt-6 sm:px-8 lg:px-10"><p className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--spm-t3)' }}><Sparkles size={13} />상용화 첫 버전은 라이브러리와 SPOMOVE의 즉시 가치를 선명하게 보여주는 데 집중합니다.</p></div>
+      <div className="px-[22px] pt-6 sm:px-8 lg:px-10">
+        <p className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--spm-t3)' }}><Sparkles size={13} />상용화 첫 버전은 라이브러리와 SPOMOVE의 즉시 가치를 선명하게 보여주는 데 집중합니다.</p>
+        <p className="mt-4 text-[10px]" style={{ color: 'var(--spm-t3)' }}>
+          <Link href="/spokedu-master/terms" style={{ color: 'var(--spm-t3)' }}>이용약관</Link>
+          <span className="mx-2">·</span>
+          <Link href="/spokedu-master/privacy" style={{ color: 'var(--spm-t3)' }}>개인정보처리방침</Link>
+          <span className="mx-2">·</span>
+          <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-t3)' }}>support@spokedu.com</a>
+        </p>
+      </div>
     </div>
   );
 }

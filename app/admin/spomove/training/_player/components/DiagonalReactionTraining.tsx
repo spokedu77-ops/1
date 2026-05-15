@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
 
 const HUD_H = 64;
 const BG = '#06060E';
@@ -13,8 +14,6 @@ const C = [
   { main: '#00E676', rgb: '0,230,118' },
   { main: '#FFD600', rgb: '255,214,0' },
 ] as const;
-
-const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간 빠름', '빠름', '매우 빠름'];
 
 type LayoutState = {
   W: number;
@@ -43,6 +42,7 @@ type GameState = {
   running: boolean;
   timeLeft: number;
   spd: number;
+  speedSec: number;
   tiles: Tile[];
   particles: (Particle | MeteorSpark)[];
   shockwaves: Shockwave[];
@@ -208,8 +208,7 @@ class Tile {
     const dist = Math.sqrt(dx * dx + dy * dy) || 1;
     this.vx = dx / dist;
     this.vy = dy / dist;
-    const lv = g.spd;
-    this.speed = (Math.min(L.W, L.H) / 1.6 / 60) * (0.55 + (lv - 1) * 0.17) * (g.baseSpeedMult || 1);
+    this.speed = (dist / g.speedSec / 60) * (g.baseSpeedMult || 1);
     this.size = Math.min(L.W, L.H) * 0.055;
     this.fired = false;
     this.dead = false;
@@ -333,11 +332,12 @@ const css = `
 type Props = {
   durationSec: number;
   speedLevel: number;
+  speedSec: number;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onComplete }: Props) {
+export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, onExit, onComplete }: Props) {
   const playAreaRef = useRef<HTMLDivElement>(null);
   const cvRef = useRef<HTMLCanvasElement>(null);
   const gRef = useRef<GameState | null>(null);
@@ -356,9 +356,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
   }, [onComplete]);
 
   const lv = Math.max(1, Math.min(7, speedLevel));
-  // 시지각 반응 4번(대각선): 전체 체감 속도(이동 + 스폰)를 확실히 낮춘다.
-  const SLOW_FACTOR = 1.8;
-  const spName = SPD_NAMES[lv - 1] ?? '보통';
+  const normalizedSpeedSec = normalizeReactSpeedSec(speedSec);
 
   const endGame = useCallback(() => {
     const g = gRef.current;
@@ -402,6 +400,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       running: true,
       timeLeft: durationSec,
       spd: lv,
+      speedSec: normalizedSpeedSec,
       tiles: [],
       particles: [],
       shockwaves: [],
@@ -409,10 +408,10 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       combo: 0,
       maxCombo: 0,
       laneCount: [0, 0, 0, 0],
-      spawnInt: Math.floor(600 * SLOW_FACTOR),
+      spawnInt: speedSecToMs(normalizedSpeedSec, { minMs: 500, maxMs: 6000 }),
       lastSpawn: 0,
       elapsed: 0,
-      baseSpeedMult: 1 / SLOW_FACTOR,
+      baseSpeedMult: 1,
       raf: null,
       timer: null,
       padPulse: [0, 0, 0, 0],
@@ -707,7 +706,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (!play) return;
       resizeCv(play);
       calcLayout();
-      g.spawnInt = Math.max(360, Math.floor((1450 - (lv - 1) * 145) * SLOW_FACTOR));
+      g.spawnInt = speedSecToMs(normalizedSpeedSec, { minMs: 500, maxMs: 6000 });
     };
 
     const startId = window.setTimeout(() => {
@@ -715,7 +714,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (play) {
         resizeCv(play);
         calcLayout();
-        g.spawnInt = Math.max(360, Math.floor((1450 - (lv - 1) * 145) * SLOW_FACTOR));
+        g.spawnInt = speedSecToMs(normalizedSpeedSec, { minMs: 500, maxMs: 6000 });
       }
       g.lastSpawn = performance.now();
       updateHudTime();
@@ -744,7 +743,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, lv, onExit]);
+  }, [durationSec, endGame, lv, onExit, normalizedSpeedSec]);
 
   return (
     <div className="drt" id="drt">

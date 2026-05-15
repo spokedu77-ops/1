@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { DesktopRail, TabBar } from './TabBar';
 import { StatusBar } from './StatusBar';
@@ -16,23 +17,28 @@ function OperationsBanner() {
   const expired = isTrialExpired(profile);
   if (operational.online && !expired) return null;
 
-  const label = !operational.online
-    ? '오프라인 상태입니다. 라이브러리와 SPOMOVE 화면은 계속 확인할 수 있습니다.'
-    : expired
-      ? '무료 체험이 종료되었습니다. 내 정보에서 이어서 사용할 플랜을 확인하세요.'
-      : '';
+  if (expired) {
+    return (
+      <div
+        className="mx-[22px] mt-3 flex items-center justify-between gap-3 rounded-[12px] px-3 py-2 sm:mx-8 lg:mx-10"
+        style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}
+        role="status"
+      >
+        <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>무료 체험이 종료되었습니다.</p>
+        <Link href="/spokedu-master/payment?plan=pro" className="shrink-0 rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)' }}>
+          Pro 시작
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div
       className="mx-[22px] mt-3 rounded-[12px] px-3 py-2 text-[12px] font-bold sm:mx-8 lg:mx-10"
-      style={{
-        background: expired ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
-        color: expired ? 'var(--spm-red)' : 'var(--spm-amb)',
-        border: expired ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(245,158,11,0.25)',
-      }}
+      style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)', border: '1px solid rgba(245,158,11,0.25)' }}
       role="status"
     >
-      {label}
+      오프라인 상태입니다. 라이브러리와 SPOMOVE 화면은 계속 확인할 수 있습니다.
     </div>
   );
 }
@@ -45,14 +51,17 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isSession = pathname.startsWith(`${basePath}/spomove/session`);
   const isOnboarding = pathname.startsWith(`${basePath}/onboarding`);
   const isParentView = pathname.startsWith(`${basePath}/parent`);
+  const isPayment = pathname.startsWith(`${basePath}/payment`);
 
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const loadDrills = useMasterStore((state) => state.loadDrills);
+  const syncSubscription = useMasterStore((state) => state.syncSubscription);
 
   useEffect(() => {
     void loadPrograms();
     void loadDrills();
-  }, [loadPrograms, loadDrills]);
+    void syncSubscription();
+  }, [loadPrograms, loadDrills, syncSubscription]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
@@ -72,29 +81,31 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }, []);
 
   useEffect(() => {
-    if (!isSession && !isOnboarding && !isParentView && profile && !profile.onboardingDone) {
+    if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !profile.onboardingDone) {
       router.replace(`${basePath}/onboarding`);
     }
-  }, [basePath, isOnboarding, isParentView, isSession, profile, router]);
+  }, [basePath, isOnboarding, isParentView, isPayment, isSession, profile, router]);
 
   if (isSession) {
     return <div className="min-h-dvh bg-black" style={{ fontFamily: 'var(--spm-font-body)' }}>{children}</div>;
   }
 
+  const hideChrome = isOnboarding || isParentView || isPayment;
+
   return (
     <div className="min-h-dvh" style={{ background: 'linear-gradient(135deg, #07070c 0%, #101426 55%, #07070c 100%)', color: 'var(--spm-t)' }}>
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-white/5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-        {isOnboarding || isParentView ? null : <DesktopRail basePath={basePath} />}
+        {hideChrome ? null : <DesktopRail basePath={basePath} />}
         <div className="flex min-w-0 flex-1 flex-col">
-          {isOnboarding || isParentView ? null : <StatusBar />}
+          {hideChrome ? null : <StatusBar />}
           <main className="min-h-0 flex-1 overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
-            {isOnboarding || isParentView ? null : <OperationsBanner />}
-            {isOnboarding || isParentView ? null : <TrialCountdownBanner />}
+            {hideChrome ? null : <OperationsBanner />}
+            {hideChrome ? null : <TrialCountdownBanner />}
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
           </main>
-          {isOnboarding || isParentView ? null : <TabBar basePath={basePath} />}
+          {hideChrome ? null : <TabBar basePath={basePath} />}
         </div>
       </div>
     </div>

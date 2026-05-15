@@ -31,6 +31,7 @@ interface MasterState {
   loadDrills: () => Promise<void>;
   profile: UserProfile | null;
   setProfile: (profile: Partial<UserProfile>) => void;
+  syncSubscription: () => Promise<void>;
   operational: OperationalStatus;
   setOnline: (online: boolean) => void;
   setLastSyncNow: () => void;
@@ -269,6 +270,22 @@ export const useMasterStore = create<MasterState>()(
       },
       profile: defaultProfile,
       setProfile: (profile) => set((state) => ({ profile: state.profile ? { ...state.profile, ...profile } : { ...defaultProfile, ...profile } })),
+      syncSubscription: async () => {
+        try {
+          const res = await fetch('/api/spokedu-master/subscription');
+          if (!res.ok) return;
+          const json = await res.json() as { plan?: string; status?: string };
+          if (json.plan && (json.plan === 'pro' || json.plan === 'team') && json.status === 'active') {
+            set((state) => ({
+              profile: state.profile
+                ? { ...state.profile, plan: json.plan as 'pro' | 'team', role: json.plan === 'team' ? 'director' : 'teacher' }
+                : state.profile,
+            }));
+          }
+        } catch {
+          // network failure — keep current plan
+        }
+      },
       operational: defaultOperational,
       setOnline: (online) => set((state) => ({ operational: { ...state.operational, online } })),
       setLastSyncNow: () => set((state) => ({ operational: { ...state.operational, lastSyncAt: new Date().toISOString() } })),

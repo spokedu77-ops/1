@@ -36,7 +36,7 @@ export default function StudentsPage() {
       if (prev[selected.id]) return prev;
       return { ...prev, [selected.id]: createParentShareToken(selected.id) };
     });
-  }, [selected?.id]);
+  }, [selected]);
 
   const selectedParentToken = selected ? parentShareTokens[selected.id] ?? '' : '';
 

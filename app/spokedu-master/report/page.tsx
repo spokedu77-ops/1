@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { BookOpen, Check, Clipboard, FileText, GraduationCap, Megaphone, MessageCircle, MonitorPlay, UsersRound, type LucideIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { PROGRAMS } from '../lib/data';
 import { isTrialExpired } from '../lib/subscription';
 import { useMasterStore, useIsPro, useProfile } from '../store';
 
@@ -21,7 +20,9 @@ const AUDIENCES: Array<{ id: Audience; label: string; description: string; Icon:
   { id: 'promo', label: '홍보용', description: '블로그·SNS 소개 문구', Icon: Megaphone },
 ];
 
-function buildCopyBlocks(audience: Audience, program: (typeof PROGRAMS)[number]): CopyBlock[] {
+import type { Program } from '../types';
+
+function buildCopyBlocks(audience: Audience, program: Program): CopyBlock[] {
   const detail = program.lessonDetail;
   const focus = detail?.developmentFocus ?? program.tags.join(', ');
   const objective = detail?.objective ?? program.description;
@@ -140,16 +141,17 @@ function CopyCard({ block, copied, onCopy }: { block: CopyBlock; copied: boolean
 }
 
 export default function ReportPage() {
+  const programs = useMasterStore((state) => state.programs);
   const classRecords = useMasterStore((state) => state.classRecords);
-  const recentProgramId = classRecords[classRecords.length - 1]?.programId ?? PROGRAMS[0]?.id ?? '';
+  const recentProgramId = classRecords[classRecords.length - 1]?.programId ?? programs[0]?.id ?? '';
   const profile = useProfile();
   const isPro = useIsPro();
   const trialExpired = isTrialExpired(profile);
   const [audience, setAudience] = useState<Audience>('parent');
   const [programId, setProgramId] = useState(recentProgramId);
   const [copiedKey, setCopiedKey] = useState('');
-  const program = PROGRAMS.find((item) => item.id === programId) ?? PROGRAMS[0]!;
-  const copyBlocks = useMemo(() => buildCopyBlocks(audience, program), [audience, program]);
+  const program = programs.find((item) => item.id === programId) ?? programs[0];
+  const copyBlocks = useMemo(() => (program ? buildCopyBlocks(audience, program) : []), [audience, program]);
   const activeAudience = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0]!;
 
   const copyText = async (key: string, text: string) => {
@@ -178,7 +180,7 @@ export default function ReportPage() {
               <AudienceButton active={audience === id && !locked} label={label} description={description} Icon={Icon} onClick={() => { if (!locked) setAudience(id); }} />
               {locked ? (
                 <div className="absolute inset-0 flex items-center justify-end rounded-[14px] bg-black/50 pr-3 backdrop-blur-[2px]">
-                  <Link href="/spokedu-master/profile" className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.35)' }}>PRO</Link>
+                  <Link href="/spokedu-master/payment?plan=pro" className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.35)' }}>PRO</Link>
                 </div>
               ) : null}
             </div>
@@ -186,7 +188,8 @@ export default function ReportPage() {
         })}
       </section>
 
-      <main className="grid gap-6 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
+      {!program ? <div className="px-[22px] py-10 text-center text-[13px]" style={{ color: 'var(--spm-t3)' }}>프로그램을 불러오는 중입니다…</div> : null}
+      {program ? <main className="grid gap-6 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
         <aside className="space-y-4">
           <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-4 flex items-center gap-2">
@@ -194,7 +197,7 @@ export default function ReportPage() {
               <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>활동 선택</h2>
             </div>
             <div className="space-y-2">
-              {PROGRAMS.map((item) => (
+              {programs.map((item) => (
                 <button key={item.id} type="button" onClick={() => setProgramId(item.id)} className="w-full rounded-[13px] p-3 text-left" style={{ background: programId === item.id ? 'rgba(99,102,241,0.16)' : 'var(--spm-s3)', border: programId === item.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid transparent' }}>
                   <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
                   <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{item.grade} · {item.duration}분 · {item.space}</span>
@@ -228,7 +231,7 @@ export default function ReportPage() {
             return <CopyCard key={key} block={block} copied={copiedKey === key} onCopy={() => copyText(key, block.text)} />;
           })}
         </section>
-      </main>
+      </main> : null}
     </div>
   );
 }

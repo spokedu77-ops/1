@@ -4,11 +4,11 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
 const COLOR_OPTIONS = [
   { id: 'red', label: '빨강', hex: '#FF3B3B' },
-  { id: 'orange', label: '주황', hex: '#FF6B00' },
   { id: 'yellow', label: '노랑', hex: '#F5C800' },
   { id: 'green', label: '초록', hex: '#00C853' },
   { id: 'blue', label: '파랑', hex: '#0A84FF' },
 ];
+const ALLOWED_COLOR_IDS = new Set(COLOR_OPTIONS.map((c) => c.id));
 
 const ARROW_OPTIONS = [
   { id: 'up_left', label: '좌상', angle: -135 },
@@ -353,7 +353,7 @@ button {
 
 .spm-color-strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 
@@ -1692,6 +1692,10 @@ function toggleInList<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
 }
 
+function sanitizeColorIds(ids: string[]): string[] {
+  return ids.filter((id) => ALLOWED_COLOR_IDS.has(id));
+}
+
 function pickRandom<T>(list: T[]): T {
   return list[Math.floor(Math.random() * list.length)];
 }
@@ -2281,7 +2285,7 @@ export default function SpomovePage() {
   }, []);
 
   const hydrateFromFavorite = useCallback((payload: SpmPayload) => {
-    setSelColors(payload.selColors);
+    setSelColors(sanitizeColorIds(payload.selColors));
     setSelArrows(payload.selArrows);
     setSelNums(payload.selNums);
     setStroop(payload.stroop);
@@ -2391,7 +2395,23 @@ export default function SpomovePage() {
   if (screen === 'intro') {
     return (
       <IntroScreen
-        onCreate={() => { setStep(1); setScreen('settings'); }}
+        onCreate={() => {
+          // Create 진입 시 이전 세션/즐겨찾기 상태를 비워 항상 현재 기본 옵션(4색) 기준으로 시작
+          setSelColors([]);
+          setSelArrows([]);
+          setSelNums([]);
+          setStroop(false);
+          setTrans('touch');
+          setDispT(1.0);
+          setBlankT(0.5);
+          setDurMode('round');
+          setCdTime(60);
+          setRounds(10);
+          setSets(3);
+          setStep(1);
+          setTab('basic');
+          setScreen('settings');
+        }}
         onFavorite={() => setScreen('favoriteList')}
       />
     );

@@ -3,10 +3,12 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
 
 type Props = {
   durationSec: number;
   speedLevel: number;
+  speedSec: number;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
@@ -48,7 +50,7 @@ const css = `
 .rmt-combo-w{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.45)}
 `;
 
-export function RobloxMoleReactionTraining({ durationSec, speedLevel, onExit, onComplete }: Props) {
+export function RobloxMoleReactionTraining({ durationSec, speedLevel, speedSec, onExit, onComplete }: Props) {
   const uid = useId();
   const gRef = useRef<{
     running: boolean;
@@ -72,15 +74,6 @@ export function RobloxMoleReactionTraining({ durationSec, speedLevel, onExit, on
   const [warn, setWarn] = useState(false);
   const [holesUp, setHolesUp] = useState<boolean[]>(() => Array.from({ length: 9 }, () => false));
   const [holeColors, setHoleColors] = useState<string[]>(() => Array.from({ length: 9 }, () => '#d97706'));
-
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen?.().catch(() => {});
-      }
-    });
-    return () => cancelAnimationFrame(id);
-  }, []);
 
   const clearSpawnTimers = useCallback(() => {
     const g = gRef.current;
@@ -119,10 +112,19 @@ export function RobloxMoleReactionTraining({ durationSec, speedLevel, onExit, on
 
   useEffect(() => {
     const lv = Math.max(1, Math.min(7, Math.round(speedLevel)));
-    // 기존 reactTrain 템포 계열(stepDur)과 동일한 속도축을 사용해 등장 주기를 맞춘다.
+    // speedSec(설정한 초)를 직접 cadence에 반영해 체감 템포를 맞춘다.
+    const normalizedSpeedSec = normalizeReactSpeedSec(speedSec);
+    const cadenceMs = speedSecToMs(normalizedSpeedSec, { minMs: 700, maxMs: 6000 });
+    // 노출 시간은 난이도/주기 모두를 고려하되, 다음 출현보다 너무 길어지지 않게 제한.
     const stepDur = Math.max(320, 820 - (lv - 1) * 70);
-    const cadenceMs = 1000;
-    const exposeMs = Math.min(860, Math.max(340, Math.round(stepDur * 0.8)));
+    const exposeMs = Math.max(
+      300,
+      Math.min(
+        1100,
+        Math.round(stepDur * 0.95),
+        Math.round(cadenceMs * 0.75),
+      ),
+    );
     const g = {
       running: true,
       timeLeft: Math.max(1, durationSec),
@@ -187,19 +189,17 @@ export function RobloxMoleReactionTraining({ durationSec, speedLevel, onExit, on
       }, g.exposeMs);
     };
 
-    const scheduleOnSecond = () => {
+    const scheduleNext = (delayMs: number) => {
       if (!g.running) return;
-      const now = Date.now();
-      const delay = g.cadenceMs - (now % g.cadenceMs);
       g.nextTimer = setTimeout(() => {
         if (!g.running) return;
         triggerMole();
-        scheduleOnSecond();
-      }, delay);
+        scheduleNext(g.cadenceMs);
+      }, delayMs);
     };
 
     setHud();
-    scheduleOnSecond();
+    scheduleNext(g.cadenceMs);
     g.timer = setInterval(() => {
       g.timeLeft -= 1;
       setHud();
@@ -211,7 +211,7 @@ export function RobloxMoleReactionTraining({ durationSec, speedLevel, onExit, on
       if (g.timer) clearInterval(g.timer);
       clearSpawnTimers();
     };
-  }, [clearSpawnTimers, durationSec, endGame, speedLevel]);
+  }, [clearSpawnTimers, durationSec, endGame, speedLevel, speedSec]);
 
   return (
     <div className="rmt">

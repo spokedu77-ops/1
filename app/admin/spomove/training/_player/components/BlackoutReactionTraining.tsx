@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { speedSecToMs } from '../lib/reactTrainTiming';
 
 const COLORS = [
   { main: '#FF1744', rgb: '255,23,68', name: 'RED' },
@@ -70,6 +71,7 @@ const css = `
 type Props = {
   durationSec: number;
   speedLevel: number;
+  speedSec: number;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
@@ -85,7 +87,7 @@ function shuffle<T>(arr: T[]): T[] {
   return out;
 }
 
-export function BlackoutReactionTraining({ durationSec, speedLevel, onExit, onComplete }: Props) {
+export function BlackoutReactionTraining({ durationSec, speedLevel, speedSec, onExit, onComplete }: Props) {
   const uid = useId();
   const gRef = useRef<BlackoutState | null>(null);
   const hudTimeRef = useRef<HTMLDivElement>(null);
@@ -137,12 +139,17 @@ export function BlackoutReactionTraining({ durationSec, speedLevel, onExit, onCo
   useEffect(() => {
     const lv = Math.max(1, Math.min(7, Math.round(speedLevel)));
     const diff = lv <= 3 ? 1 : lv <= 6 ? 2 : 3;
+    const targetRoundMs = speedSecToMs(speedSec, { minMs: 900, maxMs: 6000 });
+    const restDur = Math.max(320, Math.min(1200, Math.round(targetRoundMs * 0.28)));
+    const holdDur = Math.max(380, Math.min(2200, Math.round(targetRoundMs * 0.42)));
+    const vanishBudget = Math.max(240, targetRoundMs - restDur - holdDur);
+    const stepDur = Math.max(110, Math.min(1200, Math.round(vanishBudget / Math.max(1, diff))));
     const g: BlackoutState = {
       running: true,
       timeLeft: Math.max(1, durationSec),
-      stepDur: Math.max(320, 820 - (lv - 1) * 70),
-      holdDur: Math.max(900, 1900 - (lv - 1) * 130),
-      restDur: 760,
+      stepDur,
+      holdDur,
+      restDur,
       diff,
       roundTimer: null,
       roundTimers: [],
@@ -292,7 +299,7 @@ export function BlackoutReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (g.timer) clearInterval(g.timer);
       clearRoundTimer();
     };
-  }, [clearRoundTimer, durationSec, endGame, speedLevel]);
+  }, [clearRoundTimer, durationSec, endGame, speedLevel, speedSec]);
 
   return (
     <div className="bot">

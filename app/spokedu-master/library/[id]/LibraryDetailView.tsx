@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { ArrowLeft, Bookmark, CheckCircle2, Clipboard, ExternalLink, Lightbulb, Lock, MessageCircle, Play, ShieldAlert, ShoppingBag, Shuffle, Zap, type LucideIcon } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useIsPro, useMasterStore } from '../../store';
+import { CategoryIcon } from '../../components/ui/ProgramThumb';
+import type { Program } from '../../types';
 
 function getEquipmentPrice(item: string) {
   if (item.includes('프로젝터')) return 159000;
@@ -14,8 +16,29 @@ function getEquipmentPrice(item: string) {
   return 0;
 }
 
-function ThumbGrid({ colors }: { colors: [string, string, string, string] }) {
-  return <div className="grid h-[220px] grid-cols-2 grid-rows-2 gap-1 overflow-hidden rounded-[18px] md:h-full" aria-hidden>{colors.map((color) => <span key={color} style={{ background: color }} />)}</div>;
+function ProgramHero({ program, locked }: { program: Program; locked: boolean }) {
+  return (
+    <div
+      className="relative flex h-[220px] items-center justify-center overflow-hidden rounded-[18px] md:h-full"
+      style={{ background: `linear-gradient(145deg, ${program.colors[0]}, ${program.colors[1]}, ${program.colors[2]})` }}
+      aria-hidden
+    >
+      <span className="pointer-events-none absolute right-3 top-3 opacity-[0.1]">
+        <CategoryIcon category={program.category} size={130} color="#fff" strokeWidth={0.7} />
+      </span>
+      <div className="grid h-[72px] w-[72px] place-items-center rounded-[22px]" style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.16)' }}>
+        <CategoryIcon category={program.category} size={34} color="rgba(255,255,255,0.9)" />
+      </div>
+      {locked ? (
+        <div className="absolute inset-0 grid place-items-center rounded-[18px] bg-black/58 backdrop-blur-[3px]">
+          <div className="rounded-[12px] px-4 py-3 text-center" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <Lock className="mx-auto mb-2 h-5 w-5" color="var(--spm-amb)" />
+            <p className="text-[12px] font-black" style={{ color: 'var(--spm-amb)' }}>PRO 수업안</p>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function DetailPanel({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: ReactNode }) {
@@ -82,13 +105,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
       <main className="px-[22px] sm:px-8 lg:px-10">
         <section className="grid gap-5 md:grid-cols-[0.82fr_1.18fr]">
-          <div className="relative min-h-[220px]"><ThumbGrid colors={program.colors} />{locked ? <div className="absolute inset-0 grid place-items-center rounded-[18px] bg-black/58 backdrop-blur-[3px]"><div className="rounded-[12px] px-4 py-3 text-center" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }}><Lock className="mx-auto mb-2 h-5 w-5" color="var(--spm-amb)" /><p className="text-[12px] font-black" style={{ color: 'var(--spm-amb)' }}>PRO 수업안</p></div></div> : null}</div>
+          <div className="relative min-h-[220px]"><ProgramHero program={program} locked={locked} /></div>
           <div className="pt-1 md:pt-4">
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>{program.category}</p>
             <h1 className="mt-2 text-[30px] font-black leading-[1.12] md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{program.title}</h1>
             <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{program.grade} / {program.duration}분 / {program.space}</p>
             <p className="mt-5 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>{program.description}</p>
-            {locked ? <Link href="/spokedu-master/profile" className="mt-7 block rounded-[14px] p-4 text-center" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}><strong className="block text-[14px]" style={{ color: 'var(--spm-amb)' }}>PRO로 업그레이드하고 전체 수업안 열기</strong></Link> : <div className="mt-7 grid grid-cols-1 gap-2 sm:grid-cols-3"><Link href={`/spokedu-master/spomove/session?drill=${detail?.relatedSpomoveIds[0] ?? 'speed-track'}&mode=projector&program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={16} fill="#fff" />큰 화면 실행</Link>{detail?.videoUrl ? <a href={detail.videoUrl} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><ExternalLink size={16} />영상 보기</a> : <Link href="/spokedu-master/report" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><MessageCircle size={16} />설명 문구</Link>}<button type="button" onClick={copyParentNote} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)' }}>{copied ? <CheckCircle2 size={16} /> : <Clipboard size={16} />}{copied ? '복사 완료' : '문구 복사'}</button></div>}
+            {locked ? <Link href="/spokedu-master/payment?plan=pro" className="mt-7 flex h-12 w-full items-center justify-center rounded-[14px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.3)' }}>Pro로 시작하고 전체 수업안 보기</Link> : <div className="mt-7 grid grid-cols-1 gap-2 sm:grid-cols-3"><Link href={`/spokedu-master/spomove/session?drill=${detail?.relatedSpomoveIds[0] ?? 'speed-track'}&mode=projector&program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={16} fill="#fff" />큰 화면 실행</Link>{detail?.videoUrl ? <a href={detail.videoUrl} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><ExternalLink size={16} />영상 보기</a> : <Link href="/spokedu-master/report" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><MessageCircle size={16} />설명 문구</Link>}<button type="button" onClick={copyParentNote} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)' }}>{copied ? <CheckCircle2 size={16} /> : <Clipboard size={16} />}{copied ? '복사 완료' : '문구 복사'}</button></div>}
           </div>
         </section>
 

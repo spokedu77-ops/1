@@ -718,7 +718,8 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
         g.spawnInt = computeSpawnInt();
         g.minStimGapMs = computeMinStimGapMs();
       }
-      g.lastSpawn = performance.now();
+      // 시작 직후 첫 자극이 바로 나오도록 스폰 타이머를 한 주기 당겨둔다.
+      g.lastSpawn = performance.now() - g.spawnInt;
       g.timer = setInterval(() => {
         g.timeLeft--;
         updateHud();

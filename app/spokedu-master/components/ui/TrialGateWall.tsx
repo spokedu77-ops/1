@@ -64,12 +64,12 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
               </li>
             ))}
           </ul>
-          <div className="mt-7 grid gap-2 sm:grid-cols-2">
-            <Link href="/spokedu-master/profile#plan" className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}>
-              플랜 선택하기
+          <div className="mt-7 space-y-2">
+            <Link href="/spokedu-master/payment?plan=pro" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.32)' }}>
+              Pro 시작하기 — 39,900원/월
             </Link>
-            <Link href="/spokedu-master/profile" className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-              내 정보 보기
+            <Link href="/spokedu-master/payment?plan=team" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--spm-grn)' }}>
+              Center 플랜 (강사 3명) — 79,000원/월
             </Link>
           </div>
         </div>
@@ -96,8 +96,8 @@ export function TrialCountdownBanner() {
       <p className="text-[12px] font-bold" style={{ color: daysLeft <= 2 ? 'var(--spm-red)' : 'var(--spm-amb)' }}>
         무료 체험 <strong>{daysLeft}일</strong> 남았습니다.
       </p>
-      <Link href="/spokedu-master/profile" className="shrink-0 rounded-full px-3 py-1 text-[11px] font-black" style={{ background: daysLeft <= 2 ? 'rgba(239,68,68,0.14)' : 'rgba(245,158,11,0.14)', color: daysLeft <= 2 ? 'var(--spm-red)' : 'var(--spm-amb)' }}>
-        플랜 보기
+      <Link href="/spokedu-master/payment?plan=pro" className="shrink-0 rounded-full px-3 py-1 text-[11px] font-black" style={{ background: daysLeft <= 2 ? 'rgba(239,68,68,0.14)' : 'rgba(245,158,11,0.14)', color: daysLeft <= 2 ? 'var(--spm-red)' : 'var(--spm-amb)' }}>
+        Pro 시작
       </Link>
     </div>
   );

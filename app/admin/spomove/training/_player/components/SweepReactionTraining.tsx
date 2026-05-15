@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { speedSecToMs } from '../lib/reactTrainTiming';
 
 const C = [
   { main: '#FF1744', rgb: '255,23,68', name: 'RED' },
@@ -80,6 +81,7 @@ const css = `
 type Props = {
   durationSec: number;
   speedLevel: number;
+  speedSec: number;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
@@ -95,7 +97,7 @@ function shuffle<T>(arr: T[]): T[] {
   return out;
 }
 
-export function SweepReactionTraining({ durationSec, speedLevel, onExit, onComplete }: Props) {
+export function SweepReactionTraining({ durationSec, speedLevel: _speedLevel, speedSec, onExit, onComplete }: Props) {
   const uid = useId();
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
@@ -137,9 +139,8 @@ export function SweepReactionTraining({ durationSec, speedLevel, onExit, onCompl
     const ctx = cv.getContext('2d');
     if (!ctx) return;
 
-    const lv = Math.max(1, Math.min(7, Math.round(speedLevel)));
-    // 원본(5000~1800ms) 대비 1.5배 느리게: 7500~2700ms
-    const lineDur = Math.max(2700, 7500 - (lv - 1) * 800);
+    // 한 번의 스윕에서 4색 이벤트가 발생하므로, 체감 이벤트 간격이 speedSec에 맞도록 4배로 설정.
+    const lineDur = speedSecToMs(speedSec, { multiplier: 4, minMs: 2800, maxMs: 24000 });
 
     const g: SweepState = {
       running: true,
@@ -373,7 +374,7 @@ export function SweepReactionTraining({ durationSec, speedLevel, onExit, onCompl
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, speedLevel]);
+  }, [durationSec, endGame, speedSec]);
 
   return (
     <div className="swt">
