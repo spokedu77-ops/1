@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Award, ChevronRight, ExternalLink, FileText, MessageCircle, TrendingUp, TriangleAlert } from 'lucide-react';
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { createParentShareToken } from '../lib/subscription';
 import { useMasterStore } from '../store';
 
@@ -26,9 +26,19 @@ export default function StudentsPage() {
   const records = useMasterStore((state) => state.classRecords);
   const [selectedId, setSelectedId] = useState(students[0]?.id ?? null);
   const [kakaoReadyId, setKakaoReadyId] = useState<string | null>(null);
+  const [parentShareTokens, setParentShareTokens] = useState<Record<string, string>>({});
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
   const selectedRecordCount = selected ? records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length : 0;
-  const selectedParentToken = selected ? createParentShareToken(selected.id) : '';
+
+  useLayoutEffect(() => {
+    if (!selected) return;
+    setParentShareTokens((prev) => {
+      if (prev[selected.id]) return prev;
+      return { ...prev, [selected.id]: createParentShareToken(selected.id) };
+    });
+  }, [selected?.id]);
+
+  const selectedParentToken = selected ? parentShareTokens[selected.id] ?? '' : '';
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>

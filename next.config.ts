@@ -4,6 +4,10 @@ import withPWAInit from "@ducanh2912/next-pwa";
 const withPWA = withPWAInit({ dest: "public" });
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // lucide 배럴 + Turbopack HMR 시 "module factory is not available" 완화 및 트리쉐이킹
+    optimizePackageImports: ["lucide-react"],
+  },
   typescript: { ignoreBuildErrors: false },
   images: {
     remotePatterns: [
