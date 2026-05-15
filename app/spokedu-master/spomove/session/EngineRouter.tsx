@@ -104,6 +104,8 @@ export function EngineRouter({ mode, level, onComplete, onExit }: Props) {
           level={Math.min(level, 3)}
           onExit={onExit}
           onComplete={handleMemoryComplete}
+          audioMode="beep"
+          speedSec={1.2}
         />
       </Suspense>
     );
