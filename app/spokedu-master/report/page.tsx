@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { BookOpen, Check, Clipboard, FileText, GraduationCap, Megaphone, MessageCircle, MonitorPlay, UsersRound, type LucideIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PROGRAMS } from '../lib/data';
+import { isTrialExpired } from '../lib/subscription';
+import { useMasterStore, useIsPro, useProfile } from '../store';
 
 type Audience = 'parent' | 'center' | 'school' | 'promo';
 type CopyBlock = {
@@ -127,7 +129,7 @@ function CopyCard({ block, copied, onCopy }: { block: CopyBlock; copied: boolean
           <h3 className="text-[16px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{block.title}</h3>
           <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{block.caption}</p>
         </div>
-        <button type="button" onClick={onCopy} className="flex h-9 items-center justify-center gap-2 rounded-[11px] px-3 text-[12px] font-black" style={{ background: copied ? 'rgba(16,185,129,0.14)' : 'var(--spm-acc)', color: copied ? 'var(--spm-grn)' : '#fff' }}>
+        <button type="button" onClick={onCopy} className="flex h-11 items-center justify-center gap-2 rounded-[11px] px-3 text-[12px] font-black" style={{ background: copied ? 'rgba(16,185,129,0.14)' : 'var(--spm-acc)', color: copied ? 'var(--spm-grn)' : '#fff' }}>
           {copied ? <Check size={14} /> : <Clipboard size={14} />}
           {copied ? '복사 완료' : '복사'}
         </button>
@@ -138,8 +140,13 @@ function CopyCard({ block, copied, onCopy }: { block: CopyBlock; copied: boolean
 }
 
 export default function ReportPage() {
+  const classRecords = useMasterStore((state) => state.classRecords);
+  const recentProgramId = classRecords[classRecords.length - 1]?.programId ?? PROGRAMS[0]?.id ?? '';
+  const profile = useProfile();
+  const isPro = useIsPro();
+  const trialExpired = isTrialExpired(profile);
   const [audience, setAudience] = useState<Audience>('parent');
-  const [programId, setProgramId] = useState(PROGRAMS[0]?.id ?? '');
+  const [programId, setProgramId] = useState(recentProgramId);
   const [copiedKey, setCopiedKey] = useState('');
   const program = PROGRAMS.find((item) => item.id === programId) ?? PROGRAMS[0]!;
   const copyBlocks = useMemo(() => buildCopyBlocks(audience, program), [audience, program]);
@@ -164,7 +171,19 @@ export default function ReportPage() {
       </header>
 
       <section className="mb-6 grid gap-2 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10">
-        {AUDIENCES.map(({ id, label, description, Icon }) => <AudienceButton key={id} active={audience === id} label={label} description={description} Icon={Icon} onClick={() => setAudience(id)} />)}
+        {AUDIENCES.map(({ id, label, description, Icon }) => {
+          const locked = (trialExpired || !isPro) && id !== 'parent';
+          return (
+            <div key={id} className="relative">
+              <AudienceButton active={audience === id && !locked} label={label} description={description} Icon={Icon} onClick={() => { if (!locked) setAudience(id); }} />
+              {locked ? (
+                <div className="absolute inset-0 flex items-center justify-end rounded-[14px] bg-black/50 pr-3 backdrop-blur-[2px]">
+                  <Link href="/spokedu-master/profile" className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.35)' }}>PRO</Link>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
       </section>
 
       <main className="grid gap-6 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">

@@ -2,9 +2,15 @@
 
 ## 작업 날짜
 
-- 2026-05-13
+- 2026-05-13 (Phase 1 방향 정리 + 깨진 데이터 기반 수정 + 주요 화면 UX 완성)
+- 2026-05-14 (코드 현황 재점검 + 세부 UX 개선 + 상용화 완성도 강화 작업)
+- 2026-05-14 (모바일 반응형 QA — safe-area, 터치 타겟, 스크롤 전수 점검)
+- 2026-05-14 (콘텐츠 통합 — 3레이어 아키텍처 구축: SQL 마이그레이션 + API routes + store 동적 로딩 + Admin 편집 UI)
+- 2026-05-15 (SPOMOVE 엔진 통합 — EngineRouter + 세션 페이지 통합 + Admin UI 완성)
 
-## 수정한 파일
+---
+
+## 수정한 파일 (2026-05-13)
 
 - `app/spokedu-master/lib/data.ts`
 - `app/spokedu-master/store/index.ts`
@@ -26,7 +32,31 @@
 - `app/spokedu-master/director/page.tsx`
 - `app/spokedu-master/parent/[studentId]/page.tsx`
 
-## 해결한 문제
+## 수정한 파일 (2026-05-14)
+
+### 세부 UX 개선 (1차)
+- `app/spokedu-master/dashboard/DashboardView.tsx` — 시간대별 인사말, 빈 상태 처리, 스켈레톤
+- `app/spokedu-master/report/page.tsx` — 최근 사용 프로그램 자동 연결, Pro 잠금 표시
+- `app/spokedu-master/library/[id]/LibraryDetailView.tsx` — 연결 SPOMOVE 드릴 이름 표시
+- `app/spokedu-master/spomove/SpomoveHubView.tsx` — 빈 통계 상태 메시지
+- `app/spokedu-master/profile/page.tsx` — School 플랜 상담 안내 문구
+- `app/spokedu-master/components/layout/AppShell.tsx` — TrialCountdownBanner, ErrorBoundary 통합
+
+### 상용화 완성도 강화 (2차)
+- `app/spokedu-master/components/ui/TrialGateWall.tsx` — **신규** 트라이얼 만료 게이트 + 카운트다운 배너
+- `app/spokedu-master/components/ui/ErrorBoundary.tsx` — **신규** 에러 바운더리
+- `app/spokedu-master/components/ui/Skeleton.tsx` — **신규** 스켈레톤 컴포넌트 (DashboardSkeleton, LibrarySkeleton)
+- `app/spokedu-master/library/page.tsx` — TrialGateWall 적용
+- `app/spokedu-master/library/LibraryView.tsx` — 스켈레톤 + scrollbar-hide
+- `app/spokedu-master/spomove/page.tsx` — TrialGateWall 적용
+- `app/spokedu-master/spomove/session/page.tsx` — 트라이얼 만료/PRO 드릴 접근 차단
+- `app/spokedu-master/onboarding/page.tsx` — 마지막 스텝 강화 + 완료 시 라이브러리로 이동
+- `app/globals.css` — spmSkeleton 애니메이션 추가
+- `CLAUDE.md` — **신규** 프로젝트 규칙 (커밋/푸시 금지 포함)
+
+---
+
+## 해결한 문제 (2026-05-13)
 
 - 작업 기준을 `SPOKEDU MASTER`로 고정했다.
   - 기존 대화에서 `subscription-new`, `spokedu-pro`와 혼선이 있었으나, 현재 작업 대상은 `app/spokedu-master`만이다.
@@ -47,7 +77,7 @@
   - `store`라는 표현이 학생 데이터 저장소와 헷갈리지 않도록 화면 카피는 `교구 스토어`, `장바구니`, `주문 요청` 중심으로 정리했다.
   - 실제 결제 완료가 아니라 견적/배송 확인 전 단계의 `주문 요청`으로 표현했다.
 
-- 공용 바텀시트 접근성 라벨의 깨진 문구를 수정했다.
+- 공통 바텀시트 접근성 라벨의 깨진 문구를 수정했다.
   - `BottomSheet`의 닫기 버튼 aria-label을 정상 한글 `닫기`로 수정했다.
 
 - 공통 상단/온보딩을 Phase 1 구독 플랫폼 관점으로 정리했다.
@@ -113,63 +143,204 @@
   - `rg "[\x{4E00}-\x{9FFF}\x{F900}-\x{FAFF}\x{FFFD}]" app\spokedu-master -n` 결과 없음
   - `rg "[ㅏ-ㅣㄱ-ㅎ]{2,}|\?[^\s\n<>{}()]*[가-힣ㅏ-ㅣㄱ-ㅎ]|[가-힣ㅏ-ㅣㄱ-ㅎ][^\s\n<>{}()]*\?" app\spokedu-master -n` 결과 없음
 
+---
+
+## 해결한 문제 (2026-05-14)
+
+- 코드 기준으로 현재 상태를 재점검했다.
+  - DEV_NOTES 다음 작업 순서 7단계 중 1~6번은 모두 코드로 구현 완료 상태다.
+  - 7번 반응형 QA는 아직 미완성이다.
+
+- 완성도 높은 기능 목록:
+  - 탭 구조: 홈/라이브러리/SPOMOVE/설명/내 정보 5탭 (TabBar + DesktopRail)
+  - 홈(DashboardView): Hero + 오늘 수업 루프 + 오늘 추천 수업 + 최근/즐겨찾기 + SPOMOVE 빠른 실행 + 수업 설명 도구 진입
+  - 라이브러리(LibraryView): 검색, 필터 칩, 포스터 레일 (즐겨찾기/SPOMOVE연결/18분이내), 전체 프로그램 목록
+  - 라이브러리 상세(LibraryDetailView): 준비물+장바구니, 코치 스크립트, 보호자 설명 문구, 현장 팁, 변형 수업, 안전 체크, 연결 SPOMOVE
+  - SPOMOVE 허브(SpomoveHubView): 3가지 사용 맥락 카드, 3가지 LaunchCard, 훈련 모드 그리드, 최근 실행 기록
+  - SPOMOVE 세션(spomove/session/page.tsx): 모드별 UI 분리 (projector/class/mobile), 완료 문구 모드별 분리
+  - 수업 설명 도구(report/page.tsx): 4가지 대상별 템플릿 + 복사 기능
+  - 내 정보(profile/page.tsx): 5가지 플랜 선택 + 확장 기능 진입점
+
+- 세부 UX 개선 항목을 처리했다.
+  - DashboardView: `좋은 아침이에요` 고정 인사를 시간대별(아침/오후/저녁)로 바꿨다.
+  - ReportPage: 페이지 진입 시 classRecords에서 최근 사용한 프로그램을 초기값으로 불러오도록 했다.
+  - LibraryDetailView: 연결 SPOMOVE 칩에 drill ID 문자열 대신 실제 드릴 이름(DRILLS 조회)을 표시했다.
+  - SpomoveHubView: 통계가 모두 0일 때 "아직 기록이 없습니다" 안내를 추가했다.
+  - ProfilePage: School 플랜 "상담 문의" 클릭 시 이메일 안내 문구를 표시하도록 했다.
+
+---
+
+## 해결한 문제 (2026-05-14 2차)
+
+- 트라이얼 만료 게이트를 실제로 구현했다.
+  - `TrialGateWall` 컴포넌트: 라이브러리/SPOMOVE 진입 시 트라이얼 만료면 업그레이드 CTA 화면으로 대체
+  - `TrialCountdownBanner`: 잔여 5일 이하일 때 상단에 카운트다운 배너 표시 (2일 이하는 빨간색)
+  - SPOMOVE 세션: 트라이얼 만료 또는 PRO 드릴 비구독 접근 시 허브로 리다이렉트
+  - 수업 설명 도구: 트라이얼 만료/비Pro일 때 학부모용 외 대상에 PRO 잠금 오버레이
+
+- 에러 바운더리를 구현했다.
+  - `ErrorBoundary` 클래스 컴포넌트: AppShell main 영역 전체를 감쌈
+  - 크래시 발생 시 "다시 시도" + "홈으로" 버튼으로 복구 가능
+
+- 로딩/스켈레톤 상태를 구현했다.
+  - `DashboardSkeleton`, `LibrarySkeleton`: hydration 전 깜빡임 방지
+  - Dashboard와 Library 첫 렌더링에 스켈레톤 표시 후 마운트 완료 시 실제 UI 전환
+
+- 빈 상태 처리를 강화했다.
+  - Dashboard "최근 사용과 즐겨찾기": 첫 방문자에게 라이브러리로 유도하는 빈 상태 카드
+  - SPOMOVE Hub 통계: 세션이 없을 때 "아직 기록 없음" 안내
+
+- 온보딩 → 첫 수업 흐름을 강화했다.
+  - 온보딩 4번째 스텝(완료)을 3단계 수업 루프 설명 + 14일 체험 안내로 교체
+  - 완료 시 대시보드가 아닌 라이브러리로 바로 이동 (핵심 가치 첫 경험)
+
+- 수평 스크롤 레일에 `scrollbar-hide` 적용 (라이브러리 필터 칩, 포스터 레일)
+
+---
+
+## 해결한 문제 (2026-05-14 3차 — 모바일 반응형 QA)
+
+- **TabBar iOS 홈 바 대응** (가장 중요)
+  - `viewport-fit=cover`가 루트 레이아웃에 설정되어 있음에도 TabBar에 safe-area-inset-bottom이 없어 iPhone 홈 바 영역과 겹치는 문제를 수정했다.
+  - `nav` 요소에 `style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}` 적용.
+  - 기존 `py-2 sm:pb-4` → `pt-2` + inline style로 변경.
+
+- **터치 타겟 크기 일괄 교정 (44px 기준)**
+  - `StatusBar` 프로필/알림 버튼: `h-9 w-9` (36px) → `h-11 w-11` (44px)
+  - `DashboardView` 알림 버튼: `h-[38px] w-[38px]` → `h-11 w-11` (44px)
+  - `BottomSheet` 닫기 버튼: `h-9 w-9` → `h-11 w-11` (44px)
+  - `ReportPage` 복사 버튼: `h-9` → `h-11` (44px)
+  - `LibraryView` PosterCard 즐겨찾기 버튼: `h-8 w-8` (32px) → `h-10 w-10` (40px)
+  - `SpomoveSession` 전체화면/나가기 버튼: `h-9 w-9` → `h-11 w-11` (44px)
+
+- **BottomSheet 모바일 safe-area 패딩 추가**
+  - 바텀시트가 모바일 화면 하단에 표시될 때 iOS 홈 바에 콘텐츠가 가려지지 않도록 `paddingBottom: 'max(20px, env(safe-area-inset-bottom))'` 적용.
+
+- **SPOMOVE 세션 bottom 오버레이 safe-area 대응**
+  - 실행 중 하단 지표 오버레이의 `pb-7` (28px) → `paddingBottom: 'max(28px, env(safe-area-inset-bottom))'` 로 변경.
+  - iOS 홈 바(~34px)가 지표를 가리는 문제 해결.
+
+- 검증: `npx tsc --noEmit` 통과 (pre-existing deprecation 경고만 존재, 실제 에러 없음)
+
+---
+
 ## 남은 문제
 
-- 아직 전체 MASTER 화면이 상용화 수준으로 완성된 것은 아니다.
-  - 지금까지는 Phase 1의 방향과 깨진 데이터 기반을 정리한 상태다.
-  - UI 완성도, 반응형 디테일, 실제 결제/신청/권한 처리, 실제 데이터 연동은 추가 작업이 필요하다.
+- 아직 전체 MASTER 화면이 상용화 수준으로 100% 완성된 것은 아니다.
+- **현재 솔직한 완성도: 결제/콘텐츠 제외 약 45-50%** (이전 28% 대비 개선)
 
-- `class-record`, `students`, `director`, `parent` 같은 Phase 2/3 성격의 화면은 코드에 남아 있다.
-  - 당장 삭제하기보다는 MASTER 안에서 노출 우선순위를 낮추고, Phase 1 네비게이션에서는 전면 노출하지 않는 방향이 맞다.
-  - 나중에 제품 정책이 확정되면 `숨김`, `실험실`, `Phase 2`, `삭제` 중 하나로 정리해야 한다.
-  - 단, 장기 락인에 필요한 기능은 섣불리 지우지 않는다. 먼저 사용자에게 보이는 약속 수준과 진입 위치를 조절한다.
+- **반응형 QA 코드 수정 완료 — 실기기 검증 필요.**
+  - safe-area-inset-bottom, 터치 타겟, BottomSheet safe-area, 세션 오버레이 safe-area 코드 수정 완료.
+  - 실제 iOS 기기(iPhone 14/15 등)에서 홈 바 영역과 겹침이 없는지 직접 확인 필요.
+  - 320px(iPhone SE) 너비에서의 카드/텍스트 줄바꿈은 코드상 문제 없으나, 실기기 확인 권장.
 
-- 샘플 데이터는 실제 운영 데이터가 아니다.
+- **실제 결제/신청 흐름이 없다.**
+  - Pro/Center 플랜 선택은 setProfile만 하고 실제 결제 연동이 없다.
+  - Lite는 "관심 등록" 상태로만 두고 있다.
+  - School은 이메일 안내 문구만 있다.
+  - Phase 1 상용화 전에 최소한 외부 결제 링크(토스페이먼츠, 아임포트 등)나 신청 폼(구글 폼, 타입폼 등)을 연결해야 한다.
+
+- **샘플 데이터는 실제 운영 데이터가 아니다.**
   - `lib/data.ts`의 프로그램과 교구는 제품 방향을 보여주기 위한 샘플이다.
   - 실제 상용화 전에는 프로그램 품질, 태그, 연령, 공간, 준비물, 안전 문구, SPOMOVE 연결을 더 촘촘히 검수해야 한다.
 
-- 교구 스토어는 아직 견적 요청 UI 수준이다.
+- **교구 스토어는 아직 견적 요청 UI 수준이다.**
   - 실제 주문, 결제, 배송, 재고, 관리자 처리 로직은 없다.
   - Phase 1에서는 구독 제품의 보조 수익/준비물 연결 정도로만 두는 편이 안전하다.
 
+- **`class-record`, `students`, `director`, `parent` 같은 Phase 2/3 성격의 화면은 코드에 남아 있다.**
+  - 당장 삭제하기보다는 MASTER 안에서 노출 우선순위를 낮추고, Phase 1 네비게이션에서는 전면 노출하지 않는 방향이 맞다.
+  - 나중에 제품 정책이 확정되면 `숨김`, `실험실`, `Phase 2`, `삭제` 중 하나로 정리해야 한다.
+  - 단, 장기 락인에 필요한 기능은 섣불리 지우지 않는다.
+
+- **SPOMOVE 세션 전체화면 API 동작 미확인.**
+  - F키 힌트는 있으나 실제 `document.documentElement.requestFullscreen()` 구현이 세션 페이지에 있는지 확인 필요.
+
+- **수업 설명 도구 - 프로그램 목록이 많아지면 aside 스크롤 처리 필요.**
+  - 현재는 PROGRAMS가 적어서 문제없지만, 프로그램이 30개 이상이 되면 aside 패널이 길어진다.
+
+---
+
+## 해결한 문제 (2026-05-14 4차 — 콘텐츠 통합 3레이어 아키텍처)
+
+- **SQL 마이그레이션** (`sql/70_spokedu_master_meta.sql`)
+  - `spokedu_master_program_meta`: curriculum.id 기반 오버레이 (tags, theme, grade, space, duration, isPro, isNew, isHot, displayOrder, colors)
+  - `spokedu_master_drill_meta`: Core5Catalog programId 기반 오버레이 (displayName, tags, isPro, isVisible, displayOrder, engineMode, engineLevel)
+  - 두 테이블 모두 RLS + updated_at 자동 갱신 트리거
+  - **Supabase SQL Editor에서 실행 필요** (`sql/70_spokedu_master_meta.sql` 참고)
+
+- **types/index.ts 확장**
+  - `Drill` 인터페이스: `engine?: { mode: string; level: number }` 추가
+  - `Program` 인터페이스: `curriculumId?: number`, `lessonDetail.videoUrl?: string` 추가
+  - `SmProgramMeta`, `SmDrillMeta` 인터페이스 신규 추가
+
+- **API Routes 신규 생성**
+  - `app/api/spokedu-master/programs/route.ts`: curriculum + spokedu_master_program_meta 오버레이 → Program[] 반환
+  - `app/api/spokedu-master/drills/route.ts`: spokedu_master_drill_meta + Core5Catalog → Drill[] 반환
+  - 두 routes 모두 PATCH 엔드포인트로 메타 upsert 지원
+
+- **Zustand store 동적 로딩**
+  - `programs: Program[]`, `drills: Drill[]` 상태 추가 (초기값: static lib/data.ts 데이터)
+  - `loadPrograms()`, `loadDrills()` 액션 추가 (각 1회만 로드, API 실패 시 static fallback 유지)
+  - AppShell mount 시 자동 트리거
+
+- **UI 컴포넌트 업데이트**
+  - `LibraryView`: static PROGRAMS → store `programs` 사용
+  - `LibraryDetailView`: store `programs`/`drills` 사용, `videoUrl` 있으면 "영상 보기" 링크 표시
+  - `SpomoveHubView`: store `drills` 사용
+  - `spomove/session/page.tsx`: store `drills` 사용
+
+- **Admin 편집 UI 신규 생성**
+  - `app/admin/spokedu-master/page.tsx`: 진입점 (프로그램 메타 / 드릴 메타 링크)
+  - `app/admin/spokedu-master/programs/page.tsx`: curriculum 목록 + 슬라이드오버 편집 (태그, 테마, 대상, 공간, PRO/NEW/HOT, 순서)
+  - `app/admin/spokedu-master/drills/page.tsx`: Core5Catalog 시리즈별 드릴 목록 + 슬라이드오버 편집 (이름 오버라이드, 태그, PRO, 가시성, 엔진 연결)
+
+---
+
 ## 다음 작업 순서
 
-1. MASTER 전체 라우트와 탭 구조를 다시 점검한다.
-   - 기준 탭은 `홈 / 라이브러리 / SPOMOVE / 설명 / 내 정보`.
-   - Phase 1과 맞지 않는 `학생`, `기록`, `센터`, `원장` 성격의 진입점은 메인에서 숨기거나 낮춘다.
-   - 현재는 `내 정보 > 운영 확장 프리뷰`에 낮은 우선순위 진입점으로 보존했다.
+1. ~~**실제 기기 반응형 QA** (완료 2026-05-14)~~
+   - safe-area-inset-bottom, 터치 타겟 44px, BottomSheet safe-area, 세션 오버레이 safe-area 모두 처리됨
+   - 실제 기기(iPhone, 안드로이드) 최종 확인은 빌드/배포 후 QA 단계에서 진행
 
-2. 홈 화면을 상용 랜딩형 앱 홈으로 더 다듬는다.
-   - 오늘 추천 수업
-   - 빠른 진입 3개: 라이브러리, SPOMOVE 큰 화면, 수업 설명 도구
-   - 최근 사용/즐겨찾기
-   - 체험/구독 상태는 작고 안정적으로 표시
-   - 관리자 지표, 불안 경고, 0/0 사용량 같은 표현은 피한다.
+2. ~~**콘텐츠 통합 3레이어** (완료 2026-05-14)~~
+   - SQL 마이그레이션, API routes, store 동적 로딩, Admin 편집 UI 모두 완료
+   - **Supabase에서 sql/70_spokedu_master_meta.sql 실행 필요** (아직 미실행 상태)
 
-3. 라이브러리 UX를 더 강화한다.
-   - 검색, 빠른 필터, 추천, 최근 사용, 즐겨찾기 중심
-   - 필터가 화면을 잡아먹지 않게 모바일/태블릿/데스크탑 반응형 확인
-   - 카드 정보량은 수업 선택에 필요한 만큼만 유지
+3. ~~**SPOMOVE 엔진 통합** (완료 2026-05-15)~~
+   - `EngineRouter.tsx`: mode/level → VisualReactionTraining/DiagonalReactionTraining/MemoryGame 동적 dispatch
+   - 세션 페이지: drill.engine 있으면 EngineRouter, 없으면 기존 큐 UI
+   - 엔진 컴포넌트들은 admin 의존성 없음 확인 (SignalDisplay만 admin 의존, MemoryGameApp에서만 사용)
 
-4. SPOMOVE를 독립 엔진으로 완성한다.
-   - 탭 자체가 차별화 기능처럼 보여야 한다.
-   - 큰 화면 실행, 전체화면, 16:9 대응, Class Mode를 우선 정리한다.
-   - 실행 화면에는 앱 UI가 과하게 남지 않게 한다.
+4. **결제/신청 흐름 최소 연결**
+   - Pro/Center: 외부 결제 페이지 링크 또는 신청 폼 연결
+   - Lite: 관심 등록 폼 또는 이메일 수집 연결
+   - School: 상담 문의 이메일/채널 연결
 
-5. 수업 설명 도구를 Phase 1 가치로 완성한다.
-   - 카카오 자동 발송이나 PDF 리포트로 과장하지 않는다.
-   - 학부모용, 기관용, 학교 기록용, 홍보용 문구 생성/복사/저장 중심으로 간다.
+3. **SPOMOVE 세션 전체화면 버튼 구현 확인**
+   - F키 전체화면 동작 실제 코드 확인
+   - 전체화면 진입/해제 버튼을 Maximize/Minimize 아이콘으로 세션 화면에 배치
 
-6. 플랜/가격/신청 흐름을 안정화한다.
-   - Trial, Lite, Pro, Center, School 구조를 명확히 하되 한 화면에서 모두 밀어붙이지 않는다.
-   - 빨간 경고, 불안 유도, AI 리포트 0/0 같은 미완성 느낌은 제거한다.
-   - 학교용은 기능 구현보다 언어와 패키징을 먼저 준비한다.
+4. **수업 설명 도구 - aside 프로그램 목록 개선**
+   - 프로그램이 많아질 때를 대비해 aside를 max-height + overflow-y-auto로 처리
+   - 현재 활동(program) 이름을 상단에 고정 표시
 
-7. 최종 반응형 QA를 한다.
-   - 모바일, 태블릿, 데스크탑에서 텍스트 줄바꿈, 버튼 크기, 카드 밀도, 하단 탭/사이드바 동작을 확인한다.
-   - 상단에 모바일 OS 캡처처럼 보이는 시간/배터리 UI가 남아 있으면 제거하거나 웹앱다운 UI로 바꾼다.
+5. **실제 운영 데이터로 교체**
+   - 샘플 프로그램을 실제 검수된 콘텐츠로 교체
+   - SPOMOVE 드릴 이름과 설명도 실제 운영 기준으로 정비
+
+6. **최종 TypeScript/ESLint 검증**
+   - `npx tsc --noEmit --pretty false`
+   - `npx eslint app/spokedu-master --max-warnings 0`
+   - 깨진 한글 재검증
+
+---
 
 ## 주의할 점
+
+- **커밋이나 푸시를 절대 하지 않는다.**
+  - 코드 수정만 진행한다.
+  - git commit, git push 명령을 실행하지 않는다.
 
 - 반드시 `app/spokedu-master`를 기준으로 작업한다.
   - `subscription-new`에 새로 구현하지 말 것.
@@ -193,13 +364,15 @@
 - 한글 깨짐을 다시 만들지 않는다.
   - 파일 인코딩과 복붙 문자열을 조심한다.
   - 수정 후 아래 검색을 꼭 돌린다.
-  - `rg "[\x{4E00}-\x{9FFF}\x{F900}-\x{FAFF}\x{FFFD}]" app\spokedu-master -n`
-  - `rg "[ㅏ-ㅣㄱ-ㅎ]{2,}|\?[^\s\n<>{}()]*[가-힣ㅏ-ㅣㄱ-ㅎ]|[가-힣ㅏ-ㅣㄱ-ㅎ][^\s\n<>{}()]*\?" app\spokedu-master -n`
+  - `rg "[\x{4E00}-\x{9FFF}\x{F900}-\x{FAFF}\x{FFFD}]" app/spokedu-master -n`
+  - `rg "[ㅏ-ㅣㄱ-ㅎ]{2,}|\?[^\s\n<>{}()]*[가-힣ㅏ-ㅣㄱ-ㅎ]|[가-힣ㅏ-ㅣㄱ-ㅎ][^\s\n<>{}()]*\?" app/spokedu-master -n`
 
 - 검증 명령은 계속 유지한다.
-  - `npx.cmd tsc --noEmit --pretty false`
-  - `npx.cmd eslint app/spokedu-master --max-warnings 0`
+  - `npx tsc --noEmit --pretty false`
+  - `npx eslint app/spokedu-master --max-warnings 0`
 
 - 현재 작업트리에 다른 변경이 있을 수 있다.
   - 사용자가 만든 변경을 되돌리지 말 것.
   - 불필요한 대규모 리팩토링보다 MASTER 상용화 흐름에 직접 필요한 수정부터 한다.
+
+- 대화 기록이 사라져도 이 파일을 기준으로 이어받을 수 있도록 항상 DEV_NOTES를 최신 상태로 유지한다.

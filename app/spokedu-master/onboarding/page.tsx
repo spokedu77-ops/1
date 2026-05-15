@@ -94,7 +94,7 @@ export default function OnboardingPage() {
       onboardingDone: true,
       trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     });
-    router.replace('/spokedu-master/dashboard');
+    router.replace('/spokedu-master/library');
   };
 
   return (
@@ -149,18 +149,42 @@ export default function OnboardingPage() {
           ) : null}
 
           {step === 3 ? (
-            <div className="space-y-4">
-              <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(16,185,129,0.14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
-              <h2 className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>준비되었습니다</h2>
-              <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 라이브러리에서 수업안을 고르고, SPOMOVE를 실행하고, 수업 설명 문구를 바로 만들 수 있습니다.</p>
-              <div className="grid gap-2 sm:grid-cols-3">{['라이브러리', 'SPOMOVE', '설명 도구'].map((item) => <div key={item} className="rounded-[12px] p-3 text-center text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>{item}</div>)}</div>
+            <div className="space-y-5">
+              <div className="flex items-center gap-3">
+                <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(16,185,129,0.14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-grn)' }}>준비 완료</p>
+                  <h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>오늘 첫 수업을 골라보세요</h2>
+                </div>
+              </div>
+              <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+                라이브러리에서 수업안을 고르면 SPOMOVE 연결과 수업 설명 문구가 바로 연결됩니다.
+              </p>
+              <div className="grid gap-2">
+                {([
+                  { step: '1', label: '라이브러리에서 수업 고르기', caption: '오늘 쓸 수업안을 검색하거나 태그로 찾습니다', color: 'rgba(99,102,241,0.14)', accent: 'var(--spm-acc)' },
+                  { step: '2', label: 'SPOMOVE 큰 화면 실행', caption: '프로젝터·TV에 연결해 아이들이 신호를 보고 움직입니다', color: 'rgba(16,185,129,0.12)', accent: 'var(--spm-grn)' },
+                  { step: '3', label: '설명 문구 복사', caption: '학부모·기관·학교용 문구를 바로 복사합니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
+                ] as const).map(({ step: num, label, caption, color, accent }) => (
+                  <div key={num} className="flex items-center gap-3 rounded-[12px] p-3" style={{ background: color }}>
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-black text-white" style={{ background: accent }}>{num}</span>
+                    <span>
+                      <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
+                      <span className="mt-0.5 block text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>{caption}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="rounded-[10px] p-3 text-[11px] font-semibold leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t3)' }}>
+                14일 무료 체험이 시작됩니다. 체험 기간에 전체 흐름을 확인한 뒤 플랜을 선택하면 됩니다.
+              </p>
             </div>
           ) : null}
 
           <div className="mt-6 grid grid-cols-[auto_1fr] gap-2">
             <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} className="h-12 rounded-[12px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>이전</button>
             <button type="button" onClick={step === 3 ? finish : next} disabled={!canNext || validating} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
-              {step === 3 ? 'SPOKEDU 시작' : '다음'}
+              {step === 3 ? '라이브러리에서 시작' : '다음'}
               <ArrowRight size={16} />
             </button>
           </div>

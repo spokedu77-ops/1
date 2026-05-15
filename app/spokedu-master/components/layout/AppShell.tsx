@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { DesktopRail, TabBar } from './TabBar';
 import { StatusBar } from './StatusBar';
+import { TrialCountdownBanner } from '../ui/TrialGateWall';
+import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { isTrialExpired } from '../../lib/subscription';
 import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
 
@@ -44,6 +46,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isOnboarding = pathname.startsWith('/spokedu-master/onboarding');
   const isParentView = pathname.startsWith('/spokedu-master/parent');
 
+  const loadPrograms = useMasterStore((state) => state.loadPrograms);
+  const loadDrills = useMasterStore((state) => state.loadDrills);
+
+  useEffect(() => {
+    void loadPrograms();
+    void loadDrills();
+  }, [loadPrograms, loadDrills]);
+
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
     updateOnline();
@@ -79,7 +89,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           {isOnboarding || isParentView ? null : <StatusBar />}
           <main className="min-h-0 flex-1 overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
             {isOnboarding || isParentView ? null : <OperationsBanner />}
-            {children}
+            {isOnboarding || isParentView ? null : <TrialCountdownBanner />}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </main>
           {isOnboarding || isParentView ? null : <TabBar />}
         </div>

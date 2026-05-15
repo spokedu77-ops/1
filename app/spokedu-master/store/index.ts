@@ -4,7 +4,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
-import type { CartItem, ClassRecord, ClassStudentRecord, Lesson, Notification, Session, StudentProfile, UserProfile } from '../types';
+import type { CartItem, ClassRecord, ClassStudentRecord, Drill, Lesson, Notification, Program, Session, StudentProfile, UserProfile } from '../types';
+import { DRILLS as STATIC_DRILLS, PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
 
 type ActiveSession = {
   drillId: string;
@@ -22,6 +23,12 @@ type OperationalStatus = {
 };
 
 interface MasterState {
+  programs: Program[];
+  programsLoaded: boolean;
+  loadPrograms: () => Promise<void>;
+  drills: Drill[];
+  drillsLoaded: boolean;
+  loadDrills: () => Promise<void>;
   profile: UserProfile | null;
   setProfile: (profile: Partial<UserProfile>) => void;
   operational: OperationalStatus;
@@ -230,6 +237,36 @@ function applyStudentRecord(student: StudentProfile, record: ClassStudentRecord,
 export const useMasterStore = create<MasterState>()(
   persist(
     (set, get) => ({
+      programs: STATIC_PROGRAMS,
+      programsLoaded: false,
+      loadPrograms: async () => {
+        if (get().programsLoaded) return;
+        try {
+          const res = await fetch('/api/spokedu-master/programs');
+          if (!res.ok) return;
+          const json = await res.json() as { data?: Program[] };
+          if (Array.isArray(json.data) && json.data.length > 0) {
+            set({ programs: json.data, programsLoaded: true });
+          }
+        } catch {
+          // keep static fallback
+        }
+      },
+      drills: STATIC_DRILLS,
+      drillsLoaded: false,
+      loadDrills: async () => {
+        if (get().drillsLoaded) return;
+        try {
+          const res = await fetch('/api/spokedu-master/drills');
+          if (!res.ok) return;
+          const json = await res.json() as { data?: Drill[] };
+          if (Array.isArray(json.data) && json.data.length > 0) {
+            set({ drills: json.data, drillsLoaded: true });
+          }
+        } catch {
+          // keep static fallback
+        }
+      },
       profile: defaultProfile,
       setProfile: (profile) => set((state) => ({ profile: state.profile ? { ...state.profile, ...profile } : { ...defaultProfile, ...profile } })),
       operational: defaultOperational,
