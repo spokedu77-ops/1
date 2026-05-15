@@ -932,6 +932,32 @@ export default function MemoryGameApp({
                 </div>
               )}
             </div>
+            {settings.mode === 'flow' && (
+              <div style={S.sec}>
+                {stepNum(3, '키즈 세이프 모드')}
+                <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
+                  플로우 3D·이동 체감 속도만 낮춥니다. 레벨당 시간과 상단 진행바는 그대로입니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => set('kidsSafeMode', !settings.kidsSafeMode)}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.9rem',
+                    borderRadius: '0.75rem',
+                    border: `2px solid ${settings.kidsSafeMode ? '#F97316' : 'var(--border)'}`,
+                    background: settings.kidsSafeMode ? '#FFF7ED' : 'var(--card)',
+                    color: settings.kidsSafeMode ? '#C2410C' : 'var(--text)',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    textAlign: 'left',
+                  }}
+                >
+                  키즈 세이프 모드 {settings.kidsSafeMode ? '켜짐 ✓' : '끔'}
+                </button>
+              </div>
+            )}
             {settings.mode !== 'flow' && (
               <>
                 <div style={S.sec}>
@@ -1181,7 +1207,7 @@ export default function MemoryGameApp({
         ) : null}
         {countdown === null ? (
           <iframe
-            src="/program/iiwarmup/flow?autoStart=1&memoryPreset=shortFlow5&kidsSafe=1"
+            src={`/program/iiwarmup/flow?autoStart=1&memoryPreset=shortFlow5${settings.kidsSafeMode ? '&kidsSafe=1' : ''}`}
             title="SPOMOVE FLOW Program"
             style={{ width: '100%', height: '100%', border: 0 }}
             allow="autoplay"
