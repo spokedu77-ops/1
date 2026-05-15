@@ -21,6 +21,7 @@ function FlowPhaseContent() {
   const isAdminMode = searchParams.get('admin') === 'true';
   const showLevelSelector = searchParams.get('showLevelSelector') === '1';
   const autoStart = searchParams.get('autoStart') === '1' || searchParams.get('autoStart') === 'true';
+  const memoryPreset = searchParams.get('memoryPreset');
   const kidsSafe = searchParams.get('kidsSafe') === '1' || searchParams.get('kidsSafe') === 'true';
 
   const shortFlow5Timing: FlowTimingOverrides = {
