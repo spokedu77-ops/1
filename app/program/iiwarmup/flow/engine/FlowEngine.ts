@@ -89,6 +89,11 @@ export type FlowTimingOverrides = {
   restResumeDelayMs?: number;
   endingAutoCloseSec?: number;
   skipRestPhases?: boolean;
+  /**
+   * 3D·이동·효과만 느리게 (1=기본). 레벨 유지 시간·진행바는 벽시계 그대로.
+   * 예: 0.5 = 체감 속도 약 절반 (키즈 세이프).
+   */
+  motionTimeScale?: number;
 };
 
 /** 파노라마 전방 180°만 선명히 표시, 뒤쪽은 우주 검정. 2K도 덜 뭉개지게 */
@@ -165,9 +170,15 @@ export class FlowEngine {
   private isResting = false;
   private movementActive = false;
   private isPausedByVisibility = false;
+  /** 시뮬레이션(움직임·점프 곡선 등)용 시간 — motionTimeScale 적용 */
   private gameTime = 0;
+  /** 진행바용 벽시계 누적(플레이 구간만, 레벨 길이와 일치) */
+  private wallProgressTime = 0;
   private levelTime = 0;
   private currentLevelIndex = 0;
+  /** 1=기본. 0.5면 월드 체감 속도 약 절반, 레벨 타이머는 실시간 유지 */
+  private motionTimeScale = 1;
+  private totalPlaySecForHud = TOTAL_PLAY_SEC;
 
   private durations: readonly number[] = DURATIONS;
   private readonly displayLevels = DISPLAY_LEVELS;
@@ -329,6 +340,7 @@ export class FlowEngine {
 
     // 1) 타이밍/상태 리셋
     this.gameTime = 0;
+    this.wallProgressTime = 0;
     this.levelTime = 0;
     this.movementActive = true;
     this.isResting = false;
@@ -918,7 +930,9 @@ export class FlowEngine {
   private updateCamera(
     dt: number,
     dt60: number,
-    currentSpeed: number
+    currentSpeed: number,
+    /** 밀리초 단위 흔들림 등 벽시계 기준 */
+    dtWall: number
   ): void {
     if (!this.camera) return;
 
@@ -1007,7 +1021,7 @@ export class FlowEngine {
       this.hitShakeOffsetY = (Math.random() - 0.5) * 2 * amp;
       this.camera.position.x += this.hitShakeOffsetX;
       this.camera.position.y += this.hitShakeOffsetY;
-      this.hitShakeRemaining -= dt * 1000;
+      this.hitShakeRemaining -= dtWall * 1000;
       if (this.hitShakeRemaining <= 0) this.hitShakeRemaining = 0;
     }
 
@@ -1404,6 +1418,16 @@ export class FlowEngine {
     this.ENDING_AUTO_CLOSE_SEC = Math.max(0, Math.floor(timing?.endingAutoCloseSec ?? 15));
     this.SKIP_REST_PHASES = !!timing?.skipRestPhases;
 
+    const motionRaw = timing?.motionTimeScale;
+    this.motionTimeScale =
+      typeof motionRaw === 'number' && Number.isFinite(motionRaw)
+        ? Math.min(1, Math.max(0.25, motionRaw))
+        : 1;
+
+    this.totalPlaySecForHud = this.durations
+      .filter((_, i) => this.displayLevels[i] >= 1 && this.displayLevels[i] <= 5)
+      .reduce((a, b) => a + b, 0);
+
     this.panoStoragePath = panoStoragePath ?? null;
 
     try {
@@ -1442,6 +1466,7 @@ export class FlowEngine {
     this.isResting = true;
 
     this.gameTime = 0;
+    this.wallProgressTime = 0;
     this.levelTime = 0;
     this.currentLevelIndex = 0;
     this.nextBeatTime = 0;
@@ -1481,6 +1506,9 @@ export class FlowEngine {
 
     const dt = Math.min(rawDt, 0.1);
     const dt60 = dt * 60;
+    const m = this.motionTimeScale;
+    const dtMotion = dt * m;
+    const dt60Motion = dtMotion * 60;
 
     if (this.gameState !== 'playing') {
       this.renderer.render(this.scene, this.camera);
@@ -1501,35 +1529,36 @@ export class FlowEngine {
     const inHitStop = this.hitStopFramesRemaining > 0;
 
     if (!inHitStop && this.movementActive) {
-      this.gameTime += dt;
+      this.gameTime += dtMotion;
+      this.wallProgressTime += dt;
       this.levelTime += dt;
 
-      if (this.landingStabilityTimer > 0) this.landingStabilityTimer -= dt;
+      if (this.landingStabilityTimer > 0) this.landingStabilityTimer -= dtMotion;
 
       const springK = 150.0;
       const damping = 0.88;
 
       if (this.impactYTimer > 0) {
-        this.impactYTimer = Math.max(0, this.impactYTimer - dt);
-        this.landingImpactYVel += -this.landingImpactY * springK * dt;
-        this.landingImpactYVel *= Math.pow(damping, dt60);
-        this.landingImpactY += this.landingImpactYVel * dt;
+        this.impactYTimer = Math.max(0, this.impactYTimer - dtMotion);
+        this.landingImpactYVel += -this.landingImpactY * springK * dtMotion;
+        this.landingImpactYVel *= Math.pow(damping, dt60Motion);
+        this.landingImpactY += this.landingImpactYVel * dtMotion;
       } else {
         this.landingImpactY = 0;
         this.landingImpactYVel = 0;
       }
 
       if (this.impactZTimer > 0) {
-        this.impactZTimer = Math.max(0, this.impactZTimer - dt);
-        this.landingImpactZVel += -this.landingImpactZ * springK * dt;
-        this.landingImpactZVel *= Math.pow(damping, dt60);
-        this.landingImpactZ += this.landingImpactZVel * dt;
+        this.impactZTimer = Math.max(0, this.impactZTimer - dtMotion);
+        this.landingImpactZVel += -this.landingImpactZ * springK * dtMotion;
+        this.landingImpactZVel *= Math.pow(damping, dt60Motion);
+        this.landingImpactZ += this.landingImpactZVel * dtMotion;
       } else {
         this.landingImpactZ = 0;
         this.landingImpactZVel = 0;
       }
 
-      this.microJolt *= Math.exp(-JOLT_DECAY * dt);
+      this.microJolt *= Math.exp(-JOLT_DECAY * dtMotion);
 
       const profile = FLOW_EFFECT_PROFILES[currentLevelNum as 1 | 2 | 3 | 4 | 5] ?? FLOW_EFFECT_PROFILES[1];
       const lineSpawnRate = profile.speedLineRate * this.adaptiveQuality.getSpeedLineRateScale();
@@ -1538,12 +1567,12 @@ export class FlowEngine {
       const rate = this.landingStabilityTimer > 0 ? 0 : lineSpawnRate;
 
       // dt-compensated probability (frame-rate independent)
-      const p = 1 - Math.pow(1 - rate, dt60);
+      const p = 1 - Math.pow(1 - rate, dt60Motion);
       if (Math.random() < p) this.spawn2DSpeedLine();
     }
 
     if (!inHitStop) {
-      this.updateJump(dt);
+      this.updateJump(dtMotion);
     }
 
     const beatInfo = this.audio.getBeatInfo();
@@ -1625,7 +1654,7 @@ export class FlowEngine {
     if (!inHitStop) {
       const pruneZ = BRIDGE_PRUNE_Z_BY_LEVEL[lv];
       for (let i = this.bridges.length - 1; i >= 0; i--) {
-        this.bridges[i].mesh.position.z += currentSpeed * 50 * dt60;
+        this.bridges[i].mesh.position.z += currentSpeed * 50 * dt60Motion;
         if (this.bridges[i].mesh.position.z > pruneZ) {
           if (this.activeBridge === this.bridges[i]) this.activeBridge = null;
           this.scene.remove(this.bridges[i].mesh);
@@ -1704,7 +1733,7 @@ export class FlowEngine {
 
     if (!inHitStop) {
       this.obstacleManager.update(
-        dt60,
+        dt60Motion,
         currentSpeed,
         currentLevelNum,
         this.playerZ,
@@ -1713,13 +1742,13 @@ export class FlowEngine {
     }
 
     // B-3: 배경(별+파노) 항상 시계 방향 360도 회전. 파노 없을 때도 별이 돌아야 보임.
-    if (this.stars) this.stars.rotation.y -= PANO_ROTATION_DT60_CW * dt60;
+    if (this.stars) this.stars.rotation.y -= PANO_ROTATION_DT60_CW * dt60Motion;
     if (this.panoMesh) {
       const panoMat = this.panoMesh.material as THREE.ShaderMaterial & {
         uniforms?: { uTime?: { value: number }; uVignetteScale?: { value: number }; uGrainScale?: { value: number }; uPanoRotation?: { value: number } };
       };
       if (panoMat?.uniforms?.uPanoRotation) {
-        panoMat.uniforms.uPanoRotation.value -= PANO_ROTATION_DT60_CW * dt60;
+        panoMat.uniforms.uPanoRotation.value -= PANO_ROTATION_DT60_CW * dt60Motion;
         const twoPi = 2 * Math.PI;
         if (panoMat.uniforms.uPanoRotation.value < -twoPi) panoMat.uniforms.uPanoRotation.value += twoPi;
         if (panoMat.uniforms.uPanoRotation.value > twoPi) panoMat.uniforms.uPanoRotation.value -= twoPi;
@@ -1731,9 +1760,9 @@ export class FlowEngine {
 
     if (this.movementActive) {
       for (const obj of this.spaceObjects) {
-        obj.mesh.position.z += obj.speed * dt60;
+        obj.mesh.position.z += obj.speed * dt60Motion;
         if (obj.mesh.position.z > 15000) obj.mesh.position.z = -25000;
-        obj.mesh.rotation.y += obj.rotationSpeed * dt60;
+        obj.mesh.rotation.y += obj.rotationSpeed * dt60Motion;
       }
     }
 
@@ -1749,19 +1778,19 @@ export class FlowEngine {
 
     this.speedLines.children.forEach((l) => {
       (l as THREE.Mesh).position.z += this.movementActive
-        ? (SPEEDLINE_BASE_SPEED + currentLevelNum * SPEEDLINE_LEVEL_MULT) * dt60
+        ? (SPEEDLINE_BASE_SPEED + currentLevelNum * SPEEDLINE_LEVEL_MULT) * dt60Motion
         : 0;
       if ((l as THREE.Mesh).position.z > 2500)
         (l as THREE.Mesh).position.z = -12000;
 
       const mat = (l as THREE.Mesh).material as THREE.MeshBasicMaterial;
-      mat.opacity += (targetOpacity - mat.opacity) * 0.15 * dt60;
+      mat.opacity += (targetOpacity - mat.opacity) * 0.15 * dt60Motion;
     });
 
     if (this.speedLinesNear) {
       const baseNear = 780;
       const speedBoost = this.movementActive ? Math.min(900, currentLevelNum * 180) : 0;
-      const nearMove = (baseNear + speedBoost) * dt60;
+      const nearMove = (baseNear + speedBoost) * dt60Motion;
 
       const nearTargetOpacity = this.movementActive
         ? (0.10 + currentLevelNum * 0.03) + this.beatPulseValue * 0.08
@@ -1778,23 +1807,24 @@ export class FlowEngine {
         }
 
         const mat = m.material as THREE.MeshBasicMaterial;
-        mat.opacity += (nearTargetOpacity - mat.opacity) * 0.22 * dt60;
+        mat.opacity += (nearTargetOpacity - mat.opacity) * 0.22 * dt60Motion;
       });
     }
 
-    this.beatPulseValue *= Math.pow(0.92, dt60);
-    this.flashPulseValue *= Math.pow(0.88, dt60);
+    this.beatPulseValue *= Math.pow(0.92, dt60Motion);
+    this.flashPulseValue *= Math.pow(0.88, dt60Motion);
 
     const flash = getRefEl(this.domRefs.flashOverlay);
     if (flash) {
       flash.style.opacity = String(Math.max(0, this.flashPulseValue));
     }
 
-    this.updateCamera(dt, dt60, currentSpeed);
+    this.updateCamera(dtMotion, dt60Motion, currentSpeed, dt);
 
     const prog = getRefEl(this.domRefs.progressBar);
     if (prog && this.movementActive) {
-      const pct = (this.gameTime / TOTAL_PLAY_SEC) * 100;
+      const denom = Math.max(1, this.totalPlaySecForHud);
+      const pct = (this.wallProgressTime / denom) * 100;
       prog.style.width = Math.min(100, pct) + '%';
     }
 

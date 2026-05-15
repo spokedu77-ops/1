@@ -21,21 +21,27 @@ function FlowPhaseContent() {
   const isAdminMode = searchParams.get('admin') === 'true';
   const showLevelSelector = searchParams.get('showLevelSelector') === '1';
   const autoStart = searchParams.get('autoStart') === '1' || searchParams.get('autoStart') === 'true';
-  const memoryPreset = searchParams.get('memoryPreset');
-  const timingOverrides: FlowTimingOverrides | undefined = memoryPreset === 'shortFlow5'
-    ? {
-        welcomeDurationMs: 5000,
-        lv1GuideDurationMs: 5000,
-        durations: [10, 15, 10, 30, 10, 30, 30, 15],
-        introCountdownSec: 5,
-        introCountdownDelayMs: 0,
-        startAfterCountdownDelayMs: 0,
-        interLevelCountdownSec: 10,
-        restResumeDelayMs: 0,
-        endingAutoCloseSec: 15,
-        skipRestPhases: true,
-      }
-    : undefined;
+  const kidsSafe = searchParams.get('kidsSafe') === '1' || searchParams.get('kidsSafe') === 'true';
+
+  const shortFlow5Timing: FlowTimingOverrides = {
+    welcomeDurationMs: 5000,
+    lv1GuideDurationMs: 5000,
+    durations: [10, 15, 10, 30, 10, 30, 30, 15],
+    introCountdownSec: 5,
+    introCountdownDelayMs: 0,
+    startAfterCountdownDelayMs: 0,
+    interLevelCountdownSec: 10,
+    restResumeDelayMs: 0,
+    endingAutoCloseSec: 15,
+    skipRestPhases: true,
+  };
+
+  const timingOverrides: FlowTimingOverrides | undefined =
+    memoryPreset === 'shortFlow5'
+      ? { ...shortFlow5Timing, ...(kidsSafe ? { motionTimeScale: 0.5 } : {}) }
+      : kidsSafe
+        ? { motionTimeScale: 0.5 }
+        : undefined;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<FlowEngine | null>(null);

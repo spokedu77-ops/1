@@ -1181,7 +1181,7 @@ export default function MemoryGameApp({
         ) : null}
         {countdown === null ? (
           <iframe
-            src="/program/iiwarmup/flow?autoStart=1&memoryPreset=shortFlow5"
+            src="/program/iiwarmup/flow?autoStart=1&memoryPreset=shortFlow5&kidsSafe=1"
             title="SPOMOVE FLOW Program"
             style={{ width: '100%', height: '100%', border: 0 }}
             allow="autoplay"

@@ -185,7 +185,7 @@ export const PHRASES = {
     '<span style="color:#a78bfa;">LEVEL 5</span><br><span style="font-size:2rem;">박스 부수기 + 우주선 숙이기!<br><span style="font-size:3rem;">🥊 DUCK!</span></span>',
   ending: '<span style="color:#34d399;">수고했어요!</span><br><span style="font-size:2.2rem;color:#60a5fa;">👏👏👏</span>',
 } as const;
-/** 전체 플로우 시간 (진행바 100% 기준). gameTime은 play 구간에서만 증가 */
+/** 전체 플로우 시간 (진행바 100% 기준). 벽시계 누적 wallProgressTime과 동일 스케일 */
 export const TOTAL_PLAY_SEC = DURATIONS.filter((_, i) => DISPLAY_LEVELS[i] >= 1 && DISPLAY_LEVELS[i] <= 5).reduce((a, b) => a + b, 0);
 
 // ============ Level effect profile (SSOT, 기존 수치 그대로) ============
