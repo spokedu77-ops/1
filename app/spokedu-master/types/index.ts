@@ -31,6 +31,34 @@ export interface Drill {
   cues: Cue[];
   isPro: boolean;
   bgColor: string;
+  engine?: { mode: string; level: number };
+}
+
+/** Supabase에서 로드된 프로그램 커스터마이징 메타 */
+export interface SmProgramMeta {
+  curriculumId: number;
+  tags: string[];
+  theme: string | null;
+  grade: string | null;
+  space: string | null;
+  duration: number | null;
+  isPro: boolean;
+  isNew: boolean;
+  isHot: boolean;
+  displayOrder: number;
+  colors: [string, string, string, string] | null;
+}
+
+/** Supabase에서 로드된 드릴 커스터마이징 메타 */
+export interface SmDrillMeta {
+  drillId: string;
+  displayName: string | null;
+  tags: string[];
+  isPro: boolean;
+  isVisible: boolean;
+  displayOrder: number;
+  engineMode: string | null;
+  engineLevel: number | null;
 }
 
 export interface SessionConfig {
@@ -143,6 +171,8 @@ export interface Program {
   isPro: boolean;
   isNew: boolean;
   isHot?: boolean;
+  /** curriculum_id: Supabase curriculum 테이블의 id (동적 로딩 시 추적용) */
+  curriculumId?: number;
   lessonDetail?: {
     recommendedAge: string;
     recommendedPlayers: string;
@@ -154,5 +184,6 @@ export interface Program {
     variations: string[];
     safetyNotes: string[];
     relatedSpomoveIds: string[];
+    videoUrl?: string;
   };
 }

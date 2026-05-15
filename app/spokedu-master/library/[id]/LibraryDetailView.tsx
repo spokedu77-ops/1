@@ -1,9 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Bookmark, CheckCircle2, Clipboard, Lightbulb, Lock, MessageCircle, Play, ShieldAlert, ShoppingBag, Shuffle, Zap, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Bookmark, CheckCircle2, Clipboard, ExternalLink, Lightbulb, Lock, MessageCircle, Play, ShieldAlert, ShoppingBag, Shuffle, Zap, type LucideIcon } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { PROGRAMS } from '../../lib/data';
 import { useIsPro, useMasterStore } from '../../store';
 
 function getEquipmentPrice(item: string) {
@@ -28,7 +27,9 @@ function DetailList({ items }: { items: string[] }) {
 }
 
 export default function LibraryDetailView({ id }: { id: string }) {
-  const program = useMemo(() => PROGRAMS.find((item) => item.id === id), [id]);
+  const programs = useMasterStore((state) => state.programs);
+  const drills = useMasterStore((state) => state.drills);
+  const program = useMemo(() => programs.find((item) => item.id === id), [programs, id]);
   const isPro = useIsPro();
   const favorites = useMasterStore((state) => state.favorites);
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
@@ -87,7 +88,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
             <h1 className="mt-2 text-[30px] font-black leading-[1.12] md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{program.title}</h1>
             <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{program.grade} / {program.duration}분 / {program.space}</p>
             <p className="mt-5 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>{program.description}</p>
-            {locked ? <Link href="/spokedu-master/profile" className="mt-7 block rounded-[14px] p-4 text-center" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}><strong className="block text-[14px]" style={{ color: 'var(--spm-amb)' }}>PRO로 업그레이드하고 전체 수업안 열기</strong></Link> : <div className="mt-7 grid grid-cols-1 gap-2 sm:grid-cols-3"><Link href={`/spokedu-master/spomove/session?drill=${detail?.relatedSpomoveIds[0] ?? 'speed-track'}&mode=projector&program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={16} fill="#fff" />큰 화면 실행</Link><Link href="/spokedu-master/report" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><MessageCircle size={16} />설명 문구</Link><button type="button" onClick={copyParentNote} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)' }}>{copied ? <CheckCircle2 size={16} /> : <Clipboard size={16} />}{copied ? '복사 완료' : '문구 복사'}</button></div>}
+            {locked ? <Link href="/spokedu-master/profile" className="mt-7 block rounded-[14px] p-4 text-center" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}><strong className="block text-[14px]" style={{ color: 'var(--spm-amb)' }}>PRO로 업그레이드하고 전체 수업안 열기</strong></Link> : <div className="mt-7 grid grid-cols-1 gap-2 sm:grid-cols-3"><Link href={`/spokedu-master/spomove/session?drill=${detail?.relatedSpomoveIds[0] ?? 'speed-track'}&mode=projector&program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-glow)' }}><Play size={16} fill="#fff" />큰 화면 실행</Link>{detail?.videoUrl ? <a href={detail.videoUrl} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><ExternalLink size={16} />영상 보기</a> : <Link href="/spokedu-master/report" className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><MessageCircle size={16} />설명 문구</Link>}<button type="button" onClick={copyParentNote} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)' }}>{copied ? <CheckCircle2 size={16} /> : <Clipboard size={16} />}{copied ? '복사 완료' : '문구 복사'}</button></div>}
           </div>
         </section>
 
@@ -104,7 +105,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <DetailPanel title="현장 팁" icon={Lightbulb}><DetailList items={detail.fieldTips} /></DetailPanel>
           <DetailPanel title="변형 수업" icon={Shuffle}><DetailList items={detail.variations} /></DetailPanel>
           <DetailPanel title="안전 체크" icon={ShieldAlert}><DetailList items={detail.safetyNotes} /></DetailPanel>
-          <DetailPanel title="연결 SPOMOVE" icon={Zap}><div className="flex flex-wrap gap-2">{detail.relatedSpomoveIds.map((item) => <Link key={item} href={`/spokedu-master/spomove/session?drill=${item}&mode=class&program=${program.id}`} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(99,102,241,0.14)', color: '#a5b4fc' }}>{item}</Link>)}</div></DetailPanel>
+          <DetailPanel title="연결 SPOMOVE" icon={Zap}><div className="flex flex-wrap gap-2">{detail.relatedSpomoveIds.map((item) => { const drill = drills.find((d) => d.id === item); return <Link key={item} href={`/spokedu-master/spomove/session?drill=${item}&mode=class&program=${program.id}`} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(99,102,241,0.14)', color: '#a5b4fc' }}>{drill?.name ?? item}</Link>; })}</div></DetailPanel>
         </div> : null}
 
         <section className="mt-7"><h2 className="mb-3 text-[16px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>진행 순서</h2><div className="grid gap-3 md:grid-cols-3">{program.steps.map((step, index) => <div key={step} className="flex gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>{index + 1}</span><p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{step}</p></div>)}</div></section>

@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { Bell, BookOpen, ChevronRight, FileText, MonitorPlay, Play, Star, Zap } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { DRILLS, PROGRAMS } from '../lib/data';
 import { getTrialDaysLeft } from '../lib/subscription';
 import { useMasterStore, useProfile, useUnreadCount } from '../store';
@@ -154,6 +155,13 @@ function NotificationSheet({ open, notifications, onClose, onMarkAll }: { open: 
   );
 }
 
+function useGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return '좋은 아침이에요';
+  if (hour < 18) return '좋은 오후예요';
+  return '좋은 저녁이에요';
+}
+
 export default function DashboardView() {
   const profile = useProfile();
   const unreadCount = useUnreadCount();
@@ -161,7 +169,13 @@ export default function DashboardView() {
   const favorites = useMasterStore((state) => state.favorites);
   const notifications = useMasterStore((state) => state.notifications);
   const markAllRead = useMasterStore((state) => state.markAllRead);
+  const greeting = useGreeting();
+  const [mounted, setMounted] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) return <DashboardSkeleton />;
   const usedProgramIds = useMemo(() => new Set(classRecords.map((record) => record.programId)), [classRecords]);
   const featuredPrograms = useMemo(() => {
     const favoritePrograms = PROGRAMS.filter((program) => favorites.includes(program.id));
@@ -171,10 +185,10 @@ export default function DashboardView() {
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="flex items-center justify-between px-[22px] pb-[18px] pt-[22px] sm:px-8 lg:px-10">
-        <div><p className="mb-1 text-[12px] italic" style={{ color: 'var(--spm-t3)' }}>좋은 아침이에요</p><h1 className="text-[22px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{profile?.name ?? '선생님'}</h1></div>
+        <div><p className="mb-1 text-[12px] italic" style={{ color: 'var(--spm-t3)' }}>{greeting}</p><h1 className="text-[22px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{profile?.name ?? '선생님'}</h1></div>
         <div className="flex items-center gap-2">
           <PlanChip />
-          <button type="button" onClick={() => setNotificationOpen(true)} className="relative grid h-[38px] w-[38px] place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림"><Bell size={18} color="var(--spm-t2)" />{unreadCount > 0 ? <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: 'var(--spm-red)', border: '1.5px solid var(--spm-bg)' }} /> : null}</button>
+          <button type="button" onClick={() => setNotificationOpen(true)} className="relative grid h-11 w-11 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }} aria-label="알림"><Bell size={18} color="var(--spm-t2)" />{unreadCount > 0 ? <span className="absolute right-[7px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: 'var(--spm-red)', border: '1.5px solid var(--spm-bg)' }} /> : null}</button>
         </div>
       </header>
 
@@ -184,9 +198,21 @@ export default function DashboardView() {
       <TodayRecommendation />
 
       <SectionHeader title="최근 사용과 즐겨찾기" href="/spokedu-master/library" />
-      <section className="mb-7 grid gap-3 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10">
-        {featuredPrograms.map((program) => <ProgramCard key={program.id} program={program} used={usedProgramIds.has(program.id)} />)}
-      </section>
+      {usedProgramIds.size === 0 && favorites.length === 0 ? (
+        <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
+          <Link href="/spokedu-master/library" className="flex items-center gap-4 rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px dashed var(--spm-br3)' }}>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.12)' }}><BookOpen size={19} color="var(--spm-acc)" /></span>
+            <span className="min-w-0 flex-1">
+              <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>아직 사용한 수업이 없습니다</strong>
+              <span className="mt-1 block text-[11px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>라이브러리에서 첫 수업안을 골라보세요. 즐겨찾기하면 여기에 표시됩니다.</span>
+            </span>
+          </Link>
+        </section>
+      ) : (
+        <section className="mb-7 grid gap-3 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10">
+          {featuredPrograms.map((program) => <ProgramCard key={program.id} program={program} used={usedProgramIds.has(program.id)} />)}
+        </section>
+      )}
 
       <section className="mb-7">
         <SectionHeader title="SPOMOVE 빠른 실행" href="/spokedu-master/spomove" />

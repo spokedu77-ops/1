@@ -129,11 +129,11 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   const selectPlan = (plan: PlanInfo) => {
     if (plan.id === 'school' || plan.contact) {
-      setNotice('학교와 기관 플랜은 견적과 도입 범위가 달라 상담 문의로 연결합니다.');
+      setNotice('학교와 기관 플랜은 견적과 도입 범위가 달라 상담으로 진행합니다. 문의: hello@spokedu.kr');
       return;
     }
     if (plan.id === 'lite') {
-      setNotice('Lite는 가격 테스트 대상입니다. 지금은 관심 등록 상태로 두고 Pro/Center 전환 흐름을 우선 검증합니다.');
+      setNotice('Lite는 관심 등록 단계입니다. Pro/Center 전환 흐름을 먼저 검증 중이며, 준비되는 대로 안내드립니다.');
       return;
     }
     setProfile({ plan: plan.id, role: plan.id === 'team' ? 'director' : 'teacher' });

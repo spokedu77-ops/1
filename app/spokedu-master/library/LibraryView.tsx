@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { Bookmark, Lock, Play, Search, Smartphone, X, Zap } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { PROGRAMS } from '../lib/data';
+import { useEffect, useMemo, useState } from 'react';
 import { useIsPro, useMasterStore } from '../store';
+import { LibrarySkeleton } from '../components/ui/Skeleton';
 
 const FILTERS = ['전체', '유아', '초등', 'SPOMOVE', '간편 준비', '좁은 공간', '협동', '민첩성'];
 
@@ -16,7 +16,9 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
   return <button type="button" onClick={onClick} className="h-8 shrink-0 rounded-full px-3 text-[12px] font-bold" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s2)', color: active ? '#fff' : 'var(--spm-t2)', border: active ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>{label}</button>;
 }
 
-function matchFilter(program: (typeof PROGRAMS)[number], filter: string) {
+import type { Program } from '../types';
+
+function matchFilter(program: Program, filter: string) {
   if (filter === '전체') return true;
   if (filter === '유아') return program.grade.includes('유아') || program.grade.includes('유치') || program.tags.includes('유아');
   if (filter === '초등') return program.grade.includes('초등');
@@ -28,7 +30,7 @@ function matchFilter(program: (typeof PROGRAMS)[number], filter: string) {
   return true;
 }
 
-function PosterCard({ program, rank, locked, used, favorite, onFavorite }: { program: (typeof PROGRAMS)[number]; rank: number; locked: boolean; used: boolean; favorite: boolean; onFavorite: () => void }) {
+function PosterCard({ program, rank, locked, used, favorite, onFavorite }: { program: Program; rank: number; locked: boolean; used: boolean; favorite: boolean; onFavorite: () => void }) {
   return (
     <div className="relative h-[196px] w-[140px] shrink-0 overflow-hidden rounded-[14px] lg:h-[210px] lg:w-full" style={{ background: `linear-gradient(135deg, ${program.colors[0]}, ${program.colors[1]}, ${program.colors[2]})` }}>
       <Link href={locked ? '/spokedu-master/profile' : `/spokedu-master/library/${program.id}`} className="absolute inset-0 active:scale-[0.98]">
@@ -37,14 +39,14 @@ function PosterCard({ program, rank, locked, used, favorite, onFavorite }: { pro
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/78 to-transparent p-3 pl-8"><p className="text-[9px] font-bold uppercase tracking-[0.08em] text-white/45">{program.category}</p><p className="mt-1 line-clamp-2 text-[13px] font-bold leading-tight text-white">{program.title}</p></div>
         {locked ? <div className="absolute inset-0 grid place-items-center bg-black/55 backdrop-blur-[2px]"><span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: 'rgba(245,158,11,0.14)' }}><Lock size={16} color="var(--spm-amb)" /></span></div> : null}
       </Link>
-      <button type="button" onClick={onFavorite} className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/30" aria-label={`${program.title} 즐겨찾기`}>
+      <button type="button" onClick={onFavorite} className="absolute right-1.5 top-1.5 grid h-10 w-10 place-items-center rounded-full bg-black/30" aria-label={`${program.title} 즐겨찾기`}>
         <Bookmark size={15} color="#fff" fill={favorite ? '#fff' : 'none'} />
       </button>
     </div>
   );
 }
 
-function ProgramListItem({ program, locked, used, favorite, onFavorite }: { program: (typeof PROGRAMS)[number]; locked: boolean; used: boolean; favorite: boolean; onFavorite: () => void }) {
+function ProgramListItem({ program, locked, used, favorite, onFavorite }: { program: Program; locked: boolean; used: boolean; favorite: boolean; onFavorite: () => void }) {
   return (
     <div className="relative flex h-full gap-3 rounded-[14px] p-3 active:scale-[0.99]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
       <Link href={locked ? '/spokedu-master/profile' : `/spokedu-master/library/${program.id}`} className="absolute inset-0 rounded-[14px]" aria-label={program.title} />
@@ -63,8 +65,9 @@ function ProgramListItem({ program, locked, used, favorite, onFavorite }: { prog
   );
 }
 
-function FeaturedRail() {
-  const featured = PROGRAMS[0]!;
+function FeaturedRail({ programs }: { programs: Program[] }) {
+  const featured = programs[0];
+  if (!featured) return null;
   return (
     <section className="mb-7 px-[22px] sm:px-8 lg:px-10">
       <Link href={`/spokedu-master/library/${featured.id}`} className="grid overflow-hidden rounded-[18px] p-5 active:scale-[0.99] md:grid-cols-[1fr_auto] md:items-end md:p-7" style={{ background: `linear-gradient(135deg, ${featured.colors[0]}, ${featured.colors[1]}, ${featured.colors[2]})`, boxShadow: '0 18px 42px rgba(99,102,241,0.2)' }}>
@@ -104,11 +107,11 @@ function SelectionGuide() {
   );
 }
 
-function ProgramRail({ id, title, caption, programs, isPro, usedProgramIds, favorites, onFavorite }: { id?: string; title: string; caption: string; programs: typeof PROGRAMS; isPro: boolean; usedProgramIds: Set<string>; favorites: string[]; onFavorite: (id: string) => void }) {
+function ProgramRail({ id, title, caption, programs, isPro, usedProgramIds, favorites, onFavorite }: { id?: string; title: string; caption: string; programs: Program[]; isPro: boolean; usedProgramIds: Set<string>; favorites: string[]; onFavorite: (id: string) => void }) {
   return (
     <section id={id} className="mb-7 scroll-mt-20">
       <div className="mb-[14px] flex items-baseline justify-between px-[22px] sm:px-8 lg:px-10"><h2 className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)' }}>{title}</h2><span className="text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>{caption}</span></div>
-      <div className="flex gap-[9px] overflow-x-auto px-[22px] sm:px-8 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-10">{programs.map((program, index) => <PosterCard key={`${title}-${program.id}`} program={program} rank={index + 1} locked={program.isPro && !isPro} used={usedProgramIds.has(program.id)} favorite={favorites.includes(program.id)} onFavorite={() => onFavorite(program.id)} />)}</div>
+      <div className="scrollbar-hide flex gap-[9px] overflow-x-auto px-[22px] sm:px-8 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-10">{programs.map((program, index) => <PosterCard key={`${title}-${program.id}`} program={program} rank={index + 1} locked={program.isPro && !isPro} used={usedProgramIds.has(program.id)} favorite={favorites.includes(program.id)} onFavorite={() => onFavorite(program.id)} />)}</div>
     </section>
   );
 }
@@ -129,23 +132,29 @@ function SearchOverlay({ query, setQuery, onClose }: { query: string; setQuery: 
 
 export default function LibraryView() {
   const isPro = useIsPro();
+  const programs = useMasterStore((state) => state.programs);
   const classRecords = useMasterStore((state) => state.classRecords);
   const favorites = useMasterStore((state) => state.favorites);
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
+  const [mounted, setMounted] = useState(false);
   const [filter, setFilter] = useState('전체');
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) return <LibrarySkeleton />;
   const usedProgramIds = useMemo(() => new Set(classRecords.map((record) => record.programId)), [classRecords]);
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase();
-    return PROGRAMS.filter((program) => {
+    return programs.filter((program) => {
       const text = [program.title, program.category, program.grade, program.space, program.description, ...program.tags, ...program.equipment].join(' ').toLowerCase();
       return matchFilter(program, filter) && (!keyword || text.includes(keyword));
     });
-  }, [filter, query]);
-  const spomovePrograms = PROGRAMS.filter((program) => program.tags.includes('SPOMOVE') || program.lessonDetail?.relatedSpomoveIds.length).slice(0, 5);
-  const quickPrograms = PROGRAMS.filter((program) => program.duration <= 18).slice(0, 5);
-  const favoritePrograms = PROGRAMS.filter((program) => favorites.includes(program.id));
+  }, [filter, query, programs]);
+  const spomovePrograms = programs.filter((program) => program.tags.includes('SPOMOVE') || program.lessonDetail?.relatedSpomoveIds.length).slice(0, 5);
+  const quickPrograms = programs.filter((program) => program.duration <= 18).slice(0, 5);
+  const favoritePrograms = programs.filter((program) => favorites.includes(program.id));
   const resetFilters = () => {
     setFilter('전체');
     setQuery('');
@@ -154,12 +163,12 @@ export default function LibraryView() {
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <div className="flex items-end justify-between gap-4"><div><p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>program library</p><h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>라이브러리</h1></div><span className="pb-1 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>{PROGRAMS.length}개</span></div>
+        <div className="flex items-end justify-between gap-4"><div><p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>program library</p><h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>라이브러리</h1></div><span className="pb-1 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>{programs.length}개</span></div>
         <button type="button" onClick={() => setSearchOpen(true)} className="mt-5 flex h-11 w-full items-center gap-3 rounded-[12px] px-3 text-left" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><Search size={17} color="var(--spm-t3)" /><span className="text-[13px] font-semibold" style={{ color: query ? 'var(--spm-t)' : 'var(--spm-t3)' }}>{query || '수업명, 태그, 교구 검색'}</span></button>
       </header>
-      <FeaturedRail />
+      <FeaturedRail programs={programs} />
       <SelectionGuide />
-      <section className="mb-7 flex gap-2 overflow-x-auto px-[22px] sm:px-8 lg:px-10">{FILTERS.map((item) => <Chip key={item} label={item} active={filter === item} onClick={() => setFilter(item)} />)}</section>
+      <section className="scrollbar-hide mb-7 flex gap-2 overflow-x-auto px-[22px] sm:px-8 lg:px-10">{FILTERS.map((item) => <Chip key={item} label={item} active={filter === item} onClick={() => setFilter(item)} />)}</section>
       {favoritePrograms.length > 0 ? <ProgramRail title="즐겨찾기" caption="자주 쓰는 수업" programs={favoritePrograms} isPro={isPro} usedProgramIds={usedProgramIds} favorites={favorites} onFavorite={toggleFavorite} /> : null}
       <ProgramRail id="spomove-programs" title="SPOMOVE 연결 수업" caption="큰 화면 실행과 연결" programs={spomovePrograms} isPro={isPro} usedProgramIds={usedProgramIds} favorites={favorites} onFavorite={toggleFavorite} />
       <ProgramRail id="quick-programs" title="18분 이내 빠른 수업" caption="대체 수업용" programs={quickPrograms} isPro={isPro} usedProgramIds={usedProgramIds} favorites={favorites} onFavorite={toggleFavorite} />

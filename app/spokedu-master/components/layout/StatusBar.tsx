@@ -18,10 +18,10 @@ export function StatusBar() {
           {operational.online ? <Wifi size={13} /> : <WifiOff size={13} />}
           {operational.online ? '온라인' : '오프라인'}
         </span>
-        <Link href="/spokedu-master/profile" className="grid h-9 w-9 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="내 정보와 알림">
+        <Link href="/spokedu-master/profile" className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="내 정보와 알림">
           <Bell size={16} color="var(--spm-t2)" />
         </Link>
-        <Link href="/spokedu-master/profile" className="grid h-9 w-9 place-items-center rounded-[12px]" style={{ background: 'var(--spm-acc)' }} aria-label="내 정보">
+        <Link href="/spokedu-master/profile" className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'var(--spm-acc)' }} aria-label="내 정보">
           <CircleUserRound size={17} color="#fff" />
         </Link>
       </div>

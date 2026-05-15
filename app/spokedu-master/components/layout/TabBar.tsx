@@ -16,7 +16,7 @@ export function TabBar() {
   const router = useRouter();
 
   return (
-    <nav className="sticky bottom-0 z-50 shrink-0 border-t px-3 py-2 sm:px-6 sm:pb-4 lg:hidden" style={{ borderColor: 'var(--spm-br2)' }} aria-label="SPOKEDU PRO 주요 메뉴">
+    <nav className="sticky bottom-0 z-50 shrink-0 border-t px-3 pt-2 sm:px-6 lg:hidden" style={{ borderColor: 'var(--spm-br2)', paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }} aria-label="SPOKEDU PRO 주요 메뉴">
       <div className="mx-auto grid h-[58px] w-full max-w-[760px] rounded-[18px] border" style={{ gridTemplateColumns: `repeat(${SUBSCRIBER_TABS.length}, minmax(0, 1fr))`, background: 'rgba(12,12,18,0.96)', backdropFilter: 'blur(20px)', borderColor: 'var(--spm-br2)', boxShadow: '0 -14px 34px rgba(0,0,0,0.25)' }}>
         {SUBSCRIBER_TABS.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
