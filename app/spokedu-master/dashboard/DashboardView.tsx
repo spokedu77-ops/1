@@ -1,14 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Bell from 'lucide-react/dist/esm/icons/bell';
-import BookOpen from 'lucide-react/dist/esm/icons/book-open';
-import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
-import FileText from 'lucide-react/dist/esm/icons/file-text';
-import MonitorPlay from 'lucide-react/dist/esm/icons/monitor-play';
-import Play from 'lucide-react/dist/esm/icons/play';
-import Star from 'lucide-react/dist/esm/icons/star';
-import Zap from 'lucide-react/dist/esm/icons/zap';
+import { Bell, BookOpen, ChevronRight, FileText, MonitorPlay, Play, Star, Zap } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';

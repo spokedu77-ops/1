@@ -57,11 +57,48 @@ const eslintConfig = defineConfig([
       "@next/next/no-img-element": "off",
     },
   },
+  // lucide-react 내부 경로(dist/icons 등)는 .d.ts가 없어 Vercel/strict 빌드에서 실패할 수 있음 — 배럴 import만 사용
+  {
+    files: ["**/*.{ts,tsx}"],
+    ignores: ["app/teacher/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["lucide-react/dist/**", "lucide-react/icons/**"],
+              message:
+                "lucide 내부 경로는 타입 선언이 없을 수 있습니다. `import { IconName } from 'lucide-react'` 만 사용하세요.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   // Teacher/Admin: 쿠키 세션을 쓰려면 getSupabaseBrowserClient만 사용. createClient 사용 시 로그인/데이터 미표시 오류.
   {
     files: ["app/teacher/**/*.ts", "app/teacher/**/*.tsx"],
     rules: {
-      "no-restricted-imports": ["error", { paths: [{ name: "@supabase/supabase-js", importNames: ["createClient"], message: "Teacher 페이지는 getSupabaseBrowserClient() 사용. createClient()는 쿠키 세션을 읽지 않아 오류 발생." }] }],
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@supabase/supabase-js",
+              importNames: ["createClient"],
+              message: "Teacher 페이지는 getSupabaseBrowserClient() 사용. createClient()는 쿠키 세션을 읽지 않아 오류 발생.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["lucide-react/dist/**", "lucide-react/icons/**"],
+              message:
+                "lucide 내부 경로는 타입 선언이 없을 수 있습니다. `import { IconName } from 'lucide-react'` 만 사용하세요.",
+            },
+          ],
+        },
+      ],
     },
   },
   // Override default ignores of eslint-config-next.
