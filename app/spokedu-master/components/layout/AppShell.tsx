@@ -37,14 +37,14 @@ function OperationsBanner() {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, basePath = '/spokedu-master' }: { children: ReactNode; basePath?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const profile = useProfile();
   const setOnline = useMasterStore((state) => state.setOnline);
-  const isSession = pathname.startsWith('/spokedu-master/spomove/session');
-  const isOnboarding = pathname.startsWith('/spokedu-master/onboarding');
-  const isParentView = pathname.startsWith('/spokedu-master/parent');
+  const isSession = pathname.startsWith(`${basePath}/spomove/session`);
+  const isOnboarding = pathname.startsWith(`${basePath}/onboarding`);
+  const isParentView = pathname.startsWith(`${basePath}/parent`);
 
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const loadDrills = useMasterStore((state) => state.loadDrills);
@@ -73,9 +73,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isSession && !isOnboarding && !isParentView && profile && !profile.onboardingDone) {
-      router.replace('/spokedu-master/onboarding');
+      router.replace(`${basePath}/onboarding`);
     }
-  }, [isOnboarding, isParentView, isSession, profile, router]);
+  }, [basePath, isOnboarding, isParentView, isSession, profile, router]);
 
   if (isSession) {
     return <div className="min-h-dvh bg-black" style={{ fontFamily: 'var(--spm-font-body)' }}>{children}</div>;
@@ -84,7 +84,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh" style={{ background: 'linear-gradient(135deg, #07070c 0%, #101426 55%, #07070c 100%)', color: 'var(--spm-t)' }}>
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-white/5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-        {isOnboarding || isParentView ? null : <DesktopRail />}
+        {isOnboarding || isParentView ? null : <DesktopRail basePath={basePath} />}
         <div className="flex min-w-0 flex-1 flex-col">
           {isOnboarding || isParentView ? null : <StatusBar />}
           <main className="min-h-0 flex-1 overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               {children}
             </ErrorBoundary>
           </main>
-          {isOnboarding || isParentView ? null : <TabBar />}
+          {isOnboarding || isParentView ? null : <TabBar basePath={basePath} />}
         </div>
       </div>
     </div>

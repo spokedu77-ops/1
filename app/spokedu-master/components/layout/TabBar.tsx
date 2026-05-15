@@ -3,17 +3,18 @@
 import { BookOpen, FileText, Home, User, Zap } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 
-const SUBSCRIBER_TABS = [
-  { href: '/spokedu-master/dashboard', label: '홈', Icon: Home },
-  { href: '/spokedu-master/library', label: '라이브러리', Icon: BookOpen },
-  { href: '/spokedu-master/spomove', label: 'SPOMOVE', Icon: Zap },
-  { href: '/spokedu-master/report', label: '설명', Icon: FileText },
-  { href: '/spokedu-master/profile', label: '내 정보', Icon: User },
+const TAB_DEFS = [
+  { key: 'dashboard', label: '홈', Icon: Home },
+  { key: 'library', label: '라이브러리', Icon: BookOpen },
+  { key: 'spomove', label: 'SPOMOVE', Icon: Zap },
+  { key: 'report', label: '설명', Icon: FileText },
+  { key: 'profile', label: '내 정보', Icon: User },
 ] as const;
 
-export function TabBar() {
+export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) {
   const pathname = usePathname();
   const router = useRouter();
+  const SUBSCRIBER_TABS = TAB_DEFS.map((t) => ({ ...t, href: `${basePath}/${t.key}` }));
 
   return (
     <nav className="sticky bottom-0 z-50 shrink-0 border-t px-3 pt-2 sm:px-6 lg:hidden" style={{ borderColor: 'var(--spm-br2)', paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }} aria-label="SPOKEDU PRO 주요 메뉴">
@@ -34,9 +35,10 @@ export function TabBar() {
   );
 }
 
-export function DesktopRail() {
+export function DesktopRail({ basePath = '/spokedu-master' }: { basePath?: string }) {
   const pathname = usePathname();
   const router = useRouter();
+  const SUBSCRIBER_TABS = TAB_DEFS.map((t) => ({ ...t, href: `${basePath}/${t.key}` }));
 
   return (
     <aside className="hidden w-[208px] shrink-0 border-r px-4 py-5 lg:block" style={{ borderColor: 'var(--spm-br2)', background: 'rgba(7,7,12,0.72)' }} aria-label="SPOKEDU PRO 데스크톱 메뉴">
