@@ -65,10 +65,9 @@ function chunkWeeks(cells: (Date | null)[]) {
 }
 
 function formatTimeShort(d: Date) {
-  const h = d.getHours();
-  const min = d.getMinutes();
-  if (min === 0) return `${h}시`;
-  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${min}`;
 }
 
 /** 로컬 자정 기준 캘린더 날짜만 비교 */

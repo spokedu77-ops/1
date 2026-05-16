@@ -15,6 +15,17 @@ function pickColors(idx: number): [string, string, string, string] {
   return FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
 }
 
+function extractYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/);
+  return m?.[1] ?? null;
+}
+
+function buildThumbnailUrl(videoUrl: string | null | undefined): string | undefined {
+  if (!videoUrl) return undefined;
+  const id = extractYouTubeId(videoUrl);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : undefined;
+}
+
 export async function GET() {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
@@ -70,13 +81,17 @@ export async function GET() {
     equipment: string | null;
     checklist: string | null;
     updated_at: string | null;
+    function_type: string | null;
+    function_types: string[] | null;
+    main_theme: string | null;
+    group_size: string | null;
   };
 
   const overlayByCurriculumId = new Map<number, OverlayRow>();
   if (curriculumIds.length > 0) {
     const { data: overlayRows } = await supabase
       .from('spokedu_pro_programs')
-      .select('source_center_curriculum_id,video_url,activity_tip,activity_method,equipment,checklist,updated_at')
+      .select('source_center_curriculum_id,video_url,activity_tip,activity_method,equipment,checklist,updated_at,function_type,function_types,main_theme,group_size')
       .in('source_center_curriculum_id', curriculumIds);
     for (const o of (overlayRows ?? []) as OverlayRow[]) {
       const cid = o.source_center_curriculum_id;
@@ -99,6 +114,18 @@ export async function GET() {
     expert_tip: string | null;
     display_order: number | null;
   };
+
+  // Check subscription to gate Pro lessonDetail server-side
+  const { data: subRow } = await supabase
+    .from('spokedu_master_subscriptions')
+    .select('plan, status, period_end')
+    .eq('user_id', user.id)
+    .maybeSingle() as { data: { plan: string; status: string; period_end: string | null } | null };
+
+  const isPaidActive =
+    subRow?.status === 'active' &&
+    (subRow.plan === 'pro' || subRow.plan === 'team') &&
+    (!subRow.period_end || new Date(subRow.period_end) >= new Date());
 
   const programs: Program[] = (curriculumRows as CurrRow[]).map((r, idx) => {
     const meta = metaByCurriculumId.get(r.id);
@@ -123,35 +150,54 @@ export async function GET() {
         ? [smColors[0], smColors[1], smColors[2], smColors[3]]
         : pickColors(idx);
 
+    const isProProgram = meta?.sm_is_pro ?? false;
+    const lessonDetail = !isProProgram || isPaidActive
+      ? {
+          recommendedAge: meta?.sm_grade ?? '전학년',
+          recommendedPlayers: '6-20명',
+          objective: title,
+          developmentFocus: meta?.sm_theme ?? '',
+          coachScript,
+          parentNote: coachScript,
+          fieldTips,
+          variations: [],
+          safetyNotes: [],
+          relatedSpomoveIds: [],
+          videoUrl,
+        }
+      : undefined;
+
+    // Merge spokedu-pro classification tags with sm_tags
+    const proTags: string[] = [
+      ...(Array.isArray(ov?.function_types) && ov.function_types.length > 0
+        ? ov.function_types
+        : ov?.function_type ? [ov.function_type] : []),
+      ...(ov?.main_theme ? [ov.main_theme] : []),
+      ...(ov?.group_size ? [ov.group_size] : []),
+    ];
+    const smTags = meta?.sm_tags ?? [];
+    const tags = [...new Set([...proTags, ...smTags])];
+
+    const thumbnailUrl = buildThumbnailUrl(videoUrl);
+
     return {
       id: String(r.id),
       curriculumId: r.id,
       title,
-      category: meta?.sm_theme ?? '일반',
+      category: meta?.sm_theme ?? (ov?.main_theme ?? '일반'),
       grade: meta?.sm_grade ?? '전학년',
       duration: meta?.sm_duration ?? 20,
       space: meta?.sm_space ?? '실내',
       description: coachScript,
       steps,
       equipment,
-      tags: meta?.sm_tags ?? [],
+      tags,
       colors,
-      isPro: meta?.sm_is_pro ?? false,
+      isPro: isProProgram,
       isNew: meta?.sm_is_new ?? false,
       isHot: meta?.sm_is_hot ?? false,
-      lessonDetail: {
-        recommendedAge: meta?.sm_grade ?? '전학년',
-        recommendedPlayers: '6-20명',
-        objective: title,
-        developmentFocus: meta?.sm_theme ?? '',
-        coachScript,
-        parentNote: coachScript,
-        fieldTips,
-        variations: [],
-        safetyNotes: [],
-        relatedSpomoveIds: [],
-        videoUrl,
-      },
+      thumbnailUrl,
+      lessonDetail,
     };
   });
 

@@ -20,15 +20,25 @@ function ProgramHero({ program, locked }: { program: Program; locked: boolean })
   return (
     <div
       className="relative flex h-[220px] items-center justify-center overflow-hidden rounded-[18px] md:h-full"
-      style={{ background: `linear-gradient(145deg, ${program.colors[0]}, ${program.colors[1]}, ${program.colors[2]})` }}
+      style={program.thumbnailUrl ? undefined : { background: `linear-gradient(145deg, ${program.colors[0]}, ${program.colors[1]}, ${program.colors[2]})` }}
       aria-hidden
     >
-      <span className="pointer-events-none absolute right-3 top-3 opacity-[0.1]">
-        <CategoryIcon category={program.category} size={130} color="#fff" strokeWidth={0.7} />
-      </span>
-      <div className="grid h-[72px] w-[72px] place-items-center rounded-[22px]" style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.16)' }}>
-        <CategoryIcon category={program.category} size={34} color="rgba(255,255,255,0.9)" />
-      </div>
+      {program.thumbnailUrl ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={program.thumbnailUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.5))' }} />
+        </>
+      ) : (
+        <>
+          <span className="pointer-events-none absolute right-3 top-3 opacity-[0.1]">
+            <CategoryIcon category={program.category} size={130} color="#fff" strokeWidth={0.7} />
+          </span>
+          <div className="relative grid h-[72px] w-[72px] place-items-center rounded-[22px]" style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.16)' }}>
+            <CategoryIcon category={program.category} size={34} color="rgba(255,255,255,0.9)" />
+          </div>
+        </>
+      )}
       {locked ? (
         <div className="absolute inset-0 grid place-items-center rounded-[18px] bg-black/58 backdrop-blur-[3px]">
           <div className="rounded-[12px] px-4 py-3 text-center" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }}>

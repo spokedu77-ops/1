@@ -2,7 +2,7 @@ import { Activity, Scale, Star, Target, Timer, Users, Zap } from 'lucide-react';
 import type { Program } from '../../types';
 
 export function CategoryIcon({ category, size, color = 'rgba(255,255,255,0.85)', strokeWidth = 1.5 }: { category: string; size: number; color?: string; strokeWidth?: number }) {
-  if (category.includes('민첩') || category.includes('속도')) return <Zap size={size} color={color} strokeWidth={strokeWidth} />;
+  if (category.includes('민첩') || category.includes('속도') || category.includes('순발')) return <Zap size={size} color={color} strokeWidth={strokeWidth} />;
   if (category.includes('협동')) return <Users size={size} color={color} strokeWidth={strokeWidth} />;
   if (category.includes('협응')) return <Target size={size} color={color} strokeWidth={strokeWidth} />;
   if (category.includes('균형') || category.includes('자세')) return <Scale size={size} color={color} strokeWidth={strokeWidth} />;
@@ -12,6 +12,26 @@ export function CategoryIcon({ category, size, color = 'rgba(255,255,255,0.85)',
 }
 
 export function ProgramThumb({ program, size = 72 }: { program: Program; size?: number }) {
+  if (program.thumbnailUrl) {
+    return (
+      <div
+        className="shrink-0 overflow-hidden rounded-[12px]"
+        style={{ width: size, height: size }}
+        aria-hidden
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={program.thumbnailUrl}
+          alt=""
+          width={size}
+          height={size}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className="shrink-0 grid place-items-center overflow-hidden rounded-[12px]"

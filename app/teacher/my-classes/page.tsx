@@ -581,7 +581,11 @@ function MyClassesContent() {
               const timeDisplay = `${startDate.getHours()}:${String(startDate.getMinutes()).padStart(2, '0')}`;
               
               // 간소화된 상태 판별
-              const feedbackFields = session.feedback_fields || parseTemplateToFields(session.students_text || '');
+              const isCompletedStatus = session.status === 'finished' || session.status === 'verified';
+              const feedbackFields =
+                isCompletedStatus
+                  ? (session.feedback_fields || parseTemplateToFields(session.students_text || ''))
+                  : {};
               const isCenterType =
                 session.session_type === 'regular_center' ||
                 session.session_type === 'one_day_center';
@@ -596,7 +600,7 @@ function MyClassesContent() {
               const isVerified = session.status === 'verified';
               const isPostponed = session.status === 'postponed';
               const isCancelled = session.status === 'cancelled';
-              const isActuallyDone = hasContent;
+              const isActuallyDone = isCompletedStatus && hasContent;
               const isAssistantSession =
                 !!scheduleUserId &&
                 String(session.created_by || '').trim() !== String(scheduleUserId).trim();

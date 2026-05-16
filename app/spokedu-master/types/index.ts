@@ -171,6 +171,8 @@ export interface Program {
   isPro: boolean;
   isNew: boolean;
   isHot?: boolean;
+  /** YouTube 썸네일 URL (hqdefault.jpg 기준) */
+  thumbnailUrl?: string;
   /** curriculum_id: Supabase curriculum 테이블의 id (동적 로딩 시 추적용) */
   curriculumId?: number;
   lessonDetail?: {

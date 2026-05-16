@@ -673,6 +673,9 @@ function FeedbackReviewTab({
 
   const checkDuplicateFeedback = async (currentSession: Session) => {
     if (!supabase) return { isDuplicate: false };
+    if (currentSession.status !== 'finished' && currentSession.status !== 'verified') {
+      return { isDuplicate: false };
+    }
     if (
       currentSession.session_type === 'regular_center' ||
       currentSession.session_type === 'one_day_center'
@@ -684,6 +687,7 @@ function FeedbackReviewTab({
         .from('sessions')
         .select('id, title, students_text, start_at')
         .eq('created_by', currentSession.created_by)
+        .in('status', ['finished', 'verified'])
         .lt('start_at', currentSession.start_at)
         .order('start_at', { ascending: false })
         .limit(5);

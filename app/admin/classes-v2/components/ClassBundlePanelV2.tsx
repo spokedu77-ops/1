@@ -1488,12 +1488,12 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                           <table className="w-full table-fixed text-xs">
                             <colgroup>
                               <col className="w-[52px]" />
-                              <col className="w-[120px]" />
-                              <col className="w-[108px]" />
-                              <col />
-                              <col className="w-[64px]" />
+                              <col className="w-[112px]" />
+                              <col className="w-[102px]" />
+                              <col className="w-[192px]" />
+                              <col className="w-[58px]" />
                               <col className="w-[56px]" />
-                              <col className="w-[78px]" />
+                              <col className="w-[68px]" />
                             </colgroup>
                             <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 border-b border-slate-100">
                               <tr>
@@ -1608,7 +1608,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                             <input
                                               key={`price-${r.id}-${r.price ?? 0}`}
                                               type="number"
-                                              className="w-[80px] shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-right text-slate-800"
+                                              className="w-[72px] shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-right text-slate-800"
                                               placeholder="수업료"
                                               defaultValue={Number(r.price) || 0}
                                               onBlur={(e) => void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })}
@@ -1630,7 +1630,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                               <input
                                                 key={`assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
                                                 type="number"
-                                                className="w-[80px] shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-right text-slate-600"
+                                                className="w-[72px] shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-right text-slate-600"
                                                 placeholder="수업료"
                                                 defaultValue={Number(ex.price) || 0}
                                                 onBlur={(e) => void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)}

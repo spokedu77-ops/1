@@ -81,7 +81,21 @@ export async function GET(req: NextRequest) {
       (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
     );
 
-    return NextResponse.json({ data: combined });
+    const sanitizedForTeacherView = combined.map((row) => {
+      const status = String(row.status || '');
+      if (status !== 'opened') return row;
+      // 과거 복제/이관 데이터에 students_text·feedback_fields가 남아 있어도,
+      // 미완료(opened) 세션은 교사 화면에서 항상 "미작성"으로 취급한다.
+      return {
+        ...row,
+        students_text: null,
+        feedback_fields: {},
+        photo_url: [],
+        file_url: [],
+      };
+    });
+
+    return NextResponse.json({ data: sanitizedForTeacherView });
   } catch (err) {
     devLogger.error('[teacher/my-schedule]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

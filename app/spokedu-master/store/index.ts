@@ -275,15 +275,21 @@ export const useMasterStore = create<MasterState>()(
           const res = await fetch('/api/spokedu-master/subscription');
           if (!res.ok) return;
           const json = await res.json() as { plan?: string; status?: string };
-          if (json.plan && (json.plan === 'pro' || json.plan === 'team') && json.status === 'active') {
-            set((state) => ({
-              profile: state.profile
-                ? { ...state.profile, plan: json.plan as 'pro' | 'team', role: json.plan === 'team' ? 'director' : 'teacher' }
-                : state.profile,
-            }));
-          }
+          // Always apply the server-authoritative plan — never trust localStorage alone
+          const serverPlan: 'free' | 'pro' | 'team' =
+            json.status === 'active' && json.plan === 'team' ? 'team' :
+            json.status === 'active' && json.plan === 'pro' ? 'pro' : 'free';
+          set((state) => ({
+            profile: state.profile
+              ? {
+                  ...state.profile,
+                  plan: serverPlan,
+                  role: serverPlan === 'team' ? 'director' : 'teacher',
+                }
+              : state.profile,
+          }));
         } catch {
-          // network failure — keep current plan
+          // network failure — keep current plan (offline tolerance)
         }
       },
       operational: defaultOperational,
