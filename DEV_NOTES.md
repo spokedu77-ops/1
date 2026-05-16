@@ -11,6 +11,25 @@
 - 2026-05-15 (전환율 강화 — Pro 잠금 CTA 전수 결제 직결 + 온보딩/트라이얼 배너 개선 + 라이브러리 상세 히어로 리디자인)
 - 2026-05-16 (전면 디자인 리디자인 — Dashboard 히어로 썸네일 풀블리드 + StatsBand + Payment 플랜 토글 + 사업자 정보 + SpomoveHub 그래디언트 + Library FeaturedRail 강화)
 - 2026-05-16 (상용화 완성 — Stripe 고객 포털 + 구독 관리 페이지 + 사업자 정보 실데이터 + 전 페이지 카피 정비)
+- 2026-05-16 (UX 마무리 — SEO/robots/sitemap + 온보딩 리턴유저 리다이렉트 + 알림 배지 + SPOMOVE 전체화면 토글 + report aside 스크롤 + plan 반 입력 자유화)
+- 2026-05-16 (학생 관리 — store addStudent/removeStudent + students 페이지 추가/삭제 UI)
+- 2026-05-16 (결제 PG 교체 — Stripe 전면 제거 → 토스페이먼츠, confirm API 신규, SQL 스키마 교체, 법적 고지 전수 수정)
+
+---
+
+## 수정한 파일 (2026-05-16 — UX 마무리)
+
+### 신규 파일
+- `public/robots.txt` — 크롤러 규칙: 앱 내부 차단, landing 허용, sitemap 경로 선언
+- `app/sitemap.ts` — Next.js 사이트맵 (landing URL만 포함, NEXT_PUBLIC_SITE_URL 기반)
+
+### 기존 파일 수정
+- `app/spokedu-master/landing/page.tsx` — "로그인" 링크를 `/onboarding` → `/dashboard`로 변경 (AppShell이 온보딩 미완료자를 자동 리다이렉트)
+- `app/spokedu-master/onboarding/page.tsx` — `useEffect` 추가: `profile.onboardingDone === true`이면 `/dashboard`로 즉시 리다이렉트 (리턴 유저 온보딩 반복 방지)
+- `app/spokedu-master/components/layout/StatusBar.tsx` — Bell 버튼에 `useUnreadCount` 연결 + 미읽음 배지(빨간 점) 추가 + 링크를 profile → dashboard로 변경
+- `app/spokedu-master/spomove/session/page.tsx` — `isFullscreen` 상태 추가 + `fullscreenchange` 이벤트 구독 → 전체화면 버튼 아이콘 `Maximize`/`Minimize` 실시간 전환
+- `app/spokedu-master/report/page.tsx` — aside 프로그램 목록에 `max-h-[340px] overflow-y-auto scrollbar-hide` 적용 + 현재 선택 프로그램 이름 고정 표시
+- `app/spokedu-master/plan/PlanView.tsx` — 반 선택 고정 칩('3학년 A반' 등) → 자유 입력 텍스트 필드로 교체 + 빈 값 저장 방지
 
 ---
 
@@ -42,8 +61,9 @@
 
 ### 남은 작업
 - 통신판매업신고번호 발급 후 위 3개 파일 "신청 중" → 실제 번호로 교체
-- Stripe 대시보드에서 Customer Portal 활성화 (Settings > Billing > Customer portal)
-- `.env.local` STRIPE_SECRET_KEY 확인 (portal API 사용)
+  - `app/spokedu-master/payment/page.tsx`
+  - `app/spokedu-master/subscription/page.tsx`
+  - `app/spokedu-master/landing/page.tsx`
 
 ---
 
@@ -67,22 +87,37 @@
 - `app/spokedu-master/components/layout/AppShell.tsx` — payment 경로 chrome 제외 + syncSubscription 마운트 호출
 - `app/spokedu-master/profile/page.tsx` — Pro/Center 플랜 선택 시 `router.push('/spokedu-master/payment?plan=...')` 리다이렉트
 
-### 결제 흐름 요약
+### 결제 흐름 요약 (토스페이먼츠)
 
 1. 사용자가 프로필의 "플랜 선택" 바텀시트에서 Pro 또는 Center를 선택
 2. `/spokedu-master/payment?plan=pro` (또는 `team`)으로 이동
 3. 이메일 OTP 인증 (Supabase magic link)
-4. 인증 완료 후 "카드로 결제하기" → `/api/spokedu-master/payment/create-checkout` POST → Stripe Checkout URL로 이동
-5. Stripe 결제 완료 → `/spokedu-master/payment/success?session_id=...`로 리다이렉트
-6. 성공 페이지에서 `syncSubscription()` 호출 → `/api/spokedu-master/subscription` → Zustand profile.plan 업데이트
-7. Stripe webhook (`/api/spokedu-master/payment/webhook`) → `spokedu_master_subscriptions` 테이블 upsert
+4. 인증 완료 후 "카드로 결제" → `/api/spokedu-master/payment/create-checkout` POST → `orderId` 반환
+5. 프론트에서 `window.TossPayments(clientKey).requestPayment('카드', { orderId, ... })` 호출
+6. 토스 결제 완료 → `/spokedu-master/payment/success?paymentKey=...&orderId=...&amount=...`로 리다이렉트
+7. 성공 페이지에서 `/api/spokedu-master/payment/confirm` POST → 토스 API 검증 + Supabase upsert
+8. `syncSubscription()` 호출 → Zustand profile.plan 업데이트
 
-### 적용 전 필요 작업 (Supabase/Stripe 설정)
+### 적용 전 필요 작업
 
-- `sql/71_spokedu_master_subscriptions.sql` Supabase에 적용
-- `.env.local`에 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` 설정
-- Stripe 대시보드에서 webhook endpoint `POST /api/spokedu-master/payment/webhook` 등록
-  - 이벤트: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+#### 1. .env.local 키 추가 (프로젝트 루트)
+```
+NEXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_...   # 토스페이먼츠 대시보드 > 내 상점 > 클라이언트 키
+TOSS_SECRET_KEY=test_sk_...               # 토스페이먼츠 대시보드 > 내 상점 > 시크릿 키
+NEXT_PUBLIC_SITE_URL=https://spokedu.com  # 배포 도메인
+```
+테스트 키로 먼저 검증 후 실서비스 키로 교체.
+
+#### 2. Supabase SQL 적용
+```
+Supabase 대시보드 → SQL Editor → New query
+→ sql/71_spokedu_master_subscriptions.sql 내용 붙여넣기 → Run
+```
+
+#### 3. 토스페이먼츠 대시보드 설정
+- 결제창 > 가맹점 도메인: 배포 도메인 등록
+- successUrl 허용: `https://spokedu.com/spokedu-master/payment/success`
+- failUrl 허용: `https://spokedu.com/spokedu-master/payment/cancel`
 
 ---
 
@@ -452,3 +487,21 @@
   - 불필요한 대규모 리팩토링보다 MASTER 상용화 흐름에 직접 필요한 수정부터 한다.
 
 - 대화 기록이 사라져도 이 파일을 기준으로 이어받을 수 있도록 항상 DEV_NOTES를 최신 상태로 유지한다.
+
+---
+
+## 수업관리 안전 변경 체크리스트 (admin/classes-v2, teachers-classes)
+
+- 변경 전 범위 고정
+  - 기능 추가/리팩터링이 아니라, 문구/미사용 코드/경로 정합성 같은 저위험 변경인지 먼저 확인
+  - `useClassManagement`, postpone/undo, group_id/round_* 계산 로직은 요청 없으면 수정 금지
+
+- 변경 중 확인
+  - destructive 액션(연기/취소/회차 삭제)은 확인 문구가 대상/영향(정산, 숨김 여부)을 설명하는지 점검
+  - 상태 판정(`opened`/`finished`/`verified`)은 기존 규칙을 재사용하고, 화면별 로직을 새로 분기하지 않기
+  - 공용 유틸의 export를 줄일 때는 `rg`로 외부 사용처 0건 확인 후 내부화
+
+- 변경 후 검증
+  - 변경 파일 기준 `ReadLints`로 신규 진단 유입 여부 확인
+  - 삭제/내부화한 심볼은 `rg`로 잔여 참조 없는지 확인
+  - 문서 경로 수정 시 실제 파일 경로와 일치하는지 재확인

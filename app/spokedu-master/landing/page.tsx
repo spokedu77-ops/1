@@ -103,7 +103,7 @@ export default function LandingPage() {
           <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>PRO</span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/spokedu-master/onboarding" className="hidden h-9 items-center rounded-full px-4 text-[12px] font-black sm:flex" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+          <Link href="/spokedu-master/dashboard" className="hidden h-9 items-center rounded-full px-4 text-[12px] font-black sm:flex" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
             로그인
           </Link>
           <Link href="/spokedu-master/onboarding" className="flex h-9 items-center rounded-full px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 4px 14px rgba(99,102,241,0.3)' }}>
@@ -234,7 +234,7 @@ export default function LandingPage() {
           <div className="mt-8 flex items-start gap-3 rounded-[14px] px-5 py-4" style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.16)' }}>
             <Shield size={16} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
             <p className="text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              Stripe 보안 결제 · 언제든지 취소 가능 · 다음 결제일 전 취소 시 요금 없음 · 카드 정보는 SPOKEDU 서버에 저장되지 않습니다.
+              토스페이먼츠 보안 결제 · 언제든지 취소 가능 · 다음 결제일 전 취소 시 요금 없음 · 카드 정보는 SPOKEDU 서버에 저장되지 않습니다.
             </p>
           </div>
           <p className="mt-5 text-center text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>

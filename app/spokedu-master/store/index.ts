@@ -50,6 +50,8 @@ interface MasterState {
   toggleLessonDone: (id: number) => void;
   deleteLessonById: (id: number) => void;
   students: StudentProfile[];
+  addStudent: (name: string, group: string, meta: string, id?: string) => void;
+  removeStudent: (id: string) => void;
   classRecords: ClassRecord[];
   saveClassRecord: (record: ClassRecord) => void;
   favorites: string[];
@@ -332,6 +334,10 @@ export const useMasterStore = create<MasterState>()(
       toggleLessonDone: (id) => set((state) => ({ lessons: state.lessons.map((lesson) => (lesson.id === id ? { ...lesson, done: !lesson.done } : lesson)) })),
       deleteLessonById: (id) => set((state) => ({ lessons: state.lessons.filter((lesson) => lesson.id !== id) })),
       students: defaultStudents,
+      addStudent: (name, group, meta, id) => set((state) => ({
+        students: [...state.students, { id: id ?? Date.now().toString(), name, group, meta, level: 'Lv.1 Start', attendance: 100, classes: 0, streak: 0, risk: null, skills: [], badges: [], history: [] }],
+      })),
+      removeStudent: (id) => set((state) => ({ students: state.students.filter((student) => student.id !== id) })),
       classRecords: [],
       saveClassRecord: (record) =>
         set((state) => ({

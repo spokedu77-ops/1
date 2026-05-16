@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Award, ChevronRight, ExternalLink, FileText, MessageCircle, TrendingUp, TriangleAlert } from 'lucide-react';
+import { Award, ChevronRight, ExternalLink, FileText, MessageCircle, Plus, Trash2, TrendingUp, TriangleAlert } from 'lucide-react';
 import { useLayoutEffect, useState } from 'react';
+import { BottomSheet } from '../components/ui/BottomSheet';
 import { createParentShareToken } from '../lib/subscription';
 import { useMasterStore } from '../store';
 
@@ -24,10 +25,27 @@ function SkillBar({ label, value, delta }: { label: string; value: number; delta
 export default function StudentsPage() {
   const students = useMasterStore((state) => state.students);
   const records = useMasterStore((state) => state.classRecords);
-  const [selectedId, setSelectedId] = useState(students[0]?.id ?? null);
+  const addStudent = useMasterStore((state) => state.addStudent);
+  const removeStudent = useMasterStore((state) => state.removeStudent);
+  const [selectedId, setSelectedId] = useState<string | null>(students[0]?.id ?? null);
   const [kakaoReadyId, setKakaoReadyId] = useState<string | null>(null);
   const [parentShareTokens, setParentShareTokens] = useState<Record<string, string>>({});
+  const [addOpen, setAddOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newGroup, setNewGroup] = useState('');
+  const [newMeta, setNewMeta] = useState('');
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
+
+  const handleAdd = () => {
+    if (!newName.trim()) return;
+    const newId = Date.now().toString();
+    addStudent(newName.trim(), newGroup.trim() || '미분류', newMeta.trim(), newId);
+    setSelectedId(newId);
+    setNewName('');
+    setNewGroup('');
+    setNewMeta('');
+    setAddOpen(false);
+  };
   const selectedRecordCount = selected ? records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length : 0;
 
   useLayoutEffect(() => {
@@ -43,11 +61,19 @@ export default function StudentsPage() {
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>student history</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
-        <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          수업 기록이 쌓이면 학생별 성장 이력, 출석률, 동작 발전을 한눈에 확인할 수 있습니다.
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>student history</p>
+            <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
+            <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+              수업 기록이 쌓이면 학생별 성장 이력, 출석률, 동작 발전을 한눈에 확인할 수 있습니다.
+            </p>
+          </div>
+          <button type="button" onClick={() => setAddOpen(true)} className="mt-1 flex h-11 shrink-0 items-center gap-2 rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+            <Plus size={15} />
+            학생 추가
+          </button>
+        </div>
       </header>
 
       {students.length === 0 ? (
@@ -61,17 +87,22 @@ export default function StudentsPage() {
       <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
         {students.length > 0 ? <section className="space-y-2">
           {students.map((student) => (
-            <button key={student.id} type="button" onClick={() => setSelectedId(student.id)} className="flex w-full items-center gap-3 rounded-[15px] p-3 text-left" style={{ background: selectedId === student.id ? 'rgba(99,102,241,0.14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br)' }}>
-              <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>
-                {student.name.slice(0, 1)}
-                {student.risk ? <span className="absolute right-0 top-0 h-3 w-3 rounded-full" style={{ background: 'var(--spm-red)', border: '2px solid var(--spm-s2)' }} /> : null}
-              </span>
-              <span className="min-w-0 flex-1">
-                <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
-                <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{student.group} / {student.level}</span>
-              </span>
-              <ChevronRight size={16} color="var(--spm-t3)" />
-            </button>
+            <div key={student.id} className="flex items-center gap-2 rounded-[15px]" style={{ background: selectedId === student.id ? 'rgba(99,102,241,0.14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br)' }}>
+              <button type="button" onClick={() => setSelectedId(student.id)} className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left">
+                <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>
+                  {student.name.slice(0, 1)}
+                  {student.risk ? <span className="absolute right-0 top-0 h-3 w-3 rounded-full" style={{ background: 'var(--spm-red)', border: '2px solid var(--spm-s2)' }} /> : null}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
+                  <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{student.group} / {student.level}</span>
+                </span>
+                <ChevronRight size={16} color="var(--spm-t3)" />
+              </button>
+              <button type="button" onClick={() => { removeStudent(student.id); if (selectedId === student.id) setSelectedId(null); }} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label={`${student.name} 삭제`}>
+                <Trash2 size={14} color="var(--spm-red)" />
+              </button>
+            </div>
           ))}
         </section> : null}
 
@@ -149,6 +180,26 @@ export default function StudentsPage() {
           </section>
         ) : null}
       </div>
+
+      <BottomSheet open={addOpen} title="학생 추가" onClose={() => setAddOpen(false)}>
+        <div className="space-y-4">
+          <label className="block">
+            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름 *</span>
+            <input type="text" value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="예: 김민준" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반 / 그룹</span>
+            <input type="text" value={newGroup} onChange={(event) => setNewGroup(event.target.value)} placeholder="예: 초등 A반, 유아반" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>나이 / 수강 기간</span>
+            <input type="text" value={newMeta} onChange={(event) => setNewMeta(event.target.value)} placeholder="예: 8세 / 3개월차" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+          </label>
+          <button type="button" onClick={handleAdd} disabled={!newName.trim()} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+            추가
+          </button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

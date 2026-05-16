@@ -53,17 +53,19 @@ function LessonItem({ lesson, onToggle, onDelete }: { lesson: ReturnType<typeof 
 function AddLessonSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const addLesson = useMasterStore((state) => state.addLesson);
   const [programId, setProgramId] = useState(PROGRAMS[0]?.id ?? '');
-  const [classId, setClassId] = useState('3학년 A반');
+  const [classId, setClassId] = useState('');
   const [period, setPeriod] = useState(3);
   const [duration, setDuration] = useState(15);
+  const [dateStr, setDateStr] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const program = PROGRAMS.find((item) => item.id === programId) ?? PROGRAMS[0]!;
-  const save = () => { addLesson({ id: Date.now(), title: program.title, classId, date: new Date().toISOString(), period, duration, done: false, color: program.colors[1], memo: program.category }); onClose(); };
+  const save = () => { if (!classId.trim()) return; addLesson({ id: Date.now(), title: program.title, classId: classId.trim(), date: new Date(dateStr).toISOString(), period, duration, done: false, color: program.colors[1], memo: program.category }); onClose(); };
 
   return (
     <BottomSheet open={open} title="수업 추가" onClose={onClose}>
       <div className="space-y-5">
         <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>프로그램</span><select value={programId} onChange={(event) => setProgramId(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)', colorScheme: 'dark' }}>{PROGRAMS.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
-        <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반</p><div className="flex flex-wrap gap-2">{['3학년 A반', '3학년 B반', '4학년 A반'].map((item) => <Chip key={item} label={item} active={classId === item} onClick={() => setClassId(item)} />)}</div></div>
+        <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>날짜</span><input type="date" value={dateStr} onChange={(event) => setDateStr(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)', colorScheme: 'dark' }} /></label>
+        <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반 / 그룹</span><input type="text" value={classId} onChange={(event) => setClassId(event.target.value)} placeholder="예: 3학년 A반, 오전반, 성인반" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} /></label>
         <div><p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>교시</p><div className="flex flex-wrap gap-2">{[1, 2, 3, 4, 5].map((item) => <Chip key={item} label={`${item}교시`} active={period === item} onClick={() => setPeriod(item)} />)}</div></div>
         <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>시간</span><input type="number" min={5} max={60} value={duration} onChange={(event) => setDuration(Number(event.target.value))} className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} /></label>
         <button type="button" onClick={save} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>저장</button>

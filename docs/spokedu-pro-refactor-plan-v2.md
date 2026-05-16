@@ -117,7 +117,7 @@ D10. **전역 admin vs 센터 admin 권한 계층**
 - `app/(pro)/spokedu-pro/components/SpokeduProDrawer.tsx` — role, themeKey props 추가, 상단에 역할·테마 표시.
 - `app/(pro)/spokedu-pro/views/LibraryView.tsx` — initialPreset 적용, 테마 탭 활성화(themeKey/preset=best), onOpenDetail(id, context?) 시그니처.
 - `app/admin/spokedu-pro/page.tsx` — DashboardCurationEditor 상단 배치.
-- `app/admin/spokedu-pro/components/DashboardCurationEditor.tsx` — 신규: 테마 제목/부제/themeKey, Row1 4슬롯(programId, role, tag2), Row2 4슬롯, 저장 시 PATCH tenant + 이벤트 발행.
+- `app/(pro)/spokedu-pro/components/DashboardCurationEditor.tsx` — 신규: 테마 제목/부제/themeKey, Row1 4슬롯(programId, role, tag2), Row2 4슬롯, 저장 시 PATCH tenant + 이벤트 발행.
 
 ### 동작 확인 방법
 

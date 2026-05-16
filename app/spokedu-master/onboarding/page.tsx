@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight, Check, School, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateCenterCode, type CenterValidationResult } from '../lib/serviceContracts';
 import { useMasterStore, useProfile } from '../store';
@@ -36,6 +36,12 @@ export default function OnboardingPage() {
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
   const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (profile?.onboardingDone) {
+      router.replace('/spokedu-master/dashboard');
+    }
+  }, [profile?.onboardingDone, router]);
   const [role, setRole] = useState<UserRole>(profile?.role ?? 'teacher');
   const [centerMode, setCenterMode] = useState<'personal' | 'center'>(profile?.centerId ? 'center' : 'personal');
   const [centerCode, setCenterCode] = useState('');

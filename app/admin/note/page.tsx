@@ -46,7 +46,9 @@ import {
   useDroppable,
   useSensor,
   useSensors,
+  type DragCancelEvent,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
 import {
@@ -663,6 +665,7 @@ function SortableBlockRow({
   focusedToggleId,
   onFocusToggle,
   uploadImage,
+  isDropTarget,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -681,6 +684,7 @@ function SortableBlockRow({
   focusedToggleId?: string | null;
   onFocusToggle?: (blockId: string | null) => void;
   uploadImage?: (file: File) => Promise<string>;
+  isDropTarget?: boolean;
 }) {
   const {
     attributes,
@@ -697,15 +701,23 @@ function SortableBlockRow({
     opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 10 : undefined,
   };
+  const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`group relative flex items-start gap-2 rounded-md px-1 py-0.5 transition-colors ${
-        isDragging ? 'bg-blue-50 ring-1 ring-blue-200' : 'hover:bg-slate-50/80'
+        isDragging
+          ? 'bg-blue-50 ring-1 ring-blue-200'
+          : isDropTarget
+            ? 'bg-blue-50/70 ring-1 ring-blue-300'
+            : 'hover:bg-slate-50/80'
       }`}
     >
+      {isDropTarget && !isDragging && (
+        <div className="pointer-events-none absolute left-10 right-1 top-0 h-0.5 rounded-full bg-blue-400/80" />
+      )}
       <div className="sticky left-0 mt-1 flex h-7 shrink-0 items-center gap-0.5 rounded-md bg-white/80 opacity-0 shadow-sm ring-1 ring-slate-200/70 backdrop-blur transition-opacity group-hover:opacity-100">
         <button
           type="button"
@@ -727,6 +739,13 @@ function SortableBlockRow({
           <GripVertical className="h-4 w-4" />
         </button>
       </div>
+      {blockDepth > 0 && (
+        <div className="pointer-events-none mt-1 flex h-7 shrink-0 items-center gap-1 px-0.5" aria-hidden>
+          {Array.from({ length: blockDepth }).map((_, idx) => (
+            <span key={`${block.id}-depth-guide-${idx}`} className="h-4 w-px rounded bg-slate-200" />
+          ))}
+        </div>
+      )}
 
       {/* 블록 콘텐츠 */}
       <div
@@ -801,6 +820,7 @@ function AdminNotePageContent() {
   const [sortKey, setSortKey] = useState<SortKey>('recent');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const [overBlockId, setOverBlockId] = useState<string | null>(null);
   const [focusedEditorBlockId, setFocusedEditorBlockId] = useState<string | null>(null);
   const [focusSignal, setFocusSignal] = useState(0);
   /** 상단 '이미지' 블록 추가 시 토글 안에 넣을 대상 (토글 블록 클릭으로 설정) */
@@ -1010,10 +1030,79 @@ function AdminNotePageContent() {
   /* ── DnD handlers ── */
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveBlockId(event.active.id as string);
+    setOverBlockId(null);
+  }, []);
+
+  const normalizeDepthByOrder = useCallback((orderedBlocks: NoteBlock[]) => {
+    let prevDepth = 0;
+    const depthPatches: Array<{ id: string; content: Record<string, unknown> }> = [];
+    const normalized = orderedBlocks.map((block, index) => {
+      const content =
+        block.content && typeof block.content === 'object'
+          ? (block.content as Record<string, unknown>)
+          : null;
+      const rawDepth = Number(content?.depth ?? 0);
+      const safeDepth = Number.isFinite(rawDepth) ? Math.max(0, Math.min(6, Math.round(rawDepth))) : 0;
+      const maxDepth = index === 0 ? 0 : Math.min(6, prevDepth + 1);
+      const nextDepth = Math.min(safeDepth, maxDepth);
+      prevDepth = nextDepth;
+      if (content && safeDepth !== nextDepth) {
+        const nextContent = { ...content, depth: nextDepth };
+        depthPatches.push({ id: block.id, content: nextContent });
+        return { ...block, content: nextContent, order_index: index };
+      }
+      return { ...block, order_index: index };
+    });
+    return { normalized, depthPatches };
+  }, []);
+
+  const persistOrderAndDepth = useCallback(async (
+    orderedBlocks: NoteBlock[],
+    depthPatches: Array<{ id: string; content: Record<string, unknown> }>,
+  ) => {
+    const orders = orderedBlocks.map((block) => ({ id: block.id, order_index: block.order_index }));
+    try {
+      await fetch('/api/admin/note/blocks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ orders }),
+      });
+      if (depthPatches.length > 0) {
+        await Promise.all(
+          depthPatches.map((patch) =>
+            fetch('/api/admin/note/blocks', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ id: patch.id, content: patch.content }),
+            }),
+          ),
+        );
+      }
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] reorder/depth-sync', e);
+    }
+  }, [triggerSave]);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    if (!event.over) {
+      setOverBlockId(null);
+      return;
+    }
+    const overId = String(event.over.id);
+    setOverBlockId(overId.startsWith('doc:') ? null : overId);
+  }, []);
+
+  const handleDragCancel = useCallback((_event: DragCancelEvent) => {
+    setActiveBlockId(null);
+    setOverBlockId(null);
   }, []);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveBlockId(null);
+    setOverBlockId(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -1029,17 +1118,10 @@ function AdminNotePageContent() {
         setBlocks((prev) => {
           const idx = prev.findIndex((b) => b.id === movingBlock.id);
           if (idx < 0) return prev;
-          const next = [prev[idx], ...prev.slice(0, idx), ...prev.slice(idx + 1)];
-          const orders = next.map((b, i) => ({ id: b.id, order_index: i }));
-          fetch('/api/admin/note/blocks', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ orders }),
-          })
-            .then(() => triggerSave())
-            .catch((e) => devLogger.error('[Note] reorder(top)', e));
-          return next.map((b, i) => ({ ...b, order_index: i }));
+          const moved = [prev[idx], ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+          const { normalized, depthPatches } = normalizeDepthByOrder(moved);
+          void persistOrderAndDepth(normalized, depthPatches);
+          return normalized;
         });
         return;
       }
@@ -1069,22 +1151,13 @@ function AdminNotePageContent() {
     setBlocks((prev) => {
       const oldIndex = prev.findIndex((b) => b.id === active.id);
       const newIndex = prev.findIndex((b) => b.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return prev;
       const reordered = arrayMove(prev, oldIndex, newIndex);
-      const orders = reordered.map((b, i) => ({ id: b.id, order_index: i }));
-
-      // persist asynchronously
-      fetch('/api/admin/note/blocks', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ orders }),
-      })
-        .then(() => triggerSave())
-        .catch((e) => devLogger.error('[Note] reorder', e));
-
-      return reordered.map((b, i) => ({ ...b, order_index: i }));
+      const { normalized, depthPatches } = normalizeDepthByOrder(reordered);
+      void persistOrderAndDepth(normalized, depthPatches);
+      return normalized;
     });
-  }, [triggerSave]);
+  }, [normalizeDepthByOrder, persistOrderAndDepth, selectedId]);
 
   /* handlers */
   const handleSelectDocument = (doc: NoteDocument) => {
@@ -1278,9 +1351,21 @@ function AdminNotePageContent() {
   const handleIndentBlock = useCallback((block: NoteBlock, direction: 'in' | 'out') => {
     const content = (block.content ?? {}) as Record<string, unknown>;
     const currentDepth = Math.max(0, Math.min(6, Number(content.depth ?? 0)));
-    const nextDepth = direction === 'in'
-      ? Math.min(6, currentDepth + 1)
-      : Math.max(0, currentDepth - 1);
+    const ordered = [...blocksRef.current].sort((a, b) => a.order_index - b.order_index);
+    const idx = ordered.findIndex((item) => item.id === block.id);
+    if (idx < 0) return;
+    const prevDepth =
+      idx > 0
+        ? Math.max(0, Math.min(6, Number((ordered[idx - 1]?.content as Record<string, unknown> | undefined)?.depth ?? 0)))
+        : 0;
+    let nextDepth = currentDepth;
+    if (direction === 'in') {
+      if (idx === 0) return;
+      nextDepth = Math.min(6, currentDepth + 1, prevDepth + 1);
+    } else {
+      const oneStepOut = Math.max(0, currentDepth - 1);
+      nextDepth = idx === 0 ? 0 : Math.min(oneStepOut, prevDepth + 1);
+    }
     if (nextDepth === currentDepth) return;
     handleUpdateBlock(block, { ...content, depth: nextDepth });
   }, [handleUpdateBlock]);
@@ -1518,7 +1603,9 @@ function AdminNotePageContent() {
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <div className="flex min-h-0 min-w-0 flex-1 overflow-x-hidden">
 
@@ -1850,6 +1937,7 @@ function AdminNotePageContent() {
                         focusedToggleId={focusedToggleId}
                         onFocusToggle={setFocusedToggleId}
                         uploadImage={uploadNoteImage}
+                        isDropTarget={overBlockId === block.id}
                       />
                     ))}
                   </div>

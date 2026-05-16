@@ -1,9 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Calendar, CheckCircle2, CreditCard, Loader2, Shield, XCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, CheckCircle2, CreditCard, Loader2, Mail, Shield, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 type SubData = {
   plan: string;
@@ -15,10 +14,8 @@ const PLAN_LABELS: Record<string, string> = { pro: 'Pro', team: 'Center' };
 const PLAN_PRICES: Record<string, string> = { pro: '39,900원/월', team: '79,000원/월' };
 
 export default function SubscriptionPage() {
-  const router = useRouter();
   const [sub, setSub] = useState<SubData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -28,19 +25,6 @@ export default function SubscriptionPage() {
       .catch(() => setError('구독 정보를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
   }, []);
-
-  const openPortal = async () => {
-    setPortalLoading(true);
-    setError('');
-    try {
-      const res = await fetch('/api/spokedu-master/payment/portal', { method: 'POST' });
-      const json = await res.json() as { url?: string; error?: string };
-      if (!res.ok || !json.url) { setError(json.error ?? '구독 관리 페이지를 열지 못했습니다.'); return; }
-      router.push(json.url);
-    } finally {
-      setPortalLoading(false);
-    }
-  };
 
   const isPaid = sub?.status === 'active';
   const planLabel = PLAN_LABELS[sub?.plan ?? ''] ?? 'Trial';
@@ -111,26 +95,26 @@ export default function SubscriptionPage() {
             {isPaid ? (
               <section className="space-y-2 rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
                 <p className="mb-3 text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>결제 관리</p>
-                <button
-                  type="button"
-                  onClick={() => void openPortal()}
-                  disabled={portalLoading}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60"
+                <a
+                  href="mailto:support@spokedu.com?subject=결제%20수단%20변경%20요청"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black"
                   style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
                 >
-                  {portalLoading ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
-                  결제 수단 변경
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void openPortal()}
-                  disabled={portalLoading}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-bold disabled:opacity-60"
+                  <CreditCard size={15} />
+                  결제 수단 변경 문의
+                </a>
+                <a
+                  href="mailto:support@spokedu.com?subject=구독%20취소%20요청"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-bold"
                   style={{ color: 'var(--spm-red)' }}
                 >
-                  {portalLoading ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
-                  구독 취소
-                </button>
+                  <XCircle size={14} />
+                  구독 취소 문의
+                </a>
+                <p className="text-[11px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>
+                  <Mail size={11} className="mr-1 inline" />
+                  support@spokedu.com으로 메일을 보내주시면 1영업일 내 처리됩니다.
+                </p>
                 {error ? <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>{error}</p> : null}
               </section>
             ) : (
@@ -152,7 +136,7 @@ export default function SubscriptionPage() {
             <div className="flex items-start gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)' }}>
               <Shield size={14} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
               <p className="text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-                Stripe 보안 결제 · 언제든지 취소 가능 · 다음 결제일 전 취소 시 요금 없음
+                토스페이먼츠 보안 결제 · 언제든지 취소 가능 · 다음 결제일 전 취소 시 요금 없음
               </p>
             </div>
 

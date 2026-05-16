@@ -288,7 +288,9 @@ function ProgramListItem({ program, locked, used, favorite, onFavorite, onPrevie
 // ─── Sections ────────────────────────────────────────────────────────────────
 
 function FeaturedRail({ programs, onPreview }: { programs: Program[]; onPreview: (p: Program) => void }) {
-  const featured = programs[0];
+  const now = new Date();
+  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+  const featured = programs.length > 0 ? programs[dayOfYear % programs.length] : undefined;
   if (!featured) return null;
   return (
     <section className="mb-7 px-[22px] sm:px-8 lg:px-10">

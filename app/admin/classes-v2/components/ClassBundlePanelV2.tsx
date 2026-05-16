@@ -785,7 +785,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
   const handlePostpone = async (gid: string, sessionId: string) => {
     if (!supabase) return;
-    if (!confirm("1주일씩 미루시겠습니까?")) return;
+    if (!confirm("현재 회차부터 이후 회차를 1주일씩 미룹니다. 계속할까요?")) return;
     await postponeCascade(supabase, sessionId, {
       onAfter: () => {
         void loadAll();
@@ -799,7 +799,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     if (!supabase) return;
     if (!sessionId) return;
     if (undoingPostponeSessionId === sessionId) return;
-    if (!confirm("복구하시겠습니까?")) return;
+    if (!confirm("연기 전 시간 슬롯 기준으로 복구합니다. 계속할까요?")) return;
 
     setUndoingPostponeSessionId(sessionId);
     try {
@@ -881,7 +881,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     if (!supabase) return;
     if (!sessionId) return;
     if (deletingSessionId === sessionId) return;
-    if (!confirm("해당 회차를 취소 처리할까요? 수업료는 정산되지 않습니다.")) return;
+    if (!confirm("해당 회차를 취소 처리합니다. 취소된 회차는 수업료가 0원으로 반영됩니다. 계속할까요?")) return;
 
     setDeletingSessionId(sessionId);
     try {
@@ -1775,6 +1775,9 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                             <div className="space-y-2 px-1 pb-2 pt-1">
                               <p className="text-[11px] text-slate-500 font-bold">
                                 마지막 N회차를 status='deleted'로 숨기고 회차 정보를 재계산합니다.
+                              </p>
+                              <p className="text-[11px] text-rose-600 font-bold">
+                                삭제 처리한 회차는 목록 기본 필터에서 숨겨집니다. 실행 전 대상 회차를 다시 확인해 주세요.
                               </p>
                               <div className="flex items-center gap-2">
                                 <input

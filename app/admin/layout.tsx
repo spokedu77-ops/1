@@ -44,10 +44,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [checkSlow, setCheckSlow] = useState(false);
   const isFullscreenRoute =
     pathname != null && (pathname.startsWith('/admin/spokedu-pro') || pathname.startsWith('/admin/spokedu-master'));
+  // 실제 존재하는 플레이어 라우트만 유지해 유령 prefix 재유입을 막습니다.
+  const GAME_ROUTE_PREFIXES = ['/admin/camera', '/admin/spomove/training/_player'] as const;
   const isGameRoute =
     pathname != null &&
-    (pathname.startsWith('/admin/camera') ||
-      pathname.startsWith('/admin/spomove/training/_player'));
+    GAME_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   useEffect(() => {
     const slowTimer = setTimeout(() => setCheckSlow(true), SLOW_CHECK_MS);

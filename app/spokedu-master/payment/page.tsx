@@ -3,13 +3,22 @@
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, Loader2, Shield, X } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+
+declare global {
+  interface Window {
+    TossPayments?: (clientKey: string) => {
+      requestPayment: (method: string, options: Record<string, unknown>) => void;
+    };
+  }
+}
 
 const PLANS = {
   pro: {
     title: 'Pro',
     price: '39,900',
+    amount: 39900,
     period: '월',
     badge: '가장 인기',
     badgeColor: 'var(--spm-acc)',
@@ -28,6 +37,7 @@ const PLANS = {
   team: {
     title: 'Center',
     price: '79,000',
+    amount: 79000,
     period: '월',
     badge: '강사 3명 포함',
     badgeColor: 'var(--spm-grn)',
@@ -81,7 +91,6 @@ function PlanToggle({ selected, onSelect }: { selected: PlanKey; onSelect: (k: P
 
 function PaymentContent() {
   const params = useSearchParams();
-  const router = useRouter();
   const initialPlan = (params.get('plan') ?? 'pro') as PlanKey;
   const [planKey, setPlanKey] = useState<PlanKey>(PLANS[initialPlan] ? initialPlan : 'pro');
   const plan = PLANS[planKey];
@@ -93,6 +102,13 @@ function PaymentContent() {
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://js.tosspayments.com/v1';
+    document.head.appendChild(script);
+    return () => { document.head.removeChild(script); };
+  }, []);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -132,7 +148,7 @@ function PaymentContent() {
     } finally { setLoading(false); }
   };
 
-  const startCheckout = async () => {
+  const startTossPayment = async () => {
     setLoading(true); setError('');
     try {
       const res = await fetch('/api/spokedu-master/payment/create-checkout', {
@@ -140,10 +156,29 @@ function PaymentContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planKey }),
       });
-      const json = await res.json() as { url?: string; error?: string };
-      if (!res.ok || !json.url) { setError(json.error ?? '결제 준비 중 오류가 발생했습니다.'); return; }
-      router.push(json.url);
-    } finally { setLoading(false); }
+      const json = await res.json() as { orderId?: string; orderName?: string; amount?: number; customerEmail?: string; customerName?: string; error?: string };
+      if (!res.ok || !json.orderId) { setError(json.error ?? '결제 준비 중 오류가 발생했습니다.'); return; }
+
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
+      if (!clientKey || !window.TossPayments) {
+        setError('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+      const toss = window.TossPayments(clientKey);
+      toss.requestPayment('카드', {
+        amount: json.amount,
+        orderId: json.orderId,
+        orderName: json.orderName,
+        customerEmail: json.customerEmail,
+        customerName: json.customerName,
+        successUrl: `${window.location.origin}/spokedu-master/payment/success`,
+        failUrl: `${window.location.origin}/spokedu-master/payment/cancel`,
+      });
+      // requestPayment는 페이지를 리다이렉트하므로 이후 코드는 실행되지 않음
+    } catch {
+      setError('결제를 시작할 수 없습니다. 다시 시도해주세요.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -161,7 +196,6 @@ function PaymentContent() {
       <main className="mx-auto max-w-[520px] space-y-4 px-[22px] pb-14 sm:px-8">
         <PlanToggle selected={planKey} onSelect={setPlanKey} />
 
-        {/* Selected plan details */}
         <div className="rounded-[18px] p-5" style={{ background: plan.accent, border: `1px solid ${plan.border}` }}>
           <div className="mb-1 flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: plan.badgeColor }}>{plan.badge}</span>
@@ -183,7 +217,6 @@ function PaymentContent() {
           </ul>
         </div>
 
-        {/* Auth or checkout */}
         {checkingSession ? (
           <div className="flex h-32 items-center justify-center rounded-[16px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <Loader2 size={20} className="animate-spin" color="var(--spm-t3)" />
@@ -241,7 +274,7 @@ function PaymentContent() {
               <CheckCircle2 size={16} color="var(--spm-grn)" />
               <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{email}</p>
             </div>
-            <button type="button" onClick={() => void startCheckout()} disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[13px] py-4 text-[15px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)', boxShadow: '0 10px 28px rgba(99,102,241,0.32)' }}>
+            <button type="button" onClick={() => void startTossPayment()} disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[13px] py-4 text-[15px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)', boxShadow: '0 10px 28px rgba(99,102,241,0.32)' }}>
               {loading ? <Loader2 size={16} className="animate-spin" /> : null}
               카드로 결제 — {plan.price}원/{plan.period}
             </button>
@@ -249,15 +282,13 @@ function PaymentContent() {
           </div>
         )}
 
-        {/* Trust + cancellation */}
         <div className="flex items-start gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)' }}>
           <Shield size={14} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
           <p className="text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-            Stripe 보안 결제 · 언제든지 취소 가능 · 다음 결제일 전 취소 시 요금 없음 · 데이터는 암호화되어 저장됩니다.
+            토스페이먼츠 보안 결제 · 언제든지 취소 가능 · 다음 결제일 전 취소 시 요금 없음 · 데이터는 암호화되어 저장됩니다.
           </p>
         </div>
 
-        {/* Legal footer links */}
         <p className="text-center text-[11px]" style={{ color: 'var(--spm-t3)' }}>
           <Link href="/spokedu-master/terms" style={{ color: 'var(--spm-t3)' }}>이용약관</Link>
           <span className="mx-2">·</span>
@@ -266,7 +297,6 @@ function PaymentContent() {
           <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>문의하기</a>
         </p>
 
-        {/* 사업자 정보 — 전자상거래법 필수 기재사항 */}
         <div className="rounded-[12px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <p className="mb-3 text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>사업자 정보</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">

@@ -638,7 +638,7 @@ function FeedbackReviewTab({
 
   const handleBulkApprove = async () => {
     if (selectedSessions.size === 0) return toast.success('승인할 리포트를 선택해주세요.');
-    if (!confirm(`선택한 ${selectedSessions.size}개의 리포트를 일괄 승인하시겠습니까?`)) return;
+    if (!confirm(`선택한 ${selectedSessions.size}개의 리포트를 일괄 승인합니다.\n승인 전 수업일/중복 경고를 다시 확인했는지 점검해 주세요.`)) return;
     
     setBulkActionLoading(true);
     try {
@@ -1061,6 +1061,7 @@ function FeedbackReviewTab({
       {selectedSessions.size > 0 && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-6 z-50">
           <span className="font-bold">{selectedSessions.size}개 선택됨</span>
+          <span className="text-[11px] text-slate-300">승인 전 대상 카드(날짜/강사/중복 경고)를 확인하세요</span>
           <button onClick={handleBulkApprove} disabled={bulkActionLoading} className="px-6 py-2 bg-blue-600 rounded-full font-black hover:bg-blue-500 cursor-pointer disabled:opacity-50">
             {bulkActionLoading ? '처리 중...' : '일괄 승인'}
           </button>
@@ -1210,10 +1211,10 @@ function FeedbackReviewTab({
 
             <div className="p-8 border-t flex gap-4 shrink-0">
               <button onClick={() => handleSave('finished')} className="flex-1 py-5 bg-slate-50 border rounded-3xl font-bold text-rose-500 hover:bg-rose-50 cursor-pointer">
-                <RotateCcw size={18} className="inline mr-1" /> 수정 요청
+                <RotateCcw size={18} className="inline mr-1" /> 수정 요청으로 저장
               </button>
               <button onClick={() => handleSave('verified')} className="flex-[2] py-5 bg-slate-900 rounded-3xl font-black text-white shadow-xl hover:bg-indigo-600 cursor-pointer">
-                검수 승인 및 저장
+                검수 승인(학부모 공유용) 저장
               </button>
             </div>
           </div>

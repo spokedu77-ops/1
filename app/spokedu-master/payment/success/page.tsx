@@ -8,12 +8,22 @@ import { useMasterStore } from '../../store';
 
 function SuccessContent() {
   const params = useSearchParams();
-  const sessionId = params.get('session_id');
+  const paymentKey = params.get('paymentKey');
+  const orderId = params.get('orderId');
+  const amount = params.get('amount');
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
 
   useEffect(() => {
-    void syncSubscription();
-  }, [syncSubscription]);
+    if (paymentKey && orderId && amount) {
+      void fetch('/api/spokedu-master/payment/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentKey, orderId, amount: Number(amount) }),
+      }).then(() => syncSubscription());
+    } else {
+      void syncSubscription();
+    }
+  }, [paymentKey, orderId, amount, syncSubscription]);
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-[22px]" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
@@ -25,9 +35,9 @@ function SuccessContent() {
           <h1 className="text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>결제 완료</h1>
           <p className="mt-3 text-[15px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>플랜이 활성화되었습니다. 라이브러리와 SPOMOVE를 바로 사용할 수 있습니다.</p>
         </div>
-        {sessionId ? (
+        {orderId ? (
           <p className="text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>
-            주문 번호: {sessionId.slice(0, 24)}…
+            주문 번호: {orderId}
           </p>
         ) : null}
         <div className="space-y-3">
@@ -47,7 +57,7 @@ function SuccessContent() {
           </Link>
         </div>
         <p className="text-[10px] leading-5" style={{ color: 'var(--spm-t3)' }}>
-          Stripe 보안 결제 · 언제든지 취소 가능 · 문의: <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>support@spokedu.com</a>
+          토스페이먼츠 보안 결제 · 언제든지 취소 가능 · 문의: <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>support@spokedu.com</a>
         </p>
       </div>
     </div>

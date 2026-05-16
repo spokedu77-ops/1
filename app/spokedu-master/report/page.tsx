@@ -192,11 +192,12 @@ export default function ReportPage() {
       {program ? <main className="grid gap-6 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
         <aside className="space-y-4">
           <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-3 flex items-center gap-2">
               <BookOpen size={17} color="var(--spm-acc)" />
               <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>활동 선택</h2>
             </div>
-            <div className="space-y-2">
+            {program ? <p className="mb-3 truncate text-[11px] font-bold" style={{ color: 'var(--spm-acc)' }}>{program.title}</p> : null}
+            <div className="scrollbar-hide max-h-[340px] space-y-2 overflow-y-auto">
               {programs.map((item) => (
                 <button key={item.id} type="button" onClick={() => setProgramId(item.id)} className="w-full rounded-[13px] p-3 text-left" style={{ background: programId === item.id ? 'rgba(99,102,241,0.16)' : 'var(--spm-s3)', border: programId === item.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid transparent' }}>
                   <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>

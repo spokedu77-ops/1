@@ -273,7 +273,9 @@ export default function DashboardView() {
 
   if (!mounted) return <DashboardSkeleton />;
 
-  const todayProgram = programs[0];
+  const now = new Date();
+  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+  const todayProgram = programs.length > 0 ? programs[dayOfYear % programs.length] : undefined;
   if (!todayProgram) return <DashboardSkeleton />;
 
   return (
@@ -371,7 +373,7 @@ export default function DashboardView() {
         <PwaInstallCard compact />
       </section>
 
-      <NotificationSheet open={notificationOpen} notifications={notifications} onClose={() => setNotificationOpen(false)} onMarkAll={markAllRead} />
+      <NotificationSheet open={notificationOpen} notifications={notifications} onClose={() => { setNotificationOpen(false); markAllRead(); }} onMarkAll={markAllRead} />
     </div>
   );
 }

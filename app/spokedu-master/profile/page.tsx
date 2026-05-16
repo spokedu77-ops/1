@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building2, CheckCircle2, ClipboardList, CreditCard, HelpCircle, Mail, MonitorPlay, Pencil, ShieldCheck, ShoppingBag, Smartphone, UsersRound, type LucideIcon } from 'lucide-react';
+import { Building2, CalendarDays, CheckCircle2, ClipboardList, CreditCard, HelpCircle, LogOut, Mail, MonitorPlay, Pencil, ShieldCheck, ShoppingBag, UsersRound, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { getTrialDaysLeft } from '../lib/subscription';
@@ -157,10 +158,20 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 export default function SpokeduMasterProfilePage() {
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
+  const router = useRouter();
   const [profileOpen, setProfileOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const [name, setName] = useState(profile?.name ?? '선생님');
   const [school, setSchool] = useState(profile?.school ?? '');
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    setProfile({ plan: 'free', onboardingDone: false });
+    router.replace('/spokedu-master/landing');
+  };
   const currentPlan = profile?.plan ?? 'free';
   const daysLeft = getTrialDaysLeft(profile);
   const planName = currentPlan === 'team' ? 'Center' : currentPlan === 'pro' ? 'Pro' : 'Trial';
@@ -203,7 +214,7 @@ export default function SpokeduMasterProfilePage() {
 
         <div className="space-y-3">
           <MenuRow icon={MonitorPlay} label="SPOMOVE 큰 화면 실행" caption="수업 공간에서 바로 실행" href="/spokedu-master/spomove/session?mode=projector" />
-          <MenuRow icon={Smartphone} label="홈 화면에 추가" caption="PWA로 빠르게 열기" href="/spokedu-master/profile" />
+          <MenuRow icon={CalendarDays} label="수업 계획" caption="주간 일정 관리" href="/spokedu-master/plan" />
           <MenuRow icon={CreditCard} label="구독 관리" caption="플랜 변경 · 결제 수단 · 구독 취소" href="/spokedu-master/subscription" />
           <MenuRow icon={HelpCircle} label="도입 상담" caption="센터와 학교용 도입 문의" href="mailto:support@spokedu.com" />
           <MenuRow icon={Mail} label="문의하기" caption="기능 제안과 오류 제보" href="mailto:support@spokedu.com" />
@@ -236,6 +247,16 @@ export default function SpokeduMasterProfilePage() {
       </BottomSheet>
       <PlanSheet open={planOpen} onClose={() => setPlanOpen(false)} />
       <div className="px-[22px] pt-6 sm:px-8 lg:px-10">
+        <button
+          type="button"
+          onClick={() => void handleLogout()}
+          disabled={loggingOut}
+          className="mb-5 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-black disabled:opacity-50"
+          style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t3)' }}
+        >
+          <LogOut size={15} />
+          {loggingOut ? '로그아웃 중…' : '로그아웃'}
+        </button>
         <p className="text-[10px]" style={{ color: 'var(--spm-t3)' }}>
           <Link href="/spokedu-master/terms" style={{ color: 'var(--spm-t3)' }}>이용약관</Link>
           <span className="mx-2">·</span>

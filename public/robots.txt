@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /spokedu-master/
+Allow: /spokedu-master/landing
+
+Sitemap: https://spokedu.com/sitemap.xml

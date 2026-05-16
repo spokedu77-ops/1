@@ -182,16 +182,47 @@ export default function AdminConsultPage() {
     }
   }
 
+  const renderRowActions = (row: ConsultRow) => (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        disabled={updatingId === row.id || deletingId === row.id || row.status === 'pending'}
+        onClick={() => void setStatus(row.id, 'pending')}
+        className="rounded-md border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        미확인
+      </button>
+      <button
+        type="button"
+        disabled={updatingId === row.id || deletingId === row.id || row.status === 'done'}
+        onClick={() => void setStatus(row.id, 'done')}
+        className="rounded-md border border-emerald-700/60 bg-emerald-900/40 px-2 py-1 text-xs text-emerald-100 hover:bg-emerald-900/60 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        확인완료
+      </button>
+      <button
+        type="button"
+        disabled={updatingId === row.id || deletingId === row.id}
+        onClick={() => void deleteConsult(row)}
+        className="rounded-md border border-rose-700/60 bg-rose-900/30 px-2 py-1 text-xs text-rose-200 hover:bg-rose-900/50 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {deletingId === row.id ? '삭제 중…' : '삭제'}
+      </button>
+    </div>
+  );
+
   const filteredRows = rows.filter((row) => {
     if (typeTab === 'all') return true;
     return row.consult_type === typeTab;
   });
+  const pendingCount = filteredRows.filter((row) => row.status === 'pending').length;
+  const doneCount = filteredRows.filter((row) => row.status === 'done').length;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:px-8">
+          <div className="flex items-start gap-3 sm:items-center">
             <Link
               href="/admin"
               className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-slate-800"
@@ -208,7 +239,7 @@ export default function AdminConsultPage() {
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700 disabled:opacity-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700 disabled:opacity-50 sm:w-auto"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             새로고침
@@ -227,7 +258,7 @@ export default function AdminConsultPage() {
               key={key}
               type="button"
               onClick={() => setTypeTab(key)}
-              className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+              className={`flex-1 rounded-lg border px-3 py-1.5 text-sm transition sm:flex-none ${
                 typeTab === key
                   ? 'border-indigo-400 bg-indigo-500/20 text-indigo-100'
                   : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
@@ -237,6 +268,20 @@ export default function AdminConsultPage() {
             </button>
           ))}
         </div>
+        <div className="mb-4 grid grid-cols-3 gap-2 text-xs sm:max-w-md">
+          <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2">
+            <p className="text-slate-400">전체</p>
+            <p className="mt-0.5 text-base font-semibold text-slate-100">{filteredRows.length}</p>
+          </div>
+          <div className="rounded-lg border border-amber-900/60 bg-amber-950/30 px-3 py-2">
+            <p className="text-amber-300">미확인</p>
+            <p className="mt-0.5 text-base font-semibold text-amber-100">{pendingCount}</p>
+          </div>
+          <div className="rounded-lg border border-emerald-900/60 bg-emerald-950/30 px-3 py-2">
+            <p className="text-emerald-300">완료</p>
+            <p className="mt-0.5 text-base font-semibold text-emerald-100">{doneCount}</p>
+          </div>
+        </div>
 
         {error && (
           <div className="mb-6 rounded-lg border border-red-900/80 bg-red-950/50 px-4 py-3 text-sm text-red-200">
@@ -244,7 +289,64 @@ export default function AdminConsultPage() {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-2xl shadow-black/40">
+        <div className="space-y-3 md:hidden">
+          {loading && filteredRows.length === 0 ? (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-12 text-center text-slate-500">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin opacity-60" />
+              <p className="mt-2 text-sm">불러오는 중…</p>
+            </div>
+          ) : filteredRows.length === 0 ? (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-10 text-center text-slate-500">
+              등록된 상담이 없습니다.
+            </div>
+          ) : (
+            filteredRows.map((row) => (
+              <article key={row.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 shadow-xl shadow-black/30">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{row.parent_name}</p>
+                    <p className="mt-1 text-xs text-slate-400">{formatDate(row.created_at)}</p>
+                  </div>
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      row.status === 'done' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-200'
+                    }`}
+                  >
+                    {STATUS_LABEL[row.status] ?? row.status}
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg bg-slate-800/60 px-2.5 py-2 text-slate-300">
+                    <p className="text-slate-500">연락처</p>
+                    <p className="mt-0.5 font-medium text-slate-200">{row.phone ?? '—'}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-800/60 px-2.5 py-2 text-slate-300">
+                    <p className="text-slate-500">자녀 나이</p>
+                    <p className="mt-0.5 font-medium text-slate-200">{row.child_age ?? '—'}</p>
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <span className="inline-flex rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs font-medium text-sky-200">
+                    {TYPE_LABEL[row.consult_type] ?? row.consult_type}
+                  </span>
+                </div>
+                <p className="mt-3 line-clamp-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{row.content}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDetail(row)}
+                    className="rounded-md border border-slate-600 bg-slate-800 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-700"
+                  >
+                    전체보기
+                  </button>
+                  {renderRowActions(row)}
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+
+        <div className="hidden overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-2xl shadow-black/40 md:block">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-800 text-left text-sm">
               <thead className="bg-slate-900/90">
@@ -312,32 +414,7 @@ export default function AdminConsultPage() {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            disabled={updatingId === row.id || deletingId === row.id || row.status === 'pending'}
-                            onClick={() => void setStatus(row.id, 'pending')}
-                            className="rounded-md border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            미확인
-                          </button>
-                          <button
-                            type="button"
-                            disabled={updatingId === row.id || deletingId === row.id || row.status === 'done'}
-                            onClick={() => void setStatus(row.id, 'done')}
-                            className="rounded-md border border-emerald-700/60 bg-emerald-900/40 px-2 py-1 text-xs text-emerald-100 hover:bg-emerald-900/60 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            확인완료
-                          </button>
-                          <button
-                            type="button"
-                            disabled={updatingId === row.id || deletingId === row.id}
-                            onClick={() => void deleteConsult(row)}
-                            className="rounded-md border border-rose-700/60 bg-rose-900/30 px-2 py-1 text-xs text-rose-200 hover:bg-rose-900/50 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            {deletingId === row.id ? '삭제 중…' : '삭제'}
-                          </button>
-                        </div>
+                        {renderRowActions(row)}
                       </td>
                     </tr>
                   ))
@@ -350,14 +427,14 @@ export default function AdminConsultPage() {
 
       {detail && (
         <div
-          className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[400] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="consult-detail-title"
           onClick={() => setDetail(null)}
         >
           <div
-            className="max-h-[min(90vh,720px)] w-full max-w-2xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+            className="max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-t-2xl border border-slate-700 bg-slate-900 shadow-2xl sm:max-h-[min(90vh,720px)] sm:rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-800 px-5 py-4">

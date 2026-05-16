@@ -304,10 +304,28 @@ export async function PUT(request: NextRequest) {
     if (!Array.isArray(orders) || orders.length === 0) {
       return NextResponse.json({ error: 'orders array required' }, { status: 400 });
     }
+    const normalizedOrders = orders.map((order: { id?: unknown; order_index?: unknown }) => ({
+      id: typeof order.id === 'string' ? order.id : '',
+      order_index: typeof order.order_index === 'number' ? order.order_index : Number.NaN,
+    }));
+    const hasInvalid = normalizedOrders.some(
+      (order) => !order.id || !Number.isFinite(order.order_index) || order.order_index < 0,
+    );
+    if (hasInvalid) {
+      return NextResponse.json({ error: 'invalid orders payload' }, { status: 400 });
+    }
+    const idSet = new Set(normalizedOrders.map((order) => order.id));
+    if (idSet.size !== normalizedOrders.length) {
+      return NextResponse.json({ error: 'duplicate ids in orders payload' }, { status: 400 });
+    }
+    const orderIndexSet = new Set(normalizedOrders.map((order) => order.order_index));
+    if (orderIndexSet.size !== normalizedOrders.length) {
+      return NextResponse.json({ error: 'duplicate order_index in orders payload' }, { status: 400 });
+    }
 
     const supabase = getServiceSupabase();
     const now = new Date().toISOString();
-    const ids = orders
+    const ids = normalizedOrders
       .map((order: { id?: unknown }) => (typeof order.id === 'string' ? order.id : null))
       .filter((id: string | null): id is string => !!id);
     const { data: beforeRows } = ids.length > 0
@@ -318,7 +336,7 @@ export async function PUT(request: NextRequest) {
       : { data: [] };
 
     await Promise.all(
-      orders.map(({ id, order_index }: { id: string; order_index: number }) =>
+      normalizedOrders.map(({ id, order_index }) =>
         supabase
           .from('note_blocks')
           .update({ order_index, updated_at: now, updated_by: auth.userId })

@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         <Section title="1. 수집하는 개인정보 항목">
           <p>회사는 서비스 제공을 위해 다음의 개인정보를 수집합니다.</p>
           <p>· <strong style={{ color: 'var(--spm-t)' }}>필수 항목</strong>: 이메일 주소 (서비스 인증 및 구독 관리용)</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>결제 정보</strong>: 결제 처리는 Stripe에서 담당하며, 회사는 카드 번호 등 결제 상세 정보를 직접 수집·저장하지 않습니다.</p>
+          <p>· <strong style={{ color: 'var(--spm-t)' }}>결제 정보</strong>: 결제 처리는 토스페이먼츠에서 담당하며, 회사는 카드 번호 등 결제 상세 정보를 직접 수집·저장하지 않습니다.</p>
           <p>· <strong style={{ color: 'var(--spm-t)' }}>서비스 이용 정보</strong>: 이용자가 직접 입력한 이름, 소속, 담당 연령대, 프로그램 유형 (선택 사항)</p>
           <p>· <strong style={{ color: 'var(--spm-t)' }}>자동 수집</strong>: 접속 IP, 브라우저 종류, 서비스 이용 기록 (서비스 개선 목적)</p>
         </Section>
@@ -55,13 +55,13 @@ export default function PrivacyPage() {
         <Section title="4. 개인정보의 제3자 제공">
           <p>회사는 이용자의 동의 없이 개인정보를 제3자에게 제공하지 않습니다. 단, 다음의 경우는 예외입니다.</p>
           <p>· 법령에 따른 수사기관의 요청이 있는 경우</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>결제 처리 위탁</strong>: Stripe Inc. (미국) — 결제 처리 목적으로 이메일, 결제 금액 등 최소한의 정보를 공유합니다.</p>
+          <p>· <strong style={{ color: 'var(--spm-t)' }}>결제 처리 위탁</strong>: 토스페이먼츠 (한국) — 결제 처리 목적으로 이메일, 결제 금액 등 최소한의 정보를 공유합니다.</p>
         </Section>
 
         <Section title="5. 개인정보 처리 위탁">
           <p>회사는 원활한 서비스 제공을 위해 다음과 같이 개인정보 처리를 위탁합니다.</p>
           <p>· <strong style={{ color: 'var(--spm-t)' }}>Supabase Inc.</strong> — 인증 및 데이터 저장 (미국)</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>Stripe Inc.</strong> — 결제 처리 (미국)</p>
+          <p>· <strong style={{ color: 'var(--spm-t)' }}>토스페이먼츠</strong> — 결제 처리 (한국)</p>
           <p>· <strong style={{ color: 'var(--spm-t)' }}>Vercel Inc.</strong> — 서비스 호스팅 (미국)</p>
         </Section>
 
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
           <p>· 이메일 OTP 기반 인증으로 비밀번호 저장 없이 안전하게 처리</p>
           <p>· HTTPS 암호화 통신</p>
           <p>· Supabase Row Level Security(RLS)를 통한 데이터 접근 제한</p>
-          <p>· 결제 정보의 직접 저장 없이 Stripe PCI DSS 준수 처리</p>
+          <p>· 결제 정보의 직접 저장 없이 토스페이먼츠 PCI DSS 준수 처리</p>
         </Section>
 
         <Section title="9. 변경 사항 공지">

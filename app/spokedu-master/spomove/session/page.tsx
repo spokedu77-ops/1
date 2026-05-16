@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Check, Maximize, Play, RotateCcw, X } from 'lucide-react';
+import { Check, Maximize, Minimize, Play, RotateCcw, X } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '../../hooks/useSession';
@@ -94,6 +94,7 @@ function SpomoveSessionContent() {
       router.replace('/spokedu-master/spomove');
     }
   }, [drill.isPro, isPro, profile, router]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [state, setState] = useState<SessionState>('idle');
   const [countdown, setCountdown] = useState('3');
   const [cueIndex, setCueIndex] = useState(0);
@@ -204,6 +205,12 @@ function SpomoveSessionContent() {
 
   useEffect(() => clearTimer, [clearTimer]);
 
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
   const reset = () => {
     clearTimer();
     if (state === 'running' || state === 'paused') end();
@@ -240,7 +247,7 @@ function SpomoveSessionContent() {
       {state !== 'running' ? (
         <div className="absolute left-0 right-0 top-0 z-30 flex min-h-[68px] items-center justify-between gap-4 bg-gradient-to-b from-black/70 to-transparent px-5 py-3 sm:px-7">
           <div><p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/35">{getModeLabel(launchMode)}</p><p className="mt-1 line-clamp-1 text-[12px] font-semibold text-white/60">{drill.name}</p></div>
-          <div className="flex items-center gap-2"><button type="button" onClick={(event) => { event.stopPropagation(); const element = document.documentElement; if (!document.fullscreenElement) void element.requestFullscreen?.(); else void document.exitFullscreen?.(); }} className="grid h-11 w-11 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }} aria-label="전체화면"><Maximize size={15} /></button><button type="button" onClick={(event) => { event.stopPropagation(); exitSession(); }} className="grid h-11 w-11 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }} aria-label="나가기"><X size={16} /></button></div>
+          <div className="flex items-center gap-2"><button type="button" onClick={(event) => { event.stopPropagation(); const element = document.documentElement; if (!document.fullscreenElement) void element.requestFullscreen?.(); else void document.exitFullscreen?.(); }} className="grid h-11 w-11 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }} aria-label={isFullscreen ? '전체화면 해제' : '전체화면'}>{isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}</button><button type="button" onClick={(event) => { event.stopPropagation(); exitSession(); }} className="grid h-11 w-11 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }} aria-label="나가기"><X size={16} /></button></div>
         </div>
       ) : null}
 
