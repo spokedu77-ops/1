@@ -13,9 +13,6 @@ export { clearSmooth, clearTrails, clearParticles } from './fx';
 export { spawnSpeed, spawnMoving, spawnSequence, spawnShape } from './targets';
 export { nextBalancePose, nextMirrorPose } from './pose';
 
-export type { StateUpdate } from './pose';
-export type { TargetsCallbacks } from './targets';
-
 export interface EngineCallbacks {
   addScore: (pi: number, pts: number) => void;
   feedback: (msg: string, warn?: boolean) => void;

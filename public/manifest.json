@@ -1,13 +1,13 @@
 {
-  "name": "SPOKEDU MASTER",
+  "name": "SPOKEDU PRO",
   "short_name": "SPOKEDU",
-  "description": "아동청소년 체육 프로그램 라이브러리와 SPOMOVE 수업 실행, 기록, 리포트를 연결하는 구독형 PWA",
+  "description": "체육 강사를 위한 프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 설명 도구",
   "start_url": "/spokedu-master",
   "scope": "/spokedu-master/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#050712",
-  "theme_color": "#185FA5",
+  "background_color": "#07070c",
+  "theme_color": "#6366f1",
   "icons": [
     {
       "src": "/spokedu-master-icon.svg",

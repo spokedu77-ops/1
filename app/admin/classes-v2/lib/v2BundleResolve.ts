@@ -52,7 +52,7 @@ function normalizeForAlias(rawTitle: string) {
   return getCleanClassTitle(rawTitle).replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
 }
 
-export function getAliasTitleForGroup(rawTitle: string): string | null {
+function getAliasTitleForGroup(rawTitle: string): string | null {
   const t = normalizeForAlias(rawTitle);
   for (const rule of GROUP_ALIAS_RULES) {
     const ok = rule.matchAny.some((m) => m.titleIncludesAll.every((needle) => t.includes(needle)));
@@ -61,7 +61,7 @@ export function getAliasTitleForGroup(rawTitle: string): string | null {
   return null;
 }
 
-export type V2BundleSelection = { bundleTitle: string; groupIds: string[] };
+type V2BundleSelection = { bundleTitle: string; groupIds: string[] };
 
 /**
  * 리스트 "상세"와 동일하게:

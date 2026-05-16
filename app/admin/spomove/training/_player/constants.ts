@@ -20,35 +20,12 @@ export const ARROWS = [
 export const DUAL_TWO_COLORS = COLORS.filter((c) => c.id === 'red' || c.id === 'blue');
 export const DUAL_LR_ARROWS = ARROWS.filter((a) => a.id === 'left' || a.id === 'right');
 
-export const ACTIONS = [
-  { id: 'clap', label: '박수', voice: '박수', emoji: '👏' },
-  { id: 'jump', label: '점프', voice: '점프', emoji: '⬆️' },
-  { id: 'squat', label: '스쿼트', voice: '스쿼트', emoji: '🦵' },
-  { id: 'spin', label: '제자리 한 바퀴', voice: '한 바퀴', emoji: '🔄' },
-  { id: 'cross', label: '팔 교차', voice: '팔 교차', emoji: '✖️' },
-];
-
-export const STROOP_COLORS = [
-  { name: '빨강', hex: '#EF4444' },
-  { name: '파랑', hex: '#3B82F6' },
-  { name: '초록', hex: '#22C55E' },
-  { name: '노랑', hex: '#FACC15' },
-];
-
 export const NUMBERS = Array.from({ length: 9 }, (_, i) => ({
   label: String(i + 1),
   voice: ['일', '이', '삼', '사', '오', '육', '칠', '팔', '구'][i],
 }));
 
 export const MEMORY_ROUNDS = 10;
-
-export const NUMBER_RULES = [
-  { id: 'odd_left', label: '홀수 → 왼쪽 점프 / 짝수 → 오른쪽 점프' },
-  { id: 'odd_right', label: '홀수 → 오른쪽 점프 / 짝수 → 왼쪽 점프' },
-  { id: 'odd_jump', label: '홀수 → 앞으로 점프 / 짝수 → 제자리' },
-  { id: 'odd_jump_fwd_even_jump_back', label: '홀수 → 앞으로 점프 / 짝수 → 뒤로 점프' },
-  { id: 'big_clap', label: '5 이상 → 박수 / 5 미만 → 만세' },
-];
 
 /**
  * coreCode: 트레이닝 3축 필터 (/admin/spomove/training).
@@ -239,8 +216,6 @@ export const SPOMOVE_CATALOG_SLOT_IDS = [
   'tbd3',
   'tbd4',
 ] as const;
-
-export type SpomoveCatalogSlotId = (typeof SPOMOVE_CATALOG_SLOT_IDS)[number];
 
 export function isSpomoveCatalogTbdMode(modeId: string): boolean {
   return modeId === 'tbd1' || modeId === 'tbd2' || modeId === 'tbd3' || modeId === 'tbd4';

@@ -46,14 +46,14 @@ export default function StudentsPage() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>student history</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
         <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          수업 기록이 쌓이면 학생별 성장 이력으로 이어지는 프리뷰 화면입니다. 첫 상용 버전에서는 라이브러리와 SPOMOVE 사용 흐름을 해치지 않는 범위에서 점진적으로 다듬습니다.
+          수업 기록이 쌓이면 학생별 성장 이력, 출석률, 동작 발전을 한눈에 확인할 수 있습니다.
         </p>
       </header>
 
       {students.length === 0 ? (
         <section className="mx-[22px] rounded-[18px] p-6 text-center sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h2 className="text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>아직 등록된 학생이 없습니다</h2>
-          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>수업 기록을 저장하면 학생 이력 프리뷰에 반영됩니다.</p>
+          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>수업 기록을 저장하면 학생 이력에 자동으로 반영됩니다.</p>
           <Link href="/spokedu-master/class-record" className="mt-5 inline-flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>수업 기록 시작</Link>
         </section>
       ) : null}

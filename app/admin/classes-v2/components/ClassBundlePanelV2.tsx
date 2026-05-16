@@ -10,7 +10,7 @@ import { undoPostponeCascade } from "@/app/admin/classes-shared/lib/postponeUtil
 import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
 import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/lib/sessionInsertClone";
 import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
-import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-v2/lib/plannedRoundTotal";
+import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-shared/lib/plannedRoundTotal";
 import {
   isSessionScheduleDraftDirty,
   isoRangeFromDateTimeInputs,

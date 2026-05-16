@@ -47,8 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isGameRoute =
     pathname != null &&
     (pathname.startsWith('/admin/camera') ||
-      pathname.startsWith('/admin/spomove/training/_player') ||
-      pathname.startsWith('/admin/iiwarmup/spomove/training/_player'));
+      pathname.startsWith('/admin/spomove/training/_player'));
 
   useEffect(() => {
     const slowTimer = setTimeout(() => setCheckSlow(true), SLOW_CHECK_MS);

@@ -191,7 +191,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => finishWithPayment('pro')}
-                  className="mt-3 flex h-10 w-full items-center justify-center rounded-[10px] text-[13px] font-black text-white"
+                  className="mt-3 flex h-11 w-full items-center justify-center rounded-[12px] text-[13px] font-black text-white"
                   style={{ background: 'var(--spm-acc)', boxShadow: '0 6px 18px rgba(99,102,241,0.32)' }}
                 >
                   Pro로 시작하기

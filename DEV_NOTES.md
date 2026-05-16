@@ -9,6 +9,52 @@
 - 2026-05-15 (SPOMOVE 엔진 통합 — EngineRouter + 세션 페이지 통합 + Admin UI 완성)
 - 2026-05-15 (결제 흐름 완성 — Stripe Checkout + 구독 동기화 + 결제 페이지 UX + 썸네일/대시보드 리디자인)
 - 2026-05-15 (전환율 강화 — Pro 잠금 CTA 전수 결제 직결 + 온보딩/트라이얼 배너 개선 + 라이브러리 상세 히어로 리디자인)
+- 2026-05-16 (전면 디자인 리디자인 — Dashboard 히어로 썸네일 풀블리드 + StatsBand + Payment 플랜 토글 + 사업자 정보 + SpomoveHub 그래디언트 + Library FeaturedRail 강화)
+- 2026-05-16 (상용화 완성 — Stripe 고객 포털 + 구독 관리 페이지 + 사업자 정보 실데이터 + 전 페이지 카피 정비)
+
+---
+
+## 수정한 파일 (2026-05-16 — 상용화 완성)
+
+### 신규 파일
+- `app/api/spokedu-master/payment/portal/route.ts` — **신규** Stripe Customer Portal 세션 생성 API (POST). `stripe_customer_id` 조회 → `stripe.billingPortal.sessions.create` → URL 반환. 401/404/503 오류 처리 포함.
+- `app/spokedu-master/subscription/page.tsx` — **신규** 구독 관리 페이지 (`/spokedu-master/subscription`). 활성 구독: "결제 수단 변경" + "구독 취소" 버튼 → Stripe 포털 리디렉트. 미구독: "플랜 시작하기" CTA. 청약철회·환불 고지, 사업자 정보, 법적 링크 포함.
+
+### 기존 파일 수정
+- `app/spokedu-master/profile/page.tsx` — "플랜과 도입 방식" → "구독 관리" (href: /subscription), 플랜 카드 설명 문구 개선, Lite 안내 문구 개선, 배지 '시작 검증' → '무료 체험', "운영 확장 프리뷰" → "운영 확장", ExpansionLink 프리뷰 표시 제거
+- `app/spokedu-master/report/page.tsx` — 헤더 설명 문구 개선 (수업 흐름 중심), aside 카드 카피 개선 (복사 버튼 중심)
+- `app/spokedu-master/store/index.ts` — 기본 알림 n2 body 카피 개선
+- `app/spokedu-master/class-record/page.tsx` — 헤더 설명 "첫 상용 버전..." 문구 제거, 공유 섹션 "자동 발송..." 문구 제거
+- `app/spokedu-master/director/page.tsx` — 헤더 "센터 확장 기능..." 문구 제거, Center 플랜 카드 설명 개선, 기록 링크 "프리뷰" 제거
+- `app/spokedu-master/students/page.tsx` — 헤더 설명 개선, 빈 상태 "프리뷰" 표현 제거
+
+### 사업자 정보 — 실데이터 반영 (3개 파일)
+- `app/spokedu-master/payment/page.tsx`
+- `app/spokedu-master/subscription/page.tsx`
+- `app/spokedu-master/landing/page.tsx`
+
+실제 사업자 정보:
+- 상호: 스포케듀
+- 대표자: 최지훈
+- 사업자등록번호: 311-63-00356
+- 통신판매업신고: 신청 중 (번호 발급 후 교체 필요)
+- 주소: 서울특별시 강동구 성내동 430-2, 7층 2호
+
+### 남은 작업
+- 통신판매업신고번호 발급 후 위 3개 파일 "신청 중" → 실제 번호로 교체
+- Stripe 대시보드에서 Customer Portal 활성화 (Settings > Billing > Customer portal)
+- `.env.local` STRIPE_SECRET_KEY 확인 (portal API 사용)
+
+---
+
+## 수정한 파일 (2026-05-16 — 디자인 리디자인)
+
+- `app/spokedu-master/dashboard/DashboardView.tsx` — TodayHero 풀블리드 썸네일 지원 + min-h-224 + StatsBand(3종 통계) 신규 + PlanChip 유료 플랜 그래디언트 배지 + QuickActions 아이콘 커짐(20px) + DrillTile 3단계 그래디언트 + 더 짙은 그림자
+- `app/spokedu-master/library/LibraryView.tsx` — FeaturedRail minHeight 180→250 + boxShadow 강화 + 설명 문구 제거 → 등급/시간/공간 부제목으로 교체 + 제목 30px/44px로 커짐
+- `app/spokedu-master/spomove/SpomoveHubView.tsx` — DrillCard 3단계 그래디언트 + flex justify-between 레이아웃 + rounded-[16px] + boxShadow 추가
+- `app/spokedu-master/payment/page.tsx` — 세션 프리체크(이미 로그인 시 OTP 스킵) + PlanToggle 컴포넌트(Pro/Center 카드 선택) + 사업자 정보 섹션(전자상거래법 필수 기재) + Trust 배너 + h-13 버그 수정
+- `app/spokedu-master/profile/page.tsx` — Sparkles 개발 노트 footer 텍스트 제거 + 미사용 Sparkles 아이콘 import 제거
+- `app/spokedu-master/onboarding/page.tsx` — Pro 시작하기 버튼 h-10(40px) → h-11(44px) 터치 타겟 수정
 
 ---
 

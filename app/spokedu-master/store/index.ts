@@ -180,7 +180,7 @@ const defaultNotifications: Notification[] = [
     id: 'n2',
     type: 'billing',
     title: '체험 기간이 활성화되어 있습니다.',
-    body: '첫 상용 버전에서는 라이브러리, SPOMOVE, 수업 설명 도구를 중심으로 사용할 수 있습니다.',
+    body: '라이브러리에서 수업을 고르고, SPOMOVE로 큰 화면 활동을 실행하고, 설명 도구로 수업의 의미를 전달해 보세요.',
     read: false,
     createdAt: new Date(Date.now() - 3600000).toISOString(),
   },

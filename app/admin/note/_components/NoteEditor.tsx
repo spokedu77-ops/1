@@ -13,7 +13,7 @@ import { parseInlineMarkupToHtml, type InlineMark } from '@/app/lib/note/inlineM
 
 type RichField = 'text' | 'body';
 
-export type NoteEditorChange = {
+type NoteEditorChange = {
   text: string;
   html: string;
 };
@@ -40,7 +40,7 @@ function richTextSourceHtml({
   return legacyTextToEditorHtml(text);
 }
 
-export function applyEditorMark(editor: Editor, mark: InlineMark) {
+function applyEditorMark(editor: Editor, mark: InlineMark) {
   const chain = editor.chain().focus();
   if (mark === 'bold') chain.toggleBold().run();
   if (mark === 'italic') chain.toggleItalic().run();

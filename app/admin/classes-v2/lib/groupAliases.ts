@@ -1,4 +1,4 @@
-export type GroupAliasRule = {
+type GroupAliasRule = {
   /** V2에서 표시할 그룹명(가상 그룹 키) */
   aliasTitle: string;
   /**

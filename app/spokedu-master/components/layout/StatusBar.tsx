@@ -9,9 +9,9 @@ export function StatusBar() {
 
   return (
     <div className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b px-[22px] sm:px-8 lg:px-10" style={{ background: 'rgba(7,7,12,0.9)', backdropFilter: 'blur(22px)', borderColor: 'var(--spm-br)' }}>
-      <div className="min-w-0">
-        <span className="block text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU PRO</span>
-        <span className="hidden text-[12px] font-semibold sm:block" style={{ color: 'var(--spm-t2)' }}>수업 준비와 SPOMOVE 실행을 위한 구독 플랫폼</span>
+      <div className="flex items-baseline gap-2">
+        <span className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
+        <span className="text-[15px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>PRO</span>
       </div>
       <div className="flex items-center gap-2">
         <span className="hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-black sm:inline-flex" style={{ background: operational.online ? 'rgba(16,185,129,0.13)' : 'rgba(245,158,11,0.13)', color: operational.online ? 'var(--spm-grn)' : 'var(--spm-amb)' }}>

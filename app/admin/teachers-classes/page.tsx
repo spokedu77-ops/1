@@ -35,7 +35,6 @@ import {
   displayNameForDownload,
   alignCenterDocumentNamesWithUrls,
 } from '@/app/lib/feedbackValidation';
-import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 
 interface Session {
   id: string;

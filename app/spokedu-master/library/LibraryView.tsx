@@ -215,12 +215,14 @@ function PosterCard({ program, rank, locked, used, favorite, onFavorite, onPrevi
   program: Program; rank: number; locked: boolean; used: boolean; favorite: boolean;
   onFavorite: () => void; onPreview: () => void;
 }) {
-  const bg = program.thumbnailUrl
-    ? undefined
-    : `linear-gradient(160deg, ${program.colors[0]}, ${program.colors[1]}, ${program.colors[2]})`;
+  // Landscape (16:9-ish) when thumbnail exists, portrait when gradient fallback
+  const isLandscape = !!program.thumbnailUrl;
 
   return (
-    <div className="relative h-[196px] w-[140px] shrink-0 overflow-hidden rounded-[14px] lg:h-[210px] lg:w-full" style={{ background: bg }}>
+    <div
+      className={`relative shrink-0 overflow-hidden rounded-[14px] lg:w-full ${isLandscape ? 'h-[118px] w-[210px]' : 'h-[196px] w-[140px] lg:h-[210px]'}`}
+      style={{ background: program.thumbnailUrl ? '#111' : `linear-gradient(160deg, ${program.colors[0]}, ${program.colors[1]}, ${program.colors[2]})` }}
+    >
       {program.thumbnailUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={program.thumbnailUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
@@ -232,22 +234,19 @@ function PosterCard({ program, rank, locked, used, favorite, onFavorite, onPrevi
         </div>
       )}
       <button type="button" onClick={onPreview} className="absolute inset-0 text-left" aria-label={program.title}>
-        <div className="absolute left-2.5 top-2.5 flex flex-col gap-1">
+        <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1">
           {program.isNew ? <span className="rounded-full bg-emerald-400 px-2 py-0.5 text-[9px] font-black text-emerald-950">NEW</span> : null}
           {used ? <span className="rounded-full bg-black/35 px-2 py-0.5 text-[9px] font-black text-white">USED</span> : null}
         </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/92 via-black/50 to-transparent p-3">
-          <div className="flex items-center justify-between gap-1">
-            <p className="truncate text-[9px] font-bold uppercase tracking-[0.08em] text-white/55">{program.category}</p>
-            <span className="shrink-0 text-[9px] font-black text-white/30">#{rank}</span>
-          </div>
-          <p className="mt-0.5 line-clamp-1 text-[13px] font-bold leading-tight text-white">{program.title}</p>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/92 via-black/60 to-transparent p-3">
+          <p className="truncate text-[9px] font-bold uppercase tracking-[0.08em] text-white/50">{program.category} · #{rank}</p>
+          <p className="mt-0.5 line-clamp-2 text-[13px] font-bold leading-tight text-white">{program.title}</p>
           <p className="mt-1 text-[10px] font-semibold text-white/55">{program.grade} · {program.duration}분</p>
         </div>
         {locked ? <div className="absolute inset-0 grid place-items-center bg-black/55"><span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: 'rgba(245,158,11,0.14)' }}><Lock size={16} color="var(--spm-amb)" /></span></div> : null}
       </button>
-      <button type="button" onClick={onFavorite} className="absolute right-1.5 top-1.5 grid h-10 w-10 place-items-center rounded-full bg-black/40" aria-label={`${program.title} 즐겨찾기`}>
-        <Bookmark size={15} color="#fff" fill={favorite ? '#fff' : 'none'} />
+      <button type="button" onClick={onFavorite} className="absolute right-1.5 top-1.5 grid h-9 w-9 place-items-center rounded-full bg-black/40" aria-label={`${program.title} 즐겨찾기`}>
+        <Bookmark size={14} color="#fff" fill={favorite ? '#fff' : 'none'} />
       </button>
     </div>
   );
@@ -274,7 +273,9 @@ function ProgramListItem({ program, locked, used, favorite, onFavorite, onPrevie
           <span className="flex items-center gap-1 text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}><Clock size={10} />{program.duration}분</span>
           <span className="flex items-center gap-1 text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}><MapPin size={10} />{program.space}</span>
         </div>
-        <p className="mt-2 line-clamp-1 text-[11px] font-medium" style={{ color: 'var(--spm-t2)' }}>{program.description}</p>
+        {program.tags.length > 0 ? (
+          <p className="mt-2 line-clamp-1 text-[11px] font-medium" style={{ color: 'var(--spm-t2)' }}>{program.tags.slice(0, 4).join(' · ')}</p>
+        ) : null}
       </div>
       <button type="button" onClick={onFavorite} className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label={`${program.title} 즐겨찾기`}>
         <Bookmark size={15} color={favorite ? 'var(--spm-amb)' : 'var(--spm-t3)'} fill={favorite ? 'var(--spm-amb)' : 'none'} />
@@ -295,7 +296,7 @@ function FeaturedRail({ programs, onPreview }: { programs: Program[]; onPreview:
         type="button"
         onClick={() => onPreview(featured)}
         className="relative w-full overflow-hidden rounded-[18px] text-left active:scale-[0.99]"
-        style={{ minHeight: 180, boxShadow: '0 18px 42px rgba(0,0,0,0.35)' }}
+        style={{ minHeight: 250, boxShadow: '0 22px 52px rgba(0,0,0,0.42)' }}
       >
         {/* Background: image or gradient */}
         {featured.thumbnailUrl ? (
@@ -315,9 +316,9 @@ function FeaturedRail({ programs, onPreview }: { programs: Program[]; onPreview:
         <div className="relative grid p-5 md:grid-cols-[1fr_auto] md:items-end md:p-7">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/60">오늘 추천 수업</p>
-            <h2 className="mt-3 max-w-[580px] text-[28px] font-black leading-tight text-white md:text-[40px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0, wordBreak: 'keep-all' }}>{featured.title}</h2>
-            <p className="mt-2 max-w-[520px] text-[12px] font-semibold leading-5 text-white/70 md:text-[14px]">{featured.description}</p>
-            <div className="mt-5 flex flex-wrap gap-2">
+            <h2 className="mt-3 max-w-[580px] text-[30px] font-black leading-tight text-white md:text-[44px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0, wordBreak: 'keep-all', textShadow: '0 2px 16px rgba(0,0,0,0.45)' }}>{featured.title}</h2>
+            <p className="mt-2 text-[12px] font-semibold text-white/65">{featured.grade} · {featured.duration}분 · {featured.space}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
               {[`${featured.duration}분`, featured.space, ...featured.tags.slice(0, 3)].map((item) => (
                 <span key={item} className="rounded-full bg-black/30 px-3 py-1 text-[11px] font-black text-white/80">{item}</span>
               ))}

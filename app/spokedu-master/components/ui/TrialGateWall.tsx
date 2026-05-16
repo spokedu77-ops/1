@@ -82,21 +82,24 @@ export function TrialCountdownBanner() {
   const profile = useProfile();
   const daysLeft = getTrialDaysLeft(profile);
   if ((profile?.plan ?? 'free') !== 'free') return null;
-  if (daysLeft <= 0) return null;
-  if (daysLeft > 5) return null;
+  if (daysLeft <= 0 || daysLeft > 7) return null;
+
+  const tone =
+    daysLeft <= 2
+      ? { bg: 'rgba(239,68,68,0.10)', border: 'rgba(239,68,68,0.22)', text: 'var(--spm-red)', chip: 'rgba(239,68,68,0.14)' }
+      : daysLeft <= 5
+        ? { bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.22)', text: 'var(--spm-amb)', chip: 'rgba(245,158,11,0.14)' }
+        : { bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.18)', text: 'var(--spm-acc)', chip: 'rgba(99,102,241,0.12)' };
 
   return (
     <div
       className="mx-[22px] mt-3 flex items-center justify-between gap-3 rounded-[12px] px-3 py-2 sm:mx-8 lg:mx-10"
-      style={{
-        background: daysLeft <= 2 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
-        border: daysLeft <= 2 ? '1px solid rgba(239,68,68,0.22)' : '1px solid rgba(245,158,11,0.22)',
-      }}
+      style={{ background: tone.bg, border: `1px solid ${tone.border}` }}
     >
-      <p className="text-[12px] font-bold" style={{ color: daysLeft <= 2 ? 'var(--spm-red)' : 'var(--spm-amb)' }}>
+      <p className="text-[12px] font-bold" style={{ color: tone.text }}>
         무료 체험 <strong>{daysLeft}일</strong> 남았습니다.
       </p>
-      <Link href="/spokedu-master/payment?plan=pro" className="shrink-0 rounded-full px-3 py-1 text-[11px] font-black" style={{ background: daysLeft <= 2 ? 'rgba(239,68,68,0.14)' : 'rgba(245,158,11,0.14)', color: daysLeft <= 2 ? 'var(--spm-red)' : 'var(--spm-amb)' }}>
+      <Link href="/spokedu-master/payment?plan=pro" className="shrink-0 rounded-full px-3 py-1 text-[11px] font-black" style={{ background: tone.chip, color: tone.text }}>
         Pro 시작
       </Link>
     </div>

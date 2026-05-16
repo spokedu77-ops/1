@@ -48,10 +48,12 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const router = useRouter();
   const profile = useProfile();
   const setOnline = useMasterStore((state) => state.setOnline);
+  const isAdmin = basePath.startsWith('/admin');
   const isSession = pathname.startsWith(`${basePath}/spomove/session`);
   const isOnboarding = pathname.startsWith(`${basePath}/onboarding`);
   const isParentView = pathname.startsWith(`${basePath}/parent`);
   const isPayment = pathname.startsWith(`${basePath}/payment`);
+  const isLanding = pathname.startsWith(`${basePath}/landing`);
 
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const loadDrills = useMasterStore((state) => state.loadDrills);
@@ -81,16 +83,17 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }, []);
 
   useEffect(() => {
+    if (isAdmin || isLanding) return;
     if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !profile.onboardingDone) {
       router.replace(`${basePath}/onboarding`);
     }
-  }, [basePath, isOnboarding, isParentView, isPayment, isSession, profile, router]);
+  }, [basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isSession, profile, router]);
 
   if (isSession) {
     return <div className="min-h-dvh bg-black" style={{ fontFamily: 'var(--spm-font-body)' }}>{children}</div>;
   }
 
-  const hideChrome = isOnboarding || isParentView || isPayment;
+  const hideChrome = isOnboarding || isParentView || isPayment || isLanding;
 
   return (
     <div className="min-h-dvh" style={{ background: 'linear-gradient(135deg, #07070c 0%, #101426 55%, #07070c 100%)', color: 'var(--spm-t)' }}>
@@ -99,8 +102,8 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         <div className="flex min-w-0 flex-1 flex-col">
           {hideChrome ? null : <StatusBar />}
           <main className="min-h-0 flex-1 overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
-            {hideChrome ? null : <OperationsBanner />}
-            {hideChrome ? null : <TrialCountdownBanner />}
+            {hideChrome || isAdmin ? null : <OperationsBanner />}
+            {hideChrome || isAdmin ? null : <TrialCountdownBanner />}
             <ErrorBoundary>
               {children}
             </ErrorBoundary>

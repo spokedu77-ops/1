@@ -17,10 +17,12 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
 
 function ProgressCard({ done, total }: { done: number; total: number }) {
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  const now = new Date();
+  const weekLabel = format(now, 'M월', { locale: ko }) + ` ${Math.ceil(now.getDate() / 7)}주차`;
   return (
     <section className="mx-[22px] mb-7 rounded-[16px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <div className="flex items-center justify-between">
-        <div><p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>semester progress</p><h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>5월 2주차</h2></div>
+        <div><p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>semester progress</p><h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{weekLabel}</h2></div>
         <span className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-grn)' }}>{percent}%</span>
       </div>
       <div className="mt-5 h-2 overflow-hidden rounded-full" style={{ background: 'var(--spm-s4)' }}><div className="h-full rounded-full" style={{ width: `${percent}%`, background: 'linear-gradient(90deg,#6366f1,#10b981)' }} /></div>

@@ -2,9 +2,9 @@
  * DB `session_type` → 4가지 운영 분류(라벨·캘린더 톤·themeColor) 단일 소스.
  */
 
-export type SessionTypeCategory = "private_one" | "private" | "center" | "one_day_center" | "unknown";
+type SessionTypeCategory = "private_one" | "private" | "center" | "one_day_center" | "unknown";
 
-export function getSessionTypeCategory(type: string | null | undefined): SessionTypeCategory {
+function getSessionTypeCategory(type: string | null | undefined): SessionTypeCategory {
   const t = String(type ?? "").trim();
   if (!t) return "unknown";
   if (t === "one_day_private" || t === "one_day") return "private_one";

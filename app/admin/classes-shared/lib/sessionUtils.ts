@@ -1,6 +1,6 @@
 import { MileageAction, TeacherInput } from '../types';
 
-export const safeJsonParse = <T>(text: string, fallback: T): T => {
+const safeJsonParse = <T>(text: string, fallback: T): T => {
   try {
     return JSON.parse(text);
   } catch {

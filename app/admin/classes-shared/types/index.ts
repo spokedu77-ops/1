@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface SessionEvent {
   id: string;
   title: string;
@@ -33,35 +31,6 @@ export interface TeacherInput {
 export interface MileageAction {
   label: string;
   val: number;
-}
-
-export interface EditFields {
-  title: string;
-  teachers: TeacherInput[];
-  date: string;
-  start: string;
-  end: string;
-  memo: string;
-  mileageAction?: string;
-  roundIndex?: number;
-  roundTotal?: number;
-}
-
-export interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedEvent: SessionEvent | null;
-  editFields: EditFields;
-  setEditFields: React.Dispatch<React.SetStateAction<EditFields>>;
-  teacherList: { id: string; name: string }[];
-  onUpdate: () => void;
-  onUpdateStatus: (status: string | null) => void;
-  onPostpone: (e: React.MouseEvent) => void;
-  onUndoPostpone: (e: React.MouseEvent) => void;
-  onAddTeacher?: () => void;
-  onRemoveTeacher?: (index: number) => void;
-  onShrinkGroup?: () => void;
-  onCloneGroup?: () => void;
 }
 
 // 수업 목록/상세 뷰에서 사용하는 그룹 단위 타입

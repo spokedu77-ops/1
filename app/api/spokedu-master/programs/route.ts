@@ -23,7 +23,8 @@ function extractYouTubeId(url: string): string | null {
 function buildThumbnailUrl(videoUrl: string | null | undefined): string | undefined {
   if (!videoUrl) return undefined;
   const id = extractYouTubeId(videoUrl);
-  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : undefined;
+  // mqdefault.jpg = 320x180 (true 16:9, no letterboxing)
+  return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : undefined;
 }
 
 export async function GET() {

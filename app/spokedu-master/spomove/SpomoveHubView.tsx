@@ -7,11 +7,11 @@ import { formatReactionTime } from '../lib/utils';
 import { useIsPro, useMasterStore, useStats } from '../store';
 
 function DrillCard({ drill, index, isLocked }: { drill: Drill; index: number; isLocked: boolean }) {
-  const gradients = ['linear-gradient(135deg,#312e81,#4f46e5)', 'linear-gradient(135deg,#064e3b,#059669)', 'linear-gradient(135deg,#1e1b4b,#7c3aed)', 'linear-gradient(135deg,#713f12,#be123c)'];
+  const gradients = ['linear-gradient(145deg,#1a1744 0%,#312e81 50%,#4f46e5 100%)', 'linear-gradient(145deg,#052e16 0%,#064e3b 50%,#059669 100%)', 'linear-gradient(145deg,#150b2e 0%,#1e1b4b 50%,#7c3aed 100%)', 'linear-gradient(145deg,#3f0000 0%,#7f1d1d 50%,#be123c 100%)'];
   return (
-    <Link href={isLocked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}`} className="relative min-h-[148px] overflow-hidden rounded-[14px] p-4 active:scale-[0.98]" style={{ background: gradients[index % gradients.length], border: '1px solid rgba(255,255,255,0.07)' }}>
+    <Link href={isLocked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}`} className="relative flex min-h-[148px] flex-col justify-between overflow-hidden rounded-[16px] p-4 active:scale-[0.98]" style={{ background: gradients[index % gradients.length], border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 8px 24px rgba(0,0,0,0.28)' }}>
       <div className="flex items-start justify-between"><span className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'rgba(255,255,255,0.12)' }}><Zap size={19} color="#fff" /></span><span className="grid h-8 w-8 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.14)' }}><Play size={13} color="#fff" fill="#fff" /></span></div>
-      <div className="absolute inset-x-4 bottom-4"><p className="text-[9px] font-bold uppercase tracking-[0.09em] text-white/45">{drill.category}</p><h2 className="mt-1 text-[18px] font-bold leading-tight text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>{drill.name}</h2></div>
+      <div><p className="text-[9px] font-bold uppercase tracking-[0.09em] text-white/45">{drill.category}</p><h2 className="mt-1 text-[18px] font-bold leading-tight text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>{drill.name}</h2></div>
       {isLocked ? <div className="absolute inset-0 grid place-items-center rounded-[14px] bg-black/55 backdrop-blur-[3px]"><span className="rounded-[7px] px-3 py-1.5 text-[10px] font-black" style={{ background: 'rgba(245,158,11,0.13)', border: '1px solid rgba(245,158,11,0.28)', color: 'var(--spm-amb)' }}>PRO 잠금</span></div> : null}
     </Link>
   );
