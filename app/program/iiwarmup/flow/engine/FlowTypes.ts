@@ -1,6 +1,15 @@
 /**
  * Flow Phase - 타입 정의
  */
+
+/** flow-phase CustomEvent detail — FlowPhaseClient가 수신해 React overlay를 전환한다 */
+export type FlowPhaseDetail =
+  | { type: 'start' }
+  | { type: 'level-intro'; levelNum: number }
+  | { type: 'rest'; restIndex: number; remainingSec: number }
+  | { type: 'rest-tick'; remainingSec: number }
+  | { type: 'complete'; playedLevels: number[] };
+
 export interface FlowDomRefs {
   progressBar: { current: HTMLDivElement | null };
   levelNum: { current: HTMLSpanElement | null };

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { CheckCircle2, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { PROGRAMS } from '../lib/data';
 import { useMasterStore } from '../store';
 
 const PRODUCTS = [
@@ -30,6 +29,7 @@ function ProductIcon({ tone }: { tone: string }) {
 
 export default function SpokeduMasterShopPage() {
   const cart = useMasterStore((state) => state.cart);
+  const programs = useMasterStore((state) => state.programs);
   const addToCart = useMasterStore((state) => state.addToCart);
   const updateQty = useMasterStore((state) => state.updateQty);
   const clearCart = useMasterStore((state) => state.clearCart);
@@ -38,7 +38,7 @@ export default function SpokeduMasterShopPage() {
   const [orderCount, setOrderCount] = useState(0);
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
-  const usedEquipment = useMemo(() => Array.from(new Set(PROGRAMS.flatMap((program) => program.equipment))).slice(0, 10), []);
+  const usedEquipment = useMemo(() => Array.from(new Set(programs.flatMap((p) => p.equipment))).slice(0, 10), [programs]);
 
   const addBundle = (bundle: (typeof BUNDLES)[number]) => {
     addToCart({ id: bundle.id, name: bundle.name, price: bundle.price, qty: 1 });

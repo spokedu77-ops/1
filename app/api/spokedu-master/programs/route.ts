@@ -116,18 +116,6 @@ export async function GET() {
     display_order: number | null;
   };
 
-  // Check subscription to gate Pro lessonDetail server-side
-  const { data: subRow } = await supabase
-    .from('spokedu_master_subscriptions')
-    .select('plan, status, period_end')
-    .eq('user_id', user.id)
-    .maybeSingle() as { data: { plan: string; status: string; period_end: string | null } | null };
-
-  const isPaidActive =
-    subRow?.status === 'active' &&
-    (subRow.plan === 'pro' || subRow.plan === 'team') &&
-    (!subRow.period_end || new Date(subRow.period_end) >= new Date());
-
   const programs: Program[] = (curriculumRows as CurrRow[]).map((r, idx) => {
     const meta = metaByCurriculumId.get(r.id);
     const ov = overlayByCurriculumId.get(r.id);
@@ -152,21 +140,21 @@ export async function GET() {
         : pickColors(idx);
 
     const isProProgram = meta?.sm_is_pro ?? false;
-    const lessonDetail = !isProProgram || isPaidActive
-      ? {
-          recommendedAge: meta?.sm_grade ?? '전학년',
-          recommendedPlayers: '6-20명',
-          objective: title,
-          developmentFocus: meta?.sm_theme ?? '',
-          coachScript,
-          parentNote: coachScript,
-          fieldTips,
-          variations: [],
-          safetyNotes: [],
-          relatedSpomoveIds: [],
-          videoUrl,
-        }
-      : undefined;
+    // 인증된 사용자에게 lessonDetail 항상 반환 — 체험/유료 모두 공개
+    // 클라이언트 isPro + isTrialExpired 가 UI 잠금을 담당
+    const lessonDetail = {
+      recommendedAge: meta?.sm_grade ?? '전학년',
+      recommendedPlayers: '6-20명',
+      objective: title,
+      developmentFocus: meta?.sm_theme ?? '',
+      coachScript,
+      parentNote: coachScript,
+      fieldTips,
+      variations: [],
+      safetyNotes: [],
+      relatedSpomoveIds: [],
+      videoUrl,
+    };
 
     // Merge spokedu-pro classification tags with sm_tags
     const proTags: string[] = [

@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { DesktopRail, TabBar } from './TabBar';
@@ -10,6 +10,57 @@ import { TrialCountdownBanner } from '../ui/TrialGateWall';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { isTrialExpired } from '../../lib/subscription';
 import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
+
+function FloatingTimerPill() {
+  const running = useMasterStore((s) => s.classTimerRunning);
+  const ms = useMasterStore((s) => s.classTimerMs);
+  const startedAt = useMasterStore((s) => s.classTimerStartedAt);
+  const timerReset = useMasterStore((s) => s.classTimerReset);
+  const router = useRouter();
+  const [displayMs, setDisplayMs] = useState(ms);
+
+  useEffect(() => {
+    if (!running) { setDisplayMs(ms); return; }
+    const id = setInterval(() => setDisplayMs(ms + (startedAt ? Date.now() - startedAt : 0)), 500);
+    return () => clearInterval(id);
+  }, [running, ms, startedAt]);
+
+  if (ms === 0 && !running) return null;
+
+  const mins = Math.floor(displayMs / 60000);
+  const secs = Math.floor((displayMs % 60000) / 1000);
+
+  return (
+    <div className="flex shrink-0 justify-center px-4 pb-2">
+      <div
+        className="flex items-center gap-3 rounded-full px-4 py-2.5"
+        style={{ background: 'rgba(12,12,18,0.96)', border: '1px solid var(--spm-br2)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
+      >
+        <span className="h-2 w-2 rounded-full" style={{ background: running ? 'var(--spm-grn)' : 'var(--spm-amb)' }} />
+        <button
+          type="button"
+          onClick={() => router.push('/spokedu-master/class-tools')}
+          className="font-mono text-[15px] font-black tabular-nums"
+          style={{ color: 'var(--spm-t)' }}
+        >
+          {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+        </button>
+        <span className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+          {running ? '진행 중' : '일시정지'}
+        </span>
+        <button
+          type="button"
+          onClick={() => { timerReset(); setDisplayMs(0); }}
+          className="grid h-5 w-5 place-items-center rounded-full text-[11px] font-black"
+          style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}
+          aria-label="타이머 초기화"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function OperationsBanner() {
   const profile = useProfile();
@@ -49,7 +100,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const profile = useProfile();
   const setOnline = useMasterStore((state) => state.setOnline);
   const isAdmin = basePath.startsWith('/admin');
-  const isSession = pathname.startsWith(`${basePath}/spomove/session`);
+  const isSession = pathname.startsWith(`${basePath}/spomove/session`) || pathname.startsWith(`${basePath}/class-mode`);
   const isOnboarding = pathname.startsWith(`${basePath}/onboarding`);
   const isParentView = pathname.startsWith(`${basePath}/parent`);
   const isPayment = pathname.startsWith(`${basePath}/payment`);
@@ -108,6 +159,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
               {children}
             </ErrorBoundary>
           </main>
+          {hideChrome ? null : <FloatingTimerPill />}
           {hideChrome ? null : <TabBar basePath={basePath} />}
         </div>
       </div>

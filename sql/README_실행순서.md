@@ -120,3 +120,47 @@ WHERE tablename IN ('iiwarmup_programs', 'sports_videos');
 - [ ] 확인 쿼리 실행 완료
 
 모든 체크리스트 완료 후 개발 진행 가능합니다.
+
+---
+
+## 🔒 RLS 정책 작성 규칙 (재발 방지)
+
+Security Advisor의 `Auth RLS Initialization Plan` 경고를 막기 위해, 새 정책 작성 시 아래 규칙을 고정합니다.
+
+### 핵심 규칙
+- `auth.uid()` / `auth.role()`를 직접 쓰지 말고 **반드시** `(SELECT auth.uid())` / `(SELECT auth.role())` 사용
+- `current_setting(...)`도 직접 호출 대신 **반드시** `(SELECT current_setting(...))` 사용
+- `USING`, `WITH CHECK` 둘 다 동일 규칙 적용
+
+### 금지/권장 예시
+```sql
+-- ❌ 금지
+USING (auth.uid() = user_id)
+WITH CHECK (auth.role() = 'authenticated')
+
+-- ✅ 권장
+USING ((SELECT auth.uid()) = user_id)
+WITH CHECK ((SELECT auth.role()) = 'authenticated')
+```
+
+```sql
+-- ❌ 금지
+USING (current_setting('request.jwt.claim.role', true) = 'service_role')
+
+-- ✅ 권장
+USING ((SELECT current_setting('request.jwt.claim.role', true)) = 'service_role')
+```
+
+### 배포 전 점검 쿼리 (public 정책)
+```sql
+SELECT schemaname, tablename, policyname, qual, with_check
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND (
+    coalesce(qual, '') ~* 'auth\.(uid|role)\(\)|current_setting\('
+    OR coalesce(with_check, '') ~* 'auth\.(uid|role)\(\)|current_setting\('
+  )
+ORDER BY tablename, policyname;
+```
+
+위 결과에서 direct 호출이 보이면, 릴리즈 전에 `(SELECT ...)` 패턴으로 반드시 보정합니다.

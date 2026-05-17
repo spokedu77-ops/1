@@ -143,7 +143,7 @@ function CopyCard({ block, copied, onCopy }: { block: CopyBlock; copied: boolean
 export default function ReportPage() {
   const programs = useMasterStore((state) => state.programs);
   const classRecords = useMasterStore((state) => state.classRecords);
-  const recentProgramId = classRecords[classRecords.length - 1]?.programId ?? programs[0]?.id ?? '';
+  const recentProgramId = classRecords[0]?.programId ?? programs[0]?.id ?? '';
   const profile = useProfile();
   const isPro = useIsPro();
   const trialExpired = isTrialExpired(profile);
@@ -168,7 +168,7 @@ export default function ReportPage() {
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>teaching explanation</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 설명 도구</h1>
+        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>설명 문구</h1>
         <p className="mt-2 max-w-[780px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>프로그램을 선택하고 대상을 고르면 바로 복사할 수 있는 수업 설명 문구가 만들어집니다. 학부모 안내, 센터 운영, 학교 기록, 홍보까지 목적에 맞게 사용하세요.</p>
       </header>
 

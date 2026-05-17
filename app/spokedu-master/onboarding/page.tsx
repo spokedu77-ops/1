@@ -127,7 +127,7 @@ export default function OnboardingPage() {
           {step === 0 ? (
             <div className="space-y-3">
               <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>사용 환경</h2>
-              <ChoiceCard title="개인 강사·교사" desc="라이브러리, SPOMOVE, 수업 설명 도구를 먼저 사용합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
+              <ChoiceCard title="개인 강사·교사" desc="라이브러리, SPOMOVE, 수업 도구를 먼저 사용합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
               <ChoiceCard title="센터·도장 운영" desc="여러 강사가 같은 수업 품질과 교구 흐름을 공유할 준비를 합니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
             </div>
           ) : null}
@@ -179,7 +179,7 @@ export default function OnboardingPage() {
                 {([
                   { step: '1', label: '라이브러리에서 수업 고르기', caption: '오늘 쓸 수업안을 검색하거나 태그로 찾습니다', color: 'rgba(99,102,241,0.14)', accent: 'var(--spm-acc)' },
                   { step: '2', label: 'SPOMOVE 큰 화면 실행', caption: '프로젝터·TV에 연결해 아이들이 신호를 보고 움직입니다', color: 'rgba(16,185,129,0.12)', accent: 'var(--spm-grn)' },
-                  { step: '3', label: '설명 문구 복사', caption: '학부모·기관·학교용 문구를 바로 복사합니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
+                  { step: '3', label: '수업 도구 활용', caption: '타이머, 팀 나누기, 학생 뽑기를 수업 중에 바로 씁니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
                 ] as const).map(({ step: num, label, caption, color, accent }) => (
                   <div key={num} className="flex items-center gap-3 rounded-[12px] p-3" style={{ background: color }}>
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-black text-white" style={{ background: accent }}>{num}</span>
@@ -193,7 +193,7 @@ export default function OnboardingPage() {
               <div className="rounded-[14px] p-4" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.28)' }}>
                 <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: '#a5b4fc' }}>지금 바로 시작</p>
                 <p className="mt-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>Pro — 39,900원/월</p>
-                <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>전체 라이브러리 · SPOMOVE 무제한 · 수업 설명 도구 전체</p>
+                <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>전체 라이브러리 · SPOMOVE 무제한 · 수업 도구 전체</p>
                 <button
                   type="button"
                   onClick={() => finishWithPayment('pro')}

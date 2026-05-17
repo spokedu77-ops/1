@@ -173,18 +173,26 @@ export const LV1_GUIDE_DURATION = 10000;
 export const DURATIONS = [25, 30, 15, 60, 15, 60, 60, 15] as const;
 export const DISPLAY_LEVELS = [1, 2, 0, 3, 0, 4, 5, -1] as const;
 
-// ============ 문구 (Intro / Rest / Outro) ============
-export const PHRASES = {
-  welcome: '우주의 세계에 온 것을 환영해요.<br><span style="font-size:2.2rem;color:#60a5fa;">지금부터 화면을 따라 움직이세요</span>',
-  lv1Guide: '<span style="color:#93c5fd;">LEVEL 1</span><br><span style="font-size:2.1rem;">왼쪽/가운데/오른쪽으로 점프하세요.</span>',
-  restBreathe:
-    '잠시 숨을 고르세요<br><span style="font-size:2.2rem;color:#60a5fa;">들이마시고... 내쉬세요...</span><br><span style="font-size:1.6rem;color:#94a3b8;margin-top:0.5rem;display:block;">잠깐 쉬면 다음 동작에 더 집중할 수 있어요.</span>',
-  lv3Intro: '<span style="color:#ef4444;">LEVEL 3</span><br><span style="font-size:2rem;">다가오는 박스를 부수세요!<br><span style="font-size:4rem;">🥊</span></span>',
-  lv4Intro: '<span style="color:#f59e0b;">LEVEL 4</span><br><span style="font-size:2rem;">우주선이 지나오면 머리를 숙이세요!<br><span style="font-size:3.5rem;">DUCK!</span></span>',
-  lv5Intro:
-    '<span style="color:#a78bfa;">LEVEL 5</span><br><span style="font-size:2rem;">박스 부수기 + 우주선 숙이기!<br><span style="font-size:3rem;">🥊 DUCK!</span></span>',
-  ending: '<span style="color:#34d399;">수고했어요!</span><br><span style="font-size:2.2rem;color:#60a5fa;">👏👏👏</span>',
-} as const;
+/**
+ * Admin 구간 설정 UI용 슬롯 메타데이터.
+ * displayLevel 0 = 휴식, -1 = 종료 더미(UI에 미노출).
+ */
+export const DURATION_SLOTS: ReadonlyArray<{
+  label: string;
+  displayLevel: number;
+  defaultSec: number;
+  minSec: number;
+  maxSec: number;
+}> = [
+  { label: 'LV1  점프',   displayLevel: 1,  defaultSec: 25,  minSec: 5,  maxSec: 120 },
+  { label: 'LV2  가속',   displayLevel: 2,  defaultSec: 30,  minSec: 5,  maxSec: 120 },
+  { label: '휴식 1',      displayLevel: 0,  defaultSec: 15,  minSec: 5,  maxSec: 60  },
+  { label: 'LV3  펀치',   displayLevel: 3,  defaultSec: 60,  minSec: 10, maxSec: 120 },
+  { label: '휴식 2',      displayLevel: 0,  defaultSec: 15,  minSec: 5,  maxSec: 60  },
+  { label: 'LV4  숙이기', displayLevel: 4,  defaultSec: 60,  minSec: 10, maxSec: 120 },
+  { label: 'LV5  전체',   displayLevel: 5,  defaultSec: 60,  minSec: 10, maxSec: 120 },
+  { label: '종료 버퍼',   displayLevel: -1, defaultSec: 15,  minSec: 5,  maxSec: 30  },
+] as const;
 /** 전체 플로우 시간 (진행바 100% 기준). 벽시계 누적 wallProgressTime과 동일 스케일 */
 export const TOTAL_PLAY_SEC = DURATIONS.filter((_, i) => DISPLAY_LEVELS[i] >= 1 && DISPLAY_LEVELS[i] <= 5).reduce((a, b) => a + b, 0);
 

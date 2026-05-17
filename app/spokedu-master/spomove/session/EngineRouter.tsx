@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, lazy, useCallback } from 'react';
+import { Suspense, lazy, useCallback, useEffect } from 'react';
 import type { ReactTrainCompleteStats } from '@/app/admin/spomove/training/_player/components/VisualReactionTraining';
 
 const VisualReactionTraining = lazy(() =>
@@ -112,7 +112,12 @@ export function EngineRouter({ mode, level, onComplete, onExit }: Props) {
     );
   }
 
-  // 미지원 모드: 즉시 완료 처리
-  onComplete({ engineMode: mode, engineLevel: level });
+  return <UnknownModeHandler mode={mode} level={level} onComplete={onComplete} />;
+}
+
+function UnknownModeHandler({ mode, level, onComplete }: Pick<Props, 'mode' | 'level' | 'onComplete'>) {
+  useEffect(() => {
+    onComplete({ engineMode: mode, engineLevel: level });
+  }, [mode, level, onComplete]);
   return null;
 }

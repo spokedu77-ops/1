@@ -31,6 +31,7 @@ interface MasterState {
   loadDrills: () => Promise<void>;
   profile: UserProfile | null;
   setProfile: (profile: Partial<UserProfile>) => void;
+  resetProfile: () => void;
   syncSubscription: () => Promise<void>;
   operational: OperationalStatus;
   setOnline: (online: boolean) => void;
@@ -63,6 +64,12 @@ interface MasterState {
   notifications: Notification[];
   markRead: (id: string) => void;
   markAllRead: () => void;
+  classTimerMs: number;
+  classTimerRunning: boolean;
+  classTimerStartedAt: number | null;
+  classTimerStart: () => void;
+  classTimerStop: () => void;
+  classTimerReset: () => void;
 }
 
 const defaultProfile: UserProfile = {
@@ -182,7 +189,7 @@ const defaultNotifications: Notification[] = [
     id: 'n2',
     type: 'billing',
     title: '체험 기간이 활성화되어 있습니다.',
-    body: '라이브러리에서 수업을 고르고, SPOMOVE로 큰 화면 활동을 실행하고, 설명 도구로 수업의 의미를 전달해 보세요.',
+    body: '라이브러리에서 수업을 고르고, SPOMOVE로 큰 화면 활동을 실행하고, 수업 도구로 수업을 더 생동감 있게 진행해 보세요.',
     read: false,
     createdAt: new Date(Date.now() - 3600000).toISOString(),
   },
@@ -246,14 +253,17 @@ export const useMasterStore = create<MasterState>()(
         if (get().programsLoaded) return;
         try {
           const res = await fetch('/api/spokedu-master/programs');
-          if (!res.ok) return;
-          const json = await res.json() as { data?: Program[] };
-          if (Array.isArray(json.data) && json.data.length > 0) {
-            set({ programs: json.data, programsLoaded: true });
+          if (res.ok) {
+            const json = await res.json() as { data?: Program[] };
+            if (Array.isArray(json.data) && json.data.length > 0) {
+              set({ programs: json.data, programsLoaded: true });
+              return;
+            }
           }
         } catch {
-          // keep static fallback
+          // network failure — keep static fallback
         }
+        set({ programsLoaded: true });
       },
       drills: STATIC_DRILLS,
       drillsLoaded: false,
@@ -272,6 +282,7 @@ export const useMasterStore = create<MasterState>()(
       },
       profile: defaultProfile,
       setProfile: (profile) => set((state) => ({ profile: state.profile ? { ...state.profile, ...profile } : { ...defaultProfile, ...profile } })),
+      resetProfile: () => set({ profile: { ...defaultProfile, trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date().toISOString() } }),
       syncSubscription: async () => {
         try {
           const res = await fetch('/api/spokedu-master/subscription');
@@ -372,6 +383,18 @@ export const useMasterStore = create<MasterState>()(
       notifications: defaultNotifications,
       markRead: (id) => set((state) => ({ notifications: state.notifications.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)) })),
       markAllRead: () => set((state) => ({ notifications: state.notifications.map((notification) => ({ ...notification, read: true })) })),
+      classTimerMs: 0,
+      classTimerRunning: false,
+      classTimerStartedAt: null,
+      classTimerStart: () => set((state) => {
+        if (state.classTimerRunning) return {};
+        return { classTimerRunning: true, classTimerStartedAt: Date.now() };
+      }),
+      classTimerStop: () => set((state) => {
+        if (!state.classTimerRunning) return {};
+        return { classTimerRunning: false, classTimerMs: state.classTimerMs + (state.classTimerStartedAt ? Date.now() - state.classTimerStartedAt : 0), classTimerStartedAt: null };
+      }),
+      classTimerReset: () => set({ classTimerMs: 0, classTimerRunning: false, classTimerStartedAt: null }),
     }),
     {
       name: 'spokedu-master-store',
@@ -394,9 +417,25 @@ export const useMasterStore = create<MasterState>()(
 
 export const useProfile = () => useMasterStore((state) => state.profile);
 export const useOperationalStatus = () => useMasterStore((state) => state.operational);
-export const useIsPro = () => useMasterStore((state) => (state.profile?.plan ?? 'free') !== 'free');
+export const useIsPro = () => useMasterStore((state) => {
+  const plan = state.profile?.plan ?? 'free';
+  if (plan !== 'free') return true;
+  // 체험 기간(14일) 중에는 Pro 콘텐츠 전체 공개
+  const trialEndsAt = state.profile?.trialEndsAt;
+  if (!trialEndsAt) return false;
+  return new Date(trialEndsAt).getTime() > Date.now();
+});
 export const useCartCount = () => useMasterStore((state) => state.cart.reduce((total, item) => item.qty + total, 0));
 export const useUnreadCount = () => useMasterStore((state) => state.notifications.filter((notification) => !notification.read).length);
+export const useClassTimerState = () =>
+  useMasterStore(
+    useShallow((state) => ({
+      ms: state.classTimerMs,
+      running: state.classTimerRunning,
+      startedAt: state.classTimerStartedAt,
+    }))
+  );
+
 export const useStats = () =>
   useMasterStore(
     useShallow((state) => {

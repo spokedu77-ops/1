@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Shield, X } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { useProfile } from '../store';
 
 declare global {
   interface Window {
@@ -27,8 +28,8 @@ const PLANS = {
     includes: [
       '전체 프로그램 라이브러리 무제한',
       'SPOMOVE 큰 화면 실행',
-      '수업 설명 도구 전체',
-      '즐겨찾기와 최근 사용 기록',
+      '수업 도구 전체',
+      '설명 문구 (학부모·기관·학교용)',
     ],
     accent: 'rgba(99,102,241,0.16)',
     border: 'rgba(99,102,241,0.40)',
@@ -46,7 +47,7 @@ const PLANS = {
     includes: [
       'Pro 기능 전체',
       '강사 3명 계정 포함',
-      '센터용 설명 도구',
+      '센터용 수업 도구',
       '추가 강사 확장 가능',
     ],
     accent: 'rgba(16,185,129,0.12)',
@@ -91,9 +92,11 @@ function PlanToggle({ selected, onSelect }: { selected: PlanKey; onSelect: (k: P
 
 function PaymentContent() {
   const params = useSearchParams();
+  const profile = useProfile();
   const initialPlan = (params.get('plan') ?? 'pro') as PlanKey;
   const [planKey, setPlanKey] = useState<PlanKey>(PLANS[initialPlan] ? initialPlan : 'pro');
   const plan = PLANS[planKey];
+  const alreadySubscribed = profile?.plan === 'pro' || profile?.plan === 'team';
 
   const [email, setEmail] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -180,6 +183,25 @@ function PaymentContent() {
       setLoading(false);
     }
   };
+
+  if (alreadySubscribed) {
+    const activePlanLabel = profile?.plan === 'team' ? 'Center' : 'Pro';
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center px-[22px]" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
+        <div className="w-full max-w-[400px] space-y-6 text-center">
+          <CheckCircle2 size={56} color="var(--spm-grn)" strokeWidth={1.5} className="mx-auto" />
+          <div>
+            <h1 className="text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{activePlanLabel} 구독 중</h1>
+            <p className="mt-3 text-[14px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이미 활성 구독이 있습니다. 구독 관리 페이지에서 플랜 변경 또는 취소를 문의할 수 있습니다.</p>
+          </div>
+          <div className="space-y-2">
+            <Link href="/spokedu-master/subscription" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>구독 관리</Link>
+            <Link href="/spokedu-master/dashboard" className="block text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>대시보드로 돌아가기</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>

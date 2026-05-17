@@ -2,8 +2,15 @@
 
 import Link from 'next/link';
 import { ArrowLeft, XCircle } from 'lucide-react';
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-export default function PaymentCancelPage() {
+function CancelContent() {
+  const params = useSearchParams();
+  const orderId = params.get('orderId') ?? '';
+  const planFromOrder = orderId.split('-')[1] ?? 'pro';
+  const retryPlan = planFromOrder === 'team' ? 'team' : 'pro';
+
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-[22px]" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
       <div className="w-full max-w-[400px] space-y-6 text-center">
@@ -16,7 +23,7 @@ export default function PaymentCancelPage() {
         </div>
         <div className="space-y-3">
           <Link
-            href="/spokedu-master/payment?plan=pro"
+            href={`/spokedu-master/payment?plan=${retryPlan}`}
             className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white"
             style={{ background: 'var(--spm-acc)' }}
           >
@@ -36,5 +43,13 @@ export default function PaymentCancelPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function PaymentCancelPage() {
+  return (
+    <Suspense>
+      <CancelContent />
+    </Suspense>
   );
 }

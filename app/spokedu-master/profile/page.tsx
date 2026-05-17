@@ -31,7 +31,7 @@ const PLANS: PlanInfo[] = [
     price: '14일 무료',
     badge: '무료 체험',
     description: '라이브러리와 SPOMOVE의 핵심 경험을 확인합니다.',
-    includes: ['일부 프로그램 열람', 'SPOMOVE 제한 체험', '수업 설명 도구 체험'],
+    includes: ['일부 프로그램 열람', 'SPOMOVE 제한 체험', '수업 도구 체험'],
     target: '처음 확인하는 개인 강사·교사',
     action: '체험 유지',
   },
@@ -51,7 +51,7 @@ const PLANS: PlanInfo[] = [
     price: '39,900원/월',
     badge: '추천',
     description: '전문 강사가 매주 쓰는 수업 준비 환경입니다.',
-    includes: ['전체 프로그램', 'SPOMOVE 무제한', '수업 설명 도구 전체'],
+    includes: ['전체 프로그램', 'SPOMOVE 무제한', '수업 도구 전체', '설명 문구'],
     target: '매주 수업을 준비하는 전문 강사',
     action: 'Pro 적용',
     recommended: true,
@@ -62,7 +62,7 @@ const PLANS: PlanInfo[] = [
     price: '79,000원/월',
     badge: '3명 포함',
     description: '센터와 도장이 강사 수업 품질을 맞추는 플랜입니다.',
-    includes: ['강사 3명 포함', '센터용 설명 도구', '추가 강사 확장'],
+    includes: ['강사 3명 포함', '센터용 수업 도구', '추가 강사 확장'],
     target: '센터·도장·체육관',
     action: 'Center 적용',
   },
@@ -158,6 +158,7 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 export default function SpokeduMasterProfilePage() {
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
+  const resetProfile = useMasterStore((state) => state.resetProfile);
   const router = useRouter();
   const [profileOpen, setProfileOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
@@ -169,7 +170,7 @@ export default function SpokeduMasterProfilePage() {
     setLoggingOut(true);
     const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
-    setProfile({ plan: 'free', onboardingDone: false });
+    resetProfile();
     router.replace('/spokedu-master/landing');
   };
   const currentPlan = profile?.plan ?? 'free';
@@ -178,7 +179,7 @@ export default function SpokeduMasterProfilePage() {
   const valueCards = [
     ['라이브러리', '오늘 쓸 수업안을 빠르게 찾기'],
     ['SPOMOVE', '웹에서 큰 화면 활동 바로 실행'],
-    ['설명 도구', '대상별 수업 설명 문구 복사'],
+    ['설명 문구', '대상별 수업 설명 문구 복사'],
   ];
 
   const saveProfile = () => {
@@ -200,7 +201,7 @@ export default function SpokeduMasterProfilePage() {
         <div className="space-y-7">
           <section className="overflow-hidden rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(16,185,129,0.12), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>current plan</p>
-            <div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{planName}</h2><span className="text-[13px] font-black" style={{ color: 'var(--spm-t2)' }}>{currentPlan === 'free' ? `${daysLeft}일 남음` : '활성화됨'}</span></div>
+            <div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{planName}</h2><span className="text-[13px] font-black" style={{ color: currentPlan !== 'free' ? 'var(--spm-grn)' : daysLeft > 0 ? 'var(--spm-t2)' : 'var(--spm-red)' }}>{currentPlan !== 'free' ? '활성화됨' : daysLeft > 0 ? `${daysLeft}일 남음` : '체험 종료'}</span></div>
             <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업을 고르고, SPOMOVE로 큰 화면 활동을 실행하고, 수업의 의미를 설명 문구로 학부모·기관·학교에 바로 전달합니다.</p>
             <button type="button" onClick={() => setPlanOpen(true)} className="mt-5 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>플랜과 도입 방식 보기</button>
           </section>

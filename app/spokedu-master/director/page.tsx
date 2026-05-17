@@ -24,8 +24,9 @@ export default function DirectorPage() {
   const records = useMasterStore((state) => state.classRecords);
   const lessons = useMasterStore((state) => state.lessons);
   const riskStudents = students.filter((student) => student.risk);
-  const recordRate = records.length > 0 ? 82 : 68;
+  const recordRate = lessons.length > 0 ? Math.min(100, Math.round((records.length / lessons.length) * 100)) : records.length > 0 ? 100 : 0;
   const attendance = Math.round(students.reduce((sum, student) => sum + student.attendance, 0) / Math.max(students.length, 1));
+  const myName = profile?.name ?? '나';
   const centerName = profile?.centerName ?? profile?.school ?? '센터';
 
   return (
@@ -49,19 +50,22 @@ export default function DirectorPage() {
         <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>강사 기록률</h2>
           <div className="mt-5 space-y-3">
-            {[
-              ['김선생', recordRate],
-              ['이코치', 91],
-              ['박강사', 74],
-            ].map(([name, rate]) => (
-              <div key={name} className="rounded-[14px] p-4" style={{ background: 'var(--spm-s3)' }}>
+            <div className="rounded-[14px] p-4" style={{ background: 'var(--spm-s3)' }}>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{myName}</span>
+                <span className="text-[12px] font-black" style={{ color: recordRate < 70 ? 'var(--spm-red)' : 'var(--spm-grn)' }}>{recordRate}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--spm-s4)' }}>
+                <div className="h-full rounded-full" style={{ width: `${recordRate}%`, background: recordRate < 70 ? 'var(--spm-red)' : 'linear-gradient(90deg,#6366f1,#10b981)' }} />
+              </div>
+            </div>
+            {[0, 1].map((n) => (
+              <div key={n} className="rounded-[14px] p-4" style={{ background: 'var(--spm-s3)', opacity: 0.38 }}>
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{name}</span>
-                  <span className="text-[12px] font-black" style={{ color: Number(rate) < 70 ? 'var(--spm-red)' : 'var(--spm-grn)' }}>{rate}%</span>
+                  <span className="text-[13px] font-bold" style={{ color: 'var(--spm-t3)' }}>초대 대기 중</span>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>—</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--spm-s4)' }}>
-                  <div className="h-full rounded-full" style={{ width: `${rate}%`, background: Number(rate) < 70 ? 'var(--spm-red)' : 'linear-gradient(90deg,#6366f1,#10b981)' }} />
-                </div>
+                <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--spm-s4)' }} />
               </div>
             ))}
           </div>

@@ -64,7 +64,6 @@ import {
   RUNBOB_SCALE_JUMP_PAD,
   RUNBOB_SCALE_DUCK,
   RUNBOB_ALPHA,
-  PHRASES,
   PAD_DEPTH,
   PAD_HIGHLIGHT_MS,
   BEAT_STEP_SEC,
@@ -75,8 +74,8 @@ import {
   PANO_SPHERE_RADIUS,
 } from './core/coordContract';
 
-import type { FlowDomRefs } from './FlowTypes';
-export type { FlowDomRefs };
+import type { FlowDomRefs, FlowPhaseDetail } from './FlowTypes';
+export type { FlowDomRefs, FlowPhaseDetail };
 
 export type FlowTimingOverrides = {
   welcomeDurationMs?: number;
@@ -169,6 +168,10 @@ export class FlowEngine {
   private gameState = 'waiting';
   private isResting = false;
   private movementActive = false;
+  /** 휴식 구간 순서 (1부터 시작, getRestContent 키와 대응) */
+  private restIndex = 0;
+  /** 완료 화면에서 표시할 플레이된 레벨 번호 목록 */
+  private playedLevels: number[] = [];
   private isPausedByVisibility = false;
   /** 시뮬레이션(움직임·점프 곡선 등)용 시간 — motionTimeScale 적용 */
   private gameTime = 0;
@@ -319,6 +322,15 @@ export class FlowEngine {
     if (!el) return;
     const parts = [this.panoStatusText, this.bgmStatusText].filter(Boolean);
     el.textContent = parts.join(' | ');
+  }
+
+  /**
+   * flow-phase CustomEvent dispatch.
+   * FlowPhaseClient가 수신해 React overlay로 렌더링한다.
+   */
+  private dispatchPhase(detail: FlowPhaseDetail): void {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent<FlowPhaseDetail>('flow-phase', { detail }));
   }
 
   /** 사용자 제스처(탭) 후 오디오 활성화. startGame(..., { deferAudio: true }) 후 한 번 호출 */
@@ -1140,33 +1152,26 @@ export class FlowEngine {
   private triggerRest(): void {
     this.isResting = true;
     this.movementActive = false;
+    this.restIndex++;
 
     const ins = getRefEl(this.domRefs.introScreen);
-    const txt = getRefEl(this.domRefs.introTitle);
     const btn = getRefEl(this.domRefs.startBtn);
 
     if (btn) btn.style.display = 'none';
-    if (ins) ins.classList.remove('hidden', 'fade-out');
+    // introScreen은 React overlay에 가려지므로 hidden 유지
+    if (ins) ins.classList.add('hidden');
 
     const restDurationSec = this.durations[this.currentLevelIndex] ?? 20;
-    const updateRestCountdown = (remaining: number) => {
-      if (txt) {
-        txt.style.fontSize = '3.2rem';
-        txt.innerHTML =
-          PHRASES.restBreathe +
-          (remaining > 0
-            ? `<br><span style="font-size:2rem;color:#94a3b8;margin-top:1rem;display:block;">다음 레벨까지 ${remaining}초</span>`
-            : '');
-      }
-    };
-    updateRestCountdown(restDurationSec);
+
+    // React overlay에 휴식 시작 알림
+    this.dispatchPhase({ type: 'rest', restIndex: this.restIndex, remainingSec: restDurationSec });
 
     this.clearScheduledTimeouts();
     this.restStartMs = performance.now();
     this.restCountdownTimer = setInterval(() => {
       const elapsed = Math.floor((performance.now() - this.restStartMs) / 1000);
       const remaining = Math.max(0, restDurationSec - elapsed);
-      updateRestCountdown(remaining);
+      this.dispatchPhase({ type: 'rest-tick', remainingSec: remaining });
     }, 1000);
 
     this.registerTimeout(() => {
@@ -1185,25 +1190,17 @@ export class FlowEngine {
         this.obstacleManager.setGoldBudget(3 + Math.floor(Math.random() * 2));
       }
 
-      if (txt) {
-        if (nextLevel === 3) {
-          txt.style.fontSize = '3rem';
-          txt.innerHTML = PHRASES.lv3Intro;
-        } else if (nextLevel === 4) {
-          txt.style.fontSize = '3rem';
-          txt.innerHTML = PHRASES.lv4Intro;
-        } else if (nextLevel === 5) {
-          txt.style.fontSize = '3rem';
-          txt.innerHTML = PHRASES.lv5Intro;
-        }
-      }
+      // 레벨 인트로 overlay
+      this.dispatchPhase({ type: 'level-intro', levelNum: nextLevel });
 
       this.registerTimeout(() => {
         this.doCountdownStart(() => {
           this.isResting = false;
           this.movementActive = true;
           this.levelTime = 0;
-          if (ins) ins.classList.add('fade-out');
+          if (ins) ins.classList.add('hidden');
+          // 레벨 인트로 overlay 닫기 — type:'level-intro' + levelNum:0 으로 구분
+          this.dispatchPhase({ type: 'level-intro', levelNum: 0 });
         }, this.INTER_LEVEL_COUNTDOWN_SEC);
       }, this.REST_RESUME_DELAY_MS);
     }, restDurationSec * 1000);
@@ -1237,19 +1234,14 @@ export class FlowEngine {
       window.dispatchEvent(new CustomEvent('flow-event', { detail: { type: 'level', level: nextLevel } }));
     }
 
-    if (txt) {
-      txt.style.fontSize = '3rem';
-      if (nextLevel === 3) txt.innerHTML = PHRASES.lv3Intro;
-      else if (nextLevel === 4) txt.innerHTML = PHRASES.lv4Intro;
-      else if (nextLevel === 5) txt.innerHTML = PHRASES.lv5Intro;
-      else txt.innerHTML = `<span style="color:#93c5fd;">LEVEL ${nextLevel}</span>`;
-    }
+    this.dispatchPhase({ type: 'level-intro', levelNum: nextLevel });
 
     this.doCountdownStart(() => {
       this.isResting = false;
       this.movementActive = true;
       this.levelTime = 0;
-      if (ins) ins.classList.add('fade-out');
+      if (ins) ins.classList.add('hidden');
+      this.dispatchPhase({ type: 'level-intro', levelNum: 0 });
     }, this.INTER_LEVEL_COUNTDOWN_SEC);
   }
 
@@ -1269,13 +1261,9 @@ export class FlowEngine {
     }
 
     const ins = getRefEl(this.domRefs.introScreen);
-    const txt = getRefEl(this.domRefs.introTitle);
+    if (ins) ins.classList.add('hidden');
 
-    if (ins) ins.classList.remove('hidden', 'fade-out');
-    if (txt) {
-      txt.style.fontSize = '3.2rem';
-      txt.innerHTML = PHRASES.ending;
-    }
+    this.dispatchPhase({ type: 'complete', playedLevels: this.playedLevels });
 
     this.registerTimeout(() => {
       if (typeof window !== 'undefined' && window.parent !== window) {
@@ -1345,20 +1333,16 @@ export class FlowEngine {
     this.movementActive = false;
 
     const ins = getRefEl(this.domRefs.introScreen);
-    const txt = getRefEl(this.domRefs.introTitle);
     const btn = getRefEl(this.domRefs.startBtn);
     const cdOverlay = getRefEl(this.domRefs.countdownOverlay);
 
     if (btn) btn.style.display = 'none';
-    if (ins) ins.classList.remove('hidden', 'fade-out');
-    if (txt) {
-      txt.style.fontSize = '3.1rem';
-      txt.innerHTML = PHRASES.welcome;
-    }
+    if (ins) ins.classList.add('hidden');
+
+    this.dispatchPhase({ type: 'start' });
 
     this.clearScheduledTimeouts();
     this.clearCountdown();
-    // 인트로 문구 노출 후 카운트다운 표시
     const COUNTDOWN_DELAY_MS = this.INTRO_COUNTDOWN_DELAY_MS;
     this.registerTimeout(() => {
       if (cdOverlay) {
@@ -1381,19 +1365,12 @@ export class FlowEngine {
             this.isResting = false;
             this.movementActive = true;
             this.levelTime = 0;
-            if (ins) ins.classList.add('fade-out');
+            this.dispatchPhase({ type: 'level-intro', levelNum: 0 });
             showInstruction(this.domRefs, 'JUMP!', 'text-yellow-400', 700);
           }, this.START_AFTER_COUNTDOWN_DELAY_MS);
         }
       }, 1000);
     }, COUNTDOWN_DELAY_MS);
-
-    this.registerTimeout(() => {
-      if (txt) {
-        txt.style.fontSize = '3rem';
-        txt.innerHTML = PHRASES.lv1Guide;
-      }
-    }, this.WELCOME_DURATION);
   }
 
   /** autoStart 시 사용자 제스처 없이 오디오를 켜지 않으려면 deferAudio: true. 자동 재생 시도 후 차단되면 onAudioBlocked 호출. */
@@ -1469,6 +1446,8 @@ export class FlowEngine {
     this.wallProgressTime = 0;
     this.levelTime = 0;
     this.currentLevelIndex = 0;
+    this.restIndex = 0;
+    this.playedLevels = [];
     this.nextBeatTime = 0;
     this.currentSpeedValue = 0;
 
@@ -1587,6 +1566,7 @@ export class FlowEngine {
 
     const currentDuration = this.durations[this.currentLevelIndex];
     if (!inHitStop && this.movementActive && this.levelTime > currentDuration) {
+      if (currentLevelNum >= 1 && currentLevelNum <= 5) this.playedLevels.push(currentLevelNum);
       if (this.displayLevels[this.currentLevelIndex + 1] === 0) {
         this.levelTime = 0;
         if (this.SKIP_REST_PHASES) this.triggerGuideTransitionAfterRest();

@@ -5,13 +5,12 @@ import { AlertTriangle, BookOpen, CalendarDays, Check, ChevronRight, ClipboardLi
 import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { PROGRAMS } from '../lib/data';
 import { sendKakaoClassSummary, type KakaoSummaryResult } from '../lib/serviceContracts';
 import { canCreateClassRecord, canUseMonthlyLimit, createParentShareToken } from '../lib/subscription';
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, ClassRecord, StudentProfile } from '../types';
 
-const SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
+const DEFAULT_SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
 
 function SummaryPill({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
@@ -29,7 +28,7 @@ function EmptyRecordState() {
         <ClipboardList size={22} color="var(--spm-acc)" />
       </span>
       <h2 className="mt-4 text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>아직 수업 기록이 없습니다.</h2>
-      <p className="mx-auto mt-2 max-w-[420px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업안을 선택해 첫 기록을 시작하세요. 기록이 쌓이면 학생 이력과 수업 설명 도구를 더 풍부하게 만들 수 있습니다.</p>
+      <p className="mx-auto mt-2 max-w-[420px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업안을 선택해 첫 기록을 시작하세요. 기록이 쌓이면 학생 이력과 설명 문구를 더 풍부하게 만들 수 있습니다.</p>
       <Link href="/spokedu-master/library" className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
         <BookOpen size={15} /> 라이브러리로 이동
       </Link>
@@ -53,12 +52,13 @@ function RecordCard({ record }: { record: ClassRecord }) {
         <SummaryPill label="관찰" value={String(record.focusCount)} tone="var(--spm-amb)" />
         <SummaryPill label="동작" value={String(record.skillCount)} tone="var(--spm-acc)" />
       </div>
-      <Link href="/spokedu-master/report" className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>설명 도구에서 보기</Link>
+      <Link href="/spokedu-master/report" className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>설명 문구에서 보기</Link>
     </article>
   );
 }
 
 function RecordListView() {
+  const programs = useMasterStore((state) => state.programs);
   const lessons = useMasterStore((state) => state.lessons);
   const records = useMasterStore((state) => state.classRecords);
   const [classFilter, setClassFilter] = useState('전체');
@@ -78,7 +78,7 @@ function RecordListView() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class records</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 후 출석, 관찰, 동작 기록을 저장하면 학생 이력과 설명 도구에 자동으로 연결됩니다.</p>
+        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 후 출석, 관찰, 동작 기록을 저장하면 학생 이력과 설명 문구에 자동으로 연결됩니다.</p>
       </header>
 
       <section className="mb-5 px-[22px] sm:px-8 lg:px-10">
@@ -107,7 +107,7 @@ function RecordListView() {
               <h2 className="mt-1 text-[20px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{incompleteLessons[0]?.title}</h2>
               <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>{incompleteLessons[0]?.classId} · {incompleteLessons[0]?.period}교시</p>
             </div>
-            <Link href={`/spokedu-master/class-record?program=${PROGRAMS.find((program) => incompleteLessons[0]?.title.includes(program.title.split(':')[0]))?.id ?? PROGRAMS[0]?.id}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-amb)' }} aria-label="미완료 수업 기록">
+            <Link href={`/spokedu-master/class-record?program=${programs.find((p) => incompleteLessons[0]?.title.includes(p.title.split(':')[0]))?.id ?? programs[0]?.id}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-amb)' }} aria-label="미완료 수업 기록">
               <Play size={16} color="#fff" fill="#fff" />
             </Link>
           </div>
@@ -162,13 +162,18 @@ function RecordEntryView() {
   const classRecords = useMasterStore((state) => state.classRecords);
   const saveClassRecord = useMasterStore((state) => state.saveClassRecord);
   const enqueueRetry = useMasterStore((state) => state.enqueueRetry);
+  const programs = useMasterStore((state) => state.programs);
   const retryQueue = useMasterStore((state) => state.operational.retryQueue);
   const todayLesson = lessons[0];
   const requestedProgramId = searchParams.get('program');
-  const program = PROGRAMS.find((item) => item.id === requestedProgramId) ?? PROGRAMS[0]!;
-  const activeClassId = todayLesson?.classId ?? '초등 A반';
+  const program = programs.find((item) => item.id === requestedProgramId) ?? programs[0]!;
+  const activeClassId = todayLesson?.classId ?? students[0]?.group ?? '수업';
   const activePeriod = todayLesson?.period ?? 3;
   const activeLessonTitle = requestedProgramId ? program.title : todayLesson?.title ?? program.title;
+  const skills = useMemo(() => {
+    const fromTags = program.tags.filter((t) => t !== 'SPOMOVE').slice(0, 6);
+    return fromTags.length >= 2 ? fromTags : DEFAULT_SKILLS;
+  }, [program]);
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>(() => Object.fromEntries(students.map((student) => [student.id, 'pending'])));
   const [focused, setFocused] = useState<Record<string, boolean>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -323,7 +328,7 @@ function RecordEntryView() {
           </div>
         ) : null}
         {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}
-        {savedOnly && kakaoStep !== 'done' ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>수업 기록이 학생 이력에 저장되었습니다. 보호자 안내 문구는 설명 도구에서 이어서 정리할 수 있습니다.</p> : null}
+        {savedOnly && kakaoStep !== 'done' ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>수업 기록이 학생 이력에 저장되었습니다. 보호자 안내 문구는 설명 문구 페이지에서 이어서 정리할 수 있습니다.</p> : null}
         {kakaoStep === 'sending' ? <p className="mt-4 rounded-[12px] p-3 text-[13px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>보호자 안내를 준비하는 중입니다...</p> : null}
         {kakaoStep === 'done' ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.13)', color: 'var(--spm-grn)' }}>
@@ -358,7 +363,7 @@ function RecordEntryView() {
             </div>
             {selectedStudent.risk ? <p className="mb-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{selectedStudent.risk}</p> : null}
             <div className="grid grid-cols-2 gap-2">
-              {SKILLS.map((skill) => {
+              {skills.map((skill) => {
                 const checked = checkedSkills[selectedStudent.id]?.includes(skill) ?? false;
                 return (
                   <button key={skill} type="button" onClick={() => toggleSkill(selectedStudent.id, skill)} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: checked ? 'rgba(16,185,129,0.15)' : 'var(--spm-s2)', color: checked ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>

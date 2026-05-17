@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, CheckCircle2, ChevronRight, Clock, MapPin, MonitorPlay, Play, Shield, Users, Zap } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronRight, Clock, MapPin, Play, Shield, Timer, Users, Zap } from 'lucide-react';
 
 const FEATURES = [
   {
@@ -19,12 +19,12 @@ const FEATURES = [
     items: ['Projector · Class · Mobile 모드', '색상·방향·숫자 신호', '반응 시간 기록'],
   },
   {
-    icon: MonitorPlay,
+    icon: Timer,
     color: 'rgba(245,158,11,0.14)',
     ic: 'var(--spm-amb)',
-    title: '수업 설명 도구',
-    desc: '수업의 의미를 학부모·기관·학교 담당자에게 바로 전달할 수 있는 대상별 문구를 제공합니다. 복사 한 번으로 카카오나 공문에 바로 붙여넣습니다.',
-    items: ['학부모용 · 기관용 · 학교 기록용', '홍보용 짧은 문구', '최근 수업 자동 연결'],
+    title: '수업 도구',
+    desc: '수업 중 바로 꺼내 쓰는 타이머, 팀 나누기, 학생 뽑기, 점수판이 한 곳에 있습니다. 수업 흐름을 끊지 않고 진행을 도와줍니다.',
+    items: ['스톱워치 · 점수판', '팀 나누기 · 학생 뽑기', '수업 모드 전체화면 실행'],
   },
 ] as const;
 
@@ -36,7 +36,7 @@ const PRICING = [
     price: '39,900',
     period: '월',
     desc: '전문 강사가 매주 쓰는 수업 준비 환경',
-    includes: ['전체 프로그램 라이브러리 무제한', 'SPOMOVE 큰 화면 실행', '수업 설명 도구 전체', '즐겨찾기와 최근 사용 기록'],
+    includes: ['전체 프로그램 라이브러리 무제한', 'SPOMOVE 큰 화면 실행', '수업 도구 전체', '설명 문구 (학부모·기관·학교용)'],
     accent: 'rgba(99,102,241,0.18)',
     border: 'rgba(99,102,241,0.42)',
     badgeColor: 'var(--spm-acc)',
@@ -49,7 +49,7 @@ const PRICING = [
     price: '79,000',
     period: '월',
     desc: '센터와 도장이 강사 수업 품질을 맞추는 플랜',
-    includes: ['Pro 기능 전체', '강사 3명 계정 포함', '센터용 설명 도구', '추가 강사 확장 가능'],
+    includes: ['Pro 기능 전체', '강사 3명 계정 포함', '센터용 수업 도구', '추가 강사 확장 가능'],
     accent: 'rgba(16,185,129,0.12)',
     border: 'rgba(16,185,129,0.38)',
     badgeColor: 'var(--spm-grn)',
@@ -67,28 +67,28 @@ const STATS = [
 const FLOW = [
   { num: '1', label: '라이브러리에서 수업 고르기', caption: '태그와 검색으로 오늘 쓸 수업안을 30초 안에 찾습니다', color: 'rgba(99,102,241,0.14)', accent: 'var(--spm-acc)' },
   { num: '2', label: 'SPOMOVE 큰 화면 실행', caption: '프로젝터·TV에 연결해 아이들이 화면 신호를 보고 움직입니다', color: 'rgba(16,185,129,0.12)', accent: 'var(--spm-grn)' },
-  { num: '3', label: '설명 문구 복사', caption: '학부모·기관·학교용 문구를 한 번에 복사합니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
+  { num: '3', label: '수업 도구 활용', caption: '타이머, 팀 나누기, 학생 뽑기를 수업 중에 바로 씁니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
 ] as const;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
 
 export const metadata = {
   title: 'SPOKEDU PRO — 체육 강사의 수업 준비 플랫폼',
-  description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 설명 도구. 14일 무료 체험으로 시작하세요.',
+  description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 도구. 14일 무료 체험으로 시작하세요.',
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website' as const,
     url: `${SITE_URL}/spokedu-master/landing`,
     siteName: 'SPOKEDU PRO',
     title: 'SPOKEDU PRO — 체육 강사의 수업 준비 플랫폼',
-    description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 설명 도구. 14일 무료 체험으로 시작하세요.',
+    description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 도구. 14일 무료 체험으로 시작하세요.',
     locale: 'ko_KR',
     images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU PRO — 체육 강사의 수업 준비 플랫폼' }],
   },
   twitter: {
     card: 'summary_large_image' as const,
     title: 'SPOKEDU PRO — 체육 강사의 수업 준비 플랫폼',
-    description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 설명 도구. 14일 무료 체험으로 시작하세요.',
+    description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 도구. 14일 무료 체험으로 시작하세요.',
     images: [`${SITE_URL}/api/spokedu-master/og`],
   },
 };
@@ -125,7 +125,7 @@ export default function LandingPage() {
             수업 준비는 쉽게,<br />수업은 더 몰입감 있게
           </h1>
           <p className="mx-auto mt-6 max-w-[580px] text-[16px] font-medium leading-8" style={{ color: 'var(--spm-t2)' }}>
-            체육 강사와 교사를 위한 수업 준비 플랫폼. 프로그램 라이브러리에서 수업을 고르고, SPOMOVE를 큰 화면으로 실행하고, 수업의 의미를 설명 문구로 전달합니다.
+            체육 강사와 교사를 위한 수업 준비 플랫폼. 프로그램 라이브러리에서 수업을 고르고, SPOMOVE를 큰 화면으로 실행하고, 수업 도구로 수업을 더 생동감 있게 진행합니다.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link href="/spokedu-master/onboarding" className="flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black text-white sm:w-auto sm:min-w-[200px]" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
@@ -250,7 +250,7 @@ export default function LandingPage() {
             오늘 첫 수업을 골라보세요
           </h2>
           <p className="mt-4 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>
-            14일 무료 체험으로 라이브러리, SPOMOVE, 수업 설명 도구를 경험해보세요.
+            14일 무료 체험으로 라이브러리, SPOMOVE, 수업 도구를 경험해보세요.
           </p>
           <Link href="/spokedu-master/onboarding" className="mt-8 inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
             <Play size={16} fill="#fff" />

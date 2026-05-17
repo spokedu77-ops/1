@@ -11,6 +11,8 @@ type NoteBlock = {
   content: unknown;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 };
 
 async function insertAuditLog({
@@ -66,6 +68,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
     const parentBlockId = searchParams.get('parentBlockId');
+    const includeDeleted = searchParams.get('includeDeleted') === 'true';
     const limit = parsePositiveInt(searchParams.get('limit'), 300, 1000);
     const offset = parseOffset(searchParams.get('offset'));
     if (!documentId) {
@@ -75,10 +78,13 @@ export async function GET(request: NextRequest) {
     const supabase = getServiceSupabase();
     const query = supabase
       .from('note_blocks')
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
       .eq('document_id', documentId)
       .order('order_index', { ascending: true })
       .range(offset, offset + limit - 1);
+    if (!includeDeleted) {
+      query.is('deleted_at', null);
+    }
     if (parentBlockId === 'null') {
       query.is('parent_block_id', null);
     } else if (parentBlockId) {
@@ -133,6 +139,7 @@ export async function POST(request: NextRequest) {
       .from('note_blocks')
       .select('order_index')
       .eq('document_id', documentId)
+      .is('deleted_at', null)
       .order('order_index', { ascending: true })
       .limit(1);
     if (parentBlockId === null) minQuery.is('parent_block_id', null);
@@ -157,10 +164,12 @@ export async function POST(request: NextRequest) {
         content,
         created_at: now,
         updated_at: now,
+        deleted_at: null,
+        deleted_by: null,
         created_by: auth.userId,
         updated_by: auth.userId,
       })
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
       .single();
 
     if (error) {
@@ -219,7 +228,7 @@ export async function PATCH(request: NextRequest) {
     const supabase = getServiceSupabase();
     const { data: beforeBlock, error: beforeError } = await supabase
       .from('note_blocks')
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
       .eq('id', id)
       .maybeSingle();
     if (beforeError) {
@@ -233,6 +242,7 @@ export async function PATCH(request: NextRequest) {
         .from('note_blocks')
         .select('order_index')
         .eq('document_id', nextDocumentId)
+        .is('deleted_at', null)
         .order('order_index', { ascending: true })
         .limit(1)
         .maybeSingle();
@@ -261,7 +271,7 @@ export async function PATCH(request: NextRequest) {
         updated_by: auth.userId,
       })
       .eq('id', id)
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
       .single();
 
     if (error) {
@@ -375,9 +385,10 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabase = getServiceSupabase();
+    const now = new Date().toISOString();
     const { data: beforeBlock, error: beforeError } = await supabase
       .from('note_blocks')
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at')
+      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
       .eq('id', id)
       .maybeSingle();
     if (beforeError) {
@@ -385,7 +396,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: beforeError.message }, { status: 500 });
     }
 
-    const { error } = await supabase.from('note_blocks').delete().eq('id', id);
+    const { error } = await supabase
+      .from('note_blocks')
+      .update({
+        deleted_at: now,
+        deleted_by: auth.userId,
+        updated_at: now,
+        updated_by: auth.userId,
+      })
+      .eq('id', id)
+      .is('deleted_at', null);
 
     if (error) {
       devLogger.error('[admin/note/blocks] DELETE error', error);
@@ -397,13 +417,13 @@ export async function DELETE(request: NextRequest) {
         documentId: beforeBlock.document_id,
         blockId: beforeBlock.id,
         actorId: auth.userId,
-        action: 'delete_block',
-        summary: '블록 삭제',
-        diff: { before: beforeBlock },
+        action: 'trash_block',
+        summary: '블록 휴지통 이동',
+        diff: { before: beforeBlock, after: { deleted_at: now, deleted_by: auth.userId } },
       });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, softDeleted: true });
   } catch (err) {
     devLogger.error('[admin/note/blocks] DELETE exception', err);
     return NextResponse.json(

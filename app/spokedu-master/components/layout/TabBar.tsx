@@ -1,13 +1,13 @@
 'use client';
 
-import { BookOpen, FileText, Home, User, Zap } from 'lucide-react';
+import { BookOpen, Home, Timer, User, Zap } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 
 const TAB_DEFS = [
   { key: 'dashboard', label: '홈', Icon: Home },
   { key: 'library', label: '라이브러리', Icon: BookOpen },
   { key: 'spomove', label: 'SPOMOVE', Icon: Zap },
-  { key: 'report', label: '설명', Icon: FileText },
+  { key: 'class-tools', label: '수업 도구', Icon: Timer },
   { key: 'profile', label: '내 정보', Icon: User },
 ] as const;
 

@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Bookmark, BookOpen, CalendarDays, ChevronRight, FileText, Play, Zap } from 'lucide-react';
+import { Bell, Bookmark, BookOpen, CalendarDays, Check, ChevronRight, FileText, Play, Timer, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { isSameDay } from 'date-fns';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
@@ -22,7 +23,7 @@ function PlanChip() {
   const profile = useProfile();
   const daysLeft = getTrialDaysLeft(profile);
   const isPaid = profile?.plan === 'pro' || profile?.plan === 'team';
-  const label = profile?.plan === 'team' ? 'Center' : profile?.plan === 'pro' ? 'Pro' : `Trial ${daysLeft}일`;
+  const label = profile?.plan === 'team' ? 'Center' : profile?.plan === 'pro' ? 'Pro' : daysLeft > 0 ? `Trial ${daysLeft}일` : '체험 종료';
   return (
     <Link
       href="/spokedu-master/profile"
@@ -93,11 +94,11 @@ function TodayHero({ program }: { program: Program }) {
             </div>
             <div className="mt-4 flex gap-2">
               <Link
-                href={`/spokedu-master/library/${program.id}`}
+                href={`/spokedu-master/class-mode/${program.id}`}
                 className="flex flex-1 items-center justify-center gap-2 rounded-[13px] py-3 text-[14px] font-black text-white active:scale-[0.98]"
                 style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.22)' }}
               >
-                <Play size={14} fill="#fff" />수업안 보기
+                <Play size={14} fill="#fff" />수업 시작
               </Link>
               <Link
                 href="/spokedu-master/spomove"
@@ -145,7 +146,7 @@ function StatsBand({ programCount, favoriteCount, sessionCount }: { programCount
 const QUICK_ACTIONS = [
   { label: '라이브러리', caption: '수업안 고르기', href: '/spokedu-master/library', Icon: BookOpen, bg: 'rgba(99,102,241,0.16)', ic: 'var(--spm-acc)' },
   { label: 'SPOMOVE', caption: '큰 화면 실행', href: '/spokedu-master/spomove', Icon: Zap, bg: 'rgba(16,185,129,0.14)', ic: 'var(--spm-grn)' },
-  { label: '설명 도구', caption: '문구 복사', href: '/spokedu-master/report', Icon: FileText, bg: 'rgba(245,158,11,0.13)', ic: 'var(--spm-amb)' },
+  { label: '수업 도구', caption: '타이머·팀·뽑기', href: '/spokedu-master/class-tools', Icon: Timer, bg: 'rgba(245,158,11,0.13)', ic: 'var(--spm-amb)' },
 ] as const;
 
 function QuickActions() {
@@ -227,6 +228,30 @@ function DrillTile({ drill, index }: { drill: Drill; index: number }) {
   );
 }
 
+function TodayPlan({ lessons }: { lessons: ReturnType<typeof useMasterStore.getState>['lessons'] }) {
+  const toggleLessonDone = useMasterStore((state) => state.toggleLessonDone);
+  if (lessons.length === 0) return null;
+  return (
+    <section className="mb-6">
+      <SectionHeader title="오늘 수업 계획" href="/spokedu-master/plan" />
+      <div className="grid gap-2 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-3 lg:px-10">
+        {lessons.map((lesson) => (
+          <div key={lesson.id} className="flex items-center gap-3 rounded-[14px] p-3.5" style={{ background: 'var(--spm-s2)', border: `1px solid ${lesson.done ? 'var(--spm-br)' : lesson.color}22` }}>
+            <span className="h-10 w-1 shrink-0 rounded-full" style={{ background: lesson.color }} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-bold" style={{ color: lesson.done ? 'var(--spm-t3)' : 'var(--spm-t)', textDecoration: lesson.done ? 'line-through' : 'none' }}>{lesson.title}</p>
+              <p className="mt-0.5 text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>{lesson.classId} · {lesson.period}교시 · {lesson.duration}분</p>
+            </div>
+            <button type="button" onClick={() => toggleLessonDone(lesson.id)} className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: lesson.done ? 'rgba(16,185,129,0.14)' : 'var(--spm-s3)' }} aria-label="완료">
+              <Check size={15} color={lesson.done ? 'var(--spm-grn)' : 'var(--spm-t3)'} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function NotificationSheet({ open, notifications, onClose, onMarkAll }: { open: boolean; notifications: Notification[]; onClose: () => void; onMarkAll: () => void }) {
   return (
     <BottomSheet open={open} title="알림" onClose={onClose}>
@@ -252,11 +277,13 @@ export default function DashboardView() {
   const profile = useProfile();
   const programs = useMasterStore((state) => state.programs);
   const drills = useMasterStore((state) => state.drills);
+  const lessons = useMasterStore((state) => state.lessons);
   const unreadCount = useUnreadCount();
   const classRecords = useMasterStore((state) => state.classRecords);
   const favorites = useMasterStore((state) => state.favorites);
   const notifications = useMasterStore((state) => state.notifications);
   const markAllRead = useMasterStore((state) => state.markAllRead);
+  const programsLoaded = useMasterStore((state) => state.programsLoaded);
   const greeting = useGreeting();
   const [mounted, setMounted] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -271,12 +298,13 @@ export default function DashboardView() {
       .slice(0, 4);
   }, [favorites, programs]);
 
-  if (!mounted) return <DashboardSkeleton />;
+  if (!mounted || !programsLoaded) return <DashboardSkeleton />;
 
   const now = new Date();
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
   const todayProgram = programs.length > 0 ? programs[dayOfYear % programs.length] : undefined;
   if (!todayProgram) return <DashboardSkeleton />;
+  const todayLessons = lessons.filter((lesson) => isSameDay(new Date(lesson.date), now));
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -311,6 +339,8 @@ export default function DashboardView() {
       />
 
       <QuickActions />
+
+      <TodayPlan lessons={todayLessons} />
 
       <section className="mb-6">
         <SectionHeader title="최근 사용과 즐겨찾기" href="/spokedu-master/library" />
@@ -350,7 +380,7 @@ export default function DashboardView() {
             <FileText size={18} color="#a5b4fc" />
           </span>
           <span className="min-w-0 flex-1">
-            <strong className="block text-[13px]" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>설명 도구</strong>
+            <strong className="block text-[13px]" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>설명 문구</strong>
             <span className="mt-0.5 block text-[10px] leading-5" style={{ color: 'var(--spm-t3)' }}>학부모·기관 문구 복사</span>
           </span>
         </Link>

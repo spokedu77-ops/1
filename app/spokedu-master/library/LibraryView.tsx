@@ -182,24 +182,33 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={launch}
+                <Link
+                  href={`/spokedu-master/class-mode/${program.id}`}
+                  onClick={close}
                   className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-black text-white"
                   style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.28)' }}
                 >
                   <Play size={16} fill="#fff" />
-                  SPOMOVE 실행
-                </button>
-                <Link
-                  href={`/spokedu-master/library/${program.id}`}
-                  onClick={close}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] text-[13px] font-bold"
-                  style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
-                >
-                  <ExternalLink size={15} />
-                  전체 수업안 보기
+                  수업 시작
                 </Link>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={launch}
+                    className="flex h-11 items-center justify-center gap-2 rounded-[13px] text-[12px] font-bold"
+                    style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
+                  >
+                    <Zap size={14} />큰 화면
+                  </button>
+                  <Link
+                    href={`/spokedu-master/library/${program.id}`}
+                    onClick={close}
+                    className="flex h-11 items-center justify-center gap-2 rounded-[13px] text-[12px] font-bold"
+                    style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
+                  >
+                    <ExternalLink size={14} />수업안 전체
+                  </Link>
+                </div>
               </>
             )}
           </div>
@@ -415,6 +424,7 @@ export default function LibraryView() {
   const classRecords = useMasterStore((state) => state.classRecords);
   const favorites = useMasterStore((state) => state.favorites);
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
+  const programsLoaded = useMasterStore((state) => state.programsLoaded);
   const [mounted, setMounted] = useState(false);
   const [filter, setFilter] = useState('전체');
   const [query, setQuery] = useState('');
@@ -432,7 +442,7 @@ export default function LibraryView() {
     });
   }, [filter, query, programs]);
 
-  if (!mounted) return <LibrarySkeleton />;
+  if (!mounted || !programsLoaded) return <LibrarySkeleton />;
 
   const spomovePrograms = programs.filter((program) => program.tags.includes('SPOMOVE') || program.lessonDetail?.relatedSpomoveIds.length).slice(0, 5);
   const quickPrograms = programs.filter((program) => program.duration <= 18).slice(0, 5);

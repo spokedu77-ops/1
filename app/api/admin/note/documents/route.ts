@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
         supabase
           .from('note_blocks')
           .select('document_id')
+          .is('deleted_at', null)
           .ilike(`content->>${field}`, backlinkPattern)
           .limit(300),
       ));

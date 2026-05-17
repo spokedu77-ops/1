@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { Award, CalendarDays, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Award, CalendarDays, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { validateParentShareToken } from '../../lib/subscription';
 import { useMasterStore } from '../../store';
@@ -26,7 +26,7 @@ function InvalidLink({ title, body }: { title: string; body: string }) {
   return (
     <div className="flex min-h-dvh items-center justify-center px-6 text-center" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
       <div className="max-w-[360px] rounded-[20px] p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-        <ShieldCheck className="mx-auto mb-4 h-10 w-10" color="var(--spm-red)" />
+        <ShieldAlert className="mx-auto mb-4 h-10 w-10" color="var(--spm-red)" />
         <h1 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>{title}</h1>
         <p className="mt-2 text-[13px] leading-6" style={{ color: 'var(--spm-t2)' }}>{body}</p>
       </div>

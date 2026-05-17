@@ -14,6 +14,198 @@
 - 2026-05-16 (UX 마무리 — SEO/robots/sitemap + 온보딩 리턴유저 리다이렉트 + 알림 배지 + SPOMOVE 전체화면 토글 + report aside 스크롤 + plan 반 입력 자유화)
 - 2026-05-16 (학생 관리 — store addStudent/removeStudent + students 페이지 추가/삭제 UI)
 - 2026-05-16 (결제 PG 교체 — Stripe 전면 제거 → 토스페이먼츠, confirm API 신규, SQL 스키마 교체, 법적 고지 전수 수정)
+- 2026-05-17 (전체 감사(audit) + 버그 수정 6건 + director 하드코딩 제거)
+- 2026-05-17 (programsLoaded 버그 수정 + static PROGRAMS 제거 + 브랜드 카피 전면 통일 + LibraryDetail 개선 + PlanView 주간 네비게이션 + Pro features 업데이트)
+
+---
+
+## 수정한 파일 (2026-05-17 — class-record 정적 데이터 의존성 제거)
+
+### 핵심 수정
+- `app/spokedu-master/class-record/page.tsx`
+  - `import { PROGRAMS } from '../lib/data'` 제거 — 정적 배열(string ID)이 API 숫자 ID와 불일치해서 항상 `PROGRAMS[0]` 폴백으로 떨어지는 버그였음
+  - `RecordListView`: `useMasterStore((s) => s.programs)` 추가, 미완료 수업 링크 수정
+  - `RecordEntryView`: `useMasterStore((s) => s.programs)` 추가, `program` 조회를 store 기반으로 교체
+  - 이제 Class Mode "수업 기록 남기기" → `?program=123` → 올바른 프로그램 정보가 연결됨
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+
+---
+
+## 수정한 파일 (2026-05-17 — Class Mode 수업 완료 화면 + 기록 연결)
+
+### 핵심 기능
+- `app/spokedu-master/components/ui/ClassModeView.tsx` — 완료 흐름 추가
+  - "수업 완료" 버튼 → 타이머 자동 정지 + `done=true`
+  - **완료 화면**: CheckCircle 아이콘 + 수업 제목 + 소요 시간(timer > 0일 때) + 완료 단계 수 통계 카드
+  - **"수업 기록 남기기"** CTA → `/class-record?program={id}` 로 직결 (기록 입력 페이지)
+  - **"나가기"** → `router.back()`
+  - 기존 header(X 버튼)는 완료 화면에서도 유지되어 언제든 탈출 가능
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+
+---
+
+## 수정한 파일 (2026-05-17 — Class Mode 카드 생성 로직 개선)
+
+### 핵심 수정
+- `app/spokedu-master/components/ui/ClassModeView.tsx` — 카드 생성 전면 개선
+  - **steps 있음**: 기존과 동일 (steps → coachScript 카드 → fieldTip 카드)
+  - **steps 없음**: `description + fieldTips` 를 통일된 step 카드로 프로모트. extraCards 없음. 이전엔 amber/green 팁 카드로 분절됐으나 이제 동일 스타일의 흐름으로 연결됨
+  - **버그 수정**: `description === coachScript` (API 구조상 항상 같음) → 코치 포인트 extra 카드가 항상 스킵되던 dead code 제거
+  - **텍스트 길이 적응**: 50자 초과 텍스트는 좌정렬 + 소형 폰트(`clamp(1rem,3.2vw,1.3rem)`)로 자동 전환. 이전엔 긴 설명도 초대형 폰트로 렌더링
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+
+---
+
+## 수정한 파일 (2026-05-17 — Class Mode 단계별 타이머)
+
+### 핵심 기능
+- `app/spokedu-master/components/ui/ClassModeView.tsx` — 단계별 카운트다운 타이머 추가
+  - **StepTimerRing**: SVG 원형 진행 호(arc). 잔여 시간 비율에 따라 indigo→amber→red로 색상 전환
+  - **preset chips**: `1분 / 3분 / 5분` 탭으로 즉시 시작. 단계 이동 시 자동 초기화
+  - **만료 알림**: 종료 시 카드 테두리가 빨간색으로 전환 + "종료" 텍스트 표시
+  - 글로벌 수업 타이머(누적 스톱워치)와 단계 타이머(카운트다운) 완전 분리
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+
+---
+
+## 수정한 파일 (2026-05-17 — 브랜드 일관성: "수업 도구" 전면 통일)
+
+### 핵심 수정
+- `app/spokedu-master/landing/page.tsx` — FEATURES[2] "수업 설명 도구" → "수업 도구" (Timer 아이콘, 타이머·팀·뽑기 설명으로 교체), FLOW step 3 "설명 문구 복사" → "수업 도구 활용", pricing includes 2개 플랜 수정, 히어로 설명문·Final CTA·메타데이터 전부 통일
+- `app/spokedu-master/payment/page.tsx` — PLANS.pro includes "수업 설명 도구 전체" → "수업 도구 전체", PLANS.team includes "센터용 설명 도구" → "센터용 수업 도구"
+- `app/spokedu-master/onboarding/page.tsx` — step 3 "설명 문구 복사" → "수업 도구 활용", Pro 플랜 설명 "수업 설명 도구 전체" → "수업 도구 전체", 130번째줄 "수업 설명 도구" → "수업 도구" (이전 세션 완료분 포함)
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+- CJK 문자 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-17 — UX 실행 경험 완성: Persistent Timer + Class Mode)
+
+### 핵심 기능
+- **Persistent Timer** — `classTimerMs / classTimerRunning / classTimerStartedAt` + 3개 액션을 Zustand store에 추가 (미persist). StopwatchTab 로컬 state → store 기반으로 교체. 탭 이동해도 타이머 유지.
+- **FloatingTimerPill** — `AppShell.tsx`에 추가. 타이머 켜진 상태에서 어떤 탭이든 TabBar 위에 `MM:SS` floating pill 표시. 탭 → class-tools 이동. × → 타이머 리셋.
+- **Class Mode** — `/spokedu-master/class-mode/[id]` 신규 라우트. AppShell이 session과 동일하게 크롬 완전 숨김. 풀스크린 수업 실행 UI: 타이머 strip + 단계 dot indicator + 스텝 카드(큰 글씨) + 이전/다음 네비게이션. 코치 포인트·현장 팁을 마지막 단계 이후 amber/green 카드로 추가 표시. SPOMOVE 연결 버튼 상단 우측.
+
+### CTA 전면 통일 — "수업 시작" 프라이머리 원칙
+- `DashboardView.tsx` TodayHero: "수업안 보기" → "수업 시작" (class-mode 직결)
+- `LibraryView.tsx` ProgramSheet: "SPOMOVE 실행" → "수업 시작" (primary) + "큰 화면" / "수업안 전체" 보조 2열
+- `LibraryDetailView.tsx`: "수업 시작" 풀폭 primary + 보조 3버튼 (큰 화면 실행 / 영상 보기 또는 설명 문구 / 문구 복사)
+
+### 수정 파일 목록
+- `app/spokedu-master/store/index.ts` — timer state + actions + `useClassTimerState` export
+- `app/spokedu-master/components/ui/ClassToolsView.tsx` — StopwatchTab store 기반 교체
+- `app/spokedu-master/components/layout/AppShell.tsx` — FloatingTimerPill + isSession 확장 (class-mode 포함) + useState 추가
+- `app/spokedu-master/components/ui/ClassModeView.tsx` — **신규** 수업 모드 뷰
+- `app/spokedu-master/class-mode/[id]/page.tsx` — **신규** class-mode 라우트
+- `app/spokedu-master/dashboard/DashboardView.tsx` — TodayHero CTA 교체
+- `app/spokedu-master/library/LibraryView.tsx` — ProgramSheet CTA 교체
+- `app/spokedu-master/library/[id]/LibraryDetailView.tsx` — CTA 재편
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+- CJK 문자 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-17 — 수업 도구 통합 + 구독 전환율 강화)
+
+### 핵심 수정
+- `app/spokedu-master/store/index.ts` — `useIsPro` 수정: 체험 기간(plan='free', trialEndsAt > now) 중에도 true 반환. 기존엔 체험 중 Pro 콘텐츠가 잠겨 구독 전환 동기가 없었음.
+- `app/api/spokedu-master/programs/route.ts` — 서버 side `isPaidActive` 게이팅 제거 → 인증된 사용자에게 `lessonDetail` 항상 반환. UI 잠금은 클라이언트 `isPro + isTrialExpired`가 담당.
+
+### 신규 파일
+- `app/spokedu-master/class-tools/page.tsx` — 수업 도구 페이지 (TrialGateWall feature="class-tools" 적용)
+- `app/spokedu-master/components/ui/ClassToolsView.tsx` — 5개 탭 수업 도구 (스톱워치 / 점수판 / 학생 뽑기 / 팀 나누기 / 순서 정하기). spokedu-pro AssistantToolsView 이식, useMasterStore students 사용.
+
+### 기존 파일 수정
+- `app/spokedu-master/components/layout/TabBar.tsx` — '설명 도구(FileText, report)' → '수업 도구(Timer, class-tools)' 탭 교체
+- `app/spokedu-master/dashboard/DashboardView.tsx` — QUICK_ACTIONS '설명 도구' → '수업 도구' (Timer 아이콘, `/spokedu-master/class-tools`, 캡션 '타이머·팀·뽑기')
+- `app/spokedu-master/components/ui/TrialGateWall.tsx` — `class-tools` feature 버킷 추가 (Timer, Users 아이콘), 타입에 `'class-tools'` 추가, 만료 문구 보강
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+- CJK 문자 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-17 — programsLoaded 버그 + static PROGRAMS 제거 + 개선)
+
+### 버그 수정
+- `app/spokedu-master/store/index.ts` — `loadPrograms`: API 실패·빈 응답 시 `programsLoaded: true` 미설정 버그 수정. 모든 분기 끝에 폴백 추가 → Dashboard/Library 영구 스켈레톤 현상 해결
+- `app/spokedu-master/dashboard/DashboardView.tsx` — `programsLoaded` guard 추가 (mounted && programsLoaded가 모두 true여야 DashboardSkeleton 해제)
+- `app/spokedu-master/library/LibraryView.tsx` — `programsLoaded` guard 추가 (동일)
+- `app/spokedu-master/parent/[studentId]/page.tsx` — `ShieldCheck` → `ShieldAlert` (에러 화면에 성공 아이콘 쓰던 semantic 버그)
+
+### static PROGRAMS 의존성 제거
+- `app/spokedu-master/plan/PlanView.tsx` — `import { PROGRAMS } from '../lib/data'` 제거. programs를 `useMasterStore` 에서 읽어 `LessonItem`, `AddLessonSheet`에 전달. `getProgramForLesson`에 programs 파라미터 추가
+- `app/spokedu-master/shop/page.tsx` — 동일하게 static import 제거 → store programs 기반으로 교체
+
+### 브랜드 카피 전면 통일 (8개 파일)
+- "수업 설명 도구" / "설명 도구" → "설명 문구" (report 페이지 용어) 또는 "수업 도구" (class-tools 용어)로 전면 통일
+- 수정 파일: `dashboard/DashboardView.tsx`, `profile/page.tsx`, `report/page.tsx`, `spomove/SpomoveHubView.tsx`, `class-record/page.tsx`, `layout.tsx`, `terms/page.tsx`, `components/ui/ClassToolsView.tsx`
+
+### LibraryDetailView 개선 (5가지)
+- `app/spokedu-master/library/[id]/LibraryDetailView.tsx`
+  - 수업 횟수 배지 추가: "N회 수업함 · 마지막 M월 d일" (classRecords 기반)
+  - 태그 chips 표시 추가
+  - steps/variations/safetyNotes/relatedSpomoveIds — 빈 배열일 때 섹션 자체 숨김 (API 프로그램은 이 필드가 비어 있는 경우 많음)
+
+### class-record 개선
+- `app/spokedu-master/class-record/page.tsx` — 하드코딩 '초등 A반' → `students[0]?.group ?? '수업'` 교체. 프로그램 tags에서 스킬 목록 자동 추출 (2개 이상 tag 있으면 사용, 없으면 DEFAULT_SKILLS 폴백)
+
+### PlanView 주간 네비게이션
+- `app/spokedu-master/plan/PlanView.tsx` — `weekOffset` state 추가. `addWeeks` 기반 동적 weekStart. 이전/다음 주 ChevronLeft/ChevronRight 버튼 + "이번 주로" 리셋 링크
+
+### Pro 플랜 features 업데이트
+- `app/spokedu-master/payment/page.tsx` — Pro includes: '즐겨찾기와 최근 사용 기록' → '설명 문구 (학부모·기관·학교용)'
+- `app/spokedu-master/landing/page.tsx` — 동일
+- `app/spokedu-master/profile/page.tsx` — Pro includes에 '설명 문구' 추가 (3→4개)
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+- CJK 문자 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-17 — 전체 감사 및 버그 수정)
+
+### 버그 수정
+- `app/spokedu-master/store/index.ts` — `resetProfile` 액션 추가 (logout 시 name/school 등 잔류 데이터 문제 해결)
+- `app/spokedu-master/profile/page.tsx` — `handleLogout`에서 `setProfile({ plan:'free' })` → `resetProfile()` 교체; 체험 만료 시 색상+텍스트 수정 (0일 남음 → 빨간색 "체험 종료")
+- `app/spokedu-master/dashboard/DashboardView.tsx` — TodayPlan 섹션 신규 추가 (오늘 날짜 수업 계획 카드); PlanChip "Trial 0일" → "체험 종료"로 수정
+- `app/spokedu-master/report/page.tsx` — `recentProgramId` 배열 인덱스 버그: `classRecords[classRecords.length - 1]` (가장 오래된) → `classRecords[0]` (가장 최근)
+- `app/spokedu-master/payment/page.tsx` — 이미 구독 중인 사용자가 `/payment` 접근 시 관리 페이지로 안내하는 guard UI 추가
+- `app/spokedu-master/payment/cancel/page.tsx` — Suspense 래퍼 누락 수정; `orderId` 파라미터(`spm-{plan}-{ts}`)에서 플랜 추출해 올바른 재시도 링크 제공
+
+### 하드코딩 데이터 제거
+- `app/spokedu-master/director/page.tsx` — `recordRate` 하드코딩(82/68) → 실제 `records.length / lessons.length` 비율로 교체; 강사 목록 (김선생/이코치/박강사) → 실제 사용자 이름 1행 + "초대 대기 중" 플레이스홀더 2행으로 교체; `myName` 변수 추가 (`profile?.name ?? '나'`)
+
+### 확인 완료 (수정 불필요)
+- `api/spokedu-master/og/route.tsx` — 이미 구현됨 (Noto Sans KR 폰트 + 한국어 헤드라인)
+- `spomove/session/page.tsx`, `library/[id]/LibraryDetailView.tsx`, `class-record/page.tsx`, `students/page.tsx`, `shop/page.tsx`, `onboarding/page.tsx`, `parent/[studentId]/page.tsx`, `SpomoveHubView.tsx`, `LibraryView.tsx`, `AppShell.tsx`, `PlanView.tsx`, `TrialGateWall.tsx` 전체 감사 완료 — 이상 없음
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+- CJK 문자 검색 결과 없음
 
 ---
 
@@ -104,9 +296,9 @@
 ```
 NEXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_...   # 토스페이먼츠 대시보드 > 내 상점 > 클라이언트 키
 TOSS_SECRET_KEY=test_sk_...               # 토스페이먼츠 대시보드 > 내 상점 > 시크릿 키
-NEXT_PUBLIC_SITE_URL=https://spokedu.com  # 배포 도메인
 ```
 테스트 키로 먼저 검증 후 실서비스 키로 교체.
+successUrl/failUrl은 `payment/page.tsx` 클라이언트에서 `window.location.origin`으로 자동 구성되므로 별도 환경변수 불필요.
 
 #### 2. Supabase SQL 적용
 ```
@@ -115,9 +307,9 @@ Supabase 대시보드 → SQL Editor → New query
 ```
 
 #### 3. 토스페이먼츠 대시보드 설정
-- 결제창 > 가맹점 도메인: 배포 도메인 등록
-- successUrl 허용: `https://spokedu.com/spokedu-master/payment/success`
-- failUrl 허용: `https://spokedu.com/spokedu-master/payment/cancel`
+- 결제창 > 가맹점 도메인: 실제 배포 도메인 등록
+- successUrl 허용: `{배포도메인}/spokedu-master/payment/success`
+- failUrl 허용: `{배포도메인}/spokedu-master/payment/cancel`
 
 ---
 

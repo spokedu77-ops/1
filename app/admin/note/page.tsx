@@ -82,6 +82,8 @@ type NoteBlock = {
   content: any;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 };
 type LoadingState = 'idle' | 'loading' | 'saving' | 'saved';
 type SortKey = 'recent' | 'title';
@@ -826,7 +828,12 @@ function AdminNotePageContent() {
   /** 상단 '이미지' 블록 추가 시 토글 안에 넣을 대상 (토글 블록 클릭으로 설정) */
   const [focusedToggleId, setFocusedToggleId] = useState<string | null>(null);
   const [formatToolbar, setFormatToolbar] = useState<{ applyMark: (mark: InlineMark) => void } | null>(null);
-  const [docTab, setDocTab] = useState<'active' | 'trash'>('active');
+  const [docTab, setDocTab] = useState<'active' | 'trash' | 'block-trash'>('active');
+  const [trashedBlocks, setTrashedBlocks] = useState<NoteBlock[]>([]);
+  const [loadingTrashedBlocks, setLoadingTrashedBlocks] = useState(false);
+  const [restoringBlockId, setRestoringBlockId] = useState<string | null>(null);
+  const [purgingBlockId, setPurgingBlockId] = useState<string | null>(null);
+  const [lastDeletedBlockId, setLastDeletedBlockId] = useState<string | null>(null);
 
   const saveTimersRef = useRef<Record<string, number | undefined>>({});
   const savedTimerRef = useRef<number | undefined>(undefined);
@@ -866,16 +873,16 @@ function AdminNotePageContent() {
   }, [documents, searchQuery, sortKey]);
 
   const pinnedDocuments = useMemo(() => {
-    if (docTab === 'trash') return [];
+    if (docTab !== 'active') return [];
     const pinned = filteredDocuments.filter((d) => d.is_pinned);
     return [...pinned].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   }, [docTab, filteredDocuments]);
   const favoriteDocuments = useMemo(() => {
-    if (docTab === 'trash') return [];
+    if (docTab !== 'active') return [];
     return filteredDocuments.filter((d) => d.is_favorite && !d.is_pinned);
   }, [docTab, filteredDocuments]);
   const otherDocuments = useMemo(
-    () => (docTab === 'trash' ? filteredDocuments : filteredDocuments.filter((d) => !d.is_favorite && !d.is_pinned)),
+    () => (docTab === 'active' ? filteredDocuments.filter((d) => !d.is_favorite && !d.is_pinned) : filteredDocuments),
     [docTab, filteredDocuments],
   );
   const docMap = useMemo(() => new Map(filteredDocuments.map((d) => [d.id, d])), [filteredDocuments]);
@@ -929,7 +936,7 @@ function AdminNotePageContent() {
         if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '문서 목록을 불러오지 못했습니다.'); }
         const json = (await res.json()) as { documents: NoteDocument[] };
         setDocuments(json.documents ?? []);
-        if (docTab === 'active' && !selectedId && json.documents?.length > 0) {
+        if ((docTab === 'active' || docTab === 'block-trash') && !selectedId && json.documents?.length > 0) {
           const preferred = json.documents.find((d) => d.is_pinned) ?? json.documents[0];
           setSelectedId(preferred.id);
           router.replace(`/admin/note?id=${encodeURIComponent(preferred.id)}`);
@@ -958,8 +965,41 @@ function AdminNotePageContent() {
   }, [selectedId]);
 
   useEffect(() => {
+    setTrashedBlocks([]);
+    setLastDeletedBlockId(null);
+  }, [selectedId]);
+
+  useEffect(() => {
     blocksRef.current = blocks;
   }, [blocks]);
+
+  const loadTrashedBlocks = useCallback(async () => {
+    if (!selectedId) {
+      setTrashedBlocks([]);
+      return;
+    }
+    try {
+      setLoadingTrashedBlocks(true);
+      const res = await fetch(`/api/admin/note/blocks/trash?documentId=${encodeURIComponent(selectedId)}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '휴지통 블록 로드 실패');
+      }
+      const json = (await res.json()) as { blocks: NoteBlock[] };
+      setTrashedBlocks(json.blocks ?? []);
+    } catch (e) {
+      devLogger.error('[Note] loadTrashedBlocks', e);
+    } finally {
+      setLoadingTrashedBlocks(false);
+    }
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (docTab !== 'block-trash') return;
+    void loadTrashedBlocks();
+  }, [docTab, loadTrashedBlocks]);
 
   /* presence: 문서 선택 시 1회만 호출 */
   useEffect(() => {
@@ -1489,19 +1529,111 @@ function AdminNotePageContent() {
   }, [focusBlockEditor, triggerSave]);
 
   const handleDeleteBlock = useCallback(async (block: NoteBlock, focusPrevious = false) => {
-    const prev = blocks;
+    const ordered = [...blocksRef.current].sort((a, b) => a.order_index - b.order_index);
+    const idx = ordered.findIndex((b) => b.id === block.id);
+    if (idx < 0) return;
     if (focusPrevious) {
-      const ordered = [...blocks].sort((a, b) => a.order_index - b.order_index);
-      const idx = ordered.findIndex((b) => b.id === block.id);
       const nextFocus = ordered[idx - 1]?.id ?? ordered[idx + 1]?.id ?? null;
       if (nextFocus) focusBlockEditor(nextFocus);
     }
-    setBlocks((p) => p.filter((b) => b.id !== block.id));
+
+    setBlocks((prev) => prev.filter((b) => b.id !== block.id));
     try {
-      const res = await fetch(`/api/admin/note/blocks?id=${encodeURIComponent(block.id)}`, { method: 'DELETE', credentials: 'include' });
-      if (!res.ok) throw new Error('삭제 실패');
-    } catch (e) { devLogger.error('[Note] deleteBlock', e); setBlocks(prev); setError('블록 삭제 실패'); }
-  }, [blocks, focusBlockEditor]);
+      const res = await fetch(`/api/admin/note/blocks?id=${encodeURIComponent(block.id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '삭제 실패');
+      }
+      setLastDeletedBlockId(block.id);
+      if (docTab === 'block-trash') {
+        setMobileTab('list');
+      }
+      await loadTrashedBlocks();
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] deleteBlock', e);
+      setError(e instanceof Error ? e.message : '블록 삭제 실패');
+      setBlocks((prev) => {
+        if (prev.some((b) => b.id === block.id)) return prev;
+        return [...prev, block].sort((a, b) => a.order_index - b.order_index);
+      });
+    }
+  }, [docTab, focusBlockEditor, loadTrashedBlocks, triggerSave]);
+
+  const handleRestoreBlockFromTrash = useCallback(async (block: NoteBlock) => {
+    try {
+      setRestoringBlockId(block.id);
+      const res = await fetch('/api/admin/note/blocks/trash/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: block.id }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '블록 복구 실패');
+      }
+      const json = (await res.json()) as { block: NoteBlock };
+      const restoredBlock = json.block;
+      setTrashedBlocks((prev) => prev.filter((b) => b.id !== block.id));
+      if (lastDeletedBlockId === block.id) setLastDeletedBlockId(null);
+      setBlocks((prev) => {
+        if (prev.some((b) => b.id === restoredBlock.id)) return prev;
+        return [...prev, restoredBlock].sort((a, b) => a.order_index - b.order_index);
+      });
+      focusBlockEditor(restoredBlock.id);
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] restoreBlockFromTrash', e);
+      setError(e instanceof Error ? e.message : '블록 복구 실패');
+    } finally {
+      setRestoringBlockId(null);
+    }
+  }, [focusBlockEditor, lastDeletedBlockId, triggerSave]);
+
+  const handlePurgeBlockFromTrash = useCallback(async (block: NoteBlock) => {
+    if (!confirm('이 블록을 영구삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
+    try {
+      setPurgingBlockId(block.id);
+      const res = await fetch(`/api/admin/note/blocks/trash/purge?id=${encodeURIComponent(block.id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '블록 영구삭제 실패');
+      }
+      if (lastDeletedBlockId === block.id) setLastDeletedBlockId(null);
+      setTrashedBlocks((prev) => prev.filter((b) => b.id !== block.id));
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] purgeBlockFromTrash', e);
+      setError(e instanceof Error ? e.message : '블록 영구삭제 실패');
+    } finally {
+      setPurgingBlockId(null);
+    }
+  }, [lastDeletedBlockId, triggerSave]);
+
+  const handleUndoDeleteBlock = useCallback(async () => {
+    const candidate = trashedBlocks.find((b) => b.id === lastDeletedBlockId) ?? trashedBlocks[0];
+    if (!candidate) return;
+    await handleRestoreBlockFromTrash(candidate);
+  }, [handleRestoreBlockFromTrash, lastDeletedBlockId, trashedBlocks]);
+
+  useEffect(() => {
+    if (!lastDeletedBlockId) return;
+    const onKey = (e: KeyboardEvent) => {
+      const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z';
+      if (!isUndo) return;
+      e.preventDefault();
+      void handleUndoDeleteBlock();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleUndoDeleteBlock, lastDeletedBlockId]);
 
   const renderDocumentTree = (doc: NoteDocument, depth = 0): React.ReactNode => {
     const children = childrenByParent.get(doc.id) ?? [];
@@ -1597,7 +1729,17 @@ function AdminNotePageContent() {
           <button type="button" className="ml-2 underline" onClick={() => setError(null)}>닫기</button>
         </div>
       )}
-
+      {lastDeletedBlockId && (
+        <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12px] font-medium text-amber-700">
+          블록을 휴지통으로 이동했습니다.
+          <button type="button" className="ml-2 underline" onClick={() => void handleUndoDeleteBlock()}>
+            실행 취소
+          </button>
+          <span className="ml-2 text-[11px] text-amber-600">
+            (<kbd className="rounded border border-amber-300 bg-white px-1 py-0.5 text-[10px]">Ctrl/Cmd+Z</kbd>)
+          </span>
+        </div>
+      )}
       {/* ── 콘텐츠 ── */}
       <DndContext
         sensors={sensors}
@@ -1614,9 +1756,9 @@ function AdminNotePageContent() {
             mobileTab === 'list' ? 'flex w-full' : 'hidden'
           } md:flex md:w-[260px] md:shrink-0`}>
 
-          {/* 탭: 전체/휴지통 */}
+          {/* 탭: 전체/문서 휴지통/블록 휴지통 */}
           <div className="shrink-0 px-3 pt-3">
-            <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
+            <div className="grid grid-cols-3 rounded-xl border border-slate-200 bg-white p-1">
               <button
                 type="button"
                 className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${
@@ -1635,10 +1777,24 @@ function AdminNotePageContent() {
               >
                 휴지통
               </button>
+              <button
+                type="button"
+                className={`rounded-lg px-2 py-1.5 text-[12px] font-semibold transition-colors ${
+                  docTab === 'block-trash' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+                onClick={() => { setDocTab('block-trash'); setMobileTab('list'); void loadTrashedBlocks(); }}
+              >
+                블록
+              </button>
             </div>
             {docTab === 'trash' && (
               <p className="mt-2 px-1 text-[11px] font-medium text-slate-400">
                 휴지통 문서는 7일 후 영구삭제할 수 있습니다.
+              </p>
+            )}
+            {docTab === 'block-trash' && (
+              <p className="mt-2 px-1 text-[11px] font-medium text-slate-400">
+                선택한 문서 기준 블록 휴지통입니다.
               </p>
             )}
           </div>
@@ -1693,7 +1849,13 @@ function AdminNotePageContent() {
             ) : filteredDocuments.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-[13px] text-slate-400">
                 <FileText className="h-10 w-10 text-slate-200" />
-                {searchQuery ? '검색 결과 없음' : (docTab === 'trash' ? '휴지통이 비어 있습니다' : '아직 노트가 없습니다')}
+                {searchQuery
+                  ? '검색 결과 없음'
+                  : (docTab === 'trash'
+                    ? '휴지통이 비어 있습니다'
+                    : docTab === 'block-trash'
+                      ? '블록 휴지통이 비어 있습니다'
+                      : '아직 노트가 없습니다')}
                 {!searchQuery && docTab === 'active' && <span className="text-[12px]">&quot;새 노트&quot;로 시작하세요.</span>}
               </div>
             ) : (
@@ -1770,6 +1932,59 @@ function AdminNotePageContent() {
                             </div>
                           );
                         })}
+                      </div>
+                    ) : docTab === 'block-trash' ? (
+                      <div className="space-y-1">
+                        {!selectedId ? (
+                          <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] text-slate-500">
+                            먼저 문서를 선택한 뒤 블록 휴지통을 확인해 주세요.
+                          </div>
+                        ) : loadingTrashedBlocks ? (
+                          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] text-slate-400">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />불러오는 중…
+                          </div>
+                        ) : trashedBlocks.length === 0 ? (
+                          <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] text-slate-500">
+                            선택한 문서의 블록 휴지통이 비어 있습니다.
+                          </div>
+                        ) : (
+                          trashedBlocks.map((block) => (
+                            <div key={block.id} className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                              <div className="flex items-start gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-[12px] font-semibold text-slate-700">
+                                    {BLOCK_TYPES.find((t) => t.type === block.type)?.label ?? block.type}
+                                  </p>
+                                  <p className="truncate text-[11px] text-slate-500">
+                                    {block.type === 'divider'
+                                      ? '구분선'
+                                      : block.type === 'image'
+                                        ? (block.content?.url || '이미지 블록')
+                                        : (block.content?.text || block.content?.title || '(내용 없음)')}
+                                  </p>
+                                </div>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={restoringBlockId === block.id}
+                                    onClick={() => handleRestoreBlockFromTrash(block)}
+                                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                  >
+                                    복구
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={purgingBlockId === block.id}
+                                    onClick={() => handlePurgeBlockFromTrash(block)}
+                                    className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                                  >
+                                    영구삭제
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     ) : (
                       rootDocuments.map((doc) => renderDocumentTree(doc))

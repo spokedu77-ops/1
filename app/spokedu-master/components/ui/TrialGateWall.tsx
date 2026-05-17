@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, FileText, Lock, MonitorPlay, Sparkles } from 'lucide-react';
+import { BookOpen, FileText, Lock, MonitorPlay, Sparkles, Timer, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { getTrialDaysLeft, isTrialExpired } from '../../lib/subscription';
 import { useProfile } from '../../store';
@@ -22,11 +22,16 @@ const PLAN_FEATURES: Record<string, { icon: typeof BookOpen; label: string }[]> 
     { icon: BookOpen, label: '라이브러리 연동 자동 완성' },
     { icon: Sparkles, label: '홍보 · 학교 기록용 문구' },
   ],
+  'class-tools': [
+    { icon: Timer, label: '스톱워치 · 점수판' },
+    { icon: Users, label: '학생 뽑기 · 팀 나누기' },
+    { icon: Sparkles, label: '순서 정하기 · 수업 진행 도구' },
+  ],
 };
 
 type TrialGateWallProps = {
   children: ReactNode;
-  feature: 'library' | 'spomove' | 'report';
+  feature: 'library' | 'spomove' | 'report' | 'class-tools';
 };
 
 export function TrialGateWall({ children, feature }: TrialGateWallProps) {
@@ -52,7 +57,7 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
             14일 무료 체험이 끝났습니다.
           </h2>
           <p className="mt-3 text-[14px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            플랜을 선택하면 라이브러리, SPOMOVE, 수업 설명 도구를 계속 사용할 수 있습니다.
+            플랜을 선택하면 라이브러리, SPOMOVE, 수업 도구를 계속 무제한으로 사용할 수 있습니다.
           </p>
           <ul className="mt-5 space-y-2">
             {features.map(({ icon: Icon, label }) => (
