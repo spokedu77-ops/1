@@ -30,11 +30,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 1,
     },
-    ...spokeduRoutes.map((path) => ({
-      url: `${base}${path}`,
-      lastModified: now,
-      changeFrequency: path === '/spokedu' ? 'weekly' : 'monthly',
-      priority: path === '/spokedu' ? 0.95 : 0.8,
-    })),
+    ...spokeduRoutes.map(
+      (path): MetadataRoute.Sitemap[number] => ({
+        url: `${base}${path}`,
+        lastModified: now,
+        changeFrequency: path === '/spokedu' ? 'weekly' : 'monthly',
+        priority: path === '/spokedu' ? 0.95 : 0.8,
+      }),
+    ),
   ];
 }
