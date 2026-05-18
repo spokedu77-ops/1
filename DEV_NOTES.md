@@ -16,6 +16,7 @@
 - 2026-05-16 (결제 PG 교체 — Stripe 전면 제거 → 토스페이먼츠, confirm API 신규, SQL 스키마 교체, 법적 고지 전수 수정)
 - 2026-05-17 (전체 감사(audit) + 버그 수정 6건 + director 하드코딩 제거)
 - 2026-05-17 (programsLoaded 버그 수정 + static PROGRAMS 제거 + 브랜드 카피 전면 통일 + LibraryDetail 개선 + PlanView 주간 네비게이션 + Pro features 업데이트)
+- 2026-05-18 (Dashboard TodayHero 계획 연동 + Report 프로그램 검색 필터 + 온보딩 Pro 카드 features 통일)
 
 ---
 
@@ -140,6 +141,94 @@
 
 ### 검증 결과
 - `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+- CJK 문자 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-18 — Dashboard 계획 연동 + Report 검색 + 온보딩)
+
+### 핵심 수정
+- `app/spokedu-master/dashboard/DashboardView.tsx` — TodayHero에 plan 연동 추가
+  - 오늘 Plan에 미완료 수업이 있으면 Hero가 해당 프로그램 표시 + 배지 "3학년 A반 · 3교시" 형태로 변경
+  - Plan이 없거나 매칭 프로그램을 못 찾으면 기존 dayOfYear 알고리즘 폴백
+  - `Lesson` 타입 import 추가
+
+- `app/spokedu-master/report/page.tsx` — aside 프로그램 선택에 검색 필터 추가
+  - `programSearch` state + `filteredPrograms` 계산
+  - 검색 input (이름·태그 대조) + 결과 없음 상태 처리
+  - 기존 선택 프로그램 이름 표시 p 태그 → 검색 input으로 교체
+
+- `app/spokedu-master/onboarding/page.tsx` — 마지막 단계 Pro 카드 features 통일
+  - '전체 라이브러리 · SPOMOVE 무제한 · 수업 도구 전체' → '· 설명 문구' 추가
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+
+---
+
+## 수정한 파일 (2026-05-18 — 화면 간 연결 강화 + report URL param)
+
+### 핵심 수정
+
+- `app/spokedu-master/report/page.tsx` — `useSearchParams`로 `?program=` URL 파라미터 지원
+  - `ReportContent` 분리 + `Suspense` 래핑
+  - URL에서 `programId` 읽어 초기 선택 프로그램으로 사용
+  - 기존 최근 기록 기반 폴백 유지
+
+- `app/spokedu-master/class-record/page.tsx`
+  - `todayLesson = lessons[0]` → `isSameDay` 기반 오늘 날짜 필터링 (오래된 수업이 기본값 되던 버그 수정)
+  - Play 버튼 `/spomove/session?mode=class` → `/class-mode/${program.id}` (수업 시작 플로우 통일)
+  - `RecordCard` "설명 문구에서 보기" 링크에 `?program=${record.programId}` 전달
+
+- `app/spokedu-master/dashboard/DashboardView.tsx` — `TodayPlan` 개선
+  - 각 수업 카드에 "수업 시작" Play 버튼 추가 (program 매칭 → class-mode, 미매칭 → class-record)
+  - `programs` prop 추가로 프로그램 매칭 지원
+
+- `app/spokedu-master/plan/PlanView.tsx` — `LessonItem` CTA 재편
+  - 2버튼(수업안/기록 시작) → 3버튼(수업안 / 수업 시작class-mode primary / 기록ClipboardList)
+  - 플로우: 계획 → 수업 시작 → class-mode 완료 → 수업 기록으로 자연 연결
+
+- `app/spokedu-master/library/[id]/LibraryDetailView.tsx`
+  - "설명 문구" 링크에 `?program=${program.id}` 전달 (report 페이지 자동 선택)
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+- CJK 문자 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-18 — 전 페이지 점검 + 플로우 마무리)
+
+### 핵심 수정
+
+- `app/spokedu-master/spomove/session/page.tsx` — class 모드 완료 후 수업 기록 연결
+  - `ClipboardList` 아이콘 import 추가
+  - `searchParams.get('program')` 파싱 추가 (ClassModeView가 `?program=ID`로 이미 넘기고 있었음)
+  - done 화면 버튼 그리드: class 모드 + programId 있을 때 2열 → 3열로 확장
+  - "수업 기록" 버튼 추가 → `/class-record?program=${programId}` 직결
+  - mobile·projector 모드는 기존 2열 유지 (변경 없음)
+
+- `app/spokedu-master/class-record/page.tsx` — 저장 후 다음 단계 링크 추가
+  - "기록만 저장" 후 성공 메시지를 p 태그 → div + 내부 링크 2개 구조로 교체
+  - "기록 목록 보기" → `/class-record` (기록 목록으로 복귀)
+  - "설명 문구 보기" → `/report?program=${program.id}` (해당 프로그램 설명 문구 바로 이동)
+
+### 전 페이지 점검 결과 (변경 없음)
+다음 파일은 점검 완료, 추가 수정 불필요:
+- `spomove/session/EngineRouter.tsx` — solid
+- `students/page.tsx` — solid
+- `components/ui/ClassModeView.tsx` — solid (이전 세션에서 완성)
+- `payment/page.tsx`, `payment/success/page.tsx`, `payment/cancel/page.tsx` — solid
+- `shop/page.tsx` — solid
+- `onboarding/page.tsx` — solid
+- `subscription/page.tsx` — solid (이전 세션에서 브랜드 수정 완료)
+- `parent/[studentId]/page.tsx` — solid (이전 세션에서 에러 메시지 개선)
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과 (spokedu-master 내부 에러 없음)
 - `npx eslint app/spokedu-master --max-warnings 0` 통과
 - CJK 문자 검색 결과 없음
 

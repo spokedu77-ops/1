@@ -15,13 +15,14 @@ import {
   UFO_SPAWN_RATE,
   UFO_DUCK_START_Z,
   UFO_PASS_Z,
-  UFO_SPEED_MULT,
   UFO_HEIGHT,
 } from '../core/coordContract';
 
 // 로컬 별칭 (하위 호환)
 const DESTROY_Z = BOX_DESTROY_Z;
 const CLEANUP_Z = BOX_CLEANUP_Z;
+// reach 박스가 플레이어에게 400 유닛 남았을 때 경고
+const REACH_WARN_Z = DESTROY_Z - 400;
 
 export interface FlowBridge {
   mesh: THREE.Group;
@@ -31,6 +32,8 @@ export interface FlowBridge {
 export interface BoxEntity {
   mesh: THREE.Group;
   reward: boolean;
+  isReach: boolean;
+  warnedReach: boolean;
 }
 
 interface ShardEntity {
@@ -74,15 +77,18 @@ export class ObstacleManager {
   private goldBudget = 0;
   private goldSpawned = 0;
   private lv3FirstRewardGiven = false;
+  private reachEnabled: boolean;
 
   constructor(
     scene: THREE.Scene,
     bridgeLength: number,
-    callbacks: ObstacleManagerCallbacks = {}
+    callbacks: ObstacleManagerCallbacks = {},
+    reachEnabled = false
   ) {
     this.scene = scene;
     this.bridgeLength = bridgeLength;
     this.callbacks = callbacks;
+    this.reachEnabled = reachEnabled;
   }
 
   setGoldBudget(n: number): void {
@@ -111,12 +117,12 @@ export class ObstacleManager {
     return false;
   }
 
-  private createBoxGroup(reward: boolean): THREE.Group {
+  private createBoxGroup(reward: boolean, isReach: boolean = false): THREE.Group {
     const boxGroup = new THREE.Group();
     const bodyGeo = new THREE.BoxGeometry(65, 45, 55);
     const bodyMat = new THREE.MeshPhongMaterial({
-      color: 0xffedd5,
-      emissive: 0xffa07a,
+      color:           isReach ? 0xf3e8ff : 0xffedd5,
+      emissive:        isReach ? 0xa855f7 : 0xffa07a,
       emissiveIntensity: 0.25,
       shininess: 25,
     });
@@ -126,8 +132,8 @@ export class ObstacleManager {
 
     const lidGeo = new THREE.BoxGeometry(68, 18, 58);
     const lidMat = new THREE.MeshPhongMaterial({
-      color: 0xfde68a,
-      emissive: 0xfbbf24,
+      color:   isReach ? 0xe9d5ff : 0xfde68a,
+      emissive: isReach ? 0x9333ea : 0xfbbf24,
       emissiveIntensity: 0.3,
       shininess: 40,
     });
@@ -137,8 +143,8 @@ export class ObstacleManager {
 
     const bandGeo = new THREE.BoxGeometry(18, 70, 60);
     const bandMat = new THREE.MeshPhongMaterial({
-      color: 0x2563eb,
-      emissive: 0x3b82f6,
+      color:   isReach ? 0x7c3aed : 0x2563eb,
+      emissive: isReach ? 0x8b5cf6 : 0x3b82f6,
       emissiveIntensity: 0.4,
       shininess: 60,
     });
@@ -148,7 +154,7 @@ export class ObstacleManager {
 
     const glowGeo = new THREE.SphereGeometry(75, 12, 8);
     const glowMat = new THREE.MeshBasicMaterial({
-      color: reward ? 0xfacc15 : 0xf97316,
+      color: isReach ? 0xc084fc : (reward ? 0xfacc15 : 0xf97316),
       transparent: true,
       opacity: 0.25,
       blending: THREE.AdditiveBlending,
@@ -168,11 +174,14 @@ export class ObstacleManager {
     if (levelNum === 3) reward = this.decideRewardForLv3();
     else if (levelNum === 4 || levelNum === 5) reward = Math.random() < 0.3;
 
-    const boxGroup = this.createBoxGroup(reward);
+    // reach 박스: 활성화 시 40% 확률로 높은 위치에 보라색 박스
+    const isReach = this.reachEnabled && levelNum >= 3 && Math.random() < 0.4;
+
+    const boxGroup = this.createBoxGroup(reward, isReach);
     const localZ = -(this.bridgeLength * 0.1);
-    boxGroup.position.set(0, 40, localZ);
+    boxGroup.position.set(0, isReach ? 200 : 40, localZ);
     bridge.mesh.add(boxGroup);
-    this.boxes.push({ mesh: boxGroup, reward });
+    this.boxes.push({ mesh: boxGroup, reward, isReach, warnedReach: false });
   }
 
   /** UFO: 레벨 4 이상. 다리(bridge) 위에 스폰, 다리와 함께 이동 */
@@ -230,7 +239,9 @@ export class ObstacleManager {
     if (currentLevelNum === HIT_STOP_LEVEL) {
       this.callbacks.onHitStop?.();
     }
-    if (currentLevelNum === 3 || currentLevelNum === 5) {
+    if (box.isReach) {
+      this.callbacks.onShowInstruction?.('REACH!', 'text-violet-400', 280);
+    } else if (currentLevelNum === 3 || currentLevelNum === 5) {
       this.callbacks.onShowInstruction?.('PUNCH!', 'text-red-400', 220);
     }
 
@@ -308,9 +319,7 @@ export class ObstacleManager {
   update(
     dt60: number,
     currentSpeed: number,
-    currentLevelNum: number,
-    playerZ: number,
-    playerX: number
+    currentLevelNum: number
   ): void {
     const worldPos = new THREE.Vector3();
 
@@ -322,6 +331,11 @@ export class ObstacleManager {
       }
       box.mesh.rotation.y += 0.015 * dt60;
       box.mesh.getWorldPosition(worldPos);
+
+      if (box.isReach && !box.warnedReach && worldPos.z >= REACH_WARN_Z) {
+        box.warnedReach = true;
+        this.callbacks.onShowInstruction?.('REACH UP!', 'text-violet-400', 1200);
+      }
 
       if (worldPos.z >= DESTROY_Z) {
         this.destroyBox(box, i, currentLevelNum);

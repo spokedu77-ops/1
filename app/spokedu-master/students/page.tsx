@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Award, ChevronRight, ExternalLink, FileText, MessageCircle, Plus, Trash2, TrendingUp, TriangleAlert } from 'lucide-react';
+import { Award, Check, ChevronRight, ExternalLink, FileText, Link2, Plus, Trash2, TrendingUp, TriangleAlert } from 'lucide-react';
 import { useLayoutEffect, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { createParentShareToken } from '../lib/subscription';
@@ -28,7 +28,7 @@ export default function StudentsPage() {
   const addStudent = useMasterStore((state) => state.addStudent);
   const removeStudent = useMasterStore((state) => state.removeStudent);
   const [selectedId, setSelectedId] = useState<string | null>(students[0]?.id ?? null);
-  const [kakaoReadyId, setKakaoReadyId] = useState<string | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [parentShareTokens, setParentShareTokens] = useState<Record<string, string>>({});
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -47,6 +47,12 @@ export default function StudentsPage() {
     setAddOpen(false);
   };
   const selectedRecordCount = selected ? records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length : 0;
+  const copyParentLink = async (studentId: string, token: string) => {
+    const url = `${window.location.origin}/spokedu-master/parent/${studentId}?token=${token}`;
+    await navigator.clipboard.writeText(url).catch(() => undefined);
+    setCopiedLinkId(studentId);
+    window.setTimeout(() => setCopiedLinkId(null), 2000);
+  };
 
   useLayoutEffect(() => {
     if (!selected) return;
@@ -156,25 +162,19 @@ export default function StudentsPage() {
                 <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>최근 이력</h3>
                 <div className="space-y-2">{selected.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
               </div>
-              {kakaoReadyId === selected.id ? (
-                <div className="rounded-[13px] p-3" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                  <p className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>보호자 공유 문구가 준비되었습니다.</p>
-                  <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{selected.name} 학생의 최근 성장 기록을 설명 문구로 정리할 수 있습니다.</p>
-                </div>
-              ) : null}
               <div className="grid grid-cols-3 gap-2">
                 <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
                   <FileText size={15} />
-                  리포트
+                  설명 문구
                 </Link>
+                <button type="button" onClick={() => void copyParentLink(selected.id, selectedParentToken)} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: copiedLinkId === selected.id ? 'rgba(16,185,129,0.13)' : 'var(--spm-s3)', color: copiedLinkId === selected.id ? 'var(--spm-grn)' : 'var(--spm-t)' }}>
+                  {copiedLinkId === selected.id ? <Check size={15} /> : <Link2 size={15} />}
+                  {copiedLinkId === selected.id ? '복사됨' : '링크 복사'}
+                </button>
                 <Link href={`/spokedu-master/parent/${selected.id}?token=${selectedParentToken}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <ExternalLink size={15} />
-                  링크
+                  미리보기
                 </Link>
-                <button type="button" onClick={() => setKakaoReadyId(selected.id)} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: kakaoReadyId === selected.id ? 'rgba(16,185,129,0.13)' : 'var(--spm-s3)', color: kakaoReadyId === selected.id ? 'var(--spm-grn)' : 'var(--spm-t)' }}>
-                  <MessageCircle size={15} />
-                  {kakaoReadyId === selected.id ? '준비됨' : '공유'}
-                </button>
               </div>
             </div>
           </section>

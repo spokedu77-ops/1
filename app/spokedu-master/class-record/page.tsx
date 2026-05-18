@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { isSameDay } from 'date-fns';
 import { AlertTriangle, BookOpen, CalendarDays, Check, ChevronRight, ClipboardList, ExternalLink, MessageCircle, Play, Send, Star, UserCheck, UserX } from 'lucide-react';
 import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -52,7 +53,7 @@ function RecordCard({ record }: { record: ClassRecord }) {
         <SummaryPill label="관찰" value={String(record.focusCount)} tone="var(--spm-amb)" />
         <SummaryPill label="동작" value={String(record.skillCount)} tone="var(--spm-acc)" />
       </div>
-      <Link href="/spokedu-master/report" className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>설명 문구에서 보기</Link>
+      <Link href={`/spokedu-master/report?program=${record.programId}`} className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>설명 문구에서 보기</Link>
     </article>
   );
 }
@@ -164,7 +165,7 @@ function RecordEntryView() {
   const enqueueRetry = useMasterStore((state) => state.enqueueRetry);
   const programs = useMasterStore((state) => state.programs);
   const retryQueue = useMasterStore((state) => state.operational.retryQueue);
-  const todayLesson = lessons[0];
+  const todayLesson = lessons.find((l) => isSameDay(new Date(l.date), new Date()) && !l.done) ?? lessons.find((l) => isSameDay(new Date(l.date), new Date()));
   const requestedProgramId = searchParams.get('program');
   const program = programs.find((item) => item.id === requestedProgramId) ?? programs[0]!;
   const activeClassId = todayLesson?.classId ?? students[0]?.group ?? '수업';
@@ -285,7 +286,7 @@ function RecordEntryView() {
             <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{activeLessonTitle}</h2>
             <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>출석은 빠르게, 동작 기록은 학생 이름을 눌러 저장합니다.</p>
           </div>
-          <Link href="/spokedu-master/spomove/session?mode=class" className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-acc)' }} aria-label="SPOMOVE 실행">
+          <Link href={`/spokedu-master/class-mode/${program.id}`} className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-acc)' }} aria-label="수업 시작">
             <Play size={18} color="#fff" fill="#fff" />
           </Link>
         </div>
@@ -328,7 +329,15 @@ function RecordEntryView() {
           </div>
         ) : null}
         {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}
-        {savedOnly && kakaoStep !== 'done' ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>수업 기록이 학생 이력에 저장되었습니다. 보호자 안내 문구는 설명 문구 페이지에서 이어서 정리할 수 있습니다.</p> : null}
+        {savedOnly && kakaoStep !== 'done' ? (
+          <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>
+            <p className="text-[12px] font-bold">수업 기록이 학생 이력에 저장되었습니다.</p>
+            <div className="mt-2 flex flex-wrap gap-3">
+              <Link href="/spokedu-master/class-record" className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>기록 목록 보기</Link>
+              <Link href={`/spokedu-master/report?program=${program.id}`} className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>설명 문구 보기</Link>
+            </div>
+          </div>
+        ) : null}
         {kakaoStep === 'sending' ? <p className="mt-4 rounded-[12px] p-3 text-[13px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>보호자 안내를 준비하는 중입니다...</p> : null}
         {kakaoStep === 'done' ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.13)', color: 'var(--spm-grn)' }}>

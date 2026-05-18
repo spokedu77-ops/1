@@ -93,7 +93,22 @@ export type FlowTimingOverrides = {
    * 예: 0.5 = 체감 속도 약 절반 (키즈 세이프).
    */
   motionTimeScale?: number;
+  /** 활성화된 인터랙션 기능 플래그 */
+  features?: Partial<FlowFeatureFlags>;
 };
+
+export interface FlowFeatureFlags {
+  /** 다리 간격 넓힘 + 점프 높이 증가 */
+  bigJump: boolean;
+  /** 주기적 가속 구간 */
+  sprint: boolean;
+  /** 정지 신호 반응 훈련 */
+  freeze: boolean;
+  /** 한 발 착지 유도 */
+  balance: boolean;
+  /** 높은 박스 올려치기 */
+  reach: boolean;
+}
 
 /** 파노라마 전방 180°만 선명히 표시, 뒤쪽은 우주 검정. 2K도 덜 뭉개지게 */
 const PANO_VERTEX = `
@@ -168,6 +183,7 @@ export class FlowEngine {
   private gameState = 'waiting';
   private isResting = false;
   private movementActive = false;
+  private features: FlowFeatureFlags = { bigJump: false, sprint: false, freeze: false, balance: false, reach: false };
   /** 휴식 구간 순서 (1부터 시작, getRestContent 키와 대응) */
   private restIndex = 0;
   /** 완료 화면에서 표시할 플레이된 레벨 번호 목록 */
@@ -228,6 +244,30 @@ export class FlowEngine {
 
   private jumpProgress = 0;
   private jumpStartTime = 0;
+
+  /** sprint 기능: 주기 타이머 (초). 0 도달 시 스파이크 트리거 */
+  private sprintCycleTimer = 0;
+  /** sprint 스파이크 남은 시간 (초). 0이면 비활성 */
+  private sprintActiveTimer = 0;
+  private readonly SPRINT_CYCLE_SEC = 12;
+  private readonly SPRINT_DURATION_SEC = 3;
+  private readonly SPRINT_MULTIPLIER = 1.45;
+
+  /** freeze 기능: 다음 freeze까지 남은 시간 (초) */
+  private freezeCycleTimer = 0;
+  /** freeze 정지 남은 시간 (초). 0이면 비활성 */
+  private freezeActiveTimer = 0;
+  private readonly FREEZE_CYCLE_MIN_SEC = 10;
+  private readonly FREEZE_CYCLE_MAX_SEC = 18;
+  private readonly FREEZE_HOLD_SEC = 1.8;
+
+  /** balance 기능: 다음 한 발 큐까지 남은 시간 (초) */
+  private balanceCycleTimer = 0;
+  /** balance 큐 활성 남은 시간 (초). 0이면 비활성 */
+  private balanceActiveTimer = 0;
+  private readonly BALANCE_CYCLE_MIN_SEC = 15;
+  private readonly BALANCE_CYCLE_MAX_SEC = 22;
+  private readonly BALANCE_HOLD_SEC = 3.0;
 
   private microJolt = 0;
   private cameraLagX = 0;
@@ -385,7 +425,7 @@ export class FlowEngine {
 
     // 브리지 3개 스폰
     for (let i = 0; i < 3; i++) {
-      this.spawnBridge(i === 0, level, 0);
+      this.spawnBridge(i === 0, level);
     }
 
     // 3) 카메라/이펙트 리셋
@@ -512,34 +552,13 @@ export class FlowEngine {
         onHitStop: () => {
           if (this.getCurrentLevelNum() === HIT_STOP_LEVEL) this.hitStopFramesRemaining = HIT_STOP_FRAMES;
         },
-      }
+      },
+      this.features.reach
     );
   }
 
   private createSpaceBackground(): void {
     if (!this.scene) return;
-
-    const clearBackground = () => {
-      if (this.panoMesh) {
-        this.panoMesh.parent?.remove(this.panoMesh);
-        if (this.panoTexture) {
-          this.panoTexture.dispose();
-          this.panoTexture = null;
-        }
-        const mat = this.panoMesh.material as THREE.MeshBasicMaterial & { uniforms?: { map?: { value: THREE.Texture } } };
-        mat?.dispose();
-        this.panoMesh.geometry?.dispose();
-        this.panoMesh = null;
-      }
-
-      if (this.stars) {
-        this.scene!.remove(this.stars);
-        const mat = this.stars.material as THREE.Material;
-        this.stars.geometry?.dispose();
-        mat?.dispose();
-        this.stars = null;
-      }
-    };
 
     const ensureStars = () => {
       if (this.stars) return;
@@ -772,11 +791,7 @@ export class FlowEngine {
     }, ms);
   }
 
-  private spawnBridge(
-    isFirst: boolean,
-    levelNumForSpawn: number,
-    playerX: number
-  ): void {
+  private spawnBridge(isFirst: boolean, levelNumForSpawn: number): void {
     let spawnZ = -8000;
     const padDepth = PAD_DEPTH;
 
@@ -784,11 +799,14 @@ export class FlowEngine {
     else if (this.bridges.length > 0) {
       const lastBridge = this.bridges[this.bridges.length - 1];
       const level = levelNumForSpawn;
-      const gap =
+      const baseGap =
         level === 1 ? 900 :
         level === 2 ? 650 :
         level === 3 ? 520 :
         450;
+      const gap = (this.features.bigJump && level <= 2)
+        ? Math.round(baseGap * 1.7)
+        : baseGap;
       spawnZ =
         lastBridge.mesh.position.z -
         (this.bridgeLength + padDepth) -
@@ -1097,7 +1115,10 @@ export class FlowEngine {
     levelNum: number
   ): { duration: number; height: number } {
     const lv = (levelNum >= 1 && levelNum <= 5) ? levelNum as 1 | 2 | 3 | 4 | 5 : 1;
-    return { duration: JUMP_DURATION[lv], height: JUMP_HEIGHT[lv] };
+    const height = (this.features.bigJump && lv <= 2)
+      ? Math.round(JUMP_HEIGHT[lv] * 1.5)
+      : JUMP_HEIGHT[lv];
+    return { duration: JUMP_DURATION[lv], height };
   }
 
   private triggerJump(): void {
@@ -1116,7 +1137,7 @@ export class FlowEngine {
       showInstruction(this.domRefs, 'JUMP!', 'text-yellow-400', 450);
   }
 
-  private updateJump(dt: number): void {
+  private updateJump(): void {
     if (!this.isJumping) return;
 
     const currentLevelNum = this.getCurrentLevelNum();
@@ -1211,7 +1232,6 @@ export class FlowEngine {
     this.movementActive = false;
 
     const ins = getRefEl(this.domRefs.introScreen);
-    const txt = getRefEl(this.domRefs.introTitle);
     const btn = getRefEl(this.domRefs.startBtn);
     if (btn) btn.style.display = 'none';
     if (ins) ins.classList.remove('hidden', 'fade-out');
@@ -1401,6 +1421,15 @@ export class FlowEngine {
         ? Math.min(1, Math.max(0.25, motionRaw))
         : 1;
 
+    const f = timing?.features ?? {};
+    this.features = {
+      bigJump:  f.bigJump  ?? false,
+      sprint:   f.sprint   ?? false,
+      freeze:   f.freeze   ?? false,
+      balance:  f.balance  ?? false,
+      reach:    f.reach    ?? false,
+    };
+
     this.totalPlaySecForHud = this.durations
       .filter((_, i) => this.displayLevels[i] >= 1 && this.displayLevels[i] <= 5)
       .reduce((a, b) => a + b, 0);
@@ -1436,7 +1465,7 @@ export class FlowEngine {
 
     // 엔진 수명 = 페이지 수명. 3D 리소스는 1회 생성 후 재사용. 재시작 기능 도입 시 리셋 경로 추가 후 init3D는 !this.scene 일 때만 호출하도록 변경 권장.
     this.init3D();
-    this.spawnBridge(true, 1, 0);
+    this.spawnBridge(true, 1);
 
     this.gameState = 'playing';
     this.movementActive = false;
@@ -1448,6 +1477,12 @@ export class FlowEngine {
     this.currentLevelIndex = 0;
     this.restIndex = 0;
     this.playedLevels = [];
+    this.sprintCycleTimer = this.SPRINT_CYCLE_SEC;
+    this.sprintActiveTimer = 0;
+    this.freezeCycleTimer = this.FREEZE_CYCLE_MIN_SEC + Math.random() * (this.FREEZE_CYCLE_MAX_SEC - this.FREEZE_CYCLE_MIN_SEC);
+    this.freezeActiveTimer = 0;
+    this.balanceCycleTimer = this.BALANCE_CYCLE_MIN_SEC + Math.random() * (this.BALANCE_CYCLE_MAX_SEC - this.BALANCE_CYCLE_MIN_SEC);
+    this.balanceActiveTimer = 0;
     this.nextBeatTime = 0;
     this.currentSpeedValue = 0;
 
@@ -1484,7 +1519,6 @@ export class FlowEngine {
     if (!this.renderer || !this.scene || !this.camera) return;
 
     const dt = Math.min(rawDt, 0.1);
-    const dt60 = dt * 60;
     const m = this.motionTimeScale;
     const dtMotion = dt * m;
     const dt60Motion = dtMotion * 60;
@@ -1551,7 +1585,7 @@ export class FlowEngine {
     }
 
     if (!inHitStop) {
-      this.updateJump(dtMotion);
+      this.updateJump();
     }
 
     const beatInfo = this.audio.getBeatInfo();
@@ -1605,8 +1639,7 @@ export class FlowEngine {
     if (this.bridges.length < 3) {
       this.spawnBridge(
         this.bridges.length === 0,
-        currentLevelNum,
-        this.cameraLagX
+        currentLevelNum
       );
     }
 
@@ -1617,6 +1650,69 @@ export class FlowEngine {
     if (lv === 1 && this.movementActive) {
       const t = Math.min(this.levelTime / LV1_START_ACCEL_DURATION_SEC, 1);
       speedScalar = t * t * (3 - 2 * t);
+    }
+
+    // sprint 기능: LV2 이상에서 주기적 가속 스파이크
+    if (this.features.sprint && this.movementActive && lv >= 2) {
+      if (this.sprintActiveTimer > 0) {
+        this.sprintActiveTimer -= dt;
+        if (this.sprintActiveTimer <= 0) {
+          this.sprintActiveTimer = 0;
+          this.sprintCycleTimer = this.SPRINT_CYCLE_SEC;
+        }
+        speedScalar *= this.SPRINT_MULTIPLIER;
+        this.flashPulseValue = Math.min(1.0, this.flashPulseValue + 0.04 * dt * 60);
+      } else {
+        this.sprintCycleTimer -= dt;
+        if (this.sprintCycleTimer <= 0) {
+          this.sprintActiveTimer = this.SPRINT_DURATION_SEC;
+          showInstruction(this.domRefs, 'FASTER!', 'text-cyan-300', 800);
+          this.audio.sfxCoin();
+        }
+      }
+    }
+
+    // freeze 기능: LV3 이상에서 주기적 정지 신호
+    if (this.features.freeze && this.movementActive && lv >= 3 && !this.isResting) {
+      if (this.freezeActiveTimer > 0) {
+        this.freezeActiveTimer -= dt;
+        if (this.freezeActiveTimer <= 0) {
+          this.freezeActiveTimer = 0;
+          this.movementActive = true;
+          this.freezeCycleTimer = this.FREEZE_CYCLE_MIN_SEC +
+            Math.random() * (this.FREEZE_CYCLE_MAX_SEC - this.FREEZE_CYCLE_MIN_SEC);
+          showInstruction(this.domRefs, 'GO!', 'text-emerald-400', 500);
+        } else {
+          speedScalar = 0;
+        }
+      } else {
+        this.freezeCycleTimer -= dt;
+        if (this.freezeCycleTimer <= 0) {
+          this.freezeActiveTimer = this.FREEZE_HOLD_SEC;
+          showInstruction(this.domRefs, 'FREEZE!', 'text-blue-300', 1200);
+          this.flashPulseValue = Math.min(1.0, this.flashPulseValue + 0.3);
+        }
+      }
+    }
+
+    // balance 기능: LV2 이상에서 한 발 착지 큐
+    if (this.features.balance && this.movementActive && lv >= 2 && !this.isResting) {
+      if (this.balanceActiveTimer > 0) {
+        this.balanceActiveTimer -= dt;
+        if (this.balanceActiveTimer <= 0) {
+          this.balanceActiveTimer = 0;
+          this.balanceCycleTimer = this.BALANCE_CYCLE_MIN_SEC +
+            Math.random() * (this.BALANCE_CYCLE_MAX_SEC - this.BALANCE_CYCLE_MIN_SEC);
+          showInstruction(this.domRefs, 'GREAT!', 'text-emerald-400', 600);
+        }
+      } else {
+        this.balanceCycleTimer -= dt;
+        if (this.balanceCycleTimer <= 0) {
+          this.balanceActiveTimer = this.BALANCE_HOLD_SEC;
+          const footText = Math.random() < 0.5 ? 'LEFT FOOT' : 'RIGHT FOOT';
+          showInstruction(this.domRefs, footText, 'text-orange-300', Math.round(this.BALANCE_HOLD_SEC * 1000));
+        }
+      }
     }
 
     this.currentSpeedValue = this.movementActive
@@ -1715,9 +1811,7 @@ export class FlowEngine {
       this.obstacleManager.update(
         dt60Motion,
         currentSpeed,
-        currentLevelNum,
-        this.playerZ,
-        this.cameraLagX
+        currentLevelNum
       );
     }
 

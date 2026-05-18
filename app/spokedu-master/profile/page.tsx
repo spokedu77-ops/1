@@ -192,7 +192,7 @@ export default function SpokeduMasterProfilePage() {
       <header className="px-[22px] pb-6 pt-[22px] sm:px-8 lg:px-10">
         <div className="flex items-center gap-4">
           <div className="grid h-[72px] w-[72px] place-items-center rounded-full text-[26px] font-black text-white" style={{ background: profile?.avatarColor ?? '#312e81', fontFamily: 'var(--spm-font-display)' }}>{(profile?.name ?? '선생님').slice(0, 1)}</div>
-          <div className="min-w-0 flex-1"><h1 className="truncate text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{profile?.name ?? '선생님'}</h1><p className="mt-1 truncate text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>{profile?.school || '소속을 설정해 주세요'}</p><p className="mt-1 text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>SPOKEDU PRO · {planName}</p></div>
+          <div className="min-w-0 flex-1"><h1 className="truncate text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{profile?.name ?? '선생님'}</h1><p className="mt-1 truncate text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>{profile?.school || '소속을 설정해 주세요'}</p><p className="mt-1 text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER · {planName}</p></div>
         </div>
         <button type="button" onClick={() => setProfileOpen(true)} className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><Pencil size={15} />프로필 편집</button>
       </header>
@@ -214,7 +214,7 @@ export default function SpokeduMasterProfilePage() {
         </div>
 
         <div className="space-y-3">
-          <MenuRow icon={MonitorPlay} label="SPOMOVE 큰 화면 실행" caption="수업 공간에서 바로 실행" href="/spokedu-master/spomove/session?mode=projector" />
+          <MenuRow icon={MonitorPlay} label="SPOMOVE 큰 화면 실행" caption="수업 공간에서 바로 실행" href="/spokedu-master/spomove" />
           <MenuRow icon={CalendarDays} label="수업 계획" caption="주간 일정 관리" href="/spokedu-master/plan" />
           <MenuRow icon={CreditCard} label="구독 관리" caption="플랜 변경 · 결제 수단 · 구독 취소" href="/spokedu-master/subscription" />
           <MenuRow icon={HelpCircle} label="도입 상담" caption="센터와 학교용 도입 문의" href="mailto:support@spokedu.com" />

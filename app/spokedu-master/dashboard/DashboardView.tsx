@@ -10,7 +10,7 @@ import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { CategoryIcon, ProgramThumb } from '../components/ui/ProgramThumb';
 import { getTrialDaysLeft } from '../lib/subscription';
 import { useMasterStore, useProfile, useUnreadCount } from '../store';
-import type { Drill, Notification, Program } from '../types';
+import type { Drill, Lesson, Notification, Program } from '../types';
 
 function useGreeting() {
   const hour = new Date().getHours();
@@ -38,7 +38,7 @@ function PlanChip() {
   );
 }
 
-function TodayHero({ program }: { program: Program }) {
+function TodayHero({ program, lesson }: { program: Program; lesson?: Lesson }) {
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
   const favorites = useMasterStore((state) => state.favorites);
   const isFav = favorites.includes(program.id);
@@ -73,7 +73,7 @@ function TodayHero({ program }: { program: Program }) {
         <div className="relative flex min-h-[224px] flex-col justify-between p-5 md:p-7">
           <div className="flex items-start justify-between">
             <span className="inline-flex items-center rounded-full bg-black/30 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/70">
-              오늘 추천 수업
+              {lesson ? `${lesson.classId} · ${lesson.period}교시` : '오늘 추천 수업'}
             </span>
             <div className="flex gap-1.5">
               {program.isNew ? <span className="rounded-full bg-emerald-400 px-2 py-0.5 text-[9px] font-black text-emerald-950">NEW</span> : null}
@@ -228,25 +228,40 @@ function DrillTile({ drill, index }: { drill: Drill; index: number }) {
   );
 }
 
-function TodayPlan({ lessons }: { lessons: ReturnType<typeof useMasterStore.getState>['lessons'] }) {
+function TodayPlan({ lessons, programs }: { lessons: ReturnType<typeof useMasterStore.getState>['lessons']; programs: Program[] }) {
   const toggleLessonDone = useMasterStore((state) => state.toggleLessonDone);
   if (lessons.length === 0) return null;
+
+  const findProgramId = (lessonTitle: string) => {
+    const stem = lessonTitle.split(':')[0] ?? lessonTitle;
+    return programs.find((p) => stem.includes(p.title.split(':')[0] ?? '') || p.title.includes(stem))?.id;
+  };
+
   return (
     <section className="mb-6">
       <SectionHeader title="오늘 수업 계획" href="/spokedu-master/plan" />
       <div className="grid gap-2 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-3 lg:px-10">
-        {lessons.map((lesson) => (
-          <div key={lesson.id} className="flex items-center gap-3 rounded-[14px] p-3.5" style={{ background: 'var(--spm-s2)', border: `1px solid ${lesson.done ? 'var(--spm-br)' : lesson.color}22` }}>
-            <span className="h-10 w-1 shrink-0 rounded-full" style={{ background: lesson.color }} />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-bold" style={{ color: lesson.done ? 'var(--spm-t3)' : 'var(--spm-t)', textDecoration: lesson.done ? 'line-through' : 'none' }}>{lesson.title}</p>
-              <p className="mt-0.5 text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>{lesson.classId} · {lesson.period}교시 · {lesson.duration}분</p>
+        {lessons.map((lesson) => {
+          const programId = findProgramId(lesson.title);
+          const launchHref = programId ? `/spokedu-master/class-mode/${programId}` : '/spokedu-master/class-record';
+          return (
+            <div key={lesson.id} className="flex items-center gap-3 rounded-[14px] p-3.5" style={{ background: 'var(--spm-s2)', border: `1px solid ${lesson.done ? 'var(--spm-br)' : lesson.color}22` }}>
+              <span className="h-10 w-1 shrink-0 rounded-full" style={{ background: lesson.color }} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-bold" style={{ color: lesson.done ? 'var(--spm-t3)' : 'var(--spm-t)', textDecoration: lesson.done ? 'line-through' : 'none' }}>{lesson.title}</p>
+                <p className="mt-0.5 text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>{lesson.classId} · {lesson.period}교시 · {lesson.duration}분</p>
+              </div>
+              {!lesson.done ? (
+                <Link href={launchHref} className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-acc)' }} aria-label="수업 시작">
+                  <Play size={13} color="#fff" fill="#fff" />
+                </Link>
+              ) : null}
+              <button type="button" onClick={() => toggleLessonDone(lesson.id)} className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: lesson.done ? 'rgba(16,185,129,0.14)' : 'var(--spm-s3)' }} aria-label="완료">
+                <Check size={15} color={lesson.done ? 'var(--spm-grn)' : 'var(--spm-t3)'} />
+              </button>
             </div>
-            <button type="button" onClick={() => toggleLessonDone(lesson.id)} className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: lesson.done ? 'rgba(16,185,129,0.14)' : 'var(--spm-s3)' }} aria-label="완료">
-              <Check size={15} color={lesson.done ? 'var(--spm-grn)' : 'var(--spm-t3)'} />
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -302,9 +317,13 @@ export default function DashboardView() {
 
   const now = new Date();
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
-  const todayProgram = programs.length > 0 ? programs[dayOfYear % programs.length] : undefined;
-  if (!todayProgram) return <DashboardSkeleton />;
   const todayLessons = lessons.filter((lesson) => isSameDay(new Date(lesson.date), now));
+  const firstUndoneTodayLesson = todayLessons.find((l) => !l.done);
+  const heroFromPlan = firstUndoneTodayLesson
+    ? programs.find((p) => firstUndoneTodayLesson.title.includes(p.title.split(':')[0] ?? '') || p.title.includes(firstUndoneTodayLesson.title.split(':')[0] ?? ''))
+    : undefined;
+  const todayProgram = heroFromPlan ?? (programs.length > 0 ? programs[dayOfYear % programs.length] : undefined);
+  if (!todayProgram) return <DashboardSkeleton />;
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -330,7 +349,7 @@ export default function DashboardView() {
         </div>
       </header>
 
-      <TodayHero program={todayProgram} />
+      <TodayHero program={todayProgram} lesson={firstUndoneTodayLesson} />
 
       <StatsBand
         programCount={programs.length}
@@ -340,7 +359,7 @@ export default function DashboardView() {
 
       <QuickActions />
 
-      <TodayPlan lessons={todayLessons} />
+      <TodayPlan lessons={todayLessons} programs={programs} />
 
       <section className="mb-6">
         <SectionHeader title="최근 사용과 즐겨찾기" href="/spokedu-master/library" />

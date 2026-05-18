@@ -56,8 +56,6 @@ export function initEffects(): EffectsAPI {
   const flashOverlay = document.getElementById('flash-overlay');
   
   // PR-D: DevPanel에서 동적 조절 가능하도록 초기 opacity 저장
-  const initialVignetteOpacity = vignette ? parseFloat(getComputedStyle(vignette).opacity) : 0.4;
-  const initialGrainOpacity = grain ? parseFloat(getComputedStyle(grain).opacity) : 0.1;
 
   // Set grain texture (once)
   if (grain) {

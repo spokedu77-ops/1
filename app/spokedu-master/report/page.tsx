@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { BookOpen, Check, Clipboard, FileText, GraduationCap, Megaphone, MessageCircle, MonitorPlay, UsersRound, type LucideIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { isTrialExpired } from '../lib/subscription';
 import { useMasterStore, useIsPro, useProfile } from '../store';
 
@@ -140,17 +141,23 @@ function CopyCard({ block, copied, onCopy }: { block: CopyBlock; copied: boolean
   );
 }
 
-export default function ReportPage() {
+function ReportContent() {
+  const searchParams = useSearchParams();
   const programs = useMasterStore((state) => state.programs);
   const classRecords = useMasterStore((state) => state.classRecords);
   const recentProgramId = classRecords[0]?.programId ?? programs[0]?.id ?? '';
+  const urlProgramId = searchParams.get('program');
   const profile = useProfile();
   const isPro = useIsPro();
   const trialExpired = isTrialExpired(profile);
   const [audience, setAudience] = useState<Audience>('parent');
-  const [programId, setProgramId] = useState(recentProgramId);
+  const [programId, setProgramId] = useState(urlProgramId ?? recentProgramId);
   const [copiedKey, setCopiedKey] = useState('');
+  const [programSearch, setProgramSearch] = useState('');
   const program = programs.find((item) => item.id === programId) ?? programs[0];
+  const filteredPrograms = programSearch.trim()
+    ? programs.filter((p) => p.title.includes(programSearch) || p.tags.some((t) => t.includes(programSearch)))
+    : programs;
   const copyBlocks = useMemo(() => (program ? buildCopyBlocks(audience, program) : []), [audience, program]);
   const activeAudience = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0]!;
 
@@ -188,7 +195,7 @@ export default function ReportPage() {
         })}
       </section>
 
-      {!program ? <div className="px-[22px] py-10 text-center text-[13px]" style={{ color: 'var(--spm-t3)' }}>프로그램을 불러오는 중입니다…</div> : null}
+      {!program ? <div className="px-[22px] py-10 text-center text-[13px]" style={{ color: 'var(--spm-t3)' }}>프로그램을 불러오는 중입니다&hellip;</div> : null}
       {program ? <main className="grid gap-6 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
         <aside className="space-y-4">
           <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -196,14 +203,14 @@ export default function ReportPage() {
               <BookOpen size={17} color="var(--spm-acc)" />
               <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>활동 선택</h2>
             </div>
-            {program ? <p className="mb-3 truncate text-[11px] font-bold" style={{ color: 'var(--spm-acc)' }}>{program.title}</p> : null}
+            <input type="text" value={programSearch} onChange={(event) => setProgramSearch(event.target.value)} placeholder="활동 검색…" className="mb-3 h-9 w-full rounded-[11px] border px-3 text-[12px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
             <div className="scrollbar-hide max-h-[340px] space-y-2 overflow-y-auto">
-              {programs.map((item) => (
+              {filteredPrograms.length > 0 ? filteredPrograms.map((item) => (
                 <button key={item.id} type="button" onClick={() => setProgramId(item.id)} className="w-full rounded-[13px] p-3 text-left" style={{ background: programId === item.id ? 'rgba(99,102,241,0.16)' : 'var(--spm-s3)', border: programId === item.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid transparent' }}>
                   <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
                   <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{item.grade} · {item.duration}분 · {item.space}</span>
                 </button>
-              ))}
+              )) : <p className="py-4 text-center text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>검색 결과가 없습니다</p>}
             </div>
           </section>
 
@@ -234,5 +241,13 @@ export default function ReportPage() {
         </section>
       </main> : null}
     </div>
+  );
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense fallback={<div className="h-full" style={{ background: 'var(--spm-bg)' }} />}>
+      <ReportContent />
+    </Suspense>
   );
 }

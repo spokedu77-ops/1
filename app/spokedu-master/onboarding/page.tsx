@@ -193,7 +193,7 @@ export default function OnboardingPage() {
               <div className="rounded-[14px] p-4" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.28)' }}>
                 <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: '#a5b4fc' }}>지금 바로 시작</p>
                 <p className="mt-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>Pro — 39,900원/월</p>
-                <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>전체 라이브러리 · SPOMOVE 무제한 · 수업 도구 전체</p>
+                <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>전체 라이브러리 · SPOMOVE 무제한 · 수업 도구 전체 · 설명 문구</p>
                 <button
                   type="button"
                   onClick={() => finishWithPayment('pro')}

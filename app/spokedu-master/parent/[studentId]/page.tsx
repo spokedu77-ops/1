@@ -51,7 +51,7 @@ function ParentStudentViewContent() {
   }
 
   if (!student) {
-    return <InvalidLink title="학생 정보를 찾을 수 없습니다" body="링크가 만료되었거나 잘못된 주소일 수 있습니다." />;
+    return <InvalidLink title="학생 정보를 찾을 수 없습니다" body="이 링크는 강사의 기기에서만 열람할 수 있습니다. 강사에게 직접 기기에서 화면을 보여달라고 요청해 주세요." />;
   }
 
   return (

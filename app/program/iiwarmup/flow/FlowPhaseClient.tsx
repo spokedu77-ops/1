@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { FlowEngine, type FlowDomRefs, type FlowTimingOverrides } from './engine/FlowEngine';
+import { FlowEngine, type FlowDomRefs, type FlowTimingOverrides, type FlowFeatureFlags } from './engine/FlowEngine';
 import type { FlowPhaseDetail } from './engine/FlowTypes';
 import { useFlowBGM } from '@/app/lib/admin/hooks/useFlowBGM';
 import { useFlowPano } from '@/app/lib/admin/hooks/useFlowPano';
@@ -233,6 +233,14 @@ function FlowPhaseContent() {
   const customDurations = durationsRaw
     ? durationsRaw.split(',').map(Number).filter((x) => Number.isFinite(x) && x > 0)
     : null;
+  const featuresRaw = (searchParams.get('features') ?? '').split(',').filter(Boolean);
+  const featureFlags: FlowFeatureFlags = {
+    bigJump:  featuresRaw.includes('bigJump'),
+    sprint:   featuresRaw.includes('sprint'),
+    freeze:   featuresRaw.includes('freeze'),
+    balance:  featuresRaw.includes('balance'),
+    reach:    featuresRaw.includes('reach'),
+  };
 
   const shortFlow5Timing: FlowTimingOverrides = {
     welcomeDurationMs: 5000,
@@ -249,23 +257,28 @@ function FlowPhaseContent() {
 
   const timingOverrides: FlowTimingOverrides | undefined = (() => {
     if (memoryPreset === 'shortFlow5') {
-      return { ...shortFlow5Timing, ...(kidsSafe ? { motionTimeScale: 0.5 } : {}) };
+      return { ...shortFlow5Timing, features: featureFlags, ...(kidsSafe ? { motionTimeScale: 0.5 } : {}) };
     }
-    const base: FlowTimingOverrides = {};
+    const base: FlowTimingOverrides = { features: featureFlags };
     if (kidsSafe) base.motionTimeScale = 0.5;
     if (customDurations && customDurations.length === 8) base.durations = customDurations;
     if (skipRestParam) base.skipRestPhases = true;
-    return Object.keys(base).length > 0 ? base : undefined;
+    return base;
   })();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<FlowEngine | null>(null);
-  const domRefsRef = useRef<FlowDomRefs | null>(null);
 
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [engineReady, setEngineReady] = useState(false);
   const [showTapForAudio, setShowTapForAudio] = useState(false);
   const [overlay, setOverlay] = useState<OverlayState>(null);
+  /** 실제 DOM에 렌더링되는 overlay — fade-out 중에도 이전 내용 유지 */
+  const [displayedOverlay, setDisplayedOverlay] = useState<OverlayState>(null);
+  /** true면 opacity-100, false면 opacity-0 */
+  const [overlayShown, setOverlayShown] = useState(false);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastOverlayTypeRef = useRef<string | null>(null);
 
   const progressBarRef = useRef<HTMLDivElement>(null);
   const levelNumRef = useRef<HTMLSpanElement>(null);
@@ -283,26 +296,23 @@ function FlowPhaseContent() {
   const stampOverlayRef = useRef<HTMLDivElement>(null);
   const badgeToastRef = useRef<HTMLDivElement>(null);
 
-  // Build domRefs object once (refs themselves are stable)
-  if (domRefsRef.current === null) {
-    domRefsRef.current = {
-      progressBar: progressBarRef,
-      levelNum: levelNumRef,
-      levelTag: levelTagRef,
-      instruction: instructionRef,
-      introScreen: introScreenRef,
-      introTitle: introTitleRef,
-      startBtn: startBtnRef,
-      hud: hudRef,
-      countdownOverlay: countdownOverlayRef,
-      flashOverlay: flashOverlayRef,
-      speedLinesOverlay: speedLinesOverlayRef,
-      panoDebugHud: panoDebugHudRef,
-      duckWarningLine: duckWarningLineRef,
-      stampOverlay: stampOverlayRef,
-      badgeToast: badgeToastRef,
-    };
-  }
+  const domRefsRef = useRef<FlowDomRefs>({
+    progressBar: progressBarRef,
+    levelNum: levelNumRef,
+    levelTag: levelTagRef,
+    instruction: instructionRef,
+    introScreen: introScreenRef,
+    introTitle: introTitleRef,
+    startBtn: startBtnRef,
+    hud: hudRef,
+    countdownOverlay: countdownOverlayRef,
+    flashOverlay: flashOverlayRef,
+    speedLinesOverlay: speedLinesOverlayRef,
+    panoDebugHud: panoDebugHudRef,
+    duckWarningLine: duckWarningLineRef,
+    stampOverlay: stampOverlayRef,
+    badgeToast: badgeToastRef,
+  });
 
   // flow-phase CustomEvent → overlay state
   useEffect(() => {
@@ -328,10 +338,47 @@ function FlowPhaseContent() {
     return () => window.removeEventListener('flow-phase', handler);
   }, []);
 
+  // overlay 변경 → fade-in / fade-out 관리
+  useEffect(() => {
+    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+
+    const newType = overlay?.type ?? null;
+    const prevType = lastOverlayTypeRef.current;
+
+    // rest-tick: 같은 타입, 카운트다운 숫자만 갱신 — 애니메이션 없이 바로 반영
+    if (newType === 'rest' && prevType === 'rest') {
+      setDisplayedOverlay(overlay);
+      return;
+    }
+
+    lastOverlayTypeRef.current = newType;
+
+    if (overlay !== null) {
+      if (prevType !== null) {
+        // 타입 전환: 잠깐 fade-out → 내용 교체 → fade-in
+        setOverlayShown(false);
+        fadeTimerRef.current = setTimeout(() => {
+          setDisplayedOverlay(overlay);
+          requestAnimationFrame(() => setOverlayShown(true));
+        }, 220);
+      } else {
+        // 처음 등장: 렌더 후 한 프레임 뒤 fade-in
+        setDisplayedOverlay(overlay);
+        requestAnimationFrame(() => setOverlayShown(true));
+      }
+    } else {
+      // 사라짐: fade-out 완료 후 DOM에서 제거
+      setOverlayShown(false);
+      fadeTimerRef.current = setTimeout(() => setDisplayedOverlay(null), 300);
+    }
+
+    return () => { if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current); };
+  }, [overlay]);
+
   // Engine lifecycle
   useEffect(() => {
-    if (!canvasRef.current || !domRefsRef.current) return;
-    const engine = new FlowEngine(canvasRef.current, { current: domRefsRef.current });
+    if (!canvasRef.current) return;
+    const engine = new FlowEngine(canvasRef.current, domRefsRef);
     engineRef.current = engine;
     setEngineReady(true);
 
@@ -372,9 +419,9 @@ function FlowPhaseContent() {
 
   const handleRestart = useCallback(() => {
     setOverlay(null);
-    if (!canvasRef.current || !domRefsRef.current) return;
+    if (!canvasRef.current) return;
     engineRef.current?.dispose();
-    const newEngine = new FlowEngine(canvasRef.current, { current: domRefsRef.current });
+    const newEngine = new FlowEngine(canvasRef.current, domRefsRef);
     engineRef.current = newEngine;
     void newEngine.startGame(bgmPath, panoPath, {
       deferAudio: false,
@@ -518,19 +565,25 @@ function FlowPhaseContent() {
       />
 
       {/* Phase overlays */}
-      {overlay?.type === 'start' && <StartOverlay />}
-      {overlay?.type === 'level-intro' && overlay.levelNum > 0 && (
-        <LevelIntroOverlay levelNum={overlay.levelNum} />
-      )}
-      {overlay?.type === 'rest' && (
-        <RestOverlay restIndex={overlay.restIndex} remainingSec={overlay.remainingSec} />
-      )}
-      {overlay?.type === 'complete' && (
-        <CompleteOverlay
-          playedLevels={overlay.playedLevels}
-          onRestart={handleRestart}
-          onClose={handleClose}
-        />
+      {displayedOverlay !== null && (
+        <div
+          className={`transition-opacity duration-300 ease-in-out ${overlayShown ? 'opacity-100' : 'opacity-0'} ${!overlayShown ? 'pointer-events-none' : ''}`}
+        >
+          {displayedOverlay.type === 'start' && <StartOverlay />}
+          {displayedOverlay.type === 'level-intro' && displayedOverlay.levelNum > 0 && (
+            <LevelIntroOverlay levelNum={displayedOverlay.levelNum} />
+          )}
+          {displayedOverlay.type === 'rest' && (
+            <RestOverlay restIndex={displayedOverlay.restIndex} remainingSec={displayedOverlay.remainingSec} />
+          )}
+          {displayedOverlay.type === 'complete' && (
+            <CompleteOverlay
+              playedLevels={displayedOverlay.playedLevels}
+              onRestart={handleRestart}
+              onClose={handleClose}
+            />
+          )}
+        </div>
       )}
 
       <div
