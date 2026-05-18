@@ -43,6 +43,7 @@ export default function SpomoveHubView() {
   const drills = useMasterStore((state) => state.drills);
   const stats = useStats();
   const recent = sessions.slice(0, 3);
+  const defaultDrillId = drills[0]?.id ?? 'speed-track';
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
@@ -58,12 +59,12 @@ export default function SpomoveHubView() {
             <UseCaseCard title="라이브러리와 연결" caption="수업안 상세에서 관련 SPOMOVE를 바로 실행할 수 있습니다." icon={Zap} />
           </section>
           <section className="grid gap-2 md:grid-cols-3">
-            <LaunchCard title="큰 화면 실행" desc="빔, TV, 노트북에서 16:9 화면으로 바로 시작" href="/spokedu-master/spomove/session?drill=speed-track&mode=projector" icon={MonitorPlay} tone="#818cf8" />
-            <LaunchCard title="모바일 빠른 실행" desc="폰이나 태블릿으로 워밍업과 마무리 활동 진행" href="/spokedu-master/spomove/session?drill=speed-track&mode=mobile" icon={Smartphone} tone="#10b981" />
-            <LaunchCard title="Class Mode" desc="학생 전체가 보는 수업용 화면으로 전환" href="/spokedu-master/spomove/session?drill=speed-track&mode=class" icon={Maximize} tone="#f59e0b" />
+            <LaunchCard title="큰 화면 실행" desc="빔, TV, 노트북에서 16:9 화면으로 바로 시작" href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} icon={MonitorPlay} tone="#818cf8" />
+            <LaunchCard title="모바일 빠른 실행" desc="폰이나 태블릿으로 워밍업과 마무리 활동 진행" href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=mobile`} icon={Smartphone} tone="#10b981" />
+            <LaunchCard title="Class Mode" desc="학생 전체가 보는 수업용 화면으로 전환" href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=class`} icon={Maximize} tone="#f59e0b" />
           </section>
           <section>
-            <Link href="/spokedu-master/spomove/session?drill=speed-track&mode=projector" className="flex min-h-[132px] items-center justify-between gap-4 overflow-hidden rounded-[18px] p-5 active:scale-[0.99]" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.95), rgba(139,92,246,0.75), rgba(236,72,153,0.58))', boxShadow: '0 18px 42px rgba(99,102,241,0.22)' }}>
+            <Link href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} className="flex min-h-[132px] items-center justify-between gap-4 overflow-hidden rounded-[18px] p-5 active:scale-[0.99]" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.95), rgba(139,92,246,0.75), rgba(236,72,153,0.58))', boxShadow: '0 18px 42px rgba(99,102,241,0.22)' }}>
               <div><p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/55">quick start</p><h2 className="mt-2 text-[25px] font-black text-white" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>바로 큰 화면으로 실행</h2><p className="mt-1 text-[12px] font-semibold text-white/65">기본 색상/방향 신호 20회</p></div>
               <span className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }}><Play size={22} color="#fff" fill="#fff" /></span>
             </Link>
@@ -85,7 +86,7 @@ export default function SpomoveHubView() {
           )}
           <section>
             <div className="mb-[14px] flex items-baseline justify-between"><h2 className="text-[18px] font-bold" style={{ fontFamily: 'var(--spm-font-display)' }}>최근 실행</h2><Link href="/spokedu-master/report" className="text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>설명 문구</Link></div>
-            {recent.length > 0 ? <div className="space-y-2">{recent.map((session) => <div key={session.id} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}><p className="truncate text-[13px] font-bold" style={{ color: 'var(--spm-t)' }}>{session.drillName}</p><p className="mt-1 text-[10px] font-medium" style={{ color: 'var(--spm-t3)' }}>{new Date(session.date).toLocaleDateString('ko-KR')} · {session.cueCount}회 · 평균 {formatReactionTime(session.avg)}</p></div>)}</div> : <Link href="/spokedu-master/spomove/session?drill=speed-track" className="flex items-center justify-between rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>아직 실행 기록이 없습니다</strong><span className="mt-1 block text-[12px]" style={{ color: 'var(--spm-t3)' }}>첫 반응훈련을 시작해보세요.</span></span><ChevronRight size={18} color="var(--spm-t3)" /></Link>}
+            {recent.length > 0 ? <div className="space-y-2">{recent.map((session) => <div key={session.id} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}><p className="truncate text-[13px] font-bold" style={{ color: 'var(--spm-t)' }}>{session.drillName}</p><p className="mt-1 text-[10px] font-medium" style={{ color: 'var(--spm-t3)' }}>{new Date(session.date).toLocaleDateString('ko-KR')} · {session.cueCount}회 · 평균 {formatReactionTime(session.avg)}</p></div>)}</div> : <Link href={`/spokedu-master/spomove/session?drill=${defaultDrillId}`} className="flex items-center justify-between rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>아직 실행 기록이 없습니다</strong><span className="mt-1 block text-[12px]" style={{ color: 'var(--spm-t3)' }}>첫 반응훈련을 시작해보세요.</span></span><ChevronRight size={18} color="var(--spm-t3)" /></Link>}
           </section>
         </aside>
       </div>

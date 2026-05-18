@@ -11,8 +11,25 @@ const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#1c1917', '#292524', '#44403c', '#78716c'],
 ];
 
-function pickColors(idx: number): [string, string, string, string] {
-  return FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
+const CATEGORY_COLORS: Record<string, [string, string, string, string]> = {
+  '민첩성': ['#1e1035', '#312e81', '#4338ca', '#818cf8'],
+  '반응 속도': ['#1c0a2e', '#4c1d95', '#7c3aed', '#a78bfa'],
+  '협동': ['#052e16', '#065f46', '#059669', '#34d399'],
+  '협응성': ['#0c2a4a', '#0369a1', '#0ea5e9', '#7dd3fc'],
+  '균형': ['#052e16', '#14532d', '#16a34a', '#86efac'],
+  '표현 활동': ['#3f0000', '#7f1d1d', '#be123c', '#fb7185'],
+  '집중력': ['#1a1333', '#3730a3', '#6366f1', '#c7d2fe'],
+  '공간 인지': ['#0c1a3a', '#0f3460', '#1a6ebd', '#60a5fa'],
+  '체력': ['#1a0a00', '#7c2d12', '#c2410c', '#fb923c'],
+  '인지': ['#0f172a', '#1e3a5f', '#1d4ed8', '#93c5fd'],
+};
+
+function categoryToColors(category: string): [string, string, string, string] {
+  if (CATEGORY_COLORS[category]) return CATEGORY_COLORS[category];
+  // 알 수 없는 카테고리: 문자열 해시로 팔레트 선택
+  let h = 0;
+  for (let i = 0; i < category.length; i++) h = ((h << 5) - h + category.charCodeAt(i)) | 0;
+  return FALLBACK_COLORS[Math.abs(h) % FALLBACK_COLORS.length];
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -116,11 +133,12 @@ export async function GET() {
     display_order: number | null;
   };
 
-  const programs: Program[] = (curriculumRows as CurrRow[]).map((r, idx) => {
+  const programs: Program[] = (curriculumRows as CurrRow[]).map((r) => {
     const meta = metaByCurriculumId.get(r.id);
     const ov = overlayByCurriculumId.get(r.id);
 
     const title = (r.title ?? '').trim() || `커리큘럼 #${r.id}`;
+    const categoryName = (meta?.sm_theme ?? ov?.main_theme ?? '일반').trim() || '일반';
     const videoUrl = (ov?.video_url ?? r.url ?? '').trim() || undefined;
     const equipment = ov?.equipment
       ? String(ov.equipment).split('\n').map((s) => s.trim()).filter(Boolean)
@@ -137,7 +155,7 @@ export async function GET() {
     const colors: [string, string, string, string] =
       Array.isArray(smColors) && smColors.length === 4
         ? [smColors[0], smColors[1], smColors[2], smColors[3]]
-        : pickColors(idx);
+        : categoryToColors(categoryName);
 
     const isProProgram = meta?.sm_is_pro ?? false;
     // 인증된 사용자에게 lessonDetail 항상 반환 — 체험/유료 모두 공개
@@ -173,7 +191,7 @@ export async function GET() {
       id: String(r.id),
       curriculumId: r.id,
       title,
-      category: meta?.sm_theme ?? (ov?.main_theme ?? '일반'),
+      category: categoryName,
       grade: meta?.sm_grade ?? '전학년',
       duration: meta?.sm_duration ?? 20,
       space: meta?.sm_space ?? '실내',

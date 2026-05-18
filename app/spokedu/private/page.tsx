@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ImagePlaceholder } from '../components/image-placeholder';
-import { FAQList, ProcessSteps, SectionHeader, SplitCTA } from '../components/blocks';
+import { FAQList, ProcessSteps, SectionHeader, SplitCTA, WhySpokeduTrustSection } from '../components/blocks';
 import {
   privateClassTypes,
   privateConsultFlow,
-  privateCtas,
-  privateFaq,
   privateHero,
   privateImageSlots,
   privateLocations,
@@ -16,6 +14,9 @@ import {
   seoKeywords,
   seoMeta,
 } from '../data/content';
+import { privateCtas, privateHeroCtas } from '../data/ctas';
+import { privateFaq } from '../data/faqs';
+import { inferTrackFromHref } from '../lib/tracking';
 
 export const metadata: Metadata = {
   title: seoMeta.private.title,
@@ -33,15 +34,21 @@ export default function SpokeduPrivatePage() {
         <h1 className="whitespace-pre-line text-3xl font-semibold leading-tight text-slate-900 sm:text-5xl">{privateHero.title}</h1>
         <p className="mt-5 max-w-3xl whitespace-pre-line text-sm leading-7 text-slate-700 sm:text-base">{privateHero.description}</p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/spokedu/contact?type=private" className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white">
-            우리 아이 수업 상담하기
-          </Link>
-          <Link href="/spokedu/contact?type=private" className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900">
-            1:1 체육수업 문의
-          </Link>
-          <Link href="/spokedu/contact?type=private" className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900">
-            소그룹 수업 문의
-          </Link>
+          {privateHeroCtas.map((cta, idx) => (
+            <Link
+              key={`${cta.label}-${idx}`}
+              href={cta.href}
+              data-track={cta.track ?? inferTrackFromHref(cta.href)}
+              data-track-label={cta.label}
+              className={
+                idx === 0
+                  ? 'rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white'
+                  : 'rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900'
+              }
+            >
+              {cta.label}
+            </Link>
+          ))}
         </div>
         <div className="mt-5">
           <Link href="/info/private" className="text-xs font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline">
@@ -140,7 +147,10 @@ export default function SpokeduPrivatePage() {
         title="우리 아이에게 맞는 수업을, 지금 상담으로 시작해 보세요."
         description="연령, 현재 운동 경험, 성향, 수업 목적을 기준으로 1:1 또는 소그룹 형태를 제안합니다."
         buttons={privateCtas}
+        mobilePriority
       />
+
+      <WhySpokeduTrustSection />
     </div>
   );
 }

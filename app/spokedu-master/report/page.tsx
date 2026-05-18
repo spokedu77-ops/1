@@ -186,9 +186,9 @@ function ReportContent() {
             <div key={id} className="relative">
               <AudienceButton active={audience === id && !locked} label={label} description={description} Icon={Icon} onClick={() => { if (!locked) setAudience(id); }} />
               {locked ? (
-                <div className="absolute inset-0 flex items-center justify-end rounded-[14px] bg-black/50 pr-3 backdrop-blur-[2px]">
-                  <Link href="/spokedu-master/payment?plan=pro" className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.35)' }}>PRO</Link>
-                </div>
+                <Link href="/spokedu-master/payment?plan=pro" className="absolute inset-0 flex items-center justify-end rounded-[14px] bg-black/50 pr-3 backdrop-blur-[2px]">
+                  <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.35)' }}>PRO</span>
+                </Link>
               ) : null}
             </div>
           );

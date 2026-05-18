@@ -137,7 +137,7 @@ function ParentStudentViewContent() {
 
         <footer className="py-6 text-center">
           <p className="text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>이 링크는 7일 동안 유효한 보호자 공유 링크입니다. 학생 성장 기록은 승인된 링크에서만 열람됩니다.</p>
-          <Link href="/spokedu-master/dashboard" className="mt-4 inline-flex rounded-full px-4 py-2 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>SPOKEDU MASTER</Link>
+          <Link href="/spokedu-master/landing" className="mt-4 inline-flex rounded-full px-4 py-2 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>SPOKEDU MASTER</Link>
         </footer>
       </main>
     </div>

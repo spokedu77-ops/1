@@ -104,25 +104,42 @@ export default function DirectorPage() {
         <OperationsPanel compact />
       </section>
 
-      <section className="mx-[22px] mt-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.16), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.28)' }}>
-        <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>
-        <h2 className="mt-2 text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 플랜 사용 중</h2>
-        <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          강사 3명 기본 좌석으로 센터 수업 기록과 학생 케어를 함께 관리합니다. 현재 수업 계획 {lessons.length}개가 운영 중입니다.
-        </p>
-        <div className="mt-5 grid grid-cols-3 gap-2">
-          {[
-            ['좌석', '3/3'],
-            ['공유', '준비 중'],
-            ['기록', `${records.length || students.length}건`],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>
-              <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
-              <p className="mt-1 text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {profile?.plan === 'team' ? (
+        <section className="mx-[22px] mt-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.16), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.28)' }}>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>
+          <h2 className="mt-2 text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 플랜 사용 중</h2>
+          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+            강사 3명 기본 좌석으로 센터 수업 기록과 학생 케어를 함께 관리합니다. 현재 수업 계획 {lessons.length}개가 운영 중입니다.
+          </p>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {[
+              ['좌석', '3/3'],
+              ['공유', '준비 중'],
+              ['기록', `${records.length || students.length}건`],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>
+                <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
+                <p className="mt-1 text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="mx-[22px] mt-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid rgba(99,102,241,0.28)' }}>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>
+          <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>Center 플랜으로 전환하기</h2>
+          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+            강사 3명 좌석, 센터 학생 기록 통합, 케어 신호 자동화를 사용하려면 Center 플랜이 필요합니다.
+          </p>
+          <Link
+            href="/spokedu-master/payment?plan=team"
+            className="mt-5 flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white"
+            style={{ background: 'var(--spm-acc)' }}
+          >
+            Center 플랜 시작 — 79,000원/월
+          </Link>
+        </section>
+      )}
     </div>
   );
 }

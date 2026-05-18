@@ -23,7 +23,7 @@ export default function TermsPage() {
           <ArrowLeft size={18} color="var(--spm-t2)" />
         </Link>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU PRO</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
           <h1 className="text-[18px] font-black">이용약관</h1>
         </div>
       </header>

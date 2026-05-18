@@ -105,12 +105,14 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isParentView = pathname.startsWith(`${basePath}/parent`);
   const isPayment = pathname.startsWith(`${basePath}/payment`);
   const isLanding = pathname.startsWith(`${basePath}/landing`);
+  const [shellMounted, setShellMounted] = useState(false);
 
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const loadDrills = useMasterStore((state) => state.loadDrills);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
 
   useEffect(() => {
+    setShellMounted(true);
     void loadPrograms();
     void loadDrills();
     void syncSubscription();
@@ -153,8 +155,8 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         <div className="flex min-w-0 flex-1 flex-col">
           {hideChrome ? null : <StatusBar />}
           <main className="min-h-0 flex-1 overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
-            {hideChrome || isAdmin ? null : <OperationsBanner />}
-            {hideChrome || isAdmin ? null : <TrialCountdownBanner />}
+            {shellMounted && !hideChrome && !isAdmin ? <OperationsBanner /> : null}
+            {shellMounted && !hideChrome && !isAdmin ? <TrialCountdownBanner /> : null}
             <ErrorBoundary>
               {children}
             </ErrorBoundary>

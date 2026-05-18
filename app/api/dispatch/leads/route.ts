@@ -26,6 +26,11 @@ export async function POST(req: NextRequest) {
     const headcount = typeof body.headcount === 'string' ? body.headcount.trim() : '';
     const specialNeeds = typeof body.specialNeeds === 'string' ? body.specialNeeds.trim() : '';
     const inquiry = typeof body.inquiry === 'string' ? body.inquiry.trim() : '';
+    const rawType = typeof body.type === 'string' ? body.type.trim() : '';
+    if (rawType && rawType !== 'dispatch') {
+      return NextResponse.json({ ok: false, error: '문의 유형(type)이 올바르지 않습니다.' }, { status: 400 });
+    }
+    const type = 'dispatch';
     const source = typeof body.source === 'string' ? body.source.trim() : 'dispatch-page';
     const programs = Array.isArray(body.programs) ? body.programs.filter((v): v is string => typeof v === 'string') : [];
     const targetAge = Array.isArray(body.targetAge) ? body.targetAge.filter((v): v is string => typeof v === 'string') : [];
@@ -78,6 +83,7 @@ export async function POST(req: NextRequest) {
       `대상 연령: ${targetAge.length ? targetAge.join(', ') : '-'}`,
       `인원: ${headcount || '-'}`,
       `특수 아동 참여 유무: ${specialNeeds || '-'}`,
+      `문의 type: ${type}`,
       '',
       '[희망 수업 내용/방향성]',
       inquiry || '-',

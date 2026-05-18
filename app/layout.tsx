@@ -28,6 +28,7 @@ const spaceGrotesk = Space_Grotesk({
   variable: '--font-space-grotesk',
   display: 'swap',
 });
+const naverSiteVerification = process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION?.trim();
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#185FA5" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {naverSiteVerification ? <meta name="naver-site-verification" content={naverSiteVerification} /> : null}
       </head>
       <body className="bg-gray-50 font-sans text-slate-900 antialiased">
         <QueryProvider>

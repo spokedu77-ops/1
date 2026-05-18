@@ -12,6 +12,8 @@ import { EngineRouter } from './EngineRouter';
 
 type SessionState = 'idle' | 'countdown' | 'running' | 'done' | 'paused';
 
+const SUPPORTED_ENGINE_MODES = new Set(['reactTrain', 'flow', 'flash', 'pattern', 'diagonal', 'memory', 'spatial']);
+
 function reactionColor(value: number | null) {
   if (value == null) return 'var(--spm-t2)';
   if (value < 300) return 'var(--spm-grn)';
@@ -79,14 +81,15 @@ function SpomoveSessionContent() {
   const launchMode = searchParams.get('mode') ?? 'mobile';
   const programId = searchParams.get('program') ?? '';
   const drills = useMasterStore((state) => state.drills);
-  const drill = useMemo(() => drills.find((item) => item.id === requestedDrillId) ?? drills[0]!, [drills, requestedDrillId]);
+  const drill = useMemo(() => drills.find((item) => item.id === requestedDrillId) ?? drills[0] ?? null, [drills, requestedDrillId]);
   const modeConfig = useMemo(() => getModeConfig(launchMode), [launchMode]);
-  const cues = drill.cues.length ? drill.cues : SESSION_CUES;
+  const cues = drill?.cues?.length ? drill.cues : SESSION_CUES;
   const profile = useProfile();
   const isPro = useIsPro();
   const { activeSession, stats, start, end, markCue, markResponse, pause, resume } = useSession();
 
   useEffect(() => {
+    if (!drill) { router.replace('/spokedu-master/spomove'); return; }
     if (isTrialExpired(profile)) {
       router.replace('/spokedu-master/spomove');
       return;
@@ -94,7 +97,7 @@ function SpomoveSessionContent() {
     if (drill.isPro && !isPro) {
       router.replace('/spokedu-master/spomove');
     }
-  }, [drill.isPro, isPro, profile, router]);
+  }, [drill, isPro, profile, router]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [state, setState] = useState<SessionState>('idle');
   const [countdown, setCountdown] = useState('3');
@@ -130,14 +133,14 @@ function SpomoveSessionContent() {
   }, [clearTimer, end, setFinalSession, setState]);
 
   const beginRunning = useCallback(() => {
-    start(drill.id, drill.name);
+    start(drill?.id ?? '', drill?.name ?? '');
     setFinalSession(null);
     setLastRT(null);
     setCueIndex(0);
     setCueSerial((serial) => serial + 1);
     setState('running');
     window.setTimeout(markCue, 80);
-  }, [drill.id, drill.name, markCue, setCueIndex, setCueSerial, setFinalSession, setLastRT, setState, start]);
+  }, [drill, markCue, setCueIndex, setCueSerial, setFinalSession, setLastRT, setState, start]);
 
   const startCountdown = useCallback(() => {
     clearTimer();
@@ -227,7 +230,7 @@ function SpomoveSessionContent() {
     router.push('/spokedu-master/spomove');
   };
 
-  if (drill.engine) {
+  if (drill?.engine && SUPPORTED_ENGINE_MODES.has(drill.engine.mode)) {
     return (
       <EngineRouter
         mode={drill.engine.mode}
@@ -242,6 +245,8 @@ function SpomoveSessionContent() {
       />
     );
   }
+
+  if (!drill) return null;
 
   return (
     <div className="relative h-dvh overflow-hidden select-none" style={{ background: state === 'running' ? currentCue.bgColor : '#050509', color: '#fff', fontFamily: 'var(--spm-font-display)', transition: 'background 0.12s ease' }} onClick={state === 'running' ? handleResponse : undefined} role={state === 'running' ? 'button' : undefined} tabIndex={state === 'running' ? 0 : undefined}>

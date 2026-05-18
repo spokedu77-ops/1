@@ -9,15 +9,11 @@ export const SESSION_CUES: Cue[] = [
   { symbol: 'J', label: '점프', bgColor: '#0a1628' },
 ];
 
+// 정적 드릴은 최소한으로 유지. 나머지는 API 카탈로그(core5Catalog)에서 로드.
+// 인증 없거나 API 실패 시 이 2개만 표시됨.
 export const DRILLS: Drill[] = [
   { id: 'speed-track', name: '스피드 트랙', category: '기초 반응', cues: SESSION_CUES, isPro: false, bgColor: '#312e81' },
   { id: 'direction-shift', name: '방향 전환', category: '공간 인지', cues: SESSION_CUES.slice(0, 4), isPro: false, bgColor: '#064e3b' },
-  { id: 'focus-circle', name: '포커스 서클', category: '집중 반응', cues: SESSION_CUES, isPro: true, bgColor: '#1e1b4b' },
-  { id: 'jump-signal', name: '점프 신호', category: '출발 반응', cues: SESSION_CUES, isPro: true, bgColor: '#713f12' },
-  { id: 'color-burst', name: '컬러 버스트', category: '순발력', cues: SESSION_CUES, isPro: false, bgColor: '#7c2d12' },
-  { id: 'mirror-shadow', name: '미러 섀도우', category: '협응 반응', cues: SESSION_CUES.slice(0, 4), isPro: false, bgColor: '#134e4a' },
-  { id: 'double-signal', name: '더블 신호', category: '이중 반응', cues: SESSION_CUES, isPro: true, bgColor: '#3b0764' },
-  { id: 'freeze-zone', name: '프리즈 존', category: '정지 제어', cues: SESSION_CUES, isPro: true, bgColor: '#1c1917' },
 ];
 
 export const PROGRAMS: Program[] = [

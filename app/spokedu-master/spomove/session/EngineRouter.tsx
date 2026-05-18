@@ -112,12 +112,12 @@ export function EngineRouter({ mode, level, onComplete, onExit }: Props) {
     );
   }
 
-  return <UnknownModeHandler mode={mode} level={level} onComplete={onComplete} />;
+  return <UnknownModeHandler mode={mode} onExit={onExit} />;
 }
 
-function UnknownModeHandler({ mode, level, onComplete }: Pick<Props, 'mode' | 'level' | 'onComplete'>) {
+function UnknownModeHandler({ mode, onExit }: Pick<Props, 'mode' | 'onExit'>) {
   useEffect(() => {
-    onComplete({ engineMode: mode, engineLevel: level });
-  }, [mode, level, onComplete]);
-  return null;
+    onExit();
+  }, [onExit]);
+  return <div className="fixed inset-0 flex items-center justify-center bg-black text-white/40 text-[13px] font-semibold">알 수 없는 훈련 모드: {mode}</div>;
 }

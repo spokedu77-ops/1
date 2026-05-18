@@ -271,14 +271,21 @@ export const useMasterStore = create<MasterState>()(
         if (get().drillsLoaded) return;
         try {
           const res = await fetch('/api/spokedu-master/drills');
-          if (!res.ok) return;
+          if (!res.ok) { set({ drillsLoaded: true }); return; }
           const json = await res.json() as { data?: Drill[] };
           if (Array.isArray(json.data) && json.data.length > 0) {
-            set({ drills: json.data, drillsLoaded: true });
+            // EngineRouter 미지원 모드(예: 'basic') 드릴 제외 — 지원 모드만 교체
+            const supportedModes = new Set(['reactTrain', 'flow', 'flash', 'pattern', 'diagonal', 'memory', 'spatial']);
+            const usable = json.data.filter((d) => !d.engine || supportedModes.has(d.engine.mode));
+            if (usable.length > 0) {
+              set({ drills: usable, drillsLoaded: true });
+              return;
+            }
           }
         } catch {
           // keep static fallback
         }
+        set({ drillsLoaded: true });
       },
       profile: defaultProfile,
       setProfile: (profile) => set((state) => ({ profile: state.profile ? { ...state.profile, ...profile } : { ...defaultProfile, ...profile } })),

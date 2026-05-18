@@ -1,4 +1,6 @@
 import type { MetadataRoute } from 'next';
+import { cases } from './spokedu/data/cases';
+import { monthlyRecords } from './spokedu/data/monthly';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
@@ -12,15 +14,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/spokedu/programs',
     '/spokedu/programs/spomove',
     '/spokedu/programs/paps',
-    '/spokedu/programs/play-class',
     '/spokedu/programs/oneday-event',
     '/spokedu/programs/camp',
-    '/spokedu/programs/curriculum-content',
     '/spokedu/records',
     '/spokedu/cases',
+    ...cases.map((item) => `/spokedu/cases/${item.slug}`),
     '/spokedu/monthly',
     '/spokedu/insights',
     '/spokedu/contact',
+    ...monthlyRecords.map((record) => `/spokedu/monthly/${record.slug}`),
   ] as const;
 
   return [

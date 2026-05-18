@@ -2,6 +2,8 @@
 
 ## 작업 날짜
 
+- 2026-05-19 (SPOMOVE 전면 오류 수정 + 라이브러리 필터 개선: store loadDrills 병합, EngineRouter 폴백, session 가드, LibraryView 필터 count + ProgramSheet 중복 제거)
+- 2026-05-19 (전 페이지 감사 — 4건 버그/UX 수정: parent 링크 오류, director 플랜 배너, report 잠금 카드, plan 저장 버튼 비활성화)
 - 2026-05-13 (Phase 1 방향 정리 + 깨진 데이터 기반 수정 + 주요 화면 UX 완성)
 - 2026-05-14 (코드 현황 재점검 + 세부 UX 개선 + 상용화 완성도 강화 작업)
 - 2026-05-14 (모바일 반응형 QA — safe-area, 터치 타겟, 스크롤 전수 점검)
@@ -17,6 +19,45 @@
 - 2026-05-17 (전체 감사(audit) + 버그 수정 6건 + director 하드코딩 제거)
 - 2026-05-17 (programsLoaded 버그 수정 + static PROGRAMS 제거 + 브랜드 카피 전면 통일 + LibraryDetail 개선 + PlanView 주간 네비게이션 + Pro features 업데이트)
 - 2026-05-18 (Dashboard TodayHero 계획 연동 + Report 프로그램 검색 필터 + 온보딩 Pro 카드 features 통일)
+
+---
+
+## 수정한 파일 (2026-05-19 — SPOMOVE 전면 오류 수정 + 라이브러리 개선)
+
+### 원인 분석
+- **SPOMOVE 전부 오류**: 인증된 사용자는 `/api/spokedu-master/drills`(200) → core5Catalog 드릴이 static 드릴을 **완전 교체** → 대부분 드릴이 `engine.mode: 'basic'` → `EngineRouter`에 'basic' 핸들러 없음 → `UnknownModeHandler`가 즉시 `onComplete()` 호출 → 0데이터 세션 "완료" 화면 (오류처럼 보임)
+- **큰화면 실행 오류**: 하드코딩된 `drill=speed-track` 링크가 교체된 API 드릴에서 못 찾혀 `drills[0]!` 폴백 → 같은 문제
+- **태그 동일 문제**: `spokedu_master_program_meta` 테이블 데이터 미입력 → grade/duration/space 모두 기본값('전학년'/20/'실내') → 필터 칩 다수가 0개 결과
+
+### 수정 내용
+
+#### `app/spokedu-master/store/index.ts`
+- `loadDrills()`: API 드릴에서 EngineRouter 미지원 모드('basic' 등) 필터링
+- `loadDrills()`: static 드릴을 **교체 대신 병합** (static이 base, API가 추가)
+- `loadDrills()`: API 401 포함 실패 시 `drillsLoaded: true` 설정 (무한 재시도 방지)
+
+#### `app/spokedu-master/spomove/session/EngineRouter.tsx`
+- `UnknownModeHandler`: `onComplete()` 즉시 호출 → `onExit()` 호출로 변경 (SPOMOVE 허브로 안전 복귀)
+
+#### `app/spokedu-master/spomove/session/page.tsx`
+- `SUPPORTED_ENGINE_MODES` 상수 추출 (컴포넌트 외부)
+- `drill` null 가드: `useEffect`에 null 체크 + redirect, beginRunning 옵셔널 체이닝
+- EngineRouter 조건: `drill?.engine && SUPPORTED_ENGINE_MODES.has(drill.engine.mode)` — 지원 모드만 라우팅
+
+#### `app/spokedu-master/library/LibraryView.tsx`
+- 필터 칩: 0개 결과 필터 숨기기 (`filterCounts` 계산 후 0이면 미표시)
+- 필터 칩: 결과 수 표시 (몇 개 프로그램이 해당되는지)
+- `ProgramSheet`: description === coachScript일 때 중복 제거
+- `ProgramSheet`: 코치 포인트 잠금 시 blur 처리 + 단계 수 표시
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+- 한자/깨진 문자 없음
+
+### 남은 DB 작업 (코드 외)
+- `spokedu_master_program_meta` 테이블에 각 프로그램별 sm_grade, sm_duration, sm_space, sm_tags 입력 필요
+- 입력 전까지는 LibraryView 필터가 동작하는 칩만 표시됨
 
 ---
 
@@ -229,6 +270,34 @@
 
 ### 검증 결과
 - `npx tsc --noEmit --pretty false` 통과 (spokedu-master 내부 에러 없음)
+- `npx eslint app/spokedu-master --max-warnings 0` 통과
+- CJK 문자 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-19 — 전 페이지 감사: 4건 수정)
+
+### 핵심 수정
+
+- `app/spokedu-master/parent/[studentId]/page.tsx` — footer 링크 버그 수정
+  - `/spokedu-master/dashboard` → `/spokedu-master/landing`
+  - 이유: 부모에게 공유된 링크에서 footer를 누르면 인증 필요한 dashboard로 이동해 에러 발생
+
+- `app/spokedu-master/director/page.tsx` — Center 플랜 배너 조건부 분기
+  - `profile?.plan === 'team'`이면 기존 "사용 중" 배너
+  - 그 외 플랜(pro/free)이면 "Center 플랜으로 전환하기" 업그레이드 CTA
+  - 이유: 이전에는 plan과 무관하게 항상 "센터 플랜 사용 중" 표시 → 오해 소지
+
+- `app/spokedu-master/report/page.tsx` — 잠금 audience 카드 클릭 영역 확대
+  - 오버레이 `<div>` → `<Link href="/payment?plan=pro">` 로 교체
+  - 이유: 이전에는 작은 "PRO" 배지만 클릭 가능. 카드 전체 영역이 결제 링크여야 전환율이 높음
+
+- `app/spokedu-master/plan/PlanView.tsx` — AddLessonSheet 저장 버튼 비활성화
+  - `disabled={!classId.trim() || !program}` + `disabled:opacity-50` 추가
+  - 이유: classId 미입력 시 저장 버튼을 눌러도 아무 반응 없어 UX 혼란
+
+### 검증 결과
+- `npx tsc --noEmit --pretty false` 통과
 - `npx eslint app/spokedu-master --max-warnings 0` 통과
 - CJK 문자 검색 결과 없음
 

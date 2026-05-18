@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
 type LeadBody = {
+  type?: unknown;
   name?: unknown;
   phone?: unknown;
   content?: unknown;
@@ -72,6 +73,14 @@ export async function POST(req: NextRequest) {
 
     const name = normalize(body.name);
     const phone = normalize(body.phone);
+    const rawType = normalize(body.type);
+    if (rawType && rawType !== 'private') {
+      return NextResponse.json(
+        { ok: false, message: '문의 유형(type)이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+    const type = 'private';
     const content = normalize(body.content);
     if (!name || !content) {
       return NextResponse.json(
@@ -92,7 +101,7 @@ export async function POST(req: NextRequest) {
       parent_name: name,
       phone: phone || null,
       child_age: null,
-      content,
+      content: `[문의 type]\n${type}\n\n${content}`,
       consult_type: 'tutoring',
       status: 'pending',
     });
@@ -115,6 +124,7 @@ export async function POST(req: NextRequest) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             source: 'private-landing',
+            type,
             name,
             phone,
             content,

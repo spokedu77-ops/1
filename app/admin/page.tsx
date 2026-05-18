@@ -893,6 +893,7 @@ export default function SpokeduHQDashboard() {
               <h2 className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">안내 페이지</h2>
               <div className="grid gap-2">
                 {[
+                  { n: '0', label: 'SPOKEDU 홈페이지', href: '/spokedu' },
                   { n: '1', label: '체육관', href: '/info/gym' },
                   { n: '2', label: '과외', href: '/info/private' },
                   { n: '3', label: '파견', href: '/info/dispatch' },

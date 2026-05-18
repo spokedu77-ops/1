@@ -1,19 +1,20 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ImagePlaceholder } from '../components/image-placeholder';
-import { ProcessSteps, SectionHeader, SplitCTA } from '../components/blocks';
+import { ProcessSteps, SectionHeader, SplitCTA, WhySpokeduTrustSection } from '../components/blocks';
 import {
-  curriculumAudience,
-  curriculumCtas,
+  curriculumBuyerTargets,
+  curriculumDeliveryFormats,
   curriculumFlow,
   curriculumHero,
   curriculumImageSlots,
-  curriculumOfferings,
-  curriculumPrograms,
+  curriculumProducts,
   curriculumWhy,
   seoKeywords,
   seoMeta,
 } from '../data/content';
+import { curriculumCtas, curriculumHeroCtas } from '../data/ctas';
+import { inferTrackFromHref } from '../lib/tracking';
 
 export const metadata: Metadata = {
   title: seoMeta.curriculum.title,
@@ -31,12 +32,21 @@ export default function SpokeduCurriculumPage() {
         <h1 className="whitespace-pre-line text-3xl font-semibold leading-tight text-slate-900 sm:text-5xl">{curriculumHero.title}</h1>
         <p className="mt-5 max-w-4xl whitespace-pre-line text-sm leading-7 text-slate-700 sm:text-base">{curriculumHero.description}</p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/spokedu/contact?type=curriculum" className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white">
-            커리큘럼 문의
-          </Link>
-          <Link href="/spokedu/contact?type=curriculum" className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900">
-            콘텐츠 제휴 문의
-          </Link>
+          {curriculumHeroCtas.map((cta, idx) => (
+            <Link
+              key={`${cta.label}-${idx}`}
+              href={cta.href}
+              data-track={cta.track ?? inferTrackFromHref(cta.href)}
+              data-track-label={cta.label}
+              className={
+                idx === 0
+                  ? 'rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white'
+                  : 'rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900'
+              }
+            >
+              {cta.label}
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -48,9 +58,13 @@ export default function SpokeduCurriculumPage() {
       </section>
 
       <section className="space-y-7">
-        <SectionHeader eyebrow="Offerings" title="제공 가능한 콘텐츠" />
+        <SectionHeader
+          eyebrow="Curriculum Products"
+          title="커리큘럼 상품"
+          description="기관·강사팀에서 바로 검토할 수 있도록 제공 단위를 상품 형태로 정리했습니다."
+        />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {curriculumOfferings.map((item) => (
+          {curriculumProducts.map((item) => (
             <article key={item.title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
@@ -58,19 +72,32 @@ export default function SpokeduCurriculumPage() {
           ))}
         </div>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/spokedu/contact?type=curriculum" className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white">
-            커리큘럼 문의
-          </Link>
-          <Link href="/spokedu/contact?type=curriculum" className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900">
-            콘텐츠 제휴 문의
-          </Link>
+          {curriculumHeroCtas.map((cta, idx) => (
+            <Link
+              key={`offering-${cta.label}-${idx}`}
+              href={cta.href}
+              data-track={cta.track ?? inferTrackFromHref(cta.href)}
+              data-track-label={cta.label}
+              className={
+                idx === 0
+                  ? 'rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white'
+                  : 'rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900'
+              }
+            >
+              {cta.label}
+            </Link>
+          ))}
         </div>
       </section>
 
       <section className="space-y-7">
-        <SectionHeader eyebrow="Audience" title="누구에게 필요한가" />
-        <div className="grid gap-4 md:grid-cols-2">
-          {curriculumAudience.map((item) => (
+        <SectionHeader
+          eyebrow="Delivery Formats"
+          title="제공 형태"
+          description="도입 이후 실무에 바로 사용할 수 있는 산출물 기준으로 구성했습니다."
+        />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {curriculumDeliveryFormats.map((item) => (
             <article key={item.title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
@@ -80,7 +107,23 @@ export default function SpokeduCurriculumPage() {
       </section>
 
       <section className="space-y-7">
-        <SectionHeader eyebrow="Photo Slots" title="커리큘럼/강사교육 이미지 영역" description="수업안 자료, 교구 세팅, 강사 교육 장면을 이 슬롯에 배치하세요." />
+        <SectionHeader
+          eyebrow="Buyers & Partners"
+          title="구매/제휴 대상"
+          description="강사 개인부터 기관·브랜드 운영사까지 도입 대상과 활용 맥락을 구분해 안내합니다."
+        />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {curriculumBuyerTargets.map((item) => (
+            <article key={item.title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-7">
+        <SectionHeader eyebrow="Photo Slots" title="커리큘럼/강사교육 이미지 영역" description="상품 자료, 교구 세팅, 강사 교육 장면을 이 슬롯에 배치하세요." />
         <div className="grid gap-4 md:grid-cols-3">
           {curriculumImageSlots.map((item) => (
             <ImagePlaceholder
@@ -97,26 +140,18 @@ export default function SpokeduCurriculumPage() {
       </section>
 
       <section className="space-y-7">
-        <SectionHeader eyebrow="Program Portfolio" title="콘텐츠화 가능한 프로그램" />
-        <div className="flex flex-wrap gap-2">
-          {curriculumPrograms.map((program) => (
-            <span key={program} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700">
-              {program}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-7">
         <SectionHeader eyebrow="Production Flow" title="커리큘럼 제작 흐름" />
         <ProcessSteps steps={curriculumFlow} />
       </section>
 
       <SplitCTA
-        title="현장 수업을 반복 가능한 교육 자산으로 만들고 싶다면, 스포키듀와 함께 설계하세요."
-        description="수업안, 매뉴얼, 교구 활용 콘텐츠, 강사 교육까지 한 흐름으로 연결해 드립니다."
+        title="운영 가능한 체육 콘텐츠 체계를 찾는다면 상담으로 연결해 주세요."
+        description="운영 목적, 대상 연령, 현장 조건을 기준으로 제공 범위와 도입 단계를 제안합니다."
         buttons={curriculumCtas}
+        mobilePriority
       />
+
+      <WhySpokeduTrustSection />
     </div>
   );
 }
