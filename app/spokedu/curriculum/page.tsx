@@ -1,16 +1,14 @@
-import type { Metadata } from 'next';
 import CurriculumLanding from '../components/curriculum-landing';
-import { seoKeywords, seoMeta } from '../data/content';
+import { SpokeduRelatedLinks } from '../components/seo-related-links';
+import { buildSpokeduMetadata } from '../data/seo';
 
-export const metadata: Metadata = {
-  title: seoMeta.curriculum.title,
-  description: seoMeta.curriculum.description,
-  keywords: [...seoKeywords.curriculum],
-  alternates: {
-    canonical: '/spokedu/curriculum',
-  },
-};
+export const metadata = buildSpokeduMetadata('curriculum');
 
 export default function SpokeduCurriculumPage() {
-  return <CurriculumLanding />;
+  return (
+    <div className="space-y-8 sm:space-y-10">
+      <CurriculumLanding />
+      <SpokeduRelatedLinks page="curriculum" />
+    </div>
+  );
 }

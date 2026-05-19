@@ -1,19 +1,13 @@
-import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
+import { RecordPhoto } from '../components/record-photo';
 import { SplitCTA } from '../components/blocks';
+import { SpokeduRelatedLinks } from '../components/seo-related-links';
 import { homeInquiryCtas } from '../data/ctas';
-import { seoKeywords, seoMeta } from '../data/content';
+import { cardInteractive, fineHover, landingH1 } from '../lib/ui-classes';
+import { buildSpokeduMetadata } from '../data/seo';
 import { programCatalogCards, trackUsageRows, type ProgramTrack } from '../data/programs-catalog';
 
-export const metadata: Metadata = {
-  title: seoMeta.programs.title,
-  description: seoMeta.programs.description,
-  keywords: [...seoKeywords.programs],
-  alternates: {
-    canonical: '/spokedu/programs',
-  },
-};
+export const metadata = buildSpokeduMetadata('programs');
 
 const trackBadgeClass: Record<ProgramTrack, string> = {
   Private: 'border-indigo-200 bg-indigo-50 text-indigo-700',
@@ -40,11 +34,11 @@ export default function SpokeduProgramsPage() {
   const featured = programCatalogCards[0];
 
   return (
-    <div className="space-y-8 sm:space-y-12">
+    <div className="space-y-6 sm:space-y-12">
       {/* 1. Hero */}
-      <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-indigo-50 via-white to-lime-50 p-5 sm:p-10">
+      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-indigo-50 via-white to-lime-50 p-4 sm:rounded-3xl sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">Program Assets</p>
-        <h1 className="mt-3 max-w-3xl whitespace-pre-line text-[1.75rem] font-semibold leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
+        <h1 className={`mt-2 max-w-3xl whitespace-pre-line sm:mt-3 ${landingH1} font-bold text-slate-900 sm:font-semibold sm:text-4xl lg:text-5xl`}>
           프로그램은 상품 목록이 아니라,{'\n'}스포키듀의 수업 콘텐츠 자산입니다
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
@@ -62,28 +56,29 @@ export default function SpokeduProgramsPage() {
           {programCatalogCards.map((program) => (
             <article
               key={program.slug}
-              className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-md sm:p-4"
+              className={`group flex flex-col rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 ${cardInteractive} ${fineHover}hover:border-indigo-200`}
             >
-              <div className="relative mb-3 h-28 overflow-hidden rounded-xl bg-slate-100 sm:h-32">
-                <Image
+              <div className="relative mb-2.5 h-24 overflow-hidden rounded-xl bg-slate-100 sm:mb-3 sm:h-32">
+                <RecordPhoto
                   src={program.image}
                   alt={program.imageAlt}
+                  category="programs"
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                  className="object-cover transition duration-200 group-hover:scale-[1.02]"
+                  imageClassName={`object-cover transition duration-200 ${fineHover}group-hover:scale-[1.02]`}
                 />
               </div>
               <h3 className="text-base font-semibold text-slate-900 sm:text-lg">{program.title}</h3>
-              <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-slate-600">{program.description}</p>
-              <div className="mt-3">
+              <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{program.description}</p>
+              <div className="mt-2 sm:mt-3">
                 <TrackBadges tracks={program.tracks} />
               </div>
-              <p className="mt-2.5 text-[11px] leading-5 text-slate-500 sm:text-xs">{program.effects.join(' · ')}</p>
+              <p className="mt-2 hidden text-[11px] leading-5 text-slate-500 sm:block sm:text-xs">{program.effects.join(' · ')}</p>
               <Link
                 href={program.ctaHref}
                 data-track={program.ctaTrack}
                 data-track-label={program.ctaLabel}
-                className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:mt-4"
               >
                 {program.ctaLabel}
               </Link>
@@ -116,10 +111,10 @@ export default function SpokeduProgramsPage() {
 
       {/* 4. Featured Program CTA */}
       <section className="overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-5 text-white sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-300">Featured Asset</p>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-300">추천 프로그램</h2>
         <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <h2 className="text-xl font-semibold sm:text-2xl">{featured.title}</h2>
+            <h3 className="text-xl font-semibold sm:text-2xl">{featured.title}</h3>
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">{featured.description}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {featured.effects.map((effect) => (
@@ -147,6 +142,8 @@ export default function SpokeduProgramsPage() {
         buttons={[...homeInquiryCtas]}
         mobilePriority
       />
+
+      <SpokeduRelatedLinks page="programs" />
     </div>
   );
 }

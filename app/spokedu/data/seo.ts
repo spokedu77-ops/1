@@ -1,0 +1,192 @@
+import type { Metadata } from 'next';
+import { SPOKEDU_IMAGES } from './images';
+
+export type SpokeduSeoPageKey =
+  | 'home'
+  | 'private'
+  | 'dispatch'
+  | 'curriculum'
+  | 'programs'
+  | 'records'
+  | 'contact';
+
+export type SeoMetaItem = {
+  title: string;
+  description: string;
+};
+
+const SITE_NAME = 'SPOKEDU';
+
+const CANONICAL: Record<SpokeduSeoPageKey, string> = {
+  home: '/spokedu',
+  private: '/spokedu/private',
+  dispatch: '/spokedu/dispatch',
+  curriculum: '/spokedu/curriculum',
+  programs: '/spokedu/programs',
+  records: '/spokedu/records',
+  contact: '/spokedu/contact',
+};
+
+export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
+  home: {
+    title: 'SPOKEDU | 아동·청소년 체육교육',
+    description:
+      '움직임을 교육으로 설계하는 스포키듀. 어린이·청소년을 위한 개인·소그룹 수업, 기관 체육교육, SPOMOVE·PAPS 프로그램과 체육 커리큘럼을 한 브랜드로 연결합니다.',
+  },
+  private: {
+    title: '개인·소그룹 체육수업 | SPOKEDU',
+    description:
+      '아이의 연령과 성향에 맞춘 1:1·소그룹 체육수업. 기본 움직임과 운동 습관을 놀이 중심으로 설계하는 개인 체육수업 상담을 받아보세요.',
+  },
+  dispatch: {
+    title: '기관 체육교육·파견 프로그램 | SPOKEDU',
+    description:
+      '키움센터·지역아동센터·학교에 맞춘 기관 체육수업과 원데이·정규 파견 프로그램. 공간·인원·일정에 맞는 SPOMOVE·PAPS 운영안을 제안합니다.',
+  },
+  curriculum: {
+    title: '체육 커리큘럼·수업 콘텐츠 | SPOKEDU',
+    description:
+      '놀이체육 수업안, 교구 활용 매뉴얼, 강사 교육 자료까지. 현장 수업을 반복 운영 가능한 체육 커리큘럼과 콘텐츠 도입을 안내합니다.',
+  },
+  programs: {
+    title: '프로그램 콘텐츠 자산 | SPOMOVE·PAPS | SPOKEDU',
+    description:
+      'SPOMOVE, PAPS, 놀이체육, 원데이, 방학캠프, 커리큘럼 콘텐츠. Private·Dispatch·Curriculum에 연결되는 스포키듀 프로그램 자산을 한눈에 비교합니다.',
+  },
+  records: {
+    title: '현장기록·수업 사례 | SPOKEDU',
+    description:
+      '키움센터·지역아동센터·행사 현장의 실제 수업 기록. 월간 스포키듀와 교육 인사이트로 스포키듀 운영의 실체를 확인하세요.',
+  },
+  contact: {
+    title: '문의하기 | SPOKEDU',
+    description:
+      '개인·소그룹 수업, 기관 파견, 커리큘럼·콘텐츠 문의를 유형별로 접수합니다. 목적에 맞는 상담으로 빠르게 연결해 드립니다.',
+  },
+};
+
+export const seoKeywords: Record<SpokeduSeoPageKey, readonly string[]> = {
+  home: ['아동 체육교육', '어린이 체육수업', 'SPOKEDU', 'SPOMOVE', '체육 커리큘럼'],
+  private: ['개인 체육수업', '소그룹 체육수업', '어린이 체육수업', '아동 체육교육'],
+  dispatch: ['기관 체육수업', '키움센터 체육 프로그램', '지역아동센터 체육 프로그램', 'SPOMOVE', 'PAPS'],
+  curriculum: ['체육 커리큘럼', '놀이체육 수업안', '강사 교육', 'PAPS', 'SPOMOVE'],
+  programs: ['SPOMOVE', 'PAPS', '놀이체육', '기관 체육수업', '어린이 체육수업'],
+  records: ['아동 체육교육', '기관 체육수업', '수업 사례', '키움센터 체육 프로그램'],
+  contact: ['개인 체육수업', '기관 체육수업', '체육 커리큘럼', '소그룹 체육수업'],
+};
+
+export type SpokeduRelatedLink = {
+  href: string;
+  label: string;
+  description: string;
+};
+
+export const seoRelatedLinks: Record<SpokeduSeoPageKey, SpokeduRelatedLink[]> = {
+  home: [
+    { href: '/spokedu/private', label: '개인·소그룹 수업', description: '1:1·소그룹 체육수업 상담' },
+    { href: '/spokedu/dispatch', label: '기관 파견', description: '키움·지역아동센터 프로그램' },
+    { href: '/spokedu/programs', label: '프로그램 자산', description: 'SPOMOVE·PAPS·놀이체육' },
+    { href: '/spokedu/records', label: '현장기록', description: '수업 사례·월간 기록' },
+  ],
+  private: [
+    { href: '/spokedu/programs/spomove', label: 'SPOMOVE', description: '빔 기반 놀이체육 프로그램' },
+    { href: '/spokedu/programs', label: '전체 프로그램', description: '수업에 쓰이는 콘텐츠 자산' },
+    { href: '/spokedu/records', label: '수업 사례', description: '실제 운영 기록' },
+    { href: '/spokedu/contact?type=private', label: '수업 상담', description: '개인·소그룹 문의' },
+  ],
+  dispatch: [
+    { href: '/spokedu/programs/paps', label: 'PAPS 놀이체육', description: '기초체력 연계 프로그램' },
+    { href: '/spokedu/cases', label: '기관 사례', description: '키움·지역아동센터 실행 기록' },
+    { href: '/spokedu/curriculum', label: '커리큘럼', description: '수업안·운영 매뉴얼' },
+    { href: '/spokedu/contact?type=dispatch', label: '제안 문의', description: '기관 파견 상담' },
+  ],
+  curriculum: [
+    { href: '/spokedu/programs', label: '프로그램 자산', description: 'SPOMOVE·PAPS·콘텐츠' },
+    { href: '/spokedu/records', label: '현장기록', description: '검증된 운영 사례' },
+    { href: '/spokedu/insights', label: '교육 인사이트', description: '운영 관점 아카이브' },
+    { href: '/spokedu/contact?type=curriculum', label: '도입 문의', description: '커리큘럼·제휴 상담' },
+  ],
+  programs: [
+    { href: '/spokedu/private', label: 'Private Class', description: '개인·소그룹 적용' },
+    { href: '/spokedu/dispatch', label: 'Dispatch', description: '기관 파견 적용' },
+    { href: '/spokedu/curriculum', label: 'Curriculum', description: '수업안·강사 교육' },
+    { href: '/spokedu/contact', label: '문의하기', description: '프로그램 조합 상담' },
+  ],
+  records: [
+    { href: '/spokedu/cases', label: '수업 사례', description: '기관·행사별 상세 기록' },
+    { href: '/spokedu/monthly', label: '월간 스포키듀', description: '월별 운영 아카이브' },
+    { href: '/spokedu/programs', label: '프로그램', description: '사례에 연결된 콘텐츠' },
+    { href: '/spokedu/contact', label: '문의하기', description: '운영·제안 상담' },
+  ],
+  contact: [
+    { href: '/spokedu/private', label: '개인·소그룹', description: '아이 수업 문의' },
+    { href: '/spokedu/dispatch', label: '기관 파견', description: '제안·행사 문의' },
+    { href: '/spokedu/curriculum', label: '커리큘럼', description: '콘텐츠·제휴 문의' },
+    { href: '/spokedu/programs', label: '프로그램 안내', description: '선택 전 비교' },
+  ],
+};
+
+const DEFAULT_OG_IMAGE = SPOKEDU_IMAGES.home.hero.src;
+
+export function buildSpokeduMetadata(page: SpokeduSeoPageKey): Metadata {
+  const { title, description } = seoMeta[page];
+  const canonical = CANONICAL[page];
+  return buildSpokeduPageMetadata({ title, description, canonical, keywords: [...seoKeywords[page]] });
+}
+
+export function buildSpokeduPageMetadata({
+  title,
+  description,
+  canonical,
+  keywords = [],
+}: SeoMetaItem & { canonical: string; keywords?: string[] }): Metadata {
+  return {
+    title,
+    description,
+    keywords: keywords.length > 0 ? keywords : undefined,
+    alternates: { canonical },
+    openGraph: {
+      type: 'website',
+      locale: 'ko_KR',
+      siteName: SITE_NAME,
+      title,
+      description,
+      url: canonical,
+      images: [
+        {
+          url: DEFAULT_OG_IMAGE,
+          width: 1200,
+          height: 800,
+          alt: SPOKEDU_IMAGES.home.hero.alt,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [DEFAULT_OG_IMAGE],
+    },
+  };
+}
+
+export const seoMetaAboutPage = {
+  title: 'SPOKEDU 소개 | 아동·청소년 체육교육 전문 단체',
+  description:
+    '아이·선생님·기관을 연결하는 체육교육 브랜드. BODY·BRAIN·TOGETHER 방법론, LAB 운영, 현장기록으로 신뢰를 증명합니다.',
+} satisfies SeoMetaItem;
+
+export const seoMetaCases = {
+  title: '수업 사례 아카이브 | SPOKEDU',
+  description: '키움센터·지역아동센터·행사 현장의 실제 운영 사례. 프로그램·대상·핵심 움직임을 카드로 빠르게 비교합니다.',
+} satisfies SeoMetaItem;
+
+export const seoMetaMonthly = {
+  title: '월간 스포키듀 | 운영 기록 아카이브',
+  description: '월별 수업 운영과 커리큘럼 개발의 원천이 되는 월간 스포키듀 기록. 기관·프로그램·교육 포인트를 한눈에 확인합니다.',
+} satisfies SeoMetaItem;
+
+export const seoMetaInsights = {
+  title: '교육 인사이트 허브 | SPOKEDU',
+  description: '학부모·기관·강사를 위한 체육교육 인사이트 카드 허브. SPOMOVE, PAPS, 커리큘럼 관점을 짧게 정리합니다.',
+} satisfies SeoMetaItem;

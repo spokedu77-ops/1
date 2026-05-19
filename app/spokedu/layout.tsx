@@ -6,7 +6,7 @@ import SpokeduTrackingProvider from './components/tracking-provider';
 import { seoKeywords, seoMeta } from './data/content';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com'),
   title: {
     default: seoMeta.home.title,
     template: '%s',
@@ -46,7 +46,7 @@ export default function SpokeduSiteLayout({ children }: { children: ReactNode })
       ) : null}
       <SpokeduTrackingProvider />
       <SiteHeader />
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">{children}</main>
+      <main className="mx-auto w-full max-w-6xl px-3.5 py-5 sm:px-6 sm:py-10">{children}</main>
       <SiteFooter />
     </div>
   );

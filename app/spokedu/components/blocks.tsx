@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ImagePlaceholder } from './image-placeholder';
+import { fineHover } from '../lib/ui-classes';
+import { SpokeduImage } from './spokedu-image';
 import { inferTrackFromHref } from '../lib/tracking';
 import type {
   ContactType,
@@ -70,13 +71,11 @@ export function SiteHero({ title, description, keywords, highlights, heroVisual,
         </div>
         <aside className="grid gap-2 sm:gap-3">
           {heroVisual ? (
-            <ImagePlaceholder
-              slot={heroVisual.slot}
-              alt={heroVisual.alt}
+            <SpokeduImage
               src={heroVisual.src}
-              title={heroVisual.title}
-              caption={heroVisual.caption}
-              className="h-40 sm:h-48"
+              alt={heroVisual.alt}
+              category="home"
+              className="h-40 rounded-xl sm:h-48"
             />
           ) : null}
           {highlights.map((item) => (
@@ -138,14 +137,7 @@ export function PhilosophyCard({ code, title, description }: PhilosophyCardItem)
 export function ProgramAssetCard({ title, description, linksTo, effects, href, imageSlot, imageAlt, imageSrc }: ProgramAssetItem) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <ImagePlaceholder
-        slot={imageSlot}
-        alt={imageAlt}
-        src={imageSrc}
-        title={`${title} 대표 이미지`}
-        caption="프로그램 대표 사진으로 교체하세요."
-        className="mb-4 h-40"
-      />
+      <SpokeduImage src={imageSrc} alt={imageAlt} category="programs" className="mb-4 h-40 rounded-xl" />
       <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
       <p className="mt-3 text-sm leading-7 text-slate-600">{description}</p>
       <p className="mt-4 text-xs font-medium text-slate-500">연결 축: {linksTo.join(' / ')}</p>
@@ -166,14 +158,7 @@ export function ProofCard({ title, description, imageSlot, imageAlt, imageSrc }:
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="p-3 pb-0">
-        <ImagePlaceholder
-          slot={imageSlot}
-          alt={imageAlt}
-          src={imageSrc}
-          title={`${title} 이미지`}
-          caption="실제 현장 사진으로 교체하세요."
-          className="h-28"
-        />
+        <SpokeduImage src={imageSrc} alt={imageAlt} category="records" className="h-28 rounded-xl" />
       </div>
       <div className="p-5">
         <h3 className="text-base font-semibold text-slate-900">{title}</h3>
@@ -216,25 +201,68 @@ type SplitCTAProps = {
 };
 
 export function SplitCTA({ title, description, buttons, mobilePriority = false }: SplitCTAProps) {
+  const [primary, ...rest] = buttons;
+
   return (
-    <section className="rounded-3xl bg-slate-900 px-6 py-8 text-slate-100 sm:px-10 sm:py-10">
-      <h2 className="whitespace-pre-line text-2xl font-semibold leading-tight sm:text-3xl">{title}</h2>
-      <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-300 sm:text-base">{description}</p>
-      <div className={`mt-5 ${mobilePriority ? 'grid grid-cols-2 gap-2 sm:mt-6 sm:flex sm:flex-wrap sm:gap-3' : 'flex flex-wrap gap-2 sm:gap-3'}`}>
-        {buttons.map((button, idx) => (
+    <section className="rounded-2xl bg-slate-900 px-4 py-6 text-slate-100 sm:rounded-3xl sm:px-10 sm:py-10">
+      <h2 className="whitespace-pre-line text-xl font-semibold leading-tight sm:text-3xl">{title}</h2>
+      <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-300 sm:mt-3 sm:text-base sm:leading-7">{description}</p>
+      {mobilePriority && primary ? (
+        <div className="mt-4 space-y-2.5 sm:mt-6">
           <Link
-            key={`${button.href}-${button.label}`}
-            href={button.href}
-            data-track={button.track ?? inferTrackFromHref(button.href)}
-            data-track-label={button.label}
-            className={`rounded-full border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-indigo-400 hover:bg-slate-700 ${
-              mobilePriority && idx === 0 ? 'col-span-2' : ''
-            }`}
+            href={primary.href}
+            data-track={primary.track ?? inferTrackFromHref(primary.href)}
+            data-track-label={primary.label}
+            className={`flex min-h-11 w-full items-center justify-center rounded-full border border-white bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition active:scale-[0.98] sm:inline-flex sm:w-auto ${fineHover}hover:bg-slate-200`}
           >
-            {button.label}
+            {primary.label}
           </Link>
-        ))}
-      </div>
+          {rest.length > 0 ? (
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400 sm:hidden">
+              {rest.map((button, index) => (
+                <span key={button.href} className="inline-flex items-center gap-3">
+                  {index > 0 ? <span aria-hidden>·</span> : null}
+                  <Link
+                    href={button.href}
+                    data-track={button.track ?? inferTrackFromHref(button.href)}
+                    data-track-label={button.label}
+                    className="font-semibold text-slate-200 underline-offset-2 hover:underline"
+                  >
+                    {button.label}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          ) : null}
+          <div className="hidden flex-wrap gap-2 sm:flex sm:gap-3">
+            {rest.map((button) => (
+              <Link
+                key={`${button.href}-${button.label}`}
+                href={button.href}
+                data-track={button.track ?? inferTrackFromHref(button.href)}
+                data-track-label={button.label}
+                className={`rounded-full border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-100 transition ${fineHover}hover:border-indigo-400 ${fineHover}hover:bg-slate-700`}
+              >
+                {button.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-wrap gap-2 sm:mt-6 sm:gap-3">
+          {buttons.map((button) => (
+            <Link
+              key={`${button.href}-${button.label}`}
+              href={button.href}
+              data-track={button.track ?? inferTrackFromHref(button.href)}
+              data-track-label={button.label}
+              className={`min-h-11 rounded-full border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-100 transition ${fineHover}hover:border-indigo-400 ${fineHover}hover:bg-slate-700`}
+            >
+              {button.label}
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

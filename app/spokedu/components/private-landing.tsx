@@ -1,10 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
-import { spokeduImageManifest } from '../data/content';
-import { inferTrackFromHref } from '../lib/tracking';
+import { SPOKEDU_IMAGES } from '../data/images';
+import { cardInteractive, landingH1, landingHeroShell, landingPageStack } from '../lib/ui-classes';
+import { HeroCtaStack } from './hero-cta-stack';
+import { SpokeduHeroVisual } from './spokedu-hero-visual';
+import { SpokeduImage } from './spokedu-image';
 
 const heroLines = ['우리 아이에게 맞는', '개인·소그룹', '체육수업을 제안합니다'];
 
@@ -50,7 +52,7 @@ function Section({ children, className, delay = 0 }: { children: ReactNode; clas
   const reducedMotion = useReducedMotion();
   return (
     <motion.section
-      initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 14 }}
       whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
       transition={{ duration: 0.55, ease: 'easeOut', delay }}
@@ -66,13 +68,13 @@ export default function PrivateLanding() {
   const primaryCta = '/spokedu/contact?type=private';
 
   return (
-    <div className="space-y-10 pb-4 sm:space-y-14">
-      <Section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white px-5 pb-6 pt-8 shadow-sm sm:px-10 sm:pb-10 sm:pt-12">
+    <div className={landingPageStack}>
+      <Section className={`${landingHeroShell} border-slate-200 bg-white`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.12),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.08),transparent_44%)]" />
-        <div className="relative grid gap-7 lg:grid-cols-[1fr_1.05fr] lg:items-center">
-          <div className="space-y-5 sm:space-y-6">
+        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-7">
+          <div className="space-y-4 sm:space-y-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">For Parents</p>
-            <h1 className="text-[2rem] font-black leading-[1.05] text-slate-950 sm:text-6xl">
+            <h1 className={`${landingH1} text-slate-950`}>
               {heroLines.map((line, index) => (
                 <motion.span
                   key={line}
@@ -88,48 +90,36 @@ export default function PrivateLanding() {
             <p className="max-w-xl text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
               아이의 성향과 현재 상태를 먼저 확인하고, 가장 적합한 1:1 또는 2~4명 소그룹 수업을 제안합니다.
             </p>
-            <div className="grid gap-2.5 sm:flex sm:flex-wrap">
-              <Link
-                href={primaryCta}
-                data-track={inferTrackFromHref(primaryCta)}
-                data-track-label="1:1 수업 문의"
-                className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
-              >
-                1:1 수업 문의
-              </Link>
-              <Link
-                href={primaryCta}
-                data-track={inferTrackFromHref(primaryCta)}
-                data-track-label="소그룹 수업 문의"
-                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:border-slate-500"
-              >
-                소그룹 수업 문의
-              </Link>
-            </div>
-          </div>
-          <motion.div
-            animate={reducedMotion ? {} : { y: [-4, 4, -4] }}
-            transition={reducedMotion ? {} : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative h-[240px] overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 sm:h-[360px]"
-          >
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${spokeduImageManifest.private.oneToOne})` }}
-              role="img"
-              aria-label="개인 체육수업 장면"
+            <HeroCtaStack
+              primary={{ href: primaryCta, label: '1:1 수업 문의', trackLabel: '1:1 수업 문의' }}
+              secondary={[{ href: primaryCta, label: '소그룹 수업 문의', trackLabel: '소그룹 수업 문의' }]}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-slate-900/5 to-transparent" />
-          </motion.div>
+          </div>
+          <div className="hidden lg:block">
+            <motion.div
+              animate={reducedMotion ? {} : { y: [-4, 4, -4] }}
+              transition={reducedMotion ? {} : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <SpokeduHeroVisual image={SPOKEDU_IMAGES.private.oneToOne} />
+            </motion.div>
+          </div>
         </div>
       </Section>
 
       <Section className="space-y-5" delay={0.05}>
-        <h2 className="text-2xl font-bold leading-tight text-slate-950 sm:text-4xl">아이에게 맞는 수업 구조를 먼저 선택합니다</h2>
+        <h2 className="text-xl font-bold leading-snug text-slate-950 sm:text-4xl sm:leading-tight">아이에게 맞는 수업 구조를 먼저 선택합니다</h2>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          {[SPOKEDU_IMAGES.private.smallGroup, SPOKEDU_IMAGES.private.toolActivity].map((asset) => (
+            <div key={asset.id} className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+              <SpokeduImage asset={asset} alt={asset.alt} fill />
+            </div>
+          ))}
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {classOptions.map((item) => (
             <article
               key={item.title}
-              className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
+              className={`rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 ${cardInteractive}`}
             >
               <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
@@ -173,25 +163,13 @@ export default function PrivateLanding() {
         </div>
       </Section>
 
-      <Section className="rounded-3xl border border-slate-900 bg-slate-950 px-5 py-7 text-white sm:px-8 sm:py-10" delay={0.15}>
-        <h2 className="text-2xl font-bold sm:text-3xl">지금, 아이에게 맞는 방식으로 시작하세요</h2>
-        <div className="mt-5 grid gap-2.5 sm:flex sm:flex-wrap">
-          <Link
-            href={primaryCta}
-            data-track={inferTrackFromHref(primaryCta)}
-            data-track-label="1:1 수업 문의"
-            className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-200"
-          >
-            1:1 수업 문의
-          </Link>
-          <Link
-            href={primaryCta}
-            data-track={inferTrackFromHref(primaryCta)}
-            data-track-label="소그룹 수업 문의"
-            className="inline-flex items-center justify-center rounded-full border border-slate-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-900"
-          >
-            소그룹 수업 문의
-          </Link>
+      <Section className="rounded-2xl border border-slate-900 bg-slate-950 px-4 py-6 text-white sm:rounded-3xl sm:px-8 sm:py-10" delay={0.15}>
+        <h2 className="text-xl font-bold sm:text-3xl">지금, 아이에게 맞는 방식으로 시작하세요</h2>
+        <div className="mt-4 sm:mt-5">
+          <HeroCtaStack
+            variant="dark"
+            primary={{ href: primaryCta, label: '수업 상담 접수', trackLabel: 'private-final-cta' }}
+          />
         </div>
       </Section>
     </div>

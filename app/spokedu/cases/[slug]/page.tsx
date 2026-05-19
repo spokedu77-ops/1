@@ -62,8 +62,7 @@ export default async function SpokeduCaseDetailPage({ params }: CaseDetailPagePr
           slot={`case-detail-${item.slug}`}
           alt={item.images[0]?.alt ?? `${item.title} 사례 이미지`}
           src={item.images[0]?.src}
-          title={item.title}
-          caption={`${item.institution} · ${item.program} · ${item.date}`}
+          category="records"
           className="h-64 rounded-2xl border border-slate-200"
         />
         <article className="rounded-2xl border border-slate-200 bg-white p-5">

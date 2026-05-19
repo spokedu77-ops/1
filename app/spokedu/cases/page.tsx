@@ -1,74 +1,100 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
-import { SectionHeader, WhySpokeduTrustSection } from '../components/blocks';
-import { caseArchiveCards } from '../data/cases';
-import { ImagePlaceholder } from '../components/image-placeholder';
+import { HeroCtaStack } from '../components/hero-cta-stack';
+import { RecordPhoto } from '../components/record-photo';
+import { cases } from '../data/cases';
+import { getProgramBySlug } from '../data/programs';
+import { buildSpokeduPageMetadata, seoMetaCases } from '../data/seo';
+import { cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
-export const metadata: Metadata = {
-  title: '수업 사례 아카이브 | SPOKEDU',
-  description: '기관 및 아동 대상 실제 수업 운영 사례를 아카이브로 정리합니다.',
-  alternates: {
-    canonical: '/spokedu/cases',
-  },
-  openGraph: {
-    title: '수업 사례 아카이브 | SPOKEDU',
-    description: '기관 및 아동 대상 실제 수업 운영 사례를 아카이브로 정리합니다.',
-    url: '/spokedu/cases',
-    locale: 'ko_KR',
-    type: 'website',
-    siteName: 'SPOKEDU',
-  },
-};
+export const metadata = buildSpokeduPageMetadata({
+  ...seoMetaCases,
+  canonical: '/spokedu/cases',
+  keywords: ['수업 사례', '키움센터 체육 프로그램', 'SPOMOVE', '기관 체육수업'],
+});
 
 export default function SpokeduCasesPage() {
   return (
-    <div className="space-y-10">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10">
-        <h1 className="text-3xl font-semibold text-slate-900 sm:text-5xl">수업 사례</h1>
-        <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
-          기관 환경, 대상 연령, 운영 목적에 맞춰 어떻게 수업을 설계하고 실행했는지 사례 중심으로 정리합니다.
+    <div className={landingPageStack}>
+      <section className={`${landingHeroShell} border-slate-200 bg-gradient-to-br from-indigo-50 via-white to-lime-50`}>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">Case Archive</p>
+        <h1 className={`mt-2 sm:mt-3 ${landingH1} text-slate-950`}>실제 운영 사례</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
+          기관·행사·프로그램별로 어떻게 수업을 설계·실행했는지, 카드로 빠르게 비교합니다.
         </p>
-      </section>
-      <section className="space-y-6">
-        <SectionHeader title="대표 사례 아카이브" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {caseArchiveCards.map((item) => (
-            <article id={item.slug} key={item.slug} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <ImagePlaceholder
-                slot={`case-${item.slug}`}
-                alt={item.images[0]?.alt ?? `${item.title} 사례 이미지`}
-                src={item.images[0]?.src}
-                title={item.title}
-                caption={`${item.institution} · ${item.program} · ${item.date}`}
-                className="mb-4 h-40"
-              />
-              <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
-              <p className="mt-1 text-xs font-medium text-slate-500">
-                {item.type} · 대상 {item.target} · {item.location}
-              </p>
-              <p className="mt-2 text-sm text-slate-600">{item.summary}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {item.tags.map((tag) => (
-                  <span key={tag} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-              <Link
-                href={item.href}
-                data-track={inferTrackFromHref(item.href)}
-                data-track-label={item.title}
-                className="mt-4 inline-flex text-sm font-semibold text-indigo-700 hover:text-indigo-800"
-              >
-                사례 상세 보기 →
-              </Link>
-            </article>
-          ))}
+        <div className="mt-4">
+          <HeroCtaStack
+            primary={{ href: '/spokedu/contact?type=dispatch', label: '기관 제안 문의', track: 'cta-dispatch' }}
+            secondary={[{ href: '/spokedu/records', label: '현장기록 허브', track: 'cta-records' }]}
+          />
         </div>
       </section>
 
-      <WhySpokeduTrustSection />
+      <section className="space-y-3">
+        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">대표 사례</h2>
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {cases.map((item) => {
+            const related = getProgramBySlug(item.relatedProgram);
+            const inquiryHref = related?.inquiryHref ?? '/spokedu/contact?type=dispatch';
+            return (
+              <li key={item.slug}>
+                <article className={`flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white ${cardInteractive}`}>
+                  <div className="relative h-32 sm:h-36">
+                    <RecordPhoto
+                      src={item.images[0]?.src}
+                      alt={item.images[0]?.alt ?? `${item.title} 현장`}
+                      category="cases"
+                      fill
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                    />
+                  </div>
+                  <div className="flex flex-1 flex-col p-3.5 sm:p-4">
+                    <p className="text-xs font-medium text-slate-500">{item.institution}</p>
+                    <h3 className="mt-0.5 text-sm font-semibold text-slate-900 sm:text-base">{item.title}</h3>
+                    <dl className="mt-2 space-y-1 text-[11px] text-slate-600 sm:text-xs">
+                      <div className="flex gap-2">
+                        <dt className="shrink-0 font-medium text-slate-500">대상</dt>
+                        <dd>{item.target}</dd>
+                      </div>
+                      <div className="flex gap-2">
+                        <dt className="shrink-0 font-medium text-slate-500">프로그램</dt>
+                        <dd>{item.program}</dd>
+                      </div>
+                      <div className="flex gap-2">
+                        <dt className="shrink-0 font-medium text-slate-500">움직임</dt>
+                        <dd className="line-clamp-1">{item.movementGoals[0]}</dd>
+                      </div>
+                    </dl>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {item.tags.slice(0, 2).map((tag) => (
+                        <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-auto flex flex-wrap gap-2 pt-3">
+                      <Link
+                        href={item.href}
+                        data-track={inferTrackFromHref(item.href)}
+                        className={`text-sm ${linkMuted}`}
+                      >
+                        상세 보기 →
+                      </Link>
+                      <Link
+                        href={inquiryHref}
+                        data-track={inferTrackFromHref(inquiryHref)}
+                        className="text-sm font-semibold text-indigo-700"
+                      >
+                        문의
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
     </div>
   );
 }

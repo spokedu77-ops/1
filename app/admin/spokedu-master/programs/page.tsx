@@ -30,6 +30,11 @@ type MetaRow = {
   sm_is_new: boolean;
   sm_is_hot: boolean;
   sm_display_order: number;
+  sm_objective: string | null;
+  sm_development_focus: string | null;
+  sm_coach_script: string | null;
+  sm_parent_note: string | null;
+  sm_related_spomove_ids: string[] | null;
 };
 
 type ProgramItem = CurriculumRow & { meta: MetaRow | null };
@@ -69,6 +74,11 @@ function EditPanel({
   const [isNew, setIsNew] = useState(item.meta?.sm_is_new ?? false);
   const [isHot, setIsHot] = useState(item.meta?.sm_is_hot ?? false);
   const [displayOrder, setDisplayOrder] = useState(item.meta?.sm_display_order ?? 0);
+  const [objective, setObjective] = useState(item.meta?.sm_objective ?? '');
+  const [developmentFocus, setDevelopmentFocus] = useState(item.meta?.sm_development_focus ?? '');
+  const [coachScript, setCoachScript] = useState(item.meta?.sm_coach_script ?? '');
+  const [parentNote, setParentNote] = useState(item.meta?.sm_parent_note ?? '');
+  const [spomoveIds, setSpomoveIds] = useState((item.meta?.sm_related_spomove_ids ?? []).join(', '));
   const [saving, setSaving] = useState(false);
 
   const toggleTag = (tag: string) => {
@@ -90,6 +100,11 @@ function EditPanel({
         sm_is_new: isNew,
         sm_is_hot: isHot,
         sm_display_order: displayOrder,
+        sm_objective: objective || null,
+        sm_development_focus: developmentFocus || null,
+        sm_coach_script: coachScript || null,
+        sm_parent_note: parentNote || null,
+        sm_related_spomove_ids: spomoveIds ? spomoveIds.split(',').map((s) => s.trim()).filter(Boolean) : [],
       };
       const { error } = await supabase
         .from('spokedu_master_program_meta')
@@ -132,6 +147,66 @@ function EditPanel({
               ))}
             </div>
           </div>
+
+          <div className="h-px" style={{ background: '#1f2937' }} />
+
+          <div className="space-y-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-gray-500">수업 콘텐츠</p>
+            <div>
+              <label className="mb-1 block text-[10px] font-semibold text-gray-600">수업 목표</label>
+              <input
+                value={objective}
+                onChange={(e) => setObjective(e.target.value)}
+                placeholder="방향 전환, 공간 인지, 빠른 출발 반응"
+                className="h-9 w-full rounded-lg border px-2.5 text-[13px] font-medium outline-none"
+                style={{ background: '#1f2937', borderColor: '#374151', color: '#e5e7eb' }}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] font-semibold text-gray-600">발달 포인트</label>
+              <input
+                value={developmentFocus}
+                onChange={(e) => setDevelopmentFocus(e.target.value)}
+                placeholder="민첩성 / 시각 신호 반응 / 하체 협응"
+                className="h-9 w-full rounded-lg border px-2.5 text-[13px] font-medium outline-none"
+                style={{ background: '#1f2937', borderColor: '#374151', color: '#e5e7eb' }}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] font-semibold text-gray-600">SPOMOVE 연계 ID (쉼표 구분)</label>
+              <input
+                value={spomoveIds}
+                onChange={(e) => setSpomoveIds(e.target.value)}
+                placeholder="speed-track, direction-shift"
+                className="h-9 w-full rounded-lg border px-2.5 text-[13px] font-medium outline-none"
+                style={{ background: '#1f2937', borderColor: '#374151', color: '#e5e7eb' }}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] font-semibold text-gray-600">코치 스크립트</label>
+              <textarea
+                value={coachScript}
+                onChange={(e) => setCoachScript(e.target.value)}
+                placeholder="처음에는 속도보다 동선 이해를 먼저 확인하고..."
+                rows={3}
+                className="w-full resize-none rounded-lg border px-2.5 py-2 text-[13px] font-medium outline-none"
+                style={{ background: '#1f2937', borderColor: '#374151', color: '#e5e7eb' }}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] font-semibold text-gray-600">학부모 문구</label>
+              <textarea
+                value={parentNote}
+                onChange={(e) => setParentNote(e.target.value)}
+                placeholder="오늘은 방향 신호를 보고 몸을 빠르게 전환하는 활동을 했습니다."
+                rows={3}
+                className="w-full resize-none rounded-lg border px-2.5 py-2 text-[13px] font-medium outline-none"
+                style={{ background: '#1f2937', borderColor: '#374151', color: '#e5e7eb' }}
+              />
+            </div>
+          </div>
+
+          <div className="h-px" style={{ background: '#1f2937' }} />
 
           <div className="grid grid-cols-2 gap-3">
             <div>

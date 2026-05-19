@@ -1,10 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
-import { spokeduImageManifest } from '../data/content';
-import { inferTrackFromHref } from '../lib/tracking';
+import { SPOKEDU_IMAGES } from '../data/images';
+import { cardInteractive, landingH1, landingHeroShell, landingPageStack } from '../lib/ui-classes';
+import { HeroCtaStack } from './hero-cta-stack';
+import { SpokeduHeroVisual } from './spokedu-hero-visual';
+import { SpokeduImage } from './spokedu-image';
 
 const heroLines = ['기관의 공간, 인원, 운영 목적에 맞춰', '파견형 체육교육 프로그램을', '제안합니다'];
 
@@ -39,7 +41,7 @@ function Section({ children, className, delay = 0 }: { children: ReactNode; clas
   const reducedMotion = useReducedMotion();
   return (
     <motion.section
-      initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 14 }}
       whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
       transition={{ duration: 0.55, ease: 'easeOut', delay }}
@@ -55,13 +57,13 @@ export default function DispatchLanding() {
   const dispatchInquiry = '/spokedu/contact?type=dispatch';
 
   return (
-    <div className="space-y-10 pb-4 sm:space-y-14">
-      <Section className="relative overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 px-5 pb-6 pt-8 text-white shadow-sm sm:px-10 sm:pb-10 sm:pt-12">
+    <div className={landingPageStack}>
+      <Section className={`${landingHeroShell} border-slate-800 bg-slate-950 text-white`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.2),transparent_44%),radial-gradient(circle_at_bottom_right,rgba(148,163,184,0.14),transparent_42%)]" />
-        <div className="relative grid gap-7 lg:grid-cols-[1fr_1.05fr] lg:items-center">
-          <div className="space-y-5 sm:space-y-6">
+        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-7">
+          <div className="space-y-4 sm:space-y-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">For Organizations</p>
-            <h1 className="text-[2rem] font-black leading-[1.05] sm:text-6xl">
+            <h1 className={`${landingH1} text-white`}>
               {heroLines.map((line, index) => (
                 <motion.span
                   key={line}
@@ -77,38 +79,23 @@ export default function DispatchLanding() {
             <p className="max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
               기관 담당자가 바로 검토할 수 있도록 프로그램 형태, 운영 조건, 제안 프로세스를 명확하게 안내합니다.
             </p>
-            <div className="grid gap-2.5 sm:flex sm:flex-wrap">
-              <Link
-                href={dispatchInquiry}
-                data-track={inferTrackFromHref(dispatchInquiry)}
-                data-track-label="제안서 문의"
-                className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-200"
-              >
-                제안서 문의
-              </Link>
-              <Link
-                href={dispatchInquiry}
-                data-track={inferTrackFromHref(dispatchInquiry)}
-                data-track-label="기관 수업 제안 받기"
-                className="inline-flex items-center justify-center rounded-full border border-slate-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-900"
-              >
-                기관 수업 제안 받기
-              </Link>
-            </div>
-          </div>
-          <motion.div
-            animate={reducedMotion ? {} : { y: [-4, 4, -4] }}
-            transition={reducedMotion ? {} : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative h-[240px] overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 sm:h-[360px]"
-          >
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${spokeduImageManifest.dispatch.groupClass})` }}
-              role="img"
-              aria-label="기관 파견 체육수업 장면"
+            <HeroCtaStack
+              variant="dark"
+              primary={{ href: dispatchInquiry, label: '제안서 문의', trackLabel: '제안서 문의' }}
+              secondary={[{ href: dispatchInquiry, label: '기관 수업 제안', trackLabel: '기관 수업 제안 받기' }]}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
-          </motion.div>
+          </div>
+          <div className="hidden lg:block">
+            <motion.div
+              animate={reducedMotion ? {} : { y: [-4, 4, -4] }}
+              transition={reducedMotion ? {} : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <SpokeduHeroVisual
+                image={SPOKEDU_IMAGES.dispatch.groupClass}
+                className="relative h-[240px] overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 sm:h-[360px]"
+              />
+            </motion.div>
+          </div>
         </div>
       </Section>
 
@@ -118,12 +105,20 @@ export default function DispatchLanding() {
           {programCards.map((item) => (
             <article
               key={item.title}
-              className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
+              className={`rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 ${cardInteractive}`}
             >
               <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
             </article>
           ))}
+        </div>
+      </Section>
+
+      <Section className="space-y-3" delay={0.07}>
+        <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">현장 운영 장면</h2>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <SpokeduImage asset={SPOKEDU_IMAGES.dispatch.groupClass} alt={SPOKEDU_IMAGES.dispatch.groupClass.alt} className="aspect-[4/3] rounded-2xl" />
+          <SpokeduImage asset={SPOKEDU_IMAGES.dispatch.oneDayEvent} alt={SPOKEDU_IMAGES.dispatch.oneDayEvent.alt} className="aspect-[4/3] rounded-2xl" />
         </div>
       </Section>
 
@@ -162,25 +157,13 @@ export default function DispatchLanding() {
         </div>
       </Section>
 
-      <Section className="rounded-3xl border border-slate-900 bg-slate-950 px-5 py-7 text-white sm:px-8 sm:py-10" delay={0.15}>
-        <h2 className="text-2xl font-bold sm:text-3xl">기관 운영에 맞는 제안서를 받아보세요</h2>
-        <div className="mt-5 grid gap-2.5 sm:flex sm:flex-wrap">
-          <Link
-            href={dispatchInquiry}
-            data-track={inferTrackFromHref(dispatchInquiry)}
-            data-track-label="제안서 문의"
-            className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-200"
-          >
-            제안서 문의
-          </Link>
-          <Link
-            href={dispatchInquiry}
-            data-track={inferTrackFromHref(dispatchInquiry)}
-            data-track-label="운영 조건 공유하고 제안받기"
-            className="inline-flex items-center justify-center rounded-full border border-slate-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-900"
-          >
-            운영 조건 공유하고 제안받기
-          </Link>
+      <Section className="rounded-2xl border border-slate-900 bg-slate-950 px-4 py-6 text-white sm:rounded-3xl sm:px-8 sm:py-10" delay={0.15}>
+        <h2 className="text-xl font-bold sm:text-3xl">기관 운영에 맞는 제안서를 받아보세요</h2>
+        <div className="mt-4 sm:mt-5">
+          <HeroCtaStack
+            variant="dark"
+            primary={{ href: dispatchInquiry, label: '제안서 문의', trackLabel: 'dispatch-final-cta' }}
+          />
         </div>
       </Section>
     </div>

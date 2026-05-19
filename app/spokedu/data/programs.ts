@@ -1,5 +1,6 @@
 import type { ProgramAssetItem } from './content';
-import { SPOKEDU_BASE_PATH, spokeduImageManifest } from './content';
+import { SPOKEDU_BASE_PATH } from './content';
+import { SPOKEDU_IMAGES } from './images';
 
 export type ProgramCategory = '에듀테크' | '기초체력' | '놀이체육' | '행사형' | '캠프형' | '콘텐츠';
 export type ProgramSlug =
@@ -43,7 +44,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     detailDescription: '보고, 선택하고, 판단하고, 움직이는 빔 기반 에듀테크 놀이체육 프로그램입니다.',
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
     href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
-    image: spokeduImageManifest.programs.spomove,
+    image: SPOKEDU_IMAGES.programs.spomove.src,
     imageAlt: 'SPOMOVE 빔 기반 놀이체육 수업 장면',
   },
   paps: {
@@ -58,7 +59,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     detailDescription: '초등 기초체력 요소를 놀이체육으로 경험할 수 있도록 설계한 프로그램입니다.',
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
     href: `${SPOKEDU_BASE_PATH}/programs/paps`,
-    image: spokeduImageManifest.programs.paps,
+    image: SPOKEDU_IMAGES.programs.paps.src,
     imageAlt: 'PAPS 연계 놀이체육 활동 장면',
   },
   'oneday-event': {
@@ -73,7 +74,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     detailDescription: '어린이날, 시즌 행사, 기관 특별활동에 맞춘 체육 기반 특별 프로그램입니다.',
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
     href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
-    image: spokeduImageManifest.programs.oneDay,
+    image: SPOKEDU_IMAGES.programs.oneDay.src,
     imageAlt: '원데이 체육행사 단체 활동 장면',
   },
   camp: {
@@ -88,7 +89,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     detailDescription: '체육과 예체능을 결합한 방학 시즌 집중 프로그램입니다.',
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
     href: `${SPOKEDU_BASE_PATH}/programs/camp`,
-    image: spokeduImageManifest.programs.camp,
+    image: SPOKEDU_IMAGES.programs.camp.src,
     imageAlt: '방학캠프에서 체육과 예체능 활동을 하는 장면',
   },
   'play-class': {
@@ -102,7 +103,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     expandable: false,
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=private`,
     href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
-    image: spokeduImageManifest.programs.playClass,
+    image: SPOKEDU_IMAGES.programs.playClass.src,
     imageAlt: '놀이체육 정규수업에서 아이들이 움직이는 장면',
   },
   'curriculum-content': {
@@ -116,7 +117,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     expandable: false,
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
     href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
-    image: spokeduImageManifest.programs.curriculumContent,
+    image: SPOKEDU_IMAGES.programs.curriculumContent.src,
     imageAlt: '커리큘럼 콘텐츠 자료와 수업안이 배치된 장면',
   },
   'play-pe': {
@@ -130,7 +131,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     expandable: false,
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
     href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-    image: spokeduImageManifest.programs.playClass,
+    image: SPOKEDU_IMAGES.programs.playClass.src,
     imageAlt: 'Play PE 프로그램 안내 이미지',
   },
   'new-sports': {
@@ -144,7 +145,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     expandable: false,
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
     href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-    image: spokeduImageManifest.programs.oneDay,
+    image: SPOKEDU_IMAGES.programs.oneDay.src,
     imageAlt: 'New Sports 프로그램 안내 이미지',
   },
   funstick: {
@@ -158,7 +159,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     expandable: false,
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=private`,
     href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
-    image: spokeduImageManifest.programs.playClass,
+    image: SPOKEDU_IMAGES.programs.playClass.src,
     imageAlt: 'Funstick 프로그램 안내 이미지',
   },
   'curriculum-package': {
@@ -172,7 +173,7 @@ export const programCatalog: Record<ProgramSlug, ProgramData> = {
     expandable: false,
     inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
     href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
-    image: spokeduImageManifest.programs.curriculumContent,
+    image: SPOKEDU_IMAGES.programs.curriculumContent.src,
     imageAlt: 'Curriculum Package 프로그램 안내 이미지',
   },
 };

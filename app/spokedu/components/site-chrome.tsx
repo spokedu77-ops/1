@@ -7,7 +7,7 @@ import { inferTrackFromHref } from '../lib/tracking';
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-3.5 py-3 sm:gap-4 sm:px-6 sm:py-4">
         <Link href={SPOKEDU_BASE_PATH} className="text-sm font-semibold tracking-[0.14em] text-slate-900">
           {brandProfile.nameEn}
         </Link>
@@ -34,7 +34,7 @@ export function SiteHeader() {
           문의하기
         </Link>
       </div>
-      <div className="mx-auto w-full max-w-6xl overflow-x-auto px-4 pb-3 sm:px-6 md:hidden">
+      <div className="mx-auto w-full max-w-6xl overflow-x-auto px-3.5 pb-2.5 sm:px-6 md:hidden">
         <nav className="flex min-w-max items-center gap-4">
           {navItems.map((item) => (
             <Link

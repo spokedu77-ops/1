@@ -1,5 +1,6 @@
 import type { LinkCard, ProofItem } from './content';
-import { SPOKEDU_BASE_PATH, spokeduImageManifest } from './content';
+import { SPOKEDU_BASE_PATH } from './content';
+import { recordsCaseImageBySlug, SPOKEDU_IMAGES } from './images';
 
 export type CaseType = '기관 파견' | '개인·소그룹' | '행사형' | '강사교육';
 export type RelatedProgramSlug =
@@ -47,8 +48,8 @@ export const cases: CaseData[] = [
     educationPoints: ['스테이션 회전 운영으로 대기 최소화', '난이도 단계화로 저/고학년 혼합 운영'],
     images: [
       {
-        src: spokeduImageManifest.records.yangcheon,
-        alt: '양천거점형키움센터 SPOMOVE 사례 이미지',
+        src: recordsCaseImageBySlug['yangcheon-spomove'].src,
+        alt: recordsCaseImageBySlug['yangcheon-spomove'].alt,
         title: 'SPOMOVE 운영 장면',
       },
     ],
@@ -70,8 +71,8 @@ export const cases: CaseData[] = [
     educationPoints: ['소그룹 협동 미션으로 참여 편차 완화', '음악·리듬 신호를 활용한 몰입 유도'],
     images: [
       {
-        src: spokeduImageManifest.records.dongjak,
-        alt: '동작거점형키움센터 리듬챌린지 사례 이미지',
+        src: recordsCaseImageBySlug['dongjak-rhythm'].src,
+        alt: recordsCaseImageBySlug['dongjak-rhythm'].alt,
         title: '리듬챌린지 협동 활동',
       },
     ],
@@ -92,8 +93,8 @@ export const cases: CaseData[] = [
     educationPoints: ['행사 시간표에 맞춘 1일형 구성', '학년 혼합 편성에서도 안전 동선 유지'],
     images: [
       {
-        src: spokeduImageManifest.records.dasarang,
-        alt: '다사랑영등포지역아동센터 원데이 사례 이미지',
+        src: recordsCaseImageBySlug['dasarang-oneday'].src,
+        alt: recordsCaseImageBySlug['dasarang-oneday'].alt,
         title: '원데이 체육행사 운영',
       },
     ],
@@ -116,8 +117,8 @@ export const cases: CaseData[] = [
     educationPoints: ['캠프형 일과표 기반 몰입 운영', '체육+예체능 결합으로 참여 동기 확장'],
     images: [
       {
-        src: spokeduImageManifest.records.playz,
-        alt: 'PLAYZ Lounge 방학캠프 사례 이미지',
+        src: recordsCaseImageBySlug['playz-camp'].src,
+        alt: recordsCaseImageBySlug['playz-camp'].alt,
         title: '방학캠프 팀 활동',
       },
     ],
@@ -139,8 +140,8 @@ export const cases: CaseData[] = [
     educationPoints: ['부스 회전율 중심 운영 설계', '처음 참여하는 아동도 즉시 참여 가능한 룰 구성'],
     images: [
       {
-        src: spokeduImageManifest.records.seodaemun,
-        alt: '서대문형무소 어린이날 체험 부스 사례 이미지',
+        src: recordsCaseImageBySlug['seodaemun-event-booth'].src,
+        alt: recordsCaseImageBySlug['seodaemun-event-booth'].alt,
         title: '어린이날 체험 부스',
       },
     ],

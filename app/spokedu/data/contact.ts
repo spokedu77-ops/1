@@ -10,21 +10,29 @@ export type ContactTrackType =
   | 'cta-phone'
   | 'cta-email';
 
-export const contactTypeOptions: { id: InquiryType; title: string; description: string }[] = [
+export const contactTypeOptions: {
+  id: InquiryType;
+  title: string;
+  description: string;
+  track: 'contact-private' | 'contact-dispatch' | 'contact-curriculum';
+}[] = [
   {
     id: 'private',
-    title: '우리 아이 수업 상담하기',
-    description: '아이의 현재 상태와 목표를 기준으로 1:1/소그룹 수업을 제안합니다.',
+    title: '개인·소그룹 수업 문의',
+    description: '아이 연령·고민·희망 일정을 알려주시면 맞춤 수업을 안내합니다.',
+    track: 'contact-private',
   },
   {
     id: 'dispatch',
-    title: '기관 수업 제안 받기',
-    description: '기관 대상, 공간, 인원, 일정에 맞춰 운영안과 프로그램 조합을 제안합니다.',
+    title: '기관 파견 수업 문의',
+    description: '기관·인원·공간·일정에 맞춘 프로그램 제안을 받을 수 있습니다.',
+    track: 'contact-dispatch',
   },
   {
     id: 'curriculum',
     title: '커리큘럼·콘텐츠 문의',
-    description: '활용 목적에 맞춰 콘텐츠/강사교육/제휴 방식을 함께 설계합니다.',
+    description: '수업안·강사 교육·제휴·구매 형태를 함께 설계합니다.',
+    track: 'contact-curriculum',
   },
 ];
 

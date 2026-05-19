@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import { SPOKEDU_IMAGES } from '../data/images';
 import { inferTrackFromHref } from '../lib/tracking';
+import { btnPrimaryOnDark, cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
+import { HeroCtaStack } from './hero-cta-stack';
+import { SpokeduHeroVisual } from './spokedu-hero-visual';
 
 type TrackCard = {
   title: string;
@@ -30,14 +34,14 @@ const coreTrackCards: TrackCard[] = [
   },
   {
     title: 'Dispatch Solution',
-    subtitle: '기관 파견 체육교육 프로그램',
+    subtitle: '기관 파견 체육교육',
     description: '기관 운영 목적과 공간에 맞춰 실행 가능한 체육교육을 제안합니다.',
     href: '/dispatch',
     cta: '기관수업 보기',
   },
   {
     title: 'Curriculum & Contents',
-    subtitle: '체육수업 커리큘럼·콘텐츠',
+    subtitle: '체육 커리큘럼·콘텐츠',
     description: '현장 수업을 선생님이 반복 운영 가능한 콘텐츠 시스템으로 만듭니다.',
     href: '/curriculum',
     cta: '커리큘럼 보기',
@@ -93,10 +97,10 @@ function Section({
   return (
     <motion.section
       id={id}
-      initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 14 }}
       whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.55, ease: 'easeOut', delay }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.45, ease: 'easeOut', delay }}
       className={className}
     >
       {children}
@@ -106,21 +110,19 @@ function Section({
 
 export default function SpokeduHomeLanding() {
   const reducedMotion = useReducedMotion();
-  const heroVisual = '/images/home/home-hero-class.jpg';
-
   return (
-    <div className="space-y-10 pb-4 sm:space-y-14">
-      <Section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white px-5 pb-6 pt-8 shadow-sm sm:px-10 sm:pb-10 sm:pt-12">
+    <div className={landingPageStack}>
+      <Section className={`${landingHeroShell} border-slate-200 bg-white`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.12),transparent_46%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.09),transparent_40%)]" />
-        <div className="relative grid gap-7 lg:grid-cols-[1fr_1.05fr] lg:items-center">
-          <div className="space-y-5 sm:space-y-6">
-            <h1 className="text-[2rem] font-black leading-[1.05] text-slate-950 sm:text-6xl">
+        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-7">
+          <div className="space-y-4 sm:space-y-6">
+            <h1 className={`${landingH1} text-slate-950`}>
               {heroLines.map((line, index) => (
                 <motion.span
                   key={line}
-                  initial={reducedMotion ? false : { opacity: 0, y: 28 }}
+                  initial={reducedMotion ? false : { opacity: 0, y: 20 }}
                   animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: 'easeOut', delay: 0.08 * index }}
+                  transition={{ duration: 0.45, ease: 'easeOut', delay: 0.06 * index }}
                   className="block"
                 >
                   {line}
@@ -131,82 +133,67 @@ export default function SpokeduHomeLanding() {
               SPOKEDU는 아이들의 움직임을 교육적으로 설계하고, 그 경험을 수업·커리큘럼·콘텐츠로 확장하는
               아동·청소년 체육교육 브랜드입니다.
             </p>
-            <motion.div
-              initial={reducedMotion ? false : { opacity: 0, y: 18 }}
-              animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.28 }}
-              className="grid gap-2.5 sm:flex sm:flex-wrap"
-            >
-              <Link
-                href="/private"
-                data-track={inferTrackFromHref('/private')}
-                data-track-label="우리 아이 수업 상담하기"
-                className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
-              >
-                우리 아이 수업 상담하기
-              </Link>
-              <Link
-                href="/dispatch"
-                data-track={inferTrackFromHref('/dispatch')}
-                data-track-label="기관 수업 제안 받기"
-                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:border-slate-500"
-              >
-                기관 수업 제안 받기
-              </Link>
-              <Link
-                href="/curriculum"
-                data-track={inferTrackFromHref('/curriculum')}
-                data-track-label="커리큘럼 콘텐츠 문의"
-                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:border-slate-500"
-              >
-                커리큘럼·콘텐츠 문의
-              </Link>
-            </motion.div>
+            <HeroCtaStack
+              primary={{
+                href: '/spokedu/contact?type=private',
+                label: '우리 아이 수업 상담하기',
+                track: 'cta-private-hero',
+              }}
+              secondary={[
+                {
+                  href: '/spokedu/contact?type=dispatch',
+                  label: '기관 수업 제안',
+                  track: 'cta-dispatch-hero',
+                },
+                {
+                  href: '/spokedu/contact?type=curriculum',
+                  label: '커리큘럼 문의',
+                  track: 'cta-curriculum-hero',
+                },
+              ]}
+            />
           </div>
 
-          <motion.div
-            animate={reducedMotion ? {} : { y: [-4, 4, -4] }}
-            transition={reducedMotion ? {} : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative h-[240px] overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 sm:h-[360px]"
-          >
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${heroVisual})` }}
-              aria-label="아이들의 움직임 수업 장면"
-              role="img"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-slate-900/10 to-transparent" />
-            <div className="absolute bottom-4 left-4 rounded-xl border border-white/30 bg-white/15 px-3 py-2 text-xs font-medium text-white backdrop-blur-md">
-              Real Class Experience
-            </div>
-          </motion.div>
+          <div className="hidden lg:block">
+            <motion.div
+              animate={reducedMotion ? {} : { y: [-4, 4, -4] }}
+              transition={reducedMotion ? {} : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <SpokeduHeroVisual image={SPOKEDU_IMAGES.home.hero} badge="Real Class Experience" />
+            </motion.div>
+          </div>
         </div>
       </Section>
 
-      <Section className="space-y-5" delay={0.05}>
-        <div>
-          <h2 className="text-2xl font-bold leading-tight text-slate-950 sm:text-4xl">
-            아이에게는 수업을,
+      <Section className="space-y-4 sm:space-y-5" delay={0.05}>
+        <h2 className="text-xl font-bold leading-snug text-slate-950 sm:text-4xl sm:leading-tight">
+          아이에게는 수업을,
+          <br />
+          기관에는 프로그램을,
+          <br className="sm:hidden" />
+          <span className="hidden sm:inline">
             <br />
-            기관에는 프로그램을,
-            <br />
-            선생님에게는 커리큘럼을.
-          </h2>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
+          </span>
+          선생님에게는 커리큘럼을.
+        </h2>
+        <div className="grid gap-2.5 sm:gap-3 md:grid-cols-3">
           {coreTrackCards.map((track) => (
             <article
               key={track.title}
-              className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_0_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
+              className={`group rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_0_rgba(15,23,42,0.04)] sm:p-5 ${cardInteractive}`}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{track.title}</p>
-              <h3 className="mt-2 text-lg font-semibold text-slate-900">{track.subtitle}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{track.description}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs sm:tracking-[0.14em]">
+                {track.title}
+              </p>
+              <h3 className="mt-1.5 text-base font-semibold leading-snug text-slate-900 sm:mt-2 sm:text-lg">{track.subtitle}</h3>
+              <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-slate-600 sm:mt-2 sm:line-clamp-none sm:leading-6">
+                {track.description}
+              </p>
               <Link
                 href={track.href}
                 data-track={inferTrackFromHref(track.href)}
                 data-track-label={track.cta}
-                className="mt-4 inline-flex items-center text-sm font-semibold text-slate-900 transition group-hover:translate-x-0.5 group-hover:text-indigo-700"
+                className={`mt-3 inline-flex items-center text-sm font-semibold text-slate-900 sm:mt-4 ${linkMuted}`}
               >
                 {track.cta} →
               </Link>
@@ -215,21 +202,21 @@ export default function SpokeduHomeLanding() {
         </div>
       </Section>
 
-      <Section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8" delay={0.08}>
-        <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">스포키듀는 체육을 움직임 교육으로 설계합니다</h2>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <Section className="rounded-2xl border border-slate-200 bg-white p-4 sm:rounded-3xl sm:p-8" delay={0.08}>
+        <h2 className="text-xl font-bold text-slate-950 sm:text-3xl">스포키듀는 체육을 움직임 교육으로 설계합니다</h2>
+        <div className="mt-4 grid gap-2.5 sm:mt-5 sm:gap-3 md:grid-cols-3">
           {philosophyItems.map((item) => (
-            <article key={item.code} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <article key={item.code} className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 sm:rounded-2xl sm:p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">{item.code}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">{item.sentence}</p>
+              <p className="mt-1.5 text-sm leading-5 text-slate-700 sm:mt-2 sm:leading-6">{item.sentence}</p>
             </article>
           ))}
         </div>
       </Section>
 
-      <Section className="space-y-4" delay={0.1}>
-        <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">실제 현장에서 아이들을 만나고 있습니다</h2>
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white py-3">
+      <Section className="space-y-3 sm:space-y-4" delay={0.1}>
+        <h2 className="text-xl font-bold text-slate-950 sm:text-3xl">실제 현장에서 아이들을 만나고 있습니다</h2>
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white py-2.5 sm:py-3">
           <div
             className={`proof-marquee flex min-w-max gap-2 px-3 ${reducedMotion ? 'overflow-x-auto pb-1' : ''}`}
             style={reducedMotion ? { animation: 'none' } : undefined}
@@ -237,7 +224,7 @@ export default function SpokeduHomeLanding() {
             {[...proofItems, ...proofItems].map((item, idx) => (
               <div
                 key={`${item}-${idx}`}
-                className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700"
+                className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-medium text-slate-700 sm:px-4 sm:py-2 sm:text-sm"
               >
                 {item}
               </div>
@@ -246,9 +233,9 @@ export default function SpokeduHomeLanding() {
         </div>
       </Section>
 
-      <Section className="space-y-5" delay={0.12}>
+      <Section className="space-y-4 sm:space-y-5" delay={0.12}>
         <div className="flex items-end justify-between gap-3">
-          <h2 className="text-2xl font-bold leading-tight text-slate-950 sm:text-4xl">
+          <h2 className="text-xl font-bold leading-snug text-slate-950 sm:text-4xl sm:leading-tight">
             수업은 콘텐츠가 되고,
             <br />
             콘텐츠는 커리큘럼이 됩니다
@@ -257,19 +244,16 @@ export default function SpokeduHomeLanding() {
             href="/programs"
             data-track={inferTrackFromHref('/programs')}
             data-track-label="프로그램 보기"
-            className="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:border-slate-500 sm:inline-flex"
+            className="hidden shrink-0 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 sm:inline-flex"
           >
             프로그램 보기
           </Link>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
           {programPreviews.map((program) => (
-            <article
-              key={program.name}
-              className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:-translate-y-1 hover:border-slate-300"
-            >
-              <h3 className="text-base font-semibold text-slate-900">{program.name}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{program.description}</p>
+            <article key={program.name} className={`rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 ${cardInteractive}`}>
+              <h3 className="text-sm font-semibold text-slate-900 sm:text-base">{program.name}</h3>
+              <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">{program.description}</p>
             </article>
           ))}
         </div>
@@ -277,40 +261,38 @@ export default function SpokeduHomeLanding() {
           href="/programs"
           data-track={inferTrackFromHref('/programs')}
           data-track-label="프로그램 보기"
-          className="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:border-slate-500 sm:hidden"
+          className="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 sm:hidden"
         >
           프로그램 보기
         </Link>
       </Section>
 
-      <Section className="rounded-3xl border border-slate-900 bg-slate-950 px-5 py-7 text-white sm:px-8 sm:py-10" delay={0.15}>
-        <h2 className="text-2xl font-bold sm:text-3xl">지금 필요한 방향을 선택하세요</h2>
-        <div className="mt-5 grid gap-2.5 sm:flex sm:flex-wrap">
+      <Section className="rounded-2xl border border-slate-900 bg-slate-950 px-4 py-6 text-white sm:rounded-3xl sm:px-8 sm:py-10" delay={0.15}>
+        <h2 className="text-xl font-bold sm:text-3xl">지금 필요한 방향을 선택하세요</h2>
+        <p className="mt-2 text-sm text-slate-400 sm:hidden">유형별로 맞는 상담으로 연결합니다.</p>
+        <div className="mt-4 sm:mt-5">
           <Link
-            href="/private"
-            data-track={inferTrackFromHref('/private')}
-            data-track-label="개인수업 상담"
-            className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-200"
+            href="/spokedu/contact"
+            data-track="cta-contact"
+            data-track-label="home-final-contact"
+            className={btnPrimaryOnDark}
           >
-            개인수업 상담
-          </Link>
-          <Link
-            href="/dispatch"
-            data-track={inferTrackFromHref('/dispatch')}
-            data-track-label="기관수업 제안"
-            className="inline-flex items-center justify-center rounded-full border border-slate-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-900"
-          >
-            기관수업 제안
-          </Link>
-          <Link
-            href="/curriculum"
-            data-track={inferTrackFromHref('/curriculum')}
-            data-track-label="커리큘럼 문의"
-            className="inline-flex items-center justify-center rounded-full border border-slate-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-900"
-          >
-            커리큘럼 문의
+            문의 유형 선택하기
           </Link>
         </div>
+        <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-400">
+          <Link href="/spokedu/private" data-track="cta-private" className="text-slate-200 underline-offset-2 hover:underline">
+            개인수업
+          </Link>
+          <span aria-hidden>·</span>
+          <Link href="/spokedu/dispatch" data-track="cta-dispatch" className="text-slate-200 underline-offset-2 hover:underline">
+            기관 파견
+          </Link>
+          <span aria-hidden>·</span>
+          <Link href="/spokedu/curriculum" data-track="cta-curriculum" className="text-slate-200 underline-offset-2 hover:underline">
+            커리큘럼
+          </Link>
+        </p>
       </Section>
 
       <style jsx>{`

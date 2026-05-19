@@ -1,15 +1,8 @@
 export type InquiryType = 'private' | 'dispatch' | 'curriculum';
 
-export type InquiryCommonFields = {
-  name: string;
-  phone: string;
-  email: string;
-  type: InquiryType;
-  message: string;
-  createdAt: string;
-};
-
 export type PrivateInquiryFields = {
+  guardianName: string;
+  phone: string;
   childAge: string;
   exerciseExperience: string;
   concern: string;
@@ -20,15 +13,20 @@ export type PrivateInquiryFields = {
 
 export type DispatchInquiryFields = {
   organizationName: string;
+  managerName: string;
+  phone: string;
   organizationType: string;
   targetAge: string;
   expectedParticipants: string;
   availableSpace: string;
+  preferredSchedule: string;
   preferredProgram: string;
   proposalNeeded: string;
 };
 
 export type CurriculumInquiryFields = {
+  nameOrOrg: string;
+  phone: string;
   contentType: string;
   targetAge: string;
   purpose: string;
@@ -36,19 +34,19 @@ export type CurriculumInquiryFields = {
   partnershipType: string;
 };
 
-export type PrivateInquiryPayload = InquiryCommonFields &
-  PrivateInquiryFields & {
-    type: 'private';
-  };
+export type PrivateInquiryPayload = PrivateInquiryFields & {
+  type: 'private';
+  createdAt: string;
+};
 
-export type DispatchInquiryPayload = InquiryCommonFields &
-  DispatchInquiryFields & {
-    type: 'dispatch';
-  };
+export type DispatchInquiryPayload = DispatchInquiryFields & {
+  type: 'dispatch';
+  createdAt: string;
+};
 
-export type CurriculumInquiryPayload = InquiryCommonFields &
-  CurriculumInquiryFields & {
-    type: 'curriculum';
-  };
+export type CurriculumInquiryPayload = CurriculumInquiryFields & {
+  type: 'curriculum';
+  createdAt: string;
+};
 
 export type InquiryPayload = PrivateInquiryPayload | DispatchInquiryPayload | CurriculumInquiryPayload;

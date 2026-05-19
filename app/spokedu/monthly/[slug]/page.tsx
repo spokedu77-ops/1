@@ -56,8 +56,7 @@ export default async function SpokeduMonthlyDetailPage({ params }: MonthlyDetail
             slot={`${record.slug}-${image.title}`}
             alt={image.alt}
             src={image.src}
-            title={image.title}
-            caption={record.title}
+            category="monthly"
             className="h-56"
           />
         ))}

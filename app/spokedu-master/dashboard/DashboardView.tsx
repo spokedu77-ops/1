@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Bookmark, BookOpen, CalendarDays, Check, ChevronRight, FileText, MonitorPlay, Play, Sparkles, Timer, Zap } from 'lucide-react';
+import { Bell, Bookmark, BookOpen, Check, ChevronRight, FileText, MonitorPlay, Play, Sparkles, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { isSameDay } from 'date-fns';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
@@ -177,87 +177,6 @@ function TodayHero({ program, lesson, drill }: { program: Program; lesson?: Less
   );
 }
 
-/* ── 빠른 실행 — 라이브러리 3 + SPOMOVE 1, 한 줄 ── */
-const DRILL_GRAD = [
-  'linear-gradient(145deg,#1a1744 0%,#312e81 55%,#4f46e5 100%)',
-  'linear-gradient(145deg,#052e16 0%,#064e3b 55%,#059669 100%)',
-  'linear-gradient(145deg,#150b2e 0%,#1e1b4b 55%,#7c3aed 100%)',
-  'linear-gradient(145deg,#3f0000 0%,#7f1d1d 55%,#be123c 100%)',
-];
-
-function ProgramTile({ program }: { program: Program }) {
-  const hasThumb = !!program.thumbnailUrl;
-  return (
-    <Link
-      href={`/spokedu-master/class-mode/${program.id}`}
-      className="relative shrink-0 overflow-hidden rounded-[13px] active:scale-[0.97] sm:w-full"
-      style={{
-        width: 134,
-        height: 106,
-        background: hasThumb
-          ? '#111'
-          : `linear-gradient(155deg, ${program.colors[0]} 0%, ${program.colors[1]} 55%, ${program.colors[2]} 100%)`,
-      }}
-    >
-      {hasThumb ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={program.thumbnailUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-      ) : (
-        <div className="pointer-events-none absolute right-[-10px] top-[5%] opacity-[0.1]">
-          <CategoryIcon category={program.category} size={108} color="#fff" strokeWidth={0.55} />
-        </div>
-      )}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.88) 100%)' }} />
-      <div className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5">
-        <p className="text-[8px] font-black uppercase tracking-[0.07em] text-white/45">{program.category}</p>
-        <p className="line-clamp-2 text-[12px] font-bold leading-[1.25] text-white">{program.title}</p>
-      </div>
-      <span className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-white/15">
-        <Play size={9} fill="#fff" color="#fff" />
-      </span>
-    </Link>
-  );
-}
-
-function DrillTile({ drill, index }: { drill: Drill; index: number }) {
-  return (
-    <Link
-      href={`/spokedu-master/spomove/session?drill=${drill.id}`}
-      className="relative shrink-0 overflow-hidden rounded-[13px] active:scale-[0.97] sm:w-full"
-      style={{ width: 134, height: 106, background: DRILL_GRAD[index % DRILL_GRAD.length] }}
-    >
-      <span className="absolute right-[-10px] top-[5%] opacity-[0.1]">
-        <Zap size={108} color="#fff" strokeWidth={0.55} />
-      </span>
-      <div className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5">
-        <p className="text-[8px] font-black uppercase tracking-[0.07em] text-white/45">SPOMOVE</p>
-        <p className="line-clamp-2 text-[12px] font-bold leading-[1.25] text-white">{drill.name}</p>
-      </div>
-      <div className="absolute left-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(255,255,255,0.14)' }}>
-        <Zap size={13} color="rgba(255,255,255,0.9)" strokeWidth={1.8} />
-      </div>
-    </Link>
-  );
-}
-
-function QuickLaunch({ programs, drill }: { programs: Program[]; drill: Drill | undefined }) {
-  const items = programs.slice(0, 3);
-  if (items.length === 0 && !drill) return null;
-  return (
-    <section className="mb-5">
-      <div className="mb-3 flex items-center justify-between px-[22px] sm:px-8 lg:px-10">
-        <h2 className="text-[16px] font-bold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>빠른 실행</h2>
-        <Link href="/spokedu-master/library" className="flex items-center gap-0.5 text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>
-          전체보기<ChevronRight size={13} />
-        </Link>
-      </div>
-      <div className="scrollbar-hide flex gap-2.5 overflow-x-auto px-[22px] sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-8 lg:px-10">
-        {items.map((program) => <ProgramTile key={program.id} program={program} />)}
-        {drill ? <DrillTile drill={drill} index={0} /> : null}
-      </div>
-    </section>
-  );
-}
 
 function PackageCard({ program, drill, label }: { program: Program; drill?: Drill; label: string }) {
   const hasThumb = !!program.thumbnailUrl;
@@ -403,45 +322,24 @@ function NotificationSheet({ open, notifications, onClose, onMarkAll }: { open: 
   );
 }
 
-/* ── 컴팩트 네비 칩 ── */
-function NavChips({ programCount }: { programCount: number }) {
+/* ── 구독 3기둥 — 수업안/SPOMOVE/설명문구 ── */
+function PillarStrip({ programCount }: { programCount: number }) {
+  const pillars = [
+    { href: '/spokedu-master/library', Icon: BookOpen, tone: 'var(--spm-acc)', bg: 'rgba(99,102,241,0.12)', title: '수업안', sub: `${programCount}개 패키지` },
+    { href: '/spokedu-master/spomove', Icon: Zap,      tone: 'var(--spm-grn)', bg: 'rgba(16,185,129,0.1)',   title: 'SPOMOVE', sub: '큰 화면 즉시 실행' },
+    { href: '/spokedu-master/report',  Icon: FileText,  tone: '#f59e0b',         bg: 'rgba(245,158,11,0.1)',  title: '설명 문구', sub: '학부모 · 기관 복사' },
+  ] as const;
   return (
-    <section className="mb-4 flex gap-2 px-[22px] sm:px-8 lg:px-10">
-      {([
-        { label: '라이브러리', sub: `${programCount}개 수업`, href: '/spokedu-master/library', Icon: BookOpen, ic: 'var(--spm-acc)' },
-        { label: 'SPOMOVE', sub: '큰 화면 실행', href: '/spokedu-master/spomove', Icon: Zap, ic: 'var(--spm-grn)' },
-        { label: '수업 도구', sub: '타이머·팀·뽑기', href: '/spokedu-master/class-tools', Icon: Timer, ic: 'var(--spm-amb)' },
-      ] as const).map(({ label, sub, href, Icon, ic }) => (
-        <Link key={label} href={href} className="flex flex-1 items-center gap-2 rounded-[12px] px-3 py-2.5 active:scale-[0.97]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
-          <Icon size={15} color={ic} strokeWidth={2} />
-          <span className="min-w-0">
-            <strong className="block truncate text-[11px]" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{label}</strong>
-            <span className="mt-0.5 block truncate text-[9px] font-semibold leading-none" style={{ color: 'var(--spm-t3)' }}>{sub}</span>
+    <section className="mb-5 grid grid-cols-3 gap-2 px-[22px] sm:px-8 lg:px-10">
+      {pillars.map(({ href, Icon, tone, bg, title, sub }) => (
+        <Link key={title} href={href} className="flex flex-col items-center rounded-[14px] px-2 py-3.5 text-center active:scale-[0.97]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <span className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: bg }}>
+            <Icon size={17} color={tone} />
           </span>
+          <strong className="mt-2 block text-[12px]" style={{ color: 'var(--spm-t)' }}>{title}</strong>
+          <span className="mt-0.5 block text-[9px] font-semibold leading-[1.35]" style={{ color: 'var(--spm-t3)' }}>{sub}</span>
         </Link>
       ))}
-    </section>
-  );
-}
-
-/* ── 유틸리티 링크 ── */
-function UtilityRow() {
-  return (
-    <section className="mb-4 flex gap-2 px-[22px] sm:px-8 lg:px-10">
-      <Link href="/spokedu-master/report" className="flex flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 active:scale-[0.99]" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.11),rgba(16,185,129,0.06))', border: '1px solid rgba(99,102,241,0.18)' }}>
-        <FileText size={14} color="#a5b4fc" />
-        <span className="min-w-0">
-          <strong className="block truncate text-[12px]" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>설명 문구</strong>
-          <span className="mt-0.5 block truncate text-[9px] font-semibold leading-none" style={{ color: 'var(--spm-t3)' }}>학부모·기관 문구 복사</span>
-        </span>
-      </Link>
-      <Link href="/spokedu-master/plan" className="flex flex-1 items-center gap-2.5 rounded-[12px] px-3 py-2.5 active:scale-[0.99]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-        <CalendarDays size={14} color="var(--spm-amb)" />
-        <span className="min-w-0">
-          <strong className="block truncate text-[12px]" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>수업 계획</strong>
-          <span className="mt-0.5 block truncate text-[9px] font-semibold leading-none" style={{ color: 'var(--spm-t3)' }}>주간 일정 관리</span>
-        </span>
-      </Link>
     </section>
   );
 }
@@ -527,17 +425,9 @@ export default function DashboardView() {
 
       <PackageRail title="오늘 바로 쓸 수업 패키지" caption="커리큘럼과 SPOMOVE를 한 번에 실행" programs={packagePrograms} drills={drills} />
 
-      {/* 컴팩트 네비 칩 */}
-      <NavChips programCount={programs.length} />
+      <PillarStrip programCount={programs.length} />
 
-      {/* 오늘 수업 계획 — 콘텐츠 우선순위 1 */}
       <TodayPlan lessons={todayLessons} programs={programs} />
-
-      {/* 빠른 실행 — 콘텐츠 우선순위 2 */}
-      <QuickLaunch programs={quickPrograms} drill={drills[0]} />
-
-      {/* 유틸리티 */}
-      <UtilityRow />
 
       <section className="px-[22px] sm:px-8 lg:hidden lg:px-10">
         <PwaInstallCard compact />

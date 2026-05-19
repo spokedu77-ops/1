@@ -92,13 +92,18 @@ export async function GET() {
     sm_is_hot: boolean;
     sm_display_order: number;
     sm_colors: string[] | null;
+    sm_objective: string | null;
+    sm_development_focus: string | null;
+    sm_coach_script: string | null;
+    sm_parent_note: string | null;
+    sm_related_spomove_ids: string[] | null;
   };
 
   const metaByCurriculumId = new Map<number, MetaRow>();
   if (curriculumIds.length > 0) {
     const { data: metaRows } = await supabase
       .from('spokedu_master_program_meta')
-      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors')
+      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids')
       .in('curriculum_id', curriculumIds);
     for (const m of (metaRows ?? []) as MetaRow[]) {
       metaByCurriculumId.set(m.curriculum_id, m);
@@ -192,17 +197,22 @@ export async function GET() {
     const isProProgram = meta?.sm_is_pro ?? false;
     // 인증된 사용자에게 lessonDetail 항상 반환 — 체험/유료 모두 공개
     // 클라이언트 isPro + isTrialExpired 가 UI 잠금을 담당
+    const relatedSpomoveIds =
+      (meta?.sm_related_spomove_ids?.length ?? 0) > 0
+        ? (meta!.sm_related_spomove_ids as string[])
+        : inferredRelatedSpomoveIds;
+
     const lessonDetail = {
       recommendedAge: meta?.sm_grade ?? '전학년',
       recommendedPlayers: '6-20명',
-      objective: title,
-      developmentFocus: meta?.sm_theme ?? '',
-      coachScript,
-      parentNote: coachScript,
+      objective: meta?.sm_objective ?? (coachScript.slice(0, 60) || title),
+      developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
+      coachScript: meta?.sm_coach_script ?? coachScript,
+      parentNote: meta?.sm_parent_note ?? coachScript,
       fieldTips,
       variations: [],
       safetyNotes: [],
-      relatedSpomoveIds: inferredRelatedSpomoveIds,
+      relatedSpomoveIds,
       videoUrl,
       heroImageUrl: undefined,
       setupImageUrl: undefined,
@@ -253,7 +263,7 @@ export async function PATCH(request: Request) {
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_duration', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors'];
+  const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_duration', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors', 'sm_objective', 'sm_development_focus', 'sm_coach_script', 'sm_parent_note', 'sm_related_spomove_ids'];
   const patch: Record<string, unknown> = {};
   for (const key of allowed) { if (key in body) patch[key] = body[key]; }
 

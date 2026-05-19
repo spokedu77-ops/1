@@ -17,6 +17,9 @@ export type SpokeduTrackValue =
   | 'cta-records'
   | 'phone-click'
   | 'email-click'
+  | 'contact-private'
+  | 'contact-dispatch'
+  | 'contact-curriculum'
   | 'cta-generic';
 
 export function inferTrackFromHref(href: string): SpokeduTrackValue {

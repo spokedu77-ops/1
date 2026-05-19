@@ -1,86 +1,123 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ImagePlaceholder } from '../components/image-placeholder';
-import { SectionHeader, WhySpokeduTrustSection } from '../components/blocks';
+import { HeroCtaStack } from '../components/hero-cta-stack';
+import { RecordPhoto } from '../components/record-photo';
 import { NAVER_BLOG_URL } from '../data/external-channels';
 import { monthlyRecords } from '../data/monthly';
+import { buildSpokeduPageMetadata, seoMetaMonthly } from '../data/seo';
+import { cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
 
-export const metadata: Metadata = {
-  title: '월간 스포키듀 | SPOKEDU 운영 아카이브',
-  description: '월별 운영 기록과 주요 업데이트를 한국어 아카이브 형태로 정리합니다.',
-  alternates: {
-    canonical: '/spokedu/monthly',
-  },
-  openGraph: {
-    title: '월간 스포키듀 | SPOKEDU 운영 아카이브',
-    description: '월별 운영 기록과 주요 업데이트를 한국어 아카이브 형태로 정리합니다.',
-    url: '/spokedu/monthly',
-    locale: 'ko_KR',
-    type: 'website',
-    siteName: 'SPOKEDU',
-  },
-};
+export const metadata = buildSpokeduPageMetadata({
+  ...seoMetaMonthly,
+  canonical: '/spokedu/monthly',
+  keywords: ['월간 스포키듀', '기관 체육수업', '체육 커리큘럼', 'SPOMOVE'],
+});
 
 export default function SpokeduMonthlyPage() {
+  const featured = monthlyRecords[0];
+
   return (
-    <div className="space-y-10">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10">
-        <h1 className="text-3xl font-semibold text-slate-900 sm:text-5xl">월간 스포키듀</h1>
-        <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
-          매월 운영 기록을 아카이브로 누적해, 기관/프로그램/교육 포인트를 같은 형식으로 관리합니다.
+    <div className={landingPageStack}>
+      <section className={`${landingHeroShell} border-slate-200 bg-gradient-to-br from-indigo-50 via-white to-lime-50`}>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">Monthly SPOKEDU</p>
+        <h1 className={`mt-2 sm:mt-3 ${landingH1} text-slate-950`}>월간 스포키듀</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
+          단순 소식이 아니라, 수업 운영과 커리큘럼 개발의 원천이 되는 월간 기록입니다.
         </p>
-      </section>
-      <section className="space-y-6">
-        <SectionHeader title="월간 아카이브" description="월별 카드에서 대표 내용을 확인하고 상세 페이지에서 전체 기록을 확인할 수 있습니다." />
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {monthlyRecords.map((record) => (
-            <article key={record.slug} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <ImagePlaceholder
-                slot={`monthly-${record.slug}`}
-                alt={record.images[0]?.alt ?? `${record.title} 대표 이미지`}
-                src={record.images[0]?.src}
-                title={record.images[0]?.title ?? '월간 대표 사진'}
-                caption={record.title}
-                className="h-44"
-              />
-              <h2 className="mt-4 text-lg font-semibold text-slate-900">{record.title}</h2>
-              <p className="mt-2 text-sm text-slate-600">함께한 기관 {record.institutions.length}곳 · 운영 프로그램 {record.programs.length}개</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {record.programs.slice(0, 3).map((program) => (
-                  <span key={program} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
-                    {program}
-                  </span>
-                ))}
-              </div>
-              <Link
-                href={`/spokedu/monthly/${record.slug}`}
-                className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                상세 기록 보기
-              </Link>
-            </article>
-          ))}
-        </div>
+        {featured ? (
+          <div className="mt-4">
+            <HeroCtaStack
+              primary={{ href: `/spokedu/monthly/${featured.slug}`, label: '이번 달 기록 보기', track: 'cta-records-monthly' }}
+              secondary={[{ href: '/spokedu/cases', label: '수업 사례', track: 'cta-records-cases' }]}
+            />
+          </div>
+        ) : null}
       </section>
 
-      <section className="rounded-2xl border border-indigo-100 bg-indigo-50 p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-900">네이버 블로그 운영 후기</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-700">
-          자세한 수업 후기는 네이버 블로그에서 확인할 수 있도록 연결할 예정입니다.
-        </p>
-        <a
-          href={NAVER_BLOG_URL}
-          target="_blank"
-          rel="noreferrer"
-          data-track="external-naver-blog"
-          data-track-label="monthly-naver-blog"
-          className="mt-4 inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:border-indigo-300 hover:text-indigo-700"
-        >
-          네이버 블로그에서 자세히 보기
+      {featured ? (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="relative hidden h-40 sm:block sm:h-48">
+            <RecordPhoto
+              src={featured.images[0]?.src}
+              alt={featured.images[0]?.alt ?? featured.title}
+              category="monthly"
+              fill
+              sizes="100vw"
+            />
+          </div>
+          <div className="p-4 sm:p-6">
+            <p className="text-xs font-semibold text-indigo-600">이번 달 하이라이트</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-950">{featured.title}</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <h3 className="text-xs font-semibold uppercase text-slate-500">함께한 기관</h3>
+                <p className="mt-1 text-sm text-slate-800">{featured.institutions.join(' · ')}</p>
+              </div>
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <h3 className="text-xs font-semibold uppercase text-slate-500">운영 프로그램</h3>
+                <p className="mt-1 text-sm text-slate-800">{featured.programs.join(' · ')}</p>
+              </div>
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <h3 className="text-xs font-semibold uppercase text-slate-500">아이들이 경험한 움직임</h3>
+                <ul className="mt-1 space-y-0.5 text-sm text-slate-800">
+                  {featured.movementPoints.slice(0, 3).map((point) => (
+                    <li key={point}>· {point}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <h3 className="text-xs font-semibold uppercase text-slate-500">교육 포인트</h3>
+                <ul className="mt-1 space-y-0.5 text-sm text-slate-800">
+                  {featured.educationPoints.slice(0, 2).map((point) => (
+                    <li key={point}>· {point}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <Link href={`/spokedu/monthly/${featured.slug}`} data-track="cta-records-monthly" className={`mt-4 inline-flex text-sm ${linkMuted}`}>
+              상세 기록 보기 →
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">월간 아카이브</h2>
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {monthlyRecords.map((record) => (
+            <li key={record.slug}>
+              <article className={`overflow-hidden rounded-2xl border border-slate-200 bg-white ${cardInteractive}`}>
+                <div className="relative h-28 sm:h-32">
+                  <RecordPhoto
+                    src={record.images[0]?.src}
+                    alt={record.images[0]?.alt ?? record.title}
+                    category="monthly"
+                    fill
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                  />
+                </div>
+                <div className="p-3.5 sm:p-4">
+                  <h3 className="text-sm font-semibold text-slate-900 sm:text-base">{record.title}</h3>
+                  <p className="mt-1 line-clamp-1 text-xs text-slate-500">{record.institutions.join(' · ')}</p>
+                  <Link
+                    href={`/spokedu/monthly/${record.slug}`}
+                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white active:scale-[0.98] sm:mt-4"
+                  >
+                    상세 보기
+                  </Link>
+                </div>
+              </article>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+        <h2 className="text-base font-semibold text-slate-900">더 깊은 후기</h2>
+        <p className="mt-1 text-sm text-slate-600">네이버 블로그에서 수업 후기와 운영 이야기를 이어갑니다.</p>
+        <a href={NAVER_BLOG_URL} target="_blank" rel="noreferrer" data-track="external-naver-blog" className={`mt-3 inline-flex text-sm ${linkMuted}`}>
+          네이버 블로그 →
         </a>
       </section>
-
-      <WhySpokeduTrustSection />
     </div>
   );
 }

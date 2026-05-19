@@ -1,16 +1,14 @@
-import type { Metadata } from 'next';
 import DispatchLanding from '../components/dispatch-landing';
-import { seoKeywords, seoMeta } from '../data/content';
+import { SpokeduRelatedLinks } from '../components/seo-related-links';
+import { buildSpokeduMetadata } from '../data/seo';
 
-export const metadata: Metadata = {
-  title: seoMeta.dispatch.title,
-  description: seoMeta.dispatch.description,
-  keywords: [...seoKeywords.dispatch],
-  alternates: {
-    canonical: '/spokedu/dispatch',
-  },
-};
+export const metadata = buildSpokeduMetadata('dispatch');
 
 export default function SpokeduDispatchPage() {
-  return <DispatchLanding />;
+  return (
+    <div className="space-y-8 sm:space-y-10">
+      <DispatchLanding />
+      <SpokeduRelatedLinks page="dispatch" />
+    </div>
+  );
 }

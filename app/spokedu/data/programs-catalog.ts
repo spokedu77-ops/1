@@ -1,4 +1,4 @@
-import { spokeduImageManifest } from './content';
+import { programCatalogImages, SPOKEDU_IMAGES } from './images';
 
 export type ProgramTrack = 'Private' | 'Dispatch' | 'Curriculum';
 
@@ -10,22 +10,19 @@ export type ProgramCatalogCard = {
   effects: string[];
   image: string;
   imageAlt: string;
-  imageSlot: string;
+  imageAssetId: string;
   ctaLabel: string;
   ctaHref: string;
   ctaTrack: string;
 };
 
-export const programCatalogCards: ProgramCatalogCard[] = [
+const catalogMeta: Omit<ProgramCatalogCard, 'image' | 'imageAlt' | 'imageAssetId'>[] = [
   {
     slug: 'spomove',
     title: 'SPOMOVE',
     description: '보고, 선택하고, 판단하고, 움직이는 빔 기반 에듀테크 놀이체육',
     tracks: ['Private', 'Dispatch', 'Curriculum'],
     effects: ['집중력', '반응속도', '타이밍', '방향전환'],
-    image: spokeduImageManifest.programs.spomove,
-    imageAlt: 'SPOMOVE 빔 기반 놀이체육 수업 장면',
-    imageSlot: 'program-spomove',
     ctaLabel: '자세히 보기',
     ctaHref: '/spokedu/programs/spomove',
     ctaTrack: 'cta-program-spomove',
@@ -36,9 +33,6 @@ export const programCatalogCards: ProgramCatalogCard[] = [
     description: '초등 기초체력 요소를 놀이체육으로 경험하는 프로그램',
     tracks: ['Dispatch', 'Curriculum'],
     effects: ['심폐지구력', '근력', '유연성', '순발력'],
-    image: spokeduImageManifest.programs.paps,
-    imageAlt: 'PAPS 연계 놀이체육 활동 장면',
-    imageSlot: 'program-paps',
     ctaLabel: '자세히 보기',
     ctaHref: '/spokedu/programs/paps',
     ctaTrack: 'cta-program-paps',
@@ -49,9 +43,6 @@ export const programCatalogCards: ProgramCatalogCard[] = [
     description: '기본 움직임과 운동 습관을 만드는 기본 수업 자산',
     tracks: ['Private', 'Dispatch'],
     effects: ['기본움직임', '운동습관', '자신감', '사회성'],
-    image: spokeduImageManifest.programs.playClass,
-    imageAlt: '놀이체육 정규수업에서 아이들이 움직이는 장면',
-    imageSlot: 'program-play-class',
     ctaLabel: '문의하기',
     ctaHref: '/spokedu/contact',
     ctaTrack: 'cta-program-inquiry-play-class',
@@ -62,9 +53,6 @@ export const programCatalogCards: ProgramCatalogCard[] = [
     description: '어린이날, 시즌 행사, 기관 특별활동에 맞춘 체육 프로그램',
     tracks: ['Dispatch'],
     effects: ['몰입', '협동', '체험', '단체활동'],
-    image: spokeduImageManifest.programs.oneDay,
-    imageAlt: '원데이 체육행사 단체 활동 장면',
-    imageSlot: 'program-oneday',
     ctaLabel: '자세히 보기',
     ctaHref: '/spokedu/programs/oneday-event',
     ctaTrack: 'cta-program-oneday-event',
@@ -75,9 +63,6 @@ export const programCatalogCards: ProgramCatalogCard[] = [
     description: '체육과 예체능을 결합한 방학 시즌 프로그램',
     tracks: ['Private', 'Dispatch'],
     effects: ['종일체험', '예체능', '돌봄', '신체활동'],
-    image: spokeduImageManifest.programs.camp,
-    imageAlt: '방학캠프에서 체육과 예체능 활동을 하는 장면',
-    imageSlot: 'program-camp',
     ctaLabel: '자세히 보기',
     ctaHref: '/spokedu/programs/camp',
     ctaTrack: 'cta-program-camp',
@@ -88,14 +73,21 @@ export const programCatalogCards: ProgramCatalogCard[] = [
     description: '수업안, 교구 활용법, 월간 프로그램, 강사 교육 콘텐츠',
     tracks: ['Curriculum'],
     effects: ['수업안', '매뉴얼', '강사교육', '라이선싱'],
-    image: spokeduImageManifest.programs.curriculumContent,
-    imageAlt: '커리큘럼 콘텐츠 자료와 수업안이 배치된 장면',
-    imageSlot: 'program-curriculum-content',
     ctaLabel: '커리큘럼 문의',
     ctaHref: '/spokedu/curriculum',
     ctaTrack: 'cta-program-curriculum-content',
   },
 ];
+
+export const programCatalogCards: ProgramCatalogCard[] = catalogMeta.map((item, index) => {
+  const asset = programCatalogImages[index];
+  return {
+    ...item,
+    image: asset.src,
+    imageAlt: asset.alt,
+    imageAssetId: asset.id,
+  };
+});
 
 export const trackUsageRows = [
   {

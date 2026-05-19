@@ -1,16 +1,14 @@
-import type { Metadata } from 'next';
 import PrivateLanding from '../components/private-landing';
-import { seoKeywords, seoMeta } from '../data/content';
+import { SpokeduRelatedLinks } from '../components/seo-related-links';
+import { buildSpokeduMetadata } from '../data/seo';
 
-export const metadata: Metadata = {
-  title: seoMeta.private.title,
-  description: seoMeta.private.description,
-  keywords: [...seoKeywords.private],
-  alternates: {
-    canonical: '/spokedu/private',
-  },
-};
+export const metadata = buildSpokeduMetadata('private');
 
 export default function SpokeduPrivatePage() {
-  return <PrivateLanding />;
+  return (
+    <div className="space-y-8 sm:space-y-10">
+      <PrivateLanding />
+      <SpokeduRelatedLinks page="private" />
+    </div>
+  );
 }

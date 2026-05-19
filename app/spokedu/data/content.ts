@@ -1,4 +1,5 @@
 import { brandContactLinks, brandProfile } from './brand';
+import { SPOKEDU_IMAGES, spokeduImageManifest } from './images';
 
 export const SPOKEDU_BASE_PATH = '/spokedu';
 
@@ -88,64 +89,18 @@ export type TrustReasonCard = {
   description: string;
 };
 
-export const spokeduImageFolders = [
-  '/images/home',
-  '/images/private',
-  '/images/dispatch',
-  '/images/curriculum',
-  '/images/programs',
-  '/images/records',
-  '/images/cases',
-  '/images/monthly',
-] as const;
-
-export const spokeduImageManifest = {
-  home: {
-    heroClass: '/images/home/home-hero-class.jpg',
-    labScene: '/images/home/home-lab-scene.jpg',
-    dispatchScene: '/images/home/home-dispatch-scene.jpg',
-  },
-  private: {
-    oneToOne: '/images/private/private-one-to-one.jpg',
-    smallGroup: '/images/private/private-small-group.jpg',
-    toolActivity: '/images/private/private-tool-activity.jpg',
-  },
-  dispatch: {
-    groupClass: '/images/dispatch/dispatch-group-class.jpg',
-    kiwoomCenter: '/images/dispatch/dispatch-kiwoom-center.jpg',
-    oneDayEvent: '/images/dispatch/dispatch-one-day-event.jpg',
-  },
-  curriculum: {
-    lessonPlan: '/images/curriculum/curriculum-lesson-plan.jpg',
-    toolSetup: '/images/curriculum/curriculum-tool-setup.jpg',
-    instructorTraining: '/images/curriculum/curriculum-instructor-training.jpg',
-    programMaterials: '/images/curriculum/curriculum-program-materials.jpg',
-  },
-  programs: {
-    spomove: '/images/programs/program-spomove.jpg',
-    paps: '/images/programs/program-paps.jpg',
-    playClass: '/images/programs/program-play-class.jpg',
-    oneDay: '/images/programs/program-one-day.jpg',
-    camp: '/images/programs/program-camp.jpg',
-    curriculumContent: '/images/programs/program-curriculum-content.jpg',
-  },
-  records: {
-    lab: '/images/records/record-lab.jpg',
-    yangcheon: '/images/records/record-yangcheon.jpg',
-    dongjak: '/images/records/record-dongjak.jpg',
-    dasarang: '/images/records/record-dasarang.jpg',
-    playz: '/images/records/record-playz.jpg',
-    seodaemun: '/images/records/record-seodaemun.jpg',
-  },
-  cases: {
-    hero: '/images/cases/cases-hero.jpg',
-    representative: '/images/cases/cases-representative.jpg',
-  },
-  monthly: {
-    hero: '/images/monthly/monthly-hero.jpg',
-    representative: '/images/monthly/monthly-representative.jpg',
-  },
-} as const;
+export {
+  SPOKEDU_IMAGE_ROOT,
+  SPOKEDU_IMAGES,
+  spokeduImageFolders,
+  spokeduImageManifest,
+  spokeduPageImageMap,
+  getSpokeduImageFallback,
+  programCatalogImages,
+  recordsProofImageAssets,
+  recordsCaseImageBySlug,
+} from './images';
+export type { SpokeduImageCategory, SpokeduImageDef, PageImageSlot } from './images';
 
 export const trustReasonCards: TrustReasonCard[] = [
   {
@@ -689,51 +644,12 @@ export const contactTypes: ContactType[] = [
   },
 ];
 
-export const seoMeta: Record<string, SeoMetaItem> = {
-  home: {
-    title: 'SPOKEDU 스포키듀 | 아동·청소년 체육교육 전문 단체',
-    description:
-      'SPOKEDU는 아이들의 움직임을 교육적으로 설계하고, 그 움직임을 수업·커리큘럼·콘텐츠로 확장하는 아동·청소년 체육교육 전문 단체입니다.',
-  },
-  about: {
-    title: 'SPOKEDU | 우리는 아이를 가르치고, 선생님을 가르치며, 체육수업을 콘텐츠로 만듭니다',
-    description: '스포키듀의 교육 철학, 현장 운영, 강사 교육, 커리큘럼 콘텐츠화 구조를 소개합니다.',
-  },
-  private: {
-    title: '개인·소그룹 체육수업 | SPOKEDU Private Class',
-    description: '아이의 성향과 수준에 맞춘 1:1·소그룹 체육수업을 제안합니다.',
-  },
-  dispatch: {
-    title: '기관 파견 체육교육 | SPOKEDU Dispatch Solution',
-    description: '기관의 공간, 인원, 운영 목적에 맞춘 파견형 체육교육 프로그램을 제안합니다.',
-  },
-  curriculum: {
-    title: '커리큘럼·콘텐츠 | 선생님들을 위한 체육교육 콘텐츠 | SPOKEDU',
-    description: '현장에서 검증한 체육수업을 커리큘럼·콘텐츠·강사교육으로 확장합니다.',
-  },
-  programs: {
-    title: 'SPOKEDU 프로그램 | SPOMOVE·PAPS·놀이체육·원데이·방학캠프',
-    description: 'SPOMOVE, PAPS, 원데이, 캠프, 커리큘럼 콘텐츠 자산을 소개합니다.',
-  },
-  records: {
-    title: '현장기록 | 수업 사례·월간 스포키듀·교육 인사이트',
-    description: '수업 사례, 월간 스포키듀, 교육 인사이트를 통해 현장 운영 실체를 공유합니다.',
-  },
-  contact: {
-    title: 'SPOKEDU 문의 | 개인수업·기관수업·커리큘럼 문의',
-    description: '문의 유형에 맞춰 필요한 정보를 안내하고 빠르게 상담을 연결합니다.',
-  },
-};
+export { seoMeta, seoKeywords } from './seo';
 
-export const seoKeywords = {
-  home: ['아동 체육교육', '청소년 체육교육', '어린이 체육수업', '초등 체육수업', 'SPOKEDU'],
-  private: ['개인 체육수업', '소그룹 체육수업', '체육 과외', '어린이 체육수업', '초등 체육수업'],
-  dispatch: ['기관 체육수업', '유치원 체육수업', '키움센터 체육 프로그램', '지역아동센터 체육 프로그램', 'SPOMOVE', 'PAPS 놀이체육'],
-  curriculum: ['체육 커리큘럼', '놀이체육 수업안', '강사 교육 콘텐츠', '체육교육 콘텐츠', 'SPOMOVE', 'PAPS 놀이체육'],
-  programs: ['SPOMOVE', 'PAPS 놀이체육', '놀이체육 수업안', '어린이 체육수업', '기관 체육수업'],
-  records: ['아동 체육교육', '기관 체육수업', '키움센터 체육 프로그램', '지역아동센터 체육 프로그램', 'SPOKEDU 사례'],
-  contact: ['개인 체육수업', '소그룹 체육수업', '기관 체육수업', '체육 커리큘럼', '강사 교육 콘텐츠 문의'],
-} as const;
+export const seoMetaAbout = {
+  title: 'SPOKEDU | 우리는 아이를 가르치고, 선생님을 가르치며, 체육수업을 콘텐츠로 만듭니다',
+  description: '스포키듀의 교육 철학, 현장 운영, 강사 교육, 커리큘럼 콘텐츠화 구조를 소개합니다.',
+} satisfies SeoMetaItem;
 
 export const privateFaq = [
   '1:1 개인수업이 가능한가요?',
