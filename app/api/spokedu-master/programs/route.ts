@@ -44,6 +44,20 @@ function buildThumbnailUrl(videoUrl: string | null | undefined): string | undefi
   return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : undefined;
 }
 
+function inferRelatedSpomoveIds(input: { title: string; category: string; tags: string[]; description: string; steps: string[] }): string[] {
+  const text = [input.title, input.category, input.description, ...input.tags, ...input.steps].join(' ');
+  const candidates: string[] = [];
+
+  if (/기억|순서|회상|인지|집중|주의/.test(text)) candidates.push('SM-05', 'SM-06');
+  if (/리듬|박자|협응|표현|동기화|거울/.test(text)) candidates.push('RC-05');
+  if (/민첩|순발|스피드|반응|출발|방향|전환|공간|신호/.test(text)) candidates.push('SR-05', 'SR-06');
+  if (/협동|릴레이|팀|규칙|역할|전략/.test(text)) candidates.push('RS-05');
+  if (/멈춤|억제|충동|간섭|판단|선택/.test(text)) candidates.push('IC-05');
+  if (candidates.length === 0 && /SPOMOVE|큰 화면|화면/.test(text)) candidates.push('SR-05');
+
+  return [...new Set(candidates)].slice(0, 2);
+}
+
 export async function GET() {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
@@ -157,6 +171,24 @@ export async function GET() {
         ? [smColors[0], smColors[1], smColors[2], smColors[3]]
         : categoryToColors(categoryName);
 
+    // Merge spokedu-pro classification tags with sm_tags
+    const proTags: string[] = [
+      ...(Array.isArray(ov?.function_types) && ov.function_types.length > 0
+        ? ov.function_types
+        : ov?.function_type ? [ov.function_type] : []),
+      ...(ov?.main_theme ? [ov.main_theme] : []),
+      ...(ov?.group_size ? [ov.group_size] : []),
+    ];
+    const smTags = meta?.sm_tags ?? [];
+    const inferredRelatedSpomoveIds = inferRelatedSpomoveIds({
+      title,
+      category: categoryName,
+      tags: [...proTags, ...smTags],
+      description: coachScript,
+      steps,
+    });
+    const tags = [...new Set([...proTags, ...smTags, ...(inferredRelatedSpomoveIds.length > 0 ? ['SPOMOVE'] : [])])];
+
     const isProProgram = meta?.sm_is_pro ?? false;
     // 인증된 사용자에게 lessonDetail 항상 반환 — 체험/유료 모두 공개
     // 클라이언트 isPro + isTrialExpired 가 UI 잠금을 담당
@@ -170,20 +202,15 @@ export async function GET() {
       fieldTips,
       variations: [],
       safetyNotes: [],
-      relatedSpomoveIds: [],
+      relatedSpomoveIds: inferredRelatedSpomoveIds,
       videoUrl,
+      heroImageUrl: undefined,
+      setupImageUrl: undefined,
+      galleryImageUrls: [],
+      briefingNotes: [],
+      rules: steps,
+      setupNotes: [],
     };
-
-    // Merge spokedu-pro classification tags with sm_tags
-    const proTags: string[] = [
-      ...(Array.isArray(ov?.function_types) && ov.function_types.length > 0
-        ? ov.function_types
-        : ov?.function_type ? [ov.function_type] : []),
-      ...(ov?.main_theme ? [ov.main_theme] : []),
-      ...(ov?.group_size ? [ov.group_size] : []),
-    ];
-    const smTags = meta?.sm_tags ?? [];
-    const tags = [...new Set([...proTags, ...smTags])];
 
     const thumbnailUrl = buildThumbnailUrl(videoUrl);
 

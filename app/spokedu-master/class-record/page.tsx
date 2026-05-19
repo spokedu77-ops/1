@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { isSameDay } from 'date-fns';
-import { AlertTriangle, BookOpen, CalendarDays, Check, ChevronRight, ClipboardList, ExternalLink, MessageCircle, Play, Send, Star, UserCheck, UserX } from 'lucide-react';
+import { AlertTriangle, BookOpen, CalendarDays, Check, ChevronRight, ClipboardList, ExternalLink, FileText, History, MessageCircle, Play, Send, Star, UserCheck, UserX } from 'lucide-react';
 import { Suspense, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { sendKakaoClassSummary, type KakaoSummaryResult } from '../lib/serviceContracts';
@@ -18,6 +19,18 @@ function SummaryPill({ label, value, tone }: { label: string; value: string; ton
     <div className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <p className="text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: tone }}>{value}</p>
       <p className="mt-1 text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+    </div>
+  );
+}
+
+function OutcomeCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.14)' }}>{icon}</span>
+        <p className="text-[11px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+      </div>
+      <p className="text-[13px] font-bold leading-5" style={{ color: 'var(--spm-t)' }}>{value}</p>
     </div>
   );
 }
@@ -187,6 +200,8 @@ function RecordEntryView() {
 
   const selectedStudent = students.find((student) => student.id === selectedId);
   const firstPresentStudent = students.find((student) => attendance[student.id] === 'present');
+  const packageFocus = program.lessonDetail?.developmentFocus ?? program.tags.slice(0, 3).join(', ');
+  const packageMeta = `${program.grade} · ${program.duration}분 · ${program.space}`;
   const present = Object.values(attendance).filter((value) => value === 'present').length;
   const absent = Object.values(attendance).filter((value) => value === 'absent').length;
   const focusCount = Object.values(focused).filter(Boolean).length;
@@ -199,6 +214,7 @@ function RecordEntryView() {
   const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance;
   const canPreviewKakao = canSaveRecord && present > 0;
   const parentToken = firstPresentStudent ? createParentShareToken(firstPresentStudent.id) : '';
+  const parentCopyPreview = `오늘 ${activeClassId}은 "${program.title}" 수업을 진행했습니다. ${packageFocus}을(를) 중심으로 아이들이 신호를 보고 판단하고 몸을 조절하는 경험을 했습니다.`;
 
   const toggleSkill = (studentId: string, skill: string) => {
     setCheckedSkills((prev) => {
@@ -284,7 +300,7 @@ function RecordEntryView() {
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>{activeClassId} / {activePeriod}교시</p>
             <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{activeLessonTitle}</h2>
-            <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>출석은 빠르게, 동작 기록은 학생 이름을 눌러 저장합니다.</p>
+            <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>{packageMeta} · {packageFocus}</p>
           </div>
           <Link href={`/spokedu-master/class-mode/${program.id}`} className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-acc)' }} aria-label="수업 시작">
             <Play size={18} color="#fff" fill="#fff" />
@@ -315,18 +331,23 @@ function RecordEntryView() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class end</p>
-            <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 종료 후 바로 공유</h2>
+            <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 후 1분 정리</h2>
           </div>
-          <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: kakaoStatus.allowed ? 'rgba(16,185,129,0.13)' : 'rgba(99,102,241,0.13)', color: kakaoStatus.allowed ? 'var(--spm-grn)' : 'var(--spm-acc)' }}>공유 {kakaoStatus.label}</span>
+          <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.13)', color: 'var(--spm-acc)' }}>발송 전 복사 검토</span>
         </div>
-        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>출석 {present}명, 동작 기록 {recordedSkills}개를 보호자 안내 문구로 정리합니다.</p>
+        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업이 끝나면 기록은 학생 이력에 남고, 프로그램 맥락은 보호자·센터·학교용 설명 문구로 이어집니다.</p>
+        <div className="mt-4 grid gap-2 md:grid-cols-3">
+          <OutcomeCard icon={<History size={15} color="var(--spm-acc)" />} label="학생 이력" value={`출석 ${present}명 · 관찰 ${focusCount}명`} />
+          <OutcomeCard icon={<FileText size={15} color="var(--spm-acc)" />} label="설명 근거" value={packageFocus || '활동 목표와 관찰 포인트'} />
+          <OutcomeCard icon={<MessageCircle size={15} color="var(--spm-acc)" />} label="안내 문구" value="자동 발송 전 복사해서 검토" />
+        </div>
         {!hasStudents ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>등록된 학생이 없어 수업 기록을 만들 수 없습니다.</p> : null}
         {hasStudents && !hasAttendance ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>출석 또는 결석을 최소 1명 이상 체크해 주세요.</p> : null}
         {hasAttendance && present === 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>출석 학생이 있어야 보호자 공유를 보낼 수 있습니다. 결석 기록은 저장만 가능합니다.</p> : null}
         {kakaoStep === 'preview' ? (
           <div className="mt-4 rounded-[16px] p-4" style={{ background: '#fef3c7', color: '#2d1b05' }}>
             <p className="text-[12px] font-black">보호자 안내 미리보기</p>
-            <p className="mt-2 text-[13px] font-semibold leading-6">오늘 {activeClassId}은 {program.title} 수업을 진행했습니다. 출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장됩니다.</p>
+            <p className="mt-2 text-[13px] font-semibold leading-6">{parentCopyPreview} 출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장됩니다.</p>
           </div>
         ) : null}
         {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}
@@ -335,7 +356,7 @@ function RecordEntryView() {
             <p className="text-[12px] font-bold">수업 기록이 학생 이력에 저장되었습니다.</p>
             <div className="mt-2 flex flex-wrap gap-3">
               <Link href="/spokedu-master/class-record" className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>기록 목록 보기</Link>
-              <Link href={`/spokedu-master/report?program=${program.id}`} className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>설명 문구 보기</Link>
+              <Link href={`/spokedu-master/report?program=${program.id}`} className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>설명 문구 만들기</Link>
             </div>
           </div>
         ) : null}
@@ -352,8 +373,9 @@ function RecordEntryView() {
             <p className="mt-1 text-[11px] font-semibold">외부 발송 연동은 준비 중입니다. 실패 항목은 운영 상태에서 다시 확인합니다.</p>
           </div>
         ) : null}
-        <div className="mt-5 grid gap-2 sm:grid-cols-[0.78fr_1fr]">
+        <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr_1fr]">
           <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || kakaoStep === 'sending'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />기록만 저장</button>
+          <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={16} />설명 문구 만들기</Link>
           <button type="button" onClick={kakaoStep === 'summary' ? () => setKakaoStep('preview') : sendKakao} disabled={!canPreviewKakao || !kakaoStatus.allowed || kakaoStep === 'sending' || kakaoStep === 'done'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
             {kakaoStep === 'summary' ? <MessageCircle size={16} /> : <Send size={16} />}
             {kakaoStep === 'summary' ? '보호자 안내 미리보기' : kakaoStep === 'preview' ? '공유 준비' : kakaoStep === 'done' ? '준비 완료' : '준비 중'}

@@ -21,26 +21,27 @@ const AUDIENCES: Array<{ id: Audience; label: string; description: string; Icon:
   { id: 'promo', label: '홍보용', description: '블로그·SNS 소개 문구', Icon: Megaphone },
 ];
 
-import type { Program } from '../types';
+import type { ClassRecord, Program } from '../types';
 
-function buildCopyBlocks(audience: Audience, program: Program): CopyBlock[] {
+function buildCopyBlocks(audience: Audience, program: Program, record?: ClassRecord): CopyBlock[] {
   const detail = program.lessonDetail;
   const focus = detail?.developmentFocus ?? program.tags.join(', ');
   const objective = detail?.objective ?? program.description;
   const equipment = program.equipment.join(', ');
   const baseMeta = `${program.grade} / ${program.duration}분 / ${program.space}`;
+  const recordMeta = record ? ` 오늘 기록은 출석 ${record.present}명, 관찰 ${record.focusCount}명, 동작 체크 ${record.skillCount}개로 정리했습니다.` : '';
 
   if (audience === 'parent') {
     return [
       {
         title: '수업 직후 안내',
         caption: '학부모에게 바로 보낼 수 있는 기본 문구',
-        text: `오늘 수업은 "${program.title}" 활동으로 진행했습니다. 아이들은 ${objective}을(를) 놀이 형태로 경험했고, ${focus}을(를) 자연스럽게 연습했습니다. 단순히 뛰는 시간이 아니라 신호를 보고 판단하고, 몸을 조절하며, 친구들과 함께 움직이는 과정에 초점을 두었습니다.`,
+        text: `오늘 수업은 "${program.title}" 활동으로 진행했습니다. 아이들은 ${objective}을(를) 놀이 형태로 경험했고, ${focus}을(를) 자연스럽게 연습했습니다. 단순히 뛰는 시간이 아니라 신호를 보고 판단하고, 몸을 조절하며, 친구들과 함께 움직이는 과정에 초점을 두었습니다.${recordMeta}`,
       },
       {
         title: '짧은 알림',
         caption: '문자나 메신저에 붙여넣기 좋은 짧은 버전',
-        text: `오늘은 "${program.title}"로 ${focus}을(를) 연습했습니다. 아이들이 신호를 보고 판단하며 몸을 조절하는 경험을 했습니다.`,
+        text: `오늘은 "${program.title}"로 ${focus}을(를) 연습했습니다. 아이들이 신호를 보고 판단하며 몸을 조절하는 경험을 했습니다.${record ? ` 출석 ${record.present}명 기록을 저장했습니다.` : ''}`,
       },
       {
         title: '상담용 한 줄',
@@ -155,10 +156,11 @@ function ReportContent() {
   const [copiedKey, setCopiedKey] = useState('');
   const [programSearch, setProgramSearch] = useState('');
   const program = programs.find((item) => item.id === programId) ?? programs[0];
+  const selectedRecord = classRecords.find((record) => record.programId === program?.id);
   const filteredPrograms = programSearch.trim()
     ? programs.filter((p) => p.title.includes(programSearch) || p.tags.some((t) => t.includes(programSearch)))
     : programs;
-  const copyBlocks = useMemo(() => (program ? buildCopyBlocks(audience, program) : []), [audience, program]);
+  const copyBlocks = useMemo(() => (program ? buildCopyBlocks(audience, program, selectedRecord) : []), [audience, program, selectedRecord]);
   const activeAudience = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0]!;
 
   const copyText = async (key: string, text: string) => {
@@ -175,8 +177,8 @@ function ReportContent() {
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>teaching explanation</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>설명 문구</h1>
-        <p className="mt-2 max-w-[780px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>프로그램을 선택하고 대상을 고르면 바로 복사할 수 있는 수업 설명 문구가 만들어집니다. 학부모 안내, 센터 운영, 학교 기록, 홍보까지 목적에 맞게 사용하세요.</p>
+        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 설명 도구</h1>
+        <p className="mt-2 max-w-[780px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 고른 수업과 수업 후 기록을 보호자, 센터, 학교가 이해할 수 있는 언어로 바꿉니다. 자동 발송보다 먼저 복사·검토 가능한 문구 품질을 높입니다.</p>
       </header>
 
       <section className="mb-6 grid gap-2 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10">
@@ -226,11 +228,20 @@ function ReportContent() {
         </aside>
 
         <section className="space-y-4">
-          <div className="rounded-[18px] p-5" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>{activeAudience.label}</p>
+          <div className="rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.18), var(--spm-s1))', border: '1px solid var(--spm-br2)' }}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>{activeAudience.label}</p>
+                <p className="mt-1 text-[12px] font-bold" style={{ color: selectedRecord ? 'var(--spm-grn)' : 'var(--spm-t3)' }}>{selectedRecord ? '최근 수업 기록 반영됨' : '수업안 기반 기본 문구'}</p>
+              </div>
+              {selectedRecord ? <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.13)', color: 'var(--spm-grn)' }}>출석 {selectedRecord.present} · 관찰 {selectedRecord.focusCount}</span> : null}
+            </div>
             <h2 className="mt-2 text-[26px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{program.title}</h2>
             <div className="mt-4 flex flex-wrap gap-2">
               {[program.grade, `${program.duration}분`, program.space, ...program.tags.slice(0, 2)].map((item) => <span key={item} className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{item}</span>)}
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              {['수업 의도', '발달 포인트', '현장 전달'].map((item) => <div key={item} className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{item}</div>)}
             </div>
           </div>
 

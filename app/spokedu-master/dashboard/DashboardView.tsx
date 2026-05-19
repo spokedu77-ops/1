@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Bookmark, BookOpen, CalendarDays, Check, ChevronRight, FileText, Play, Timer, Zap } from 'lucide-react';
+import { Bell, Bookmark, BookOpen, CalendarDays, Check, ChevronRight, FileText, MonitorPlay, Play, Sparkles, Timer, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { isSameDay } from 'date-fns';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
@@ -39,12 +39,47 @@ function PlanChip() {
   );
 }
 
-/* ── 히어로 ── 16:9 고정 비율로 길쭉함 제거 */
-function TodayHero({ program, lesson }: { program: Program; lesson?: Lesson }) {
+function getProgramDrills(program: Program, drills: Drill[]) {
+  const relatedIds = program.lessonDetail?.relatedSpomoveIds ?? [];
+  const direct = relatedIds
+    .map((id) => drills.find((drill) => drill.id === id))
+    .filter((drill): drill is Drill => Boolean(drill));
+  if (direct.length > 0) return direct;
+
+  const programText = [program.title, program.category, program.description, ...program.tags].join(' ');
+  const scored = drills
+    .map((drill) => {
+      let score = 0;
+      if (/반응|민첩|순발|방향|신호|스피드/.test(programText)) score += /반응|방향|속도|스피드|Visual|Reaction/i.test(`${drill.name} ${drill.category}`) ? 3 : 0;
+      if (/집중|기억|인지|색|판단/.test(programText)) score += /집중|기억|색|Memory|인지/i.test(`${drill.name} ${drill.category}`) ? 3 : 0;
+      if (/점프|균형|협동|워밍업/.test(programText)) score += /점프|균형|신호|반응/i.test(`${drill.name} ${drill.category}`) ? 2 : 0;
+      score += drill.isPro === program.isPro ? 0.5 : 0;
+      return { drill, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  return scored.filter((item) => item.score > 0).map((item) => item.drill).slice(0, 2);
+}
+
+function getBestProgramDrill(program: Program, drills: Drill[]) {
+  return getProgramDrills(program, drills)[0] ?? drills[0];
+}
+
+function getPackageReason(program: Program, drill?: Drill) {
+  const focus = program.lessonDetail?.developmentFocus || program.tags.slice(0, 2).join(' · ') || program.category;
+  if (!drill) return `${focus} 중심 수업안입니다.`;
+  return `${focus} 수업에 ${drill.name}을(를) 도입·전환 활동으로 붙일 수 있습니다.`;
+}
+
+/* ── 히어로 ── 홈은 수업안 + 연결 SPOMOVE 패키지를 먼저 보여준다 */
+function TodayHero({ program, lesson, drill }: { program: Program; lesson?: Lesson; drill?: Drill }) {
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
   const favorites = useMasterStore((state) => state.favorites);
   const isFav = favorites.includes(program.id);
   const hasThumb = !!program.thumbnailUrl;
+  const spomoveHref = drill
+    ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
+    : '/spokedu-master/spomove';
 
   return (
     <section className="mb-5 px-[22px] sm:px-8 lg:px-10">
@@ -91,17 +126,21 @@ function TodayHero({ program, lesson }: { program: Program; lesson?: Lesson }) {
           </div>
 
           <div>
-            <p className="text-[9px] font-black uppercase tracking-[0.1em] text-white/48">{program.category}</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.1em] text-white/48">오늘 수업 패키지 · {program.category}</p>
             <h2
               className="mt-0.5 max-w-[520px] text-[20px] font-black leading-[1.15] text-white sm:text-[26px] md:text-[32px]"
               style={{ fontFamily: 'var(--spm-font-display)', wordBreak: 'keep-all', textShadow: '0 2px 12px rgba(0,0,0,0.45)' }}
             >
               {program.title}
             </h2>
+            <p className="mt-2 line-clamp-2 max-w-[560px] text-[12px] font-semibold leading-5 text-white/64 sm:text-[13px]">
+              {getPackageReason(program, drill)}
+            </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {[program.grade, `${program.duration}분`, program.space].map((tag) => (
                 <span key={tag} className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white/75" style={{ background: 'rgba(0,0,0,0.28)' }}>{tag}</span>
               ))}
+              {drill ? <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white/85" style={{ background: 'rgba(99,102,241,0.5)' }}>연결 SPOMOVE · {drill.name}</span> : null}
             </div>
 
             {/* CTA 버튼 */}
@@ -114,12 +153,12 @@ function TodayHero({ program, lesson }: { program: Program; lesson?: Lesson }) {
                 <Play size={13} fill="#fff" />수업 시작
               </Link>
               <Link
-                href="/spokedu-master/spomove"
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] active:scale-[0.97]"
+                href={spomoveHref}
+                className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-[12px] px-3 text-[12px] font-black text-white active:scale-[0.97]"
                 style={{ background: 'rgba(0,0,0,0.32)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.14)' }}
-                aria-label="SPOMOVE"
+                aria-label="연결 SPOMOVE 실행"
               >
-                <Zap size={16} color="rgba(255,255,255,0.9)" />
+                <Zap size={14} color="rgba(255,255,255,0.9)" />SPOMOVE
               </Link>
               <button
                 type="button"
@@ -215,6 +254,83 @@ function QuickLaunch({ programs, drill }: { programs: Program[]; drill: Drill | 
       <div className="scrollbar-hide flex gap-2.5 overflow-x-auto px-[22px] sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-8 lg:px-10">
         {items.map((program) => <ProgramTile key={program.id} program={program} />)}
         {drill ? <DrillTile drill={drill} index={0} /> : null}
+      </div>
+    </section>
+  );
+}
+
+function PackageCard({ program, drill, label }: { program: Program; drill?: Drill; label: string }) {
+  const hasThumb = !!program.thumbnailUrl;
+  const spomoveHref = drill
+    ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
+    : '/spokedu-master/spomove';
+
+  return (
+    <article className="min-w-[252px] rounded-[16px] p-3 sm:min-w-0" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <div
+        className="relative h-[112px] overflow-hidden rounded-[13px]"
+        style={{
+          background: hasThumb ? '#111' : `linear-gradient(155deg, ${program.colors[0]} 0%, ${program.colors[1]} 55%, ${program.colors[2]} 100%)`,
+        }}
+      >
+        {hasThumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={program.thumbnailUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <span className="pointer-events-none absolute right-[-12px] top-[-4px] opacity-[0.1]" aria-hidden>
+            <CategoryIcon category={program.category} size={126} color="#fff" strokeWidth={0.55} />
+          </span>
+        )}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.78))' }} />
+        <span className="absolute left-2 top-2 rounded-full bg-black/35 px-2 py-1 text-[9px] font-black text-white/75">{label}</span>
+        <div className="absolute inset-x-0 bottom-0 p-3">
+          <p className="text-[9px] font-black uppercase tracking-[0.08em] text-white/45">{program.category}</p>
+          <h3 className="mt-1 line-clamp-2 text-[15px] font-black leading-tight text-white" style={{ fontFamily: 'var(--spm-font-display)', wordBreak: 'keep-all' }}>{program.title}</h3>
+        </div>
+      </div>
+      <div className="mt-3">
+        <p className="line-clamp-2 min-h-[40px] text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{getPackageReason(program, drill)}</p>
+        <div className="mt-3 flex items-center gap-2 rounded-[12px] px-3 py-2" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.18)' }}>
+          <Zap size={14} color="#a5b4fc" />
+          <span className="min-w-0 flex-1 truncate text-[11px] font-black" style={{ color: '#c4b5fd' }}>{drill?.name ?? 'SPOMOVE 선택'}</span>
+        </div>
+        <div className="mt-3 grid grid-cols-[1fr_0.82fr] gap-2">
+          <Link href={`/spokedu-master/class-mode/${program.id}`} className="flex h-10 items-center justify-center gap-1.5 rounded-[11px] text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+            <Play size={12} fill="#fff" />수업 시작
+          </Link>
+          <Link href={spomoveHref} className="flex h-10 items-center justify-center gap-1.5 rounded-[11px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+            <MonitorPlay size={13} />큰 화면
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function PackageRail({ title, caption, programs, drills }: { title: string; caption: string; programs: Program[]; drills: Drill[] }) {
+  if (!programs.length) return null;
+  return (
+    <section className="mb-5">
+      <div className="mb-3 flex items-end justify-between gap-3 px-[22px] sm:px-8 lg:px-10">
+        <div>
+          <div className="mb-1 flex items-center gap-1.5">
+            <Sparkles size={13} color="var(--spm-amb)" />
+            <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>curated packages</p>
+          </div>
+          <h2 className="text-[17px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{title}</h2>
+          <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{caption}</p>
+        </div>
+        <Link href="/spokedu-master/library" className="shrink-0 text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>더 보기</Link>
+      </div>
+      <div className="scrollbar-hide flex gap-3 overflow-x-auto px-[22px] sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-8 lg:px-10">
+        {programs.slice(0, 3).map((program, index) => (
+          <PackageCard
+            key={program.id}
+            program={program}
+            drill={getBestProgramDrill(program, drills)}
+            label={index === 0 ? '추천' : index === 1 ? '빠른 수업' : 'SPOMOVE 연계'}
+          />
+        ))}
       </div>
     </section>
   );
@@ -360,6 +476,14 @@ export default function DashboardView() {
       .slice(0, 3);
   }, [favorites, programs, usedProgramIds]);
 
+  const packagePrograms = useMemo(() => {
+    const withSpomove = programs.filter((program) => getProgramDrills(program, drills).length > 0);
+    const short = programs.filter((program) => program.duration <= 18);
+    return [...withSpomove, ...quickPrograms, ...short, ...programs]
+      .filter((program, index, list) => list.findIndex((item) => item.id === program.id) === index)
+      .slice(0, 3);
+  }, [drills, programs, quickPrograms]);
+
   if (!mounted || !programsLoaded) return <DashboardSkeleton />;
 
   const now = new Date();
@@ -371,6 +495,7 @@ export default function DashboardView() {
     : undefined;
   const todayProgram = heroFromPlan ?? (programs.length > 0 ? programs[dayOfYear % programs.length] : undefined);
   if (!todayProgram) return <DashboardSkeleton />;
+  const todayDrill = getBestProgramDrill(todayProgram, drills);
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -398,7 +523,9 @@ export default function DashboardView() {
       </header>
 
       {/* 히어로 — 16:9 비율 고정 */}
-      <TodayHero program={todayProgram} lesson={firstUndoneTodayLesson} />
+      <TodayHero program={todayProgram} lesson={firstUndoneTodayLesson} drill={todayDrill} />
+
+      <PackageRail title="오늘 바로 쓸 수업 패키지" caption="커리큘럼과 SPOMOVE를 한 번에 실행" programs={packagePrograms} drills={drills} />
 
       {/* 컴팩트 네비 칩 */}
       <NavChips programCount={programs.length} />

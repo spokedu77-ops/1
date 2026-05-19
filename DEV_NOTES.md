@@ -4,6 +4,16 @@
 
 - 2026-05-19 (SPOMOVE 전면 오류 수정 + 라이브러리 필터 개선: store loadDrills 병합, EngineRouter 폴백, session 가드, LibraryView 필터 count + ProgramSheet 중복 제거)
 - 2026-05-19 (전 페이지 감사 — 4건 버그/UX 수정: parent 링크 오류, director 플랜 배너, report 잠금 카드, plan 저장 버튼 비활성화)
+- 2026-05-19 (홈 구독 경험 1차 재편 — admin 원천 데이터는 유지하고, Dashboard에서 curriculum 수업안 + SPOMOVE training을 "오늘 수업 패키지"로 재가공)
+- 2026-05-19 (레퍼런스 적용 기준 정리 + 라이브러리 모달 1차 개선: 연결 SPOMOVE 맥락 노출)
+- 2026-05-19 (SPOMOVE 허브 1차 재편: 드릴 목록 중심 → 수업 흐름별 실행 엔진)
+- 2026-05-19 (라이브러리 상세 1차 재편: 수업안 문서 → 수업 패키지 상세)
+- 2026-05-19 (Class Mode 1차 재편: 수업 진행 화면에 패키지 맥락 + 연결 SPOMOVE 실행 카드 추가)
+- 2026-05-19 (수업 후 연결 흐름 보완: Class Mode/SPOMOVE 완료 → 수업 기록/설명 문구 CTA 연결, 엔진형 SPOMOVE 완료 화면 버그 수정)
+- 2026-05-19 (콘텐츠 상품화 1차 보강: 라이브러리 상세 깨진 문구 제거, 콘텐츠 품질 지표/컬렉션 레일 추가)
+- 2026-05-19 (콘텐츠-SPOMOVE 매핑 브릿지: programs API에서 수업 맥락 기반 relatedSpomoveIds 후보 자동 추론)
+- 2026-05-19 (프리미엄 콘텐츠 모달 1차 재설계: Funstick Fencing 레퍼런스 기반 ProgramSheet를 패키지 프리뷰 구조로 개편)
+- 2026-05-19 (라이브러리 뷰 재정비 + 콘텐츠 필드 확장: 깨진 문구 제거, hero/setup/gallery/rules 계열 필드 수용)
 - 2026-05-13 (Phase 1 방향 정리 + 깨진 데이터 기반 수정 + 주요 화면 UX 완성)
 - 2026-05-14 (코드 현황 재점검 + 세부 UX 개선 + 상용화 완성도 강화 작업)
 - 2026-05-14 (모바일 반응형 QA — safe-area, 터치 타겟, 스크롤 전수 점검)
@@ -19,6 +29,393 @@
 - 2026-05-17 (전체 감사(audit) + 버그 수정 6건 + director 하드코딩 제거)
 - 2026-05-17 (programsLoaded 버그 수정 + static PROGRAMS 제거 + 브랜드 카피 전면 통일 + LibraryDetail 개선 + PlanView 주간 네비게이션 + Pro features 업데이트)
 - 2026-05-18 (Dashboard TodayHero 계획 연동 + Report 프로그램 검색 필터 + 온보딩 Pro 카드 features 통일)
+
+---
+
+## 수정한 파일 (2026-05-19 — 라이브러리 뷰 재정비 + 콘텐츠 필드 확장)
+
+### 작업 날짜
+- 2026-05-19
+
+### 수정한 파일
+- `app/spokedu-master/library/LibraryView.tsx`
+- `app/spokedu-master/types/index.ts`
+- `app/api/spokedu-master/programs/route.ts`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 라이브러리 화면과 프로그램 모달에 남아 있던 깨진 한글 문구를 더 이상 부분 땜질하지 않고, 화면 파일을 구독자용 UX 기준으로 재작성했다.
+- `LibraryView`를 다시 정리하면서 다음 구조를 유지했다.
+  - 오늘 추천 수업
+  - 콘텐츠 품질 지표
+  - 빠른 선택 가이드
+  - 필터
+  - 즐겨찾기
+  - SPOMOVE 연결 수업
+  - 18분 이내 빠른 수업
+  - 준비물 적은 수업
+  - 실내·좁은 공간 수업
+  - 전체 프로그램
+- Funstick Fencing 같은 고품질 프로그램 자료를 받을 수 있도록 `Program.lessonDetail`에 프리미엄 콘텐츠 필드를 확장했다.
+  - `heroImageUrl`
+  - `setupImageUrl`
+  - `galleryImageUrls`
+  - `briefingNotes`
+  - `rules`
+  - `setupNotes`
+- API 응답에서도 새 필드의 기본값을 내려주도록 맞췄다.
+- 모달에서 `setupImageUrl`, `galleryImageUrls`, `rules`, `briefingNotes`를 우선 사용할 수 있게 했다.
+
+### 남은 문제
+- 실제 DB에는 아직 위 필드를 저장/관리할 컬럼이나 별도 콘텐츠 테이블이 없다.
+- 지금은 타입과 화면이 먼저 준비된 상태다. 다음 단계에서는 관리자 입력 또는 콘텐츠 import 파이프라인을 정해야 한다.
+- 기존 `spokedu_pro_programs`에는 `video_url`, `activity_tip`, `activity_method`, `equipment`, `checklist` 정도만 안정적으로 연결되어 있다.
+- Funstick 수준의 사진/세팅 다이어그램/사전교육/규칙/변형을 안정적으로 운영하려면 별도 콘텐츠 패키지 구조가 필요하다.
+
+### 다음 작업 순서
+1. `spokedu_master_program_content` 또는 유사 테이블을 설계한다.
+2. Funstick Fencing 샘플 1개를 MASTER 콘텐츠 구조로 실제 변환한다.
+3. 라이브러리 상세 페이지도 새 필드 기반으로 세팅 이미지/갤러리/규칙을 표시하도록 맞춘다.
+4. SPOMOVE 연결을 자동 추론 후보와 검수 완료 연결로 구분한다.
+
+### 주의할 점
+- `admin/curriculum`과 `admin/spomove/training`의 원천 구조는 건드리지 않는다.
+- MASTER는 원천 데이터를 그대로 보여주는 곳이 아니라, 수업 실행용 프리미엄 패키지로 재편집하는 화면이다.
+- 문서가 아니라 실제 구독자가 보는 화면의 신뢰도가 우선이다.
+
+### 검증 결과
+- `npx.cmd eslint app/spokedu-master app/api/spokedu-master --max-warnings 0` 통과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `app/spokedu-master/library/LibraryView.tsx` 깨진 한글 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-19 — 프리미엄 콘텐츠 모달 1차 재설계)
+
+### 방향
+- 사용자가 말한 대로 MASTER의 콘텐츠 모달은 단순 정보 팝업이 아니라 `돈 내고 볼 만한 수업 패키지 프리뷰`여야 한다.
+- Funstick Fencing 노션 예시에서 좋은 점만 흡수했다.
+  - 실제 수업 사진 중심의 첫인상
+  - 테마/인원/기능/움직임 4개 핵심 메타
+  - 필요 교구와 사전 교육 체크
+  - How to Play 진행 규칙
+  - 변형 수업 아이디어
+- 그대로 복붙하지 않고, SPOKEDU MASTER의 핵심 루프인 `수업안 + 연결 SPOMOVE + 설명 문구`에 맞게 재배치했다.
+
+### 수정한 파일
+
+#### `app/spokedu-master/library/LibraryView.tsx`
+- `ProgramSheet`를 프리미엄 패키지 모달 구조로 개편했다.
+  - 모바일: 하단 시트
+  - 태블릿/데스크탑: 넓은 2컬럼 프리뷰 모달
+  - 좌측/상단: 큰 비주얼, 카테고리/PRO/SPOMOVE 배지, 제목, 설명, 참고 영상
+  - 우측/하단: 핵심 메타, 연결 SPOMOVE, 사전 체크, How to Play, Variations, CTA
+- `PremiumMetaCard`, `PreviewSection` 컴포넌트 추가.
+- `CheckCircle2`, `ShieldAlert`, `Lightbulb` 아이콘을 사용해 교구/안전/변형 정보를 더 읽기 쉽게 만들었다.
+- 기존 즐겨찾기 동작은 유지하고, 모달 상단에서 바로 토글할 수 있게 했다.
+- 잠금 상태에서도 무료 사용자가 콘텐츠 가치를 일부 체감하도록 2단계/일부 교구만 blur 처리하고 Pro CTA로 연결했다.
+
+### 해결한 문제
+- 기존 모달은 수업 제목, 설명, 단계가 나열된 느낌이라 상용 구독 서비스의 프리미엄감이 약했다.
+- 수업 콘텐츠의 가치가 `실제 현장 실행 패키지`로 보이지 않고 단순 자료 카드처럼 보였다.
+- Funstick Fencing처럼 좋은 원본 자료가 들어와도, MASTER 모달이 그 장점을 담을 그릇이 부족했다.
+
+### 남은 문제
+- 실제 Funstick 이미지와 세팅 다이어그램은 아직 MASTER 데이터 모델에 연결하지 않았다.
+  - 다음 단계에서 `heroImage`, `galleryImages`, `setupImage`, `referenceVideoUrl`, `safetyRules`, `variations` 같은 콘텐츠 필드를 명확히 잡아야 한다.
+- 현재는 `program.thumbnailUrl`과 기존 `lessonDetail`만 사용하므로, 사진·세팅 이미지가 없는 콘텐츠는 아직 프리미엄감이 제한적이다.
+- SPOMOVE 연결은 여전히 일부 자동 추론이다. 상용화 전에는 검수된 수동 매핑이 필요하다.
+
+### 다음 작업 순서
+1. 콘텐츠 상세 데이터 구조를 Funstick Fencing 수준으로 확장한다.
+2. 라이브러리 상세 페이지도 모달과 같은 프리미엄 정보 구조로 맞춘다.
+3. 이미지/세팅 다이어그램이 있는 콘텐츠와 없는 콘텐츠의 fallback 디자인을 분리한다.
+4. 프로그램별 `연결 SPOMOVE`를 추론 후보와 검수 완료로 구분한다.
+
+### 검증 결과
+- `npx.cmd eslint app/spokedu-master --max-warnings 0` 통과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `app/spokedu-master/library/LibraryView.tsx` 깨진 한글 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-19 — Class Mode 1차 재편)
+
+### 방향
+- Class Mode는 수업안 문서를 넘기는 화면이 아니라, 강사가 수업 중 보는 `수업 진행 리모컨`이어야 한다.
+- 홈/라이브러리/상세에서 만든 `수업안 + 연결 SPOMOVE` 패키지 맥락이 실제 실행 화면에서도 유지되어야 한다.
+
+### 수정 내용
+
+#### `app/spokedu-master/components/ui/ClassModeView.tsx`
+- 상단에 `class package` 정보 카드 추가
+  - 대상/시간/공간
+  - 발달 초점 또는 카테고리
+- 연결 SPOMOVE 실행 카드를 추가
+  - 연결된 드릴 이름 표시
+  - `도입 3분 집중 전환`, `수업 중 반응 전환`, `마무리 참여 게임`, `큰 화면 몰입 활동` 같은 사용 맥락 표시
+  - 연결 SPOMOVE가 없으면 SPOMOVE 허브로 이동
+- 기존 우측 작은 번개 버튼은 유지하되, 본문 상단 카드로 더 친절한 실행 맥락을 제공한다.
+
+### 검증 결과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `npx.cmd eslint app/spokedu-master --max-warnings 0` 통과
+- 깨진 한글 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-19 — 콘텐츠 상품화 1차 보강)
+
+### 냉정한 판단
+- 콘텐츠는 구독 서비스의 핵심이 맞다.
+- 현재는 `admin/curriculum` 데이터 연결은 되어 있지만, 콘텐츠 자체가 완벽한 상태는 아니다.
+- 특히 `curriculum.id ↔ SPOMOVE drill_id`의 운영 메타 연결이 아직 비어 있어, 일부 화면은 임시 추정/fallback에 기대고 있다.
+- 따라서 기능 확장보다 콘텐츠 포장, 상세 신뢰도, 컬렉션 편성이 우선이다.
+
+### 수정한 파일
+
+#### `app/spokedu-master/library/[id]/LibraryDetailView.tsx`
+- 깨진 한글이 많던 상세 페이지를 전체 재작성했다.
+- 상세 페이지를 `수업안 문서`가 아니라 `구독자용 수업 패키지 상세`로 재구성했다.
+  - 상단: 비주얼/제목/대상/시간/공간/태그
+  - CTA: 수업 시작, 연결 SPOMOVE, 영상 또는 설명 문구, 문구 복사
+  - 패키지 요약: 수업안, 연결 SPOMOVE, 설명 문구
+  - 상세 근거: 권장 연령, 권장 인원, 수업 목표, 발달 포인트
+  - 코치 스크립트, 보호자 설명 문구, 현장 팁, 변형 수업, 안전 체크
+  - 준비물/교구 스토어 연결
+  - 진행 순서
+- 상세 페이지에서 깨진 문구 검색 결과가 나오지 않게 정리했다.
+
+#### `app/spokedu-master/library/LibraryView.tsx`
+- 콘텐츠 품질 지표 `ContentQualityStrip` 추가.
+  - 실행 가능한 수업안
+  - SPOMOVE 연계 후보
+  - 영상 프리뷰
+- 리스트 카드에 콘텐츠 상태 배지 추가.
+  - `SPOMOVE`
+  - `수업안`
+- 구독형 콘텐츠 편성에 가까운 컬렉션 레일 추가.
+  - `준비물 적은 수업`
+  - `실내·좁은 공간 수업`
+- 라이브러리 헤더 문구를 “센터 커리큘럼을 구독자용 수업 패키지로 재구성”하는 방향으로 수정했다.
+
+### 검증 결과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `npx.cmd eslint app/spokedu-master --max-warnings 0` 통과
+- `rg "[\x{4E00}-\x{9FFF}\x{F900}-\x{FAFF}\x{FFFD}]" app\spokedu-master\library -n` 결과 없음
+
+### 남은 콘텐츠 핵심 과제
+- SPOMOVE 연결은 반드시 운영 메타로 확정해야 한다.
+  - 지금 API의 `lessonDetail.relatedSpomoveIds`는 대부분 빈 배열이다.
+  - 콘텐츠 구독 서비스에서 이 매핑이 불명확하면 “수업안 + 큰 화면 실행” 상품성이 약해진다.
+- 콘텐츠 태그 체계를 재정의해야 한다.
+  - 대상: 유아/초등/청소년/교사
+  - 상황: 도입/본수업/마무리/대체수업/좁은 공간
+  - 목적: 민첩성/협응/집중/협동/균형/표현
+  - 운영: 준비물 없음/소규모/대규모/실내/실외
+- 영상 프리뷰 품질도 검수해야 한다.
+  - 썸네일 없는 콘텐츠가 많으면 구독형 라이브러리의 프리미엄감이 약하다.
+
+---
+
+## 수정한 파일 (2026-05-19 — 콘텐츠-SPOMOVE 매핑 브릿지)
+
+### 방향
+- 구독 서비스의 핵심은 `수업안 콘텐츠`와 `SPOMOVE 실행`이 한 패키지처럼 연결되는 것이다.
+- 현재 DB에는 `curriculum.id ↔ SPOMOVE drill_id` 운영 매핑 컬럼이 없다.
+- 그래서 Phase 1에서는 프로그램 제목/카테고리/태그/설명/진행 단계 기반의 보수적 추론으로 `relatedSpomoveIds`를 채운다.
+- 이 추론은 최종 정답이 아니라, 운영 메타가 생기기 전까지 빈 화면을 막는 브릿지다.
+
+### 수정한 파일
+
+#### `app/api/spokedu-master/programs/route.ts`
+- `inferRelatedSpomoveIds()` 추가.
+- 수업 텍스트를 분석해 SPOMOVE 후보를 1~2개 자동 연결한다.
+  - 기억/순서/회상/집중 → `SM-05`, `SM-06`
+  - 리듬/협응/표현/거울 → `RC-05`
+  - 민첩/순발/반응/출발/방향/공간/신호 → `SR-05`, `SR-06`
+  - 협동/릴레이/팀/규칙/전략 → `RS-05`
+  - 멈춤/억제/판단/선택 → `IC-05`
+- 연결 후보가 생긴 프로그램에는 `SPOMOVE` 태그도 자동 보강한다.
+- `lessonDetail.relatedSpomoveIds`가 더 이상 항상 빈 배열이 아니게 됐다.
+
+### 검증 결과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `npx.cmd eslint app/spokedu-master app/api/spokedu-master --max-warnings 0` 통과
+- 깨진 한글 검색 결과 없음
+
+### 남은 문제
+- 이 자동 추론은 운영 품질을 보장하지 않는다.
+- 상용화 전에는 반드시 관리자 메타 또는 별도 테이블로 수동 검수된 연결을 만들어야 한다.
+  - 권장 구조 예: `spokedu_master_program_spomove_links`
+  - 필드 예: `curriculum_id`, `drill_id`, `use_phase`, `purpose`, `display_order`, `is_primary`
+- 지금 화면에는 `연계 후보`로 보여도 되지만, 최종 상품에서는 “검수된 연결”과 “추천 후보”를 구분해야 한다.
+
+---
+
+## 수정한 파일 (2026-05-19 — 수업 후 연결 흐름 보완)
+
+### 방향
+- 구독 서비스의 핵심 루프는 실행에서 끝나면 안 된다.
+- `수업 실행 완료 → 수업 기록 → 설명 문구`로 이어져야 수업 준비와 수업 가치 설명이 하나의 상품 경험이 된다.
+
+### 수정 내용
+
+#### `app/spokedu-master/components/ui/ClassModeView.tsx`
+- Class Mode 완료 화면에 `보호자 안내 문구 만들기` CTA를 추가했다.
+- 기존 `수업 기록 남기기` CTA와 함께 수업 후 1분 정리 흐름으로 연결되게 했다.
+
+#### `app/spokedu-master/spomove/session/page.tsx`
+- SPOMOVE 완료 문구를 Phase 1 방향에 맞게 조정했다.
+  - 단순 반복 실행 안내가 아니라 `수업 기록`과 `설명 문구`로 이어지는 흐름을 안내.
+- `program` query가 있는 SPOMOVE 실행 완료 화면에서 연결 수업명을 표시한다.
+- 완료 화면 CTA를 보강했다.
+  - `다시 시작`
+  - `수업 기록`
+  - `설명 문구`
+  - `목록으로`
+- 엔진형 SPOMOVE 완료 화면 버그 수정.
+  - 기존에는 `drill.engine`이 있으면 항상 `EngineRouter`를 반환해서 완료 state가 보여지지 않을 수 있었다.
+  - `state !== 'done'`일 때만 `EngineRouter`를 반환하도록 수정.
+
+### 검증 결과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `npx.cmd eslint app/spokedu-master --max-warnings 0` 통과
+
+### 남은 문제
+- 엔진형 SPOMOVE 완료 통계는 아직 단순 세션 저장 수준이다. 추후에는 engine complete payload를 session 기록에 더 정확히 반영해야 한다.
+- SPOMOVE 완료 후 `수업 기록` 화면으로 이동하면 출석/관찰은 수동 입력이다. Phase 2에서 실행 이력을 수업 기록 프리필로 연결하면 더 강해진다.
+
+---
+
+## 수정한 파일 (2026-05-19 — 라이브러리 상세 1차 재편)
+
+### 방향
+- 라이브러리 상세는 `admin/curriculum` 원본 문서가 아니라 구독자가 수업 실행 여부를 판단하는 `수업 패키지 상세`여야 한다.
+- 상세 페이지에서도 `수업안 + 연결 SPOMOVE + 설명 문구`가 한 세트로 보여야 홈/모달/SPOMOVE 흐름이 끊기지 않는다.
+
+### 수정 내용
+
+#### `app/spokedu-master/library/[id]/LibraryDetailView.tsx`
+- `PackageSummary` 추가
+  - `수업안`
+  - `연결 SPOMOVE`
+  - `설명 문구`
+  - 3요소를 상단 요약 카드로 보여준다.
+- `getSpomoveUseLabel()` 추가
+  - 프로그램 맥락에 따라 `도입 3분 집중 전환`, `수업 중 반응 전환`, `마무리 참여 게임`, `큰 화면 몰입 활동` 중 하나를 표시한다.
+- 상단 CTA 문구 개선
+  - `큰 화면 실행` → `연결 SPOMOVE`
+  - 실행 링크는 `?drill={primarySpomoveId}&mode=projector&program={program.id}` 유지.
+- 하단 `연결 SPOMOVE` 영역 개선
+  - 기존 둥근 칩 목록 → 실행 카드 목록으로 변경.
+  - 각 카드에 드릴명, 사용 맥락, 큰 화면 아이콘을 함께 표시한다.
+
+### 검증 결과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `npx.cmd eslint app/spokedu-master --max-warnings 0` 통과
+- 깨진 한글 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-19 — SPOMOVE 허브 1차 재편)
+
+### 방향
+- `admin/spomove/training`은 원천 엔진/관리 화면이다.
+- MASTER SPOMOVE는 구독자가 수업에서 바로 쓰는 실행 엔진이어야 한다.
+- 따라서 허브는 `드릴 목록`보다 `수업 도입/중간/마무리에 무엇을 실행할지`를 먼저 보여준다.
+
+### 수정 내용
+
+#### `app/spokedu-master/spomove/SpomoveHubView.tsx`
+- `getDrillIntent()` 추가
+  - 드릴 이름/카테고리 기반으로 `순발 반응`, `방향 전환`, `기억·집중`, `몰입 전환` 라벨을 붙인다.
+- `getDrillsByIntent()` 추가
+  - 수업 순간별로 어울리는 드릴을 보수적으로 분류한다.
+- `IntentRow` 추가
+  - `도입 3분 집중 전환`
+  - `수업 중 반응 전환`
+  - `마무리 참여 게임`
+  - 각 섹션에서 바로 projector 모드 실행 가능.
+- 기존 `훈련 모드` 목록은 유지하되, 그 위에 수업 흐름별 선택 섹션을 추가했다.
+
+### 레퍼런스 반영
+- Peloton/Apple Fitness+의 목표·상황별 컬렉션 방식을 SPOMOVE에 적용했다.
+- Netflix식 단순 목록보다 “무엇을 언제 실행할지”를 먼저 보여주는 편성 구조를 강화했다.
+
+### 검증 결과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `npx.cmd eslint app/spokedu-master --max-warnings 0` 통과
+- 깨진 한글 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-19 — 레퍼런스 적용 기준 + 라이브러리 모달)
+
+### 레퍼런스 적용 방식
+- 특정 서비스 하나를 복제하지 않는다.
+- Netflix: 개인화 행, 이어보기, 행 자체의 랭킹 개념을 `오늘 수업 패키지`, `빠른 실행`, `최근/즐겨찾기`로 번역한다.
+- Peloton / Apple Fitness+: 프로그램·컬렉션·목표별 운동 묶음을 `수업안 + 연결 SPOMOVE + 실행 CTA` 패키지로 번역한다.
+- MasterClass / Class101: 카테고리 기반 탐색과 상세 프리뷰를 `수업 선택 모달`, `상세 수업안`, `Pro 잠금 CTA`로 번역한다.
+- Duolingo / Headspace류: 다음 행동을 명확히 주는 습관 UX를 `수업 시작`, `큰 화면`, `기록`, `설명 문구`의 순서로 번역한다.
+
+### 수정 내용
+
+#### `app/spokedu-master/library/LibraryView.tsx`
+- `ProgramSheet`에 `connected spomove` 섹션 추가.
+- 수업 모달에서 연결 SPOMOVE 이름과 사용 맥락을 바로 표시한다.
+- CTA 문구를 `큰 화면`에서 `연결 SPOMOVE`로 바꿔 수업안과 SPOMOVE가 별개 메뉴가 아니라 한 패키지임을 강조했다.
+- `getSpomoveUseLabel()` 추가.
+  - 프로그램 제목/카테고리/태그/발달 초점 기반으로 `도입 3분 집중 전환`, `수업 중 반응 전환`, `마무리 참여 게임`, `큰 화면 몰입 활동` 중 하나로 구독자용 사용 맥락을 표시한다.
+
+### 검증 결과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `npx.cmd eslint app/spokedu-master --max-warnings 0` 통과
+- 깨진 한글 검색 결과 없음
+
+---
+
+## 수정한 파일 (2026-05-19 — 홈 구독 경험 1차 재편)
+
+### 최종 방향 정리
+- `admin/curriculum`은 MASTER 라이브러리의 원천 데이터다.
+- `admin/spomove/training`은 MASTER SPOMOVE 실행 엔진의 원천 데이터다.
+- MASTER는 관리자 UX를 복제하지 않고, 두 원천 데이터를 구독자가 바로 쓰기 좋은 상품 경험으로 재가공한다.
+- 특히 홈은 대시보드가 아니라 `오늘 수업 편성 화면`이어야 한다.
+
+### 수정 내용
+
+#### `app/spokedu-master/dashboard/DashboardView.tsx`
+- `getProgramDrills(program, drills)` 추가
+  - 1순위: `program.lessonDetail.relatedSpomoveIds`로 직접 연결된 SPOMOVE를 찾는다.
+  - 2순위: 직접 연결이 없으면 프로그램 제목/카테고리/태그/설명 기반으로 어울리는 드릴을 보수적으로 추정한다.
+  - 이 추정은 DB 매핑이 완성되기 전 홈 UX가 완전히 끊기지 않게 하는 임시 보완이다.
+
+- `TodayHero` 개선
+  - 기존 "오늘 추천 수업"을 `오늘 수업 패키지`로 재구성했다.
+  - 히어로에 연결 SPOMOVE 이름을 함께 표시한다.
+  - SPOMOVE 버튼은 단순 허브 이동이 아니라 연결 드릴이 있으면 `/spomove/session?drill=...&mode=projector&program=...`로 바로 실행한다.
+
+- `PackageRail`, `PackageCard` 추가
+  - 홈에 `오늘 바로 쓸 수업 패키지` 레일을 추가했다.
+  - 각 카드가 `수업 시작`과 `큰 화면` CTA를 함께 제공한다.
+  - 구독자가 "수업안"과 "SPOMOVE"를 별개 메뉴가 아니라 하나의 실행 패키지로 이해하게 만드는 첫 단계다.
+
+### 검증 결과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `npx.cmd eslint app/spokedu-master --max-warnings 0` 통과
+- 깨진 한글 검색 결과 없음
+- `mailto:support@spokedu.com?subject=...` URL은 한글 의심 검색에 잡히지만 정상 URL 쿼리다.
+
+### 남은 문제
+- 홈의 패키지 매칭은 아직 완전한 운영 데이터 매핑이 아니다.
+- 궁극적으로는 `curriculum.id ↔ spomove training drill_id` 연결 메타가 필요하다.
+- 연결 메타에는 단순 ID뿐 아니라 사용 맥락이 있어야 한다.
+  - 도입 3분
+  - 수업 중 전환
+  - 마무리 반응 게임
+  - 집중/순발력/협동/기억 등 목적
+- 다음 작업은 라이브러리 카드/모달에서 이 패키지 구조를 더 명확히 보여주는 것이다.
 
 ---
 
@@ -837,6 +1234,55 @@ Supabase 대시보드 → SQL Editor → New query
   - 불필요한 대규모 리팩토링보다 MASTER 상용화 흐름에 직접 필요한 수정부터 한다.
 
 - 대화 기록이 사라져도 이 파일을 기준으로 이어받을 수 있도록 항상 DEV_NOTES를 최신 상태로 유지한다.
+
+---
+
+## 작업 날짜
+
+2026-05-19
+
+## 수정한 파일
+
+- `app/spokedu-master/class-record/page.tsx`
+- `app/spokedu-master/report/page.tsx`
+
+## 해결한 문제
+
+- MASTER의 수업 후 흐름이 단순 기록/공유 버튼처럼 보이던 문제를 `수업 후 1분 정리` 흐름으로 재정리했다.
+- 수업 기록 화면에서 프로그램 패키지 맥락이 약했던 부분을 보완했다.
+  - 대상/시간/공간/발달 포인트가 수업 기록 상단에 보이도록 정리.
+  - 수업 종료 영역에 `학생 이력`, `설명 근거`, `안내 문구` 3개 결과물을 명확히 노출.
+- Phase 1에서 아직 위험한 자동 발송 인상을 줄이고, 먼저 복사·검토 가능한 안내 문구로 연결되도록 조정했다.
+  - `설명 문구 만들기` CTA를 수업 종료 영역에 직접 추가.
+  - 보호자 안내 미리보기 문구에 프로그램 발달 포인트와 기록 수치를 반영.
+- 설명/리포트 페이지를 `수업 설명 도구`로 재포지셔닝했다.
+  - 수업안 기반 기본 문구인지, 최근 수업 기록이 반영된 문구인지 상단에서 구분.
+  - 최근 기록이 있으면 출석/관찰 수치를 문구에 반영.
+  - 자동 발송보다 문구 품질과 검토 가능성을 우선하는 Phase 1 방향으로 정리.
+
+## 남은 문제
+
+- `class-record`는 아직 학생/반 데이터가 샘플 중심이라 상용 Phase 1의 전면 기능으로 강하게 밀기에는 이르다.
+- 카카오 관련 내부 함수명과 상태명은 남아 있다. 사용자-facing 문구는 보수적으로 정리했지만, Phase 2/3에서 실제 카카오 연동 여부를 결정한 뒤 서비스 계약/템플릿/비용 구조에 맞춰 재정리해야 한다.
+- 설명 문구 품질은 아직 템플릿 기반이다. 실제 수업 기록, SPOMOVE 실행 이력, 프로그램 목표를 더 자연스럽게 섞는 문장 엔진이 필요하다.
+- 학생/센터/학교 언어 분리는 계속 점검해야 한다. 학교용에서는 원생/센터/재등록 같은 표현이 보이면 안 된다.
+
+## 다음 작업 순서
+
+1. 홈의 `오늘 수업 패키지`에서 수업 완료 후 `class-record?program=`으로 이어지는 CTA 흐름을 더 명확히 만든다.
+2. 수업 설명 도구의 프로그램 선택 aside를 더 구독 서비스답게 정리한다.
+   - 최근 사용, 오늘 추천, SPOMOVE 연계 표시.
+   - 단순 목록이 아니라 “바로 보낼 문구를 만들 수 있는 수업 패키지”로 보이게 한다.
+3. SPOMOVE 세션 종료 후에도 `수업 기록/설명 문구`로 돌아오는 후속 CTA를 붙인다.
+4. 모바일/태블릿/데스크탑에서 `class-record`와 `report`의 카드 밀도, 버튼 크기, 긴 제목 줄바꿈을 확인한다.
+5. 깨진 한글 검색과 TypeScript/ESLint 검증을 계속 유지한다.
+
+## 주의할 점
+
+- `admin/curriculum`과 `admin/spomove/training`은 데이터 원천일 뿐이다. MASTER 화면의 UX와 문구는 구독자용으로 별도 설계한다.
+- Phase 1은 `라이브러리 + SPOMOVE + 수업 설명 도구`가 핵심이다. 수업 기록/학생 이력은 장기 락인 재료지만, 미완성 상태로 과하게 전면화하지 않는다.
+- “공유/카카오”는 자동 발송을 약속하지 않는다. 우선은 복사 가능한 안내 문구와 검토 가능한 미리보기로 간다.
+- 기능을 더 붙이기보다, 홈 → 라이브러리 → SPOMOVE → 수업 후 설명 문구의 완성도를 계속 높인다.
 
 ---
 

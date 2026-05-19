@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, Maximize, MonitorPlay, Play, Smartphone, TimerReset, Zap, type LucideIcon } from 'lucide-react';
+import { Brain, ChevronRight, Goal, Maximize, MonitorPlay, Play, Smartphone, Sparkles, TimerReset, Zap, type LucideIcon } from 'lucide-react';
 import type { Drill } from '../types';
 import { formatReactionTime } from '../lib/utils';
 import { useIsPro, useMasterStore, useStats } from '../store';
@@ -37,6 +37,58 @@ function UseCaseCard({ title, caption, icon: Icon }: { title: string; caption: s
   );
 }
 
+function getDrillIntent(drill: Drill) {
+  const text = `${drill.name} ${drill.category}`;
+  if (/기억|Memory|인지|색|집중/i.test(text)) return '기억·집중';
+  if (/방향|대각|Diagonal|전환/i.test(text)) return '방향 전환';
+  if (/속도|스피드|반응|Visual|Reaction/i.test(text)) return '순발 반응';
+  return '몰입 전환';
+}
+
+function getDrillsByIntent(drills: Drill[], intent: string) {
+  const matcher = {
+    warmup: /반응|속도|스피드|Visual|Reaction|색/i,
+    transition: /방향|대각|전환|Diagonal|flow/i,
+    finish: /기억|Memory|인지|집중|pattern|spatial/i,
+  }[intent] ?? /./;
+  const matched = drills.filter((drill) => matcher.test(`${drill.name} ${drill.category} ${drill.engine?.mode ?? ''}`));
+  return (matched.length ? matched : drills).slice(0, 3);
+}
+
+function IntentRow({ title, caption, icon: Icon, tone, drills, isPro }: { title: string; caption: string; icon: LucideIcon; tone: string; drills: Drill[]; isPro: boolean }) {
+  if (!drills.length) return null;
+  return (
+    <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
+      <div className="mb-4 flex items-start gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px]" style={{ background: `${tone}24` }}>
+          <Icon size={20} color={tone} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[17px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{title}</h2>
+          <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{caption}</p>
+        </div>
+      </div>
+      <div className="grid gap-2 md:grid-cols-3">
+        {drills.map((drill) => {
+          const locked = drill.isPro && !isPro;
+          return (
+            <Link key={`${title}-${drill.id}`} href={locked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`} className="flex min-h-[92px] items-center gap-3 rounded-[14px] p-3 active:scale-[0.99]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: `${tone}18` }}>
+                <Zap size={17} color={tone} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <strong className="line-clamp-2 text-[13px]" style={{ color: 'var(--spm-t)' }}>{drill.name}</strong>
+                <span className="mt-1 block text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{locked ? 'PRO 필요' : getDrillIntent(drill)}</span>
+              </span>
+              <Play size={14} color={tone} fill={tone} />
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function SpomoveHubView() {
   const isPro = useIsPro();
   const sessions = useMasterStore((state) => state.sessions);
@@ -62,6 +114,19 @@ export default function SpomoveHubView() {
             <LaunchCard title="큰 화면 실행" desc="빔, TV, 노트북에서 16:9 화면으로 바로 시작" href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} icon={MonitorPlay} tone="#818cf8" />
             <LaunchCard title="모바일 빠른 실행" desc="폰이나 태블릿으로 워밍업과 마무리 활동 진행" href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=mobile`} icon={Smartphone} tone="#10b981" />
             <LaunchCard title="Class Mode" desc="학생 전체가 보는 수업용 화면으로 전환" href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=class`} icon={Maximize} tone="#f59e0b" />
+          </section>
+          <section className="space-y-3">
+            <div>
+              <div className="mb-1 flex items-center gap-1.5">
+                <Sparkles size={13} color="var(--spm-amb)" />
+                <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>classroom moments</p>
+              </div>
+              <h2 className="text-[19px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>수업 흐름별 SPOMOVE</h2>
+              <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>드릴 목록이 아니라, 수업에서 언제 쓰는지 기준으로 고릅니다.</p>
+            </div>
+            <IntentRow title="도입 3분 집중 전환" caption="수업 시작 전 시선과 움직임을 한 번에 모읍니다." icon={TimerReset} tone="#818cf8" drills={getDrillsByIntent(drills, 'warmup')} isPro={isPro} />
+            <IntentRow title="수업 중 반응 전환" caption="늘어진 분위기를 신호·방향·순발 활동으로 다시 끌어올립니다." icon={Goal} tone="#10b981" drills={getDrillsByIntent(drills, 'transition')} isPro={isPro} />
+            <IntentRow title="마무리 참여 게임" caption="기억, 집중, 판단 활동으로 마지막까지 참여감을 유지합니다." icon={Brain} tone="#f59e0b" drills={getDrillsByIntent(drills, 'finish')} isPro={isPro} />
           </section>
           <section>
             <Link href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} className="flex min-h-[132px] items-center justify-between gap-4 overflow-hidden rounded-[18px] p-5 active:scale-[0.99]" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.95), rgba(139,92,246,0.75), rgba(236,72,153,0.58))', boxShadow: '0 18px 42px rgba(99,102,241,0.22)' }}>

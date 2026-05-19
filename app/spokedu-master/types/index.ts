@@ -187,5 +187,11 @@ export interface Program {
     safetyNotes: string[];
     relatedSpomoveIds: string[];
     videoUrl?: string;
+    heroImageUrl?: string;
+    setupImageUrl?: string;
+    galleryImageUrls?: string[];
+    briefingNotes?: string[];
+    rules?: string[];
+    setupNotes?: string[];
   };
 }

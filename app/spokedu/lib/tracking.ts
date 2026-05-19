@@ -25,6 +25,9 @@ export function inferTrackFromHref(href: string): SpokeduTrackValue {
   if (href.includes('type=private')) return 'cta-private';
   if (href.includes('type=dispatch')) return 'cta-dispatch';
   if (href.includes('type=curriculum')) return 'cta-curriculum';
+  if (href === '/private' || href.includes('/spokedu/private')) return 'cta-private';
+  if (href === '/dispatch' || href.includes('/spokedu/dispatch')) return 'cta-dispatch';
+  if (href === '/curriculum' || href.includes('/spokedu/curriculum')) return 'cta-curriculum';
   if (href.includes('/contact')) return 'cta-contact';
   return 'cta-generic';
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Pause, Play, RotateCcw, X, Zap } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, MonitorPlay, Pause, Play, RotateCcw, X, Zap } from 'lucide-react';
 import { useMasterStore } from '../../store';
 
 const STEP_PRESETS = [
@@ -33,9 +33,17 @@ function StepTimerRing({ remaining, total }: { remaining: number; total: number 
   );
 }
 
+function getSpomoveUseLabel(text: string) {
+  if (/도입|워밍업|집중|인지|신호/.test(text)) return '도입 3분 집중 전환';
+  if (/민첩|순발|방향|반응|스피드/.test(text)) return '수업 중 반응 전환';
+  if (/마무리|정리|협동|기억/.test(text)) return '마무리 참여 게임';
+  return '큰 화면 몰입 활동';
+}
+
 export default function ClassModeView({ programId }: { programId: string }) {
   const router = useRouter();
   const programs = useMasterStore((s) => s.programs);
+  const drills = useMasterStore((s) => s.drills);
   const program = programs.find((p) => p.id === programId);
 
   const timerMs = useMasterStore((s) => s.classTimerMs);
@@ -137,6 +145,8 @@ export default function ClassModeView({ programId }: { programId: string }) {
   const currentStep = stepIdx < steps.length ? steps[stepIdx] : null;
   const currentExtra = stepIdx >= steps.length ? extraCards[stepIdx - steps.length] : null;
   const spomoveId = program.lessonDetail?.relatedSpomoveIds?.[0];
+  const spomoveDrill = drills.find((drill) => drill.id === spomoveId);
+  const spomoveUseLabel = getSpomoveUseLabel([program.title, program.category, program.description, program.lessonDetail?.developmentFocus ?? '', ...program.tags].join(' '));
   const mins = Math.floor(displayMs / 60000);
   const secs = Math.floor((displayMs % 60000) / 1000);
   const isLast = stepIdx === totalCards - 1;
@@ -215,6 +225,13 @@ export default function ClassModeView({ programId }: { programId: string }) {
               >
                 <ClipboardList size={18} />수업 기록 남기기
               </Link>
+              <Link
+                href={`/spokedu-master/report?program=${program.id}`}
+                className="flex h-12 items-center justify-center rounded-[16px] text-[14px] font-black"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.72)' }}
+              >
+                보호자 안내 문구 만들기
+              </Link>
               <button
                 type="button"
                 onClick={() => router.back()}
@@ -230,6 +247,27 @@ export default function ClassModeView({ programId }: { programId: string }) {
         <>
 
       {/* Global class timer */}
+      <div className="mx-auto mb-4 grid w-full max-w-[720px] shrink-0 gap-2 px-5 sm:grid-cols-[1fr_auto]">
+        <div className="rounded-[16px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'rgba(255,255,255,0.32)' }}>class package</p>
+          <p className="mt-1 line-clamp-1 text-[14px] font-black" style={{ color: 'rgba(255,255,255,0.84)' }}>{program.grade} · {program.duration}분 · {program.space}</p>
+          <p className="mt-1 line-clamp-1 text-[11px] font-semibold" style={{ color: 'rgba(255,255,255,0.36)' }}>{program.lessonDetail?.developmentFocus || program.category}</p>
+        </div>
+        <Link
+          href={spomoveId ? `/spokedu-master/spomove/session?drill=${spomoveId}&mode=class&program=${program.id}` : '/spokedu-master/spomove'}
+          className="flex min-h-[72px] items-center gap-3 rounded-[16px] px-4 py-3"
+          style={{ background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.28)' }}
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.18)' }}>
+            <MonitorPlay size={18} color="#a5b4fc" />
+          </span>
+          <span className="min-w-0">
+            <strong className="block truncate text-[12px]" style={{ color: '#e0e7ff' }}>{spomoveDrill?.name ?? 'SPOMOVE 실행'}</strong>
+            <span className="mt-1 block truncate text-[10px] font-bold" style={{ color: 'rgba(224,231,255,0.48)' }}>{spomoveUseLabel}</span>
+          </span>
+        </Link>
+      </div>
+
       <div className="flex shrink-0 justify-center pb-5">
         <div
           className="flex items-center gap-3 rounded-full px-5 py-2"
