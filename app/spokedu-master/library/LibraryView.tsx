@@ -7,20 +7,18 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
-  Images,
   Lightbulb,
   Lock,
   MapPin,
   MonitorPlay,
   Play,
   Search,
-  ShieldAlert,
   Smartphone,
   Users,
   X,
   Zap,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useIsPro, useMasterStore } from '../store';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
 import { CategoryIcon, ProgramThumb } from '../components/ui/ProgramThumb';
@@ -38,11 +36,6 @@ function hasCompleteLesson(program: Program) {
 
 function getHeroImage(program: Program) {
   return program.lessonDetail?.heroImageUrl || program.thumbnailUrl;
-}
-
-function getGalleryImages(program: Program) {
-  return [program.lessonDetail?.heroImageUrl, ...(program.lessonDetail?.galleryImageUrls ?? []), program.lessonDetail?.setupImageUrl]
-    .filter((item): item is string => !!item);
 }
 
 function getSpomoveUseLabel(program: Program) {
@@ -82,24 +75,6 @@ function Chip({ label, count, active, onClick }: { label: string; count: number;
   );
 }
 
-function PremiumMetaCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-      <p className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-      <p className="mt-1 line-clamp-2 text-[13px] font-black leading-5" style={{ color: 'var(--spm-t)' }}>{value || '-'}</p>
-    </div>
-  );
-}
-
-function PreviewSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="mt-5">
-      <h3 className="mb-3 text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>{title}</h3>
-      {children}
-    </section>
-  );
-}
-
 function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
   program: Program;
   isPro: boolean;
@@ -112,26 +87,11 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
   const drills = useMasterStore((state) => state.drills);
   const detail = program.lessonDetail;
   const drillId = detail?.relatedSpomoveIds[0] ?? drills[0]?.id ?? 'speed-track';
-  const connectedDrill = drills.find((drill) => drill.id === drillId);
+  const connectedDrill = drills.find((d) => d.id === drillId);
   const heroImage = getHeroImage(program);
-  const galleryImages = getGalleryImages(program);
   const sheetRef = useRef<HTMLDivElement>(null);
-
-  const focus = detail?.developmentFocus || program.category;
-  const movement = /정적|멈춤|균형/.test([program.title, program.category, ...program.tags].join(' ')) ? '정적·조절형' : '동적·반응형';
-  const equipment = program.equipment.length > 0 ? program.equipment : ['현장 교구 확인'];
-  const briefingItems = [
-    ...(detail?.briefingNotes ?? []),
-    ...(detail?.safetyNotes ?? []),
-    detail?.coachScript,
-    hasSpomoveLink(program) ? 'SPOMOVE 신호와 연결할 타이밍을 미리 정합니다.' : null,
-  ].filter(Boolean).slice(0, 3) as string[];
   const ruleItems = detail?.rules?.length ? detail.rules : program.steps;
-  const variationItems = detail?.variations?.length ? detail.variations : [
-    '교구 수를 줄여 저연령도 쉽게 시작합니다.',
-    '공간 크기와 제한 시간을 바꿔 난이도를 조절합니다.',
-    '개인전에서 2:2 또는 팀전으로 확장합니다.',
-  ];
+  const equipment = program.equipment.length > 0 ? program.equipment : ['현장 교구 확인'];
 
   useEffect(() => {
     const el = sheetRef.current;
@@ -145,10 +105,7 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
 
   const close = () => {
     const el = sheetRef.current;
-    if (!el) {
-      onClose();
-      return;
-    }
+    if (!el) { onClose(); return; }
     el.style.transform = 'translateY(100%)';
     setTimeout(onClose, 280);
   };
@@ -159,169 +116,213 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center" onClick={(event) => { if (event.target === event.currentTarget) close(); }}>
-      <div className="absolute inset-0 bg-black/78" style={{ backdropFilter: 'blur(7px)' }} onClick={close} />
+    <div className="fixed inset-0 z-[90] flex items-end justify-center" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
+      <div className="absolute inset-0 bg-black/80" style={{ backdropFilter: 'blur(8px)' }} onClick={close} />
       <div
         ref={sheetRef}
-        className="relative z-10 w-full overflow-hidden rounded-t-[24px] pb-[env(safe-area-inset-bottom)] lg:mb-6 lg:max-w-[980px] lg:rounded-[24px]"
-        style={{ background: 'var(--spm-bg)', maxHeight: '92dvh', overflowY: 'auto', willChange: 'transform', boxShadow: '0 30px 90px rgba(0,0,0,0.48)' }}
+        className="relative z-10 w-full overflow-hidden rounded-t-[26px] pb-[env(safe-area-inset-bottom)] lg:mb-6 lg:max-w-[1020px] lg:rounded-[26px]"
+        style={{ background: 'var(--spm-bg)', maxHeight: '94dvh', overflowY: 'auto', willChange: 'transform', boxShadow: '0 32px 100px rgba(0,0,0,0.56)' }}
       >
-        <div className="flex justify-center pb-1 pt-3 lg:hidden"><div className="h-[4px] w-10 rounded-full" style={{ background: 'var(--spm-br2)' }} /></div>
-        <button type="button" onClick={close} className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full bg-black/45" aria-label="닫기">
-          <X size={15} color="rgba(255,255,255,0.82)" />
+        {/* 모바일 드래그 핸들 */}
+        <div className="flex justify-center pb-1 pt-3 lg:hidden">
+          <div className="h-[4px] w-10 rounded-full" style={{ background: 'var(--spm-br2)' }} />
+        </div>
+        {/* 닫기 버튼 */}
+        <button type="button" onClick={close} className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full bg-black/50 backdrop-blur-sm" aria-label="닫기">
+          <X size={15} color="rgba(255,255,255,0.88)" />
         </button>
 
-        <div className="grid lg:grid-cols-[1.08fr_0.92fr]">
+        <div className="lg:grid lg:min-h-[640px] lg:grid-cols-[1.1fr_0.9fr]">
+
+          {/* ── 좌측: 히어로 비주얼 ── */}
           <section
-            className="relative min-h-[300px] overflow-hidden lg:min-h-[620px]"
-            style={heroImage ? undefined : { background: `linear-gradient(145deg, ${program.colors[0]}, ${program.colors[1]}, ${program.colors[2]})` }}
+            className="relative min-h-[260px] overflow-hidden lg:min-h-[640px]"
+            style={heroImage ? undefined : {
+              background: `radial-gradient(ellipse 80% 60% at 70% 40%, ${program.colors[2]}55 0%, transparent 65%), linear-gradient(155deg, ${program.colors[0]} 0%, ${program.colors[1]} 55%, ${program.colors[2]}cc 100%)`,
+            }}
           >
             {heroImage ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.74))' }} />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.38) 45%, rgba(0,0,0,0.82) 100%)' }} />
               </>
             ) : (
               <>
-                <span className="pointer-events-none absolute right-[-20px] top-[16%] opacity-[0.1]" aria-hidden>
-                  <CategoryIcon category={program.category} size={220} color="#fff" strokeWidth={0.6} />
+                {/* 대형 워터마크 아이콘 — 중앙 배치, 압도적 스케일 */}
+                <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.07]" style={{ transform: 'translate(-50%, -52%) rotate(-8deg)' }} aria-hidden>
+                  <CategoryIcon category={program.category} size={340} color="#fff" strokeWidth={0.42} />
                 </span>
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.7))' }} />
+                {/* 하단 블러 광 */}
+                <div className="pointer-events-none absolute -bottom-8 -right-8 h-52 w-52 rounded-full" style={{ background: program.colors[3], filter: 'blur(48px)', opacity: 0.42 }} />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.72) 100%)' }} />
               </>
             )}
-            {locked ? <div className="absolute inset-0 grid place-items-center bg-black/50"><Lock size={28} color="var(--spm-amb)" /></div> : null}
+
+            {/* PRO 잠금 오버레이 */}
+            {locked ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/55">
+                <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                  <Lock size={24} color="var(--spm-amb)" />
+                </span>
+                <p className="text-[12px] font-black text-white/70">Pro 전용 수업 패키지</p>
+              </div>
+            ) : null}
+
+            {/* 히어로 하단 콘텐츠 */}
             <div className="absolute inset-x-0 bottom-0 p-5 lg:p-7">
+              {/* 배지 */}
               <div className="mb-3 flex flex-wrap gap-1.5">
-                {[program.category, program.isPro ? 'PRO' : 'MASTER', hasSpomoveLink(program) ? 'SPOMOVE' : '수업안'].map((item) => (
-                  <span key={item} className="rounded-full bg-black/40 px-2.5 py-1 text-[10px] font-black text-white/82" style={{ border: '1px solid rgba(255,255,255,0.12)' }}>{item}</span>
+                <span className="rounded-full px-2.5 py-1 text-[10px] font-black text-white/75" style={{ background: 'rgba(0,0,0,0.42)', border: '1px solid rgba(255,255,255,0.1)' }}>{program.category}</span>
+                {program.isPro ? <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(245,158,11,0.28)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>PRO</span> : null}
+                {hasSpomoveLink(program) ? <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(99,102,241,0.32)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>SPOMOVE 연계</span> : null}
+              </div>
+              {/* 제목 */}
+              <h2 className="max-w-[640px] text-[32px] font-black leading-[1.06] text-white sm:text-[42px] lg:text-[44px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: '-0.01em', wordBreak: 'keep-all', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
+                {program.title}
+              </h2>
+              {/* 설명 */}
+              <p className="mt-2.5 max-w-[560px] text-[13px] font-medium leading-6 text-white/65">
+                {program.description || detail?.objective || '현장에서 바로 실행할 수 있는 SPOKEDU 수업 패키지입니다.'}
+              </p>
+              {/* 메타 pill 한 줄 */}
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {[
+                  { icon: Users, label: program.grade },
+                  { icon: Clock, label: `${program.duration}분` },
+                  { icon: MapPin, label: program.space },
+                ].map(({ icon: Icon, label }) => (
+                  <span key={label} className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold text-white/80" style={{ background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <Icon size={10} />
+                    {label}
+                  </span>
                 ))}
               </div>
-              <h2 className="max-w-[680px] text-[30px] font-black leading-[1.08] text-white md:text-[40px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0, wordBreak: 'keep-all' }}>{program.title}</h2>
-              <p className="mt-3 max-w-[620px] text-[13px] font-semibold leading-6 text-white/70">{program.description || detail?.objective || '현장에서 바로 실행할 수 있는 SPOKEDU 수업 패키지입니다.'}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {!locked && detail?.videoUrl ? (
-                  <a href={detail.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-white/14 px-4 text-[12px] font-black text-white" style={{ border: '1px solid rgba(255,255,255,0.16)' }}>
-                    <Play size={13} fill="#fff" />참고 영상
-                  </a>
-                ) : null}
-                {galleryImages.length > 1 ? (
-                  <span className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-white/10 px-4 text-[12px] font-black text-white/82" style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
-                    <Images size={13} />현장 이미지 {galleryImages.length}장
-                  </span>
-                ) : null}
-              </div>
+              {/* 영상 버튼 */}
+              {!locked && detail?.videoUrl ? (
+                <a href={detail.videoUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex h-9 items-center gap-2 rounded-[10px] px-3 text-[11px] font-black text-white" style={{ background: 'rgba(255,255,255,0.13)', border: '1px solid rgba(255,255,255,0.16)' }}>
+                  <Play size={11} fill="#fff" />참고 영상 보기
+                </a>
+              ) : null}
             </div>
           </section>
 
-          <section className="px-4 pb-6 pt-4 lg:px-6 lg:py-6">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>premium lesson preview</p>
+          {/* ── 우측: 정보 + CTA ── */}
+          <section className="flex flex-col px-4 pb-5 pt-4 lg:overflow-y-auto lg:px-6 lg:py-5">
+
+            {/* 상단: 즐겨찾기 */}
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-t3)' }}>수업 패키지 프리뷰</p>
               <button type="button" onClick={onFavorite} className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="즐겨찾기">
-                <Bookmark size={16} color={favorite ? 'var(--spm-amb)' : 'var(--spm-t3)'} fill={favorite ? 'var(--spm-amb)' : 'none'} />
+                <Bookmark size={15} color={favorite ? '#fbbf24' : 'var(--spm-t3)'} fill={favorite ? '#fbbf24' : 'none'} />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <PremiumMetaCard label="테마" value={program.category} />
-              <PremiumMetaCard label="인원" value={detail?.recommendedPlayers || program.grade} />
-              <PremiumMetaCard label="기능" value={focus} />
-              <PremiumMetaCard label="움직임" value={movement} />
-            </div>
-
-            <div className="mt-4 rounded-[15px] p-3" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.16), rgba(16,185,129,0.08))', border: '1px solid rgba(99,102,241,0.25)' }}>
-              <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.18)' }}>
-                  <Zap size={18} color="#a5b4fc" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: '#a5b4fc' }}>connected spomove</p>
-                  <h3 className="mt-1 truncate text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{connectedDrill?.name ?? 'SPOMOVE 큰 화면'}</h3>
-                  <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{getSpomoveUseLabel(program)}으로 붙이면 수업 전환이 빨라집니다.</p>
-                </div>
-              </div>
-            </div>
-
-            <PreviewSection title="사전 체크">
-              <div className="grid gap-2">
-                <div className="rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                  <p className="mb-2 flex items-center gap-2 text-[12px] font-black" style={{ color: 'var(--spm-t)' }}><CheckCircle2 size={14} color="var(--spm-grn)" />필요 교구</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {equipment.slice(0, locked ? 2 : 6).map((item) => (
-                      <span key={item} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${locked ? 'blur-[1.5px] select-none' : ''}`} style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</span>
-                    ))}
-                  </div>
-                </div>
-                {detail?.setupImageUrl ? (
-                  <div className="overflow-hidden rounded-[13px]" style={{ border: '1px solid var(--spm-br2)' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={detail.setupImageUrl} alt="수업 세팅 이미지" className="h-32 w-full object-cover" loading="lazy" />
-                  </div>
-                ) : null}
-                <div className="rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                  <p className="mb-2 flex items-center gap-2 text-[12px] font-black" style={{ color: 'var(--spm-t)' }}><ShieldAlert size={14} color="var(--spm-amb)" />사전 교육·안전</p>
-                  <ul className="space-y-1.5">
-                    {(briefingItems.length ? briefingItems : ['수업 전 안전거리와 성공/실패 규칙을 짧게 안내합니다.']).map((item) => (
-                      <li key={item} className="flex gap-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-                        <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--spm-amb)' }} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </PreviewSection>
-
-            {ruleItems.length > 0 ? (
-              <PreviewSection title={`How to Play · ${ruleItems.length}단계`}>
-                <ol className="space-y-2">
-                  {ruleItems.slice(0, locked ? 2 : 4).map((step, index) => (
-                    <li key={`${index}-${step}`} className={`flex gap-3 rounded-[12px] p-3 ${locked && index === 1 ? 'select-none blur-[2px]' : ''}`} style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
-                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>{index + 1}</span>
-                      <p className="text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t)' }}>{step}</p>
-                    </li>
-                  ))}
-                </ol>
-              </PreviewSection>
-            ) : null}
-
-            <PreviewSection title="Variations">
-              <div className="grid gap-2">
-                {variationItems.slice(0, locked ? 1 : 3).map((item) => (
-                  <div key={item} className="flex gap-2 rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
-                    <Lightbulb size={14} color="var(--spm-acc)" className="mt-0.5 shrink-0" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </PreviewSection>
-
-            <div className="mt-5 flex flex-col gap-2">
+            {/* ① CTA — Netflix처럼 모달 열자마자 액션 버튼 먼저 */}
+            <div className="mb-5 flex flex-col gap-2">
               {locked ? (
                 <>
-                  <Link href="/spokedu-master/payment?plan=pro" className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.3)' }}>
-                    Pro로 시작하고 전체 수업안 보기
+                  <Link href="/spokedu-master/payment?plan=pro" className="flex h-13 w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 28px rgba(99,102,241,0.35)', height: 52 }}>
+                    <Zap size={15} />Pro로 전체 수업안 보기
                   </Link>
-                  <Link href={`/spokedu-master/library/${program.id}`} className="flex h-11 w-full items-center justify-center rounded-[14px] text-[13px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
-                    미리보기
+                  <Link href={`/spokedu-master/library/${program.id}`} className="flex h-11 w-full items-center justify-center rounded-[13px] text-[12px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+                    미리보기만 보기
                   </Link>
                 </>
               ) : (
                 <>
-                  <Link href={`/spokedu-master/class-mode/${program.id}`} onClick={close} className="flex h-12 w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.28)' }}>
-                    <Play size={16} fill="#fff" />수업 시작
+                  <Link href={`/spokedu-master/class-mode/${program.id}`} onClick={close} className="flex w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 28px rgba(99,102,241,0.3)', height: 52 }}>
+                    <Play size={15} fill="#fff" />수업 시작
                   </Link>
                   <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={launch} className="flex h-11 items-center justify-center gap-2 rounded-[13px] text-[12px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-                      <MonitorPlay size={14} />연결 SPOMOVE
+                    <button type="button" onClick={launch} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[12px] font-bold" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.14),rgba(16,185,129,0.08))', border: '1px solid rgba(99,102,241,0.22)', color: '#a5b4fc' }}>
+                      <Zap size={13} />연결 SPOMOVE
                     </button>
-                    <Link href={`/spokedu-master/library/${program.id}`} onClick={close} className="flex h-11 items-center justify-center gap-2 rounded-[13px] text-[12px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-                      <ExternalLink size={14} />수업안 전체
+                    <Link href={`/spokedu-master/library/${program.id}`} onClick={close} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[12px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+                      <ExternalLink size={13} />수업안 전체
                     </Link>
                   </div>
                 </>
               )}
             </div>
+
+            {/* ② 연결 SPOMOVE — 구독 핵심 가치 강조 */}
+            <div className="mb-5 rounded-[16px] p-4" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(16,185,129,0.09))', border: '1px solid rgba(99,102,241,0.28)' }}>
+              <p className="mb-2 text-[9px] font-black uppercase tracking-[0.16em]" style={{ color: '#818cf8' }}>connected spomove</p>
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.22)' }}>
+                  <Zap size={18} color="#a5b4fc" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{connectedDrill?.name ?? 'SPOMOVE 큰 화면'}</p>
+                  <p className="mt-0.5 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{getSpomoveUseLabel(program)}</p>
+                </div>
+                <button type="button" onClick={launch} className="shrink-0 rounded-[10px] px-3 py-2 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.24)' }}>
+                  <MonitorPlay size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-3 h-px" style={{ background: 'var(--spm-br2)' }} />
+
+            {/* ③ 필요 교구 — 간결하게 */}
+            {equipment.length > 0 ? (
+              <div className="mb-4">
+                <p className="mb-2 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>
+                  <CheckCircle2 size={12} color="var(--spm-grn)" />필요 교구
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {equipment.slice(0, locked ? 2 : 5).map((item) => (
+                    <span key={item} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${locked && equipment.indexOf(item) > 0 ? 'select-none blur-[2px]' : ''}`} style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)', color: 'var(--spm-t2)' }}>{item}</span>
+                  ))}
+                  {locked && equipment.length > 2 ? <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--spm-amb)', border: '1px solid rgba(245,158,11,0.2)' }}>+{equipment.length - 2}개 더 · Pro</span> : null}
+                </div>
+              </div>
+            ) : null}
+
+            {/* ④ How to Play — 핵심 단계 3개만 (Funstick Fencing 구조) */}
+            {ruleItems.length > 0 ? (
+              <div className="mb-4">
+                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>HOW TO PLAY · {ruleItems.length}단계</p>
+                <ol className="space-y-1.5">
+                  {ruleItems.slice(0, locked ? 2 : 3).map((step, i) => (
+                    <li key={i} className={`flex gap-2.5 rounded-[11px] p-3 ${locked && i === 1 ? 'select-none blur-[2px]' : ''}`} style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+                      <span className="mt-px grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>{i + 1}</span>
+                      <p className="text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t)' }}>{step}</p>
+                    </li>
+                  ))}
+                </ol>
+                {locked && ruleItems.length > 2 ? (
+                  <p className="mt-2 text-center text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+                    +{ruleItems.length - 2}단계 더 · Pro에서 전체 확인
+                  </p>
+                ) : ruleItems.length > 3 ? (
+                  <Link href={`/spokedu-master/library/${program.id}`} onClick={close} className="mt-2 block text-center text-[11px] font-semibold" style={{ color: 'var(--spm-acc)' }}>
+                    전체 {ruleItems.length}단계 보기
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* ⑤ 변형 수업 팁 — Funstick Variations 구조 (잠금 시 1개만) */}
+            {!locked ? (
+              <div className="mb-2">
+                <p className="mb-2 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>
+                  <Lightbulb size={12} color="var(--spm-acc)" />변형 수업
+                </p>
+                <div className="space-y-1.5">
+                  {(detail?.variations?.length ? detail.variations : [
+                    '교구 수를 줄여 저연령도 바로 시작합니다.',
+                    '공간·제한 시간을 바꿔 난이도를 조절합니다.',
+                  ]).slice(0, 2).map((item) => (
+                    <div key={item} className="flex gap-2 rounded-[10px] px-3 py-2 text-[12px] font-medium leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)' }}>
+                      <span className="mt-0.5 shrink-0 text-[10px]">→</span>{item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
           </section>
         </div>
       </div>

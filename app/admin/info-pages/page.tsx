@@ -3,12 +3,6 @@
 import { useState } from 'react';
 
 const PAGES = [
-  {
-    id: 'spokedu',
-    label: 'SPOKEDU 홈페이지',
-    url: '/spokedu',
-    title: 'SPOKEDU 스포키듀 | 아동·청소년 체육교육 전문 단체',
-  },
   { id: 'gym', label: '체육관 수업', url: '/info/gym', title: 'SPOKEDU 체육관 수업 안내' },
   { id: 'private', label: '과외 수업', url: '/info/private', title: 'SPOKEDU 과외 수업 안내' },
   { id: 'dispatch', label: '파견', url: '/info/dispatch', title: 'SPOKEDU 프리미엄 체육 파견 솔루션' },
@@ -16,7 +10,7 @@ const PAGES = [
 ];
 
 export default function InfoPagesAdmin() {
-  const [active, setActive] = useState('spokedu');
+  const [active, setActive] = useState('gym');
   const current = PAGES.find((p) => p.id === active)!;
 
   return (

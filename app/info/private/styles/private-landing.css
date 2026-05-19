@@ -1038,19 +1038,15 @@
   border: 1px solid var(--pl-border);
   padding: 40px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, min(100%, 380px));
+  grid-template-columns: 1fr 360px;
   gap: 28px;
   box-shadow: var(--pl-shadow-glow);
-  min-width: 0;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .pl-mr-left {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-width: 0;
 }
 
 .pl-mr-kicker {
@@ -1107,13 +1103,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-width: 0;
 }
 
 .pl-mr-summary {
   width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
   min-height: 180px;
   border-radius: 12px;
   background: rgba(2, 6, 23, 0.45);
@@ -1123,39 +1116,12 @@
   font-size: 14px;
   line-height: 1.6;
   resize: vertical;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.pl-mr-share-url {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  border-radius: 12px;
-  background: rgba(2, 6, 23, 0.35);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  color: var(--pl-text);
-  padding: 12px 14px;
-  font-size: 13px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-  word-break: break-all;
 }
 
 .pl-mr-summary-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
-  align-items: stretch;
-}
-
-.pl-mr-summary-actions .pl-btn {
-  flex: 1 1 auto;
-  min-width: min(100%, 140px);
-  white-space: normal;
-  text-align: center;
-  line-height: 1.25;
-  padding: 10px 14px;
 }
 
 .pl-result-funnel-section {
@@ -1784,13 +1750,6 @@
 }
 
 /* Responsive */
-@media (max-width: 960px) {
-  .pl-mr-wrapper {
-    grid-template-columns: 1fr;
-    padding: 28px 20px;
-  }
-}
-
 @media (max-width: 900px) {
   .pl-grid-3 {
     grid-template-columns: 1fr;
@@ -1857,15 +1816,16 @@
   }
 
   .pl-mr-wrapper {
-    padding: 24px 18px;
+    grid-template-columns: 1fr;
+    padding: 24px;
   }
 
   .pl-mr-title {
     font-size: 24px;
   }
 
-  .pl-mr-summary-actions .pl-btn {
-    min-width: 100%;
+  .pl-mr-summary-actions {
+    grid-template-columns: 1fr;
   }
 
   .pl-result-panel {

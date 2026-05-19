@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import PrivateLandingClient from './components/PrivateLandingClient';
 import './styles/private-landing.css';
 
@@ -15,13 +14,10 @@ export const metadata: Metadata = {
   },
 };
 
-// useSearchParams()를 쓰는 클라이언트 트리는 Suspense 경계가 있어야 정적 프리렌더/배포 빌드가 통과합니다.
 export default function PrivateInfoPage() {
   return (
     <div className="private-landing">
-      <Suspense fallback={<div className="min-h-screen" aria-busy="true" />}>
-        <PrivateLandingClient />
-      </Suspense>
+      <PrivateLandingClient />
     </div>
   );
 }

@@ -34,8 +34,6 @@ const nextConfig: NextConfig = {
       { source: "/parents", destination: "/spokedu/private", permanent: true },
       { source: "/institutions", destination: "/spokedu/dispatch", permanent: true },
       { source: "/audience", destination: "/spokedu/programs", permanent: true },
-      { source: "/info/private", destination: "/spokedu/private", permanent: true },
-      { source: "/info/dispatch", destination: "/spokedu/dispatch", permanent: true },
       { source: "/admin/iiwarmup/play", destination: "/admin/iiwarmup", permanent: true },
       { source: "/admin/iiwarmup/spomove", destination: "/admin/spomove/training", permanent: true },
       { source: "/admin/iiwarmup/spomove/training", destination: "/admin/spomove/training", permanent: true },
