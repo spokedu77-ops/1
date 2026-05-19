@@ -11,6 +11,7 @@ import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
 import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/lib/sessionInsertClone";
 import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-shared/lib/plannedRoundTotal";
+import { reindexGroupRounds } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
 import {
   isSessionScheduleDraftDirty,
   isoRangeFromDateTimeInputs,
@@ -737,10 +738,24 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     }
     setSavingSessionScheduleId(r.id);
     try {
+      const rows = sessionsByGroupId[gid] || [];
+      const rowsAfterSchedule = rows.map((row) =>
+        row.id === r.id
+          ? { ...row, start_at: patchIso.start_at, end_at: patchIso.end_at }
+          : row
+      );
       await applyInlineUpdate(gid, r.id, {
         start_at: patchIso.start_at,
         end_at: patchIso.end_at,
       });
+      if (supabase) {
+        const n = await reindexGroupRounds(supabase, rowsAfterSchedule);
+        if (n > 1) {
+          toast.message("날짜 저장 후 회차 번호를 날짜 순으로 맞췄습니다.");
+          void loadAll();
+          onChanged?.();
+        }
+      }
     } finally {
       setSavingSessionScheduleId(null);
     }
@@ -851,21 +866,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
     setReindexingByGroup((prev) => ({ ...prev, [gid]: true }));
     try {
-      const sorted = active;
-      const total = resolvePlannedTotal(sessions);
-      await Promise.all(
-        sorted.map((row, i) => {
-          return supabase
-            .from("sessions")
-            .update({
-              round_index: i + 1,
-              round_total: total,
-              sequence_number: i + 1,
-              round_display: `${i + 1}/${total}`,
-            })
-            .eq("id", row.id);
-        })
-      );
+      await reindexGroupRounds(supabase, sessions);
       toast.success("회차가 재정렬되었습니다.");
       void loadAll();
       onChanged?.();

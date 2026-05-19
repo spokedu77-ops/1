@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import PrivateLandingClient from './components/PrivateLandingClient';
 import './styles/private-landing.css';
 
@@ -17,7 +18,9 @@ export const metadata: Metadata = {
 export default function PrivateInfoPage() {
   return (
     <div className="private-landing">
-      <PrivateLandingClient />
+      <Suspense fallback={<div className="private-landing min-h-screen" aria-busy="true" />}>
+        <PrivateLandingClient />
+      </Suspense>
     </div>
   );
 }
