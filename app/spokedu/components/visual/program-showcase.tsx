@@ -19,10 +19,10 @@ export function ProgramShowcase() {
       >
         <motion.div
           role="listitem"
-          initial={reducedMotion ? false : { opacity: 0, y: 10 }}
-          whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
+          initial={reducedMotion ? false : { opacity: 0, x: 24 }}
+          whileInView={reducedMotion ? {} : { opacity: 1, x: 0 }}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
           className="w-[min(88vw,320px)] shrink-0 snap-start"
         >
           <ProgramShowcaseCard program={featuredProgram} variant="featured" className="min-h-[300px]" />
@@ -31,10 +31,10 @@ export function ProgramShowcase() {
           <motion.div
             key={program.id}
             role="listitem"
-            initial={reducedMotion ? false : { opacity: 0, y: 10 }}
-            whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
+            initial={reducedMotion ? false : { opacity: 0, x: 20 }}
+            whileInView={reducedMotion ? {} : { opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.04 * (index + 1) }}
+            transition={{ duration: 0.45, ease: 'easeOut', delay: 0.05 * (index + 1) }}
             className="w-[min(76vw,260px)] shrink-0 snap-start"
           >
             <ProgramShowcaseCard program={program} variant="compact" className="min-h-[248px]" />

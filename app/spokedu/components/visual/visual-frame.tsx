@@ -10,6 +10,7 @@ type VisualFrameProps = {
   float?: boolean;
   showLabel?: boolean;
   priority?: boolean;
+  heroZoom?: boolean;
 };
 
 export function VisualFrame({
@@ -18,16 +19,25 @@ export function VisualFrame({
   float = false,
   showLabel = true,
   priority = false,
+  heroZoom = false,
 }: VisualFrameProps) {
   const reducedMotion = useReducedMotion();
 
   return (
     <motion.div
-      className={className}
-      animate={float && !reducedMotion ? { y: [-5, 5, -5] } : {}}
-      transition={float && !reducedMotion ? { duration: 8, repeat: Infinity, ease: 'easeInOut' } : {}}
+      className={`${className} ring-1 ring-indigo-200/40`}
+      animate={float && !reducedMotion ? { y: [-6, 6, -6] } : {}}
+      transition={float && !reducedMotion ? { duration: 7, repeat: Infinity, ease: 'easeInOut' } : {}}
     >
-      <MediaRenderer media={media} showLabel={showLabel} priority={priority} className="absolute inset-0" />
+      <div className="pointer-events-none absolute -inset-px z-0 rounded-[inherit] bg-gradient-to-br from-indigo-400/25 via-transparent to-lime-300/20 opacity-80 blur-sm" aria-hidden />
+      <MediaRenderer
+        media={media}
+        showLabel={showLabel}
+        priority={priority}
+        animateZoom={heroZoom}
+        className="absolute inset-0 z-[1]"
+        sizes="(max-width: 1024px) 100vw, 55vw"
+      />
     </motion.div>
   );
 }

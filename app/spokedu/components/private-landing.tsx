@@ -7,6 +7,7 @@ import { SPOKEDU_IMAGES } from '../data/images';
 import { cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 import { HeroCtaStack } from './hero-cta-stack';
+import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
 import { SpokeduHeroVisual } from './spokedu-hero-visual';
 import { SpokeduImage } from './spokedu-image';
 
@@ -59,8 +60,8 @@ export default function PrivateLanding() {
   const reducedMotion = useReducedMotion();
   return (
     <div className={landingPageStack}>
-      <Section className={`${landingHeroShell} border-slate-200 bg-white`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.12),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.08),transparent_44%)]" />
+      <Section className={`${landingHeroShell} border-violet-200/80 bg-gradient-to-b from-violet-50/80 via-white to-amber-50/40`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.14),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.1),transparent_44%)]" />
         <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-7">
           <div className="space-y-4 sm:space-y-6">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">학부모 · 개인·소그룹 체육수업</p>
@@ -83,7 +84,8 @@ export default function PrivateLanding() {
             <div className="lg:hidden">
               <SpokeduHeroVisual
                 image={SPOKEDU_IMAGES.private.oneToOne}
-                className="relative h-[200px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[220px]"
+                tone="warm"
+                className="relative h-[min(48vw,220px)] overflow-hidden rounded-2xl border border-violet-200/80 bg-slate-100 sm:h-[240px]"
               />
             </div>
             <HeroCtaStack
@@ -103,7 +105,7 @@ export default function PrivateLanding() {
               animate={reducedMotion ? {} : { y: [-4, 4, -4] }}
               transition={reducedMotion ? {} : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <SpokeduHeroVisual image={SPOKEDU_IMAGES.private.oneToOne} />
+              <SpokeduHeroVisual image={SPOKEDU_IMAGES.private.oneToOne} tone="warm" />
             </motion.div>
           </div>
         </div>
@@ -119,19 +121,23 @@ export default function PrivateLanding() {
           ))}
         </div>
         <div className="grid gap-2.5 sm:grid-cols-3 sm:gap-3">
-          {classOptions.map((item) => (
+          {classOptions.map((item, index) => {
+            const variants: LandingCardVariant[] = ['glass', 'gradient', 'image'];
+            const variant = variants[index] ?? 'image';
+            return (
             <article
               key={item.title}
-              className={`rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 ${cardInteractive}`}
+              className={`rounded-2xl p-4 sm:p-5 ${landingCardShell(variant)} ${cardInteractive}`}
             >
               <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
             </article>
-          ))}
+          );
+          })}
         </div>
       </Section>
 
-      <Section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8" delay={0.08}>
+      <Section className={`rounded-3xl p-6 sm:p-8 ${landingCardShell('glass')}`} delay={0.08}>
         <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">수업 장소</h2>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {locationItems.map((item) => (
@@ -157,8 +163,11 @@ export default function PrivateLanding() {
       <Section className="space-y-5" delay={0.12}>
         <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">기대할 수 있는 변화</h2>
         <div className="grid gap-3 md:grid-cols-3">
-          {parentOutcomes.map((benefit) => (
-            <article key={benefit.title} className="rounded-2xl border border-slate-200 bg-white p-5">
+          {parentOutcomes.map((benefit, index) => (
+            <article
+              key={benefit.title}
+              className={`rounded-2xl p-5 ${landingCardShell((['gradient', 'image', 'glass'] as const)[index] ?? 'image')}`}
+            >
               <h3 className="text-base font-semibold text-slate-900">{benefit.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{benefit.description}</p>
             </article>

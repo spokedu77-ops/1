@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '개인정보처리방침 — SPOKEDU PRO',
+  title: '개인정보처리방침 — SPOKEDU MASTER',
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

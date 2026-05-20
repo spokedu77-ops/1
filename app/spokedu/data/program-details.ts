@@ -1,10 +1,12 @@
-import type { HomeMediaKey } from './home-media';
 import type { ProgramSlug } from './programs';
 import { SPOKEDU_BASE_PATH } from './site';
+
+import type { HomeMediaKey } from './home-media';
 
 export type ProgramActivity = {
   title: string;
   description: string;
+  mediaKey: HomeMediaKey;
 };
 
 export type ProgramDetailBlock = {
@@ -33,9 +35,9 @@ export const programDetailBlocks: Record<
       '키움센터·방과후·소그룹까지 응용',
     ],
     activities: [
-      { title: '빔 반응 미션', description: '시각 자극에 맞춰 방향·타이밍을 선택합니다.' },
-      { title: '회전 스테이션', description: '대기 없이 참여 밀도를 유지합니다.' },
-      { title: '난이도 단계화', description: '연령·수준에 맞춰 미션을 조절합니다.' },
+      { title: '빔 반응 미션', description: '시각 자극에 맞춰 방향·타이밍을 선택합니다.', mediaKey: 'programSpomove' },
+      { title: '회전 스테이션', description: '대기 없이 참여 밀도를 유지합니다.', mediaKey: 'proofClass' },
+      { title: '난이도 단계화', description: '연령·수준에 맞춰 미션을 조절합니다.', mediaKey: 'trackDispatch' },
     ],
     targets: ['키움센터·방과후', '개인·소그룹 응용', '혼합 연령 기관 수업'],
     caseSlugs: ['yangcheon-spomove', 'dongjak-rhythm'],
@@ -61,9 +63,9 @@ export const programDetailBlocks: Record<
       '기록보다 참여와 움직임 감각에 집중',
     ],
     activities: [
-      { title: '체력 놀이 모듈', description: '요소별 미니 게임으로 구성합니다.' },
-      { title: '순환 스테이션', description: '짧은 회전으로 참여율을 높입니다.' },
-      { title: '협동 챌린지', description: '팀 미션으로 재미와 몰입을 더합니다.' },
+      { title: '체력 놀이 모듈', description: '요소별 미니 게임으로 구성합니다.', mediaKey: 'programPaps' },
+      { title: '순환 스테이션', description: '짧은 회전으로 참여율을 높입니다.', mediaKey: 'programPlay' },
+      { title: '협동 챌린지', description: '팀 미션으로 재미와 몰입을 더합니다.', mediaKey: 'trackDispatch' },
     ],
     targets: ['초등 저·고학년', '기관 정규수업', '체력 경험형 프로그램'],
     caseSlugs: ['yangcheon-spomove'],
@@ -89,9 +91,9 @@ export const programDetailBlocks: Record<
       '안전 동선과 회전 운영으로 현장 밀도 관리',
     ],
     activities: [
-      { title: '스테이션 체험', description: '짧은 순환으로 많은 아이가 참여합니다.' },
-      { title: '팀 협동 게임', description: '행사 목적에 맞는 미션을 구성합니다.' },
-      { title: '현장 회전 운영', description: '공간·인원에 맞춰 동선을 설계합니다.' },
+      { title: '스테이션 체험', description: '짧은 순환으로 많은 아이가 참여합니다.', mediaKey: 'programOneday' },
+      { title: '팀 협동 게임', description: '행사 목적에 맞는 미션을 구성합니다.', mediaKey: 'proofCommunity' },
+      { title: '현장 회전 운영', description: '공간·인원에 맞춰 동선을 설계합니다.', mediaKey: 'proofEvent' },
     ],
     targets: ['지역아동센터 행사', '어린이날·시즌 이벤트', '기관 특별활동'],
     caseSlugs: ['dasarang-oneday', 'seodaemun-event-booth'],
@@ -117,9 +119,9 @@ export const programDetailBlocks: Record<
       '기관·공간 파트너와 함께 설계 가능',
     ],
     activities: [
-      { title: '오전·오후 블록', description: '집중형 일과로 에너지를 관리합니다.' },
-      { title: '체육·예체능 결합', description: '움직임과 표현 활동을 번갈아 구성합니다.' },
-      { title: '캠프 피드백', description: '하루 단위 목표와 회고를 포함합니다.' },
+      { title: '오전·오후 블록', description: '집중형 일과로 에너지를 관리합니다.', mediaKey: 'programCamp' },
+      { title: '체육·예체능 결합', description: '움직임과 표현 활동을 번갈아 구성합니다.', mediaKey: 'proofLounge' },
+      { title: '캠프 피드백', description: '하루 단위 목표와 회고를 포함합니다.', mediaKey: 'programPlay' },
     ],
     targets: ['방학 집중 프로그램', '키즈 복합공간', '기관·공간 연계 캠프'],
     caseSlugs: ['playz-camp'],

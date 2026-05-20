@@ -95,105 +95,11 @@ const defaultOperational: OperationalStatus = {
   retryQueue: [],
 };
 
-const defaultLessons: Lesson[] = [
-  {
-    id: 1,
-    title: '8자 드릴: 민첩성 트레이닝',
-    classId: '오늘 수업',
-    date: new Date().toISOString(),
-    period: 3,
-    duration: 15,
-    done: false,
-    color: '#6366f1',
-    memo: 'SPOMOVE 방향 전환과 연결하기 좋은 추천 수업',
-  },
-  {
-    id: 2,
-    title: '밸런스 로드',
-    classId: '다음 수업',
-    date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    period: 4,
-    duration: 18,
-    done: false,
-    color: '#10b981',
-  },
-];
+const defaultLessons: Lesson[] = [];
 
-const defaultStudents: StudentProfile[] = [
-  {
-    id: 'minjun',
-    name: '김민준',
-    group: '초등 A반',
-    meta: '8세 / 3개월차',
-    level: 'Lv.4 Balance',
-    attendance: 92,
-    classes: 18,
-    streak: 4,
-    risk: '다음 수업에서 균형 자세 확인 필요',
-    skills: [
-      { label: '균형 유지', value: 74, delta: '+12%' },
-      { label: '방향 전환', value: 61, delta: '+6%' },
-      { label: '멈춤 반응', value: 42, delta: '유지' },
-    ],
-    badges: ['균형 마스터', '출석 루틴'],
-    history: ['5.11 8자 드릴 출석', '5.04 멈춤 반응 관찰', '4.27 균형 마스터 배지'],
-  },
-  {
-    id: 'seoyeon',
-    name: '이서연',
-    group: '초등 A반',
-    meta: '9세 / 5개월차',
-    level: 'Lv.5 Focus',
-    attendance: 98,
-    classes: 24,
-    streak: 9,
-    risk: null,
-    skills: [
-      { label: '신호 반응', value: 88, delta: '+18%' },
-      { label: '적응 리듬', value: 81, delta: '+10%' },
-      { label: '방향 전환', value: 76, delta: '+9%' },
-    ],
-    badges: ['집중왕', '연속 출석'],
-    history: ['5.11 밸런스 로드 우수', '5.04 집중왕 배지', '4.27 리듬 과제 완료'],
-  },
-  {
-    id: 'jiho',
-    name: '박지호',
-    group: '초등 A반',
-    meta: '8세 / 2개월차',
-    level: 'Lv.3 Agility',
-    attendance: 86,
-    classes: 13,
-    streak: 1,
-    risk: '최근 결석 기록 확인 필요',
-    skills: [
-      { label: '방향 전환', value: 69, delta: '+8%' },
-      { label: '출발 반응', value: 58, delta: '+4%' },
-      { label: '집중 유지', value: 47, delta: '-2%' },
-    ],
-    badges: ['첫 리포트'],
-    history: ['5.11 결석', '5.04 결석', '4.27 방향 전환 개선'],
-  },
-];
+const defaultStudents: StudentProfile[] = [];
 
-const defaultNotifications: Notification[] = [
-  {
-    id: 'n1',
-    type: 'program',
-    title: '이번 주 추천 프로그램이 준비되었습니다.',
-    body: '라이브러리에서 오늘 수업에 바로 쓸 수 있는 추천 수업안을 확인해 보세요.',
-    read: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'n2',
-    type: 'billing',
-    title: '체험 기간이 활성화되었습니다.',
-    body: '라이브러리에서 수업을 고르고, SPOMOVE 큰 화면 실행과 설명 도구까지 이어지는 흐름을 확인해 보세요.',
-    read: false,
-    createdAt: new Date(Date.now() - 3600000).toISOString(),
-  },
-];
+const defaultNotifications: Notification[] = [];
 
 const brokenTextPattern = /[\u4E00-\u9FFF\uF900-\uFAFF\uFFFD]/;
 
@@ -298,7 +204,7 @@ export const useMasterStore = create<MasterState>()(
         try {
           const res = await fetch('/api/spokedu-master/subscription');
           if (!res.ok) return;
-          const json = await res.json() as { plan?: string; status?: string };
+          const json = await res.json() as { plan?: string; status?: string; isAdmin?: boolean; userId?: string; email?: string | null; trialEndsAt?: string | null };
           const serverPlan: 'free' | 'pro' | 'team' =
             json.status === 'active' && json.plan === 'team' ? 'team' :
             json.status === 'active' && json.plan === 'pro' ? 'pro' : 'free';
@@ -308,6 +214,10 @@ export const useMasterStore = create<MasterState>()(
                   ...state.profile,
                   plan: serverPlan,
                   role: serverPlan === 'team' ? 'director' : 'teacher',
+                  isAdmin: json.isAdmin ?? false,
+                  ...(json.userId ? { id: json.userId } : {}),
+                  ...(json.email ? { email: json.email } : {}),
+                  ...(json.trialEndsAt ? { trialEndsAt: json.trialEndsAt } : {}),
                 }
               : state.profile,
           }));
@@ -428,6 +338,7 @@ export const useMasterStore = create<MasterState>()(
 export const useProfile = () => useMasterStore((state) => state.profile);
 export const useOperationalStatus = () => useMasterStore((state) => state.operational);
 export const useIsPro = () => useMasterStore((state) => {
+  if (state.profile?.isAdmin) return true;
   const plan = state.profile?.plan ?? 'free';
   if (plan !== 'free') return true;
   const trialEndsAt = state.profile?.trialEndsAt;

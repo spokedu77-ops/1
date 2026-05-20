@@ -21,6 +21,7 @@ import {
 import { SESSION_TYPE_OPTIONS } from "@/app/admin/classes-v2/lib/sessionTypeCategory";
 import {
   dominantSessionType,
+  resolveDefaultAssistSessionPrice,
   resolveDefaultSessionPrice,
   shiftSessionToWeekday,
   type TeacherFeeRow,
@@ -162,6 +163,7 @@ function resolveMergedBundleSessionType(rows: SessionRow[]): string | null {
     .filter((t): t is string => typeof t === "string" && t.length > 0);
   if (types.includes("regular_private")) return "regular_private";
   if (types.includes("regular_center")) return "regular_center";
+  if (types.includes("special_lecture")) return "special_lecture";
   return resolveMainSessionTypeFromRows(rows);
 }
 
@@ -315,7 +317,10 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   /** "" = 요일 변경 없음 */
   const [bulkDayOfWeekByGroup, setBulkDayOfWeekByGroup] = useState<Record<string, string>>({});
   const [bulkPriceByGroup, setBulkPriceByGroup] = useState<Record<string, string>>({});
+  const [bulkAssistTeacherIdByGroup, setBulkAssistTeacherIdByGroup] = useState<Record<string, string>>({});
+  const [bulkAssistPriceByGroup, setBulkAssistPriceByGroup] = useState<Record<string, string>>({});
   const [bulkTeacherApplyingGid, setBulkTeacherApplyingGid] = useState<string | null>(null);
+  const [bulkAssistApplyingGid, setBulkAssistApplyingGid] = useState<string | null>(null);
 
   bundleBulkRef.current = { teacher: bulkTeacherIdByGroup, price: bulkPriceByGroup };
 
@@ -1312,6 +1317,71 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     }
   };
 
+  const handleBulkApplyAssistToGroup = async (gid: string) => {
+    if (!supabase) return;
+    const assistId = String(bulkAssistTeacherIdByGroup[gid] || "").trim();
+    if (!assistId) return;
+
+    const priceStr = String(bulkAssistPriceByGroup[gid] ?? "").trim();
+    const wantsPrice = priceStr !== "" && Number.isFinite(Number(priceStr));
+    const priceNum = wantsPrice ? Math.max(0, Math.floor(Number(priceStr))) : 0;
+    const assistTeacher = teachers.find((t) => t.id === assistId);
+    const list = sessionsByGroupId[gid] || [];
+    const domType = dominantSessionType(list);
+    const defaultAssistPrice = resolveDefaultAssistSessionPrice(assistTeacher, domType, tierFeeMap);
+
+    const rows = (sessionsByGroupId[gid] || []).filter(isSessionBulkTarget);
+    if (rows.length === 0) {
+      return toast.error(
+        "변경할 수 있는 회차가 없습니다. (진행·예정(연기 제외)에 해당하는 회차가 없거나, 취소·삭제·연기·시간 완료만 있습니다.)"
+      );
+    }
+
+    const assistName = teacherMap[assistId] || "보조 강사";
+    const priceLabel = wantsPrice
+      ? `${priceNum.toLocaleString("ko-KR")}원`
+      : `${defaultAssistPrice.toLocaleString("ko-KR")}원(등급 기본)`;
+    if (
+      !confirm(
+        `진행·예정(연기 제외) 회차 ${rows.length}건에 보조1로 「${assistName}」(${priceLabel})을(를) 일괄 지정할까요? 메인과 동일한 회차는 건너뜁니다. 선택하지 않은 보조2는 유지됩니다.`
+      )
+    ) {
+      return;
+    }
+
+    setBulkAssistApplyingGid(gid);
+    try {
+      let applied = 0;
+      for (const s of rows) {
+        const mainId = String(s.created_by || "").trim();
+        if (assistId === mainId) continue;
+
+        const prev = extraTeachersFromMemo(s.memo);
+        const assistPrice = wantsPrice ? priceNum : Number(prev[0]?.price) || defaultAssistPrice;
+        const keptSecond = prev
+          .filter((t) => t.id && t.id !== mainId && t.id !== assistId)
+          .slice(0, 1)[0];
+        const nextExtras: TeacherInput[] = [
+          { id: assistId, price: assistPrice },
+          ...(keptSecond ? [keptSecond] : []),
+        ].slice(0, 2);
+
+        const memo = persistMemoExtras(s.memo, nextExtras);
+        const { error } = await supabase.from("sessions").update({ memo }).eq("id", s.id);
+        if (error) throw error;
+        applied += 1;
+      }
+      toast.success(`보조 일괄 적용 완료: ${applied}건`);
+      onChanged?.();
+      void loadAll();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("보조 일괄 적용에 실패했습니다.");
+    } finally {
+      setBulkAssistApplyingGid(null);
+    }
+  };
+
   const sortedGroupIds = useMemo(() => {
     return [...effectiveGroupIds].sort((a, b) => {
       const ar = sessionsByGroupId[a] || [];
@@ -1349,6 +1419,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         const tname = String(teacherMap[tid] || "").trim();
         return tname === "미정";
       });
+    const isSpecialLectureGroup = dominantSessionType(rows) === "special_lecture";
     return (
       <section key={gid} className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
                     <button
@@ -1371,12 +1442,25 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                           <h4 className="text-sm font-black text-slate-800">그룹 설정</h4>
                           <p className="text-xs text-slate-500 font-bold mt-1">
                             수업명은 상단에서 번들 전체로 변경합니다. 아래 일괄 적용은 회차 목록의{" "}
-                            <span className="text-slate-700">진행·예정 (연기 제외)</span>에 보이는 회차에만 메인
-                            강사·요일·시작 시간·수업료를 반영합니다. 수업료는 선택한 강사의{" "}
-                            <span className="text-slate-700">등급·DB 기본 수업료</span>로 자동 채워지며 숫자로 수정할 수
-                            있습니다. 회차별 보조1·보조2는 표에서 설정합니다 (최대 3인: 메인+보조2).
+                            <span className="text-slate-700">진행·예정 (연기 제외)</span>에 보이는 회차에만 반영됩니다.
+                            {isSpecialLectureGroup ? (
+                              <>
+                                {" "}
+                                <span className="text-slate-700">특강</span>은 1줄 메인·2줄 보조 일괄 적용이
+                                가능합니다. 보조를 선택하지 않으면 기존 보조는 그대로 둡니다.
+                              </>
+                            ) : (
+                              <>
+                                {" "}
+                                메인 강사·요일·시작·수업료만 일괄 반영하며, 보조는 표에서 회차별로 설정합니다 (최대
+                                메인+보조2).
+                              </>
+                            )}
                           </p>
-                          <div className="mt-3 flex flex-col gap-2">
+                          <div className="mt-3 flex flex-col gap-3">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">
+                              메인 일괄 적용
+                            </p>
                             <div className="flex items-center gap-2 flex-wrap">
                               <select
                                 className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold min-w-[140px]"
@@ -1452,12 +1536,76 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                               <button
                                 type="button"
                                 onClick={() => void handleBulkApplyToGroup(gid)}
-                                disabled={bulkTeacherApplyingGid === gid}
+                                disabled={bulkTeacherApplyingGid === gid || bulkAssistApplyingGid === gid}
                                 className="px-3 py-2 rounded-full text-xs font-black bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
                               >
-                                {bulkTeacherApplyingGid === gid ? "적용 중..." : "일괄 적용"}
+                                {bulkTeacherApplyingGid === gid ? "적용 중..." : "메인 일괄 적용"}
                               </button>
                             </div>
+                            {isSpecialLectureGroup ? (
+                              <>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">
+                                  보조 일괄 적용
+                                </p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <select
+                                    className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold min-w-[140px]"
+                                    value={bulkAssistTeacherIdByGroup[gid] ?? ""}
+                                    onChange={(e) => {
+                                      const v = e.target.value;
+                                      setBulkAssistTeacherIdByGroup((prev) => ({ ...prev, [gid]: v }));
+                                      const teacher = teachers.find((t) => t.id === v);
+                                      const list = sessionsByGroupId[gid] || [];
+                                      if (teacher && list.length) {
+                                        const st = dominantSessionType(list);
+                                        setBulkAssistPriceByGroup((p) => ({
+                                          ...p,
+                                          [gid]: String(resolveDefaultAssistSessionPrice(teacher, st, tierFeeMap)),
+                                        }));
+                                      } else if (!v) {
+                                        setBulkAssistPriceByGroup((p) => ({ ...p, [gid]: "" }));
+                                      }
+                                    }}
+                                  >
+                                    <option value="">보조 강사 선택 (비우면 미적용)</option>
+                                    {teachers.map((t) => (
+                                      <option key={t.id} value={t.id}>
+                                        {t.name ?? ""} T
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                                    보조 수업료(원)
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step={1000}
+                                      className="w-[100px] bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-right"
+                                      placeholder="등급 기본"
+                                      value={bulkAssistPriceByGroup[gid] ?? ""}
+                                      onChange={(e) =>
+                                        setBulkAssistPriceByGroup((prev) => ({
+                                          ...prev,
+                                          [gid]: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleBulkApplyAssistToGroup(gid)}
+                                    disabled={
+                                      bulkAssistApplyingGid === gid ||
+                                      bulkTeacherApplyingGid === gid ||
+                                      !String(bulkAssistTeacherIdByGroup[gid] || "").trim()
+                                    }
+                                    className="px-3 py-2 rounded-full text-xs font-black bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-50"
+                                  >
+                                    {bulkAssistApplyingGid === gid ? "적용 중..." : "보조 일괄 적용"}
+                                  </button>
+                                </div>
+                              </>
+                            ) : null}
                           </div>
                         </div>
 

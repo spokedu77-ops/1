@@ -21,10 +21,10 @@ export function ProofFieldWall({ fields }: ProofFieldWallProps) {
         <motion.div
           key={field.id}
           role="listitem"
-          initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+          initial={reducedMotion ? false : { opacity: 0, y: 18 }}
           whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.4, ease: 'easeOut', delay: 0.05 * index }}
+          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.07 * index }}
           className="w-[min(84vw,280px)] shrink-0 snap-start sm:w-auto"
         >
           <ProofFieldCard field={field} className="h-full min-h-[248px] sm:min-h-[260px]" />

@@ -1,3 +1,4 @@
+import { isCenterSessionType } from "@/app/admin/classes-v2/lib/sessionTypeCategory";
 import {
   computeTier,
   effectiveFees,
@@ -51,8 +52,30 @@ export function resolveDefaultSessionPrice(
     },
     tierFeeMap
   );
-  if (sessionType === "regular_center" || sessionType === "one_day_center") return fees.fee_center_main;
+  if (isCenterSessionType(sessionType)) return fees.fee_center_main;
   return fees.fee_private;
+}
+
+/** 보조 강사 일괄 적용 시 기본 수업료(센터·특강 = fee_center_assist) */
+export function resolveDefaultAssistSessionPrice(
+  teacher: TeacherFeeRow | null | undefined,
+  sessionType: string,
+  tierFeeMap: TierFeeMap
+): number {
+  if (!teacher) return 25_000;
+  const tier = computeTier(totalLessonsFromCounts(teacher.session_count ?? 0, 0));
+  const fees = effectiveFees(
+    tier,
+    {
+      fee_private: teacher.fee_private ?? null,
+      fee_group: teacher.fee_group ?? null,
+      fee_center_main: teacher.fee_center_main ?? null,
+      fee_center_assist: teacher.fee_center_assist ?? null,
+    },
+    tierFeeMap
+  );
+  if (isCenterSessionType(sessionType)) return fees.fee_center_assist;
+  return fees.fee_group;
 }
 
 /** 로컬 달력 기준으로 요일만 targetDow(0=일)로 맞춤, 시각·수업 길이는 유지 */

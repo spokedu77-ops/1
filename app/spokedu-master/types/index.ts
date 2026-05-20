@@ -16,6 +16,7 @@ export interface UserProfile {
   onboardingDone: boolean;
   trialEndsAt: string | null;
   createdAt: string;
+  isAdmin?: boolean;
 }
 
 export interface Cue {

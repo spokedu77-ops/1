@@ -108,13 +108,21 @@ export interface CompletionStatus {
   completion_rate: number;
 }
 
+import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+
 export interface SessionWithFeedback {
   feedback_fields?: FeedbackFields;
   photo_url?: string[];
   file_url?: string[];
   status?: string;
-  /** 센터 수업(regular_center, one_day_center)은 파일만 올려도 작성완료(done)로 간주 */
-  session_type?: 'regular_center' | 'regular_private' | 'one_day' | 'one_day_center' | 'one_day_private';
+  /** 센터 수업(원데이·정규·특강)은 파일만 올려도 작성완료(done)로 간주 */
+  session_type?:
+    | 'regular_center'
+    | 'regular_private'
+    | 'one_day'
+    | 'one_day_center'
+    | 'one_day_private'
+    | 'special_lecture';
 }
 
 /**
@@ -273,8 +281,7 @@ export function getSessionDisplayStatus(session: SessionWithFeedback): 'empty' |
   if (session.status === 'verified') return 'verified';
 
   const fileUrls = session.file_url ?? [];
-  const isCenterCondition =
-    session.session_type === 'regular_center' || session.session_type === 'one_day_center';
+  const isCenterCondition = isCenterSessionType(session.session_type);
   if (isCenterCondition && fileUrls.length > 0) return 'done';
 
   const feedbackFields = session.feedback_fields || {};

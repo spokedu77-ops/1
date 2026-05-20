@@ -6,6 +6,7 @@ import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
+import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 import {
   type FeedbackFields,
   fieldsToTemplateText,
@@ -90,8 +91,7 @@ export async function POST(req: Request) {
     }
 
     const sessionType = String(row.session_type || '');
-    const isCenterType =
-      sessionType === 'regular_center' || sessionType === 'one_day_center';
+    const isCenterType = isCenterSessionType(sessionType);
 
     /** 센터 첨부는 항상 1개만 저장(클라이언트가 여러 URL을 내도 마지막만 반영) */
     let centerFileUrls = fileUrls;

@@ -22,41 +22,43 @@ public/images/spokedu/
 ### Home (`home/`)
 | 파일 | 용도 |
 |------|------|
-| `hero.jpg` | 홈 Hero |
-| `lab-scene.jpg` | LAB / Living Proof |
-| `dispatch-scene.jpg` | 기관 수업 톤 |
+| `home-hero-movement.jpg` | 홈 Hero |
+| `home-lab-energy.jpg` | LAB / Living Proof |
+| `home-dispatch-scene.jpg` | 기관 수업 톤 |
 
 ### Private (`private/`)
 | 파일 | 용도 |
 |------|------|
-| `one-to-one.jpg` | 1:1 수업 Hero |
-| `small-group.jpg` | 소그룹 수업 |
-| `tool-activity.jpg` | 교구 활동 |
+| `private-coaching.jpg` | 1:1 수업 Hero |
+| `private-small-group.jpg` | 소그룹 수업 |
+| `private-tool-activity.jpg` | 교구 활동 |
 
 ### Dispatch (`dispatch/`)
 | 파일 | 용도 |
 |------|------|
-| `group-class.jpg` | 기관 정규 수업 Hero |
-| `kiwoom-center.jpg` | 키움·기관 현장 |
-| `one-day-event.jpg` | 원데이 행사 |
+| `dispatch-group-class.jpg` | 기관 정규 수업 Hero |
+| `dispatch-institution-class.jpg` | 키움·기관 현장 |
+| `dispatch-oneday-event.jpg` | 원데이 행사 |
 
 ### Curriculum (`curriculum/`)
 | 파일 | 용도 |
 |------|------|
-| `lesson-plan.jpg` | 수업안 Hero |
-| `tool-setup.jpg` | 교구 세팅 |
-| `instructor-training.jpg` | 강사 교육 |
-| `program-materials.jpg` | 프로그램 자료 |
+| `curriculum-planning.jpg` | 수업안 Hero |
+| `curriculum-tool-setup.jpg` | 교구 세팅 |
+| `curriculum-instructor-training.jpg` | 강사 교육 |
+| `curriculum-materials.jpg` | 프로그램 자료 |
 
 ### Programs (`programs/`)
 | 파일 | 용도 |
 |------|------|
-| `spomove.jpg` | SPOMOVE 카드 |
-| `paps.jpg` | PAPS 카드 |
-| `play-class.jpg` | 놀이체육 |
-| `one-day.jpg` | 원데이 |
-| `camp.jpg` | 방학캠프 |
-| `curriculum-content.jpg` | 커리큘럼 콘텐츠 |
+| `program-spomove.jpg` | SPOMOVE 카드 |
+| `program-paps-running.jpg` | PAPS 카드 |
+| `program-play-pe.jpg` | 놀이체육 |
+| `program-oneday.jpg` | 원데이 |
+| `program-camp.jpg` | 방학캠프 |
+| `program-curriculum-content.jpg` | 커리큘럼 콘텐츠 |
+
+무료 스톡 사진 출처는 `SOURCES.internal.md` (UI 비노출) 참고.
 
 ### Records (`records/`) — 사례 썸네일
 | 파일 | 용도 |

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { useProfile } from '../store';
+import { useMasterStore, useProfile } from '../store';
 
 declare global {
   interface Window {
@@ -89,17 +89,17 @@ const VALUE_CARDS = [
   {
     icon: BookOpen,
     title: '수업 준비',
-    body: 'admin/curriculum의 커리큘럼을 구독자용 수업 카드와 상세 수업안으로 재구성합니다.',
+    body: '라이브러리에서 수업안을 고르고 준비물, 공간, 진행 단계를 한 번에 확인합니다.',
   },
   {
     icon: MonitorPlay,
     title: '수업 몰입',
-    body: 'admin/spomove/training의 훈련을 큰 화면 실행과 Class Mode 흐름으로 연결합니다.',
+    body: 'SPOMOVE를 큰 화면에 켜고 학생들이 신호를 보고 바로 움직이는 수업을 만듭니다.',
   },
   {
     icon: FileText,
     title: '수업 설명',
-    body: '학부모, 기관, 학교에 수업의 의미를 설명할 문구를 바로 사용할 수 있게 합니다.',
+    body: '학부모, 기관, 학교에 수업 가치를 설명하는 문구를 바로 복사해 씁니다.',
   },
 ];
 
@@ -147,6 +147,7 @@ function PlanSelector({ selected, onSelect }: { selected: PlanKey; onSelect: (pl
 function PaymentContent() {
   const params = useSearchParams();
   const profile = useProfile();
+  const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const [planKey, setPlanKey] = useState<PlanKey>(normalizePlan(params.get('plan')));
   const plan = PLANS[planKey];
   const alreadySubscribed = profile?.plan === 'pro' || profile?.plan === 'team';
@@ -227,6 +228,7 @@ function PaymentContent() {
         return;
       }
       setIsAuthed(true);
+      void syncSubscription();
     } finally {
       setLoading(false);
     }

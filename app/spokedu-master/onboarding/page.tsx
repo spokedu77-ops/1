@@ -116,7 +116,7 @@ export default function OnboardingPage() {
     <div className="h-full overflow-y-auto pb-8" style={{ background: 'var(--spm-bg)' }}>
       <main className="mx-auto flex min-h-full w-full max-w-[880px] flex-col justify-center px-[22px] py-8 sm:px-8">
         <div className="mb-8">
-          <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU PRO</p>
+          <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
           <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 준비는 쉽게, 수업은 더 몰입감 있게</h1>
           <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>프로그램 라이브러리에서 수업을 고르고, SPOMOVE를 큰 화면으로 실행하고, 수업의 의미를 설명 문구로 남깁니다.</p>
         </div>

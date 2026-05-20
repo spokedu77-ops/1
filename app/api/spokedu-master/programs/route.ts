@@ -525,10 +525,10 @@ export async function GET() {
       lessonDetail: {
         recommendedAge: meta?.sm_grade ?? '전학년',
         recommendedPlayers: '6~20명',
-        objective: meta?.sm_objective ?? (coachScript.slice(0, 80) || ''),
+        objective: meta?.sm_objective ?? '',
         developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
         coachScript: meta?.sm_coach_script ?? coachScript,
-        parentNote: meta?.sm_parent_note ?? coachScript,
+        parentNote: meta?.sm_parent_note ?? '',
         fieldTips,
         variations: [],
         safetyNotes: [],

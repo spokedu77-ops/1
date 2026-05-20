@@ -18,10 +18,12 @@ export function getTrialDaysLeft(profile: UserProfile | null): number {
 }
 
 export function isTrialExpired(profile: UserProfile | null): boolean {
+  if (profile?.isAdmin) return false;
   return (profile?.plan ?? 'free') === 'free' && getTrialDaysLeft(profile) <= 0;
 }
 
 export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
+  if (profile?.isAdmin) return { allowed: true, label: '관리자' };
   if (isTrialExpired(profile)) {
     return {
       allowed: false,
@@ -32,7 +34,8 @@ export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
   return { allowed: true, label: '사용 가능' };
 }
 
-export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao' | 'ai' | 'pdf'): LimitStatus {
+export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao' | 'ai' | 'pdf', isAdmin = false): LimitStatus {
+  if (isAdmin) return { allowed: true, label: '관리자' };
   const label = kind === 'kakao' ? '준비 중' : kind === 'ai' ? '준비 중' : '설명 도구 우선';
   return {
     allowed: false,

@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { CENTER_SESSION_TYPE_VALUES } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     const scope = searchParams.get('scope') ?? 'private';
     const sessionTypes =
       scope === 'center'
-        ? (['regular_center', 'one_day_center'] as const)
+        ? [...CENTER_SESSION_TYPE_VALUES]
         : (['one_day', 'one_day_private', 'regular_private'] as const);
 
     // 이번 주: 월요일 00:00 ~ 일요일 23:59 (KST, ISO 주간과 동일)

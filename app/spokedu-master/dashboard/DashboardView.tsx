@@ -1,21 +1,15 @@
 'use client';
 
 import { isSameDay } from 'date-fns';
-import type { LucideIcon } from 'lucide-react';
 import {
   Bell,
   BookOpen,
   Check,
   ChevronRight,
-  ClipboardList,
   Clock3,
-  FileText,
   MonitorPlay,
   Play,
-  Search,
   Sparkles,
-  Timer,
-  Wand2,
   Zap,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -43,9 +37,6 @@ function isSpomoveLinked(program: Program) {
   return Boolean(program.lessonDetail?.relatedSpomoveIds?.length) || program.tags.some((tag) => tag.toUpperCase().includes('SPOMOVE'));
 }
 
-function hasExplanationReady(program: Program) {
-  return Boolean(program.lessonDetail?.parentNote || program.lessonDetail?.objective || program.lessonDetail?.developmentFocus || program.description);
-}
 
 function getPrimaryDrill(program: Program | undefined, drills: Drill[]) {
   if (!program || drills.length === 0) return undefined;
@@ -136,9 +127,6 @@ function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
               <br />
               수업은 더 몰입감 있게.
             </h1>
-            <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
-              {program.title}을 중심으로 라이브러리, SPOMOVE, 설명 문구를 한 번에 이어 오늘 수업을 바로 시작합니다.
-            </p>
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -214,45 +202,49 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MetricCard({ label, value, caption }: { label: string; value: string; caption: string }) {
+// Peloton + Apple Fitness+ 참고: 홈에서 운동 직접 실행, 색상으로 카테고리 즉각 구분
+function SpomoveDrillCard({ drill }: { drill: Drill }) {
   return (
-    <div className="min-h-[112px] rounded-3xl border border-white/10 bg-white/[0.055] p-5">
-      <p className="text-xs font-semibold text-slate-400">{label}</p>
-      <p className="mt-3 text-3xl font-black text-white">{value}</p>
-      <p className="mt-1 text-xs font-semibold text-emerald-300">{caption}</p>
-    </div>
+    <article
+      className="flex min-h-[152px] flex-col overflow-hidden rounded-3xl border border-white/10 p-5"
+      style={{ backgroundColor: drill.bgColor }}
+    >
+      <span className="mb-3 inline-block w-fit rounded-full border border-white/15 bg-black/25 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/70">
+        {drill.category}
+      </span>
+      <h3 className="flex-1 text-base font-black leading-snug text-white">{drill.name}</h3>
+      <Link
+        href={`/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`}
+        className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-2xl bg-white/15 text-[13px] font-extrabold text-white transition hover:bg-white/25"
+      >
+        <Play className="h-3.5 w-3.5 fill-current" />
+        바로 실행
+      </Link>
+    </article>
   );
 }
 
-function QuickActionCard({
-  href,
-  icon: Icon,
-  title,
-  body,
-  accent,
-}: {
-  href: string;
-  icon: LucideIcon;
-  title: string;
-  body: string;
-  accent: string;
-}) {
+function SpomoveQuickLaunch({ drills }: { drills: Drill[] }) {
+  const topDrills = drills.slice(0, 4);
+  if (topDrills.length === 0) return null;
+
   return (
-    <Link
-      href={href}
-      className="group flex min-h-[140px] flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.055] p-5 transition hover:-translate-y-0.5 hover:bg-white/[0.085]"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${accent}`}>
-          <Icon className="h-5 w-5" />
-        </span>
-        <ChevronRight className="h-5 w-5 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-white" />
+    <section>
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-300">SPOMOVE</p>
+          <h2 className="mt-1 text-xl font-black text-white">드릴 바로 실행</h2>
+        </div>
+        <Link href="/spokedu-master/spomove" className="text-sm font-bold text-indigo-200 hover:text-white">
+          전체 보기
+        </Link>
       </div>
-      <div>
-        <h3 className="text-base font-black text-white">{title}</h3>
-        <p className="mt-1 text-sm leading-6 text-slate-400">{body}</p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {topDrills.map((drill) => (
+          <SpomoveDrillCard key={drill.id} drill={drill} />
+        ))}
       </div>
-    </Link>
+    </section>
   );
 }
 
@@ -283,8 +275,7 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
         </span>
       </Link>
       <div className="flex flex-1 flex-col p-5">
-        <h3 className="line-clamp-2 text-lg font-black leading-snug text-white">{program.title}</h3>
-        <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">{program.description}</p>
+        <h3 className="line-clamp-2 text-base font-black leading-snug text-white">{program.title}</h3>
         <div className="mt-auto flex flex-wrap gap-2 pt-4">
           <Link
             href={`/spokedu-master/class-mode/${program.id}`}
@@ -342,8 +333,15 @@ function TodayLessons({ lessons }: { lessons: Lesson[] }) {
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.03] p-5 text-sm leading-6 text-slate-400">
-            오늘 등록된 수업이 없습니다. 라이브러리에서 프로그램을 고르고 Class Mode로 바로 시작하세요.
+          <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.03] p-5">
+            <p className="mb-3 text-sm leading-6 text-slate-400">오늘 예정된 수업이 없습니다.</p>
+            <Link
+              href="/spokedu-master/library"
+              className="inline-flex h-9 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.06] px-3 text-xs font-bold text-white transition hover:bg-white/[0.1]"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              수업 찾기
+            </Link>
           </div>
         )}
       </div>
@@ -426,9 +424,6 @@ export default function DashboardView() {
       .slice(0, 3);
   }, [heroProgram?.id, programs]);
 
-  const linkedSpomoveCount = useMemo(() => programs.filter(isSpomoveLinked).length, [programs]);
-  const explanationReadyCount = useMemo(() => programs.filter(hasExplanationReady).length, [programs]);
-
   if (!mounted || !heroProgram) {
     return <DashboardSkeleton />;
   }
@@ -451,50 +446,7 @@ export default function DashboardView() {
 
         <HomeHero program={heroProgram} drill={heroDrill} />
 
-        <section className="grid gap-3 sm:grid-cols-3">
-          <MetricCard label="라이브러리" value={`${programs.length}`} caption="센터 커리큘럼 연동" />
-          <MetricCard label="SPOMOVE" value={`${linkedSpomoveCount}`} caption="화면 활동 연결" />
-          <MetricCard label="설명 문구" value={`${explanationReadyCount}`} caption="복사/공유 준비" />
-        </section>
-
-        <section>
-          <div className="mb-4 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-300">Quick Start</p>
-              <h2 className="mt-1 text-xl font-black text-white">수업 흐름</h2>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <QuickActionCard
-              href="/spokedu-master/library"
-              icon={Search}
-              title="라이브러리"
-              body="수업안을 찾고 필터로 빠르게 고릅니다."
-              accent="bg-sky-400/12 text-sky-200"
-            />
-            <QuickActionCard
-              href="/spokedu-master/spomove"
-              icon={MonitorPlay}
-              title="SPOMOVE"
-              body="빔, TV, 태블릿용 큰 화면 활동을 실행합니다."
-              accent="bg-violet-400/12 text-violet-200"
-            />
-            <QuickActionCard
-              href="/spokedu-master/report"
-              icon={FileText}
-              title="설명 도구"
-              body="학부모, 기관, 학교용 수업 문구를 만듭니다."
-              accent="bg-emerald-400/12 text-emerald-200"
-            />
-            <QuickActionCard
-              href="/spokedu-master/class-tools"
-              icon={Timer}
-              title="수업 보조 도구"
-              body="타이머, 팀 나누기, 점수판을 현장에서 엽니다."
-              accent="bg-amber-400/12 text-amber-200"
-            />
-          </div>
-        </section>
+        <SpomoveQuickLaunch drills={drills} />
 
         <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div>
@@ -517,38 +469,6 @@ export default function DashboardView() {
           <div className="space-y-6">
             <TodayLessons lessons={todayLessons} />
             <PwaInstallCard compact />
-            <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-400/12 text-indigo-200">
-                  <Wand2 className="h-5 w-5" />
-                </span>
-                <div>
-                  <h2 className="text-base font-black text-white">설계 기준</h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-400">
-                    OTT처럼 추천을 앞에 두고, 수업 SaaS처럼 실행 동선을 짧게 유지합니다.
-                  </p>
-                </div>
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/12 via-white/[0.04] to-emerald-400/10 p-5 sm:p-6">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-200">Next Action</p>
-              <h2 className="mt-2 text-xl font-black text-white">콘텐츠 품질을 기준화할 차례입니다.</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                대표 사진, 공간 배치, 준비물, 진행 단계, SPOMOVE 연결, 설명 문구가 한 화면에서 자연스럽게 이어지도록 다음 단계에서 더 다듬습니다.
-              </p>
-            </div>
-            <Link
-              href="/spokedu-master/library"
-              className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-extrabold text-slate-950"
-            >
-              <ClipboardList className="h-4 w-4" />
-              콘텐츠 점검
-            </Link>
           </div>
         </section>
       </main>

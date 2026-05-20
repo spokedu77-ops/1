@@ -208,7 +208,7 @@ function RecordEntryView() {
   const recordedSkills = Object.values(checkedSkills).reduce((sum, items) => sum + items.length, 0);
   const progress = useMemo(() => Math.round(((present + absent) / Math.max(students.length, 1)) * 100), [absent, present, students.length]);
   const recordStatus = canCreateClassRecord(profile);
-  const kakaoStatus = canUseMonthlyLimit(profile?.plan ?? 'free', classRecords.filter((record) => record.kakaoSent).length, 'kakao');
+  const kakaoStatus = canUseMonthlyLimit(profile?.plan ?? 'free', classRecords.filter((record) => record.kakaoSent).length, 'kakao', profile?.isAdmin);
   const hasStudents = students.length > 0;
   const hasAttendance = present + absent > 0;
   const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance;

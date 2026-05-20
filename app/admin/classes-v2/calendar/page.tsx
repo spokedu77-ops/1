@@ -100,12 +100,27 @@ function addLocalDays(d: Date, delta: number) {
   return x;
 }
 
+function sessionTypeOf(ev: SessionEvent): string {
+  return String(ev.type ?? ev.session_type ?? "").trim();
+}
+
 function monthRowTone(ev: SessionEvent): string {
   if (ev.status === "cancelled" || ev.status === "deleted")
     return "bg-rose-200 border-2 border-rose-600 shadow-sm";
   if (ev.status === "postponed") return "bg-violet-200 border-2 border-violet-600 shadow-sm";
+
+  const st = sessionTypeOf(ev);
   const teacherLabel = String(ev.teacher || "").trim();
   const mainUndecided = !ev.teacherId || teacherLabel.startsWith("미정");
+
+  /** 특강은 항상 샛노란. 미정이면 테두리만 빨강(기존 분홍 덮어쓰기 방지). */
+  if (st === "special_lecture") {
+    if (mainUndecided) {
+      return `bg-[#FFE100] border-2 border-red-600 shadow-sm`;
+    }
+    return monthRowToneClassesForSessionType("special_lecture");
+  }
+
   if (mainUndecided) return "bg-red-100 border-2 border-red-500 shadow-sm";
   return monthRowToneClassesForSessionType(ev.type);
 }

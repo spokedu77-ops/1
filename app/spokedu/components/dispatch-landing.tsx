@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { SPOKEDU_IMAGES } from '../data/images';
 import { cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
 import { HeroCtaStack } from './hero-cta-stack';
+import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
 import { SpokeduHeroVisual } from './spokedu-hero-visual';
 import { SpokeduImage } from './spokedu-image';
 
@@ -83,7 +84,8 @@ export default function DispatchLanding() {
             <div className="lg:hidden">
               <SpokeduHeroVisual
                 image={SPOKEDU_IMAGES.dispatch.groupClass}
-                className="relative h-[200px] overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 sm:h-[220px]"
+                tone="cool"
+                className="relative h-[min(48vw,220px)] overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 sm:h-[240px]"
               />
             </div>
             <HeroCtaStack
@@ -106,6 +108,7 @@ export default function DispatchLanding() {
             >
               <SpokeduHeroVisual
                 image={SPOKEDU_IMAGES.dispatch.groupClass}
+                tone="cool"
                 className="relative h-[240px] overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 sm:h-[360px]"
               />
             </motion.div>
@@ -117,15 +120,18 @@ export default function DispatchLanding() {
         <h2 className="text-xl font-bold leading-snug text-slate-950 sm:text-3xl">운영 프로그램</h2>
         <p className="text-sm text-slate-600">정규수업부터 SPOMOVE·PAPS까지 기관 조건에 맞게 조합합니다.</p>
         <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-5">
-          {programCards.map((item) => (
+          {programCards.map((item, index) => {
+            const variants: LandingCardVariant[] = ['image', 'dark', 'glass', 'gradient', 'image'];
+            return (
             <article
               key={item.title}
-              className={`rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 ${cardInteractive}`}
+              className={`rounded-2xl p-4 sm:p-5 ${landingCardShell(variants[index] ?? 'image')} ${cardInteractive}`}
             >
               <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
             </article>
-          ))}
+          );
+          })}
         </div>
       </Section>
 
@@ -140,8 +146,11 @@ export default function DispatchLanding() {
       <Section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8" delay={0.08}>
         <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">공간·인원·운영 목적 맞춤</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {fitCards.map((item) => (
-            <article key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          {fitCards.map((item, index) => (
+            <article
+              key={item.title}
+              className={`rounded-2xl p-4 ${landingCardShell((['dark', 'glass', 'gradient'] as const)[index] ?? 'image')}`}
+            >
               <h3 className="text-sm font-semibold text-slate-900">{item.title}</h3>
               <p className="mt-1.5 text-sm leading-6 text-slate-600">{item.description}</p>
             </article>

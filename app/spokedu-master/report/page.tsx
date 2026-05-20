@@ -180,8 +180,8 @@ function ReportContent() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Explanation</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 설명 도구</h1>
-        <p className="mt-2 max-w-[640px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          Base44 레퍼런스처럼 설명 기능은 보조 메뉴가 아니라 독립 핵심 페이지로 둡니다. 수업 직후 30초 안에 보호자, 기관, 학교, 홍보용 문구를 골라 복사할 수 있게 구성했습니다.
+        <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+          수업 후 30초 안에 대상별 문구를 골라 복사하세요.
         </p>
       </header>
 
@@ -238,7 +238,7 @@ function ReportContent() {
             <MessageCircle size={16} color="#a5b4fc" />
             <h2 className="mt-2.5 text-[14px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{activeAudience.label} 템플릿</h2>
             <p className="mt-1.5 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-              {activeAudience.description}. 복사 후 카카오톡, 문자, 보고서에 바로 사용할 수 있습니다.
+              {activeAudience.description}
             </p>
             {program ? (
               <div className="mt-4 grid grid-cols-2 gap-2">

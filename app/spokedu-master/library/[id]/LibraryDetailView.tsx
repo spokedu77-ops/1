@@ -8,15 +8,12 @@ import {
   Clock3,
   FileText,
   Image as ImageIcon,
-  Lightbulb,
   Lock,
   MapPin,
   MonitorPlay,
   Package,
   Play,
-  ShieldCheck,
   ShoppingBag,
-  Shuffle,
   Users,
   Zap,
 } from 'lucide-react';
@@ -69,16 +66,6 @@ function getSpomoveUseLabel(program: Program) {
   return '큰 화면 몰입 활동';
 }
 
-function getSpomoveReason(program: Program, drill?: Drill) {
-  const drillName = cleanText(drill?.name, 'SPOMOVE 큰 화면');
-  if (/펀스틱|펜싱|거리|타이밍/.test(`${program.title} ${program.description} ${program.tags.join(' ')}`)) {
-    return `${drillName}을 연결하면 공격 타이밍, 거리 판단, 반응 전환을 짧은 라운드로 반복할 수 있습니다.`;
-  }
-  if (/협동|팀|릴레이/.test(`${program.title} ${program.category} ${program.tags.join(' ')}`)) {
-    return `${drillName}을 연결하면 팀별 신호 반응과 역할 교대를 더 선명하게 만들 수 있습니다.`;
-  }
-  return `${getSpomoveUseLabel(program)}에 맞춰 ${drillName}을 실행하면 수업 준비에서 화면 활동까지 흐름이 끊기지 않습니다.`;
-}
 
 function getParentCopy(program: Program) {
   return cleanText(
@@ -111,7 +98,7 @@ function DetailSection({
   children,
 }: {
   title: string;
-  icon: typeof Lightbulb;
+  icon: typeof FileText;
   children: ReactNode;
 }) {
   return (
@@ -169,8 +156,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const detail = program.lessonDetail;
   const title = cleanText(program.title, 'SPOKEDU 수업 패키지');
   const category = cleanText(program.category, '체육 수업');
-  const description = cleanText(program.description || detail?.objective, '수업 목표, 진행 방법, SPOMOVE 연결까지 한 번에 확인하고 바로 실행할 수 있는 프로그램입니다.');
-  const favorite = favorites.includes(program.id);
+const favorite = favorites.includes(program.id);
   const locked = program.isPro && !isPro;
   const cartCount = cart.reduce((total, item) => total + item.qty, 0);
   const heroImage = getHeroImage(program);
@@ -180,13 +166,12 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const relatedSpomoveIds = detail?.relatedSpomoveIds?.length ? detail.relatedSpomoveIds : [primarySpomoveId];
   const ruleItems = cleanList(detail?.rules?.length ? detail.rules : program.steps, ['도구와 공간을 확인합니다.', '시범을 보여주고 안전 거리를 확보합니다.', '기본 규칙으로 시작한 뒤 난이도를 단계적으로 올립니다.']);
   const setupNotes = cleanList(detail?.setupNotes, [`공간: ${cleanText(program.space, '실내 또는 체육 공간')}`, `준비물: ${cleanList(program.equipment, ['현장 기본 도구']).join(', ')}`]);
-  const fieldTips = cleanList(detail?.fieldTips, ['처음에는 속도보다 규칙 이해를 우선합니다.', '충돌 위험이 생기면 대기선과 이동선을 분리합니다.']);
-  const safetyNotes = cleanList(detail?.safetyNotes, ['교구 간격과 이동 방향을 먼저 확인합니다.', '경쟁 강도가 올라가면 라운드 시간을 짧게 끊습니다.']);
-  const variations = cleanList(detail?.variations, ['도구 수를 줄여 난이도를 낮춥니다.', '개인전에서 팀전으로 확장합니다.', 'SPOMOVE 신호를 추가해 반응 요소를 강화합니다.']);
+  const fieldTips = (detail?.fieldTips ?? []).filter((item) => item && !hasBrokenText(item));
+  const safetyNotes = (detail?.safetyNotes ?? []).filter((item) => item && !hasBrokenText(item));
+  const variations = (detail?.variations ?? []).filter((item) => item && !hasBrokenText(item));
   const equipment = cleanList(program.equipment, ['현장 기본 도구']);
   const parentCopy = getParentCopy(program);
   const usageCount = usageRecords.length;
-  const spomoveReason = getSpomoveReason(program, primaryDrill);
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -254,8 +239,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 {usageCount > 0 ? <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-slate-950">{usageCount}회 사용</span> : null}
               </div>
               <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">{title}</h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">{description}</p>
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Users className="h-3.5 w-3.5" />{cleanText(detail?.recommendedAge, program.grade)}</span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Clock3 className="h-3.5 w-3.5" />{program.duration}분</span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><MapPin className="h-3.5 w-3.5" />{cleanText(program.space, '실내 공간')}</span>
@@ -297,19 +281,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <MetaCard label="공간" value={cleanText(program.space, '실내 또는 체육 공간')} />
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <DetailSection title="수업 목표" icon={FileText}>
-            <p className="text-sm leading-7 text-slate-300">{cleanText(detail?.objective, description)}</p>
-          </DetailSection>
-          <DetailSection title="패키지 구성" icon={Zap}>
-            <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              <MetaCard label="수업안" value={`${program.duration}분 · ${cleanText(program.space, '활동 공간')}`} />
-              <MetaCard label="연결 SPOMOVE" value={cleanText(primaryDrill?.name, 'SPOMOVE 큰 화면')} />
-              <MetaCard label="설명 도구" value="학부모/기관 문구 복사" />
-            </div>
-            <p className="mt-4 rounded-2xl border border-indigo-300/18 bg-indigo-400/10 p-4 text-sm leading-7 text-indigo-100/85">{spomoveReason}</p>
-          </DetailSection>
-        </section>
+        <DetailSection title="패키지 구성" icon={Zap}>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <MetaCard label="수업안" value={`${program.duration}분 · ${cleanText(program.space, '활동 공간')}`} />
+            <MetaCard label="연결 SPOMOVE" value={cleanText(primaryDrill?.name, 'SPOMOVE 큰 화면')} />
+            <MetaCard label="설명 도구" value="학부모/기관 문구 복사" />
+          </div>
+        </DetailSection>
 
         {galleryImages.length > 0 ? (
           <section>
@@ -393,20 +371,28 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </DetailSection>
         ) : null}
 
-        <section className="grid gap-6 lg:grid-cols-2">
-          <DetailSection title="현장 팁" icon={Lightbulb}>
-            <BulletList items={fieldTips} tone="bg-emerald-300" />
-          </DetailSection>
-          <DetailSection title="안전 체크" icon={ShieldCheck}>
-            <BulletList items={safetyNotes} tone="bg-rose-300" />
-          </DetailSection>
-          <DetailSection title="변형 수업" icon={Shuffle}>
-            <BulletList items={variations} tone="bg-amber-300" />
-          </DetailSection>
-          <DetailSection title="설명 문구" icon={Clipboard}>
-            <p className="text-sm leading-7 text-slate-300">{parentCopy}</p>
-          </DetailSection>
-        </section>
+        {fieldTips.length > 0 || safetyNotes.length > 0 || variations.length > 0 ? (
+          <section className="grid gap-6 lg:grid-cols-3">
+            {fieldTips.length > 0 ? (
+              <DetailSection title="현장 팁" icon={FileText}>
+                <BulletList items={fieldTips} tone="bg-emerald-300" />
+              </DetailSection>
+            ) : null}
+            {safetyNotes.length > 0 ? (
+              <DetailSection title="안전 체크" icon={FileText}>
+                <BulletList items={safetyNotes} tone="bg-rose-300" />
+              </DetailSection>
+            ) : null}
+            {variations.length > 0 ? (
+              <DetailSection title="변형 수업" icon={FileText}>
+                <BulletList items={variations} tone="bg-amber-300" />
+              </DetailSection>
+            ) : null}
+          </section>
+        ) : null}
+        <DetailSection title="설명 문구" icon={Clipboard}>
+          <p className="text-sm leading-7 text-slate-300">{parentCopy}</p>
+        </DetailSection>
       </div>
     </main>
   );

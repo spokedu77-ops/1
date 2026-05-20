@@ -15,7 +15,6 @@ import {
   Mail,
   MonitorPlay,
   Pencil,
-  ShieldCheck,
   ShoppingBag,
   Sparkles,
   UsersRound,
@@ -119,25 +118,25 @@ const EXPANSION_LINKS = [
   {
     icon: ClipboardList,
     label: '수업 기록',
-    caption: '출석과 관찰 기록은 Phase 2 핵심 기능입니다.',
+    caption: '수업 출석과 관찰을 기록합니다.',
     href: '/spokedu-master/class-record',
   },
   {
     icon: UsersRound,
     label: '학생 이력',
-    caption: '학생별 누적 성장 기록은 장기 락인 기능입니다.',
+    caption: '학생별 성장 이력을 관리합니다.',
     href: '/spokedu-master/students',
   },
   {
     icon: Building2,
     label: '센터 운영',
-    caption: '센터·강사 운영 현황은 조직 플랜 확장용입니다.',
+    caption: '강사와 수업 현황을 관리합니다.',
     href: '/spokedu-master/director',
   },
   {
     icon: ShoppingBag,
     label: '교구 스토어',
-    caption: 'store는 학생 관리가 아니라 교구 구매 흐름입니다.',
+    caption: '수업에 필요한 교구를 구매합니다.',
     href: '/spokedu-master/shop',
   },
 ];
@@ -375,9 +374,6 @@ export default function SpokeduMasterProfilePage() {
                 구독 관리
               </Link>
             </div>
-            <p className="mt-4 max-w-[680px] text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              이 화면은 관리자 대시보드가 아니라 구독자가 자신의 수업 준비 환경을 확인하는 곳입니다. 라이브러리, SPOMOVE, 설명 도구가 계속 같은 수업 루프로 이어지도록 관리합니다.
-            </p>
             <button type="button" onClick={() => setPlanOpen(true)} className="mt-5 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
               플랜과 도입 방식 보기
             </button>
@@ -410,9 +406,6 @@ export default function SpokeduMasterProfilePage() {
             <div className="mb-3">
               <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Expansion</p>
               <h2 className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>확장 기능</h2>
-              <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                장기 락인 기능은 남기되, Phase 1의 핵심 흐름보다 앞에 세우지 않습니다.
-              </p>
             </div>
             <div className="grid gap-2">
               {EXPANSION_LINKS.map((item) => (
@@ -421,15 +414,6 @@ export default function SpokeduMasterProfilePage() {
             </div>
           </section>
 
-          <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={17} color="var(--spm-grn)" />
-              <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>운영 원칙</h2>
-            </div>
-            <p className="mt-2 text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t3)' }}>
-              Phase 1은 라이브러리, SPOMOVE, 설명 도구의 완성도를 우선합니다. 학생 기록과 센터 운영은 중요한 기능이지만 검수와 안정화 이후 전면 배치합니다.
-            </p>
-          </section>
         </aside>
       </main>
 

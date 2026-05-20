@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { SPOKEDU_IMAGES } from '../data/images';
 import { cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
 import { HeroCtaStack } from './hero-cta-stack';
+import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
 import { SpokeduHeroVisual } from './spokedu-hero-visual';
 import { SpokeduImage } from './spokedu-image';
 
@@ -81,8 +82,8 @@ export default function CurriculumLanding() {
 
   return (
     <div className={landingPageStack}>
-      <Section className={`${landingHeroShell} border-slate-200 bg-white`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.14),transparent_43%),radial-gradient(circle_at_bottom_right,rgba(14,116,144,0.1),transparent_42%)]" />
+      <Section className={`${landingHeroShell} border-teal-200/60 bg-gradient-to-b from-indigo-50/70 via-white to-teal-50/50`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_43%),radial-gradient(circle_at_bottom_right,rgba(20,184,166,0.12),transparent_42%)]" />
         <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-7">
           <div className="space-y-4 sm:space-y-6">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">강사·기관 파트너 · 커리큘럼·콘텐츠</p>
@@ -135,10 +136,12 @@ export default function CurriculumLanding() {
         <h2 className="text-xl font-bold leading-snug text-slate-950 sm:text-3xl">도입 가능한 콘텐츠 상품</h2>
         <p className="text-sm text-slate-600">수업안부터 라이선싱까지, 현장에서 바로 쓰는 자료 단위로 구성합니다.</p>
         <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-5">
-          {productCards.map((item) => (
+          {productCards.map((item, index) => {
+            const variants: LandingCardVariant[] = ['gradient', 'image', 'glass', 'dark', 'gradient'];
+            return (
             <article
               key={item.title}
-              className={`flex flex-col rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 ${cardInteractive}`}
+              className={`flex flex-col rounded-2xl p-4 sm:p-5 ${landingCardShell(variants[index] ?? 'image')} ${cardInteractive}`}
             >
               <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
               <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{item.description}</p>
@@ -153,7 +156,8 @@ export default function CurriculumLanding() {
                 ))}
               </div>
             </article>
-          ))}
+          );
+          })}
         </div>
       </Section>
 
@@ -197,8 +201,11 @@ export default function CurriculumLanding() {
       <Section className="space-y-4" delay={0.12}>
         <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">적용 대상</h2>
         <div className="grid gap-3 md:grid-cols-3">
-          {partnerTargets.map((item) => (
-            <article key={item.title} className="rounded-2xl border border-slate-200 bg-white p-5">
+          {partnerTargets.map((item, index) => (
+            <article
+              key={item.title}
+              className={`rounded-2xl p-5 ${landingCardShell((['image', 'gradient', 'glass'] as const)[index] ?? 'image')}`}
+            >
               <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
             </article>

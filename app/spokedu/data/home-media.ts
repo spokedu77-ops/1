@@ -1,8 +1,11 @@
 /**
  * Home 전용 미디어 슬롯.
- * 실제 파일을 `public/images/spokedu/home/` 등에 추가한 뒤 src/poster만 채우면 교체됩니다.
- * src가 null이면 CSS gradient visual만 렌더링합니다 (깨진 이미지 없음).
+ * 실제 파일: `public/images/spokedu/` — `images.ts`와 동일 경로.
+ * src가 null일 때만 CSS gradient visual (깨진 이미지 없음).
  */
+
+import type { SpokeduImageDef } from './images';
+import { SPOKEDU_IMAGES } from './images';
 
 export type HomeMediaType = 'image' | 'video' | 'visual';
 
@@ -19,6 +22,19 @@ export type HomeMediaItem = {
   tone: HomeMediaTone;
 };
 
+function fromPhoto(
+  asset: SpokeduImageDef,
+  item: Omit<HomeMediaItem, 'type' | 'src' | 'poster' | 'alt'> & { alt?: string },
+): HomeMediaItem {
+  return {
+    type: 'image',
+    src: asset.src,
+    poster: null,
+    alt: item.alt ?? asset.alt,
+    ...item,
+  };
+}
+
 function media(
   item: Omit<HomeMediaItem, 'type'> & { type?: HomeMediaType },
 ): HomeMediaItem {
@@ -26,164 +42,111 @@ function media(
 }
 
 export const HOME_MEDIA = {
-  homeHero: media({
+  homeHero: fromPhoto(SPOKEDU_IMAGES.home.hero, {
     id: 'home-hero',
-    src: null,
-    poster: null,
-    alt: '아이들이 움직이며 참여하는 스포키듀 체육수업 장면',
     label: '체육수업 현장',
     fallbackGradient: 'from-indigo-600 via-indigo-800 to-slate-900',
     tone: 'indigo',
   }),
-  trackPrivate: media({
+  trackPrivate: fromPhoto(SPOKEDU_IMAGES.private.oneToOne, {
     id: 'track-private',
-    src: null,
-    poster: null,
-    alt: '1:1 및 소그룹 개인 체육수업',
     label: '개인·소그룹',
     fallbackGradient: 'from-violet-500 via-indigo-600 to-slate-800',
     tone: 'violet',
   }),
-  trackDispatch: media({
+  trackDispatch: fromPhoto(SPOKEDU_IMAGES.dispatch.groupClass, {
     id: 'track-dispatch',
-    src: null,
-    poster: null,
-    alt: '기관 파견 단체 체육수업 현장',
     label: '기관 파견',
     fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
     tone: 'sky',
   }),
-  trackCurriculum: media({
+  trackCurriculum: fromPhoto(SPOKEDU_IMAGES.curriculum.lessonPlan, {
     id: 'track-curriculum',
-    src: null,
-    poster: null,
-    alt: '수업안과 교구 콘텐츠 제작',
     label: '커리큘럼',
     fallbackGradient: 'from-emerald-500 via-teal-700 to-slate-900',
     tone: 'lime',
   }),
-  proofLab: media({
+  proofLab: fromPhoto(SPOKEDU_IMAGES.home.labScene, {
     id: 'proof-lab',
-    src: null,
-    poster: null,
-    alt: '스포키듀 LAB에서 프로그램을 준비하고 강사 교육을 진행하는 장면',
     label: 'LAB',
     fallbackGradient: 'from-indigo-500 via-indigo-700 to-slate-900',
     tone: 'indigo',
   }),
-  proofClass: media({
+  proofClass: fromPhoto(SPOKEDU_IMAGES.programs.spomove, {
     id: 'proof-class',
-    src: null,
-    poster: null,
-    alt: '양천거점형키움센터 SPOMOVE 에듀테크 체육수업',
     label: 'SPOMOVE',
     fallbackGradient: 'from-sky-400 via-blue-600 to-indigo-950',
     tone: 'sky',
   }),
-  proofCenter: media({
+  proofCenter: fromPhoto(SPOKEDU_IMAGES.dispatch.groupClass, {
     id: 'proof-center',
-    src: null,
-    poster: null,
-    alt: '동작거점형키움센터 리듬챌린지 반응형 체육수업',
     label: '리듬챌린지',
     fallbackGradient: 'from-cyan-400 via-teal-600 to-slate-900',
     tone: 'sky',
   }),
-  proofCommunity: media({
+  proofCommunity: fromPhoto(SPOKEDU_IMAGES.dispatch.oneDayEvent, {
     id: 'proof-community',
-    src: null,
-    poster: null,
-    alt: '다사랑영등포지역아동센터 원데이 체육행사',
     label: '원데이',
     fallbackGradient: 'from-lime-400 via-emerald-600 to-slate-900',
     tone: 'lime',
   }),
-  proofLounge: media({
+  proofLounge: fromPhoto(SPOKEDU_IMAGES.programs.camp, {
     id: 'proof-lounge',
-    src: null,
-    poster: null,
-    alt: 'PLAYZ Lounge 방학캠프 체육·예체능 프로그램',
     label: '방학캠프',
     fallbackGradient: 'from-amber-300 via-orange-500 to-slate-900',
     tone: 'amber',
   }),
-  proofEvent: media({
+  proofEvent: fromPhoto(SPOKEDU_IMAGES.dispatch.oneDayEvent, {
     id: 'proof-event',
-    src: null,
-    poster: null,
-    alt: '서대문형무소 어린이날 체험 부스',
     label: '체험 부스',
     fallbackGradient: 'from-rose-400 via-pink-600 to-slate-900',
     tone: 'rose',
   }),
-  proofMonthly: media({
+  proofMonthly: fromPhoto(SPOKEDU_IMAGES.home.labScene, {
     id: 'proof-monthly',
-    src: null,
-    poster: null,
-    alt: '월간 스포키듀 운영 기록',
     label: '월간 기록',
+    alt: '월간 스포키듀 운영 기록',
     fallbackGradient: 'from-violet-500 via-indigo-700 to-slate-950',
     tone: 'violet',
   }),
-  programSpomove: media({
+  programSpomove: fromPhoto(SPOKEDU_IMAGES.programs.spomove, {
     id: 'program-spomove',
-    src: null,
-    poster: null,
-    alt: 'SPOMOVE 몰입형 움직임 수업',
     label: 'SPOMOVE',
     fallbackGradient: 'from-fuchsia-500 via-violet-700 to-slate-900',
     tone: 'violet',
   }),
-  programPaps: media({
+  programPaps: fromPhoto(SPOKEDU_IMAGES.programs.paps, {
     id: 'program-paps',
-    src: null,
-    poster: null,
-    alt: 'PAPS 놀이체육 프로그램',
     label: 'PAPS',
     fallbackGradient: 'from-lime-400 via-green-600 to-slate-900',
     tone: 'lime',
   }),
-  programPlay: media({
+  programPlay: fromPhoto(SPOKEDU_IMAGES.programs.playClass, {
     id: 'program-play',
-    src: null,
-    poster: null,
-    alt: '놀이체육 기본 트랙',
     label: '놀이체육',
     fallbackGradient: 'from-amber-300 via-orange-500 to-slate-800',
     tone: 'amber',
   }),
-  programOneday: media({
+  programOneday: fromPhoto(SPOKEDU_IMAGES.programs.oneDay, {
     id: 'program-oneday',
-    src: null,
-    poster: null,
-    alt: '원데이 체육행사 프로그램',
     label: '원데이',
     fallbackGradient: 'from-sky-400 to-indigo-900',
     tone: 'sky',
   }),
-  programCamp: media({
+  programCamp: fromPhoto(SPOKEDU_IMAGES.programs.camp, {
     id: 'program-camp',
-    src: null,
-    poster: null,
-    alt: '방학캠프 집중 프로그램',
     label: '방학캠프',
     fallbackGradient: 'from-teal-400 to-slate-900',
     tone: 'lime',
   }),
-  programCurriculum: media({
+  programCurriculum: fromPhoto(SPOKEDU_IMAGES.programs.curriculumContent, {
     id: 'program-curriculum',
-    src: null,
-    poster: null,
-    alt: '커리큘럼 콘텐츠 패키지',
     label: '커리큘럼',
     fallbackGradient: 'from-indigo-400 to-slate-900',
     tone: 'indigo',
   }),
-  finalCta: media({
+  finalCta: fromPhoto(SPOKEDU_IMAGES.home.hero, {
     id: 'final-cta',
-    src: null,
-    poster: null,
-    alt: '스포키듀 상담 및 프로그램 안내',
     label: '상담 연결',
     fallbackGradient: 'from-indigo-600/40 via-transparent to-lime-400/20',
     tone: 'slate',
@@ -201,6 +164,7 @@ export type HomeProofField = {
   cta: string;
   href: string;
   trackLabel: string;
+  cardVariant?: 'image' | 'dark' | 'glass';
 };
 
 export const HOME_PROOF_FIELDS: HomeProofField[] = [
@@ -213,6 +177,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
     cta: '브랜드 보기',
     href: '/spokedu/about',
     trackLabel: 'cta-home-proof-about',
+    cardVariant: 'dark',
   },
   {
     id: 'proof-spomove',
@@ -223,6 +188,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
     cta: '사례 보기',
     href: '/spokedu/records',
     trackLabel: 'cta-home-proof-records',
+    cardVariant: 'image',
   },
   {
     id: 'proof-rhythm',
@@ -233,6 +199,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
     cta: '사례 보기',
     href: '/spokedu/records',
     trackLabel: 'cta-home-proof-records',
+    cardVariant: 'glass',
   },
   {
     id: 'proof-oneday',
@@ -243,6 +210,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
     cta: '사례 보기',
     href: '/spokedu/records',
     trackLabel: 'cta-home-proof-records',
+    cardVariant: 'image',
   },
   {
     id: 'proof-camp',
@@ -253,6 +221,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
     cta: '캠프 보기',
     href: '/spokedu/programs/camp',
     trackLabel: 'cta-home-proof-camp',
+    cardVariant: 'glass',
   },
   {
     id: 'proof-booth',
@@ -263,6 +232,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
     cta: '현장기록 보기',
     href: '/spokedu/records',
     trackLabel: 'cta-home-proof-records',
+    cardVariant: 'dark',
   },
 ];
 
@@ -279,6 +249,7 @@ export type HomeSignatureProgram = {
   href: string;
   trackLabel: string;
   featured?: boolean;
+  cardVariant?: 'image' | 'gradient' | 'dark';
 };
 
 export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
@@ -293,6 +264,7 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     cta: 'SPOMOVE 보기',
     href: '/spokedu/programs/spomove',
     trackLabel: 'cta-home-program-spomove',
+    cardVariant: 'gradient',
   },
   {
     id: 'paps',
@@ -304,6 +276,7 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     cta: 'PAPS 보기',
     href: '/spokedu/programs/paps',
     trackLabel: 'cta-home-program-paps',
+    cardVariant: 'image',
   },
   {
     id: 'play',
@@ -315,6 +288,7 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     cta: '수업 문의',
     href: '/spokedu/contact',
     trackLabel: 'cta-home-program-play',
+    cardVariant: 'image',
   },
   {
     id: 'oneday',
@@ -326,6 +300,7 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     cta: '원데이 보기',
     href: '/spokedu/programs/oneday-event',
     trackLabel: 'cta-home-program-event',
+    cardVariant: 'dark',
   },
   {
     id: 'camp',
@@ -337,6 +312,7 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     cta: '캠프 보기',
     href: '/spokedu/programs/camp',
     trackLabel: 'cta-home-program-camp',
+    cardVariant: 'image',
   },
   {
     id: 'curriculum',
@@ -348,5 +324,6 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     cta: '커리큘럼 문의',
     href: '/spokedu/curriculum',
     trackLabel: 'cta-home-program-curriculum',
+    cardVariant: 'gradient',
   },
 ];

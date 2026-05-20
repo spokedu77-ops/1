@@ -73,21 +73,21 @@ const FLOW = [
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
 
 export const metadata = {
-  title: 'SPOKEDU PRO — 체육 강사의 수업 준비 플랫폼',
+  title: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼',
   description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 도구. 14일 무료 체험으로 시작하세요.',
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website' as const,
     url: `${SITE_URL}/spokedu-master/landing`,
-    siteName: 'SPOKEDU PRO',
-    title: 'SPOKEDU PRO — 체육 강사의 수업 준비 플랫폼',
+    siteName: 'SPOKEDU MASTER',
+    title: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼',
     description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 도구. 14일 무료 체험으로 시작하세요.',
     locale: 'ko_KR',
-    images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU PRO — 체육 강사의 수업 준비 플랫폼' }],
+    images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼' }],
   },
   twitter: {
     card: 'summary_large_image' as const,
-    title: 'SPOKEDU PRO — 체육 강사의 수업 준비 플랫폼',
+    title: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼',
     description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 도구. 14일 무료 체험으로 시작하세요.',
     images: [`${SITE_URL}/api/spokedu-master/og`],
   },
@@ -100,7 +100,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 flex items-center justify-between border-b px-[22px] py-4 sm:px-10" style={{ background: 'rgba(7,7,12,0.92)', backdropFilter: 'blur(20px)', borderColor: 'var(--spm-br2)' }}>
         <div className="flex items-baseline gap-2">
           <span className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
-          <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>PRO</span>
+          <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/spokedu-master/dashboard" className="hidden h-9 items-center rounded-full px-4 text-[12px] font-black sm:flex" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
@@ -119,7 +119,7 @@ export default function LandingPage() {
         </div>
         <div className="relative mx-auto max-w-[780px]">
           <span className="mb-4 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em]" style={{ background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
-            SPOKEDU PRO — 14일 무료 체험
+            SPOKEDU MASTER — 14일 무료 체험
           </span>
           <h1 className="mt-4 text-[42px] font-black leading-[1.1] md:text-[64px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>
             수업 준비는 쉽게,<br />수업은 더 몰입감 있게
@@ -265,7 +265,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-[960px]">
           <div className="mb-8 flex items-baseline gap-2">
             <span className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
-            <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>PRO</span>
+            <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
           </div>
           <div className="mb-8 grid gap-x-8 gap-y-2 sm:grid-cols-[auto_1fr]">
             <p className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>사업자 정보</p>

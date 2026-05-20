@@ -25,13 +25,14 @@ import {
   getBundleTitleFromCompositeKey,
 } from '../lib/v2BundleResolve';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
-import { SESSION_TYPE_OPTIONS } from '../lib/sessionTypeCategory';
+import { isCenterSessionType, SESSION_TYPE_OPTIONS } from '../lib/sessionTypeCategory';
 
 const CREATE_TYPE_ICONS: Record<(typeof SESSION_TYPE_OPTIONS)[number]['value'], string> = {
   one_day_private: '🎓',
   regular_private: '🏠',
   regular_center: '🏢',
   one_day_center: '🎉',
+  special_lecture: '⭐',
 };
 
 type DayOption = { label: string; value: number };
@@ -169,7 +170,7 @@ function ClassListPageV2Content() {
         fee_center_assist: selectedTeacher.fee_center_assist ?? null,
       }, tierFeeMap);
 
-      if (clsType === 'regular_center' || clsType === 'one_day_center') return fees.fee_center_main;
+      if (isCenterSessionType(clsType)) return fees.fee_center_main;
       return fees.fee_private;
     },
     [teachers, tierFeeMap],

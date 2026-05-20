@@ -113,7 +113,7 @@ export default function SubscriptionPage() {
       return {
         eyebrow: '구독이 정상 적용 중입니다',
         title: `${planLabel} 플랜으로 수업 준비 흐름을 유지하고 있어요.`,
-        body: '라이브러리, SPOMOVE, 설명 도구가 하나의 수업 루프로 이어지도록 계속 다듬고 있습니다.',
+        body: '라이브러리, SPOMOVE, 설명 도구가 하나의 수업 루프로 이어집니다.',
       };
     }
 
@@ -273,7 +273,7 @@ export default function SubscriptionPage() {
                   </a>
                 </div>
                 <p className="mt-3 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                  운영 초기에는 결제 변경과 취소를 메일 기반으로 안전하게 처리합니다. 자동 포털은 결제 안정화 이후 연결합니다.
+                  결제 변경과 구독 취소는 이메일로 안전하게 처리합니다.
                 </p>
               </section>
 

@@ -76,6 +76,9 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
             <Link href="/spokedu-master/payment?plan=team" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--spm-grn)' }}>
               Center 플랜 (강사 3명) — 79,000원/월
             </Link>
+            <Link href="/spokedu-master/payment" className="flex h-10 w-full items-center justify-center rounded-[12px] text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+              이미 구독 중이신가요? 이메일로 로그인
+            </Link>
           </div>
         </div>
       </div>

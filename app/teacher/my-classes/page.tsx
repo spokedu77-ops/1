@@ -15,6 +15,7 @@ import {
   FEEDBACK_TEXT_FIELD_KEYS,
   isFieldValid,
 } from '@/app/lib/feedbackValidation';
+import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
@@ -259,7 +260,7 @@ function MyClassesContent() {
 
     const urls = Array.isArray(session.file_url) ? session.file_url : [];
     const isCenterSession =
-      session.session_type === 'regular_center' || session.session_type === 'one_day_center';
+      isCenterSessionType(session.session_type);
     const centerUrlsForModal =
       isCenterSession && urls.length > 1 ? [urls[urls.length - 1]!] : urls;
 
@@ -305,10 +306,7 @@ function MyClassesContent() {
       return toast.error('수업일이 아직 지나지 않았습니다. 수업일 이후에 완료 처리해 주세요.');
     }
     
-    // 센터 수업: 파일만 체크 (regular_center, one_day_center)
-    const isCenterType =
-      selectedEvent.session_type === 'regular_center' ||
-      selectedEvent.session_type === 'one_day_center';
+    const isCenterType = isCenterSessionType(selectedEvent.session_type);
 
     if (isCenterType) {
       if (fileUrls.length === 0) {
@@ -587,8 +585,7 @@ function MyClassesContent() {
                   ? (session.feedback_fields || parseTemplateToFields(session.students_text || ''))
                   : {};
               const isCenterType =
-                session.session_type === 'regular_center' ||
-                session.session_type === 'one_day_center';
+                isCenterSessionType(session.session_type);
               const hasContent = isCenterType
                 ? (Array.isArray(session.file_url) ? session.file_url.length > 0 : false)
                 : isFieldValid(feedbackFields.main_activity) &&
@@ -677,7 +674,7 @@ function MyClassesContent() {
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 text-left bg-slate-50/30">
               {/* 센터 수업: 파일 업로드만 */}
-              {(selectedEvent.session_type === 'regular_center' || selectedEvent.session_type === 'one_day_center') ? (
+              {isCenterSessionType(selectedEvent.session_type) ? (
                 <div className="space-y-6">
                   <div className="space-y-4 p-6 bg-blue-50/50 rounded-[32px] border border-blue-100">
                     <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest">

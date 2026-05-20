@@ -1,8 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { CENTER_SESSION_TYPE_VALUES } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 import type { FeedbackFields } from '@/app/lib/feedbackValidation';
 
 export const CENTER_SESSION_FILES_BUCKET = 'session-files';
-const CENTER_TYPES = new Set(['regular_center', 'one_day_center']);
+const CENTER_TYPES = new Set<string>(CENTER_SESSION_TYPE_VALUES);
 
 /** NEXT_PUBLIC_SUPABASE_URL이 커스텀 도메인이어도 DB의 file_url은 projectref.supabase.co일 수 있음 → 동일 프로젝트면 허용 */
 function getSupabaseProjectRefFromEnv(): string | null {

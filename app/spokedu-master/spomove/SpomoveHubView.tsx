@@ -188,7 +188,6 @@ function IntentSection({
           <div>
             <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">{meta.badge}</p>
             <h2 className="mt-1 text-xl font-black text-white">{meta.title}</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-400">{meta.caption}</p>
           </div>
         </div>
         {!firstLocked ? (
@@ -234,27 +233,22 @@ function LaunchModeCard({
   href,
   icon: Icon,
   title,
-  caption,
   tone,
 }: {
   href: string;
   icon: LucideIcon;
   title: string;
-  caption: string;
   tone: string;
 }) {
   return (
     <Link
       href={href}
-      className="flex min-h-[120px] flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.052] p-5 transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
+      className="flex min-h-[100px] flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.052] p-5 transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
     >
       <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `${tone}18`, color: tone }}>
         <Icon className="h-5 w-5" />
       </span>
-      <span>
-        <strong className="block text-base font-black text-white">{title}</strong>
-        <span className="mt-1 block text-sm leading-6 text-slate-400">{caption}</span>
-      </span>
+      <strong className="block text-base font-black text-white">{title}</strong>
     </Link>
   );
 }
@@ -312,9 +306,6 @@ export default function SpomoveHubView() {
                   <br />
                   움직임 몰입 엔진.
                 </h1>
-                <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                  SPOMOVE는 라이브러리 수업을 큰 화면 반응 활동으로 확장합니다. 수업 도입, 중간 전환, 마무리까지 학생들이 화면을 보고 바로 움직이게 만듭니다.
-                </p>
               </div>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -352,27 +343,9 @@ export default function SpomoveHubView() {
           </div>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
-          <LaunchModeCard
-            href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`}
-            icon={MonitorPlay}
-            title="큰 화면"
-            caption="프로젝터, TV, 전자칠판에 띄워 전체 참여를 만듭니다."
-            tone="#818cf8"
-          />
-          <LaunchModeCard
-            href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=mobile`}
-            icon={Smartphone}
-            title="모바일"
-            caption="강사 폰이나 태블릿에서 빠르게 반응 신호를 실행합니다."
-            tone="#10b981"
-          />
-          <LaunchModeCard
-            href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=class`}
-            icon={Maximize}
-            title="Class Mode"
-            caption="수업안과 연결된 흐름에서 화면 활동을 바로 이어갑니다."
-            tone="#f59e0b"
-          />
+          <LaunchModeCard href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} icon={MonitorPlay} title="큰 화면" tone="#818cf8" />
+          <LaunchModeCard href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=mobile`} icon={Smartphone} title="모바일" tone="#10b981" />
+          <LaunchModeCard href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=class`} icon={Maximize} title="Class Mode" tone="#f59e0b" />
         </div>
       </section>
 
@@ -460,14 +433,6 @@ export default function SpomoveHubView() {
         </div>
 
         <aside className="space-y-6">
-          <section className="rounded-3xl border border-emerald-300/18 bg-emerald-400/10 p-5">
-            <MonitorPlay className="h-6 w-6 text-emerald-200" />
-            <h2 className="mt-3 text-lg font-black text-white">왜 독립 탭이어야 하나요?</h2>
-            <p className="mt-2 text-sm leading-7 text-emerald-50/80">
-              SPOMOVE는 라이브러리의 부가 기능이 아니라 SPOKEDU MASTER의 차별화 엔진입니다. 수업 자료를 보는 앱에서 학생들이 움직이는 수업 경험으로 넘어가게 만듭니다.
-            </p>
-          </section>
-
           <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -490,7 +455,7 @@ export default function SpomoveHubView() {
                 <Link href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                   <span>
                     <strong className="block text-sm font-black text-white">첫 SPOMOVE를 실행해보세요</strong>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">실행 기록은 이후 설명과 리포트의 근거가 됩니다.</span>
+                    <span className="mt-1 block text-xs font-semibold text-slate-500">드릴을 선택해 첫 세션을 시작하세요</span>
                   </span>
                   <ChevronRight className="h-5 w-5 text-slate-500" />
                 </Link>

@@ -35,6 +35,10 @@ import {
   displayNameForDownload,
   alignCenterDocumentNamesWithUrls,
 } from '@/app/lib/feedbackValidation';
+import {
+  CENTER_SESSION_TYPE_VALUES,
+  isCenterSessionType,
+} from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 
 interface Session {
   id: string;
@@ -45,7 +49,13 @@ interface Session {
   students_text: string;
   photo_url: string[];
   file_url: string[];
-  session_type: 'regular_center' | 'regular_private' | 'one_day' | 'one_day_center' | 'one_day_private';
+  session_type:
+    | 'regular_center'
+    | 'regular_private'
+    | 'one_day'
+    | 'one_day_center'
+    | 'one_day_private'
+    | 'special_lecture';
   created_by: string;
   memo?: string | null;
   feedback_fields?: FeedbackFields;
@@ -150,7 +160,7 @@ export default function MasterQCPage() {
 
 /** 피드백 검수: 과외(개인/원데이) vs 센터 구분 — 수업안 조회와 별도 */
 const FEEDBACK_SESSION_TYPES_PRIVATE = ['one_day', 'one_day_private', 'regular_private'] as const satisfies readonly Session['session_type'][];
-const FEEDBACK_SESSION_TYPES_CENTER = ['regular_center', 'one_day_center'] as const satisfies readonly Session['session_type'][];
+const FEEDBACK_SESSION_TYPES_CENTER = [...CENTER_SESSION_TYPE_VALUES] as const satisfies readonly Session['session_type'][];
 
 /** lesson-plans-sessions API와 동일한 KST 주간(월 00:00 ~ 일 23:59) UTC 구간 */
 function getKstWeekRangeFromYmd(dateYmd: string): { start: Date; end: Date } {
@@ -423,6 +433,7 @@ function FeedbackReviewTab({
     switch (sessionType) {
       case 'regular_center':
       case 'one_day_center':
+      case 'special_lecture':
         return '센터';
       case 'one_day':
         return '원데이';
@@ -437,6 +448,7 @@ function FeedbackReviewTab({
     switch (sessionType) {
       case 'regular_center':
       case 'one_day_center':
+      case 'special_lecture':
         return '센터 수업';
       case 'one_day':
         return '원데이 수업';
@@ -554,7 +566,7 @@ function FeedbackReviewTab({
           if (c) row = { ...row, short_code: c };
           const urls = Array.isArray(row.file_url) ? row.file_url : [];
           const isCenter =
-            row.session_type === 'regular_center' || row.session_type === 'one_day_center';
+            isCenterSessionType(row.session_type);
           if (isCenter && urls.length > 0) {
             const ff = (row.feedback_fields || {}) as FeedbackFields;
             row = {
@@ -676,8 +688,7 @@ function FeedbackReviewTab({
       return { isDuplicate: false };
     }
     if (
-      currentSession.session_type === 'regular_center' ||
-      currentSession.session_type === 'one_day_center'
+      isCenterSessionType(currentSession.session_type)
     ) {
       return { isDuplicate: false };
     }
@@ -721,7 +732,7 @@ function FeedbackReviewTab({
     setSelectedEvent(session);
     const urls = Array.isArray(session.file_url) ? session.file_url : [];
     const isCenter =
-      session.session_type === 'regular_center' || session.session_type === 'one_day_center';
+      isCenterSessionType(session.session_type);
     let fields: FeedbackFields = session.feedback_fields || parseTemplateToFields(session.students_text || '');
     if (isCenter && urls.length > 0) {
       fields = {
@@ -1087,7 +1098,7 @@ function FeedbackReviewTab({
 
             <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/30">
               <div className="flex gap-2">
-                <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${(selectedEvent.session_type === 'regular_center' || selectedEvent.session_type === 'one_day_center') ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>
+                <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${isCenterSessionType(selectedEvent.session_type) ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>
                   {getSessionTypeBadgeLabel(selectedEvent.session_type)}
                 </span>
                 {selectedEvent.status === 'postponed' && (
@@ -1121,8 +1132,7 @@ function FeedbackReviewTab({
 
               {(() => {
                   const centerCondition =
-                    selectedEvent.session_type === 'regular_center' ||
-                    selectedEvent.session_type === 'one_day_center';
+                    isCenterSessionType(selectedEvent.session_type);
                   return centerCondition ? (
                     <div className="bg-white p-5 rounded-[24px] border border-indigo-100 space-y-3">
                   <p className="text-[10px] font-black text-indigo-400 uppercase">파일</p>
@@ -1151,8 +1161,7 @@ function FeedbackReviewTab({
 
               {(() => {
                 const centerCondition =
-                  selectedEvent.session_type === 'regular_center' ||
-                  selectedEvent.session_type === 'one_day_center';
+                  isCenterSessionType(selectedEvent.session_type);
                 return !centerCondition ? (
                 <div className="space-y-3">
                   <p className="text-[10px] font-black text-slate-400 uppercase">사진</p>
@@ -1172,8 +1181,7 @@ function FeedbackReviewTab({
 
               {(() => {
                 const centerCondition =
-                  selectedEvent.session_type === 'regular_center' ||
-                  selectedEvent.session_type === 'one_day_center';
+                  isCenterSessionType(selectedEvent.session_type);
                 return centerCondition ? (
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-slate-400 uppercase block ml-1">메모</label>

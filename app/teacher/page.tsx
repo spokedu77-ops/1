@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DOMPurify from 'isomorphic-dompurify';
 import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package, Receipt, Calendar } from 'lucide-react';
+import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
@@ -371,7 +372,7 @@ export default function TeacherMainPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-slate-100 text-slate-600">
-                        {(s.session_type === 'regular_center' || s.session_type === 'one_day_center') ? '센터' : '방문'}
+                        {isCenterSessionType(s.session_type) ? '센터' : '방문'}
                       </span>
                       {isAssist ? (
                         <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-amber-100 text-amber-800">보조</span>

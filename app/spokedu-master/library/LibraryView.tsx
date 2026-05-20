@@ -6,7 +6,6 @@ import {
   Check,
   ChevronRight,
   Clipboard,
-  Clock3,
   FileText,
   Lock,
   MapPin,
@@ -14,13 +13,10 @@ import {
   Package,
   Play,
   Search,
-  ShieldCheck,
   Sparkles,
-  Users,
   X,
   Zap,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
@@ -122,14 +118,6 @@ function SectionTitle({ eyebrow, title, actionHref }: { eyebrow: string; title: 
   );
 }
 
-function MetaPill({ icon: Icon, children }: { icon: LucideIcon; children: string }) {
-  return (
-    <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 text-xs font-bold text-slate-300">
-      <Icon className="h-3.5 w-3.5" />
-      {children}
-    </span>
-  );
-}
 
 function ProgramCard({
   program,
@@ -171,27 +159,12 @@ function ProgramCard({
         ) : null}
       </button>
 
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-3 flex flex-wrap gap-2">
-          <MetaPill icon={Users}>{program.grade}</MetaPill>
-          <MetaPill icon={Clock3}>{`${program.duration}분`}</MetaPill>
-          <MetaPill icon={MapPin}>{program.space}</MetaPill>
-        </div>
-
-        <button type="button" onClick={onPreview} className="text-left">
-          <h3 className="line-clamp-2 text-lg font-black leading-snug text-white">{program.title}</h3>
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">{program.description}</p>
+      <div className="flex flex-1 flex-col p-4">
+        <button type="button" onClick={onPreview} className="flex-1 text-left">
+          <h3 className="line-clamp-2 text-base font-black leading-snug text-white">{program.title}</h3>
         </button>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {(program.tags ?? []).slice(0, 3).map((tag) => (
-            <span key={tag} className="rounded-full bg-white/[0.055] px-2.5 py-1 text-[11px] font-semibold text-slate-400">
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        <div className="mt-auto flex items-center justify-between gap-3 pt-5">
+        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
           <button
             type="button"
             onClick={onFavorite}
@@ -232,9 +205,6 @@ function FeaturedProgram({ program, drill, onPreview }: { program: Program; dril
               이번 주 추천 수업안
             </span>
             <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl">{program.title}</h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-              {program.lessonDetail?.objective || program.description}
-            </p>
           </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-extrabold text-slate-950">
@@ -299,7 +269,6 @@ function ProgramModal({
   const parentCopy = getParentCopy(program);
   const rules = detail?.rules?.length ? detail.rules : program.steps;
   const setupNotes = detail?.setupNotes?.length ? detail.setupNotes : [`공간: ${program.space}`, `준비물: ${program.equipment.join(', ') || '현장 기본 도구'}`];
-  const tips = [...(detail?.fieldTips ?? []), ...(detail?.safetyNotes ?? [])].slice(0, 5);
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -379,12 +348,6 @@ function ProgramModal({
           </button>
         </div>
 
-        <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-          <h3 className="text-base font-black text-white">수업 목표</h3>
-          <p className="mt-3 text-sm leading-7 text-slate-300">{detail?.objective || program.description}</p>
-          {detail?.developmentFocus ? <p className="mt-3 text-sm font-bold text-emerald-200">발달 초점: {detail.developmentFocus}</p> : null}
-        </section>
-
         <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
             <h3 className="flex items-center gap-2 text-base font-black text-white">
@@ -435,21 +398,6 @@ function ProgramModal({
           <p className="mt-3 text-sm leading-7 text-indigo-100/80">
             {drill?.name ? `${drill.name}과 연결하면 ${getSpomoveUseLabel(program)} 흐름으로 수업 몰입을 만들 수 있습니다.` : `${getSpomoveUseLabel(program)} 용도로 큰 화면 활동을 연결합니다.`}
           </p>
-        </section>
-
-        <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-          <h3 className="flex items-center gap-2 text-base font-black text-white">
-            <ShieldCheck className="h-4 w-4 text-emerald-200" />
-            현장 팁
-          </h3>
-          <ul className="mt-4 space-y-2">
-            {(tips.length ? tips : ['충돌 위험이 있는 구간은 교구 간격을 넓히고, 시범 후 난이도를 단계적으로 올립니다.']).map((tip) => (
-              <li key={tip} className="flex gap-2 text-sm leading-6 text-slate-300">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300" />
-                {tip}
-              </li>
-            ))}
-          </ul>
         </section>
 
         <section className="rounded-3xl border border-emerald-300/18 bg-emerald-400/10 p-5">
@@ -510,10 +458,7 @@ export default function LibraryView() {
         <header className="flex flex-col gap-5">
           <div>
             <p className="text-sm font-semibold text-slate-400">MASTER LIBRARY</p>
-            <h1 className="mt-1 text-3xl font-black text-white sm:text-4xl">수업을 고르는 화면이 아니라, 바로 실행하는 수업 패키지입니다.</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              센터 커리큘럼 데이터를 가져오되, 구독자 화면에서는 사진, 목표, 준비물, 공간 세팅, SPOMOVE, 설명 문구까지 한 번에 이어집니다.
-            </p>
+            <h1 className="mt-1 text-3xl font-black text-white sm:text-4xl">수업 패키지</h1>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
@@ -522,7 +467,7 @@ export default function LibraryView() {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="프로그램명, 도구, 공간, 발달 초점 검색"
+                placeholder="수업 검색"
                 className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.055] pl-12 pr-4 text-sm font-semibold text-white outline-none placeholder:text-slate-500 focus:border-indigo-300/45"
               />
             </label>
@@ -555,17 +500,14 @@ export default function LibraryView() {
           <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
             <p className="text-xs font-bold text-slate-500">전체 프로그램</p>
             <p className="mt-2 text-3xl font-black text-white">{programs.length}</p>
-            <p className="mt-1 text-xs font-bold text-emerald-300">admin/curriculum 연동</p>
           </div>
           <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
             <p className="text-xs font-bold text-slate-500">SPOMOVE 연결</p>
             <p className="mt-2 text-3xl font-black text-white">{programs.filter(hasSpomoveLink).length}</p>
-            <p className="mt-1 text-xs font-bold text-indigo-300">admin/spomove/training 실행</p>
           </div>
           <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-            <p className="text-xs font-bold text-slate-500">바로 설명 가능</p>
+            <p className="text-xs font-bold text-slate-500">설명 문구 준비</p>
             <p className="mt-2 text-3xl font-black text-white">{programs.filter((program) => Boolean(program.lessonDetail?.parentNote || program.description)).length}</p>
-            <p className="mt-1 text-xs font-bold text-emerald-300">수업 후 문구 복사</p>
           </div>
         </section>
 

@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '이용약관 — SPOKEDU PRO',
+  title: '이용약관 — SPOKEDU MASTER',
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -32,7 +32,7 @@ export default function TermsPage() {
         <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 5월 15일</p>
 
         <Section title="제1조 (목적)">
-          <p>이 약관은 SPOKEDU(이하 "회사")가 운영하는 SPOKEDU PRO 서비스(이하 "서비스")의 이용 조건 및 절차, 회사와 이용자 간의 권리·의무 및 책임 사항을 규정함을 목적으로 합니다.</p>
+          <p>이 약관은 SPOKEDU(이하 "회사")가 운영하는 SPOKEDU MASTER 서비스(이하 "서비스")의 이용 조건 및 절차, 회사와 이용자 간의 권리·의무 및 책임 사항을 규정함을 목적으로 합니다.</p>
         </Section>
 
         <Section title="제2조 (정의)">
