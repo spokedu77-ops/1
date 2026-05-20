@@ -1,24 +1,24 @@
 'use client';
 
-import { Suspense, lazy, useCallback, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useEffect } from 'react';
 import type { ReactTrainCompleteStats } from '@/app/admin/spomove/training/_player/components/VisualReactionTraining';
 
 const VisualReactionTraining = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/VisualReactionTraining').then((m) => ({
-    default: m.VisualReactionTraining,
-  }))
+  import('@/app/admin/spomove/training/_player/components/VisualReactionTraining').then((module) => ({
+    default: module.VisualReactionTraining,
+  })),
 );
 
 const DiagonalReactionTraining = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/DiagonalReactionTraining').then((m) => ({
-    default: m.DiagonalReactionTraining,
-  }))
+  import('@/app/admin/spomove/training/_player/components/DiagonalReactionTraining').then((module) => ({
+    default: module.DiagonalReactionTraining,
+  })),
 );
 
 const MemoryGame = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/MemoryGame').then((m) => ({
-    default: m.MemoryGame,
-  }))
+  import('@/app/admin/spomove/training/_player/components/MemoryGame').then((module) => ({
+    default: module.MemoryGame,
+  })),
 );
 
 export type EngineCompletePayload = {
@@ -55,19 +55,19 @@ export function EngineRouter({ mode, level, onComplete, onExit }: Props) {
     (stats: ReactTrainCompleteStats) => {
       onComplete({ engineMode: mode, engineLevel: level, stims: stats.stims, maxCombo: stats.maxCombo });
     },
-    [mode, level, onComplete]
+    [level, mode, onComplete],
   );
 
   const handleDiagonalComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
       onComplete({ engineMode: mode, engineLevel: level, stims: stats.stims, maxCombo: stats.maxCombo });
     },
-    [mode, level, onComplete]
+    [level, mode, onComplete],
   );
 
   const handleMemoryComplete = useCallback(() => {
     onComplete({ engineMode: mode, engineLevel: level });
-  }, [mode, level, onComplete]);
+  }, [level, mode, onComplete]);
 
   if (mode === 'reactTrain' || mode === 'flow' || mode === 'flash' || mode === 'pattern') {
     const variant = mode === 'reactTrain' ? resolveVariant(level) : (mode as 'flow' | 'flash' | 'pattern');
@@ -119,5 +119,6 @@ function UnknownModeHandler({ mode, onExit }: Pick<Props, 'mode' | 'onExit'>) {
   useEffect(() => {
     onExit();
   }, [onExit]);
-  return <div className="fixed inset-0 flex items-center justify-center bg-black text-white/40 text-[13px] font-semibold">알 수 없는 훈련 모드: {mode}</div>;
+
+  return <div className="fixed inset-0 flex items-center justify-center bg-black text-[13px] font-semibold text-white/40">지원하지 않는 훈련 모드: {mode}</div>;
 }

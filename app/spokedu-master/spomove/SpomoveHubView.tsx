@@ -1,146 +1,227 @@
 'use client';
 
-import Link from 'next/link';
 import {
+  Activity,
   Brain,
   ChevronRight,
+  Clock3,
+  Gamepad2,
   Goal,
+  History,
+  Lock,
   Maximize,
   MonitorPlay,
   Play,
   Smartphone,
   Sparkles,
   TimerReset,
+  Trophy,
   Zap,
-  type LucideIcon,
 } from 'lucide-react';
-import type { Drill } from '../types';
+import type { LucideIcon } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo } from 'react';
+
 import { formatReactionTime } from '../lib/utils';
 import { useIsPro, useMasterStore, useStats } from '../store';
+import type { Drill, Program } from '../types';
 
-function getDrillIntent(drill: Drill) {
-  const text = `${drill.name} ${drill.category}`;
-  if (/기억|Memory|인지|집중|pattern|spatial/i.test(text)) return '기억 · 집중';
-  if (/방향|전환|Diagonal|flow/i.test(text)) return '방향 전환';
-  if (/속도|스피드|반응|Visual|Reaction|순발/i.test(text)) return '순발 반응';
-  if (/팀|협동|릴레이/i.test(text)) return '협동 반응';
-  return '몰입 전환';
-}
+type IntentKey = 'warmup' | 'reaction' | 'focus' | 'finish';
 
-function getDrillsByIntent(drills: Drill[], intent: string) {
-  const matcher: Record<string, RegExp> = {
-    warmup: /반응|속도|스피드|Visual|Reaction|순발|SR/i,
-    transition: /방향|전환|Diagonal|flow|공간/i,
-    finish: /기억|Memory|인지|집중|pattern|spatial|리듬|RC|SM/i,
-  };
-  const re = matcher[intent] ?? /./;
-  const matched = drills.filter((drill) => re.test(`${drill.id} ${drill.name} ${drill.category} ${drill.engine?.mode ?? ''}`));
-  return (matched.length ? matched : drills).slice(0, 3);
-}
+const INTENT_META: Record<
+  IntentKey,
+  {
+    title: string;
+    caption: string;
+    badge: string;
+    tone: string;
+    icon: LucideIcon;
+    matcher: RegExp;
+  }
+> = {
+  warmup: {
+    title: '도입 3분 집중 전환',
+    caption: '수업 시작 전 시선과 움직임을 한 번에 모읍니다.',
+    badge: 'Warm-up',
+    tone: '#818cf8',
+    icon: TimerReset,
+    matcher: /warm|start|도입|집중|시선|신호|sr|visual|reaction|반응|속도|스피드|순발/i,
+  },
+  reaction: {
+    title: '수업 중 반응 전환',
+    caption: '흐트러진 분위기를 방향, 신호, 순발 활동으로 다시 끌어올립니다.',
+    badge: 'Reaction',
+    tone: '#10b981',
+    icon: Goal,
+    matcher: /direction|flow|diagonal|공간|방향|전환|민첩|거리|펜싱|agility/i,
+  },
+  focus: {
+    title: '기억·판단 챌린지',
+    caption: '규칙 이해, 순간 판단, 패턴 기억을 짧고 선명하게 훈련합니다.',
+    badge: 'Focus',
+    tone: '#f59e0b',
+    icon: Brain,
+    matcher: /memory|pattern|spatial|기억|판단|패턴|집중|인지|sm|rc/i,
+  },
+  finish: {
+    title: '마무리 참여 게임',
+    caption: '마지막까지 아이들의 참여감을 유지하고 수업을 기분 좋게 닫습니다.',
+    badge: 'Finish',
+    tone: '#ec4899',
+    icon: Trophy,
+    matcher: /finish|ending|마무리|정리|협동|리듬|게임|team/i,
+  },
+};
 
-const DRILL_GRADIENTS = [
-  'linear-gradient(145deg,#111827 0%,#312e81 52%,#4f46e5 100%)',
-  'linear-gradient(145deg,#052e16 0%,#064e3b 52%,#059669 100%)',
-  'linear-gradient(145deg,#150b2e 0%,#1e1b4b 52%,#7c3aed 100%)',
-  'linear-gradient(145deg,#3f0000 0%,#7f1d1d 52%,#be123c 100%)',
+const CARD_GRADIENTS = [
+  'linear-gradient(145deg,#0f172a 0%,#312e81 48%,#4f46e5 100%)',
+  'linear-gradient(145deg,#052e16 0%,#064e3b 50%,#059669 100%)',
+  'linear-gradient(145deg,#1f1338 0%,#4c1d95 50%,#7c3aed 100%)',
+  'linear-gradient(145deg,#3f0b1f 0%,#831843 48%,#db2777 100%)',
 ];
 
-function DrillCard({ drill, index, isLocked }: { drill: Drill; index: number; isLocked: boolean }) {
+function getDrillText(drill: Drill) {
+  return `${drill.id} ${drill.name} ${drill.category} ${drill.engine?.mode ?? ''}`;
+}
+
+function getDrillIntent(drill: Drill): IntentKey {
+  const text = getDrillText(drill);
+  const matched = (Object.keys(INTENT_META) as IntentKey[]).find((key) => INTENT_META[key].matcher.test(text));
+  return matched ?? 'warmup';
+}
+
+function getIntentLabel(drill: Drill) {
+  return INTENT_META[getDrillIntent(drill)].title;
+}
+
+function getDrillsByIntent(drills: Drill[], intent: IntentKey, limit = 3) {
+  const matched = drills.filter((drill) => INTENT_META[intent].matcher.test(getDrillText(drill)));
+  return (matched.length ? matched : drills).slice(0, limit);
+}
+
+function getLinkedPrograms(drill: Drill, programs: Program[]) {
+  return programs
+    .filter((program) => program.lessonDetail?.relatedSpomoveIds?.includes(drill.id))
+    .slice(0, 3);
+}
+
+function DrillCard({
+  drill,
+  index,
+  isLocked,
+  linkedPrograms,
+}: {
+  drill: Drill;
+  index: number;
+  isLocked: boolean;
+  linkedPrograms: Program[];
+}) {
+  const intent = getDrillIntent(drill);
+  const meta = INTENT_META[intent];
+  const href = isLocked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`;
+
   return (
     <Link
-      href={isLocked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`}
-      className="relative flex min-h-[164px] flex-col justify-between overflow-hidden rounded-[18px] p-4 active:scale-[0.98]"
-      style={{ background: DRILL_GRADIENTS[index % DRILL_GRADIENTS.length], border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 14px 34px rgba(0,0,0,0.28)' }}
+      href={href}
+      className="group relative flex min-h-[240px] flex-col justify-between overflow-hidden rounded-3xl p-5 transition hover:-translate-y-0.5"
+      style={{ background: CARD_GRADIENTS[index % CARD_GRADIENTS.length], border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 70px rgba(0,0,0,0.28)' }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="grid h-10 w-10 place-items-center rounded-[13px]" style={{ background: 'rgba(255,255,255,0.13)' }}>
-          <Zap size={17} color="#fff" />
+      <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+      <div className="relative flex items-start justify-between gap-3">
+        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/14 text-white">
+          <Zap className="h-5 w-5" />
         </span>
-        <span className="rounded-full px-2.5 py-1 text-[9px] font-black text-white/62" style={{ background: 'rgba(0,0,0,0.32)' }}>
-          {drill.category}
+        <span className="rounded-full bg-black/30 px-3 py-1 text-[11px] font-black text-white/70">{meta.badge}</span>
+      </div>
+
+      <div className="relative">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-white/45">{drill.category}</p>
+        <h3 className="mt-2 line-clamp-2 text-2xl font-black leading-tight text-white">{drill.name}</h3>
+        <p className="mt-3 line-clamp-2 text-sm font-semibold leading-6 text-white/64">
+          {linkedPrograms.length > 0 ? `${linkedPrograms[0].title} 등 ${linkedPrograms.length}개 수업과 연결됩니다.` : getIntentLabel(drill)}
+        </p>
+      </div>
+
+      <div className="relative flex items-center justify-between gap-3">
+        <span className="inline-flex h-10 items-center gap-2 rounded-full bg-white/14 px-4 text-xs font-black text-white">
+          <MonitorPlay className="h-4 w-4" />
+          큰 화면 실행
+        </span>
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/16 transition group-hover:scale-105">
+          {isLocked ? <Lock className="h-4 w-4 text-white" /> : <Play className="h-4 w-4 fill-white text-white" />}
         </span>
       </div>
-      <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/45">{getDrillIntent(drill)}</p>
-        <h2 className="mt-1 text-[18px] font-black leading-tight text-white" style={{ fontFamily: 'var(--spm-font-display)', wordBreak: 'keep-all' }}>{drill.name}</h2>
-      </div>
-      <div className="absolute bottom-3 right-3 grid h-9 w-9 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.16)' }}>
-        <Play size={13} fill="#fff" color="#fff" />
-      </div>
+
       {isLocked ? (
-        <div className="absolute inset-0 flex items-center justify-center rounded-[18px] bg-black/62 backdrop-blur-[3px]">
-          <span className="rounded-[10px] px-3 py-1.5 text-[10px] font-black" style={{ background: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.28)', color: 'var(--spm-amb)' }}>PRO</span>
+        <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-black/65 backdrop-blur-[3px]">
+          <span className="rounded-2xl border border-amber-300/35 bg-amber-300/14 px-4 py-2 text-xs font-black text-amber-100">PRO 전용</span>
         </div>
       ) : null}
     </Link>
   );
 }
 
-function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="rounded-[14px] p-3 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-      <p className="text-[21px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: tone ?? 'var(--spm-t)' }}>{value}</p>
-      <p className="mt-1 text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-    </div>
-  );
-}
-
-function IntentRow({ id, title, caption, icon: Icon, tone, drills, isPro }: {
+function IntentSection({
+  id,
+  intent,
+  drills,
+  isPro,
+}: {
   id: string;
-  title: string;
-  caption: string;
-  icon: LucideIcon;
-  tone: string;
+  intent: IntentKey;
   drills: Drill[];
   isPro: boolean;
 }) {
-  if (!drills.length) return null;
-  const firstDrill = drills[0]!;
-  const firstLocked = firstDrill.isPro && !isPro;
+  if (drills.length === 0) return null;
+  const meta = INTENT_META[intent];
+  const Icon = meta.icon;
+  const first = drills[0];
+  const firstLocked = first.isPro && !isPro;
 
   return (
-    <section id={id} className="scroll-mt-4 overflow-hidden rounded-[20px]" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
-      <div className="flex items-center gap-3 p-4" style={{ borderBottom: '1px solid var(--spm-br)' }}>
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px]" style={{ background: `${tone}20`, border: `1px solid ${tone}28` }}>
-          <Icon size={19} color={tone} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[17px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{title}</h2>
-          <p className="mt-0.5 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{caption}</p>
+    <section id={id} className="scroll-mt-5 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.045]">
+      <div className="flex flex-col gap-4 border-b border-white/8 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-4">
+          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: `${meta.tone}20`, color: meta.tone }}>
+            <Icon className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">{meta.badge}</p>
+            <h2 className="mt-1 text-xl font-black text-white">{meta.title}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-400">{meta.caption}</p>
+          </div>
         </div>
         {!firstLocked ? (
           <Link
-            href={`/spokedu-master/spomove/session?drill=${firstDrill.id}&mode=projector`}
-            className="hidden h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[12px] font-black sm:flex"
-            style={{ background: `${tone}18`, color: tone, border: `1px solid ${tone}28` }}
+            href={`/spokedu-master/spomove/session?drill=${first.id}&mode=projector`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-black"
+            style={{ background: `${meta.tone}18`, color: meta.tone, border: `1px solid ${meta.tone}28` }}
           >
-            <Play size={12} fill={tone} /> 바로 실행
+            <Play className="h-4 w-4 fill-current" />
+            바로 실행
           </Link>
         ) : null}
       </div>
 
-      <div className="grid gap-2 p-4 md:grid-cols-3">
+      <div className="grid gap-3 p-5 md:grid-cols-3">
         {drills.map((drill) => {
           const locked = drill.isPro && !isPro;
           return (
             <Link
               key={`${id}-${drill.id}`}
               href={locked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`}
-              className="flex items-center gap-3 rounded-[15px] p-3.5 active:scale-[0.99]"
-              style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}
+              className="flex min-h-[92px] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.045] p-4 transition hover:bg-white/[0.075]"
             >
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px]" style={{ background: `${tone}18` }}>
-                <Zap size={17} color={tone} />
+              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: `${meta.tone}18`, color: meta.tone }}>
+                <Zap className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
-                <strong className="block truncate text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{drill.name}</strong>
-                <span className="mt-0.5 block text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-                  {locked ? 'PRO 필요' : getDrillIntent(drill)}
-                </span>
+                <strong className="line-clamp-1 text-sm font-black text-white">{drill.name}</strong>
+                <span className="mt-1 block text-xs font-semibold text-slate-500">{locked ? 'PRO 플랜 필요' : drill.category}</span>
               </span>
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full" style={{ background: `${tone}18` }}>
-                {locked ? <span className="text-[9px] font-black" style={{ color: tone }}>PRO</span> : <Play size={12} fill={tone} color={tone} />}
-              </div>
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: `${meta.tone}18`, color: meta.tone }}>
+                {locked ? <Lock className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 fill-current" />}
+              </span>
             </Link>
           );
         })}
@@ -149,167 +230,292 @@ function IntentRow({ id, title, caption, icon: Icon, tone, drills, isPro }: {
   );
 }
 
+function LaunchModeCard({
+  href,
+  icon: Icon,
+  title,
+  caption,
+  tone,
+}: {
+  href: string;
+  icon: LucideIcon;
+  title: string;
+  caption: string;
+  tone: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[120px] flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.052] p-5 transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
+    >
+      <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `${tone}18`, color: tone }}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <span>
+        <strong className="block text-base font-black text-white">{title}</strong>
+        <span className="mt-1 block text-sm leading-6 text-slate-400">{caption}</span>
+      </span>
+    </Link>
+  );
+}
+
+function Metric({ label, value, icon: Icon, tone }: { label: string; value: string; icon: LucideIcon; tone: string }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: `${tone}18`, color: tone }}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <p className="mt-4 text-2xl font-black text-white">{value}</p>
+      <p className="mt-1 text-xs font-bold text-slate-500">{label}</p>
+    </div>
+  );
+}
+
 export default function SpomoveHubView() {
   const isPro = useIsPro();
   const sessions = useMasterStore((state) => state.sessions);
   const drills = useMasterStore((state) => state.drills);
+  const programs = useMasterStore((state) => state.programs);
   const stats = useStats();
-  const recent = sessions.slice(0, 3);
-  const defaultDrillId = drills[0]?.id ?? 'SR-05';
 
-  const warmupDrills = getDrillsByIntent(drills, 'warmup');
-  const transitionDrills = getDrillsByIntent(drills, 'transition');
-  const finishDrills = getDrillsByIntent(drills, 'finish');
+  const defaultDrill = drills[0];
+  const defaultDrillId = defaultDrill?.id ?? 'SR-05';
+
+  const warmupDrills = useMemo(() => getDrillsByIntent(drills, 'warmup'), [drills]);
+  const reactionDrills = useMemo(() => getDrillsByIntent(drills, 'reaction'), [drills]);
+  const focusDrills = useMemo(() => getDrillsByIntent(drills, 'focus'), [drills]);
+  const finishDrills = useMemo(() => getDrillsByIntent(drills, 'finish'), [drills]);
+  const featuredDrills = useMemo(() => {
+    const proAware = isPro ? drills : drills.filter((drill) => !drill.isPro);
+    return (proAware.length ? proAware : drills).slice(0, 4);
+  }, [drills, isPro]);
+  const linkedProgramCount = useMemo(() => {
+    return programs.filter((program) => (program.lessonDetail?.relatedSpomoveIds?.length ?? 0) > 0).length;
+  }, [programs]);
+
+  const recent = sessions.slice(0, 3);
 
   return (
-    <div className="h-full overflow-y-auto pb-8" style={{ background: 'var(--spm-bg)' }}>
-      <header className="px-[18px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>screen movement engine</p>
-        <h1 className="mt-1 text-[34px] font-black md:text-[46px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>SPOMOVE</h1>
-        <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6 sm:text-[14px]" style={{ color: 'var(--spm-t2)' }}>
-          설치 없이 브라우저에서 실행하는 화면 기반 반응훈련입니다. 모바일은 개인 반응 측정, 빔·TV·태블릿은 수업 전체가 함께 보는 큰 화면 활동으로 전환됩니다.
-        </p>
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
+      <header className="grid gap-6 lg:grid-cols-[1fr_380px]">
+        <section className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/72">
+          <div className="relative min-h-[420px] p-6 sm:p-8 lg:p-10">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(99,102,241,0.45),transparent_32%),radial-gradient(circle_at_76%_28%,rgba(16,185,129,0.25),transparent_30%),linear-gradient(135deg,#020617,#0f172a_48%,#020617)]" />
+            <div className="relative flex h-full min-h-[340px] flex-col justify-between">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-indigo-100">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Screen Movement Engine
+                </span>
+                <h1 className="mt-6 max-w-3xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
+                  빔, TV, 태블릿에 켜는
+                  <br />
+                  움직임 몰입 엔진.
+                </h1>
+                <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+                  SPOMOVE는 라이브러리 수업을 큰 화면 반응 활동으로 확장합니다. 수업 도입, 중간 전환, 마무리까지 학생들이 화면을 보고 바로 움직이게 만듭니다.
+                </p>
+              </div>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-extrabold text-slate-950"
+                >
+                  <MonitorPlay className="h-4 w-4" />
+                  지금 큰 화면 실행
+                </Link>
+                <Link
+                  href="/spokedu-master/library"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/[0.07] px-5 text-sm font-bold text-white"
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  연결 수업 찾기
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <Metric label="실행 가능한 드릴" value={`${drills.length}`} icon={Zap} tone="#818cf8" />
+          <Metric label="라이브러리 연결 수업" value={`${linkedProgramCount}`} icon={Activity} tone="#10b981" />
+          <Metric label="누적 실행 세션" value={`${stats.totalSessions}`} icon={History} tone="#f59e0b" />
+        </aside>
       </header>
 
-      <div className="grid gap-7 px-[18px] sm:px-8 lg:grid-cols-[1fr_360px] lg:px-10">
-        <main className="space-y-6">
-          <section>
-            <Link
-              href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`}
-              className="flex min-h-[170px] items-center justify-between gap-4 overflow-hidden rounded-[24px] px-6 py-6 active:scale-[0.99] sm:px-8"
-              style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.96),rgba(139,92,246,0.82),rgba(236,72,153,0.62))', boxShadow: '0 24px 62px rgba(99,102,241,0.3)' }}
+      <section>
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">Launch Modes</p>
+            <h2 className="mt-1 text-xl font-black text-white">수업 환경에 맞춰 실행</h2>
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <LaunchModeCard
+            href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`}
+            icon={MonitorPlay}
+            title="큰 화면"
+            caption="프로젝터, TV, 전자칠판에 띄워 전체 참여를 만듭니다."
+            tone="#818cf8"
+          />
+          <LaunchModeCard
+            href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=mobile`}
+            icon={Smartphone}
+            title="모바일"
+            caption="강사 폰이나 태블릿에서 빠르게 반응 신호를 실행합니다."
+            tone="#10b981"
+          />
+          <LaunchModeCard
+            href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=class`}
+            icon={Maximize}
+            title="Class Mode"
+            caption="수업안과 연결된 흐름에서 화면 활동을 바로 이어갑니다."
+            tone="#f59e0b"
+          />
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">Featured</p>
+            <h2 className="mt-1 text-xl font-black text-white">오늘 바로 쓸 SPOMOVE</h2>
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {featuredDrills.map((drill, index) => (
+            <DrillCard
+              key={drill.id}
+              drill={drill}
+              index={index}
+              isLocked={drill.isPro && !isPro}
+              linkedPrograms={getLinkedPrograms(drill, programs)}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-4">
+        {(Object.keys(INTENT_META) as IntentKey[]).map((intent) => {
+          const meta = INTENT_META[intent];
+          const Icon = meta.icon;
+          return (
+            <a
+              key={intent}
+              href={`#${intent}`}
+              className="flex min-h-[116px] flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.045] p-5 transition hover:bg-white/[0.075]"
             >
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/55">quick start · projector mode</p>
-                <h2 className="mt-2 text-[30px] font-black leading-tight text-white sm:text-[40px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>지금 큰 화면으로 실행</h2>
-                <p className="mt-2 max-w-[560px] text-[13px] font-semibold leading-5 text-white/66">빔, TV, 태블릿에 띄우면 학생들이 신호를 보고 함께 움직입니다. 수업 전환, 워밍업, 마무리에 바로 씁니다.</p>
-              </div>
-              <span className="grid h-[62px] w-[62px] shrink-0 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                <Play size={25} fill="#fff" color="#fff" />
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: `${meta.tone}18`, color: meta.tone }}>
+                <Icon className="h-5 w-5" />
               </span>
-            </Link>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {[
-                { href: `?drill=${defaultDrillId}&mode=projector`, Icon: MonitorPlay, label: '큰 화면', color: '#818cf8' },
-                { href: `?drill=${defaultDrillId}&mode=mobile`, Icon: Smartphone, label: '모바일', color: '#10b981' },
-                { href: `?drill=${defaultDrillId}&mode=class`, Icon: Maximize, label: '수업 모드', color: '#f59e0b' },
-              ].map(({ href, Icon, label, color }) => (
+              <span>
+                <strong className="block text-sm font-black text-white">{meta.title}</strong>
+                <span className="mt-1 block text-xs font-semibold text-slate-500">{meta.badge}</span>
+              </span>
+            </a>
+          );
+        })}
+      </section>
+
+      <section className="space-y-4">
+        <IntentSection id="warmup" intent="warmup" drills={warmupDrills} isPro={isPro} />
+        <IntentSection id="reaction" intent="reaction" drills={reactionDrills} isPro={isPro} />
+        <IntentSection id="focus" intent="focus" drills={focusDrills} isPro={isPro} />
+        <IntentSection id="finish" intent="finish" drills={finishDrills} isPro={isPro} />
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1fr_380px]">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">All Drills</p>
+              <h2 className="mt-1 text-xl font-black text-white">전체 실행 목록</h2>
+            </div>
+            <span className="text-sm font-bold text-slate-500">{drills.length}개</span>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {drills.map((drill) => {
+              const intent = getDrillIntent(drill);
+              const meta = INTENT_META[intent];
+              const locked = drill.isPro && !isPro;
+              return (
                 <Link
-                  key={label}
-                  href={`/spokedu-master/spomove/session${href}`}
-                  className="flex h-12 items-center justify-center gap-1.5 rounded-[14px] text-[12px] font-bold"
-                  style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
+                  key={drill.id}
+                  href={locked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`}
+                  className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.045] p-4 transition hover:bg-white/[0.075]"
                 >
-                  <Icon size={15} color={color} />{label}
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <div className="mb-3 flex items-center gap-1.5">
-              <Sparkles size={13} color="var(--spm-amb)" />
-              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>right now flow</p>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: '도입', sub: '3분 집중 전환', href: '#warmup', tone: '#818cf8', Icon: TimerReset },
-                { label: '중간', sub: '반응 전환', href: '#transition', tone: '#10b981', Icon: Goal },
-                { label: '마무리', sub: '참여 게임', href: '#finish', tone: '#f59e0b', Icon: Brain },
-              ].map(({ label, sub, href, tone, Icon }) => (
-                <a
-                  key={href}
-                  href={href}
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-[15px] py-4 text-center active:scale-[0.98]"
-                  style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}
-                >
-                  <span className="grid h-9 w-9 place-items-center rounded-[11px]" style={{ background: `${tone}18` }}>
-                    <Icon size={16} color={tone} />
+                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: `${meta.tone}18`, color: meta.tone }}>
+                    <Zap className="h-5 w-5" />
                   </span>
-                  <strong className="text-[13px]" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{label}</strong>
-                  <span className="text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{sub}</span>
-                </a>
-              ))}
-            </div>
-          </section>
+                  <span className="min-w-0 flex-1">
+                    <strong className="line-clamp-1 text-sm font-black text-white">{drill.name}</strong>
+                    <span className="mt-1 block text-xs font-semibold text-slate-500">{meta.title}</span>
+                  </span>
+                  {locked ? <Lock className="h-4 w-4 text-amber-200" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
 
-          <section className="space-y-3">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-[20px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>수업 흐름별 SPOMOVE</h2>
-              <span className="text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>드릴 목록이 아니라 수업 타이밍 기준</span>
-            </div>
-            <IntentRow id="warmup" title="도입 3분 집중 전환" caption="수업 시작 전 시선과 움직임을 한 번에 모읍니다." icon={TimerReset} tone="#818cf8" drills={warmupDrills} isPro={isPro} />
-            <IntentRow id="transition" title="수업 중 반응 전환" caption="흐트러진 분위기를 신호, 방향, 순발 활동으로 다시 끌어올립니다." icon={Goal} tone="#10b981" drills={transitionDrills} isPro={isPro} />
-            <IntentRow id="finish" title="마무리 참여 게임" caption="기억, 집중, 판단 활동으로 마지막까지 참여감을 유지합니다." icon={Brain} tone="#f59e0b" drills={finishDrills} isPro={isPro} />
-          </section>
-
-          <section>
-            <div className="mb-[14px] flex items-baseline justify-between">
-              <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>전체 실행 모드</h2>
-              <span className="text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>{drills.length}개</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-              {drills.map((drill, index) => (
-                <DrillCard key={drill.id} drill={drill} index={index} isLocked={drill.isPro && !isPro} />
-              ))}
-            </div>
-          </section>
-        </main>
-
-        <aside className="space-y-5">
-          <section className="rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg,rgba(16,185,129,0.14),var(--spm-s2))', border: '1px solid rgba(16,185,129,0.24)' }}>
-            <MonitorPlay size={20} color="var(--spm-grn)" />
-            <h2 className="mt-3 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 공간에 맞게 실행합니다</h2>
-            <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-              모바일은 개인 반응, 큰 화면은 전체 참여, 수업 모드는 결과 노출을 줄인 몰입형 실행에 맞췄습니다.
+        <aside className="space-y-6">
+          <section className="rounded-3xl border border-emerald-300/18 bg-emerald-400/10 p-5">
+            <MonitorPlay className="h-6 w-6 text-emerald-200" />
+            <h2 className="mt-3 text-lg font-black text-white">왜 독립 탭이어야 하나요?</h2>
+            <p className="mt-2 text-sm leading-7 text-emerald-50/80">
+              SPOMOVE는 라이브러리의 부가 기능이 아니라 SPOKEDU MASTER의 차별화 엔진입니다. 수업 자료를 보는 앱에서 학생들이 움직이는 수업 경험으로 넘어가게 만듭니다.
             </p>
+          </section>
+
+          <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Recent</p>
+                <h2 className="mt-1 text-lg font-black text-white">최근 실행</h2>
+              </div>
+              <Clock3 className="h-5 w-5 text-slate-500" />
+            </div>
+            <div className="mt-4 space-y-3">
+              {recent.length > 0 ? (
+                recent.map((session) => (
+                  <div key={session.id} className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
+                    <p className="truncate text-sm font-black text-white">{session.drillName}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">
+                      {new Date(session.date).toLocaleDateString('ko-KR')} · {session.cueCount}회 · 평균 {formatReactionTime(session.avg)}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <Link href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <span>
+                    <strong className="block text-sm font-black text-white">첫 SPOMOVE를 실행해보세요</strong>
+                    <span className="mt-1 block text-xs font-semibold text-slate-500">실행 기록은 이후 설명과 리포트의 근거가 됩니다.</span>
+                  </span>
+                  <ChevronRight className="h-5 w-5 text-slate-500" />
+                </Link>
+              )}
+            </div>
           </section>
 
           {stats.totalSessions > 0 ? (
             <section className="grid grid-cols-3 gap-2">
-              <Metric label="세션" value={String(stats.totalSessions)} />
-              <Metric label="평균" value={formatReactionTime(stats.avgRT)} tone="var(--spm-grn)" />
-              <Metric label="최고" value={formatReactionTime(stats.bestRT)} />
-            </section>
-          ) : (
-            <section className="rounded-[15px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-              <p className="text-[13px] font-bold" style={{ color: 'var(--spm-t)' }}>아직 실행 기록이 없습니다</p>
-              <p className="mt-1 text-[11px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>첫 세션을 완료하면 반응 시간과 실행 기록이 여기에 표시됩니다.</p>
-            </section>
-          )}
-
-          <section>
-            <div className="mb-[14px] flex items-baseline justify-between">
-              <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>최근 실행</h2>
-              <Link href="/spokedu-master/report" className="text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>설명 문구</Link>
-            </div>
-            {recent.length > 0 ? (
-              <div className="space-y-2">
-                {recent.map((session) => (
-                  <div key={session.id} className="rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
-                    <p className="truncate text-[13px] font-bold" style={{ color: 'var(--spm-t)' }}>{session.drillName}</p>
-                    <p className="mt-1 text-[10px] font-medium" style={{ color: 'var(--spm-t3)' }}>
-                      {new Date(session.date).toLocaleDateString('ko-KR')} · {session.cueCount}회 · 평균 {formatReactionTime(session.avg)}
-                    </p>
-                  </div>
-                ))}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3 text-center">
+                <p className="text-lg font-black text-white">{stats.totalSessions}</p>
+                <p className="mt-1 text-[11px] font-bold text-slate-500">세션</p>
               </div>
-            ) : (
-              <Link
-                href={`/spokedu-master/spomove/session?drill=${defaultDrillId}`}
-                className="flex items-center justify-between rounded-[15px] p-4"
-                style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}
-              >
-                <span>
-                  <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>첫 반응훈련을 시작해보세요</strong>
-                  <span className="mt-1 block text-[12px]" style={{ color: 'var(--spm-t3)' }}>기록은 수업 설명과 리포트의 근거가 됩니다.</span>
-                </span>
-                <ChevronRight size={18} color="var(--spm-t3)" />
-              </Link>
-            )}
-          </section>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3 text-center">
+                <p className="text-lg font-black text-emerald-200">{formatReactionTime(stats.avgRT)}</p>
+                <p className="mt-1 text-[11px] font-bold text-slate-500">평균</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3 text-center">
+                <p className="text-lg font-black text-white">{formatReactionTime(stats.bestRT)}</p>
+                <p className="mt-1 text-[11px] font-bold text-slate-500">최고</p>
+              </div>
+            </section>
+          ) : null}
         </aside>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

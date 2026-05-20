@@ -1,9 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  FileText,
+  MonitorPlay,
+  Pause,
+  Play,
+  RotateCcw,
+  Timer,
+  X,
+  Zap,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, MonitorPlay, Pause, Play, RotateCcw, X, Zap } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
 import { useMasterStore } from '../../store';
 
 const STEP_PRESETS = [
@@ -12,51 +26,81 @@ const STEP_PRESETS = [
   { label: '5분', secs: 300 },
 ] as const;
 
+function hasBrokenText(value: string | undefined) {
+  if (!value) return false;
+  return value.includes(String.fromCharCode(0xfffd)) || /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥/.test(value);
+}
+
+function cleanText(value: string | undefined, fallback: string) {
+  const text = (value ?? '').trim();
+  if (!text || hasBrokenText(text)) return fallback;
+  return text;
+}
+
+function cleanList(items: string[] | undefined, fallback: string[]) {
+  const cleaned = (items ?? []).map((item) => item.trim()).filter((item) => item && !hasBrokenText(item));
+  return cleaned.length > 0 ? cleaned : fallback;
+}
+
+function getSpomoveUseLabel(text: string) {
+  if (/도입|집중|신호|주의/.test(text)) return '도입 3분 집중 전환';
+  if (/민첩|순발|반응|스피드|방향|거리|펜싱/.test(text)) return '수업 중 반응 전환';
+  if (/마무리|정리|협동|리듬|기억/.test(text)) return '마무리 참여 게임';
+  return '큰 화면 몰입 활동';
+}
+
+function formatElapsed(ms: number) {
+  const mins = Math.floor(ms / 60000);
+  const secs = Math.floor((ms % 60000) / 1000);
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function formatCountdown(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
 function StepTimerRing({ remaining, total }: { remaining: number; total: number }) {
-  const r = 13;
-  const c = 2 * Math.PI * r;
+  const radius = 13;
+  const circumference = 2 * Math.PI * radius;
   const pct = total > 0 ? remaining / total : 0;
-  const color = pct < 0.2 ? '#ef4444' : pct < 0.4 ? '#fbbf24' : '#a5b4fc';
+  const color = pct < 0.2 ? '#fb7185' : pct < 0.4 ? '#fbbf24' : '#a5b4fc';
+
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
-      <circle cx="16" cy="16" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2.5" />
+    <svg width="32" height="32" viewBox="0 0 32 32" className="shrink-0 -rotate-90">
+      <circle cx="16" cy="16" r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2.5" />
       <circle
-        cx="16" cy="16" r={r} fill="none"
+        cx="16"
+        cy="16"
+        r={radius}
+        fill="none"
         stroke={color}
         strokeWidth="2.5"
-        strokeDasharray={c}
-        strokeDashoffset={c * (1 - pct)}
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference * (1 - pct)}
         strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 0.8s linear, stroke 0.3s' }}
+        className="transition-all duration-700"
       />
     </svg>
   );
 }
 
-function getSpomoveUseLabel(text: string) {
-  if (/도입|워밍업|집중|인지|신호/.test(text)) return '도입 3분 집중 전환';
-  if (/민첩|순발|방향|반응|스피드/.test(text)) return '수업 중 반응 전환';
-  if (/마무리|정리|협동|기억/.test(text)) return '마무리 참여 게임';
-  return '큰 화면 몰입 활동';
-}
-
 export default function ClassModeView({ programId }: { programId: string }) {
   const router = useRouter();
-  const programs = useMasterStore((s) => s.programs);
-  const drills = useMasterStore((s) => s.drills);
-  const program = programs.find((p) => p.id === programId);
+  const programs = useMasterStore((state) => state.programs);
+  const drills = useMasterStore((state) => state.drills);
+  const program = programs.find((item) => item.id === programId);
 
-  const timerMs = useMasterStore((s) => s.classTimerMs);
-  const timerRunning = useMasterStore((s) => s.classTimerRunning);
-  const timerStartedAt = useMasterStore((s) => s.classTimerStartedAt);
-  const timerStart = useMasterStore((s) => s.classTimerStart);
-  const timerStop = useMasterStore((s) => s.classTimerStop);
-  const timerReset = useMasterStore((s) => s.classTimerReset);
+  const timerMs = useMasterStore((state) => state.classTimerMs);
+  const timerRunning = useMasterStore((state) => state.classTimerRunning);
+  const timerStartedAt = useMasterStore((state) => state.classTimerStartedAt);
+  const timerStart = useMasterStore((state) => state.classTimerStart);
+  const timerStop = useMasterStore((state) => state.classTimerStop);
+  const timerReset = useMasterStore((state) => state.classTimerReset);
 
   const [displayMs, setDisplayMs] = useState(timerMs);
-  const [stepIdx, setStepIdx] = useState(0);
-
-  // Per-step countdown timer (local — no persistence needed)
+  const [stepIndex, setStepIndex] = useState(0);
   const [stepTotal, setStepTotal] = useState(0);
   const [stepRemaining, setStepRemaining] = useState(0);
   const [stepRunning, setStepRunning] = useState(false);
@@ -64,15 +108,24 @@ export default function ClassModeView({ programId }: { programId: string }) {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (!timerRunning) { setDisplayMs(timerMs); return; }
-    const id = setInterval(() => setDisplayMs(timerMs + (timerStartedAt ? Date.now() - timerStartedAt : 0)), 500);
-    return () => clearInterval(id);
-  }, [timerRunning, timerMs, timerStartedAt]);
+    if (!timerRunning) {
+      setDisplayMs(timerMs);
+      return;
+    }
+
+    const id = window.setInterval(() => {
+      setDisplayMs(timerMs + (timerStartedAt ? Date.now() - timerStartedAt : 0));
+    }, 500);
+
+    return () => window.clearInterval(id);
+  }, [timerMs, timerRunning, timerStartedAt]);
 
   useEffect(() => {
     if (!stepRunning) return;
-    const id = setInterval(() => setStepRemaining((p) => Math.max(0, p - 1)), 1000);
-    return () => clearInterval(id);
+    const id = window.setInterval(() => {
+      setStepRemaining((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => window.clearInterval(id);
   }, [stepRunning]);
 
   useEffect(() => {
@@ -80,381 +133,268 @@ export default function ClassModeView({ programId }: { programId: string }) {
       setStepRunning(false);
       setStepExpired(true);
     }
-  }, [stepRunning, stepRemaining]);
+  }, [stepRemaining, stepRunning]);
 
   useEffect(() => {
     setStepRunning(false);
     setStepRemaining(0);
     setStepTotal(0);
     setStepExpired(false);
-  }, [stepIdx]);
+  }, [stepIndex]);
 
-  const startStep = (s: number) => {
-    setStepTotal(s);
-    setStepRemaining(s);
+  const lesson = useMemo(() => {
+    if (!program) return null;
+    const title = cleanText(program.title, 'SPOKEDU 수업');
+    const category = cleanText(program.category, '체육 수업');
+    const focus = cleanText(program.lessonDetail?.developmentFocus, category);
+    const steps = cleanList(program.lessonDetail?.rules?.length ? program.lessonDetail.rules : program.steps, [
+      '공간과 준비물을 확인합니다.',
+      '규칙을 짧게 설명하고 시범을 보여줍니다.',
+      '기본 라운드로 시작한 뒤 난이도를 단계적으로 올립니다.',
+    ]);
+    const coachScript = cleanText(program.lessonDetail?.coachScript, '');
+    const fieldTips = cleanList(program.lessonDetail?.fieldTips, []);
+    const spomoveId = program.lessonDetail?.relatedSpomoveIds?.[0];
+    const spomoveDrill = drills.find((drill) => drill.id === spomoveId);
+    const cards = [
+      ...steps.map((text, index) => ({ type: 'step' as const, label: `${index + 1}단계`, text })),
+      ...(coachScript ? [{ type: 'coach' as const, label: '코치 멘트', text: coachScript }] : []),
+      ...fieldTips.slice(0, 3).map((text) => ({ type: 'tip' as const, label: '현장 팁', text })),
+    ];
+
+    return {
+      title,
+      category,
+      focus,
+      grade: cleanText(program.grade, '전학년'),
+      duration: program.duration,
+      space: cleanText(program.space, '실내 또는 체육 공간'),
+      cards: cards.length > 0 ? cards : [{ type: 'step' as const, label: '1단계', text: '수업을 시작합니다.' }],
+      spomoveId,
+      spomoveName: cleanText(spomoveDrill?.name, 'SPOMOVE 실행'),
+      spomoveUse: getSpomoveUseLabel(`${title} ${category} ${focus} ${program.tags.join(' ')}`),
+    };
+  }, [drills, program]);
+
+  const startStepTimer = (seconds: number) => {
+    setStepTotal(seconds);
+    setStepRemaining(seconds);
     setStepRunning(true);
     setStepExpired(false);
   };
 
-  const resetStep = () => {
+  const resetStepTimer = () => {
     setStepRunning(false);
     setStepRemaining(0);
     setStepTotal(0);
     setStepExpired(false);
   };
 
-  if (!program) {
+  if (!program || !lesson) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4" style={{ background: '#07070c', fontFamily: 'var(--spm-font-body)' }}>
-        <p className="text-[16px] font-bold text-white">수업안을 찾을 수 없습니다.</p>
-        <button type="button" onClick={() => router.back()} className="rounded-[12px] px-5 py-3 text-[14px] font-black" style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc' }}>
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-[#070812] px-6 text-center text-white">
+        <p className="text-lg font-black">수업안을 찾을 수 없습니다.</p>
+        <button type="button" onClick={() => router.back()} className="mt-5 rounded-2xl bg-white px-5 py-3 text-sm font-extrabold text-slate-950">
           돌아가기
         </button>
-      </div>
+      </main>
     );
   }
 
-  const hasActualSteps = program.steps.length > 0;
-  const coachScript = program.lessonDetail?.coachScript ?? '';
-  const fieldTips = program.lessonDetail?.fieldTips ?? [];
+  const current = lesson.cards[stepIndex] ?? lesson.cards[0]!;
+  const isLast = stepIndex === lesson.cards.length - 1;
+  const stepTone = current.type === 'coach' ? '#fbbf24' : current.type === 'tip' ? '#34d399' : '#a5b4fc';
 
-  // When steps exist: keep them + show fieldTips as amber/green extra cards.
-  // When steps empty: promote description + fieldTips into unified step cards so the
-  // presentation flow stays consistent (no colour-coded interruptions).
-  let steps: string[];
-  let extraCards: Array<{ type: 'coach' | 'tip'; text: string }>;
-
-  if (hasActualSteps) {
-    steps = program.steps;
-    extraCards = [
-      ...(coachScript && coachScript !== program.description
-        ? [{ type: 'coach' as const, text: coachScript }]
-        : []),
-      ...fieldTips.slice(0, 3).map((t) => ({ type: 'tip' as const, text: t })),
-    ];
-  } else {
-    const fallback: string[] = [];
-    if (program.description?.trim()) fallback.push(program.description.trim());
-    fallback.push(...fieldTips.slice(0, 4));
-    steps = fallback.length > 0 ? fallback : ['수업을 시작합니다.'];
-    extraCards = [];
-  }
-
-  const totalCards = steps.length + extraCards.length;
-
-  const currentStep = stepIdx < steps.length ? steps[stepIdx] : null;
-  const currentExtra = stepIdx >= steps.length ? extraCards[stepIdx - steps.length] : null;
-  const spomoveId = program.lessonDetail?.relatedSpomoveIds?.[0];
-  const spomoveDrill = drills.find((drill) => drill.id === spomoveId);
-  const spomoveUseLabel = getSpomoveUseLabel([program.title, program.category, program.description, program.lessonDetail?.developmentFocus ?? '', ...program.tags].join(' '));
-  const mins = Math.floor(displayMs / 60000);
-  const secs = Math.floor((displayMs % 60000) / 1000);
-  const isLast = stepIdx === totalCards - 1;
-
-  const stepMins = Math.floor(stepRemaining / 60);
-  const stepSecs = stepRemaining % 60;
+  const finishClass = () => {
+    timerStop();
+    setDone(true);
+  };
 
   return (
-    <div className="flex min-h-dvh flex-col" style={{ background: '#07070c', fontFamily: 'var(--spm-font-body)' }}>
-      {/* Header */}
-      <header
-        className="flex shrink-0 items-center justify-between px-5"
-        style={{ paddingTop: 'max(18px, env(safe-area-inset-top))', paddingBottom: '14px' }}
-      >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="grid h-11 w-11 place-items-center rounded-full"
-          style={{ background: 'rgba(255,255,255,0.08)' }}
-          aria-label="수업 종료"
-        >
-          <X size={20} color="rgba(255,255,255,0.6)" />
+    <main className="flex min-h-dvh flex-col bg-[#070812] text-white">
+      <header className="flex shrink-0 items-center justify-between px-4 pb-3 sm:px-6" style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}>
+        <button type="button" onClick={() => router.back()} className="grid h-11 w-11 place-items-center rounded-full bg-white/[0.08]" aria-label="수업 종료">
+          <X className="h-5 w-5 text-white/65" />
         </button>
 
-        <div className="flex flex-col items-center gap-0.5">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            {program.category}
-          </p>
-          <p className="max-w-[180px] truncate text-center text-[13px] font-black leading-tight" style={{ color: 'rgba(255,255,255,0.8)' }}>
-            {program.title}
-          </p>
+        <div className="min-w-0 px-4 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35">{lesson.category}</p>
+          <p className="mt-1 max-w-[240px] truncate text-sm font-black text-white/86">{lesson.title}</p>
         </div>
 
-        {spomoveId ? (
-          <Link
-            href={`/spokedu-master/spomove/session?drill=${spomoveId}&mode=class&program=${program.id}`}
-            className="grid h-11 w-11 place-items-center rounded-full"
-            style={{ background: 'rgba(99,102,241,0.18)', border: '1px solid rgba(99,102,241,0.32)' }}
-            aria-label="SPOMOVE 연결 실행"
-          >
-            <Zap size={18} color="#a5b4fc" />
-          </Link>
-        ) : (
-          <div className="h-11 w-11" />
-        )}
+        <Link
+          href={lesson.spomoveId ? `/spokedu-master/spomove/session?drill=${lesson.spomoveId}&mode=class&program=${program.id}` : '/spokedu-master/spomove'}
+          className="grid h-11 w-11 place-items-center rounded-full border border-indigo-300/25 bg-indigo-400/14"
+          aria-label="SPOMOVE 실행"
+        >
+          <Zap className="h-5 w-5 text-indigo-200" />
+        </Link>
       </header>
 
       {done ? (
-        /* ── 수업 완료 화면 ── */
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6" style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom))' }}>
-          <div className="w-full max-w-[420px] text-center">
-            <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>
-              <CheckCircle2 size={40} color="#10b981" strokeWidth={1.5} />
+        <section className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 text-center" style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom))' }}>
+          <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-emerald-300/25 bg-emerald-400/12">
+            <CheckCircle2 className="h-10 w-10 text-emerald-300" />
+          </div>
+          <h1 className="mt-6 text-4xl font-black">수업 완료</h1>
+          <p className="mt-2 text-sm font-semibold text-white/45">{lesson.title}</p>
+
+          <div className="mt-8 grid w-full max-w-[420px] grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4">
+              <p className="font-mono text-2xl font-black tabular-nums">{formatElapsed(displayMs)}</p>
+              <p className="mt-1 text-xs font-bold text-white/35">소요 시간</p>
             </div>
-            <h2 className="text-[32px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: '#fff', letterSpacing: 0 }}>수업 완료</h2>
-            <p className="mt-2 text-[14px] font-semibold" style={{ color: 'rgba(255,255,255,0.45)' }}>{program.title}</p>
-            <div className="mt-8 flex justify-center gap-4">
-              {displayMs > 0 && (
-                <div className="rounded-[14px] px-5 py-3" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <p className="font-mono text-[22px] font-black tabular-nums" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                    {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-                  </p>
-                  <p className="mt-1 text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>소요 시간</p>
-                </div>
-              )}
-              <div className="rounded-[14px] px-5 py-3" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                <p className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'rgba(255,255,255,0.9)' }}>{totalCards}</p>
-                <p className="mt-1 text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>단계 완료</p>
-              </div>
-            </div>
-            <div className="mt-8 flex flex-col gap-3">
-              <Link
-                href={`/spokedu-master/class-record?program=${program.id}`}
-                className="flex h-14 items-center justify-center gap-2 rounded-[16px] text-[15px] font-black text-white"
-                style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.3)' }}
-              >
-                <ClipboardList size={18} />수업 기록 남기기
-              </Link>
-              <Link
-                href={`/spokedu-master/report?program=${program.id}`}
-                className="flex h-12 items-center justify-center rounded-[16px] text-[14px] font-black"
-                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.72)' }}
-              >
-                보호자 안내 문구 만들기
-              </Link>
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="flex h-12 items-center justify-center rounded-[16px] text-[14px] font-black"
-                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
-              >
-                나가기
-              </button>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4">
+              <p className="text-2xl font-black">{lesson.cards.length}</p>
+              <p className="mt-1 text-xs font-bold text-white/35">진행 카드</p>
             </div>
           </div>
-        </div>
+
+          <div className="mt-8 flex w-full max-w-[460px] flex-col gap-3">
+            <Link href={`/spokedu-master/class-record?program=${program.id}`} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-black text-white">
+              <ClipboardList className="h-4 w-4" />
+              수업 기록 남기기
+            </Link>
+            <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-white/[0.08] text-sm font-black text-white/75">
+              <FileText className="h-4 w-4" />
+              설명 문구 만들기
+            </Link>
+            <button type="button" onClick={() => router.back()} className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.055] text-sm font-black text-white/55">
+              나가기
+            </button>
+          </div>
+        </section>
       ) : (
         <>
-
-      {/* Global class timer */}
-      <div className="mx-auto mb-4 grid w-full max-w-[720px] shrink-0 gap-2 px-5 sm:grid-cols-[1fr_auto]">
-        <div className="rounded-[16px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'rgba(255,255,255,0.32)' }}>class package</p>
-          <p className="mt-1 line-clamp-1 text-[14px] font-black" style={{ color: 'rgba(255,255,255,0.84)' }}>{program.grade} · {program.duration}분 · {program.space}</p>
-          <p className="mt-1 line-clamp-1 text-[11px] font-semibold" style={{ color: 'rgba(255,255,255,0.36)' }}>{program.lessonDetail?.developmentFocus || program.category}</p>
-        </div>
-        <Link
-          href={spomoveId ? `/spokedu-master/spomove/session?drill=${spomoveId}&mode=class&program=${program.id}` : '/spokedu-master/spomove'}
-          className="flex min-h-[72px] items-center gap-3 rounded-[16px] px-4 py-3"
-          style={{ background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.28)' }}
-        >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.18)' }}>
-            <MonitorPlay size={18} color="#a5b4fc" />
-          </span>
-          <span className="min-w-0">
-            <strong className="block truncate text-[12px]" style={{ color: '#e0e7ff' }}>{spomoveDrill?.name ?? 'SPOMOVE 실행'}</strong>
-            <span className="mt-1 block truncate text-[10px] font-bold" style={{ color: 'rgba(224,231,255,0.48)' }}>{spomoveUseLabel}</span>
-          </span>
-        </Link>
-      </div>
-
-      <div className="flex shrink-0 justify-center pb-5">
-        <div
-          className="flex items-center gap-3 rounded-full px-5 py-2"
-          style={{ background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.09)' }}
-        >
-          <button
-            type="button"
-            onClick={timerRunning ? timerStop : timerStart}
-            className="grid h-7 w-7 place-items-center rounded-full transition-colors"
-            style={{ background: timerRunning ? 'rgba(239,68,68,0.22)' : 'rgba(16,185,129,0.22)' }}
-            aria-label={timerRunning ? '타이머 일시정지' : '타이머 시작'}
-          >
-            {timerRunning
-              ? <Pause size={13} color="var(--spm-red)" fill="var(--spm-red)" />
-              : <Play size={13} color="var(--spm-grn)" fill="var(--spm-grn)" />}
-          </button>
-          <span className="font-mono text-[19px] font-black tabular-nums" style={{ color: 'rgba(255,255,255,0.88)', letterSpacing: '-0.01em' }}>
-            {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-          </span>
-          <button
-            type="button"
-            onClick={() => { timerReset(); setDisplayMs(0); }}
-            className="grid h-6 w-6 place-items-center rounded-full"
-            style={{ background: 'rgba(255,255,255,0.06)' }}
-            aria-label="타이머 리셋"
-          >
-            <RotateCcw size={11} color="rgba(255,255,255,0.35)" />
-          </button>
-        </div>
-      </div>
-
-      {/* Progress dots */}
-      <div className="flex shrink-0 justify-center gap-2 pb-5">
-        {Array.from({ length: totalCards }, (_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setStepIdx(i)}
-            aria-label={`${i + 1}단계`}
-            style={{
-              width: i === stepIdx ? '28px' : '7px',
-              height: '7px',
-              borderRadius: '9999px',
-              background: i === stepIdx
-                ? (i >= steps.length ? (extraCards[i - steps.length]?.type === 'coach' ? '#fbbf24' : '#34d399') : '#a5b4fc')
-                : i < stepIdx ? 'rgba(165,180,252,0.35)' : 'rgba(255,255,255,0.15)',
-              transition: 'all 0.25s ease',
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Step card */}
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6">
-        <p className="mb-6 text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: 'rgba(255,255,255,0.28)' }}>
-          {stepIdx + 1} / {totalCards}
-        </p>
-        <div
-          className="w-full max-w-[600px] rounded-[24px] p-8"
-          style={{
-            background: currentExtra
-              ? currentExtra.type === 'coach' ? 'rgba(245,158,11,0.07)' : 'rgba(16,185,129,0.07)'
-              : 'rgba(255,255,255,0.04)',
-            border: `1px solid ${
-              stepExpired
-                ? 'rgba(239,68,68,0.55)'
-                : currentExtra
-                  ? currentExtra.type === 'coach' ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)'
-                  : stepRunning ? 'rgba(165,180,252,0.2)' : 'rgba(255,255,255,0.08)'
-            }`,
-            transition: 'border-color 0.3s',
-          }}
-        >
-          {currentStep ? (
-            currentStep.length > 50 ? (
-              <p
-                className="text-left text-[clamp(1rem,3.2vw,1.3rem)] font-bold leading-relaxed"
-                style={{ color: 'rgba(255,255,255,0.92)', wordBreak: 'keep-all' }}
-              >
-                {currentStep}
-              </p>
-            ) : (
-              <p
-                className="text-center text-[clamp(1.4rem,4.5vw,2.2rem)] font-black leading-tight"
-                style={{ fontFamily: 'var(--spm-font-display)', color: '#fff', wordBreak: 'keep-all' }}
-              >
-                {currentStep}
-              </p>
-            )
-          ) : currentExtra ? (
-            <>
-              <p className="mb-3 text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: currentExtra.type === 'coach' ? '#fbbf24' : '#34d399' }}>
-                {currentExtra.type === 'coach' ? '코치 포인트' : '현장 팁'}
-              </p>
-              <p
-                className="text-[clamp(1rem,3.5vw,1.4rem)] font-bold leading-relaxed"
-                style={{ color: 'rgba(255,255,255,0.9)', wordBreak: 'keep-all' }}
-              >
-                {currentExtra.text}
-              </p>
-            </>
-          ) : null}
-        </div>
-
-        {/* Step-level countdown */}
-        <div className="mt-5 flex items-center justify-center gap-2">
-          {(stepRunning || stepExpired) ? (
-            <>
-              <StepTimerRing remaining={stepRemaining} total={stepTotal} />
-              <span
-                className="font-mono text-[17px] font-black tabular-nums"
-                style={{
-                  color: stepExpired ? '#ef4444' : stepRemaining < 30 ? '#fbbf24' : 'rgba(255,255,255,0.7)',
-                  minWidth: '44px',
-                }}
-              >
-                {stepExpired ? '종료' : `${String(stepMins).padStart(2, '0')}:${String(stepSecs).padStart(2, '0')}`}
+          <section className="mx-auto grid w-full max-w-5xl shrink-0 gap-3 px-4 pb-4 sm:grid-cols-[1fr_auto] sm:px-6">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35">Class Package</p>
+              <p className="mt-1 line-clamp-1 text-sm font-black text-white/85">{lesson.grade} · {lesson.duration}분 · {lesson.space}</p>
+              <p className="mt-1 line-clamp-1 text-xs font-semibold text-white/38">{lesson.focus}</p>
+            </div>
+            <Link
+              href={lesson.spomoveId ? `/spokedu-master/spomove/session?drill=${lesson.spomoveId}&mode=class&program=${program.id}` : '/spokedu-master/spomove'}
+              className="flex min-h-[76px] items-center gap-3 rounded-3xl border border-indigo-300/25 bg-indigo-400/12 px-4 py-3"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-indigo-400/14">
+                <MonitorPlay className="h-5 w-5 text-indigo-200" />
               </span>
+              <span className="min-w-0">
+                <strong className="block truncate text-sm font-black text-indigo-100">{lesson.spomoveName}</strong>
+                <span className="mt-1 block truncate text-xs font-bold text-indigo-100/48">{lesson.spomoveUse}</span>
+              </span>
+            </Link>
+          </section>
+
+          <section className="flex shrink-0 justify-center pb-5">
+            <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.055] px-5 py-2">
               <button
                 type="button"
-                onClick={resetStep}
-                className="rounded-full px-3 py-1 text-[11px] font-black"
-                style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)' }}
+                onClick={timerRunning ? timerStop : timerStart}
+                className={`grid h-8 w-8 place-items-center rounded-full ${timerRunning ? 'bg-rose-400/18' : 'bg-emerald-400/18'}`}
+                aria-label={timerRunning ? '타이머 일시정지' : '타이머 시작'}
               >
-                초기화
+                {timerRunning ? <Pause className="h-3.5 w-3.5 fill-rose-300 text-rose-300" /> : <Play className="h-3.5 w-3.5 fill-emerald-300 text-emerald-300" />}
               </button>
-            </>
-          ) : (
-            <>
-              <span className="mr-1 text-[11px] font-semibold" style={{ color: 'rgba(255,255,255,0.25)' }}>단계 타이머</span>
-              {STEP_PRESETS.map(({ label, secs: s }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => startStep(s)}
-                  className="rounded-full px-3 py-1 text-[12px] font-black"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.5)',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-      </div>
+              <span className="font-mono text-xl font-black tabular-nums text-white/88">{formatElapsed(displayMs)}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  timerReset();
+                  setDisplayMs(0);
+                }}
+                className="grid h-7 w-7 place-items-center rounded-full bg-white/[0.06]"
+                aria-label="타이머 초기화"
+              >
+                <RotateCcw className="h-3 w-3 text-white/40" />
+              </button>
+            </div>
+          </section>
 
-      {/* Navigation */}
-      <div
-        className="flex shrink-0 items-center justify-between px-6 pt-6"
-        style={{ paddingBottom: 'max(28px, env(safe-area-inset-bottom))' }}
-      >
-        <button
-          type="button"
-          onClick={() => setStepIdx((i) => Math.max(0, i - 1))}
-          disabled={stepIdx === 0}
-          className="flex h-14 items-center gap-2 rounded-[16px] px-6 text-[14px] font-black transition-opacity disabled:opacity-25"
-          style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.65)' }}
-        >
-          <ChevronLeft size={20} />이전
-        </button>
+          <section className="flex shrink-0 justify-center gap-2 pb-5">
+            {lesson.cards.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setStepIndex(index)}
+                aria-label={`${index + 1}단계로 이동`}
+                className="h-2 rounded-full transition-all"
+                style={{
+                  width: index === stepIndex ? 30 : 8,
+                  background: index === stepIndex ? stepTone : index < stepIndex ? 'rgba(165,180,252,0.35)' : 'rgba(255,255,255,0.16)',
+                }}
+              />
+            ))}
+          </section>
 
-        {isLast ? (
-          <button
-            type="button"
-            onClick={() => { timerStop(); setDone(true); }}
-            className="flex h-14 items-center gap-2 rounded-[16px] px-8 text-[14px] font-black text-white"
-            style={{ background: 'rgba(16,185,129,0.75)', boxShadow: '0 8px 24px rgba(16,185,129,0.22)' }}
-          >
-            수업 완료 <CheckCircle2 size={18} />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setStepIdx((i) => Math.min(totalCards - 1, i + 1))}
-            className="flex h-14 items-center gap-2 rounded-[16px] px-8 text-[14px] font-black text-white"
-            style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.3)' }}
-          >
-            다음 <ChevronRight size={20} />
-          </button>
-        )}
-      </div>
+          <section className="flex min-h-0 flex-1 flex-col items-center justify-center px-6">
+            <p className="mb-6 text-[11px] font-black uppercase tracking-[0.18em] text-white/30">
+              {stepIndex + 1} / {lesson.cards.length} · {current.label}
+            </p>
+            <div
+              className="w-full max-w-3xl rounded-[28px] p-8 sm:p-10"
+              style={{
+                background: current.type === 'coach' ? 'rgba(245,158,11,0.08)' : current.type === 'tip' ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.045)',
+                border: `1px solid ${stepExpired ? 'rgba(251,113,133,0.55)' : current.type === 'coach' ? 'rgba(245,158,11,0.22)' : current.type === 'tip' ? 'rgba(16,185,129,0.22)' : 'rgba(255,255,255,0.1)'}`,
+              }}
+            >
+              <p
+                className={current.text.length > 54 ? 'text-left text-[clamp(1rem,3.2vw,1.35rem)] font-bold leading-relaxed text-white/90' : 'text-center text-[clamp(1.5rem,5vw,2.6rem)] font-black leading-tight text-white'}
+                style={{ wordBreak: 'keep-all' }}
+              >
+                {current.text}
+              </p>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              {stepRunning || stepExpired ? (
+                <>
+                  <StepTimerRing remaining={stepRemaining} total={stepTotal} />
+                  <span className={`min-w-14 font-mono text-lg font-black tabular-nums ${stepExpired ? 'text-rose-300' : stepRemaining < 30 ? 'text-amber-300' : 'text-white/70'}`}>
+                    {stepExpired ? '종료' : formatCountdown(stepRemaining)}
+                  </span>
+                  <button type="button" onClick={resetStepTimer} className="rounded-full bg-white/[0.07] px-3 py-1 text-xs font-black text-white/45">
+                    초기화
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="mr-1 inline-flex items-center gap-1 text-xs font-semibold text-white/28"><Timer className="h-3.5 w-3.5" />단계 타이머</span>
+                  {STEP_PRESETS.map(({ label, secs }) => (
+                    <button key={label} type="button" onClick={() => startStepTimer(secs)} className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-black text-white/55">
+                      {label}
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+          </section>
+
+          <footer className="flex shrink-0 items-center justify-between px-6 pt-6" style={{ paddingBottom: 'max(28px, env(safe-area-inset-bottom))' }}>
+            <button
+              type="button"
+              onClick={() => setStepIndex((index) => Math.max(0, index - 1))}
+              disabled={stepIndex === 0}
+              className="flex h-14 items-center gap-2 rounded-2xl bg-white/[0.07] px-6 text-sm font-black text-white/65 transition disabled:opacity-25"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              이전
+            </button>
+
+            {isLast ? (
+              <button type="button" onClick={finishClass} className="flex h-14 items-center gap-2 rounded-2xl bg-emerald-500 px-8 text-sm font-black text-white">
+                수업 완료
+                <CheckCircle2 className="h-5 w-5" />
+              </button>
+            ) : (
+              <button type="button" onClick={() => setStepIndex((index) => Math.min(lesson.cards.length - 1, index + 1))} className="flex h-14 items-center gap-2 rounded-2xl bg-indigo-500 px-8 text-sm font-black text-white">
+                다음
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            )}
+          </footer>
         </>
       )}
-    </div>
+    </main>
   );
 }

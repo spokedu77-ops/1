@@ -3,12 +3,16 @@
 import Link from 'next/link';
 import { LandingSection } from './landing-section';
 import { HeroCtaStack } from './hero-cta-stack';
-import { RecordPhoto } from './record-photo';
+import { MediaPanel } from './visual';
 import { getCaseBySlug } from '../data/cases';
+import { HOME_MEDIA } from '../data/home-media';
 import { programDetailBlocks } from '../data/program-details';
 import { getProgramBySlug, type ProgramSlug } from '../data/programs';
-import { cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
+import { cardInteractive, fineHover, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
+
+const focusRing =
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
 type ProgramDetailLandingProps = {
   slug: Extract<ProgramSlug, 'spomove' | 'paps' | 'oneday-event' | 'camp'>;
@@ -23,51 +27,77 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
 
   if (!program) return null;
 
+  const heroMedia = HOME_MEDIA[detail.mediaKey];
+
   return (
     <div className={landingPageStack}>
-      {/* 1. Hero */}
-      <LandingSection className={`${landingHeroShell} border-slate-200 bg-gradient-to-br from-indigo-50 via-white to-lime-50`}>
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">{program.category}</p>
-        <h1 className={`mt-2 sm:mt-3 ${landingH1} text-slate-950`}>{program.title}</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700 sm:text-base">{program.description}</p>
-        <div className="mt-4 hidden lg:block">
-          <div className="relative h-44 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-52">
-            <RecordPhoto src={program.image} alt={program.imageAlt} category="programs" fill sizes="(max-width: 1024px) 100vw, 50vw" />
+      <LandingSection className={`${landingHeroShell} border-slate-200 bg-white`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.12),transparent_48%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.06),transparent_42%)]" />
+        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-start">
+          <div className="space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">{program.category}</p>
+            <h1 className={`${landingH1} text-slate-950`}>{program.title}</h1>
+            <p className="max-w-xl text-sm leading-6 text-slate-700 sm:text-base">{detail.heroSubtitle}</p>
+            <div className="lg:hidden">
+              <MediaPanel media={heroMedia} className="aspect-[16/10] overflow-hidden rounded-2xl border border-slate-200/90" />
+            </div>
+            <HeroCtaStack
+              primary={{
+                href: detail.primaryCta.href,
+                label: detail.primaryCta.label,
+                track: inferTrackFromHref(detail.primaryCta.href),
+                trackLabel: detail.primaryCta.trackLabel,
+              }}
+              secondary={[
+                {
+                  href: detail.secondaryCta.href,
+                  label: detail.secondaryCta.label,
+                  track: inferTrackFromHref(detail.secondaryCta.href),
+                  trackLabel: detail.secondaryCta.trackLabel,
+                },
+              ]}
+            />
+          </div>
+          <div className="hidden lg:block">
+            <MediaPanel media={heroMedia} className="aspect-[5/3] overflow-hidden rounded-2xl border border-slate-200/90" />
           </div>
         </div>
-        <div className="mt-4">
-          <HeroCtaStack
-            primary={{ ...detail.primaryCta, track: inferTrackFromHref(detail.primaryCta.href) }}
-            secondary={[{ ...detail.secondaryCta, track: inferTrackFromHref(detail.secondaryCta.href) }]}
-          />
-        </div>
       </LandingSection>
 
-      {/* 2. Why */}
-      <LandingSection className="rounded-2xl border border-slate-200 bg-white p-4 sm:rounded-3xl sm:p-6" delay={0.05}>
+      <LandingSection className="space-y-3" delay={0.05}>
         <h2 className="text-lg font-bold text-slate-950 sm:text-xl">이 프로그램이 필요한 이유</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-700">{detail.why}</p>
-      </LandingSection>
-
-      {/* 3. Activities */}
-      <LandingSection className="space-y-3" delay={0.08}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">핵심 활동 구성</h2>
-        <ul className="grid gap-2 sm:grid-cols-3">
-          {detail.activities.map((item, index) => (
-            <li key={item} className="rounded-xl border border-slate-200 bg-white p-3.5 sm:p-4">
-              <p className="text-xs font-semibold text-indigo-600">0{index + 1}</p>
-              <p className="mt-1 text-sm font-medium leading-5 text-slate-800">{item}</p>
+        <ul className="grid gap-2.5 sm:grid-cols-3">
+          {detail.whyPoints.map((point) => (
+            <li key={point} className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4">
+              <p className="text-sm font-medium leading-5 text-slate-800">{point}</p>
             </li>
           ))}
         </ul>
       </LandingSection>
 
-      {/* 4. Targets */}
-      <LandingSection className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-6" delay={0.1}>
+      <LandingSection className="space-y-3" delay={0.08}>
+        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">핵심 활동 구성</h2>
+        <ul className="grid gap-2.5 sm:grid-cols-3">
+          {detail.activities.map((item, index) => (
+            <li key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 sm:p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">
+                STEP 0{index + 1}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">{item.title}</p>
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600 sm:text-sm">{item.description}</p>
+            </li>
+          ))}
+        </ul>
+      </LandingSection>
+
+      <LandingSection className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5" delay={0.1}>
         <h2 className="text-lg font-bold text-slate-950 sm:text-xl">적용 대상</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {detail.targets.map((target) => (
-            <span key={target} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+            <span
+              key={target}
+              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 sm:text-sm"
+            >
               {target}
             </span>
           ))}
@@ -75,13 +105,17 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
         <p className="mt-3 text-xs text-slate-500 sm:text-sm">연결 축 · {program.connectedTracks.join(' / ')}</p>
       </LandingSection>
 
-      {/* 5. Cases */}
       {relatedCases.length > 0 ? (
         <LandingSection className="space-y-3" delay={0.12}>
           <div className="flex items-end justify-between gap-2">
-            <h2 className="text-lg font-bold text-slate-950 sm:text-xl">운영 예시</h2>
-            <Link href="/spokedu/cases" data-track="cta-records-cases" className={`text-sm ${linkMuted}`}>
-              사례 더보기 →
+            <h2 className="text-lg font-bold text-slate-950 sm:text-xl">실제 운영 예시</h2>
+            <Link
+              href="/spokedu/records"
+              data-track={inferTrackFromHref('/spokedu/records')}
+              data-track-label="program-records-link"
+              className={`text-sm ${linkMuted}`}
+            >
+              현장기록 →
             </Link>
           </div>
           <div className="grid gap-2.5 sm:grid-cols-2">
@@ -90,48 +124,62 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
                 key={item.slug}
                 href={item.href}
                 data-track={inferTrackFromHref(item.href)}
-                className={`overflow-hidden rounded-2xl border border-slate-200 bg-white ${cardInteractive}`}
+                data-track-label={`program-case-${slug}-${item.slug}`}
+                className={`group rounded-2xl border border-slate-200 bg-white p-4 ${cardInteractive} ${focusRing}`}
               >
-                <div className="relative h-28 sm:h-32">
-                  <RecordPhoto
-                    src={item.images[0]?.src}
-                    alt={item.images[0]?.alt ?? item.title}
-                    category="cases"
-                    fill
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                  />
-                </div>
-                <div className="p-3">
-                  <p className="text-xs text-slate-500">{item.institution}</p>
-                  <h3 className="mt-0.5 text-sm font-semibold text-slate-900">{item.title}</h3>
-                </div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">
+                  {item.institution}
+                </p>
+                <h3 className="mt-1 text-sm font-semibold text-slate-900 sm:text-base">{item.title}</h3>
+                <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600 sm:text-sm">{item.summary}</p>
+                <span className={`mt-2 inline-flex text-xs font-semibold text-slate-900 ${fineHover}group-hover:text-indigo-700`}>
+                  사례 보기 →
+                </span>
               </Link>
             ))}
           </div>
         </LandingSection>
       ) : null}
 
-      {/* 6. CTA */}
       <LandingSection
-        className="rounded-2xl border border-slate-900 bg-slate-950 px-4 py-6 text-white sm:rounded-3xl sm:px-8 sm:py-8"
+        className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 px-5 py-8 text-white shadow-xl ring-1 ring-white/10 sm:rounded-3xl sm:px-8 sm:py-10"
         delay={0.15}
       >
-        <h2 className="text-xl font-bold sm:text-2xl">{program.title} 도입 상담</h2>
-        <p className="mt-2 text-sm text-slate-400">공간·인원·일정을 확인한 뒤 맞는 운영안을 안내합니다.</p>
-        <div className="mt-4">
-          <HeroCtaStack
-            variant="dark"
-            primary={{ ...detail.primaryCta, track: inferTrackFromHref(detail.primaryCta.href) }}
-            secondary={[{ ...detail.secondaryCta, track: inferTrackFromHref(detail.secondaryCta.href) }]}
-          />
+        <div className="pointer-events-none absolute inset-0 opacity-70" aria-hidden>
+          <MediaPanel media={heroMedia} className="h-full rounded-none border-0" />
         </div>
-        <Link
-          href="/spokedu/programs"
-          data-track="cta-programs"
-          className="mt-4 inline-block text-sm text-slate-300 underline-offset-2 hover:text-white hover:underline"
-        >
-          전체 프로그램 비교 →
-        </Link>
+        <div className="pointer-events-none absolute inset-0 bg-slate-950/85" aria-hidden />
+        <div className="relative max-w-xl">
+          <h2 className="text-xl font-bold sm:text-2xl">{detail.finalCtaTitle}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{detail.finalCtaSub}</p>
+          <div className="mt-5">
+            <HeroCtaStack
+              variant="dark"
+              primary={{
+                href: detail.primaryCta.href,
+                label: detail.primaryCta.label,
+                track: inferTrackFromHref(detail.primaryCta.href),
+                trackLabel: detail.primaryCta.trackLabel,
+              }}
+              secondary={[
+                {
+                  href: detail.secondaryCta.href,
+                  label: detail.secondaryCta.label,
+                  track: inferTrackFromHref(detail.secondaryCta.href),
+                  trackLabel: detail.secondaryCta.trackLabel,
+                },
+              ]}
+            />
+          </div>
+          <Link
+            href="/spokedu/programs"
+            data-track={inferTrackFromHref('/spokedu/programs')}
+            data-track-label="program-all-link"
+            className={`mt-4 inline-block text-sm text-slate-300 underline-offset-2 ${fineHover}hover:text-white ${fineHover}hover:underline ${focusRing}`}
+          >
+            전체 프로그램 보기 →
+          </Link>
+        </div>
       </LandingSection>
     </div>
   );

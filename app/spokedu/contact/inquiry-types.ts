@@ -1,8 +1,13 @@
 export type InquiryType = 'private' | 'dispatch' | 'curriculum';
 
-export type PrivateInquiryFields = {
-  guardianName: string;
+export type InquiryCommonFields = {
+  name: string;
   phone: string;
+  email: string;
+  message: string;
+};
+
+export type PrivateInquiryFields = InquiryCommonFields & {
   childAge: string;
   exerciseExperience: string;
   concern: string;
@@ -11,10 +16,8 @@ export type PrivateInquiryFields = {
   preferredTime: string;
 };
 
-export type DispatchInquiryFields = {
+export type DispatchInquiryFields = InquiryCommonFields & {
   organizationName: string;
-  managerName: string;
-  phone: string;
   organizationType: string;
   targetAge: string;
   expectedParticipants: string;
@@ -24,9 +27,8 @@ export type DispatchInquiryFields = {
   proposalNeeded: string;
 };
 
-export type CurriculumInquiryFields = {
+export type CurriculumInquiryFields = InquiryCommonFields & {
   nameOrOrg: string;
-  phone: string;
   contentType: string;
   targetAge: string;
   purpose: string;

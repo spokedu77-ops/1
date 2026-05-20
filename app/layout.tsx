@@ -1,36 +1,31 @@
 'use client';
 
+import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Toaster } from 'sonner';
-import { Geist, Noto_Sans_KR, Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import Sidebar from './components/Sidebar';
 import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
 import { QueryProvider } from './providers/QueryProvider';
 import { I18nProvider } from './providers/I18nProvider';
 import './globals.css';
-import { cn } from '@/lib/utils';
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' });
-const notoSansKR = Noto_Sans_KR({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-sans',
-  display: 'swap',
-});
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-plus-jakarta',
-  display: 'swap',
-});
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-space-grotesk',
-  display: 'swap',
-});
+const fontVariables = {
+  '--font-sans':
+    '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  '--font-geist-sans':
+    '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  '--font-geist-mono':
+    '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
+  '--font-plus-jakarta':
+    '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  '--font-space-grotesk':
+    '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+} as CSSProperties;
+
 const naverSiteVerification = process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION?.trim();
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const hideSidebar = isFullscreenPath(pathname);
   const [isDesktopOpen, setIsDesktopOpen] = useState(true);
@@ -54,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <html lang="ko" className={cn(notoSansKR.variable, geist.variable, plusJakarta.variable, spaceGrotesk.variable, 'font-sans')}>
+    <html lang="ko" className="font-sans" style={fontVariables}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#185FA5" />

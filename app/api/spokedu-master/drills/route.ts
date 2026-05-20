@@ -21,6 +21,32 @@ const SERIES_COLORS: Record<string, string> = {
   RC: '#1c1917',
 };
 
+const DRILL_NAME_FALLBACK: Record<string, string> = {
+  'SR-05': '스피드 리액션',
+  'SR-06': '방향 전환 챌린지',
+  'RS-05': '팀 콜 사인',
+  'IC-05': '스톱 밸런스',
+  'RC-05': '리듬 체인지',
+};
+
+const SERIES_TITLE_FALLBACK: Record<string, string> = {
+  SR: '순발 반응',
+  IC: '균형 조절',
+  RS: '협동 반응',
+  SM: '기억·집중',
+  RC: '리듬 반응',
+};
+
+function hasBrokenText(value: string | null | undefined) {
+  if (!value) return false;
+  return value.includes(String.fromCharCode(0xfffd)) || /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄/.test(value);
+}
+
+function cleanText(value: string | null | undefined, fallback: string) {
+  if (!value || hasBrokenText(value)) return fallback;
+  return value;
+}
+
 export async function GET() {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
@@ -54,6 +80,8 @@ export async function GET() {
 
   for (const series of catalog) {
     const seriesBg = SERIES_COLORS[series.code] ?? '#312e81';
+    const category = cleanText(series.title, SERIES_TITLE_FALLBACK[series.code] ?? 'SPOMOVE');
+
     for (const program of series.programs) {
       const meta = metaByDrillId.get(program.programId);
       if (meta && !meta.is_visible) continue;
@@ -64,8 +92,8 @@ export async function GET() {
 
       drills.push({
         id: program.programId,
-        name: meta?.display_name ?? program.title,
-        category: series.title,
+        name: cleanText(meta?.display_name ?? program.title, DRILL_NAME_FALLBACK[program.programId] ?? 'SPOMOVE 드릴'),
+        category,
         cues: SESSION_CUES,
         isPro: meta?.is_pro ?? false,
         bgColor: seriesBg,

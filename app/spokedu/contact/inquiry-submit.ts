@@ -11,15 +11,16 @@ type InquirySubmitResult = {
 function formatPrivateContent(payload: PrivateInquiryPayload): string {
   return [
     '[개인·소그룹 수업 문의]',
-    `보호자 이름: ${payload.guardianName}`,
+    `이름: ${payload.name}`,
     `연락처: ${payload.phone}`,
+    `이메일: ${payload.email}`,
+    `문의 내용: ${payload.message}`,
     `아이 연령: ${payload.childAge}`,
     `운동 경험: ${payload.exerciseExperience}`,
     `현재 고민: ${payload.concern}`,
     `희망 수업 형태: ${payload.preferredClassType}`,
     `희망 장소: ${payload.preferredLocation}`,
     `희망 요일/시간: ${payload.preferredTime}`,
-    `type: ${payload.type}`,
     `createdAt: ${payload.createdAt}`,
   ].join('\n');
 }
@@ -27,9 +28,11 @@ function formatPrivateContent(payload: PrivateInquiryPayload): string {
 function formatDispatchInquiry(payload: DispatchInquiryPayload): string {
   return [
     '[기관 파견 수업 문의]',
-    `기관명: ${payload.organizationName}`,
-    `담당자: ${payload.managerName}`,
+    `이름: ${payload.name}`,
     `연락처: ${payload.phone}`,
+    `이메일: ${payload.email}`,
+    `문의 내용: ${payload.message}`,
+    `기관명: ${payload.organizationName}`,
     `기관 유형: ${payload.organizationType}`,
     `대상 연령: ${payload.targetAge}`,
     `예상 참여 인원: ${payload.expectedParticipants}`,
@@ -37,7 +40,6 @@ function formatDispatchInquiry(payload: DispatchInquiryPayload): string {
     `희망 일정: ${payload.preferredSchedule}`,
     `희망 프로그램: ${payload.preferredProgram}`,
     `제안서 필요 여부: ${payload.proposalNeeded}`,
-    `type: ${payload.type}`,
     `createdAt: ${payload.createdAt}`,
   ].join('\n');
 }
@@ -45,9 +47,16 @@ function formatDispatchInquiry(payload: DispatchInquiryPayload): string {
 function formatCurriculumExtra(payload: CurriculumInquiryPayload): string {
   return [
     '[커리큘럼·콘텐츠 문의]',
-    `이름/기관명: ${payload.nameOrOrg}`,
+    `이름: ${payload.name}`,
     `연락처: ${payload.phone}`,
-    `type: ${payload.type}`,
+    `이메일: ${payload.email}`,
+    `문의 내용: ${payload.message}`,
+    `기관명 또는 소속: ${payload.nameOrOrg}`,
+    `필요한 콘텐츠 유형: ${payload.contentType}`,
+    `대상 연령: ${payload.targetAge}`,
+    `활용 목적: ${payload.purpose}`,
+    `강사 교육 필요 여부: ${payload.trainingNeeded}`,
+    `제휴 또는 구매 형태: ${payload.partnershipType}`,
     `createdAt: ${payload.createdAt}`,
   ].join('\n');
 }
@@ -63,8 +72,9 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
       endpoint: '/api/private/leads',
       body: {
         type: payload.type,
-        name: payload.guardianName,
+        name: payload.name,
         phone: payload.phone,
+        email: payload.email,
         content: formatPrivateContent(payload),
       },
     };
@@ -76,9 +86,9 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
       body: {
         type: payload.type,
         organization: payload.organizationName,
-        manager: payload.managerName,
+        manager: payload.name,
         phone: payload.phone,
-        email: '',
+        email: payload.email,
         location: payload.organizationType,
         startDate: payload.preferredSchedule,
         endDate: '',
@@ -98,6 +108,7 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
       type: payload.type,
       name_or_org: payload.nameOrOrg,
       phone: payload.phone,
+      email: payload.email,
       content_type: payload.contentType,
       target_age: payload.targetAge,
       purpose: payload.purpose,
@@ -136,12 +147,8 @@ export async function submitInquiry(payload: InquiryPayload): Promise<InquirySub
     }
 
     return { ok: true, mode: 'api' };
-  } catch (error) {
+  } catch {
     storeTemporaryInquiry(payload);
-    return {
-      ok: true,
-      mode: 'temp',
-      message: error instanceof Error ? error.message : '문의를 임시 저장했습니다.',
-    };
+    return { ok: true, mode: 'temp' };
   }
 }

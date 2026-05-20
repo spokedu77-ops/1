@@ -1,7 +1,12 @@
 import Link from 'next/link';
-import { footerSiteLinks, navItems, SPOKEDU_BASE_PATH } from '../data/content';
-import { getLiveExternalChannels } from '../data/external-channels';
-import { brandContactLinks, brandProfile } from '../data/brand';
+import { navItems } from '../data/content';
+import {
+  brandContactLinks,
+  brandProfile,
+  footerLinks,
+  getSocialLinks,
+  SPOKEDU_BASE_PATH,
+} from '../data/site';
 import { inferTrackFromHref } from '../lib/tracking';
 
 export function SiteHeader() {
@@ -54,11 +59,11 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
-  const liveChannels = getLiveExternalChannels();
+  const socialLinks = getSocialLinks();
 
   return (
     <footer className="border-t border-slate-200 bg-white">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+      <div className="mx-auto w-full max-w-6xl space-y-5 px-4 py-8 sm:px-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-900">
@@ -101,8 +106,8 @@ export function SiteFooter() {
         </div>
 
         <nav aria-label="사이트 메뉴" className="border-t border-slate-100 pt-4">
-          <ul className="flex flex-wrap gap-x-3 gap-y-1">
-            {footerSiteLinks.map((link) => (
+          <ul className="flex flex-wrap gap-x-3 gap-y-1.5">
+            {footerLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
@@ -117,11 +122,11 @@ export function SiteFooter() {
           </ul>
         </nav>
 
-        <div className="border-t border-slate-100 pt-4">
-          <p className="text-xs font-semibold text-slate-500">공식 채널</p>
-          {liveChannels.length > 0 ? (
+        {socialLinks.length > 0 ? (
+          <div className="border-t border-slate-100 pt-4">
+            <p className="text-xs font-semibold text-slate-500">공식 채널</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {liveChannels.map((channel) => (
+              {socialLinks.map((channel) => (
                 <a
                   key={channel.key}
                   href={channel.href}
@@ -135,10 +140,8 @@ export function SiteFooter() {
                 </a>
               ))}
             </div>
-          ) : (
-            <p className="mt-2 text-xs text-slate-500">공식 채널 준비 중</p>
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
     </footer>
   );

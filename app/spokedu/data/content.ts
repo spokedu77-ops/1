@@ -1,7 +1,8 @@
 import { brandContactLinks, brandProfile } from './brand';
-import { SPOKEDU_IMAGES, spokeduImageManifest } from './images';
+import { spokeduImageManifest } from './images';
+import { footerLinks, siteNavItems, SPOKEDU_BASE_PATH } from './site';
 
-export const SPOKEDU_BASE_PATH = '/spokedu';
+export { SPOKEDU_BASE_PATH };
 
 export type SeoMetaItem = {
   title: string;
@@ -91,7 +92,6 @@ export type TrustReasonCard = {
 
 export {
   SPOKEDU_IMAGE_ROOT,
-  SPOKEDU_IMAGES,
   spokeduImageFolders,
   spokeduImageManifest,
   spokeduPageImageMap,
@@ -100,6 +100,7 @@ export {
   recordsProofImageAssets,
   recordsCaseImageBySlug,
 } from './images';
+export { SPOKEDU_IMAGES } from './images';
 export type { SpokeduImageCategory, SpokeduImageDef, PageImageSlot } from './images';
 
 export const trustReasonCards: TrustReasonCard[] = [
@@ -151,18 +152,10 @@ export const aboutLabHighlights = [
   '월간 운영 기록과 사례 데이터가 집약되는 아카이브 베이스',
 ] as const;
 
-export const navItems: NavItem[] = [
-  { label: '브랜드', path: '/about', href: `${SPOKEDU_BASE_PATH}/about` },
-  { label: '개인수업', path: '/private', href: `${SPOKEDU_BASE_PATH}/private` },
-  { label: '기관수업', path: '/dispatch', href: `${SPOKEDU_BASE_PATH}/dispatch` },
-  { label: '커리큘럼', path: '/curriculum', href: `${SPOKEDU_BASE_PATH}/curriculum` },
-  { label: '프로그램', path: '/programs', href: `${SPOKEDU_BASE_PATH}/programs` },
-  { label: '현장기록', path: '/records', href: `${SPOKEDU_BASE_PATH}/records` },
-  { label: '문의', path: '/contact', href: `${SPOKEDU_BASE_PATH}/contact` },
-];
+export const navItems: NavItem[] = siteNavItems;
 
-/** Footer 보조 내비 — 홈 등 본문 하단 카드 대신 푸터에서만 노출 */
-export const footerSiteLinks: NavItem[] = navItems.filter((item) => item.path !== '/about');
+/** Footer 보조 내비 */
+export const footerSiteLinks: NavItem[] = footerLinks;
 
 export const coreTracks: TrackItem[] = [
   {

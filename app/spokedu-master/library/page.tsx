@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import LibraryView from './LibraryView';
 import { TrialGateWall } from '../components/ui/TrialGateWall';
+import LibraryView from './LibraryView';
 
 export const metadata: Metadata = {
   title: '라이브러리',
-  description: '체육 수업 프로그램 라이브러리. 대상별, 태그별로 오늘 쓸 수업안을 빠르게 찾고 SPOMOVE와 바로 연결합니다.',
+  description: '체육 수업 프로그램을 검색하고, 수업안과 SPOMOVE 큰 화면 활동을 바로 연결하는 SPOKEDU MASTER 라이브러리입니다.',
 };
 
 export default function SpokeduMasterLibraryPage() {

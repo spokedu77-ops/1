@@ -1,46 +1,87 @@
 'use client';
 
-import Link from 'next/link';
 import { Check, ClipboardList, Maximize, Minimize, Play, RotateCcw, X } from 'lucide-react';
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { useSession } from '../../hooks/useSession';
 import { SESSION_CUES } from '../../lib/data';
 import { isTrialExpired } from '../../lib/subscription';
 import { useIsPro, useMasterStore, useProfile } from '../../store';
+import type { Cue } from '../../types';
 import { EngineRouter } from './EngineRouter';
 
 type SessionState = 'idle' | 'countdown' | 'running' | 'done' | 'paused';
+type LaunchMode = 'projector' | 'mobile' | 'class';
 
 const SUPPORTED_ENGINE_MODES = new Set(['reactTrain', 'flow', 'flash', 'pattern', 'diagonal', 'memory', 'spatial']);
 
+const CLEAN_CUES: Cue[] = [
+  { symbol: 'L', label: '왼쪽', bgColor: '#1a0a3a' },
+  { symbol: 'R', label: '오른쪽', bgColor: '#0a1a3a' },
+  { symbol: 'F', label: '앞으로', bgColor: '#022c1a' },
+  { symbol: 'B', label: '뒤로', bgColor: '#1c0a00' },
+  { symbol: 'S', label: '멈춤', bgColor: '#1a0a1a' },
+  { symbol: 'J', label: '점프', bgColor: '#0a1628' },
+];
+
+const DRILL_NAME_FALLBACK: Record<string, string> = {
+  'SR-05': '스피드 리액션',
+  'SR-06': '방향 전환 챌린지',
+  'RS-05': '팀 콜 사인',
+  'IC-05': '스톱 밸런스',
+  'RC-05': '리듬 체인지',
+};
+
+function hasBrokenText(value: string | undefined) {
+  if (!value) return false;
+  return value.includes(String.fromCharCode(0xfffd)) || /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄/.test(value);
+}
+
+function cleanDrillName(id: string, name: string) {
+  if (hasBrokenText(name)) return DRILL_NAME_FALLBACK[id] ?? 'SPOMOVE 드릴';
+  return name;
+}
+
+function cleanCue(cue: Cue): Cue {
+  const fallback = CLEAN_CUES.find((item) => item.symbol === cue.symbol);
+  if (!cue.label || hasBrokenText(cue.label)) return fallback ?? cue;
+  return cue;
+}
+
 function reactionColor(value: number | null) {
-  if (value == null) return 'var(--spm-t2)';
-  if (value < 300) return 'var(--spm-grn)';
-  if (value < 400) return 'var(--spm-amb)';
-  return 'var(--spm-red)';
+  if (value == null) return 'rgba(255,255,255,0.62)';
+  if (value < 300) return '#34d399';
+  if (value < 430) return '#fbbf24';
+  return '#fb7185';
 }
 
-function getIdleDescription(mode: string) {
-  if (mode === 'projector') return '큰 화면으로 실행하면 학생들이 신호를 보고 함께 움직입니다. 수업 전환이나 워밍업에 바로 사용할 수 있습니다.';
-  if (mode === 'class') return '수업 모드는 결과 노출을 줄이고 몰입을 우선합니다. 학생들이 화면 신호에만 집중하도록 설계했습니다.';
-  return '화면 신호가 바뀌면 최대한 빠르게 화면을 터치하세요. 반응 시간이 기록됩니다.';
+function normalizeMode(mode: string | null): LaunchMode {
+  if (mode === 'projector' || mode === 'class' || mode === 'mobile') return mode;
+  return 'mobile';
 }
 
-function getModeLabel(mode: string) {
-  if (mode === 'projector') return 'PROJECTOR';
-  if (mode === 'class') return 'CLASS MODE';
-  return 'MOBILE';
+function getModeLabel(mode: LaunchMode) {
+  if (mode === 'projector') return '큰 화면 모드';
+  if (mode === 'class') return 'Class Mode';
+  return '모바일 모드';
 }
 
-function getModeConfig(mode: string) {
+function getIdleDescription(mode: LaunchMode) {
+  if (mode === 'projector') return '프로젝터, TV, 전자칠판에 띄우고 학생들이 화면 신호를 보고 함께 움직입니다.';
+  if (mode === 'class') return '수업안과 연결된 흐름에서 결과 노출을 줄이고 몰입을 우선합니다.';
+  return '화면 신호가 바뀌면 최대한 빠르게 탭합니다. 반응 시간이 기록됩니다.';
+}
+
+function getModeConfig(mode: LaunchMode) {
   if (mode === 'class') {
     return {
       maxCues: 16,
       showMetricsDuringRun: false,
       showReactionBadge: false,
-      doneTitle: '수업 실행 완료',
-      doneDescription: 'SPOMOVE 실행이 끝났습니다. 이어서 수업 기록이나 학부모 안내 문구로 정리할 수 있습니다.',
+      title: '수업 실행 완료',
+      description: 'SPOMOVE 실행이 끝났습니다. 이어서 수업 기록이나 설명 문구로 수업의 의미를 정리할 수 있습니다.',
     };
   }
   if (mode === 'projector') {
@@ -48,23 +89,27 @@ function getModeConfig(mode: string) {
       maxCues: 20,
       showMetricsDuringRun: false,
       showReactionBadge: false,
-      doneTitle: '큰 화면 실행 완료',
-      doneDescription: '프로젝터 수업 흐름이 끝났습니다. 연결된 수업안이 있으면 기록과 설명 문구로 바로 이어갈 수 있습니다.',
+      title: '큰 화면 실행 완료',
+      description: '전체 참여 활동이 끝났습니다. 연결된 수업안이 있으면 설명 문구와 기록으로 바로 이어갈 수 있습니다.',
     };
   }
   return {
     maxCues: 20,
     showMetricsDuringRun: true,
     showReactionBadge: true,
-    doneTitle: '세션 완료',
-    doneDescription: '측정 결과가 저장되었습니다. 반복 실행으로 반응 패턴을 확인할 수 있습니다.',
+    title: '세션 완료',
+    description: '측정 결과가 저장되었습니다. 반복 실행으로 반응 패턴을 확인할 수 있습니다.',
   };
+}
+
+function formatMs(value: number | undefined) {
+  return value ? `${value}ms` : '-';
 }
 
 function CountdownLayer({ value }: { value: string }) {
   return (
-    <div className="absolute inset-0 z-20 grid place-items-center bg-black/92">
-      <span key={value} className="animate-[spmCountPop_0.75s_cubic-bezier(.34,1.56,.64,1)_both] text-[clamp(96px,22vw,220px)] font-black leading-none text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>
+    <div className="absolute inset-0 z-30 grid place-items-center bg-black/94">
+      <span key={value} className="animate-[spmCountPop_0.72s_cubic-bezier(.34,1.56,.64,1)_both] text-[clamp(96px,22vw,230px)] font-black leading-none text-white">
         {value}
       </span>
     </div>
@@ -73,22 +118,22 @@ function CountdownLayer({ value }: { value: string }) {
 
 function ResultStat({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <div className="rounded-[16px] p-4 text-center" style={{ background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.09)' }}>
-      <p className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: tone ?? '#fff' }}>{value}</p>
-      <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/38">{label}</p>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-center">
+      <p className="text-2xl font-black" style={{ color: tone ?? '#fff' }}>{value}</p>
+      <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white/42">{label}</p>
     </div>
   );
 }
 
-function SessionHint({ mode }: { mode: string }) {
+function SessionHint({ mode }: { mode: LaunchMode }) {
   const hints = mode === 'projector'
     ? ['F 전체화면', 'Space 시작', 'Esc 일시정지']
-    : ['화면 터치', 'Space 시작/기록', 'Esc 일시정지'];
+    : ['화면 탭', 'Space 시작/기록', 'Esc 일시정지'];
 
   return (
     <div className="mt-6 flex flex-wrap justify-center gap-2">
       {hints.map((hint) => (
-        <span key={hint} className="rounded-full px-3 py-1.5 text-[11px] font-bold text-white/58" style={{ background: 'rgba(255,255,255,0.075)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <span key={hint} className="rounded-full border border-white/10 bg-white/[0.075] px-3 py-1.5 text-xs font-bold text-white/60">
           {hint}
         </span>
       ))}
@@ -104,22 +149,27 @@ function TopBar({
   onExit,
 }: {
   drillName: string;
-  mode: string;
+  mode: LaunchMode;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   onExit: () => void;
 }) {
   return (
-    <div className="absolute left-0 right-0 top-0 z-30 flex min-h-[72px] items-center justify-between gap-4 bg-gradient-to-b from-black/72 to-transparent px-5 py-3 sm:px-7">
+    <div className="absolute left-0 right-0 top-0 z-20 flex min-h-[72px] items-center justify-between gap-4 bg-gradient-to-b from-black/72 to-transparent px-5 py-3 sm:px-7">
       <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/38">{getModeLabel(mode)}</p>
-        <p className="mt-1 line-clamp-1 text-[13px] font-semibold text-white/66">{drillName}</p>
+        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/42">{getModeLabel(mode)}</p>
+        <p className="mt-1 line-clamp-1 text-sm font-semibold text-white/70">{drillName}</p>
       </div>
       <div className="flex items-center gap-2">
-        <button type="button" onClick={onToggleFullscreen} className="grid h-11 w-11 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }} aria-label={isFullscreen ? '전체화면 해제' : '전체화면'}>
+        <button
+          type="button"
+          onClick={onToggleFullscreen}
+          className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white"
+          aria-label={isFullscreen ? '전체화면 해제' : '전체화면'}
+        >
           {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
         </button>
-        <button type="button" onClick={onExit} className="grid h-11 w-11 place-items-center rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }} aria-label="나가기">
+        <button type="button" onClick={onExit} className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white" aria-label="나가기">
           <X size={16} />
         </button>
       </div>
@@ -131,17 +181,19 @@ function SpomoveSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedDrillId = searchParams.get('drill') ?? 'SR-05';
-  const launchMode = searchParams.get('mode') ?? 'mobile';
+  const launchMode = normalizeMode(searchParams.get('mode'));
   const programId = searchParams.get('program') ?? '';
   const programs = useMasterStore((state) => state.programs);
   const drills = useMasterStore((state) => state.drills);
-  const drill = useMemo(() => drills.find((item) => item.id === requestedDrillId) ?? drills[0] ?? null, [drills, requestedDrillId]);
-  const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
-  const modeConfig = useMemo(() => getModeConfig(launchMode), [launchMode]);
-  const cues = drill?.cues?.length ? drill.cues : SESSION_CUES;
   const profile = useProfile();
   const isPro = useIsPro();
   const { activeSession, stats, start, end, markCue, markResponse, pause, resume } = useSession();
+
+  const drill = useMemo(() => drills.find((item) => item.id === requestedDrillId) ?? drills[0] ?? null, [drills, requestedDrillId]);
+  const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
+  const modeConfig = useMemo(() => getModeConfig(launchMode), [launchMode]);
+  const cues = useMemo(() => (drill?.cues?.length ? drill.cues : SESSION_CUES).map(cleanCue), [drill]);
+  const drillName = drill ? cleanDrillName(drill.id, drill.name) : 'SPOMOVE';
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [state, setState] = useState<SessionState>('idle');
@@ -153,7 +205,7 @@ function SpomoveSessionContent() {
   const timeoutRef = useRef<number | null>(null);
 
   const maxCues = modeConfig.maxCues;
-  const currentCue = cues[cueIndex % cues.length] ?? cues[0]!;
+  const currentCue = cues[cueIndex % cues.length] ?? CLEAN_CUES[0]!;
   const recordedCount = activeSession?.cueCount ?? finalSession?.cueCount ?? 0;
   const avg = stats?.avg ?? finalSession?.avg ?? 0;
   const best = stats?.best ?? finalSession?.best ?? 0;
@@ -191,14 +243,14 @@ function SpomoveSessionContent() {
   }, [markCue]);
 
   const beginRunning = useCallback(() => {
-    start(drill?.id ?? '', drill?.name ?? '');
+    start(drill?.id ?? '', drillName);
     setFinalSession(null);
     setLastRT(null);
     setCueIndex(0);
     setCueSerial((serial) => serial + 1);
     setState('running');
     window.setTimeout(markCue, 80);
-  }, [drill, markCue, start]);
+  }, [drill?.id, drillName, markCue, start]);
 
   const startCountdown = useCallback(() => {
     clearTimer();
@@ -211,16 +263,18 @@ function SpomoveSessionContent() {
     const sequence = ['3', '2', '1', 'GO'];
     let index = 0;
     setCountdown(sequence[index]!);
+
     const tick = () => {
       index += 1;
       if (index >= sequence.length) {
-        timeoutRef.current = window.setTimeout(beginRunning, 500);
+        timeoutRef.current = window.setTimeout(beginRunning, 420);
         return;
       }
       setCountdown(sequence[index]!);
-      timeoutRef.current = window.setTimeout(tick, sequence[index] === 'GO' ? 500 : 900);
+      timeoutRef.current = window.setTimeout(tick, sequence[index] === 'GO' ? 420 : 820);
     };
-    timeoutRef.current = window.setTimeout(tick, 900);
+
+    timeoutRef.current = window.setTimeout(tick, 820);
     return clearTimer;
   }, [beginRunning, clearTimer, state]);
 
@@ -268,7 +322,7 @@ function SpomoveSessionContent() {
   useEffect(() => clearTimer, [clearTimer]);
 
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => setIsFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
@@ -301,7 +355,7 @@ function SpomoveSessionContent() {
         level={drill.engine.level}
         onExit={exitSession}
         onComplete={() => {
-          start(drill.id, drill.name);
+          start(drill.id, drillName);
           const session = end();
           setFinalSession(session);
           setState('done');
@@ -319,9 +373,10 @@ function SpomoveSessionContent() {
       onClick={state === 'running' ? handleResponse : undefined}
       role={state === 'running' ? 'button' : undefined}
       tabIndex={state === 'running' ? 0 : undefined}
+      aria-label={state === 'running' ? '반응 기록' : undefined}
     >
       {state !== 'running' ? (
-        <TopBar drillName={drill.name} mode={launchMode} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} onExit={exitSession} />
+        <TopBar drillName={drillName} mode={launchMode} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} onExit={exitSession} />
       ) : null}
 
       {state === 'idle' ? (
@@ -336,8 +391,8 @@ function SpomoveSessionContent() {
             <Play size={44} fill="#fff" />
           </button>
           <p className="mt-7 text-[38px] font-black sm:text-[54px]">START</p>
-          {program ? <p className="mt-1 text-[12px] font-black uppercase tracking-[0.12em] text-indigo-200/70">{program.title}</p> : null}
-          <p className="mt-3 max-w-[520px] text-[14px] font-medium leading-6 text-white/55 sm:text-[15px]">{getIdleDescription(launchMode)}</p>
+          <p className="mt-1 text-xs font-black uppercase tracking-[0.12em] text-indigo-200/70">{program?.title ?? drillName}</p>
+          <p className="mt-3 max-w-[560px] text-sm font-medium leading-6 text-white/55 sm:text-[15px]">{getIdleDescription(launchMode)}</p>
           <SessionHint mode={launchMode} />
         </div>
       ) : null}
@@ -353,15 +408,15 @@ function SpomoveSessionContent() {
             <span className="text-[20px] font-semibold uppercase tracking-[0.12em] text-white/62 sm:text-[26px]">{currentCue.label}</span>
           </div>
           {modeConfig.showReactionBadge && lastRT !== null ? (
-            <div key={lastRT} className="absolute right-5 top-5 z-40 rounded-full px-3 py-1 text-[14px] font-black shadow-xl" style={{ background: 'rgba(0,0,0,0.35)', color: reactionColor(lastRT) }}>
+            <div key={lastRT} className="absolute right-5 top-5 z-40 rounded-full bg-black/35 px-3 py-1 text-sm font-black shadow-xl" style={{ color: reactionColor(lastRT) }}>
               {lastRT}ms
             </div>
           ) : null}
           {modeConfig.showMetricsDuringRun ? (
             <div className="absolute inset-x-0 bottom-0 z-30 grid grid-cols-3 gap-2 bg-gradient-to-t from-black/70 to-transparent px-5 pt-12" style={{ paddingBottom: 'max(28px, env(safe-area-inset-bottom))' }}>
               <ResultStat label="횟수" value={`${recordedCount}/${maxCues}`} />
-              <ResultStat label="평균" value={avg ? `${avg}ms` : '-'} tone="var(--spm-grn)" />
-              <ResultStat label="최고" value={best ? `${best}ms` : '-'} />
+              <ResultStat label="평균" value={formatMs(avg)} tone="#34d399" />
+              <ResultStat label="최고" value={formatMs(best)} />
             </div>
           ) : (
             <div className="absolute inset-x-0 bottom-0 z-30 h-1 bg-white/10">
@@ -374,8 +429,16 @@ function SpomoveSessionContent() {
       {state === 'paused' ? (
         <div className="flex h-full flex-col items-center justify-center px-8 text-center">
           <p className="text-[48px] font-black">PAUSED</p>
-          <p className="mt-2 text-[14px] font-semibold text-white/48">수업 흐름을 잠시 멈췄습니다.</p>
-          <button type="button" onClick={() => { resume(); setState('running'); window.setTimeout(markCue, 80); }} className="mt-6 rounded-[14px] px-6 py-4 text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)' }}>
+          <p className="mt-2 text-sm font-semibold text-white/48">수업 흐름을 잠시 멈췄습니다.</p>
+          <button
+            type="button"
+            onClick={() => {
+              resume();
+              setState('running');
+              window.setTimeout(markCue, 80);
+            }}
+            className="mt-6 rounded-2xl bg-indigo-500 px-6 py-4 text-sm font-bold text-white"
+          >
             계속하기
           </button>
         </div>
@@ -383,32 +446,34 @@ function SpomoveSessionContent() {
 
       {state === 'done' ? (
         <div className="flex h-full flex-col items-center justify-center px-8 text-center">
-          <div className="grid h-[96px] w-[96px] place-items-center rounded-full animate-[spmCuePop_0.28s_cubic-bezier(.34,1.56,.64,1)_both]" style={{ background: 'rgba(255,255,255,0.1)' }}>
-            <Check size={42} color="var(--spm-grn)" />
+          <div className="grid h-24 w-24 animate-[spmCuePop_0.28s_cubic-bezier(.34,1.56,.64,1)_both] place-items-center rounded-full bg-white/10">
+            <Check size={42} color="#34d399" />
           </div>
-          <h1 className="mt-6 text-[36px] font-black">{modeConfig.doneTitle}</h1>
-          {program ? <p className="mt-2 text-[12px] font-black uppercase tracking-[0.12em] text-indigo-200/70">{program.title}</p> : null}
-          <p className="mt-2 max-w-[500px] text-[13px] font-semibold leading-6 text-white/48">{modeConfig.doneDescription}</p>
+          <h1 className="mt-6 text-[36px] font-black">{modeConfig.title}</h1>
+          <p className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-indigo-200/70">{program?.title ?? drillName}</p>
+          <p className="mt-2 max-w-[520px] text-sm font-semibold leading-6 text-white/48">{modeConfig.description}</p>
           <div className="mt-7 grid w-full max-w-[560px] grid-cols-3 gap-2">
             <ResultStat label="횟수" value={String(finalSession?.cueCount ?? recordedCount)} />
-            <ResultStat label="평균" value={avg ? `${avg}ms` : '-'} tone="var(--spm-grn)" />
-            <ResultStat label="최고" value={best ? `${best}ms` : '-'} />
+            <ResultStat label="평균" value={formatMs(avg)} tone="#34d399" />
+            <ResultStat label="최고" value={formatMs(best)} />
           </div>
-          <div className={`mt-7 grid w-full max-w-[660px] gap-2 ${programId ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'}`}>
-            <button type="button" onClick={startCountdown} className="flex h-12 items-center justify-center gap-2 rounded-[13px] text-[14px] font-bold text-white" style={{ background: 'var(--spm-acc)' }}>
-              <RotateCcw size={16} /> 다시 시작
+          <div className={`mt-7 grid w-full max-w-[680px] gap-2 ${programId ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'}`}>
+            <button type="button" onClick={startCountdown} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-bold text-white">
+              <RotateCcw size={16} />
+              다시 시작
             </button>
             {programId ? (
-              <Link href={`/spokedu-master/class-record?program=${programId}`} className="flex h-12 items-center justify-center gap-1.5 rounded-[13px] text-[13px] font-bold" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--spm-t)' }}>
-                <ClipboardList size={14} /> 수업 기록
+              <Link href={`/spokedu-master/class-record?program=${programId}`} className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-white/[0.08] text-sm font-bold text-white">
+                <ClipboardList size={14} />
+                수업 기록
               </Link>
             ) : null}
             {programId ? (
-              <Link href={`/spokedu-master/report?program=${programId}`} className="flex h-12 items-center justify-center rounded-[13px] text-[13px] font-bold" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--spm-t)' }}>
+              <Link href={`/spokedu-master/report?program=${programId}`} className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.08] text-sm font-bold text-white">
                 설명 문구
               </Link>
             ) : null}
-            <Link href="/spokedu-master/spomove" className="flex h-12 items-center justify-center rounded-[13px] text-[14px] font-bold" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--spm-t)' }}>
+            <Link href="/spokedu-master/spomove" className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.08] text-sm font-bold text-white">
               목록으로
             </Link>
           </div>
@@ -432,7 +497,7 @@ function SpomoveSessionContent() {
 
 export default function SpomoveSessionPage() {
   return (
-    <Suspense fallback={<div className="relative h-dvh overflow-hidden select-none" style={{ background: '#050509', color: '#fff', fontFamily: 'var(--spm-font-display)' }} />}>
+    <Suspense fallback={<div className="relative h-dvh overflow-hidden select-none bg-black text-white" />}>
       <SpomoveSessionContent />
     </Suspense>
   );

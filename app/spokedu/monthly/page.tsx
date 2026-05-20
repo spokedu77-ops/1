@@ -111,17 +111,21 @@ export default function SpokeduMonthlyPage() {
         </ul>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-        <h2 className="text-base font-semibold text-slate-900">더 깊은 후기</h2>
-        <p className="mt-1 text-sm text-slate-600">네이버 블로그에서 수업 후기와 운영 이야기를 이어갑니다.</p>
-        {NAVER_BLOG_URL ? (
-          <a href={NAVER_BLOG_URL} target="_blank" rel="noreferrer" data-track="external-naver-blog" className={`mt-3 inline-flex text-sm ${linkMuted}`}>
+      {NAVER_BLOG_URL ? (
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+          <h2 className="text-base font-semibold text-slate-900">더 깊은 후기</h2>
+          <p className="mt-1 text-sm text-slate-600">네이버 블로그에서 수업 후기와 운영 이야기를 이어갑니다.</p>
+          <a
+            href={NAVER_BLOG_URL}
+            target="_blank"
+            rel="noreferrer"
+            data-track="external-naver-blog"
+            className={`mt-3 inline-flex text-sm ${linkMuted}`}
+          >
             네이버 블로그 →
           </a>
-        ) : (
-          <p className="mt-3 text-xs text-slate-500">공식 채널 준비 중</p>
-        )}
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -209,6 +209,163 @@ function applyPremiumContentOverlay(program: Program): Program {
   };
 }
 
+function hasBrokenText(value: string | null | undefined) {
+  if (!value) return false;
+  return value.includes(String.fromCharCode(0xfffd)) || /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥|諛|湲|由|誘/.test(value);
+}
+
+function cleanText(value: string | null | undefined, fallback: string) {
+  const text = (value ?? '').trim();
+  if (!text || hasBrokenText(text)) return fallback;
+  return text;
+}
+
+function cleanList(items: string[] | null | undefined, fallback: string[]) {
+  const cleaned = (items ?? []).map((item) => item.trim()).filter((item) => item && !hasBrokenText(item));
+  return cleaned.length > 0 ? cleaned : fallback;
+}
+
+function inferCleanCategory(text: string) {
+  if (/펀스틱|펜싱|fencing|funstick|민첩|반응|스피드|방향/.test(text)) return '민첩·반응';
+  if (/협동|팀|릴레이|관계/.test(text)) return '협동';
+  if (/균형|밸런스|자세|정지/.test(text)) return '균형 조절';
+  if (/리듬|표현|음악|창의/.test(text)) return '리듬·표현';
+  return '일반 체육';
+}
+
+function inferCleanFocus(category: string) {
+  if (category.includes('민첩')) return '민첩성 / 반응 조절 / 방향 전환';
+  if (category.includes('협동')) return '협동성 / 역할 수행 / 팀 커뮤니케이션';
+  if (category.includes('균형')) return '균형 감각 / 자세 조절 / 충동 조절';
+  if (category.includes('리듬')) return '리듬 감각 / 표현 움직임 / 신체 조절';
+  return '신체 조절 / 집중력 / 참여 경험';
+}
+
+function cleanFunstickProgram(program: Program): Program {
+  return {
+    ...program,
+    title: '펀스틱 펜싱 Funstick Fencing',
+    category: '민첩·반응',
+    grade: '초등 3학년 이상',
+    duration: program.duration || 20,
+    space: '실내 체육관 · 넓은 활동 공간',
+    description:
+      '부드러운 펀스틱으로 상대의 목표물을 겨냥하며 거리 판단, 타이밍, 균형 조절, 공격·방어 전환을 경험하는 대체 펜싱 프로그램입니다.',
+    steps: [
+      '두 명이 안전거리를 두고 마주 섭니다. 펀스틱은 얼굴 방향이 아니라 목표물 방향으로만 사용합니다.',
+      '한 명은 펀스틱을 들고, 다른 한 명은 라바콘과 공을 들고 균형을 유지합니다.',
+      '상대의 공을 정확히 찌르면 1점입니다. 자신의 공을 떨어뜨리거나 안전선을 넘으면 공격권을 넘깁니다.',
+      '1라운드는 30초로 짧게 운영하고, 라운드 사이에 거리와 자세를 바로 피드백합니다.',
+    ],
+    equipment: ['펀스틱 2개', '라바콘 2개', '공 2개', '접시콘 12~15개'],
+    tags: ['펜싱', '민첩성', '거리 판단', '타이밍', '균형 조절', 'SPOMOVE 연계'],
+    colors: ['#111827', '#1d4ed8', '#f97316', '#facc15'],
+    isHot: true,
+    thumbnailUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
+    lessonDetail: {
+      recommendedAge: '초등 3학년 이상',
+      recommendedPlayers: '2명 페어 · 6~20명 순환 운영',
+      objective: '거리 판단, 반응 타이밍, 균형 유지, 공격·방어 전환을 안전한 펜싱 형태로 경험합니다.',
+      developmentFocus: '민첩성 / 반응 조절 / 집중력 / 스포츠맨십',
+      coachScript:
+        '오늘은 세게 찌르는 수업이 아닙니다. 거리를 보고, 타이밍을 읽고, 몸이 앞으로 쏠리지 않게 균형을 잡는 수업입니다.',
+      parentNote:
+        '오늘은 펀스틱 펜싱 활동으로 거리 판단과 반응 전환을 연습했습니다. 아이들이 규칙을 지키며 공격과 방어를 번갈아 경험했습니다.',
+      fieldTips: [
+        '처음 1라운드는 점수보다 안전거리와 자세 확인에 집중합니다.',
+        '공격이 과격해지면 “천천히, 정확하게” 라운드로 전환합니다.',
+        '대기 학생에게 관찰 역할을 주면 수업 집중도가 유지됩니다.',
+      ],
+      variations: [
+        '초급: 정지 상태에서 목표물 찌르기만 진행합니다.',
+        '중급: 발을 한 번만 이동할 수 있게 제한합니다.',
+        '고급: SPOMOVE 신호에 맞춰 공격권이나 이동 방향을 바꿉니다.',
+      ],
+      safetyNotes: [
+        '얼굴과 목 방향으로 펀스틱이 향하지 않도록 시작 전에 금지선을 명확히 안내합니다.',
+        '접시콘으로 경기 구역을 넓게 표시하고 대기 학생은 구역 밖에서 기다립니다.',
+        '펀스틱은 휘두르지 않고 목표물을 향한 가벼운 찌르기로만 사용합니다.',
+      ],
+      relatedSpomoveIds: ['SR-05', 'SR-06'],
+      videoUrl: program.lessonDetail?.videoUrl,
+      heroImageUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
+      setupImageUrl: '/images/spokedu-master/programs/funstick-fencing/setup.png',
+      galleryImageUrls: ['/images/spokedu-master/programs/funstick-fencing/gallery-1.jpeg'],
+      briefingNotes: [
+        '현장 사진은 신뢰를 만들고, 배치도는 수업 직전 준비 시간을 줄입니다.',
+        '구독자는 활동 가치, 준비물, 안전 기준, 실행 순서를 한 번에 판단할 수 있어야 합니다.',
+      ],
+      rules: [
+        '목표물은 공으로 제한하고 얼굴·목·몸통은 공격 대상에서 제외합니다.',
+        '안전선 밖으로 나가거나 공을 떨어뜨리면 공격권을 넘깁니다.',
+        '라운드가 끝나면 서로 인사하고 다음 페어로 교대합니다.',
+      ],
+      setupNotes: [
+        '접시콘으로 직사각형 경기장을 만들고 중앙에 두 명이 마주 보는 시작선을 둡니다.',
+        '각 학생은 라바콘과 공을 들고, 상대는 펀스틱으로 공만 겨냥합니다.',
+        '대기자는 측면 안전 구역에서 다음 라운드를 준비합니다.',
+      ],
+    },
+  };
+}
+
+function normalizeProgramForMaster(program: Program, index: number): Program {
+  const identity = `${program.id} ${program.title} ${program.thumbnailUrl ?? ''}`.toLowerCase();
+  if (/funstick|fencing|펀스틱|펜싱/.test(identity)) return cleanFunstickProgram(program);
+
+  const title = cleanText(program.title, `수업 패키지 ${index + 1}`);
+  const category = cleanText(program.category, inferCleanCategory(`${title} ${program.description} ${program.tags.join(' ')}`));
+  const focus = cleanText(program.lessonDetail?.developmentFocus, inferCleanFocus(category));
+  const equipment = cleanList(program.equipment, ['현장 기본 도구']);
+  const steps = cleanList(program.steps, [
+    '공간과 준비물을 확인합니다.',
+    '규칙을 짧게 설명하고 시범을 보여줍니다.',
+    '기본 라운드로 시작한 뒤 난이도를 단계적으로 올립니다.',
+  ]);
+  const relatedSpomoveIds = program.lessonDetail?.relatedSpomoveIds?.length ? program.lessonDetail.relatedSpomoveIds : inferRelatedSpomoveIds({
+    title,
+    category,
+    tags: program.tags,
+    description: program.description,
+    steps,
+  });
+  const description = cleanText(
+    program.description,
+    `${title} 활동으로 ${focus}을 자연스럽게 경험하는 체육 수업 패키지입니다.`,
+  );
+
+  return {
+    ...program,
+    title,
+    category,
+    grade: cleanText(program.grade, '전학년'),
+    space: cleanText(program.space, '실내 또는 체육 공간'),
+    description,
+    steps,
+    equipment,
+    tags: [...new Set(cleanList(program.tags, [category, focus.split('/')[0].trim()]).concat(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : []))],
+    lessonDetail: {
+      recommendedAge: cleanText(program.lessonDetail?.recommendedAge, cleanText(program.grade, '전학년')),
+      recommendedPlayers: cleanText(program.lessonDetail?.recommendedPlayers, '6~20명'),
+      objective: cleanText(program.lessonDetail?.objective, `${title}을 통해 ${focus}을 경험합니다.`),
+      developmentFocus: focus,
+      coachScript: cleanText(program.lessonDetail?.coachScript, `${title}은 속도보다 규칙 이해와 안전한 움직임을 먼저 확인한 뒤 진행합니다.`),
+      parentNote: cleanText(program.lessonDetail?.parentNote, `오늘은 ${title} 활동으로 ${focus}을 연습했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`),
+      fieldTips: cleanList(program.lessonDetail?.fieldTips, ['처음 라운드는 성공 경험을 만들고, 이후 신호 반응이나 역할 변화를 추가합니다.']),
+      variations: cleanList(program.lessonDetail?.variations, ['도구 수를 줄여 난이도를 낮춥니다.', '개인전에서 팀전으로 확장합니다.']),
+      safetyNotes: cleanList(program.lessonDetail?.safetyNotes, ['충돌 위험이 있는 구간은 대기선과 이동선을 분리합니다.']),
+      relatedSpomoveIds,
+      videoUrl: program.lessonDetail?.videoUrl,
+      heroImageUrl: program.lessonDetail?.heroImageUrl,
+      setupImageUrl: program.lessonDetail?.setupImageUrl,
+      galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
+      briefingNotes: cleanList(program.lessonDetail?.briefingNotes, ['수업 목표, 안전 기준, 진행 순서를 수업 전에 짧게 확인합니다.']),
+      rules: cleanList(program.lessonDetail?.rules, steps),
+      setupNotes: cleanList(program.lessonDetail?.setupNotes, [`공간: ${cleanText(program.space, '실내 또는 체육 공간')}`, `준비물: ${equipment.join(', ')}`]),
+    },
+  };
+}
+
 export async function GET() {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
@@ -303,7 +460,7 @@ export async function GET() {
     display_order: number | null;
   };
 
-  const programs: Program[] = (curriculumRows as CurrRow[]).map((row) => {
+  const programs: Program[] = (curriculumRows as CurrRow[]).map((row, index) => {
     const meta = metaByCurriculumId.get(row.id);
     const overlay = overlayByCurriculumId.get(row.id);
     const title = (row.title ?? '').trim() || `커리큘럼 #${row.id}`;
@@ -386,7 +543,7 @@ export async function GET() {
       },
     };
 
-    return buildContentQuality(applyPremiumContentOverlay(program));
+    return normalizeProgramForMaster(buildContentQuality(applyPremiumContentOverlay(program)), index);
   });
 
   return NextResponse.json({ data: programs, total: programs.length });
