@@ -1,6 +1,7 @@
 'use client';
 
 import { isSameDay } from 'date-fns';
+import type { LucideIcon } from 'lucide-react';
 import {
   Bell,
   BookOpen,
@@ -31,7 +32,7 @@ import type { Drill, Lesson, Notification, Program } from '../types';
 
 function pickHeroProgram(programs: Program[]) {
   return (
-    programs.find((program) => program.isHot && program.tags?.some((tag) => tag.toUpperCase().includes('SPOMOVE'))) ||
+    programs.find((program) => program.isHot && isSpomoveLinked(program)) ||
     programs.find((program) => program.isHot) ||
     programs.find((program) => program.isNew) ||
     programs[0]
@@ -39,14 +40,11 @@ function pickHeroProgram(programs: Program[]) {
 }
 
 function isSpomoveLinked(program: Program) {
-  const tags = program.tags ?? [];
-  const related = program.lessonDetail?.relatedSpomoveIds ?? [];
-  return related.length > 0 || tags.some((tag) => tag.toUpperCase().includes('SPOMOVE'));
+  return Boolean(program.lessonDetail?.relatedSpomoveIds?.length) || program.tags.some((tag) => tag.toUpperCase().includes('SPOMOVE'));
 }
 
 function hasExplanationReady(program: Program) {
-  const detail = program.lessonDetail;
-  return Boolean(detail?.parentNote || detail?.objective || detail?.developmentFocus || program.description);
+  return Boolean(program.lessonDetail?.parentNote || program.lessonDetail?.objective || program.lessonDetail?.developmentFocus || program.description);
 }
 
 function getPrimaryDrill(program: Program | undefined, drills: Drill[]) {
@@ -57,10 +55,6 @@ function getPrimaryDrill(program: Program | undefined, drills: Drill[]) {
 
 function getHeroImage(program: Program | undefined) {
   return program?.lessonDetail?.heroImageUrl || program?.thumbnailUrl;
-}
-
-function getLessonColor(lesson: Lesson) {
-  return lesson.color || 'bg-indigo-500';
 }
 
 function formatLessonTime(lesson: Lesson) {
@@ -76,7 +70,7 @@ function PlanStatusChip() {
   if (profile.plan === 'free' && daysLeft > 0) {
     return (
       <Link
-        href="/spokedu-master/plan"
+        href="/spokedu-master/profile"
         className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-300/15"
       >
         체험 {daysLeft}일 남음
@@ -87,7 +81,7 @@ function PlanStatusChip() {
 
   return (
     <Link
-      href="/spokedu-master/plan"
+      href="/spokedu-master/profile"
       className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-300/15"
     >
       MASTER 활성
@@ -114,13 +108,7 @@ function NotificationButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function HomeHero({
-  program,
-  drill,
-}: {
-  program: Program;
-  drill?: Drill;
-}) {
+function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
   const heroImage = getHeroImage(program);
   const spomoveHref = drill
     ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
@@ -128,7 +116,7 @@ function HomeHero({
 
   return (
     <section className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/70 shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
-      <div className="grid min-h-[360px] lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid min-h-[360px] lg:grid-cols-[1.08fr_0.92fr]">
         <div className="flex flex-col justify-between p-6 sm:p-8 lg:p-10">
           <div>
             <div className="mb-5 flex flex-wrap items-center gap-2">
@@ -144,12 +132,12 @@ function HomeHero({
             </div>
 
             <h1 className="max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">
-              수업 준비는 빠르게,
+              수업 준비는 쉽게,
               <br />
-              화면 활동은 더 몰입감 있게.
+              수업은 더 몰입감 있게.
             </h1>
             <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
-              {program.title}을 중심으로 라이브러리, SPOMOVE, 설명 문구를 한 번에 이어서 오늘 수업을 바로 시작합니다.
+              {program.title}을 중심으로 라이브러리, SPOMOVE, 설명 문구를 한 번에 이어 오늘 수업을 바로 시작합니다.
             </p>
           </div>
 
@@ -193,10 +181,10 @@ function HomeHero({
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(99,102,241,0.5),transparent_36%),linear-gradient(135deg,#10172a,#172554_48%,#020617)]" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6">
+          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
             <div className="rounded-3xl border border-white/12 bg-slate-950/72 p-5 backdrop-blur-xl">
               <div className="flex items-center justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Selected Program</p>
                   <h2 className="mt-1 line-clamp-2 text-xl font-black text-white">{program.title}</h2>
                 </div>
@@ -205,18 +193,9 @@ function HomeHero({
                 </span>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-2xl bg-white/[0.06] px-2 py-3">
-                  <p className="text-[11px] text-slate-400">대상</p>
-                  <p className="mt-1 truncate text-xs font-bold text-white">{program.grade}</p>
-                </div>
-                <div className="rounded-2xl bg-white/[0.06] px-2 py-3">
-                  <p className="text-[11px] text-slate-400">시간</p>
-                  <p className="mt-1 text-xs font-bold text-white">{program.duration}</p>
-                </div>
-                <div className="rounded-2xl bg-white/[0.06] px-2 py-3">
-                  <p className="text-[11px] text-slate-400">공간</p>
-                  <p className="mt-1 truncate text-xs font-bold text-white">{program.space}</p>
-                </div>
+                <MiniStat label="대상" value={program.grade} />
+                <MiniStat label="시간" value={`${program.duration}분`} />
+                <MiniStat label="공간" value={program.space} />
               </div>
             </div>
           </div>
@@ -226,15 +205,16 @@ function HomeHero({
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  caption,
-}: {
-  label: string;
-  value: string;
-  caption: string;
-}) {
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-h-[62px] rounded-2xl bg-white/[0.06] px-2 py-3">
+      <p className="text-[11px] text-slate-400">{label}</p>
+      <p className="mt-1 truncate text-xs font-bold text-white">{value}</p>
+    </div>
+  );
+}
+
+function MetricCard({ label, value, caption }: { label: string; value: string; caption: string }) {
   return (
     <div className="min-h-[112px] rounded-3xl border border-white/10 bg-white/[0.055] p-5">
       <p className="text-xs font-semibold text-slate-400">{label}</p>
@@ -252,7 +232,7 @@ function QuickActionCard({
   accent,
 }: {
   href: string;
-  icon: typeof BookOpen;
+  icon: LucideIcon;
   title: string;
   body: string;
   accent: string;
@@ -260,7 +240,7 @@ function QuickActionCard({
   return (
     <Link
       href={href}
-      className="group flex min-h-[132px] flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.055] p-5 transition hover:-translate-y-0.5 hover:bg-white/[0.085]"
+      className="group flex min-h-[140px] flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.055] p-5 transition hover:-translate-y-0.5 hover:bg-white/[0.085]"
     >
       <div className="flex items-center justify-between gap-3">
         <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${accent}`}>
@@ -282,8 +262,8 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
     : '/spokedu-master/spomove';
 
   return (
-    <article className="flex min-h-[250px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.055]">
-      <Link href={`/spokedu-master/library/${program.id}`} className="relative h-28 overflow-hidden bg-slate-900">
+    <article className="flex min-h-[264px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.055]">
+      <Link href={`/spokedu-master/library/${program.id}`} className="relative h-32 overflow-hidden bg-slate-900">
         {getHeroImage(program) ? (
           <Image
             src={getHeroImage(program) as string}
@@ -345,7 +325,7 @@ function TodayLessons({ lessons }: { lessons: Lesson[] }) {
         {lessons.length > 0 ? (
           lessons.slice(0, 3).map((lesson) => (
             <div key={lesson.id} className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/[0.045] p-4">
-              <span className={`h-11 w-1.5 rounded-full ${getLessonColor(lesson)}`} />
+              <span className="h-11 w-1.5 rounded-full" style={{ background: lesson.color || '#6366f1' }} />
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-sm font-black text-white">{lesson.title}</h3>
                 <p className="mt-1 text-xs text-slate-400">{formatLessonTime(lesson)}</p>
@@ -440,11 +420,10 @@ export default function DashboardView() {
   const heroDrill = useMemo(() => getPrimaryDrill(heroProgram, drills), [heroProgram, drills]);
 
   const recommendedPrograms = useMemo(() => {
-    const selected = programs
+    return programs
       .filter((program) => program.id !== heroProgram?.id)
       .sort((a, b) => Number(b.isHot) - Number(a.isHot) || Number(b.isNew) - Number(a.isNew))
       .slice(0, 3);
-    return selected;
   }, [heroProgram?.id, programs]);
 
   const linkedSpomoveCount = useMemo(() => programs.filter(isSpomoveLinked).length, [programs]);
@@ -497,21 +476,21 @@ export default function DashboardView() {
               href="/spokedu-master/spomove"
               icon={MonitorPlay}
               title="SPOMOVE"
-              body="빔·TV·태블릿용 큰 화면 활동을 실행합니다."
+              body="빔, TV, 태블릿용 큰 화면 활동을 실행합니다."
               accent="bg-violet-400/12 text-violet-200"
             />
             <QuickActionCard
               href="/spokedu-master/report"
               icon={FileText}
               title="설명 도구"
-              body="학부모·기관·학교용 수업 문구를 만듭니다."
+              body="학부모, 기관, 학교용 수업 문구를 만듭니다."
               accent="bg-emerald-400/12 text-emerald-200"
             />
             <QuickActionCard
               href="/spokedu-master/class-tools"
               icon={Timer}
               title="수업 보조 도구"
-              body="타이머, 팀 나누기, 점수판을 현장에서 씁니다."
+              body="타이머, 팀 나누기, 점수판을 현장에서 엽니다."
               accent="bg-amber-400/12 text-amber-200"
             />
           </div>
@@ -544,9 +523,9 @@ export default function DashboardView() {
                   <Wand2 className="h-5 w-5" />
                 </span>
                 <div>
-                  <h2 className="text-base font-black text-white">홈 설계 기준</h2>
+                  <h2 className="text-base font-black text-white">설계 기준</h2>
                   <p className="mt-1 text-sm leading-6 text-slate-400">
-                    OTT처럼 추천은 앞에 두고, SaaS처럼 실행 동선은 짧게 유지했습니다.
+                    OTT처럼 추천을 앞에 두고, 수업 SaaS처럼 실행 동선을 짧게 유지합니다.
                   </p>
                 </div>
               </div>
@@ -558,9 +537,9 @@ export default function DashboardView() {
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-200">Next Action</p>
-              <h2 className="mt-2 text-xl font-black text-white">콘텐츠 품질을 더 올릴 준비가 되어 있습니다.</h2>
+              <h2 className="mt-2 text-xl font-black text-white">콘텐츠 품질을 기준화할 차례입니다.</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                프로그램 모달은 사진, 공간 배치, 준비물, 진행 단계, 설명 문구가 한 화면에서 자연스럽게 읽히도록 다음 단계에서 정리합니다.
+                대표 사진, 공간 배치, 준비물, 진행 단계, SPOMOVE 연결, 설명 문구가 한 화면에서 자연스럽게 이어지도록 다음 단계에서 더 다듬습니다.
               </p>
             </div>
             <Link
