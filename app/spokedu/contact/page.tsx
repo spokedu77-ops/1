@@ -36,8 +36,10 @@ export default function SpokeduContactPage() {
         <p>
           <span className="font-semibold text-slate-800">{brandProfile.nameKo}</span> · 대표 {brandProfile.representative}
         </p>
-        <p className="mt-1">{brandProfile.address}</p>
-        <p className="mt-1">{brandProfile.businessInfo.displayText}</p>
+        <p className="mt-1">
+          연락처 {brandProfile.phone} · {brandProfile.email}
+        </p>
+        <p className="mt-1">운영권역 {brandProfile.serviceArea}</p>
       </section>
     </div>
   );

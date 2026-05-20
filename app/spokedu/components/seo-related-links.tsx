@@ -7,6 +7,10 @@ type SpokeduRelatedLinksProps = {
 };
 
 export function SpokeduRelatedLinks({ page }: SpokeduRelatedLinksProps) {
+  if (page === 'home') {
+    return null;
+  }
+
   const links = seoRelatedLinks[page];
 
   return (

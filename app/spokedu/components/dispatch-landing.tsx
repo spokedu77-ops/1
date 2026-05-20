@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { SPOKEDU_IMAGES } from '../data/images';
-import { cardInteractive, landingH1, landingHeroShell, landingPageStack } from '../lib/ui-classes';
+import { cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
 import { HeroCtaStack } from './hero-cta-stack';
 import { SpokeduHeroVisual } from './spokedu-hero-visual';
 import { SpokeduImage } from './spokedu-image';
@@ -12,7 +13,7 @@ const heroLines = ['기관의 공간, 인원, 운영 목적에 맞춰', '파견�
 
 const programCards = [
   { title: '정규수업', description: '주간 운영 리듬에 맞춘 반복형 파견 수업입니다.' },
-  { title: '원데이 행사', description: '행사 일정에 맞춘 체험형 단기 프로그램입니다.' },
+  { title: '원데이 체육행사', description: '행사 일정에 맞춘 체험형 단기 프로그램입니다.' },
   { title: '방학캠프', description: '방학 시즌 집중 운영이 가능한 확장형 구성입니다.' },
   { title: 'SPOMOVE', description: '몰입형 반응 활동으로 참여도를 높이는 에듀테크 수업입니다.' },
   { title: 'PAPS', description: '기초체력 요소를 놀이 중심으로 재구성한 프로그램입니다.' },
@@ -44,7 +45,7 @@ function Section({ children, className, delay = 0 }: { children: ReactNode; clas
       initial={reducedMotion ? false : { opacity: 0, y: 14 }}
       whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.55, ease: 'easeOut', delay }}
+      transition={{ duration: 0.45, ease: 'easeOut', delay }}
       className={className}
     >
       {children}
@@ -62,7 +63,7 @@ export default function DispatchLanding() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.2),transparent_44%),radial-gradient(circle_at_bottom_right,rgba(148,163,184,0.14),transparent_42%)]" />
         <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-7">
           <div className="space-y-4 sm:space-y-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">For Organizations</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-300">기관 담당자 · 파견형 체육교육</p>
             <h1 className={`${landingH1} text-white`}>
               {heroLines.map((line, index) => (
                 <motion.span
@@ -77,13 +78,26 @@ export default function DispatchLanding() {
               ))}
             </h1>
             <p className="max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-              기관 담당자가 바로 검토할 수 있도록 프로그램 형태, 운영 조건, 제안 프로세스를 명확하게 안내합니다.
+              정규수업·원데이·캠프·SPOMOVE·PAPS를 기관 공간·인원·운영 목적에 맞춰 제안합니다.
             </p>
+            <div className="lg:hidden">
+              <SpokeduHeroVisual
+                image={SPOKEDU_IMAGES.dispatch.groupClass}
+                className="relative h-[200px] overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 sm:h-[220px]"
+              />
+            </div>
             <HeroCtaStack
               variant="dark"
-              primary={{ href: dispatchInquiry, label: '제안서 문의', trackLabel: '제안서 문의' }}
-              secondary={[{ href: dispatchInquiry, label: '기관 수업 제안', trackLabel: '기관 수업 제안 받기' }]}
+              primary={{ href: dispatchInquiry, label: '제안서 문의', trackLabel: 'dispatch-cta-proposal' }}
+              secondary={[{ href: dispatchInquiry, label: '기관 수업 제안', trackLabel: 'dispatch-cta-program' }]}
             />
+            <p className="text-xs leading-5 text-slate-400 sm:text-sm">
+              가정·소그룹 개인수업은{' '}
+              <Link href="/spokedu/private" data-track="cta-private" data-track-label="dispatch-to-private" className={linkMuted}>
+                개인·소그룹 수업 안내
+              </Link>
+              를 확인해 주세요.
+            </p>
           </div>
           <div className="hidden lg:block">
             <motion.div
@@ -100,8 +114,9 @@ export default function DispatchLanding() {
       </Section>
 
       <Section className="space-y-5" delay={0.05}>
-        <h2 className="text-2xl font-bold leading-tight text-slate-950 sm:text-4xl">운영 가능한 프로그램 라인업</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <h2 className="text-xl font-bold leading-snug text-slate-950 sm:text-3xl">운영 프로그램</h2>
+        <p className="text-sm text-slate-600">정규수업부터 SPOMOVE·PAPS까지 기관 조건에 맞게 조합합니다.</p>
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-5">
           {programCards.map((item) => (
             <article
               key={item.title}
@@ -115,7 +130,7 @@ export default function DispatchLanding() {
       </Section>
 
       <Section className="space-y-3" delay={0.07}>
-        <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">현장 운영 장면</h2>
+        <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">현장 운영 장면</h2>
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
           <SpokeduImage asset={SPOKEDU_IMAGES.dispatch.groupClass} alt={SPOKEDU_IMAGES.dispatch.groupClass.alt} className="aspect-[4/3] rounded-2xl" />
           <SpokeduImage asset={SPOKEDU_IMAGES.dispatch.oneDayEvent} alt={SPOKEDU_IMAGES.dispatch.oneDayEvent.alt} className="aspect-[4/3] rounded-2xl" />
@@ -123,7 +138,7 @@ export default function DispatchLanding() {
       </Section>
 
       <Section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8" delay={0.08}>
-        <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">공간·인원 맞춤 운영</h2>
+        <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">공간·인원·운영 목적 맞춤</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {fitCards.map((item) => (
             <article key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -135,7 +150,7 @@ export default function DispatchLanding() {
       </Section>
 
       <Section className="space-y-4" delay={0.1}>
-        <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">운영 프로세스</h2>
+        <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">운영 프로세스</h2>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {processSteps.map((step, index) => (
             <div key={step} className="rounded-xl border border-slate-200 bg-white p-4">
@@ -147,7 +162,7 @@ export default function DispatchLanding() {
       </Section>
 
       <Section className="space-y-4" delay={0.12}>
-        <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">적용 기관 예시</h2>
+        <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">적용 기관 예시</h2>
         <div className="grid gap-2 sm:grid-cols-2">
           {useCases.map((item) => (
             <div key={item} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700">
@@ -159,10 +174,12 @@ export default function DispatchLanding() {
 
       <Section className="rounded-2xl border border-slate-900 bg-slate-950 px-4 py-6 text-white sm:rounded-3xl sm:px-8 sm:py-10" delay={0.15}>
         <h2 className="text-xl font-bold sm:text-3xl">기관 운영에 맞는 제안서를 받아보세요</h2>
+        <p className="mt-2 text-sm text-slate-400">대상·공간·인원·일정을 알려주시면 맞춤 제안서를 준비합니다.</p>
         <div className="mt-4 sm:mt-5">
           <HeroCtaStack
             variant="dark"
-            primary={{ href: dispatchInquiry, label: '제안서 문의', trackLabel: 'dispatch-final-cta' }}
+            primary={{ href: dispatchInquiry, label: '제안서 문의', trackLabel: 'dispatch-final-proposal' }}
+            secondary={[{ href: dispatchInquiry, label: '기관 수업 제안', trackLabel: 'dispatch-final-program' }]}
           />
         </div>
       </Section>

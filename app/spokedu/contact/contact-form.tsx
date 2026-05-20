@@ -100,6 +100,21 @@ export default function SpokeduContactForm() {
     if (isInquiryType(requestedType)) {
       setInquiryType(requestedType);
     }
+
+    const classType = searchParams.get('classType');
+    if (classType === '1to1') {
+      setPrivateForm((prev) => ({ ...prev, preferredClassType: '1:1 개인 체육수업' }));
+    } else if (classType === 'small-group') {
+      setPrivateForm((prev) => ({ ...prev, preferredClassType: '2~4명 소그룹 수업' }));
+    }
+
+    if (requestedType === 'curriculum' && searchParams.get('intent') === 'partnership') {
+      setCurriculumForm((prev) => ({
+        ...prev,
+        partnershipType: prev.partnershipType || '콘텐츠 제휴·라이선싱',
+        contentType: prev.contentType || '프로그램 라이선싱',
+      }));
+    }
   }, [searchParams]);
 
   const activeOption = useMemo(

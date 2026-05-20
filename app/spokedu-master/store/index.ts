@@ -150,7 +150,7 @@ const defaultStudents: StudentProfile[] = [
     risk: null,
     skills: [
       { label: '신호 반응', value: 88, delta: '+18%' },
-      { label: '협응 리듬', value: 81, delta: '+10%' },
+      { label: '적응 리듬', value: 81, delta: '+10%' },
       { label: '방향 전환', value: 76, delta: '+9%' },
     ],
     badges: ['집중왕', '연속 출석'],
@@ -180,16 +180,16 @@ const defaultNotifications: Notification[] = [
   {
     id: 'n1',
     type: 'program',
-    title: '이번 주 추천 프로그램이 준비됐습니다.',
-    body: '라이브러리에서 수업 전 바로 쓸 수 있는 추천 수업안을 확인하세요.',
+    title: '이번 주 추천 프로그램이 준비되었습니다.',
+    body: '라이브러리에서 오늘 수업에 바로 쓸 수 있는 추천 수업안을 확인해 보세요.',
     read: false,
     createdAt: new Date().toISOString(),
   },
   {
     id: 'n2',
     type: 'billing',
-    title: '체험 기간이 활성화되어 있습니다.',
-    body: '라이브러리에서 수업을 고르고, SPOMOVE로 큰 화면 활동을 실행하고, 수업 도구로 수업을 더 생동감 있게 진행해 보세요.',
+    title: '체험 기간이 활성화되었습니다.',
+    body: '라이브러리에서 수업을 고르고, SPOMOVE 큰 화면 실행과 설명 도구까지 이어지는 흐름을 확인해 보세요.',
     read: false,
     createdAt: new Date(Date.now() - 3600000).toISOString(),
   },
@@ -229,7 +229,9 @@ function applyStudentRecord(student: StudentProfile, record: ClassStudentRecord,
   const nextSkills = student.skills.map((skill) => (skillSet.has(skill.label) ? { ...skill, value: Math.min(100, skill.value + 3), delta: '+3%' } : skill));
   const addedSkills = record.skills.filter((skill) => !student.skills.some((item) => item.label === skill)).map<StudentProfile['skills'][number]>((label) => ({ label, value: 44, delta: '+3%' }));
   const memoSuffix = record.memo ? ` / ${record.memo}` : '';
-  const historyLine = missed ? `${today} ${classRecord.programTitle} 결석${memoSuffix}` : `${today} ${classRecord.programTitle} ${record.skills.length}개 기록${record.focused ? ' / 집중 관찰' : ''}${memoSuffix}`;
+  const historyLine = missed
+    ? `${today} ${classRecord.programTitle} 결석${memoSuffix}`
+    : `${today} ${classRecord.programTitle} ${record.skills.length}개 기록${record.focused ? ' / 집중 관찰' : ''}${memoSuffix}`;
   const badgeEarned = nextClasses >= 20 && !student.badges.includes('수업 기록 누적');
 
   return {
@@ -261,7 +263,7 @@ export const useMasterStore = create<MasterState>()(
             }
           }
         } catch {
-          // network failure — keep static fallback
+          // Keep static fallback when the network is unavailable.
         }
         set({ programsLoaded: true });
       },
@@ -271,19 +273,21 @@ export const useMasterStore = create<MasterState>()(
         if (get().drillsLoaded) return;
         try {
           const res = await fetch('/api/spokedu-master/drills');
-          if (!res.ok) { set({ drillsLoaded: true }); return; }
+          if (!res.ok) {
+            set({ drillsLoaded: true });
+            return;
+          }
           const json = await res.json() as { data?: Drill[] };
           if (Array.isArray(json.data) && json.data.length > 0) {
-            // EngineRouter 미지원 모드(예: 'basic') 드릴 제외 — 지원 모드만 교체
             const supportedModes = new Set(['reactTrain', 'flow', 'flash', 'pattern', 'diagonal', 'memory', 'spatial']);
-            const usable = json.data.filter((d) => !d.engine || supportedModes.has(d.engine.mode));
+            const usable = json.data.filter((drill) => !drill.engine || supportedModes.has(drill.engine.mode));
             if (usable.length > 0) {
               set({ drills: usable, drillsLoaded: true });
               return;
             }
           }
         } catch {
-          // keep static fallback
+          // Keep static fallback when the network is unavailable.
         }
         set({ drillsLoaded: true });
       },
@@ -295,7 +299,6 @@ export const useMasterStore = create<MasterState>()(
           const res = await fetch('/api/spokedu-master/subscription');
           if (!res.ok) return;
           const json = await res.json() as { plan?: string; status?: string };
-          // Always apply the server-authoritative plan — never trust localStorage alone
           const serverPlan: 'free' | 'pro' | 'team' =
             json.status === 'active' && json.plan === 'team' ? 'team' :
             json.status === 'active' && json.plan === 'pro' ? 'pro' : 'free';
@@ -309,7 +312,7 @@ export const useMasterStore = create<MasterState>()(
               : state.profile,
           }));
         } catch {
-          // network failure — keep current plan (offline tolerance)
+          // Keep current plan when offline.
         }
       },
       operational: defaultOperational,
@@ -405,7 +408,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 8,
+      version: 9,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,
@@ -418,8 +421,8 @@ export const useMasterStore = create<MasterState>()(
         cart: state.cart,
         notifications: state.notifications,
       }),
-    }
-  )
+    },
+  ),
 );
 
 export const useProfile = () => useMasterStore((state) => state.profile);
@@ -427,7 +430,6 @@ export const useOperationalStatus = () => useMasterStore((state) => state.operat
 export const useIsPro = () => useMasterStore((state) => {
   const plan = state.profile?.plan ?? 'free';
   if (plan !== 'free') return true;
-  // 체험 기간(14일) 중에는 Pro 콘텐츠 전체 공개
   const trialEndsAt = state.profile?.trialEndsAt;
   if (!trialEndsAt) return false;
   return new Date(trialEndsAt).getTime() > Date.now();
@@ -440,7 +442,7 @@ export const useClassTimerState = () =>
       ms: state.classTimerMs,
       running: state.classTimerRunning,
       startedAt: state.classTimerStartedAt,
-    }))
+    })),
   );
 
 export const useStats = () =>
@@ -455,5 +457,5 @@ export const useStats = () =>
         bestRT: times.length ? Math.min(...times) : 0,
         totalCues: state.sessions.reduce((total, session) => total + session.cueCount, 0),
       };
-    })
+    }),
   );

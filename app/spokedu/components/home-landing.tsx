@@ -7,6 +7,7 @@ import { SPOKEDU_IMAGES } from '../data/images';
 import { inferTrackFromHref } from '../lib/tracking';
 import { btnPrimaryOnDark, cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
 import { HeroCtaStack } from './hero-cta-stack';
+import { ProofMarqueeStrip } from './proof-marquee-strip';
 import { SpokeduHeroVisual } from './spokedu-hero-visual';
 
 type TrackCard = {
@@ -20,6 +21,7 @@ type TrackCard = {
 type ProgramPreview = {
   name: string;
   description: string;
+  href: string;
 };
 
 const heroLines = ['움직임으로', '아이의 성장을', '설계합니다'];
@@ -65,21 +67,45 @@ const philosophyItems = [
 
 const proofItems = [
   '스포키듀 LAB',
-  '양천거점형키움센터',
-  '동작거점형키움센터',
-  '다사랑영등포지역아동센터',
+  '양천 키움센터',
+  '동작 키움센터',
+  '영등포 다사랑지역아동센터',
   'PLAYZ Lounge',
-  '서대문형무소 어린이날 체험 부스',
+  '서대문형무소 체험',
   '월간 스포키듀',
-];
+] as const;
 
 const programPreviews: ProgramPreview[] = [
-  { name: 'SPOMOVE', description: '보고 판단하고 반응하는 몰입형 움직임 수업입니다.' },
-  { name: 'PAPS', description: '기초체력 요소를 놀이형 학습으로 재구성한 프로그램입니다.' },
-  { name: '놀이체육', description: '운동이 낯선 아이도 즐겁게 시작하는 기본 트랙입니다.' },
-  { name: '원데이 체육행사', description: '기관 일정과 목적에 맞춘 체험형 단기 프로그램입니다.' },
-  { name: '방학캠프', description: '방학 시즌에 맞춘 집중형 체육·협동 프로그램입니다.' },
-  { name: '커리큘럼 콘텐츠', description: '선생님 운영 품질을 높이는 수업안·콘텐츠 세트입니다.' },
+  {
+    name: 'SPOMOVE',
+    description: '보고 판단하고 반응하는 몰입형 움직임 수업입니다.',
+    href: '/spokedu/programs/spomove',
+  },
+  {
+    name: 'PAPS',
+    description: '기초체력 요소를 놀이형 학습으로 재구성한 프로그램입니다.',
+    href: '/spokedu/programs/paps',
+  },
+  {
+    name: '놀이체육',
+    description: '운동이 낯선 아이도 즐겁게 시작하는 기본 트랙입니다.',
+    href: '/spokedu/contact?type=private',
+  },
+  {
+    name: '원데이 체육행사',
+    description: '기관 일정과 목적에 맞춘 체험형 단기 프로그램입니다.',
+    href: '/spokedu/programs/oneday-event',
+  },
+  {
+    name: '방학캠프',
+    description: '방학 시즌에 맞춘 집중형 체육·협동 프로그램입니다.',
+    href: '/spokedu/programs/camp',
+  },
+  {
+    name: '커리큘럼 콘텐츠',
+    description: '선생님 운영 품질을 높이는 수업안·콘텐츠 세트입니다.',
+    href: '/spokedu/curriculum',
+  },
 ];
 
 function Section({
@@ -111,7 +137,7 @@ function Section({
 export default function SpokeduHomeLanding() {
   const reducedMotion = useReducedMotion();
   return (
-    <div className={landingPageStack}>
+    <div className={`${landingPageStack} pb-0 sm:pb-0`}>
       <Section className={`${landingHeroShell} border-slate-200 bg-white`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.12),transparent_46%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.09),transparent_40%)]" />
         <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-7">
@@ -216,21 +242,7 @@ export default function SpokeduHomeLanding() {
 
       <Section className="space-y-3 sm:space-y-4" delay={0.1}>
         <h2 className="text-xl font-bold text-slate-950 sm:text-3xl">실제 현장에서 아이들을 만나고 있습니다</h2>
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white py-2.5 sm:py-3">
-          <div
-            className={`proof-marquee flex min-w-max gap-2 px-3 ${reducedMotion ? 'overflow-x-auto pb-1' : ''}`}
-            style={reducedMotion ? { animation: 'none' } : undefined}
-          >
-            {[...proofItems, ...proofItems].map((item, idx) => (
-              <div
-                key={`${item}-${idx}`}
-                className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-medium text-slate-700 sm:px-4 sm:py-2 sm:text-sm"
-              >
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
+        <ProofMarqueeStrip items={proofItems} />
       </Section>
 
       <Section className="space-y-4 sm:space-y-5" delay={0.12}>
@@ -251,10 +263,16 @@ export default function SpokeduHomeLanding() {
         </div>
         <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
           {programPreviews.map((program) => (
-            <article key={program.name} className={`rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 ${cardInteractive}`}>
+            <Link
+              key={program.name}
+              href={program.href}
+              data-track={inferTrackFromHref(program.href)}
+              data-track-label={`home-program-${program.name}`}
+              className={`block rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 ${cardInteractive}`}
+            >
               <h3 className="text-sm font-semibold text-slate-900 sm:text-base">{program.name}</h3>
               <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">{program.description}</p>
-            </article>
+            </Link>
           ))}
         </div>
         <Link
@@ -267,9 +285,12 @@ export default function SpokeduHomeLanding() {
         </Link>
       </Section>
 
-      <Section className="rounded-2xl border border-slate-900 bg-slate-950 px-4 py-6 text-white sm:rounded-3xl sm:px-8 sm:py-10" delay={0.15}>
+      <Section
+        className="rounded-2xl border border-slate-900 bg-slate-950 px-4 py-7 text-white sm:rounded-3xl sm:px-8 sm:py-11"
+        delay={0.15}
+      >
         <h2 className="text-xl font-bold sm:text-3xl">지금 필요한 방향을 선택하세요</h2>
-        <p className="mt-2 text-sm text-slate-400 sm:hidden">유형별로 맞는 상담으로 연결합니다.</p>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">유형별로 맞는 상담으로 연결합니다.</p>
         <div className="mt-4 sm:mt-5">
           <Link
             href="/spokedu/contact"
@@ -295,26 +316,6 @@ export default function SpokeduHomeLanding() {
         </p>
       </Section>
 
-      <style jsx>{`
-        @keyframes spokedu-marquee {
-          from {
-            transform: translateX(0);
-          }
-          to {
-            transform: translateX(-50%);
-          }
-        }
-
-        .proof-marquee {
-          animation: spokedu-marquee 28s linear infinite;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .proof-marquee {
-            animation: none;
-          }
-        }
-      `}</style>
     </div>
   );
 }

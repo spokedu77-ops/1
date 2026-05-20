@@ -7,26 +7,28 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  Lightbulb,
   Lock,
   MapPin,
   MonitorPlay,
   Play,
   Search,
+  ShieldAlert,
   Smartphone,
   Users,
   X,
   Zap,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useIsPro, useMasterStore } from '../store';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
 import { CategoryIcon, ProgramThumb } from '../components/ui/ProgramThumb';
-import type { Program } from '../types';
+import { useIsPro, useMasterStore } from '../store';
+import type { Drill, Program } from '../types';
 
 const FILTERS = ['전체', '유아', '초등', 'SPOMOVE', '간편 준비', '좁은 공간', '협동', '민첩성'];
 
 function hasSpomoveLink(program: Program) {
-  return program.tags.includes('SPOMOVE') || (program.lessonDetail?.relatedSpomoveIds?.length ?? 0) > 0;
+  return program.tags.includes('SPOMOVE') || program.tags.includes('SPOMOVE 연계') || (program.lessonDetail?.relatedSpomoveIds?.length ?? 0) > 0;
 }
 
 function hasCompleteLesson(program: Program) {
@@ -40,9 +42,21 @@ function getHeroImage(program: Program) {
 function getSpomoveUseLabel(program: Program) {
   const text = [program.title, program.category, program.description, ...program.tags, program.lessonDetail?.developmentFocus ?? ''].join(' ');
   if (/도입|워밍업|집중|인지|신호/.test(text)) return '도입 3분 집중 전환';
-  if (/민첩|순발|방향|반응|스피드/.test(text)) return '수업 중 반응 전환';
-  if (/마무리|정리|협동|기억/.test(text)) return '마무리 참여 게임';
+  if (/펀스틱|펜싱|민첩|순발|방향|반응|스피드|타이밍|거리/.test(text)) return '수업 중 반응 전환';
+  if (/마무리|정리|협동|기억|리듬|표현/.test(text)) return '마무리 참여 게임';
   return '큰 화면 몰입 활동';
+}
+
+function getSpomoveReason(program: Program, drill?: Drill) {
+  const useLabel = getSpomoveUseLabel(program);
+  const drillName = drill?.name ?? 'SPOMOVE 큰 화면';
+  if (/펀스틱|펜싱|거리|타이밍/.test([program.title, program.description, ...program.tags].join(' '))) {
+    return `${drillName}을 연결하면 공격 타이밍, 거리 판단, 반응 전환을 짧은 라운드로 반복할 수 있습니다.`;
+  }
+  if (/협동|팀|릴레이/.test([program.title, program.category, ...program.tags].join(' '))) {
+    return `${drillName}을 연결하면 팀별 신호 반응과 역할 교대를 더 선명하게 만들 수 있습니다.`;
+  }
+  return `${useLabel}에 맞춰 ${drillName}을 실행하면 수업 준비에서 화면 활동까지 흐름이 끊기지 않습니다.`;
 }
 
 function matchFilter(program: Program, filter: string) {
@@ -74,6 +88,15 @@ function Chip({ label, count, active, onClick }: { label: string; count: number;
   );
 }
 
+function LessonMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <p className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+      <p className="mt-1 line-clamp-2 text-[13px] font-black leading-5" style={{ color: 'var(--spm-t)' }}>{value || '-'}</p>
+    </div>
+  );
+}
+
 function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
   program: Program;
   isPro: boolean;
@@ -85,11 +108,23 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
   const locked = program.isPro && !isPro;
   const drills = useMasterStore((state) => state.drills);
   const detail = program.lessonDetail;
-  const drillId = detail?.relatedSpomoveIds[0] ?? drills[0]?.id ?? 'speed-track';
-  const connectedDrill = drills.find((d) => d.id === drillId);
+  const drillId = detail?.relatedSpomoveIds[0] ?? drills[0]?.id ?? 'SR-05';
+  const connectedDrill = drills.find((drill) => drill.id === drillId);
   const heroImage = getHeroImage(program);
   const sheetRef = useRef<HTMLDivElement>(null);
   const ruleItems = detail?.rules?.length ? detail.rules : program.steps;
+  const briefingItems = [
+    ...(detail?.briefingNotes ?? []),
+    ...(detail?.safetyNotes ?? []),
+    detail?.coachScript,
+    hasSpomoveLink(program) ? getSpomoveReason(program, connectedDrill) : null,
+  ].filter(Boolean).slice(0, 4) as string[];
+  const variationItems = detail?.variations?.length ? detail.variations : [
+    '도구 수를 줄여 저연령도 쉽게 시작합니다.',
+    '공간 크기와 제한 시간을 바꿔 난이도를 조절합니다.',
+    '개인전에서 2:2 또는 팀전으로 확장합니다.',
+  ];
+  const movement = /정적|멈춤|균형/.test([program.title, program.category, ...program.tags].join(' ')) ? '정적 · 조절형' : '동적 · 반응형';
 
   useEffect(() => {
     const el = sheetRef.current;
@@ -103,7 +138,10 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
 
   const close = () => {
     const el = sheetRef.current;
-    if (!el) { onClose(); return; }
+    if (!el) {
+      onClose();
+      return;
+    }
     el.style.transform = 'translateY(100%)';
     setTimeout(onClose, 280);
   };
@@ -114,30 +152,22 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
+    <div className="fixed inset-0 z-[90] flex items-end justify-center" onClick={(event) => { if (event.target === event.currentTarget) close(); }}>
       <div className="absolute inset-0 bg-black/80" style={{ backdropFilter: 'blur(8px)' }} onClick={close} />
       <div
         ref={sheetRef}
         className="relative z-10 w-full overflow-hidden rounded-t-[26px] pb-[env(safe-area-inset-bottom)] lg:mb-6 lg:max-w-[1020px] lg:rounded-[26px]"
         style={{ background: 'var(--spm-bg)', maxHeight: '94dvh', overflowY: 'auto', willChange: 'transform', boxShadow: '0 32px 100px rgba(0,0,0,0.56)' }}
       >
-        {/* 모바일 드래그 핸들 */}
-        <div className="flex justify-center pb-1 pt-3 lg:hidden">
-          <div className="h-[4px] w-10 rounded-full" style={{ background: 'var(--spm-br2)' }} />
-        </div>
-        {/* 닫기 버튼 */}
-        <button type="button" onClick={close} className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full bg-black/50 backdrop-blur-sm" aria-label="닫기">
-          <X size={15} color="rgba(255,255,255,0.88)" />
+        <div className="flex justify-center pb-1 pt-3 lg:hidden"><div className="h-[4px] w-10 rounded-full" style={{ background: 'var(--spm-br2)' }} /></div>
+        <button type="button" onClick={close} className="absolute right-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/50 backdrop-blur-sm" aria-label="닫기">
+          <X size={16} color="rgba(255,255,255,0.88)" />
         </button>
 
         <div className="lg:grid lg:min-h-[640px] lg:grid-cols-[1.1fr_0.9fr]">
-
-          {/* ── 좌측: 히어로 비주얼 ── */}
           <section
-            className="relative min-h-[260px] overflow-hidden lg:min-h-[640px]"
-            style={heroImage ? undefined : {
-              background: `radial-gradient(ellipse 80% 60% at 70% 40%, ${program.colors[2]}55 0%, transparent 65%), linear-gradient(155deg, ${program.colors[0]} 0%, ${program.colors[1]} 55%, ${program.colors[2]}cc 100%)`,
-            }}
+            className="relative min-h-[300px] overflow-hidden lg:min-h-[640px]"
+            style={heroImage ? undefined : { background: `radial-gradient(ellipse 80% 60% at 70% 40%, ${program.colors[2]}55 0%, transparent 65%), linear-gradient(155deg, ${program.colors[0]} 0%, ${program.colors[1]} 55%, ${program.colors[2]}cc 100%)` }}
           >
             {heroImage ? (
               <>
@@ -147,17 +177,12 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
               </>
             ) : (
               <>
-                {/* 대형 워터마크 아이콘 — 중앙 배치, 압도적 스케일 */}
-                <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.07]" style={{ transform: 'translate(-50%, -52%) rotate(-8deg)' }} aria-hidden>
+                <span className="pointer-events-none absolute left-1/2 top-1/2 opacity-[0.07]" style={{ transform: 'translate(-50%, -52%) rotate(-8deg)' }} aria-hidden>
                   <CategoryIcon category={program.category} size={340} color="#fff" strokeWidth={0.42} />
                 </span>
-                {/* 하단 블러 광 */}
-                <div className="pointer-events-none absolute -bottom-8 -right-8 h-52 w-52 rounded-full" style={{ background: program.colors[3], filter: 'blur(48px)', opacity: 0.42 }} />
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.72) 100%)' }} />
               </>
             )}
-
-            {/* PRO 잠금 오버레이 */}
             {locked ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/55">
                 <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.3)' }}>
@@ -166,37 +191,27 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
                 <p className="text-[12px] font-black text-white/70">Pro 전용 수업 패키지</p>
               </div>
             ) : null}
-
-            {/* 히어로 하단 콘텐츠 */}
             <div className="absolute inset-x-0 bottom-0 p-5 lg:p-7">
-              {/* 배지 */}
               <div className="mb-3 flex flex-wrap gap-1.5">
                 <span className="rounded-full px-2.5 py-1 text-[10px] font-black text-white/75" style={{ background: 'rgba(0,0,0,0.42)', border: '1px solid rgba(255,255,255,0.1)' }}>{program.category}</span>
                 {program.isPro ? <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(245,158,11,0.28)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>PRO</span> : null}
                 {hasSpomoveLink(program) ? <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(99,102,241,0.32)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>SPOMOVE 연계</span> : null}
               </div>
-              {/* 제목 */}
-              <h2 className="max-w-[640px] text-[32px] font-black leading-[1.06] text-white sm:text-[42px] lg:text-[44px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: '-0.01em', wordBreak: 'keep-all', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
+              <h2 className="max-w-[640px] text-[32px] font-black leading-[1.06] text-white sm:text-[42px] lg:text-[44px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0, wordBreak: 'keep-all', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
                 {program.title}
               </h2>
-              {/* 설명 */}
-              <p className="mt-2.5 max-w-[560px] text-[13px] font-medium leading-6 text-white/65">
-                {program.description || detail?.objective || '현장에서 바로 실행할 수 있는 SPOKEDU 수업 패키지입니다.'}
-              </p>
-              {/* 메타 pill 한 줄 */}
+              <p className="mt-2.5 max-w-[560px] text-[13px] font-medium leading-6 text-white/65">{program.description || detail?.objective || '현장에서 바로 실행할 수 있는 SPOKEDU 수업 패키지입니다.'}</p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {[
-                  { icon: Users, label: program.grade },
-                  { icon: Clock, label: `${program.duration}분` },
-                  { icon: MapPin, label: program.space },
-                ].map(({ icon: Icon, label }) => (
+                  { Icon: Users, label: program.grade },
+                  { Icon: Clock, label: `${program.duration}분` },
+                  { Icon: MapPin, label: program.space },
+                ].map(({ Icon, label }) => (
                   <span key={label} className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold text-white/80" style={{ background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <Icon size={10} />
-                    {label}
+                    <Icon size={10} />{label}
                   </span>
                 ))}
               </div>
-              {/* 영상 버튼 */}
               {!locked && detail?.videoUrl ? (
                 <a href={detail.videoUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex h-9 items-center gap-2 rounded-[10px] px-3 text-[11px] font-black text-white" style={{ background: 'rgba(255,255,255,0.13)', border: '1px solid rgba(255,255,255,0.16)' }}>
                   <Play size={11} fill="#fff" />참고 영상 보기
@@ -205,22 +220,18 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
             </div>
           </section>
 
-          {/* ── 우측: 정보 + CTA ── */}
           <section className="flex flex-col px-4 pb-5 pt-4 lg:overflow-y-auto lg:px-6 lg:py-5">
-
-            {/* 상단: 즐겨찾기 */}
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-t3)' }}>수업 패키지 프리뷰</p>
-              <button type="button" onClick={onFavorite} className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="즐겨찾기">
-                <Bookmark size={15} color={favorite ? '#fbbf24' : 'var(--spm-t3)'} fill={favorite ? '#fbbf24' : 'none'} />
+              <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-t3)' }}>수업 패키지 미리보기</p>
+              <button type="button" onClick={onFavorite} className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="즐겨찾기">
+                <Bookmark size={16} color={favorite ? '#fbbf24' : 'var(--spm-t3)'} fill={favorite ? '#fbbf24' : 'none'} />
               </button>
             </div>
 
-            {/* ① CTA — Netflix처럼 모달 열자마자 액션 버튼 먼저 */}
             <div className="mb-5 flex flex-col gap-2">
               {locked ? (
                 <>
-                  <Link href="/spokedu-master/payment?plan=pro" className="flex h-13 w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 28px rgba(99,102,241,0.35)', height: 52 }}>
+                  <Link href="/spokedu-master/payment?plan=pro" className="flex w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 28px rgba(99,102,241,0.35)', height: 52 }}>
                     <Zap size={15} />Pro로 전체 수업안 보기
                   </Link>
                   <Link href={`/spokedu-master/library/${program.id}`} className="flex h-11 w-full items-center justify-center rounded-[13px] text-[12px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
@@ -244,53 +255,53 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
               )}
             </div>
 
-            {/* ② 연결 SPOMOVE — 구독 핵심 가치 강조 */}
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <LessonMeta label="테마" value={program.category} />
+              <LessonMeta label="인원" value={detail?.recommendedPlayers || program.grade} />
+              <LessonMeta label="기능" value={detail?.developmentFocus || program.category} />
+              <LessonMeta label="움직임" value={movement} />
+            </div>
+
             <div className="mb-5 rounded-[16px] p-4" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(16,185,129,0.09))', border: '1px solid rgba(99,102,241,0.28)' }}>
-              <p className="mb-2 text-[9px] font-black uppercase tracking-[0.16em]" style={{ color: '#818cf8' }}>connected spomove</p>
+              <p className="mb-2 text-[9px] font-black uppercase tracking-[0.16em]" style={{ color: '#818cf8' }}>why spomove</p>
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.22)' }}>
                   <Zap size={18} color="#a5b4fc" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{connectedDrill?.name ?? 'SPOMOVE 큰 화면'}</p>
-                  <p className="mt-0.5 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{getSpomoveUseLabel(program)}</p>
+                  <p className="mt-0.5 text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>{getSpomoveReason(program, connectedDrill)}</p>
                 </div>
-                <button type="button" onClick={launch} className="shrink-0 rounded-[10px] px-3 py-2 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.24)' }}>
-                  <MonitorPlay size={14} />
+                <button type="button" onClick={launch} className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.24)' }} aria-label="SPOMOVE 실행">
+                  <MonitorPlay size={15} />
                 </button>
               </div>
             </div>
 
-            {/* ③ 수업 핵심 — objective + developmentFocus */}
-            {(detail?.objective || detail?.developmentFocus) ? (
-              <div className="mb-4 rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
-                {(
-                  [['수업 목표', detail?.objective], ['발달 포인트', detail?.developmentFocus]] as [string, string | undefined][]
-                ).filter(([, v]) => !!v).map(([label, value]) => (
-                  <div key={label} className="mb-3 last:mb-0">
-                    <p className="text-[9px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-                    <p className="mt-0.5 text-[13px] font-semibold leading-5" style={{ color: locked ? 'transparent' : 'var(--spm-t)', textShadow: locked ? '0 0 8px rgba(255,255,255,0.18)' : 'none', filter: locked ? 'blur(4px)' : 'none', userSelect: locked ? 'none' : 'auto' }}>{value}</p>
-                  </div>
+            <div className="mb-4 rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+              <p className="mb-2 flex items-center gap-2 text-[12px] font-black" style={{ color: 'var(--spm-t)' }}><ShieldAlert size={14} color="var(--spm-amb)" />사전 안내 · 안전</p>
+              <ul className="space-y-1.5">
+                {(briefingItems.length ? briefingItems : ['수업 전 안전거리와 성공/실패 규칙을 짧게 안내합니다.']).map((item) => (
+                  <li key={item} className="flex gap-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--spm-amb)' }} />
+                    {item}
+                  </li>
                 ))}
-                {locked ? (
-                  <p className="mt-2 text-[10px] font-black" style={{ color: 'var(--spm-amb)' }}>Pro에서 전체 확인</p>
-                ) : null}
-              </div>
-            ) : null}
+              </ul>
+            </div>
 
-            {/* ④ 진행 단계 — 2개만 */}
             {ruleItems.length > 0 ? (
               <div className="mb-4">
-                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>진행 단계</p>
+                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>How to Play</p>
                 <ol className="space-y-1.5">
-                  {ruleItems.slice(0, locked ? 1 : 2).map((step, i) => (
-                    <li key={i} className="flex gap-2.5 rounded-[11px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
-                      <span className="mt-px grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>{i + 1}</span>
+                  {ruleItems.slice(0, locked ? 1 : 3).map((step, index) => (
+                    <li key={`${index}-${step}`} className="flex gap-2.5 rounded-[11px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+                      <span className="mt-px grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>{index + 1}</span>
                       <p className="text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t)' }}>{step}</p>
                     </li>
                   ))}
                 </ol>
-                {ruleItems.length > 2 ? (
+                {ruleItems.length > 3 ? (
                   <Link href={`/spokedu-master/library/${program.id}`} onClick={close} className="mt-2 block text-center text-[11px] font-semibold" style={{ color: 'var(--spm-acc)' }}>
                     전체 {ruleItems.length}단계 보기
                   </Link>
@@ -298,21 +309,14 @@ function ProgramSheet({ program, isPro, favorite, onFavorite, onClose }: {
               </div>
             ) : null}
 
-            {/* ⑤ 학부모 문구 미리보기 — 구독 가치 직결 */}
-            {detail?.parentNote ? (
-              <div className="mb-2 overflow-hidden rounded-[14px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--spm-br)' }}>
-                  <p className="text-[9px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>학부모 설명 문구</p>
-                  {!locked ? (
-                    <Link href={`/spokedu-master/report?program=${program.id}`} onClick={close} className="text-[10px] font-black" style={{ color: 'var(--spm-acc)' }}>전체 보기</Link>
-                  ) : (
-                    <Link href="/spokedu-master/payment?plan=pro" className="text-[10px] font-black" style={{ color: 'var(--spm-amb)' }}>Pro 전용</Link>
-                  )}
+            <div className="grid gap-2">
+              {variationItems.slice(0, locked ? 1 : 2).map((item) => (
+                <div key={item} className="flex gap-2 rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+                  <Lightbulb size={14} color="var(--spm-acc)" className="mt-0.5 shrink-0" />
+                  {item}
                 </div>
-                <p className={`line-clamp-3 px-4 py-3 text-[12px] font-medium leading-6 ${locked ? 'select-none' : ''}`} style={{ color: locked ? 'transparent' : 'var(--spm-t2)', filter: locked ? 'blur(5px)' : 'none' }}>{detail.parentNote}</p>
-              </div>
-            ) : null}
-
+              ))}
+            </div>
           </section>
         </div>
       </div>
@@ -356,19 +360,12 @@ function PosterCard({ program, locked, used, favorite, onFavorite, onPreview }: 
             <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ background: 'rgba(245,158,11,0.18)', color: 'var(--spm-amb)' }}>PRO</span>
           </div>
         ) : null}
-        {!locked && hasSpomoveLink(program) ? (
-          <span className="absolute bottom-1.5 left-2 flex items-center gap-0.5 rounded-[5px] px-1.5 py-0.5 text-[9px] font-black" style={{ background: 'rgba(99,102,241,0.85)', color: '#e0e7ff' }}>
-            <Zap size={8} />SPOMOVE
-          </span>
-        ) : null}
       </div>
-
       <div className="absolute inset-x-0 bottom-0 px-3 py-2.5" style={{ top: visualHeight }}>
         <p className="text-[9px] font-black uppercase tracking-[0.08em]" style={{ color: 'var(--spm-acc)' }}>{program.category}</p>
         <p className={`mt-0.5 font-bold leading-[1.3] ${heroImage ? 'truncate text-[12px]' : 'line-clamp-2 text-[13px]'}`} style={{ color: 'var(--spm-t)' }}>{program.title}</p>
         {!heroImage ? <p className="mt-1.5 text-[10px] font-medium" style={{ color: 'var(--spm-t3)' }}>{program.grade} · {program.duration}분 · {program.space}</p> : null}
       </div>
-
       <button type="button" onClick={onPreview} className="absolute inset-0" aria-label={program.title} />
       <button type="button" onClick={onFavorite} className="absolute right-1.5 top-1.5 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/40" aria-label={`${program.title} 즐겨찾기`}>
         <Bookmark size={13} color="#fff" fill={favorite ? '#fff' : 'none'} />
@@ -415,9 +412,7 @@ function ProgramListItem({ program, locked, used, favorite, onFavorite, onPrevie
 }
 
 function FeaturedRail({ programs, onPreview }: { programs: Program[]; onPreview: (p: Program) => void }) {
-  const now = new Date();
-  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
-  const featured = programs.length > 0 ? programs[dayOfYear % programs.length] : undefined;
+  const featured = programs.find(hasSpomoveLink) ?? programs[0];
   if (!featured) return null;
   const heroImage = getHeroImage(featured);
 
@@ -458,30 +453,9 @@ function FeaturedRail({ programs, onPreview }: { programs: Program[]; onPreview:
 
 function SituationGuide() {
   const situations = [
-    {
-      label: '지금 수업 10분 남았어요',
-      sub: '준비물 없이 바로 쓸 수 있는 수업',
-      href: '#quick-programs',
-      tone: 'var(--spm-amb)',
-      bg: 'rgba(245,158,11,0.1)',
-      Icon: Clock,
-    },
-    {
-      label: 'SPOMOVE 큰 화면이 준비됐어요',
-      sub: '프로젝터 · 태블릿 반응훈련 연계',
-      href: '#spomove-programs',
-      tone: '#818cf8',
-      bg: 'rgba(99,102,241,0.12)',
-      Icon: Zap,
-    },
-    {
-      label: '완성된 수업안이 필요해요',
-      sub: '수업안 + 설명문구 세트 패키지',
-      href: '#all-programs',
-      tone: 'var(--spm-grn)',
-      bg: 'rgba(16,185,129,0.1)',
-      Icon: CheckCircle2,
-    },
+    { label: '지금 수업 10분 남았어요', sub: '준비물 없이 바로 쓸 수 있는 수업', href: '#quick-programs', tone: 'var(--spm-amb)', bg: 'rgba(245,158,11,0.1)', Icon: Clock },
+    { label: 'SPOMOVE 큰 화면을 켤게요', sub: '프로젝터·태블릿 반응훈련 연계', href: '#spomove-programs', tone: '#818cf8', bg: 'rgba(99,102,241,0.12)', Icon: Zap },
+    { label: '완성형 수업안이 필요해요', sub: '수업안 + 설명 문구 세트 패키지', href: '#all-programs', tone: 'var(--spm-grn)', bg: 'rgba(16,185,129,0.1)', Icon: CheckCircle2 },
   ] as const;
 
   return (
@@ -505,28 +479,11 @@ function SubscriptionValueStrip({ programs }: { programs: Program[] }) {
   const readyCount = programs.filter(hasCompleteLesson).length;
   const spomoveCount = programs.filter(hasSpomoveLink).length;
   const values = [
-    {
-      Icon: CheckCircle2,
-      tone: 'var(--spm-grn)',
-      bg: 'rgba(16,185,129,0.1)',
-      label: `${readyCount}개 완성 패키지`,
-      sub: '수업안 + SPOMOVE + 설명문구',
-    },
-    {
-      Icon: Zap,
-      tone: '#818cf8',
-      bg: 'rgba(99,102,241,0.12)',
-      label: `${spomoveCount}개 SPOMOVE 연계`,
-      sub: '큰 화면 실행 즉시 이어짐',
-    },
-    {
-      Icon: Play,
-      tone: 'var(--spm-amb)',
-      bg: 'rgba(245,158,11,0.12)',
-      label: '90초 수업 준비',
-      sub: '수업안 → 실행 → 문구 3탭 완성',
-    },
+    { Icon: CheckCircle2, tone: 'var(--spm-grn)', bg: 'rgba(16,185,129,0.1)', label: `${readyCount}개 완성 패키지`, sub: '수업안 + SPOMOVE + 설명 문구' },
+    { Icon: Zap, tone: '#818cf8', bg: 'rgba(99,102,241,0.12)', label: `${spomoveCount}개 SPOMOVE 연계`, sub: '큰 화면 실행 즉시 이어짐' },
+    { Icon: Play, tone: 'var(--spm-amb)', bg: 'rgba(245,158,11,0.12)', label: '90초 수업 준비', sub: '고르고 실행하고 문구까지 연결' },
   ] as const;
+
   return (
     <section className="mb-7 grid gap-2 px-[22px] sm:grid-cols-3 sm:px-8 lg:px-10">
       {values.map(({ Icon, tone, bg, label, sub }) => (
@@ -631,17 +588,13 @@ export default function LibraryView() {
 
   if (!mounted || !programsLoaded) return <LibrarySkeleton />;
 
-  const spomoveTagged = programs.filter(hasSpomoveLink);
-  const spomovePrograms = (spomoveTagged.length > 0 ? spomoveTagged : programs.filter((program) => program.duration <= 15)).slice(0, 5);
+  const spomovePrograms = (programs.filter(hasSpomoveLink).length > 0 ? programs.filter(hasSpomoveLink) : programs.filter((program) => program.duration <= 15)).slice(0, 5);
   const quickPrograms = programs.filter((program) => program.duration <= 18).slice(0, 5);
   const noPrepPrograms = programs.filter((program) => program.equipment.length <= 2 || program.tags.includes('준비물 없음')).slice(0, 5);
   const smallSpacePrograms = programs.filter((program) => program.space.includes('좁은') || program.space.includes('실내')).slice(0, 5);
   const favoritePrograms = programs.filter((program) => favorites.includes(program.id));
   const resetFilters = () => { setFilter('전체'); setQuery(''); };
-
-  const filterCounts = Object.fromEntries(
-    FILTERS.map((item) => [item, item === '전체' ? programs.length : programs.filter((program) => matchFilter(program, item)).length])
-  );
+  const filterCounts = Object.fromEntries(FILTERS.map((item) => [item, item === '전체' ? programs.length : programs.filter((program) => matchFilter(program, item)).length]));
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -670,10 +623,7 @@ export default function LibraryView() {
         ))}
       </section>
 
-      {favoritePrograms.length > 0 ? (
-        <ProgramRail title="즐겨찾기" caption="자주 쓰는 수업" programs={favoritePrograms} isPro={isPro} usedProgramIds={usedProgramIds} favorites={favorites} onFavorite={toggleFavorite} onPreview={setPreview} />
-      ) : null}
-
+      {favoritePrograms.length > 0 ? <ProgramRail title="즐겨찾기" caption="자주 쓰는 수업" programs={favoritePrograms} isPro={isPro} usedProgramIds={usedProgramIds} favorites={favorites} onFavorite={toggleFavorite} onPreview={setPreview} /> : null}
       <ProgramRail id="spomove-programs" title="SPOMOVE 연결 수업" caption="큰 화면 실행과 연결" programs={spomovePrograms} isPro={isPro} usedProgramIds={usedProgramIds} favorites={favorites} onFavorite={toggleFavorite} onPreview={setPreview} />
       <ProgramRail id="quick-programs" title="18분 이내 빠른 수업" caption="대체 수업용" programs={quickPrograms} isPro={isPro} usedProgramIds={usedProgramIds} favorites={favorites} onFavorite={toggleFavorite} onPreview={setPreview} />
       <ProgramRail title="준비물 적은 수업" caption="현장에서 바로 운영" programs={noPrepPrograms} isPro={isPro} usedProgramIds={usedProgramIds} favorites={favorites} onFavorite={toggleFavorite} onPreview={setPreview} />
@@ -701,15 +651,7 @@ export default function LibraryView() {
         {filtered.length > 0 ? (
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map((program) => (
-              <ProgramListItem
-                key={program.id}
-                program={program}
-                locked={program.isPro && !isPro}
-                used={usedProgramIds.has(program.id)}
-                favorite={favorites.includes(program.id)}
-                onFavorite={() => toggleFavorite(program.id)}
-                onPreview={() => setPreview(program)}
-              />
+              <ProgramListItem key={program.id} program={program} locked={program.isPro && !isPro} used={usedProgramIds.has(program.id)} favorite={favorites.includes(program.id)} onFavorite={() => toggleFavorite(program.id)} onPreview={() => setPreview(program)} />
             ))}
           </div>
         ) : (
@@ -722,16 +664,7 @@ export default function LibraryView() {
       </section>
 
       {searchOpen ? <SearchOverlay query={query} setQuery={setQuery} onClose={() => setSearchOpen(false)} /> : null}
-
-      {preview ? (
-        <ProgramSheet
-          program={preview}
-          isPro={isPro}
-          favorite={favorites.includes(preview.id)}
-          onFavorite={() => toggleFavorite(preview.id)}
-          onClose={() => setPreview(null)}
-        />
-      ) : null}
+      {preview ? <ProgramSheet program={preview} isPro={isPro} favorite={favorites.includes(preview.id)} onFavorite={() => toggleFavorite(preview.id)} onClose={() => setPreview(null)} /> : null}
     </div>
   );
 }

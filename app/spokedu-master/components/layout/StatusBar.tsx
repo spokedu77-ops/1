@@ -12,7 +12,7 @@ export function StatusBar() {
     <div className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b px-[22px] sm:px-8 lg:px-10" style={{ background: 'rgba(7,7,12,0.9)', backdropFilter: 'blur(22px)', borderColor: 'var(--spm-br)' }}>
       <div className="flex items-baseline gap-2">
         <span className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
-        <span className="text-[15px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>PRO</span>
+        <span className="text-[15px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
       </div>
       <div className="flex items-center gap-2">
         <span className="hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-black sm:inline-flex" style={{ background: operational.online ? 'rgba(16,185,129,0.13)' : 'rgba(245,158,11,0.13)', color: operational.online ? 'var(--spm-grn)' : 'var(--spm-amb)' }}>

@@ -2,6 +2,185 @@
 
 ## 작업 날짜
 
+- 2026-05-20 (SPOKEDU MASTER Zustand store 재작성: 기본 프로필/수업/학생/알림 샘플 깨진 문구 제거, 마이그레이션 버전 9 적용)
+- 2026-05-20 (SPOKEDU MASTER 공통 내비게이션 크롬 재작성: TabBar/StatusBar/AppShell의 PRO 명칭과 깨진 문구 제거, 설명 도구 탭 정렬)
+- 2026-05-20 (SPOKEDU MASTER 공통 BottomSheet 재작성: 깨진 접근성 문구 제거, 포커스 트랩/ESC/포커스 복귀 적용)
+- 2026-05-20 (SPOKEDU MASTER 프로필/내 정보 화면 재작성: 깨진 한글 제거, 구독 상태와 확장 기능을 구독자 관점으로 재정렬)
+- 2026-05-20 (SPOKEDU MASTER 결제 플로우 재작성: 플랜 선택, Toss 주문명, 성공/취소 화면의 깨진 문구 제거와 전환 UX 정리)
+- 2026-05-20 (SPOKEDU MASTER 구독 관리 화면 재작성: 깨진 한글 제거, 경고판형 화면을 안심형 멤버십/업그레이드 화면으로 전환)
+
+## 수정한 파일
+
+- `app/spokedu-master/store/index.ts`
+- `app/spokedu-master/components/layout/TabBar.tsx`
+- `app/spokedu-master/components/layout/StatusBar.tsx`
+- `app/spokedu-master/components/layout/AppShell.tsx`
+- `app/spokedu-master/components/ui/BottomSheet.tsx`
+- `app/spokedu-master/profile/page.tsx`
+- `app/spokedu-master/payment/page.tsx`
+- `app/spokedu-master/payment/success/page.tsx`
+- `app/spokedu-master/payment/cancel/page.tsx`
+- `app/api/spokedu-master/payment/create-checkout/route.ts`
+- `app/spokedu-master/subscription/page.tsx`
+- `DEV_NOTES.md`
+
+## 해결한 문제
+
+- `store/index.ts`의 기본 프로필, 기본 수업 계획, 학생 샘플, 알림 샘플, 수업기록 저장 알림에 남아 있던 깨진 한글을 제거했다.
+- 기존 persisted localStorage에 깨진 데이터가 남아 있어도 `version: 9` 마이그레이션과 `hasBrokenText()` 기준으로 기본값을 다시 쓰도록 했다.
+- 학생 이력 샘플은 Phase 2 기능이지만, 화면에 노출될 때 신뢰를 깨지 않도록 김민준·이서연·박지호 예시로 정리했다.
+- 수업기록 저장 시 생성되는 알림도 `수업 기록 저장`, `학생 이력에 반영되었습니다`처럼 실제 사용자에게 읽히는 문구로 바꿨다.
+- 하단 탭바와 데스크톱 사이드 레일에 남아 있던 깨진 탭 라벨과 `SPOKEDU PRO` 접근성 문구를 `SPOKEDU MASTER` 기준으로 교체했다.
+- 데스크톱 사이드바 브랜드 표기를 `PRO`에서 `MASTER`로 바꿔 현재 작업 기준과 맞췄다.
+- 상단 상태바의 `PRO`, 온라인/오프라인 깨진 문구, 알림/내 정보 aria-label을 정리했다.
+- `AppShell`의 플로팅 타이머, 체험 종료 배너, 오프라인 배너 문구를 깨끗한 한글로 재작성했다.
+- 하단 탭의 4번째 항목을 `수업 도구`에서 Phase 1 핵심인 `설명 도구`로 바꾸고 `/spokedu-master/report`로 연결했다.
+- 공통 `BottomSheet`에 남아 있던 깨진 `aria-label`을 제거하고, 제목 기반 닫기 라벨로 교체했다.
+- 모달이 열릴 때 배경 스크롤을 잠그고, 닫을 때 이전 포커스로 돌아가도록 했다.
+- ESC 닫기, 배경 클릭 닫기, 닫기 버튼 포커스, Tab/Shift+Tab 포커스 순환을 추가해 실제 키보드 접근성을 보강했다.
+- 프로필/내 정보 화면에 남아 있던 깨진 한글과 JSX 속성 깨짐을 제거했다.
+- 내 정보 화면을 관리자식 메뉴 모음이 아니라 구독자가 자신의 수업 준비 환경과 플랜 상태를 확인하는 화면으로 재구성했다.
+- 라이브러리, SPOMOVE, 설명 도구를 3개 가치 카드로 고정해 “구독자가 돈을 내는 이유”를 프로필 화면에서도 반복 확인하게 했다.
+- 수업 기록, 학생 이력, 센터 운영, 교구 스토어는 삭제하지 않고 확장 기능으로 내려 배치했다. 특히 교구 스토어는 학생 관리가 아니라 구매/견적 흐름이라는 점을 문구로 분리했다.
+- 플랜 선택 바텀시트에서 Trial, Lite, Pro, Center, School을 보여주되 실제 결제 가능한 것은 Pro/Center로 제한하고, Lite/School은 준비 중/상담 문의로 처리했다.
+- 결제 페이지에 남아 있던 깨진 한글을 제거하고, 단순 가격표가 아니라 “무엇을 구독하는지”를 확인하는 결제 직전 화면으로 재작성했다.
+- Toss 결제창에 전달되는 주문명을 `SPOKEDU MASTER Pro 플랜`, `SPOKEDU MASTER Center 플랜`으로 정리해 결제창에서 과거 PRO 명칭이나 깨진 문구가 보이지 않게 했다.
+- 결제 성공 화면은 결제 완료 안내에서 끝나지 않고 라이브러리 시작, SPOMOVE 큰 화면 실행, 수업 설명 도구로 바로 이어지게 했다.
+- 결제 취소 화면은 불안감을 주는 실패 화면이 아니라 “플랜은 변경되지 않았고 다시 시도 가능하다”는 안심형 복구 화면으로 정리했다.
+- 구독 관리 화면에 남아 있던 깨진 한글과 JSX 문구 오류를 제거했다.
+- 기존 화면의 빨간 경고, 0/0식 사용량, 불안감을 주는 취소/환불 문구 중심 UX를 걷어내고, 현재 플랜·다음 결제일·포함 가치·결제 관리 요청을 차분하게 보여주는 구조로 바꿨다.
+- 구독 화면을 “관리자 결제 상태판”이 아니라 구독자가 계속 결제할 이유를 확인하는 멤버십 화면으로 재구성했다.
+- Pro/Center 플랜 카드를 같은 화면 안에서 비교할 수 있게 하고, 현재 플랜이면 라이브러리 이동, 미구독/업그레이드 대상이면 결제 페이지로 연결했다.
+- 운영 초기에는 자동 결제 포털보다 메일 기반 결제 수단 변경/취소 문의가 더 안전하다고 판단해, 자동화가 덜 된 상태에서도 신뢰를 잃지 않는 문구로 정리했다.
+
+## 레퍼런스 반영 방식
+
+- TeamSnap/MOJO/Sportimea류 코칭 앱: 학생 이력 샘플은 출석, 집중 관찰, 기술 성장, 배지, 히스토리로 구성해 장기 락인 방향을 유지했다.
+- ClassDojo류 학부모 커뮤니케이션: 알림 문구는 관리자가 보는 로그가 아니라 교사가 바로 이해하는 짧은 상태 메시지로 정리했다.
+- Netflix/OTT 앱 하단 내비게이션: 홈, 라이브러리, 핵심 실행 엔진, 설명/리포트, 내 정보처럼 반복 사용 흐름을 짧은 탭으로 고정했다.
+- Class101/교육 구독 서비스: 결제 후 사용자가 가장 자주 찾는 “내 콘텐츠/설명 자료/내 정보” 동선을 하단 탭에 반영했다.
+- B2B SaaS 사이드바: 데스크톱에서는 브랜드와 기능 메뉴를 분리하되, 과거 PRO 명칭이 섞이지 않도록 MASTER 기준으로 통일했다.
+- Radix UI/Dialog 접근성 패턴: 모달 열림 시 포커스 이동, 포커스 트랩, ESC 닫기, 닫은 뒤 이전 포커스 복귀의 핵심 동작을 가볍게 반영했다.
+- Notion/Linear 설정 화면: 계정 정보, 플랜, 지원 메뉴를 과밀하게 나열하지 않고 카드형 섹션으로 나누는 방식을 반영했다.
+- Class101 멤버십/내 강의실: 사용자가 구독 중인 핵심 가치가 계속 보이도록 라이브러리·SPOMOVE·설명 도구 요약을 상단에 배치했다.
+- B2B SaaS 설정 UX: 장기 확장 기능은 숨기지 않되, 현재 핵심 사용 흐름보다 아래에 배치해 제품 초점을 흐리지 않게 했다.
+- Stripe Checkout/Notion 결제 UX: 결제 전 상품명, 대상, 가격, 인증 상태를 명확히 보여주는 구조를 반영했다.
+- Class101 결제 직전 화면: 가격보다 구독 후 열리는 콘텐츠 가치와 사용 시나리오를 먼저 보여주는 방식을 반영했다.
+- Apple Fitness+/Peloton 온보딩 결제 흐름: 결제 성공 후 바로 핵심 행동으로 보내는 후속 CTA를 반영했다.
+- Notion/Slack 계정 관리 화면: 결제 상태를 과하게 경고하지 않고 현재 플랜, 갱신일, 관리 요청을 조용히 정리하는 방식만 반영했다.
+- Class101 멤버십 화면: “구독하면 무엇을 계속 얻는가”를 라이브러리, SPOMOVE, 설명 도구 3가지 가치 카드로 요약했다.
+- Duolingo/Apple Fitness+ 업그레이드 흐름: 기능 나열보다 사용 루프의 이득을 먼저 보여주고, 다음 행동은 플랜 선택/큰 화면 실행처럼 명확한 CTA로 제한했다.
+- B2B SaaS 가격 페이지 패턴: 개인 Pro와 Center를 같은 화면에서 비교하되, 학교/기관은 별도 상담으로 빼서 과도한 기능 약속을 피했다.
+
+## 남은 문제
+
+- 공통 `BottomSheet`는 접근성 기본 동작을 넣었지만, 완전한 production dialog 수준으로는 스크린리더 회귀 테스트가 아직 필요하다.
+- 랜딩, 약관, 개인정보, 리포트 일부 텍스트에는 아직 `SPOKEDU PRO` 명칭이 남아 있다. 제품명 최종 결정을 반영해 `MASTER` 또는 `PRO` 중 하나로 통일해야 한다.
+- `students`, `class-record`, `plan`, `shop` 같은 Phase 2/보조 화면은 데이터는 깨끗해졌지만 UI 자체의 상용화 완성도는 아직 낮다.
+- 실제 결제 포털 자동 변경/취소 기능은 아직 없다. 운영 정책상 지금은 메일 문의 기반으로 두고, 결제 안정화 이후 포털을 붙이는 편이 낫다.
+
+## 다음 작업 순서
+
+1. 홈 → 라이브러리 → SPOMOVE → 구독/결제/프로필 흐름을 브라우저 기준으로 모바일·태블릿·데스크탑 QA한다.
+2. 랜딩/약관/개인정보/리포트의 `SPOKEDU PRO` 명칭을 최종 브랜드 기준으로 통일한다.
+3. `students`, `class-record`, `plan`, `shop` 보조 화면 중 실제 노출 우선순위가 높은 것부터 UI를 재정리한다.
+4. 결제/환불/약관 문구는 법적 검토 전 임시 문구임을 유지하고, 과장된 자동화 표현은 쓰지 않는다.
+
+## 주의할 점
+
+- SPOKEDU MASTER만 기준으로 작업한다. `subscription-new`와 기존 `spokedu-pro`는 장점만 참고하고 직접 유지보수 대상으로 보지 않는다.
+- 구독 화면은 불안감보다 확신을 줘야 한다. 경고 배너와 기능 잠금 카드를 남발하지 않는다.
+- 결제 관련 문구는 실제 운영 가능한 수준만 말한다. 카카오 자동 발송, 자동 환불, 포털 자동 변경처럼 아직 완성되지 않은 기능을 약속하지 않는다.
+- 라이브러리 데이터는 `admin/curriculum`, SPOMOVE 데이터는 `admin/spomove/training`을 소스로 유지한다.
+
+## 작업 날짜
+
+- 2026-05-20 (SPOKEDU MASTER 라이브러리 프리미엄화 2차: Funstick Fencing 실제 콘텐츠 패키지 반영, 정적 폴백 데이터 재작성, API 콘텐츠 오버레이 추가)
+- 2026-05-20 (SPOKEDU MASTER 홈 재작성: 깨진 문구 제거, 오늘 수업 히어로/즉시 실행/구독 가치/추천 패키지 구조로 재정렬)
+- 2026-05-20 (SPOMOVE 허브 재작성: 깨진 문구 제거, 큰 화면 실행/도입·중간·마무리 흐름/수업 공간별 모드로 재정렬)
+- 2026-05-20 (SPOMOVE 세션 실행 화면 재작성: 깨진 문구 제거, projector/class/mobile 모드별 실행·완료 UX 정리)
+- 2026-05-20 (라이브러리/상세 재작성: 남은 깨진 문구 제거, SPOMOVE 연결 이유를 모달·상세에 명시)
+- 2026-05-20 (콘텐츠 공급층 정리: programs API와 정적 폴백 데이터 깨진 문구 제거, 부족한 수업안 자동 품질 보강)
+
+## 수정한 파일
+
+- `app/spokedu-master/library/LibraryView.tsx`
+- `app/spokedu-master/library/[id]/LibraryDetailView.tsx`
+- `app/spokedu-master/components/ui/ProgramThumb.tsx`
+- `app/spokedu-master/lib/data.ts`
+- `app/api/spokedu-master/programs/route.ts`
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `app/spokedu-master/spomove/SpomoveHubView.tsx`
+- `app/spokedu-master/spomove/session/page.tsx`
+- `app/api/spokedu-master/drills/route.ts`
+- `app/api/spokedu-master/programs/route.ts`
+- `app/spokedu-master/lib/data.ts`
+- `public/images/spokedu-master/programs/funstick-fencing/hero.jpeg`
+- `public/images/spokedu-master/programs/funstick-fencing/gallery-1.jpeg`
+- `public/images/spokedu-master/programs/funstick-fencing/setup.png`
+- `DEV_NOTES.md`
+
+## 해결한 문제
+
+- MASTER 라이브러리/상세/모달의 깨진 한글을 제거하고, 구독자용 프리미엄 콘텐츠 탐색 경험으로 재정렬했다.
+- `admin/curriculum` 원본 데이터는 유지하되, MASTER 화면에서는 구독 서비스용 모달/상세 UX로 재가공하도록 했다.
+- `admin/spomove/training`과 연결되는 `relatedSpomoveIds` 추론을 한국어 키워드 기준으로 보강했다.
+- Funstick Fencing 예시를 실제 현장 사진, 배치도, 준비물, 안전 기준, How to Play, 변형 수업, 학부모 설명 문구까지 갖춘 콘텐츠 패키지로 반영했다.
+- API 응답에 `applyPremiumContentOverlay()`를 추가해 DB 원본을 훼손하지 않고 특정 고품질 콘텐츠만 프리미엄 패키지로 보강할 수 있게 했다.
+- API 실패/로그인 전 폴백용 `data.ts`를 깨진 샘플 대신 MASTER용 최소 프리미엄 샘플로 재작성했다.
+- 홈을 관리자 대시보드가 아니라 구독자용 수업 시작점으로 재작성했다. 첫 화면은 오늘 추천 패키지, 수업 시작, 큰 화면 실행, 수업안 보기로 바로 이어진다.
+- 홈의 깨진 한글과 과거 대시보드성 문구를 제거했다.
+- SPOMOVE 허브를 단순 드릴 목록이 아니라 “화면 기반 수업 엔진”으로 재작성했다.
+- SPOMOVE 진입을 큰 화면 실행 중심으로 올리고, 모바일/큰 화면/수업 모드의 역할을 분리했다.
+- API에서 내려가는 SPOMOVE cue 라벨의 깨진 한글을 `왼쪽`, `오른쪽`, `앞으로`, `뒤로`, `멈춤`, `점프`로 정리했다.
+- SPOMOVE 세션 실행 화면의 깨진 문구를 제거하고, 시작/카운트다운/실행/일시정지/완료 흐름을 읽히는 구조로 재작성했다.
+- projector/class 모드에서는 수업 중 지표 노출을 줄이고 하단 진행바만 남겨 큰 화면 몰입을 우선했다.
+- 라이브러리 목록/모달/상세 페이지에 남아 있던 깨진 문구를 제거했다.
+- 각 프로그램에서 SPOMOVE를 왜 실행해야 하는지 `why spomove` 문장으로 설명하도록 했다.
+- 상세 페이지의 패키지 구성에 수업안, 연결 SPOMOVE, 설명 문구가 함께 보이도록 정리했다.
+- `programs` API를 깨끗한 한글 기준으로 재작성했다. `admin/curriculum` 원본은 유지하되 MASTER 응답에서 구독자용 콘텐츠 품질을 보강한다.
+- `buildContentQuality()`를 추가해 목표, 발달 포인트, 보호자 문구, 현장 팁, 변형 수업, 안전 체크, briefing/rules/setupNotes가 비어 있어도 최소 품질을 채운다.
+- 정적 폴백 `data.ts`도 Funstick, 8자 드릴, 팀 릴레이 기준의 깨끗한 대표 샘플로 재작성했다.
+
+## 레퍼런스 반영 방식
+
+- Netflix: 대표 추천 히어로, 가로 레일, 카테고리별 발견 구조를 라이브러리 홈에 반영했다.
+- Class101: 수업을 열기 전 대상, 시간, 준비물, 결과물, 실행 난이도를 빠르게 판단하는 정보 배치를 반영했다.
+- MasterClass: 큰 실사 이미지와 짧고 선명한 가치 문장으로 콘텐츠의 프리미엄감을 만드는 방식을 반영했다.
+- Peloton / Apple Fitness+: “지금 10분 남았을 때”, “큰 화면을 켤 때”처럼 상황 기반 진입을 반영했다.
+- Funstick Fencing 자료: 실제 사진, 수업 배치도, 안전 운영, 목표물 규칙, 변형 수업 구조를 상세/모달의 기준 샘플로 삼았다.
+- 홈 화면에는 Netflix식 히어로 추천, Class101식 수업 판단 정보, MasterClass식 실사 중심 프리미엄 첫인상, Peloton식 즉시 실행 CTA를 함께 반영했다.
+- SPOMOVE 허브에는 Apple Fitness/Peloton식 즉시 실행 CTA와 상황별 운동 진입 구조를 반영했다. 사용자는 드릴명을 먼저 고르는 것이 아니라 도입, 중간, 마무리 중 지금 수업 타이밍을 먼저 고른다.
+- SPOMOVE 실행 화면에는 Kahoot류의 멀리서도 읽히는 큰 신호, Peloton식 즉시 시작/완료 흐름, Apple Fitness식 모드별 정보 밀도 조절을 반영했다.
+- 라이브러리 모달/상세에는 Class101식 수업 전 판단 정보, Apple Fitness식 목적 기반 추천 이유, Netflix식 다음 행동 CTA를 반영했다.
+- 콘텐츠 공급층에는 Class101식 수업 목표/결과/설명 문구 보강, Apple Fitness식 활동 목적 추론, Netflix식 라이브러리 전반의 최소 품질 유지 원칙을 반영했다.
+
+## 남은 문제
+
+- `store/index.ts` 등 일부 MASTER 보조 데이터에는 아직 예전 깨진 한글이 남아 있을 수 있다. 다만 핵심 라이브러리/상세/썸네일/정적 프로그램 폴백은 정리됐다.
+- Funstick 콘텐츠는 현재 코드 오버레이 방식이다. 장기적으로는 `spokedu_master_program_meta` 또는 별도 콘텐츠 테이블에 `heroImageUrl`, `setupImageUrl`, `galleryImageUrls`, `rules`, `briefingNotes`, `setupNotes`를 저장하는 구조가 필요하다.
+- SPOMOVE 연계는 키워드 추론 + 수동 IDs 병행 상태다. 상용화 전에는 프로그램별 검수된 연계 매핑 테이블이 필요하다.
+- 디자인 전체 완성도는 아직 100%가 아니다. 지금은 콘텐츠 구조와 핵심 흐름을 바로잡는 단계이며, 다음 단계에서 홈/모달/상세의 시각 밀도와 반응형 polish가 더 필요하다.
+
+## 다음 작업 순서
+
+1. 플랜/구독 화면은 경고판이 아니라 안심 + 업그레이드 화면으로 다듬는다.
+2. 홈/라이브러리/SPOMOVE를 실제 브라우저에서 모바일·태블릿·데스크탑 기준으로 시각 QA한다.
+3. `store/index.ts` 등 보조 화면의 남은 깨진 한글을 핵심 노출 순서에 따라 정리한다.
+4. 실제 DB 콘텐츠 중 상위 노출 프로그램 5~10개는 자동 보강이 아니라 수동 검수된 `hero/setup/gallery/rules`를 채우는 방식으로 전환한다.
+
+## 주의할 점
+
+- 현재 기준은 SPOKEDU MASTER다. `subscription-new`나 과거 `spokedu-pro`는 장점만 흡수하고 작업 기준으로 삼지 않는다.
+- 라이브러리 데이터 소스는 `admin/curriculum`, SPOMOVE 데이터 소스는 `admin/spomove/training`이다.
+- MASTER에서는 데이터를 그대로 복붙하지 않고 구독 서비스용 UX, 모달, 태그, CTA, 설명 구조로 재가공한다.
+- 원생/반/수업기록/카카오/학부모 웹뷰/원장 대시보드는 장기 락인 기능이지만 Phase 1 홈과 라이브러리를 흐리게 만들면 안 된다.
+- 사용자가 요구한 핵심은 기능 추가보다 상용화 완성도다. 다음 작업도 홈, 라이브러리, SPOMOVE 연결, 모달 UX의 완성도를 우선한다.
+
+---
+
+## 작업 날짜
+
 - 2026-05-19 (SPOMOVE 전면 오류 수정 + 라이브러리 필터 개선: store loadDrills 병합, EngineRouter 폴백, session 가드, LibraryView 필터 count + ProgramSheet 중복 제거)
 - 2026-05-19 (전 페이지 감사 — 4건 버그/UX 수정: parent 링크 오류, director 플랜 배너, report 잠금 카드, plan 저장 버튼 비활성화)
 - 2026-05-19 (홈 구독 경험 1차 재편 — admin 원천 데이터는 유지하고, Dashboard에서 curriculum 수업안 + SPOMOVE training을 "오늘 수업 패키지"로 재가공)
@@ -14,6 +193,7 @@
 - 2026-05-19 (콘텐츠-SPOMOVE 매핑 브릿지: programs API에서 수업 맥락 기반 relatedSpomoveIds 후보 자동 추론)
 - 2026-05-19 (프리미엄 콘텐츠 모달 1차 재설계: Funstick Fencing 레퍼런스 기반 ProgramSheet를 패키지 프리뷰 구조로 개편)
 - 2026-05-19 (라이브러리 뷰 재정비 + 콘텐츠 필드 확장: 깨진 문구 제거, hero/setup/gallery/rules 계열 필드 수용)
+- 2026-05-20 (라이브러리/상세 재복구: 깨진 한글 제거, 프리미엄 콘텐츠 OTT 레퍼런스 기준으로 모달·상세·썸네일 정렬)
 - 2026-05-13 (Phase 1 방향 정리 + 깨진 데이터 기반 수정 + 주요 화면 UX 완성)
 - 2026-05-14 (코드 현황 재점검 + 세부 UX 개선 + 상용화 완성도 강화 작업)
 - 2026-05-14 (모바일 반응형 QA — safe-area, 터치 타겟, 스크롤 전수 점검)
@@ -29,6 +209,59 @@
 - 2026-05-17 (전체 감사(audit) + 버그 수정 6건 + director 하드코딩 제거)
 - 2026-05-17 (programsLoaded 버그 수정 + static PROGRAMS 제거 + 브랜드 카피 전면 통일 + LibraryDetail 개선 + PlanView 주간 네비게이션 + Pro features 업데이트)
 - 2026-05-18 (Dashboard TodayHero 계획 연동 + Report 프로그램 검색 필터 + 온보딩 Pro 카드 features 통일)
+
+---
+
+## 수정한 파일 (2026-05-20 — 라이브러리/상세 재복구 + 레퍼런스 반영)
+
+### 작업 날짜
+- 2026-05-20
+
+### 수정한 파일
+- `app/spokedu-master/library/LibraryView.tsx`
+- `app/spokedu-master/library/[id]/LibraryDetailView.tsx`
+- `app/spokedu-master/components/ui/ProgramThumb.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 어제 저녁 작업 이후 라이브러리와 상세 페이지에 다시 깨진 한글 문구가 들어와 있었다.
+- 구독 서비스의 핵심 화면인 라이브러리에서 깨진 문구가 보이면 프리미엄 디자인 이전에 신뢰가 무너지므로, 부분 수정이 아니라 핵심 화면을 다시 정리했다.
+- `ProgramThumb`도 `heroImageUrl`을 우선 사용하도록 바꿔, 실제 수업 사진이 있을 때 썸네일/카드/상세가 같은 콘텐츠 자산을 바라보게 했다.
+- 모달과 상세 페이지의 역할을 분리했다.
+  - 모달: 빠른 프리뷰와 즉시 실행
+  - 상세: 전체 수업 패키지 문서와 현장 운영 정보
+
+### 레퍼런스 반영 방식
+- Netflix
+  - 히어로 추천, 가로 레일, 이어보기/즐겨찾기식 탐색 구조를 라이브러리에 반영했다.
+  - 단순 목록이 아니라 "오늘 추천 수업", "SPOMOVE 연결 수업", "빠른 수업"처럼 편성된 행으로 보이게 했다.
+- Class101
+  - 수업 선택 전에 사용자가 확인해야 하는 난이도/대상/구성/결과물을 모달과 상세에 배치했다.
+  - "이 콘텐츠를 열면 무엇을 얻는가"가 먼저 보이도록 CTA와 메타를 상단에 배치했다.
+- MasterClass
+  - 프리미엄 콘텐츠의 첫인상을 큰 비주얼과 짧은 카피 중심으로 잡았다.
+  - 사진이 있으면 이미지가 주인공이 되고, 없으면 카테고리 아이콘 기반 fallback으로 깨지지 않게 했다.
+- Peloton / Apple Fitness+
+  - 사용자의 상황별 진입을 반영했다.
+  - "지금 수업 10분 남았어요", "SPOMOVE 큰 화면을 켤게요", "완성형 수업안이 필요해요" 같은 행동 기반 선택 가이드를 유지했다.
+- Funstick Fencing 샘플
+  - 실제 사진, 4개 핵심 메타, 사전 교육·안전, How to Play, 변형 수업 구조를 모달/상세의 정보 구조에 반영했다.
+
+### 남은 문제
+- `store/index.ts` 등 일부 기본 샘플 데이터에는 아직 깨진 문자열이 남아 있다. 이번 작업은 사용자가 가장 먼저 보는 라이브러리/상세 복구에 집중했다.
+- 실제 Funstick 이미지와 세팅 다이어그램은 아직 public asset 또는 DB 콘텐츠 필드로 연결하지 않았다.
+- `relatedSpomoveIds`는 여전히 일부 자동 추론이다. 상용화 전에는 검수 완료 매핑과 추천 후보를 분리해야 한다.
+
+### 다음 작업 순서
+1. Funstick Fencing 샘플 1개를 실제 MASTER 콘텐츠 구조에 넣는다.
+2. `heroImageUrl`, `setupImageUrl`, `galleryImageUrls`, `rules`, `briefingNotes`, `setupNotes`를 저장할 콘텐츠 테이블 또는 import 방식을 결정한다.
+3. 라이브러리 홈/대시보드에도 같은 콘텐츠 패키지 품질 기준을 반영한다.
+4. 남은 깨진 샘플 데이터는 store 기본값부터 정리한다.
+
+### 검증 결과
+- `npx.cmd eslint app/spokedu-master/library app/spokedu-master/components/ui/ProgramThumb.tsx --max-warnings 0` 통과
+- `npx.cmd tsc --noEmit --pretty false` 통과
+- `rg "[\x{4E00}-\x{9FFF}\x{F900}-\x{FAFF}\x{FFFD}]" app\spokedu-master\library app\spokedu-master\components\ui\ProgramThumb.tsx -n` 결과 없음
 
 ---
 

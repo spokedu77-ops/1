@@ -161,6 +161,9 @@ export const navItems: NavItem[] = [
   { label: '문의', path: '/contact', href: `${SPOKEDU_BASE_PATH}/contact` },
 ];
 
+/** Footer 보조 내비 — 홈 등 본문 하단 카드 대신 푸터에서만 노출 */
+export const footerSiteLinks: NavItem[] = navItems.filter((item) => item.path !== '/about');
+
 export const coreTracks: TrackItem[] = [
   {
     title: 'Private Class',
@@ -221,7 +224,7 @@ export const programAssets: ProgramAssetItem[] = [
     imageSrc: spokeduImageManifest.programs.spomove,
   },
   {
-    title: 'PAPS 연계 놀이체육',
+    title: 'PAPS',
     description: '초등 기초체력 요소를 놀이체육으로 경험하는 프로그램',
     linksTo: ['Dispatch', 'Curriculum'],
     effects: ['심폐지구력', '근력', '유연성', '순발력'],
@@ -231,7 +234,7 @@ export const programAssets: ProgramAssetItem[] = [
     imageSrc: spokeduImageManifest.programs.paps,
   },
   {
-    title: '놀이체육 정규수업',
+    title: '놀이체육',
     description: '기본 움직임과 운동 습관을 만드는 스포키듀의 기본 수업 자산',
     linksTo: ['Private', 'Dispatch'],
     effects: ['기본움직임', '운동습관', '자신감', '사회성'],

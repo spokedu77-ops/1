@@ -1,9 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, Loader2, Shield, X } from 'lucide-react';
-import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import {
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  CreditCard,
+  FileText,
+  Loader2,
+  Mail,
+  MonitorPlay,
+  Shield,
+  Sparkles,
+} from 'lucide-react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { useProfile } from '../store';
 
@@ -15,74 +26,117 @@ declare global {
   }
 }
 
-const PLANS = {
+type PlanKey = 'pro' | 'team';
+
+const PLANS: Record<PlanKey, {
+  title: string;
+  shortTitle: string;
+  price: string;
+  amount: number;
+  period: string;
+  badge: string;
+  description: string;
+  primaryFor: string;
+  includes: string[];
+  accent: string;
+  border: string;
+  activeBorder: string;
+  badgeColor: string;
+}> = {
   pro: {
-    title: 'Pro',
+    title: 'SPOKEDU MASTER Pro',
+    shortTitle: 'Pro',
     price: '39,900',
     amount: 39900,
     period: '월',
-    badge: '가장 인기',
-    badgeColor: 'var(--spm-acc)',
-    badgeBg: 'rgba(99,102,241,0.18)',
-    description: '전문 강사가 매주 쓰는 수업 준비 환경',
+    badge: '개인 강사 추천',
+    description: '수업 라이브러리, SPOMOVE 큰 화면, 설명 문구까지 개인 강사가 바로 쓰는 표준 플랜입니다.',
+    primaryFor: '개인 강사, 프리랜서 체육교육자, 소규모 클래스 운영자',
     includes: [
-      '전체 프로그램 라이브러리 무제한',
+      '전체 프로그램 라이브러리',
       'SPOMOVE 큰 화면 실행',
-      '수업 도구 전체',
-      '설명 문구 (학부모·기관·학교용)',
+      '수업 설명 문구와 기관용 문구',
+      '최근 사용·즐겨찾기·추천 수업',
     ],
     accent: 'rgba(99,102,241,0.16)',
-    border: 'rgba(99,102,241,0.40)',
-    activeBorder: 'rgba(99,102,241,0.65)',
+    border: 'rgba(99,102,241,0.36)',
+    activeBorder: 'rgba(99,102,241,0.72)',
+    badgeColor: 'var(--spm-acc)',
   },
   team: {
-    title: 'Center',
+    title: 'SPOKEDU MASTER Center',
+    shortTitle: 'Center',
     price: '79,000',
     amount: 79000,
     period: '월',
     badge: '강사 3명 포함',
-    badgeColor: 'var(--spm-grn)',
-    badgeBg: 'rgba(16,185,129,0.16)',
-    description: '센터와 도장이 강사 수업 품질을 맞추는 플랜',
+    description: '센터·도장·체육관에서 여러 강사가 같은 수업 품질과 설명 자료를 공유하는 플랜입니다.',
+    primaryFor: '센터, 도장, 체육관, 강사 2명 이상 운영 조직',
     includes: [
       'Pro 기능 전체',
-      '강사 3명 계정 포함',
-      '센터용 수업 도구',
-      '추가 강사 확장 가능',
+      '강사 계정 3명 포함',
+      '센터용 수업 설명 자료',
+      '기관 도입 상담과 확장 안내',
     ],
     accent: 'rgba(16,185,129,0.12)',
-    border: 'rgba(16,185,129,0.35)',
-    activeBorder: 'rgba(16,185,129,0.65)',
+    border: 'rgba(16,185,129,0.34)',
+    activeBorder: 'rgba(16,185,129,0.70)',
+    badgeColor: 'var(--spm-grn)',
   },
-} as const;
+};
 
-type PlanKey = keyof typeof PLANS;
+const VALUE_CARDS = [
+  {
+    icon: BookOpen,
+    title: '수업 준비',
+    body: 'admin/curriculum의 커리큘럼을 구독자용 수업 카드와 상세 수업안으로 재구성합니다.',
+  },
+  {
+    icon: MonitorPlay,
+    title: '수업 몰입',
+    body: 'admin/spomove/training의 훈련을 큰 화면 실행과 Class Mode 흐름으로 연결합니다.',
+  },
+  {
+    icon: FileText,
+    title: '수업 설명',
+    body: '학부모, 기관, 학교에 수업의 의미를 설명할 문구를 바로 사용할 수 있게 합니다.',
+  },
+];
 
-function PlanToggle({ selected, onSelect }: { selected: PlanKey; onSelect: (k: PlanKey) => void }) {
+function normalizePlan(value: string | null): PlanKey {
+  return value === 'team' ? 'team' : 'pro';
+}
+
+function PlanSelector({ selected, onSelect }: { selected: PlanKey; onSelect: (plan: PlanKey) => void }) {
   return (
-    <div className="mb-5 grid grid-cols-2 gap-2">
+    <div className="grid gap-3 md:grid-cols-2">
       {(Object.keys(PLANS) as PlanKey[]).map((key) => {
-        const p = PLANS[key];
+        const plan = PLANS[key];
         const active = selected === key;
         return (
           <button
             key={key}
             type="button"
             onClick={() => onSelect(key)}
-            className="rounded-[14px] p-4 text-left transition-none active:scale-[0.98]"
+            className="rounded-[18px] p-5 text-left transition-none active:scale-[0.99]"
             style={{
-              background: active ? p.accent : 'var(--spm-s2)',
-              border: `1.5px solid ${active ? p.activeBorder : 'var(--spm-br2)'}`,
+              background: active ? plan.accent : 'var(--spm-s2)',
+              border: `1.5px solid ${active ? plan.activeBorder : 'var(--spm-br2)'}`,
             }}
           >
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: active ? p.badgeColor : 'var(--spm-t3)' }}>{p.badge}</span>
-              {active ? <span className="grid h-4 w-4 place-items-center rounded-full" style={{ background: p.badgeColor }}><CheckCircle2 size={10} color="#fff" strokeWidth={2.5} /></span> : <span className="grid h-4 w-4 place-items-center rounded-full" style={{ background: 'var(--spm-s3)', border: '1.5px solid var(--spm-br2)' }} />}
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-black" style={{ color: active ? plan.badgeColor : 'var(--spm-t3)' }}>{plan.badge}</p>
+                <p className="mt-2 text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{plan.shortTitle}</p>
+              </div>
+              <span className="grid h-6 w-6 place-items-center rounded-full" style={{ background: active ? plan.badgeColor : 'var(--spm-s3)', border: active ? 'none' : '1px solid var(--spm-br2)' }}>
+                {active ? <CheckCircle2 size={14} color="#fff" strokeWidth={2.5} /> : null}
+              </span>
             </div>
-            <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{p.title}</p>
-            <p className="mt-0.5 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>
-              {p.price}<span className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>원/{p.period}</span>
+            <p className="mt-4 text-[24px] font-black" style={{ color: 'var(--spm-t)' }}>
+              {plan.price}원<span className="ml-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>/{plan.period}</span>
             </p>
+            <p className="mt-3 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{plan.description}</p>
           </button>
         );
       })}
@@ -93,8 +147,7 @@ function PlanToggle({ selected, onSelect }: { selected: PlanKey; onSelect: (k: P
 function PaymentContent() {
   const params = useSearchParams();
   const profile = useProfile();
-  const initialPlan = (params.get('plan') ?? 'pro') as PlanKey;
-  const [planKey, setPlanKey] = useState<PlanKey>(PLANS[initialPlan] ? initialPlan : 'pro');
+  const [planKey, setPlanKey] = useState<PlanKey>(normalizePlan(params.get('plan')));
   const plan = PLANS[planKey];
   const alreadySubscribed = profile?.plan === 'pro' || profile?.plan === 'team';
 
@@ -106,11 +159,21 @@ function PaymentContent() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState('');
 
+  const orderSummary = useMemo(() => {
+    return {
+      name: plan.title,
+      price: `${plan.price}원/${plan.period}`,
+      target: plan.primaryFor,
+    };
+  }, [plan]);
+
   useEffect(() => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-toss-payments="true"]');
+    if (existing) return;
     const script = document.createElement('script');
     script.src = 'https://js.tosspayments.com/v1';
+    script.dataset.tossPayments = 'true';
     document.head.appendChild(script);
-    return () => { document.head.removeChild(script); };
   }, []);
 
   useEffect(() => {
@@ -130,43 +193,73 @@ function PaymentContent() {
   }, []);
 
   const sendOtp = async () => {
-    if (!email.includes('@')) { setError('올바른 이메일을 입력해주세요.'); return; }
-    setLoading(true); setError('');
+    if (!email.includes('@')) {
+      setError('결제 확인에 사용할 이메일 주소를 입력해 주세요.');
+      return;
+    }
+    setLoading(true);
+    setError('');
     try {
       const supabase = getSupabaseBrowserClient();
       const { error: authError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-      if (authError) { setError(authError.message); return; }
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
       setOtpSent(true);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const verifyOtp = async () => {
-    if (otp.length < 6) { setError('6자리 인증 코드를 입력해주세요.'); return; }
-    setLoading(true); setError('');
+    if (otp.length < 6) {
+      setError('이메일로 받은 6자리 인증 코드를 입력해 주세요.');
+      return;
+    }
+    setLoading(true);
+    setError('');
     try {
       const supabase = getSupabaseBrowserClient();
       const { error: authError } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' });
-      if (authError) { setError('인증 코드가 올바르지 않습니다.'); return; }
+      if (authError) {
+        setError('인증 코드가 올바르지 않습니다. 다시 확인해 주세요.');
+        return;
+      }
       setIsAuthed(true);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startTossPayment = async () => {
-    setLoading(true); setError('');
+    setLoading(true);
+    setError('');
     try {
       const res = await fetch('/api/spokedu-master/payment/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planKey }),
       });
-      const json = await res.json() as { orderId?: string; orderName?: string; amount?: number; customerEmail?: string; customerName?: string; error?: string };
-      if (!res.ok || !json.orderId) { setError(json.error ?? '결제 준비 중 오류가 발생했습니다.'); return; }
+      const json = await res.json() as {
+        orderId?: string;
+        orderName?: string;
+        amount?: number;
+        customerEmail?: string;
+        customerName?: string;
+        error?: string;
+      };
+      if (!res.ok || !json.orderId) {
+        setError(json.error ?? '결제를 준비하는 중 문제가 발생했습니다.');
+        return;
+      }
 
       const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
       if (!clientKey || !window.TossPayments) {
-        setError('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        setError('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
         return;
       }
+
       const toss = window.TossPayments(clientKey);
       toss.requestPayment('카드', {
         amount: json.amount,
@@ -177,9 +270,8 @@ function PaymentContent() {
         successUrl: `${window.location.origin}/spokedu-master/payment/success`,
         failUrl: `${window.location.origin}/spokedu-master/payment/cancel`,
       });
-      // requestPayment는 페이지를 리다이렉트하므로 이후 코드는 실행되지 않음
     } catch {
-      setError('결제를 시작할 수 없습니다. 다시 시도해주세요.');
+      setError('결제를 시작하지 못했습니다. 다시 시도해 주세요.');
       setLoading(false);
     }
   };
@@ -187,16 +279,22 @@ function PaymentContent() {
   if (alreadySubscribed) {
     const activePlanLabel = profile?.plan === 'team' ? 'Center' : 'Pro';
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center px-[22px]" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-        <div className="w-full max-w-[400px] space-y-6 text-center">
-          <CheckCircle2 size={56} color="var(--spm-grn)" strokeWidth={1.5} className="mx-auto" />
+      <div className="flex min-h-dvh flex-col items-center justify-center px-5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
+        <div className="w-full max-w-[440px] space-y-6 text-center">
+          <CheckCircle2 size={58} color="var(--spm-grn)" strokeWidth={1.5} className="mx-auto" />
           <div>
-            <h1 className="text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{activePlanLabel} 구독 중</h1>
-            <p className="mt-3 text-[14px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이미 활성 구독이 있습니다. 구독 관리 페이지에서 플랜 변경 또는 취소를 문의할 수 있습니다.</p>
+            <h1 className="text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{activePlanLabel} 구독 중입니다</h1>
+            <p className="mt-3 text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+              이미 활성 구독이 있습니다. 플랜 변경이나 결제 수단 변경은 구독 관리 화면에서 이어갈 수 있습니다.
+            </p>
           </div>
           <div className="space-y-2">
-            <Link href="/spokedu-master/subscription" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>구독 관리</Link>
-            <Link href="/spokedu-master/dashboard" className="block text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>대시보드로 돌아가기</Link>
+            <Link href="/spokedu-master/subscription" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+              구독 관리로 이동
+            </Link>
+            <Link href="/spokedu-master/dashboard" className="block text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+              홈으로 돌아가기
+            </Link>
           </div>
         </div>
       </div>
@@ -205,138 +303,180 @@ function PaymentContent() {
 
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-      <header className="flex items-center gap-3 px-[22px] pb-5 pt-[22px] sm:px-8">
-        <Link href="/spokedu-master/profile" className="grid h-10 w-10 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="뒤로">
+      <header className="mx-auto flex w-full max-w-[1180px] items-center gap-3 px-5 pb-4 pt-5 sm:px-8">
+        <Link href="/spokedu-master/subscription" className="grid h-10 w-10 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="이전 화면">
           <ArrowLeft size={18} color="var(--spm-t2)" />
         </Link>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</p>
-          <h1 className="text-[20px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>플랜 선택</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
+          <h1 className="text-[21px] font-black leading-tight sm:text-[26px]" style={{ fontFamily: 'var(--spm-font-display)' }}>플랜 선택과 결제</h1>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[520px] space-y-4 px-[22px] pb-14 sm:px-8">
-        <PlanToggle selected={planKey} onSelect={setPlanKey} />
-
-        <div className="rounded-[18px] p-5" style={{ background: plan.accent, border: `1px solid ${plan.border}` }}>
-          <div className="mb-1 flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: plan.badgeColor }}>{plan.badge}</span>
+      <main className="mx-auto grid w-full max-w-[1180px] gap-5 px-5 pb-16 sm:px-8 lg:grid-cols-[minmax(0,1fr)_370px]">
+        <section className="space-y-5">
+          <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(16,185,129,0.08), rgba(255,255,255,0.04))', border: '1px solid rgba(99,102,241,0.28)' }}>
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--spm-t2)' }}>
+              <Sparkles size={13} />
+              수업 준비는 쉽게, 수업은 더 몰입감 있게
+            </span>
+            <h2 className="mt-5 max-w-[760px] text-[31px] font-black leading-[1.08] sm:text-[44px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
+              결제 전에, SPOKEDU MASTER가 매 수업에서 해줄 일을 확인하세요.
+            </h2>
+            <p className="mt-4 max-w-[690px] text-[14px] font-semibold leading-7 sm:text-[15px]" style={{ color: 'var(--spm-t2)' }}>
+              이 결제는 자료 몇 개를 여는 비용이 아니라, 라이브러리에서 수업을 고르고 SPOMOVE로 실행하고 설명 도구로 수업의 가치를 남기는 구독입니다.
+            </p>
           </div>
-          <div className="flex items-end justify-between">
-            <h2 className="text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{plan.title}</h2>
-            <div className="text-right">
-              <span className="text-[24px] font-black" style={{ color: 'var(--spm-t)' }}>{plan.price}원</span>
-              <span className="ml-1 text-[12px]" style={{ color: 'var(--spm-t3)' }}>/{plan.period}</span>
-            </div>
-          </div>
-          <p className="mt-2 text-[13px] font-medium leading-5" style={{ color: 'var(--spm-t2)' }}>{plan.description}</p>
-          <ul className="mt-4 space-y-2.5">
-            {plan.includes.map((item) => (
-              <li key={item} className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
-                <CheckCircle2 size={14} color="var(--spm-grn)" strokeWidth={2} />{item}
-              </li>
-            ))}
-          </ul>
-        </div>
 
-        {checkingSession ? (
-          <div className="flex h-32 items-center justify-center rounded-[16px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <Loader2 size={20} className="animate-spin" color="var(--spm-t3)" />
-          </div>
-        ) : !isAuthed ? (
-          <div className="space-y-3 rounded-[16px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div>
-              <p className="text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>이메일로 계속</p>
-              <p className="mt-1 text-[11px] leading-5" style={{ color: 'var(--spm-t3)' }}>결제 확인과 구독 관리를 위해 이메일 인증이 필요합니다.</p>
-            </div>
-            {!otpSent ? (
-              <>
-                <input
-                  type="email"
-                  placeholder="이메일 주소"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') void sendOtp(); }}
-                  className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-semibold outline-none"
-                  style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
-                />
-                <button type="button" onClick={() => void sendOtp()} disabled={loading} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-                  인증 코드 받기
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-[12px] font-semibold" style={{ color: 'var(--spm-grn)' }}>{email}로 6자리 코드를 보냈습니다.</p>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="인증 코드 6자리"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                  onKeyDown={(e) => { if (e.key === 'Enter') void verifyOtp(); }}
-                  className="h-12 w-full rounded-[12px] border px-3 text-center text-[22px] font-black tracking-[0.3em] outline-none"
-                  style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
-                />
-                <button type="button" onClick={() => void verifyOtp()} disabled={loading} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-                  인증 확인
-                </button>
-                <button type="button" onClick={() => { setOtpSent(false); setOtp(''); }} className="flex w-full items-center justify-center gap-1 py-1 text-[11px]" style={{ color: 'var(--spm-t3)' }}>
-                  <X size={12} />다른 이메일로 다시 시도
-                </button>
-              </>
-            )}
-            {error ? <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>{error}</p> : null}
-          </div>
-        ) : (
-          <div className="space-y-3 rounded-[16px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={16} color="var(--spm-grn)" />
-              <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{email}</p>
-            </div>
-            <button type="button" onClick={() => void startTossPayment()} disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[13px] py-4 text-[15px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)', boxShadow: '0 10px 28px rgba(99,102,241,0.32)' }}>
-              {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-              카드로 결제 — {plan.price}원/{plan.period}
-            </button>
-            {error ? <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>{error}</p> : null}
-          </div>
-        )}
+          <PlanSelector selected={planKey} onSelect={setPlanKey} />
 
-        <div className="flex items-start gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)' }}>
-          <Shield size={14} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
-          <p className="text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-            토스페이먼츠 보안 결제 · 언제든지 취소 가능 · 다음 결제일 전 취소 시 요금 없음 · 데이터는 암호화되어 저장됩니다.
-          </p>
-        </div>
+          <section className="grid gap-3 md:grid-cols-3">
+            {VALUE_CARDS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                  <Icon size={18} color="var(--spm-acc)" />
+                  <p className="mt-3 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{item.title}</p>
+                  <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{item.body}</p>
+                </div>
+              );
+            })}
+          </section>
 
-        <p className="text-center text-[11px]" style={{ color: 'var(--spm-t3)' }}>
-          <Link href="/spokedu-master/terms" style={{ color: 'var(--spm-t3)' }}>이용약관</Link>
-          <span className="mx-2">·</span>
-          <Link href="/spokedu-master/privacy" style={{ color: 'var(--spm-t3)' }}>개인정보처리방침</Link>
-          <span className="mx-2">·</span>
-          <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>문의하기</a>
-        </p>
-
-        <div className="rounded-[12px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <p className="mb-3 text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>사업자 정보</p>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
-            {[
-              ['상호', '스포케듀'],
-              ['대표자', '최지훈'],
-              ['사업자등록번호', '311-63-00356'],
-              ['통신판매업신고', '신청 중'],
-              ['주소', '서울특별시 강동구 성내동 430-2, 7층 2호'],
-              ['고객센터', 'support@spokedu.com'],
-            ].map(([label, value]) => (
-              <div key={label} className="contents">
-                <dt className="text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</dt>
-                <dd className="text-[10px] font-medium" style={{ color: 'var(--spm-t2)' }}>{value}</dd>
+          <section className="rounded-[18px] p-5" style={{ background: plan.accent, border: `1px solid ${plan.border}` }}>
+            <p className="text-[11px] font-black" style={{ color: plan.badgeColor }}>{plan.badge}</p>
+            <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h3 className="text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{plan.title}</h3>
+                <p className="mt-2 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>{plan.primaryFor}</p>
               </div>
-            ))}
-          </dl>
-        </div>
+              <p className="text-[28px] font-black" style={{ color: 'var(--spm-t)' }}>
+                {plan.price}원<span className="ml-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>/{plan.period}</span>
+              </p>
+            </div>
+            <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+              {plan.includes.map((item) => (
+                <li key={item} className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
+                  <CheckCircle2 size={14} color="var(--spm-grn)" strokeWidth={2} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </section>
+
+        <aside className="space-y-4">
+          <section className="rounded-[20px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>결제 요약</p>
+            <div className="mt-4 space-y-3">
+              <div className="flex justify-between gap-4 text-[13px] font-semibold">
+                <span style={{ color: 'var(--spm-t3)' }}>상품</span>
+                <span className="text-right" style={{ color: 'var(--spm-t)' }}>{orderSummary.name}</span>
+              </div>
+              <div className="flex justify-between gap-4 text-[13px] font-semibold">
+                <span style={{ color: 'var(--spm-t3)' }}>대상</span>
+                <span className="max-w-[210px] text-right" style={{ color: 'var(--spm-t)' }}>{orderSummary.target}</span>
+              </div>
+              <div className="h-px" style={{ background: 'var(--spm-br2)' }} />
+              <div className="flex justify-between gap-4">
+                <span className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>오늘 결제</span>
+                <span className="text-[22px] font-black" style={{ color: 'var(--spm-t)' }}>{orderSummary.price}</span>
+              </div>
+            </div>
+          </section>
+
+          {checkingSession ? (
+            <section className="flex h-40 items-center justify-center rounded-[20px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <Loader2 size={22} className="animate-spin" color="var(--spm-t3)" />
+            </section>
+          ) : !isAuthed ? (
+            <section className="space-y-3 rounded-[20px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <div>
+                <p className="text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>이메일로 계속하기</p>
+                <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
+                  결제 확인과 구독 관리를 위해 이메일 인증이 필요합니다.
+                </p>
+              </div>
+              {!otpSent ? (
+                <>
+                  <input
+                    type="email"
+                    placeholder="이메일 주소"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') void sendOtp(); }}
+                    className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-semibold outline-none"
+                    style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+                  />
+                  <button type="button" onClick={() => void sendOtp()} disabled={loading} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
+                    {loading ? <Loader2 size={16} className="animate-spin" /> : <Mail size={15} />}
+                    인증 코드 받기
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-[12px] font-semibold" style={{ color: 'var(--spm-grn)' }}>{email}로 6자리 코드를 보냈습니다.</p>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="인증 코드 6자리"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    onKeyDown={(e) => { if (e.key === 'Enter') void verifyOtp(); }}
+                    className="h-12 w-full rounded-[12px] border px-3 text-center text-[22px] font-black tracking-[0.3em] outline-none"
+                    style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+                  />
+                  <button type="button" onClick={() => void verifyOtp()} disabled={loading} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
+                    {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                    인증 확인
+                  </button>
+                  <button type="button" onClick={() => { setOtpSent(false); setOtp(''); }} className="w-full py-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+                    다른 이메일로 다시 시도
+                  </button>
+                </>
+              )}
+              {error ? <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>{error}</p> : null}
+            </section>
+          ) : (
+            <section className="space-y-3 rounded-[20px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} color="var(--spm-grn)" />
+                <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{email}</p>
+              </div>
+              <button type="button" onClick={() => void startTossPayment()} disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[13px] py-4 text-[15px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)', boxShadow: '0 10px 28px rgba(99,102,241,0.32)' }}>
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                카드로 {plan.price}원 결제
+              </button>
+              {error ? <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>{error}</p> : null}
+            </section>
+          )}
+
+          <section className="rounded-[20px] p-5" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)' }}>
+            <Shield size={18} color="var(--spm-grn)" />
+            <p className="mt-3 text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>결제 전 확인</p>
+            <ul className="mt-3 space-y-2">
+              {[
+                '토스페이먼츠 보안 결제로 진행됩니다.',
+                '다음 결제일 전 구독 취소를 요청할 수 있습니다.',
+                '디지털 콘텐츠 이용 시작 후 환불은 이용 내역에 따라 제한될 수 있습니다.',
+              ].map((item) => (
+                <li key={item} className="flex gap-2 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+                  <CheckCircle2 size={13} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <p className="text-center text-[11px]" style={{ color: 'var(--spm-t3)' }}>
+            <Link href="/spokedu-master/terms" style={{ color: 'var(--spm-t3)' }}>이용약관</Link>
+            <span className="mx-2">·</span>
+            <Link href="/spokedu-master/privacy" style={{ color: 'var(--spm-t3)' }}>개인정보처리방침</Link>
+            <span className="mx-2">·</span>
+            <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>문의하기</a>
+          </p>
+        </aside>
       </main>
     </div>
   );

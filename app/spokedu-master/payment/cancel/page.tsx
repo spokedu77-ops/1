@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, XCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, XCircle } from 'lucide-react';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
@@ -12,22 +12,28 @@ function CancelContent() {
   const retryPlan = planFromOrder === 'team' ? 'team' : 'pro';
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-[22px]" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-      <div className="w-full max-w-[400px] space-y-6 text-center">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
+      <div className="w-full max-w-[430px] space-y-6 text-center">
         <div className="grid place-items-center">
           <XCircle size={64} color="var(--spm-t3)" strokeWidth={1.5} />
         </div>
         <div>
-          <h1 className="text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>결제 취소됨</h1>
-          <p className="mt-3 text-[15px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>결제가 완료되지 않았습니다. 다시 시도하거나 체험을 계속 이용하세요.</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Payment Canceled</p>
+          <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+            결제가 완료되지 않았습니다
+          </h1>
+          <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+            카드 인증이나 결제창을 닫아 결제가 중단되었습니다. 플랜은 변경되지 않았고, 다시 시도할 수 있습니다.
+          </p>
         </div>
         <div className="space-y-3">
           <Link
             href={`/spokedu-master/payment?plan=${retryPlan}`}
-            className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white"
             style={{ background: 'var(--spm-acc)' }}
           >
-            다시 시도하기
+            <CreditCard size={16} />
+            다시 결제하기
           </Link>
           <Link
             href="/spokedu-master/library"
@@ -39,7 +45,7 @@ function CancelContent() {
           </Link>
         </div>
         <p className="text-[11px]" style={{ color: 'var(--spm-t3)' }}>
-          문의: <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>support@spokedu.com</a>
+          결제 문제가 반복되면 <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>support@spokedu.com</a>으로 문의해 주세요.
         </p>
       </div>
     </div>

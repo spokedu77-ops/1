@@ -12,35 +12,31 @@ const FALLBACK_COLORS: [string, string, string, string][] = [
 ];
 
 const CATEGORY_COLORS: Record<string, [string, string, string, string]> = {
-  '민첩성': ['#1e1035', '#312e81', '#4338ca', '#818cf8'],
+  경쟁형: ['#111827', '#1d4ed8', '#f97316', '#facc15'],
+  민첩성: ['#1e1035', '#312e81', '#4338ca', '#818cf8'],
   '반응 속도': ['#1c0a2e', '#4c1d95', '#7c3aed', '#a78bfa'],
-  '협동': ['#052e16', '#065f46', '#059669', '#34d399'],
-  '협응성': ['#0c2a4a', '#0369a1', '#0ea5e9', '#7dd3fc'],
-  '균형': ['#052e16', '#14532d', '#16a34a', '#86efac'],
-  '표현 활동': ['#3f0000', '#7f1d1d', '#be123c', '#fb7185'],
-  '집중력': ['#1a1333', '#3730a3', '#6366f1', '#c7d2fe'],
-  '공간 인지': ['#0c1a3a', '#0f3460', '#1a6ebd', '#60a5fa'],
-  '체력': ['#1a0a00', '#7c2d12', '#c2410c', '#fb923c'],
-  '인지': ['#0f172a', '#1e3a5f', '#1d4ed8', '#93c5fd'],
+  협동: ['#052e16', '#065f46', '#059669', '#34d399'],
+  협응력: ['#0c2a4a', '#0369a1', '#0ea5e9', '#7dd3fc'],
+  균형: ['#052e16', '#14532d', '#16a34a', '#86efac'],
+  표현활동: ['#3f0000', '#7f1d1d', '#be123c', '#fb7185'],
+  집중력: ['#1a1333', '#3730a3', '#6366f1', '#c7d2fe'],
 };
 
 function categoryToColors(category: string): [string, string, string, string] {
   if (CATEGORY_COLORS[category]) return CATEGORY_COLORS[category];
-  // 알 수 없는 카테고리: 문자열 해시로 팔레트 선택
-  let h = 0;
-  for (let i = 0; i < category.length; i++) h = ((h << 5) - h + category.charCodeAt(i)) | 0;
-  return FALLBACK_COLORS[Math.abs(h) % FALLBACK_COLORS.length];
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) hash = ((hash << 5) - hash + category.charCodeAt(i)) | 0;
+  return FALLBACK_COLORS[Math.abs(hash) % FALLBACK_COLORS.length];
 }
 
 function extractYouTubeId(url: string): string | null {
-  const m = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/);
-  return m?.[1] ?? null;
+  const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/);
+  return match?.[1] ?? null;
 }
 
 function buildThumbnailUrl(videoUrl: string | null | undefined): string | undefined {
   if (!videoUrl) return undefined;
   const id = extractYouTubeId(videoUrl);
-  // mqdefault.jpg = 320x180 (true 16:9, no letterboxing)
   return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : undefined;
 }
 
@@ -48,25 +44,177 @@ function inferRelatedSpomoveIds(input: { title: string; category: string; tags: 
   const text = [input.title, input.category, input.description, ...input.tags, ...input.steps].join(' ');
   const candidates: string[] = [];
 
-  if (/기억|순서|회상|인지|집중|주의/.test(text)) candidates.push('SM-05', 'SM-06');
-  if (/리듬|박자|협응|표현|동기화|거울/.test(text)) candidates.push('RC-05');
-  if (/민첩|순발|스피드|반응|출발|방향|전환|공간|신호/.test(text)) candidates.push('SR-05', 'SR-06');
-  if (/협동|릴레이|팀|규칙|역할|전략/.test(text)) candidates.push('RS-05');
-  if (/멈춤|억제|충동|간섭|판단|선택/.test(text)) candidates.push('IC-05');
-  if (candidates.length === 0 && /SPOMOVE|큰 화면|화면/.test(text)) candidates.push('SR-05');
+  if (/펀스틱|펜싱|fencing|funstick|찌르기|상대|거리|타이밍/i.test(text)) candidates.push('SR-05', 'SR-06');
+  if (/민첩|스피드|반응|출발|방향|전환|공간|신호|순발/i.test(text)) candidates.push('SR-05', 'SR-06');
+  if (/협동|릴레이|팀|규칙|역할|전략/i.test(text)) candidates.push('RS-05');
+  if (/균형|자세|밸런스|멈춤|정지|중심/i.test(text)) candidates.push('IC-05');
+  if (/리듬|박자|표현|음악|거울/i.test(text)) candidates.push('RC-05');
+  if (/기억|집중|인지|순서|패턴/i.test(text)) candidates.push('SM-05', 'SM-06');
+  if (candidates.length === 0 && /SPOMOVE|화면|신호/i.test(text)) candidates.push('SR-05');
 
   return [...new Set(candidates)].slice(0, 2);
+}
+
+function inferFocus(program: Program) {
+  const text = [program.title, program.category, program.description, ...program.tags].join(' ');
+  if (/펀스틱|펜싱|경쟁|상대|타이밍|거리/.test(text)) return '거리 판단 / 반응 타이밍 / 균형 유지 / 스포츠맨십';
+  if (/민첩|순발|방향|전환|스피드/.test(text)) return '민첩성 / 방향 전환 / 시각 신호 반응';
+  if (/협동|팀|릴레이|역할/.test(text)) return '협동성 / 출발 반응 / 역할 수행';
+  if (/균형|자세|중심|멈춤/.test(text)) return '균형 감각 / 자세 조절 / 충동 조절';
+  if (/리듬|표현|박자|음악/.test(text)) return '리듬 감각 / 표현 움직임 / 신체 협응';
+  return '신체 협응 / 집중력 / 참여 경험';
+}
+
+function inferObjective(program: Program) {
+  const focus = inferFocus(program);
+  return `${program.title} 활동을 통해 ${focus}을(를) 놀이 흐름 안에서 경험합니다.`;
+}
+
+function buildParentNote(program: Program) {
+  const focus = inferFocus(program);
+  return `오늘은 "${program.title}" 활동으로 ${focus}을(를) 연습했습니다. 아이들이 신호를 보고 판단하고, 몸을 조절하며, 친구들과 함께 움직이는 경험을 했습니다.`;
+}
+
+function buildContentQuality(program: Program): Program {
+  const detail = program.lessonDetail;
+  if (!detail) return program;
+
+  const rules = detail.rules?.length ? detail.rules : program.steps;
+  const relatedSpomoveIds = detail.relatedSpomoveIds.length
+    ? detail.relatedSpomoveIds
+    : inferRelatedSpomoveIds({
+      title: program.title,
+      category: program.category,
+      tags: program.tags,
+      description: program.description,
+      steps: program.steps,
+    });
+
+  return {
+    ...program,
+    description: program.description || detail.objective || inferObjective(program),
+    tags: [...new Set([...program.tags, ...(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : [])])],
+    lessonDetail: {
+      ...detail,
+      recommendedAge: detail.recommendedAge || program.grade || '전학년',
+      recommendedPlayers: detail.recommendedPlayers || '6~20명',
+      objective: detail.objective || inferObjective(program),
+      developmentFocus: detail.developmentFocus || inferFocus(program),
+      coachScript:
+        detail.coachScript ||
+        `${program.title}은(는) 속도보다 규칙 이해와 안전한 움직임을 먼저 잡는 것이 중요합니다. 첫 라운드는 천천히 진행하고, 이후 신호 반응과 움직임 정확도를 올립니다.`,
+      parentNote: detail.parentNote || buildParentNote(program),
+      fieldTips: detail.fieldTips.length > 0 ? detail.fieldTips : [
+        '첫 라운드는 성공 경험을 만드는 데 집중합니다.',
+        '대기 학생에게 관찰 역할을 주면 참여 밀도가 유지됩니다.',
+      ],
+      variations: detail.variations.length > 0 ? detail.variations : [
+        '초급: 이동 거리와 제한 시간을 줄입니다.',
+        '중급: 신호나 역할을 추가해 판단 요소를 늘립니다.',
+        '고급: 팀전 또는 라운드제로 확장합니다.',
+      ],
+      safetyNotes: detail.safetyNotes.length > 0 ? detail.safetyNotes : [
+        '시작 전 이동 방향과 안전 구역을 먼저 안내합니다.',
+        '충돌을 막기 위해 출발 간격과 대기 위치를 분리합니다.',
+      ],
+      relatedSpomoveIds,
+      briefingNotes: detail.briefingNotes?.length ? detail.briefingNotes : [
+        '오늘 활동의 목표와 성공 기준을 30초 안에 안내합니다.',
+        relatedSpomoveIds.length > 0 ? 'SPOMOVE 신호를 언제 연결할지 미리 정합니다.' : '활동 중 관찰할 움직임 포인트를 먼저 정합니다.',
+      ],
+      rules: rules.length > 0 ? rules : [
+        '활동 구역과 대기 구역을 나눕니다.',
+        '시범을 한 번 보여준 뒤 짧은 라운드로 시작합니다.',
+        '라운드가 끝나면 성공 기준과 안전 규칙을 다시 확인합니다.',
+      ],
+      setupNotes: detail.setupNotes?.length ? detail.setupNotes : [
+        '시작선과 반환 지점을 명확히 표시합니다.',
+        '대기 학생이 활동 구역 안으로 들어오지 않도록 위치를 분리합니다.',
+      ],
+    },
+  };
+}
+
+function applyPremiumContentOverlay(program: Program): Program {
+  const key = [program.title, program.category, program.description, ...program.tags].join(' ').toLowerCase();
+  if (!/(펀스틱|funstick|펜싱|fencing)/i.test(key)) return program;
+
+  const rules = [
+    '두 명이 안전거리를 두고 마주 선 뒤, 펀스틱은 전방 목표물 쪽으로만 향하게 합니다.',
+    '한 손에는 펀스틱, 다른 손에는 라바콘과 공을 든 상태로 균형을 유지합니다.',
+    '상대의 공을 정확히 찌르면 1점, 자신의 공을 떨어뜨리거나 안전선을 넘으면 공격권을 넘깁니다.',
+    '1라운드는 30초로 짧게 운영하고, 라운드 사이에 공격 거리와 방어 자세를 바로 피드백합니다.',
+  ];
+  const current = program.lessonDetail;
+
+  return {
+    ...program,
+    title: '펀스틱 펜싱 Funstick Fencing',
+    category: '경쟁형',
+    grade: '초등 3학년 이상',
+    duration: program.duration || 20,
+    space: '실내 체육관 · 넓은 활동 공간',
+    description:
+      '부드러운 펀스틱으로 상대의 목표물을 겨냥하며 거리 판단, 타이밍, 균형 유지, 공격·방어 전환을 익히는 경쟁형 놀이체육 프로그램입니다.',
+    steps: rules,
+    equipment: ['펀스틱 2개', '라바콘 2개', '공 2개', '접시콘 12~15개'],
+    tags: [...new Set(['경쟁형', '민첩성', '순발력', '거리 판단', '타이밍', 'SPOMOVE 연계', ...program.tags])],
+    colors: ['#111827', '#1d4ed8', '#f97316', '#facc15'],
+    isHot: true,
+    thumbnailUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
+    lessonDetail: {
+      recommendedAge: '초등 3학년 이상',
+      recommendedPlayers: '2명씩 페어 · 6~20명 순환 운영',
+      objective: '거리 판단, 반응 타이밍, 균형 유지, 공격·방어 전환을 안전한 경쟁 놀이로 경험합니다.',
+      developmentFocus: '민첩성 / 협응력 / 집중력 / 스포츠맨십',
+      coachScript:
+        current?.coachScript ||
+        '오늘은 세게 찌르는 수업이 아니라, 거리와 타이밍을 읽는 수업입니다. 상대 공을 보되 몸이 앞으로 쏠리지 않게 균형을 먼저 잡아주세요.',
+      parentNote:
+        current?.parentNote ||
+        '오늘은 펀스틱 펜싱 활동으로 거리 판단과 반응 타이밍을 연습했습니다. 아이들이 규칙을 지키며 경쟁하고, 공격과 방어를 번갈아 경험했습니다.',
+      fieldTips: [
+        '처음 1라운드는 득점보다 안전거리와 자세를 확인하는 데 씁니다.',
+        '공격이 과격해지면 "천천히 정확하게" 라운드로 전환합니다.',
+        '대기 학생에게 관찰 역할을 주면 수업 밀도가 떨어지지 않습니다.',
+        ...(current?.fieldTips ?? []),
+      ],
+      variations: [
+        '초급: 정지 상태에서 목표물 찌르기만 진행합니다.',
+        '중급: 발을 한 번만 이동할 수 있게 제한합니다.',
+        '고급: SPOMOVE 신호에 맞춰 공격권 또는 이동 방향을 바꿉니다.',
+      ],
+      safetyNotes: [
+        '얼굴과 목 방향으로 펀스틱을 들지 않도록 시작 전에 금지선을 명확히 안내합니다.',
+        '접시콘으로 경기 구역을 넓게 표시하고, 대기 학생은 구역 밖에서 기다립니다.',
+        '펀스틱은 휘두르지 않고 목표물을 향해 "밀어 찌르기"로만 사용합니다.',
+      ],
+      relatedSpomoveIds:
+        current?.relatedSpomoveIds && current.relatedSpomoveIds.length > 0 ? current.relatedSpomoveIds : ['SR-05', 'SR-06'],
+      videoUrl: current?.videoUrl,
+      heroImageUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
+      setupImageUrl: '/images/spokedu-master/programs/funstick-fencing/setup.png',
+      galleryImageUrls: ['/images/spokedu-master/programs/funstick-fencing/gallery-1.jpeg'],
+      briefingNotes: [
+        '구독자가 모달을 열자마자 활동 가치, 준비물, 안전 기준, 실행 순서를 한 번에 판단할 수 있어야 합니다.',
+        '현장 사진은 신뢰를 만들고, 배치도는 수업 직전 준비 시간을 줄이는 역할을 합니다.',
+      ],
+      rules,
+      setupNotes: [
+        '접시콘으로 직사각형 경기장을 만들고, 중앙에 두 명이 마주 보는 시작선을 둡니다.',
+        '각 학생은 라바콘 위 공을 들고, 상대는 펀스틱으로 공만 겨냥합니다.',
+        '대기자는 측면 안전 구역에서 다음 라운드를 준비합니다.',
+      ],
+    },
+  };
 }
 
 export async function GET() {
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const supabase = getServiceSupabase();
-
   const { data: curriculumRows, error: currErr } = await supabase
     .from('curriculum')
     .select('id,title,url,check_list,equipment,steps,expert_tip,display_order')
@@ -78,7 +226,7 @@ export async function GET() {
     return NextResponse.json({ error: currErr?.message ?? 'DB error' }, { status: 500 });
   }
 
-  const curriculumIds = (curriculumRows as { id: number }[]).map((r) => r.id);
+  const curriculumIds = (curriculumRows as { id: number }[]).map((row) => row.id);
 
   type MetaRow = {
     curriculum_id: number;
@@ -105,8 +253,8 @@ export async function GET() {
       .from('spokedu_master_program_meta')
       .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids')
       .in('curriculum_id', curriculumIds);
-    for (const m of (metaRows ?? []) as MetaRow[]) {
-      metaByCurriculumId.set(m.curriculum_id, m);
+    for (const meta of (metaRows ?? []) as MetaRow[]) {
+      metaByCurriculumId.set(meta.curriculum_id, meta);
     }
   }
 
@@ -130,14 +278,17 @@ export async function GET() {
       .from('spokedu_pro_programs')
       .select('source_center_curriculum_id,video_url,activity_tip,activity_method,equipment,checklist,updated_at,function_type,function_types,main_theme,group_size')
       .in('source_center_curriculum_id', curriculumIds);
-    for (const o of (overlayRows ?? []) as OverlayRow[]) {
-      const cid = o.source_center_curriculum_id;
-      if (cid == null) continue;
-      const prev = overlayByCurriculumId.get(cid);
-      if (!prev) { overlayByCurriculumId.set(cid, o); continue; }
-      const prevT = prev.updated_at ? Date.parse(prev.updated_at) : 0;
-      const nextT = o.updated_at ? Date.parse(o.updated_at) : 0;
-      if (nextT >= prevT) overlayByCurriculumId.set(cid, o);
+    for (const overlay of (overlayRows ?? []) as OverlayRow[]) {
+      const curriculumId = overlay.source_center_curriculum_id;
+      if (curriculumId == null) continue;
+      const prev = overlayByCurriculumId.get(curriculumId);
+      if (!prev) {
+        overlayByCurriculumId.set(curriculumId, overlay);
+        continue;
+      }
+      const prevTime = prev.updated_at ? Date.parse(prev.updated_at) : 0;
+      const nextTime = overlay.updated_at ? Date.parse(overlay.updated_at) : 0;
+      if (nextTime >= prevTime) overlayByCurriculumId.set(curriculumId, overlay);
     }
   }
 
@@ -152,23 +303,22 @@ export async function GET() {
     display_order: number | null;
   };
 
-  const programs: Program[] = (curriculumRows as CurrRow[]).map((r) => {
-    const meta = metaByCurriculumId.get(r.id);
-    const ov = overlayByCurriculumId.get(r.id);
-
-    const title = (r.title ?? '').trim() || `커리큘럼 #${r.id}`;
-    const categoryName = (meta?.sm_theme ?? ov?.main_theme ?? '일반').trim() || '일반';
-    const videoUrl = (ov?.video_url ?? r.url ?? '').trim() || undefined;
-    const equipment = ov?.equipment
-      ? String(ov.equipment).split('\n').map((s) => s.trim()).filter(Boolean)
-      : (r.equipment ?? []).filter(Boolean);
-    const steps = ov?.activity_method
-      ? String(ov.activity_method).split('\n').map((s) => s.trim()).filter(Boolean)
-      : (r.steps ?? []).filter(Boolean);
-    const coachScript = (ov?.activity_tip ?? r.expert_tip ?? '').trim() || '';
-    const fieldTips = ov?.checklist
-      ? String(ov.checklist).split('\n').map((s) => s.trim()).filter(Boolean)
-      : (r.check_list ?? []).filter(Boolean);
+  const programs: Program[] = (curriculumRows as CurrRow[]).map((row) => {
+    const meta = metaByCurriculumId.get(row.id);
+    const overlay = overlayByCurriculumId.get(row.id);
+    const title = (row.title ?? '').trim() || `커리큘럼 #${row.id}`;
+    const categoryName = (meta?.sm_theme ?? overlay?.main_theme ?? '일반').trim() || '일반';
+    const videoUrl = (overlay?.video_url ?? row.url ?? '').trim() || undefined;
+    const equipment = overlay?.equipment
+      ? String(overlay.equipment).split('\n').map((item) => item.trim()).filter(Boolean)
+      : (row.equipment ?? []).filter(Boolean);
+    const steps = overlay?.activity_method
+      ? String(overlay.activity_method).split('\n').map((item) => item.trim()).filter(Boolean)
+      : (row.steps ?? []).filter(Boolean);
+    const coachScript = (overlay?.activity_tip ?? row.expert_tip ?? '').trim() || '';
+    const fieldTips = overlay?.checklist
+      ? String(overlay.checklist).split('\n').map((item) => item.trim()).filter(Boolean)
+      : (row.check_list ?? []).filter(Boolean);
 
     const smColors = meta?.sm_colors;
     const colors: [string, string, string, string] =
@@ -176,13 +326,12 @@ export async function GET() {
         ? [smColors[0], smColors[1], smColors[2], smColors[3]]
         : categoryToColors(categoryName);
 
-    // Merge spokedu-pro classification tags with sm_tags
     const proTags: string[] = [
-      ...(Array.isArray(ov?.function_types) && ov.function_types.length > 0
-        ? ov.function_types
-        : ov?.function_type ? [ov.function_type] : []),
-      ...(ov?.main_theme ? [ov.main_theme] : []),
-      ...(ov?.group_size ? [ov.group_size] : []),
+      ...(Array.isArray(overlay?.function_types) && overlay.function_types.length > 0
+        ? overlay.function_types
+        : overlay?.function_type ? [overlay.function_type] : []),
+      ...(overlay?.main_theme ? [overlay.main_theme] : []),
+      ...(overlay?.group_size ? [overlay.group_size] : []),
     ];
     const smTags = meta?.sm_tags ?? [];
     const inferredRelatedSpomoveIds = inferRelatedSpomoveIds({
@@ -193,40 +342,15 @@ export async function GET() {
       steps,
     });
     const tags = [...new Set([...proTags, ...smTags, ...(inferredRelatedSpomoveIds.length > 0 ? ['SPOMOVE'] : [])])];
-
-    const isProProgram = meta?.sm_is_pro ?? false;
-    // 인증된 사용자에게 lessonDetail 항상 반환 — 체험/유료 모두 공개
-    // 클라이언트 isPro + isTrialExpired 가 UI 잠금을 담당
     const relatedSpomoveIds =
       (meta?.sm_related_spomove_ids?.length ?? 0) > 0
         ? (meta!.sm_related_spomove_ids as string[])
         : inferredRelatedSpomoveIds;
-
-    const lessonDetail = {
-      recommendedAge: meta?.sm_grade ?? '전학년',
-      recommendedPlayers: '6-20명',
-      objective: meta?.sm_objective ?? (coachScript.slice(0, 60) || title),
-      developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
-      coachScript: meta?.sm_coach_script ?? coachScript,
-      parentNote: meta?.sm_parent_note ?? coachScript,
-      fieldTips,
-      variations: [],
-      safetyNotes: [],
-      relatedSpomoveIds,
-      videoUrl,
-      heroImageUrl: undefined,
-      setupImageUrl: undefined,
-      galleryImageUrls: [],
-      briefingNotes: [],
-      rules: steps,
-      setupNotes: [],
-    };
-
     const thumbnailUrl = buildThumbnailUrl(videoUrl);
 
-    return {
-      id: String(r.id),
-      curriculumId: r.id,
+    const program: Program = {
+      id: String(row.id),
+      curriculumId: row.id,
       title,
       category: categoryName,
       grade: meta?.sm_grade ?? '전학년',
@@ -237,12 +361,32 @@ export async function GET() {
       equipment,
       tags,
       colors,
-      isPro: isProProgram,
+      isPro: meta?.sm_is_pro ?? false,
       isNew: meta?.sm_is_new ?? false,
       isHot: meta?.sm_is_hot ?? false,
       thumbnailUrl,
-      lessonDetail,
+      lessonDetail: {
+        recommendedAge: meta?.sm_grade ?? '전학년',
+        recommendedPlayers: '6~20명',
+        objective: meta?.sm_objective ?? (coachScript.slice(0, 80) || ''),
+        developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
+        coachScript: meta?.sm_coach_script ?? coachScript,
+        parentNote: meta?.sm_parent_note ?? coachScript,
+        fieldTips,
+        variations: [],
+        safetyNotes: [],
+        relatedSpomoveIds,
+        videoUrl,
+        heroImageUrl: undefined,
+        setupImageUrl: undefined,
+        galleryImageUrls: [],
+        briefingNotes: [],
+        rules: steps,
+        setupNotes: [],
+      },
     };
+
+    return buildContentQuality(applyPremiumContentOverlay(program));
   });
 
   return NextResponse.json({ data: programs, total: programs.length });
@@ -261,11 +405,17 @@ export async function PATCH(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   let body: Record<string, unknown>;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
 
   const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_duration', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors', 'sm_objective', 'sm_development_focus', 'sm_coach_script', 'sm_parent_note', 'sm_related_spomove_ids'];
   const patch: Record<string, unknown> = {};
-  for (const key of allowed) { if (key in body) patch[key] = body[key]; }
+  for (const key of allowed) {
+    if (key in body) patch[key] = body[key];
+  }
 
   const supabase = getServiceSupabase();
   const { data, error } = await supabase

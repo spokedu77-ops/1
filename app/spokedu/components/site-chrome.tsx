@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { navItems, SPOKEDU_BASE_PATH } from '../data/content';
-import { externalChannels } from '../data/external-channels';
+import { footerSiteLinks, navItems, SPOKEDU_BASE_PATH } from '../data/content';
+import { getLiveExternalChannels } from '../data/external-channels';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import { inferTrackFromHref } from '../lib/tracking';
 
@@ -54,66 +54,90 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const liveChannels = getLiveExternalChannels();
+
   return (
     <footer className="border-t border-slate-200 bg-white">
-      <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 sm:px-6 md:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-slate-900">{brandProfile.nameEn} / {brandProfile.nameKo}</p>
-          <p className="text-sm text-slate-600">아동·청소년 체육교육 전문 운영 단체</p>
-          <p className="text-sm text-slate-600">현장 수업 운영 · 기관 파견 프로그램 · 커리큘럼/강사교육</p>
-        </div>
-        <div className="grid gap-1 text-sm text-slate-600">
-          <p>
-            <span className="font-semibold text-slate-800">대표</span>
-            {' '}
-            {brandProfile.representative}
-          </p>
-          <p>
-            <span className="font-semibold text-slate-800">연락처</span>
-            {' '}
-            <a id="footer-phone-link" data-track="cta-phone" data-track-label="footer-phone" href={brandContactLinks.phone} className="underline underline-offset-2">
-              {brandProfile.phone}
-            </a>
-          </p>
-          <p>
-            <span className="font-semibold text-slate-800">이메일</span>
-            {' '}
-            <a id="footer-email-link" data-track="cta-email" data-track-label="footer-email" href={brandContactLinks.email} className="underline underline-offset-2">
-              {brandProfile.email}
-            </a>
-          </p>
-          <p>
-            <span className="font-semibold text-slate-800">주소</span>
-            {' '}
-            {brandProfile.address}
-          </p>
-          <p>
-            <span className="font-semibold text-slate-800">사업자 정보</span>
-            {' '}
-            {brandProfile.businessInfo.displayText}
-          </p>
-        </div>
-        <div className="md:col-span-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">External Channels</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {externalChannels.map((channel) => (
-              <a
-                key={channel.key}
-                href={channel.href}
-                target="_blank"
-                rel="noreferrer"
-                data-track={`external-${channel.key}`}
-                data-track-label={`footer-${channel.key}`}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
-              >
-                <span className="block font-semibold text-slate-900">
-                  {channel.label}
-                  {channel.isPending ? ' (TODO)' : ''}
-                </span>
-                <span className="mt-1 block text-xs text-slate-500">{channel.description}</span>
-              </a>
-            ))}
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-slate-900">
+              {brandProfile.nameEn} / {brandProfile.nameKo}
+            </p>
+            <p className="text-sm text-slate-600">{brandProfile.tagline}</p>
           </div>
+          <div className="grid gap-1 text-sm text-slate-600">
+            <p>
+              <span className="font-semibold text-slate-800">대표</span> {brandProfile.representative}
+            </p>
+            <p>
+              <span className="font-semibold text-slate-800">연락처</span>{' '}
+              <a
+                id="footer-phone-link"
+                data-track="cta-phone"
+                data-track-label="footer-phone"
+                href={brandContactLinks.phone}
+                className="underline underline-offset-2"
+              >
+                {brandProfile.phone}
+              </a>
+            </p>
+            <p>
+              <span className="font-semibold text-slate-800">이메일</span>{' '}
+              <a
+                id="footer-email-link"
+                data-track="cta-email"
+                data-track-label="footer-email"
+                href={brandContactLinks.email}
+                className="underline underline-offset-2"
+              >
+                {brandProfile.email}
+              </a>
+            </p>
+            <p>
+              <span className="font-semibold text-slate-800">운영권역</span> {brandProfile.serviceArea}
+            </p>
+          </div>
+        </div>
+
+        <nav aria-label="사이트 메뉴" className="border-t border-slate-100 pt-4">
+          <ul className="flex flex-wrap gap-x-3 gap-y-1">
+            {footerSiteLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  data-track={inferTrackFromHref(link.href)}
+                  data-track-label={`footer-nav-${link.label}`}
+                  className="text-xs text-slate-500 transition hover:text-slate-800"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="border-t border-slate-100 pt-4">
+          <p className="text-xs font-semibold text-slate-500">공식 채널</p>
+          {liveChannels.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {liveChannels.map((channel) => (
+                <a
+                  key={channel.key}
+                  href={channel.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-track={`external-${channel.key}`}
+                  data-track-label={`footer-${channel.key}`}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
+                >
+                  {channel.label}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-xs text-slate-500">공식 채널 준비 중</p>
+          )}
         </div>
       </div>
     </footer>

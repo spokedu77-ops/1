@@ -2,7 +2,25 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building2, CalendarDays, CheckCircle2, ClipboardList, CreditCard, HelpCircle, LogOut, Mail, MonitorPlay, Pencil, ShieldCheck, ShoppingBag, UsersRound, type LucideIcon } from 'lucide-react';
+import {
+  BookOpen,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardList,
+  CreditCard,
+  FileText,
+  HelpCircle,
+  LogOut,
+  Mail,
+  MonitorPlay,
+  Pencil,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  UsersRound,
+  type LucideIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
@@ -29,9 +47,9 @@ const PLANS: PlanInfo[] = [
     id: 'free',
     title: 'Trial',
     price: '14일 무료',
-    badge: '무료 체험',
-    description: '라이브러리와 SPOMOVE의 핵심 경험을 확인합니다.',
-    includes: ['일부 프로그램 열람', 'SPOMOVE 제한 체험', '수업 도구 체험'],
+    badge: '체험',
+    description: '라이브러리와 SPOMOVE의 핵심 흐름을 먼저 확인하는 체험 플랜입니다.',
+    includes: ['일부 프로그램 열람', 'SPOMOVE 제한 체험', '수업 설명 도구 체험'],
     target: '처음 확인하는 개인 강사·교사',
     action: '체험 유지',
   },
@@ -39,39 +57,39 @@ const PLANS: PlanInfo[] = [
     id: 'lite',
     title: 'Lite',
     price: '19,900원/월',
-    badge: '개인 강사',
-    description: '수업 준비와 SPOMOVE 체험을 가볍게 시작합니다.',
-    includes: ['라이브러리 기본 이용', 'SPOMOVE 월 제한 실행', '즐겨찾기와 최근 사용'],
+    badge: '준비 중',
+    description: '가벼운 개인 사용자를 위한 입문 플랜입니다. 현재는 Pro 전환을 우선 안내합니다.',
+    includes: ['라이브러리 기본 이용', 'SPOMOVE 제한 실행', '최근 사용·즐겨찾기'],
     target: '가벼운 개인 사용',
-    action: '관심 등록',
+    action: '준비 중',
   },
   {
     id: 'pro',
     title: 'Pro',
     price: '39,900원/월',
     badge: '추천',
-    description: '전문 강사가 매주 쓰는 수업 준비 환경입니다.',
-    includes: ['전체 프로그램', 'SPOMOVE 무제한', '수업 도구 전체', '설명 문구'],
+    description: '수업 준비, SPOMOVE 실행, 설명 문구까지 개인 강사가 매주 쓰는 표준 플랜입니다.',
+    includes: ['전체 프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 설명 도구', '추천 수업·최근 사용'],
     target: '매주 수업을 준비하는 전문 강사',
-    action: 'Pro 적용',
+    action: 'Pro 시작',
     recommended: true,
   },
   {
     id: 'team',
     title: 'Center',
     price: '79,000원/월',
-    badge: '3명 포함',
-    description: '센터와 도장이 강사 수업 품질을 맞추는 플랜입니다.',
-    includes: ['강사 3명 포함', '센터용 수업 도구', '추가 강사 확장'],
+    badge: '강사 3명 포함',
+    description: '센터·도장·체육관에서 여러 강사가 같은 수업 품질과 설명 자료를 공유하는 플랜입니다.',
+    includes: ['Pro 기능 전체', '강사 3명 포함', '센터용 수업 설명 자료', '추가 강사 확장'],
     target: '센터·도장·체육관',
-    action: 'Center 적용',
+    action: 'Center 시작',
   },
   {
     id: 'school',
     title: 'School',
     price: '문의',
-    badge: '학교/기관',
-    description: '학교 체육수업과 기관 라이선스에 맞춘 도입형 플랜입니다.',
+    badge: '학교·기관',
+    description: '학교 체육수업과 기관 라이선스에 맞춘 별도 도입 플랜입니다.',
     includes: ['학교용 언어와 자료', '교사 계정', '기관 견적'],
     target: '학교·기관·공공 프로젝트',
     action: '상담 문의',
@@ -79,9 +97,102 @@ const PLANS: PlanInfo[] = [
   },
 ];
 
+const VALUE_CARDS = [
+  {
+    icon: BookOpen,
+    title: '라이브러리',
+    caption: '오늘 쓸 수업안을 빠르게 찾기',
+  },
+  {
+    icon: MonitorPlay,
+    title: 'SPOMOVE',
+    caption: '큰 화면 반응훈련 바로 실행',
+  },
+  {
+    icon: FileText,
+    title: '설명 도구',
+    caption: '학부모·기관·학교용 문구 준비',
+  },
+];
+
+const EXPANSION_LINKS = [
+  {
+    icon: ClipboardList,
+    label: '수업 기록',
+    caption: '출석과 관찰 기록은 Phase 2 핵심 기능입니다.',
+    href: '/spokedu-master/class-record',
+  },
+  {
+    icon: UsersRound,
+    label: '학생 이력',
+    caption: '학생별 누적 성장 기록은 장기 락인 기능입니다.',
+    href: '/spokedu-master/students',
+  },
+  {
+    icon: Building2,
+    label: '센터 운영',
+    caption: '센터·강사 운영 현황은 조직 플랜 확장용입니다.',
+    href: '/spokedu-master/director',
+  },
+  {
+    icon: ShoppingBag,
+    label: '교구 스토어',
+    caption: 'store는 학생 관리가 아니라 교구 구매 흐름입니다.',
+    href: '/spokedu-master/shop',
+  },
+];
+
+function planName(plan: PlanType | undefined) {
+  if (plan === 'team') return 'Center';
+  if (plan === 'pro') return 'Pro';
+  return 'Trial';
+}
+
+function planStatusText(plan: PlanType | undefined, daysLeft: number) {
+  if (plan === 'pro' || plan === 'team') return '활성 구독';
+  if (daysLeft > 0) return `체험 ${daysLeft}일 남음`;
+  return '체험 종료';
+}
+
+function MenuRow({ icon: Icon, label, caption, href, onClick }: { icon: LucideIcon; label: string; caption: string; href?: string; onClick?: () => void }) {
+  const content = (
+    <>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s3)' }}>
+        <Icon size={18} color="var(--spm-t2)" />
+      </span>
+      <span className="min-w-0 flex-1 text-left">
+        <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
+        <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>{caption}</span>
+      </span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className="flex w-full items-center gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      {content}
+    </button>
+  );
+}
+
 function PlanCard({ plan, current, onSelect }: { plan: PlanInfo; current: boolean; onSelect: () => void }) {
   return (
-    <button type="button" onClick={onSelect} className="w-full rounded-[16px] p-4 text-left transition active:scale-[0.99]" style={{ background: plan.recommended ? 'linear-gradient(135deg, rgba(99,102,241,0.22), var(--spm-s2))' : 'var(--spm-s2)', border: current ? '1px solid rgba(16,185,129,0.55)' : plan.recommended ? '1px solid rgba(99,102,241,0.44)' : '1px solid var(--spm-br2)' }}>
+    <button
+      type="button"
+      onClick={onSelect}
+      className="w-full rounded-[16px] p-4 text-left transition-none active:scale-[0.99]"
+      style={{
+        background: plan.recommended ? 'linear-gradient(135deg, rgba(99,102,241,0.22), var(--spm-s2))' : 'var(--spm-s2)',
+        border: current ? '1px solid rgba(16,185,129,0.55)' : plan.recommended ? '1px solid rgba(99,102,241,0.44)' : '1px solid var(--spm-br2)',
+      }}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <span className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: plan.recommended ? '#a5b4fc' : 'var(--spm-t3)' }}>{plan.badge}</span>
@@ -89,37 +200,20 @@ function PlanCard({ plan, current, onSelect }: { plan: PlanInfo; current: boolea
         </div>
         <span className="text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{plan.price}</span>
       </div>
-      <p className="mt-3 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t2)' }}>{plan.description}</p>
-      <p className="mt-2 rounded-[10px] px-3 py-2 text-[11px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{plan.target}</p>
-      <ul className="mt-4 space-y-2">{plan.includes.map((item) => <li key={item} className="flex items-center gap-2 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}><CheckCircle2 size={14} color="var(--spm-grn)" />{item}</li>)}</ul>
-      {current ? <p className="mt-4 rounded-[10px] px-3 py-2 text-center text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>현재 플랜</p> : null}
-      {!current ? <p className="mt-4 rounded-[10px] px-3 py-2 text-center text-[11px] font-black" style={{ background: plan.recommended ? 'rgba(99,102,241,0.18)' : 'var(--spm-s3)', color: plan.recommended ? '#c4b5fd' : 'var(--spm-t2)' }}>{plan.action}</p> : null}
+      <p className="mt-3 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{plan.description}</p>
+      <p className="mt-3 rounded-[10px] px-3 py-2 text-[11px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{plan.target}</p>
+      <ul className="mt-4 space-y-2">
+        {plan.includes.map((item) => (
+          <li key={item} className="flex items-center gap-2 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
+            <CheckCircle2 size={14} color="var(--spm-grn)" />
+            {item}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 rounded-[10px] px-3 py-2 text-center text-[11px] font-black" style={{ background: current ? 'rgba(16,185,129,0.12)' : plan.recommended ? 'rgba(99,102,241,0.18)' : 'var(--spm-s3)', color: current ? 'var(--spm-grn)' : plan.recommended ? '#c4b5fd' : 'var(--spm-t2)' }}>
+        {current ? '현재 플랜' : plan.action}
+      </p>
     </button>
-  );
-}
-
-function MenuRow({ icon: Icon, label, caption, href, onClick }: { icon: LucideIcon; label: string; caption: string; href?: string; onClick?: () => void }) {
-  const content = (
-    <>
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s3)' }}><Icon size={18} color="var(--spm-t2)" /></span>
-      <span className="min-w-0 flex-1 text-left"><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{label}</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{caption}</span></span>
-    </>
-  );
-  if (href) return <Link href={href} className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>{content}</Link>;
-  return <button type="button" onClick={onClick} className="flex w-full items-center gap-3 rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>{content}</button>;
-}
-
-function ExpansionLink({ icon: Icon, label, caption, href }: { icon: LucideIcon; label: string; caption: string; href: string }) {
-  return (
-    <Link href={href} className="flex items-center gap-3 rounded-[12px] px-1 py-2.5">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s3)' }}>
-        <Icon size={17} color="var(--spm-t2)" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
-        <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>{caption}</span>
-      </span>
-    </Link>
   );
 }
 
@@ -130,26 +224,81 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const currentPlan = profile?.plan ?? 'free';
 
   const selectPlan = (plan: PlanInfo) => {
+    if (plan.id === currentPlan) return;
     if (plan.id === 'school' || plan.contact) {
-      setNotice('학교와 기관 플랜은 견적과 도입 범위가 달라 상담으로 진행합니다. 문의: support@spokedu.com');
+      setNotice('학교·기관 플랜은 도입 범위와 계정 수가 달라 별도 상담으로 진행합니다. support@spokedu.com으로 문의해 주세요.');
       return;
     }
     if (plan.id === 'lite') {
-      setNotice('Lite 플랜은 현재 준비 중입니다. Pro 또는 Center 플랜으로 시작하시면 전체 기능을 이용하실 수 있습니다.');
+      setNotice('Lite 플랜은 준비 중입니다. 현재는 Pro 또는 Center 플랜을 우선 제공합니다.');
       return;
     }
-    if (plan.id === 'pro' || plan.id === 'team') {
-      onClose();
-      router.push(`/spokedu-master/payment?plan=${plan.id}`);
+    if (plan.id === 'free') {
+      setNotice('무료 체험은 신규 계정에 자동 적용됩니다. 이미 체험 중이라면 현재 상태가 유지됩니다.');
       return;
     }
+    onClose();
+    router.push(`/spokedu-master/payment?plan=${plan.id}`);
   };
 
   return (
     <BottomSheet open={open} title="플랜 선택" onClose={onClose}>
       <div className="space-y-3">
-        {PLANS.map((plan) => <PlanCard key={plan.id} plan={plan} current={plan.id === currentPlan} onSelect={() => selectPlan(plan)} />)}
-        {notice ? <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>{notice}</p> : null}
+        {PLANS.map((plan) => (
+          <PlanCard key={plan.id} plan={plan} current={plan.id === currentPlan} onSelect={() => selectPlan(plan)} />
+        ))}
+        {notice ? (
+          <p className="rounded-[12px] p-3 text-[12px] font-bold leading-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+            {notice}
+          </p>
+        ) : null}
+      </div>
+    </BottomSheet>
+  );
+}
+
+function ProfileSheet({
+  open,
+  onClose,
+  name,
+  school,
+  setName,
+  setSchool,
+  onSave,
+}: {
+  open: boolean;
+  onClose: () => void;
+  name: string;
+  school: string;
+  setName: (value: string) => void;
+  setSchool: (value: string) => void;
+  onSave: () => void;
+}) {
+  return (
+    <BottomSheet open={open} title="프로필 편집" onClose={onClose}>
+      <div className="space-y-4">
+        <label className="block">
+          <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름</span>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
+            style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>소속</span>
+          <input
+            value={school}
+            onChange={(event) => setSchool(event.target.value)}
+            placeholder="센터명, 학교명, 팀명"
+            className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
+            style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+          />
+        </label>
+        <button type="button" onClick={onSave} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+          저장
+        </button>
       </div>
     </BottomSheet>
   );
@@ -166,6 +315,17 @@ export default function SpokeduMasterProfilePage() {
   const [school, setSchool] = useState(profile?.school ?? '');
   const [loggingOut, setLoggingOut] = useState(false);
 
+  const currentPlan = profile?.plan ?? 'free';
+  const daysLeft = getTrialDaysLeft(profile);
+  const currentPlanName = planName(currentPlan);
+  const statusText = planStatusText(currentPlan, daysLeft);
+  const initial = (profile?.name ?? '선생님').slice(0, 1);
+
+  const saveProfile = () => {
+    setProfile({ name: name.trim() || '선생님', school: school.trim() });
+    setProfileOpen(false);
+  };
+
   const handleLogout = async () => {
     setLoggingOut(true);
     const supabase = getSupabaseBrowserClient();
@@ -173,81 +333,118 @@ export default function SpokeduMasterProfilePage() {
     resetProfile();
     router.replace('/spokedu-master/landing');
   };
-  const currentPlan = profile?.plan ?? 'free';
-  const daysLeft = getTrialDaysLeft(profile);
-  const planName = currentPlan === 'team' ? 'Center' : currentPlan === 'pro' ? 'Pro' : 'Trial';
-  const valueCards = [
-    ['라이브러리', '오늘 쓸 수업안을 빠르게 찾기'],
-    ['SPOMOVE', '웹에서 큰 화면 활동 바로 실행'],
-    ['설명 문구', '대상별 수업 설명 문구 복사'],
-  ];
-
-  const saveProfile = () => {
-    setProfile({ name: name.trim() || '선생님', school: school.trim() });
-    setProfileOpen(false);
-  };
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
-      <header className="px-[22px] pb-6 pt-[22px] sm:px-8 lg:px-10">
-        <div className="flex items-center gap-4">
-          <div className="grid h-[72px] w-[72px] place-items-center rounded-full text-[26px] font-black text-white" style={{ background: profile?.avatarColor ?? '#312e81', fontFamily: 'var(--spm-font-display)' }}>{(profile?.name ?? '선생님').slice(0, 1)}</div>
-          <div className="min-w-0 flex-1"><h1 className="truncate text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{profile?.name ?? '선생님'}</h1><p className="mt-1 truncate text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>{profile?.school || '소속을 설정해 주세요'}</p><p className="mt-1 text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER · {planName}</p></div>
+      <header className="mx-auto max-w-[1180px] px-5 pb-6 pt-5 sm:px-8">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="grid h-[72px] w-[72px] place-items-center rounded-full text-[26px] font-black text-white" style={{ background: profile?.avatarColor ?? '#312e81', fontFamily: 'var(--spm-font-display)' }}>
+            {initial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
+            <h1 className="mt-1 truncate text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+              {profile?.name ?? '선생님'}
+            </h1>
+            <p className="mt-1 truncate text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+              {profile?.school || '소속을 설정해 주세요'}
+            </p>
+          </div>
+          <button type="button" onClick={() => setProfileOpen(true)} className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-[12px] px-4 text-[14px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+            <Pencil size={15} />
+            프로필 편집
+          </button>
         </div>
-        <button type="button" onClick={() => setProfileOpen(true)} className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}><Pencil size={15} />프로필 편집</button>
       </header>
 
-      <main className="grid gap-7 px-[22px] sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-10">
+      <main className="mx-auto grid max-w-[1180px] gap-7 px-5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-7">
-          <section className="overflow-hidden rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(16,185,129,0.12), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>current plan</p>
-            <div className="mt-3 flex flex-wrap items-end justify-between gap-2"><h2 className="text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{planName}</h2><span className="text-[13px] font-black" style={{ color: currentPlan !== 'free' ? 'var(--spm-grn)' : daysLeft > 0 ? 'var(--spm-t2)' : 'var(--spm-red)' }}>{currentPlan !== 'free' ? '활성화됨' : daysLeft > 0 ? `${daysLeft}일 남음` : '체험 종료'}</span></div>
-            <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업을 고르고, SPOMOVE로 큰 화면 활동을 실행하고, 수업의 의미를 설명 문구로 학부모·기관·학교에 바로 전달합니다.</p>
-            <button type="button" onClick={() => setPlanOpen(true)} className="mt-5 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>플랜과 도입 방식 보기</button>
+          <section className="overflow-hidden rounded-[22px] p-6" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(16,185,129,0.12), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--spm-t2)' }}>
+                <Sparkles size={13} />
+                현재 플랜
+              </span>
+              <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: currentPlan !== 'free' ? 'rgba(16,185,129,0.14)' : 'rgba(245,158,11,0.14)', color: currentPlan !== 'free' ? 'var(--spm-grn)' : 'var(--spm-yel)' }}>
+                {statusText}
+              </span>
+            </div>
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+              <h2 className="text-[34px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{currentPlanName}</h2>
+              <Link href="/spokedu-master/subscription" className="rounded-[12px] px-4 py-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+                구독 관리
+              </Link>
+            </div>
+            <p className="mt-4 max-w-[680px] text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+              이 화면은 관리자 대시보드가 아니라 구독자가 자신의 수업 준비 환경을 확인하는 곳입니다. 라이브러리, SPOMOVE, 설명 도구가 계속 같은 수업 루프로 이어지도록 관리합니다.
+            </p>
+            <button type="button" onClick={() => setPlanOpen(true)} className="mt-5 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+              플랜과 도입 방식 보기
+            </button>
           </section>
 
           <section className="grid gap-3 sm:grid-cols-3">
-            {valueCards.map(([title, caption]) => <div key={title} className="rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}><p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>{title}</p><p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{caption}</p></div>)}
+            {VALUE_CARDS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                  <Icon size={18} color="var(--spm-acc)" />
+                  <p className="mt-3 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>{item.title}</p>
+                  <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{item.caption}</p>
+                </div>
+              );
+            })}
           </section>
 
           <PwaInstallCard />
         </div>
 
-        <div className="space-y-3">
-          <MenuRow icon={MonitorPlay} label="SPOMOVE 큰 화면 실행" caption="수업 공간에서 바로 실행" href="/spokedu-master/spomove" />
-          <MenuRow icon={CalendarDays} label="수업 계획" caption="주간 일정 관리" href="/spokedu-master/plan" />
+        <aside className="space-y-3">
+          <MenuRow icon={MonitorPlay} label="SPOMOVE 큰 화면" caption="수업 공간에서 바로 실행" href="/spokedu-master/spomove" />
+          <MenuRow icon={CalendarDays} label="수업 계획" caption="주간 수업 흐름 정리" href="/spokedu-master/plan" />
           <MenuRow icon={CreditCard} label="구독 관리" caption="플랜 변경 · 결제 수단 · 구독 취소" href="/spokedu-master/subscription" />
-          <MenuRow icon={HelpCircle} label="도입 상담" caption="센터와 학교용 도입 문의" href="mailto:support@spokedu.com" />
+          <MenuRow icon={HelpCircle} label="도입 상담" caption="센터·학교 도입 문의" href="mailto:support@spokedu.com" />
           <MenuRow icon={Mail} label="문의하기" caption="기능 제안과 오류 제보" href="mailto:support@spokedu.com" />
+
           <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>expansion</p>
-              <h2 className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>운영 확장</h2>
-              <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>기록, 학생 이력, 센터 운영 기능을 한곳에서 확인합니다.</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Expansion</p>
+              <h2 className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>확장 기능</h2>
+              <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
+                장기 락인 기능은 남기되, Phase 1의 핵심 흐름보다 앞에 세우지 않습니다.
+              </p>
             </div>
             <div className="grid gap-2">
-              <ExpansionLink icon={ClipboardList} label="수업 기록" caption="출석과 관찰 기록" href="/spokedu-master/class-record" />
-              <ExpansionLink icon={UsersRound} label="학생 이력" caption="학생별 누적 성장 기록" href="/spokedu-master/students" />
-              <ExpansionLink icon={Building2} label="센터 운영" caption="센터·강사 운영 현황" href="/spokedu-master/director" />
-              <ExpansionLink icon={ShoppingBag} label="교구 스토어" caption="수업 준비물 견적 요청" href="/spokedu-master/shop" />
+              {EXPANSION_LINKS.map((item) => (
+                <MenuRow key={item.label} icon={item.icon} label={item.label} caption={item.caption} href={item.href} />
+              ))}
             </div>
           </section>
+
           <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div className="flex items-center gap-2"><ShieldCheck size={17} color="var(--spm-grn)" /><h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>안심 운영 원칙</h2></div>
-            <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>기록과 확장 기능은 수업 흐름에 맞게 단계적으로 제공합니다. 수업 준비와 몰입 경험이 먼저입니다.</p>
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={17} color="var(--spm-grn)" />
+              <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>운영 원칙</h2>
+            </div>
+            <p className="mt-2 text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t3)' }}>
+              Phase 1은 라이브러리, SPOMOVE, 설명 도구의 완성도를 우선합니다. 학생 기록과 센터 운영은 중요한 기능이지만 검수와 안정화 이후 전면 배치합니다.
+            </p>
           </section>
-        </div>
+        </aside>
       </main>
 
-      <BottomSheet open={profileOpen} title="프로필 편집" onClose={() => setProfileOpen(false)}>
-        <div className="space-y-4">
-          <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름</span><input value={name} onChange={(event) => setName(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} /></label>
-          <label className="block"><span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>소속</span><input value={school} onChange={(event) => setSchool(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} /></label>
-          <button type="button" onClick={saveProfile} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>저장</button>
-        </div>
-      </BottomSheet>
+      <ProfileSheet
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        name={name}
+        school={school}
+        setName={setName}
+        setSchool={setSchool}
+        onSave={saveProfile}
+      />
       <PlanSheet open={planOpen} onClose={() => setPlanOpen(false)} />
-      <div className="px-[22px] pt-6 sm:px-8 lg:px-10">
+
+      <div className="mx-auto max-w-[1180px] px-5 pt-7 sm:px-8">
         <button
           type="button"
           onClick={() => void handleLogout()}
@@ -256,7 +453,7 @@ export default function SpokeduMasterProfilePage() {
           style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t3)' }}
         >
           <LogOut size={15} />
-          {loggingOut ? '로그아웃 중…' : '로그아웃'}
+          {loggingOut ? '로그아웃 중...' : '로그아웃'}
         </button>
         <p className="text-[10px]" style={{ color: 'var(--spm-t3)' }}>
           <Link href="/spokedu-master/terms" style={{ color: 'var(--spm-t3)' }}>이용약관</Link>

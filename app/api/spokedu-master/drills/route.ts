@@ -46,8 +46,8 @@ export async function GET() {
     .select('drill_id,display_name,sm_tags,is_pro,is_visible,display_order,engine_mode,engine_level');
 
   const metaByDrillId = new Map<string, MetaRow>();
-  for (const m of (metaRows ?? []) as MetaRow[]) {
-    metaByDrillId.set(m.drill_id, m);
+  for (const meta of (metaRows ?? []) as MetaRow[]) {
+    metaByDrillId.set(meta.drill_id, meta);
   }
 
   const drills: Drill[] = [];
@@ -58,7 +58,7 @@ export async function GET() {
       const meta = metaByDrillId.get(program.programId);
       if (meta && !meta.is_visible) continue;
 
-      const firstEngine = program.stages.find((s) => s.engine != null)?.engine ?? null;
+      const firstEngine = program.stages.find((stage) => stage.engine != null)?.engine ?? null;
       const engineMode = meta?.engine_mode ?? firstEngine?.mode ?? null;
       const engineLevel = meta?.engine_level ?? firstEngine?.level ?? null;
 
@@ -69,9 +69,7 @@ export async function GET() {
         cues: SESSION_CUES,
         isPro: meta?.is_pro ?? false,
         bgColor: seriesBg,
-        engine: engineMode != null && engineLevel != null
-          ? { mode: engineMode, level: engineLevel }
-          : undefined,
+        engine: engineMode != null && engineLevel != null ? { mode: engineMode, level: engineLevel } : undefined,
       });
     }
   }
@@ -95,11 +93,17 @@ export async function PATCH(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   let body: Record<string, unknown>;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
 
   const allowed = ['display_name', 'sm_tags', 'is_pro', 'is_visible', 'display_order', 'engine_mode', 'engine_level'];
   const patch: Record<string, unknown> = {};
-  for (const key of allowed) { if (key in body) patch[key] = body[key]; }
+  for (const key of allowed) {
+    if (key in body) patch[key] = body[key];
+  }
 
   const supabase = getServiceSupabase();
   const { data, error } = await supabase

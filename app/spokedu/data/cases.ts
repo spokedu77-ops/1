@@ -9,11 +9,7 @@ export type RelatedProgramSlug =
   | 'oneday-event'
   | 'camp'
   | 'play-class'
-  | 'curriculum-content'
-  | 'play-pe'
-  | 'new-sports'
-  | 'funstick'
-  | 'curriculum-package';
+  | 'curriculum-content';
 
 export type CaseData = {
   title: string;
@@ -76,7 +72,7 @@ export const cases: CaseData[] = [
         title: '리듬챌린지 협동 활동',
       },
     ],
-    relatedProgram: 'new-sports',
+    relatedProgram: 'spomove',
     tags: ['리듬', '협동', '키움센터'],
     href: `${SPOKEDU_BASE_PATH}/cases/dongjak-rhythm`,
   },
