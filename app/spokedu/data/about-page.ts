@@ -34,21 +34,21 @@ export const aboutPage = {
     cards: [
       {
         title: '아이에게는 수업',
-        description: '맞춤 체육수업으로 자신감과 기본 기능을 키웁니다.',
+        description: '연령·성향·운동 경험에 맞춘 수업으로 움직임 자신감과 기본 체력을 함께 키웁니다.',
         mediaKey: 'trackPrivate',
         href: `${SPOKEDU_BASE_PATH}/private`,
         trackLabel: 'about-role-private',
       },
       {
         title: '기관에는 프로그램',
-        description: '정규·원데이·캠프·SPOMOVE·PAPS를 기관 조건에 맞춰 제안합니다.',
+        description: '정규수업·원데이·캠프·SPOMOVE·PAPS를 공간·인원·일정에 맞춰 운영 가능하게 설계합니다.',
         mediaKey: 'trackDispatch',
         href: `${SPOKEDU_BASE_PATH}/dispatch`,
         trackLabel: 'about-role-dispatch',
       },
       {
         title: '선생님에게는 커리큘럼',
-        description: '수업안·매뉴얼·교구·강사 교육 패키지로 정리합니다.',
+        description: '현장 수업을 수업안·운영 매뉴얼·강사 교육 콘텐츠로 정리해 재사용 가능한 기준을 만듭니다.',
         mediaKey: 'trackCurriculum',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'about-role-curriculum',
@@ -61,17 +61,17 @@ export const aboutPage = {
       {
         code: 'BODY',
         title: '몸을 잘 쓰는 힘',
-        description: '달리기·점프·균형을 놀이 안에서 익힙니다.',
+        description: '달리기·점프·균형 같은 기본 움직임을 놀이 맥락에서 반복해 몸의 사용 감각을 키웁니다.',
       },
       {
         code: 'BRAIN',
         title: '보고 판단하고 반응하는 힘',
-        description: '보고 선택하고, 타이밍에 맞춰 몸으로 반응합니다.',
+        description: '보고 선택하고 타이밍에 맞춰 반응하는 과정을 통해 집중력과 판단력을 함께 훈련합니다.',
       },
       {
         code: 'TOGETHER',
         title: '함께하는 힘',
-        description: '규칙과 협력을 몸으로 경험합니다.',
+        description: '규칙 이해·역할 수행·협동 경험을 수업 안에서 반복해 사회적 참여 역량을 기릅니다.',
       },
     ] satisfies AboutMethodCard[],
   },

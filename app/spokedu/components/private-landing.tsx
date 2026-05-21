@@ -8,7 +8,6 @@ import { privatePage } from '../data/private-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
   btnPrimary,
-  btnSecondaryOnDark,
   fineHover,
   landingH1,
   landingHeroCopy,
@@ -44,7 +43,7 @@ export default function PrivateLanding() {
   const whoVariants = [
     'rounded-2xl border border-violet-200/70 bg-gradient-to-br from-violet-50 via-white to-amber-50/60 px-4 py-5',
     'rounded-2xl border border-white/50 bg-white/60 px-4 py-5 shadow-lg shadow-violet-900/5 backdrop-blur-md',
-    'rounded-2xl border border-slate-800 bg-slate-950 px-4 py-5 text-white',
+    'rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50/80 px-4 py-5',
   ] as const;
 
   return (
@@ -99,10 +98,8 @@ export default function PrivateLanding() {
         <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
           {privatePage.whoNeeds.items.map((item, index) => (
             <article key={item.title} className={whoVariants[index] ?? whoVariants[0]}>
-              <h3 className={`text-base font-semibold ${index === 2 ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-              <p className={`mt-2 text-sm leading-relaxed ${index === 2 ? 'text-slate-300' : 'text-slate-600'}`}>
-                {item.description}
-              </p>
+              <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
             </article>
           ))}
         </div>
@@ -114,12 +111,12 @@ export default function PrivateLanding() {
           {privatePage.classFormat.items.map((item) => (
             <article
               key={item.title}
-              className="overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-slate-950 shadow-md shadow-slate-900/10"
+              className="overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white shadow-md shadow-slate-900/5"
             >
               <MediaPanel media={HOME_MEDIA[item.mediaKey]} className="aspect-[16/10] rounded-none border-0" />
-              <div className="border-t border-white/10 p-4 sm:p-5">
-                <h3 className="text-base font-semibold text-white sm:text-lg">{item.title}</h3>
-                <p className="mt-1 text-sm text-slate-300">{item.description}</p>
+              <div className="border-t border-slate-100 p-4 sm:p-5">
+                <h3 className="text-base font-semibold text-slate-900 sm:text-lg">{item.title}</h3>
+                <p className="mt-1 text-sm text-slate-600">{item.description}</p>
               </div>
             </article>
           ))}
@@ -132,6 +129,31 @@ export default function PrivateLanding() {
             >
               {loc}
             </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {privatePage.classFormat.deliveryModes.map((mode) => (
+            <span
+              key={mode}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700"
+            >
+              {mode}
+            </span>
+          ))}
+        </div>
+      </Section>
+
+      <Section className="space-y-6 sm:space-y-8">
+        <h2 className={landingSectionTitle}>{privatePage.quickFaqs.title}</h2>
+        <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+          {privatePage.quickFaqs.items.map((faq) => (
+            <article
+              key={faq.q}
+              className="rounded-2xl border border-slate-200/90 bg-white/90 p-4 shadow-sm shadow-slate-900/5"
+            >
+              <h3 className="text-sm font-semibold text-slate-900">{faq.q}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{faq.a}</p>
+            </article>
           ))}
         </div>
       </Section>
@@ -153,20 +175,20 @@ export default function PrivateLanding() {
         </ol>
       </Section>
 
-      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-12 text-white sm:rounded-[2rem] sm:px-10 sm:py-16">
-        <div className="pointer-events-none absolute inset-0 opacity-75" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="soft" animateZoom className="h-full w-full" />
+      <Section className="relative overflow-hidden rounded-[1.75rem] border border-violet-200/70 bg-gradient-to-br from-violet-50 via-white to-indigo-50 px-6 py-12 sm:rounded-[2rem] sm:px-10 sm:py-16">
+        <div className="pointer-events-none absolute inset-0 opacity-45" aria-hidden>
+          <MediaRenderer media={ctaMedia} photoTone="clear" className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/80" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-white/80" aria-hidden />
         <div className="relative mx-auto max-w-xl text-center sm:text-left">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{privatePage.finalCta.title}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:text-base">{privatePage.finalCta.description}</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{privatePage.finalCta.title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">{privatePage.finalCta.description}</p>
           <div className="mt-8 grid gap-2.5 sm:grid-cols-2 sm:gap-3">
             <Link
               href={privatePage.finalCta.primary.href}
               data-track={inferTrackFromHref(privatePage.finalCta.primary.href)}
               data-track-label={privatePage.finalCta.primary.trackLabel}
-              className={`${btnSecondaryOnDark} !w-full`}
+              className={`${btnPrimary} !w-full`}
             >
               {privatePage.finalCta.primary.label}
             </Link>
@@ -174,7 +196,7 @@ export default function PrivateLanding() {
               href={privatePage.finalCta.secondary.href}
               data-track={inferTrackFromHref(privatePage.finalCta.secondary.href)}
               data-track-label={privatePage.finalCta.secondary.trackLabel}
-              className={`${btnSecondaryOnDark} !w-full border-slate-500`}
+              className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-violet-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-violet-300 ${fineHover}hover:bg-violet-50 ${focusRing}`}
             >
               {privatePage.finalCta.secondary.label}
             </Link>

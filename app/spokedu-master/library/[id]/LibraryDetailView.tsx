@@ -288,55 +288,85 @@ export default function LibraryDetailView({ id }: { id: string }) {
       </header>
 
       <section className="relative overflow-hidden">
-        <div className="relative min-h-[520px]">
-          {videoEmbedUrl ? (
-            <iframe
-              src={videoEmbedUrl}
-              title={`${title} 영상`}
-              className="h-full w-full"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-            />
-          ) : directVideoUrl ? (
-            <video src={directVideoUrl} className="h-full w-full object-cover" controls autoPlay muted playsInline />
-          ) : heroImage ? (
-            <Image src={heroImage} alt="" fill sizes="100vw" className="object-cover" priority unoptimized />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/32 via-slate-950 to-emerald-400/20" />
-          )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070d17] via-[#070d17]/42 to-black/10" />
-          {!heroImage && !videoEmbedUrl && !directVideoUrl ? (
-            <span className="pointer-events-none absolute left-1/2 top-1/2 opacity-[0.08]" style={{ transform: 'translate(-50%, -50%) rotate(-8deg)' }} aria-hidden>
-              <CategoryIcon category={category} size={360} color="#fff" strokeWidth={0.45} />
-            </span>
-          ) : null}
-          {locked ? (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60">
-              <span className="inline-flex h-16 w-16 items-center justify-center rounded-3xl border border-amber-300/30 bg-amber-300/14 text-amber-200">
-                <Lock className="h-7 w-7" />
-              </span>
-              <p className="mt-3 text-sm font-black text-amber-100">Pro 전용 수업 패키지</p>
+        {videoEmbedUrl ? (
+          <>
+            <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
+              <iframe
+                src={videoEmbedUrl}
+                title={`${title} 영상`}
+                className="absolute inset-0 h-full w-full border-0"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+              />
+              {locked ? (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70">
+                  <span className="inline-flex h-16 w-16 items-center justify-center rounded-3xl border border-amber-300/30 bg-amber-300/14 text-amber-200">
+                    <Lock className="h-7 w-7" />
+                  </span>
+                  <p className="mt-3 text-sm font-black text-amber-100">Pro 전용 수업 패키지</p>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-
-          <div className="absolute inset-x-0 bottom-0 px-4 pb-8 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-7xl">
-              <div className="mb-4 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">{category}</span>
-                {program.isPro ? <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">PRO</span> : null}
-                {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-400 px-3 py-1 text-xs font-black text-white">SPOMOVE 연동</span> : null}
-                {usageCount > 0 ? <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-slate-950">{usageCount}회 사용</span> : null}
+            <div className="px-4 py-7 sm:px-6 lg:px-8" style={{ background: 'linear-gradient(165deg, #0d1228 0%, #070d17 100%)' }}>
+              <div className="mx-auto max-w-7xl">
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">{category}</span>
+                  {program.isPro ? <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">PRO</span> : null}
+                  {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-400 px-3 py-1 text-xs font-black text-white">SPOMOVE 연동</span> : null}
+                  {usageCount > 0 ? <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-slate-950">{usageCount}회 사용</span> : null}
+                </div>
+                <h1 className="max-w-4xl text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">{title}</h1>
+                <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-white/68">{description}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Zap className="h-3.5 w-3.5" />{focus}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Users className="h-3.5 w-3.5" />{cleanText(detail?.recommendedPlayers, grade)}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Clock3 className="h-3.5 w-3.5" />{program.duration}분</span>
+                </div>
               </div>
-              <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">{title}</h1>
-              <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-white/68 sm:text-base">{description}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Users className="h-3.5 w-3.5" />{cleanText(detail?.recommendedAge, grade)}</span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Clock3 className="h-3.5 w-3.5" />{program.duration}분</span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><MapPin className="h-3.5 w-3.5" />{space}</span>
+            </div>
+          </>
+        ) : (
+          <div className="relative min-h-[480px]">
+            {directVideoUrl ? (
+              <video src={directVideoUrl} className="h-full w-full object-cover" controls autoPlay muted playsInline />
+            ) : heroImage ? (
+              <Image src={heroImage} alt="" fill sizes="100vw" className="object-cover" priority unoptimized />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/32 via-slate-950 to-emerald-400/20" />
+            )}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070d17] via-[#070d17]/42 to-black/10" />
+            {!heroImage && !directVideoUrl ? (
+              <span className="pointer-events-none absolute left-1/2 top-1/2 opacity-[0.08]" style={{ transform: 'translate(-50%, -50%) rotate(-8deg)' }} aria-hidden>
+                <CategoryIcon category={category} size={360} color="#fff" strokeWidth={0.45} />
+              </span>
+            ) : null}
+            {locked ? (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60">
+                <span className="inline-flex h-16 w-16 items-center justify-center rounded-3xl border border-amber-300/30 bg-amber-300/14 text-amber-200">
+                  <Lock className="h-7 w-7" />
+                </span>
+                <p className="mt-3 text-sm font-black text-amber-100">Pro 전용 수업 패키지</p>
+              </div>
+            ) : null}
+            <div className="absolute inset-x-0 bottom-0 px-4 pb-8 sm:px-6 lg:px-8">
+              <div className="mx-auto max-w-7xl">
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">{category}</span>
+                  {program.isPro ? <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">PRO</span> : null}
+                  {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-400 px-3 py-1 text-xs font-black text-white">SPOMOVE 연동</span> : null}
+                  {usageCount > 0 ? <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-slate-950">{usageCount}회 사용</span> : null}
+                </div>
+                <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">{title}</h1>
+                <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-white/68 sm:text-base">{description}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Zap className="h-3.5 w-3.5" />{focus}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Users className="h-3.5 w-3.5" />{cleanText(detail?.recommendedPlayers, grade)}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Clock3 className="h-3.5 w-3.5" />{program.duration}분</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-4 pt-6 sm:px-6 lg:px-8">
@@ -409,7 +439,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 return (
                   <div key={item} className="flex items-center gap-3 rounded-2xl p-3" style={{ border: '1px solid var(--spm-br)', background: 'var(--spm-s3)' }}>
                     <span className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm font-black" style={{ color: 'var(--spm-t)' }}>{item}</strong>
+                      <strong className="block text-sm font-black leading-5" style={{ color: 'var(--spm-t)' }}>{item}</strong>
                       <span className="mt-1 block text-xs font-semibold text-slate-500">{price > 0 ? `${price.toLocaleString('ko-KR')}원` : '보유 장비'}</span>
                     </span>
                     {price > 0 ? (

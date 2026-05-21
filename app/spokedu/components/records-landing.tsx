@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { LandingSection } from './landing-section';
-import { HeroCtaStack } from './hero-cta-stack';
 import { CaseProofCard } from './case-proof-card';
 import { MotionPoster, MediaRenderer, MediaPanel } from './visual';
 import { landingCardShell } from './visual/card-variants';
@@ -20,6 +19,7 @@ import {
   landingHeroVisual,
   landingPageStack,
   landingSectionTitle,
+  btnPrimary,
 } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
@@ -122,26 +122,25 @@ export function RecordsLanding() {
       </LandingSection>
 
       <LandingSection
-        className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 px-5 py-8 text-white shadow-xl ring-1 ring-white/10 sm:rounded-3xl sm:px-8 sm:py-10"
+        className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 shadow-xl shadow-indigo-900/10 ring-1 ring-white/60 sm:rounded-3xl sm:px-8 sm:py-10"
         delay={0.12}
       >
-        <div className="pointer-events-none absolute inset-0 opacity-85" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="soft" animateZoom className="h-full w-full" />
+        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
+          <MediaRenderer media={ctaMedia} photoTone="clear" className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/82" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative max-w-xl">
-          <h2 className="text-xl font-bold sm:text-2xl">{recordsPage.cta.title}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-300">{recordsPage.cta.description}</p>
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{recordsPage.cta.title}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{recordsPage.cta.description}</p>
           <div className="mt-5">
-            <HeroCtaStack
-              variant="dark"
-              primary={{
-                href: recordsPage.cta.href,
-                label: recordsPage.cta.label,
-                track: inferTrackFromHref(recordsPage.cta.href),
-                trackLabel: recordsPage.cta.trackLabel,
-              }}
-            />
+            <Link
+              href={recordsPage.cta.href}
+              data-track={inferTrackFromHref(recordsPage.cta.href)}
+              data-track-label={recordsPage.cta.trackLabel}
+              className={`${btnPrimary} !w-full sm:!w-auto`}
+            >
+              {recordsPage.cta.label}
+            </Link>
           </div>
         </div>
       </LandingSection>

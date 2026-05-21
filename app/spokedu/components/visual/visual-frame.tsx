@@ -11,6 +11,7 @@ type VisualFrameProps = {
   showLabel?: boolean;
   priority?: boolean;
   heroZoom?: boolean;
+  photoTone?: 'clear' | 'soft' | 'bold';
 };
 
 export function VisualFrame({
@@ -20,21 +21,29 @@ export function VisualFrame({
   showLabel = true,
   priority = false,
   heroZoom = false,
+  photoTone = 'soft',
 }: VisualFrameProps) {
   const reducedMotion = useReducedMotion();
+  const clearPhoto = photoTone === 'clear';
 
   return (
     <motion.div
-      className={`${className} ring-1 ring-indigo-200/40`}
-      animate={float && !reducedMotion ? { y: [-6, 6, -6] } : {}}
+      className={`${className} ${clearPhoto ? 'ring-1 ring-slate-200/90' : 'ring-1 ring-indigo-200/40'}`}
+      animate={float && !reducedMotion && !clearPhoto ? { y: [-6, 6, -6] } : {}}
       transition={float && !reducedMotion ? { duration: 7, repeat: Infinity, ease: 'easeInOut' } : {}}
     >
-      <div className="pointer-events-none absolute -inset-px z-0 rounded-[inherit] bg-gradient-to-br from-indigo-400/25 via-transparent to-lime-300/20 opacity-80 blur-sm" aria-hidden />
+      {!clearPhoto ? (
+        <div
+          className="pointer-events-none absolute -inset-px z-0 rounded-[inherit] bg-gradient-to-br from-indigo-400/25 via-transparent to-lime-300/20 opacity-80 blur-sm"
+          aria-hidden
+        />
+      ) : null}
       <MediaRenderer
         media={media}
         showLabel={showLabel}
         priority={priority}
-        animateZoom={heroZoom}
+        photoTone={photoTone}
+        animateZoom={heroZoom && !clearPhoto}
         className="absolute inset-0 z-[1]"
         sizes="(max-width: 1024px) 100vw, 55vw"
       />

@@ -8,7 +8,6 @@ import { homePage } from '../data/home-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
   btnPrimary,
-  btnSecondaryOnDark,
   cardInteractive,
   fineHover,
   landingH1,
@@ -88,6 +87,9 @@ export default function SpokeduHomeLanding() {
             <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
               {homePage.hero.subtitle}
             </p>
+            <p className="max-w-lg text-sm leading-relaxed text-slate-600 sm:text-base">
+              {homePage.hero.axisSummary}
+            </p>
             <Link
               href={homePage.heroCtas.primary.href}
               data-track="cta-contact"
@@ -101,11 +103,7 @@ export default function SpokeduHomeLanding() {
             <div className="relative">
               <MotionPoster media={HOME_MEDIA.homeHero} variant="cinematic" />
               <div
-                className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-tr from-indigo-950/35 via-transparent to-sky-500/15"
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/25"
+                className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-slate-200/60"
                 aria-hidden
               />
             </div>
@@ -133,13 +131,17 @@ export default function SpokeduHomeLanding() {
                 data-track-label={card.trackLabel}
                 className={`group flex min-h-[248px] flex-col overflow-hidden rounded-[1.5rem] border border-slate-200/90 border-t-4 bg-white shadow-lg shadow-slate-900/8 sm:min-h-[272px] ${gateAccent[index] ?? ''} ${cardInteractive} ${focusRing}`}
               >
-                <div className="relative h-[5.5rem] shrink-0 overflow-hidden sm:h-[6.5rem]">
+                <div className="relative aspect-[5/4] w-full shrink-0 overflow-hidden sm:aspect-[16/11]">
                   <MediaPanel
                     media={gateMedia[index]}
+                    priority={index === 0}
+                    photoTone="clear"
+                    showLabel={false}
                     className="absolute inset-0 h-full w-full rounded-none border-0"
+                    sizes="(max-width: 768px) 100vw, 33vw"
                   />
                   <div
-                    className="absolute inset-0 bg-gradient-to-t from-white via-white/55 to-white/10"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-[38%] bg-gradient-to-t from-white via-white/75 to-transparent"
                     aria-hidden
                   />
                 </div>
@@ -201,6 +203,9 @@ export default function SpokeduHomeLanding() {
                   <h3 className="mt-0.5 line-clamp-2 text-xs font-bold leading-snug text-white sm:text-sm">
                     {field.title}
                   </h3>
+                  <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-slate-200 sm:text-xs">
+                    {field.description}
+                  </p>
                 </div>
               </Link>
             </motion.div>
@@ -240,13 +245,13 @@ export default function SpokeduHomeLanding() {
       </Section>
 
       {/* 5. Final CTA */}
-      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-10 text-white sm:rounded-[2rem] sm:px-10 sm:py-14">
-        <div className="pointer-events-none absolute inset-0 opacity-80" aria-hidden>
-          <MediaRenderer media={HOME_MEDIA.trackDispatch} intensity="soft" animateZoom className="h-full w-full" />
+      <Section className="relative overflow-hidden rounded-[1.75rem] border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-6 py-10 sm:rounded-[2rem] sm:px-10 sm:py-14">
+        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
+          <MediaRenderer media={HOME_MEDIA.trackDispatch} photoTone="clear" className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/78" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{homePage.finalCta.title}</h2>
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{homePage.finalCta.title}</h2>
           <div className="mt-5 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
             {homePage.finalCta.links.map((item) => (
               <Link
@@ -254,7 +259,7 @@ export default function SpokeduHomeLanding() {
                 href={item.href}
                 data-track={inferTrackFromHref(item.href)}
                 data-track-label={item.trackLabel}
-                className={`${btnSecondaryOnDark} !w-full text-center`}
+                className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50 ${focusRing}`}
               >
                 {item.label}
               </Link>

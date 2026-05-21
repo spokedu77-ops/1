@@ -30,6 +30,8 @@ export const homePage = {
   hero: {
     lines: ['움직임으로', '아이의 성장을', '설계합니다'] as const,
     subtitle: '아동·청소년 체육교육 브랜드 SPOKEDU.',
+    axisSummary:
+      '아이에게는 맞춤 수업을, 기관에는 운영 가능한 프로그램을, 선생님에게는 커리큘럼 콘텐츠를 제공합니다.',
   },
   heroCtas: {
     primary: {
@@ -110,7 +112,7 @@ export const homePage = {
         id: 'spomove',
         featured: true,
         name: 'SPOMOVE',
-        description: '빔 반응 놀이',
+        description: '보고·선택·반응하는 과정을 반복하며 집중과 판단, 움직임을 함께 훈련합니다.',
         mediaKey: 'programSpomove',
         href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
         trackLabel: 'cta-home-system-spomove',
@@ -118,7 +120,7 @@ export const homePage = {
       {
         id: 'paps',
         name: 'PAPS',
-        description: '기초체력',
+        description: '기초체력 요소를 놀이형 스테이션으로 구성해 참여 부담 없이 체력 경험을 쌓습니다.',
         mediaKey: 'programPaps',
         href: `${SPOKEDU_BASE_PATH}/programs/paps`,
         trackLabel: 'cta-home-system-paps',
@@ -126,7 +128,7 @@ export const homePage = {
       {
         id: 'oneday',
         name: '원데이',
-        description: '행사형',
+        description: '행사 일정과 공간에 맞춘 단기 몰입형 수업으로 현장 참여도를 빠르게 끌어올립니다.',
         mediaKey: 'programOneday',
         href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
         trackLabel: 'cta-home-system-oneday',
@@ -134,7 +136,7 @@ export const homePage = {
       {
         id: 'camp',
         name: '방학캠프',
-        description: '방학 캠프',
+        description: '방학 기간에 맞춰 체육과 예체능 활동을 연결한 집중형 일과를 운영합니다.',
         mediaKey: 'programCamp',
         href: `${SPOKEDU_BASE_PATH}/programs/camp`,
         trackLabel: 'cta-home-system-camp',
@@ -142,7 +144,7 @@ export const homePage = {
       {
         id: 'curriculum',
         name: '교육 패키지',
-        description: '매뉴얼·라이선스',
+        description: '현장 수업을 수업안·운영 매뉴얼·강사 교육 콘텐츠로 정리해 재사용 가능하게 만듭니다.',
         mediaKey: 'programCurriculum',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-system-curriculum',

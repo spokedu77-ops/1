@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { aboutPage } from '../data/about-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { btnSecondaryOnDark, cardInteractive, fineHover, landingH1, landingPageStack } from '../lib/ui-classes';
+import { cardInteractive, fineHover, landingH1, landingPageStack } from '../lib/ui-classes';
 import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
 
 const focusRing =
@@ -77,9 +77,7 @@ export function AboutLanding() {
 
       {/* 2. What We Do */}
       <Section className="space-y-8 sm:space-y-10">
-        <p className="text-center text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600 lg:text-left">
-          What we do
-        </p>
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600 lg:text-left">우리가 하는 일</p>
         <div className="flex flex-col gap-4 md:grid md:grid-cols-3 md:gap-5">
           {aboutPage.whatWeDo.cards.map((card, index) => (
             <motion.div
@@ -93,17 +91,17 @@ export function AboutLanding() {
                 href={card.href}
                 data-track={inferTrackFromHref(card.href)}
                 data-track-label={card.trackLabel}
-                className={`group block overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-slate-950 shadow-md shadow-slate-900/10 ${cardInteractive} ${focusRing}`}
+                className={`group block overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white shadow-md shadow-slate-900/5 ${cardInteractive} ${focusRing}`}
               >
                 <MediaPanel
                   media={HOME_MEDIA[card.mediaKey]}
                   className="aspect-[16/10] rounded-none border-0 sm:aspect-[5/3]"
                 />
                 <div className={`border-t-4 p-4 sm:p-5 ${roleAccent[index] ?? ''}`}>
-                  <h3 className="text-lg font-semibold tracking-tight text-white sm:text-xl">{card.title}</h3>
-                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-300">{card.description}</p>
+                  <h3 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">{card.title}</h3>
+                  <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">{card.description}</p>
                   <span
-                    className={`mt-3 inline-block text-xs font-semibold text-slate-200 sm:text-sm ${fineHover}group-hover:text-indigo-300`}
+                    className={`mt-3 inline-block text-xs font-semibold text-slate-700 sm:text-sm ${fineHover}group-hover:text-indigo-700`}
                   >
                     자세히 →
                   </span>
@@ -115,7 +113,7 @@ export function AboutLanding() {
       </Section>
 
       {/* 3. SPOKEDU Method */}
-      <Section className="overflow-hidden rounded-[1.75rem] bg-slate-950 px-5 py-10 text-white sm:rounded-[2rem] sm:px-8 sm:py-12">
+      <Section className="overflow-hidden rounded-[1.75rem] border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-10 sm:rounded-[2rem] sm:px-8 sm:py-12">
         <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-left">
           {aboutPage.method.title}
         </h2>
@@ -127,11 +125,11 @@ export function AboutLanding() {
               whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.25 }}
               transition={{ duration: 0.4, delay: 0.06 * index }}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 sm:px-5 sm:py-6"
+              className="rounded-2xl border border-white/90 bg-white/80 px-4 py-5 shadow-sm sm:px-5 sm:py-6"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-300">{item.code}</p>
-              <h3 className="mt-2 text-base font-semibold text-white sm:text-lg">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-300">{item.description}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">{item.code}</p>
+              <h3 className="mt-2 text-base font-semibold text-slate-900 sm:text-lg">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
             </motion.article>
           ))}
         </div>
@@ -177,13 +175,13 @@ export function AboutLanding() {
       </Section>
 
       {/* 5. Final CTA */}
-      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-12 text-white sm:rounded-[2rem] sm:px-10 sm:py-16">
-        <div className="pointer-events-none absolute inset-0 opacity-80" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="soft" animateZoom className="h-full w-full" />
+      <Section className="relative overflow-hidden rounded-[1.75rem] border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-6 py-12 sm:rounded-[2rem] sm:px-10 sm:py-16">
+        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
+          <MediaRenderer media={ctaMedia} photoTone="clear" className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/78" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{aboutPage.finalCta.title}</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{aboutPage.finalCta.title}</h2>
           <div className="mt-8 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
             {aboutPage.finalCta.links.map((item) => (
               <Link
@@ -191,7 +189,7 @@ export function AboutLanding() {
                 href={item.href}
                 data-track={inferTrackFromHref(item.href)}
                 data-track-label={item.trackLabel}
-                className={`${btnSecondaryOnDark} !w-full text-center`}
+                className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50 ${focusRing}`}
               >
                 {item.label}
               </Link>

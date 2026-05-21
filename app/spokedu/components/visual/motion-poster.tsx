@@ -16,13 +16,15 @@ const variantClass: Record<NonNullable<MotionPosterProps['variant']>, string> = 
 };
 
 export function MotionPoster({ media, variant = 'hero' }: MotionPosterProps) {
+  const cinematic = variant === 'cinematic';
   return (
     <VisualFrame
       media={media}
       className={variantClass[variant]}
-      float
-      heroZoom
-      showLabel={variant !== 'cinematic'}
+      float={!cinematic}
+      heroZoom={!cinematic}
+      showLabel={!cinematic}
+      photoTone={cinematic ? 'clear' : 'soft'}
       priority
     />
   );

@@ -208,7 +208,7 @@ function ProgramCard({
         {heroImage ? (
           <Image src={heroImage} alt="" fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" unoptimized />
         ) : (
-          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-indigo-500/28 via-slate-900 to-emerald-500/18">
+          <div className="grid h-full w-full place-items-center" style={{ background: 'linear-gradient(135deg, var(--spm-s3) 0%, var(--spm-s4) 100%)' }}>
             <CategoryIcon category={program.category} size={42} />
           </div>
         )}
@@ -260,51 +260,74 @@ function ProgramCard({
 
 function FeaturedProgram({ program, drill, onPreview }: { program: Program; drill?: Drill; onPreview: () => void }) {
   const heroImage = getHeroImage(program);
+  const hasSpomove = hasSpomoveLink(program);
   const spomoveHref = drill
     ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
     : '/spokedu-master/spomove';
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/70">
-      <div className="grid lg:grid-cols-[1fr_420px]">
-        <div className="flex min-h-[320px] flex-col justify-between p-6 sm:p-8">
+    <section
+      className="overflow-hidden rounded-[28px] border bg-white"
+      style={{ borderColor: 'var(--spm-br2)', boxShadow: '0 4px 24px rgba(15,23,42,0.07)' }}
+    >
+      <div className="grid lg:grid-cols-[1fr_400px]">
+        <div className="flex min-h-[300px] flex-col justify-between p-6 sm:p-8">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-400/12 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-indigo-200">
+            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-indigo-600">
               <Sparkles className="h-3.5 w-3.5" />
               이번 주 추천 수업안
             </span>
-            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl">{program.title}</h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">{program.description}</p>
-            <ValueChips program={program} />
+            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl" style={{ color: 'var(--spm-t)' }}>{program.title}</h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7" style={{ color: 'var(--spm-t2)' }}>{program.description}</p>
           </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-extrabold text-slate-950">
+            <Link
+              href={`/spokedu-master/class-mode/${program.id}`}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-extrabold text-white"
+              style={{ background: 'var(--spm-acc)' }}
+            >
               <Play className="h-4 w-4 fill-current" />
               수업 시작
             </Link>
-            <Link href={spomoveHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-300/20 bg-indigo-400/10 px-5 text-sm font-bold text-indigo-100">
-              <MonitorPlay className="h-4 w-4" />
-              큰 화면 실행
-            </Link>
-            <button type="button" onClick={onPreview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 px-5 text-sm font-bold text-slate-200">
+            {hasSpomove ? (
+              <Link
+                href={spomoveHref}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 text-sm font-bold text-indigo-700"
+              >
+                <MonitorPlay className="h-4 w-4" />
+                큰 화면 실행
+              </Link>
+            ) : null}
+            <button
+              type="button"
+              onClick={onPreview}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-5 text-sm font-bold"
+              style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)', color: 'var(--spm-t)' }}
+            >
               <BookOpen className="h-4 w-4" />
               패키지 열기
             </button>
           </div>
         </div>
-        <button type="button" onClick={onPreview} className="relative min-h-[260px] overflow-hidden">
+        <button
+          type="button"
+          onClick={onPreview}
+          className="relative min-h-[240px] overflow-hidden border-t lg:border-l lg:border-t-0"
+          style={{ borderColor: 'var(--spm-br)', background: 'var(--spm-s2)' }}
+        >
           {heroImage ? (
-            <Image src={heroImage} alt="" fill sizes="(min-width: 1024px) 420px, 100vw" className="object-cover" priority unoptimized />
+            <Image src={heroImage} alt="" fill sizes="(min-width: 1024px) 400px, 100vw" className="object-cover" priority unoptimized />
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-indigo-500/35 via-slate-900 to-emerald-400/20" />
+            <div className="flex h-full w-full items-center justify-center">
+              <CategoryIcon category={program.category} size={72} />
+            </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 to-transparent" />
-          <div className="absolute bottom-5 left-5 right-5 rounded-3xl border border-white/12 bg-slate-950/72 p-4 text-left backdrop-blur-xl">
-            <p className="text-xs font-bold text-slate-400">패키지 구성</p>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-2xl bg-white/[0.06] px-2 py-3 text-xs font-bold text-white">수업안</div>
-              <div className="rounded-2xl bg-white/[0.06] px-2 py-3 text-xs font-bold text-white">배치도</div>
-              <div className="rounded-2xl bg-white/[0.06] px-2 py-3 text-xs font-bold text-white">설명 문구</div>
+          <div className="absolute bottom-4 left-4 right-4 rounded-2xl p-4 text-left" style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid var(--spm-br2)', backdropFilter: 'blur(12px)' }}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>패키지 구성</p>
+            <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+              <div className="rounded-xl py-2 text-xs font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>수업안</div>
+              <div className="rounded-xl py-2 text-xs font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>배치도</div>
+              <div className="rounded-xl py-2 text-xs font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>설명 문구</div>
             </div>
           </div>
         </button>
@@ -352,34 +375,37 @@ function ProgramModal({
   return (
     <BottomSheet open title="수업 패키지" onClose={onClose}>
       <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950">
-          <div className="relative h-[260px]">
-            {videoEmbedUrl ? (
+        <div className="overflow-hidden rounded-3xl border" style={{ borderColor: 'var(--spm-br2)' }}>
+          {videoEmbedUrl ? (
+            <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
               <iframe
                 src={videoEmbedUrl}
                 title={`${program.title} 영상`}
-                className="h-full w-full"
+                className="absolute inset-0 h-full w-full border-0"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
               />
-            ) : directVideoUrl ? (
-              <video src={directVideoUrl} className="h-full w-full object-cover" controls autoPlay muted playsInline />
-            ) : heroImage ? (
-              <Image src={heroImage} alt="" fill sizes="720px" className="object-cover" priority unoptimized />
-            ) : (
-              <div className="grid h-full w-full place-items-center bg-gradient-to-br from-indigo-500/32 via-slate-950 to-emerald-400/20">
-                <CategoryIcon category={program.category} size={54} />
-              </div>
-            )}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
-            <div className="pointer-events-none absolute bottom-5 left-5 right-5">
-              <div className="mb-3 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">{program.category}</span>
-                {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-400 px-3 py-1 text-xs font-black text-white">SPOMOVE 연동</span> : null}
-                {locked ? <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">PRO 전용</span> : null}
-              </div>
-              <h2 className="text-2xl font-black leading-tight text-white sm:text-3xl">{program.title}</h2>
             </div>
+          ) : directVideoUrl ? (
+            <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
+              <video src={directVideoUrl} className="absolute inset-0 h-full w-full object-cover" controls autoPlay muted playsInline />
+            </div>
+          ) : heroImage ? (
+            <div className="relative h-[220px] overflow-hidden" style={{ background: 'var(--spm-s2)' }}>
+              <Image src={heroImage} alt="" fill sizes="720px" className="object-cover" priority unoptimized />
+            </div>
+          ) : (
+            <div className="flex h-[160px] items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--spm-s3) 0%, var(--spm-s4) 100%)' }}>
+              <CategoryIcon category={program.category} size={54} />
+            </div>
+          )}
+          <div className="p-4">
+            <div className="flex flex-wrap gap-1.5">
+              <span className="rounded-full px-2.5 py-1 text-xs font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{program.category}</span>
+              {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-black text-indigo-700">SPOMOVE</span> : null}
+              {locked ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700">PRO 전용</span> : null}
+            </div>
+            <h2 className="mt-2 text-2xl font-black leading-tight sm:text-3xl" style={{ color: 'var(--spm-t)' }}>{program.title}</h2>
           </div>
         </div>
 

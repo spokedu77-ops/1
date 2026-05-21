@@ -122,7 +122,7 @@ function CatalogModeCard({ drill, isLocked, linkedPrograms }: { drill: Drill; is
         <span className="mt-1 block text-xs font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>{drill.enName}</span>
         <span className="mt-3 line-clamp-2 block text-sm leading-6" style={{ color: 'var(--spm-t2)' }}>{drill.description}</span>
         <span className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white px-3 text-xs font-black text-slate-950">
+          <span className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
             <SlidersHorizontal className="h-3.5 w-3.5" />
             설정으로
           </span>
@@ -206,13 +206,13 @@ export default function SpomoveHubView() {
           <div className="relative min-h-[340px] p-6 sm:p-8 lg:p-10">
             <div
               className="pointer-events-none absolute inset-0"
-              style={{ background: 'linear-gradient(135deg, var(--spm-bg) 0%, #0d1f3c 52%, #111827 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #0a0e1a 0%, #0d1f3c 52%, #111827 100%)' }}
             />
             <div className="relative flex h-full min-h-[260px] flex-col justify-between">
               <div>
                 <span
                   className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em]"
-                  style={{ background: 'rgba(255,255,255,0.07)', color: 'var(--spm-t2)' }}
+                  style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)' }}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Screen Movement Engine

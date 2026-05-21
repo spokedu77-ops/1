@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { LandingSection } from './landing-section';
-import { HeroCtaStack } from './hero-cta-stack';
 import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
 import { landingCardShell } from './visual/card-variants';
 import { HOME_MEDIA } from '../data/home-media';
 import { insightsCards } from '../data/insights';
 import { insightsPage } from '../data/insights-page';
 import {
+  btnPrimary,
   cardInteractive,
   fineHover,
   landingH1,
@@ -141,34 +141,35 @@ export function InsightsLanding() {
       </LandingSection>
 
       <LandingSection
-        className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 px-5 py-8 text-white shadow-xl ring-1 ring-white/10 sm:rounded-3xl sm:px-8 sm:py-10"
+        className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 shadow-xl shadow-indigo-900/10 ring-1 ring-white/60 sm:rounded-3xl sm:px-8 sm:py-10"
         delay={0.12}
       >
-        <div className="pointer-events-none absolute inset-0 opacity-85" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="soft" animateZoom className="h-full w-full" />
+        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
+          <MediaRenderer media={ctaMedia} photoTone="clear" className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/82" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative max-w-xl">
-          <h2 className="text-xl font-bold sm:text-2xl">현장과 연결된 인사이트</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-300">문의·기록·프로그램을 한 번에 이어갑니다.</p>
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">현장과 연결된 인사이트</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">인사이트를 읽고, 기록과 문의까지 한 흐름으로 이어보세요.</p>
           <div className="mt-5">
-            <HeroCtaStack
-              variant="dark"
-              primary={{
-                href: insightsPage.cta.primary.href,
-                label: insightsPage.cta.primary.label,
-                track: inferTrackFromHref(insightsPage.cta.primary.href),
-                trackLabel: insightsPage.cta.primary.trackLabel,
-              }}
-              secondary={[
-                {
-                  href: insightsPage.cta.secondary.href,
-                  label: insightsPage.cta.secondary.label,
-                  track: inferTrackFromHref(insightsPage.cta.secondary.href),
-                  trackLabel: insightsPage.cta.secondary.trackLabel,
-                },
-              ]}
-            />
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <Link
+                href={insightsPage.cta.primary.href}
+                data-track={inferTrackFromHref(insightsPage.cta.primary.href)}
+                data-track-label={insightsPage.cta.primary.trackLabel}
+                className={`${btnPrimary} !w-full`}
+              >
+                {insightsPage.cta.primary.label}
+              </Link>
+              <Link
+                href={insightsPage.cta.secondary.href}
+                data-track={inferTrackFromHref(insightsPage.cta.secondary.href)}
+                data-track-label={insightsPage.cta.secondary.trackLabel}
+                className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50 ${focusRing}`}
+              >
+                {insightsPage.cta.secondary.label}
+              </Link>
+            </div>
           </div>
         </div>
       </LandingSection>

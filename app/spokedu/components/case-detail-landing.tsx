@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { LandingSection } from './landing-section';
-import { HeroCtaStack } from './hero-cta-stack';
 import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
 import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
 import type { CaseData } from '../data/cases';
@@ -11,6 +10,7 @@ import { HOME_MEDIA, type HomeMediaItem } from '../data/home-media';
 import { getProgramBySlug } from '../data/programs';
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import {
+  btnPrimary,
   cardInteractive,
   fineHover,
   landingH1,
@@ -25,7 +25,7 @@ import { inferTrackFromHref } from '../lib/tracking';
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
-const pillVariants: LandingCardVariant[] = ['glass', 'gradient', 'dark'];
+const pillVariants: LandingCardVariant[] = ['glass', 'gradient', 'image'];
 
 function imageToMedia(src: string, alt: string, label: string): HomeMediaItem {
   return {
@@ -96,21 +96,21 @@ export function CaseDetailLanding({ item }: CaseDetailLandingProps) {
       <LandingSection className="space-y-4" delay={0.04}>
         <h2 className={landingSectionTitle}>수업 개요</h2>
         <div className="grid gap-4 lg:grid-cols-[1.1fr_minmax(0,1fr)]">
-          <article className={`rounded-2xl p-5 sm:p-6 ${landingCardShell('dark')}`}>
+          <article className={`rounded-2xl p-5 sm:p-6 ${landingCardShell('gradient')}`}>
             <dl className="grid gap-3 sm:grid-cols-2">
               {overviewRows.map((row) => (
                 <div key={row.label}>
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">{row.label}</dt>
-                  <dd className="mt-1 text-sm font-medium text-white">{row.value}</dd>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{row.label}</dt>
+                  <dd className="mt-1 text-sm font-medium text-slate-900">{row.value}</dd>
                 </div>
               ))}
             </dl>
-            <p className="mt-4 border-t border-white/10 pt-4 text-sm leading-relaxed text-slate-300">{item.summary}</p>
+            <p className="mt-4 border-t border-indigo-100/80 pt-4 text-sm leading-relaxed text-slate-600">{item.summary}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {item.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-medium text-slate-200"
+                  className="rounded-full border border-indigo-100 bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-700"
                 >
                   {tag}
                 </span>
@@ -192,40 +192,39 @@ export function CaseDetailLanding({ item }: CaseDetailLandingProps) {
 
       {/* 6. CTA */}
       <LandingSection
-        className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-10 text-white sm:rounded-[2rem] sm:px-10 sm:py-14"
+        className="relative overflow-hidden rounded-[1.75rem] border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-6 py-10 shadow-xl shadow-indigo-900/10 sm:rounded-[2rem] sm:px-10 sm:py-14"
         delay={0.12}
       >
-        <div className="pointer-events-none absolute inset-0 opacity-80" aria-hidden>
-          <MediaRenderer media={heroMedia} intensity="soft" animateZoom className="h-full w-full" />
+        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
+          <MediaRenderer media={heroMedia} photoTone="clear" className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/78" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">비슷한 수업을 계획 중이신가요?</h2>
-          <p className="mt-2 text-sm text-slate-300 sm:text-base">공간·인원·목적을 알려주시면 제안드립니다.</p>
-          <div className="mt-6">
-            <HeroCtaStack
-              variant="dark"
-              primary={{
-                href: inquiryHref,
-                label: inquiryLabel,
-                track: inferTrackFromHref(inquiryHref),
-                trackLabel: `case-detail-cta-dispatch-${item.slug}`,
-              }}
-              secondary={[
-                {
-                  href: programHref,
-                  label: '프로그램 보기',
-                  track: inferTrackFromHref(programHref),
-                  trackLabel: `case-detail-cta-program-${item.slug}`,
-                },
-              ]}
-            />
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">비슷한 수업을 계획 중이신가요?</h2>
+          <p className="mt-2 text-sm text-slate-600 sm:text-base">공간·인원·목적을 알려주시면 사례 기반으로 운영안을 제안드립니다.</p>
+          <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
+            <Link
+              href={inquiryHref}
+              data-track={inferTrackFromHref(inquiryHref)}
+              data-track-label={`case-detail-cta-dispatch-${item.slug}`}
+              className={`${btnPrimary} !w-full`}
+            >
+              {inquiryLabel}
+            </Link>
+            <Link
+              href={programHref}
+              data-track={inferTrackFromHref(programHref)}
+              data-track-label={`case-detail-cta-program-${item.slug}`}
+              className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50 ${focusRing}`}
+            >
+              프로그램 보기
+            </Link>
           </div>
           <Link
             href={backHref}
             data-track={inferTrackFromHref(backHref)}
             data-track-label={`case-detail-cta-back-${item.slug}`}
-            className={`mt-5 inline-block text-sm font-semibold text-slate-300 underline-offset-4 ${fineHover}hover:text-white ${fineHover}hover:underline ${focusRing}`}
+            className={`mt-5 inline-block text-sm font-semibold text-slate-600 underline-offset-4 ${fineHover}hover:text-indigo-700 ${fineHover}hover:underline ${focusRing}`}
           >
             사례 목록으로 →
           </Link>

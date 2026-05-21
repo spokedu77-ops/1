@@ -8,7 +8,6 @@ import { dispatchPage } from '../data/dispatch-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
   btnPrimary,
-  btnSecondaryOnDark,
   cardInteractive,
   fineHover,
   landingH1,
@@ -90,22 +89,22 @@ export default function DispatchLanding() {
         </div>
       </section>
 
-      <Section className="overflow-hidden rounded-[1.75rem] bg-slate-950 text-white sm:rounded-[2rem]">
+      <Section className="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white sm:rounded-[2rem]">
         <div className="grid lg:grid-cols-[1.1fr_1fr]">
           <div className="p-5 sm:p-8 lg:p-10">
             <h2 className={landingSectionTitle}>{dispatchPage.operationTypes.title}</h2>
-            <div className="mt-5 divide-y divide-white/10">
+            <div className="mt-5 divide-y divide-slate-100">
               {dispatchPage.operationTypes.rows.map((row) => (
-                <div key={row.label} className="flex items-baseline justify-between gap-3 py-3 first:pt-0">
-                  <span className="text-sm font-semibold sm:text-base">{row.label}</span>
-                  <span className="text-xs text-slate-400 sm:text-sm">{row.note}</span>
+                <div key={row.label} className="py-3 first:pt-0">
+                  <p className="text-sm font-semibold text-slate-900 sm:text-base">{row.label}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">{row.note}</p>
                 </div>
               ))}
             </div>
           </div>
           <MediaPanel
             media={HOME_MEDIA[dispatchPage.operationTypes.mediaKey]}
-            className="aspect-[16/11] min-h-[200px] rounded-none border-0 border-t border-white/10 lg:aspect-auto lg:min-h-full lg:border-l lg:border-t-0"
+            className="aspect-[16/11] min-h-[200px] rounded-none border-0 border-t border-slate-100 lg:aspect-auto lg:min-h-full lg:border-l lg:border-t-0"
           />
         </div>
       </Section>
@@ -118,16 +117,14 @@ export default function DispatchLanding() {
               key={item.title}
               className={
                 index === 0
-                  ? 'rounded-2xl border border-slate-800 bg-slate-950 p-5 text-white'
+                  ? 'rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-indigo-50/70 p-5'
                   : index === 1
                     ? 'rounded-2xl border border-white/50 bg-white/70 p-5 shadow-lg shadow-sky-900/5 backdrop-blur-md'
                     : 'rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-slate-50 p-5'
               }
             >
-              <h3 className={`text-base font-semibold ${index === 0 ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-              <p className={`mt-2 text-sm leading-relaxed ${index === 0 ? 'text-slate-300' : 'text-slate-600'}`}>
-                {item.description}
-              </p>
+              <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
             </article>
           ))}
         </div>
@@ -152,10 +149,10 @@ export default function DispatchLanding() {
               href={dispatchPage.examples.href}
               data-track={inferTrackFromHref(dispatchPage.examples.href)}
               data-track-label={`dispatch-example-${item.title}`}
-              className={`block overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-slate-950 shadow-md ${cardInteractive} ${focusRing}`}
+              className={`block overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white shadow-md ${cardInteractive} ${focusRing}`}
             >
               <MediaPanel media={HOME_MEDIA[item.mediaKey]} className="aspect-[16/10] rounded-none border-0" />
-              <p className="border-t border-white/10 px-4 py-3 text-sm font-semibold text-white">{item.title}</p>
+              <p className="border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">{item.title}</p>
             </Link>
           ))}
         </div>
@@ -171,20 +168,35 @@ export default function DispatchLanding() {
         </div>
       </Section>
 
-      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-12 text-white sm:rounded-[2rem] sm:px-10 sm:py-16">
-        <div className="pointer-events-none absolute inset-0 opacity-75" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="soft" animateZoom className="h-full w-full" />
+      <Section className="overflow-hidden rounded-[1.75rem] border border-sky-200/70 bg-gradient-to-br from-sky-50 via-white to-indigo-50 px-6 py-10 sm:rounded-[2rem] sm:px-10 sm:py-12">
+        <h2 className={landingSectionTitle}>{dispatchPage.proposalFlow.title}</h2>
+        <ol className="mt-5 flex gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:thin] sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible">
+          {dispatchPage.proposalFlow.steps.map((step, index) => (
+            <li
+              key={step}
+              className="flex min-w-[9rem] shrink-0 flex-col rounded-xl border border-white bg-white/80 px-3 py-3 shadow-sm sm:min-w-0"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-600">{index + 1}</span>
+              <span className="mt-1 text-sm font-semibold text-slate-800">{step}</span>
+            </li>
+          ))}
+        </ol>
+      </Section>
+
+      <Section className="relative overflow-hidden rounded-[1.75rem] border border-sky-200/70 bg-gradient-to-br from-sky-50 via-white to-indigo-50 px-6 py-12 sm:rounded-[2rem] sm:px-10 sm:py-16">
+        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
+          <MediaRenderer media={ctaMedia} photoTone="clear" className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/82" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{dispatchPage.finalCta.title}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:text-base">{dispatchPage.finalCta.description}</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{dispatchPage.finalCta.title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">{dispatchPage.finalCta.description}</p>
           <div className="mt-8 grid gap-2.5 sm:grid-cols-2 sm:gap-3">
             <Link
               href={dispatchPage.finalCta.primary.href}
               data-track={inferTrackFromHref(dispatchPage.finalCta.primary.href)}
               data-track-label={dispatchPage.finalCta.primary.trackLabel}
-              className={`${btnSecondaryOnDark} !w-full`}
+              className={`${btnPrimary} !w-full`}
             >
               {dispatchPage.finalCta.primary.label}
             </Link>
@@ -192,7 +204,7 @@ export default function DispatchLanding() {
               href={dispatchPage.finalCta.secondary.href}
               data-track={inferTrackFromHref(dispatchPage.finalCta.secondary.href)}
               data-track-label={dispatchPage.finalCta.secondary.trackLabel}
-              className={`${btnSecondaryOnDark} !w-full border-slate-500`}
+              className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-sky-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-sky-300 ${fineHover}hover:bg-sky-50 ${focusRing}`}
             >
               {dispatchPage.finalCta.secondary.label}
             </Link>
