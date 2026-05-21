@@ -73,8 +73,7 @@ export type ContactInquiryType = 'private' | 'dispatch' | 'curriculum';
 export const contactPage = {
   hero: {
     title: '개인수업, 기관수업,\n커리큘럼 문의를 나누어 안내합니다',
-    subtitle:
-      '아이의 수업 상담부터 기관 프로그램 제안, 커리큘럼·콘텐츠 문의까지 목적에 맞게 연결됩니다.',
+    subtitle: '개인수업·기관 제안·커리큘럼 문의를 목적별로 안내합니다.',
   },
   inquiryTypes: [
     {

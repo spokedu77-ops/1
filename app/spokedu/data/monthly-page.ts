@@ -4,9 +4,9 @@ import { SPOKEDU_BASE_PATH } from './site';
 export const monthlyPage = {
   hero: {
     title: '매월 쌓이는\n스포키듀의 움직임 기록',
-    subtitle: '기관·프로그램·아이들의 움직임을 월 단위로 정리합니다. 단순 소식이 아니라 운영 증거입니다.',
+    subtitle: '기관·프로그램·움직임 변화를 월 단위 운영 증거로 정리합니다.',
   },
-  heroMediaKey: 'trackDispatch' as HomeMediaKey,
+  heroMediaKey: 'proofMonthly' as HomeMediaKey,
   highlightLabels: ['함께한 기관', '운영한 프로그램', '아이들이 경험한 움직임', '교육 포인트'] as const,
   archiveSlugs: ['2026-05', '2026-04'] as const,
   curriculumFlow: [
@@ -16,7 +16,11 @@ export const monthlyPage = {
   ],
   cta: {
     primary: { label: '수업 사례 보기', href: `${SPOKEDU_BASE_PATH}/cases`, trackLabel: 'monthly-cta-cases' },
-    secondary: { label: '수업 문의하기', href: `${SPOKEDU_BASE_PATH}/contact`, trackLabel: 'monthly-cta-contact' },
+    secondary: {
+      label: '수업 문의하기',
+      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+      trackLabel: 'monthly-cta-contact',
+    },
   },
   ctaMediaKey: 'proofLab' as HomeMediaKey,
 } as const;

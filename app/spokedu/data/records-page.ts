@@ -19,7 +19,7 @@ export type RecordsHubCard = {
 export const recordsPage = {
   hero: {
     title: '실제 수업과 기록이\n스포키듀의 실체입니다',
-    subtitle: 'LAB에서 준비하고, 현장에서 운영하고, 그 경험을 사례와 기록으로 남깁니다.',
+    subtitle: 'LAB·현장·사례·월간 기록이 이어지는 운영 증거 허브입니다.',
   },
   proofSummary: [
     { label: '스포키듀 LAB', mediaKey: 'proofLab', cardVariant: 'dark' },
@@ -56,7 +56,7 @@ export const recordsPage = {
       cardVariant: 'dark',
     },
   ] satisfies RecordsHubCard[],
-  heroMediaKey: 'trackDispatch' as HomeMediaKey,
+  heroMediaKey: 'proofLab' as HomeMediaKey,
   cta: {
     title: '현장 검증된 수업이 필요하신가요?',
     description: '개인·기관·커리큘럼 문의를 목적에 맞게 안내합니다.',
@@ -69,16 +69,16 @@ export const recordsPage = {
 export const casesPage = {
   hero: {
     title: '실제 운영 사례',
-    subtitle: '기관·행사·프로그램별로 어떻게 수업을 설계하고 운영했는지 확인하세요.',
+    subtitle: '기관·행사·프로그램별 실제 운영을 짧게 확인합니다.',
   },
   heroMediaKey: 'proofCommunity' as HomeMediaKey,
-  ctaMediaKey: 'homeHero' as HomeMediaKey,
+  ctaMediaKey: 'proofEvent' as HomeMediaKey,
   cta: {
     title: '비슷한 수업을 계획 중이신가요?',
     description: '공간·인원·목적을 알려주시면 운영 방향을 제안합니다.',
     primary: {
       label: '수업 문의하기',
-      href: `${SPOKEDU_BASE_PATH}/contact`,
+      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
       trackLabel: 'cases-contact',
     },
     secondary: {

@@ -11,7 +11,15 @@ import { HOME_MEDIA } from '../data/home-media';
 import type { HomeMediaKey } from '../data/home-media';
 import { getMonthlyRecordBySlug, monthlyRecords } from '../data/monthly';
 import { monthlyPage } from '../data/monthly-page';
-import { cardInteractive, fineHover, landingH1, landingHeroShell, landingPageStack } from '../lib/ui-classes';
+import {
+  fineHover,
+  landingH1,
+  landingHeroCopy,
+  landingHeroGrid,
+  landingHeroVisual,
+  landingPageStack,
+  landingSectionTitle,
+} from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const highlightVariants: LandingCardVariant[] = ['glass', 'gradient', 'image', 'dark'];
@@ -29,18 +37,14 @@ export function MonthlyLanding() {
 
   return (
     <div className={landingPageStack}>
-      <LandingSection
-        className={`${landingHeroShell} overflow-hidden border-violet-200/50 bg-gradient-to-b from-indigo-50/60 via-white to-lime-50/30`}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_48%),radial-gradient(circle_at_bottom_right,rgba(132,204,22,0.1),transparent_42%)]" />
-        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center">
-          <div className="space-y-3 sm:space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">Monthly SPOKEDU</p>
+      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className={landingHeroGrid}>
+          <div className={landingHeroCopy}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">월간 스포키듀</p>
             <h1 className={`whitespace-pre-line ${landingH1} text-slate-950`}>{monthlyPage.hero.title}</h1>
-            <p className="max-w-2xl text-sm leading-6 text-slate-700 sm:text-base">{monthlyPage.hero.subtitle}</p>
-            <div className="lg:hidden">
-              <MotionPoster media={heroMedia} variant="compact" />
-            </div>
+            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
+              {monthlyPage.hero.subtitle}
+            </p>
             {featured ? (
               <HeroCtaStack
                 primary={{
@@ -50,23 +54,27 @@ export function MonthlyLanding() {
                   trackLabel: 'monthly-hero-featured',
                 }}
                 secondary={[
-                  { href: monthlyPage.cta.primary.href, label: monthlyPage.cta.primary.label, trackLabel: monthlyPage.cta.primary.trackLabel },
+                  {
+                    href: monthlyPage.cta.primary.href,
+                    label: monthlyPage.cta.primary.label,
+                    trackLabel: monthlyPage.cta.primary.trackLabel,
+                  },
                 ]}
               />
             ) : null}
           </div>
-          <div className="hidden lg:block">
-            <MotionPoster media={heroMedia} variant="hero" />
+          <div className={landingHeroVisual}>
+            <MotionPoster media={heroMedia} variant="cinematic" />
           </div>
         </div>
       </LandingSection>
 
       {featured ? (
         <LandingSection className="space-y-3" delay={0.05}>
-          <h2 className="text-lg font-bold text-slate-950 sm:text-xl">이번 달 하이라이트</h2>
+          <h2 className={landingSectionTitle}>이번 달 하이라이트</h2>
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white shadow-xl ring-1 ring-white/10">
             <div className="relative aspect-[21/9] max-h-[200px] sm:max-h-[240px]">
-              <MediaRenderer media={HOME_MEDIA.proofClass} intensity="soft" className="absolute inset-0" />
+              <MediaRenderer media={HOME_MEDIA.proofMonthly} intensity="soft" className="absolute inset-0" />
               <div className="pointer-events-none absolute inset-0 bg-slate-950/55" />
               <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-300">{featured.month}</p>
@@ -108,7 +116,7 @@ export function MonthlyLanding() {
       ) : null}
 
       <LandingSection className="space-y-3" delay={0.08}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">월간 기록</h2>
+        <h2 className={landingSectionTitle}>월간 기록</h2>
         <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 scroll-smooth [scrollbar-width:thin] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0">
           {archiveRecords.map((record, index) => (
             <motion.div
@@ -130,7 +138,7 @@ export function MonthlyLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.1}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">기록이 커리큘럼이 되는 과정</h2>
+        <h2 className={landingSectionTitle}>기록이 커리큘럼이 되는 과정</h2>
         <div className="grid gap-2.5 sm:grid-cols-3">
           {monthlyPage.curriculumFlow.map((step, index) => (
             <motion.article

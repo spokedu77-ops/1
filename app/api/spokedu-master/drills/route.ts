@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import catalog from '@/app/lib/spomove/core5Catalog';
+import { MODES, SPOMOVE_CATALOG_SLOT_IDS, isSpomoveCatalogTbdMode } from '@/app/admin/spomove/training/_player/constants';
 import type { Drill } from '@/app/spokedu-master/types';
 
 const SESSION_CUES = [
@@ -13,39 +13,18 @@ const SESSION_CUES = [
   { symbol: 'J', label: '점프', bgColor: '#0a1628' },
 ];
 
-const SERIES_COLORS: Record<string, string> = {
-  SR: '#312e81',
-  IC: '#064e3b',
-  RS: '#713f12',
-  SM: '#1e1b4b',
-  RC: '#1c1917',
+type MetaRow = {
+  drill_id: string;
+  display_name: string | null;
+  sm_tags: string[] | null;
+  is_pro: boolean;
+  is_visible: boolean;
+  display_order: number;
+  engine_mode: string | null;
+  engine_level: number | null;
 };
 
-const DRILL_NAME_FALLBACK: Record<string, string> = {
-  'SR-05': '스피드 리액션',
-  'SR-06': '방향 전환 챌린지',
-  'RS-05': '팀 콜 사인',
-  'IC-05': '스톱 밸런스',
-  'RC-05': '리듬 체인지',
-};
-
-const SERIES_TITLE_FALLBACK: Record<string, string> = {
-  SR: '순발 반응',
-  IC: '균형 조절',
-  RS: '협동 반응',
-  SM: '기억·집중',
-  RC: '리듬 반응',
-};
-
-function hasBrokenText(value: string | null | undefined) {
-  if (!value) return false;
-  return value.includes(String.fromCharCode(0xfffd)) || /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄/.test(value);
-}
-
-function cleanText(value: string | null | undefined, fallback: string) {
-  if (!value || hasBrokenText(value)) return fallback;
-  return value;
-}
+type DrillWithOrder = Drill & { _order: number };
 
 export async function GET() {
   const serverSupabase = await createServerSupabaseClient();
@@ -55,18 +34,6 @@ export async function GET() {
   }
 
   const supabase = getServiceSupabase();
-
-  type MetaRow = {
-    drill_id: string;
-    display_name: string | null;
-    sm_tags: string[] | null;
-    is_pro: boolean;
-    is_visible: boolean;
-    display_order: number;
-    engine_mode: string | null;
-    engine_level: number | null;
-  };
-
   const { data: metaRows } = await supabase
     .from('spokedu_master_drill_meta')
     .select('drill_id,display_name,sm_tags,is_pro,is_visible,display_order,engine_mode,engine_level');
@@ -76,37 +43,39 @@ export async function GET() {
     metaByDrillId.set(meta.drill_id, meta);
   }
 
-  const drills: Drill[] = [];
+  const drills: Drill[] = SPOMOVE_CATALOG_SLOT_IDS
+    .filter((modeId) => !isSpomoveCatalogTbdMode(modeId))
+    .map<DrillWithOrder | null>((modeId, index) => {
+      const mode = MODES[modeId];
+      const meta = metaByDrillId.get(modeId);
+      if (meta && !meta.is_visible) return null;
+      const firstLevel = mode.levels[0];
 
-  for (const series of catalog) {
-    const seriesBg = SERIES_COLORS[series.code] ?? '#312e81';
-    const category = cleanText(series.title, SERIES_TITLE_FALLBACK[series.code] ?? 'SPOMOVE');
-
-    for (const program of series.programs) {
-      const meta = metaByDrillId.get(program.programId);
-      if (meta && !meta.is_visible) continue;
-
-      const firstEngine = program.stages.find((stage) => stage.engine != null)?.engine ?? null;
-      const engineMode = meta?.engine_mode ?? firstEngine?.mode ?? null;
-      const engineLevel = meta?.engine_level ?? firstEngine?.level ?? null;
-
-      drills.push({
-        id: program.programId,
-        name: cleanText(meta?.display_name ?? program.title, DRILL_NAME_FALLBACK[program.programId] ?? 'SPOMOVE 드릴'),
-        category,
+      return {
+        id: mode.id,
+        name: meta?.display_name || `${mode.title} : ${mode.en}`,
+        category: mode.title,
+        description: mode.desc,
+        icon: mode.icon,
+        enName: mode.en,
+        tag: mode.tag,
         cues: SESSION_CUES,
         isPro: meta?.is_pro ?? false,
-        bgColor: seriesBg,
-        engine: engineMode != null && engineLevel != null ? { mode: engineMode, level: engineLevel } : undefined,
-      });
-    }
-  }
-
-  drills.sort((a, b) => {
-    const orderA = metaByDrillId.get(a.id)?.display_order ?? 999;
-    const orderB = metaByDrillId.get(b.id)?.display_order ?? 999;
-    return orderA - orderB;
-  });
+        bgColor: mode.accent,
+        engine: {
+          mode: meta?.engine_mode || mode.id,
+          level: meta?.engine_level || firstLevel?.id || 1,
+        },
+        _order: meta?.display_order ?? index,
+      } satisfies DrillWithOrder;
+    })
+    .filter((drill): drill is DrillWithOrder => drill != null)
+    .sort((a, b) => a._order - b._order)
+    .map((drillWithOrder) => {
+      const drill = { ...drillWithOrder } as Drill & { _order?: number };
+      delete drill._order;
+      return drill;
+    });
 
   return NextResponse.json({ data: drills, total: drills.length });
 }

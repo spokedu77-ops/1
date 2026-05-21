@@ -9,7 +9,14 @@ import { MediaRenderer, MotionPoster } from './visual';
 import { cases } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { casesPage } from '../data/records-page';
-import { fineHover, landingH1, landingHeroShell, landingPageStack } from '../lib/ui-classes';
+import {
+  landingH1,
+  landingHeroCopy,
+  landingHeroGrid,
+  landingHeroVisual,
+  landingPageStack,
+  landingSectionTitle,
+} from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const caseCardVariants = ['image', 'glass', 'gradient', 'dark', 'image'] as const;
@@ -21,27 +28,23 @@ export function CasesLanding() {
 
   return (
     <div className={landingPageStack}>
-      <LandingSection
-        className={`${landingHeroShell} overflow-hidden border-slate-200 bg-gradient-to-b from-white via-lime-50/20 to-white`}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.14),transparent_48%),radial-gradient(circle_at_bottom_right,rgba(132,204,22,0.12),transparent_42%)]" />
-        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center">
-          <div className="space-y-3 sm:space-y-4">
+      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className={landingHeroGrid}>
+          <div className={landingHeroCopy}>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">수업 사례</p>
             <h1 className={`${landingH1} text-slate-950`}>{casesPage.hero.title}</h1>
-            <p className="max-w-2xl text-sm leading-6 text-slate-700 sm:text-base">{casesPage.hero.subtitle}</p>
-            <div className="lg:hidden">
-              <MotionPoster media={heroMedia} variant="compact" />
-            </div>
+            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
+              {casesPage.hero.subtitle}
+            </p>
           </div>
-          <div className="hidden lg:block">
-            <MotionPoster media={heroMedia} variant="hero" />
+          <div className={landingHeroVisual}>
+            <MotionPoster media={heroMedia} variant="cinematic" />
           </div>
         </div>
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.05}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">대표 사례</h2>
+        <h2 className={landingSectionTitle}>대표 사례</h2>
         <div
           className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 scroll-smooth [scrollbar-width:thin] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3"
           role="list"
@@ -97,14 +100,6 @@ export function CasesLanding() {
               ]}
             />
           </div>
-          <Link
-            href="/spokedu/programs"
-            data-track={inferTrackFromHref('/spokedu/programs')}
-            data-track-label="cases-programs-link"
-            className={`mt-4 inline-block text-sm text-slate-300 underline-offset-2 ${fineHover}hover:text-white ${fineHover}hover:underline`}
-          >
-            프로그램 전체 보기 →
-          </Link>
         </div>
       </LandingSection>
     </div>

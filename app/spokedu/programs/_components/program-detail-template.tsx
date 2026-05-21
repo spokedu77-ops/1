@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { ProgramDetailLanding } from '../../components/program-detail-landing';
-import { buildSpokeduPageMetadata } from '../../data/seo';
+import { buildProgramDetailOgImage, buildSpokeduPageMetadata } from '../../data/seo';
 import { getProgramBySlug, type ProgramSlug } from '../../data/programs';
 
 const EXPANDABLE_SLUGS = ['spomove', 'paps', 'oneday-event', 'camp'] as const;
@@ -18,6 +18,8 @@ export function buildProgramDetailMetadata(slug: ExpandableSlug) {
     description: program.detailDescription ?? program.description,
     canonical: `/spokedu/programs/${slug}`,
     keywords: [program.title, ...program.effects],
+    pageKey: 'programs',
+    ogImage: buildProgramDetailOgImage(slug),
   });
 }
 

@@ -3,4 +3,4 @@ Disallow: /spokedu-master/
 Allow: /spokedu-master/landing
 Allow: /spokedu/
 
-Sitemap: https://spokedu.com/sitemap.xml
+# Sitemap URL: app/robots.ts (getSpokeduSiteUrl) — 도메인 연결 후 NEXT_PUBLIC_SITE_URL 설정

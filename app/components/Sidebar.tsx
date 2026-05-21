@@ -95,15 +95,16 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     },
     {
       group: '구독 서비스',
-      items: [{ name: '스포키듀 구독 NEW', href: '/admin/spokedu-master', icon: Sparkles }],
+      items: [
+        { name: '스포키듀 구독 NEW', href: '/admin/spokedu-master', icon: Sparkles },
+        { name: 'SPOKEDU MASTER', href: '/spokedu-master/dashboard', icon: LayoutDashboard },
+      ],
     },
     {
       group: '사람',
       items: [
         { name: '강사 관리', href: '/admin/users', icon: Users },
-        ...(userEmail === 'choijihoon@spokedu.com'
-          ? [{ name: '정산 리포트', href: '/admin/master/reports', icon: CreditCard }]
-          : []),
+        ...(userEmail === 'choijihoon@spokedu.com' ? [{ name: '정산 리포트', href: '/admin/master/reports', icon: CreditCard }] : []),
       ],
     },
   ];
@@ -128,7 +129,10 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
 
   const isActiveItem = (href: string) => {
     if (href === '/admin/spokedu-master') {
-      return pathname.startsWith('/admin/spokedu-master') || pathname.startsWith('/spokedu-master');
+      return pathname.startsWith('/admin/spokedu-master');
+    }
+    if (href === '/spokedu-master/dashboard') {
+      return pathname.startsWith('/spokedu-master');
     }
     if (href === '/admin/spomove/training') {
       return pathname.startsWith('/admin/spomove');
@@ -171,7 +175,9 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
         </button>
       </div>
 
-      {isOpen ? <button className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setIsOpen(false)} aria-label="메뉴 닫기" /> : null}
+      {isOpen ? (
+        <button className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setIsOpen(false)} aria-label="메뉴 닫기" />
+      ) : null}
 
       <aside
         className={`fixed left-0 top-0 z-[260] flex h-screen w-64 flex-col bg-[#1e293b] text-white transition-transform duration-300 ease-in-out ${

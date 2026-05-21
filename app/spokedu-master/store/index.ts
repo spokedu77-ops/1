@@ -185,8 +185,7 @@ export const useMasterStore = create<MasterState>()(
           }
           const json = await res.json() as { data?: Drill[] };
           if (Array.isArray(json.data) && json.data.length > 0) {
-            const supportedModes = new Set(['reactTrain', 'flow', 'flash', 'pattern', 'diagonal', 'memory', 'spatial']);
-            const usable = json.data.filter((drill) => !drill.engine || supportedModes.has(drill.engine.mode));
+            const usable = json.data;
             if (usable.length > 0) {
               set({ drills: usable, drillsLoaded: true });
               return;
@@ -206,6 +205,7 @@ export const useMasterStore = create<MasterState>()(
           if (!res.ok) return;
           const json = await res.json() as { plan?: string; status?: string; isAdmin?: boolean; userId?: string; email?: string | null; trialEndsAt?: string | null };
           const serverPlan: 'free' | 'pro' | 'team' =
+            json.isAdmin ? 'team' :
             json.status === 'active' && json.plan === 'team' ? 'team' :
             json.status === 'active' && json.plan === 'pro' ? 'pro' : 'free';
           set((state) => ({
@@ -217,7 +217,7 @@ export const useMasterStore = create<MasterState>()(
                   isAdmin: json.isAdmin ?? false,
                   ...(json.userId ? { id: json.userId } : {}),
                   ...(json.email ? { email: json.email } : {}),
-                  ...(json.trialEndsAt ? { trialEndsAt: json.trialEndsAt } : {}),
+                  trialEndsAt: json.isAdmin ? null : (json.trialEndsAt ?? state.profile.trialEndsAt),
                 }
               : state.profile,
           }));

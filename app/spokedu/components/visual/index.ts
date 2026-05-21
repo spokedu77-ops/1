@@ -6,6 +6,7 @@ export { MediaRenderer } from './media-renderer';
 export { MotionPoster } from './motion-poster';
 export { ProgramShowcase } from './program-showcase';
 export { ProgramShowcaseCard } from './program-showcase-card';
+export { HomeProgramSystem } from './home-program-system';
 export { ProofSummaryWall } from './proof-summary-wall';
 export { ProofFieldCard } from './proof-field-card';
 export { ProofFieldWall } from './proof-field-wall';

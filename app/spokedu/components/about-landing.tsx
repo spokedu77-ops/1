@@ -6,13 +6,11 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { aboutPage } from '../data/about-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { btnSecondaryOnDark, cardInteractive, fineHover, landingH1 } from '../lib/ui-classes';
+import { btnSecondaryOnDark, cardInteractive, fineHover, landingH1, landingPageStack } from '../lib/ui-classes';
 import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
-
-const aboutStack = 'mx-auto flex w-full max-w-6xl flex-col gap-16 pb-4 sm:gap-24 sm:pb-6 lg:gap-28';
 
 const roleAccent = [
   'border-t-indigo-400/80',
@@ -49,7 +47,7 @@ export function AboutLanding() {
   const ctaMedia = HOME_MEDIA[aboutPage.ctaMediaKey];
 
   return (
-    <div className={aboutStack}>
+    <div className={landingPageStack}>
       {/* 1. Hero */}
       <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12">

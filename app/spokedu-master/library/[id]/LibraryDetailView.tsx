@@ -26,9 +26,63 @@ import { CategoryIcon } from '../../components/ui/ProgramThumb';
 import { useIsPro, useMasterStore } from '../../store';
 import type { Drill, Program } from '../../types';
 
+const BROKEN_TEXT_PATTERN = /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥|獄|筌|揶|癰|疫|椰|\?/;
+
+const PROGRAM_FALLBACK: Record<string, Partial<Program>> = {
+  'funstick-fencing': {
+    title: '펀스틱 펜싱 Funstick Fencing',
+    category: '민첩·반응',
+    grade: '초등 3학년 이상',
+    space: '실내 체육관 · 넓은 활동 공간',
+    description: '부드러운 펀스틱과 풍선 목표물을 활용해 거리 판단, 타이밍, 균형 조절을 경험하는 대체 펜싱 수업입니다.',
+    equipment: ['펀스틱 2개', '풍선 목표물 2개', '접시콘 12~15개'],
+    tags: ['펜싱', '민첩성', '거리 판단', 'SPOMOVE 연계'],
+  },
+  'figure-8-agility': {
+    title: '8자 드릴 민첩성 트레이닝',
+    category: '민첩·반응',
+    grade: '초등 3~6학년',
+    space: '좁은 실내 공간',
+    description: '마커콘을 8자 패턴으로 통과하며 방향 전환, 가속, 재출발 리듬을 익히는 SPOMOVE 연계 수업입니다.',
+    equipment: ['마커콘 4개', '태블릿 또는 노트북'],
+    tags: ['민첩성', '방향 전환', '좁은 공간', 'SPOMOVE'],
+  },
+  'team-relay-challenge': {
+    title: '팀 릴레이 챌린지',
+    category: '협동',
+    grade: '전 학년',
+    space: '넓은 공간',
+    description: '팀별 릴레이로 출발 반응과 협동성을 함께 끌어올리는 수업입니다.',
+    equipment: ['바톤', '마커콘'],
+    tags: ['협동', '출발 반응', '팀 빌딩'],
+  },
+};
+
+const DRILL_FALLBACK: Record<string, string> = {
+  'SR-05': '스피드 리액션',
+  'SR-06': '방향 전환 챌린지',
+  'RS-05': '팀 콜 사인',
+  'IC-05': '스텝 밸런스',
+  'RC-05': '리듬 체인지',
+};
+
 function hasBrokenText(value: string | undefined) {
   if (!value) return false;
-  return value.includes(String.fromCharCode(0xfffd)) || /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄/.test(value);
+  return value.includes(String.fromCharCode(0xfffd)) || BROKEN_TEXT_PATTERN.test(value);
+}
+
+function fallbackProgramValue<K extends keyof Program>(program: Program, key: K, fallback: Program[K]) {
+  const override = PROGRAM_FALLBACK[program.id]?.[key] as Program[K] | undefined;
+  const value = program[key];
+  if (typeof value === 'string') {
+    if (!value.trim() || hasBrokenText(value)) return (override ?? fallback) as Program[K];
+  }
+  if (Array.isArray(value)) {
+    const cleaned = value.filter((item) => typeof item !== 'string' || !hasBrokenText(item));
+    if (!cleaned.length) return (override ?? fallback) as Program[K];
+    return cleaned as Program[K];
+  }
+  return value ?? override ?? fallback;
 }
 
 function cleanText(value: string | undefined, fallback: string) {
@@ -36,9 +90,15 @@ function cleanText(value: string | undefined, fallback: string) {
   return value;
 }
 
-function cleanList(items: string[] | undefined, fallback: string[] = []) {
-  const cleaned = (items ?? []).filter((item) => item && !hasBrokenText(item));
+function cleanList(items: string[] | undefined, fallback: string[]) {
+  const cleaned = (items ?? []).map((item) => item.trim()).filter((item) => item && !hasBrokenText(item));
   return cleaned.length ? cleaned : fallback;
+}
+
+function cleanDrillName(drill: Drill | undefined, fallback = 'SPOMOVE 드릴') {
+  if (!drill) return fallback;
+  if (hasBrokenText(drill.name)) return DRILL_FALLBACK[drill.id] ?? fallback;
+  return drill.name;
 }
 
 function getHeroImage(program: Program) {
@@ -66,11 +126,10 @@ function getSpomoveUseLabel(program: Program) {
   return '큰 화면 몰입 활동';
 }
 
-
-function getParentCopy(program: Program) {
+function getParentCopy(program: Program, title: string, focus: string) {
   return cleanText(
     program.lessonDetail?.parentNote,
-    `오늘은 ${cleanText(program.title, '선택한 프로그램')} 활동으로 ${cleanText(program.lessonDetail?.developmentFocus, program.category)}을 자연스럽게 경험했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`,
+    `오늘은 ${title} 활동으로 ${focus}을 자연스럽게 경험했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`,
   );
 }
 
@@ -92,15 +151,7 @@ function MetaCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DetailSection({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: typeof FileText;
-  children: ReactNode;
-}) {
+function DetailSection({ title, icon: Icon, children }: { title: string; icon: typeof FileText; children: ReactNode }) {
   return (
     <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
       <h2 className="flex items-center gap-2 text-base font-black text-white">
@@ -154,9 +205,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
   }
 
   const detail = program.lessonDetail;
-  const title = cleanText(program.title, 'SPOKEDU 수업 패키지');
-  const category = cleanText(program.category, '체육 수업');
-const favorite = favorites.includes(program.id);
+  const title = fallbackProgramValue(program, 'title', 'SPOKEDU 수업 패키지') as string;
+  const category = fallbackProgramValue(program, 'category', '체육 수업') as string;
+  const grade = fallbackProgramValue(program, 'grade', '전 학년') as string;
+  const space = fallbackProgramValue(program, 'space', '실내 또는 체육 공간') as string;
+  const description = fallbackProgramValue(program, 'description', `${title} 수업 패키지입니다.`) as string;
+  const equipment = fallbackProgramValue(program, 'equipment', ['현장 기본 교구']) as string[];
+  const favorite = favorites.includes(program.id);
   const locked = program.isPro && !isPro;
   const cartCount = cart.reduce((total, item) => total + item.qty, 0);
   const heroImage = getHeroImage(program);
@@ -164,13 +219,18 @@ const favorite = favorites.includes(program.id);
   const primaryDrill = getPrimaryDrill(program, drills);
   const primarySpomoveId = primaryDrill?.id ?? detail?.relatedSpomoveIds?.[0] ?? drills[0]?.id ?? 'SR-05';
   const relatedSpomoveIds = detail?.relatedSpomoveIds?.length ? detail.relatedSpomoveIds : [primarySpomoveId];
-  const ruleItems = cleanList(detail?.rules?.length ? detail.rules : program.steps, ['도구와 공간을 확인합니다.', '시범을 보여주고 안전 거리를 확보합니다.', '기본 규칙으로 시작한 뒤 난이도를 단계적으로 올립니다.']);
-  const setupNotes = cleanList(detail?.setupNotes, [`공간: ${cleanText(program.space, '실내 또는 체육 공간')}`, `준비물: ${cleanList(program.equipment, ['현장 기본 도구']).join(', ')}`]);
-  const fieldTips = (detail?.fieldTips ?? []).filter((item) => item && !hasBrokenText(item));
-  const safetyNotes = (detail?.safetyNotes ?? []).filter((item) => item && !hasBrokenText(item));
-  const variations = (detail?.variations ?? []).filter((item) => item && !hasBrokenText(item));
-  const equipment = cleanList(program.equipment, ['현장 기본 도구']);
-  const parentCopy = getParentCopy(program);
+  const objective = cleanText(detail?.objective, description);
+  const focus = cleanText(detail?.developmentFocus, category);
+  const ruleItems = cleanList(detail?.rules?.length ? detail.rules : program.steps, [
+    '공간과 준비물을 확인하고 학생들이 안전하게 움직일 범위를 먼저 정합니다.',
+    '시범을 짧게 보여준 뒤 기본 규칙으로 1라운드를 진행합니다.',
+    '학생 반응을 보며 난이도와 이동 거리를 조절합니다.',
+  ]);
+  const setupNotes = cleanList(detail?.setupNotes, [`공간: ${space}`, `준비물: ${equipment.join(', ')}`]);
+  const fieldTips = cleanList(detail?.fieldTips, []);
+  const safetyNotes = cleanList(detail?.safetyNotes, []);
+  const variations = cleanList(detail?.variations, []);
+  const parentCopy = getParentCopy(program, title, focus);
   const usageCount = usageRecords.length;
 
   const copyParentNote = async () => {
@@ -183,7 +243,7 @@ const favorite = favorites.includes(program.id);
     const price = getEquipmentPrice(item);
     if (price <= 0) return;
     addToCart({ id: item, name: item, price, qty: 1 });
-    setCartNotice(`${item} 교구가 장바구니에 추가되었습니다.`);
+    setCartNotice(`${item} 교구를 장바구니에 담았습니다.`);
   };
 
   return (
@@ -239,10 +299,11 @@ const favorite = favorites.includes(program.id);
                 {usageCount > 0 ? <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-slate-950">{usageCount}회 사용</span> : null}
               </div>
               <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">{title}</h1>
+              <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-white/68 sm:text-base">{description}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Users className="h-3.5 w-3.5" />{cleanText(detail?.recommendedAge, program.grade)}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Users className="h-3.5 w-3.5" />{cleanText(detail?.recommendedAge, grade)}</span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Clock3 className="h-3.5 w-3.5" />{program.duration}분</span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><MapPin className="h-3.5 w-3.5" />{cleanText(program.space, '실내 공간')}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><MapPin className="h-3.5 w-3.5" />{space}</span>
               </div>
             </div>
           </div>
@@ -264,28 +325,28 @@ const favorite = favorites.includes(program.id);
               </Link>
               <Link href={`/spokedu-master/spomove/session?drill=${primarySpomoveId}&mode=projector&program=${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-300/25 bg-indigo-400/10 px-5 text-sm font-bold text-indigo-100">
                 <MonitorPlay className="h-4 w-4" />
-                SPOMOVE
+                SPOMOVE 큰 화면
               </Link>
               <button type="button" onClick={copyParentNote} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-300/25 bg-emerald-400/10 px-5 text-sm font-bold text-emerald-100">
                 {copied ? <CheckCircle2 className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
-                {copied ? '복사 완료' : '문구 복사'}
+                {copied ? '복사 완료' : '설명 문구 복사'}
               </button>
             </>
           )}
         </section>
 
         <section className="grid gap-3 sm:grid-cols-4">
-          <MetaCard label="대상" value={cleanText(detail?.recommendedAge, program.grade)} />
-          <MetaCard label="인원" value={cleanText(detail?.recommendedPlayers, '소그룹~학급')} />
-          <MetaCard label="발달 초점" value={cleanText(detail?.developmentFocus, category)} />
-          <MetaCard label="공간" value={cleanText(program.space, '실내 또는 체육 공간')} />
+          <MetaCard label="대상" value={cleanText(detail?.recommendedAge, grade)} />
+          <MetaCard label="인원" value={cleanText(detail?.recommendedPlayers, '소그룹·학급 운영')} />
+          <MetaCard label="발달 초점" value={focus} />
+          <MetaCard label="공간" value={space} />
         </section>
 
         <DetailSection title="패키지 구성" icon={Zap}>
           <div className="grid gap-2 sm:grid-cols-3">
-            <MetaCard label="수업안" value={`${program.duration}분 · ${cleanText(program.space, '활동 공간')}`} />
-            <MetaCard label="연결 SPOMOVE" value={cleanText(primaryDrill?.name, 'SPOMOVE 큰 화면')} />
-            <MetaCard label="설명 도구" value="학부모/기관 문구 복사" />
+            <MetaCard label="수업안" value={`${program.duration}분 · ${space}`} />
+            <MetaCard label="연결 SPOMOVE" value={cleanDrillName(primaryDrill)} />
+            <MetaCard label="설명 도구" value="학부모·기관용 문구 복사" />
           </div>
         </DetailSection>
 
@@ -338,6 +399,10 @@ const favorite = favorites.includes(program.id);
           </DetailSection>
         </section>
 
+        <DetailSection title="수업 목표" icon={FileText}>
+          <p className="text-sm leading-7 text-slate-300">{objective}</p>
+        </DetailSection>
+
         <DetailSection title={`진행 단계 · ${ruleItems.length}단계`} icon={Play}>
           <ol className="space-y-3">
             {ruleItems.map((step, index) => (
@@ -360,7 +425,7 @@ const favorite = favorites.includes(program.id);
                       <Zap className="h-5 w-5" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm font-black text-white">{cleanText(drill?.name, spomoveId)}</strong>
+                      <strong className="block truncate text-sm font-black text-white">{cleanDrillName(drill, spomoveId)}</strong>
                       <span className="mt-1 block text-xs font-semibold text-indigo-100/70">{getSpomoveUseLabel(program)}으로 실행</span>
                     </span>
                     <MonitorPlay className="h-4 w-4 text-indigo-100" />
@@ -390,6 +455,7 @@ const favorite = favorites.includes(program.id);
             ) : null}
           </section>
         ) : null}
+
         <DetailSection title="설명 문구" icon={Clipboard}>
           <p className="text-sm leading-7 text-slate-300">{parentCopy}</p>
         </DetailSection>

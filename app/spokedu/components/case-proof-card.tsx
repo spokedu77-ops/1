@@ -63,14 +63,20 @@ export function CaseProofCard({
           </>
         )}
         <div className={`mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 ${compact ? 'pt-2.5' : 'pt-3'}`}>
-          <Link
-            href={item.href}
-            data-track={inferTrackFromHref(item.href)}
-            data-track-label={`${trackPrefix}-detail-${item.slug}`}
-            className={`text-xs font-semibold text-slate-900 sm:text-sm ${fineHover}hover:text-indigo-700 ${focusRing}`}
-          >
-            사례 보기 →
-          </Link>
+          {compact ? (
+            <span className="text-xs font-semibold text-slate-900 transition duration-200 group-hover:text-indigo-700 sm:text-sm">
+              사례 보기 →
+            </span>
+          ) : (
+            <Link
+              href={item.href}
+              data-track={inferTrackFromHref(item.href)}
+              data-track-label={`${trackPrefix}-detail-${item.slug}`}
+              className={`text-xs font-semibold text-slate-900 sm:text-sm ${fineHover}hover:text-indigo-700 ${focusRing}`}
+            >
+              사례 보기 →
+            </Link>
+          )}
           {!compact && related ? (
             <Link
               href={related.href}

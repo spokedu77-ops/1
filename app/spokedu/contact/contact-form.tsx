@@ -203,8 +203,18 @@ export default function SpokeduContactForm() {
 
   useEffect(() => {
     const requestedType = searchParams.get('type');
-    if (isInquiryType(requestedType)) {
-      setInquiryType(requestedType);
+    const wantsProposal = searchParams.get('proposal') === 'true';
+    const resolvedType: InquiryType | null = isInquiryType(requestedType)
+      ? requestedType
+      : wantsProposal
+        ? 'dispatch'
+        : null;
+
+    if (resolvedType) {
+      setInquiryType(resolvedType);
+      requestAnimationFrame(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     }
 
     const classType = searchParams.get('classType');
@@ -214,7 +224,15 @@ export default function SpokeduContactForm() {
       setPrivateForm((prev) => ({ ...prev, preferredClassType: '2~4명 소그룹 수업' }));
     }
 
-    if (requestedType === 'curriculum' && searchParams.get('intent') === 'partnership') {
+    if (wantsProposal) {
+      setDispatchForm((prev) => ({
+        ...prev,
+        proposalNeeded: '필요',
+        message: prev.message.trim() ? prev.message : '기관 수업 제안서 상담을 요청합니다.',
+      }));
+    }
+
+    if (resolvedType === 'curriculum' && searchParams.get('intent') === 'partnership') {
       setCurriculumForm((prev) => ({
         ...prev,
         partnershipType: prev.partnershipType || '콘텐츠 제휴·라이선싱',

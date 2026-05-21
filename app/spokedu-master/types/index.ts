@@ -29,6 +29,10 @@ export interface Drill {
   id: string;
   name: string;
   category: string;
+  description?: string;
+  icon?: string;
+  enName?: string;
+  tag?: string;
   cues: Cue[];
   isPro: boolean;
   bgColor: string;

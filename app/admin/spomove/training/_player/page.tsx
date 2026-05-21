@@ -13,19 +13,22 @@ const MemoryGameApp = dynamic(
 function MemoryGamePageContent() {
   const searchParams = useSearchParams();
   const mode = searchParams.get('mode') ?? undefined;
+  const embed = searchParams.get('embed') === '1';
   const levelRaw = Number(searchParams.get('level') ?? '');
   const level = Number.isFinite(levelRaw) && levelRaw > 0 ? levelRaw : undefined;
 
   return (
     <div className="flex min-h-screen flex-col">
-      <div className="shrink-0 border-b border-slate-700 bg-slate-950 px-4 py-2">
-        <Link
-          href="/admin/spomove/training"
-          className="text-sm font-semibold text-blue-400 hover:underline"
-        >
-          ← SPOMOVE 트레이닝
-        </Link>
-      </div>
+      {!embed ? (
+        <div className="shrink-0 border-b border-slate-700 bg-slate-950 px-4 py-2">
+          <Link
+            href="/admin/spomove/training"
+            className="text-sm font-semibold text-blue-400 hover:underline"
+          >
+            ← SPOMOVE 트레이닝
+          </Link>
+        </div>
+      ) : null}
       <div className="min-h-0 flex-1">
         <MemoryGameApp initialMode={mode} initialLevel={level} />
       </div>
@@ -38,14 +41,6 @@ export default function MemoryGamePage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen flex-col bg-slate-900">
-          <div className="shrink-0 border-b border-slate-700 bg-slate-950 px-4 py-2">
-            <Link
-              href="/admin/spomove/training"
-              className="text-sm font-semibold text-blue-400 hover:underline"
-            >
-              ← SPOMOVE 트레이닝
-            </Link>
-          </div>
           <div className="flex min-h-0 flex-1 items-center justify-center text-white">로딩 중…</div>
         </div>
       }

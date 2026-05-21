@@ -8,18 +8,19 @@ import { homePage } from '../data/home-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
   btnPrimary,
-  btnSecondary,
   btnSecondaryOnDark,
   cardInteractive,
   fineHover,
   landingH1,
+  landingPageStack,
 } from '../lib/ui-classes';
+import { HomeProgramSystem } from './visual/home-program-system';
 import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
+
+const gateMedia = [HOME_MEDIA.trackPrivate, HOME_MEDIA.trackDispatch, HOME_MEDIA.trackCurriculum] as const;
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
-
-const homeStack = 'mx-auto flex w-full max-w-6xl flex-col gap-16 pb-4 sm:gap-24 sm:pb-6 lg:gap-28';
 
 const gateAccent = [
   'border-t-indigo-400/80',
@@ -53,21 +54,20 @@ function Section({
   );
 }
 
-function resolveFieldRecord(proofId: string) {
-  const field = HOME_PROOF_FIELDS.find((f) => f.id === proofId);
-  const card = homePage.fieldRecords.cards.find((c) => c.proofId === proofId);
-  if (!field || !card) return null;
-  return { field, tagline: card.tagline };
+function resolveFieldProof(card: (typeof homePage.fieldRecords.cards)[number]) {
+  const field = HOME_PROOF_FIELDS.find((f) => f.id === card.proofId);
+  if (!field) return null;
+  return { field, tagline: card.tagline, href: card.href, trackLabel: card.trackLabel };
 }
 
 export default function SpokeduHomeLanding() {
   const reducedMotion = useReducedMotion();
-  const fieldRecordItems = homePage.fieldRecords.cards
-    .map((c) => resolveFieldRecord(c.proofId))
+  const fieldProofItems = homePage.fieldRecords.cards
+    .map((c) => resolveFieldProof(c))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   return (
-    <div className={homeStack}>
+    <div className={landingPageStack}>
       {/* 1. Cinematic Hero */}
       <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12">
@@ -114,19 +114,26 @@ export default function SpokeduHomeLanding() {
             </div>
           </div>
           <div className="order-1 lg:order-2">
-            <MotionPoster media={HOME_MEDIA.homeHero} variant="cinematic" />
+            <div className="relative">
+              <MotionPoster media={HOME_MEDIA.homeHero} variant="cinematic" />
+              <div
+                className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-tr from-indigo-950/35 via-transparent to-sky-500/15"
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/25"
+                aria-hidden
+              />
+            </div>
           </div>
         </div>
       </section>
 
       {/* 2. Visitor Gate */}
-      <Section id={homePage.visitorGate.id} className="scroll-mt-20 space-y-8 sm:space-y-10">
-        <div className="space-y-2 text-center lg:text-left">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-            {homePage.visitorGate.title}
-          </h2>
-          <p className="text-sm text-slate-500 sm:text-base">세 가지 입구 중 하나를 선택하세요</p>
-        </div>
+      <Section id={homePage.visitorGate.id} className="scroll-mt-20 space-y-7 sm:space-y-9">
+        <h2 className="text-center text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl lg:text-left">
+          {homePage.visitorGate.title}
+        </h2>
         <div className="flex flex-col gap-4 md:grid md:grid-cols-3 md:gap-5">
           {homePage.visitorGate.cards.map((card, index) => (
             <motion.div
@@ -140,67 +147,70 @@ export default function SpokeduHomeLanding() {
                 href={card.href}
                 data-track={inferTrackFromHref(card.href)}
                 data-track-label={card.trackLabel}
-                className={`group flex min-h-[210px] flex-col justify-between rounded-[1.5rem] border border-slate-200/90 border-t-4 bg-white p-6 shadow-sm sm:min-h-[228px] sm:p-8 ${gateAccent[index] ?? ''} ${cardInteractive} ${focusRing}`}
+                className={`group flex min-h-[248px] flex-col overflow-hidden rounded-[1.5rem] border border-slate-200/90 border-t-4 bg-white shadow-lg shadow-slate-900/8 sm:min-h-[272px] ${gateAccent[index] ?? ''} ${cardInteractive} ${focusRing}`}
               >
-                <p className="text-sm font-medium text-slate-500">{card.audience}</p>
-                <div>
-                  <h3 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{card.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.description}</p>
+                <div className="relative h-[5.5rem] shrink-0 overflow-hidden sm:h-[6.5rem]">
+                  <MediaPanel
+                    media={gateMedia[index]}
+                    className="absolute inset-0 h-full w-full rounded-none border-0"
+                  />
+                  <div
+                    className="absolute inset-0 bg-gradient-to-t from-white via-white/55 to-white/10"
+                    aria-hidden
+                  />
                 </div>
-                <span
-                  className={`text-sm font-semibold text-slate-900 ${fineHover}group-hover:translate-x-0.5 ${fineHover}group-hover:text-indigo-700`}
-                  aria-hidden
-                >
-                  →
-                </span>
+                <div className="flex flex-1 flex-col justify-between p-5 sm:p-6">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500">{card.audience}</p>
+                    <h3 className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{card.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.description}</p>
+                  </div>
+                  <span
+                    className={`mt-4 text-sm font-semibold text-slate-900 ${fineHover}group-hover:translate-x-0.5 ${fineHover}group-hover:text-indigo-700`}
+                    aria-hidden
+                  >
+                    →
+                  </span>
+                </div>
               </Link>
             </motion.div>
           ))}
         </div>
       </Section>
 
-      {/* 3. Field Records */}
-      <Section className="space-y-8 sm:space-y-10">
-        <div className="mx-auto max-w-2xl space-y-3 text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-            {homePage.fieldRecords.title}
-          </h2>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 sm:text-base">
-            {homePage.fieldRecords.subtitle}
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:gap-6">
-          {fieldRecordItems.map(({ field, tagline }, index) => (
+      {/* 3. Field Records — proof wall */}
+      <Section className="space-y-4 sm:space-y-5">
+        <h2 className="text-center text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl lg:text-left">
+          {homePage.fieldRecords.title}
+        </h2>
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4" role="list" aria-label="현장 운영 증거">
+          {fieldProofItems.map(({ field, tagline, href, trackLabel }, index) => (
             <motion.div
               key={field.id}
-              initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+              role="listitem"
+              initial={reducedMotion ? false : { opacity: 0, y: 14 }}
               whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.45, delay: 0.06 * index }}
+              transition={{ duration: 0.45, delay: 0.05 * index }}
             >
               <Link
-                href={field.href}
-                data-track={inferTrackFromHref(field.href)}
-                data-track-label={`cta-home-field-${field.id}`}
-                className={`group block overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white shadow-md shadow-slate-900/5 ${cardInteractive} ${focusRing}`}
+                href={href}
+                data-track={inferTrackFromHref(href)}
+                data-track-label={trackLabel}
+                className={`group relative block aspect-[5/6] overflow-hidden rounded-2xl border border-slate-400/30 shadow-xl shadow-slate-900/18 ring-1 ring-white/20 transition duration-300 sm:aspect-[4/5] lg:min-h-[300px] lg:aspect-auto ${cardInteractive} ${focusRing}`}
               >
-                <MediaPanel
-                  media={field.media}
-                  className="aspect-[16/10] rounded-none border-0 sm:aspect-[5/3]"
+                <MediaPanel media={field.media} className="absolute inset-0 h-full w-full rounded-none border-0 scale-105 transition duration-500 group-hover:scale-110" />
+                <div
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/92 via-slate-900/25 to-slate-900/5 transition duration-300 group-hover:from-slate-950/96"
+                  aria-hidden
                 />
-                <div className="p-4 sm:p-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-indigo-600">
-                    {field.category}
-                  </p>
-                  <h3 className="mt-1 text-base font-semibold leading-snug text-slate-950 sm:text-lg">
+                <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-300">
+                    {tagline}
+                  </span>
+                  <h3 className="mt-0.5 line-clamp-2 text-xs font-bold leading-snug text-white sm:text-sm">
                     {field.title}
                   </h3>
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-600">{tagline}</p>
-                  <span
-                    className={`mt-3 inline-block text-xs font-semibold text-slate-800 sm:text-sm ${fineHover}group-hover:text-indigo-700`}
-                  >
-                    {field.cta} →
-                  </span>
                 </div>
               </Link>
             </motion.div>
@@ -218,30 +228,39 @@ export default function SpokeduHomeLanding() {
         </p>
       </Section>
 
-      {/* 4. Program Mini Line */}
-      <Section className="text-center" delay={0.02}>
-        <p className="text-sm text-slate-500">
-          운영 프로그램 ·{' '}
+      {/* 4. Program System */}
+      <Section className="space-y-5 sm:space-y-7" delay={0.02}>
+        <div className="space-y-3 border-l-4 border-indigo-500 pl-4 text-center sm:pl-5 lg:text-left">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600">Program System</p>
+          <h2 className="whitespace-pre-line text-[1.85rem] font-black leading-[1.06] tracking-tight text-slate-950 sm:text-[2.35rem] lg:text-[2.75rem]">
+            {homePage.programSystem.title}
+          </h2>
+          <p className="mx-auto max-w-lg text-sm leading-relaxed text-slate-600 sm:text-base lg:mx-0">
+            {homePage.programSystem.subtitle}
+          </p>
+        </div>
+        <HomeProgramSystem items={homePage.programSystem.items} />
+        <p className="text-center lg:text-left">
           <Link
-            href={homePage.programMini.href}
-            data-track={inferTrackFromHref(homePage.programMini.href)}
-            data-track-label={homePage.programMini.trackLabel}
-            className={`font-semibold text-slate-800 underline-offset-2 ${fineHover}hover:text-indigo-700 ${fineHover}hover:underline ${focusRing}`}
+            href={homePage.programSystem.cta.href}
+            data-track={inferTrackFromHref(homePage.programSystem.cta.href)}
+            data-track-label={homePage.programSystem.cta.trackLabel}
+            className={`inline-flex min-h-12 items-center justify-center rounded-full bg-slate-950 px-8 py-3 text-sm font-semibold text-white shadow-md ${fineHover}hover:bg-slate-800 ${focusRing}`}
           >
-            {homePage.programMini.text}
+            {homePage.programSystem.cta.label} →
           </Link>
         </p>
       </Section>
 
       {/* 5. Final CTA */}
-      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-12 text-white sm:rounded-[2rem] sm:px-10 sm:py-16">
+      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-10 text-white sm:rounded-[2rem] sm:px-10 sm:py-14">
         <div className="pointer-events-none absolute inset-0 opacity-80" aria-hidden>
           <MediaRenderer media={HOME_MEDIA.trackDispatch} intensity="soft" animateZoom className="h-full w-full" />
         </div>
         <div className="pointer-events-none absolute inset-0 bg-slate-950/78" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{homePage.finalCta.title}</h2>
-          <div className="mt-8 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
+          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{homePage.finalCta.title}</h2>
+          <div className="mt-6 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
             {homePage.finalCta.links.map((item) => (
               <Link
                 key={item.href}
@@ -256,9 +275,9 @@ export default function SpokeduHomeLanding() {
           </div>
           <Link
             href={homePage.finalCta.contact.href}
-            data-track={inferTrackFromHref(homePage.finalCta.contact.href)}
+            data-track="cta-contact"
             data-track-label={homePage.finalCta.contact.trackLabel}
-            className={`mt-5 inline-block text-sm font-semibold text-slate-300 underline-offset-4 ${fineHover}hover:text-white ${fineHover}hover:underline ${focusRing}`}
+            className={`mt-4 inline-block text-sm font-semibold text-slate-300 underline-offset-4 ${fineHover}hover:text-white ${fineHover}hover:underline ${focusRing}`}
           >
             {homePage.finalCta.contact.label} →
           </Link>

@@ -9,7 +9,16 @@ import { landingCardShell } from './visual/card-variants';
 import { HOME_MEDIA } from '../data/home-media';
 import { insightsCards } from '../data/insights';
 import { insightsPage } from '../data/insights-page';
-import { cardInteractive, fineHover, landingH1, landingHeroShell, landingPageStack } from '../lib/ui-classes';
+import {
+  cardInteractive,
+  fineHover,
+  landingH1,
+  landingHeroCopy,
+  landingHeroGrid,
+  landingHeroVisual,
+  landingPageStack,
+  landingSectionTitle,
+} from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
@@ -22,27 +31,23 @@ export function InsightsLanding() {
 
   return (
     <div className={landingPageStack}>
-      <LandingSection
-        className={`${landingHeroShell} overflow-hidden border-slate-200 bg-gradient-to-b from-white via-violet-50/40 to-indigo-50/30`}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.12),transparent_46%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.1),transparent_42%)]" />
-        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center">
-          <div className="space-y-3 sm:space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">Education Insights</p>
+      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className={landingHeroGrid}>
+          <div className={landingHeroCopy}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">교육 인사이트</p>
             <h1 className={`whitespace-pre-line ${landingH1} text-slate-950`}>{insightsPage.hero.title}</h1>
-            <p className="max-w-2xl text-sm leading-6 text-slate-700 sm:text-base">{insightsPage.hero.subtitle}</p>
-            <div className="lg:hidden">
-              <MotionPoster media={heroMedia} variant="compact" />
-            </div>
+            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
+              {insightsPage.hero.subtitle}
+            </p>
           </div>
-          <div className="hidden lg:block">
-            <MotionPoster media={heroMedia} variant="hero" />
+          <div className={landingHeroVisual}>
+            <MotionPoster media={heroMedia} variant="cinematic" />
           </div>
         </div>
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.05}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">카테고리</h2>
+        <h2 className={landingSectionTitle}>카테고리</h2>
         <div className="-mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1 scroll-smooth [scrollbar-width:thin] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 lg:grid-cols-6">
           {insightsPage.categoryCards.map((cat, index) => (
             <motion.div
@@ -53,7 +58,7 @@ export function InsightsLanding() {
               transition={{ duration: 0.4, delay: 0.04 * index }}
               className="w-[min(72vw,200px)] shrink-0 snap-start sm:w-auto"
             >
-              <article className={`flex h-full min-h-[168px] flex-col overflow-hidden rounded-2xl ${landingCardShell(cat.cardVariant)}`}>
+              <article className={`flex h-full flex-col overflow-hidden rounded-2xl ${landingCardShell(cat.cardVariant)}`}>
                 <MediaPanel
                   media={HOME_MEDIA[cat.mediaKey]}
                   className="aspect-[4/3] shrink-0 rounded-none border-0 border-b border-slate-200/80"
@@ -69,7 +74,7 @@ export function InsightsLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.08}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">인사이트</h2>
+        <h2 className={landingSectionTitle}>인사이트</h2>
         <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 scroll-smooth [scrollbar-width:thin] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 lg:grid-cols-3">
           {insightsCards.map((card, index) => (
             <motion.div
@@ -84,7 +89,7 @@ export function InsightsLanding() {
                 href={card.href}
                 data-track={inferTrackFromHref(card.href)}
                 data-track-label={`insights-card-${card.slug}`}
-                className={`group flex h-full min-h-[280px] flex-col overflow-hidden rounded-2xl ${landingCardShell(card.cardVariant)} ${cardInteractive} ${focusRing}`}
+                className={`group flex h-full flex-col overflow-hidden rounded-2xl ${landingCardShell(card.cardVariant)} ${cardInteractive} ${focusRing}`}
               >
                 <MediaPanel
                   media={HOME_MEDIA[card.mediaKey]}
@@ -115,7 +120,7 @@ export function InsightsLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.1}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">추천 연결</h2>
+        <h2 className={landingSectionTitle}>추천 연결</h2>
         <div className="grid gap-2.5 sm:grid-cols-3">
           {insightsPage.audienceLinks.map((link, index) => (
             <Link
@@ -126,7 +131,7 @@ export function InsightsLanding() {
               className={`rounded-2xl p-4 ${landingCardShell((['gradient', 'image', 'dark'] as const)[index] ?? 'image')} ${cardInteractive} ${focusRing}`}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-600">{link.audience}</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">맞춤 입구로 이동</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">{link.audience} 안내</p>
               <span className={`mt-2 inline-flex text-xs font-semibold text-slate-800 ${fineHover}hover:text-indigo-700`}>
                 바로가기 →
               </span>

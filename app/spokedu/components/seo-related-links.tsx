@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { seoRelatedLinks, type SpokeduSeoPageKey } from '../data/seo';
+import { seoRelatedLinks, type SpokeduRelatedLink, type SpokeduSeoPageKey } from '../data/seo';
 import { inferTrackFromHref } from '../lib/tracking';
 
 type SpokeduRelatedLinksProps = {
@@ -11,7 +11,11 @@ export function SpokeduRelatedLinks({ page }: SpokeduRelatedLinksProps) {
     return null;
   }
 
-  const links = seoRelatedLinks[page];
+  const links: SpokeduRelatedLink[] = seoRelatedLinks[page] ?? seoRelatedLinks.home ?? [];
+
+  if (!links.length) {
+    return null;
+  }
 
   return (
     <nav aria-label="관련 페이지" className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-5">

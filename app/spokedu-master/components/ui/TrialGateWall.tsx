@@ -8,24 +8,24 @@ import { useProfile } from '../../store';
 
 const PLAN_FEATURES: Record<string, { icon: typeof BookOpen; label: string }[]> = {
   library: [
-    { icon: BookOpen, label: '전체 프로그램 무제한' },
-    { icon: Sparkles, label: '신규 수업안 우선 공개' },
-    { icon: MonitorPlay, label: 'SPOMOVE 연결 수업 전체' },
+    { icon: BookOpen, label: '전체 프로그램 라이브러리' },
+    { icon: Sparkles, label: '신규 수업 우선 공개' },
+    { icon: MonitorPlay, label: 'SPOMOVE 연동 수업안' },
   ],
   spomove: [
     { icon: MonitorPlay, label: 'SPOMOVE 드릴 전체 실행' },
-    { icon: Sparkles, label: '큰 화면 · Class Mode 무제한' },
-    { icon: BookOpen, label: '훈련 기록 누적 보존' },
+    { icon: Sparkles, label: '큰 화면 · Class Mode' },
+    { icon: BookOpen, label: '라이브러리 수업안 연결' },
   ],
   report: [
-    { icon: FileText, label: '대상별 설명 문구 전체' },
-    { icon: BookOpen, label: '라이브러리 연동 자동 완성' },
-    { icon: Sparkles, label: '홍보 · 학교 기록용 문구' },
+    { icon: FileText, label: '대상별 수업 설명 문구' },
+    { icon: BookOpen, label: '라이브러리 연동 자동 초안' },
+    { icon: Sparkles, label: '홍보 · 기관 제출용 문구' },
   ],
   'class-tools': [
     { icon: Timer, label: '스톱워치 · 점수판' },
     { icon: Users, label: '학생 뽑기 · 팀 나누기' },
-    { icon: Sparkles, label: '순서 정하기 · 수업 진행 도구' },
+    { icon: Sparkles, label: '수업 진행 보조 도구' },
   ],
 };
 
@@ -44,9 +44,7 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
 
   return (
     <div className="relative h-full overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
-      <div className="pointer-events-none absolute inset-0 z-0 select-none opacity-20 blur-[3px]">
-        {children}
-      </div>
+      <div className="pointer-events-none absolute inset-0 z-0 select-none opacity-20 blur-[3px]">{children}</div>
       <div className="absolute inset-0 z-10 flex items-center justify-center p-6" style={{ background: 'linear-gradient(to top, var(--spm-bg) 60%, rgba(7,7,12,0.72))' }}>
         <div className="w-full max-w-[440px]">
           <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px]" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}>
@@ -57,7 +55,7 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
             14일 무료 체험이 끝났습니다.
           </h2>
           <p className="mt-3 text-[14px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            플랜을 선택하면 라이브러리, SPOMOVE, 수업 도구를 계속 무제한으로 사용할 수 있습니다.
+            플랜을 선택하면 라이브러리, SPOMOVE, 수업 도구를 계속 사용할 수 있습니다.
           </p>
           <ul className="mt-5 space-y-2">
             {features.map(({ icon: Icon, label }) => (
@@ -71,13 +69,13 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
           </ul>
           <div className="mt-7 space-y-2">
             <Link href="/spokedu-master/payment?plan=pro" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.32)' }}>
-              Pro 시작하기 — 39,900원/월
+              Pro 시작하기 · 월 39,900원
             </Link>
             <Link href="/spokedu-master/payment?plan=team" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--spm-grn)' }}>
-              Center 플랜 (강사 3명) — 79,000원/월
+              Center 플랜 · 강사 3명 포함 월 79,000원
             </Link>
             <Link href="/spokedu-master/payment" className="flex h-10 w-full items-center justify-center rounded-[12px] text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-              이미 구독 중이신가요? 이메일로 로그인
+              이미 구독 중이라면 결제 상태 확인
             </Link>
           </div>
         </div>
@@ -89,6 +87,7 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
 export function TrialCountdownBanner() {
   const profile = useProfile();
   const daysLeft = getTrialDaysLeft(profile);
+  if (profile?.isAdmin) return null;
   if ((profile?.plan ?? 'free') !== 'free') return null;
   if (daysLeft <= 0 || daysLeft > 7) return null;
 
@@ -100,10 +99,7 @@ export function TrialCountdownBanner() {
         : { bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.18)', text: 'var(--spm-acc)', chip: 'rgba(99,102,241,0.12)' };
 
   return (
-    <div
-      className="mx-[22px] mt-3 flex items-center justify-between gap-3 rounded-[12px] px-3 py-2 sm:mx-8 lg:mx-10"
-      style={{ background: tone.bg, border: `1px solid ${tone.border}` }}
-    >
+    <div className="mx-[22px] mt-3 flex items-center justify-between gap-3 rounded-[12px] px-3 py-2 sm:mx-8 lg:mx-10" style={{ background: tone.bg, border: `1px solid ${tone.border}` }}>
       <p className="text-[12px] font-bold" style={{ color: tone.text }}>
         무료 체험 <strong>{daysLeft}일</strong> 남았습니다.
       </p>

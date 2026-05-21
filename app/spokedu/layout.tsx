@@ -4,9 +4,10 @@ import Script from 'next/script';
 import { SiteFooter, SiteHeader } from './components/site-chrome';
 import SpokeduTrackingProvider from './components/tracking-provider';
 import { seoKeywords, seoMeta } from './data/content';
+import { getSpokeduSiteUrl } from './lib/site-url';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com'),
+  metadataBase: new URL(getSpokeduSiteUrl()),
   title: {
     default: seoMeta.home.title,
     template: '%s',
@@ -17,6 +18,20 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ko_KR',
     siteName: 'SPOKEDU',
+    title: seoMeta.home.title,
+    description: seoMeta.home.description,
+    url: '/spokedu',
+    images: [
+      {
+        url: '/images/spokedu/home/home-hero-movement.jpg',
+        width: 1200,
+        height: 800,
+        alt: '스포키듀 대표 수업 장면',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
     title: seoMeta.home.title,
     description: seoMeta.home.description,
   },

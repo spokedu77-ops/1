@@ -147,7 +147,8 @@ function planName(plan: PlanType | undefined) {
   return 'Trial';
 }
 
-function planStatusText(plan: PlanType | undefined, daysLeft: number) {
+function planStatusText(plan: PlanType | undefined, daysLeft: number, isAdmin?: boolean) {
+  if (isAdmin) return '관리자 패스';
   if (plan === 'pro' || plan === 'team') return '활성 구독';
   if (daysLeft > 0) return `체험 ${daysLeft}일 남음`;
   return '체험 종료';
@@ -317,7 +318,7 @@ export default function SpokeduMasterProfilePage() {
   const currentPlan = profile?.plan ?? 'free';
   const daysLeft = getTrialDaysLeft(profile);
   const currentPlanName = planName(currentPlan);
-  const statusText = planStatusText(currentPlan, daysLeft);
+  const statusText = planStatusText(currentPlan, daysLeft, profile?.isAdmin);
   const initial = (profile?.name ?? '선생님').slice(0, 1);
 
   const saveProfile = () => {
@@ -405,7 +406,10 @@ export default function SpokeduMasterProfilePage() {
           <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-3">
               <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Expansion</p>
-              <h2 className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>확장 기능</h2>
+              <h2 className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>확장 기능 준비</h2>
+              <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
+                Phase 1에서는 라이브러리, SPOMOVE, 설명 도구를 우선 완성합니다.
+              </p>
             </div>
             <div className="grid gap-2">
               {EXPANSION_LINKS.map((item) => (

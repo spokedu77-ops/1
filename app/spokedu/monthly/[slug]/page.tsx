@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { WhySpokeduTrustSection } from '../../components/blocks';
 import { ImagePlaceholder } from '../../components/image-placeholder';
+import { buildSpokeduPageMetadata } from '../../data/seo';
 import { getMonthlyRecordBySlug, monthlyRecords } from '../../data/monthly';
 
 type MonthlyDetailPageProps = {
@@ -23,13 +24,13 @@ export async function generateMetadata({ params }: MonthlyDetailPageProps): Prom
     };
   }
 
-  return {
-    title: `${record.title} | 월간 스포키듀`,
-    description: `${record.title} 운영 기록: 함께한 기관, 프로그램, 움직임 경험, 교육 포인트를 확인하세요.`,
-    alternates: {
-      canonical: `/spokedu/monthly/${record.slug}`,
-    },
-  };
+  return buildSpokeduPageMetadata({
+    title: `${record.title} | 월간 스포키듀 · SPOKEDU`,
+    description: `${record.month} 운영 기록. ${record.institutions.slice(0, 2).join(', ')} 등 현장 프로그램을 정리합니다.`,
+    canonical: `/spokedu/monthly/${record.slug}`,
+    pageKey: 'monthly',
+    keywords: ['월간 스포키듀', '현장기록', '아동 체육교육'],
+  });
 }
 
 export default async function SpokeduMonthlyDetailPage({ params }: MonthlyDetailPageProps) {

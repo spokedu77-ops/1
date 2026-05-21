@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
 import { isTrialExpired } from '../lib/subscription';
 import { useIsPro, useMasterStore, useProfile } from '../store';
 import type { ClassRecord, Program } from '../types';
@@ -34,30 +35,55 @@ function joinList(values: string[]) {
   return values.filter(Boolean).join(', ') || '기본 움직임';
 }
 
+function normalizeTitle(title: string) {
+  return title.toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
+}
+
+function uniquePrograms(programs: Program[]) {
+  const seen = new Set<string>();
+  return programs.filter((program) => {
+    const key = normalizeTitle(program.title);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function buildProgramPool(programs: Program[]) {
+  return uniquePrograms(programs.length > 0 ? programs : STATIC_PROGRAMS);
+}
+
 function buildCopyBlocks(audience: Audience, program: Program, record?: ClassRecord): CopyBlock[] {
   const detail = program.lessonDetail;
   const focus = detail?.developmentFocus || joinList(program.tags);
   const objective = detail?.objective || program.description;
   const equipment = joinList(program.equipment);
   const baseMeta = `${program.grade} / ${program.duration}분 / ${program.space}`;
+  const parentNote = detail?.parentNote || `오늘은 "${program.title}" 활동으로 ${focus}을 자연스럽게 경험했습니다.`;
+  const coachPoint = detail?.coachScript || `${program.title}은 ${focus}을 중심으로 수업 흐름을 구성합니다.`;
+  const safetySummary = detail?.safetyNotes?.length ? detail.safetyNotes.slice(0, 2).join(' ') : '이동 동선, 충돌 가능성, 도구 간격을 사전에 확인합니다.';
+  const setupSummary = detail?.setupNotes?.length ? detail.setupNotes.slice(0, 2).join(' ') : `${program.space}에서 준비물 ${equipment}을 활용합니다.`;
+  const spomoveSummary = detail?.relatedSpomoveIds?.length
+    ? 'SPOMOVE 화면 신호를 연결하면 학생들이 신호를 보고 판단하고 즉시 움직이는 참여형 활동으로 확장됩니다.'
+    : '수업 흐름에 따라 타이머, 점수판, 설명 도구를 함께 활용할 수 있습니다.';
   const recordMeta = record ? ` 오늘 기록은 출석 ${record.present}명, 집중 관찰 ${record.focusCount}명, 동작 체크 ${record.skillCount}개로 정리되었습니다.` : '';
 
   if (audience === 'parent') {
     return [
       {
         title: '수업 직후 안내',
-        caption: '보호자에게 바로 보낼 수 있는 기본 문구',
-        text: `오늘 수업은 "${program.title}" 활동으로 진행했습니다. 아이들은 ${objective}을(를) 놀이 형태로 경험했고, ${focus}을(를) 자연스럽게 연습했습니다. 단순히 뛰어노는 시간이 아니라 신호를 보고 판단하고, 몸을 조절하며, 친구들과 함께 움직이는 과정에 초점을 두었습니다.${recordMeta}`,
+        caption: '보호자에게 바로 보낼 수 있는 완성형 문구',
+        text: `${parentNote} 단순히 뛰어노는 시간이 아니라 규칙을 이해하고, 신호를 보고 판단하며, 몸의 속도와 방향을 조절하는 과정에 초점을 두었습니다. ${spomoveSummary}${recordMeta}`,
       },
       {
         title: '짧은 알림',
         caption: '카카오톡이나 문자에 붙이기 좋은 버전',
-        text: `오늘은 "${program.title}"로 ${focus}을(를) 연습했습니다. 아이들이 신호를 보고 판단하며 몸을 조절하는 경험을 했습니다.${record ? ` 출석 ${record.present}명 기록을 저장했습니다.` : ''}`,
+        text: `오늘은 "${program.title}"로 ${focus}을 연습했습니다. 아이들이 규칙 안에서 판단하고 몸을 조절하는 경험을 했습니다.${record ? ` 출석 ${record.present}명 기록을 저장했습니다.` : ''}`,
       },
       {
         title: '상담 메모',
         caption: '상담 기록이나 수업 노트에 남기는 문구',
-        text: `${program.title}: ${objective} 중심 활동. 관찰 포인트는 ${focus}.`,
+        text: `${program.title}: ${objective} 관찰 포인트는 ${focus}. 수업 중 코칭 포인트는 “${coachPoint}”입니다.`,
       },
     ];
   }
@@ -67,17 +93,17 @@ function buildCopyBlocks(audience: Audience, program: Program, record?: ClassRec
       {
         title: '센터 수업 설명',
         caption: '원장·상담자가 수업 가치를 설명할 때',
-        text: `"${program.title}"은 ${baseMeta} 조건에 맞춘 체육교육 프로그램입니다. 핵심 목표는 ${objective}이며, 강사마다 수업 품질 편차가 커지지 않도록 준비물, 운영 흐름, 설명 문구까지 함께 정리합니다.`,
+        text: `"${program.title}"은 ${baseMeta} 조건에 맞춘 체육교육 프로그램입니다. 핵심 목표는 ${objective}입니다. 준비물, 공간 세팅, 안전 체크, 코치 멘트, 보호자 설명 문구까지 함께 정리되어 있어 강사별 수업 품질 편차를 줄이는 데 도움이 됩니다.`,
       },
       {
         title: '운영 메모',
         caption: '강사 공유나 수업 배정에 쓰는 요약',
-        text: `권장 대상: ${program.grade}. 운영 시간: ${program.duration}분. 공간: ${program.space}. 준비물: ${equipment}. 발달 포인트: ${focus}.`,
+        text: `권장 대상: ${program.grade}. 운영 시간: ${program.duration}분. 공간: ${program.space}. 준비물: ${equipment}. 발달 포인트: ${focus}. 공간 세팅: ${setupSummary}`,
       },
       {
         title: '도입 제안 문구',
         caption: '센터 도입 제안서에 넣기 좋은 문구',
-        text: `SPOKEDU MASTER는 프로그램 라이브러리, SPOMOVE 실행, 수업 설명 문구를 연결해 강사별 수업 준비 시간을 줄이고 보호자에게 체육수업의 가치를 설명할 수 있게 돕는 구독형 체육교육 플랫폼입니다.`,
+        text: `SPOKEDU MASTER는 프로그램 라이브러리, SPOMOVE 실행, 수업 설명 문구를 연결해 강사별 수업 준비 시간을 줄이고 보호자에게 체육수업의 가치를 설명할 수 있게 돕는 구독형 체육교육 플랫폼입니다. 센터는 같은 콘텐츠 기준으로 강사 수업 품질을 맞추고, 수업 직후 보호자 커뮤니케이션까지 일관되게 운영할 수 있습니다.`,
       },
     ];
   }
@@ -87,17 +113,17 @@ function buildCopyBlocks(audience: Audience, program: Program, record?: ClassRec
       {
         title: '차시 기록',
         caption: '학교 수업 기록에 맞춘 기본 문구',
-        text: `차시 활동명: ${program.title}. 활동 목표는 ${objective}이며, 주요 관찰 요소는 ${focus}입니다. 준비물은 ${equipment}이고, ${program.space} 환경에서 운영할 수 있습니다. 학생 참여형 신체활동으로 수업 전개 또는 마무리 활동에 활용 가능합니다.`,
+        text: `차시 활동명: ${program.title}. 활동 목표는 ${objective}이며, 주요 관찰 요소는 ${focus}입니다. 준비물은 ${equipment}이고, ${program.space} 환경에서 운영할 수 있습니다. 학생 참여형 신체활동으로 수업 전개 또는 마무리 활동에 활용 가능합니다. ${spomoveSummary}`,
       },
       {
         title: '수업 준비 기록',
         caption: '준비물·안전 확인용',
-        text: `활동 준비물: ${equipment}. 공간 조건: ${program.space}. 안전 확인: ${detail?.safetyNotes.join(' ') || '이동 동선, 충돌 가능성, 도구 간격을 사전에 확인합니다.'}`,
+        text: `활동 준비물: ${equipment}. 공간 조건: ${program.space}. 공간 세팅: ${setupSummary} 안전 확인: ${safetySummary}`,
       },
       {
         title: '교사용 요약',
         caption: '동료 교사 공유용',
-        text: `${program.title}은 ${program.grade} 학생에게 적합한 ${program.duration}분 신체활동입니다. ${focus}을(를) 중심으로 참여형 체육수업을 구성할 수 있습니다.`,
+        text: `${program.title}은 ${program.grade} 학생에게 적합한 ${program.duration}분 신체활동입니다. ${focus}을 중심으로 참여형 체육수업을 구성할 수 있으며, 코칭 핵심은 “${coachPoint}”입니다.`,
       },
     ];
   }
@@ -106,7 +132,7 @@ function buildCopyBlocks(audience: Audience, program: Program, record?: ClassRec
     {
       title: '홍보 소개',
       caption: '블로그·SNS 기본 소개',
-      text: `${program.title} 수업은 아이들이 즐겁게 움직이면서 ${focus}을(를) 기르는 체육교육 프로그램입니다. SPOKEDU MASTER의 프로그램 라이브러리와 SPOMOVE를 함께 활용해 수업 준비는 줄이고 몰입감은 높였습니다.`,
+      text: `${program.title} 수업은 아이들이 즐겁게 움직이면서 ${focus}을 기르는 체육교육 프로그램입니다. 준비물과 공간 세팅, 안전 기준, 설명 문구까지 함께 제공되어 수업 준비는 줄이고 수업의 완성도는 높일 수 있습니다. ${spomoveSummary}`,
     },
     {
       title: '짧은 홍보 문구',
@@ -145,7 +171,8 @@ function ReportContent() {
   const searchParams = useSearchParams();
   const programs = useMasterStore((state) => state.programs);
   const classRecords = useMasterStore((state) => state.classRecords);
-  const recentProgramId = classRecords[0]?.programId ?? programs[0]?.id ?? '';
+  const programPool = useMemo(() => buildProgramPool(programs), [programs]);
+  const recentProgramId = classRecords[0]?.programId ?? programPool[0]?.id ?? '';
   const urlProgramId = searchParams.get('program');
   const profile = useProfile();
   const isPro = useIsPro();
@@ -155,15 +182,15 @@ function ReportContent() {
   const [copiedKey, setCopiedKey] = useState('');
   const [programSearch, setProgramSearch] = useState('');
 
-  const program = programs.find((item) => item.id === programId) ?? programs[0];
+  const program = programPool.find((item) => item.id === programId) ?? programPool[0];
   const selectedRecord = classRecords.find((record) => record.programId === program?.id);
   const filteredPrograms = programSearch.trim()
-    ? programs.filter((item) => item.title.includes(programSearch) || item.tags.some((tag) => tag.includes(programSearch)))
-    : programs;
+    ? programPool.filter((item) => item.title.includes(programSearch) || item.tags.some((tag) => tag.includes(programSearch)))
+    : programPool;
   const copyBlocks = useMemo(() => (program ? buildCopyBlocks(audience, program, selectedRecord) : []), [audience, program, selectedRecord]);
   const activeAudience = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0]!;
   const detail = program?.lessonDetail;
-  const primaryDrillId = detail?.relatedSpomoveIds[0] ?? 'speed-track';
+  const primaryDrillId = detail?.relatedSpomoveIds[0] ?? 'SR-05';
 
   const copyText = async (key: string, text: string) => {
     try {
@@ -183,11 +210,23 @@ function ReportContent() {
         <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
           수업 후 30초 안에 대상별 문구를 골라 복사하세요.
         </p>
+        <div className="mt-5 grid gap-2 sm:grid-cols-3">
+          {[
+            { label: '학부모 안내', value: '수업 직후 바로 공유' },
+            { label: '기관 설명', value: '상담·운영 문구 정리' },
+            { label: '학교 기록', value: '차시 기록용 문장 제공' },
+          ].map((item) => (
+            <div key={item.label} className="rounded-[14px] px-3 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <p className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>{item.label}</p>
+              <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t)' }}>{item.value}</p>
+            </div>
+          ))}
+        </div>
       </header>
 
       <div className="scrollbar-hide mb-6 flex gap-1.5 overflow-x-auto px-[22px] sm:px-8 lg:px-10">
         {AUDIENCES.map(({ id, label, Icon }) => {
-          const locked = (trialExpired || !isPro) && id !== 'parent';
+          const locked = !profile?.isAdmin && (trialExpired || !isPro) && id !== 'parent';
           const active = audience === id && !locked;
           const cls = 'flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-bold';
           const sty = {

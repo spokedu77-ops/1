@@ -5,6 +5,7 @@ import { WhySpokeduTrustSection } from '../../components/blocks';
 import { ImagePlaceholder } from '../../components/image-placeholder';
 import { cases, getCaseBySlug } from '../../data/cases';
 import { getProgramBySlug } from '../../data/programs';
+import { buildSpokeduPageMetadata } from '../../data/seo';
 import { inferTrackFromHref } from '../../lib/tracking';
 
 type CaseDetailPageProps = {
@@ -26,13 +27,18 @@ export async function generateMetadata({ params }: CaseDetailPageProps): Promise
     };
   }
 
-  return {
+  const image = item.images[0];
+
+  return buildSpokeduPageMetadata({
     title: `${item.title} | SPOKEDU 수업 사례`,
-    description: `${item.institution}에서 운영한 ${item.program} 사례입니다. 대상, 운영 유형, 핵심 포인트를 확인해 보세요.`,
-    alternates: {
-      canonical: `/spokedu/cases/${item.slug}`,
-    },
-  };
+    description: `${item.institution} ${item.program} 운영 사례. ${item.highlight}`,
+    canonical: `/spokedu/cases/${item.slug}`,
+    pageKey: 'cases',
+    keywords: [item.program, item.institution, '수업 사례', 'SPOMOVE'],
+    ogImage: image
+      ? { url: image.src, alt: image.alt }
+      : undefined,
+  });
 }
 
 export default async function SpokeduCaseDetailPage({ params }: CaseDetailPageProps) {

@@ -44,7 +44,7 @@ const catalogMeta: Omit<ProgramCatalogCard, 'image' | 'imageAlt' | 'imageAssetId
     tracks: ['Private', 'Dispatch'],
     effects: ['기본움직임', '운동습관', '자신감', '사회성'],
     ctaLabel: '문의하기',
-    ctaHref: '/spokedu/contact',
+    ctaHref: '/spokedu/contact?type=private',
     ctaTrack: 'cta-program-inquiry-play-class',
   },
   {
@@ -93,21 +93,21 @@ export const trackUsageRows = [
   {
     track: 'Private Class' as const,
     label: 'Private',
-    summary: '1:1·소그룹 수업에 SPOMOVE·놀이체육·방학캠프 자산을 맞춤 적용합니다.',
+    summary: '1:1·소그룹에 SPOMOVE·놀이체육·방학캠프를 맞춤 적용합니다.',
     href: '/spokedu/private',
     programs: ['SPOMOVE', '놀이체육', '방학캠프'],
   },
   {
     track: 'Dispatch Solution' as const,
     label: 'Dispatch',
-    summary: '기관 정규수업·행사·캠프에 PAPS·원데이·SPOMOVE를 조합해 제안합니다.',
+    summary: '정규·행사·캠프에 PAPS·원데이·SPOMOVE를 조합 제안합니다.',
     href: '/spokedu/dispatch',
     programs: ['PAPS', '원데이', 'SPOMOVE', '놀이체육'],
   },
   {
     track: 'Curriculum & Contents' as const,
     label: 'Curriculum',
-    summary: '수업안·교구 매뉴얼·강사 교육으로 운영 품질을 표준화합니다.',
+    summary: '수업안·매뉴얼·강사 교육으로 운영을 표준화합니다.',
     href: '/spokedu/curriculum',
     programs: ['커리큘럼 콘텐츠', 'PAPS', 'SPOMOVE'],
   },

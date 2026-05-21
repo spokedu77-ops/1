@@ -3,73 +3,39 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
-import { SPOKEDU_IMAGES } from '../data/images';
-import { cardInteractive, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
-import { HeroCtaStack } from './hero-cta-stack';
-import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
-import { SpokeduHeroVisual } from './spokedu-hero-visual';
-import { SpokeduImage } from './spokedu-image';
+import { HOME_MEDIA } from '../data/home-media';
+import { curriculumPage } from '../data/curriculum-page';
+import { inferTrackFromHref } from '../lib/tracking';
+import {
+  btnPrimary,
+  btnSecondaryOnDark,
+  fineHover,
+  landingH1,
+  landingHeroCopy,
+  landingHeroGrid,
+  landingHeroVisual,
+  landingPageStack,
+  landingSectionTitle,
+} from '../lib/ui-classes';
+import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
 
-const heroLines = ['선생님들의 선생님,', '체육수업을', '커리큘럼과 콘텐츠로 만듭니다'];
+const focusRing =
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
-const CTA_CURRICULUM = '/spokedu/contact?type=curriculum';
-const CTA_PARTNERSHIP = '/spokedu/contact?type=curriculum&intent=partnership';
+const packageShell = [
+  'rounded-2xl border border-teal-200/80 bg-gradient-to-br from-teal-50 via-white to-indigo-50/80 p-5',
+  'rounded-2xl border border-slate-800 bg-slate-950 p-5 text-white shadow-xl shadow-slate-900/15',
+  'rounded-2xl border border-white/50 bg-white/70 p-5 shadow-lg shadow-indigo-900/5 backdrop-blur-md',
+] as const;
 
-const productCards = [
-  {
-    title: '수업안',
-    description: '연령·목표·난이도가 정리된 현장 실행형 수업안',
-    deliverables: ['PDF 수업안', '주차별 시안'],
-  },
-  {
-    title: '운영 매뉴얼',
-    description: '도입-전개-정리 흐름과 운영 체크포인트 문서',
-    deliverables: ['운영 매뉴얼', '체크리스트'],
-  },
-  {
-    title: '교구 콘텐츠',
-    description: '교구별 세팅과 활동 구조를 표준화한 활용 콘텐츠',
-    deliverables: ['교구 세팅 가이드', '활동 카드'],
-  },
-  {
-    title: '강사 교육',
-    description: '신규·기존 강사 온보딩에 쓰는 교육 자료 세트',
-    deliverables: ['교육 슬라이드', '시연 자료'],
-  },
-  {
-    title: '프로그램 라이선싱',
-    description: '브랜드·기관 확장을 위한 라이선스 협업 모델',
-    deliverables: ['라이선스 계약', '브랜드 가이드'],
-  },
-];
-
-const deliveryPanels = ['PDF 수업안', '운영 매뉴얼 문서', '교구 세팅 가이드', '교육용 시연 자료'];
-
-const rolloutFlow = ['도입 목적 정리', '대상·환경 분석', '콘텐츠 범위 설계', '자료 전달·교육', '파일럿 운영', '정기 업데이트'];
-
-const partnerTargets = [
-  {
-    title: '선생님',
-    description: '수업 품질을 안정적으로 끌어올리고 싶은 현장 강사',
-  },
-  {
-    title: '기관',
-    description: '정규·행사 프로그램을 체계적으로 운영하려는 기관',
-  },
-  {
-    title: '교육 파트너',
-    description: '콘텐츠 제휴와 라이선싱 확장을 검토하는 파트너',
-  },
-];
-
-function Section({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+function Section({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const reducedMotion = useReducedMotion();
   return (
     <motion.section
-      initial={reducedMotion ? false : { opacity: 0, y: 14 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 12 }}
       whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.45, ease: 'easeOut', delay }}
+      viewport={{ once: true, amount: 0.12 }}
+      transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay }}
       className={className}
     >
       {children}
@@ -79,149 +45,136 @@ function Section({ children, className, delay = 0 }: { children: ReactNode; clas
 
 export default function CurriculumLanding() {
   const reducedMotion = useReducedMotion();
+  const heroMedia = HOME_MEDIA[curriculumPage.hero.mediaKey];
+  const ctaMedia = HOME_MEDIA[curriculumPage.finalCta.mediaKey];
 
   return (
     <div className={landingPageStack}>
-      <Section className={`${landingHeroShell} border-teal-200/60 bg-gradient-to-b from-indigo-50/70 via-white to-teal-50/50`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_43%),radial-gradient(circle_at_bottom_right,rgba(20,184,166,0.12),transparent_42%)]" />
-        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-7">
-          <div className="space-y-4 sm:space-y-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">강사·기관 파트너 · 커리큘럼·콘텐츠</p>
+      <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className={landingHeroGrid}>
+          <div className={landingHeroCopy}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">강사·기관·파트너</p>
             <h1 className={`${landingH1} text-slate-950`}>
-              {heroLines.map((line, index) => (
+              {curriculumPage.hero.lines.map((line, index) => (
                 <motion.span
                   key={line}
-                  initial={reducedMotion ? false : { opacity: 0, y: 26 }}
+                  initial={reducedMotion ? false : { opacity: 0, y: 24 }}
                   animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: 'easeOut', delay: 0.08 * index }}
+                  transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.07 * index }}
                   className="block"
                 >
                   {line}
                 </motion.span>
               ))}
             </h1>
-            <p className="max-w-xl text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
-              철학 설명이 아니라, 바로 수업에 쓰는 수업안·매뉴얼·교구 콘텐츠·강사교육·라이선싱을 패키지로 제공합니다.
+            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
+              {curriculumPage.hero.subtitle}
             </p>
-            <div className="lg:hidden">
-              <SpokeduHeroVisual
-                image={SPOKEDU_IMAGES.curriculum.lessonPlan}
-                className="relative h-[200px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[220px]"
-              />
-            </div>
-            <HeroCtaStack
-              primary={{ href: CTA_CURRICULUM, label: '커리큘럼 문의', trackLabel: 'curriculum-cta-inquiry' }}
-              secondary={[{ href: CTA_PARTNERSHIP, label: '콘텐츠 제휴 문의', trackLabel: 'curriculum-cta-partnership' }]}
-            />
-            <p className="text-xs leading-5 text-slate-500 sm:text-sm">
-              현장 파견 수업이 필요하면{' '}
-              <Link href="/spokedu/dispatch" data-track="cta-dispatch" data-track-label="curriculum-to-dispatch" className={linkMuted}>
-                기관수업 안내
+            <div className="space-y-3">
+              <Link
+                href={curriculumPage.heroCtas.primary.href}
+                data-track="cta-contact"
+                data-track-label={curriculumPage.heroCtas.primary.trackLabel}
+                className={`${btnPrimary} !w-full sm:!w-auto`}
+              >
+                {curriculumPage.heroCtas.primary.label}
               </Link>
-              를 확인해 주세요.
-            </p>
+              <Link
+                href={curriculumPage.heroCtas.secondary.href}
+                data-track="cta-contact"
+                data-track-label={curriculumPage.heroCtas.secondary.trackLabel}
+                className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-teal-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 sm:w-auto ${fineHover}hover:border-teal-400 ${fineHover}hover:bg-teal-50 ${focusRing}`}
+              >
+                {curriculumPage.heroCtas.secondary.label}
+              </Link>
+            </div>
           </div>
-          <div className="hidden lg:block">
-            <motion.div
-              animate={reducedMotion ? {} : { y: [-4, 4, -4] }}
-              transition={reducedMotion ? {} : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <SpokeduHeroVisual image={SPOKEDU_IMAGES.curriculum.lessonPlan} />
-            </motion.div>
+          <div className={landingHeroVisual}>
+            <MotionPoster media={heroMedia} variant="cinematic" />
           </div>
         </div>
-      </Section>
+      </section>
 
-      <Section className="space-y-4" delay={0.05}>
-        <h2 className="text-xl font-bold leading-snug text-slate-950 sm:text-3xl">도입 가능한 콘텐츠 상품</h2>
-        <p className="text-sm text-slate-600">수업안부터 라이선싱까지, 현장에서 바로 쓰는 자료 단위로 구성합니다.</p>
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-5">
-          {productCards.map((item, index) => {
-            const variants: LandingCardVariant[] = ['gradient', 'image', 'glass', 'dark', 'gradient'];
-            return (
+      <Section className="space-y-6 sm:space-y-8">
+        <h2 className={landingSectionTitle}>{curriculumPage.contentProducts.title}</h2>
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 scroll-smooth [scrollbar-width:thin] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-5">
+          {curriculumPage.contentProducts.items.map((item) => (
             <article
               key={item.title}
-              className={`flex flex-col rounded-2xl p-4 sm:p-5 ${landingCardShell(variants[index] ?? 'image')} ${cardInteractive}`}
+              className="w-[min(72vw,240px)] shrink-0 snap-start overflow-hidden rounded-[1.25rem] border border-slate-200/80 bg-slate-950 shadow-md sm:w-auto"
             >
-              <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{item.description}</p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {item.deliverables.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700"
-                  >
-                    {tag}
-                  </span>
-                ))}
+              <MediaPanel media={HOME_MEDIA[item.mediaKey]} className="aspect-[4/3] rounded-none border-0" />
+              <div className="border-t border-white/10 p-3 sm:p-4">
+                <h3 className="text-sm font-semibold text-white sm:text-base">{item.title}</h3>
+                <p className="mt-1 text-xs text-teal-200/90">{item.tag}</p>
               </div>
             </article>
-          );
-          })}
-        </div>
-      </Section>
-
-      <Section className="space-y-3" delay={0.07}>
-        <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">콘텐츠·교육 자료</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-          {[SPOKEDU_IMAGES.curriculum.lessonPlan, SPOKEDU_IMAGES.curriculum.toolSetup, SPOKEDU_IMAGES.curriculum.instructorTraining].map(
-            (asset) => (
-              <div key={asset.id} className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-                <SpokeduImage asset={asset} alt={asset.alt} fill />
-              </div>
-            ),
-          )}
-        </div>
-      </Section>
-
-      <Section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8" delay={0.08}>
-        <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">제공 형태</h2>
-        <p className="mt-1 text-sm text-slate-600">구매·제휴 범위에 따라 조합해 전달합니다.</p>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {deliveryPanels.map((item) => (
-            <div key={item} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-              {item}
-            </div>
           ))}
         </div>
       </Section>
 
-      <Section className="space-y-4" delay={0.1}>
-        <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">도입 흐름</h2>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {rolloutFlow.map((step, index) => (
-            <div key={step} className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-600">Step {index + 1}</p>
-              <p className="mt-1.5 text-sm font-medium leading-6 text-slate-700">{step}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      <Section className="space-y-4" delay={0.12}>
-        <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">적용 대상</h2>
-        <div className="grid gap-3 md:grid-cols-3">
-          {partnerTargets.map((item, index) => (
-            <article
-              key={item.title}
-              className={`rounded-2xl p-5 ${landingCardShell((['image', 'gradient', 'glass'] as const)[index] ?? 'image')}`}
-            >
-              <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+      <Section className="space-y-6 sm:space-y-8">
+        <h2 className={landingSectionTitle}>{curriculumPage.packages.title}</h2>
+        <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+          {curriculumPage.packages.items.map((item, index) => (
+            <article key={item.title} className={packageShell[index] ?? packageShell[0]}>
+              <p
+                className={`text-xs font-semibold uppercase tracking-[0.12em] ${index === 1 ? 'text-sky-300' : 'text-indigo-600'}`}
+              >
+                {index === 1 ? '추천 패키지' : '패키지'}
+              </p>
+              <h3 className={`mt-1 text-lg font-semibold ${index === 1 ? 'text-white' : 'text-slate-900'}`}>
+                {item.title}
+              </h3>
+              <p className={`mt-2 text-sm ${index === 1 ? 'text-slate-300' : 'text-slate-600'}`}>{item.description}</p>
             </article>
           ))}
         </div>
       </Section>
 
-      <Section className="rounded-2xl border border-slate-900 bg-slate-950 px-4 py-6 text-white sm:rounded-3xl sm:px-8 sm:py-10" delay={0.15}>
-        <h2 className="text-xl font-bold sm:text-3xl">운영 가능한 콘텐츠 체계를 지금 도입하세요</h2>
-        <p className="mt-2 text-sm text-slate-400">필요한 상품 범위와 활용 목적을 알려주시면 맞춤 제안을 드립니다.</p>
-        <div className="mt-4 sm:mt-5">
-          <HeroCtaStack
-            variant="dark"
-            primary={{ href: CTA_CURRICULUM, label: '커리큘럼 문의', trackLabel: 'curriculum-final-inquiry' }}
-            secondary={[{ href: CTA_PARTNERSHIP, label: '콘텐츠 제휴 문의', trackLabel: 'curriculum-final-partnership' }]}
-          />
+      <Section className="overflow-hidden rounded-[1.75rem] border border-indigo-200/60 bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 px-5 py-8 text-white sm:rounded-[2rem] sm:px-8 sm:py-10">
+        <h2 className={landingSectionTitle}>{curriculumPage.productionFlow.title}</h2>
+        <ol className="mt-5 flex gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:thin] sm:grid sm:grid-cols-6 sm:gap-3 sm:overflow-visible">
+          {curriculumPage.productionFlow.steps.map((step, index) => (
+            <li
+              key={step}
+              className="flex min-w-[6.5rem] shrink-0 flex-col rounded-xl border border-white/15 bg-white/10 px-3 py-3 backdrop-blur-sm sm:min-w-0"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-teal-300">
+                {index + 1}
+              </span>
+              <span className="mt-1 text-sm font-semibold">{step}</span>
+            </li>
+          ))}
+        </ol>
+      </Section>
+
+      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-12 text-white sm:rounded-[2rem] sm:px-10 sm:py-16">
+        <div className="pointer-events-none absolute inset-0 opacity-75" aria-hidden>
+          <MediaRenderer media={ctaMedia} intensity="soft" animateZoom className="h-full w-full" />
+        </div>
+        <div className="pointer-events-none absolute inset-0 bg-slate-950/80" aria-hidden />
+        <div className="relative mx-auto max-w-xl text-center">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{curriculumPage.finalCta.title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:text-base">{curriculumPage.finalCta.description}</p>
+          <div className="mt-8 grid gap-2.5 sm:grid-cols-2 sm:gap-3">
+            <Link
+              href={curriculumPage.finalCta.primary.href}
+              data-track={inferTrackFromHref(curriculumPage.finalCta.primary.href)}
+              data-track-label={curriculumPage.finalCta.primary.trackLabel}
+              className={`${btnSecondaryOnDark} !w-full`}
+            >
+              {curriculumPage.finalCta.primary.label}
+            </Link>
+            <Link
+              href={curriculumPage.finalCta.secondary.href}
+              data-track={inferTrackFromHref(curriculumPage.finalCta.secondary.href)}
+              data-track-label={curriculumPage.finalCta.secondary.trackLabel}
+              className={`${btnSecondaryOnDark} !w-full border-slate-500`}
+            >
+              {curriculumPage.finalCta.secondary.label}
+            </Link>
+          </div>
         </div>
       </Section>
     </div>

@@ -11,7 +11,16 @@ import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { programDetailBlocks } from '../data/program-details';
 import { getProgramBySlug, type ProgramSlug } from '../data/programs';
-import { fineHover, landingH1, landingHeroShell, landingPageStack, linkMuted } from '../lib/ui-classes';
+import {
+  fineHover,
+  landingH1,
+  landingHeroCopy,
+  landingHeroGrid,
+  landingHeroVisual,
+  landingPageStack,
+  landingSectionTitle,
+  linkMuted,
+} from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
@@ -38,18 +47,12 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
 
   return (
     <div className={landingPageStack}>
-      <LandingSection
-        className={`${landingHeroShell} overflow-hidden border-slate-200 bg-gradient-to-b from-white via-indigo-50/25 to-white`}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_48%),radial-gradient(circle_at_bottom_right,rgba(132,204,22,0.1),transparent_42%)]" />
-        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-start">
-          <div className="space-y-4">
+      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className={landingHeroGrid}>
+          <div className={landingHeroCopy}>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">{program.category}</p>
             <h1 className={`${landingH1} text-slate-950`}>{program.title}</h1>
-            <p className="max-w-xl text-sm leading-6 text-slate-700 sm:text-base">{detail.heroSubtitle}</p>
-            <div className="lg:hidden">
-              <MotionPoster media={heroMedia} variant="compact" />
-            </div>
+            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">{detail.heroSubtitle}</p>
             <HeroCtaStack
               primary={{
                 href: detail.primaryCta.href,
@@ -67,14 +70,14 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
               ]}
             />
           </div>
-          <div className="hidden lg:block">
-            <MotionPoster media={heroMedia} variant="hero" />
+          <div className={landingHeroVisual}>
+            <MotionPoster media={heroMedia} variant="cinematic" />
           </div>
         </div>
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.05}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">이 프로그램이 필요한 이유</h2>
+        <h2 className={landingSectionTitle}>이 프로그램이 필요한 이유</h2>
         <ul className="grid gap-2.5 sm:grid-cols-3">
           {detail.whyPoints.map((point, index) => (
             <li
@@ -88,7 +91,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.08}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">핵심 활동 구성</h2>
+        <h2 className={landingSectionTitle}>핵심 활동 구성</h2>
         <ul className="grid gap-2.5 sm:grid-cols-3">
           {detail.activities.map((item, index) => {
             const variant = activityVariants[index] ?? 'image';
@@ -123,7 +126,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
       </LandingSection>
 
       <LandingSection className={`rounded-2xl p-4 sm:p-5 ${landingCardShell('gradient')}`} delay={0.1}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">적용 대상</h2>
+        <h2 className={landingSectionTitle}>적용 대상</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {detail.targets.map((target) => (
             <span
@@ -140,7 +143,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
       {relatedCases.length > 0 ? (
         <LandingSection className="space-y-3" delay={0.12}>
           <div className="flex items-end justify-between gap-2">
-            <h2 className="text-lg font-bold text-slate-950 sm:text-xl">실제 운영 예시</h2>
+            <h2 className={landingSectionTitle}>실제 운영 예시</h2>
             <Link
               href="/spokedu/records"
               data-track={inferTrackFromHref('/spokedu/records')}

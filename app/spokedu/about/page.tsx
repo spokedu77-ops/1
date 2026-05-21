@@ -1,11 +1,7 @@
 import { AboutLanding } from '../components/about-landing';
-import { buildSpokeduPageMetadata, seoMetaAboutPage } from '../data/seo';
+import { buildSpokeduMetadata } from '../data/seo';
 
-export const metadata = buildSpokeduPageMetadata({
-  ...seoMetaAboutPage,
-  canonical: '/spokedu/about',
-  keywords: ['아동 체육교육', 'SPOKEDU', '체육 커리큘럼', 'SPOMOVE'],
-});
+export const metadata = buildSpokeduMetadata('about');
 
 export default function SpokeduAboutPage() {
   return <AboutLanding />;

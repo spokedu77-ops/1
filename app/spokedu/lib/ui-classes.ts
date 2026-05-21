@@ -19,7 +19,21 @@ export const cardInteractive =
 export const linkMuted =
   'font-semibold text-slate-800 underline-offset-2 hover:underline active:text-indigo-700';
 
-export const landingPageStack = 'space-y-8 pb-2 sm:space-y-14 sm:pb-4';
+/** Home · About · 랜딩 계열 공통 세로 리듬 */
+export const landingTrackStack =
+  'mx-auto flex w-full max-w-6xl flex-col gap-16 pb-4 sm:gap-24 sm:pb-6 lg:gap-28';
+
+export const landingPageStack = landingTrackStack;
+
+export const landingSectionTitle = 'text-xl font-bold tracking-tight text-slate-950 sm:text-2xl';
+
+export const landingHeroGrid =
+  'flex flex-col gap-6 sm:gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12';
+
+/** 모바일: 카피·CTA 먼저, 이미지 다음 */
+export const landingHeroCopy = 'order-1 space-y-5 sm:space-y-6 lg:space-y-8';
+
+export const landingHeroVisual = 'order-2 lg:order-2';
 
 export const landingHeroShell =
   'relative overflow-hidden rounded-[1.75rem] border px-4 pb-5 pt-6 shadow-sm sm:rounded-[2rem] sm:px-10 sm:pb-10 sm:pt-12';

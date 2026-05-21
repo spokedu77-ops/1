@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
   FileText,
   MonitorPlay,
   Pause,
@@ -19,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useMasterStore } from '../../store';
+import type { Program } from '../../types';
 
 const STEP_PRESETS = [
   { label: '1분', secs: 60 },
@@ -26,9 +26,40 @@ const STEP_PRESETS = [
   { label: '5분', secs: 300 },
 ] as const;
 
+const BROKEN_TEXT_PATTERN = /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥|獄|筌|揶|癰|疫|椰|\?/;
+
+const PROGRAM_FALLBACK: Record<string, Partial<Program>> = {
+  'funstick-fencing': {
+    title: '펀스틱 펜싱 Funstick Fencing',
+    category: '민첩·반응',
+    grade: '초등 3학년 이상',
+    space: '실내 체육관',
+  },
+  'figure-8-agility': {
+    title: '8자 드릴 민첩성 트레이닝',
+    category: '민첩·반응',
+    grade: '초등 3~6학년',
+    space: '좁은 실내 공간',
+  },
+  'team-relay-challenge': {
+    title: '팀 릴레이 챌린지',
+    category: '협동',
+    grade: '전 학년',
+    space: '넓은 공간',
+  },
+};
+
+const DRILL_FALLBACK: Record<string, string> = {
+  'SR-05': '스피드 리액션',
+  'SR-06': '방향 전환 챌린지',
+  'RS-05': '팀 콜 사인',
+  'IC-05': '스텝 밸런스',
+  'RC-05': '리듬 체인지',
+};
+
 function hasBrokenText(value: string | undefined) {
   if (!value) return false;
-  return value.includes(String.fromCharCode(0xfffd)) || /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥/.test(value);
+  return value.includes(String.fromCharCode(0xfffd)) || BROKEN_TEXT_PATTERN.test(value);
 }
 
 function cleanText(value: string | undefined, fallback: string) {
@@ -37,9 +68,21 @@ function cleanText(value: string | undefined, fallback: string) {
   return text;
 }
 
+function cleanProgramText(program: Program, key: 'title' | 'category' | 'grade' | 'space', fallback: string) {
+  const value = program[key];
+  if (!value || hasBrokenText(value)) return (PROGRAM_FALLBACK[program.id]?.[key] as string | undefined) ?? fallback;
+  return value;
+}
+
 function cleanList(items: string[] | undefined, fallback: string[]) {
   const cleaned = (items ?? []).map((item) => item.trim()).filter((item) => item && !hasBrokenText(item));
   return cleaned.length > 0 ? cleaned : fallback;
+}
+
+function cleanDrillName(id: string | undefined, name: string | undefined) {
+  if (!id && !name) return 'SPOMOVE 실행';
+  if (!name || hasBrokenText(name)) return (id ? DRILL_FALLBACK[id] : undefined) ?? 'SPOMOVE 실행';
+  return name;
 }
 
 function getSpomoveUseLabel(text: string) {
@@ -144,13 +187,13 @@ export default function ClassModeView({ programId }: { programId: string }) {
 
   const lesson = useMemo(() => {
     if (!program) return null;
-    const title = cleanText(program.title, 'SPOKEDU 수업');
-    const category = cleanText(program.category, '체육 수업');
+    const title = cleanProgramText(program, 'title', 'SPOKEDU 수업');
+    const category = cleanProgramText(program, 'category', '체육 수업');
     const focus = cleanText(program.lessonDetail?.developmentFocus, category);
     const steps = cleanList(program.lessonDetail?.rules?.length ? program.lessonDetail.rules : program.steps, [
-      '공간과 준비물을 확인합니다.',
+      '공간과 준비물을 확인하고 학생들이 움직일 범위를 정합니다.',
       '규칙을 짧게 설명하고 시범을 보여줍니다.',
-      '기본 라운드로 시작한 뒤 난이도를 단계적으로 올립니다.',
+      '기본 라운드 후 학생 반응에 맞춰 난이도를 조절합니다.',
     ]);
     const coachScript = cleanText(program.lessonDetail?.coachScript, '');
     const fieldTips = cleanList(program.lessonDetail?.fieldTips, []);
@@ -166,12 +209,12 @@ export default function ClassModeView({ programId }: { programId: string }) {
       title,
       category,
       focus,
-      grade: cleanText(program.grade, '전학년'),
+      grade: cleanProgramText(program, 'grade', '전 학년'),
       duration: program.duration,
-      space: cleanText(program.space, '실내 또는 체육 공간'),
+      space: cleanProgramText(program, 'space', '실내 또는 체육 공간'),
       cards: cards.length > 0 ? cards : [{ type: 'step' as const, label: '1단계', text: '수업을 시작합니다.' }],
       spomoveId,
-      spomoveName: cleanText(spomoveDrill?.name, 'SPOMOVE 실행'),
+      spomoveName: cleanDrillName(spomoveDrill?.id, spomoveDrill?.name),
       spomoveUse: getSpomoveUseLabel(`${title} ${category} ${focus} ${program.tags.join(' ')}`),
     };
   }, [drills, program]);
@@ -239,25 +282,21 @@ export default function ClassModeView({ programId }: { programId: string }) {
           <h1 className="mt-6 text-4xl font-black">수업 완료</h1>
           <p className="mt-2 text-sm font-semibold text-white/45">{lesson.title}</p>
 
-          <div className="mt-8 grid w-full max-w-[420px] grid-cols-2 gap-3">
+          <div className="mt-8 w-full max-w-[260px]">
             <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4">
               <p className="font-mono text-2xl font-black tabular-nums">{formatElapsed(displayMs)}</p>
               <p className="mt-1 text-xs font-bold text-white/35">소요 시간</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4">
-              <p className="text-2xl font-black">{lesson.cards.length}</p>
-              <p className="mt-1 text-xs font-bold text-white/35">진행 카드</p>
-            </div>
           </div>
 
           <div className="mt-8 flex w-full max-w-[460px] flex-col gap-3">
-            <Link href={`/spokedu-master/class-record?program=${program.id}`} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-black text-white">
-              <ClipboardList className="h-4 w-4" />
-              수업 기록 남기기
-            </Link>
-            <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-white/[0.08] text-sm font-black text-white/75">
+            <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-white text-sm font-black text-slate-950">
               <FileText className="h-4 w-4" />
               설명 문구 만들기
+            </Link>
+            <Link href={lesson.spomoveId ? `/spokedu-master/spomove/session?drill=${lesson.spomoveId}&mode=projector&program=${program.id}` : '/spokedu-master/spomove'} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-black text-white">
+              <MonitorPlay className="h-4 w-4" />
+              SPOMOVE 다시 실행
             </Link>
             <button type="button" onClick={() => router.back()} className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.055] text-sm font-black text-white/55">
               나가기
@@ -266,23 +305,22 @@ export default function ClassModeView({ programId }: { programId: string }) {
         </section>
       ) : (
         <>
-          <section className="mx-auto grid w-full max-w-5xl shrink-0 gap-3 px-4 pb-4 sm:grid-cols-[1fr_auto] sm:px-6">
-            <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35">Class Package</p>
-              <p className="mt-1 line-clamp-1 text-sm font-black text-white/85">{lesson.grade} · {lesson.duration}분 · {lesson.space}</p>
-              <p className="mt-1 line-clamp-1 text-xs font-semibold text-white/38">{lesson.focus}</p>
-            </div>
+          <section className="mx-auto flex w-full max-w-5xl shrink-0 flex-wrap items-center justify-center gap-2 px-4 pb-4 sm:px-6">
+            <span className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-2 text-xs font-black text-white/55">
+              {lesson.grade}
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-2 text-xs font-black text-white/55">
+              {lesson.duration}분
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-2 text-xs font-black text-white/55">
+              {lesson.space}
+            </span>
             <Link
               href={lesson.spomoveId ? `/spokedu-master/spomove/session?drill=${lesson.spomoveId}&mode=class&program=${program.id}` : '/spokedu-master/spomove'}
-              className="flex min-h-[76px] items-center gap-3 rounded-3xl border border-indigo-300/25 bg-indigo-400/12 px-4 py-3"
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-indigo-300/25 bg-indigo-400/12 px-3 py-2"
             >
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-indigo-400/14">
-                <MonitorPlay className="h-5 w-5 text-indigo-200" />
-              </span>
-              <span className="min-w-0">
-                <strong className="block truncate text-sm font-black text-indigo-100">{lesson.spomoveName}</strong>
-                <span className="mt-1 block truncate text-xs font-bold text-indigo-100/48">{lesson.spomoveUse}</span>
-              </span>
+              <MonitorPlay className="h-4 w-4 text-indigo-200" />
+              <span className="max-w-[220px] truncate text-xs font-black text-indigo-100">{lesson.spomoveName}</span>
             </Link>
           </section>
 

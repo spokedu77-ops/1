@@ -11,7 +11,16 @@ import { ProofSummaryWall } from './visual/proof-summary-wall';
 import { cases, recordsFeaturedCaseSlugs } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { recordsPage } from '../data/records-page';
-import { cardInteractive, fineHover, landingH1, landingHeroShell, landingPageStack } from '../lib/ui-classes';
+import {
+  cardInteractive,
+  fineHover,
+  landingH1,
+  landingHeroCopy,
+  landingHeroGrid,
+  landingHeroVisual,
+  landingPageStack,
+  landingSectionTitle,
+} from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
@@ -30,32 +39,28 @@ export function RecordsLanding() {
 
   return (
     <div className={landingPageStack}>
-      <LandingSection
-        className={`${landingHeroShell} overflow-hidden border-slate-200 bg-gradient-to-b from-white via-sky-50/30 to-white`}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_48%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.1),transparent_42%)]" />
-        <div className="relative grid gap-5 lg:grid-cols-[1fr_1.05fr] lg:items-center">
-          <div className="space-y-3 sm:space-y-4">
+      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className={landingHeroGrid}>
+          <div className={landingHeroCopy}>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">현장기록</p>
             <h1 className={`whitespace-pre-line ${landingH1} text-slate-950`}>{recordsPage.hero.title}</h1>
-            <p className="max-w-2xl text-sm leading-6 text-slate-700 sm:text-base">{recordsPage.hero.subtitle}</p>
-            <div className="lg:hidden">
-              <MotionPoster media={heroMedia} variant="compact" />
-            </div>
+            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
+              {recordsPage.hero.subtitle}
+            </p>
           </div>
-          <div className="hidden lg:block">
-            <MotionPoster media={heroMedia} variant="hero" />
+          <div className={landingHeroVisual}>
+            <MotionPoster media={heroMedia} variant="cinematic" />
           </div>
         </div>
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.05}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">운영 증거 한눈에</h2>
+        <h2 className={landingSectionTitle}>운영 증거 한눈에</h2>
         <ProofSummaryWall items={recordsPage.proofSummary} />
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.08}>
-        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">기록 허브</h2>
+        <h2 className={landingSectionTitle}>기록 허브</h2>
         <div className="grid gap-2.5 sm:grid-cols-3 sm:gap-3">
           {recordsPage.hubCards.map((card) => (
             <Link
@@ -63,7 +68,7 @@ export function RecordsLanding() {
               href={card.href}
               data-track={inferTrackFromHref(card.href)}
               data-track-label={card.trackLabel}
-              className={`group flex min-h-[200px] flex-col overflow-hidden rounded-2xl ${landingCardShell(card.cardVariant ?? 'image')} ${cardInteractive} ${focusRing}`}
+              className={`group flex flex-col overflow-hidden rounded-2xl ${landingCardShell(card.cardVariant ?? 'image')} ${cardInteractive} ${focusRing}`}
             >
               <MediaPanel
                 media={HOME_MEDIA[card.mediaKey]}
@@ -85,7 +90,7 @@ export function RecordsLanding() {
 
       <LandingSection className="space-y-3" delay={0.1}>
         <div className="flex items-end justify-between gap-2">
-          <h2 className="text-lg font-bold text-slate-950 sm:text-xl">대표 운영 사례</h2>
+          <h2 className={landingSectionTitle}>대표 운영 사례</h2>
           <Link
             href="/spokedu/cases"
             data-track={inferTrackFromHref('/spokedu/cases')}

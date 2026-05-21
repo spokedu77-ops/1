@@ -12,6 +12,18 @@ export type HomeVisitorGateCard = {
 export type HomeFieldRecordCard = {
   proofId: 'proof-lab' | 'proof-spomove' | 'proof-oneday' | 'proof-camp';
   tagline: string;
+  href: string;
+  trackLabel: string;
+};
+
+export type HomeProgramSystemItem = {
+  id: string;
+  name: string;
+  description: string;
+  mediaKey: HomeMediaKey;
+  href: string;
+  trackLabel: string;
+  featured?: boolean;
 };
 
 export const homePage = {
@@ -69,21 +81,86 @@ export const homePage = {
   },
   fieldRecords: {
     title: '현장에서 검증된 수업을 기록합니다',
-    subtitle:
-      '스포키듀는 LAB에서 준비하고, 기관과 현장에서 수업하며, 그 경험을 월간 기록과 커리큘럼으로 정리합니다.',
     recordsHref: `${SPOKEDU_BASE_PATH}/records`,
     recordsTrackLabel: 'cta-home-field-records',
     cards: [
-      { proofId: 'proof-lab', tagline: '프로그램 개발과 강사 교육' },
-      { proofId: 'proof-spomove', tagline: '보고, 선택하고, 반응하는 에듀테크 체육' },
-      { proofId: 'proof-oneday', tagline: '협동 미션과 움직임 놀이 중심 수업' },
-      { proofId: 'proof-camp', tagline: '체육과 예체능을 결합한 초등 방학캠프' },
+      {
+        proofId: 'proof-lab',
+        tagline: 'LAB',
+        href: `${SPOKEDU_BASE_PATH}/records`,
+        trackLabel: 'cta-home-proof-lab',
+      },
+      {
+        proofId: 'proof-spomove',
+        tagline: 'SPOMOVE',
+        href: `${SPOKEDU_BASE_PATH}/cases/yangcheon-spomove`,
+        trackLabel: 'cta-home-proof-spomove',
+      },
+      {
+        proofId: 'proof-oneday',
+        tagline: '원데이',
+        href: `${SPOKEDU_BASE_PATH}/cases/dasarang-oneday`,
+        trackLabel: 'cta-home-proof-oneday',
+      },
+      {
+        proofId: 'proof-camp',
+        tagline: '방학캠프',
+        href: `${SPOKEDU_BASE_PATH}/cases/playz-camp`,
+        trackLabel: 'cta-home-proof-camp',
+      },
     ] satisfies HomeFieldRecordCard[],
   },
-  programMini: {
-    text: 'SPOMOVE · PAPS · 원데이 · 캠프 · 커리큘럼 콘텐츠',
-    href: `${SPOKEDU_BASE_PATH}/programs`,
-    trackLabel: 'cta-home-programs-mini',
+  programSystem: {
+    title: '수업은 프로그램이 되고,\n프로그램은 커리큘럼이 됩니다',
+    subtitle: '스포키듀는 현장에서 검증한 수업을 프로그램·콘텐츠 자산으로 확장합니다.',
+    cta: {
+      label: '프로그램 전체 보기',
+      href: `${SPOKEDU_BASE_PATH}/programs`,
+      trackLabel: 'cta-home-programs-system',
+    },
+    items: [
+      {
+        id: 'spomove',
+        featured: true,
+        name: 'SPOMOVE',
+        description: '보고 판단하고 반응하는 에듀테크 체육',
+        mediaKey: 'programSpomove',
+        href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+        trackLabel: 'cta-home-system-spomove',
+      },
+      {
+        id: 'paps',
+        name: 'PAPS',
+        description: '초등 기초체력을 놀이로 경험하는 수업',
+        mediaKey: 'programPaps',
+        href: `${SPOKEDU_BASE_PATH}/programs/paps`,
+        trackLabel: 'cta-home-system-paps',
+      },
+      {
+        id: 'oneday',
+        name: '원데이',
+        description: '기관 행사와 특별활동에 맞춘 체육 프로그램',
+        mediaKey: 'programOneday',
+        href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
+        trackLabel: 'cta-home-system-oneday',
+      },
+      {
+        id: 'camp',
+        name: '방학캠프',
+        description: '체육과 예체능을 결합한 초등 캠프',
+        mediaKey: 'programCamp',
+        href: `${SPOKEDU_BASE_PATH}/programs/camp`,
+        trackLabel: 'cta-home-system-camp',
+      },
+      {
+        id: 'curriculum',
+        name: '커리큘럼 콘텐츠',
+        description: '수업안, 매뉴얼, 강사교육 콘텐츠',
+        mediaKey: 'programCurriculum',
+        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        trackLabel: 'cta-home-system-curriculum',
+      },
+    ] satisfies HomeProgramSystemItem[],
   },
   finalCta: {
     title: '스포키듀와 함께할 방향을 선택하세요',

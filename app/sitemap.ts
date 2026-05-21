@@ -1,9 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { cases } from './spokedu/data/cases';
 import { monthlyRecords } from './spokedu/data/monthly';
+import { getSpokeduSiteUrl } from './spokedu/lib/site-url';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
+  const base = getSpokeduSiteUrl();
   const now = new Date();
   const spokeduRoutes = [
     '/spokedu',
