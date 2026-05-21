@@ -4,7 +4,7 @@ import { SPOKEDU_BASE_PATH } from './site';
 export const privatePage = {
   hero: {
     lines: ['운동을 싫어하는 아이도', '자기 속도로 움직임을', '시작할 수 있습니다'] as const,
-    subtitle: '1:1·소그룹 맞춤 상담 후, 아이 연령과 경험에 맞는 수업을 제안합니다.',
+    subtitle: '1:1·소그룹 맞춤 상담 후, 연령과 경험에 맞는 수업을 제안합니다.',
     mediaKey: 'trackPrivate' as HomeMediaKey,
   },
   heroCtas: {
@@ -24,7 +24,7 @@ export const privatePage = {
     items: [
       { title: '운동이 낯선 아이', description: '참여 부담을 줄이고, 작은 성공을 반복합니다.' },
       { title: '자기 페이스가 필요한 아이', description: '1:1·소그룹으로 속도와 난이도를 맞춥니다.' },
-      { title: '생활으로 이어지는 변화', description: '학교·일상 활동에도 쓰는 움직임을 돕습니다.' },
+      { title: '생활으로 이어지는 변화', description: '학교·일상에도 이어지는 변화를 돕습니다.' },
     ],
   },
   classFormat: {
@@ -53,8 +53,8 @@ export const privatePage = {
     steps: ['연령·성향', '운동 경험', '수업 형태 제안', '장소·시간', '수업 시작'] as const,
   },
   finalCta: {
-    title: '아이에게 맞는 수업, 지금 상담하세요',
-    description: '1:1·소그룹 중 선택해 문의해 주세요.',
+    title: '맞춤 수업 상담',
+    description: '1:1·소그룹 중 선택해 주세요.',
     mediaKey: 'trackPrivate' as HomeMediaKey,
     primary: {
       label: '1:1 수업 문의',

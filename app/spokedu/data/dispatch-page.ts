@@ -3,8 +3,8 @@ import { SPOKEDU_BASE_PATH } from './site';
 
 export const dispatchPage = {
   hero: {
-    lines: ['기관의 공간과 인원에 맞춰', '체육교육 프로그램을', '제안합니다'] as const,
-    subtitle: '정규·원데이·캠프·SPOMOVE·PAPS를 운영 조건에 맞게 조합합니다.',
+    lines: ['기관 조건에 맞춰', '수업·행사·캠프를', '설계합니다'] as const,
+    subtitle: 'SPOMOVE·PAPS·정규·원데이·캠프를 조합 제안합니다.',
     mediaKey: 'trackDispatch' as HomeMediaKey,
   },
   heroCtas: {
@@ -39,7 +39,7 @@ export const dispatchPage = {
     ],
   },
   examples: {
-    title: '실제 운영 사례',
+    title: '현장 사례',
     href: `${SPOKEDU_BASE_PATH}/cases`,
     trackLabel: 'dispatch-cases',
     items: [
@@ -50,8 +50,8 @@ export const dispatchPage = {
     institutions: ['키움센터', '지역아동센터', '학교·방과후', '키즈 복합'] as const,
   },
   finalCta: {
-    title: '기관 운영에 맞는 제안서를 받아보세요',
-    description: '대상·공간·인원·일정을 알려주시면 맞춤 제안을 준비합니다.',
+    title: '기관 맞춤 제안',
+    description: '공간·인원·일정을 알려주세요.',
     mediaKey: 'trackDispatch' as HomeMediaKey,
     primary: {
       label: '기관 수업 제안 요청',

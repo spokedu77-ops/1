@@ -9,7 +9,7 @@ export function StatusBar() {
   const unreadCount = useUnreadCount();
 
   return (
-    <div className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b px-[22px] sm:px-8 lg:px-10" style={{ background: 'rgba(7,7,12,0.9)', backdropFilter: 'blur(22px)', borderColor: 'var(--spm-br)' }}>
+    <div className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b px-[22px] sm:px-8 lg:px-10" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(22px)', borderColor: 'var(--spm-br2)' }}>
       <div className="flex items-baseline gap-2">
         <span className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
         <span className="text-[15px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>

@@ -209,7 +209,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   if (!program) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center bg-[#070812] px-6 text-center">
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-[var(--spm-bg)] px-6 text-center">
         <BookOpenFallback />
         <h1 className="mt-5 text-xl font-black text-white">수업안을 찾을 수 없습니다.</h1>
         <p className="mt-2 text-sm text-slate-400">라이브러리에서 다른 프로그램을 선택해 주세요.</p>
@@ -265,8 +265,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
   };
 
   return (
-    <main className="min-h-dvh bg-[#070812] pb-24 text-white lg:pb-12">
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/8 bg-[#070812]/86 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
+    <main className="min-h-dvh bg-[var(--spm-bg)] pb-24 text-white lg:pb-12">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/8 bg-[var(--spm-bg)]/86 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
         <Link href="/spokedu-master/library" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.055]" aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -303,7 +303,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/32 via-slate-950 to-emerald-400/20" />
           )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070812] via-[#070812]/42 to-black/10" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070d17] via-[#070d17]/42 to-black/10" />
           {!heroImage && !videoEmbedUrl && !directVideoUrl ? (
             <span className="pointer-events-none absolute left-1/2 top-1/2 opacity-[0.08]" style={{ transform: 'translate(-50%, -50%) rotate(-8deg)' }} aria-hidden>
               <CategoryIcon category={category} size={360} color="#fff" strokeWidth={0.45} />

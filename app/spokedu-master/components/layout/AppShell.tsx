@@ -37,7 +37,7 @@ function FloatingTimerPill() {
     <div className="flex shrink-0 justify-center px-4 pb-2">
       <div
         className="flex items-center gap-3 rounded-full px-4 py-2.5"
-        style={{ background: 'rgba(12,12,18,0.96)', border: '1px solid var(--spm-br2)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
+        style={{ background: 'rgba(255,255,255,0.96)', border: '1px solid var(--spm-br2)', boxShadow: '0 4px 20px rgba(15,23,42,0.1)' }}
       >
         <span className="h-2 w-2 rounded-full" style={{ background: running ? 'var(--spm-grn)' : 'var(--spm-amb)' }} />
         <button type="button" onClick={() => router.push('/spokedu-master/class-tools')} className="font-mono text-[15px] font-black tabular-nums" style={{ color: 'var(--spm-t)' }}>
@@ -149,7 +149,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }
 
   return (
-    <div className="min-h-dvh" style={{ background: 'linear-gradient(135deg, #07070c 0%, #101426 55%, #07070c 100%)', color: 'var(--spm-t)' }}>
+    <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-white/5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
         {hideChrome ? null : <DesktopRail basePath={basePath} />}
         <div className="flex min-w-0 flex-1 flex-col">

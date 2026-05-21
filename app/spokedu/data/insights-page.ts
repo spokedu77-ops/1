@@ -11,8 +11,8 @@ export type InsightsCategoryCard = {
 
 export const insightsPage = {
   hero: {
-    title: '움직임 교육을\n콘텐츠로 쌓습니다',
-    subtitle: '학부모·기관·강사 관점의 짧은 움직임 교육 기록입니다.',
+    title: '교육 인사이트',
+    subtitle: '학부모·기관·강사 관점의 짧은 기록.',
   },
   heroMediaKey: 'programCurriculum' as HomeMediaKey,
   categoryCards: [
@@ -48,7 +48,7 @@ export const insightsPage = {
     },
     {
       category: '수업 사례',
-      description: '현장 검증 기록',
+      description: '운영·설계 기록',
       mediaKey: 'proofClass',
       cardVariant: 'glass',
     },
@@ -72,11 +72,11 @@ export const insightsPage = {
   ],
   cta: {
     primary: {
-      label: '수업 문의하기',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
+      label: '문의 유형 선택',
+      href: `${SPOKEDU_BASE_PATH}/contact`,
       trackLabel: 'insights-cta-contact',
     },
-    secondary: { label: '현장기록 보기', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'insights-cta-records' },
+    secondary: { label: '현장 기록', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'insights-cta-records' },
   },
   ctaMediaKey: 'homeHero' as HomeMediaKey,
 } as const;

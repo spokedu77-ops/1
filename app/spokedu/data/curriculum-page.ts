@@ -3,8 +3,8 @@ import { SPOKEDU_BASE_PATH } from './site';
 
 export const curriculumPage = {
   hero: {
-    lines: ['선생님들의 선생님,', '체육수업을 커리큘럼과', '콘텐츠로 만듭니다'] as const,
-    subtitle: '수업안·매뉴얼·교구 콘텐츠·강사교육·라이선싱을 패키지로 제공합니다.',
+    lines: ['현장 수업을', '수업안·콘텐츠로', '패키징합니다'] as const,
+    subtitle: '수업안·매뉴얼·교구·강사 교육·라이선싱 패키지.',
     mediaKey: 'trackCurriculum' as HomeMediaKey,
   },
   heroCtas: {
@@ -20,7 +20,7 @@ export const curriculumPage = {
     },
   },
   contentProducts: {
-    title: '제공 가능한 콘텐츠',
+    title: '콘텐츠 라인업',
     items: [
       { title: '수업안', tag: 'PDF·주차 시안', mediaKey: 'trackCurriculum' as HomeMediaKey },
       { title: '운영 매뉴얼', tag: '체크리스트', mediaKey: 'proofLab' as HomeMediaKey },
@@ -30,7 +30,7 @@ export const curriculumPage = {
     ],
   },
   packages: {
-    title: '상품화 가능한 패키지',
+    title: '도입 패키지',
     items: [
       { title: '스타터', description: '수업안 + 운영 매뉴얼' },
       { title: '현장형', description: '교구 콘텐츠 + 강사 교육' },
@@ -42,8 +42,8 @@ export const curriculumPage = {
     steps: ['도입 목적', '대상·환경', '범위 설계', '자료·교육', '파일럿', '업데이트'] as const,
   },
   finalCta: {
-    title: '운영 가능한 콘텐츠를 도입하세요',
-    description: '필요 범위와 활용 목적을 알려주시면 맞춤 제안을 드립니다.',
+    title: '콘텐츠 도입 문의',
+    description: '필요 범위와 목적만 알려주세요.',
     mediaKey: 'programCurriculum' as HomeMediaKey,
     primary: {
       label: '커리큘럼 문의',

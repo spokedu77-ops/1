@@ -29,15 +29,6 @@ const trackBadgeClass: Record<ProgramTrack, string> = {
   Curriculum: 'border-emerald-200 bg-emerald-50 text-emerald-800',
 };
 
-const catalogMediaKeys = [
-  'programSpomove',
-  'programPaps',
-  'programPlay',
-  'programOneday',
-  'programCamp',
-  'programCurriculum',
-] as const;
-
 function Section({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const reducedMotion = useReducedMotion();
   return (
@@ -88,7 +79,7 @@ export default function ProgramsLanding() {
       <Section className="space-y-5 sm:space-y-6">
         <h2 className={landingSectionTitle}>{programsPage.catalogTitle}</h2>
         <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-          {programCatalogCards.map((program, index) => (
+          {programCatalogCards.map((program) => (
             <Link
               key={program.slug}
               href={program.ctaHref}
@@ -97,7 +88,7 @@ export default function ProgramsLanding() {
               className={`group flex min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-slate-950 shadow-lg shadow-slate-900/15 ${cardInteractive} ${focusRing}`}
             >
               <MediaPanel
-                media={HOME_MEDIA[catalogMediaKeys[index] ?? 'programSpomove']}
+                media={HOME_MEDIA[program.mediaKey]}
                 className="aspect-[16/10] rounded-none border-0"
               />
               <div className="flex flex-1 flex-col border-t border-white/10 p-4">

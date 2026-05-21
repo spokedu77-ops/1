@@ -3,22 +3,22 @@
 @import "shadcn/tailwind.css";
 
 :root {
-  --spm-bg: #07070c;
-  --spm-s1: #0d0d14;
-  --spm-s2: #111119;
-  --spm-s3: #18181f;
-  --spm-s4: #222230;
-  --spm-t: #f2f2ff;
-  --spm-t2: #7a7a99;
-  --spm-t3: #3a3a55;
+  --spm-bg: #f4f6fb;
+  --spm-s1: #ffffff;
+  --spm-s2: #eef1f8;
+  --spm-s3: #e4e9f4;
+  --spm-s4: #d8dfee;
+  --spm-t: #0f172a;
+  --spm-t2: #475569;
+  --spm-t3: #94a3b8;
   --spm-acc: #6366f1;
-  --spm-acc-glow: rgba(99, 102, 241, 0.25);
+  --spm-acc-glow: rgba(99, 102, 241, 0.15);
   --spm-grn: #10b981;
   --spm-amb: #f59e0b;
   --spm-red: #f43f5e;
-  --spm-br: rgba(255, 255, 255, 0.055);
-  --spm-br2: rgba(255, 255, 255, 0.09);
-  --spm-br3: rgba(255, 255, 255, 0.14);
+  --spm-br: rgba(15, 23, 42, 0.07);
+  --spm-br2: rgba(15, 23, 42, 0.11);
+  --spm-br3: rgba(15, 23, 42, 0.18);
   --spm-font-body: var(--font-plus-jakarta), system-ui, sans-serif;
   --spm-font-display: var(--font-space-grotesk), system-ui, sans-serif;
 }
@@ -166,11 +166,11 @@ body {
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    rgb(38 38 38) 0%,
-    rgb(64 64 64) 40%,
-    rgb(82 82 82) 50%,
-    rgb(64 64 64) 60%,
-    rgb(38 38 38) 100%
+    #e2e8f0 0%,
+    #eef2f7 40%,
+    #f8fafc 50%,
+    #eef2f7 60%,
+    #e2e8f0 100%
   );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;

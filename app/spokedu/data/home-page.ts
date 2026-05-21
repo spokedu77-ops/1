@@ -41,25 +41,25 @@ export const homePage = {
   },
   visitorGate: {
     id: 'visitor-gate',
-    title: '입구를 선택하세요',
+    title: '대상별 입구',
     cards: [
       {
         audience: '학부모',
-        title: '개인·소그룹',
+        title: '개인수업',
         description: '아이 맞춤 체육수업',
         href: `${SPOKEDU_BASE_PATH}/private`,
         trackLabel: 'cta-home-gate-private',
       },
       {
         audience: '기관',
-        title: '기관 파견',
+        title: '기관수업',
         description: '정규·원데이·캠프',
         href: `${SPOKEDU_BASE_PATH}/dispatch`,
         trackLabel: 'cta-home-gate-dispatch',
       },
       {
         audience: '강사·파트너',
-        title: '커리큘럼',
+        title: '교육 콘텐츠',
         description: '수업안·강사 교육',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-gate-curriculum',
@@ -67,7 +67,7 @@ export const homePage = {
     ] satisfies HomeVisitorGateCard[],
   },
   fieldRecords: {
-    title: '실제 운영 기록',
+    title: '현장 기록',
     recordsHref: `${SPOKEDU_BASE_PATH}/records`,
     recordsTrackLabel: 'cta-home-field-records',
     cards: [
@@ -98,7 +98,8 @@ export const homePage = {
     ] satisfies HomeFieldRecordCard[],
   },
   programSystem: {
-    title: '수업은 프로그램이 되고,\n프로그램은 커리큘럼이 됩니다',
+    title: '수업 콘텐츠',
+    subtitle: '현장에서 검증한 수업을 프로그램과 콘텐츠로 확장합니다.',
     cta: {
       label: '프로그램 전체 보기',
       href: `${SPOKEDU_BASE_PATH}/programs`,
@@ -109,7 +110,7 @@ export const homePage = {
         id: 'spomove',
         featured: true,
         name: 'SPOMOVE',
-        description: '빔 반응 놀이체육',
+        description: '빔 반응 놀이',
         mediaKey: 'programSpomove',
         href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
         trackLabel: 'cta-home-system-spomove',
@@ -117,7 +118,7 @@ export const homePage = {
       {
         id: 'paps',
         name: 'PAPS',
-        description: '기초체력 놀이체육',
+        description: '기초체력',
         mediaKey: 'programPaps',
         href: `${SPOKEDU_BASE_PATH}/programs/paps`,
         trackLabel: 'cta-home-system-paps',
@@ -125,7 +126,7 @@ export const homePage = {
       {
         id: 'oneday',
         name: '원데이',
-        description: '행사·특별활동',
+        description: '행사형',
         mediaKey: 'programOneday',
         href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
         trackLabel: 'cta-home-system-oneday',
@@ -133,15 +134,15 @@ export const homePage = {
       {
         id: 'camp',
         name: '방학캠프',
-        description: '방학 시즌 캠프',
+        description: '방학 캠프',
         mediaKey: 'programCamp',
         href: `${SPOKEDU_BASE_PATH}/programs/camp`,
         trackLabel: 'cta-home-system-camp',
       },
       {
         id: 'curriculum',
-        name: '커리큘럼 콘텐츠',
-        description: '수업안·매뉴얼',
+        name: '교육 패키지',
+        description: '매뉴얼·라이선스',
         mediaKey: 'programCurriculum',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-system-curriculum',
@@ -149,7 +150,7 @@ export const homePage = {
     ] satisfies HomeProgramSystemItem[],
   },
   finalCta: {
-    title: '다음 단계',
+    title: '방향 선택',
     links: [
       {
         label: '개인수업',

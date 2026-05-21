@@ -214,11 +214,11 @@ export default function SpokeduHomeLanding() {
 
       {/* 4. Program System */}
       <Section className="space-y-5 sm:space-y-7" delay={0.02}>
-        <div className="space-y-3 border-l-4 border-indigo-500 pl-4 text-center sm:pl-5 lg:text-left">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600">프로그램</p>
-          <h2 className="whitespace-pre-line text-[1.85rem] font-black leading-[1.06] tracking-tight text-slate-950 sm:text-[2.35rem] lg:text-[2.75rem]">
+        <div className="mx-auto max-w-2xl space-y-2 text-center lg:mx-0 lg:max-w-none lg:text-left">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
             {homePage.programSystem.title}
           </h2>
+          <p className="text-sm leading-relaxed text-slate-600 sm:text-base">{homePage.programSystem.subtitle}</p>
         </div>
         <HomeProgramSystem items={homePage.programSystem.items} />
         <p className="text-center lg:text-left">

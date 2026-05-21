@@ -26,9 +26,8 @@ function ProgramFeaturedCard({ item }: { item: HomeProgramSystemItem }) {
         className="min-h-[200px] flex-1 rounded-none border-0 transition duration-500 group-hover:scale-[1.02] sm:min-h-[220px] lg:min-h-[300px] lg:aspect-[4/3]"
       />
       <div className="border-t border-white/10 bg-gradient-to-r from-slate-950 via-slate-950 to-indigo-950/80 px-4 py-4 sm:px-5 sm:py-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-300">대표 프로그램</p>
-        <h3 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">{item.name}</h3>
-        <p className="mt-1.5 line-clamp-2 text-sm leading-snug text-slate-300">{item.description}</p>
+        <h3 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{item.name}</h3>
+        <p className="mt-1 line-clamp-1 text-sm leading-snug text-slate-300">{item.description}</p>
       </div>
     </Link>
   );
@@ -47,7 +46,7 @@ function ProgramCompactCard({ item }: { item: HomeProgramSystemItem }) {
       <MediaPanel media={media} className="min-h-[80px] flex-1 rounded-none border-0 sm:min-h-[88px] lg:min-h-[110px] lg:aspect-[16/10]" />
       <div className="border-t border-white/10 bg-slate-950/95 px-2.5 py-2.5 sm:px-3">
         <h3 className="text-sm font-bold text-white sm:text-[15px]">{item.name}</h3>
-        <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-400">{item.description}</p>
+        <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug text-slate-400">{item.description}</p>
       </div>
     </Link>
   );

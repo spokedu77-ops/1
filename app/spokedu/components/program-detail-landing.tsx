@@ -9,8 +9,8 @@ import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
 import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
 import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
-import { programDetailBlocks } from '../data/program-details';
-import { getProgramBySlug, type ProgramSlug } from '../data/programs';
+import { programDetailBlocks, type ProgramDetailSlug } from '../data/program-details';
+import { getProgramBySlug } from '../data/programs';
 import {
   fineHover,
   landingH1,
@@ -30,7 +30,7 @@ const whyVariants: LandingCardVariant[] = ['glass', 'gradient', 'image'];
 const activityVariants: LandingCardVariant[] = ['image', 'gradient', 'dark'];
 
 type ProgramDetailLandingProps = {
-  slug: Extract<ProgramSlug, 'spomove' | 'paps' | 'oneday-event' | 'camp'>;
+  slug: ProgramDetailSlug;
 };
 
 export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {

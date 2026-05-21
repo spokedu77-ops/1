@@ -140,11 +140,11 @@ function SectionTitle({ eyebrow, title, actionHref }: { eyebrow: string; title: 
   return (
     <div className="mb-4 flex items-end justify-between gap-4">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">{eyebrow}</p>
-        <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+        <p className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc)' }}>{eyebrow}</p>
+        <h2 className="mt-1 text-xl font-black" style={{ color: 'var(--spm-t)' }}>{title}</h2>
       </div>
       {actionHref ? (
-        <Link href={actionHref} className="inline-flex items-center gap-1 text-sm font-bold text-indigo-200 hover:text-white">
+        <Link href={actionHref} className="inline-flex items-center gap-1 text-sm font-bold transition" style={{ color: 'var(--spm-acc)' }}>
           보기
           <ChevronRight className="h-4 w-4" />
         </Link>
@@ -159,7 +159,7 @@ function CompactMeta({ program }: { program: Program }) {
   return (
     <div className="mt-3 flex flex-wrap gap-1.5">
       {items.map((item) => (
-        <span key={item} className="max-w-full truncate rounded-full bg-white/[0.055] px-2.5 py-1 text-[11px] font-bold text-slate-400">
+        <span key={item} className="max-w-full truncate rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t2)' }}>
           {item}
         </span>
       ))}
@@ -177,7 +177,7 @@ function ValueChips({ program }: { program: Program }) {
   return (
     <div className="mt-3 flex flex-wrap gap-1.5">
       {chips.slice(0, 3).map((chip) => (
-        <span key={chip} className="rounded-full bg-indigo-400/10 px-2.5 py-1 text-[11px] font-black text-indigo-100">
+        <span key={chip} className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-black text-indigo-700">
           {chip}
         </span>
       ))}
@@ -203,7 +203,7 @@ function ProgramCard({
   const heroImage = getHeroImage(program);
 
   return (
-    <article className="group flex min-h-[390px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.052] transition hover:-translate-y-0.5 hover:bg-white/[0.075]">
+    <article className="group flex min-h-[390px] flex-col overflow-hidden rounded-3xl border bg-white transition hover:-translate-y-0.5 hover:shadow-md" style={{ borderColor: 'var(--spm-br2)' }}>
       <button type="button" onClick={onPreview} className="relative h-44 overflow-hidden text-left">
         {heroImage ? (
           <Image src={heroImage} alt="" fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" unoptimized />
@@ -227,8 +227,8 @@ function ProgramCard({
 
       <div className="flex flex-1 flex-col p-4">
         <button type="button" onClick={onPreview} className="flex-1 text-left">
-          <h3 className="line-clamp-2 text-base font-black leading-snug text-white">{program.title}</h3>
-          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">{program.description}</p>
+          <h3 className="line-clamp-2 text-base font-black leading-snug" style={{ color: 'var(--spm-t)' }}>{program.title}</h3>
+          <p className="mt-2 line-clamp-2 text-xs leading-5" style={{ color: 'var(--spm-t2)' }}>{program.description}</p>
           <CompactMeta program={program} />
           <ValueChips program={program} />
         </button>
@@ -238,7 +238,7 @@ function ProgramCard({
             type="button"
             onClick={onFavorite}
             className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
-              favorite ? 'border-amber-300/40 bg-amber-300/14 text-amber-200' : 'border-white/10 bg-white/[0.05] text-slate-400 hover:text-white'
+              favorite ? 'border-amber-300/60 bg-amber-50 text-amber-600' : 'bg-[var(--spm-bg)] text-[var(--spm-t3)]'
             }`}
             aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
           >
@@ -248,7 +248,7 @@ function ProgramCard({
             패키지 보기
           </button>
           {used ? (
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-400/12 text-emerald-200" title="사용 이력 있음">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600" title="사용 이력 있음">
               <Check className="h-4 w-4" />
             </span>
           ) : null}
@@ -487,9 +487,9 @@ function ProgramModal({
 
 function MetaBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
-      <p className="text-[11px] font-bold text-slate-500">{label}</p>
-      <p className="mt-1 truncate text-sm font-black text-white">{value}</p>
+    <div className="rounded-2xl border bg-white p-3" style={{ borderColor: 'var(--spm-br2)' }}>
+      <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+      <p className="mt-1 truncate text-sm font-black" style={{ color: 'var(--spm-t)' }}>{value}</p>
     </div>
   );
 }
@@ -540,18 +540,19 @@ export default function LibraryView() {
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
         <header className="flex flex-col gap-5">
           <div>
-            <p className="text-sm font-semibold text-slate-400">MASTER LIBRARY</p>
-            <h1 className="mt-1 text-3xl font-black text-white sm:text-4xl">수업 패키지</h1>
+            <p className="text-sm font-semibold" style={{ color: 'var(--spm-t3)' }}>MASTER LIBRARY</p>
+            <h1 className="mt-1 text-3xl font-black sm:text-4xl" style={{ color: 'var(--spm-t)' }}>수업 패키지</h1>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
             <label className="relative block">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: 'var(--spm-t3)' }} />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="수업, 도구, 공간, 연령 검색"
-                className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.055] pl-12 pr-4 text-sm font-semibold text-white outline-none placeholder:text-slate-500 focus:border-indigo-300/45"
+                className="h-14 w-full rounded-2xl border bg-white pl-12 pr-4 text-sm font-semibold outline-none"
+                style={{ borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
               />
             </label>
             <Link href="/spokedu-master/spomove" className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-5 text-sm font-extrabold text-white">
@@ -566,9 +567,8 @@ export default function LibraryView() {
                 key={item}
                 type="button"
                 onClick={() => setFilter(item)}
-                className={`h-10 shrink-0 rounded-full px-4 text-sm font-black transition ${
-                  filter === item ? 'bg-white text-slate-950' : 'border border-white/10 bg-white/[0.055] text-slate-300 hover:bg-white/[0.08]'
-                }`}
+                className="h-10 shrink-0 rounded-full px-4 text-sm font-black transition"
+                style={filter === item ? { background: 'var(--spm-t)', color: 'var(--spm-s1)' } : { border: '1px solid var(--spm-br2)', background: 'var(--spm-s1)', color: 'var(--spm-t2)' }}
               >
                 {item}
                 <span className="ml-1 text-xs opacity-55">{counts[item] ?? 0}</span>

@@ -14,6 +14,14 @@ import { getTrialDaysLeft } from '../lib/subscription';
 import { useMasterStore, useProfile, useUnreadCount } from '../store';
 import type { Drill, Lesson, Notification, Program } from '../types';
 
+function thisMonthCount<T extends { date: string }>(items: T[]) {
+  const now = new Date();
+  return items.filter((item) => {
+    const d = new Date(item.date);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }).length;
+}
+
 function isSpomoveLinked(program: Program) {
   return Boolean(program.lessonDetail?.relatedSpomoveIds?.length) || program.tags.some((tag) => tag.toUpperCase().includes('SPOMOVE'));
 }
@@ -85,7 +93,7 @@ function PlanStatusChip() {
     return (
       <Link
         href="/spokedu-master/profile"
-        className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/35 bg-emerald-300/10 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-300/15"
+        className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/50 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
       >
         관리자 패스
         <ChevronRight className="h-3.5 w-3.5" />
@@ -97,7 +105,7 @@ function PlanStatusChip() {
     return (
       <Link
         href="/spokedu-master/profile"
-        className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-300/15"
+        className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
       >
         체험 {daysLeft}일 남음
         <ChevronRight className="h-3.5 w-3.5" />
@@ -108,7 +116,7 @@ function PlanStatusChip() {
   return (
     <Link
       href="/spokedu-master/profile"
-      className="inline-flex items-center gap-1.5 rounded-full border border-indigo-300/30 bg-indigo-300/10 px-3 py-1.5 text-xs font-semibold text-indigo-200 transition hover:bg-indigo-300/15"
+      className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100"
     >
       플랜 확인
       <ChevronRight className="h-3.5 w-3.5" />
@@ -123,11 +131,12 @@ function NotificationButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-100 transition hover:bg-white/[0.1]"
+      className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border bg-white transition hover:bg-[var(--spm-bg)]"
+      style={{ borderColor: 'var(--spm-br2)', color: 'var(--spm-t2)' }}
       aria-label="알림 열기"
     >
       <Bell className="h-5 w-5" />
-      {unreadCount > 0 ? <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full border-2 border-[#070812] bg-rose-400" /> : null}
+      {unreadCount > 0 ? <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-rose-400" /> : null}
     </button>
   );
 }
@@ -239,6 +248,16 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   );
 }
 
+function StatCard({ label, value, sub }: { label: string; value: string | number; sub: string }) {
+  return (
+    <div className="flex flex-col rounded-2xl border bg-white px-5 py-4" style={{ borderColor: 'var(--spm-br2)' }}>
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+      <p className="mt-2 text-3xl font-black" style={{ color: 'var(--spm-t)' }}>{value}</p>
+      <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--spm-t2)' }}>{sub}</p>
+    </div>
+  );
+}
+
 function ProgramPackageCard({ program, drill }: { program: Program; drill?: Drill }) {
   const valueChips = getProgramValueChips(program);
   const focus = getProgramFocus(program);
@@ -343,13 +362,13 @@ function WeeklySpomoveCard({ drill }: { drill: Drill }) {
 
 function TodayLessons({ lessons }: { lessons: Lesson[] }) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 sm:p-6">
+    <section className="rounded-3xl border bg-white p-5 sm:p-6" style={{ borderColor: 'var(--spm-br2)' }}>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-300">Today</p>
-          <h2 className="mt-1 text-xl font-black text-white">오늘 수업</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc)' }}>Today</p>
+          <h2 className="mt-1 text-xl font-black" style={{ color: 'var(--spm-t)' }}>오늘 수업</h2>
         </div>
-        <Link href="/spokedu-master/library" className="text-sm font-bold text-indigo-200 hover:text-white">
+        <Link href="/spokedu-master/library" className="text-sm font-bold transition" style={{ color: 'var(--spm-acc)' }}>
           수업 찾기
         </Link>
       </div>
@@ -357,27 +376,27 @@ function TodayLessons({ lessons }: { lessons: Lesson[] }) {
       <div className="mt-5 space-y-3">
         {lessons.length > 0 ? (
           lessons.slice(0, 3).map((lesson) => (
-            <div key={lesson.id} className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/[0.045] p-4">
+            <div key={lesson.id} className="flex items-center gap-4 rounded-2xl border p-4" style={{ borderColor: 'var(--spm-br)', background: 'var(--spm-bg)' }}>
               <span className="h-11 w-1.5 rounded-full" style={{ background: lesson.color || '#6366f1' }} />
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-black text-white">{lesson.title}</h3>
-                <p className="mt-1 text-xs text-slate-400">{formatLessonTime(lesson)}</p>
+                <h3 className="truncate text-sm font-black" style={{ color: 'var(--spm-t)' }}>{lesson.title}</h3>
+                <p className="mt-1 text-xs" style={{ color: 'var(--spm-t3)' }}>{formatLessonTime(lesson)}</p>
               </div>
               {lesson.done ? (
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400/12 text-emerald-200">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                   <Check className="h-4 w-4" />
                 </span>
               ) : (
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-slate-300">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
                   <Clock3 className="h-4 w-4" />
                 </span>
               )}
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.03] p-5">
-            <p className="mb-3 text-sm leading-6 text-slate-400">오늘 등록된 수업이 없습니다.</p>
-            <Link href="/spokedu-master/library" className="inline-flex h-9 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.06] px-3 text-xs font-bold text-white transition hover:bg-white/[0.1]">
+          <div className="rounded-2xl border border-dashed p-5" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-bg)' }}>
+            <p className="mb-3 text-sm leading-6" style={{ color: 'var(--spm-t2)' }}>오늘 등록된 수업이 없습니다.</p>
+            <Link href="/spokedu-master/library" className="inline-flex h-9 items-center gap-1.5 rounded-2xl border bg-white px-3 text-xs font-bold transition" style={{ borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
               <BookOpen className="h-3.5 w-3.5" />
               수업 찾기
             </Link>
@@ -404,18 +423,18 @@ function NotificationSheet({
       <div className="space-y-3">
         {notifications.length > 0 ? (
           notifications.map((notification) => (
-            <div key={notification.id} className={`rounded-2xl border p-4 ${notification.read ? 'border-white/8 bg-white/[0.035]' : 'border-indigo-300/25 bg-indigo-400/10'}`}>
+            <div key={notification.id} className="rounded-2xl border p-4" style={{ borderColor: notification.read ? 'var(--spm-br)' : 'rgba(99,102,241,0.3)', background: notification.read ? 'var(--spm-bg)' : 'rgba(99,102,241,0.06)' }}>
               <div className="flex items-start gap-3">
-                <span className={`mt-1 h-2.5 w-2.5 rounded-full ${notification.read ? 'bg-slate-600' : 'bg-indigo-300'}`} />
+                <span className="mt-1 h-2.5 w-2.5 rounded-full" style={{ background: notification.read ? 'var(--spm-t3)' : 'var(--spm-acc)' }} />
                 <div>
-                  <h3 className="text-sm font-black text-white">{notification.title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-slate-400">{notification.body}</p>
+                  <h3 className="text-sm font-black" style={{ color: 'var(--spm-t)' }}>{notification.title}</h3>
+                  <p className="mt-1 text-sm leading-6" style={{ color: 'var(--spm-t2)' }}>{notification.body}</p>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-white/8 bg-white/[0.035] p-5 text-sm text-slate-400">아직 새 알림이 없습니다.</div>
+          <div className="rounded-2xl border p-5 text-sm" style={{ borderColor: 'var(--spm-br)', background: 'var(--spm-bg)', color: 'var(--spm-t2)' }}>아직 새 알림이 없습니다.</div>
         )}
       </div>
       {notifications.some((notification) => !notification.read) ? (
@@ -428,7 +447,7 @@ function NotificationSheet({
 }
 
 export default function DashboardView() {
-  const { programs, programsLoaded, drills, drillsLoaded, lessons, notifications, markAllRead } = useMasterStore();
+  const { programs, programsLoaded, drills, drillsLoaded, lessons, notifications, markAllRead, sessions, classRecords } = useMasterStore();
   const [mounted, setMounted] = useState(false);
   const [isNotificationOpen, setNotificationOpen] = useState(false);
 
@@ -453,6 +472,9 @@ export default function DashboardView() {
 
   const weeklyDrill = useMemo(() => heroDrill ?? drills[0], [drills, heroDrill]);
 
+  const monthClassCount = useMemo(() => thisMonthCount(classRecords), [classRecords]);
+  const monthSpomoveCount = useMemo(() => thisMonthCount(sessions), [sessions]);
+
   if (!mounted || !programsLoaded || !drillsLoaded || !heroProgram) {
     return <DashboardSkeleton />;
   }
@@ -462,8 +484,8 @@ export default function DashboardView() {
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-slate-400">SPOKEDU MASTER</p>
-            <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">오늘 수업</h1>
+            <p className="text-sm font-semibold" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
+            <h1 className="mt-1 text-2xl font-black sm:text-3xl" style={{ color: 'var(--spm-t)' }}>오늘 수업</h1>
           </div>
           <div className="flex items-center gap-2">
             <PlanStatusChip />
@@ -473,13 +495,19 @@ export default function DashboardView() {
 
         <HomeHero program={heroProgram} drill={heroDrill} />
 
+        <section className="grid grid-cols-3 gap-3">
+          <StatCard label="이번 달 수업" value={monthClassCount} sub="수업 기록" />
+          <StatCard label="이번 달 SPOMOVE" value={monthSpomoveCount} sub="세션 기록" />
+          <StatCard label="수업 패키지" value={programs.length} sub="전체 라이브러리" />
+        </section>
+
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-300">Ready This Week</p>
-              <h2 className="mt-1 text-xl font-black text-white">이번 주 수업 준비 끝내는 4선</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc)' }}>Ready This Week</p>
+              <h2 className="mt-1 text-xl font-black" style={{ color: 'var(--spm-t)' }}>이번 주 수업 준비 끝내는 4선</h2>
             </div>
-            <Link href="/spokedu-master/library" className="text-sm font-bold text-indigo-200 hover:text-white">
+            <Link href="/spokedu-master/library" className="text-sm font-bold transition" style={{ color: 'var(--spm-acc)' }}>
               전체 보기
             </Link>
           </div>
