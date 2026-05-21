@@ -266,7 +266,7 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
     : '/spokedu-master/spomove';
 
   return (
-    <article className="flex min-h-[326px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.055] transition hover:-translate-y-0.5 hover:bg-white/[0.075]">
+    <article className="flex min-h-[326px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900 transition hover:-translate-y-0.5 hover:bg-slate-800">
       <Link href={`/spokedu-master/library/${program.id}`} className="relative h-36 overflow-hidden bg-slate-900">
         {getHeroImage(program) ? (
           <Image
@@ -335,7 +335,7 @@ function WeeklySpomoveCard({ drill }: { drill: Drill }) {
   const drillCaption = drill.description || `${drill.category} 수업에서 바로 실행할 수 있는 큰 화면 반응 훈련입니다.`;
 
   return (
-    <article className="flex min-h-[326px] flex-col overflow-hidden rounded-3xl border border-indigo-300/20 bg-indigo-400/12 p-5 transition hover:-translate-y-0.5 hover:bg-indigo-400/16">
+    <article className="flex min-h-[326px] flex-col overflow-hidden rounded-3xl border border-indigo-500/30 bg-indigo-950 p-5 transition hover:-translate-y-0.5 hover:bg-indigo-900">
       <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-bold text-white/80">
         <MonitorPlay className="h-3.5 w-3.5" />
         SPOMOVE

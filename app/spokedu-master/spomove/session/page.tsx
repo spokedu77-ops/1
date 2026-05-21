@@ -173,6 +173,8 @@ function SpomoveSessionContent() {
   const cues = useMemo(() => (drill?.cues?.length ? drill.cues : SESSION_CUES).map(cleanCue), [drill]);
   const drillName = drill ? cleanDrillName(drill.id, drill.name) : 'SPOMOVE';
 
+  const saveClassRecord = useMasterStore((state) => state.saveClassRecord);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [state, setState] = useState<SessionState>('idle');
   const [countdown, setCountdown] = useState('3');
@@ -180,6 +182,8 @@ function SpomoveSessionContent() {
   const [cueSerial, setCueSerial] = useState(0);
   const [lastRT, setLastRT] = useState<number | null>(null);
   const [finalSession, setFinalSession] = useState<ReturnType<typeof end>>(null);
+  const [studentCount, setStudentCount] = useState(6);
+  const [recordSaved, setRecordSaved] = useState(false);
   const timeoutRef = useRef<number | null>(null);
 
   const maxCues = modeConfig.maxCues;
@@ -214,7 +218,27 @@ function SpomoveSessionContent() {
     const session = end();
     setFinalSession(session);
     setState('done');
+    setRecordSaved(false);
   }, [clearTimer, end]);
+
+  const handleSaveRecord = useCallback(() => {
+    const title = program?.title ?? drillName;
+    saveClassRecord({
+      id: `rec-${Date.now()}`,
+      lessonTitle: title,
+      classId: '',
+      programId,
+      programTitle: title,
+      date: new Date().toISOString().slice(0, 10),
+      present: studentCount,
+      absent: 0,
+      focusCount: 0,
+      skillCount: 0,
+      kakaoSent: false,
+      students: [],
+    });
+    setRecordSaved(true);
+  }, [drillName, program?.title, programId, saveClassRecord, studentCount]);
 
   const showNextCue = useCallback(() => {
     setCueIndex((index) => index + 1);
@@ -483,11 +507,46 @@ function SpomoveSessionContent() {
               목록으로
             </Link>
           </div>
-          {programId ? (
-            <Link href={`/spokedu-master/class-record?program=${programId}`} className="mt-4 text-xs font-bold text-white/38 underline-offset-4 hover:text-white/70 hover:underline">
-              수업 기록은 확장 기능에서 남기기
-            </Link>
-          ) : null}
+          {!recordSaved ? (
+            <div className="mt-5 w-full max-w-[560px] rounded-2xl border border-white/12 bg-white/[0.06] p-4 text-left">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-indigo-200/60">오늘 수업 기록</p>
+              <p className="mt-1 text-sm font-bold text-white/90">몇 명 수업했나요?</p>
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStudentCount((c) => Math.max(1, c - 1))}
+                  className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-lg font-bold text-white/70"
+                >
+                  −
+                </button>
+                <span className="min-w-[2ch] text-center text-2xl font-black tabular-nums text-white">{studentCount}</span>
+                <button
+                  type="button"
+                  onClick={() => setStudentCount((c) => c + 1)}
+                  className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-lg font-bold text-white/70"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveRecord}
+                  className="ml-auto rounded-xl bg-emerald-500 px-5 py-2 text-sm font-black text-white"
+                >
+                  기록 저장
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5 flex w-full max-w-[560px] items-center justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.08] px-4 py-3">
+              <div className="flex items-center gap-2 text-sm font-bold text-emerald-400">
+                <Check size={15} />
+                수업 기록 완료 ({studentCount}명)
+              </div>
+              <Link href="/spokedu-master/class-record" className="text-[11px] font-black text-indigo-300 underline-offset-2 hover:underline">
+                기록 보기
+              </Link>
+            </div>
+          )}
         </div>
       ) : null}
 

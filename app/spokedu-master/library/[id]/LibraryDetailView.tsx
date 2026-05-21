@@ -160,18 +160,18 @@ function getEquipmentPrice(item: string) {
 
 function MetaCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
-      <p className="text-[11px] font-bold text-slate-500">{label}</p>
-      <p className="mt-1 line-clamp-2 text-sm font-black leading-6 text-white">{value}</p>
+    <div className="rounded-2xl p-4" style={{ border: '1px solid var(--spm-br)', background: 'var(--spm-s2)' }}>
+      <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+      <p className="mt-1 line-clamp-2 text-sm font-black leading-6" style={{ color: 'var(--spm-t)' }}>{value}</p>
     </div>
   );
 }
 
 function DetailSection({ title, icon: Icon, children }: { title: string; icon: typeof FileText; children: ReactNode }) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-      <h2 className="flex items-center gap-2 text-base font-black text-white">
-        <Icon className="h-4 w-4 text-indigo-200" />
+    <section className="rounded-3xl p-5" style={{ border: '1px solid var(--spm-br)', background: 'var(--spm-s2)' }}>
+      <h2 className="flex items-center gap-2 text-base font-black" style={{ color: 'var(--spm-t)' }}>
+        <Icon className="h-4 w-4 text-indigo-500" />
         {title}
       </h2>
       <div className="mt-4">{children}</div>
@@ -179,11 +179,11 @@ function DetailSection({ title, icon: Icon, children }: { title: string; icon: t
   );
 }
 
-function BulletList({ items, tone = 'bg-indigo-300' }: { items: string[]; tone?: string }) {
+function BulletList({ items, tone = 'bg-indigo-400' }: { items: string[]; tone?: string }) {
   return (
     <ul className="space-y-2">
       {items.map((item) => (
-        <li key={item} className="flex gap-2 text-sm leading-6 text-slate-300">
+        <li key={item} className="flex gap-2 text-sm leading-6" style={{ color: 'var(--spm-t2)' }}>
           <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${tone}`} />
           {item}
         </li>
@@ -211,8 +211,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-[var(--spm-bg)] px-6 text-center">
         <BookOpenFallback />
-        <h1 className="mt-5 text-xl font-black text-white">수업안을 찾을 수 없습니다.</h1>
-        <p className="mt-2 text-sm text-slate-400">라이브러리에서 다른 프로그램을 선택해 주세요.</p>
+        <h1 className="mt-5 text-xl font-black" style={{ color: 'var(--spm-t)' }}>수업안을 찾을 수 없습니다.</h1>
+        <p className="mt-2 text-sm" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 다른 프로그램을 선택해 주세요.</p>
         <Link href="/spokedu-master/library" className="mt-6 rounded-2xl bg-white px-5 py-3 text-sm font-extrabold text-slate-950">
           라이브러리로 돌아가기
         </Link>
@@ -265,23 +265,24 @@ export default function LibraryDetailView({ id }: { id: string }) {
   };
 
   return (
-    <main className="min-h-dvh bg-[var(--spm-bg)] pb-24 text-white lg:pb-12">
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/8 bg-[var(--spm-bg)]/86 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
-        <Link href="/spokedu-master/library" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.055]" aria-label="라이브러리로 돌아가기">
+    <main className="min-h-dvh pb-24 lg:pb-12" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8" style={{ borderColor: 'var(--spm-br2)', background: 'rgba(244,246,251,0.92)' }}>
+        <Link href="/spokedu-master/library" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)', color: 'var(--spm-t2)' }} aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex items-center gap-2">
-          <Link href="/spokedu-master/shop" className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.055]" aria-label="교구 스토어">
-            <ShoppingBag className="h-5 w-5 text-slate-300" />
+          <Link href="/spokedu-master/shop" className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)', color: 'var(--spm-t2)' }} aria-label="교구 스토어">
+            <ShoppingBag className="h-5 w-5" />
             {cartCount > 0 ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white">{cartCount}</span> : null}
           </Link>
           <button
             type="button"
             onClick={() => toggleFavorite(program.id)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.055]"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border"
+            style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)', color: favorite ? undefined : 'var(--spm-t2)' }}
             aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
           >
-            <Bookmark className={`h-5 w-5 ${favorite ? 'fill-amber-300 text-amber-300' : 'text-slate-300'}`} />
+            <Bookmark className={`h-5 w-5 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
         </div>
       </header>
@@ -351,11 +352,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 <Play className="h-4 w-4 fill-current" />
                 수업 시작
               </Link>
-              <Link href={`/spokedu-master/spomove/session?drill=${primarySpomoveId}&mode=projector&program=${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-300/25 bg-indigo-400/10 px-5 text-sm font-bold text-indigo-100">
+              <Link href={`/spokedu-master/spomove/session?drill=${primarySpomoveId}&mode=projector&program=${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-200/60 bg-indigo-50 px-5 text-sm font-bold text-indigo-700">
                 <MonitorPlay className="h-4 w-4" />
                 SPOMOVE 큰 화면
               </Link>
-              <button type="button" onClick={copyParentNote} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-300/25 bg-emerald-400/10 px-5 text-sm font-bold text-emerald-100">
+              <button type="button" onClick={copyParentNote} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-200/60 bg-emerald-50 px-5 text-sm font-bold text-emerald-700">
                 {copied ? <CheckCircle2 className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
                 {copied ? '복사 완료' : '설명 문구 복사'}
               </button>
@@ -381,12 +382,12 @@ export default function LibraryDetailView({ id }: { id: string }) {
         {galleryImages.length > 0 ? (
           <section>
             <div className="mb-4 flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-indigo-200" />
-              <h2 className="text-xl font-black text-white">현장 이미지</h2>
+              <ImageIcon className="h-5 w-5 text-indigo-500" />
+              <h2 className="text-xl font-black" style={{ color: 'var(--spm-t)' }}>현장 이미지</h2>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               {galleryImages.slice(0, 3).map((src) => (
-                <div key={src} className="relative h-56 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.045]">
+                <div key={src} className="relative h-56 overflow-hidden rounded-3xl" style={{ border: '1px solid var(--spm-br2)', background: 'var(--spm-s2)' }}>
                   <Image src={src} alt="" fill sizes="(min-width: 768px) 33vw, 100vw" className="object-cover" unoptimized />
                 </div>
               ))}
@@ -397,18 +398,18 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <DetailSection title="준비물" icon={Package}>
             {cartNotice ? (
-              <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-300/18 bg-emerald-400/10 p-3">
-                <p className="text-xs font-black text-emerald-200">{cartNotice}</p>
-                <Link href="/spokedu-master/shop" className="text-xs font-black text-emerald-200">스토어 보기</Link>
+              <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200/60 bg-emerald-50 p-3">
+                <p className="text-xs font-black text-emerald-700">{cartNotice}</p>
+                <Link href="/spokedu-master/shop" className="text-xs font-black text-emerald-700">스토어 보기</Link>
               </div>
             ) : null}
             <div className="grid gap-2 sm:grid-cols-2">
               {equipment.map((item) => {
                 const price = getEquipmentPrice(item);
                 return (
-                  <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.04] p-3">
+                  <div key={item} className="flex items-center gap-3 rounded-2xl p-3" style={{ border: '1px solid var(--spm-br)', background: 'var(--spm-s3)' }}>
                     <span className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm font-black text-white">{item}</strong>
+                      <strong className="block truncate text-sm font-black" style={{ color: 'var(--spm-t)' }}>{item}</strong>
                       <span className="mt-1 block text-xs font-semibold text-slate-500">{price > 0 ? `${price.toLocaleString('ko-KR')}원` : '보유 장비'}</span>
                     </span>
                     {price > 0 ? (
@@ -428,15 +429,15 @@ export default function LibraryDetailView({ id }: { id: string }) {
         </section>
 
         <DetailSection title="수업 목표" icon={FileText}>
-          <p className="text-sm leading-7 text-slate-300">{objective}</p>
+          <p className="text-sm leading-7" style={{ color: 'var(--spm-t2)' }}>{objective}</p>
         </DetailSection>
 
         <DetailSection title={`진행 단계 · ${ruleItems.length}단계`} icon={Play}>
           <ol className="space-y-3">
             {ruleItems.map((step, index) => (
-              <li key={`${step}-${index}`} className="grid grid-cols-[34px_1fr] gap-3 rounded-2xl border border-white/8 bg-white/[0.04] p-4">
+              <li key={`${step}-${index}`} className="grid grid-cols-[34px_1fr] gap-3 rounded-2xl p-4" style={{ border: '1px solid var(--spm-br)', background: 'var(--spm-s3)' }}>
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500 text-xs font-black text-white">{index + 1}</span>
-                <p className="text-sm leading-7 text-slate-300">{step}</p>
+                <p className="text-sm leading-7" style={{ color: 'var(--spm-t2)' }}>{step}</p>
               </li>
             ))}
           </ol>
@@ -448,15 +449,15 @@ export default function LibraryDetailView({ id }: { id: string }) {
               {relatedSpomoveIds.map((spomoveId) => {
                 const drill = drills.find((item) => item.id === spomoveId);
                 return (
-                  <Link key={spomoveId} href={`/spokedu-master/spomove/session?drill=${spomoveId}&mode=class&program=${program.id}`} className="flex items-center gap-4 rounded-2xl border border-indigo-300/18 bg-indigo-400/10 p-4">
-                    <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-400/14 text-indigo-100">
+                  <Link key={spomoveId} href={`/spokedu-master/spomove/session?drill=${spomoveId}&mode=class&program=${program.id}`} className="flex items-center gap-4 rounded-2xl border border-indigo-200/60 bg-indigo-50 p-4">
+                    <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
                       <Zap className="h-5 w-5" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm font-black text-white">{cleanDrillName(drill, spomoveId)}</strong>
-                      <span className="mt-1 block text-xs font-semibold text-indigo-100/70">{getSpomoveUseLabel(program)}으로 실행</span>
+                      <strong className="block truncate text-sm font-black text-indigo-800">{cleanDrillName(drill, spomoveId)}</strong>
+                      <span className="mt-1 block text-xs font-semibold text-indigo-600">{getSpomoveUseLabel(program)}으로 실행</span>
                     </span>
-                    <MonitorPlay className="h-4 w-4 text-indigo-100" />
+                    <MonitorPlay className="h-4 w-4 text-indigo-500" />
                   </Link>
                 );
               })}
@@ -485,7 +486,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         ) : null}
 
         <DetailSection title="설명 문구" icon={Clipboard}>
-          <p className="text-sm leading-7 text-slate-300">{parentCopy}</p>
+          <p className="text-sm leading-7" style={{ color: 'var(--spm-t2)' }}>{parentCopy}</p>
         </DetailSection>
       </div>
     </main>
@@ -494,7 +495,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
 function BookOpenFallback() {
   return (
-    <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/[0.055] text-slate-300">
+    <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl" style={{ border: '1px solid var(--spm-br2)', background: 'var(--spm-s2)', color: 'var(--spm-t3)' }}>
       <FileText className="h-7 w-7" />
     </div>
   );

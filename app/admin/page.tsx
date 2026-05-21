@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
+import { clampRoundIndex } from '@/app/admin/classes-shared/lib/roundFields';
 import { BarChart3, Calendar, MessageSquare, Pin, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -276,7 +277,7 @@ export default function SpokeduHQDashboard() {
           const roundIndex = typeof c.round_index === 'number' ? c.round_index : undefined;
           const roundDisplay =
             typeof roundIndex === 'number' && Number.isFinite(roundIndex) && typeof total === 'number' && Number.isFinite(total) && total > 0
-              ? `${roundIndex}/${total}`
+              ? `${clampRoundIndex(roundIndex, total)}/${total}`
               : undefined;
           return {
             id: c.id,

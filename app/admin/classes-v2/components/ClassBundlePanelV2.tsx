@@ -12,6 +12,7 @@ import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/li
 import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-shared/lib/plannedRoundTotal";
 import { reindexGroupRounds } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
+import { findCrossGroupSlotConflicts } from "@/app/admin/classes-shared/lib/sessionRoundGuards";
 import {
   isSessionScheduleDraftDirty,
   isoRangeFromDateTimeInputs,
@@ -899,6 +900,10 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         .maybeSingle();
       if (cancelErr) throw cancelErr;
       if (!cancelledRow?.id) throw new Error("BUNDLE_SESSION_NOT_CANCELLED");
+      const rows = sessionsByGroupId[gid] || [];
+      if (rows.length > 1) {
+        await reindexGroupRounds(supabase, rows);
+      }
       toast.success("회차가 취소 처리되었습니다.");
       await loadAll();
       onChanged?.();
@@ -1129,6 +1134,25 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       weeklyFreq === 1
         ? Array.from({ length: count }, (_, i) => addDays(startFrom, intervalDays * i))
         : buildDates();
+
+    const restartTitle = String(bundleTitle || last.title || "").trim();
+    const restartTeacherId = String(last.created_by ?? "");
+    const restartStartAtList = dates.map((d) => d.toISOString());
+    const slotConflicts = await findCrossGroupSlotConflicts(supabase, {
+      teacherId: restartTeacherId,
+      title: restartTitle,
+      startAtList: restartStartAtList,
+    });
+    if (slotConflicts.length > 0) {
+      const sample = slotConflicts
+        .slice(0, 3)
+        .map((c) => `${new Date(c.start_at).toLocaleString("ko-KR")} (${c.round_display ?? "회차?"})`)
+        .join("\n");
+      toast.error(
+        `새 사이클 일정이 기존 다른 그룹 수업과 ${slotConflicts.length}건 겹칩니다. 구 사이클을 정리·취소한 뒤 재시작하세요.\n${sample}`
+      );
+      return;
+    }
 
     if (
       !confirm(

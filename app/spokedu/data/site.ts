@@ -37,7 +37,7 @@ export const siteNavItems: SiteNavItem[] = [
 export const footerLinks = siteNavItems;
 
 export function getSocialLinks(): BrandChannel[] {
-  return getLiveExternalChannels();
+  return getLiveExternalChannels().filter((channel) => channel.href.trim().length > 0);
 }
 
 export type ContactInquiryType = 'private' | 'dispatch' | 'curriculum';

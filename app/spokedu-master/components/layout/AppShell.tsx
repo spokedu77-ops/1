@@ -150,7 +150,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-white/5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)', borderColor: 'var(--spm-br)' }}>
         {hideChrome ? null : <DesktopRail basePath={basePath} />}
         <div className="flex min-w-0 flex-1 flex-col">
           {hideChrome ? null : <StatusBar />}

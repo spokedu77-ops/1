@@ -127,9 +127,9 @@ function CatalogModeCard({ drill, isLocked, linkedPrograms }: { drill: Drill; is
             설정으로
           </span>
           {linkedPrograms.length > 0 ? (
-            <span className="inline-flex h-9 items-center rounded-xl border border-white/10 px-3 text-xs font-bold text-slate-300">{linkedPrograms.length}개 수업 연동</span>
+            <span className="inline-flex h-9 items-center rounded-xl border px-3 text-xs font-bold" style={{ borderColor: 'var(--spm-br2)', color: 'var(--spm-t3)' }}>{linkedPrograms.length}개 수업 연동</span>
           ) : firstLevel ? (
-            <span className="inline-flex h-9 min-w-0 items-center rounded-xl border border-white/10 px-3 text-xs font-bold text-slate-300">{firstLevel.enName}</span>
+            <span className="inline-flex h-9 min-w-0 items-center rounded-xl border px-3 text-xs font-bold" style={{ borderColor: 'var(--spm-br2)', color: 'var(--spm-t3)' }}>{firstLevel.enName}</span>
           ) : null}
           {isLocked ? <Lock className="h-3.5 w-3.5 text-amber-300" /> : null}
         </span>
@@ -202,7 +202,7 @@ export default function SpomoveHubView() {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
       <header>
-        <section className="overflow-hidden rounded-[28px] border border-white/10" style={{ background: 'var(--spm-s1)' }}>
+        <section className="overflow-hidden rounded-[28px]" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
           <div className="relative min-h-[340px] p-6 sm:p-8 lg:p-10">
             <div
               className="pointer-events-none absolute inset-0"
@@ -273,7 +273,7 @@ export default function SpomoveHubView() {
             <a
               key={code}
               href={`#${code}`}
-              className="shrink-0 rounded-full border px-4 py-2 text-sm font-black transition hover:bg-white/[0.08]"
+              className="shrink-0 rounded-full border px-4 py-2 text-sm font-black transition hover:opacity-80"
               style={{ borderColor: `${meta.tone}40`, color: meta.tone, background: `${meta.tone}0f` }}
             >
               {meta.title}

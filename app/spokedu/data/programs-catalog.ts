@@ -185,24 +185,28 @@ export const programCatalogCards: ProgramCatalogCard[] = programRegistry.map((it
 
 export const trackUsageRows = [
   {
-    track: 'Private Class' as const,
-    label: 'Private',
-    summary: 'SPOMOVE·놀이체육·방학캠프 맞춤 적용.',
+    track: '개인수업',
+    summary: 'SPOMOVE·놀이체육·방학캠프',
     href: '/spokedu/private',
     programs: ['SPOMOVE', '놀이체육', '방학캠프'],
   },
   {
-    track: 'Dispatch Solution' as const,
-    label: 'Dispatch',
-    summary: 'PAPS·원데이·SPOMOVE 조합 제안.',
+    track: '기관수업',
+    summary: 'PAPS·원데이·SPOMOVE',
     href: '/spokedu/dispatch',
     programs: ['PAPS', '원데이', 'SPOMOVE', '놀이체육'],
   },
   {
-    track: 'Curriculum & Contents' as const,
-    label: 'Curriculum',
-    summary: '수업안·매뉴얼·강사 교육 패키지.',
+    track: '교육 콘텐츠',
+    summary: '수업안·매뉴얼·강사 교육',
     href: '/spokedu/curriculum',
     programs: ['커리큘럼 콘텐츠', 'PAPS', 'SPOMOVE'],
   },
 ] as const;
+
+/** 카드 배지 표시용 (내부 트랙 키는 유지) */
+export const programTrackLabels: Record<ProgramTrack, string> = {
+  Private: '개인',
+  Dispatch: '기관',
+  Curriculum: '콘텐츠',
+};

@@ -5,6 +5,7 @@ import { SessionEvent } from '../types';
 import { parseExtraTeachers } from '../lib/sessionUtils';
 import { ADMIN_NAMES } from '../constants/admins';
 import { buildGroupPlannedTotals } from '../lib/plannedRoundTotal';
+import { clampRoundIndex } from '../lib/roundFields';
 import { themeColorHexForSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 
 function assertUpdatedRow(data: { id?: string } | null, error: unknown, fallback: string) {
@@ -102,7 +103,7 @@ export function useClassManagement() {
         const roundIndex = typeof s.round_index === 'number' ? s.round_index : undefined;
         let roundStr: string | undefined =
           typeof roundIndex === 'number' && typeof total === 'number' && Number.isFinite(roundIndex) && Number.isFinite(total) && total > 0
-            ? `${roundIndex}/${total}`
+            ? `${clampRoundIndex(roundIndex, total)}/${total}`
             : undefined;
 
         // round_index가 비어있는 데이터만 최소 fallback(정수 패턴만) 처리

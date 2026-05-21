@@ -389,16 +389,16 @@ function ProgramModal({
           <MetaBox label="인원" value={detail?.recommendedPlayers || '소그룹~학급'} />
         </div>
 
-        <div className="sticky top-0 z-10 grid gap-3 rounded-3xl border border-white/10 bg-[#0d0d14]/95 p-2 backdrop-blur-xl sm:grid-cols-2">
-          <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-extrabold text-slate-950">
+        <div className="sticky top-0 z-10 grid gap-3 rounded-3xl p-2 sm:grid-cols-2" style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid var(--spm-br2)', backdropFilter: 'blur(12px)' }}>
+          <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-extrabold text-white" style={{ background: 'var(--spm-acc)' }}>
             <Play className="h-4 w-4 fill-current" />
             수업 시작
           </Link>
-          <Link href={spomoveHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-300/25 bg-indigo-400/10 px-5 text-sm font-bold text-indigo-100">
+          <Link href={spomoveHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-200/60 bg-indigo-50 px-5 text-sm font-bold text-indigo-700">
             <MonitorPlay className="h-4 w-4" />
             SPOMOVE 큰 화면
           </Link>
-          <button type="button" onClick={copyParentNote} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-300/25 bg-emerald-400/10 px-5 text-sm font-bold text-emerald-100">
+          <button type="button" onClick={copyParentNote} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-200/60 bg-emerald-50 px-5 text-sm font-bold text-emerald-700">
             <Clipboard className="h-4 w-4" />
             {copied ? '복사 완료' : '설명 문구 복사'}
           </button>
@@ -406,42 +406,43 @@ function ProgramModal({
             type="button"
             onClick={onFavorite}
             className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-5 text-sm font-bold ${
-              favorite ? 'border-amber-300/35 bg-amber-300/12 text-amber-100' : 'border-white/10 bg-white/[0.05] text-slate-200'
+              favorite ? 'border-amber-200/60 bg-amber-50 text-amber-700' : 'text-[var(--spm-t2)]'
             }`}
+            style={favorite ? undefined : { borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}
           >
             <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
             {favorite ? '즐겨찾기 저장됨' : '즐겨찾기'}
           </button>
         </div>
 
-        <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-          <h3 className="text-base font-black text-white">수업 목표</h3>
-          <p className="mt-3 text-sm leading-7 text-slate-300">{detail?.objective || program.description}</p>
+        <section className="rounded-3xl p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+          <h3 className="text-base font-black" style={{ color: 'var(--spm-t)' }}>수업 목표</h3>
+          <p className="mt-3 text-sm leading-7" style={{ color: 'var(--spm-t2)' }}>{detail?.objective || program.description}</p>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-            <h3 className="flex items-center gap-2 text-base font-black text-white">
-              <Package className="h-4 w-4 text-indigo-200" />
+          <div className="rounded-3xl p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+            <h3 className="flex items-center gap-2 text-base font-black" style={{ color: 'var(--spm-t)' }}>
+              <Package className="h-4 w-4 text-indigo-500" />
               준비물
             </h3>
             <div className="mt-4 flex flex-wrap gap-2">
               {(program.equipment.length ? program.equipment : ['현장 기본 도구']).map((item) => (
-                <span key={item} className="rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-slate-300">
+                <span key={item} className="rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
                   {item}
                 </span>
               ))}
             </div>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-            <h3 className="flex items-center gap-2 text-base font-black text-white">
-              <MapPin className="h-4 w-4 text-indigo-200" />
+          <div className="rounded-3xl p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+            <h3 className="flex items-center gap-2 text-base font-black" style={{ color: 'var(--spm-t)' }}>
+              <MapPin className="h-4 w-4 text-indigo-500" />
               공간 세팅
             </h3>
             <ul className="mt-4 space-y-2">
               {setupNotes.slice(0, 4).map((item) => (
-                <li key={item} className="flex gap-2 text-sm leading-6 text-slate-300">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-300" />
+                <li key={item} className="flex gap-2 text-sm leading-6" style={{ color: 'var(--spm-t2)' }}>
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
                   {item}
                 </li>
               ))}
@@ -449,36 +450,36 @@ function ProgramModal({
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-          <h3 className="text-base font-black text-white">진행 단계</h3>
+        <section className="rounded-3xl p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
+          <h3 className="text-base font-black" style={{ color: 'var(--spm-t)' }}>진행 단계</h3>
           <ol className="mt-4 space-y-3">
             {rules.slice(0, 6).map((step, index) => (
-              <li key={`${step}-${index}`} className="grid grid-cols-[32px_1fr] gap-3 rounded-2xl bg-white/[0.04] p-3">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-400/14 text-xs font-black text-indigo-100">{index + 1}</span>
-                <p className="text-sm leading-6 text-slate-300">{step}</p>
+              <li key={`${step}-${index}`} className="grid grid-cols-[32px_1fr] gap-3 rounded-2xl p-3" style={{ background: 'var(--spm-s3)' }}>
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-black text-indigo-700">{index + 1}</span>
+                <p className="text-sm leading-6" style={{ color: 'var(--spm-t2)' }}>{step}</p>
               </li>
             ))}
           </ol>
         </section>
 
-        <section className="rounded-3xl border border-indigo-300/18 bg-indigo-400/10 p-5">
-          <h3 className="flex items-center gap-2 text-base font-black text-white">
-            <Zap className="h-4 w-4 text-indigo-200" />
+        <section className="rounded-3xl border border-indigo-200/60 bg-indigo-50 p-5">
+          <h3 className="flex items-center gap-2 text-base font-black text-indigo-800">
+            <Zap className="h-4 w-4 text-indigo-500" />
             SPOMOVE 연결
           </h3>
-          <p className="mt-3 text-sm leading-7 text-indigo-100/80">
+          <p className="mt-3 text-sm leading-7 text-indigo-700">
             {drill?.name
               ? `${drill.name}과 연결하면 ${getSpomoveUseLabel(program)} 흐름으로 수업 몰입을 만들 수 있습니다.`
               : `${getSpomoveUseLabel(program)} 용도로 큰 화면 활동을 연결합니다.`}
           </p>
         </section>
 
-        <section className="rounded-3xl border border-emerald-300/18 bg-emerald-400/10 p-5">
-          <h3 className="flex items-center gap-2 text-base font-black text-white">
-            <FileText className="h-4 w-4 text-emerald-200" />
+        <section className="rounded-3xl border border-emerald-200/60 bg-emerald-50 p-5">
+          <h3 className="flex items-center gap-2 text-base font-black text-emerald-800">
+            <FileText className="h-4 w-4 text-emerald-600" />
             학부모·기관 설명 문구
           </h3>
-          <p className="mt-3 text-sm leading-7 text-emerald-50/85">{parentCopy}</p>
+          <p className="mt-3 text-sm leading-7 text-emerald-700">{parentCopy}</p>
         </section>
       </div>
     </BottomSheet>
@@ -595,10 +596,10 @@ export default function LibraryView() {
           <SectionTitle eyebrow="All Programs" title={query || filter !== '전체' ? `검색 결과 ${filteredPrograms.length}개` : '전체 수업 패키지'} />
           <ProgramGrid programs={filteredPrograms} isPro={isPro} favorites={favorites} usedProgramIds={usedProgramIds} toggleFavorite={toggleFavorite} setSelected={setSelected} />
           {filteredPrograms.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-white/12 bg-white/[0.035] p-8 text-center">
-              <BookOpen className="mx-auto h-10 w-10 text-slate-500" />
-              <h3 className="mt-4 text-lg font-black text-white">조건에 맞는 수업이 없습니다.</h3>
-              <p className="mt-2 text-sm text-slate-400">검색어를 줄이거나 필터를 전체로 바꿔보세요.</p>
+            <div className="rounded-3xl p-8 text-center" style={{ border: '1.5px dashed var(--spm-br3)', background: 'var(--spm-s2)' }}>
+              <BookOpen className="mx-auto h-10 w-10" style={{ color: 'var(--spm-t3)' }} />
+              <h3 className="mt-4 text-lg font-black" style={{ color: 'var(--spm-t)' }}>조건에 맞는 수업이 없습니다.</h3>
+              <p className="mt-2 text-sm" style={{ color: 'var(--spm-t2)' }}>검색어를 줄이거나 필터를 전체로 바꿔보세요.</p>
             </div>
           ) : null}
         </section>

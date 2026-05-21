@@ -145,8 +145,14 @@ export default function SpokeduHomeLanding() {
                 </div>
                 <div className="flex flex-1 flex-col justify-between p-5 sm:p-6">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">{card.audience}</p>
-                    <h3 className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{card.title}</h3>
+                    {card.audience ? (
+                      <p className="text-sm font-medium text-slate-500">{card.audience}</p>
+                    ) : null}
+                    <h3
+                      className={`text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl ${card.audience ? 'mt-1' : ''}`}
+                    >
+                      {card.title}
+                    </h3>
                     <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.description}</p>
                   </div>
                   <span

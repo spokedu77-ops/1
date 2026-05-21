@@ -191,7 +191,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
         </div>
         <div className="pointer-events-none absolute inset-0 bg-slate-950/78" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">다음 운영을 준비 중이신가요?</h2>
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">다음 운영 상담이 필요하신가요?</h2>
           <div className="mt-6">
             <HeroCtaStack
               variant="dark"

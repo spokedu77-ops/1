@@ -41,26 +41,26 @@ export const homePage = {
   },
   visitorGate: {
     id: 'visitor-gate',
-    title: '대상별 입구',
+    title: '어떤 수업이 필요하신가요?',
     cards: [
       {
-        audience: '학부모',
+        audience: '',
         title: '개인수업',
-        description: '아이 맞춤 체육수업',
+        description: '아이에게 맞춘 1:1·소그룹 체육수업',
         href: `${SPOKEDU_BASE_PATH}/private`,
         trackLabel: 'cta-home-gate-private',
       },
       {
-        audience: '기관',
+        audience: '',
         title: '기관수업',
-        description: '정규·원데이·캠프',
+        description: '공간과 인원에 맞춘 정규수업·원데이·캠프',
         href: `${SPOKEDU_BASE_PATH}/dispatch`,
         trackLabel: 'cta-home-gate-dispatch',
       },
       {
-        audience: '강사·파트너',
+        audience: '',
         title: '교육 콘텐츠',
-        description: '수업안·강사 교육',
+        description: '수업안·매뉴얼·강사교육·커리큘럼 콘텐츠',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-gate-curriculum',
       },

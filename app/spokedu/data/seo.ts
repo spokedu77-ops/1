@@ -101,24 +101,24 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '아이의 수업, 기관의 프로그램, 선생님의 커리큘럼을 연결하는 스포키듀. LAB 운영과 현장기록으로 검증한 체육교육 브랜드입니다.',
   },
   private: {
-    title: '개인·소그룹 체육수업 | SPOKEDU Private Class',
+    title: '개인·소그룹 체육수업 | SPOKEDU',
     description:
       '아이의 연령과 성향에 맞춘 1:1·소그룹 체육수업. 기본 움직임과 운동 습관을 놀이 중심으로 설계하는 어린이 체육수업 상담을 받아보세요.',
   },
   dispatch: {
-    title: '기관 파견 체육교육 | SPOKEDU Dispatch Solution',
+    title: '기관 파견 체육교육 | SPOKEDU',
     description:
       '키움센터·지역아동센터·학교에 맞춘 기관 체육수업과 원데이·정규 프로그램. 공간·인원·일정에 맞는 SPOMOVE·PAPS 운영안을 제안합니다.',
   },
   curriculum: {
-    title: '체육 커리큘럼·콘텐츠 | SPOKEDU Curriculum',
+    title: '체육 커리큘럼·콘텐츠 | SPOKEDU',
     description:
       '놀이체육 수업안, 운영 매뉴얼, 교구 활용, 강사 교육까지. 현장 수업을 반복 운영 가능한 체육 커리큘럼과 콘텐츠 도입을 안내합니다.',
   },
   programs: {
     title: 'SPOKEDU 프로그램 | SPOMOVE·PAPS·원데이·방학캠프',
     description:
-      'SPOMOVE, PAPS 놀이체육, 원데이, 방학캠프, 커리큘럼 콘텐츠. 개인·기관·강사 운영에 연결되는 스포키듀 프로그램 자산을 비교합니다.',
+      'SPOMOVE, PAPS, 원데이, 방학캠프, 커리큘럼 콘텐츠. 개인·기관·강사 운영에 맞는 프로그램을 한곳에서 확인합니다.',
   },
   records: {
     title: '현장기록 | 수업 사례·월간 스포키듀',
