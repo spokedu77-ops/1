@@ -158,7 +158,7 @@ function TopBar({
 function SpomoveSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedDrillId = searchParams.get('drill') ?? 'SR-05';
+  const requestedDrillId = searchParams.get('drill') ?? 'reactTrain';
   const launchMode = normalizeMode(searchParams.get('mode'));
   const programId = searchParams.get('program') ?? '';
   const programs = useMasterStore((state) => state.programs);

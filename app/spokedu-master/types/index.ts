@@ -33,6 +33,7 @@ export interface Drill {
   icon?: string;
   enName?: string;
   tag?: string;
+  levels?: Array<{ id: number; name: string; enName: string; desc: string }>;
   cues: Cue[];
   isPro: boolean;
   bgColor: string;

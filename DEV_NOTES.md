@@ -39,6 +39,16 @@
 - 구독자 SPOMOVE 화면에 `시지각 반응`, `반응 인지`, `사이먼 효과`, `플랭커`, `Go / No-Go`, `Task Switching`, `순차 기억`, `스트룹 과제`, `플로우` 같은 실제 training 모드가 나오도록 했다.
 - 구독자 SPOMOVE 세션에서 로컬 엔진으로 처리하지 않는 실제 training 모드는 `/admin/spomove/training/_player?embed=1` iframe으로 실행한다. admin training 플레이어는 embed 모드에서 헤더 링크를 숨긴다.
 - 라이브러리 모달 상단은 `lessonDetail.videoUrl`이 있으면 썸네일 대신 영상을 즉시 재생한다. YouTube URL은 embed autoplay/mute로, mp4/webm/ogg는 video 태그로 처리한다.
+- 라이브러리 상세 페이지 상단도 `lessonDetail.videoUrl`이 있으면 대표 이미지보다 영상을 우선 재생한다.
+- store 초기값을 실제 로딩 전 빈 배열로 바꿨다. API가 로딩되기 전 정적 샘플이 먼저 보이는 문제를 막고, 네트워크 실패/데이터 없음일 때만 fallback 콘텐츠를 사용한다.
+- 프로그램-SPOMOVE 연결 ID를 실제 training ID 기준으로 바꿨다. 신규 연결은 `reactTrain`, `basic`, `simon`, `flanker`, `gonogo`, `taskswitch`, `spatial`, `stroop`, `flow`를 사용한다.
+- 기존 DB나 레거시 데이터에 남아 있을 수 있는 `SR-05`, `SR-06`, `RS-05`, `IC-05`, `RC-05`, `SM-05`, `SM-06`은 `/api/spokedu-master/programs`에서 실제 training ID로 자동 변환한다.
+- 홈 히어로에 대표 프로그램의 수업안, 준비물, 진행 단계, 설명 문구, SPOMOVE 실행이 한 번에 이어진다는 메시지를 추가했다.
+- 홈 `이번 주 수업 준비 끝내는 4선` 카드를 강화했다. 프로그램 카드에는 발달 초점, SPOMOVE 연동, 준비 간편, 설명 문구, 배치 가이드, 시간, 공간, 단계 수가 바로 보인다.
+- 홈 추천 4선은 실제 프로그램 3개 + 실제 SPOMOVE 1개 구조를 유지하되, 단순 목록이 아니라 수업 준비 패키지처럼 보이도록 카드 밀도와 CTA를 조정했다.
+- `Drill` 타입과 `/api/spokedu-master/drills` 응답에 실제 training `levels`를 포함했다.
+- SPOMOVE 카탈로그 카드에 한/영 이름, 설명, 태그, 단계 수, 연결 수업 수를 노출했다.
+- SPOMOVE 전체 목록 CTA를 `설정으로`로 정리했다. 구독자 화면에서도 admin training의 `설정으로 ▶` 흐름과 같은 인지 구조를 유지한다.
 - 정적 기준 콘텐츠 데이터를 정상 한국어로 복구했다. `Funstick Fencing`, `8자 드릴 민첩성 트레이닝`, `팀 릴레이 챌린지`와 SPOMOVE 기본 드릴명이 깨진 문자열 없이 표시된다.
 - Funstick Fencing을 기준 상품 샘플로 강화했다. 수업 목표, 코치 멘트, 학부모 문구, 현장 팁, 변형, 안전 체크, 공간 세팅, SPOMOVE 연결까지 채웠다.
 - `8자 드릴 민첩성 트레이닝`과 `팀 릴레이 챌린지`도 같은 콘텐츠 골격으로 강화했다. 목표, 단계, 코치 멘트, 보호자 문구, 현장 팁, 변형, 안전 체크, 공간 세팅, SPOMOVE 연결이 포함된다.
@@ -67,10 +77,12 @@
 ## 반영한 레퍼런스
 
 - Netflix/Disney+식 큐레이션: 사용자가 무엇을 볼지 고민하기 전에 오늘 쓸 콘텐츠를 먼저 제안한다.
+- Netflix/교육 OTT식 홈 큐레이션: 첫 화면에서 대표 수업과 이번 주 추천 묶음을 보여주되, SPOKEDU에서는 감상 콘텐츠가 아니라 수업 준비 패키지로 번역한다.
 - Class101/MasterClass식 패키징: 콘텐츠를 단순 목록이 아니라 완성된 수업 패키지로 보여준다.
 - Class101/MasterClass식 상세 페이지: 대표 이미지, 수업 목표, 준비물, 단계, 현장 팁, 연결 활동을 한 화면에서 확인하게 한다.
 - GoNoodle/MOJO식 화면 활동: 아이들이 바로 반응하는 SPOMOVE를 독립 실행 엔진으로 보여준다.
 - Peloton/Apple Fitness식 실행 CTA: `큰 화면 실행`, `모바일`, `Class Mode`처럼 실행 맥락을 분리한다.
+- GoNoodle/Peloton식 모드 카탈로그: 화면 활동은 단순 카드가 아니라 모드, 레벨, 실행 맥락이 바로 보여야 하므로 SPOMOVE 카드에 단계 수와 설정 진입을 넣었다.
 - Class101/MasterClass식 영상 우선 상세: 모달을 열면 대표 썸네일보다 영상 재생을 우선해 강사가 수업 준비 흐름을 끊지 않게 한다.
 - 교실 운영 도구 레퍼런스: ClassDojo/TeamSnap류의 무거운 관리 기능이 아니라, 현장에서 바로 쓰는 타이머·점수판·랜덤 선택 수준으로 낮춰 유지한다.
 - TeamSnap/ClassDojo식 커뮤니케이션 가치: Phase 1에서는 자동 발송이 아니라 복사 가능한 설명 문구로 수업 직후 커뮤니케이션을 만든다.
@@ -99,6 +111,7 @@
 - SPOMOVE 데이터 원천은 `admin/spomove/training`이다.
 - 실제 프로그램 데이터가 있을 때 정적 샘플 콘텐츠를 섞으면 안 된다. 정적 콘텐츠는 API 비어 있음/오프라인 fallback으로만 사용한다.
 - SPOMOVE를 라이브러리 카테고리처럼 만들면 안 된다. 라이브러리와 연결은 가능하지만, 데이터와 실행은 `/admin/spomove/training` 기반 독립 엔진이다.
+- 라이브러리의 `relatedSpomoveIds`는 반드시 실제 training ID를 써야 한다. 예전 `SR-05` 계열은 API에서 호환 변환만 한다.
 - Store는 교구 판매 영역이다. 학생/수업 기록/성장 리포트와 섞으면 안 된다.
 - Phase 1은 라이브러리, SPOMOVE, 수업 설명 도구, 플랜/프로필 완성도가 우선이다.
 - 수업 기록, 학생 이력, 카카오, 학부모 웹뷰, 원장 대시보드는 Phase 2/3로 미룬다.

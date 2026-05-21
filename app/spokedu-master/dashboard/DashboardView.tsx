@@ -1,10 +1,10 @@
 'use client';
 
 import { isSameDay } from 'date-fns';
-import { Bell, BookOpen, Check, ChevronRight, Clock3, MonitorPlay, Play, Sparkles, Zap } from 'lucide-react';
+import { Bell, BookOpen, Check, ChevronRight, Clock3, FileText, MapPin, MonitorPlay, Play, Sparkles, Zap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
@@ -54,6 +54,21 @@ function getPrimaryDrill(program: Program | undefined, drills: Drill[]) {
 
 function getHeroImage(program: Program | undefined) {
   return program?.lessonDetail?.heroImageUrl || program?.thumbnailUrl;
+}
+
+function getProgramFocus(program: Program) {
+  return program.lessonDetail?.developmentFocus || program.category;
+}
+
+function getProgramValueChips(program: Program) {
+  const chips = [
+    program.lessonDetail?.relatedSpomoveIds?.length ? 'SPOMOVE 연동' : null,
+    program.equipment.length <= 2 ? '준비 간편' : null,
+    /좁은|실내|교실|소규모/.test(`${program.space} ${program.tags.join(' ')}`) ? '좁은 공간' : null,
+    program.lessonDetail?.parentNote ? '설명 문구 포함' : null,
+    program.lessonDetail?.setupNotes?.length ? '배치 가이드' : null,
+  ].filter(Boolean) as string[];
+  return chips.slice(0, 3);
 }
 
 function formatLessonTime(lesson: Lesson) {
@@ -119,6 +134,8 @@ function NotificationButton({ onClick }: { onClick: () => void }) {
 
 function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
   const heroImage = getHeroImage(program);
+  const focus = getProgramFocus(program);
+  const valueChips = getProgramValueChips(program);
   const spomoveHref = drill
     ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
     : '/spokedu-master/spomove';
@@ -145,6 +162,16 @@ function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
               <br />
               수업은 더 몰입감 있게.
             </h1>
+            <p className="mt-5 max-w-xl text-sm font-semibold leading-7 text-slate-300">
+              {program.title} 수업안, 준비물, 진행 단계, 설명 문구, SPOMOVE 실행까지 한 번에 이어집니다.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {valueChips.map((chip) => (
+                <span key={chip} className="rounded-full border border-white/10 bg-white/[0.065] px-3 py-1.5 text-xs font-bold text-slate-200">
+                  {chip}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -193,7 +220,7 @@ function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                 <MiniStat label="대상" value={program.grade} />
                 <MiniStat label="시간" value={`${program.duration}분`} />
-                <MiniStat label="공간" value={program.space} />
+                <MiniStat label="초점" value={focus} />
               </div>
             </div>
           </div>
@@ -213,12 +240,14 @@ function MiniStat({ label, value }: { label: string; value: string }) {
 }
 
 function ProgramPackageCard({ program, drill }: { program: Program; drill?: Drill }) {
+  const valueChips = getProgramValueChips(program);
+  const focus = getProgramFocus(program);
   const spomoveHref = drill
     ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
     : '/spokedu-master/spomove';
 
   return (
-    <article className="flex min-h-[286px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.055]">
+    <article className="flex min-h-[326px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.055] transition hover:-translate-y-0.5 hover:bg-white/[0.075]">
       <Link href={`/spokedu-master/library/${program.id}`} className="relative h-36 overflow-hidden bg-slate-900">
         {getHeroImage(program) ? (
           <Image
@@ -237,10 +266,25 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
         <span className="absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1 text-[11px] font-bold text-white backdrop-blur">
           {program.category}
         </span>
+        <span className="absolute bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-black/45 text-white backdrop-blur">
+          <BookOpen className="h-4 w-4" />
+        </span>
       </Link>
       <div className="flex flex-1 flex-col p-5">
         <h3 className="line-clamp-2 text-base font-black leading-snug text-white">{program.title}</h3>
-        <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">{program.description}</p>
+        <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">{focus}</p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {valueChips.map((chip) => (
+            <span key={chip} className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-bold text-slate-300">
+              {chip}
+            </span>
+          ))}
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <PackageStat icon={<Clock3 className="h-3.5 w-3.5" />} value={`${program.duration}분`} />
+          <PackageStat icon={<MapPin className="h-3.5 w-3.5" />} value={program.space} />
+          <PackageStat icon={<FileText className="h-3.5 w-3.5" />} value={program.lessonDetail?.rules?.length ? `${program.lessonDetail.rules.length}단계` : '수업안'} />
+        </div>
         <div className="mt-auto flex flex-wrap gap-2 pt-4">
           <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white px-3 text-xs font-extrabold text-slate-950">
             <Play className="h-3.5 w-3.5 fill-current" />
@@ -258,12 +302,21 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
   );
 }
 
+function PackageStat({ icon, value }: { icon: ReactNode; value: string }) {
+  return (
+    <div className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-white/[0.045] px-2 text-center text-[11px] font-bold text-slate-300">
+      <span className="shrink-0 text-slate-500">{icon}</span>
+      <span className="min-w-0 truncate">{value}</span>
+    </div>
+  );
+}
+
 function WeeklySpomoveCard({ drill }: { drill: Drill }) {
   const drillTitle = drill.name || drill.category || 'SPOMOVE';
   const drillCaption = drill.description || `${drill.category} 수업에서 바로 실행할 수 있는 큰 화면 반응 훈련입니다.`;
 
   return (
-    <article className="flex min-h-[286px] flex-col overflow-hidden rounded-3xl border border-indigo-300/20 bg-indigo-400/12 p-5">
+    <article className="flex min-h-[326px] flex-col overflow-hidden rounded-3xl border border-indigo-300/20 bg-indigo-400/12 p-5 transition hover:-translate-y-0.5 hover:bg-indigo-400/16">
       <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-bold text-white/80">
         <MonitorPlay className="h-3.5 w-3.5" />
         SPOMOVE
@@ -272,6 +325,10 @@ function WeeklySpomoveCard({ drill }: { drill: Drill }) {
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-200">이번 주 화면 활동</p>
         <h3 className="mt-3 text-2xl font-black leading-tight text-white">{drillTitle}</h3>
         <p className="mt-3 line-clamp-3 text-sm leading-6 text-indigo-100/75">{drillCaption}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <span className="rounded-2xl bg-white/[0.08] px-3 py-2 text-center text-[11px] font-black text-indigo-100">{drill.tag || drill.category}</span>
+          <span className="rounded-2xl bg-white/[0.08] px-3 py-2 text-center text-[11px] font-black text-indigo-100">{drill.enName || 'Class Mode'}</span>
+        </div>
       </div>
       <Link
         href={`/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`}
@@ -371,7 +428,7 @@ function NotificationSheet({
 }
 
 export default function DashboardView() {
-  const { programs, drills, lessons, notifications, markAllRead } = useMasterStore();
+  const { programs, programsLoaded, drills, drillsLoaded, lessons, notifications, markAllRead } = useMasterStore();
   const [mounted, setMounted] = useState(false);
   const [isNotificationOpen, setNotificationOpen] = useState(false);
 
@@ -396,7 +453,7 @@ export default function DashboardView() {
 
   const weeklyDrill = useMemo(() => heroDrill ?? drills[0], [drills, heroDrill]);
 
-  if (!mounted || !heroProgram) {
+  if (!mounted || !programsLoaded || !drillsLoaded || !heroProgram) {
     return <DashboardSkeleton />;
   }
 
@@ -419,8 +476,8 @@ export default function DashboardView() {
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-300">Weekly Picks</p>
-              <h2 className="mt-1 text-xl font-black text-white">이번 주 바로 쓰는 4선</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-300">Ready This Week</p>
+              <h2 className="mt-1 text-xl font-black text-white">이번 주 수업 준비 끝내는 4선</h2>
             </div>
             <Link href="/spokedu-master/library" className="text-sm font-bold text-indigo-200 hover:text-white">
               전체 보기

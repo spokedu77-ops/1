@@ -10,11 +10,15 @@ export const SESSION_CUES: Cue[] = [
 ];
 
 export const DRILLS: Drill[] = [
-  { id: 'SR-05', name: '스피드 리액션', category: '시각 반응', cues: SESSION_CUES, isPro: false, bgColor: '#312e81' },
-  { id: 'SR-06', name: '방향 전환 챌린지', category: '방향 전환', cues: SESSION_CUES.slice(0, 4), isPro: false, bgColor: '#064e3b' },
-  { id: 'RS-05', name: '팀 콜 사인', category: '협동 반응', cues: SESSION_CUES.slice(0, 5), isPro: true, bgColor: '#0f766e' },
-  { id: 'IC-05', name: '스텝 밸런스', category: '균형 조절', cues: SESSION_CUES, isPro: true, bgColor: '#92400e' },
-  { id: 'RC-05', name: '리듬 체인지', category: '리듬 반응', cues: SESSION_CUES, isPro: true, bgColor: '#7c2d12' },
+  { id: 'reactTrain', name: '시지각 반응 : Visual Reaction', category: '시지각 반응', description: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각·반응 훈련입니다.', icon: '◆', enName: 'Visual Reaction', tag: '시지각 · 반응 훈련', levels: [{ id: 1, name: '1번', enName: 'FLOW', desc: '색 타일이 레인을 따라 흘러내립니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#E11D48', engine: { mode: 'reactTrain', level: 1 } },
+  { id: 'basic', name: '반응 인지 : Reactive Cognition', category: '반응 인지', description: '화면 신호를 보는 순간, 판단하고 즉시 움직입니다.', icon: '⚡', enName: 'Reactive Cognition', tag: '순발력 · 지각 훈련', levels: [{ id: 1, name: '1번', enName: 'Quad Color', desc: '사분할 색 신호에 반응합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#3B82F6', engine: { mode: 'basic', level: 1 } },
+  { id: 'simon', name: '사이먼 효과 : Simon Effect', category: '사이먼 효과', description: '원·삼각형·사각형이 화면 어디에나 하나씩 나타납니다. 안을 채운 색에 맞는 색 위치로 이동합니다.', icon: '◈', enName: 'Simon Effect', tag: '공간 위치 · 색 반응', levels: [{ id: 1, name: '1번', enName: 'Pole Shape', desc: '공간 위치와 색을 분리해 반응합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#EC4899', engine: { mode: 'simon', level: 1 } },
+  { id: 'flanker', name: '플랭커 : Flanker', category: '플랭커', description: '가로로 나란히 다섯 개의 원이 보입니다. 가운데 원의 색에 맞는 색 위치로 이동합니다.', icon: '◎', enName: 'Flanker', tag: '방해 자극 · 목표 색 선택', levels: [{ id: 1, name: '1번', enName: 'Uniform Flankers', desc: '가운데 목표 색에만 반응합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#6366F1', engine: { mode: 'flanker', level: 1 } },
+  { id: 'gonogo', name: 'Go / No-Go : Go / No-Go', category: 'Go / No-Go', description: '움직여야 할 때와 멈춰야 할 때를 구분해 반응을 억제합니다.', icon: '🛑', enName: 'Go / No-Go', tag: '반응 억제', levels: [{ id: 1, name: '1번', enName: 'Go / No-Go', desc: 'Go 신호와 멈춤 신호를 구분합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#F97316', engine: { mode: 'gonogo', level: 1 } },
+  { id: 'taskswitch', name: 'Task Switching : Task Switching', category: 'Task Switching', description: 'cue에 따라 색, 위치, 반대로 규칙을 바꿔 반응합니다.', icon: '🔀', enName: 'Task Switching', tag: '규칙 전환', levels: [{ id: 1, name: '1번', enName: 'Text Cues', desc: '규칙 cue에 따라 반응 기준을 바꿉니다.' }], cues: SESSION_CUES, isPro: true, bgColor: '#EA580C', engine: { mode: 'taskswitch', level: 1 } },
+  { id: 'spatial', name: '순차 기억 : Sequential Memory', category: '순차 기억', description: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.', icon: '🎨', enName: 'Sequential Memory', tag: '작업기억 · 순서 재생', levels: [{ id: 1, name: '1번', enName: '3항 기억', desc: '색 순서를 기억합니다.' }], cues: SESSION_CUES, isPro: true, bgColor: '#22C55E', engine: { mode: 'spatial', level: 1 } },
+  { id: 'stroop', name: '스트룹 과제 : Stroop Task', category: '스트룹 과제', description: '화살표·글자 과제에서 규칙에 따라 방향·색·의미를 말합니다.', icon: '🧠', enName: 'Stroop Task', tag: '억제 제어 · 인지 유연성', levels: [{ id: 1, name: '1번', enName: 'Arrow Stroop', desc: '방향과 규칙 간섭을 처리합니다.' }], cues: SESSION_CUES, isPro: true, bgColor: '#A855F7', engine: { mode: 'stroop', level: 1 } },
+  { id: 'flow', name: '플로우 : Flow Mode', category: '플로우', description: '우주 러닝 FLOW를 SPOMOVE에서 바로 실행합니다.', icon: '🌌', enName: 'Flow Mode', tag: '몰입 러닝 · 반응 전환', levels: [{ id: 1, name: '1번', enName: 'Flow Program', desc: 'FLOW 전체 시퀀스를 진행합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#06B6D4', engine: { mode: 'flow', level: 1 } },
 ];
 
 export const PROGRAMS: Program[] = [
@@ -69,7 +73,7 @@ export const PROGRAMS: Program[] = [
         '펀스틱은 상대 몸이 아니라 풍선 목표물을 향한 가벼운 터치로만 사용합니다.',
         '미끄러운 바닥에서는 이동 범위를 줄이고 정지형 라운드부터 시작합니다.',
       ],
-      relatedSpomoveIds: ['SR-05', 'SR-06'],
+      relatedSpomoveIds: ['reactTrain', 'simon'],
       heroImageUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
       setupImageUrl: '/images/spokedu-master/programs/funstick-fencing/setup.png',
       galleryImageUrls: ['/images/spokedu-master/programs/funstick-fencing/gallery-1.jpeg'],
@@ -140,7 +144,7 @@ export const PROGRAMS: Program[] = [
         '콘을 밟거나 차지 않도록 이동 경로 바깥쪽으로 발을 둡니다.',
         '바닥이 미끄러우면 달리기 대신 빠른 걷기로 진행합니다.',
       ],
-      relatedSpomoveIds: ['SR-05', 'SR-06'],
+      relatedSpomoveIds: ['reactTrain', 'basic'],
       briefingNotes: [
         '수업 전 8자 경로와 대기선을 먼저 구분합니다.',
         'SPOMOVE 신호를 언제 연결할지 먼저 정합니다.',
@@ -208,7 +212,7 @@ export const PROGRAMS: Program[] = [
         '바톤 전달 구역과 대기 구역을 분리해 충돌을 줄입니다.',
         '달리기 속도가 과해지면 이동 거리를 줄이고 정확한 전달 라운드로 전환합니다.',
       ],
-      relatedSpomoveIds: ['RS-05'],
+      relatedSpomoveIds: ['basic', 'taskswitch'],
       briefingNotes: [
         '팀별 역할과 교대 규칙을 먼저 안내합니다.',
         '기록 경쟁보다 정확한 연결과 팀 피드백이 목표임을 강조합니다.',

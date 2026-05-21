@@ -10,6 +10,7 @@ import {
   Maximize,
   MonitorPlay,
   Play,
+  SlidersHorizontal,
   Smartphone,
   Sparkles,
   TimerReset,
@@ -164,7 +165,7 @@ function DrillCard({ drill, index, isLocked, linkedPrograms }: { drill: Drill; i
       <div className="relative flex items-center justify-between gap-3">
         <span className="inline-flex h-10 items-center gap-2 rounded-full bg-white/14 px-4 text-xs font-black text-white">
           <MonitorPlay className="h-4 w-4" />
-          큰 화면 실행
+          설정으로
         </span>
         <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/16 transition group-hover:scale-105">
           {isLocked ? <Lock className="h-4 w-4 text-white" /> : <Play className="h-4 w-4 fill-white text-white" />}
@@ -253,6 +254,45 @@ function LaunchModeCard({ href, icon: Icon, title, caption, tone }: { href: stri
   );
 }
 
+function CatalogModeCard({ drill, isLocked, linkedPrograms }: { drill: Drill; isLocked: boolean; linkedPrograms: Program[] }) {
+  const href = isLocked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`;
+  const tone = drill.bgColor || '#818cf8';
+  const levelCount = drill.levels?.length ?? 1;
+  const firstLevel = drill.levels?.[0];
+
+  return (
+    <Link
+      href={href}
+      className="group grid min-h-[188px] grid-cols-[auto_1fr] gap-4 rounded-3xl border border-white/10 bg-white/[0.045] p-5 transition hover:-translate-y-0.5 hover:bg-white/[0.075]"
+    >
+      <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl" style={{ background: `${tone}22`, color: tone }}>
+        {drill.icon || <Zap className="h-6 w-6" />}
+      </span>
+      <span className="min-w-0">
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-black text-slate-300">{drill.tag || getDrillCategory(drill)}</span>
+          <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-black text-slate-300">{levelCount}단계</span>
+          {isLocked ? <span className="rounded-full bg-amber-300/14 px-2.5 py-1 text-[11px] font-black text-amber-100">PRO</span> : null}
+        </span>
+        <strong className="mt-3 line-clamp-1 block text-lg font-black text-white">{getDrillName(drill)}</strong>
+        <span className="mt-1 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">{drill.enName}</span>
+        <span className="mt-3 line-clamp-2 block text-sm leading-6 text-slate-400">{drill.description}</span>
+        <span className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white px-3 text-xs font-black text-slate-950">
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            설정으로
+          </span>
+          {linkedPrograms.length > 0 ? (
+            <span className="inline-flex h-9 items-center rounded-xl border border-white/10 px-3 text-xs font-bold text-slate-300">{linkedPrograms.length}개 수업 연동</span>
+          ) : firstLevel ? (
+            <span className="inline-flex h-9 min-w-0 items-center rounded-xl border border-white/10 px-3 text-xs font-bold text-slate-300">{firstLevel.enName}</span>
+          ) : null}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 export default function SpomoveHubView() {
   const isPro = useIsPro();
   const sessions = useMasterStore((state) => state.sessions);
@@ -261,7 +301,7 @@ export default function SpomoveHubView() {
   const stats = useStats();
 
   const defaultDrill = drills[0];
-  const defaultDrillId = defaultDrill?.id ?? 'SR-05';
+  const defaultDrillId = defaultDrill?.id ?? 'reactTrain';
 
   const warmupDrills = useMemo(() => getDrillsByIntent(drills, 'warmup'), [drills]);
   const reactionDrills = useMemo(() => getDrillsByIntent(drills, 'reaction'), [drills]);
@@ -360,29 +400,15 @@ export default function SpomoveHubView() {
         <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 sm:p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">All Drills</p>
-              <h2 className="mt-1 text-xl font-black text-white">전체 실행 목록</h2>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">Training Catalog</p>
+              <h2 className="mt-1 text-xl font-black text-white">실제 SPOMOVE 모드 전체</h2>
             </div>
             <span className="text-sm font-bold text-slate-500">{drills.length}개</span>
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {drills.map((drill) => {
-              const intent = getDrillIntent(drill);
-              const meta = INTENT_META[intent];
-              const locked = drill.isPro && !isPro;
-              return (
-                <Link key={drill.id} href={locked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.045] p-4 transition hover:bg-white/[0.075]">
-                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-lg" style={{ background: `${meta.tone}18`, color: meta.tone }}>
-                    {drill.icon || <Zap className="h-5 w-5" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <strong className="line-clamp-1 text-sm font-black text-white">{getDrillName(drill)}</strong>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">{drill.enName || drill.description || meta.title}</span>
-                  </span>
-                  {locked ? <Lock className="h-4 w-4 text-amber-200" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
-                </Link>
-              );
-            })}
+            {drills.map((drill) => (
+              <CatalogModeCard key={drill.id} drill={drill} isLocked={drill.isPro && !isPro} linkedPrograms={getLinkedPrograms(drill, programs)} />
+            ))}
           </div>
         </div>
 

@@ -109,6 +109,22 @@ function getGalleryImages(program: Program) {
   return [program.lessonDetail?.heroImageUrl, ...(program.lessonDetail?.galleryImageUrls ?? []), program.lessonDetail?.setupImageUrl].filter(Boolean) as string[];
 }
 
+function getYouTubeId(url?: string) {
+  if (!url) return undefined;
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  return match?.[1];
+}
+
+function getVideoEmbedUrl(url?: string) {
+  const youtubeId = getYouTubeId(url);
+  if (youtubeId) return `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`;
+  return undefined;
+}
+
+function isDirectVideoUrl(url?: string) {
+  return Boolean(url && /\.(mp4|webm|ogg)(\?.*)?$/i.test(url));
+}
+
 function hasSpomoveLink(program: Program) {
   return (program.lessonDetail?.relatedSpomoveIds?.length ?? 0) > 0 || program.tags.some((tag) => tag.toUpperCase().includes('SPOMOVE'));
 }
@@ -215,9 +231,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const locked = program.isPro && !isPro;
   const cartCount = cart.reduce((total, item) => total + item.qty, 0);
   const heroImage = getHeroImage(program);
+  const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl);
+  const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
   const galleryImages = getGalleryImages(program);
   const primaryDrill = getPrimaryDrill(program, drills);
-  const primarySpomoveId = primaryDrill?.id ?? detail?.relatedSpomoveIds?.[0] ?? drills[0]?.id ?? 'SR-05';
+  const primarySpomoveId = primaryDrill?.id ?? detail?.relatedSpomoveIds?.[0] ?? drills[0]?.id ?? 'reactTrain';
   const relatedSpomoveIds = detail?.relatedSpomoveIds?.length ? detail.relatedSpomoveIds : [primarySpomoveId];
   const objective = cleanText(detail?.objective, description);
   const focus = cleanText(detail?.developmentFocus, category);
@@ -270,13 +288,23 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
       <section className="relative overflow-hidden">
         <div className="relative min-h-[520px]">
-          {heroImage ? (
+          {videoEmbedUrl ? (
+            <iframe
+              src={videoEmbedUrl}
+              title={`${title} 영상`}
+              className="h-full w-full"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+            />
+          ) : directVideoUrl ? (
+            <video src={directVideoUrl} className="h-full w-full object-cover" controls autoPlay muted playsInline />
+          ) : heroImage ? (
             <Image src={heroImage} alt="" fill sizes="100vw" className="object-cover" priority unoptimized />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/32 via-slate-950 to-emerald-400/20" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#070812] via-[#070812]/48 to-black/10" />
-          {!heroImage ? (
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070812] via-[#070812]/42 to-black/10" />
+          {!heroImage && !videoEmbedUrl && !directVideoUrl ? (
             <span className="pointer-events-none absolute left-1/2 top-1/2 opacity-[0.08]" style={{ transform: 'translate(-50%, -50%) rotate(-8deg)' }} aria-hidden>
               <CategoryIcon category={category} size={360} color="#fff" strokeWidth={0.45} />
             </span>

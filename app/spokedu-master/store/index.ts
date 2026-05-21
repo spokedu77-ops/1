@@ -155,7 +155,7 @@ function applyStudentRecord(student: StudentProfile, record: ClassStudentRecord,
 export const useMasterStore = create<MasterState>()(
   persist(
     (set, get) => ({
-      programs: STATIC_PROGRAMS,
+      programs: [],
       programsLoaded: false,
       loadPrograms: async () => {
         if (get().programsLoaded) return;
@@ -171,9 +171,9 @@ export const useMasterStore = create<MasterState>()(
         } catch {
           // Keep static fallback when the network is unavailable.
         }
-        set({ programsLoaded: true });
+        set({ programs: STATIC_PROGRAMS, programsLoaded: true });
       },
-      drills: STATIC_DRILLS,
+      drills: [],
       drillsLoaded: false,
       loadDrills: async () => {
         if (get().drillsLoaded) return;
@@ -194,7 +194,7 @@ export const useMasterStore = create<MasterState>()(
         } catch {
           // Keep static fallback when the network is unavailable.
         }
-        set({ drillsLoaded: true });
+        set({ drills: STATIC_DRILLS, drillsLoaded: true });
       },
       profile: defaultProfile,
       setProfile: (profile) => set((state) => ({ profile: state.profile ? { ...state.profile, ...profile } : { ...defaultProfile, ...profile } })),

@@ -59,6 +59,7 @@ export async function GET() {
         icon: mode.icon,
         enName: mode.en,
         tag: mode.tag,
+        levels: mode.levels,
         cues: SESSION_CUES,
         isPro: meta?.is_pro ?? false,
         bgColor: mode.accent,

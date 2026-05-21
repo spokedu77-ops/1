@@ -190,7 +190,7 @@ function ReportContent() {
   const copyBlocks = useMemo(() => (program ? buildCopyBlocks(audience, program, selectedRecord) : []), [audience, program, selectedRecord]);
   const activeAudience = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0]!;
   const detail = program?.lessonDetail;
-  const primaryDrillId = detail?.relatedSpomoveIds[0] ?? 'SR-05';
+  const primaryDrillId = detail?.relatedSpomoveIds[0] ?? 'reactTrain';
 
   const copyText = async (key: string, text: string) => {
     try {

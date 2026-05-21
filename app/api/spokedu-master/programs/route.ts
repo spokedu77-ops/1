@@ -44,15 +44,28 @@ function inferRelatedSpomoveIds(input: { title: string; category: string; tags: 
   const text = [input.title, input.category, input.description, ...input.tags, ...input.steps].join(' ');
   const candidates: string[] = [];
 
-  if (/펀스틱|펜싱|fencing|funstick|찌르기|상대|거리|타이밍/i.test(text)) candidates.push('SR-05', 'SR-06');
-  if (/민첩|스피드|반응|출발|방향|전환|공간|신호|순발/i.test(text)) candidates.push('SR-05', 'SR-06');
-  if (/협동|릴레이|팀|규칙|역할|전략/i.test(text)) candidates.push('RS-05');
-  if (/균형|자세|밸런스|멈춤|정지|중심/i.test(text)) candidates.push('IC-05');
-  if (/리듬|박자|표현|음악|거울/i.test(text)) candidates.push('RC-05');
-  if (/기억|집중|인지|순서|패턴/i.test(text)) candidates.push('SM-05', 'SM-06');
-  if (candidates.length === 0 && /SPOMOVE|화면|신호/i.test(text)) candidates.push('SR-05');
+  if (/펀스틱|펜싱|fencing|funstick|찌르기|상대|거리|타이밍/i.test(text)) candidates.push('reactTrain', 'simon');
+  if (/민첩|스피드|반응|출발|방향|전환|공간|신호|순발/i.test(text)) candidates.push('reactTrain', 'basic');
+  if (/협동|릴레이|팀|규칙|역할|전략/i.test(text)) candidates.push('basic', 'taskswitch');
+  if (/균형|자세|밸런스|멈춤|정지|중심/i.test(text)) candidates.push('gonogo');
+  if (/리듬|박자|표현|음악|거울/i.test(text)) candidates.push('flow');
+  if (/기억|집중|인지|순서|패턴/i.test(text)) candidates.push('spatial', 'stroop');
+  if (candidates.length === 0 && /SPOMOVE|화면|신호/i.test(text)) candidates.push('reactTrain');
 
   return [...new Set(candidates)].slice(0, 2);
+}
+
+function normalizeSpomoveIds(ids: string[]): string[] {
+  const legacyMap: Record<string, string[]> = {
+    'SR-05': ['reactTrain'],
+    'SR-06': ['basic'],
+    'RS-05': ['basic', 'taskswitch'],
+    'IC-05': ['gonogo'],
+    'RC-05': ['flow'],
+    'SM-05': ['spatial'],
+    'SM-06': ['stroop'],
+  };
+  return [...new Set(ids.flatMap((id) => legacyMap[id] ?? [id]))].slice(0, 3);
 }
 
 function inferFocus(program: Program) {
@@ -81,7 +94,7 @@ function buildContentQuality(program: Program): Program {
 
   const rules = detail.rules?.length ? detail.rules : program.steps;
   const relatedSpomoveIds = detail.relatedSpomoveIds.length
-    ? detail.relatedSpomoveIds
+    ? normalizeSpomoveIds(detail.relatedSpomoveIds)
     : inferRelatedSpomoveIds({
       title: program.title,
       category: program.category,
@@ -190,7 +203,7 @@ function applyPremiumContentOverlay(program: Program): Program {
         '펀스틱은 휘두르지 않고 목표물을 향해 "밀어 찌르기"로만 사용합니다.',
       ],
       relatedSpomoveIds:
-        current?.relatedSpomoveIds && current.relatedSpomoveIds.length > 0 ? current.relatedSpomoveIds : ['SR-05', 'SR-06'],
+        current?.relatedSpomoveIds && current.relatedSpomoveIds.length > 0 ? normalizeSpomoveIds(current.relatedSpomoveIds) : ['reactTrain', 'simon'],
       videoUrl: current?.videoUrl,
       heroImageUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
       setupImageUrl: '/images/spokedu-master/programs/funstick-fencing/setup.png',
@@ -286,7 +299,7 @@ function cleanFunstickProgram(program: Program): Program {
         '접시콘으로 경기 구역을 넓게 표시하고 대기 학생은 구역 밖에서 기다립니다.',
         '펀스틱은 휘두르지 않고 목표물을 향한 가벼운 찌르기로만 사용합니다.',
       ],
-      relatedSpomoveIds: ['SR-05', 'SR-06'],
+      relatedSpomoveIds: ['reactTrain', 'simon'],
       videoUrl: program.lessonDetail?.videoUrl,
       heroImageUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
       setupImageUrl: '/images/spokedu-master/programs/funstick-fencing/setup.png',
@@ -322,13 +335,15 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
     '규칙을 짧게 설명하고 시범을 보여줍니다.',
     '기본 라운드로 시작한 뒤 난이도를 단계적으로 올립니다.',
   ]);
-  const relatedSpomoveIds = program.lessonDetail?.relatedSpomoveIds?.length ? program.lessonDetail.relatedSpomoveIds : inferRelatedSpomoveIds({
-    title,
-    category,
-    tags: program.tags,
-    description: program.description,
-    steps,
-  });
+  const relatedSpomoveIds = program.lessonDetail?.relatedSpomoveIds?.length
+    ? normalizeSpomoveIds(program.lessonDetail.relatedSpomoveIds)
+    : inferRelatedSpomoveIds({
+      title,
+      category,
+      tags: program.tags,
+      description: program.description,
+      steps,
+    });
   const description = cleanText(
     program.description,
     `${title} 활동으로 ${focus}을 자연스럽게 경험하는 체육 수업 패키지입니다.`,

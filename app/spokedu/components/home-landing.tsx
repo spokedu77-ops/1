@@ -88,30 +88,14 @@ export default function SpokeduHomeLanding() {
             <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
               {homePage.hero.subtitle}
             </p>
-            <p className="text-sm font-medium text-slate-500">{homePage.hero.audienceLine}</p>
-            <div className="space-y-3">
-              <Link
-                href={homePage.heroCtas.primary.href}
-                data-track="cta-contact"
-                data-track-label={homePage.heroCtas.primary.trackLabel}
-                className={`${btnPrimary} !w-full sm:!w-auto`}
-              >
-                {homePage.heroCtas.primary.label}
-              </Link>
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-                {homePage.heroCtas.secondary.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    data-track={inferTrackFromHref(item.href)}
-                    data-track-label={item.trackLabel}
-                    className={`inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-800 ${fineHover}hover:border-slate-400 ${fineHover}hover:bg-slate-50 ${focusRing}`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            <Link
+              href={homePage.heroCtas.primary.href}
+              data-track="cta-contact"
+              data-track-label={homePage.heroCtas.primary.trackLabel}
+              className={`${btnPrimary} !w-full sm:!w-auto`}
+            >
+              {homePage.heroCtas.primary.label}
+            </Link>
           </div>
           <div className="order-1 lg:order-2">
             <div className="relative">
@@ -231,13 +215,10 @@ export default function SpokeduHomeLanding() {
       {/* 4. Program System */}
       <Section className="space-y-5 sm:space-y-7" delay={0.02}>
         <div className="space-y-3 border-l-4 border-indigo-500 pl-4 text-center sm:pl-5 lg:text-left">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600">Program System</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600">프로그램</p>
           <h2 className="whitespace-pre-line text-[1.85rem] font-black leading-[1.06] tracking-tight text-slate-950 sm:text-[2.35rem] lg:text-[2.75rem]">
             {homePage.programSystem.title}
           </h2>
-          <p className="mx-auto max-w-lg text-sm leading-relaxed text-slate-600 sm:text-base lg:mx-0">
-            {homePage.programSystem.subtitle}
-          </p>
         </div>
         <HomeProgramSystem items={homePage.programSystem.items} />
         <p className="text-center lg:text-left">
@@ -260,7 +241,7 @@ export default function SpokeduHomeLanding() {
         <div className="pointer-events-none absolute inset-0 bg-slate-950/78" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">
           <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{homePage.finalCta.title}</h2>
-          <div className="mt-6 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
+          <div className="mt-5 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
             {homePage.finalCta.links.map((item) => (
               <Link
                 key={item.href}
@@ -273,14 +254,6 @@ export default function SpokeduHomeLanding() {
               </Link>
             ))}
           </div>
-          <Link
-            href={homePage.finalCta.contact.href}
-            data-track="cta-contact"
-            data-track-label={homePage.finalCta.contact.trackLabel}
-            className={`mt-4 inline-block text-sm font-semibold text-slate-300 underline-offset-4 ${fineHover}hover:text-white ${fineHover}hover:underline ${focusRing}`}
-          >
-            {homePage.finalCta.contact.label} →
-          </Link>
         </div>
       </Section>
     </div>
