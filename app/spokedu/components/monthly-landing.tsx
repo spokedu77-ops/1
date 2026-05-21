@@ -86,9 +86,9 @@ export function MonthlyLanding() {
                 const content =
                   label === '함께한 기관'
                     ? featured.institutions.join(' · ')
-                    : label === '운영한 프로그램'
+                    : label === '운영 프로그램'
                       ? featured.programs.join(' · ')
-                      : label === '아이들이 경험한 움직임'
+                      : label === '수업 포인트'
                         ? featured.movementPoints.join(' · ')
                         : featured.educationPoints[0];
                 return (
