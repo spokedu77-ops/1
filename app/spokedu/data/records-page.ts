@@ -118,27 +118,3 @@ export const recordsPage = {
     trackLabel: 'records-dispatch-cta',
   },
 } as const;
-
-/** Cases 페이지 메타 — records-page.ts에 함께 두었던 기존 export 유지 */
-export const casesPage = {
-  hero: {
-    title: '수업 사례',
-    subtitle: '기관·행사·프로그램별 실제 운영 방식과 현장 반응을 사례 단위로 확인합니다.',
-  },
-  heroMediaKey: 'proofCommunity' as HomeMediaKey,
-  ctaMediaKey: 'proofEvent' as HomeMediaKey,
-  cta: {
-    title: '비슷한 수업 계획',
-    description: '공간·인원·운영 목적을 알려주시면 사례 기반으로 맞는 운영안을 제안합니다.',
-    primary: {
-      label: '기관수업 제안',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'cases-contact',
-    },
-    secondary: {
-      label: '현장 기록',
-      href: `${SPOKEDU_BASE_PATH}/records`,
-      trackLabel: 'cases-records',
-    },
-  },
-} as const;
