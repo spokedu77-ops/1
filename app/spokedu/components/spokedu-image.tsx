@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import type { SpokeduImageCategory, SpokeduImageDef } from '../data/images';
-import { getSpokeduImageFallback } from '../data/images';
+import { getSpokeduImageFallback, SPOKEDU_FALLBACK_FIELD } from '../data/images';
 
 export type SpokeduImageProps = {
   asset?: SpokeduImageDef;
@@ -55,6 +55,14 @@ export function SpokeduImage({
     setResolvedSrc(primary);
   }, [primary]);
 
+  const handleError = () => {
+    if (resolvedSrc === primary && primary !== SPOKEDU_FALLBACK_FIELD) {
+      setResolvedSrc(SPOKEDU_FALLBACK_FIELD);
+      return;
+    }
+    if (resolvedSrc !== backup) setResolvedSrc(backup);
+  };
+
   const wrapperClass = fill
     ? `absolute inset-0 overflow-hidden bg-slate-100 ${className}`
     : `relative overflow-hidden bg-slate-100 ${className}`;
@@ -69,9 +77,7 @@ export function SpokeduImage({
           sizes={sizes ?? '(max-width: 768px) 100vw, 50vw'}
           priority={priority}
           className={imageClassName}
-          onError={() => {
-            if (resolvedSrc !== backup) setResolvedSrc(backup);
-          }}
+          onError={handleError}
         />
       ) : (
         <Image
@@ -82,9 +88,7 @@ export function SpokeduImage({
           sizes={sizes}
           priority={priority}
           className={`h-full w-full ${imageClassName}`}
-          onError={() => {
-            if (resolvedSrc !== backup) setResolvedSrc(backup);
-          }}
+          onError={handleError}
         />
       )}
     </figure>

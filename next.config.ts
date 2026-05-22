@@ -75,6 +75,10 @@ const nextConfig: NextConfig = {
         source: "/spomove/variant-animals/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
+      {
+        source: "/images/spokedu/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
     ];
   },
 };

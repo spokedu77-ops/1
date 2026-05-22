@@ -5,7 +5,7 @@
  */
 
 import type { SpokeduImageDef } from './images';
-import { SPOKEDU_IMAGES } from './images';
+import { SPOKEDU_FALLBACK_FIELD, SPOKEDU_IMAGES } from './images';
 
 export type HomeMediaType = 'image' | 'video' | 'visual';
 
@@ -15,6 +15,8 @@ export type HomeMediaItem = {
   id: string;
   type: HomeMediaType;
   src: string | null;
+  /** 로딩 실패 시 SVG·공통 실사 fallback */
+  fallbackSrc?: string | null;
   poster: string | null;
   alt: string;
   label: string;
@@ -29,6 +31,7 @@ function fromPhoto(
   return {
     type: 'image',
     src: asset.src,
+    fallbackSrc: asset.fallback ?? SPOKEDU_FALLBACK_FIELD,
     poster: null,
     alt: item.alt ?? asset.alt,
     ...item,

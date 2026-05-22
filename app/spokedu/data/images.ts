@@ -1,25 +1,9 @@
-/** 실제 사진은 `public/images/spokedu/{category}/` 에 동일 파일명으로 추가 */
+/** 실제 사진: `public/images/spokedu/{category}/` — 레지스트리에서 중앙 관리 */
 
 export const SPOKEDU_IMAGE_ROOT = '/images/spokedu';
 
-/** 운영 실사 CDN (로컬 파일 추가 전) */
-export const SPOKEDU_LIVE_PHOTOS = {
-  /** 대표 Hero — 더 밝은 현장 사진으로 교체 가능 (아래 spomove·lab 등) */
-  homeHero: 'https://i.postimg.cc/Dz7dJvwW/Kakao-Talk-20260508-135643505.jpg',
-  homeHeroAlt: 'https://i.postimg.cc/Vk0txnwG/seupokidyu-laeb-cheyuggwan-hyeopchan-13.jpg',
-  lab: 'https://i.postimg.cc/5yW4kbxr/20260403-134412.png',
-  spomove: 'https://i.postimg.cc/Dz7dJvwW/Kakao-Talk-20260508-135643505.jpg',
-  onedayField: 'https://i.postimg.cc/fLbsYPgR/DSC00739.jpg',
-  playzLounge: 'https://i.postimg.cc/5tg9yHWy/Kakao-Talk-20260507-091904775.jpg',
-  paps: 'https://i.postimg.cc/RZ73P8f2/IMG-7176.jpg',
-  onedayProgram: 'https://i.postimg.cc/TwGGXg7h/Kakao-Talk-20260507-095612628-01.jpg',
-  camp: 'https://i.postimg.cc/J0pswpW4/20260417-115503.png',
-  curriculumPackage: 'https://i.postimg.cc/C1W82jzZ/IMG-7594.jpg',
-  /** Visitor Gate — 전용 사진 교체 시 URL만 바꾸면 됨 */
-  gatePrivate: 'https://i.postimg.cc/RZ73P8f2/IMG-7176.jpg',
-  gateDispatch: 'https://i.postimg.cc/fLbsYPgR/DSC00739.jpg',
-  gateCurriculum: 'https://i.postimg.cc/C1W82jzZ/IMG-7594.jpg',
-} as const;
+/** 로딩 실패 시 공통 실사 대체 (SVG 카테고리 fallback 전) */
+export const SPOKEDU_FALLBACK_FIELD = `${SPOKEDU_IMAGE_ROOT}/fallback-field.jpg`;
 
 export type SpokeduImageCategory =
   | 'home'
@@ -31,6 +15,9 @@ export type SpokeduImageCategory =
   | 'cases'
   | 'monthly';
 
+/** `placeholder-copy`: 다른 슬롯 사진 임시 복사 — 전용 실사로 교체 예정 */
+export type SpokeduImageAssetStatus = 'production' | 'placeholder-copy';
+
 export type SpokeduImageDef = {
   id: string;
   category: SpokeduImageCategory;
@@ -38,6 +25,14 @@ export type SpokeduImageDef = {
   alt: string;
   src: string;
   fallback: string;
+  assetStatus: SpokeduImageAssetStatus;
+  /** assetStatus가 placeholder-copy일 때 교체 안내 */
+  placeholderNote?: string;
+};
+
+type DefineImageOptions = {
+  assetStatus?: SpokeduImageAssetStatus;
+  placeholderNote?: string;
 };
 
 function defineImage(
@@ -45,17 +40,30 @@ function defineImage(
   id: string,
   file: string,
   alt: string,
-  liveSrc?: string,
+  options?: DefineImageOptions,
 ): SpokeduImageDef {
+  const assetStatus = options?.assetStatus ?? 'production';
   return {
     id,
     category,
     file,
     alt,
-    src: liveSrc ?? `${SPOKEDU_IMAGE_ROOT}/${category}/${file}`,
+    src: `${SPOKEDU_IMAGE_ROOT}/${category}/${file}`,
     fallback: `${SPOKEDU_IMAGE_ROOT}/_fallback/${category}.svg`,
+    assetStatus,
+    ...(assetStatus === 'placeholder-copy' && options?.placeholderNote
+      ? { placeholderNote: options.placeholderNote }
+      : {}),
   };
 }
+
+/** 전용 실사 교체 대상 — 운영·에셋 교체 시 참고 */
+export const SPOKEDU_PLACEHOLDER_IMAGE_ASSETS = [
+  'records/dongjak.jpg',
+  'records/seodaemun.jpg',
+  'cases/hero.jpg',
+  'cases/representative.jpg',
+] as const;
 
 export const SPOKEDU_IMAGES = {
   home: {
@@ -64,14 +72,12 @@ export const SPOKEDU_IMAGES = {
       'home-hero',
       'home-hero-movement.jpg',
       '스포키듀 대표 수업 장면 — 아이들이 움직이며 참여하는 체육수업',
-      SPOKEDU_LIVE_PHOTOS.homeHero,
     ),
     labScene: defineImage(
       'home',
       'home-lab',
       'home-lab-energy.jpg',
       '스포키듀 LAB 수업 준비 및 운영 장면',
-      SPOKEDU_LIVE_PHOTOS.lab,
     ),
     dispatchScene: defineImage('home', 'home-dispatch', 'home-dispatch-scene.jpg', '기관 파견 체육수업 현장 장면'),
   },
@@ -81,7 +87,6 @@ export const SPOKEDU_IMAGES = {
       'private-1to1',
       'private-coaching.jpg',
       '스포키듀 1:1 개인 체육수업 장면',
-      SPOKEDU_LIVE_PHOTOS.gatePrivate,
     ),
     smallGroup: defineImage('private', 'private-small-group', 'private-small-group.jpg', '스포키듀 2~4명 소그룹 체육수업 장면'),
     toolActivity: defineImage('private', 'private-tool', 'private-tool-activity.jpg', '교구를 활용한 개인·소그룹 체육 활동 장면'),
@@ -92,7 +97,6 @@ export const SPOKEDU_IMAGES = {
       'dispatch-group',
       'dispatch-group-class.jpg',
       '기관 정규 파견 단체 체육수업 장면',
-      SPOKEDU_LIVE_PHOTOS.gateDispatch,
     ),
     kiwoomCenter: defineImage('dispatch', 'dispatch-kiwoom', 'dispatch-institution-class.jpg', '키움센터 체육 프로그램 운영 장면'),
     oneDayEvent: defineImage(
@@ -100,7 +104,6 @@ export const SPOKEDU_IMAGES = {
       'dispatch-oneday',
       'dispatch-oneday-event.jpg',
       '기관 원데이 체육행사·시즌 행사 운영 장면',
-      SPOKEDU_LIVE_PHOTOS.onedayField,
     ),
   },
   curriculum: {
@@ -109,10 +112,14 @@ export const SPOKEDU_IMAGES = {
       'curriculum-plan',
       'curriculum-planning.jpg',
       '체육수업 수업안·커리큘럼 문서 장면',
-      SPOKEDU_LIVE_PHOTOS.gateCurriculum,
     ),
     toolSetup: defineImage('curriculum', 'curriculum-tools', 'curriculum-tool-setup.jpg', '체육 교구 세팅 및 활용 안내 장면'),
-    instructorTraining: defineImage('curriculum', 'curriculum-training', 'curriculum-instructor-training.jpg', '스포키듀 강사 교육·워크숍 장면'),
+    instructorTraining: defineImage(
+      'curriculum',
+      'curriculum-training',
+      'curriculum-instructor-training.webp',
+      '스포키듀 강사 교육·워크숍 장면',
+    ),
     programMaterials: defineImage('curriculum', 'curriculum-materials', 'curriculum-materials.jpg', '프로그램 운영 자료·콘텐츠 패키지 장면'),
   },
   programs: {
@@ -121,14 +128,12 @@ export const SPOKEDU_IMAGES = {
       'program-spomove',
       'program-spomove.jpg',
       'SPOMOVE 빔 기반 에듀테크 놀이체육 수업',
-      SPOKEDU_LIVE_PHOTOS.spomove,
     ),
     paps: defineImage(
       'programs',
       'program-paps',
       'program-paps-running.jpg',
       'PAPS 연계 놀이체육 프로그램 수업',
-      SPOKEDU_LIVE_PHOTOS.paps,
     ),
     playClass: defineImage('programs', 'program-play-class', 'program-play-pe.jpg', '놀이체육 정규수업 장면'),
     oneDay: defineImage(
@@ -136,57 +141,80 @@ export const SPOKEDU_IMAGES = {
       'program-oneday',
       'program-oneday.jpg',
       '원데이 체육행사 프로그램 장면',
-      SPOKEDU_LIVE_PHOTOS.onedayProgram,
     ),
     camp: defineImage(
       'programs',
       'program-camp',
-      'program-camp.jpg',
+      'program-camp.webp',
       '방학캠프 체육·예체능 결합 프로그램',
-      SPOKEDU_LIVE_PHOTOS.camp,
     ),
     curriculumContent: defineImage(
       'programs',
       'program-curriculum',
       'program-curriculum-content.jpg',
       '커리큘럼 콘텐츠·수업안 자료',
-      SPOKEDU_LIVE_PHOTOS.curriculumPackage,
     ),
   },
   records: {
-    lab: defineImage('records', 'record-lab', 'lab.jpg', '스포키듀 LAB 운영 기록', SPOKEDU_LIVE_PHOTOS.lab),
+    lab: defineImage('records', 'record-lab', 'lab.jpg', '스포키듀 LAB 운영 기록'),
     yangcheon: defineImage(
       'records',
       'record-yangcheon',
       'yangcheon.jpg',
       '양천거점형키움센터 SPOMOVE 수업 기록',
-      SPOKEDU_LIVE_PHOTOS.spomove,
     ),
-    dongjak: defineImage('records', 'record-dongjak', 'dongjak.jpg', '동작거점형키움센터 리듬챌린지 수업 기록'),
+    dongjak: defineImage('records', 'record-dongjak', 'dongjak.jpg', '동작거점형키움센터 리듬챌린지 수업 기록', {
+      assetStatus: 'placeholder-copy',
+      placeholderNote: '임시: dispatch-institution-class.jpg 복사본 → 동작 키움 전용 실사로 교체',
+    }),
     dasarang: defineImage(
       'records',
       'record-dasarang',
       'dasarang.jpg',
       '다사랑영등포지역아동센터 원데이 행사 기록',
-      SPOKEDU_LIVE_PHOTOS.onedayField,
     ),
     playz: defineImage(
       'records',
       'record-playz',
       'playz.jpg',
       'PLAYZ Lounge 방학캠프 기록',
-      SPOKEDU_LIVE_PHOTOS.playzLounge,
     ),
-    seodaemun: defineImage('records', 'record-seodaemun', 'seodaemun.jpg', '서대문형무소 어린이날 체험 부스 기록'),
+    seodaemun: defineImage('records', 'record-seodaemun', 'seodaemun.jpg', '서대문형무소 어린이날 체험 부스 기록', {
+      assetStatus: 'placeholder-copy',
+      placeholderNote: '임시: program-oneday.jpg 복사본 → 서대문 행사 전용 실사로 교체',
+    }),
   },
   cases: {
-    hero: defineImage('cases', 'cases-hero', 'hero.jpg', '스포키듀 수업 사례 모음 대표 장면'),
-    representative: defineImage('cases', 'cases-rep', 'representative.jpg', '대표 수업 사례 현장 사진'),
+    hero: defineImage('cases', 'cases-hero', 'hero.jpg', '스포키듀 수업 사례 모음 대표 장면', {
+      assetStatus: 'placeholder-copy',
+      placeholderNote: '임시: records/yangcheon.jpg 복사본 → Cases Hero 전용 실사로 교체',
+    }),
+    representative: defineImage('cases', 'cases-rep', 'representative.jpg', '대표 수업 사례 현장 사진', {
+      assetStatus: 'placeholder-copy',
+      placeholderNote: '임시: dispatch-group-class.jpg 복사본 → Cases 대표 전용 실사로 교체',
+    }),
   },
   monthly: {
     hero: defineImage('monthly', 'monthly-hero', 'hero.jpg', '월간 스포키듀 운영 기록 대표 장면'),
     representative: defineImage('monthly', 'monthly-rep', 'representative.jpg', '월간 운영 하이라이트 장면'),
   },
+} as const;
+
+/** @deprecated postimg 제거 — 로컬 레지스트리 경로만 사용 */
+export const SPOKEDU_LIVE_PHOTOS = {
+  homeHero: SPOKEDU_IMAGES.home.hero.src,
+  homeHeroAlt: SPOKEDU_IMAGES.home.hero.src,
+  lab: SPOKEDU_IMAGES.home.labScene.src,
+  spomove: SPOKEDU_IMAGES.programs.spomove.src,
+  onedayField: SPOKEDU_IMAGES.dispatch.oneDayEvent.src,
+  playzLounge: SPOKEDU_IMAGES.records.playz.src,
+  paps: SPOKEDU_IMAGES.programs.paps.src,
+  onedayProgram: SPOKEDU_IMAGES.programs.oneDay.src,
+  camp: SPOKEDU_IMAGES.programs.camp.src,
+  curriculumPackage: SPOKEDU_IMAGES.curriculum.lessonPlan.src,
+  gatePrivate: SPOKEDU_IMAGES.private.oneToOne.src,
+  gateDispatch: SPOKEDU_IMAGES.dispatch.groupClass.src,
+  gateCurriculum: SPOKEDU_IMAGES.curriculum.lessonPlan.src,
 } as const;
 
 /** 레거시 문자열 경로 호환 (기존 import 유지) */

@@ -36,6 +36,8 @@ export function CaseProofCard({
       <MediaPanel
         media={HOME_MEDIA[item.mediaKey]}
         className={`${compact ? 'aspect-[16/9]' : 'aspect-[16/10]'} shrink-0 rounded-none border-0 border-b border-slate-200/80`}
+        sizes={compact ? 'gateThumb' : 'card3'}
+        photoPriority
       />
       <div className={`flex flex-1 flex-col ${compact ? 'p-3' : 'p-3.5 sm:p-4'}`}>
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">{item.institution}</p>

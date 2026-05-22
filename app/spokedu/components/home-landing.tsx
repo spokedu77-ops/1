@@ -16,6 +16,7 @@ import {
   landingPageStack,
   landingSectionLead,
 } from '../lib/ui-classes';
+import { IMAGE_SIZES } from '../lib/image-sizes';
 import { HomeProgramSystem } from './visual/home-program-system';
 import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
 
@@ -136,6 +137,8 @@ export default function SpokeduHomeLanding() {
               <MotionPoster
                 media={HOME_MEDIA.homeHero}
                 variant="cinematic"
+                priority
+                sizes="heroSplit"
                 className="!h-[min(54vw,252px)] sm:!h-[min(48vw,300px)]"
               />
               <div
@@ -173,6 +176,8 @@ export default function SpokeduHomeLanding() {
                   <MediaPanel
                     media={gateMedia[index]}
                     className="absolute inset-0 h-full w-full rounded-none border-0"
+                    sizes="gateThumb"
+                    photoPriority
                   />
                   <div
                     className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-white/15"
@@ -227,6 +232,7 @@ export default function SpokeduHomeLanding() {
                 <MediaPanel
                   media={field.media}
                   className="absolute inset-0 h-full w-full rounded-none border-0"
+                  sizes="card4"
                   photoPriority
                 />
                 <div
@@ -285,7 +291,12 @@ export default function SpokeduHomeLanding() {
       {/* 5. Final CTA — dark emphasis */}
       <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-5 py-10 text-white sm:rounded-[2rem] sm:px-8 sm:py-12">
         <div className="pointer-events-none absolute inset-0 opacity-70" aria-hidden>
-          <MediaRenderer media={HOME_MEDIA.trackDispatch} intensity="soft" animateZoom className="h-full w-full" />
+          <MediaRenderer
+            media={HOME_MEDIA.trackDispatch}
+            intensity="soft"
+            sizes="full"
+            className="h-full w-full"
+          />
         </div>
         <div className="pointer-events-none absolute inset-0 bg-slate-950/82" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">

@@ -33,7 +33,8 @@ export type ProgramDetailBlock = {
 export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> = {
   spomove: {
     mediaKey: 'programSpomove',
-    heroSubtitle: '빔 반응형 콘텐츠로 집중과 움직임을 동시에 설계하는 에듀테크 체육수업입니다.',
+    heroSubtitle:
+      '빔 화면의 색, 위치, 방향, 신호를 보고 몸으로 반응하는 인지·신체 반응형 에듀테크 놀이체육 프로그램입니다.',
     whyPoints: [
       '빔·에듀테크로 보고 반응하는 몰입 경험',
       '집중과 움직임을 한 수업 안에서 설계',
@@ -61,7 +62,8 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
   },
   paps: {
     mediaKey: 'programPaps',
-    heroSubtitle: '심폐·근력·유연성 요소를 놀이 모듈로 운영해 체력 경험을 쌓는 프로그램입니다.',
+    heroSubtitle:
+      '학교 체력평가 요소를 놀이형 수업으로 경험하며, 참여와 움직임 이해를 돕는 체력 향상 프로그램입니다.',
     whyPoints: [
       '평가 부담 없이 체력 요소를 놀이로 경험',
       '심폐·근력·유연성·순발력을 스테이션으로 분리',
@@ -89,7 +91,8 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
   },
   'oneday-event': {
     mediaKey: 'programOneday',
-    heroSubtitle: '행사 목적과 공간 조건에 맞춰 한 번에 몰입을 만드는 체험형 원데이 프로그램입니다.',
+    heroSubtitle:
+      '기관 행사·체험일·특별활동 일정에 맞춰 협동 미션형 체육 이벤트를 구성하는 프로그램입니다.',
     whyPoints: [
       '행사 일정·공간에 맞춘 단기 몰입 설계',
       '협동과 체험을 동시에 만드는 팀 미션',
@@ -117,7 +120,8 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
   },
   camp: {
     mediaKey: 'programCamp',
-    heroSubtitle: '체육과 예체능을 블록형으로 연결해 방학 기간 몰입도와 참여 지속성을 높이는 캠프입니다.',
+    heroSubtitle:
+      '방학 하루를 체육과 예체능 활동으로 채우는 하루 단위 몰입형 방학캠프 프로그램입니다.',
     whyPoints: [
       '방학 일정에 맞춘 종일·반일 블록 운영',
       '체육과 예체능을 한 캠프 안에서 연결',

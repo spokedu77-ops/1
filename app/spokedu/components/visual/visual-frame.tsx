@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import type { HomeMediaItem } from '../../data/home-media';
+import { IMAGE_SIZES } from '../../lib/image-sizes';
 import { MediaRenderer } from './media-renderer';
 
 type PhotoTone = 'clear' | 'soft' | 'bold';
@@ -14,6 +15,7 @@ type VisualFrameProps = {
   priority?: boolean;
   heroZoom?: boolean;
   photoTone?: PhotoTone;
+  sizes?: string;
 };
 
 function photoToneToIntensity(photoTone: PhotoTone): 'soft' | 'bold' | 'photo' {
@@ -29,6 +31,7 @@ export function VisualFrame({
   priority = false,
   heroZoom = false,
   photoTone = 'soft',
+  sizes = IMAGE_SIZES.heroWide,
 }: VisualFrameProps) {
   const reducedMotion = useReducedMotion();
   const clearPhoto = photoTone === 'clear';
@@ -52,7 +55,7 @@ export function VisualFrame({
         intensity={photoToneToIntensity(photoTone)}
         animateZoom={heroZoom && !clearPhoto}
         className="absolute inset-0 z-[1]"
-        sizes="(max-width: 1024px) 100vw, 55vw"
+        sizes={sizes}
       />
     </motion.div>
   );

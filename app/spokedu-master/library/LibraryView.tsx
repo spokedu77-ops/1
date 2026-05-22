@@ -365,8 +365,8 @@ function ProgramModal({
   return (
     <BottomSheet open title="수업 패키지" onClose={onClose}>
       <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-[18px] border border-slate-200 bg-slate-950">
-          <div className="relative aspect-video min-h-[220px]">
+        <div className="relative overflow-hidden rounded-[18px] bg-slate-950">
+          <div className="relative aspect-video">
             {activeMedia === 'video' && videoEmbedUrl ? (
               <iframe
                 src={videoEmbedUrl}

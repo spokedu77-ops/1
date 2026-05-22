@@ -4,7 +4,7 @@ import Script from 'next/script';
 import { SpokeduSiteShell } from './components/spokedu-site-shell';
 import SpokeduTrackingProvider from './components/tracking-provider';
 import { seoKeywords, seoMeta } from './data/content';
-import { SPOKEDU_LIVE_PHOTOS } from './data/images';
+import { SPOKEDU_IMAGES } from './data/images';
 import { getSpokeduSiteUrl } from './lib/site-url';
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     url: '/spokedu',
     images: [
       {
-        url: SPOKEDU_LIVE_PHOTOS.homeHero,
+        url: SPOKEDU_IMAGES.home.hero.src,
         width: 1200,
         height: 800,
         alt: '스포키듀 대표 수업 장면',
@@ -43,9 +43,6 @@ export default function SpokeduSiteLayout({ children }: { children: ReactNode })
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <link rel="preconnect" href="https://i.postimg.cc" crossOrigin="anonymous" />
-      <link rel="dns-prefetch" href="https://i.postimg.cc" />
-      <link rel="preload" as="image" href={SPOKEDU_LIVE_PHOTOS.homeHero} />
       {gaMeasurementId ? (
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} strategy="afterInteractive" />

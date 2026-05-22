@@ -83,7 +83,7 @@ export default function CurriculumLanding() {
             </div>
           </div>
           <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" />
+            <MotionPoster media={heroMedia} variant="cinematic" priority sizes="heroSplit" />
           </div>
         </div>
       </section>

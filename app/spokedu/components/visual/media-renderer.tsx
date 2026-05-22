@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import type { HomeMediaItem } from '../../data/home-media';
+import { SPOKEDU_FALLBACK_FIELD } from '../../data/images';
 import { BrandOverlay } from './brand-overlay';
 import { GradientVisual } from './gradient-visual';
 
@@ -17,6 +18,10 @@ type MediaRendererProps = {
   animateZoom?: boolean;
 };
 
+function resolveFallback(media: HomeMediaItem): string {
+  return media.fallbackSrc ?? SPOKEDU_FALLBACK_FIELD;
+}
+
 export function MediaRenderer({
   media,
   className = '',
@@ -27,13 +32,23 @@ export function MediaRenderer({
   animateZoom = false,
 }: MediaRendererProps) {
   const reducedMotion = useReducedMotion();
-  const [useImage, setUseImage] = useState(Boolean(media.src));
-  const [imgSrc, setImgSrc] = useState(media.src);
+  const primarySrc = media.src;
+  const fallbackSrc = resolveFallback(media);
+  const [useImage, setUseImage] = useState(Boolean(primarySrc));
+  const [imgSrc, setImgSrc] = useState(primarySrc ?? '');
 
   useEffect(() => {
-    setUseImage(Boolean(media.src));
-    setImgSrc(media.src);
-  }, [media.src]);
+    setUseImage(Boolean(primarySrc));
+    setImgSrc(primarySrc ?? '');
+  }, [primarySrc]);
+
+  const handleError = () => {
+    if (imgSrc && imgSrc !== fallbackSrc) {
+      setImgSrc(fallbackSrc);
+      return;
+    }
+    setUseImage(false);
+  };
 
   if (!useImage || !imgSrc) {
     return (
@@ -72,12 +87,12 @@ export function MediaRenderer({
       sizes={sizes}
       priority={priority}
       className="object-cover"
-      onError={() => setUseImage(false)}
+      onError={handleError}
     />
   );
 
   return (
-    <figure className={`relative h-full w-full overflow-hidden bg-slate-900 ${className}`}>
+    <figure className={`relative h-full w-full overflow-hidden bg-slate-200 ${className}`}>
       {animateZoom && !reducedMotion ? (
         <motion.div
           className="absolute inset-0"

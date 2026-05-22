@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: CaseDetailPageProps): Promise
 
   return buildSpokeduPageMetadata({
     title: `${item.title} | SPOKEDU 수업 사례`,
-    description: `${item.institution} ${item.program} 운영 사례. ${item.highlight}`,
+    description: `${item.institution} ${item.program} 운영 사례. ${item.cardSummary}`,
     canonical: `/spokedu/cases/${item.slug}`,
     pageKey: 'cases',
     keywords: [item.program, item.institution, '수업 사례', 'SPOMOVE'],

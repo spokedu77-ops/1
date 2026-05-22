@@ -1,12 +1,16 @@
 'use client';
 
 import type { HomeMediaItem } from '../../data/home-media';
+import { IMAGE_SIZES, type ImageSizesPreset } from '../../lib/image-sizes';
 import { VisualFrame } from './visual-frame';
 
 type MotionPosterProps = {
   media: HomeMediaItem;
   variant?: 'hero' | 'compact' | 'cinematic';
   className?: string;
+  /** 해당 페이지 첫 Hero 1장만 true */
+  priority?: boolean;
+  sizes?: string | ImageSizesPreset;
 };
 
 const variantClass: Record<NonNullable<MotionPosterProps['variant']>, string> = {
@@ -16,8 +20,17 @@ const variantClass: Record<NonNullable<MotionPosterProps['variant']>, string> = 
   compact: 'relative h-[min(48vw,220px)] w-full overflow-hidden rounded-2xl border border-slate-200/90 shadow-lg shadow-indigo-900/15 sm:h-[240px]',
 };
 
-export function MotionPoster({ media, variant = 'hero', className }: MotionPosterProps) {
+export function MotionPoster({
+  media,
+  variant = 'hero',
+  className,
+  priority = false,
+  sizes = 'heroSplit',
+}: MotionPosterProps) {
   const cinematic = variant === 'cinematic';
+  const resolvedSizes =
+    sizes in IMAGE_SIZES ? IMAGE_SIZES[sizes as ImageSizesPreset] : (sizes as string);
+
   return (
     <VisualFrame
       media={media}
@@ -26,7 +39,8 @@ export function MotionPoster({ media, variant = 'hero', className }: MotionPoste
       heroZoom={!cinematic}
       showLabel={!cinematic}
       photoTone={cinematic ? 'clear' : 'soft'}
-      priority
+      priority={priority}
+      sizes={resolvedSizes}
     />
   );
 }

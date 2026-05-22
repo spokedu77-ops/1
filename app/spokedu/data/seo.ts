@@ -121,14 +121,14 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       'SPOMOVE, PAPS, 원데이, 방학캠프, 커리큘럼 콘텐츠. 개인·기관·강사 운영에 맞는 프로그램을 한곳에서 확인합니다.',
   },
   records: {
-    title: '현장기록 | 수업 사례·월간 스포키듀',
+    title: '현장기록 | 키움센터·학교·아동시설 수업 운영 기록',
     description:
-      '키움센터·지역아동센터·행사 현장의 실제 수업 기록. 수업 사례, 월간 스포키듀, 교육 인사이트로 운영 실체를 확인하세요.',
+      '키움센터, 학교, 아동시설, 문화공간 등 실제 운영 현장에서 진행한 수업과 프로그램 기록. 어디서, 누구에게, 어떤 프로그램을 운영했는지 확인하세요.',
   },
   cases: {
-    title: '수업 사례 | SPOKEDU 현장 운영 기록',
+    title: '수업 운영 사례 | 기관 협업 SPOKEDU',
     description:
-      '기관·행사·프로그램별 실제 운영 사례. SPOMOVE, 원데이, 방학캠프 등 현장에서 검증한 수업을 카드로 빠르게 확인합니다.',
+      '기관의 공간·대상·운영 목적에 맞춰 구성한 수업 사례. 운영 배경, 수업 구성, 현장 흐름과 운영 의미를 확인하세요.',
   },
   monthly: {
     title: '월간 스포키듀 | SPOKEDU 운영 기록',
@@ -154,8 +154,8 @@ export const seoKeywords: Record<SpokeduSeoPageKey, readonly string[]> = {
   dispatch: ['기관 체육수업', '키움센터 체육 프로그램', 'SPOMOVE', 'PAPS 놀이체육'],
   curriculum: ['체육 커리큘럼', '놀이체육 수업안', '강사 교육', 'SPOMOVE'],
   programs: ['SPOMOVE', 'PAPS', '놀이체육', '방학캠프', '체육 커리큘럼'],
-  records: ['현장기록', '수업 사례', '월간 스포키듀', '기관 체육수업'],
-  cases: ['수업 사례', '키움센터 체육 프로그램', 'SPOMOVE', '기관 체육수업'],
+  records: ['현장기록', '키움센터 체육', 'SPOMOVE', '기관 체육수업', '방학캠프'],
+  cases: ['수업 운영 사례', '기관 협업', '키움센터 체육', 'SPOMOVE', '방학캠프'],
   monthly: ['월간 스포키듀', '아동 체육교육', '기관 체육수업'],
   insights: ['교육 인사이트', '아동 체육교육', 'SPOMOVE', 'PAPS'],
   contact: ['스포키듀 문의', '개인 체육수업', '기관 체육수업', '체육 커리큘럼'],
