@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 
 import { omitSessionIdentityForInsertClone } from './sessionInsertClone';
+import { reindexGroupRounds } from './reindexGroupRounds';
 
 function formatErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -137,23 +138,6 @@ export async function extendClass(
       });
     }
 
-    // 기존 세션 round_total / round_display 업데이트
-    await Promise.all(
-      activeSessions.map(async (s: any) => {
-        const { data, error: updateError } = await supabase
-          .from('sessions')
-          .update({
-            round_total: newTotal,
-            round_display: `${s.round_index ?? 1}/${newTotal}`,
-          })
-          .eq('id', s.id)
-          .select('id')
-          .maybeSingle();
-
-        assertMutationApplied(data, updateError, 'EXTEND_SESSION_ROUND_NOT_UPDATED');
-      })
-    );
-
     const { data: insertedRows, error: insertError } = await supabase
       .from('sessions')
       .insert(newSessions)
@@ -163,6 +147,14 @@ export async function extendClass(
     if (!Array.isArray(insertedRows) || insertedRows.length !== newSessions.length) {
       throw new Error('EXTEND_SESSIONS_NOT_CREATED');
     }
+
+    const { data: allAfter, error: afterErr } = await supabase
+      .from('sessions')
+      .select('id, start_at, status, round_total, round_index')
+      .eq('group_id', groupId)
+      .order('start_at', { ascending: true });
+    if (afterErr) throw afterErr;
+    await reindexGroupRounds(supabase, (allAfter || []) as Parameters<typeof reindexGroupRounds>[1]);
 
     toast.success('회차가 성공적으로 확장되었습니다.');
     options?.onAfter?.();

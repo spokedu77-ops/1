@@ -1,5 +1,5 @@
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './content';
+import { SPOKEDU_BASE_PATH } from './site';
 
 export type InsightsCategory =
   | '학부모 가이드'
@@ -36,19 +36,19 @@ export const insightsCards: InsightsCard[] = [
     slug: 'why-start-exercise-lower-grades',
     title: '초등 저학년 운동, 지금 시작해야 하는 이유',
     category: '학부모 가이드',
-    summary: '저학년 움직임 경험이 이후 체력·자신감에 미치는 영향과 가정에서 볼 포인트.',
+    summary: '저학년 경험이 이후 체력·자신감에 미치는 포인트.',
     keywords: ['초등 저학년 운동', '어린이 체육 시작', '학부모 가이드'],
     target: '초등 저학년 학부모',
     href: `${SPOKEDU_BASE_PATH}/private`,
     mediaKey: 'trackPrivate',
     cardVariant: 'glass',
-    ctaLabel: '개인·소그룹 수업',
+    ctaLabel: '개인수업',
   },
   {
     slug: 'how-to-move-kids-hating-exercise',
     title: '운동을 싫어하는 아이를 움직이게 하는 방법',
     category: '학부모 가이드',
-    summary: '거부감을 낮추는 참여 설계와 가정에서 이어지는 작은 움직임 루틴.',
+    summary: '거부감을 낮추는 참여 설계와 가정 루틴.',
     keywords: ['운동 싫어하는 아이', '놀이체육', '체육 동기'],
     target: '운동 거부 아이 학부모',
     href: `${SPOKEDU_BASE_PATH}/private`,
@@ -84,7 +84,7 @@ export const insightsCards: InsightsCard[] = [
     slug: 'what-is-spomove-class',
     title: 'SPOMOVE는 어떤 수업인가요?',
     category: 'SPOMOVE',
-    summary: '보고·선택·반응·움직임이 한 흐름으로 이어지는 에듀테크 놀이체육.',
+    summary: '보고·선택·반응이 한 흐름으로 이어지는 에듀테크 수업.',
     keywords: ['SPOMOVE', '빔 체육', '반응 훈련'],
     target: '기관·학부모·강사',
     href: `${SPOKEDU_BASE_PATH}/programs/spomove`,

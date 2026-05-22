@@ -12,6 +12,7 @@ import type { HomeMediaKey } from '../data/home-media';
 import { getMonthlyRecordBySlug, monthlyRecords } from '../data/monthly';
 import { monthlyPage } from '../data/monthly-page';
 import {
+  btnPrimary,
   fineHover,
   landingH1,
   landingHeroCopy,
@@ -72,13 +73,13 @@ export function MonthlyLanding() {
       {featured ? (
         <LandingSection className="space-y-3" delay={0.05}>
           <h2 className={landingSectionTitle}>이번 달 하이라이트</h2>
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white shadow-xl ring-1 ring-white/10">
+          <div className="overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 shadow-xl shadow-indigo-900/10 ring-1 ring-white/60">
             <div className="relative aspect-[21/9] max-h-[200px] sm:max-h-[240px]">
-              <MediaRenderer media={HOME_MEDIA.proofMonthly} intensity="soft" className="absolute inset-0" />
-              <div className="pointer-events-none absolute inset-0 bg-slate-950/55" />
+              <MediaRenderer media={HOME_MEDIA.proofMonthly} photoTone="clear" className="absolute inset-0" />
+              <div className="pointer-events-none absolute inset-0 bg-white/35" />
               <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-300">{featured.month}</p>
-                <p className="text-base font-bold sm:text-lg">{featured.title}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-700">{featured.month}</p>
+                <p className="text-base font-bold text-slate-900 sm:text-lg">{featured.title}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4 sm:gap-2.5 sm:p-4">
@@ -86,9 +87,9 @@ export function MonthlyLanding() {
                 const content =
                   label === '함께한 기관'
                     ? featured.institutions.join(' · ')
-                    : label === '운영한 프로그램'
+                    : label === '운영 프로그램'
                       ? featured.programs.join(' · ')
-                      : label === '아이들이 경험한 움직임'
+                      : label === '수업 포인트'
                         ? featured.movementPoints.join(' · ')
                         : featured.educationPoints[0];
                 return (
@@ -102,11 +103,11 @@ export function MonthlyLanding() {
                 );
               })}
             </div>
-            <div className="border-t border-white/10 px-3 pb-3 sm:px-4 sm:pb-4">
+            <div className="border-t border-indigo-100/70 px-3 pb-3 sm:px-4 sm:pb-4">
               <Link
                 href={`/spokedu/monthly/${featured.slug}`}
                 data-track="cta-records-monthly"
-                className={`text-sm font-semibold text-white ${fineHover}hover:text-sky-200`}
+                className={`text-sm font-semibold text-slate-800 ${fineHover}hover:text-indigo-700`}
               >
                 {featured.month} 상세 기록 →
               </Link>
@@ -158,34 +159,35 @@ export function MonthlyLanding() {
       </LandingSection>
 
       <LandingSection
-        className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 px-5 py-8 text-white shadow-xl ring-1 ring-white/10 sm:rounded-3xl sm:px-8 sm:py-10"
+        className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 shadow-xl shadow-indigo-900/10 ring-1 ring-white/60 sm:rounded-3xl sm:px-8 sm:py-10"
         delay={0.12}
       >
-        <div className="pointer-events-none absolute inset-0 opacity-85" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="soft" animateZoom className="h-full w-full" />
+        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
+          <MediaRenderer media={ctaMedia} photoTone="clear" className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/82" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative max-w-xl">
-          <h2 className="text-xl font-bold sm:text-2xl">다음 달도 함께 운영해 보세요</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-300">현장 기록을 바탕으로 맞춤 프로그램을 제안합니다.</p>
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">다음 운영 상담이 필요하신가요?</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">월간 기록을 바탕으로 기관 상황에 맞는 다음 운영안을 제안합니다.</p>
           <div className="mt-5">
-            <HeroCtaStack
-              variant="dark"
-              primary={{
-                href: monthlyPage.cta.primary.href,
-                label: monthlyPage.cta.primary.label,
-                track: inferTrackFromHref(monthlyPage.cta.primary.href),
-                trackLabel: monthlyPage.cta.primary.trackLabel,
-              }}
-              secondary={[
-                {
-                  href: monthlyPage.cta.secondary.href,
-                  label: monthlyPage.cta.secondary.label,
-                  track: inferTrackFromHref(monthlyPage.cta.secondary.href),
-                  trackLabel: monthlyPage.cta.secondary.trackLabel,
-                },
-              ]}
-            />
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <Link
+                href={monthlyPage.cta.primary.href}
+                data-track={inferTrackFromHref(monthlyPage.cta.primary.href)}
+                data-track-label={monthlyPage.cta.primary.trackLabel}
+                className={`${btnPrimary} !w-full`}
+              >
+                {monthlyPage.cta.primary.label}
+              </Link>
+              <Link
+                href={monthlyPage.cta.secondary.href}
+                data-track={inferTrackFromHref(monthlyPage.cta.secondary.href)}
+                data-track-label={monthlyPage.cta.secondary.trackLabel}
+                className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50`}
+              >
+                {monthlyPage.cta.secondary.label}
+              </Link>
+            </div>
           </div>
         </div>
       </LandingSection>

@@ -1,4 +1,4 @@
-import { SPOKEDU_BASE_PATH } from './content';
+import { SPOKEDU_BASE_PATH } from './site';
 import { SPOKEDU_IMAGES } from './images';
 import { cases } from './cases';
 
@@ -53,7 +53,7 @@ export const monthlyRecords: MonthlyRecord[] = [
         .filter((item) => item.slug === 'yangcheon-spomove' || item.slug === 'dongjak-rhythm')
         .map((item) => ({ label: item.title, href: item.href })),
     ],
-    nextInquiryCta: { label: '다음 달 운영 문의하기', href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch` },
+    nextInquiryCta: { label: '기관수업 제안', href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch` },
   },
   {
     slug: '2026-04',
@@ -81,7 +81,7 @@ export const monthlyRecords: MonthlyRecord[] = [
         .filter((item) => item.slug === 'playz-camp' || item.slug === 'seodaemun-event-booth')
         .map((item) => ({ label: item.title, href: item.href })),
     ],
-    nextInquiryCta: { label: '행사형 수업 문의하기', href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch` },
+    nextInquiryCta: { label: '기관수업 제안', href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch` },
   },
   {
     slug: '2026-03',
@@ -104,7 +104,7 @@ export const monthlyRecords: MonthlyRecord[] = [
       },
     ],
     relatedCases: [{ label: '수업 사례 보기', href: `${SPOKEDU_BASE_PATH}/cases` }],
-    nextInquiryCta: { label: '커리큘럼 문의하기', href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum` },
+    nextInquiryCta: { label: '기관수업 제안', href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch` },
   },
 ];
 

@@ -101,24 +101,24 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '아이의 수업, 기관의 프로그램, 선생님의 커리큘럼을 연결하는 스포키듀. LAB 운영과 현장기록으로 검증한 체육교육 브랜드입니다.',
   },
   private: {
-    title: '개인·소그룹 체육수업 | SPOKEDU Private Class',
+    title: '개인·소그룹 체육수업 | SPOKEDU',
     description:
       '아이의 연령과 성향에 맞춘 1:1·소그룹 체육수업. 기본 움직임과 운동 습관을 놀이 중심으로 설계하는 어린이 체육수업 상담을 받아보세요.',
   },
   dispatch: {
-    title: '기관 파견 체육교육 | SPOKEDU Dispatch Solution',
+    title: '기관 파견 체육교육 | SPOKEDU',
     description:
       '키움센터·지역아동센터·학교에 맞춘 기관 체육수업과 원데이·정규 프로그램. 공간·인원·일정에 맞는 SPOMOVE·PAPS 운영안을 제안합니다.',
   },
   curriculum: {
-    title: '체육 커리큘럼·콘텐츠 | SPOKEDU Curriculum',
+    title: '체육 커리큘럼·콘텐츠 | SPOKEDU',
     description:
       '놀이체육 수업안, 운영 매뉴얼, 교구 활용, 강사 교육까지. 현장 수업을 반복 운영 가능한 체육 커리큘럼과 콘텐츠 도입을 안내합니다.',
   },
   programs: {
     title: 'SPOKEDU 프로그램 | SPOMOVE·PAPS·원데이·방학캠프',
     description:
-      'SPOMOVE, PAPS 놀이체육, 원데이, 방학캠프, 커리큘럼 콘텐츠. 개인·기관·강사 운영에 연결되는 스포키듀 프로그램 자산을 비교합니다.',
+      'SPOMOVE, PAPS, 원데이, 방학캠프, 커리큘럼 콘텐츠. 개인·기관·강사 운영에 맞는 프로그램을 한곳에서 확인합니다.',
   },
   records: {
     title: '현장기록 | 수업 사례·월간 스포키듀',
@@ -172,57 +172,6 @@ export const seoMetaMonthly = seoMeta.monthly;
 
 /** @deprecated seo.ts의 seoMeta.insights 사용 */
 export const seoMetaInsights = seoMeta.insights;
-
-export type SpokeduRelatedLink = {
-  href: string;
-  label: string;
-  description: string;
-};
-
-export const seoRelatedLinks: Partial<Record<SpokeduSeoPageKey, SpokeduRelatedLink[]>> = {
-  home: [
-    { href: '/spokedu/private', label: '개인·소그룹 수업', description: '1:1·소그룹 체육수업 상담' },
-    { href: '/spokedu/dispatch', label: '기관 파견', description: '키움·지역아동센터 프로그램' },
-    { href: '/spokedu/programs', label: '프로그램 자산', description: 'SPOMOVE·PAPS·놀이체육' },
-    { href: '/spokedu/records', label: '현장기록', description: '수업 사례·월간 기록' },
-  ],
-  private: [
-    { href: '/spokedu/programs/spomove', label: 'SPOMOVE', description: '빔 기반 놀이체육 프로그램' },
-    { href: '/spokedu/programs', label: '전체 프로그램', description: '수업에 쓰이는 콘텐츠 자산' },
-    { href: '/spokedu/records', label: '수업 사례', description: '실제 운영 기록' },
-    { href: '/spokedu/contact?type=private', label: '수업 상담', description: '개인·소그룹 문의' },
-  ],
-  dispatch: [
-    { href: '/spokedu/programs/paps', label: 'PAPS 놀이체육', description: '기초체력 연계 프로그램' },
-    { href: '/spokedu/cases', label: '기관 사례', description: '키움·지역아동센터 실행 기록' },
-    { href: '/spokedu/curriculum', label: '커리큘럼', description: '수업안·운영 매뉴얼' },
-    { href: '/spokedu/contact?type=dispatch', label: '제안 문의', description: '기관 파견 상담' },
-  ],
-  curriculum: [
-    { href: '/spokedu/programs', label: '프로그램 자산', description: 'SPOMOVE·PAPS·콘텐츠' },
-    { href: '/spokedu/records', label: '현장기록', description: '검증된 운영 사례' },
-    { href: '/spokedu/insights', label: '교육 인사이트', description: '운영 관점 아카이브' },
-    { href: '/spokedu/contact?type=curriculum', label: '도입 문의', description: '커리큘럼·제휴 상담' },
-  ],
-  programs: [
-    { href: '/spokedu/private', label: 'Private Class', description: '개인·소그룹 적용' },
-    { href: '/spokedu/dispatch', label: 'Dispatch', description: '기관 파견 적용' },
-    { href: '/spokedu/curriculum', label: 'Curriculum', description: '수업안·강사 교육' },
-    { href: '/spokedu/contact', label: '문의하기', description: '프로그램 조합 상담' },
-  ],
-  records: [
-    { href: '/spokedu/cases', label: '수업 사례', description: '기관·행사별 상세 기록' },
-    { href: '/spokedu/monthly', label: '월간 스포키듀', description: '월별 운영 아카이브' },
-    { href: '/spokedu/programs', label: '프로그램', description: '사례에 연결된 콘텐츠' },
-    { href: '/spokedu/contact', label: '문의하기', description: '운영·제안 상담' },
-  ],
-  contact: [
-    { href: '/spokedu/private', label: '개인·소그룹', description: '아이 수업 문의' },
-    { href: '/spokedu/dispatch', label: '기관 파견', description: '제안·행사 문의' },
-    { href: '/spokedu/curriculum', label: '커리큘럼', description: '콘텐츠·제휴 문의' },
-    { href: '/spokedu/programs', label: '프로그램 안내', description: '선택 전 비교' },
-  ],
-};
 
 const PROGRAM_OG: Partial<Record<string, SeoOgImage>> = {
   spomove: { url: SPOKEDU_IMAGES.programs.spomove.src, alt: SPOKEDU_IMAGES.programs.spomove.alt },

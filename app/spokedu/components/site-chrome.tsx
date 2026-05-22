@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { navItems } from '../data/content';
+import { siteNavItems as navItems } from '../data/site';
 import {
   brandContactLinks,
   brandProfile,

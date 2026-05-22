@@ -90,7 +90,7 @@ export const HOME_MEDIA = {
     fallbackGradient: 'from-lime-400 via-emerald-600 to-slate-900',
     tone: 'lime',
   }),
-  proofLounge: fromPhoto(SPOKEDU_IMAGES.programs.camp, {
+  proofLounge: fromPhoto(SPOKEDU_IMAGES.records.playz, {
     id: 'proof-lounge',
     label: '방학캠프',
     fallbackGradient: 'from-amber-300 via-orange-500 to-slate-900',

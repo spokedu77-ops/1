@@ -1,8 +1,27 @@
 import { toast } from 'sonner';
 
+import { reindexGroupRounds, type SessionRowForReindex } from './reindexGroupRounds';
+import { buildRoundSnapshot } from './roundFields';
+import { findCrossGroupSlotConflicts, hasDuplicatePostponedSlot } from './sessionRoundGuards';
+import { omitSessionIdentityForInsertClone } from './sessionInsertClone';
+
 function assertMutationApplied(data: { id?: string } | null, error: unknown, fallback: string) {
   if (error) throw error;
   if (!data?.id) throw new Error(fallback);
+}
+
+async function loadGroupSessionsForRounds(
+  supabase: any,
+  groupId: string
+): Promise<SessionRowForReindex[]> {
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('id, start_at, status, round_total, round_index')
+    .eq('group_id', groupId)
+    .order('start_at', { ascending: true });
+
+  if (error) throw error;
+  return (data || []) as SessionRowForReindex[];
 }
 
 // 기존 page.tsx의 handlePostponeCascade 로직을 그대로 옮긴 순수 함수 버전
@@ -26,15 +45,53 @@ export async function postponeCascade(
       return;
     }
 
+    const groupId = String(curr.group_id);
+    const origStartAt = String(curr.start_at);
+    const teacherId = String(curr.created_by ?? '');
+    const title = String(curr.title ?? '');
+
+    if (await hasDuplicatePostponedSlot(supabase, groupId, origStartAt)) {
+      toast.error('이미 같은 날짜·시간에 연기 기록이 있습니다. 중복 연기는 할 수 없습니다.');
+      return;
+    }
+
+    const crossConflicts = await findCrossGroupSlotConflicts(supabase, {
+      teacherId,
+      title,
+      startAtList: [origStartAt],
+      excludeGroupId: groupId,
+    });
+    if (crossConflicts.length > 0) {
+      toast.error(
+        '같은 강사·수업명·시간에 다른 사이클(그룹) 수업이 이미 있습니다. 구 사이클을 정리한 뒤 연기해 주세요.'
+      );
+      return;
+    }
+
+    let groupRows = await loadGroupSessionsForRounds(supabase, groupId);
+    if (groupRows.length > 1) {
+      await reindexGroupRounds(supabase, groupRows);
+      groupRows = await loadGroupSessionsForRounds(supabase, groupId);
+    }
+
+    const { data: currFresh, error: refetchError } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .single();
+    if (refetchError) throw refetchError;
+    if (!currFresh) throw new Error('POSTPONE_SESSION_NOT_FOUND');
+
+    const roundSnapshot = buildRoundSnapshot(groupRows, currFresh.round_index);
+
     // 주 2회(월/수)처럼 "다음 슬롯"으로 미뤄야 하므로,
     // 같은 group_id에서 start_at 오름차순으로 정렬된 "활성 회차(= postponed/cancelled/deleted 제외)"를
-    // 1칸 뒤로 시프트한다. 즉, i번째 회차는 i+1번째 회차의 start/end로 이동한다.
-    // 마지막 회차는 직전 간격만큼 뒤로 이동한다.
+    // 1칸 뒤로 시프트한다.
     const { data: future = [], error: futureError } = await supabase
       .from('sessions')
       .select('id, start_at, end_at, status')
-      .eq('group_id', curr.group_id)
-      .gte('start_at', curr.start_at)
+      .eq('group_id', groupId)
+      .gte('start_at', currFresh.start_at)
       .order('start_at', { ascending: true });
 
     if (futureError) throw futureError;
@@ -74,18 +131,27 @@ export async function postponeCascade(
       })
     );
 
-    // id, created_at 제외한 복사본으로 연기 세션 생성
-    const { id: _id, created_at: _createdAt, ...copyData } = curr;
-    void _id;
-    void _createdAt;
-
+    const insertBase = omitSessionIdentityForInsertClone(currFresh as Record<string, unknown>);
     const { data: insertedPostpone, error: insertError } = await supabase
       .from('sessions')
-      .insert([{ ...copyData, start_at: curr.start_at, status: 'postponed' }])
+      .insert([
+        {
+          ...insertBase,
+          start_at: origStartAt,
+          end_at: currFresh.end_at,
+          status: 'postponed',
+          ...roundSnapshot,
+        },
+      ])
       .select('id')
       .maybeSingle();
 
     assertMutationApplied(insertedPostpone, insertError, 'POSTPONE_SESSION_NOT_CREATED');
+
+    const afterRows = await loadGroupSessionsForRounds(supabase, groupId);
+    if (afterRows.length > 1) {
+      await reindexGroupRounds(supabase, afterRows);
+    }
 
     toast.success('일정이 성공적으로 연기되었습니다.');
     options?.onAfter?.();
@@ -96,7 +162,6 @@ export async function postponeCascade(
 }
 
 // postponed 상태였던 회차를 원래 슬롯 기준으로 복구한다.
-// postponeCascade에서 "다음 슬롯으로 시프트"했으므로, 여기서는 반대로 1칸 앞(이전 슬롯)으로 되돌린다.
 export async function undoPostponeCascade(
   supabase: any,
   sessionId: string,
@@ -117,7 +182,7 @@ export async function undoPostponeCascade(
       return;
     }
 
-    // postponed 레코드는 원래 start_at을 기준으로 활성 회차를 되돌린다.
+    const groupId = String(curr.group_id);
     const origStartMs = new Date(curr.start_at).getTime();
     if (!Number.isFinite(origStartMs)) {
       toast.error('복구할 시작일이 올바르지 않습니다.');
@@ -127,7 +192,7 @@ export async function undoPostponeCascade(
     const { data: future = [], error: futureError } = await supabase
       .from('sessions')
       .select('id, start_at, end_at, status')
-      .eq('group_id', curr.group_id)
+      .eq('group_id', groupId)
       .gte('start_at', curr.start_at)
       .order('start_at', { ascending: true });
 
@@ -138,7 +203,6 @@ export async function undoPostponeCascade(
       .filter((s) => !!s.id && !!s.start_at && !!s.end_at)
       .sort((a, b) => new Date(a.start_at!).getTime() - new Date(b.start_at!).getTime());
 
-    // activeList가 비어있으면, postponed 레코드만 삭제한다.
     await Promise.all(
       activeList.map(async (s, i) => {
         const durationMs = new Date(s.end_at!).getTime() - new Date(s.start_at!).getTime();
@@ -162,6 +226,11 @@ export async function undoPostponeCascade(
       .select('id')
       .maybeSingle();
     assertMutationApplied(deletedPostpone, deleteError, 'POSTPONED_SESSION_NOT_DELETED');
+
+    const afterRows = await loadGroupSessionsForRounds(supabase, groupId);
+    if (afterRows.length > 1) {
+      await reindexGroupRounds(supabase, afterRows);
+    }
 
     toast.success('일정이 성공적으로 복구되었습니다.');
     options?.onAfter?.();
