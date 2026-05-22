@@ -8,16 +8,20 @@
 
 ## 작업 기준
 
-- 작업 대상은 `app/spokedu-master`만이다.
-  - `subscription-new`나 `spokedu-pro`에 직접 구현하지 않는다.
-  - 참고할 장점만 MASTER에 흡수한다.
+- 작업 기준은 `SPOKEDU MASTER`다.
+- 주 화면 작업 대상은 `app/spokedu-master`다.
+- MASTER 작동을 위해 필요한 경우에만 관련 API와 원천 플레이어를 함께 수정한다.
+  - 예: `app/api/spokedu-master/*`
+  - 예: `/admin/spomove/training`에서 가져오는 embed/player 보정
+- `subscription-new`나 `spokedu-pro`에 직접 구현하지 않는다.
+- 참고할 장점만 MASTER에 흡수한다.
 
 ## 검증 명령 (수정 후 반드시 실행)
 
 ```bash
 npx tsc --noEmit --pretty false
 npx eslint app/spokedu-master --max-warnings 0
-rg "[\x{4E00}-\x{9FFF}\x{F900}-\x{FAFF}\x{FFFD}]" app/spokedu-master -n
+rg "\x{FFFD}|怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥|獄|筌|揶|癰|疫|椰" app/spokedu-master app/api/spokedu-master -n
 ```
 
 ## 개발 현황

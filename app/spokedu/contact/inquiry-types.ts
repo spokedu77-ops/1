@@ -4,36 +4,27 @@ export type InquiryCommonFields = {
   name: string;
   phone: string;
   email: string;
+  preferredRegion: string;
   message: string;
 };
 
 export type PrivateInquiryFields = InquiryCommonFields & {
   childAge: string;
-  exerciseExperience: string;
-  concern: string;
   preferredClassType: string;
   preferredLocation: string;
-  preferredTime: string;
 };
 
 export type DispatchInquiryFields = InquiryCommonFields & {
   organizationName: string;
-  organizationType: string;
   targetAge: string;
   expectedParticipants: string;
-  availableSpace: string;
-  preferredSchedule: string;
-  preferredProgram: string;
-  proposalNeeded: string;
+  preferredOperation: string;
 };
 
 export type CurriculumInquiryFields = InquiryCommonFields & {
   nameOrOrg: string;
-  contentType: string;
-  targetAge: string;
-  purpose: string;
-  trainingNeeded: string;
-  partnershipType: string;
+  inquiryPurpose: string;
+  utilizationTarget: string;
 };
 
 export type PrivateInquiryPayload = PrivateInquiryFields & {

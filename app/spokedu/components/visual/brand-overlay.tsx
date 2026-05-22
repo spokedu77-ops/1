@@ -14,13 +14,24 @@ const toneGlow: Record<HomeMediaTone, string> = {
 
 type BrandOverlayProps = {
   tone?: HomeMediaTone;
-  intensity?: 'soft' | 'bold';
+  intensity?: 'soft' | 'bold' | 'photo';
   className?: string;
 };
 
 /** 실사진 위 브랜드 톤 그라데이션·글로우 (생사진 그대로 노출 방지) */
 export function BrandOverlay({ tone = 'indigo', intensity = 'bold', className = '' }: BrandOverlayProps) {
   const soft = intensity === 'soft';
+  const photo = intensity === 'photo';
+
+  if (photo) {
+    return (
+      <div
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/25 via-transparent to-transparent ${className}`}
+        aria-hidden
+      />
+    );
+  }
+
   return (
     <>
       <div

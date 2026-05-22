@@ -1,12 +1,13 @@
 /**
- * SPOKEDU SPOMOVE — 상수 정의
+ * SPOKEDU SPOMOVE training constants.
+ * This file is shared by the admin trainer and SPOKEDU MASTER iframe player.
  */
 
 export const COLORS = [
-  { id: 'red', name: '빨강', bg: '#EF4444', text: '#fff', symbol: '●' },
-  { id: 'blue', name: '파랑', bg: '#3B82F6', text: '#fff', symbol: '■' },
-  { id: 'green', name: '초록', bg: '#22C55E', text: '#fff', symbol: '▲' },
-  { id: 'yellow', name: '노랑', bg: '#FACC15', text: '#111', symbol: '◆' },
+  { id: 'red', name: '빨강', bg: '#EF4444', text: '#fff', symbol: '🔴' },
+  { id: 'blue', name: '파랑', bg: '#3B82F6', text: '#fff', symbol: '🔵' },
+  { id: 'green', name: '초록', bg: '#22C55E', text: '#fff', symbol: '🟢' },
+  { id: 'yellow', name: '노랑', bg: '#FACC15', text: '#111', symbol: '🟡' },
 ];
 
 export const ARROWS = [
@@ -16,71 +17,99 @@ export const ARROWS = [
   { id: 'right', label: '오른쪽', icon: '→', voice: '오른쪽으로' },
 ];
 
-/** 이중과제 2-1: 파랑·빨강만, 좌·우 화살표만 */
 export const DUAL_TWO_COLORS = COLORS.filter((c) => c.id === 'red' || c.id === 'blue');
 export const DUAL_LR_ARROWS = ARROWS.filter((a) => a.id === 'left' || a.id === 'right');
 
 export const NUMBERS = Array.from({ length: 9 }, (_, i) => ({
   label: String(i + 1),
-  voice: ['일', '이', '삼', '사', '오', '육', '칠', '팔', '구'][i],
+  voice: ['하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉'][i],
 }));
 
 export const MEMORY_ROUNDS = 10;
 
-/**
- * coreCode: 트레이닝 3축 필터 (/admin/spomove/training).
- * VM = 시지각-반응 처리, IC = 선택주의와 간섭통제, EWM = 실행조절과 작업기억
- */
-export const MODES: Record<string, { id: string; title: string; en: string; icon: string; accent: string; tag: string; desc: string; coreCode?: string; levels: Array<{ id: number; name: string; enName: string; desc: string }> }> = {
-  basic: {
-    id: 'basic', title: '반응 인지', en: 'Reactive Cognition', icon: '⚡', accent: '#3B82F6',
+type SpomoveMode = {
+  id: string;
+  title: string;
+  en: string;
+  icon: string;
+  accent: string;
+  tag: string;
+  desc: string;
+  coreCode?: string;
+  levels: Array<{ id: number; name: string; enName: string; desc: string }>;
+};
+
+export const MODES: Record<string, SpomoveMode> = {
+  reactTrain: {
+    id: 'reactTrain',
+    title: '시지각 반응',
+    en: 'Visual Reaction',
+    icon: '◆',
+    accent: '#E11D48',
     coreCode: 'VM',
-    tag: '순발력 · 지각 훈련',
-    desc: '화면 신호를 보는 순간, 판단하고 즉시 움직입니다.',
+    tag: '색 자극 · 반응 훈련',
+    desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Quad Color', desc: '사분할 색 — Think와 동일 2×2 격자에서 한 칸만 강조됩니다. 강조된 칸 색에 맞는 색 위치로 이동합니다.' },
-      { id: 2, name: '2번', enName: 'Full-Screen Color', desc: '전면 색 — 화면 전체 색 신호와 함께 선택한 색지각 이미지 테마가 화면 전체로 표시됩니다. 해당 색 위치로 이동합니다.' },
-      { id: 3, name: '3번', enName: 'Variant Color (1)', desc: '변형 색지각 1단계 — 같은 테마. 가로 3칸 중 일부만 이미지(나머지 흰 칸). 색 한 가지로 답합니다.' },
-      { id: 4, name: '4번', enName: 'Variant Color (2)', desc: '변형 색지각 2단계 — 과일 기본 테마. 가로 3칸 중 일부만 이미지(나머지 흰 칸)로 표시되고, 보이는 이미지의 색 위치로 이동합니다.' },
-      { id: 5, name: '변형 색상 3패널', enName: 'Variant 3', desc: '변형 색상 3패널 (Variant 3) — 가로 3패널에 서로 다른 이미지 3개(색도 모두 다름)가 동시에 표시됩니다. 바로 다음 cue에서 같은 칸에 같은 이미지가 연속으로 나오지 않습니다.' },
-      { id: 6, name: '6번', enName: 'Spatial Orientation', desc: '공간 방향 — 화살표 방향을 보고 해당 방향 위치로 즉시 이동합니다.' },
+      { id: 1, name: '1단계', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
+      { id: 2, name: '2단계', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
+      { id: 3, name: '3단계', enName: 'PATTERN', desc: '여러 색 자극이 패턴으로 나타나며 위치 판단을 요구합니다.' },
+      { id: 4, name: '4단계', enName: 'Diagonal', desc: '대각선 방향으로 이동하는 자극을 보고 해당 위치로 이동합니다.' },
+      { id: 5, name: '5단계', enName: 'Deep Reaction', desc: '깊이감이 있는 자극을 보고 빠르게 반응합니다.' },
+      { id: 6, name: '6단계', enName: 'Pulse', desc: '중앙에서 퍼지는 펄스 자극에 맞춰 반응합니다.' },
+      { id: 7, name: '7단계', enName: 'Blackout', desc: '사라지는 색 자극을 기억하고 반응합니다.' },
+      { id: 8, name: '8단계', enName: 'Sweep', desc: '좌우로 쓸고 지나가는 자극에 맞춰 반응합니다.' },
+      { id: 9, name: '9단계', enName: 'Rush', desc: '빠르게 몰려오는 자극을 보고 반응합니다.' },
+      { id: 10, name: '블록 두더지', enName: 'Mole Simulator', desc: '3x3 구역에서 나타나는 색 자극에 반응합니다.' },
     ],
   },
-  stroop: {
-    id: 'stroop', title: '스트룹 과제', en: 'Stroop Task', icon: '🧠', accent: '#A855F7',
-    coreCode: 'IC',
-    tag: '억제 제어 · 인지 유연성',
-    desc: '배경은 기본 흰색입니다. 화살표·글자 과제에서 규칙에 따라 방향·색·의미를 말합니다.',
+  basic: {
+    id: 'basic',
+    title: '반응 인지',
+    en: 'Reactive Cognition',
+    icon: '⚡',
+    accent: '#3B82F6',
+    coreCode: 'VM',
+    tag: '화면 신호 · 지각 훈련',
+    desc: '화면 신호를 보는 순간 판단하고 즉시 움직이는 기본 반응 훈련입니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Arrow Stroop / Reverse', desc: '화살표 스트룹/역스트룹 통합 — 배경 흰색. 신호마다 일반·역규칙이 무작위로 섞입니다.' },
-      { id: 2, name: '2번', enName: 'Arrow + BG Interference', desc: '화살표 스트룹/역스트룹(배경 간섭) 통합 — 배경색 간섭이 있는 상태에서 일반·역규칙이 무작위로 섞입니다.' },
-      { id: 3, name: '3번', enName: 'Word Stroop / Reverse', desc: '글자 스트룹/역스트룹 통합 — 배경 흰색. 글자 의미·잉크색의 일반·역규칙이 무작위로 섞입니다.' },
-      { id: 4, name: '4번', enName: 'Word + BG', desc: '글자 스트룹(배경 간섭) — 잉크 색을 말하되, 배경색이 추가로 겹칩니다.' },
-      { id: 5, name: '5번', enName: 'Missing Color', desc: '역스트룹(배경 간섭 — 나오지 않은 색) — 글자·잉크·배경 세 가지 색에 나오지 않은 네 번째 색 이름을 말합니다.' },
+      { id: 1, name: '1단계', enName: 'Quad Color', desc: '4분할 색 신호를 보고 해당 위치로 이동합니다.' },
+      { id: 2, name: '2단계', enName: 'Full-Screen Color', desc: '화면 전체 색 신호를 보고 해당 위치로 이동합니다.' },
+      { id: 3, name: '3단계', enName: 'Variant Color (1)', desc: '부분적으로 변형된 색 신호를 보고 판단합니다.' },
+      { id: 4, name: '4단계', enName: 'Variant Color (2)', desc: '여러 색 신호가 섞인 화면에서 목표 색을 판단합니다.' },
+      { id: 5, name: '5단계', enName: 'Variant 3', desc: '세 가지 색 패턴을 구분하며 반응합니다.' },
+      { id: 6, name: '6단계', enName: 'Spatial Orientation', desc: '화면 방향 신호를 보고 해당 방향 위치로 이동합니다.' },
     ],
   },
   simon: {
-    id: 'simon', title: '사이먼 효과', en: 'Simon Effect', icon: '◈', accent: '#EC4899',
+    id: 'simon',
+    title: '사이먼 효과',
+    en: 'Simon Effect',
+    icon: '◈',
+    accent: '#EC4899',
     coreCode: 'IC',
     tag: '공간 위치 · 색 반응',
-    desc: '원·삼각형·사각형이 화면 어디에나 하나씩 나타납니다. 안을 채운 색에 맞는 색 위치로 이동합니다.',
+    desc: '원, 삼각형, 사각형이 화면 어디에나 하나씩 나타납니다. 채워진 색에 맞는 색 위치로 이동합니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Pole Shape', desc: '원·삼각형·사각형 중 하나가 좌·우·상·하 양극단을 순서대로 번갈아 배치됩니다(색·도형은 무작위). 약 25% 크기로 채워지며, 채운 색 위치로 이동합니다.' },
-      { id: 2, name: '2번', enName: 'Pole Arrows', desc: '↑↓←→ 화살표가 양극단을 순서대로 번갈아 나타납니다. 화살표가 가리키는 방향 위치로 이동합니다.' },
+      { id: 1, name: '1단계', enName: 'Pole Shape', desc: '도형의 위치와 색을 분리해서 판단합니다.' },
+      { id: 2, name: '2단계', enName: 'Pole Arrows', desc: '화살표가 가리키는 방향과 색 규칙을 구분합니다.' },
     ],
   },
   flanker: {
-    id: 'flanker', title: '플랭커', en: 'Flanker', icon: '◎', accent: '#6366F1',
+    id: 'flanker',
+    title: '플랭커',
+    en: 'Flanker',
+    icon: '◎',
+    accent: '#6366F1',
     coreCode: 'IC',
-    tag: '방해 자극 · 목표 색 선택',
-    desc: '가로로 나란히 다섯 개의 원이 보입니다. 가운데(세 번째) 원의 색에 맞는 색 위치로만 이동합니다.',
+    tag: '방해 자극 · 목표 선택',
+    desc: '가로로 나란히 다섯 개의 원이 보입니다. 가운데 원의 색에 맞는 색 위치로만 이동합니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Uniform Flankers', desc: '다섯 원이 모두 같은 색입니다. 가운데 색 위치로 이동합니다.' },
-      { id: 2, name: '2번', enName: 'Grouped Flankers', desc: '양끝(1·5번)과 가운데 셋(2·3·4번)끼리 각각 같은 색입니다. 답은 항상 가운데(3번) 원의 색입니다.' },
-      { id: 3, name: '3번', enName: 'Random Flankers', desc: '다섯 원 색이 각각 무작위입니다. 가운데 원 색만 보고 색 위치를 고릅니다.' },
-      { id: 4, name: '4번', enName: 'Mixed Size & Color', desc: '다섯 원의 크기·색이 서로 다르게(한 줄, 스크롤 없음) 나옵니다. 가운데 원 색 위치로 이동합니다.' },
-      { id: 5, name: '5번', enName: '3-Circle Extreme Sizes', desc: '원 3개만 표시됩니다. 100%·70%·40% 크기가 랜덤 순서로 강하게 섞여 나오며, 가운데 원 색 위치로 이동합니다.' },
-      { id: 6, name: '6번', enName: '5-Circle Extreme Sizes', desc: '원 5개가 모두 서로 다른 크기로 매우 강하게 표시됩니다. 답은 가운데(3번) 원의 색입니다.' },
+      { id: 1, name: '1단계', enName: 'Uniform Flankers', desc: '다섯 원이 같은 색입니다. 가운데 색에 반응합니다.' },
+      { id: 2, name: '2단계', enName: 'Grouped Flankers', desc: '중앙 그룹과 양쪽 방해 자극을 구분합니다.' },
+      { id: 3, name: '3단계', enName: 'Random Flankers', desc: '무작위 색 원 중 가운데 색만 보고 판단합니다.' },
+      { id: 4, name: '4단계', enName: 'Mixed Size & Color', desc: '크기와 색이 섞인 자극에서 목표 원을 찾습니다.' },
+      { id: 5, name: '5단계', enName: '3-Circle Extreme Sizes', desc: '세 개의 원이 극단적인 크기로 나타납니다.' },
+      { id: 6, name: '6단계', enName: '5-Circle Extreme Sizes', desc: '다섯 개의 원이 서로 다른 크기로 나타납니다.' },
     ],
   },
   gonogo: {
@@ -91,12 +120,12 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     accent: '#F97316',
     coreCode: 'EWM',
     tag: '반응 억제',
-    desc: '움직여야 할 때와 멈춰야 할 때를 구분해 반응을 억제합니다.',
+    desc: '움직여야 할 때와 멈춰야 할 때를 구분해 반응을 조절합니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Go / No-Go (Color)', desc: 'Go / No-Go — 색 기반. 빨강·파랑·노랑은 Go(이동), 초록은 No-Go(멈춤).' },
-      { id: 2, name: '2번', enName: 'Go / No-Go (Shape)', desc: 'Go / No-Go — 도형 기반. 동그라미는 Go, 세모는 No-Go.' },
-      { id: 3, name: '3번', enName: 'Go / No-Go (Action)', desc: 'Go / No-Go — 동작 기반. 화살표는 이동(Go), X표는 멈춤(No-Go).' },
-      { id: 4, name: '4번', enName: 'Go / No-Go (Dual)', desc: 'Go / No-Go — 이중 규칙. 빨강 동그라미는 Go, 빨강 세모는 No-Go.' },
+      { id: 1, name: '1단계', enName: 'Go / No-Go (Color)', desc: '색 기준으로 Go와 No-Go를 구분합니다.' },
+      { id: 2, name: '2단계', enName: 'Go / No-Go (Shape)', desc: '도형 기준으로 Go와 No-Go를 구분합니다.' },
+      { id: 3, name: '3단계', enName: 'Go / No-Go (Action)', desc: '행동 신호 기준으로 이동과 멈춤을 구분합니다.' },
+      { id: 4, name: '4단계', enName: 'Go / No-Go (Dual)', desc: '색과 도형의 이중 규칙을 함께 판단합니다.' },
     ],
   },
   taskswitch: {
@@ -107,100 +136,123 @@ export const MODES: Record<string, { id: string; title: string; en: string; icon
     accent: '#EA580C',
     coreCode: 'EWM',
     tag: '규칙 전환',
-    desc: 'cue에 따라 「색 / 위치 / 반대로」 규칙을 바꿔 반응합니다.',
+    desc: 'cue에 따라 색, 위치, 반대로 규칙을 바꿔 반응합니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Task Switching (Text Cues)', desc: 'Task Switching — 한글 cue(색·위치·반대로)로 규칙을 알려 줍니다.' },
-      { id: 2, name: '2번', enName: 'Task Switching (Icon Cues)', desc: 'Task Switching — 팔레트·핀·반전 아이콘으로 글자 의존도를 줄입니다.' },
-      { id: 3, name: '3번', enName: 'Task Switching (Border Cues)', desc: 'Task Switching — 실선/점선/이중 테두리만으로 규칙을 읽어야 합니다.' },
+      { id: 1, name: '1단계', enName: 'Task Switching (Text Cues)', desc: '텍스트 cue에 따라 반응 기준을 바꿉니다.' },
+      { id: 2, name: '2단계', enName: 'Task Switching (Icon Cues)', desc: '아이콘 cue로 규칙 전환을 수행합니다.' },
+      { id: 3, name: '3단계', enName: 'Task Switching (Border Cues)', desc: '테두리 cue만 보고 규칙을 읽어냅니다.' },
     ],
   },
-  /** 예전 URL·북마크용. 카탈로그에는 노출하지 않음 */
   executive: {
-    id: 'executive', title: '실행 조절 (통합·레거시)', en: 'Executive Control', icon: '🔀', accent: '#F97316',
+    id: 'executive',
+    title: '실행 조절',
+    en: 'Executive Control',
+    icon: '🧠',
+    accent: '#F97316',
     coreCode: 'EWM',
     tag: '반응 억제 · 규칙 전환',
-    desc: '레거시 통합 슬롯입니다. 1~4는 Go/No-Go, 5~7은 Task Switching에 해당합니다.',
+    desc: 'Go / No-Go와 Task Switching을 통합한 실행 조절 훈련입니다.',
     levels: [
-      { id: 1, name: '1번', enName: 'Go / No-Go (Color)', desc: 'Go / No-Go — 색 기반. 빨강·파랑·노랑은 Go(이동), 초록은 No-Go(멈춤).' },
-      { id: 2, name: '2번', enName: 'Go / No-Go (Shape)', desc: 'Go / No-Go — 도형 기반. 동그라미는 Go, 세모는 No-Go.' },
-      { id: 3, name: '3번', enName: 'Go / No-Go (Action)', desc: 'Go / No-Go — 동작 기반. 화살표는 이동(Go), X표는 멈춤(No-Go).' },
-      { id: 4, name: '4번', enName: 'Go / No-Go (Dual)', desc: 'Go / No-Go — 이중 규칙. 빨강 동그라미는 Go, 빨강 세모는 No-Go.' },
-      { id: 5, name: '5번', enName: 'Task Switching (Text Cues)', desc: 'Task Switching — 한글 cue(색·위치·반대로)로 규칙을 알려 줍니다.' },
-      { id: 6, name: '6번', enName: 'Task Switching (Icon Cues)', desc: 'Task Switching — 팔레트·핀·반전 아이콘으로 글자 의존도를 줄입니다.' },
-      { id: 7, name: '7번', enName: 'Task Switching (Border Cues)', desc: 'Task Switching — 실선/점선/이중 테두리만으로 규칙을 읽어야 합니다.' },
+      { id: 1, name: '1단계', enName: 'Go / No-Go (Color)', desc: '색 기준 Go / No-Go.' },
+      { id: 2, name: '2단계', enName: 'Go / No-Go (Shape)', desc: '도형 기준 Go / No-Go.' },
+      { id: 3, name: '3단계', enName: 'Go / No-Go (Action)', desc: '행동 기준 Go / No-Go.' },
+      { id: 4, name: '4단계', enName: 'Go / No-Go (Dual)', desc: '이중 규칙 Go / No-Go.' },
+      { id: 5, name: '5단계', enName: 'Task Switching (Text Cues)', desc: '텍스트 cue 규칙 전환.' },
+      { id: 6, name: '6단계', enName: 'Task Switching (Icon Cues)', desc: '아이콘 cue 규칙 전환.' },
+      { id: 7, name: '7단계', enName: 'Task Switching (Border Cues)', desc: '테두리 cue 규칙 전환.' },
     ],
   },
   spatial: {
-    id: 'spatial', title: '순차 기억', en: 'Sequential Memory', icon: '🎨', accent: '#22C55E',
+    id: 'spatial',
+    title: '순차 기억',
+    en: 'Sequential Memory',
+    icon: '🎨',
+    accent: '#22C55E',
     coreCode: 'EWM',
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
-      { id: 1, name: '1번', enName: '3항 기억', desc: '색깔 3개가 1초씩 나온 뒤 순서대로 말합니다.' },
-      { id: 2, name: '2번', enName: '5항 기억', desc: '색깔 5개가 1초씩 나온 뒤 순서대로 말합니다.' },
-      { id: 3, name: '3번', enName: '10항 기억', desc: '색깔이 무작위 10번 나옵니다. 기억한 뒤 선생님이 정답 공개.' },
-      { id: 4, name: '4번', enName: '색깔-번호 기억', desc: '색깔 배경에 번호(1~10)가 하나씩 나옵니다. 10번 모두 본 뒤, 번호별 색깔을 맞혀보세요.' },
-      { id: 5, name: '5번', enName: '색깔-번호 전체 공개', desc: '색깔 배경에 번호(1~10)가 하나씩 나옵니다. 10번 모두 본 뒤, 전체 정답을 한 화면에 공개합니다.' },
+      { id: 1, name: '1단계', enName: '3 Color Memory', desc: '색 3개 순서를 기억합니다.' },
+      { id: 2, name: '2단계', enName: '5 Color Memory', desc: '색 5개 순서를 기억합니다.' },
+      { id: 3, name: '3단계', enName: '10 Color Memory', desc: '색 10개 순서를 기억합니다.' },
+      { id: 4, name: '4단계', enName: 'Color-Number Memory', desc: '색과 번호를 함께 기억합니다.' },
+      { id: 5, name: '5단계', enName: 'Full Reveal', desc: '전체 정답을 확인하며 기억 전략을 점검합니다.' },
+    ],
+  },
+  stroop: {
+    id: 'stroop',
+    title: '스트룹 과제',
+    en: 'Stroop Task',
+    icon: '🧠',
+    accent: '#A855F7',
+    coreCode: 'IC',
+    tag: '통제 제어 · 인지 지연',
+    desc: '배경은 기본 흰색입니다. 화살표와 글자 과제에서 규칙에 따라 방향, 색, 의미를 말합니다.',
+    levels: [
+      { id: 1, name: '1단계', enName: 'Arrow Stroop / Reverse', desc: '화살표와 반대 규칙을 처리합니다.' },
+      { id: 2, name: '2단계', enName: 'Arrow + BG Interference', desc: '화살표와 배경 간섭을 함께 처리합니다.' },
+      { id: 3, name: '3단계', enName: 'Word Stroop / Reverse', desc: '글자 의미와 반대 규칙을 처리합니다.' },
+      { id: 4, name: '4단계', enName: 'Word + BG', desc: '글자와 배경색 간섭을 함께 처리합니다.' },
+      { id: 5, name: '5단계', enName: 'Missing Color', desc: '나오지 않은 색을 찾아 말합니다.' },
     ],
   },
   flow: {
-    id: 'flow', title: '플로우', en: 'Flow Mode', icon: '🌌', accent: '#06B6D4',
+    id: 'flow',
+    title: '플로우',
+    en: 'Flow Mode',
+    icon: '🌌',
+    accent: '#06B6D4',
     coreCode: 'VM',
     tag: '몰입 러닝 · 반응 전환',
     desc: '우주 러닝 FLOW를 SPOMOVE에서 바로 실행합니다.',
-    levels: [
-      { id: 1, name: '1번', enName: 'Flow Program', desc: 'FLOW 프로그램 — 시작·레벨·휴식을 포함한 전체 시퀀스를 진행합니다.' },
-    ],
-  },
-  reactTrain: {
-    id: 'reactTrain', title: '시지각 반응', en: 'Visual Reaction', icon: '◆', accent: '#E11D48',
-    coreCode: 'VM',
-    tag: '시지각 · 반응 훈련',
-    desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각·반응 훈련입니다.',
-    levels: [
-      { id: 1, name: '1번', enName: 'FLOW', desc: '색 타일이 레인을 따라 흘러내립니다.' },
-      { id: 2, name: '2번', enName: 'FLASH', desc: '원형 버블이 자유 낙하합니다.' },
-      { id: 3, name: '3번', enName: 'PATTERN', desc: '두 색이 동시에 낙하 — 양발로 두 색 위치을 동시에 밟습니다.' },
-      { id: 4, name: '4번', enName: 'Diagonal', desc: '모서리에서 중앙 2×2 패드로 날아오는 유성 자극 — 색에 맞는 색 위치를 밟습니다. 30초 후 가속이 들어갑니다.' },
-      { id: 5, name: '5번', enName: 'Deep Reaction', desc: '심해에서 중앙을 향해 헤엄치는 해파리 — 모서리 패드에 닿기 전에 해당 색 위치을 밟습니다. 30초 후 주기적으로 가속됩니다.' },
-      { id: 6, name: '6번', enName: 'Pulse', desc: '중앙 심박 코어에서 링이 퍼져 모서리에 닿는 타이밍 반응 — 해당 색 위치를 즉시 밟습니다.' },
-      { id: 7, name: '7번', enName: 'Blackout', desc: '색 패널이 순서대로 사라진 뒤 마지막 색을 기억해 타이밍 반응하는 순서 기억 반응.' },
-      { id: 8, name: '8번', enName: 'Sweep', desc: '좌→우 타임라인 스윕이 색 밴드를 훑을 때 색 자극에 반응하는 스캔형 반응 훈련.' },
-      { id: 9, name: '9번', enName: 'Rush', desc: '원근 레일을 따라 돌진하는 색 세그먼트를 타이밍에 맞춰 반응하는 러시형 훈련.' },
-      { id: 10, name: '블록 두더지', enName: 'Mole Simulator', desc: '3×3 구멍에서 올라오는 색 블록 두더지를 관찰하며 시간/횟수 모드로 반응 지속력을 훈련합니다.' },
-    ],
+    levels: [{ id: 1, name: '1단계', enName: 'Flow Program', desc: 'FLOW 전체 시퀀스를 진행합니다.' }],
   },
   tbd1: {
-    id: 'tbd1', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    id: 'tbd1',
+    title: '준비 중',
+    en: 'TBD',
+    icon: '＋',
+    accent: 'rgba(148,163,184,0.55)',
     coreCode: 'VM',
     tag: '보류',
-    desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
-    levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
+    desc: '추후 확정할 SPOMOVE 모드입니다.',
+    levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
   },
   tbd2: {
-    id: 'tbd2', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    id: 'tbd2',
+    title: '준비 중',
+    en: 'TBD',
+    icon: '＋',
+    accent: 'rgba(148,163,184,0.55)',
     coreCode: 'IC',
     tag: '보류',
-    desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
-    levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
+    desc: '추후 확정할 SPOMOVE 모드입니다.',
+    levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
   },
   tbd3: {
-    id: 'tbd3', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    id: 'tbd3',
+    title: '준비 중',
+    en: 'TBD',
+    icon: '＋',
+    accent: 'rgba(148,163,184,0.55)',
     coreCode: 'EWM',
     tag: '보류',
-    desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
-    levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
+    desc: '추후 확정할 SPOMOVE 모드입니다.',
+    levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
   },
   tbd4: {
-    id: 'tbd4', title: '미정', en: 'TBD', icon: '⋯', accent: 'rgba(148,163,184,0.55)',
+    id: 'tbd4',
+    title: '준비 중',
+    en: 'TBD',
+    icon: '＋',
+    accent: 'rgba(148,163,184,0.55)',
     coreCode: 'VM',
     tag: '보류',
-    desc: '추후 확정될 SPOMOVE 테마 슬롯입니다.',
-    levels: [{ id: 1, name: '—', enName: 'TBD', desc: '비워둠' }],
+    desc: '추후 확정할 SPOMOVE 모드입니다.',
+    levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
   },
 };
 
-/** 트레이닝 카탈로그 12슬롯: 실행축은 Go/No-Go·Task Switching 분리 + 실행·작업기억 미정 1슬롯(tbd3) */
 export const SPOMOVE_CATALOG_SLOT_IDS = [
   'reactTrain',
   'basic',
@@ -221,7 +273,6 @@ export function isSpomoveCatalogTbdMode(modeId: string): boolean {
   return modeId === 'tbd1' || modeId === 'tbd2' || modeId === 'tbd3' || modeId === 'tbd4';
 }
 
-/** UI 모드·레벨 → 신호 엔진 (내부 gonogo / taskswitch 레벨) */
 export function resolveTrainingEngine(mode: string, level: number): { engineMode: string; engineLevel: number } {
   if (mode === 'executive') {
     const lv = Math.min(7, Math.max(1, Math.floor(level)));
@@ -239,11 +290,7 @@ export function resolveTrainingEngine(mode: string, level: number): { engineMode
   return { engineMode: mode, engineLevel: level };
 }
 
-/** 예전 URL·북마크용 모드명을 현재 카탈로그 id로 맞춤 */
-export function normalizeLegacyTrainingMode(
-  mode: string | undefined,
-  level: number,
-): { mode: string; level: number } {
+export function normalizeLegacyTrainingMode(mode: string | undefined, level: number): { mode: string; level: number } {
   if (!mode) return { mode: 'basic', level: 1 };
   if (mode === 'gonogo') return { mode: 'gonogo', level: Math.min(4, Math.max(1, level)) };
   if (mode === 'taskswitch') return { mode: 'taskswitch', level: Math.min(3, Math.max(1, level)) };
@@ -257,15 +304,12 @@ export function normalizeLegacyTrainingMode(
 }
 
 export const STUDENTS_KEY = 'spokedu_students_v1';
-export const STUDENT_COLORS = [
-  '#F97316', '#3B82F6', '#22C55E', '#A855F7',
-  '#EF4444', '#FACC15', '#06B6D4', '#EC4899',
-];
+export const STUDENT_COLORS = ['#F97316', '#3B82F6', '#22C55E', '#A855F7', '#EF4444', '#FACC15', '#06B6D4', '#EC4899'];
 
 export const SPEED_PRESETS = [
-  { label: '미취학', sub: '5~7세', value: 5.0, emoji: '🐥', color: '#F59E0B' },
-  { label: '초등 저학년', sub: '8~10세', value: 4.0, emoji: '🌱', color: '#10B981' },
-  { label: '초등 고학년', sub: '11~13세', value: 3.0, emoji: '🏃', color: '#3B82F6' },
-  { label: '중고등·성인', sub: '14~40세', value: 2.0, emoji: '⚡', color: '#8B5CF6' },
+  { label: '유아', sub: '5~7세', value: 5.0, emoji: '🧒', color: '#F59E0B' },
+  { label: '초등 저학년', sub: '8~10세', value: 4.0, emoji: '🏃', color: '#10B981' },
+  { label: '초등 고학년', sub: '11~13세', value: 3.0, emoji: '⚡', color: '#3B82F6' },
+  { label: '중고등·성인', sub: '14~40세', value: 2.0, emoji: '🔥', color: '#8B5CF6' },
   { label: '시니어', sub: '60세 이상', value: 4.5, emoji: '🌿', color: '#EC4899' },
 ];

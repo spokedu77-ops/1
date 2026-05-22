@@ -99,6 +99,11 @@ function isDirectVideoUrl(url?: string) {
   return Boolean(url && /\.(mp4|webm|ogg)(\?.*)?$/i.test(url));
 }
 
+function getVideoThumbnail(url?: string) {
+  const youtubeId = getYouTubeId(url);
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : undefined;
+}
+
 function getPrimaryDrill(program: Program, drills: Drill[]) {
   const relatedIds = program.lessonDetail?.relatedSpomoveIds ?? [];
   return drills.find((drill) => relatedIds.includes(drill.id)) ?? (hasSpomoveLink(program) ? drills[0] : undefined);
@@ -140,11 +145,11 @@ function SectionTitle({ eyebrow, title, actionHref }: { eyebrow: string; title: 
   return (
     <div className="mb-4 flex items-end justify-between gap-4">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">{eyebrow}</p>
-        <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+        <p className="text-xs font-black tracking-[0.14em] text-indigo-500">{eyebrow}</p>
+        <h2 className="mt-1 text-xl font-black text-slate-950">{title}</h2>
       </div>
       {actionHref ? (
-        <Link href={actionHref} className="inline-flex items-center gap-1 text-sm font-bold text-indigo-200 hover:text-white">
+        <Link href={actionHref} className="inline-flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-500">
           보기
           <ChevronRight className="h-4 w-4" />
         </Link>
@@ -159,7 +164,7 @@ function CompactMeta({ program }: { program: Program }) {
   return (
     <div className="mt-3 flex flex-wrap gap-1.5">
       {items.map((item) => (
-        <span key={item} className="max-w-full truncate rounded-full bg-white/[0.055] px-2.5 py-1 text-[11px] font-bold text-slate-400">
+        <span key={item} className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
           {item}
         </span>
       ))}
@@ -177,7 +182,7 @@ function ValueChips({ program }: { program: Program }) {
   return (
     <div className="mt-3 flex flex-wrap gap-1.5">
       {chips.slice(0, 3).map((chip) => (
-        <span key={chip} className="rounded-full bg-indigo-400/10 px-2.5 py-1 text-[11px] font-black text-indigo-100">
+        <span key={chip} className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-black text-indigo-600">
           {chip}
         </span>
       ))}
@@ -203,7 +208,7 @@ function ProgramCard({
   const heroImage = getHeroImage(program);
 
   return (
-    <article className="group flex min-h-[390px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.052] transition hover:-translate-y-0.5 hover:bg-white/[0.075]">
+    <article className="group flex min-h-[390px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
       <button type="button" onClick={onPreview} className="relative h-44 overflow-hidden text-left">
         {heroImage ? (
           <Image src={heroImage} alt="" fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" unoptimized />
@@ -227,8 +232,8 @@ function ProgramCard({
 
       <div className="flex flex-1 flex-col p-4">
         <button type="button" onClick={onPreview} className="flex-1 text-left">
-          <h3 className="line-clamp-2 text-base font-black leading-snug text-white">{program.title}</h3>
-          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">{program.description}</p>
+          <h3 className="line-clamp-2 text-base font-black leading-snug text-slate-950">{program.title}</h3>
+          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{program.description}</p>
           <CompactMeta program={program} />
           <ValueChips program={program} />
         </button>
@@ -238,17 +243,17 @@ function ProgramCard({
             type="button"
             onClick={onFavorite}
             className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
-              favorite ? 'border-amber-300/40 bg-amber-300/14 text-amber-200' : 'border-white/10 bg-white/[0.05] text-slate-400 hover:text-white'
+              favorite ? 'border-amber-200 bg-amber-50 text-amber-600' : 'border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-700'
             }`}
             aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
           >
             <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
           </button>
-          <button type="button" onClick={onPreview} className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-2xl bg-white px-3 text-sm font-extrabold text-slate-950 transition hover:bg-slate-100">
+          <button type="button" onClick={onPreview} className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3 text-sm font-extrabold text-white transition hover:bg-indigo-500">
             패키지 보기
           </button>
           {used ? (
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-400/12 text-emerald-200" title="사용 이력 있음">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" title="사용 이력 있음">
               <Check className="h-4 w-4" />
             </span>
           ) : null}
@@ -265,28 +270,28 @@ function FeaturedProgram({ program, drill, onPreview }: { program: Program; dril
     : '/spokedu-master/spomove';
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/70">
+    <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
       <div className="grid lg:grid-cols-[1fr_420px]">
         <div className="flex min-h-[320px] flex-col justify-between p-6 sm:p-8">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-400/12 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-indigo-200">
+            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black tracking-[0.14em] text-indigo-600">
               <Sparkles className="h-3.5 w-3.5" />
               이번 주 추천 수업안
             </span>
-            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl">{program.title}</h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">{program.description}</p>
+            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{program.title}</h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">{program.description}</p>
             <ValueChips program={program} />
           </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-extrabold text-slate-950">
+            <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white">
               <Play className="h-4 w-4 fill-current" />
               수업 시작
             </Link>
-            <Link href={spomoveHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-300/20 bg-indigo-400/10 px-5 text-sm font-bold text-indigo-100">
+            <Link href={spomoveHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800">
               <MonitorPlay className="h-4 w-4" />
               큰 화면 실행
             </Link>
-            <button type="button" onClick={onPreview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 px-5 text-sm font-bold text-slate-200">
+            <button type="button" onClick={onPreview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-slate-500 hover:text-slate-900">
               <BookOpen className="h-4 w-4" />
               패키지 열기
             </button>
@@ -298,13 +303,13 @@ function FeaturedProgram({ program, drill, onPreview }: { program: Program; dril
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-indigo-500/35 via-slate-900 to-emerald-400/20" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 to-transparent" />
-          <div className="absolute bottom-5 left-5 right-5 rounded-3xl border border-white/12 bg-slate-950/72 p-4 text-left backdrop-blur-xl">
-            <p className="text-xs font-bold text-slate-400">패키지 구성</p>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 to-transparent" />
+          <div className="absolute bottom-5 left-5 right-5 rounded-[18px] border border-white/25 bg-white/88 p-4 text-left shadow-[0_18px_46px_rgba(15,23,42,0.2)] backdrop-blur-xl">
+            <p className="text-xs font-bold text-slate-500">패키지 구성</p>
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-2xl bg-white/[0.06] px-2 py-3 text-xs font-bold text-white">수업안</div>
-              <div className="rounded-2xl bg-white/[0.06] px-2 py-3 text-xs font-bold text-white">배치도</div>
-              <div className="rounded-2xl bg-white/[0.06] px-2 py-3 text-xs font-bold text-white">설명 문구</div>
+              <div className="rounded-xl bg-slate-100 px-2 py-3 text-xs font-bold text-slate-800">수업안</div>
+              <div className="rounded-xl bg-slate-100 px-2 py-3 text-xs font-bold text-slate-800">배치도</div>
+              <div className="rounded-xl bg-slate-100 px-2 py-3 text-xs font-bold text-slate-800">설명 문구</div>
             </div>
           </div>
         </button>
@@ -329,12 +334,16 @@ function ProgramModal({
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [activeMedia, setActiveMedia] = useState<'video' | number>('video');
   const locked = program.isPro && !isPro;
   const detail = program.lessonDetail;
   const gallery = getGalleryImages(program);
   const heroImage = gallery[0];
   const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl);
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
+  const hasVideo = Boolean(videoEmbedUrl || directVideoUrl);
+  const videoThumbnail = getVideoThumbnail(detail?.videoUrl) || heroImage;
+  const activeImage = typeof activeMedia === 'number' ? gallery[activeMedia] : undefined;
   const primaryDrillId = drill?.id ?? detail?.relatedSpomoveIds?.[0];
   const spomoveHref = primaryDrillId
     ? `/spokedu-master/spomove/session?drill=${primaryDrillId}&mode=projector&program=${program.id}`
@@ -352,9 +361,9 @@ function ProgramModal({
   return (
     <BottomSheet open title="수업 패키지" onClose={onClose}>
       <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950">
-          <div className="relative h-[260px]">
-            {videoEmbedUrl ? (
+        <div className="relative overflow-hidden rounded-[18px] border border-slate-200 bg-slate-950">
+          <div className="relative aspect-video min-h-[220px]">
+            {activeMedia === 'video' && videoEmbedUrl ? (
               <iframe
                 src={videoEmbedUrl}
                 title={`${program.title} 영상`}
@@ -362,8 +371,10 @@ function ProgramModal({
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
               />
-            ) : directVideoUrl ? (
+            ) : activeMedia === 'video' && directVideoUrl ? (
               <video src={directVideoUrl} className="h-full w-full object-cover" controls autoPlay muted playsInline />
+            ) : activeImage ? (
+              <Image src={activeImage} alt="" fill sizes="720px" className="object-cover" priority unoptimized />
             ) : heroImage ? (
               <Image src={heroImage} alt="" fill sizes="720px" className="object-cover" priority unoptimized />
             ) : (
@@ -371,16 +382,47 @@ function ProgramModal({
                 <CategoryIcon category={program.category} size={54} />
               </div>
             )}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
+            <div className={`pointer-events-none absolute inset-0 ${activeMedia === 'video' && hasVideo ? 'bg-gradient-to-t from-slate-950/55 via-transparent to-transparent' : 'bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent'}`} />
             <div className="pointer-events-none absolute bottom-5 left-5 right-5">
               <div className="mb-3 flex flex-wrap gap-2">
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">{program.category}</span>
                 {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-400 px-3 py-1 text-xs font-black text-white">SPOMOVE 연동</span> : null}
                 {locked ? <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">PRO 전용</span> : null}
+                {hasVideo ? <span className="rounded-full bg-rose-400 px-3 py-1 text-xs font-black text-white">영상 자동재생</span> : null}
               </div>
               <h2 className="text-2xl font-black leading-tight text-white sm:text-3xl">{program.title}</h2>
             </div>
           </div>
+          {hasVideo || gallery.length > 1 ? (
+            <div className="flex gap-2 overflow-x-auto border-t border-white/10 bg-slate-950 p-3">
+              {hasVideo ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveMedia('video')}
+                  className={`relative h-16 w-28 shrink-0 overflow-hidden rounded-xl border text-left ${activeMedia === 'video' ? 'border-white' : 'border-white/15'}`}
+                  aria-label="수업 영상 보기"
+                >
+                  {videoThumbnail ? <Image src={videoThumbnail} alt="" fill sizes="112px" className="object-cover opacity-75" unoptimized /> : null}
+                  <span className="absolute inset-0 grid place-items-center bg-black/30">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-950">
+                      <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
+                    </span>
+                  </span>
+                </button>
+              ) : null}
+              {gallery.map((image, index) => (
+                <button
+                  key={`${image}-${index}`}
+                  type="button"
+                  onClick={() => setActiveMedia(index)}
+                  className={`relative h-16 w-28 shrink-0 overflow-hidden rounded-xl border ${activeMedia === index ? 'border-white' : 'border-white/15'}`}
+                  aria-label={index === 0 ? '대표 이미지 보기' : index === gallery.length - 1 ? '배치 이미지 보기' : `현장 이미지 ${index + 1} 보기`}
+                >
+                  <Image src={image} alt="" fill sizes="112px" className="object-cover" unoptimized />
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -389,24 +431,24 @@ function ProgramModal({
           <MetaBox label="인원" value={detail?.recommendedPlayers || '소그룹~학급'} />
         </div>
 
-        <div className="sticky top-0 z-10 grid gap-3 rounded-3xl border border-white/10 bg-[#0d0d14]/95 p-2 backdrop-blur-xl sm:grid-cols-2">
-          <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-extrabold text-slate-950">
+        <div className="sticky top-0 z-10 grid gap-3 rounded-[18px] border border-slate-200 bg-white/95 p-2 shadow-[0_14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-2">
+          <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white">
             <Play className="h-4 w-4 fill-current" />
             수업 시작
           </Link>
-          <Link href={spomoveHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-indigo-300/25 bg-indigo-400/10 px-5 text-sm font-bold text-indigo-100">
+          <Link href={spomoveHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800">
             <MonitorPlay className="h-4 w-4" />
             SPOMOVE 큰 화면
           </Link>
-          <button type="button" onClick={copyParentNote} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-300/25 bg-emerald-400/10 px-5 text-sm font-bold text-emerald-100">
+          <button type="button" onClick={copyParentNote} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-bold text-emerald-700">
             <Clipboard className="h-4 w-4" />
             {copied ? '복사 완료' : '설명 문구 복사'}
           </button>
           <button
             type="button"
             onClick={onFavorite}
-            className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-5 text-sm font-bold ${
-              favorite ? 'border-amber-300/35 bg-amber-300/12 text-amber-100' : 'border-white/10 bg-white/[0.05] text-slate-200'
+            className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-bold ${
+              favorite ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-700'
             }`}
           >
             <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
@@ -414,34 +456,34 @@ function ProgramModal({
           </button>
         </div>
 
-        <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-          <h3 className="text-base font-black text-white">수업 목표</h3>
-          <p className="mt-3 text-sm leading-7 text-slate-300">{detail?.objective || program.description}</p>
+        <section className="rounded-[18px] border border-slate-200 bg-slate-50 p-5">
+          <h3 className="text-base font-black text-slate-950">수업 목표</h3>
+          <p className="mt-3 text-sm leading-7 text-slate-600">{detail?.objective || program.description}</p>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-            <h3 className="flex items-center gap-2 text-base font-black text-white">
-              <Package className="h-4 w-4 text-indigo-200" />
+          <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-5">
+            <h3 className="flex items-center gap-2 text-base font-black text-slate-950">
+              <Package className="h-4 w-4 text-indigo-600" />
               준비물
             </h3>
             <div className="mt-4 flex flex-wrap gap-2">
               {(program.equipment.length ? program.equipment : ['현장 기본 도구']).map((item) => (
-                <span key={item} className="rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-slate-300">
+                <span key={item} className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
                   {item}
                 </span>
               ))}
             </div>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-            <h3 className="flex items-center gap-2 text-base font-black text-white">
-              <MapPin className="h-4 w-4 text-indigo-200" />
+          <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-5">
+            <h3 className="flex items-center gap-2 text-base font-black text-slate-950">
+              <MapPin className="h-4 w-4 text-indigo-600" />
               공간 세팅
             </h3>
             <ul className="mt-4 space-y-2">
               {setupNotes.slice(0, 4).map((item) => (
-                <li key={item} className="flex gap-2 text-sm leading-6 text-slate-300">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-300" />
+                <li key={item} className="flex gap-2 text-sm leading-6 text-slate-600">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" />
                   {item}
                 </li>
               ))}
@@ -449,36 +491,36 @@ function ProgramModal({
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-          <h3 className="text-base font-black text-white">진행 단계</h3>
+        <section className="rounded-[18px] border border-slate-200 bg-slate-50 p-5">
+          <h3 className="text-base font-black text-slate-950">진행 단계</h3>
           <ol className="mt-4 space-y-3">
             {rules.slice(0, 6).map((step, index) => (
-              <li key={`${step}-${index}`} className="grid grid-cols-[32px_1fr] gap-3 rounded-2xl bg-white/[0.04] p-3">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-400/14 text-xs font-black text-indigo-100">{index + 1}</span>
-                <p className="text-sm leading-6 text-slate-300">{step}</p>
+              <li key={`${step}-${index}`} className="grid grid-cols-[32px_1fr] gap-3 rounded-xl bg-white p-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-xs font-black text-indigo-600">{index + 1}</span>
+                <p className="text-sm leading-6 text-slate-600">{step}</p>
               </li>
             ))}
           </ol>
         </section>
 
-        <section className="rounded-3xl border border-indigo-300/18 bg-indigo-400/10 p-5">
-          <h3 className="flex items-center gap-2 text-base font-black text-white">
-            <Zap className="h-4 w-4 text-indigo-200" />
+        <section className="rounded-[18px] border border-indigo-100 bg-indigo-50 p-5">
+          <h3 className="flex items-center gap-2 text-base font-black text-slate-950">
+            <Zap className="h-4 w-4 text-indigo-600" />
             SPOMOVE 연결
           </h3>
-          <p className="mt-3 text-sm leading-7 text-indigo-100/80">
+          <p className="mt-3 text-sm leading-7 text-indigo-700">
             {drill?.name
               ? `${drill.name}과 연결하면 ${getSpomoveUseLabel(program)} 흐름으로 수업 몰입을 만들 수 있습니다.`
               : `${getSpomoveUseLabel(program)} 용도로 큰 화면 활동을 연결합니다.`}
           </p>
         </section>
 
-        <section className="rounded-3xl border border-emerald-300/18 bg-emerald-400/10 p-5">
-          <h3 className="flex items-center gap-2 text-base font-black text-white">
-            <FileText className="h-4 w-4 text-emerald-200" />
+        <section className="rounded-[18px] border border-emerald-100 bg-emerald-50 p-5">
+          <h3 className="flex items-center gap-2 text-base font-black text-slate-950">
+            <FileText className="h-4 w-4 text-emerald-600" />
             학부모·기관 설명 문구
           </h3>
-          <p className="mt-3 text-sm leading-7 text-emerald-50/85">{parentCopy}</p>
+          <p className="mt-3 text-sm leading-7 text-emerald-800">{parentCopy}</p>
         </section>
       </div>
     </BottomSheet>
@@ -487,9 +529,9 @@ function ProgramModal({
 
 function MetaBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
       <p className="text-[11px] font-bold text-slate-500">{label}</p>
-      <p className="mt-1 truncate text-sm font-black text-white">{value}</p>
+      <p className="mt-1 truncate text-sm font-black text-slate-950">{value}</p>
     </div>
   );
 }
@@ -537,11 +579,11 @@ export default function LibraryView() {
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
+      <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-7 overflow-y-auto bg-[#f5f7fb] px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
         <header className="flex flex-col gap-5">
           <div>
             <p className="text-sm font-semibold text-slate-400">MASTER LIBRARY</p>
-            <h1 className="mt-1 text-3xl font-black text-white sm:text-4xl">수업 패키지</h1>
+            <h1 className="mt-1 text-3xl font-black text-slate-950 sm:text-4xl">수업 패키지</h1>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
@@ -551,10 +593,10 @@ export default function LibraryView() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="수업, 도구, 공간, 연령 검색"
-                className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.055] pl-12 pr-4 text-sm font-semibold text-white outline-none placeholder:text-slate-500 focus:border-indigo-300/45"
+                className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-950 shadow-[0_8px_22px_rgba(15,23,42,0.04)] outline-none placeholder:text-slate-400 focus:border-indigo-300"
               />
             </label>
-            <Link href="/spokedu-master/spomove" className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-5 text-sm font-extrabold text-white">
+            <Link href="/spokedu-master/spomove" className="inline-flex h-14 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white">
               <MonitorPlay className="h-4 w-4" />
               SPOMOVE 전체 보기
             </Link>
@@ -567,7 +609,7 @@ export default function LibraryView() {
                 type="button"
                 onClick={() => setFilter(item)}
                 className={`h-10 shrink-0 rounded-full px-4 text-sm font-black transition ${
-                  filter === item ? 'bg-white text-slate-950' : 'border border-white/10 bg-white/[0.055] text-slate-300 hover:bg-white/[0.08]'
+                  filter === item ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 {item}
@@ -595,9 +637,9 @@ export default function LibraryView() {
           <SectionTitle eyebrow="All Programs" title={query || filter !== '전체' ? `검색 결과 ${filteredPrograms.length}개` : '전체 수업 패키지'} />
           <ProgramGrid programs={filteredPrograms} isPro={isPro} favorites={favorites} usedProgramIds={usedProgramIds} toggleFavorite={toggleFavorite} setSelected={setSelected} />
           {filteredPrograms.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-white/12 bg-white/[0.035] p-8 text-center">
+            <div className="rounded-[18px] border border-dashed border-slate-300 bg-white p-8 text-center">
               <BookOpen className="mx-auto h-10 w-10 text-slate-500" />
-              <h3 className="mt-4 text-lg font-black text-white">조건에 맞는 수업이 없습니다.</h3>
+              <h3 className="mt-4 text-lg font-black text-slate-950">조건에 맞는 수업이 없습니다.</h3>
               <p className="mt-2 text-sm text-slate-400">검색어를 줄이거나 필터를 전체로 바꿔보세요.</p>
             </div>
           ) : null}

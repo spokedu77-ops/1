@@ -11,7 +11,7 @@ type MediaRendererProps = {
   media: HomeMediaItem;
   className?: string;
   showLabel?: boolean;
-  intensity?: 'soft' | 'bold';
+  intensity?: 'soft' | 'bold' | 'photo';
   priority?: boolean;
   sizes?: string;
   animateZoom?: boolean;
@@ -36,7 +36,14 @@ export function MediaRenderer({
   }, [media.src]);
 
   if (!useImage || !imgSrc) {
-    return <GradientVisual media={media} className={className} showLabel={showLabel} intensity={intensity} />;
+    return (
+      <GradientVisual
+        media={media}
+        className={className}
+        showLabel={showLabel}
+        intensity={intensity === 'photo' ? 'soft' : intensity}
+      />
+    );
   }
 
   if (media.type === 'video') {

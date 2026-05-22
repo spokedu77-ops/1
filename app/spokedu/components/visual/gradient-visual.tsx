@@ -7,7 +7,7 @@ type GradientVisualProps = {
   media: HomeMediaItem;
   className?: string;
   showLabel?: boolean;
-  intensity?: 'soft' | 'bold';
+  intensity?: 'soft' | 'bold' | 'photo';
 };
 
 export function GradientVisual({ media, className = '', showLabel = false, intensity = 'bold' }: GradientVisualProps) {

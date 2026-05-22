@@ -43,23 +43,23 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
   const features = PLAN_FEATURES[feature] ?? PLAN_FEATURES.library!;
 
   return (
-    <div className="relative h-full overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
+    <div className="relative h-full overflow-hidden" style={{ background: '#f5f7fb' }}>
       <div className="pointer-events-none absolute inset-0 z-0 select-none opacity-20 blur-[3px]">{children}</div>
-      <div className="absolute inset-0 z-10 flex items-center justify-center p-6" style={{ background: 'linear-gradient(to top, var(--spm-bg) 60%, rgba(7,7,12,0.72))' }}>
+      <div className="absolute inset-0 z-10 flex items-center justify-center p-6" style={{ background: 'linear-gradient(to top, rgba(245,247,251,0.98) 60%, rgba(245,247,251,0.78))' }}>
         <div className="w-full max-w-[440px]">
           <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px]" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}>
             <Lock size={24} color="var(--spm-red)" />
           </div>
           <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-red)' }}>체험 종료</p>
-          <h2 className="mt-2 text-[28px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>
+          <h2 className="mt-2 text-[28px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: '#0f172a', letterSpacing: 0, wordBreak: 'keep-all' }}>
             14일 무료 체험이 끝났습니다.
           </h2>
-          <p className="mt-3 text-[14px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+          <p className="mt-3 text-[14px] font-medium leading-6" style={{ color: '#64748b' }}>
             플랜을 선택하면 라이브러리, SPOMOVE, 수업 도구를 계속 사용할 수 있습니다.
           </p>
           <ul className="mt-5 space-y-2">
             {features.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-3 text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
+              <li key={label} className="flex items-center gap-3 text-[13px] font-semibold" style={{ color: '#475569' }}>
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px]" style={{ background: 'rgba(99,102,241,0.14)' }}>
                   <Icon size={14} color="var(--spm-acc)" />
                 </span>
@@ -71,10 +71,10 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
             <Link href="/spokedu-master/payment?plan=pro" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.32)' }}>
               Pro 시작하기 · 월 39,900원
             </Link>
-            <Link href="/spokedu-master/payment?plan=team" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--spm-grn)' }}>
+            <Link href="/spokedu-master/payment?plan=team" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: '#ffffff', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--spm-grn)' }}>
               Center 플랜 · 강사 3명 포함 월 79,000원
             </Link>
-            <Link href="/spokedu-master/payment" className="flex h-10 w-full items-center justify-center rounded-[12px] text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+            <Link href="/spokedu-master/payment" className="flex h-10 w-full items-center justify-center rounded-[12px] text-[12px] font-semibold" style={{ color: '#64748b' }}>
               이미 구독 중이라면 결제 상태 확인
             </Link>
           </div>

@@ -8,12 +8,14 @@ import { dispatchPage } from '../data/dispatch-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
   btnPrimary,
+  btnPrimaryOnDark,
   btnSecondaryOnDark,
   cardInteractive,
   fineHover,
   landingH1,
   landingHeroCopy,
   landingHeroGrid,
+  landingHeroSubtitle,
   landingHeroVisual,
   landingPageStack,
   landingSectionTitle,
@@ -62,15 +64,13 @@ export default function DispatchLanding() {
                 </motion.span>
               ))}
             </h1>
-            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
-              {dispatchPage.hero.subtitle}
-            </p>
-            <div className="space-y-3">
+            <p className={`max-w-md ${landingHeroSubtitle}`}>{dispatchPage.hero.subtitle}</p>
+            <div className="space-y-2.5 pt-1">
               <Link
                 href={dispatchPage.heroCtas.primary.href}
                 data-track="cta-contact"
                 data-track-label={dispatchPage.heroCtas.primary.trackLabel}
-                className={`${btnPrimary} !w-full sm:!w-auto`}
+                className={`${btnPrimary} min-h-12 !w-full sm:!w-auto`}
               >
                 {dispatchPage.heroCtas.primary.label}
               </Link>
@@ -78,7 +78,7 @@ export default function DispatchLanding() {
                 href={dispatchPage.heroCtas.secondary.href}
                 data-track="cta-contact"
                 data-track-label={dispatchPage.heroCtas.secondary.trackLabel}
-                className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 sm:w-auto ${fineHover}hover:border-sky-400 ${fineHover}hover:bg-sky-50 ${focusRing}`}
+                className={`inline-flex min-h-12 w-full items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 sm:w-auto ${fineHover}hover:border-sky-400 ${fineHover}hover:bg-sky-50 ${focusRing}`}
               >
                 {dispatchPage.heroCtas.secondary.label}
               </Link>
@@ -90,47 +90,104 @@ export default function DispatchLanding() {
         </div>
       </section>
 
-      <Section className="overflow-hidden rounded-[1.75rem] bg-slate-950 text-white sm:rounded-[2rem]">
-        <div className="grid lg:grid-cols-[1.1fr_1fr]">
-          <div className="p-5 sm:p-8 lg:p-10">
-            <h2 className={landingSectionTitle}>{dispatchPage.operationTypes.title}</h2>
-            <div className="mt-5 divide-y divide-white/10">
-              {dispatchPage.operationTypes.rows.map((row) => (
-                <div key={row.label} className="flex items-baseline justify-between gap-3 py-3 first:pt-0">
-                  <span className="text-sm font-semibold sm:text-base">{row.label}</span>
-                  <span className="text-xs text-slate-400 sm:text-sm">{row.note}</span>
-                </div>
-              ))}
-            </div>
+      <Section className="space-y-6 sm:space-y-8">
+        <h2 className={landingSectionTitle}>{dispatchPage.whoFits.title}</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          {dispatchPage.whoFits.items.map((item) => (
+            <article
+              key={item.title}
+              className="rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-slate-50 p-5"
+            >
+              <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
+            </article>
+          ))}
+        </div>
+      </Section>
+
+      <Section className="rounded-[1.75rem] border border-sky-200/70 bg-gradient-to-br from-white via-sky-50/40 to-indigo-50/30 px-5 py-6 sm:rounded-[2rem] sm:px-8 sm:py-8">
+        <h2 className={landingSectionTitle}>{dispatchPage.smallSpace.title}</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base">{dispatchPage.smallSpace.description}</p>
+      </Section>
+
+      <Section className="space-y-6 sm:space-y-8">
+        <h2 className={landingSectionTitle}>{dispatchPage.operationTypes.title}</h2>
+        <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr] lg:gap-6">
+          <div className="grid gap-3 sm:gap-4">
+            {dispatchPage.operationTypes.rows.map((row) => (
+              <article
+                key={row.label}
+                className="flex min-h-[7.5rem] flex-col rounded-2xl border border-slate-200/80 bg-white px-4 py-4 sm:min-h-[8rem] sm:px-5 sm:py-5"
+              >
+                <h3 className="text-base font-semibold text-slate-950">{row.label}</h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{row.description}</p>
+              </article>
+            ))}
           </div>
           <MediaPanel
             media={HOME_MEDIA[dispatchPage.operationTypes.mediaKey]}
-            className="aspect-[16/11] min-h-[200px] rounded-none border-0 border-t border-white/10 lg:aspect-auto lg:min-h-full lg:border-l lg:border-t-0"
+            className="aspect-[16/11] min-h-[200px] rounded-[1.25rem] border-slate-200/80 lg:min-h-full"
+            photoPriority
           />
+        </div>
+      </Section>
+
+      <Section className="space-y-6 sm:space-y-8">
+        <h2 className={landingSectionTitle}>{dispatchPage.signaturePrograms.title}</h2>
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
+          {dispatchPage.signaturePrograms.items.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              data-track={inferTrackFromHref(item.href)}
+              data-track-label={item.trackLabel}
+              className={`overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white ${cardInteractive} ${focusRing}`}
+            >
+              <MediaPanel
+                media={HOME_MEDIA[item.mediaKey]}
+                className="aspect-[16/10] min-h-[180px] rounded-none border-0 sm:min-h-0"
+                photoPriority
+              />
+              <div className="border-t border-slate-100 p-4 sm:p-5">
+                <h3 className="text-lg font-semibold text-slate-950">{item.name}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </Section>
 
       <Section className="space-y-6 sm:space-y-8">
         <h2 className={landingSectionTitle}>{dispatchPage.fit.title}</h2>
         <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-          {dispatchPage.fit.items.map((item, index) => (
+          {dispatchPage.fit.items.map((item) => (
             <article
               key={item.title}
-              className={
-                index === 0
-                  ? 'rounded-2xl border border-slate-800 bg-slate-950 p-5 text-white'
-                  : index === 1
-                    ? 'rounded-2xl border border-white/50 bg-white/70 p-5 shadow-lg shadow-sky-900/5 backdrop-blur-md'
-                    : 'rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-slate-50 p-5'
-              }
+              className="rounded-2xl border border-slate-200/80 bg-white p-5"
             >
-              <h3 className={`text-base font-semibold ${index === 0 ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-              <p className={`mt-2 text-sm leading-relaxed ${index === 0 ? 'text-slate-300' : 'text-slate-600'}`}>
-                {item.description}
-              </p>
+              <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
             </article>
           ))}
         </div>
+      </Section>
+
+      <Section className="overflow-hidden rounded-[1.75rem] border border-sky-200/60 bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/50 px-5 py-8 sm:rounded-[2rem] sm:px-8 sm:py-10">
+        <h2 className={landingSectionTitle}>{dispatchPage.inquiryFlow.title}</h2>
+        <ol className="mt-5 flex gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:thin] sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible">
+          {dispatchPage.inquiryFlow.steps.map((step, index) => (
+            <li
+              key={step.label}
+              className="flex min-w-[8.5rem] shrink-0 flex-col rounded-xl border border-sky-100 bg-white px-3 py-3 sm:min-w-0"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-600">
+                {index + 1}
+              </span>
+              <span className="mt-1 text-sm font-semibold text-slate-900">{step.label}</span>
+              <span className="mt-1 text-xs leading-relaxed text-slate-600">{step.detail}</span>
+            </li>
+          ))}
+        </ol>
       </Section>
 
       <Section className="space-y-6 sm:space-y-8">
@@ -145,17 +202,21 @@ export default function DispatchLanding() {
             사례 전체 →
           </Link>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
           {dispatchPage.examples.items.map((item) => (
             <Link
               key={item.title}
               href={dispatchPage.examples.href}
               data-track={inferTrackFromHref(dispatchPage.examples.href)}
               data-track-label={`dispatch-example-${item.title}`}
-              className={`block overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-slate-950 shadow-md ${cardInteractive} ${focusRing}`}
+              className={`block overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white ${cardInteractive} ${focusRing}`}
             >
-              <MediaPanel media={HOME_MEDIA[item.mediaKey]} className="aspect-[16/10] rounded-none border-0" />
-              <p className="border-t border-white/10 px-4 py-3 text-sm font-semibold text-white">{item.title}</p>
+              <MediaPanel
+                media={HOME_MEDIA[item.mediaKey]}
+                className="aspect-[16/10] min-h-[180px] rounded-none border-0 sm:min-h-0"
+                photoPriority
+              />
+              <p className="border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-950">{item.title}</p>
             </Link>
           ))}
         </div>
@@ -184,7 +245,7 @@ export default function DispatchLanding() {
               href={dispatchPage.finalCta.primary.href}
               data-track={inferTrackFromHref(dispatchPage.finalCta.primary.href)}
               data-track-label={dispatchPage.finalCta.primary.trackLabel}
-              className={`${btnSecondaryOnDark} !w-full`}
+              className={`${btnPrimaryOnDark} min-h-12 !w-full`}
             >
               {dispatchPage.finalCta.primary.label}
             </Link>
@@ -192,7 +253,7 @@ export default function DispatchLanding() {
               href={dispatchPage.finalCta.secondary.href}
               data-track={inferTrackFromHref(dispatchPage.finalCta.secondary.href)}
               data-track-label={dispatchPage.finalCta.secondary.trackLabel}
-              className={`${btnSecondaryOnDark} !w-full border-slate-500`}
+              className={`${btnSecondaryOnDark} min-h-12 !w-full border-slate-500`}
             >
               {dispatchPage.finalCta.secondary.label}
             </Link>

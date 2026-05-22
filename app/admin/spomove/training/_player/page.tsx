@@ -30,7 +30,7 @@ function MemoryGamePageContent() {
         </div>
       ) : null}
       <div className="min-h-0 flex-1">
-        <MemoryGameApp initialMode={mode} initialLevel={level} />
+        <MemoryGameApp initialMode={mode} initialLevel={level} embed={embed} />
       </div>
     </div>
   );

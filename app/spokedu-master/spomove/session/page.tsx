@@ -9,7 +9,7 @@ import { useSession } from '../../hooks/useSession';
 import { SESSION_CUES } from '../../lib/data';
 import { isTrialExpired } from '../../lib/subscription';
 import { useIsPro, useMasterStore, useProfile } from '../../store';
-import type { Cue } from '../../types';
+import type { Cue, Session } from '../../types';
 import { EngineRouter } from './EngineRouter';
 
 type SessionState = 'idle' | 'countdown' | 'running' | 'done' | 'paused';
@@ -26,21 +26,31 @@ const CLEAN_CUES: Cue[] = [
   { symbol: 'J', label: '점프', bgColor: '#0a1628' },
 ];
 
-const DRILL_NAME_FALLBACK: Record<string, string> = {
-  'SR-05': '스피드 리액션',
-  'SR-06': '방향 전환 챌린지',
-  'RS-05': '팀 콜 사인',
-  'IC-05': '스텝 밸런스',
-  'RC-05': '리듬 체인지',
+const MODE_LABELS: Record<string, string> = {
+  reactTrain: '시지각 반응',
+  basic: '반응 인지',
+  simon: '사이먼 효과',
+  flanker: '플랭커',
+  gonogo: 'Go / No-Go',
+  taskswitch: 'Task Switching',
+  spatial: '순차 기억',
+  stroop: '스트룹 과제',
+  flow: '플로우',
+  'SR-05': '시지각 반응',
+  'SR-06': '반응 인지',
+  'RS-05': '사이먼 효과',
+  'IC-05': '플랭커',
+  'RC-05': '플로우',
 };
 
+const BROKEN_TEXT_PATTERN = /[�]|[?][가-힣]|諛|嫄|媛|吏|湲|源|醫|쨌/;
+
 function hasBrokenText(value: string | undefined) {
-  if (!value) return false;
-  return value.includes(String.fromCharCode(0xfffd)) || /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄/.test(value);
+  return !value || BROKEN_TEXT_PATTERN.test(value);
 }
 
-function cleanDrillName(id: string, name: string) {
-  if (hasBrokenText(name)) return DRILL_NAME_FALLBACK[id] ?? 'SPOMOVE 드릴';
+function cleanDrillName(id: string, name: string, engineMode?: string) {
+  if (hasBrokenText(name)) return MODE_LABELS[engineMode ?? ''] ?? MODE_LABELS[id] ?? 'SPOMOVE';
   return name;
 }
 
@@ -59,7 +69,7 @@ function reactionColor(value: number | null) {
 
 function normalizeMode(mode: string | null): LaunchMode {
   if (mode === 'projector' || mode === 'class' || mode === 'mobile') return mode;
-  return 'mobile';
+  return 'projector';
 }
 
 function getModeLabel(mode: LaunchMode) {
@@ -74,8 +84,8 @@ function getModeConfig(mode: LaunchMode) {
       maxCues: 16,
       showMetricsDuringRun: false,
       showReactionBadge: false,
-      title: '수업 실행 완료',
-      description: 'SPOMOVE 실행이 끝났습니다. 이어서 설명 문구로 수업의 의미를 정리할 수 있습니다.',
+      title: 'Class Mode 완료',
+      description: '화면 활동이 끝났습니다. 이어서 설명 문구로 수업의 의미를 정리할 수 있습니다.',
     };
   }
   if (mode === 'projector') {
@@ -113,7 +123,9 @@ function CountdownLayer({ value }: { value: string }) {
 function ResultStat({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-center">
-      <p className="text-2xl font-black" style={{ color: tone ?? '#fff' }}>{value}</p>
+      <p className="text-2xl font-black" style={{ color: tone ?? '#fff' }}>
+        {value}
+      </p>
       <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white/42">{label}</p>
     </div>
   );
@@ -139,15 +151,38 @@ function TopBar({
         <p className="mt-1 line-clamp-1 text-sm font-semibold text-white/70">{drillName}</p>
       </div>
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onToggleFullscreen}
-          className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white"
-          aria-label={isFullscreen ? '전체화면 해제' : '전체화면'}
-        >
+        <button type="button" onClick={onToggleFullscreen} className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white" aria-label={isFullscreen ? '전체화면 해제' : '전체화면'}>
           {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
         </button>
         <button type="button" onClick={onExit} className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white" aria-label="나가기">
+          <X size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function IframePlayer({
+  src,
+  title,
+  isFullscreen,
+  onToggleFullscreen,
+  onExit,
+}: {
+  src: string;
+  title: string;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
+  onExit: () => void;
+}) {
+  return (
+    <div className="relative h-dvh overflow-hidden bg-black text-white">
+      <iframe src={src} title={title} className="h-full w-full border-0" allow="fullscreen; autoplay" />
+      <div className="absolute right-4 top-4 z-30 flex items-center gap-2">
+        <button type="button" onClick={onToggleFullscreen} className="grid h-11 w-11 place-items-center rounded-full bg-black/45 text-white backdrop-blur" aria-label={isFullscreen ? '전체화면 해제' : '전체화면'}>
+          {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
+        </button>
+        <button type="button" onClick={onExit} className="grid h-11 w-11 place-items-center rounded-full bg-black/45 text-white backdrop-blur" aria-label="나가기">
           <X size={16} />
         </button>
       </div>
@@ -167,11 +202,11 @@ function SpomoveSessionContent() {
   const isPro = useIsPro();
   const { activeSession, stats, start, end, markCue, markResponse, pause, resume } = useSession();
 
-  const drill = useMemo(() => drills.find((item) => item.id === requestedDrillId) ?? drills[0] ?? null, [drills, requestedDrillId]);
+  const drill = useMemo(() => drills.find((item) => item.id === requestedDrillId || item.engine?.mode === requestedDrillId) ?? drills[0] ?? null, [drills, requestedDrillId]);
   const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
   const modeConfig = useMemo(() => getModeConfig(launchMode), [launchMode]);
   const cues = useMemo(() => (drill?.cues?.length ? drill.cues : SESSION_CUES).map(cleanCue), [drill]);
-  const drillName = drill ? cleanDrillName(drill.id, drill.name) : 'SPOMOVE';
+  const drillName = drill ? cleanDrillName(drill.id, drill.name, drill.engine?.mode) : 'SPOMOVE';
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [state, setState] = useState<SessionState>('idle');
@@ -179,7 +214,7 @@ function SpomoveSessionContent() {
   const [cueIndex, setCueIndex] = useState(0);
   const [cueSerial, setCueSerial] = useState(0);
   const [lastRT, setLastRT] = useState<number | null>(null);
-  const [finalSession, setFinalSession] = useState<ReturnType<typeof end>>(null);
+  const [finalSession, setFinalSession] = useState<Session | null>(null);
   const timeoutRef = useRef<number | null>(null);
 
   const maxCues = modeConfig.maxCues;
@@ -331,16 +366,14 @@ function SpomoveSessionContent() {
   const engineMode = drill?.engine?.mode;
   const engineLevel = drill?.engine?.level ?? 1;
 
-  if (drill?.engine && SUPPORTED_ENGINE_MODES.has(drill.engine.mode) && state !== 'done') {
+  if (drill?.engine && engineMode && SUPPORTED_ENGINE_MODES.has(engineMode) && state !== 'done') {
     return (
       <EngineRouter
-        mode={drill.engine.mode}
-        level={drill.engine.level}
+        mode={engineMode}
+        level={engineLevel}
         onExit={exitSession}
         onComplete={() => {
-          start(drill.id, drillName);
-          const session = end();
-          setFinalSession(session);
+          setFinalSession(null);
           setState('done');
         }}
       />
@@ -349,24 +382,7 @@ function SpomoveSessionContent() {
 
   if (drill?.engine && engineMode && state !== 'done') {
     const playerSrc = `/admin/spomove/training/_player?mode=${encodeURIComponent(engineMode)}&level=${encodeURIComponent(String(engineLevel))}&embed=1`;
-    return (
-      <div className="relative h-dvh overflow-hidden bg-black text-white">
-        <iframe
-          src={playerSrc}
-          title={drillName}
-          className="h-full w-full border-0"
-          allow="fullscreen; autoplay"
-        />
-        <button
-          type="button"
-          onClick={exitSession}
-          className="absolute right-4 top-4 z-30 grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white backdrop-blur"
-          aria-label="나가기"
-        >
-          <X size={16} />
-        </button>
-      </div>
-    );
+    return <IframePlayer src={playerSrc} title={drillName} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} onExit={exitSession} />;
   }
 
   if (!drill) return null;
@@ -380,9 +396,7 @@ function SpomoveSessionContent() {
       tabIndex={state === 'running' ? 0 : undefined}
       aria-label={state === 'running' ? '반응 기록' : undefined}
     >
-      {state !== 'running' ? (
-        <TopBar drillName={drillName} mode={launchMode} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} onExit={exitSession} />
-      ) : null}
+      {state !== 'running' ? <TopBar drillName={drillName} mode={launchMode} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} onExit={exitSession} /> : null}
 
       {state === 'idle' ? (
         <div className="flex h-full flex-col items-center justify-center px-8 text-center">
@@ -406,10 +420,7 @@ function SpomoveSessionContent() {
       {state === 'running' ? (
         <>
           <div className="flex h-full flex-col items-center justify-center gap-5 px-8 text-center">
-            <span
-              key={cueSerial}
-              className={`${isScreenMode ? 'text-[clamp(144px,34vw,360px)]' : 'text-[clamp(104px,28vw,260px)]'} animate-[spmCuePop_0.2s_cubic-bezier(.34,1.56,.64,1)_both] font-black leading-none text-white drop-shadow-[0_24px_80px_rgba(0,0,0,0.34)]`}
-            >
+            <span key={cueSerial} className={`${isScreenMode ? 'text-[clamp(144px,34vw,360px)]' : 'text-[clamp(104px,28vw,260px)]'} animate-[spmCuePop_0.2s_cubic-bezier(.34,1.56,.64,1)_both] font-black leading-none text-white drop-shadow-[0_24px_80px_rgba(0,0,0,0.34)]`}>
               {currentCue.symbol}
             </span>
             <span className={`${isScreenMode ? 'text-[clamp(24px,4vw,48px)]' : 'text-[20px] sm:text-[26px]'} font-semibold uppercase tracking-[0.12em] text-white/68`}>{currentCue.label}</span>
@@ -485,7 +496,7 @@ function SpomoveSessionContent() {
           </div>
           {programId ? (
             <Link href={`/spokedu-master/class-record?program=${programId}`} className="mt-4 text-xs font-bold text-white/38 underline-offset-4 hover:text-white/70 hover:underline">
-              수업 기록은 확장 기능에서 남기기
+              수업 기록은 확장 기능에서 이어집니다
             </Link>
           ) : null}
         </div>

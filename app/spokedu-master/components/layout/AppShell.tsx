@@ -149,12 +149,12 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }
 
   return (
-    <div className="min-h-dvh" style={{ background: 'linear-gradient(135deg, #07070c 0%, #101426 55%, #07070c 100%)', color: 'var(--spm-t)' }}>
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-white/5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
+    <div className="min-h-dvh" style={{ background: '#eef2f7', color: '#0f172a' }}>
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-slate-200" style={{ background: '#f5f7fb', color: '#0f172a', fontFamily: 'var(--spm-font-body)' }}>
         {hideChrome ? null : <DesktopRail basePath={basePath} />}
         <div className="flex min-w-0 flex-1 flex-col">
           {hideChrome ? null : <StatusBar />}
-          <main className="min-h-0 flex-1 overflow-hidden" style={{ background: 'var(--spm-bg)' }}>
+          <main className="min-h-0 flex-1 overflow-hidden" style={{ background: '#f5f7fb' }}>
             {shellMounted && !hideChrome && !isAdmin ? <OperationsBanner /> : null}
             {shellMounted && !hideChrome && !isAdmin ? <TrialCountdownBanner /> : null}
             <ErrorBoundary>{children}</ErrorBoundary>

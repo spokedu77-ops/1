@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
 import { getTrialDaysLeft } from '../lib/subscription';
@@ -60,15 +59,45 @@ function getProgramFocus(program: Program) {
   return program.lessonDetail?.developmentFocus || program.category;
 }
 
+function getFocusItems(program: Program, limit = 3) {
+  return getProgramFocus(program)
+    .split('/')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
 function getProgramValueChips(program: Program) {
   const chips = [
-    program.lessonDetail?.relatedSpomoveIds?.length ? 'SPOMOVE 연동' : null,
-    program.equipment.length <= 2 ? '준비 간편' : null,
-    /좁은|실내|교실|소규모/.test(`${program.space} ${program.tags.join(' ')}`) ? '좁은 공간' : null,
-    program.lessonDetail?.parentNote ? '설명 문구 포함' : null,
-    program.lessonDetail?.setupNotes?.length ? '배치 가이드' : null,
+    program.lessonDetail?.relatedSpomoveIds?.length ? 'SPOMOVE' : null,
+    program.lessonDetail?.rules?.length ? `${program.lessonDetail.rules.length}단계` : null,
+    program.lessonDetail?.parentNote ? '안내문' : null,
+    program.lessonDetail?.setupNotes?.length ? '배치도' : null,
   ].filter(Boolean) as string[];
   return chips.slice(0, 3);
+}
+
+function getHeroSubtitle(program: Program) {
+  const focusItems = getFocusItems(program, 2);
+  const focus = focusItems.length > 0 ? focusItems.join(' · ') : program.category;
+  return `${program.duration}분 안에 바로 운영하는 ${program.category} 수업입니다. ${focus} 흐름까지 정리되어 있어 준비 시간이 줄어듭니다.`;
+}
+
+function getProgramOutcome(program: Program) {
+  const focusItems = getFocusItems(program, 3);
+  return focusItems.length > 0 ? focusItems.join(' · ') : program.category;
+}
+
+function getProgramCardSummary(program: Program) {
+  const focusItems = getFocusItems(program, 2);
+  const focus = focusItems.length > 0 ? focusItems.join(' · ') : program.category;
+  return `${program.duration}분 · ${program.space} · ${focus}`;
+}
+
+function getActionLabel(program: Program) {
+  if (isSpomoveLinked(program)) return '수업안과 화면 활동이 연결됨';
+  if (program.lessonDetail?.parentNote) return '수업 후 설명 문구까지 준비됨';
+  return '오늘 바로 진행 가능한 수업안';
 }
 
 function formatLessonTime(lesson: Lesson) {
@@ -85,7 +114,7 @@ function PlanStatusChip() {
     return (
       <Link
         href="/spokedu-master/profile"
-        className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/35 bg-emerald-300/10 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-300/15"
+        className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700 transition hover:bg-emerald-100"
       >
         관리자 패스
         <ChevronRight className="h-3.5 w-3.5" />
@@ -97,7 +126,7 @@ function PlanStatusChip() {
     return (
       <Link
         href="/spokedu-master/profile"
-        className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-300/15"
+        className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-700 transition hover:bg-amber-100"
       >
         체험 {daysLeft}일 남음
         <ChevronRight className="h-3.5 w-3.5" />
@@ -108,7 +137,7 @@ function PlanStatusChip() {
   return (
     <Link
       href="/spokedu-master/profile"
-      className="inline-flex items-center gap-1.5 rounded-full border border-indigo-300/30 bg-indigo-300/10 px-3 py-1.5 text-xs font-semibold text-indigo-200 transition hover:bg-indigo-300/15"
+      className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-black text-indigo-700 transition hover:bg-indigo-100"
     >
       플랜 확인
       <ChevronRight className="h-3.5 w-3.5" />
@@ -123,105 +152,110 @@ function NotificationButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-100 transition hover:bg-white/[0.1]"
+      className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-[0_8px_20px_rgba(15,23,42,0.05)] transition hover:bg-slate-50"
       aria-label="알림 열기"
     >
       <Bell className="h-5 w-5" />
-      {unreadCount > 0 ? <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full border-2 border-[#070812] bg-rose-400" /> : null}
+      {unreadCount > 0 ? <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-rose-400" /> : null}
     </button>
   );
 }
 
 function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
   const heroImage = getHeroImage(program);
-  const focus = getProgramFocus(program);
+  const focusItems = getFocusItems(program, 4);
   const valueChips = getProgramValueChips(program);
   const spomoveHref = drill
     ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
     : '/spokedu-master/spomove';
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/70 shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
-      <div className="grid min-h-[360px] lg:grid-cols-[1.02fr_0.98fr]">
-        <div className="flex flex-col justify-between p-6 sm:p-8 lg:p-10">
+    <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.09)]">
+      <div className="grid lg:grid-cols-[1fr_420px] xl:grid-cols-[1fr_460px]">
+        <div className="flex min-h-[380px] flex-col justify-between p-5 sm:p-8 lg:p-10">
           <div>
             <div className="mb-5 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-400/12 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-indigo-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-black text-white">
                 <Sparkles className="h-3.5 w-3.5" />
-                오늘의 대표 수업
+                오늘 대표 수업
               </span>
               {isSpomoveLinked(program) ? (
-                <span className="inline-flex items-center rounded-full bg-emerald-400/12 px-3 py-1.5 text-xs font-semibold text-emerald-200">
-                  SPOMOVE 연동
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700">
+                  <MonitorPlay className="h-3.5 w-3.5" />
+                  화면 활동 포함
                 </span>
               ) : null}
             </div>
 
-            <h1 className="max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">
-              수업 준비는 쉽게,
-              <br />
-              수업은 더 몰입감 있게.
+            <p className="text-sm font-black text-indigo-600">{getActionLabel(program)}</p>
+            <h1 className="mt-3 max-w-2xl text-3xl font-black leading-[1.08] text-slate-950 sm:text-4xl lg:text-5xl">
+              {program.title}
             </h1>
-            <p className="mt-5 max-w-xl text-sm font-semibold leading-7 text-slate-300">
-              {program.title} 수업안, 준비물, 진행 단계, 설명 문구, SPOMOVE 실행까지 한 번에 이어집니다.
+            <p className="mt-4 max-w-xl text-sm font-semibold leading-7 text-slate-600 sm:text-[15px]">
+              {getHeroSubtitle(program)}
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {valueChips.map((chip) => (
-                <span key={chip} className="rounded-full border border-white/10 bg-white/[0.065] px-3 py-1.5 text-xs font-bold text-slate-200">
-                  {chip}
-                </span>
-              ))}
+            <div className="mt-6 grid max-w-2xl grid-cols-2 gap-2 md:grid-cols-4" aria-label="수업 핵심 정보">
+              <MiniStat label="대상" value={program.grade} />
+              <MiniStat label="시간" value={`${program.duration}분`} />
+              <MiniStat label="공간" value={program.space} />
+              <MiniStat label="초점" value={getProgramOutcome(program)} />
             </div>
+            {valueChips.length > 0 ? (
+              <div className="mt-4 flex flex-wrap gap-2" aria-label="패키지 구성">
+                {valueChips.map((chip) => (
+                  <span key={chip} className="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black text-indigo-600">
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href={`/spokedu-master/class-mode/${program.id}`}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-extrabold text-slate-950 transition hover:bg-slate-100"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white shadow-[0_16px_34px_rgba(79,70,229,0.25)] transition hover:bg-indigo-500"
             >
               <Play className="h-4 w-4 fill-current" />
               수업 시작
             </Link>
             <Link
               href={spomoveHref}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/[0.07] px-5 text-sm font-bold text-white transition hover:bg-white/[0.12]"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800 transition hover:bg-slate-100"
             >
               <MonitorPlay className="h-4 w-4" />
               큰 화면 실행
             </Link>
             <Link
               href={`/spokedu-master/library/${program.id}`}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 px-5 text-sm font-bold text-slate-200 transition hover:bg-white/[0.08]"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-2 text-sm font-bold text-slate-500 transition hover:text-slate-900"
             >
               <BookOpen className="h-4 w-4" />
-              수업안 보기
+              상세 보기
             </Link>
           </div>
         </div>
 
-        <div className="relative min-h-[280px] overflow-hidden border-t border-white/10 lg:border-l lg:border-t-0">
+        <div className="relative min-h-[300px] overflow-hidden bg-slate-100 lg:min-h-full">
           {heroImage ? (
             <Image src={heroImage} alt="" fill sizes="(min-width: 1024px) 45vw, 100vw" className="object-cover" loading="eager" unoptimized />
           ) : (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(99,102,241,0.5),transparent_36%),linear-gradient(135deg,#10172a,#172554_48%,#020617)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,#eef2ff,#e0f2fe_52%,#f8fafc)]" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
-            <div className="rounded-3xl border border-white/12 bg-slate-950/72 p-5 backdrop-blur-xl">
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">PICK</p>
-                  <h2 className="mt-1 line-clamp-2 text-xl font-black text-white">{program.title}</h2>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" />
+          <div className="absolute bottom-5 left-5 right-5">
+            <div className="rounded-[18px] border border-white/25 bg-white/88 p-4 shadow-[0_18px_46px_rgba(15,23,42,0.2)] backdrop-blur-md">
+              <p className="text-[11px] font-black tracking-[0.14em] text-slate-400">수업 핵심</p>
+              <p className="mt-2 text-sm font-black leading-5 text-slate-950">{program.lessonDetail?.objective || program.description}</p>
+              {focusItems.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {focusItems.slice(0, 3).map((item) => (
+                    <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                      {item}
+                    </span>
+                  ))}
                 </div>
-                <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white">
-                  <CategoryIcon category={program.category} size={22} />
-                </span>
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <MiniStat label="대상" value={program.grade} />
-                <MiniStat label="시간" value={`${program.duration}분`} />
-                <MiniStat label="초점" value={focus} />
-              </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -232,23 +266,23 @@ function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-h-[62px] rounded-2xl bg-white/[0.06] px-2 py-3">
-      <p className="text-[11px] text-slate-400">{label}</p>
-      <p className="mt-1 truncate text-xs font-bold text-white">{value}</p>
+    <div className="flex h-[62px] min-w-0 flex-col justify-center rounded-xl border border-slate-200 bg-slate-50 px-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.08em] text-slate-400">{label}</p>
+      <p className="mt-1 line-clamp-1 text-xs font-black text-slate-950">{value}</p>
     </div>
   );
 }
 
 function ProgramPackageCard({ program, drill }: { program: Program; drill?: Drill }) {
   const valueChips = getProgramValueChips(program);
-  const focus = getProgramFocus(program);
+  const focusItems = getFocusItems(program, 2);
   const spomoveHref = drill
     ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
     : '/spokedu-master/spomove';
 
   return (
-    <article className="flex min-h-[326px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.055] transition hover:-translate-y-0.5 hover:bg-white/[0.075]">
-      <Link href={`/spokedu-master/library/${program.id}`} className="relative h-36 overflow-hidden bg-slate-900">
+    <article className="flex min-h-[316px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
+      <Link href={`/spokedu-master/library/${program.id}`} className="relative h-40 overflow-hidden bg-slate-900">
         {getHeroImage(program) ? (
           <Image
             src={getHeroImage(program) as string}
@@ -262,38 +296,46 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-indigo-500/30 via-slate-900 to-emerald-500/20" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
-        <span className="absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1 text-[11px] font-bold text-white backdrop-blur">
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent" />
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-black text-slate-800 backdrop-blur">
           {program.category}
         </span>
-        <span className="absolute bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-black/45 text-white backdrop-blur">
+        <span className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-black/45 text-white backdrop-blur">
           <BookOpen className="h-4 w-4" />
         </span>
       </Link>
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="line-clamp-2 text-base font-black leading-snug text-white">{program.title}</h3>
-        <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">{focus}</p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="line-clamp-2 min-h-[44px] text-base font-black leading-snug text-slate-950">{program.title}</h3>
+        <p className="mt-2 line-clamp-2 min-h-[40px] text-xs font-semibold leading-5 text-slate-500">
+          {getProgramCardSummary(program)}
+        </p>
+        <div className="mt-3 flex min-h-[24px] flex-wrap gap-1.5">
+          {focusItems.map((item) => (
+            <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+              {item}
+            </span>
+          ))}
+        </div>
+        <div className="mt-2 flex min-h-[24px] flex-wrap gap-1.5">
           {valueChips.map((chip) => (
-            <span key={chip} className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-bold text-slate-300">
+            <span key={chip} className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-black text-indigo-600">
               {chip}
             </span>
           ))}
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-1.5">
           <PackageStat icon={<Clock3 className="h-3.5 w-3.5" />} value={`${program.duration}분`} />
           <PackageStat icon={<MapPin className="h-3.5 w-3.5" />} value={program.space} />
           <PackageStat icon={<FileText className="h-3.5 w-3.5" />} value={program.lessonDetail?.rules?.length ? `${program.lessonDetail.rules.length}단계` : '수업안'} />
         </div>
         <div className="mt-auto flex flex-wrap gap-2 pt-4">
-          <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white px-3 text-xs font-extrabold text-slate-950">
+          <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 text-xs font-extrabold text-white">
             <Play className="h-3.5 w-3.5 fill-current" />
-            시작
+            수업 시작
           </Link>
           {isSpomoveLinked(program) ? (
-            <Link href={spomoveHref} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-white/10 px-3 text-xs font-bold text-slate-200">
+            <Link href={spomoveHref} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500" aria-label="SPOMOVE 큰 화면 실행">
               <Zap className="h-3.5 w-3.5" />
-              SPOMOVE
             </Link>
           ) : null}
         </div>
@@ -304,8 +346,8 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
 
 function PackageStat({ icon, value }: { icon: ReactNode; value: string }) {
   return (
-    <div className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-white/[0.045] px-2 text-center text-[11px] font-bold text-slate-300">
-      <span className="shrink-0 text-slate-500">{icon}</span>
+    <div className="flex h-9 min-w-0 items-center justify-center gap-1 rounded-lg bg-slate-50 px-2 text-center text-[11px] font-bold text-slate-500">
+      <span className="shrink-0 text-slate-400">{icon}</span>
       <span className="min-w-0 truncate">{value}</span>
     </div>
   );
@@ -316,23 +358,26 @@ function WeeklySpomoveCard({ drill }: { drill: Drill }) {
   const drillCaption = drill.description || `${drill.category} 수업에서 바로 실행할 수 있는 큰 화면 반응 훈련입니다.`;
 
   return (
-    <article className="flex min-h-[326px] flex-col overflow-hidden rounded-3xl border border-indigo-300/20 bg-indigo-400/12 p-5 transition hover:-translate-y-0.5 hover:bg-indigo-400/16">
-      <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-bold text-white/80">
+    <article className="flex min-h-[316px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-slate-950 p-5 text-white shadow-[0_18px_42px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5">
+      <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/12 px-3 py-1 text-[11px] font-black text-white">
         <MonitorPlay className="h-3.5 w-3.5" />
         SPOMOVE
       </span>
       <div className="flex flex-1 flex-col justify-center">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-200">이번 주 화면 활동</p>
+        <div className="mb-5 flex h-20 items-center justify-center rounded-2xl border border-white/12 bg-white/8">
+          <span className="text-4xl font-black">{drill.icon || '◆'}</span>
+        </div>
+        <p className="text-xs font-bold tracking-[0.14em] text-indigo-100">큰 화면 추천</p>
         <h3 className="mt-3 text-2xl font-black leading-tight text-white">{drillTitle}</h3>
         <p className="mt-3 line-clamp-3 text-sm leading-6 text-indigo-100/75">{drillCaption}</p>
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <span className="rounded-2xl bg-white/[0.08] px-3 py-2 text-center text-[11px] font-black text-indigo-100">{drill.tag || drill.category}</span>
-          <span className="rounded-2xl bg-white/[0.08] px-3 py-2 text-center text-[11px] font-black text-indigo-100">{drill.enName || 'Class Mode'}</span>
+          <span className="rounded-xl bg-white/12 px-3 py-2 text-center text-[11px] font-black text-indigo-50">{drill.tag || drill.category}</span>
+          <span className="rounded-xl bg-white/12 px-3 py-2 text-center text-[11px] font-black text-indigo-50">{drill.enName || 'Class Mode'}</span>
         </div>
       </div>
       <Link
         href={`/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`}
-        className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-white text-sm font-extrabold text-slate-950 transition hover:bg-slate-100"
+        className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-sm font-extrabold text-slate-950 transition hover:bg-indigo-50"
       >
         <Play className="h-4 w-4 fill-current" />
         큰 화면 실행
@@ -341,50 +386,87 @@ function WeeklySpomoveCard({ drill }: { drill: Drill }) {
   );
 }
 
-function TodayLessons({ lessons }: { lessons: Lesson[] }) {
+function TodayFlow({ lessons, heroProgram, heroDrill }: { lessons: Lesson[]; heroProgram: Program; heroDrill?: Drill }) {
+  const spomoveHref = heroDrill
+    ? `/spokedu-master/spomove/session?drill=${heroDrill.id}&mode=projector&program=${heroProgram.id}`
+    : '/spokedu-master/spomove';
+
   return (
-    <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 sm:p-6">
+    <section className="rounded-[18px] border border-slate-200 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)] sm:p-5">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-300">Today</p>
-          <h2 className="mt-1 text-xl font-black text-white">오늘 수업</h2>
+          <p className="text-xs font-bold tracking-[0.14em] text-indigo-500">오늘 진행</p>
+          <h2 className="mt-1 text-lg font-black text-slate-950 sm:text-xl">수업 시작까지 3단계</h2>
         </div>
-        <Link href="/spokedu-master/library" className="text-sm font-bold text-indigo-200 hover:text-white">
-          수업 찾기
+        <Link href="/spokedu-master/library" className="text-sm font-bold text-indigo-600 hover:text-indigo-500">
+          라이브러리
         </Link>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5">
         {lessons.length > 0 ? (
-          lessons.slice(0, 3).map((lesson) => (
-            <div key={lesson.id} className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/[0.045] p-4">
-              <span className="h-11 w-1.5 rounded-full" style={{ background: lesson.color || '#6366f1' }} />
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-black text-white">{lesson.title}</h3>
-                <p className="mt-1 text-xs text-slate-400">{formatLessonTime(lesson)}</p>
+          <div className="space-y-3">
+            {lessons.slice(0, 3).map((lesson) => (
+              <div key={lesson.id} className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <span className="h-11 w-1.5 rounded-full" style={{ background: lesson.color || '#6366f1' }} />
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-sm font-black text-slate-950">{lesson.title}</h3>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">{formatLessonTime(lesson)}</p>
+                </div>
+                {lesson.done ? (
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                    <Check className="h-4 w-4" />
+                  </span>
+                ) : (
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-400">
+                    <Clock3 className="h-4 w-4" />
+                  </span>
+                )}
               </div>
-              {lesson.done ? (
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400/12 text-emerald-200">
-                  <Check className="h-4 w-4" />
-                </span>
-              ) : (
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-slate-300">
-                  <Clock3 className="h-4 w-4" />
-                </span>
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.03] p-5">
-            <p className="mb-3 text-sm leading-6 text-slate-400">오늘 등록된 수업이 없습니다.</p>
-            <Link href="/spokedu-master/library" className="inline-flex h-9 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.06] px-3 text-xs font-bold text-white transition hover:bg-white/[0.1]">
-              <BookOpen className="h-3.5 w-3.5" />
-              수업 찾기
-            </Link>
+          <div className="grid gap-3 md:grid-cols-3">
+            <FlowStep
+              number="01"
+              title="수업안 확인"
+              body={`${heroProgram.duration}분 흐름과 준비물을 먼저 봅니다.`}
+              href={`/spokedu-master/library/${heroProgram.id}`}
+              icon={<BookOpen className="h-4 w-4" />}
+            />
+            <FlowStep
+              number="02"
+              title="큰 화면 실행"
+              body="SPOMOVE로 수업 집중을 빠르게 끌어올립니다."
+              href={spomoveHref}
+              icon={<MonitorPlay className="h-4 w-4" />}
+            />
+            <FlowStep
+              number="03"
+              title="설명 문구"
+              body="수업 후 보호자·기관용 문구를 바로 정리합니다."
+              href={`/spokedu-master/report?program=${heroProgram.id}`}
+              icon={<FileText className="h-4 w-4" />}
+            />
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+function FlowStep({ number, title, body, href, icon }: { number: string; title: string; body: string; href: string; icon: ReactNode }) {
+  return (
+    <Link href={href} className="group flex min-h-[116px] flex-col justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_14px_34px_rgba(15,23,42,0.08)]">
+      <span className="flex items-center justify-between gap-3">
+        <span className="text-xs font-black tracking-[0.16em] text-slate-400">{number}</span>
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-indigo-600 shadow-sm">{icon}</span>
+      </span>
+      <span>
+        <strong className="block text-sm font-black text-slate-950">{title}</strong>
+        <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{body}</span>
+      </span>
+    </Link>
   );
 }
 
@@ -404,18 +486,18 @@ function NotificationSheet({
       <div className="space-y-3">
         {notifications.length > 0 ? (
           notifications.map((notification) => (
-            <div key={notification.id} className={`rounded-2xl border p-4 ${notification.read ? 'border-white/8 bg-white/[0.035]' : 'border-indigo-300/25 bg-indigo-400/10'}`}>
+            <div key={notification.id} className={`rounded-2xl border p-4 ${notification.read ? 'border-slate-200 bg-white' : 'border-indigo-200 bg-indigo-50'}`}>
               <div className="flex items-start gap-3">
                 <span className={`mt-1 h-2.5 w-2.5 rounded-full ${notification.read ? 'bg-slate-600' : 'bg-indigo-300'}`} />
                 <div>
-                  <h3 className="text-sm font-black text-white">{notification.title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-slate-400">{notification.body}</p>
+                  <h3 className="text-sm font-black text-slate-950">{notification.title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">{notification.body}</p>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-white/8 bg-white/[0.035] p-5 text-sm text-slate-400">아직 새 알림이 없습니다.</div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">아직 새 알림이 없습니다.</div>
         )}
       </div>
       {notifications.some((notification) => !notification.read) ? (
@@ -445,11 +527,13 @@ export default function DashboardView() {
   const heroDrill = useMemo(() => getPrimaryDrill(heroProgram, drills), [heroProgram, drills]);
 
   const weeklyPrograms = useMemo(() => {
-    const pool = buildProgramPool(programs).filter((program) => program.id !== heroProgram?.id);
-    return pool
+    const pool = buildProgramPool(programs)
       .sort((a, b) => Number(b.isHot) - Number(a.isHot) || Number(b.isNew) - Number(a.isNew))
-      .slice(0, 3);
-  }, [heroProgram?.id, programs]);
+      .filter((program) => program.id !== heroProgram?.id);
+    const picks = pool.slice(0, 3);
+    if (picks.length < 3 && heroProgram) picks.push(heroProgram);
+    return uniquePrograms(picks).slice(0, 3);
+  }, [heroProgram, programs]);
 
   const weeklyDrill = useMemo(() => heroDrill ?? drills[0], [drills, heroDrill]);
 
@@ -459,11 +543,11 @@ export default function DashboardView() {
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
+      <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-6 overflow-y-auto bg-[#f5f7fb] px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-slate-400">SPOKEDU MASTER</p>
-            <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">오늘 수업</h1>
+            <h1 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">오늘 수업</h1>
           </div>
           <div className="flex items-center gap-2">
             <PlanStatusChip />
@@ -473,13 +557,15 @@ export default function DashboardView() {
 
         <HomeHero program={heroProgram} drill={heroDrill} />
 
+        <TodayFlow lessons={todayLessons} heroProgram={heroProgram} heroDrill={heroDrill} />
+
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-300">Ready This Week</p>
-              <h2 className="mt-1 text-xl font-black text-white">이번 주 수업 준비 끝내는 4선</h2>
+              <p className="text-xs font-bold tracking-[0.14em] text-indigo-500">주간 큐레이션</p>
+              <h2 className="mt-1 text-xl font-black text-slate-950">이번 주 바로 꺼내 쓰는 4선</h2>
             </div>
-            <Link href="/spokedu-master/library" className="text-sm font-bold text-indigo-200 hover:text-white">
+            <Link href="/spokedu-master/library" className="text-sm font-bold text-indigo-600 hover:text-indigo-500">
               전체 보기
             </Link>
           </div>
@@ -490,8 +576,6 @@ export default function DashboardView() {
             {weeklyDrill ? <WeeklySpomoveCard drill={weeklyDrill} /> : null}
           </div>
         </section>
-
-        <TodayLessons lessons={todayLessons} />
       </main>
 
       <NotificationSheet

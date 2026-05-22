@@ -164,6 +164,11 @@ export default function ClassModeView({ programId }: { programId: string }) {
   }, [timerMs, timerRunning, timerStartedAt]);
 
   useEffect(() => {
+    if (!program || done || timerRunning || timerMs > 0) return;
+    timerStart();
+  }, [done, program, timerMs, timerRunning, timerStart]);
+
+  useEffect(() => {
     if (!stepRunning) return;
     const id = window.setInterval(() => {
       setStepRemaining((value) => Math.max(0, value - 1));
@@ -256,7 +261,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
   return (
     <main className="flex min-h-dvh flex-col bg-[#070812] text-white">
       <header className="flex shrink-0 items-center justify-between px-4 pb-3 sm:px-6" style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}>
-        <button type="button" onClick={() => router.back()} className="grid h-11 w-11 place-items-center rounded-full bg-white/[0.08]" aria-label="수업 종료">
+        <button type="button" onClick={() => router.back()} className="grid h-11 w-11 place-items-center rounded-full bg-white/[0.08]" aria-label="수업 나가기">
           <X className="h-5 w-5 text-white/65" />
         </button>
 

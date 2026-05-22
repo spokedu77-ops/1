@@ -18,7 +18,7 @@ export function Skeleton({ className = '', style, height, width, rounded = '10px
         height,
         width,
         borderRadius: rounded,
-        background: 'linear-gradient(90deg, var(--spm-s2) 25%, var(--spm-s3) 50%, var(--spm-s2) 75%)',
+        background: 'linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%)',
         backgroundSize: '200% 100%',
         animation: 'spmSkeleton 1.4s ease-in-out infinite',
         ...style,
@@ -29,7 +29,7 @@ export function Skeleton({ className = '', style, height, width, rounded = '10px
 
 export function SkeletonCard({ height = 150 }: { height?: number }) {
   return (
-    <div className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', height }}>
+    <div className="rounded-[16px] p-4" style={{ background: '#ffffff', border: '1px solid #e2e8f0', height }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 space-y-2">
           <Skeleton height={10} width="40%" />
@@ -45,7 +45,7 @@ export function SkeletonCard({ height = 150 }: { height?: number }) {
 
 export function SkeletonPosterCard() {
   return (
-    <div className="h-[196px] w-[140px] shrink-0 overflow-hidden rounded-[14px] lg:h-[210px] lg:w-full" style={{ background: 'var(--spm-s2)' }}>
+    <div className="h-[196px] w-[140px] shrink-0 overflow-hidden rounded-[14px] lg:h-[210px] lg:w-full" style={{ background: '#ffffff' }}>
       <Skeleton height="100%" rounded="14px" />
     </div>
   );
@@ -53,7 +53,7 @@ export function SkeletonPosterCard() {
 
 export function SkeletonHero() {
   return (
-    <div className="mx-[22px] mb-7 overflow-hidden rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+    <div className="mx-[22px] mb-7 overflow-hidden rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}>
       <Skeleton height={10} width="30%" className="mb-3" />
       <Skeleton height={34} width="70%" className="mb-3" />
       <Skeleton height={14} width="90%" className="mb-2" />
@@ -69,7 +69,7 @@ export function SkeletonHero() {
 
 export function DashboardSkeleton() {
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div className="h-full overflow-y-auto pb-7" style={{ background: '#f5f7fb' }}>
       <div className="flex items-center justify-between px-[22px] pb-[18px] pt-[22px] sm:px-8 lg:px-10">
         <div className="space-y-2">
           <Skeleton height={12} width={80} />
@@ -108,7 +108,7 @@ export function DashboardSkeleton() {
 
 export function LibrarySkeleton() {
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div className="h-full overflow-y-auto pb-7" style={{ background: '#f5f7fb' }}>
       <div className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <Skeleton height={12} width={100} className="mb-2" />
         <Skeleton height={42} width={200} className="mb-5" />

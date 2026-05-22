@@ -119,11 +119,14 @@ export default function MemoryGameApp({
   initialMode,
   initialLevel,
   autoLaunch,
+  embed = false,
   onExit,
   onUnavailable,
 }: {
   initialMode?: string;
   initialLevel?: number;
+  /** SPOKEDU MASTER iframe 등 외부 화면에 삽입될 때 admin용 홈/뒤로 진입을 줄인다. */
+  embed?: boolean;
   /** 제공 시 설정 화면을 건너뛰고 이 설정으로 훈련을 즉시 시작 */
   autoLaunch?: MemoryGameAutoLaunch;
   /** autoLaunch 모드에서 내부적으로 훈련이 끝나 home/result로 돌아갈 때 부모에게 닫힘 신호 */
@@ -844,7 +847,7 @@ export default function MemoryGameApp({
         <style>{CSS}</style>
         <div style={S.scroll}>
           <div style={{ ...S.card, maxWidth: '34rem' }}>
-            <button type="button" style={S.back} onClick={() => setScreen('home')}>← 처음으로</button>
+            {!embed ? <button type="button" style={S.back} onClick={() => setScreen('home')}>← 처음으로</button> : null}
             <h2 style={S.ctitle}>트레이닝 설정</h2>
             <p style={S.csub}>아래 항목을 순서대로 설정하고 시작하세요.</p>
             <div style={S.sec}>

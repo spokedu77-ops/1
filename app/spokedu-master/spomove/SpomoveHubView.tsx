@@ -4,12 +4,15 @@ import {
   Brain,
   ChevronRight,
   Clock3,
-  Gamepad2,
-  Goal,
+  Eye,
+  Focus,
+  Gauge,
   Lock,
   Maximize,
   MonitorPlay,
   Play,
+  RotateCcw,
+  Shapes,
   SlidersHorizontal,
   Smartphone,
   Sparkles,
@@ -25,27 +28,109 @@ import { formatReactionTime } from '../lib/utils';
 import { useIsPro, useMasterStore, useStats } from '../store';
 import type { Drill, Program } from '../types';
 
-type IntentKey = 'warmup' | 'reaction' | 'focus' | 'finish';
+type IntentKey = 'ready' | 'reaction' | 'control' | 'flow';
 
-const DRILL_NAME_FALLBACK: Record<string, string> = {
-  'SR-05': '스피드 리액션',
-  'SR-06': '방향 전환 챌린지',
-  'RS-05': '팀 콜 사인',
-  'IC-05': '스텝 밸런스',
-  'RC-05': '리듬 체인지',
+type ModePreset = {
+  name: string;
+  enName: string;
+  category: string;
+  description: string;
+  icon: string;
+  tag: string;
+  intent: IntentKey;
 };
 
-const CATEGORY_FALLBACK: Record<string, string> = {
-  'SR-05': '시각 반응',
-  'SR-06': '방향 전환',
-  'RS-05': '협동 반응',
-  'IC-05': '균형 조절',
-  'RC-05': '리듬 반응',
+const MODE_ALIASES: Record<string, string> = {
+  'SR-05': 'reactTrain',
+  'SR-06': 'basic',
+  'RS-05': 'simon',
+  'IC-05': 'flanker',
+  'RC-05': 'flow',
 };
 
-const BROKEN_TEXT_PATTERN = /[\u4E00-\u9FFF\uF900-\uFAFF\uFFFD]/;
-
-const FEATURED_MODE_ORDER = ['reactTrain', 'basic', 'simon', 'flanker'];
+const MODE_PRESETS: Record<string, ModePreset> = {
+  reactTrain: {
+    name: '시지각 반응',
+    enName: 'Visual Reaction',
+    category: '색 자극 반응',
+    description: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
+    icon: '◆',
+    tag: '색 자극',
+    intent: 'ready',
+  },
+  basic: {
+    name: '반응 인지',
+    enName: 'Reactive Cognition',
+    category: '즉시 판단',
+    description: '화면 신호를 보는 순간 판단하고 즉시 움직이는 기본 반응 훈련입니다.',
+    icon: '⚡',
+    tag: '인지 반응',
+    intent: 'ready',
+  },
+  simon: {
+    name: '사이먼 효과',
+    enName: 'Simon Effect',
+    category: '간섭 억제',
+    description: '위치와 색이 충돌할 때, 규칙에 맞는 색 위치로 이동합니다.',
+    icon: '◈',
+    tag: '판단 전환',
+    intent: 'reaction',
+  },
+  flanker: {
+    name: '플랭커',
+    enName: 'Flanker',
+    category: '주의 집중',
+    description: '가운데 자극만 보고 주변 방해 자극을 억제하는 집중 훈련입니다.',
+    icon: '◎',
+    tag: '집중',
+    intent: 'control',
+  },
+  gonogo: {
+    name: 'Go / No-Go',
+    enName: 'Go / No-Go',
+    category: '반응 억제',
+    description: '움직여야 할 때와 멈춰야 할 때를 구분해 반응을 조절합니다.',
+    icon: '🛑',
+    tag: '멈춤 조절',
+    intent: 'control',
+  },
+  taskswitch: {
+    name: 'Task Switching',
+    enName: 'Task Switching',
+    category: '규칙 전환',
+    description: '큐에 따라 색, 위치, 반대 규칙을 바꾸며 빠르게 반응합니다.',
+    icon: '🔀',
+    tag: '규칙 전환',
+    intent: 'reaction',
+  },
+  spatial: {
+    name: '순차 기억',
+    enName: 'Sequential Memory',
+    category: '작업 기억',
+    description: '색깔이 차례로 나타나는 순서를 기억하고 재현합니다.',
+    icon: '🎨',
+    tag: '순서 기억',
+    intent: 'control',
+  },
+  stroop: {
+    name: '스트룹 과제',
+    enName: 'Stroop Task',
+    category: '인지 억제',
+    description: '화살표와 글자 과제에서 규칙에 따라 방향, 색, 의미를 판단합니다.',
+    icon: '🧠',
+    tag: '인지 조절',
+    intent: 'control',
+  },
+  flow: {
+    name: '플로우',
+    enName: 'Flow Mode',
+    category: '몰입 러닝',
+    description: '우주 러닝 FLOW를 SPOMOVE에서 바로 실행하는 몰입형 활동입니다.',
+    icon: '🌌',
+    tag: '몰입',
+    intent: 'flow',
+  },
+};
 
 const INTENT_META: Record<
   IntentKey,
@@ -55,126 +140,152 @@ const INTENT_META: Record<
     badge: string;
     tone: string;
     icon: LucideIcon;
-    matcher: RegExp;
   }
 > = {
-  warmup: {
-    title: '도입 3분 집중 전환',
-    caption: '수업 시작 전 시선과 움직임을 한 번에 모읍니다.',
-    badge: 'Warm-up',
-    tone: '#818cf8',
+  ready: {
+    title: '수업 시작 3분',
+    caption: '아이들의 시선과 움직임을 한 번에 모으는 진입 루틴입니다.',
+    badge: 'Ready',
+    tone: '#635bff',
     icon: TimerReset,
-    matcher: /warm|start|도입|집중|시선|신호|sr|visual|reaction|반응|스피드|순발/i,
   },
   reaction: {
-    title: '수업 중 반응 전환',
-    caption: '흐트러진 분위기를 방향, 신호, 순발 활동으로 다시 끌어올립니다.',
+    title: '반응 전환',
+    caption: '색, 위치, 규칙이 바뀌는 순간 판단하고 움직이게 합니다.',
     badge: 'Reaction',
     tone: '#10b981',
-    icon: Goal,
-    matcher: /direction|flow|diagonal|공간|방향|전환|민첩|거리|펜싱|agility/i,
+    icon: Gauge,
   },
-  focus: {
-    title: '기억·판단 챌린지',
-    caption: '규칙 이해, 순간 판단, 패턴 기억을 짧고 선명하게 훈련합니다.',
-    badge: 'Focus',
+  control: {
+    title: '집중 조절',
+    caption: '멈춤, 억제, 기억, 주의 집중을 놀이처럼 훈련합니다.',
+    badge: 'Control',
     tone: '#f59e0b',
     icon: Brain,
-    matcher: /memory|pattern|spatial|기억|판단|패턴|집중|인지|sm|rc/i,
   },
-  finish: {
-    title: '마무리 참여 게임',
-    caption: '마지막까지 참여감을 유지하고 수업을 기분 좋게 닫습니다.',
-    badge: 'Finish',
+  flow: {
+    title: '마무리 몰입',
+    caption: '수업의 마지막 에너지를 큰 화면 활동으로 정리합니다.',
+    badge: 'Flow',
     tone: '#ec4899',
     icon: Trophy,
-    matcher: /finish|ending|마무리|정리|협동|리듬|게임|team/i,
   },
 };
 
-const CARD_GRADIENTS = [
-  'linear-gradient(145deg,#0f172a 0%,#312e81 48%,#4f46e5 100%)',
-  'linear-gradient(145deg,#052e16 0%,#064e3b 50%,#059669 100%)',
-  'linear-gradient(145deg,#1f1338 0%,#4c1d95 50%,#7c3aed 100%)',
-  'linear-gradient(145deg,#3f0b1f 0%,#831843 48%,#db2777 100%)',
-];
+const MODE_ORDER = ['reactTrain', 'basic', 'simon', 'flanker', 'gonogo', 'taskswitch', 'spatial', 'stroop', 'flow'];
+const BROKEN_TEXT_PATTERN = /[�]|[?][가-힣]|諛|嫄|媛|吏|湲|源|醫|쨌/;
+
+function canonicalMode(drill: Drill) {
+  const raw = drill.engine?.mode || drill.id;
+  return MODE_ALIASES[raw] || MODE_ALIASES[drill.id] || raw;
+}
+
+function modePreset(drill: Drill) {
+  return MODE_PRESETS[canonicalMode(drill)] ?? MODE_PRESETS.reactTrain;
+}
 
 function cleanText(value: string | undefined, fallback: string) {
   if (!value || BROKEN_TEXT_PATTERN.test(value)) return fallback;
   return value;
 }
 
-function getDrillName(drill: Drill) {
-  return cleanText(drill.name, DRILL_NAME_FALLBACK[drill.id] ?? drill.category ?? drill.enName ?? 'SPOMOVE');
+function drillName(drill: Drill) {
+  return cleanText(drill.name, modePreset(drill).name);
 }
 
-function getDrillCategory(drill: Drill) {
-  return cleanText(drill.category, CATEGORY_FALLBACK[drill.id] ?? drill.tag ?? 'SPOMOVE');
+function drillEnName(drill: Drill) {
+  return cleanText(drill.enName, modePreset(drill).enName);
 }
 
-function getDrillText(drill: Drill) {
-  return `${drill.id} ${getDrillName(drill)} ${getDrillCategory(drill)} ${drill.description ?? ''} ${drill.tag ?? ''} ${drill.enName ?? ''} ${drill.engine?.mode ?? ''}`;
+function drillCategory(drill: Drill) {
+  return cleanText(drill.category, modePreset(drill).category);
 }
 
-function getDrillIntent(drill: Drill): IntentKey {
-  const text = getDrillText(drill);
-  const matched = (Object.keys(INTENT_META) as IntentKey[]).find((key) => INTENT_META[key].matcher.test(text));
-  return matched ?? 'warmup';
+function drillDescription(drill: Drill) {
+  return cleanText(drill.description, modePreset(drill).description);
 }
 
-function getIntentLabel(drill: Drill) {
-  return INTENT_META[getDrillIntent(drill)].title;
+function drillIcon(drill: Drill) {
+  return cleanText(drill.icon, modePreset(drill).icon);
 }
 
-function getDrillsByIntent(drills: Drill[], intent: IntentKey, limit = 3) {
-  const matched = drills.filter((drill) => INTENT_META[intent].matcher.test(getDrillText(drill)));
-  return (matched.length ? matched : drills).slice(0, limit);
+function drillTag(drill: Drill) {
+  return cleanText(drill.tag, modePreset(drill).tag);
 }
 
-function getLinkedPrograms(drill: Drill, programs: Program[]) {
-  return programs.filter((program) => program.lessonDetail?.relatedSpomoveIds?.includes(drill.id)).slice(0, 3);
+function drillIntent(drill: Drill): IntentKey {
+  return modePreset(drill).intent;
 }
 
-function DrillCard({ drill, index, isLocked, linkedPrograms }: { drill: Drill; index: number; isLocked: boolean; linkedPrograms: Program[] }) {
-  const intent = getDrillIntent(drill);
-  const meta = INTENT_META[intent];
-  const href = isLocked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`;
-  const description = drill.description || getIntentLabel(drill);
+function linkedPrograms(drill: Drill, programs: Program[]) {
+  const ids = new Set([drill.id, canonicalMode(drill)]);
+  return programs.filter((program) => program.lessonDetail?.relatedSpomoveIds?.some((id) => ids.has(id))).slice(0, 3);
+}
+
+function sessionHref(drillId: string, mode: 'projector' | 'mobile' | 'class' = 'projector') {
+  return `/spokedu-master/spomove/session?drill=${drillId}&mode=${mode}`;
+}
+
+function sortDrills(drills: Drill[]) {
+  return [...drills].sort((a, b) => {
+    const aIndex = MODE_ORDER.indexOf(canonicalMode(a));
+    const bIndex = MODE_ORDER.indexOf(canonicalMode(b));
+    return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
+  });
+}
+
+function DrillGlyph({ drill, className = 'h-11 w-11 text-xl' }: { drill: Drill; className?: string }) {
+  return <span className={`inline-flex shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ${className}`}>{drillIcon(drill) || <Zap className="h-5 w-5" />}</span>;
+}
+
+function LaunchModeCard({ href, icon: Icon, title, caption, tone }: { href: string; icon: LucideIcon; title: string; caption: string; tone: string }) {
+  return (
+    <Link href={href} className="group flex min-h-[116px] flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+      <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `${tone}14`, color: tone }}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <span>
+        <strong className="block text-base font-black text-slate-950">{title}</strong>
+        <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{caption}</span>
+      </span>
+    </Link>
+  );
+}
+
+function FeaturedCard({ drill, index, isLocked, programs }: { drill: Drill; index: number; isLocked: boolean; programs: Program[] }) {
+  const href = isLocked ? '/spokedu-master/payment?plan=pro' : sessionHref(drill.id);
+  const related = linkedPrograms(drill, programs);
+  const tones = ['#635bff', '#10b981', '#f59e0b', '#ec4899'];
+  const tone = tones[index % tones.length];
 
   return (
-    <Link
-      href={href}
-      className="group relative flex min-h-[228px] flex-col justify-between overflow-hidden rounded-3xl p-5 transition hover:-translate-y-0.5"
-      style={{ background: CARD_GRADIENTS[index % CARD_GRADIENTS.length], border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 70px rgba(0,0,0,0.28)' }}
-    >
-      <div className="relative flex items-start justify-between gap-3">
-        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/14 text-xl text-white">
-          {drill.icon || <Zap className="h-5 w-5" />}
-        </span>
-        <span className="rounded-full bg-black/30 px-3 py-1 text-[11px] font-black text-white/70">{drill.tag || meta.badge}</span>
+    <Link href={href} className="group relative flex min-h-[236px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+      <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: tone }} />
+      <div className="flex items-start justify-between gap-3">
+        <DrillGlyph drill={drill} className="h-12 w-12 text-2xl" />
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black text-slate-600">{drillTag(drill)}</span>
       </div>
 
-      <div className="relative">
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-white/45">{drill.enName || getDrillCategory(drill)}</p>
-        <h3 className="mt-2 line-clamp-2 text-2xl font-black leading-tight text-white">{getDrillName(drill)}</h3>
-        <p className="mt-3 line-clamp-1 text-sm font-semibold leading-6 text-white/64">
-          {linkedPrograms.length > 0 ? `${linkedPrograms.length}개 수업 연동` : description}
-        </p>
+      <div>
+        <p className="text-xs font-black uppercase tracking-[0.12em] text-indigo-500">{drillEnName(drill)}</p>
+        <h3 className="mt-2 line-clamp-2 text-2xl font-black leading-tight text-slate-950">{drillName(drill)}</h3>
+        <p className="mt-3 line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{drillDescription(drill)}</p>
       </div>
 
-      <div className="relative flex items-center justify-between gap-3">
-        <span className="inline-flex h-10 items-center gap-2 rounded-full bg-white/14 px-4 text-xs font-black text-white">
-          <MonitorPlay className="h-4 w-4" />
+      <div className="flex items-center justify-between gap-3">
+        <span className="inline-flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-xs font-black text-white">
+          <SlidersHorizontal className="h-4 w-4" />
           설정으로
         </span>
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/16 transition group-hover:scale-105">
-          {isLocked ? <Lock className="h-4 w-4 text-white" /> : <Play className="h-4 w-4 fill-white text-white" />}
-        </span>
+        <span className="text-xs font-bold text-slate-500">{related.length > 0 ? `${related.length}개 수업 연동` : drillCategory(drill)}</span>
       </div>
 
       {isLocked ? (
-        <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-black/65 backdrop-blur-[3px]">
-          <span className="rounded-2xl border border-amber-300/35 bg-amber-300/14 px-4 py-2 text-xs font-black text-amber-100">PRO 전용</span>
+        <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/80 backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-black text-amber-700">
+            <Lock className="h-3.5 w-3.5" />
+            PRO 전용
+          </span>
         </div>
       ) : null}
     </Link>
@@ -189,24 +300,20 @@ function IntentSection({ id, intent, drills, isPro }: { id: string; intent: Inte
   const firstLocked = first.isPro && !isPro;
 
   return (
-    <section id={id} className="scroll-mt-5 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.045]">
-      <div className="flex flex-col gap-4 border-b border-white/8 p-5 sm:flex-row sm:items-center sm:justify-between">
+    <section id={id} className="scroll-mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-4">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: `${meta.tone}20`, color: meta.tone }}>
+          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: `${meta.tone}14`, color: meta.tone }}>
             <Icon className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">{meta.badge}</p>
-            <h2 className="mt-1 text-xl font-black text-white">{meta.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">{meta.caption}</p>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{meta.badge}</p>
+            <h2 className="mt-1 text-xl font-black text-slate-950">{meta.title}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">{meta.caption}</p>
           </div>
         </div>
         {!firstLocked ? (
-          <Link
-            href={`/spokedu-master/spomove/session?drill=${first.id}&mode=projector`}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-black"
-            style={{ background: `${meta.tone}18`, color: meta.tone, border: `1px solid ${meta.tone}28` }}
-          >
+          <Link href={sessionHref(first.id)} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-black" style={{ background: `${meta.tone}14`, color: meta.tone, border: `1px solid ${meta.tone}24` }}>
             <Play className="h-4 w-4 fill-current" />
             바로 실행
           </Link>
@@ -217,19 +324,13 @@ function IntentSection({ id, intent, drills, isPro }: { id: string; intent: Inte
         {drills.map((drill) => {
           const locked = drill.isPro && !isPro;
           return (
-            <Link
-              key={`${id}-${drill.id}`}
-              href={locked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`}
-              className="flex min-h-[92px] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.045] p-4 transition hover:bg-white/[0.075]"
-            >
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: `${meta.tone}18`, color: meta.tone }}>
-                {drill.icon || <Zap className="h-5 w-5" />}
-              </span>
+            <Link key={`${id}-${drill.id}`} href={locked ? '/spokedu-master/payment?plan=pro' : sessionHref(drill.id)} className="flex min-h-[96px] items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:border-indigo-200 hover:bg-white">
+              <DrillGlyph drill={drill} className="h-12 w-12 text-xl" />
               <span className="min-w-0 flex-1">
-                <strong className="line-clamp-1 text-sm font-black text-white">{getDrillName(drill)}</strong>
-                <span className="mt-1 block text-xs font-semibold text-slate-500">{locked ? 'PRO 플랜 필요' : drill.enName || getDrillCategory(drill)}</span>
+                <strong className="line-clamp-1 text-sm font-black text-slate-950">{drillName(drill)}</strong>
+                <span className="mt-1 block text-xs font-semibold text-slate-500">{locked ? 'PRO 플랜 필요' : drillEnName(drill)}</span>
               </span>
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: `${meta.tone}18`, color: meta.tone }}>
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm">
                 {locked ? <Lock className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 fill-current" />}
               </span>
             </Link>
@@ -240,52 +341,33 @@ function IntentSection({ id, intent, drills, isPro }: { id: string; intent: Inte
   );
 }
 
-function LaunchModeCard({ href, icon: Icon, title, caption, tone }: { href: string; icon: LucideIcon; title: string; caption: string; tone: string }) {
-  return (
-    <Link href={href} className="flex min-h-[120px] flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.052] p-5 transition hover:-translate-y-0.5 hover:bg-white/[0.08]">
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `${tone}18`, color: tone }}>
-        <Icon className="h-5 w-5" />
-      </span>
-      <span>
-        <strong className="block text-base font-black text-white">{title}</strong>
-        <span className="mt-1 block text-xs font-semibold leading-5 text-slate-400">{caption}</span>
-      </span>
-    </Link>
-  );
-}
-
-function CatalogModeCard({ drill, isLocked, linkedPrograms }: { drill: Drill; isLocked: boolean; linkedPrograms: Program[] }) {
-  const href = isLocked ? '/spokedu-master/payment?plan=pro' : `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`;
-  const tone = drill.bgColor || '#818cf8';
+function CatalogModeCard({ drill, isLocked, programs }: { drill: Drill; isLocked: boolean; programs: Program[] }) {
+  const href = isLocked ? '/spokedu-master/payment?plan=pro' : sessionHref(drill.id);
+  const related = linkedPrograms(drill, programs);
   const levelCount = drill.levels?.length ?? 1;
   const firstLevel = drill.levels?.[0];
 
   return (
-    <Link
-      href={href}
-      className="group grid min-h-[188px] grid-cols-[auto_1fr] gap-4 rounded-3xl border border-white/10 bg-white/[0.045] p-5 transition hover:-translate-y-0.5 hover:bg-white/[0.075]"
-    >
-      <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl" style={{ background: `${tone}22`, color: tone }}>
-        {drill.icon || <Zap className="h-6 w-6" />}
-      </span>
+    <Link href={href} className="group grid min-h-[188px] grid-cols-[auto_1fr] gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+      <DrillGlyph drill={drill} className="h-14 w-14 text-2xl" />
       <span className="min-w-0">
         <span className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-black text-slate-300">{drill.tag || getDrillCategory(drill)}</span>
-          <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-black text-slate-300">{levelCount}단계</span>
-          {isLocked ? <span className="rounded-full bg-amber-300/14 px-2.5 py-1 text-[11px] font-black text-amber-100">PRO</span> : null}
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-600">{drillTag(drill)}</span>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-600">{levelCount}단계</span>
+          {isLocked ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-black text-amber-700">PRO</span> : null}
         </span>
-        <strong className="mt-3 line-clamp-1 block text-lg font-black text-white">{getDrillName(drill)}</strong>
-        <span className="mt-1 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">{drill.enName}</span>
-        <span className="mt-3 line-clamp-2 block text-sm leading-6 text-slate-400">{drill.description}</span>
+        <strong className="mt-3 line-clamp-1 block text-lg font-black text-slate-950">{drillName(drill)}</strong>
+        <span className="mt-1 block text-xs font-black uppercase tracking-[0.12em] text-indigo-500">{drillEnName(drill)}</span>
+        <span className="mt-3 line-clamp-2 block text-sm leading-6 text-slate-500">{drillDescription(drill)}</span>
         <span className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white px-3 text-xs font-black text-slate-950">
+          <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-600 px-3 text-xs font-black text-white">
             <SlidersHorizontal className="h-3.5 w-3.5" />
             설정으로
           </span>
-          {linkedPrograms.length > 0 ? (
-            <span className="inline-flex h-9 items-center rounded-xl border border-white/10 px-3 text-xs font-bold text-slate-300">{linkedPrograms.length}개 수업 연동</span>
+          {related.length > 0 ? (
+            <span className="inline-flex h-9 items-center rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-600">{related.length}개 수업 연동</span>
           ) : firstLevel ? (
-            <span className="inline-flex h-9 min-w-0 items-center rounded-xl border border-white/10 px-3 text-xs font-bold text-slate-300">{firstLevel.enName}</span>
+            <span className="inline-flex h-9 min-w-0 items-center rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-600">{firstLevel.enName}</span>
           ) : null}
         </span>
       </span>
@@ -296,171 +378,210 @@ function CatalogModeCard({ drill, isLocked, linkedPrograms }: { drill: Drill; is
 export default function SpomoveHubView() {
   const isPro = useIsPro();
   const sessions = useMasterStore((state) => state.sessions);
-  const drills = useMasterStore((state) => state.drills);
+  const rawDrills = useMasterStore((state) => state.drills);
   const programs = useMasterStore((state) => state.programs);
   const stats = useStats();
 
+  const drills = useMemo(() => sortDrills(rawDrills), [rawDrills]);
   const defaultDrill = drills[0];
   const defaultDrillId = defaultDrill?.id ?? 'reactTrain';
-
-  const warmupDrills = useMemo(() => getDrillsByIntent(drills, 'warmup'), [drills]);
-  const reactionDrills = useMemo(() => getDrillsByIntent(drills, 'reaction'), [drills]);
-  const focusDrills = useMemo(() => getDrillsByIntent(drills, 'focus'), [drills]);
-  const finishDrills = useMemo(() => getDrillsByIntent(drills, 'finish'), [drills]);
   const featuredDrills = useMemo(() => {
-    const proAware = isPro ? drills : drills.filter((drill) => !drill.isPro);
-    const source = proAware.length ? proAware : drills;
-    const ordered = FEATURED_MODE_ORDER.map((mode) => source.find((drill) => drill.id === mode || drill.engine?.mode === mode)).filter(Boolean) as Drill[];
-    const rest = source.filter((drill) => !ordered.some((featured) => featured.id === drill.id));
-    return [...ordered, ...rest].slice(0, 4);
+    const visible = isPro ? drills : drills.filter((drill) => !drill.isPro);
+    return (visible.length ? visible : drills).slice(0, 4);
   }, [drills, isPro]);
+  const intentDrills = useMemo(
+    () =>
+      ({
+        ready: drills.filter((drill) => drillIntent(drill) === 'ready'),
+        reaction: drills.filter((drill) => drillIntent(drill) === 'reaction'),
+        control: drills.filter((drill) => drillIntent(drill) === 'control'),
+        flow: drills.filter((drill) => drillIntent(drill) === 'flow'),
+      }) satisfies Record<IntentKey, Drill[]>,
+    [drills],
+  );
   const recent = sessions.slice(0, 3);
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
-      <header>
-        <section className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/72">
-          <div className="relative min-h-[420px] p-6 sm:p-8 lg:p-10">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#020617,#0f172a_52%,#111827)]" />
-            <div className="relative flex h-full min-h-[340px] flex-col justify-between">
-              <div>
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-indigo-100">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Screen Movement Engine
-                </span>
-                <h1 className="mt-6 max-w-3xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
-                  빔, TV, 태블릿에 켜는
-                  <br />
-                  움직임 몰입 엔진.
-                </h1>
-              </div>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-extrabold text-slate-950">
-                  <MonitorPlay className="h-4 w-4" />
-                  지금 큰 화면 실행
-                </Link>
-                <Link href="/spokedu-master/library" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/[0.07] px-5 text-sm font-bold text-white">
-                  <Gamepad2 className="h-4 w-4" />
-                  수업과 연결하기
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-      </header>
-
-      <section>
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">Launch Modes</p>
-            <h2 className="mt-1 text-xl font-black text-white">수업 환경에 맞춰 실행</h2>
-          </div>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          <LaunchModeCard href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} icon={MonitorPlay} title="큰 화면" caption="빔, TV, 노트북 화면으로 바로 실행" tone="#818cf8" />
-          <LaunchModeCard href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=mobile`} icon={Smartphone} title="모바일" caption="강사가 손에 들고 짧게 진행" tone="#10b981" />
-          <LaunchModeCard href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=class`} icon={Maximize} title="Class Mode" caption="수업안 흐름과 함께 운영" tone="#f59e0b" />
-        </div>
-      </section>
-
-      <section>
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">Featured</p>
-            <h2 className="mt-1 text-xl font-black text-white">실제 SPOMOVE 트레이닝</h2>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {featuredDrills.map((drill, index) => (
-            <DrillCard key={drill.id} drill={drill} index={index} isLocked={drill.isPro && !isPro} linkedPrograms={getLinkedPrograms(drill, programs)} />
-          ))}
-        </div>
-      </section>
-
-      <section className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
-        {(Object.keys(INTENT_META) as IntentKey[]).map((intent) => {
-          const meta = INTENT_META[intent];
-          return (
-            <a key={intent} href={`#${intent}`} className="shrink-0 rounded-full border border-white/10 bg-white/[0.055] px-4 py-2 text-sm font-black text-slate-200 transition hover:bg-white/[0.085]">
-              {meta.title}
-            </a>
-          );
-        })}
-      </section>
-
-      <section className="space-y-4">
-        <IntentSection id="warmup" intent="warmup" drills={warmupDrills} isPro={isPro} />
-        <IntentSection id="reaction" intent="reaction" drills={reactionDrills} isPro={isPro} />
-        <IntentSection id="focus" intent="focus" drills={focusDrills} isPro={isPro} />
-        <IntentSection id="finish" intent="finish" drills={finishDrills} isPro={isPro} />
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1fr_380px]">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">Training Catalog</p>
-              <h2 className="mt-1 text-xl font-black text-white">실제 SPOMOVE 모드 전체</h2>
-            </div>
-            <span className="text-sm font-bold text-slate-500">{drills.length}개</span>
-          </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {drills.map((drill) => (
-              <CatalogModeCard key={drill.id} drill={drill} isLocked={drill.isPro && !isPro} linkedPrograms={getLinkedPrograms(drill, programs)} />
-            ))}
-          </div>
-        </div>
-
-        <aside className="space-y-6">
-          <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Recent</p>
-                <h2 className="mt-1 text-lg font-black text-white">최근 실행</h2>
-              </div>
-              <Clock3 className="h-5 w-5 text-slate-500" />
-            </div>
-            <div className="mt-4 space-y-3">
-              {recent.length > 0 ? (
-                recent.map((session) => (
-                  <div key={session.id} className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                    <p className="truncate text-sm font-black text-white">{session.drillName}</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-500">
-                      {new Date(session.date).toLocaleDateString('ko-KR')} · {session.cueCount}회 · 평균 {formatReactionTime(session.avg)}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <Link href={`/spokedu-master/spomove/session?drill=${defaultDrillId}&mode=projector`} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                  <span>
-                    <strong className="block text-sm font-black text-white">첫 SPOMOVE를 실행해보세요</strong>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">드릴을 선택해 첫 세션을 시작하세요.</span>
+    <main className="h-full overflow-y-auto bg-[#f5f7fb]">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
+        <header>
+          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+            <div className="grid min-h-[360px] lg:grid-cols-[1fr_440px]">
+              <div className="flex flex-col justify-between p-6 sm:p-8 lg:p-10">
+                <div>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-indigo-600">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    SPOMOVE Screen Engine
                   </span>
-                  <ChevronRight className="h-5 w-5 text-slate-500" />
-                </Link>
-              )}
+                  <h1 className="mt-6 max-w-2xl text-4xl font-black leading-tight text-slate-950 sm:text-5xl">
+                    큰 화면을 켜면,
+                    <br />
+                    수업 분위기가 바뀝니다.
+                  </h1>
+                  <p className="mt-5 max-w-xl text-sm font-semibold leading-7 text-slate-600">
+                    색, 위치, 규칙 자극을 TV, 태블릿, 빔 화면에 띄워 아이들이 바로 움직이게 하는 SPOKEDU의 실행 엔진입니다.
+                  </p>
+                </div>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <Link href={sessionHref(defaultDrillId)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white shadow-sm transition hover:bg-indigo-500">
+                    <MonitorPlay className="h-4 w-4" />
+                    큰 화면 실행
+                  </Link>
+                  <Link href="/spokedu-master/library" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 transition hover:border-indigo-200">
+                    <Shapes className="h-4 w-4" />
+                    수업과 연결
+                  </Link>
+                </div>
+              </div>
+
+              <div className="relative hidden min-h-full overflow-hidden bg-slate-950 lg:block">
+                <div className="absolute inset-8 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.38),transparent_34%),linear-gradient(135deg,#0f172a,#111827)]" />
+                <div className="absolute inset-8 flex items-center justify-center">
+                  <div className="relative aspect-video w-[82%] rounded-[24px] border border-white/12 bg-white shadow-2xl">
+                    <span className="absolute left-[18%] top-[20%] h-5 w-5 rounded-full bg-red-500 shadow-[0_0_0_8px_rgba(239,68,68,0.12)]" />
+                    <span className="absolute right-[18%] top-[20%] h-5 w-5 rounded-full bg-blue-500 shadow-[0_0_0_8px_rgba(59,130,246,0.12)]" />
+                    <span className="absolute bottom-[22%] left-[22%] h-14 w-14 rounded-full bg-amber-400" />
+                    <span className="absolute bottom-[24%] right-[22%] h-14 w-14 rounded-full bg-emerald-400" />
+                    <span className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-600 shadow-[0_18px_50px_rgba(79,70,229,0.35)]" />
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
+        </header>
 
-          {stats.totalSessions > 0 ? (
-            <section className="grid grid-cols-3 gap-2">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3 text-center">
-                <p className="text-lg font-black text-white">{stats.totalSessions}</p>
-                <p className="mt-1 text-[11px] font-bold text-slate-500">세션</p>
+        <section>
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-500">Launch Modes</p>
+              <h2 className="mt-1 text-xl font-black text-slate-950">수업 환경에 맞게 실행</h2>
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <LaunchModeCard href={sessionHref(defaultDrillId, 'projector')} icon={MonitorPlay} title="큰 화면" caption="빔, TV, 노트북 화면으로 바로 실행" tone="#635bff" />
+            <LaunchModeCard href={sessionHref(defaultDrillId, 'mobile')} icon={Smartphone} title="모바일" caption="강사가 손에 들고 빠르게 진행" tone="#10b981" />
+            <LaunchModeCard href={sessionHref(defaultDrillId, 'class')} icon={Maximize} title="Class Mode" caption="수업 흐름과 단계까지 함께 운영" tone="#f59e0b" />
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-500">Featured</p>
+              <h2 className="mt-1 text-xl font-black text-slate-950">바로 실행하는 대표 모드</h2>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {featuredDrills.map((drill, index) => (
+              <FeaturedCard key={drill.id} drill={drill} index={index} isLocked={drill.isPro && !isPro} programs={programs} />
+            ))}
+          </div>
+        </section>
+
+        <section className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+          {(Object.keys(INTENT_META) as IntentKey[]).map((intent) => (
+            <a key={intent} href={`#${intent}`} className="shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:border-indigo-200">
+              {INTENT_META[intent].title}
+            </a>
+          ))}
+        </section>
+
+        <section className="space-y-4">
+          <IntentSection id="ready" intent="ready" drills={intentDrills.ready} isPro={isPro} />
+          <IntentSection id="reaction" intent="reaction" drills={intentDrills.reaction} isPro={isPro} />
+          <IntentSection id="control" intent="control" drills={intentDrills.control} isPro={isPro} />
+          <IntentSection id="flow" intent="flow" drills={intentDrills.flow} isPro={isPro} />
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[1fr_380px]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-500">Training Catalog</p>
+                <h2 className="mt-1 text-xl font-black text-slate-950">SPOMOVE 모드 전체</h2>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3 text-center">
-                <p className="text-lg font-black text-emerald-200">{formatReactionTime(stats.avgRT)}</p>
-                <p className="mt-1 text-[11px] font-bold text-slate-500">평균</p>
+              <span className="text-sm font-bold text-slate-500">{drills.length}개</span>
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {drills.map((drill) => (
+                <CatalogModeCard key={drill.id} drill={drill} isLocked={drill.isPro && !isPro} programs={programs} />
+              ))}
+            </div>
+          </div>
+
+          <aside className="space-y-6">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Recent</p>
+                  <h2 className="mt-1 text-lg font-black text-slate-950">최근 실행</h2>
+                </div>
+                <Clock3 className="h-5 w-5 text-slate-400" />
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3 text-center">
-                <p className="text-lg font-black text-white">{formatReactionTime(stats.bestRT)}</p>
-                <p className="mt-1 text-[11px] font-bold text-slate-500">최고</p>
+              <div className="mt-4 space-y-3">
+                {recent.length > 0 ? (
+                  recent.map((session) => (
+                    <div key={session.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                      <p className="truncate text-sm font-black text-slate-950">{session.drillName}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        {new Date(session.date).toLocaleDateString('ko-KR')} · {session.cueCount}회 · 평균 {formatReactionTime(session.avg)}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <Link href={sessionHref(defaultDrillId)} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:bg-white">
+                    <span>
+                      <strong className="block text-sm font-black text-slate-950">첫 SPOMOVE를 실행해보세요</strong>
+                      <span className="mt-1 block text-xs font-semibold text-slate-500">대표 모드를 선택해 첫 세션을 시작합니다.</span>
+                    </span>
+                    <ChevronRight className="h-5 w-5 text-slate-400" />
+                  </Link>
+                )}
               </div>
             </section>
-          ) : null}
-        </aside>
-      </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-200">Projection QA</p>
+              <h2 className="mt-2 text-lg font-black">실행 화면은 어둡게 유지</h2>
+              <p className="mt-3 text-sm font-semibold leading-6 text-slate-300">
+                허브는 밝은 구독 UX로 정리하고, 실제 실행 화면은 프로젝터와 TV에서 자극이 잘 보이도록 고대비 화면을 유지합니다.
+              </p>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl bg-white/8 p-3">
+                  <Eye className="mx-auto h-4 w-4 text-indigo-200" />
+                  <p className="mt-2 text-[11px] font-bold text-slate-300">시인성</p>
+                </div>
+                <div className="rounded-xl bg-white/8 p-3">
+                  <Focus className="mx-auto h-4 w-4 text-indigo-200" />
+                  <p className="mt-2 text-[11px] font-bold text-slate-300">집중</p>
+                </div>
+                <div className="rounded-xl bg-white/8 p-3">
+                  <RotateCcw className="mx-auto h-4 w-4 text-indigo-200" />
+                  <p className="mt-2 text-[11px] font-bold text-slate-300">반복</p>
+                </div>
+              </div>
+            </section>
+
+            {stats.totalSessions > 0 ? (
+              <section className="grid grid-cols-3 gap-2">
+                <div className="rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm">
+                  <p className="text-lg font-black text-slate-950">{stats.totalSessions}</p>
+                  <p className="mt-1 text-[11px] font-bold text-slate-500">세션</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm">
+                  <p className="text-lg font-black text-emerald-600">{formatReactionTime(stats.avgRT)}</p>
+                  <p className="mt-1 text-[11px] font-bold text-slate-500">평균</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm">
+                  <p className="text-lg font-black text-slate-950">{formatReactionTime(stats.bestRT)}</p>
+                  <p className="mt-1 text-[11px] font-bold text-slate-500">최고</p>
+                </div>
+              </section>
+            ) : null}
+          </aside>
+        </section>
+      </div>
     </main>
   );
 }

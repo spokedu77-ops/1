@@ -66,19 +66,19 @@ export function BottomSheet({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 px-3 sm:items-center sm:px-6" role="presentation">
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm sm:items-center sm:px-6" role="presentation">
       <button type="button" aria-label={`${title} 닫기`} className="absolute inset-0 cursor-default" onClick={onClose} />
       <div
         ref={dialogRef}
-        className="relative max-h-[88dvh] w-full max-w-[720px] overflow-y-auto rounded-t-[24px] p-5 shadow-2xl outline-none sm:rounded-[24px] sm:p-6"
-        style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', paddingBottom: 'max(20px, env(safe-area-inset-bottom))' }}
+        className="relative max-h-[88dvh] w-full max-w-[720px] overflow-y-auto rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6"
+        style={{ background: '#ffffff', border: '1px solid #e2e8f0', paddingBottom: 'max(20px, env(safe-area-inset-bottom))' }}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
       >
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 id={titleId} className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+          <h2 id={titleId} className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: '#0f172a', letterSpacing: 0 }}>
             {title}
           </h2>
           <button
@@ -86,7 +86,7 @@ export function BottomSheet({
             type="button"
             onClick={onClose}
             className="grid h-11 w-11 place-items-center rounded-[10px] outline-none ring-offset-2 focus-visible:ring-2"
-            style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}
+            style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b' }}
             aria-label={`${title} 닫기`}
           >
             <X size={17} color="currentColor" />

@@ -8,11 +8,14 @@ import { homePage } from '../data/home-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
   btnPrimary,
-  btnSecondaryOnDark,
   cardInteractive,
   fineHover,
   landingH1,
+  landingHeroSubtitle,
+  landingDarkCtaButton,
+  landingHeroSupport,
   landingPageStack,
+  landingSectionLead,
 } from '../lib/ui-classes';
 import { HomeProgramSystem } from './visual/home-program-system';
 import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
@@ -54,10 +57,25 @@ function Section({
   );
 }
 
+function SectionHeading({ title, lead }: { title: string; lead?: string }) {
+  return (
+    <div className="text-center lg:text-left">
+      <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{title}</h2>
+      {lead ? <p className={`${landingSectionLead} mx-auto lg:mx-0`}>{lead}</p> : null}
+    </div>
+  );
+}
+
 function resolveFieldProof(card: (typeof homePage.fieldRecords.cards)[number]) {
   const field = HOME_PROOF_FIELDS.find((f) => f.id === card.proofId);
   if (!field) return null;
-  return { field, tagline: card.tagline, href: card.href, trackLabel: card.trackLabel };
+  return {
+    field,
+    tagline: card.tagline,
+    href: card.href,
+    trackLabel: card.trackLabel,
+    caption: field.description,
+  };
 }
 
 export default function SpokeduHomeLanding() {
@@ -68,10 +86,10 @@ export default function SpokeduHomeLanding() {
 
   return (
     <div className={landingPageStack}>
-      {/* 1. Cinematic Hero */}
+      {/* 1. Hero */}
       <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12">
-          <div className="order-2 space-y-6 lg:order-1 lg:space-y-8">
+        <div className="flex flex-col gap-6 sm:gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12">
+          <div className="order-2 lg:order-1">
             <h1 className={`${landingH1} text-slate-950`}>
               {homePage.hero.lines.map((line, index) => (
                 <motion.span
@@ -85,23 +103,26 @@ export default function SpokeduHomeLanding() {
                 </motion.span>
               ))}
             </h1>
-            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
-              {homePage.hero.subtitle}
-            </p>
-            <Link
-              href={homePage.heroCtas.primary.href}
-              data-track="cta-contact"
-              data-track-label={homePage.heroCtas.primary.trackLabel}
-              className={`${btnPrimary} !w-full sm:!w-auto`}
-            >
-              {homePage.heroCtas.primary.label}
-            </Link>
+            <div className="mt-5 max-w-lg space-y-3 sm:mt-6">
+              <p className={landingHeroSubtitle}>{homePage.hero.subtitle}</p>
+              <p className={landingHeroSupport}>{homePage.hero.support}</p>
+            </div>
+            <div className="mt-6 sm:mt-7">
+              <Link
+                href={homePage.heroCtas.primary.href}
+                data-track="cta-contact"
+                data-track-label={homePage.heroCtas.primary.trackLabel}
+                className={`${btnPrimary} min-h-12 !w-full sm:!w-auto`}
+              >
+                {homePage.heroCtas.primary.label}
+              </Link>
+            </div>
           </div>
           <div className="order-1 lg:order-2">
             <div className="relative">
               <MotionPoster media={HOME_MEDIA.homeHero} variant="cinematic" />
               <div
-                className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-tr from-indigo-950/35 via-transparent to-sky-500/15"
+                className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-tr from-indigo-950/25 via-transparent to-sky-500/10"
                 aria-hidden
               />
               <div
@@ -114,11 +135,9 @@ export default function SpokeduHomeLanding() {
       </section>
 
       {/* 2. Visitor Gate */}
-      <Section id={homePage.visitorGate.id} className="scroll-mt-20 space-y-7 sm:space-y-9">
-        <h2 className="text-center text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl lg:text-left">
-          {homePage.visitorGate.title}
-        </h2>
-        <div className="flex flex-col gap-4 md:grid md:grid-cols-3 md:gap-5">
+      <Section id={homePage.visitorGate.id} className="scroll-mt-20 space-y-5 sm:space-y-7">
+        <SectionHeading title={homePage.visitorGate.title} lead={homePage.visitorGate.lead} />
+        <div className="flex flex-col gap-3.5 md:grid md:grid-cols-3 md:gap-4">
           {homePage.visitorGate.cards.map((card, index) => (
             <motion.div
               key={card.href}
@@ -131,29 +150,30 @@ export default function SpokeduHomeLanding() {
                 href={card.href}
                 data-track={inferTrackFromHref(card.href)}
                 data-track-label={card.trackLabel}
-                className={`group flex min-h-[248px] flex-col overflow-hidden rounded-[1.5rem] border border-slate-200/90 border-t-4 bg-white shadow-lg shadow-slate-900/8 sm:min-h-[272px] ${gateAccent[index] ?? ''} ${cardInteractive} ${focusRing}`}
+                className={`group flex min-h-[220px] flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/90 border-t-4 bg-white sm:min-h-[248px] ${gateAccent[index] ?? ''} ${cardInteractive} ${focusRing}`}
               >
-                <div className="relative h-[5.5rem] shrink-0 overflow-hidden sm:h-[6.5rem]">
+                <div className="relative h-[5rem] shrink-0 overflow-hidden sm:h-[5.75rem]">
                   <MediaPanel
                     media={gateMedia[index]}
                     className="absolute inset-0 h-full w-full rounded-none border-0"
                   />
                   <div
-                    className="absolute inset-0 bg-gradient-to-t from-white via-white/55 to-white/10"
+                    className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-white/15"
                     aria-hidden
                   />
                 </div>
-                <div className="flex flex-1 flex-col justify-between p-5 sm:p-6">
+                <div className="flex flex-1 flex-col justify-between p-4 sm:p-5">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">{card.audience}</p>
-                    <h3 className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{card.title}</h3>
+                    <p className="text-xs font-medium text-slate-500">{card.audience}</p>
+                    <h3 className="mt-0.5 text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">
+                      {card.title}
+                    </h3>
                     <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.description}</p>
                   </div>
                   <span
-                    className={`mt-4 text-sm font-semibold text-slate-900 ${fineHover}group-hover:translate-x-0.5 ${fineHover}group-hover:text-indigo-700`}
-                    aria-hidden
+                    className={`mt-3 text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-800`}
                   >
-                    →
+                    {card.linkLabel} →
                   </span>
                 </div>
               </Link>
@@ -162,13 +182,15 @@ export default function SpokeduHomeLanding() {
         </div>
       </Section>
 
-      {/* 3. Field Records — proof wall */}
+      {/* 3. Field Records */}
       <Section className="space-y-4 sm:space-y-5">
-        <h2 className="text-center text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl lg:text-left">
-          {homePage.fieldRecords.title}
-        </h2>
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4" role="list" aria-label="현장 운영 증거">
-          {fieldProofItems.map(({ field, tagline, href, trackLabel }, index) => (
+        <SectionHeading title={homePage.fieldRecords.title} lead={homePage.fieldRecords.lead} />
+        <div
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4"
+          role="list"
+          aria-label="현장 운영 증거"
+        >
+          {fieldProofItems.map(({ field, tagline, href, trackLabel, caption }, index) => (
             <motion.div
               key={field.id}
               role="listitem"
@@ -181,44 +203,52 @@ export default function SpokeduHomeLanding() {
                 href={href}
                 data-track={inferTrackFromHref(href)}
                 data-track-label={trackLabel}
-                className={`group relative block aspect-[5/6] overflow-hidden rounded-2xl border border-slate-400/30 shadow-xl shadow-slate-900/18 ring-1 ring-white/20 transition duration-300 sm:aspect-[4/5] lg:min-h-[300px] lg:aspect-auto ${cardInteractive} ${focusRing}`}
+                className={`group relative block min-h-[220px] overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm transition duration-300 sm:aspect-[4/5] sm:min-h-0 lg:min-h-[280px] lg:aspect-auto ${cardInteractive} ${focusRing}`}
               >
-                <MediaPanel media={field.media} className="absolute inset-0 h-full w-full rounded-none border-0 scale-105 transition duration-500 group-hover:scale-110" />
+                <MediaPanel
+                  media={field.media}
+                  className="absolute inset-0 h-full w-full rounded-none border-0"
+                  photoPriority
+                />
                 <div
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/92 via-slate-900/25 to-slate-900/5 transition duration-300 group-hover:from-slate-950/96"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent"
                   aria-hidden
                 />
-                <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-300">
+                <div className="absolute inset-x-3 bottom-3 rounded-xl border border-white/60 bg-white/95 p-3 sm:inset-x-2.5 sm:bottom-2.5 sm:p-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">
                     {tagline}
                   </span>
-                  <h3 className="mt-0.5 line-clamp-2 text-xs font-bold leading-snug text-white sm:text-sm">
+                  <h3 className="mt-0.5 line-clamp-2 text-sm font-bold leading-snug text-slate-950">
                     {field.title}
                   </h3>
+                  <p className="mt-1 line-clamp-1 text-xs leading-snug text-slate-600">
+                    {caption}
+                  </p>
                 </div>
               </Link>
             </motion.div>
           ))}
         </div>
-        <p className="text-center">
+        <p className="text-center pt-1">
           <Link
             href={homePage.fieldRecords.recordsHref}
             data-track={inferTrackFromHref(homePage.fieldRecords.recordsHref)}
             data-track-label={homePage.fieldRecords.recordsTrackLabel}
-            className={`inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 bg-slate-950 px-6 py-2.5 text-sm font-semibold text-white ${fineHover}hover:bg-slate-800 ${focusRing}`}
+            className={`inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-200 ${fineHover}hover:bg-indigo-50 ${fineHover}hover:text-indigo-900 ${focusRing}`}
           >
-            현장기록 더 보기 →
+            {homePage.fieldRecords.recordsCtaLabel} →
           </Link>
         </p>
       </Section>
 
       {/* 4. Program System */}
-      <Section className="space-y-5 sm:space-y-7" delay={0.02}>
-        <div className="space-y-3 border-l-4 border-indigo-500 pl-4 text-center sm:pl-5 lg:text-left">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600">프로그램</p>
-          <h2 className="whitespace-pre-line text-[1.85rem] font-black leading-[1.06] tracking-tight text-slate-950 sm:text-[2.35rem] lg:text-[2.75rem]">
+      <Section className="space-y-4 sm:space-y-6" delay={0.02}>
+        <div className="space-y-2 border-l-4 border-indigo-500 pl-4 text-center sm:pl-5 lg:text-left">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600">수업 콘텐츠</p>
+          <h2 className="whitespace-pre-line text-[1.65rem] font-black leading-[1.08] tracking-tight text-slate-950 sm:text-[2.1rem] lg:text-[2.5rem]">
             {homePage.programSystem.title}
           </h2>
+          <p className={`${landingSectionLead} mx-auto lg:mx-0`}>{homePage.programSystem.lead}</p>
         </div>
         <HomeProgramSystem items={homePage.programSystem.items} />
         <p className="text-center lg:text-left">
@@ -226,29 +256,30 @@ export default function SpokeduHomeLanding() {
             href={homePage.programSystem.cta.href}
             data-track={inferTrackFromHref(homePage.programSystem.cta.href)}
             data-track-label={homePage.programSystem.cta.trackLabel}
-            className={`inline-flex min-h-12 items-center justify-center rounded-full bg-slate-950 px-8 py-3 text-sm font-semibold text-white shadow-md ${fineHover}hover:bg-slate-800 ${focusRing}`}
+            className={`inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-7 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-200 ${fineHover}hover:bg-indigo-50 ${fineHover}hover:text-indigo-900 ${focusRing}`}
           >
             {homePage.programSystem.cta.label} →
           </Link>
         </p>
       </Section>
 
-      {/* 5. Final CTA */}
-      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-10 text-white sm:rounded-[2rem] sm:px-10 sm:py-14">
-        <div className="pointer-events-none absolute inset-0 opacity-80" aria-hidden>
+      {/* 5. Final CTA — dark emphasis */}
+      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-5 py-10 text-white sm:rounded-[2rem] sm:px-8 sm:py-12">
+        <div className="pointer-events-none absolute inset-0 opacity-70" aria-hidden>
           <MediaRenderer media={HOME_MEDIA.trackDispatch} intensity="soft" animateZoom className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/78" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-slate-950/82" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">{homePage.finalCta.title}</h2>
-          <div className="mt-5 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
+          <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{homePage.finalCta.title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:text-base">{homePage.finalCta.description}</p>
+          <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
             {homePage.finalCta.links.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 data-track={inferTrackFromHref(item.href)}
                 data-track-label={item.trackLabel}
-                className={`${btnSecondaryOnDark} !w-full text-center`}
+                className={`${landingDarkCtaButton} !w-full`}
               >
                 {item.label}
               </Link>

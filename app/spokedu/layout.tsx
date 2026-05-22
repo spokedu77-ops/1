@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import Script from 'next/script';
-import { SiteFooter, SiteHeader } from './components/site-chrome';
+import { SpokeduSiteShell } from './components/spokedu-site-shell';
 import SpokeduTrackingProvider from './components/tracking-provider';
 import { seoKeywords, seoMeta } from './data/content';
 import { getSpokeduSiteUrl } from './lib/site-url';
@@ -60,9 +60,7 @@ export default function SpokeduSiteLayout({ children }: { children: ReactNode })
         </>
       ) : null}
       <SpokeduTrackingProvider />
-      <SiteHeader />
-      <main className="mx-auto w-full max-w-6xl px-3.5 py-5 sm:px-6 sm:py-10">{children}</main>
-      <SiteFooter />
+      <SpokeduSiteShell>{children}</SpokeduSiteShell>
     </div>
   );
 }
