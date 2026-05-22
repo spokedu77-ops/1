@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
+import { cleanList, cleanText, DRILL_FALLBACK, hasBrokenText, PROGRAM_FALLBACK } from '../../lib/clean';
 import { useMasterStore } from '../../store';
 import type { Program } from '../../types';
 
@@ -26,57 +27,10 @@ const STEP_PRESETS = [
   { label: '5분', secs: 300 },
 ] as const;
 
-const BROKEN_TEXT_PATTERN = /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥|獄|筌|揶|癰|疫|椰|\?/;
-
-const PROGRAM_FALLBACK: Record<string, Partial<Program>> = {
-  'funstick-fencing': {
-    title: '펀스틱 펜싱 Funstick Fencing',
-    category: '민첩·반응',
-    grade: '초등 3학년 이상',
-    space: '실내 체육관',
-  },
-  'figure-8-agility': {
-    title: '8자 드릴 민첩성 트레이닝',
-    category: '민첩·반응',
-    grade: '초등 3~6학년',
-    space: '좁은 실내 공간',
-  },
-  'team-relay-challenge': {
-    title: '팀 릴레이 챌린지',
-    category: '협동',
-    grade: '전 학년',
-    space: '넓은 공간',
-  },
-};
-
-const DRILL_FALLBACK: Record<string, string> = {
-  'SR-05': '스피드 리액션',
-  'SR-06': '방향 전환 챌린지',
-  'RS-05': '팀 콜 사인',
-  'IC-05': '스텝 밸런스',
-  'RC-05': '리듬 체인지',
-};
-
-function hasBrokenText(value: string | undefined) {
-  if (!value) return false;
-  return value.includes(String.fromCharCode(0xfffd)) || BROKEN_TEXT_PATTERN.test(value);
-}
-
-function cleanText(value: string | undefined, fallback: string) {
-  const text = (value ?? '').trim();
-  if (!text || hasBrokenText(text)) return fallback;
-  return text;
-}
-
 function cleanProgramText(program: Program, key: 'title' | 'category' | 'grade' | 'space', fallback: string) {
   const value = program[key];
   if (!value || hasBrokenText(value)) return (PROGRAM_FALLBACK[program.id]?.[key] as string | undefined) ?? fallback;
   return value;
-}
-
-function cleanList(items: string[] | undefined, fallback: string[]) {
-  const cleaned = (items ?? []).map((item) => item.trim()).filter((item) => item && !hasBrokenText(item));
-  return cleaned.length > 0 ? cleaned : fallback;
 }
 
 function cleanDrillName(id: string | undefined, name: string | undefined) {

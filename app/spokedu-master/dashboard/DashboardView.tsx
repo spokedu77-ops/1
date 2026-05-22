@@ -282,21 +282,23 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
 
   return (
     <article className="flex min-h-[316px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
-      <Link href={`/spokedu-master/library/${program.id}`} className="relative h-40 overflow-hidden bg-slate-900">
+      <Link href={`/spokedu-master/library/${program.id}`} className="relative h-40 overflow-hidden" style={{ background: 'var(--spm-s3)' }}>
         {getHeroImage(program) ? (
-          <Image
-            src={getHeroImage(program) as string}
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 24vw, (min-width: 768px) 45vw, 100vw"
-            className="object-cover transition duration-500 hover:scale-105"
-            loading="lazy"
-            unoptimized
-          />
+          <>
+            <Image
+              src={getHeroImage(program) as string}
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 24vw, (min-width: 768px) 45vw, 100vw"
+              className="object-cover transition duration-500 hover:scale-105"
+              loading="lazy"
+              unoptimized
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent" />
+          </>
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-indigo-500/30 via-slate-900 to-emerald-500/20" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, var(--spm-s3) 0%, var(--spm-s4) 100%)' }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent" />
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-black text-slate-800 backdrop-blur">
           {program.category}
         </span>

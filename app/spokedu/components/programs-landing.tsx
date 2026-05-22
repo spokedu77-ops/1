@@ -4,29 +4,30 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
-import { programCatalogCards, programTrackLabels, trackUsageRows, type ProgramTrack } from '../data/programs-catalog';
 import { programsPage } from '../data/programs-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
+  btnPrimary,
+  btnPrimaryOnDark,
+  btnSecondary,
   btnSecondaryOnDark,
   cardInteractive,
   fineHover,
   landingH1,
   landingHeroCopy,
   landingHeroGrid,
+  landingHeroSubtitle,
   landingHeroVisual,
   landingPageStack,
   landingSectionTitle,
 } from '../lib/ui-classes';
 import { MediaPanel, MotionPoster } from './visual';
+
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
-const trackBadgeClass: Record<ProgramTrack, string> = {
-  Private: 'border-violet-200 bg-violet-50 text-violet-800',
-  Dispatch: 'border-sky-200 bg-sky-50 text-sky-800',
-  Curriculum: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-};
+const programCardShell =
+  'group flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04]';
 
 function Section({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const reducedMotion = useReducedMotion();
@@ -43,15 +44,47 @@ function Section({ children, className = '', delay = 0 }: { children: ReactNode;
   );
 }
 
+function ProgramCard({ program }: { program: (typeof programsPage.groups)[number]['programs'][number] }) {
+  return (
+    <Link
+      href={program.detailHref}
+      data-track={program.ctaTrack}
+      data-track-label={program.ctaLabel}
+      className={`${programCardShell} ${cardInteractive} ${focusRing}`}
+    >
+      <MediaPanel
+        media={HOME_MEDIA[program.mediaKey]}
+        className="aspect-[16/10] min-h-[140px] shrink-0 rounded-none border-0 sm:min-h-0"
+        photoPriority
+      />
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <h3 className="text-base font-semibold text-slate-950 sm:text-lg">{program.title}</h3>
+        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+          {program.description}
+        </p>
+        <p className="mt-2 text-xs font-medium text-slate-500 [word-break:keep-all]">
+          <span className="text-slate-400">적합</span> · {program.fit}
+        </p>
+        <span
+          className={`mt-auto inline-flex min-h-11 items-center pt-3 text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-900`}
+        >
+          {program.ctaLabel} →
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export default function ProgramsLanding() {
   const reducedMotion = useReducedMotion();
+  const heroMedia = HOME_MEDIA[programsPage.hero.mediaKey];
 
   return (
     <div className={landingPageStack}>
       <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className={landingHeroGrid}>
           <div className={landingHeroCopy}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">프로그램</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">프로그램 구성</p>
             <h1 className={`${landingH1} text-slate-950`}>
               {programsPage.hero.lines.map((line, index) => (
                 <motion.span
@@ -65,87 +98,86 @@ export default function ProgramsLanding() {
                 </motion.span>
               ))}
             </h1>
-            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
+            <p
+              className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-lg`}
+            >
               {programsPage.hero.subtitle}
             </p>
+            <div className="flex flex-col gap-2.5 pt-2 sm:flex-row sm:pt-3">
+              <Link
+                href={programsPage.heroCtas.primary.href}
+                data-track="cta-contact"
+                data-track-label={programsPage.heroCtas.primary.trackLabel}
+                className={`${btnPrimary} min-h-12 !w-full sm:!w-auto`}
+              >
+                {programsPage.heroCtas.primary.label}
+              </Link>
+              <Link
+                href={programsPage.heroCtas.secondary.href}
+                data-track="cta-contact"
+                data-track-label={programsPage.heroCtas.secondary.trackLabel}
+                className={`${btnSecondary} min-h-12 !w-full sm:!w-auto`}
+              >
+                {programsPage.heroCtas.secondary.label}
+              </Link>
+            </div>
           </div>
           <div className={landingHeroVisual}>
-            <MotionPoster media={HOME_MEDIA.programSpomove} variant="cinematic" />
+            <MotionPoster media={heroMedia} variant="cinematic" />
           </div>
         </div>
       </section>
 
-      <Section className="space-y-5 sm:space-y-6">
-        <h2 className={landingSectionTitle}>{programsPage.catalogTitle}</h2>
-        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-          {programCatalogCards.map((program) => (
-            <Link
-              key={program.slug}
-              href={program.ctaHref}
-              data-track={program.ctaTrack}
-              data-track-label={program.ctaLabel}
-              className={`group flex min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-slate-950 shadow-lg shadow-slate-900/15 ${cardInteractive} ${focusRing}`}
+      <Section className="rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-4 sm:px-5 sm:py-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-700">
+          {programsPage.selectionGuide.title}
+        </p>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2 sm:gap-2.5">
+          {programsPage.selectionGuide.items.map((item) => (
+            <li
+              key={item.program}
+              className="rounded-xl border border-white/80 bg-white/90 px-3 py-2.5 text-sm leading-snug text-slate-700 [word-break:keep-all]"
             >
-              <MediaPanel
-                media={HOME_MEDIA[program.mediaKey]}
-                className="aspect-[16/10] rounded-none border-0"
-              />
-              <div className="flex flex-1 flex-col border-t border-white/10 p-4">
-                <h3 className="text-base font-semibold text-white">{program.title}</h3>
-                <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-300">{program.description}</p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {program.tracks.map((track) => (
-                    <span
-                      key={track}
-                      className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${trackBadgeClass[track]}`}
-                    >
-                      {programTrackLabels[track]}
-                    </span>
-                  ))}
-                </div>
-                <span
-                  className={`mt-auto inline-flex min-h-11 items-center pt-3 text-sm font-semibold text-white ${fineHover}group-hover:text-sky-200`}
-                >
-                  {program.ctaLabel} →
-                </span>
-              </div>
-            </Link>
+              <span className="text-slate-600">{item.need}</span>
+              <span className="font-semibold text-indigo-800"> → {item.program}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       </Section>
 
-      <Section className="overflow-hidden rounded-[1.75rem] bg-slate-950 text-white sm:rounded-[2rem]" delay={0.04}>
-        <h2 className="px-5 pt-6 text-xl font-bold sm:px-8 sm:pt-8 sm:text-2xl">{programsPage.tracksTitle}</h2>
-        <div className="mt-4 grid gap-px bg-white/10 sm:grid-cols-3">
-          {trackUsageRows.map((row) => (
-            <Link
-              key={row.href}
-              href={row.href}
-              data-track={inferTrackFromHref(row.href)}
-              data-track-label={`programs-track-${row.track}`}
-              className={`block bg-slate-950/90 p-5 transition ${fineHover}hover:bg-slate-900 ${focusRing}`}
-            >
-              <p className="text-sm font-semibold text-white">{row.track}</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{row.summary}</p>
-              <p className="mt-2 text-xs text-slate-500">{row.programs.join(' · ')}</p>
-            </Link>
-          ))}
-        </div>
-      </Section>
+      {programsPage.groups.map((group) => (
+        <Section key={group.title} className="space-y-4 sm:space-y-5">
+          <div>
+            <h2 className={landingSectionTitle}>{group.title}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
+              {group.lead}
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
+            {group.programs.map((program) => (
+              <ProgramCard key={program.slug} program={program} />
+            ))}
+          </div>
+        </Section>
+      ))}
 
       <Section
         className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-12 text-white sm:rounded-[2rem] sm:px-10 sm:py-14"
         delay={0.06}
       >
         <div className="relative mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{programsPage.finalCta.title}</h2>
-          <p className="mt-2 text-sm text-slate-300 sm:text-base">{programsPage.finalCta.description}</p>
-          <div className="mt-8 grid gap-2.5 sm:grid-cols-2 sm:gap-3">
+          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl [word-break:keep-all]">
+            {programsPage.finalCta.title}
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-200 [word-break:keep-all] sm:text-base">
+            {programsPage.finalCta.description}
+          </p>
+          <div className="mt-8 flex flex-col gap-2.5 sm:flex-row sm:justify-center sm:gap-3">
             <Link
               href={programsPage.finalCta.primary.href}
               data-track={inferTrackFromHref(programsPage.finalCta.primary.href)}
               data-track-label={programsPage.finalCta.primary.trackLabel}
-              className={`${btnSecondaryOnDark} !w-full`}
+              className={`${btnPrimaryOnDark} min-h-12 !w-full sm:!w-auto`}
             >
               {programsPage.finalCta.primary.label}
             </Link>
@@ -153,7 +185,7 @@ export default function ProgramsLanding() {
               href={programsPage.finalCta.secondary.href}
               data-track={inferTrackFromHref(programsPage.finalCta.secondary.href)}
               data-track-label={programsPage.finalCta.secondary.trackLabel}
-              className={`${btnSecondaryOnDark} !w-full border-slate-500`}
+              className={`${btnSecondaryOnDark} min-h-12 !w-full sm:!w-auto`}
             >
               {programsPage.finalCta.secondary.label}
             </Link>

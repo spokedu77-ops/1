@@ -177,7 +177,7 @@ export function AboutLanding() {
       {/* 5. Final CTA */}
       <Section className="relative overflow-hidden rounded-[1.75rem] border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-6 py-12 sm:rounded-[2rem] sm:px-10 sm:py-16">
         <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-          <MediaRenderer media={ctaMedia} photoTone="clear" className="h-full w-full" />
+          <MediaRenderer media={ctaMedia} intensity="photo" className="h-full w-full" />
         </div>
         <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">

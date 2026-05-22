@@ -187,7 +187,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
         delay={0.1}
       >
         <div className="pointer-events-none absolute inset-0 opacity-35" aria-hidden>
-          <MediaRenderer media={heroMedia} photoTone="clear" className="h-full w-full" />
+          <MediaRenderer media={heroMedia} intensity="photo" className="h-full w-full" />
         </div>
         <div className="pointer-events-none absolute inset-0 bg-white/80" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">

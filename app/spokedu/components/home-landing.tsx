@@ -13,7 +13,6 @@ import {
   landingH1,
   landingHeroSubtitle,
   landingDarkCtaButton,
-  landingHeroSupport,
   landingPageStack,
   landingSectionLead,
 } from '../lib/ui-classes';
@@ -72,9 +71,10 @@ function resolveFieldProof(card: (typeof homePage.fieldRecords.cards)[number]) {
   return {
     field,
     tagline: card.tagline,
+    venue: card.venue,
+    sessionLine: card.sessionLine,
     href: card.href,
     trackLabel: card.trackLabel,
-    caption: field.description,
   };
 }
 
@@ -88,8 +88,8 @@ export default function SpokeduHomeLanding() {
     <div className={landingPageStack}>
       {/* 1. Hero */}
       <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="flex flex-col gap-6 sm:gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12">
-          <div className="order-2 lg:order-1">
+        <div className="flex flex-col gap-7 sm:gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12">
+          <div className="order-1 lg:order-1">
             <h1 className={`${landingH1} text-slate-950`}>
               {homePage.hero.lines.map((line, index) => (
                 <motion.span
@@ -103,9 +103,22 @@ export default function SpokeduHomeLanding() {
                 </motion.span>
               ))}
             </h1>
-            <div className="mt-5 max-w-lg space-y-3 sm:mt-6">
-              <p className={landingHeroSubtitle}>{homePage.hero.subtitle}</p>
-              <p className={landingHeroSupport}>{homePage.hero.support}</p>
+            <div className="mt-5 space-y-4 sm:mt-6">
+              <p
+                className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-md`}
+              >
+                {homePage.hero.subtitle}
+              </p>
+              <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap" aria-label="스포키듀 운영 축">
+                {homePage.hero.supportChips.map((chip) => (
+                  <li
+                    key={chip}
+                    className="inline-flex rounded-full border border-slate-200/90 bg-white px-3.5 py-2 text-[13px] font-medium leading-snug text-slate-700 shadow-sm [word-break:keep-all] sm:text-sm"
+                  >
+                    {chip}
+                  </li>
+                ))}
+              </ul>
             </div>
             <div className="mt-6 sm:mt-7">
               <Link
@@ -118,9 +131,13 @@ export default function SpokeduHomeLanding() {
               </Link>
             </div>
           </div>
-          <div className="order-1 lg:order-2">
+          <div className="order-2 lg:order-2">
             <div className="relative">
-              <MotionPoster media={HOME_MEDIA.homeHero} variant="cinematic" />
+              <MotionPoster
+                media={HOME_MEDIA.homeHero}
+                variant="cinematic"
+                className="!h-[min(54vw,252px)] sm:!h-[min(48vw,300px)]"
+              />
               <div
                 className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-tr from-indigo-950/25 via-transparent to-sky-500/10"
                 aria-hidden
@@ -150,9 +167,9 @@ export default function SpokeduHomeLanding() {
                 href={card.href}
                 data-track={inferTrackFromHref(card.href)}
                 data-track-label={card.trackLabel}
-                className={`group flex min-h-[220px] flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/90 border-t-4 bg-white sm:min-h-[248px] ${gateAccent[index] ?? ''} ${cardInteractive} ${focusRing}`}
+                className={`group flex min-h-[232px] flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/90 border-t-4 bg-white sm:min-h-[252px] ${gateAccent[index] ?? ''} ${cardInteractive} ${focusRing}`}
               >
-                <div className="relative h-[5rem] shrink-0 overflow-hidden sm:h-[5.75rem]">
+                <div className="relative h-[5.25rem] shrink-0 overflow-hidden sm:h-[5.75rem]">
                   <MediaPanel
                     media={gateMedia[index]}
                     className="absolute inset-0 h-full w-full rounded-none border-0"
@@ -168,7 +185,9 @@ export default function SpokeduHomeLanding() {
                     <h3 className="mt-0.5 text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">
                       {card.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.description}</p>
+                    <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+                      {card.description}
+                    </p>
                   </div>
                   <span
                     className={`mt-3 text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-800`}
@@ -190,7 +209,7 @@ export default function SpokeduHomeLanding() {
           role="list"
           aria-label="현장 운영 증거"
         >
-          {fieldProofItems.map(({ field, tagline, href, trackLabel, caption }, index) => (
+          {fieldProofItems.map(({ field, tagline, venue, sessionLine, href, trackLabel }, index) => (
             <motion.div
               key={field.id}
               role="listitem"
@@ -203,7 +222,7 @@ export default function SpokeduHomeLanding() {
                 href={href}
                 data-track={inferTrackFromHref(href)}
                 data-track-label={trackLabel}
-                className={`group relative block min-h-[220px] overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm transition duration-300 sm:aspect-[4/5] sm:min-h-0 lg:min-h-[280px] lg:aspect-auto ${cardInteractive} ${focusRing}`}
+                className={`group relative block aspect-[5/4] max-h-[240px] overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm transition duration-300 sm:aspect-[4/5] sm:max-h-none sm:min-h-0 lg:min-h-[280px] lg:aspect-auto ${cardInteractive} ${focusRing}`}
               >
                 <MediaPanel
                   media={field.media}
@@ -218,11 +237,11 @@ export default function SpokeduHomeLanding() {
                   <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">
                     {tagline}
                   </span>
-                  <h3 className="mt-0.5 line-clamp-2 text-sm font-bold leading-snug text-slate-950">
-                    {field.title}
+                  <h3 className="mt-0.5 line-clamp-2 text-sm font-bold leading-snug text-slate-950 [word-break:keep-all]">
+                    {venue}
                   </h3>
-                  <p className="mt-1 line-clamp-1 text-xs leading-snug text-slate-600">
-                    {caption}
+                  <p className="mt-1 line-clamp-2 text-xs leading-snug text-slate-600 [word-break:keep-all]">
+                    {sessionLine}
                   </p>
                 </div>
               </Link>
@@ -271,7 +290,9 @@ export default function SpokeduHomeLanding() {
         <div className="pointer-events-none absolute inset-0 bg-slate-950/82" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">
           <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{homePage.finalCta.title}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:text-base">{homePage.finalCta.description}</p>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-slate-300 [word-break:keep-all] sm:text-base">
+            {homePage.finalCta.description}
+          </p>
           <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
             {homePage.finalCta.links.map((item) => (
               <Link
@@ -279,7 +300,7 @@ export default function SpokeduHomeLanding() {
                 href={item.href}
                 data-track={inferTrackFromHref(item.href)}
                 data-track-label={item.trackLabel}
-                className={`${landingDarkCtaButton} !w-full`}
+                className={`${landingDarkCtaButton} !w-full !min-h-12`}
               >
                 {item.label}
               </Link>

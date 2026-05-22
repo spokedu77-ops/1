@@ -75,7 +75,7 @@ export function MonthlyLanding() {
           <h2 className={landingSectionTitle}>이번 달 하이라이트</h2>
           <div className="overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 shadow-xl shadow-indigo-900/10 ring-1 ring-white/60">
             <div className="relative aspect-[21/9] max-h-[200px] sm:max-h-[240px]">
-              <MediaRenderer media={HOME_MEDIA.proofMonthly} photoTone="clear" className="absolute inset-0" />
+              <MediaRenderer media={HOME_MEDIA.proofMonthly} intensity="photo" className="absolute inset-0" />
               <div className="pointer-events-none absolute inset-0 bg-white/35" />
               <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-700">{featured.month}</p>
@@ -163,7 +163,7 @@ export function MonthlyLanding() {
         delay={0.12}
       >
         <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-          <MediaRenderer media={ctaMedia} photoTone="clear" className="h-full w-full" />
+          <MediaRenderer media={ctaMedia} intensity="photo" className="h-full w-full" />
         </div>
         <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative max-w-xl">

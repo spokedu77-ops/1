@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { hasBrokenText } from '../../lib/clean';
 import { useSession } from '../../hooks/useSession';
 import { SESSION_CUES } from '../../lib/data';
 import { isTrialExpired } from '../../lib/subscription';
@@ -42,12 +43,6 @@ const MODE_LABELS: Record<string, string> = {
   'IC-05': '플랭커',
   'RC-05': '플로우',
 };
-
-const BROKEN_TEXT_PATTERN = /[�]|[?][가-힣]|諛|嫄|媛|吏|湲|源|醫|쨌/;
-
-function hasBrokenText(value: string | undefined) {
-  return !value || BROKEN_TEXT_PATTERN.test(value);
-}
 
 function cleanDrillName(id: string, name: string, engineMode?: string) {
   if (hasBrokenText(name)) return MODE_LABELS[engineMode ?? ''] ?? MODE_LABELS[id] ?? 'SPOMOVE';

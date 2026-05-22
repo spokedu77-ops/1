@@ -328,9 +328,9 @@ function ReportContent() {
                     { label: '발달 포인트', value: detail?.developmentFocus || program.tags.join(' · ') || program.category },
                     { label: '수업 기록', value: selectedRecord ? `출석 ${selectedRecord.present}명 · 관찰 ${selectedRecord.focusCount}명` : `${program.duration}분 · ${program.space}` },
                   ].map(({ label, value }) => (
-                    <div key={label} className="rounded-[12px] p-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-[10px] font-black uppercase tracking-[0.08em]" style={{ color: 'rgba(255,255,255,0.35)' }}>{label}</p>
-                      <p className="mt-1 line-clamp-3 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{value || '-'}</p>
+                    <div key={label} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                      <p className="text-[10px] font-black uppercase tracking-[0.08em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+                      <p className="mt-1 line-clamp-3 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t)' }}>{value || '-'}</p>
                     </div>
                   ))}
                 </div>

@@ -4,14 +4,11 @@ import {
   Brain,
   ChevronRight,
   Clock3,
-  Eye,
-  Focus,
   Gauge,
   Lock,
   Maximize,
   MonitorPlay,
   Play,
-  RotateCcw,
   Shapes,
   SlidersHorizontal,
   Smartphone,
@@ -24,6 +21,7 @@ import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
+import { cleanText } from '../lib/clean';
 import { formatReactionTime } from '../lib/utils';
 import { useIsPro, useMasterStore, useStats } from '../store';
 import type { Drill, Program } from '../types';
@@ -173,7 +171,6 @@ const INTENT_META: Record<
 };
 
 const MODE_ORDER = ['reactTrain', 'basic', 'simon', 'flanker', 'gonogo', 'taskswitch', 'spatial', 'stroop', 'flow'];
-const BROKEN_TEXT_PATTERN = /[�]|[?][가-힣]|諛|嫄|媛|吏|湲|源|醫|쨌/;
 
 function canonicalMode(drill: Drill) {
   const raw = drill.engine?.mode || drill.id;
@@ -182,11 +179,6 @@ function canonicalMode(drill: Drill) {
 
 function modePreset(drill: Drill) {
   return MODE_PRESETS[canonicalMode(drill)] ?? MODE_PRESETS.reactTrain;
-}
-
-function cleanText(value: string | undefined, fallback: string) {
-  if (!value || BROKEN_TEXT_PATTERN.test(value)) return fallback;
-  return value;
 }
 
 function drillName(drill: Drill) {
@@ -541,24 +533,30 @@ export default function SpomoveHubView() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-200">Projection QA</p>
-              <h2 className="mt-2 text-lg font-black">실행 화면은 어둡게 유지</h2>
-              <p className="mt-3 text-sm font-semibold leading-6 text-slate-300">
-                허브는 밝은 구독 UX로 정리하고, 실제 실행 화면은 프로젝터와 TV에서 자극이 잘 보이도록 고대비 화면을 유지합니다.
-              </p>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl bg-white/8 p-3">
-                  <Eye className="mx-auto h-4 w-4 text-indigo-200" />
-                  <p className="mt-2 text-[11px] font-bold text-slate-300">시인성</p>
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-500">수업 흐름</p>
+              <h2 className="mt-2 text-lg font-black text-slate-950">언제 쓰면 되나요?</h2>
+              <div className="mt-4 space-y-3">
+                <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-white" style={{ background: '#635bff' }}>1</span>
+                  <div>
+                    <strong className="text-sm font-black text-slate-950">수업 도입 3분</strong>
+                    <p className="mt-0.5 text-xs leading-5 text-slate-500">시지각 반응·반응 인지로 아이들의 시선을 한 번에 모으세요.</p>
+                  </div>
                 </div>
-                <div className="rounded-xl bg-white/8 p-3">
-                  <Focus className="mx-auto h-4 w-4 text-indigo-200" />
-                  <p className="mt-2 text-[11px] font-bold text-slate-300">집중</p>
+                <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-white" style={{ background: '#10b981' }}>2</span>
+                  <div>
+                    <strong className="text-sm font-black text-slate-950">수업 중 전환</strong>
+                    <p className="mt-0.5 text-xs leading-5 text-slate-500">플랭커·Go/No-Go로 집중이 흐트러질 때 빠르게 리셋합니다.</p>
+                  </div>
                 </div>
-                <div className="rounded-xl bg-white/8 p-3">
-                  <RotateCcw className="mx-auto h-4 w-4 text-indigo-200" />
-                  <p className="mt-2 text-[11px] font-bold text-slate-300">반복</p>
+                <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-white" style={{ background: '#ec4899' }}>3</span>
+                  <div>
+                    <strong className="text-sm font-black text-slate-950">마무리 몰입</strong>
+                    <p className="mt-0.5 text-xs leading-5 text-slate-500">플로우로 수업 마지막 에너지를 큰 화면 활동으로 마무리합니다.</p>
+                  </div>
                 </div>
               </div>
             </section>

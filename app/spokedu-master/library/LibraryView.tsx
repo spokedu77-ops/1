@@ -211,13 +211,15 @@ function ProgramCard({
     <article className="group flex min-h-[390px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
       <button type="button" onClick={onPreview} className="relative h-44 overflow-hidden text-left">
         {heroImage ? (
-          <Image src={heroImage} alt="" fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" unoptimized />
+          <>
+            <Image src={heroImage} alt="" fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" unoptimized />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
+          </>
         ) : (
-          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-indigo-500/28 via-slate-900 to-emerald-500/18">
+          <div className="grid h-full w-full place-items-center" style={{ background: 'linear-gradient(135deg, var(--spm-s3) 0%, var(--spm-s4) 100%)' }}>
             <CategoryIcon category={program.category} size={42} />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
           {program.isHot ? <span className="rounded-full bg-rose-400 px-2.5 py-1 text-[11px] font-black text-white">HOT</span> : null}
           {program.isNew ? <span className="rounded-full bg-emerald-400 px-2.5 py-1 text-[11px] font-black text-slate-950">NEW</span> : null}
@@ -297,13 +299,15 @@ function FeaturedProgram({ program, drill, onPreview }: { program: Program; dril
             </button>
           </div>
         </div>
-        <button type="button" onClick={onPreview} className="relative min-h-[260px] overflow-hidden">
+        <button type="button" onClick={onPreview} className="relative min-h-[260px] overflow-hidden" style={{ background: 'var(--spm-s2)' }}>
           {heroImage ? (
-            <Image src={heroImage} alt="" fill sizes="(min-width: 1024px) 420px, 100vw" className="object-cover" priority unoptimized />
+            <>
+              <Image src={heroImage} alt="" fill sizes="(min-width: 1024px) 420px, 100vw" className="object-cover" priority unoptimized />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 to-transparent" />
+            </>
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-indigo-500/35 via-slate-900 to-emerald-400/20" />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, var(--spm-s3) 0%, var(--spm-s4) 100%)' }} />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 to-transparent" />
           <div className="absolute bottom-5 left-5 right-5 rounded-[18px] border border-white/25 bg-white/88 p-4 text-left shadow-[0_18px_46px_rgba(15,23,42,0.2)] backdrop-blur-xl">
             <p className="text-xs font-bold text-slate-500">패키지 구성</p>
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">

@@ -196,7 +196,7 @@ export function CaseDetailLanding({ item }: CaseDetailLandingProps) {
         delay={0.12}
       >
         <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-          <MediaRenderer media={heroMedia} photoTone="clear" className="h-full w-full" />
+          <MediaRenderer media={heroMedia} intensity="photo" className="h-full w-full" />
         </div>
         <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">

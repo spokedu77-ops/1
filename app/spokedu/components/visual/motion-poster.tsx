@@ -6,6 +6,7 @@ import { VisualFrame } from './visual-frame';
 type MotionPosterProps = {
   media: HomeMediaItem;
   variant?: 'hero' | 'compact' | 'cinematic';
+  className?: string;
 };
 
 const variantClass: Record<NonNullable<MotionPosterProps['variant']>, string> = {
@@ -15,12 +16,12 @@ const variantClass: Record<NonNullable<MotionPosterProps['variant']>, string> = 
   compact: 'relative h-[min(48vw,220px)] w-full overflow-hidden rounded-2xl border border-slate-200/90 shadow-lg shadow-indigo-900/15 sm:h-[240px]',
 };
 
-export function MotionPoster({ media, variant = 'hero' }: MotionPosterProps) {
+export function MotionPoster({ media, variant = 'hero', className }: MotionPosterProps) {
   const cinematic = variant === 'cinematic';
   return (
     <VisualFrame
       media={media}
-      className={variantClass[variant]}
+      className={[variantClass[variant], className].filter(Boolean).join(' ')}
       float={!cinematic}
       heroZoom={!cinematic}
       showLabel={!cinematic}

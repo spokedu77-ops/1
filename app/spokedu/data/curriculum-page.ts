@@ -3,9 +3,9 @@ import { SPOKEDU_BASE_PATH } from './site';
 
 export const curriculumPage = {
   hero: {
-    lines: ['선생님들의 선생님,', '체육수업을 커리큘럼과', '콘텐츠로 만듭니다'] as const,
+    lines: ['현장 수업을', '커리큘럼 콘텐츠로', '확장합니다'] as const,
     subtitle:
-      '현장 수업을 수업안·운영 매뉴얼·교구 콘텐츠·강사 교육·라이선싱으로 패키지화해, 기관·센터·파트너가 운영할 수 있게 돕습니다.',
+      '수업안, 운영 매뉴얼, 교구 활용 콘텐츠, 강사교육, 라이선싱까지 현장에서 검증한 수업 경험을 활용 가능한 형태로 정리합니다.',
     mediaKey: 'trackCurriculum' as HomeMediaKey,
   },
   heroCtas: {
@@ -14,88 +14,94 @@ export const curriculumPage = {
       href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
       trackLabel: 'curriculum-cta-inquiry',
     },
-    secondary: {
-      label: '콘텐츠 제휴 문의하기',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum&intent=partnership`,
-      trackLabel: 'curriculum-cta-partnership',
-    },
   },
   contentProducts: {
-    title: '제공 가능한 콘텐츠',
+    title: '현장 수업에서 확장하는 5가지 콘텐츠',
+    lead: '자료 나열이 아니라, 강사·기관·파트너가 바로 운영에 쓸 수 있는 형태로 정리합니다.',
     items: [
       {
         title: '수업안',
         description:
-          '활동 목표·진행 순서·변형 방법을 단계별로 정리해, 강사가 수업 시작 전에 흐름을 잡을 수 있게 합니다.',
+          '강사가 바로 수업에 적용할 수 있도록 활동 목표, 진행 순서, 변형 방법을 정리합니다.',
         mediaKey: 'trackCurriculum' as HomeMediaKey,
       },
       {
         title: '운영 매뉴얼',
         description:
-          '세팅·안전·인원·마무리 체크리스트로, 담당자와 강사가 같은 기준으로 운영할 수 있게 합니다.',
+          '기관과 강사가 같은 기준으로 운영할 수 있도록 준비물, 동선, 안전, 진행 기준을 정리합니다.',
         mediaKey: 'proofLab' as HomeMediaKey,
       },
       {
         title: '교구 활용 콘텐츠',
         description:
-          '교구 배치도와 활동 카드로, 좁은 공간·혼합 연령 수업도 현장에서 바로 조정할 수 있습니다.',
+          '하나의 교구를 여러 연령과 목적에 맞게 확장할 수 있도록 활동 예시와 응용법을 제공합니다.',
         mediaKey: 'programCurriculum' as HomeMediaKey,
       },
       {
         title: '강사 교육',
         description:
-          '시연·실습·피드백으로 수업 의도와 코칭 포인트를 팀 전체가 같은 방식으로 맞춥니다.',
+          '프로그램의 의도, 진행 방식, 현장 대응 기준을 이해하고 수업에 적용할 수 있도록 교육합니다.',
         mediaKey: 'proofMonthly' as HomeMediaKey,
       },
       {
         title: '프로그램 라이선싱',
         description:
-          '프로그램 사용 권한·브랜드 가이드·정기 업데이트를 묶어, 센터·지역 단위 확장을 지원합니다.',
+          '기관이나 파트너가 스포키듀 프로그램을 일정 기준에 맞춰 운영할 수 있도록 콘텐츠와 운영 구조를 제공합니다.',
         mediaKey: 'trackDispatch' as HomeMediaKey,
       },
     ],
   },
   packages: {
-    title: '상품화 가능한 패키지',
+    title: '활용 목적별 구성',
+    lead: '가격 등급이 아니라, 도입 범위와 운영 목적에 맞춰 콘텐츠 조합을 제안합니다.',
     items: [
       {
-        title: '스타터',
-        description: '문서 중심 — 수업안·매뉴얼만으로 첫 도입·시범 운영을 시작할 때.',
+        title: '문서 중심 패키지',
+        description:
+          '수업안과 활동 자료를 중심으로 내부 수업 준비에 활용합니다.',
       },
       {
-        title: '현장형',
-        description: '현장 실행 — 교구 콘텐츠·강사 교육까지 포함해 운영 품질을 맞출 때.',
+        title: '현장 실행 패키지',
+        description:
+          '수업안, 운영 매뉴얼, 교구 활용법을 함께 제공해 실제 수업 운영까지 연결합니다.',
       },
       {
-        title: '파트너형',
-        description: '확장 운영 — 라이선싱·업데이트·파트너 지원으로 브랜드를 키울 때.',
+        title: '확장 운영 패키지',
+        description:
+          '강사교육과 라이선싱 구조를 포함해 기관·파트너 단위 운영으로 확장합니다.',
       },
     ],
   },
   productionFlow: {
-    title: '제작 흐름',
+    title: '현장 수업에서 시작하는 제작 흐름',
     steps: [
-      { label: '도입 목적', detail: '기관·센터가 달성하려는 목표를 정리합니다.' },
-      { label: '대상·환경', detail: '연령·공간·인원 조건을 반영합니다.' },
-      { label: '범위 설계', detail: '수업안·매뉴얼·교육 범위를 확정합니다.' },
-      { label: '자료·교육', detail: '콘텐츠 제작과 강사 교육을 진행합니다.' },
-      { label: '파일럿', detail: '현장 시범 운영으로 흐름을 검증합니다.' },
-      { label: '업데이트', detail: '운영 피드백을 반영해 개선합니다.' },
+      {
+        label: '현장 수업 분석',
+        detail: '실제 수업에서 아이들의 반응, 난이도, 운영 변수를 확인합니다.',
+      },
+      {
+        label: '활동 구조화',
+        detail: '수업 목표, 진행 순서, 변형 방법, 안전 기준을 정리합니다.',
+      },
+      {
+        label: '콘텐츠 문서화',
+        detail: '강사가 이해하고 바로 적용할 수 있도록 수업안과 매뉴얼 형태로 정리합니다.',
+      },
+      {
+        label: '교육·운영 적용',
+        detail: '강사 교육, 기관 운영, 파트너 적용 과정에서 피드백을 반영합니다.',
+      },
     ] as const,
   },
   finalCta: {
-    title: '운영 가능한 콘텐츠를 도입하세요',
-    description: '필요 범위와 활용 목적을 알려주시면 패키지 구성과 도입 일정을 맞춰 제안드립니다.',
+    title: '스포키듀의 수업 콘텐츠를 함께 활용하고 싶다면',
+    description:
+      '수업안, 운영 매뉴얼, 강사교육, 라이선싱 등 필요한 범위에 맞춰 커리큘럼 콘텐츠 활용 방식을 안내드립니다.',
     mediaKey: 'programCurriculum' as HomeMediaKey,
     primary: {
       label: '커리큘럼 콘텐츠 문의하기',
       href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
       trackLabel: 'curriculum-final-inquiry',
-    },
-    secondary: {
-      label: '콘텐츠 제휴 문의하기',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum&intent=partnership`,
-      trackLabel: 'curriculum-final-partnership',
     },
   },
 } as const;

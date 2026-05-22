@@ -23,53 +23,9 @@ import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 
 import { CategoryIcon } from '../../components/ui/ProgramThumb';
+import { cleanList, cleanText, DRILL_FALLBACK, hasBrokenText, PROGRAM_FALLBACK } from '../../lib/clean';
 import { useIsPro, useMasterStore } from '../../store';
 import type { Drill, Program } from '../../types';
-
-const BROKEN_TEXT_PATTERN = /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥|獄|筌|揶|癰|疫|椰|\?/;
-
-const PROGRAM_FALLBACK: Record<string, Partial<Program>> = {
-  'funstick-fencing': {
-    title: '펀스틱 펜싱 Funstick Fencing',
-    category: '민첩·반응',
-    grade: '초등 3학년 이상',
-    space: '실내 체육관 · 넓은 활동 공간',
-    description: '부드러운 펀스틱과 풍선 목표물을 활용해 거리 판단, 타이밍, 균형 조절을 경험하는 대체 펜싱 수업입니다.',
-    equipment: ['펀스틱 2개', '풍선 목표물 2개', '접시콘 12~15개'],
-    tags: ['펜싱', '민첩성', '거리 판단', 'SPOMOVE 연계'],
-  },
-  'figure-8-agility': {
-    title: '8자 드릴 민첩성 트레이닝',
-    category: '민첩·반응',
-    grade: '초등 3~6학년',
-    space: '좁은 실내 공간',
-    description: '마커콘을 8자 패턴으로 통과하며 방향 전환, 가속, 재출발 리듬을 익히는 SPOMOVE 연계 수업입니다.',
-    equipment: ['마커콘 4개', '태블릿 또는 노트북'],
-    tags: ['민첩성', '방향 전환', '좁은 공간', 'SPOMOVE'],
-  },
-  'team-relay-challenge': {
-    title: '팀 릴레이 챌린지',
-    category: '협동',
-    grade: '전 학년',
-    space: '넓은 공간',
-    description: '팀별 릴레이로 출발 반응과 협동성을 함께 끌어올리는 수업입니다.',
-    equipment: ['바톤', '마커콘'],
-    tags: ['협동', '출발 반응', '팀 빌딩'],
-  },
-};
-
-const DRILL_FALLBACK: Record<string, string> = {
-  'SR-05': '스피드 리액션',
-  'SR-06': '방향 전환 챌린지',
-  'RS-05': '팀 콜 사인',
-  'IC-05': '스텝 밸런스',
-  'RC-05': '리듬 체인지',
-};
-
-function hasBrokenText(value: string | undefined) {
-  if (!value) return false;
-  return value.includes(String.fromCharCode(0xfffd)) || BROKEN_TEXT_PATTERN.test(value);
-}
 
 function fallbackProgramValue<K extends keyof Program>(program: Program, key: K, fallback: Program[K]) {
   const override = PROGRAM_FALLBACK[program.id]?.[key] as Program[K] | undefined;
@@ -83,16 +39,6 @@ function fallbackProgramValue<K extends keyof Program>(program: Program, key: K,
     return cleaned as Program[K];
   }
   return value ?? override ?? fallback;
-}
-
-function cleanText(value: string | undefined, fallback: string) {
-  if (!value || hasBrokenText(value)) return fallback;
-  return value;
-}
-
-function cleanList(items: string[] | undefined, fallback: string[]) {
-  const cleaned = (items ?? []).map((item) => item.trim()).filter((item) => item && !hasBrokenText(item));
-  return cleaned.length ? cleaned : fallback;
 }
 
 function cleanDrillName(drill: Drill | undefined, fallback = 'SPOMOVE 드릴') {
@@ -287,55 +233,78 @@ export default function LibraryDetailView({ id }: { id: string }) {
       </header>
 
       <section className="relative overflow-hidden">
-        <div className="relative min-h-[520px]">
-          {videoEmbedUrl ? (
-            <iframe
-              src={videoEmbedUrl}
-              title={`${title} 영상`}
-              className="h-full w-full"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-            />
-          ) : directVideoUrl ? (
-            <video src={directVideoUrl} className="h-full w-full object-cover" controls autoPlay muted playsInline />
-          ) : heroImage ? (
-            <Image src={heroImage} alt="" fill sizes="100vw" className="object-cover" priority unoptimized />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/32 via-slate-950 to-emerald-400/20" />
-          )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/72 via-slate-950/22 to-transparent" />
-          {!heroImage && !videoEmbedUrl && !directVideoUrl ? (
-            <span className="pointer-events-none absolute left-1/2 top-1/2 opacity-[0.08]" style={{ transform: 'translate(-50%, -50%) rotate(-8deg)' }} aria-hidden>
-              <CategoryIcon category={category} size={360} color="#fff" strokeWidth={0.45} />
-            </span>
-          ) : null}
-          {locked ? (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60">
-              <span className="inline-flex h-16 w-16 items-center justify-center rounded-3xl border border-amber-300/30 bg-amber-300/14 text-amber-200">
-                <Lock className="h-7 w-7" />
-              </span>
-              <p className="mt-3 text-sm font-black text-amber-100">Pro 전용 수업 패키지</p>
+        {videoEmbedUrl ? (
+          <>
+            <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
+              <iframe
+                src={videoEmbedUrl}
+                title={`${title} 영상`}
+                className="absolute inset-0 h-full w-full border-0"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+              />
             </div>
-          ) : null}
-
-          <div className="absolute inset-x-0 bottom-0 px-4 pb-8 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-7xl">
-              <div className="mb-4 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">{category}</span>
-                {program.isPro ? <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">PRO</span> : null}
-                {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-400 px-3 py-1 text-xs font-black text-white">SPOMOVE 연동</span> : null}
-                {usageCount > 0 ? <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-slate-950">{usageCount}회 사용</span> : null}
+            <div className="bg-slate-950 px-4 pb-8 pt-6 sm:px-6 lg:px-8">
+              <div className="mx-auto max-w-7xl">
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">{category}</span>
+                  {program.isPro ? <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">PRO</span> : null}
+                  {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-400 px-3 py-1 text-xs font-black text-white">SPOMOVE 연동</span> : null}
+                  {usageCount > 0 ? <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-slate-950">{usageCount}회 사용</span> : null}
+                  {locked ? <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">PRO 전용</span> : null}
+                </div>
+                <h1 className="max-w-4xl text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">{title}</h1>
+                <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-white/70">{description}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80"><Users className="h-3.5 w-3.5" />{cleanText(detail?.recommendedAge, grade)}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80"><Clock3 className="h-3.5 w-3.5" />{program.duration}분</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80"><MapPin className="h-3.5 w-3.5" />{space}</span>
+                </div>
               </div>
-              <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">{title}</h1>
-              <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-white/78 sm:text-base">{description}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Users className="h-3.5 w-3.5" />{cleanText(detail?.recommendedAge, grade)}</span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Clock3 className="h-3.5 w-3.5" />{program.duration}분</span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><MapPin className="h-3.5 w-3.5" />{space}</span>
+            </div>
+          </>
+        ) : (
+          <div className="relative min-h-[480px]">
+            {directVideoUrl ? (
+              <video src={directVideoUrl} className="h-full w-full object-cover" controls autoPlay muted playsInline />
+            ) : heroImage ? (
+              <Image src={heroImage} alt="" fill sizes="100vw" className="object-cover" priority unoptimized />
+            ) : (
+              <div className="absolute inset-0 bg-[linear-gradient(135deg,#1e1b4b_0%,#0f172a_45%,#064e3b_100%)]" />
+            )}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/20 to-transparent" />
+            {!heroImage && !directVideoUrl ? (
+              <span className="pointer-events-none absolute left-1/2 top-1/2 opacity-[0.12]" style={{ transform: 'translate(-50%, -50%) rotate(-8deg)' }} aria-hidden>
+                <CategoryIcon category={category} size={360} color="#fff" strokeWidth={0.45} />
+              </span>
+            ) : null}
+            {locked ? (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60">
+                <span className="inline-flex h-16 w-16 items-center justify-center rounded-3xl border border-amber-300/30 bg-amber-300/14 text-amber-200">
+                  <Lock className="h-7 w-7" />
+                </span>
+                <p className="mt-3 text-sm font-black text-amber-100">Pro 전용 수업 패키지</p>
+              </div>
+            ) : null}
+            <div className="absolute inset-x-0 bottom-0 px-4 pb-8 sm:px-6 lg:px-8">
+              <div className="mx-auto max-w-7xl">
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">{category}</span>
+                  {program.isPro ? <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">PRO</span> : null}
+                  {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-400 px-3 py-1 text-xs font-black text-white">SPOMOVE 연동</span> : null}
+                  {usageCount > 0 ? <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-slate-950">{usageCount}회 사용</span> : null}
+                </div>
+                <h1 className="max-w-4xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">{title}</h1>
+                <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-white/78 sm:text-base">{description}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Users className="h-3.5 w-3.5" />{cleanText(detail?.recommendedAge, grade)}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><Clock3 className="h-3.5 w-3.5" />{program.duration}분</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-black/28 px-3 py-1.5 text-xs font-bold text-white/80"><MapPin className="h-3.5 w-3.5" />{space}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-4 pt-6 sm:px-6 lg:px-8">
@@ -408,7 +377,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 return (
                   <div key={item} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
                     <span className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm font-black text-slate-950">{item}</strong>
+                      <strong className="block text-sm font-black leading-5 text-slate-950">{item}</strong>
                       <span className="mt-1 block text-xs font-semibold text-slate-500">{price > 0 ? `${price.toLocaleString('ko-KR')}원` : '보유 장비'}</span>
                     </span>
                     {price > 0 ? (
@@ -428,7 +397,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         </section>
 
         <DetailSection title="수업 목표" icon={FileText}>
-            <p className="text-sm leading-7 text-slate-600">{objective}</p>
+          <p className="text-sm leading-7 text-slate-600">{objective}</p>
         </DetailSection>
 
         <DetailSection title={`진행 단계 · ${ruleItems.length}단계`} icon={Play}>
