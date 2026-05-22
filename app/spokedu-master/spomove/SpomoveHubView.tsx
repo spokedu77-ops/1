@@ -230,6 +230,41 @@ function DrillGlyph({ drill, className = 'h-11 w-11 text-xl' }: { drill: Drill; 
   return <span className={`inline-flex shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ${className}`}>{drillIcon(drill) || <Zap className="h-5 w-5" />}</span>;
 }
 
+function ScreenActivityPreview({ drill }: { drill?: Drill }) {
+  const label = drill ? drillName(drill) : '시지각 반응';
+  const tiles = [
+    { label: 'RED', tone: '#ef4444' },
+    { label: 'BLUE', tone: '#3b82f6' },
+    { label: 'GO', tone: '#22c55e' },
+    { label: 'STOP', tone: '#f59e0b' },
+  ];
+
+  return (
+    <div className="relative hidden min-h-full overflow-hidden bg-slate-950 lg:block">
+      <div className="absolute inset-8 rounded-[28px] border border-white/10 bg-slate-900" />
+      <div className="absolute inset-8 flex items-center justify-center p-8">
+        <div className="relative aspect-video w-full max-w-[360px] overflow-hidden rounded-[24px] border border-white/12 bg-black shadow-2xl">
+          <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-white/10 bg-white/8 px-4 py-3">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-white/46">SPOMOVE LIVE</span>
+            <span className="rounded-full bg-emerald-400 px-2 py-1 text-[10px] font-black text-slate-950">READY</span>
+          </div>
+          <div className="grid h-full grid-cols-2 gap-3 p-6 pt-16">
+            {tiles.map((tile) => (
+              <span key={tile.label} className="flex items-center justify-center rounded-2xl text-sm font-black text-white" style={{ background: tile.tone }}>
+                {tile.label}
+              </span>
+            ))}
+          </div>
+          <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/10 bg-slate-950/82 p-4 backdrop-blur">
+            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-indigo-200/70">오늘 실행 모드</p>
+            <p className="mt-1 text-xl font-black text-white">{label}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LaunchModeCard({ href, icon: Icon, title, caption, tone }: { href: string; icon: LucideIcon; title: string; caption: string; tone: string }) {
   return (
     <Link href={href} className="group flex min-h-[116px] flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
@@ -392,27 +427,41 @@ export default function SpomoveHubView() {
     [drills],
   );
   const recent = sessions.slice(0, 3);
+  const linkedProgramCount = useMemo(() => programs.filter((program) => program.lessonDetail?.relatedSpomoveIds?.length).length, [programs]);
+  const hubStats = [
+    { label: '실행 모드', value: `${drills.length}개` },
+    { label: '수업 연동', value: `${linkedProgramCount}개` },
+    { label: '도입 루틴', value: `${intentDrills.ready.length}개` },
+  ];
 
   return (
     <main className="h-full overflow-y-auto bg-[#f5f7fb]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
         <header>
           <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
-            <div className="grid min-h-[360px] lg:grid-cols-[1fr_440px]">
+            <div className="grid min-h-[390px] lg:grid-cols-[1fr_460px]">
               <div className="flex flex-col justify-between p-6 sm:p-8 lg:p-10">
                 <div>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-indigo-600">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black text-indigo-600">
                     <Sparkles className="h-3.5 w-3.5" />
-                    SPOMOVE Screen Engine
+                    큰 화면 반응 수업
                   </span>
                   <h1 className="mt-6 max-w-2xl text-4xl font-black leading-tight text-slate-950 sm:text-5xl">
-                    큰 화면을 켜면,
+                    체육관 TV가
                     <br />
-                    수업 분위기가 바뀝니다.
+                    바로 수업 도구가 됩니다.
                   </h1>
                   <p className="mt-5 max-w-xl text-sm font-semibold leading-7 text-slate-600">
-                    색, 위치, 규칙 자극을 TV, 태블릿, 빔 화면에 띄워 아이들이 바로 움직이게 하는 SPOKEDU의 실행 엔진입니다.
+                    색, 위치, 규칙 신호를 빔과 TV에 띄우고 아이들이 보고, 고르고, 움직입니다. 준비 설명보다 실행이 먼저인 체육교육 화면 활동입니다.
                   </p>
+                  <div className="mt-6 grid max-w-xl grid-cols-3 gap-2">
+                    {hubStats.map((item) => (
+                      <div key={item.label} className="rounded-2xl bg-slate-50 px-4 py-3">
+                        <p className="text-[11px] font-black text-slate-400">{item.label}</p>
+                        <p className="mt-1 text-xl font-black text-slate-950">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -427,18 +476,7 @@ export default function SpomoveHubView() {
                 </div>
               </div>
 
-              <div className="relative hidden min-h-full overflow-hidden bg-slate-950 lg:block">
-                <div className="absolute inset-8 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.38),transparent_34%),linear-gradient(135deg,#0f172a,#111827)]" />
-                <div className="absolute inset-8 flex items-center justify-center">
-                  <div className="relative aspect-video w-[82%] rounded-[24px] border border-white/12 bg-white shadow-2xl">
-                    <span className="absolute left-[18%] top-[20%] h-5 w-5 rounded-full bg-red-500 shadow-[0_0_0_8px_rgba(239,68,68,0.12)]" />
-                    <span className="absolute right-[18%] top-[20%] h-5 w-5 rounded-full bg-blue-500 shadow-[0_0_0_8px_rgba(59,130,246,0.12)]" />
-                    <span className="absolute bottom-[22%] left-[22%] h-14 w-14 rounded-full bg-amber-400" />
-                    <span className="absolute bottom-[24%] right-[22%] h-14 w-14 rounded-full bg-emerald-400" />
-                    <span className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-600 shadow-[0_18px_50px_rgba(79,70,229,0.35)]" />
-                  </div>
-                </div>
-              </div>
+              <ScreenActivityPreview drill={defaultDrill} />
             </div>
           </section>
         </header>
@@ -446,7 +484,7 @@ export default function SpomoveHubView() {
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-500">Launch Modes</p>
+              <p className="text-xs font-black tracking-[0.14em] text-indigo-500">실행 환경</p>
               <h2 className="mt-1 text-xl font-black text-slate-950">수업 환경에 맞게 실행</h2>
             </div>
           </div>
@@ -460,7 +498,7 @@ export default function SpomoveHubView() {
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-500">Featured</p>
+              <p className="text-xs font-black tracking-[0.14em] text-indigo-500">대표 활동</p>
               <h2 className="mt-1 text-xl font-black text-slate-950">바로 실행하는 대표 모드</h2>
             </div>
           </div>
@@ -490,7 +528,7 @@ export default function SpomoveHubView() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-500">Training Catalog</p>
+                <p className="text-xs font-black tracking-[0.14em] text-indigo-500">전체 활동</p>
                 <h2 className="mt-1 text-xl font-black text-slate-950">SPOMOVE 모드 전체</h2>
               </div>
               <span className="text-sm font-bold text-slate-500">{drills.length}개</span>
@@ -506,7 +544,7 @@ export default function SpomoveHubView() {
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Recent</p>
+                  <p className="text-xs font-black tracking-[0.14em] text-slate-400">최근 실행</p>
                   <h2 className="mt-1 text-lg font-black text-slate-950">최근 실행</h2>
                 </div>
                 <Clock3 className="h-5 w-5 text-slate-400" />

@@ -48,8 +48,8 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
     alt: SPOKEDU_IMAGES.home.hero.alt,
   },
   about: {
-    url: SPOKEDU_IMAGES.home.labScene.src,
-    alt: SPOKEDU_IMAGES.home.labScene.alt,
+    url: SPOKEDU_IMAGES.programs.spomove.src,
+    alt: SPOKEDU_IMAGES.programs.spomove.alt,
   },
   private: {
     url: SPOKEDU_IMAGES.private.oneToOne.src,
@@ -91,14 +91,14 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
 
 export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
   home: {
-    title: 'SPOKEDU 스포키듀 | 아동·청소년 체육교육 브랜드',
+    title: 'SPOKEDU 스포키듀 | 현장 체육교육 운영 브랜드',
     description:
-      '움직임을 교육으로 설계하는 스포키듀. 어린이·청소년 개인·소그룹 수업, 기관 체육교육, SPOMOVE·PAPS 프로그램과 체육 커리큘럼을 한 브랜드로 연결합니다.',
+      '현장 수업에서 시작해 프로그램·커리큘럼 콘텐츠로 확장하는 아동·청소년 체육교육 운영 브랜드. 개인·기관·콘텐츠 3축 운영.',
   },
   about: {
-    title: 'SPOKEDU 소개 | 아동·청소년 체육교육 브랜드',
+    title: '스포키듀 소개 | 현장 체육교육 운영 브랜드',
     description:
-      '아이의 수업, 기관의 프로그램, 선생님의 커리큘럼을 연결하는 스포키듀. LAB 운영과 현장기록으로 검증한 체육교육 브랜드입니다.',
+      '현장 수업에서 시작해 프로그램·커리큘럼 콘텐츠로 확장하는 아동·청소년 체육교육 운영 브랜드. 개인·기관·콘텐츠 3축 운영.',
   },
   private: {
     title: '개인·소그룹 체육수업 | SPOKEDU',
@@ -131,14 +131,14 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '기관의 공간·대상·운영 목적에 맞춰 구성한 수업 사례. 운영 배경, 수업 구성, 현장 흐름과 운영 의미를 확인하세요.',
   },
   monthly: {
-    title: '월간 스포키듀 | SPOKEDU 운영 기록',
+    title: '월간형 체육수업 | 월별 테마 SPOKEDU',
     description:
-      '월별 수업 운영과 커리큘럼 개발의 기록. 함께한 기관, 프로그램, 움직임 변화를 월간 아카이브로 정리합니다.',
+      '신체 기능·움직임 주제·교구·협동을 월별 테마로 구성하는 기관 정규·방과후 체육 커리큘럼. 월간 수업 흐름과 운영 방식을 확인하세요.',
   },
   insights: {
-    title: '교육 인사이트 | SPOKEDU',
+    title: '체육교육 관점 | SPOKEDU 인사이트',
     description:
-      '학부모·기관·강사 관점의 짧은 체육교육 인사이트. SPOMOVE, PAPS, 커리큘럼 운영 노하우를 읽기 쉽게 정리합니다.',
+      '현장 수업에서 관찰한 움직임·참여·반응을 바탕으로 수업 설계 기준과 체육교육 관점을 정리합니다. 학부모·기관·강사용.',
   },
   contact: {
     title: 'SPOKEDU 문의 | 개인수업·기관수업·커리큘럼 문의',
@@ -156,8 +156,8 @@ export const seoKeywords: Record<SpokeduSeoPageKey, readonly string[]> = {
   programs: ['SPOMOVE', 'PAPS', '놀이체육', '방학캠프', '체육 커리큘럼'],
   records: ['현장기록', '키움센터 체육', 'SPOMOVE', '기관 체육수업', '방학캠프'],
   cases: ['수업 운영 사례', '기관 협업', '키움센터 체육', 'SPOMOVE', '방학캠프'],
-  monthly: ['월간 스포키듀', '아동 체육교육', '기관 체육수업'],
-  insights: ['교육 인사이트', '아동 체육교육', 'SPOMOVE', 'PAPS'],
+  monthly: ['월간형 체육수업', '월별 테마', '기관 정규수업', '방과후 체육'],
+  insights: ['체육교육 관점', '수업 설계', '아동 체육', 'SPOMOVE', '기관 체육'],
   contact: ['스포키듀 문의', '개인 체육수업', '기관 체육수업', '체육 커리큘럼'],
 };
 

@@ -91,7 +91,10 @@ export default function SpokeduHomeLanding() {
       <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="flex flex-col gap-7 sm:gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12">
           <div className="order-1 lg:order-1">
-            <h1 className={`${landingH1} text-slate-950`}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">
+              {homePage.hero.kicker}
+            </p>
+            <h1 className={`${landingH1} mt-2 text-slate-950 sm:mt-2.5`}>
               {homePage.hero.lines.map((line, index) => (
                 <motion.span
                   key={line}

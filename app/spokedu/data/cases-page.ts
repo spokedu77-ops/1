@@ -17,7 +17,7 @@ export const casesPage = {
     lines: ['기관과 함께 만든', '수업 운영 사례를 정리합니다'] as const,
     subtitle:
       '기관의 공간, 대상, 운영 목적에 맞춰 스포키듀가 실제로 구성하고 운영한 수업 사례를 정리했습니다.',
-    mediaKey: 'proofCommunity' as HomeMediaKey,
+    mediaKey: 'programOneday' as HomeMediaKey,
   },
   roleCompare: {
     title: '현장 기록과 운영 사례의 차이',

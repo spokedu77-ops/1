@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Clipboard,
   FileText,
+  Layers3,
   Lock,
   MapPin,
   MonitorPlay,
@@ -14,6 +15,7 @@ import {
   Play,
   Search,
   Sparkles,
+  Timer,
   Zap,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -141,6 +143,19 @@ function getSearchText(program: Program) {
     .toLowerCase();
 }
 
+function getPackageCompleteness(program: Program) {
+  const detail = program.lessonDetail;
+  const checks = [
+    Boolean(detail?.objective || program.description),
+    program.equipment.length > 0,
+    (detail?.rules?.length ?? program.steps.length) > 0,
+    (detail?.setupNotes?.length ?? 0) > 0 || Boolean(program.space),
+    Boolean(detail?.parentNote),
+    hasSpomoveLink(program),
+  ];
+  return checks.filter(Boolean).length;
+}
+
 function SectionTitle({ eyebrow, title, actionHref }: { eyebrow: string; title: string; actionHref?: string }) {
   return (
     <div className="mb-4 flex items-end justify-between gap-4">
@@ -206,9 +221,10 @@ function ProgramCard({
   onFavorite: () => void;
 }) {
   const heroImage = getHeroImage(program);
+  const completeness = getPackageCompleteness(program);
 
   return (
-    <article className="group flex min-h-[390px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
+    <article className="group flex min-h-[420px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
       <button type="button" onClick={onPreview} className="relative h-44 overflow-hidden text-left">
         {heroImage ? (
           <>
@@ -238,6 +254,21 @@ function ProgramCard({
           <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{program.description}</p>
           <CompactMeta program={program} />
           <ValueChips program={program} />
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <span className="rounded-xl bg-slate-50 px-2 py-2 text-center text-[11px] font-black text-slate-600">
+              수업안
+            </span>
+            <span className="rounded-xl bg-slate-50 px-2 py-2 text-center text-[11px] font-black text-slate-600">
+              세팅
+            </span>
+            <span className="rounded-xl bg-slate-50 px-2 py-2 text-center text-[11px] font-black text-slate-600">
+              문구
+            </span>
+          </div>
+          <div className="mt-3 flex items-center justify-between rounded-xl bg-indigo-50 px-3 py-2">
+            <span className="text-[11px] font-black text-indigo-700">패키지 밀도</span>
+            <span className="text-[11px] font-black text-indigo-700">{completeness}/6</span>
+          </div>
         </button>
 
         <div className="mt-auto flex items-center justify-between gap-3 pt-4">
@@ -267,22 +298,29 @@ function ProgramCard({
 
 function FeaturedProgram({ program, drill, onPreview }: { program: Program; drill?: Drill; onPreview: () => void }) {
   const heroImage = getHeroImage(program);
+  const detail = program.lessonDetail;
+  const completeness = getPackageCompleteness(program);
   const spomoveHref = drill
     ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
     : '/spokedu-master/spomove';
 
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-      <div className="grid lg:grid-cols-[1fr_420px]">
-        <div className="flex min-h-[320px] flex-col justify-between p-6 sm:p-8">
+      <div className="grid lg:grid-cols-[1fr_460px]">
+        <div className="flex min-h-[360px] flex-col justify-between p-6 sm:p-8">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black tracking-[0.14em] text-indigo-600">
               <Sparkles className="h-3.5 w-3.5" />
-              이번 주 추천 수업안
+              대표 수업 패키지
             </span>
             <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{program.title}</h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">{program.description}</p>
+            <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600">{detail?.objective || program.description}</p>
             <ValueChips program={program} />
+            <div className="mt-5 grid gap-2 sm:grid-cols-3">
+              <FeatureMetric icon={Timer} label="수업 시간" value={`${program.duration}분`} />
+              <FeatureMetric icon={MapPin} label="공간" value={program.space} />
+              <FeatureMetric icon={Layers3} label="구성 밀도" value={`${completeness}/6`} />
+            </div>
           </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white">
@@ -319,6 +357,20 @@ function FeaturedProgram({ program, drill, onPreview }: { program: Program; dril
         </button>
       </div>
     </section>
+  );
+}
+
+function FeatureMetric({ icon: Icon, label, value }: { icon: typeof Timer; label: string; value: string }) {
+  return (
+    <div className="flex min-h-[72px] items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-indigo-600 shadow-sm">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[11px] font-black text-slate-400">{label}</span>
+        <span className="mt-1 block truncate text-sm font-black text-slate-950">{value}</span>
+      </span>
+    </div>
   );
 }
 
@@ -569,6 +621,17 @@ export default function LibraryView() {
 
   const spomovePrograms = useMemo(() => pool.filter(hasSpomoveLink).slice(0, 6), [pool]);
   const favoritePrograms = useMemo(() => pool.filter((program) => favorites.includes(program.id)).slice(0, 6), [favorites, pool]);
+  const packageStats = useMemo(() => {
+    const spomoveCount = pool.filter(hasSpomoveLink).length;
+    const lowPrepCount = pool.filter(hasLowPrep).length;
+    const denseCount = pool.filter((program) => getPackageCompleteness(program) >= 5).length;
+    return [
+      { label: '전체 패키지', value: `${pool.length}개` },
+      { label: '화면 활동 연동', value: `${spomoveCount}개` },
+      { label: '준비 간편', value: `${lowPrepCount}개` },
+      { label: '고밀도 구성', value: `${denseCount}개` },
+    ];
+  }, [pool]);
 
   const counts = useMemo(() => {
     return QUICK_FILTERS.reduce<Record<string, number>>((acc, item) => {
@@ -585,9 +648,26 @@ export default function LibraryView() {
     <>
       <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-7 overflow-y-auto bg-[#f5f7fb] px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
         <header className="flex flex-col gap-5">
-          <div>
-            <p className="text-sm font-semibold text-slate-400">MASTER LIBRARY</p>
-            <h1 className="mt-1 text-3xl font-black text-slate-950 sm:text-4xl">수업 패키지</h1>
+          <div className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_16px_48px_rgba(15,23,42,0.06)] sm:p-7">
+            <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
+              <div>
+                <p className="text-sm font-semibold text-slate-400">MASTER LIBRARY</p>
+                <h1 className="mt-2 max-w-3xl text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
+                  바로 꺼내 쓰는 수업 패키지
+                </h1>
+                <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600">
+                  수업안, 준비물, 공간 세팅, 큰 화면 활동, 학부모 설명 문구까지 한 번에 확인하고 바로 실행합니다.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {packageStats.map((item) => (
+                  <div key={item.label} className="rounded-2xl bg-slate-50 px-4 py-3">
+                    <p className="text-[11px] font-black text-slate-400">{item.label}</p>
+                    <p className="mt-1 text-xl font-black text-slate-950">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-[1fr_auto]">

@@ -145,6 +145,9 @@ export const PROGRAMS: Program[] = [
         '바닥이 미끄러우면 달리기 대신 빠른 걷기로 진행합니다.',
       ],
       relatedSpomoveIds: ['reactTrain', 'basic'],
+      heroImageUrl: '/images/spokedu/programs/program-spomove.jpg',
+      setupImageUrl: '/images/spokedu/curriculum/curriculum-tool-setup.jpg',
+      galleryImageUrls: ['/images/spokedu/home/home-lab-energy.jpg'],
       briefingNotes: [
         '수업 전 8자 경로와 대기선을 먼저 구분합니다.',
         'SPOMOVE 신호를 언제 연결할지 먼저 정합니다.',
@@ -213,6 +216,9 @@ export const PROGRAMS: Program[] = [
         '달리기 속도가 과해지면 이동 거리를 줄이고 정확한 전달 라운드로 전환합니다.',
       ],
       relatedSpomoveIds: ['basic', 'taskswitch'],
+      heroImageUrl: '/images/spokedu/programs/program-play-pe.jpg',
+      setupImageUrl: '/images/spokedu/dispatch/dispatch-group-class.jpg',
+      galleryImageUrls: ['/images/spokedu/records/dasarang.jpg'],
       briefingNotes: [
         '팀별 역할과 교대 규칙을 먼저 안내합니다.',
         '기록 경쟁보다 정확한 연결과 팀 피드백이 목표임을 강조합니다.',
@@ -281,6 +287,9 @@ export const PROGRAMS: Program[] = [
         '처음에는 빠른 이동보다 정확한 색 찾기에 집중하도록 안내합니다.',
       ],
       relatedSpomoveIds: ['reactTrain', 'basic'],
+      heroImageUrl: '/images/spokedu/private/private-tool-activity.jpg',
+      setupImageUrl: '/images/spokedu/curriculum/curriculum-tool-setup.jpg',
+      galleryImageUrls: ['/images/spokedu/home/home-hero-movement.jpg'],
       briefingNotes: [
         '색깔 원판 위치를 미리 정하고 이동 경로가 겹치지 않는지 확인합니다.',
         'SPOMOVE 신호 색과 원판 색이 일치하는지 먼저 점검합니다.',
@@ -349,6 +358,9 @@ export const PROGRAMS: Program[] = [
         '공간이 좁으면 상체 동작만 사용합니다.',
       ],
       relatedSpomoveIds: ['flanker', 'gonogo'],
+      heroImageUrl: '/images/spokedu/private/private-small-group.jpg',
+      setupImageUrl: '/images/spokedu/private/private-coaching.jpg',
+      galleryImageUrls: ['/images/spokedu/records/playz.jpg'],
       briefingNotes: [
         '수업 전 페어를 미리 정하고 간격을 일정하게 유지합니다.',
         '역할 전환 신호를 무엇으로 쓸지 먼저 정합니다.',
@@ -417,6 +429,9 @@ export const PROGRAMS: Program[] = [
         '미끄러운 바닥에서는 양말 착용을 금지하고 운동화를 확인합니다.',
       ],
       relatedSpomoveIds: ['reactTrain', 'basic'],
+      heroImageUrl: '/images/spokedu/programs/program-paps-running.jpg',
+      setupImageUrl: '/images/spokedu/curriculum/curriculum-planning.jpg',
+      galleryImageUrls: ['/images/spokedu/monthly/representative.jpg'],
       briefingNotes: [
         '사다리를 바닥에 고정하고 이탈 방지 처리를 합니다.',
         '스텝 패턴을 1가지만 먼저 연습한 뒤 다음 패턴으로 넘어갑니다.',
@@ -485,6 +500,9 @@ export const PROGRAMS: Program[] = [
         '균형을 잃었을 때 옆으로 발을 빠르게 내딛도록 미리 안내합니다.',
       ],
       relatedSpomoveIds: ['spatial'],
+      heroImageUrl: '/images/spokedu/curriculum/curriculum-materials.jpg',
+      setupImageUrl: '/images/spokedu/curriculum/curriculum-tool-setup.jpg',
+      galleryImageUrls: ['/images/spokedu/private/private-coaching.jpg'],
       briefingNotes: [
         '테이프를 직선으로 붙이고 대기 동선을 분리합니다.',
         '인원이 많으면 테이프 2~3줄을 병렬로 배치합니다.',
@@ -553,6 +571,9 @@ export const PROGRAMS: Program[] = [
         '충돌 방지를 위해 두 손을 가슴 앞에 붙이고 이동하는 안전 자세를 먼저 연습합니다.',
       ],
       relatedSpomoveIds: ['gonogo', 'basic'],
+      heroImageUrl: '/images/spokedu/programs/program-oneday.jpg',
+      setupImageUrl: '/images/spokedu/dispatch/dispatch-oneday-event.jpg',
+      galleryImageUrls: ['/images/spokedu/records/dongjak.jpg'],
       briefingNotes: [
         '경기 구역 크기를 인원수에 맞게 조정합니다 (1인당 약 4~6㎡).',
         'SPOMOVE 정지 신호 사용 여부와 간격을 미리 정합니다.',
@@ -621,6 +642,9 @@ export const PROGRAMS: Program[] = [
         '움직임 중 옆 친구와 팔이 부딪히지 않도록 충분한 간격을 유지합니다.',
       ],
       relatedSpomoveIds: ['stroop', 'taskswitch'],
+      heroImageUrl: '/images/spokedu/home/home-lab-energy.jpg',
+      setupImageUrl: '/images/spokedu/private/private-tool-activity.jpg',
+      galleryImageUrls: ['/images/spokedu/records/lab.jpg'],
       briefingNotes: [
         '패턴 2~3가지를 미리 정하고 각 패턴의 이름을 붙여 신호와 연결합니다.',
         'SPOMOVE 신호 색마다 패턴을 연결하면 색 인지와 리듬이 동시에 훈련됩니다.',

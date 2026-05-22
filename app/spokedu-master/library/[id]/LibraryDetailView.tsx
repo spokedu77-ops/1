@@ -95,6 +95,18 @@ function getParentCopy(program: Program, title: string, focus: string) {
   );
 }
 
+function getPackageCompleteness(program: Program) {
+  const detail = program.lessonDetail;
+  return [
+    Boolean(detail?.objective || program.description),
+    Boolean(detail?.rules?.length || program.steps.length),
+    Boolean(detail?.setupNotes?.length || program.equipment.length),
+    Boolean(detail?.parentNote),
+    Boolean(detail?.relatedSpomoveIds?.length),
+    Boolean(detail?.heroImageUrl || detail?.videoUrl || program.thumbnailUrl),
+  ].filter(Boolean).length;
+}
+
 function getEquipmentPrice(item: string) {
   if (/프로젝터|빔|projector/i.test(item)) return 159000;
   if (/마커|콘|cone|접시콘/i.test(item)) return 8900;
@@ -191,11 +203,17 @@ export default function LibraryDetailView({ id }: { id: string }) {
     '학생 반응을 보며 난이도와 이동 거리를 조절합니다.',
   ]);
   const setupNotes = cleanList(detail?.setupNotes, [`공간: ${space}`, `준비물: ${equipment.join(', ')}`]);
+  const briefingNotes = cleanList(detail?.briefingNotes, []);
   const fieldTips = cleanList(detail?.fieldTips, []);
   const safetyNotes = cleanList(detail?.safetyNotes, []);
   const variations = cleanList(detail?.variations, []);
   const parentCopy = getParentCopy(program, title, focus);
+  const coachScript = cleanText(
+    detail?.coachScript,
+    `${title} 수업은 짧은 시범으로 규칙을 보여준 뒤, 학생 반응에 따라 거리와 속도를 조절하며 진행합니다.`,
+  );
   const usageCount = usageRecords.length;
+  const packageScore = getPackageCompleteness(program);
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -339,6 +357,30 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <MetaCard label="공간" value={space} />
         </section>
 
+        <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_14px_36px_rgba(15,23,42,0.04)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-black tracking-[0.14em] text-indigo-600">구독 패키지 가치</p>
+              <h2 className="mt-2 text-xl font-black text-slate-950">이 수업 하나로 준비, 실행, 설명까지 끝냅니다</h2>
+            </div>
+            <p className="text-sm font-black text-slate-500">구성 밀도 <span className="text-slate-950">{packageScore}/6</span></p>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-4">
+            {[
+              { label: '수업 준비', value: `${program.duration}분안`, caption: '목표와 진행 단계' },
+              { label: '화면 활동', value: hasSpomoveLink(program) ? '연동' : '선택', caption: cleanDrillName(primaryDrill, 'SPOMOVE 추천') },
+              { label: '현장 세팅', value: `${equipment.length}개`, caption: '준비물과 공간 배치' },
+              { label: '소통 자료', value: '복사', caption: '학부모·기관 설명 문구' },
+            ].map((item) => (
+              <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[11px] font-bold text-slate-500">{item.label}</p>
+                <p className="mt-2 text-2xl font-black leading-none text-slate-950">{item.value}</p>
+                <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">{item.caption}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <DetailSection title="패키지 구성" icon={Zap}>
           <div className="grid gap-2 sm:grid-cols-3">
             <MetaCard label="수업안" value={`${program.duration}분 · ${space}`} />
@@ -399,6 +441,27 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <DetailSection title="수업 목표" icon={FileText}>
           <p className="text-sm leading-7 text-slate-600">{objective}</p>
         </DetailSection>
+
+        <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <DetailSection title="강사 오프닝 멘트" icon={Clipboard}>
+            <p className="text-sm leading-7 text-slate-600">{coachScript}</p>
+          </DetailSection>
+
+          <DetailSection title="수업 전 브리핑" icon={FileText}>
+            {briefingNotes.length > 0 ? (
+              <BulletList items={briefingNotes} tone="bg-indigo-300" />
+            ) : (
+              <BulletList
+                items={[
+                  `${cleanText(detail?.recommendedAge, grade)} 기준으로 규칙을 짧게 설명합니다.`,
+                  `${space}에서 충돌 위험이 없는 동선을 먼저 확인합니다.`,
+                  `마무리에는 ${focus}이 어떻게 드러났는지 한 문장으로 정리합니다.`,
+                ]}
+                tone="bg-indigo-300"
+              />
+            )}
+          </DetailSection>
+        </section>
 
         <DetailSection title={`진행 단계 · ${ruleItems.length}단계`} icon={Play}>
           <ol className="space-y-3">

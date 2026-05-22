@@ -30,7 +30,7 @@ export const monthlyRecords: MonthlyRecord[] = [
   {
     slug: '2026-05',
     month: '2026-05',
-    title: '2026년 5월 월간 스포키듀',
+    title: '2026년 5월 월간형 수업',
     institutions: ['양천거점형키움센터', '동작거점형키움센터', '다사랑영등포지역아동센터'],
     programs: ['SPOMOVE', '리듬챌린지', '원데이 체육행사'],
     movementPoints: ['반응속도 훈련', '리듬 기반 협응', '팀 미션 협동 활동'],
@@ -38,7 +38,7 @@ export const monthlyRecords: MonthlyRecord[] = [
     images: [
       {
         src: SPOKEDU_IMAGES.monthly.hero.src,
-        alt: '2026년 5월 월간 스포키듀 대표 수업 사진',
+        alt: '2026년 5월 월간형 수업 대표 장면',
         title: '5월 대표 수업 장면',
       },
       {
@@ -58,7 +58,7 @@ export const monthlyRecords: MonthlyRecord[] = [
   {
     slug: '2026-04',
     month: '2026-04',
-    title: '2026년 4월 월간 스포키듀',
+    title: '2026년 4월 월간형 수업',
     institutions: ['PLAYZ Lounge', '서대문형무소 어린이행사 운영팀'],
     programs: ['방학캠프', '체험형 원데이 프로그램', '뉴스포츠 협동 활동'],
     movementPoints: ['기초 민첩성', '공간 인지 기반 방향전환', '협동 규칙 수행'],
@@ -86,7 +86,7 @@ export const monthlyRecords: MonthlyRecord[] = [
   {
     slug: '2026-03',
     month: '2026-03',
-    title: '2026년 3월 월간 스포키듀',
+    title: '2026년 3월 월간형 수업',
     institutions: ['스포키듀 LAB', '지역 연계 체육교육 파트너 기관'],
     programs: ['놀이체육 정규수업', 'PAPS 연계 활동', '강사 교육 세션'],
     movementPoints: ['기본 움직임 루틴', '점프·밸런스·협응', '관찰-판단-반응 시퀀스'],

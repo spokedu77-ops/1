@@ -34,7 +34,7 @@ export function SiteHeader() {
           id="header-contact-button"
           data-track="cta-contact"
           data-track-label="header-contact"
-          className="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-900 sm:text-sm"
+          className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-900 sm:text-sm"
         >
           문의하기
         </Link>

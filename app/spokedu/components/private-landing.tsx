@@ -170,7 +170,7 @@ export default function PrivateLanding() {
 
       <Section className="space-y-5 sm:space-y-6">
         <h2 className={landingSectionTitle}>{privatePage.faq.title}</h2>
-        <div className="grid gap-3 sm:grid-cols-2 sm:gap-3.5">
+        <div className="grid gap-3 lg:grid-cols-2 lg:gap-3.5">
           {privatePage.faq.items.map((item) => (
             <article
               key={item.q}

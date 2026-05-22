@@ -65,12 +65,12 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
               data-track-label={`monthly-detail-back-${record.slug}`}
               className={`text-sm font-semibold text-slate-500 ${fineHover}hover:text-indigo-700 ${focusRing}`}
             >
-              ← 월간 스포키듀
+              ← 월간형 체육수업
             </Link>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">월간 기록</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">월간형 커리큘럼</p>
             <h1 className={`${landingH1} text-slate-950`}>{record.title}</h1>
-            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
-              {record.month} 운영 내용을 기관·프로그램·교육 포인트 중심으로 정리한 월간 아카이브입니다.
+            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8 [word-break:keep-all]">
+              {record.month} 기관 정규·방과후 수업의 테마 흐름과 운영 포인트를 정리했습니다.
             </p>
           </div>
           <div className={landingHeroVisual}>

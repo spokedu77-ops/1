@@ -67,7 +67,7 @@ export const cases: CaseData[] = [
     expansion:
       '동일한 스테이션 구조를 유지한 채 학기 단위 정규 운영·테마 교체로 확장할 수 있습니다.',
     sceneCaption: '빔 화면의 색 신호에 맞춰 아이들이 이동 방향을 선택하는 활동',
-    mediaKey: 'proofClass',
+    mediaKey: 'programSpomove',
     movementGoals: ['시각 자극 기반 반응', '집중 전환', '방향 전환 타이밍'],
     educationPoints: ['스테이션 회전 운영', '난이도 단계화'],
     images: [
@@ -113,7 +113,7 @@ export const cases: CaseData[] = [
     expansion:
       '테마별 리듬 미션을 교체하며 동일 거점에서 분기 운영이 가능합니다.',
     sceneCaption: '화면 신호에 맞춰 소그룹이 역할을 나누며 움직이는 활동',
-    mediaKey: 'proofCenter',
+    mediaKey: 'programPaps',
     movementGoals: ['리듬 기반 반응', '규칙 전환 대응', '협동 플레이'],
     educationPoints: ['소그룹 협동 미션', '리듬 신호 활용'],
     images: [
@@ -158,7 +158,7 @@ export const cases: CaseData[] = [
     expansion:
       '분기별 테마 원데이·정규 연계 프로그램으로 이어 설계할 수 있습니다.',
     sceneCaption: '팀 미션 규칙에 맞춰 순환하며 참여하는 원데이 활동',
-    mediaKey: 'proofCommunity',
+    mediaKey: 'programPlay',
     movementGoals: ['협동 팀 미션', '순환형 체력 활동', '도전·성취 경험'],
     educationPoints: ['1일형 시간표 구성', '혼합 학년 안전 동선'],
     images: [
@@ -205,7 +205,7 @@ export const cases: CaseData[] = [
     expansion:
       '주제별 캠프(스포츠·예술) 패키지로 시즌 단위 반복 운영이 가능합니다.',
     sceneCaption: '캠프 일과에 맞춰 팀 활동으로 이어지는 체육 블록',
-    mediaKey: 'proofLounge',
+    mediaKey: 'programCamp',
     movementGoals: ['기본 체력 루틴', '협동 활동', '장시간 활동 적응'],
     educationPoints: ['캠프형 일과표', '체육+예체능 결합'],
     images: [
@@ -251,7 +251,7 @@ export const cases: CaseData[] = [
     expansion:
       '지자체·문화시설 행사 부스 패키지로 유사 공간에 적용할 수 있습니다.',
     sceneCaption: '행사 부스에서 가족 단위로 체험 미션에 참여하는 장면',
-    mediaKey: 'proofEvent',
+    mediaKey: 'programOneday',
     movementGoals: ['순간 반응 놀이', '가족 협동 미션', '기초 움직임 체험'],
     educationPoints: ['부스 회전율 중심 설계', '즉시 참여 룰'],
     images: [

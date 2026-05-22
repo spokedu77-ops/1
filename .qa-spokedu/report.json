@@ -1,0 +1,356 @@
+{
+  "base": "http://localhost:3000",
+  "timestamp": "2026-05-22T16:55:37.884Z",
+  "pageResults": [
+    {
+      "path": "/spokedu",
+      "status": 200,
+      "grade": "A",
+      "title": "SPOKEDU 스포키듀 | 아동·청소년 체육교육 브랜드",
+      "h1": "움직임으로 아이의 성장을 설계합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/about",
+      "status": 200,
+      "grade": "A",
+      "title": "스포키듀 소개 | 현장 체육교육 운영 브랜드",
+      "h1": "현장 수업에서 시작해 체육교육 콘텐츠로 확장합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/private",
+      "status": 200,
+      "grade": "A",
+      "title": "개인·소그룹 체육수업 | SPOKEDU",
+      "h1": "운동을 어려워하는 아이도 자기 속도로 시작할 수 있습니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/dispatch",
+      "status": 200,
+      "grade": "A",
+      "title": "기관 파견 체육교육 | SPOKEDU",
+      "h1": "기관의 공간과 일정에 맞춰 운영 가능한 체육 프로그램을 제안합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/curriculum",
+      "status": 200,
+      "grade": "A",
+      "title": "체육 커리큘럼·콘텐츠 | SPOKEDU",
+      "h1": "현장 수업을 커리큘럼 콘텐츠로 확장합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/programs",
+      "status": 200,
+      "grade": "A",
+      "title": "SPOKEDU 프로그램 | SPOMOVE·PAPS·원데이·방학캠프",
+      "h1": "아이와 기관의 목적에 맞춰 수업 프로그램을 구성합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/programs/spomove",
+      "status": 200,
+      "grade": "A",
+      "title": "SPOMOVE | SPOKEDU 프로그램",
+      "h1": "보고, 판단하고, 몸으로 반응하는 에듀테크 놀이체육",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/programs/paps",
+      "status": 200,
+      "grade": "A",
+      "title": "PAPS | SPOKEDU 프로그램",
+      "h1": "체력평가 요소를 놀이형 수업으로 경험합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/programs/oneday-event",
+      "status": 200,
+      "grade": "A",
+      "title": "원데이 체육행사 | SPOKEDU 프로그램",
+      "h1": "기관 행사에 맞춰 협동 미션형 체육 이벤트를 운영합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/programs/camp",
+      "status": 200,
+      "grade": "A",
+      "title": "방학캠프 | SPOKEDU 프로그램",
+      "h1": "방학 하루를 움직임과 예체능 경험으로 채웁니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/records",
+      "status": 200,
+      "grade": "A",
+      "title": "현장기록 | 키움센터·학교·아동시설 수업 운영 기록",
+      "h1": "현장에서 쌓은 수업 경험을 기록합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/cases",
+      "status": 200,
+      "grade": "A",
+      "title": "수업 운영 사례 | 기관 협업 SPOKEDU",
+      "h1": "기관과 함께 만든 수업 운영 사례를 정리합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/cases/yangcheon-spomove",
+      "status": 200,
+      "grade": "A",
+      "title": "양천거점형키움센터 SPOMOVE 정규수업 | SPOKEDU 수업 사례",
+      "h1": "양천거점형키움센터 SPOMOVE 정규수업",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/monthly",
+      "status": 200,
+      "grade": "A",
+      "title": "월간형 체육수업 | 월별 테마 SPOKEDU",
+      "h1": "월별 테마로 수업의 흐름을 설계합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/monthly/2026-05",
+      "status": 200,
+      "grade": "A",
+      "title": "2026년 5월 월간 스포키듀 | 월간 스포키듀 · SPOKEDU",
+      "h1": "2026년 5월 월간 스포키듀",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/insights",
+      "status": 200,
+      "grade": "A",
+      "title": "체육교육 관점 | SPOKEDU 인사이트",
+      "h1": "움직임을 교육으로 바라보는 스포키듀의 관점을 정리합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/contact",
+      "status": 200,
+      "grade": "A",
+      "title": "SPOKEDU 문의 | 개인수업·기관수업·커리큘럼 문의",
+      "h1": "필요한 수업 방향에 맞춰 상담을 연결합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/contact?type=private",
+      "status": 200,
+      "grade": "A",
+      "title": "SPOKEDU 문의 | 개인수업·기관수업·커리큘럼 문의",
+      "h1": "필요한 수업 방향에 맞춰 상담을 연결합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/contact?type=dispatch",
+      "status": 200,
+      "grade": "A",
+      "title": "SPOKEDU 문의 | 개인수업·기관수업·커리큘럼 문의",
+      "h1": "필요한 수업 방향에 맞춰 상담을 연결합니다",
+      "footerCount": 1,
+      "issues": []
+    },
+    {
+      "path": "/spokedu/contact?type=curriculum",
+      "status": 200,
+      "grade": "A",
+      "title": "SPOKEDU 문의 | 개인수업·기관수업·커리큘럼 문의",
+      "h1": "필요한 수업 방향에 맞춰 상담을 연결합니다",
+      "footerCount": 1,
+      "issues": []
+    }
+  ],
+  "network": {
+    "postimg": [],
+    "failedImages": [],
+    "status404": []
+  },
+  "contact": [
+    {
+      "path": "/spokedu/contact",
+      "type": "private",
+      "activeId": "",
+      "formVisible": true,
+      "buttonCount": 3
+    },
+    {
+      "path": "/spokedu/contact?type=private",
+      "type": "private",
+      "activeId": "",
+      "formVisible": true,
+      "buttonCount": 3
+    },
+    {
+      "path": "/spokedu/contact?type=dispatch",
+      "type": "dispatch",
+      "activeId": "",
+      "formVisible": true,
+      "buttonCount": 3
+    },
+    {
+      "path": "/spokedu/contact?type=curriculum",
+      "type": "curriculum",
+      "activeId": "",
+      "formVisible": true,
+      "buttonCount": 3
+    }
+  ],
+  "cta": [
+    {
+      "page": "/spokedu",
+      "href": "/spokedu/contact?type=private",
+      "ok": true,
+      "expected": "/type=private/"
+    },
+    {
+      "page": "/spokedu",
+      "href": "/spokedu/contact?type=dispatch",
+      "ok": true,
+      "expected": "/type=dispatch/"
+    },
+    {
+      "page": "/spokedu/private",
+      "href": "/spokedu/private",
+      "ok": false,
+      "expected": "/type=private/"
+    },
+    {
+      "page": "/spokedu/dispatch",
+      "href": "/spokedu/contact",
+      "ok": false,
+      "expected": "/type=dispatch/"
+    },
+    {
+      "page": "/spokedu/curriculum",
+      "href": "/spokedu/contact",
+      "ok": false,
+      "expected": "/type=curriculum/"
+    },
+    {
+      "page": "/spokedu/about",
+      "href": "/spokedu/contact?type=private",
+      "ok": true,
+      "expected": "/type=private/"
+    }
+  ],
+  "heroSamples": [
+    {
+      "viewport": "360",
+      "path": "/spokedu",
+      "h1Lines": [
+        "움직임으로",
+        "아이의 성장을",
+        "설계합니다"
+      ],
+      "h1Width": 332,
+      "overflowX": false
+    },
+    {
+      "viewport": "360",
+      "path": "/spokedu/about",
+      "h1Lines": [
+        "현장 수업에서 시작해",
+        "체육교육 콘텐츠로 확장합니다"
+      ],
+      "h1Width": 332,
+      "overflowX": false
+    },
+    {
+      "viewport": "360",
+      "path": "/spokedu/contact",
+      "h1Lines": [
+        "필요한 수업 방향에 맞춰",
+        "상담을 연결합니다"
+      ],
+      "h1Width": 290,
+      "overflowX": false
+    },
+    {
+      "viewport": "390",
+      "path": "/spokedu",
+      "h1Lines": [
+        "움직임으로",
+        "아이의 성장을",
+        "설계합니다"
+      ],
+      "h1Width": 362,
+      "overflowX": false
+    },
+    {
+      "viewport": "390",
+      "path": "/spokedu/about",
+      "h1Lines": [
+        "현장 수업에서 시작해",
+        "체육교육 콘텐츠로 확장합니다"
+      ],
+      "h1Width": 362,
+      "overflowX": false
+    },
+    {
+      "viewport": "390",
+      "path": "/spokedu/contact",
+      "h1Lines": [
+        "필요한 수업 방향에 맞춰",
+        "상담을 연결합니다"
+      ],
+      "h1Width": 320,
+      "overflowX": false
+    },
+    {
+      "viewport": "430",
+      "path": "/spokedu",
+      "h1Lines": [
+        "움직임으로",
+        "아이의 성장을",
+        "설계합니다"
+      ],
+      "h1Width": 402,
+      "overflowX": false
+    },
+    {
+      "viewport": "430",
+      "path": "/spokedu/about",
+      "h1Lines": [
+        "현장 수업에서 시작해",
+        "체육교육 콘텐츠로 확장합니다"
+      ],
+      "h1Width": 402,
+      "overflowX": false
+    },
+    {
+      "viewport": "430",
+      "path": "/spokedu/contact",
+      "h1Lines": [
+        "필요한 수업 방향에 맞춰",
+        "상담을 연결합니다"
+      ],
+      "h1Width": 360,
+      "overflowX": false
+    }
+  ],
+  "errors": [],
+  "_currentPage": "/spokedu/contact?type=curriculum"
+}

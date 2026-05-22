@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useMemo, useState } from 'react';
 import { LandingSection } from './landing-section';
 import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
-import { landingCardShell } from './visual/card-variants';
-import { HOME_MEDIA } from '../data/home-media';
-import { insightsCards } from '../data/insights';
+import { insightArticles, insightFilters, insightMatchesFilter, type InsightArticle, type InsightFilterId } from '../data/insights';
 import { insightsPage } from '../data/insights-page';
+import { HOME_MEDIA } from '../data/home-media';
 import {
   btnPrimary,
   cardInteractive,
@@ -15,6 +15,7 @@ import {
   landingH1,
   landingHeroCopy,
   landingHeroGrid,
+  landingHeroSubtitle,
   landingHeroVisual,
   landingPageStack,
   landingSectionTitle,
@@ -24,152 +25,212 @@ import { inferTrackFromHref } from '../lib/tracking';
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
+function InsightArticleCard({ article }: { article: InsightArticle }) {
+  return (
+    <Link
+      href={article.href}
+      data-track={inferTrackFromHref(article.href)}
+      data-track-label={article.trackLabel}
+      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${cardInteractive} ${focusRing}`}
+    >
+      <MediaPanel
+        media={HOME_MEDIA[article.mediaKey]}
+        className="aspect-[16/10] max-h-[180px] shrink-0 rounded-none border-0 sm:max-h-[200px]"
+        sizes="card3"
+        photoPriority
+      />
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-indigo-600">
+          {article.topic}
+        </span>
+        <p className="mt-1.5 text-xs font-medium leading-snug text-indigo-800 [word-break:keep-all]">
+          {article.coreQuestion}
+        </p>
+        <h3 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-slate-950 [word-break:keep-all]">
+          {article.title}
+        </h3>
+        <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+          {article.summary}
+        </p>
+        <p className="mt-2 text-xs font-medium text-slate-500">대상: {article.audience}</p>
+        <span
+          className={`mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-900`}
+        >
+          {article.ctaLabel} →
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export function InsightsLanding() {
   const reducedMotion = useReducedMotion();
-  const heroMedia = HOME_MEDIA[insightsPage.heroMediaKey];
-  const ctaMedia = HOME_MEDIA[insightsPage.ctaMediaKey];
+  const [activeFilter, setActiveFilter] = useState<InsightFilterId>('all');
+  const heroMedia = HOME_MEDIA[insightsPage.hero.mediaKey];
+  const ctaMedia = HOME_MEDIA[insightsPage.cta.mediaKey];
+
+  const filteredArticles = useMemo(
+    () => insightArticles.filter((a) => insightMatchesFilter(a, activeFilter)),
+    [activeFilter],
+  );
 
   return (
     <div className={landingPageStack}>
       <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className={landingHeroGrid}>
           <div className={landingHeroCopy}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">교육 인사이트</p>
-            <h1 className={`whitespace-pre-line ${landingH1} text-slate-950`}>{insightsPage.hero.title}</h1>
-            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">
+              {insightsPage.hero.kicker}
+            </p>
+            <h1 className={`${landingH1} text-slate-950`}>
+              {insightsPage.hero.lines.map((line, index) => (
+                <motion.span
+                  key={line}
+                  initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+                  animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
+                  transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.07 * index }}
+                  className="block"
+                >
+                  {line}
+                </motion.span>
+              ))}
+            </h1>
+            <p
+              className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-lg`}
+            >
               {insightsPage.hero.subtitle}
             </p>
           </div>
           <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" />
+            <MotionPoster media={heroMedia} variant="cinematic" sizes="heroSplit" />
           </div>
         </div>
       </LandingSection>
 
-      <LandingSection className="space-y-3" delay={0.05}>
-        <h2 className={landingSectionTitle}>카테고리</h2>
-        <div className="-mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1 scroll-smooth [scrollbar-width:thin] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 lg:grid-cols-6">
-          {insightsPage.categoryCards.map((cat, index) => (
-            <motion.div
-              key={cat.category}
-              initial={reducedMotion ? false : { opacity: 0, y: 10 }}
-              whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.4, delay: 0.04 * index }}
-              className="w-[min(72vw,200px)] shrink-0 snap-start sm:w-auto"
-            >
-              <article className={`flex h-full flex-col overflow-hidden rounded-2xl ${landingCardShell(cat.cardVariant)}`}>
-                <MediaPanel
-                  media={HOME_MEDIA[cat.mediaKey]}
-                  className="aspect-[4/3] shrink-0 rounded-none border-0 border-b border-slate-200/80"
-                />
-                <div className="flex flex-1 flex-col p-2.5 sm:p-3">
-                  <p className="text-xs font-semibold text-slate-900">{cat.category}</p>
-                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-600">{cat.description}</p>
-                </div>
-              </article>
-            </motion.div>
-          ))}
-        </div>
+      <LandingSection className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 py-6 sm:px-7 sm:py-7" delay={0.04}>
+        <h2 className={landingSectionTitle}>{insightsPage.definition.title}</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base [word-break:keep-all]">
+          {insightsPage.definition.body}
+        </p>
       </LandingSection>
 
-      <LandingSection className="space-y-3" delay={0.08}>
-        <h2 className={landingSectionTitle}>인사이트</h2>
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 scroll-smooth [scrollbar-width:thin] sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 lg:grid-cols-3">
-          {insightsCards.map((card, index) => (
-            <motion.div
-              key={card.slug}
-              initial={reducedMotion ? false : { opacity: 0, y: 14 }}
-              whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.45, delay: 0.05 * index }}
-              className="w-[min(84vw,300px)] shrink-0 snap-start sm:w-auto"
-            >
-              <Link
-                href={card.href}
-                data-track={inferTrackFromHref(card.href)}
-                data-track-label={`insights-card-${card.slug}`}
-                className={`group flex h-full flex-col overflow-hidden rounded-2xl ${landingCardShell(card.cardVariant)} ${cardInteractive} ${focusRing}`}
-              >
-                <MediaPanel
-                  media={HOME_MEDIA[card.mediaKey]}
-                  className="aspect-[16/9] shrink-0 rounded-none border-0 border-b border-slate-200/80"
-                />
-                <div className="flex flex-1 flex-col p-3 sm:p-3.5">
-                  <span className="w-fit rounded-full border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
-                    {card.category}
-                  </span>
-                  <h3 className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug text-slate-900">{card.title}</h3>
-                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{card.summary}</p>
-                  <p className="mt-1 text-[11px] text-slate-500">{card.target}</p>
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {card.keywords.slice(0, 3).map((kw) => (
-                      <span key={kw} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
-                  <span className={`mt-auto pt-2.5 text-xs font-semibold text-slate-900 sm:text-sm ${fineHover}group-hover:text-indigo-700`}>
-                    {card.ctaLabel} →
-                  </span>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </LandingSection>
-
-      <LandingSection className="space-y-3" delay={0.1}>
-        <h2 className={landingSectionTitle}>추천 연결</h2>
-        <div className="grid gap-2.5 sm:grid-cols-3">
-          {insightsPage.audienceLinks.map((link, index) => (
+      <LandingSection className="space-y-4" delay={0.06}>
+        <h2 className={landingSectionTitle}>{insightsPage.roleCompare.title}</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">현장 기록</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+              {insightsPage.roleCompare.recordsLead}
+            </p>
             <Link
-              key={link.audience}
-              href={link.href}
-              data-track={inferTrackFromHref(link.href)}
-              data-track-label={link.trackLabel}
-              className={`rounded-2xl p-4 ${landingCardShell((['gradient', 'image', 'dark'] as const)[index] ?? 'image')} ${cardInteractive} ${focusRing}`}
+              href={insightsPage.roleCompare.recordsHref}
+              data-track={inferTrackFromHref(insightsPage.roleCompare.recordsHref)}
+              data-track-label="insights-to-records"
+              className={`mt-2 inline-flex text-xs font-semibold text-slate-700 ${fineHover}hover:text-indigo-700 ${focusRing}`}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-600">{link.audience}</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{link.audience} 안내</p>
-              <span className={`mt-2 inline-flex text-xs font-semibold text-slate-800 ${fineHover}hover:text-indigo-700`}>
-                바로가기 →
-              </span>
+              {insightsPage.roleCompare.recordsLinkLabel} →
             </Link>
+          </div>
+          <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">운영 사례</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+              {insightsPage.roleCompare.casesLead}
+            </p>
+            <Link
+              href={insightsPage.roleCompare.casesHref}
+              data-track={inferTrackFromHref(insightsPage.roleCompare.casesHref)}
+              data-track-label="insights-to-cases"
+              className={`mt-2 inline-flex text-xs font-semibold text-slate-700 ${fineHover}hover:text-indigo-700 ${focusRing}`}
+            >
+              {insightsPage.roleCompare.casesLinkLabel} →
+            </Link>
+          </div>
+          <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">월간 수업</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+              {insightsPage.roleCompare.monthlyLead}
+            </p>
+            <Link
+              href={insightsPage.roleCompare.monthlyHref}
+              data-track={inferTrackFromHref(insightsPage.roleCompare.monthlyHref)}
+              data-track-label="insights-to-monthly"
+              className={`mt-2 inline-flex text-xs font-semibold text-slate-700 ${fineHover}hover:text-indigo-700 ${focusRing}`}
+            >
+              {insightsPage.roleCompare.monthlyLinkLabel} →
+            </Link>
+          </div>
+          <div className="rounded-xl border border-indigo-200/60 bg-white px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-indigo-700">교육 관점</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+              {insightsPage.roleCompare.insightsLead}
+            </p>
+          </div>
+        </div>
+      </LandingSection>
+
+      <LandingSection className="space-y-4 sm:space-y-5" delay={0.08}>
+        <h2 className={landingSectionTitle}>{insightsPage.articlesSectionTitle}</h2>
+        <div
+          className="flex gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:thin]"
+          role="tablist"
+          aria-label="교육 관점 분류"
+        >
+          {insightFilters.map((filter) => {
+            const active = activeFilter === filter.id;
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveFilter(filter.id)}
+                className={`shrink-0 rounded-full border px-3.5 py-2 text-sm font-semibold transition ${focusRing} ${
+                  active
+                    ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-3">
+          {filteredArticles.map((article, index) => (
+            <motion.div
+              key={article.slug}
+              initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.04 * index }}
+              className="min-h-0"
+            >
+              <InsightArticleCard article={article} />
+            </motion.div>
           ))}
         </div>
       </LandingSection>
 
-      <LandingSection
-        className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 shadow-xl shadow-indigo-900/10 ring-1 ring-white/60 sm:rounded-3xl sm:px-8 sm:py-10"
-        delay={0.12}
-      >
+      <LandingSection className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 sm:rounded-3xl sm:px-8 sm:py-10">
         <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="photo" className="h-full w-full" />
+          <MediaRenderer media={ctaMedia} intensity="photo" sizes="full" className="h-full w-full" />
         </div>
         <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
-        <div className="relative max-w-xl">
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">현장과 연결된 인사이트</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">인사이트를 읽고, 기록과 문의까지 한 흐름으로 이어보세요.</p>
-          <div className="mt-5">
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <Link
-                href={insightsPage.cta.primary.href}
-                data-track={inferTrackFromHref(insightsPage.cta.primary.href)}
-                data-track-label={insightsPage.cta.primary.trackLabel}
-                className={`${btnPrimary} !w-full`}
-              >
-                {insightsPage.cta.primary.label}
-              </Link>
-              <Link
-                href={insightsPage.cta.secondary.href}
-                data-track={inferTrackFromHref(insightsPage.cta.secondary.href)}
-                data-track-label={insightsPage.cta.secondary.trackLabel}
-                className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50 ${focusRing}`}
-              >
-                {insightsPage.cta.secondary.label}
-              </Link>
-            </div>
+        <div className="relative mx-auto max-w-xl text-center">
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl [word-break:keep-all]">
+            {insightsPage.cta.title}
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
+            {insightsPage.cta.description}
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Link
+              href={insightsPage.cta.href}
+              data-track={inferTrackFromHref(insightsPage.cta.href)}
+              data-track-label={insightsPage.cta.trackLabel}
+              className={`${btnPrimary} min-h-12 !w-full sm:!min-w-[18rem] sm:!w-auto`}
+            >
+              {insightsPage.cta.label}
+            </Link>
           </div>
         </div>
       </LandingSection>

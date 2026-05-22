@@ -30,7 +30,7 @@ export const recordsPage = {
     lines: ['현장에서 쌓은 수업 경험을', '기록합니다'] as const,
     subtitle:
       '키움센터, 학교, 아동시설, 문화공간 등 실제 운영 현장에서 진행한 수업과 프로그램 기록을 모았습니다.',
-    mediaKey: 'proofLab' as HomeMediaKey,
+    mediaKey: 'homeHero' as HomeMediaKey,
   },
   roleCompare: {
     title: '현장 기록과 수업 사례의 차이',

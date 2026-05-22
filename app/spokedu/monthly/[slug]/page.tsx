@@ -17,17 +17,17 @@ export async function generateMetadata({ params }: MonthlyDetailPageProps): Prom
   const record = getMonthlyRecordBySlug(slug);
   if (!record) {
     return {
-      title: '월간 스포키듀',
-      description: '월간 운영 기록',
+      title: '월간형 체육수업',
+      description: '월별 테마형 기관 체육 커리큘럼',
     };
   }
 
   return buildSpokeduPageMetadata({
-    title: `${record.title} | 월간 스포키듀 · SPOKEDU`,
-    description: `${record.month} 운영 기록. ${record.institutions.slice(0, 2).join(', ')} 등 현장 프로그램을 정리합니다.`,
+    title: `${record.title} | 월간형 체육수업 · SPOKEDU`,
+    description: `${record.month} 월간형 수업 흐름. ${record.institutions.slice(0, 2).join(', ')} 등 기관 정규·방과후 프로그램 운영을 정리합니다.`,
     canonical: `/spokedu/monthly/${record.slug}`,
     pageKey: 'monthly',
-    keywords: ['월간 스포키듀', '현장기록', '아동 체육교육'],
+    keywords: ['월간형 체육수업', '월별 테마', '기관 정규수업', '아동 체육교육'],
   });
 }
 

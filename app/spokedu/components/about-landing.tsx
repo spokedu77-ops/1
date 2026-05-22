@@ -6,7 +6,18 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { aboutPage } from '../data/about-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { cardInteractive, fineHover, landingH1, landingPageStack } from '../lib/ui-classes';
+import {
+  btnPrimary,
+  cardInteractive,
+  fineHover,
+  landingH1,
+  landingHeroCopy,
+  landingHeroGrid,
+  landingHeroSubtitle,
+  landingHeroVisual,
+  landingPageStack,
+  landingSectionTitle,
+} from '../lib/ui-classes';
 import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
 
 const focusRing =
@@ -43,15 +54,17 @@ function Section({
 
 export function AboutLanding() {
   const reducedMotion = useReducedMotion();
-  const heroMedia = HOME_MEDIA[aboutPage.heroMediaKey];
-  const ctaMedia = HOME_MEDIA[aboutPage.ctaMediaKey];
+  const heroMedia = HOME_MEDIA[aboutPage.hero.mediaKey];
+  const ctaMedia = HOME_MEDIA[aboutPage.finalCta.mediaKey];
 
   return (
     <div className={landingPageStack}>
-      {/* 1. Hero */}
       <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12">
-          <div className="order-2 space-y-6 lg:order-1 lg:space-y-8">
+        <div className={landingHeroGrid}>
+          <div className={landingHeroCopy}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">
+              {aboutPage.hero.kicker}
+            </p>
             <h1 className={`${landingH1} text-slate-950`}>
               {aboutPage.hero.lines.map((line, index) => (
                 <motion.span
@@ -65,20 +78,36 @@ export function AboutLanding() {
                 </motion.span>
               ))}
             </h1>
-            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">
+            <p className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-lg`}>
               {aboutPage.hero.subtitle}
             </p>
           </div>
-          <div className="order-1 lg:order-2">
-            <MotionPoster media={heroMedia} variant="cinematic" />
+          <div className={landingHeroVisual}>
+            <MotionPoster media={heroMedia} variant="cinematic" priority sizes="heroSplit" />
           </div>
         </div>
       </section>
 
-      {/* 2. What We Do */}
-      <Section className="space-y-8 sm:space-y-10">
-        <p className="text-center text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600 lg:text-left">우리가 하는 일</p>
-        <div className="flex flex-col gap-4 md:grid md:grid-cols-3 md:gap-5">
+      <Section className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 py-6 sm:px-7 sm:py-7">
+        <h2 className={landingSectionTitle}>{aboutPage.definition.title}</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base [word-break:keep-all]">
+          {aboutPage.definition.body}
+        </p>
+        <ul className="mt-4 flex flex-wrap gap-2">
+          {aboutPage.definition.pillars.map((pillar) => (
+            <li
+              key={pillar}
+              className="rounded-full border border-indigo-200/80 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-800"
+            >
+              {pillar}
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section className="space-y-4 sm:space-y-5">
+        <h2 className={landingSectionTitle}>{aboutPage.whatWeDo.title}</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-stretch sm:gap-4">
           {aboutPage.whatWeDo.cards.map((card, index) => (
             <motion.div
               key={card.href}
@@ -86,24 +115,31 @@ export function AboutLanding() {
               whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.45, delay: 0.08 * index }}
+              className="flex min-h-0"
             >
               <Link
                 href={card.href}
                 data-track={inferTrackFromHref(card.href)}
                 data-track-label={card.trackLabel}
-                className={`group block overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white shadow-md shadow-slate-900/5 ${cardInteractive} ${focusRing}`}
+                className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ${cardInteractive} ${focusRing}`}
               >
                 <MediaPanel
                   media={HOME_MEDIA[card.mediaKey]}
-                  className="aspect-[16/10] rounded-none border-0 sm:aspect-[5/3]"
+                  className="aspect-[16/10] shrink-0 rounded-none border-0"
+                  sizes="card3"
+                  photoPriority
                 />
-                <div className={`border-t-4 p-4 sm:p-5 ${roleAccent[index] ?? ''}`}>
-                  <h3 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">{card.title}</h3>
-                  <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">{card.description}</p>
+                <div className={`flex flex-1 flex-col border-t-4 p-4 sm:p-5 ${roleAccent[index] ?? ''}`}>
+                  <h3 className="text-base font-bold leading-snug text-slate-950 [word-break:keep-all] sm:text-lg">
+                    {card.title}
+                  </h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+                    {card.description}
+                  </p>
                   <span
-                    className={`mt-3 inline-block text-xs font-semibold text-slate-700 sm:text-sm ${fineHover}group-hover:text-indigo-700`}
+                    className={`mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-900`}
                   >
-                    자세히 →
+                    {card.linkLabel} →
                   </span>
                 </div>
               </Link>
@@ -112,84 +148,112 @@ export function AboutLanding() {
         </div>
       </Section>
 
-      {/* 3. SPOKEDU Method */}
-      <Section className="overflow-hidden rounded-[1.75rem] border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-10 sm:rounded-[2rem] sm:px-8 sm:py-12">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-left">
-          {aboutPage.method.title}
-        </h2>
-        <div className="mt-8 grid gap-4 sm:grid-cols-3 sm:gap-5">
-          {aboutPage.method.cards.map((item, index) => (
+      <Section className="rounded-2xl border border-indigo-200/60 bg-gradient-to-br from-indigo-50/80 via-white to-sky-50/50 px-5 py-6 sm:px-7 sm:py-8">
+        <h2 className={landingSectionTitle}>{aboutPage.philosophy.title}</h2>
+        <p className="mt-3 text-base font-medium text-slate-800 [word-break:keep-all] sm:text-lg">
+          {aboutPage.philosophy.lead}
+        </p>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base [word-break:keep-all]">
+          {aboutPage.philosophy.body}
+        </p>
+      </Section>
+
+      <Section className="space-y-4 sm:space-y-5">
+        <h2 className={landingSectionTitle}>{aboutPage.fieldTrust.title}</h2>
+        <div className="grid gap-4 lg:grid-cols-[1.1fr_minmax(0,1fr)] lg:items-stretch">
+          <div>
+            <p className="text-sm leading-relaxed text-slate-600 sm:text-base [word-break:keep-all]">
+              {aboutPage.fieldTrust.lead}
+            </p>
+            <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {aboutPage.fieldTrust.operations.map((item) => (
+                <li
+                  key={item}
+                  className="rounded-lg border border-slate-200/80 bg-white px-3 py-2 text-sm text-slate-700 [word-break:keep-all]"
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href={aboutPage.fieldTrust.recordsHref}
+                data-track={inferTrackFromHref(aboutPage.fieldTrust.recordsHref)}
+                data-track-label="about-field-records"
+                className={`text-sm font-semibold text-indigo-700 ${fineHover}hover:text-indigo-900 ${focusRing}`}
+              >
+                현장 기록 보기 →
+              </Link>
+              <Link
+                href={aboutPage.fieldTrust.casesHref}
+                data-track={inferTrackFromHref(aboutPage.fieldTrust.casesHref)}
+                data-track-label="about-field-cases"
+                className={`text-sm font-semibold text-indigo-700 ${fineHover}hover:text-indigo-900 ${focusRing}`}
+              >
+                운영 사례 보기 →
+              </Link>
+            </div>
+          </div>
+          <MediaPanel
+            media={HOME_MEDIA[aboutPage.fieldTrust.mediaKey]}
+            className="aspect-[4/3] min-h-[200px] overflow-hidden rounded-2xl border border-slate-200/80 lg:aspect-auto lg:min-h-full"
+            sizes="card2"
+          />
+        </div>
+      </Section>
+
+      <Section className="space-y-4">
+        <h2 className={landingSectionTitle}>{aboutPage.team.title}</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-stretch sm:gap-4">
+          {aboutPage.team.roles.map((role, index) => (
             <motion.article
-              key={item.code}
-              initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+              key={role.title}
+              initial={reducedMotion ? false : { opacity: 0, y: 10 }}
               whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.4, delay: 0.06 * index }}
-              className="rounded-2xl border border-white/90 bg-white/80 px-4 py-5 shadow-sm sm:px-5 sm:py-6"
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.4, delay: 0.05 * index }}
+              className="flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">{item.code}</p>
-              <h3 className="mt-2 text-base font-semibold text-slate-900 sm:text-lg">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
+              <h3 className="text-base font-bold text-slate-950 [word-break:keep-all]">{role.title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+                {role.description}
+              </p>
             </motion.article>
           ))}
         </div>
       </Section>
 
-      {/* 4. Field-Based Brand */}
-      <Section className="space-y-8 sm:space-y-10">
-        <div className="mx-auto max-w-2xl space-y-3 text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{aboutPage.fieldBrand.title}</h2>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:gap-6">
-          {aboutPage.fieldBrand.cards.map((card, index) => (
-            <motion.div
-              key={card.href}
-              initial={reducedMotion ? false : { opacity: 0, y: 16 }}
-              whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.45, delay: 0.06 * index }}
-            >
-              <Link
-                href={card.href}
-                data-track={inferTrackFromHref(card.href)}
-                data-track-label={card.trackLabel}
-                className={`group block overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white shadow-md shadow-slate-900/5 ${cardInteractive} ${focusRing}`}
-              >
-                <MediaPanel
-                  media={HOME_MEDIA[card.mediaKey]}
-                  className="aspect-[16/10] rounded-none border-0 sm:aspect-[5/3]"
-                />
-                <div className="p-4 sm:p-5">
-                  <h3 className="text-base font-semibold leading-snug text-slate-950 sm:text-lg">{card.title}</h3>
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-600">{card.tagline}</p>
-                  <span
-                    className={`mt-3 inline-block text-xs font-semibold text-slate-800 sm:text-sm ${fineHover}group-hover:text-indigo-700`}
-                  >
-                    보기 →
-                  </span>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+      <Section>
+        <h2 className={landingSectionTitle}>{aboutPage.expansion.title}</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base [word-break:keep-all]">
+          {aboutPage.expansion.body}
+        </p>
       </Section>
 
-      {/* 5. Final CTA */}
-      <Section className="relative overflow-hidden rounded-[1.75rem] border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-6 py-12 sm:rounded-[2rem] sm:px-10 sm:py-16">
+      <Section className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 sm:rounded-3xl sm:px-8 sm:py-10">
         <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="photo" className="h-full w-full" />
+          <MediaRenderer media={ctaMedia} intensity="photo" sizes="full" className="h-full w-full" />
         </div>
         <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{aboutPage.finalCta.title}</h2>
-          <div className="mt-8 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
-            {aboutPage.finalCta.links.map((item) => (
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl [word-break:keep-all]">
+            {aboutPage.finalCta.title}
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
+            {aboutPage.finalCta.description}
+          </p>
+          <div className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
+            {aboutPage.finalCta.links.map((item, index) => (
               <Link
                 key={item.href}
                 href={item.href}
                 data-track={inferTrackFromHref(item.href)}
                 data-track-label={item.trackLabel}
-                className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50 ${focusRing}`}
+                className={`inline-flex min-h-12 w-full items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold ${focusRing} ${
+                  index === 0
+                    ? `${btnPrimary} !border-transparent`
+                    : `border-indigo-200 bg-white text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50`
+                }`}
               >
                 {item.label}
               </Link>

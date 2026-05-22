@@ -16,7 +16,7 @@ const FEATURES = [
     ic: 'var(--spm-grn)',
     title: 'SPOMOVE',
     desc: '설치 없이 웹에서 바로 실행하는 화면 기반 반응훈련입니다. 프로젝터·TV·태블릿에 연결하면 아이들이 화면 신호를 보고 몸을 움직입니다.',
-    items: ['Projector · Class · Mobile 모드', '색상·방향·숫자 신호', '반응 시간 기록'],
+    items: ['빔·TV·태블릿 실행', '색상·방향·숫자 신호', '반응 시간 기록'],
   },
   {
     icon: Timer,
@@ -70,25 +70,31 @@ const FLOW = [
   { num: '3', label: '수업 도구 활용', caption: '타이머, 팀 나누기, 학생 뽑기를 수업 중에 바로 씁니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
 ] as const;
 
+const HERO_PROOF = [
+  { label: '이번 주 추천 수업', value: '4개', caption: '수업안과 SPOMOVE 연결' },
+  { label: '수업 준비 흐름', value: '3단계', caption: '고르기, 실행하기, 설명하기' },
+  { label: '바로 쓰는 자료', value: '5종', caption: '영상, 준비물, 세팅, 문구' },
+] as const;
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
 
 export const metadata = {
-  title: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼',
-  description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 도구. 14일 무료 체험으로 시작하세요.',
+  title: 'SPOKEDU MASTER — 체육교육 OTT 구독 서비스',
+  description: '수업안, 영상, SPOMOVE 큰 화면 활동, 설명 문구를 하나로 연결한 체육교육 OTT 구독 서비스. 14일 무료 체험으로 시작하세요.',
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website' as const,
     url: `${SITE_URL}/spokedu-master/landing`,
     siteName: 'SPOKEDU MASTER',
-    title: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼',
-    description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 도구. 14일 무료 체험으로 시작하세요.',
+    title: 'SPOKEDU MASTER — 체육교육 OTT 구독 서비스',
+    description: '수업안, 영상, SPOMOVE 큰 화면 활동, 설명 문구를 하나로 연결한 체육교육 OTT 구독 서비스. 14일 무료 체험으로 시작하세요.',
     locale: 'ko_KR',
     images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼' }],
   },
   twitter: {
     card: 'summary_large_image' as const,
-    title: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼',
-    description: '프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 도구. 14일 무료 체험으로 시작하세요.',
+    title: 'SPOKEDU MASTER — 체육교육 OTT 구독 서비스',
+    description: '수업안, 영상, SPOMOVE 큰 화면 활동, 설명 문구를 하나로 연결한 체육교육 OTT 구독 서비스. 14일 무료 체험으로 시작하세요.',
     images: [`${SITE_URL}/api/spokedu-master/og`],
   },
 };
@@ -113,30 +119,48 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden px-[22px] pb-[80px] pt-[80px] text-center sm:px-10 sm:pt-[110px]">
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
-          <div className="h-[500px] w-[700px] rounded-full opacity-[0.07]" style={{ background: 'radial-gradient(ellipse, var(--spm-acc), transparent 70%)' }} />
-        </div>
-        <div className="relative mx-auto max-w-[780px]">
-          <span className="mb-4 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em]" style={{ background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.35)', color: '#a5b4fc' }}>
-            SPOKEDU MASTER — 14일 무료 체험
-          </span>
-          <h1 className="mt-4 text-[42px] font-black leading-[1.1] md:text-[64px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>
-            수업 준비는 쉽게,<br />수업은 더 몰입감 있게
-          </h1>
-          <p className="mx-auto mt-6 max-w-[580px] text-[16px] font-medium leading-8" style={{ color: 'var(--spm-t2)' }}>
-            체육 강사와 교사를 위한 수업 준비 플랫폼. 프로그램 라이브러리에서 수업을 고르고, SPOMOVE를 큰 화면으로 실행하고, 수업 도구로 수업을 더 생동감 있게 진행합니다.
-          </p>
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+      <section
+        className="relative overflow-hidden px-[22px] pb-8 pt-[74px] sm:px-10 sm:pb-10 sm:pt-[92px]"
+        style={{
+          backgroundImage: 'linear-gradient(90deg, rgba(7,7,12,0.94) 0%, rgba(7,7,12,0.72) 48%, rgba(7,7,12,0.42) 100%), linear-gradient(0deg, rgba(7,7,12,0.96) 0%, rgba(7,7,12,0.2) 44%), url("/images/spokedu/home/home-hero-movement.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.5fr)] lg:items-end">
+          <div className="max-w-[720px]">
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em]" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', color: '#dbeafe' }}>
+              체육교육 OTT · 14일 무료 체험
+            </span>
+            <h1 className="mt-5 text-[46px] font-black leading-[0.98] md:text-[76px]" style={{ fontFamily: 'var(--spm-font-display)', color: '#fff', letterSpacing: 0, wordBreak: 'keep-all' }}>
+              SPOKEDU<br />MASTER
+            </h1>
+            <p className="mt-6 max-w-[640px] text-[19px] font-black leading-8 md:text-[23px]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
+              수업안, 영상, SPOMOVE 큰 화면 활동, 학부모 설명 문구까지 한 번에 구독합니다.
+            </p>
+            <p className="mt-4 max-w-[620px] text-[14px] font-semibold leading-7 md:text-[15px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
+              오늘 체육수업을 고르고, 체육관 TV에 바로 띄우고, 수업 후 가치를 설명하는 흐름까지 이어지는 한국형 체육교육 구독 서비스입니다.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/spokedu-master/onboarding" className="flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black text-white sm:w-auto sm:min-w-[200px]" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
               <Play size={16} fill="#fff" />
-              14일 무료 체험 시작
+              무료 체험으로 수업 열기
             </Link>
             <Link href="#pricing" className="flex h-14 w-full items-center justify-center gap-1.5 rounded-[14px] text-[15px] font-black sm:w-auto sm:min-w-[160px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-              플랜 보기 <ChevronRight size={16} />
+              구독 가치 보기 <ChevronRight size={16} />
             </Link>
+            </div>
+            <p className="mt-4 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.62)' }}>신용카드 없이 시작 · 14일 후 자동 만료 · 언제든 취소</p>
           </div>
-          <p className="mt-4 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>신용카드 없이 시작 · 14일 후 자동 만료 · 언제든 취소</p>
+          <div className="grid gap-3">
+            {HERO_PROOF.map((item) => (
+              <div key={item.label} className="rounded-[16px] p-4" style={{ background: 'rgba(7,7,12,0.58)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(16px)' }}>
+                <p className="text-[11px] font-black" style={{ color: 'rgba(255,255,255,0.62)' }}>{item.label}</p>
+                <p className="mt-1 text-[28px] font-black leading-none" style={{ color: '#fff', fontFamily: 'var(--spm-font-display)' }}>{item.value}</p>
+                <p className="mt-2 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.74)' }}>{item.caption}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

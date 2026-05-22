@@ -67,6 +67,12 @@ const INCLUDED_VALUES = [
   },
 ];
 
+const SUBSCRIPTION_LOOP = [
+  { label: '고르기', body: '이번 주 수업 패키지를 홈과 라이브러리에서 선택합니다.' },
+  { label: '실행하기', body: 'SPOMOVE와 Class Mode로 수업 현장에서 바로 진행합니다.' },
+  { label: '설명하기', body: '학부모와 기관에 보낼 수업 설명 문구를 남깁니다.' },
+];
+
 const TRUST_POINTS = [
   '토스페이먼츠 기반 보안 결제를 사용합니다.',
   '다음 결제일 전까지 언제든 구독 취소를 요청할 수 있습니다.',
@@ -189,6 +195,15 @@ export default function SubscriptionPage() {
                       </div>
                     );
                   })}
+                </div>
+                <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                  {SUBSCRIPTION_LOOP.map((item, index) => (
+                    <div key={item.label} className="rounded-[14px] p-4" style={{ background: 'rgba(255,255,255,0.52)', border: '1px solid rgba(255,255,255,0.62)' }}>
+                      <span className="text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>0{index + 1}</span>
+                      <p className="mt-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{item.label}</p>
+                      <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{item.body}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 

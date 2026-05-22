@@ -31,8 +31,10 @@ export type HomeProgramSystemItem = {
 
 export const homePage = {
   hero: {
-    lines: ['움직임으로', '아이의 성장을', '설계합니다'] as const,
-    subtitle: '현장 수업을 프로그램으로, 프로그램을 커리큘럼과 콘텐츠로 확장하는 아동·청소년 체육교육 운영 브랜드.',
+    kicker: '체육교육 운영 브랜드',
+    lines: ['현장 수업에서 시작해', '아이의 움직임을 설계합니다'] as const,
+    subtitle:
+      '스포키듀는 아동·청소년의 움직임 경험을 설계하는 체육교육 운영 브랜드입니다. 현장에서 아이들을 가르치고, 그 수업을 프로그램과 커리큘럼 콘텐츠로 확장합니다.',
     supportChips: [
       '아이에게는 맞춤 수업',
       '기관에는 운영 프로그램',

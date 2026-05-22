@@ -108,7 +108,7 @@ export const HOME_MEDIA = {
   proofMonthly: fromPhoto(SPOKEDU_IMAGES.home.labScene, {
     id: 'proof-monthly',
     label: '월간 기록',
-    alt: '월간 스포키듀 운영 기록',
+    alt: '월간형 체육수업 운영 기록',
     fallbackGradient: 'from-violet-500 via-indigo-700 to-slate-950',
     tone: 'violet',
   }),

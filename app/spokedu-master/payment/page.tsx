@@ -103,6 +103,12 @@ const VALUE_CARDS = [
   },
 ];
 
+const OUTCOME_STATS = [
+  { label: '매주 추천 수업', value: '4개', caption: '수업안 3개 + 화면 활동 1개' },
+  { label: '수업 준비 흐름', value: '3단계', caption: '고르기, 실행하기, 설명하기' },
+  { label: '바로 쓰는 자료', value: '5종', caption: '수업안, 영상, 준비물, 세팅, 문구' },
+];
+
 function normalizePlan(value: string | null): PlanKey {
   return value === 'team' ? 'team' : 'pro';
 }
@@ -328,6 +334,15 @@ function PaymentContent() {
             <p className="mt-4 max-w-[690px] text-[14px] font-semibold leading-7 sm:text-[15px]" style={{ color: 'var(--spm-t2)' }}>
               이 결제는 자료 몇 개를 여는 비용이 아니라, 라이브러리에서 수업을 고르고 SPOMOVE로 실행하고 설명 도구로 수업의 가치를 남기는 구독입니다.
             </p>
+            <div className="mt-6 grid gap-2 sm:grid-cols-3">
+              {OUTCOME_STATS.map((item) => (
+                <div key={item.label} className="rounded-[16px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.52)', border: '1px solid rgba(255,255,255,0.62)' }}>
+                  <p className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>{item.label}</p>
+                  <p className="mt-1 text-[24px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{item.value}</p>
+                  <p className="mt-1 text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t2)' }}>{item.caption}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           <PlanSelector selected={planKey} onSelect={setPlanKey} />
@@ -364,6 +379,23 @@ function PaymentContent() {
                 </li>
               ))}
             </ul>
+          </section>
+
+          <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>결제 후 바로 하는 일</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {[
+                ['1', '이번 주 수업 확인', '홈에서 대표 수업과 주간 4선을 확인합니다.'],
+                ['2', '큰 화면 실행', 'SPOMOVE를 TV나 빔에 띄워 바로 움직입니다.'],
+                ['3', '설명 문구 복사', '수업 후 학부모·기관 안내 문구를 남깁니다.'],
+              ].map(([step, title, body]) => (
+                <div key={step} className="rounded-[15px] p-4" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
+                  <span className="grid h-8 w-8 place-items-center rounded-[10px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>{step}</span>
+                  <p className="mt-3 text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{title}</p>
+                  <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{body}</p>
+                </div>
+              ))}
+            </div>
           </section>
         </section>
 

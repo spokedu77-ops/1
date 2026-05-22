@@ -180,7 +180,7 @@ export const useMasterStore = create<MasterState>()(
         try {
           const res = await fetch('/api/spokedu-master/drills');
           if (!res.ok) {
-            set({ drillsLoaded: true });
+            set({ drills: STATIC_DRILLS, drillsLoaded: true });
             return;
           }
           const json = await res.json() as { data?: Drill[] };

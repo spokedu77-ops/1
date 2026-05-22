@@ -4,6 +4,15 @@
 
 - 2026-05-21
 - 2026-05-22 노트 분석 업데이트
+- 2026-05-22 `/spokedu` RC 배포 준비 (테스트 리드 삭제, post-deploy 스크립트)
+
+## `/spokedu` 배포 준비 (RC)
+
+- RC QA 통과. Home H1: `현장 수업에서 시작해` / `아이의 움직임을 설계합니다` (About은 `체육교육 콘텐츠로 확장합니다`).
+- RC Contact 테스트 리드 삭제 완료 (`scripts/delete-rc-test-leads.mjs`). 재확인: `node scripts/delete-rc-test-leads.mjs --dry-run` → 0건.
+- 배포 후: `node scripts/spokedu-post-deploy-check.mjs https://PRODUCTION_URL`
+- 프로덕션 OG: Home / About / Contact — 카카오·문자 공유 1회 수동 확인.
+- 이미지 TODO (배포 후 교체): `records/dongjak.jpg`, `records/seodaemun.jpg`, `cases/hero.jpg`, `cases/representative.jpg` (`assetStatus: placeholder-copy`).
 
 ## 수정한 파일
 

@@ -132,9 +132,21 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }, [setOnline]);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/spokedu-master-sw.js', { scope: '/spokedu-master/' }).catch(() => undefined);
+    if (!('serviceWorker' in navigator)) return;
+
+    if (process.env.NODE_ENV !== 'production') {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => {
+          registrations
+            .filter((registration) => registration.scope.includes('/spokedu-master/'))
+            .forEach((registration) => void registration.unregister());
+        })
+        .catch(() => undefined);
+      return;
     }
+
+    navigator.serviceWorker.register('/spokedu-master-sw.js', { scope: '/spokedu-master/' }).catch(() => undefined);
   }, []);
 
   useEffect(() => {

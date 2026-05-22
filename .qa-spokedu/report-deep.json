@@ -1,0 +1,843 @@
+{
+  "contactLinks": {
+    "/spokedu": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "개인수업 상담",
+        "href": "/spokedu/contact?type=private"
+      },
+      {
+        "text": "기관 제안받기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "콘텐츠 문의",
+        "href": "/spokedu/contact?type=curriculum"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/about": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "개인수업 상담",
+        "href": "/spokedu/contact?type=private"
+      },
+      {
+        "text": "기관 프로그램 제안",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "커리큘럼 콘텐츠 문의",
+        "href": "/spokedu/contact?type=curriculum"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/private": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "개인수업 상담하기",
+        "href": "/spokedu/contact?type=private"
+      },
+      {
+        "text": "개인수업 상담하기",
+        "href": "/spokedu/contact?type=private"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/dispatch": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "기관 프로그램 제안받기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "기관 프로그램 제안받기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/curriculum": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "커리큘럼 콘텐츠 문의하기",
+        "href": "/spokedu/contact?type=curriculum"
+      },
+      {
+        "text": "커리큘럼 콘텐츠 문의하기",
+        "href": "/spokedu/contact?type=curriculum"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/programs": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "기관 프로그램 제안받기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "프로그램 상담하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "기관 프로그램 제안받기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "프로그램 상담하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/programs/spomove": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "SPOMOVE 도입 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "SPOMOVE 도입 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/programs/paps": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "PAPS 프로그램 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "PAPS 프로그램 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/programs/oneday-event": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "원데이 이벤트 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "원데이 이벤트 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/programs/camp": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "방학캠프 운영 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "방학캠프 운영 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/records": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "기관 프로그램 제안받기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/cases": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "기관 프로그램 제안받기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/monthly": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "월간 수업 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "월간 수업 문의하기",
+        "href": "/spokedu/contact?type=dispatch"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ],
+    "/spokedu/insights": [
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "스포키듀 수업 상담하기",
+        "href": "/spokedu/contact"
+      },
+      {
+        "text": "문의",
+        "href": "/spokedu/contact"
+      }
+    ]
+  },
+  "contactForms": [
+    {
+      "type": "private",
+      "h3": "개인수업 상담",
+      "selected": [
+        {
+          "text": "개인수업 상담",
+          "active": true,
+          "cls": "flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem"
+        },
+        {
+          "text": "기관 프로그램 제안",
+          "active": false,
+          "cls": "flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem"
+        },
+        {
+          "text": "커리큘럼·콘텐츠 문의",
+          "active": false,
+          "cls": "flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem"
+        }
+      ],
+      "phoneRequired": true,
+      "emailOptional": true,
+      "footers": 1,
+      "hasForm": true,
+      "titleOk": false
+    },
+    {
+      "type": "dispatch",
+      "h3": "기관 프로그램 제안",
+      "selected": [
+        {
+          "text": "개인수업 상담",
+          "active": false,
+          "cls": "flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem"
+        },
+        {
+          "text": "기관 프로그램 제안",
+          "active": true,
+          "cls": "flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem"
+        },
+        {
+          "text": "커리큘럼·콘텐츠 문의",
+          "active": false,
+          "cls": "flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem"
+        }
+      ],
+      "phoneRequired": true,
+      "emailOptional": true,
+      "footers": 1,
+      "hasForm": true,
+      "titleOk": true
+    },
+    {
+      "type": "curriculum",
+      "h3": "커리큘럼·콘텐츠 문의",
+      "selected": [
+        {
+          "text": "개인수업 상담",
+          "active": false,
+          "cls": "flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem"
+        },
+        {
+          "text": "기관 프로그램 제안",
+          "active": false,
+          "cls": "flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem"
+        },
+        {
+          "text": "커리큘럼·콘텐츠 문의",
+          "active": true,
+          "cls": "flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem"
+        }
+      ],
+      "phoneRequired": true,
+      "emailOptional": true,
+      "footers": 1,
+      "hasForm": true,
+      "titleOk": true
+    }
+  ],
+  "ctaHeights": [
+    {
+      "viewport": 360,
+      "aboutCtas": [
+        {
+          "text": "문의하기",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "개인수업 상담",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "기관 프로그램 제안",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "커리큘럼 콘텐츠 문의",
+          "height": 48,
+          "minH": "48px"
+        }
+      ]
+    },
+    {
+      "viewport": 390,
+      "aboutCtas": [
+        {
+          "text": "문의하기",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "개인수업 상담",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "기관 프로그램 제안",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "커리큘럼 콘텐츠 문의",
+          "height": 48,
+          "minH": "48px"
+        }
+      ]
+    },
+    {
+      "viewport": 430,
+      "aboutCtas": [
+        {
+          "text": "문의하기",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "개인수업 상담",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "기관 프로그램 제안",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "커리큘럼 콘텐츠 문의",
+          "height": 48,
+          "minH": "48px"
+        }
+      ]
+    },
+    {
+      "viewport": 768,
+      "aboutCtas": [
+        {
+          "text": "문의하기",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "개인수업 상담",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "기관 프로그램 제안",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "커리큘럼 콘텐츠 문의",
+          "height": 48,
+          "minH": "48px"
+        }
+      ]
+    },
+    {
+      "viewport": 1280,
+      "aboutCtas": [
+        {
+          "text": "문의하기",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "개인수업 상담",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "기관 프로그램 제안",
+          "height": 48,
+          "minH": "48px"
+        },
+        {
+          "text": "커리큘럼 콘텐츠 문의",
+          "height": 48,
+          "minH": "48px"
+        }
+      ]
+    }
+  ],
+  "footers": {
+    "contact": {
+      "footers": 1,
+      "contactFooter": true
+    }
+  },
+  "priorities": [],
+  "duplicateImages": {},
+  "postimg": [],
+  "overflow": [],
+  "ctaAudit": [
+    {
+      "page": "/spokedu",
+      "labelPart": "개인수업 상담",
+      "hrefPart": "type=private",
+      "ok": true,
+      "matches": [
+        {
+          "text": "개인수업 상담",
+          "href": "/spokedu/contact?type=private"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu",
+      "labelPart": "기관 제안받기",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "기관 제안받기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu",
+      "labelPart": "콘텐츠 문의",
+      "hrefPart": "type=curriculum",
+      "ok": true,
+      "matches": [
+        {
+          "text": "콘텐츠 문의",
+          "href": "/spokedu/contact?type=curriculum"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/private",
+      "labelPart": "개인수업 상담하기",
+      "hrefPart": "type=private",
+      "ok": true,
+      "matches": [
+        {
+          "text": "개인수업 상담하기",
+          "href": "/spokedu/contact?type=private"
+        },
+        {
+          "text": "개인수업 상담하기",
+          "href": "/spokedu/contact?type=private"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/dispatch",
+      "labelPart": "기관 프로그램 제안받기",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "기관 프로그램 제안받기",
+          "href": "/spokedu/contact?type=dispatch"
+        },
+        {
+          "text": "기관 프로그램 제안받기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/curriculum",
+      "labelPart": "커리큘럼 콘텐츠 문의하기",
+      "hrefPart": "type=curriculum",
+      "ok": true,
+      "matches": [
+        {
+          "text": "커리큘럼 콘텐츠 문의하기",
+          "href": "/spokedu/contact?type=curriculum"
+        },
+        {
+          "text": "커리큘럼 콘텐츠 문의하기",
+          "href": "/spokedu/contact?type=curriculum"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/programs",
+      "labelPart": "기관 프로그램",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "기관 프로그램 제안받기",
+          "href": "/spokedu/contact?type=dispatch"
+        },
+        {
+          "text": "기관 프로그램 제안받기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/programs/spomove",
+      "labelPart": "SPOMOVE 도입 문의하기",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "SPOMOVE 도입 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        },
+        {
+          "text": "SPOMOVE 도입 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/programs/paps",
+      "labelPart": "PAPS 프로그램 문의하기",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "PAPS 프로그램 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        },
+        {
+          "text": "PAPS 프로그램 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/programs/oneday-event",
+      "labelPart": "원데이 이벤트 문의하기",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "원데이 이벤트 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        },
+        {
+          "text": "원데이 이벤트 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/programs/camp",
+      "labelPart": "방학캠프 운영 문의하기",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "방학캠프 운영 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        },
+        {
+          "text": "방학캠프 운영 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/records",
+      "labelPart": "기관 프로그램",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "기관 프로그램 제안받기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/cases",
+      "labelPart": "기관 프로그램",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "기관 프로그램 제안받기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/monthly",
+      "labelPart": "월간 수업 문의",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "월간 수업 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        },
+        {
+          "text": "월간 수업 문의하기",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/insights",
+      "labelPart": "스포키듀 수업 상담하기",
+      "hrefPart": "/spokedu/contact",
+      "ok": true,
+      "matches": [
+        {
+          "text": "스포키듀 수업 상담하기",
+          "href": "/spokedu/contact"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/about",
+      "labelPart": "개인수업 상담",
+      "hrefPart": "type=private",
+      "ok": true,
+      "matches": [
+        {
+          "text": "개인수업 상담",
+          "href": "/spokedu/contact?type=private"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/about",
+      "labelPart": "기관 프로그램 제안",
+      "hrefPart": "type=dispatch",
+      "ok": true,
+      "matches": [
+        {
+          "text": "기관 프로그램 제안",
+          "href": "/spokedu/contact?type=dispatch"
+        }
+      ]
+    },
+    {
+      "page": "/spokedu/about",
+      "labelPart": "커리큘럼 콘텐츠 문의",
+      "hrefPart": "type=curriculum",
+      "ok": true,
+      "matches": [
+        {
+          "text": "커리큘럼 콘텐츠 문의",
+          "href": "/spokedu/contact?type=curriculum"
+        }
+      ]
+    }
+  ]
+}
