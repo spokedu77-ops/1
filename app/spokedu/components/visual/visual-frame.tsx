@@ -4,6 +4,8 @@ import { motion, useReducedMotion } from 'framer-motion';
 import type { HomeMediaItem } from '../../data/home-media';
 import { MediaRenderer } from './media-renderer';
 
+type PhotoTone = 'clear' | 'soft' | 'bold';
+
 type VisualFrameProps = {
   media: HomeMediaItem;
   className?: string;
@@ -11,8 +13,13 @@ type VisualFrameProps = {
   showLabel?: boolean;
   priority?: boolean;
   heroZoom?: boolean;
-  photoTone?: 'clear' | 'soft' | 'bold';
+  photoTone?: PhotoTone;
 };
+
+function photoToneToIntensity(photoTone: PhotoTone): 'soft' | 'bold' | 'photo' {
+  if (photoTone === 'clear') return 'photo';
+  return photoTone;
+}
 
 export function VisualFrame({
   media,
@@ -42,7 +49,7 @@ export function VisualFrame({
         media={media}
         showLabel={showLabel}
         priority={priority}
-        photoTone={photoTone}
+        intensity={photoToneToIntensity(photoTone)}
         animateZoom={heroZoom && !clearPhoto}
         className="absolute inset-0 z-[1]"
         sizes="(max-width: 1024px) 100vw, 55vw"
