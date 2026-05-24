@@ -491,7 +491,7 @@ function SpomoveSessionContent() {
           </div>
           {programId ? (
             <Link href={`/spokedu-master/class-record?program=${programId}`} className="mt-4 text-xs font-bold text-white/38 underline-offset-4 hover:text-white/70 hover:underline">
-              수업 기록은 확장 기능에서 이어집니다
+              수업 기록으로 오늘 활동 남기기
             </Link>
           ) : null}
         </div>

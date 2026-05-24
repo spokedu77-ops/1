@@ -1,23 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckCircle2, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle2, ClipboardCheck, Minus, MonitorPlay, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useMasterStore } from '../store';
 
 const PRODUCTS = [
-  { id: 'marker-cone', name: '마커콘 세트', desc: '방향 전환, 릴레이, 공간 구분 수업에 바로 쓰는 기본 교구', price: 8900, tone: '#f59e0b', tags: ['공간 구성', '릴레이'] },
-  { id: 'image-card', name: '움직임 이미지 카드', desc: '유아부터 초등까지 동작을 빠르게 이해시키는 수업 카드', price: 12000, tone: '#10b981', tags: ['유아체육', '표현 활동'] },
-  { id: 'mini-hurdle', name: '미니 허들 6개입', desc: '균형, 점프, 하체 협응 훈련에 연결하기 좋은 안전 교구', price: 24000, tone: '#818cf8', tags: ['밸런스', '출발 반응'] },
-  { id: 'baton', name: '소프트 릴레이 바통', desc: '팀 릴레이와 협동 수업을 위한 부드러운 바통', price: 6900, tone: '#fb7185', tags: ['팀 활동', '협응'] },
-  { id: 'projector', name: '수업용 미니 프로젝터', desc: 'SPOMOVE 웹 실행과 큰 화면 수업을 위한 권장 장비', price: 159000, tone: '#38bdf8', tags: ['SPOMOVE', '큰 화면'] },
+  { id: 'marker-cone', name: '마커콘 세트', desc: '방향 전환, 릴레이, 공간 구분 수업에 바로 쓰는 기본 교구', price: 8900, tone: '#f59e0b', tags: ['공간 구성', '릴레이'], lesson: '민첩성·반응 수업' },
+  { id: 'image-card', name: '움직임 이미지 카드', desc: '유아부터 초등까지 동작을 빠르게 이해시키는 수업 카드', price: 12000, tone: '#10b981', tags: ['유아체육', '표현 활동'], lesson: '도입·표현 활동' },
+  { id: 'mini-hurdle', name: '미니 허들 6개입', desc: '균형, 점프, 하체 협응 훈련에 연결하기 좋은 안전 교구', price: 24000, tone: '#818cf8', tags: ['밸런스', '출발 반응'], lesson: '점프·협응 루틴' },
+  { id: 'baton', name: '소프트 릴레이 바통', desc: '팀 릴레이와 협동 수업을 위한 부드러운 바통', price: 6900, tone: '#fb7185', tags: ['팀 활동', '협응'], lesson: '협동 릴레이' },
+  { id: 'projector', name: '수업용 미니 프로젝터', desc: 'SPOMOVE 웹 실행과 큰 화면 수업을 위한 권장 장비', price: 159000, tone: '#38bdf8', tags: ['SPOMOVE', '큰 화면'], lesson: '화면 활동' },
 ];
 
 const BUNDLES = [
-  { id: 'starter', name: '개인 강사 스타터 세트', desc: '마커콘, 이미지 카드, 바통으로 첫 수업 준비를 끝내는 구성', items: ['마커콘', '이미지 카드', '바통'], price: 26800 },
-  { id: 'center', name: '센터 공용 운영 세트', desc: '여러 강사가 함께 쓰는 SPOMOVE 실행 장비와 기본 교구 구성', items: ['마커콘', '미니 허들', '바통', '프로젝터'], price: 198800 },
+  { id: 'starter', name: '개인 강사 스타터 키트', desc: '마커콘, 이미지 카드, 바통으로 첫 수업 준비를 끝내는 구성', items: ['마커콘', '이미지 카드', '바통'], price: 26800, fit: '개인 강사·방과후' },
+  { id: 'center', name: '센터 공용 운영 키트', desc: '여러 강사가 함께 쓰는 SPOMOVE 실행 장비와 기본 교구 구성', items: ['마커콘', '미니 허들', '바통', '프로젝터'], price: 198800, fit: '센터·도장' },
 ];
+
+const STORE_FLOW = [
+  { icon: BookOpen, label: '수업안 확인', href: '/spokedu-master/library' },
+  { icon: MonitorPlay, label: '큰 화면 실행', href: '/spokedu-master/spomove' },
+  { icon: ClipboardCheck, label: '설명 문구', href: '/spokedu-master/report' },
+] as const;
 
 function ProductIcon({ tone }: { tone: string }) {
   return (
@@ -56,22 +62,35 @@ export default function SpokeduMasterShopPage() {
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>
-          equipment shop
+          lesson kit store
         </p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
-          교구 스토어
+          수업 준비 키트
         </h1>
         <p className="mt-2 max-w-[760px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          프로그램 라이브러리와 연결되는 수업 준비 영역입니다. 학생 데이터와 분리된 교구 구매 흐름으로 운영해, 강사와 센터가 필요한 장비를 빠르게 장바구니에 담을 수 있게 합니다.
+          라이브러리 수업안에서 실제로 쓰는 준비물을 빠르게 맞춥니다. 판매 페이지가 아니라 수업 실행에 필요한 교구를 확인하고 견적 요청까지 이어가는 운영 영역입니다.
         </p>
+        <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:max-w-[760px]">
+          {STORE_FLOW.map(({ icon: Icon, label, href }) => (
+            <Link
+              key={label}
+              href={href}
+              className="flex h-12 items-center justify-between rounded-[14px] px-4 text-[12px] font-black"
+              style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
+            >
+              <span className="flex items-center gap-2"><Icon size={15} />{label}</span>
+              <ArrowRight size={14} color="var(--spm-t3)" />
+            </Link>
+          ))}
+        </div>
       </header>
 
       <section className="mx-[22px] mb-7 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(24,95,165,0.22), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.26)' }}>
         <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#93c5fd' }}>
-          from library
+          from lesson library
         </p>
         <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
-          라이브러리에서 자주 쓰는 교구
+          수업안에서 자주 등장하는 준비물
         </h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {usedEquipment.map((item) => (
@@ -104,6 +123,9 @@ export default function SpokeduMasterShopPage() {
                       <h3 className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>
                         {bundle.name}
                       </h3>
+                      <p className="mt-1 inline-flex rounded-full px-2 py-1 text-[10px] font-black" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc)' }}>
+                        {bundle.fit}
+                      </p>
                       <p className="mt-1 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>
                         {bundle.desc}
                       </p>
@@ -120,7 +142,7 @@ export default function SpokeduMasterShopPage() {
                     </div>
                   </div>
                   <button type="button" onClick={() => addBundle(bundle)} className="mt-4 h-11 w-full rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                    세트 담기
+                    키트 담기
                   </button>
                 </article>
               ))}
@@ -147,6 +169,9 @@ export default function SpokeduMasterShopPage() {
                       </h3>
                       <p className="mt-1 text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>
                         {product.desc}
+                      </p>
+                      <p className="mt-2 text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>
+                        연결 수업 · {product.lesson}
                       </p>
                       <div className="mt-3 flex flex-wrap gap-1.5">
                         {product.tags.map((item) => (

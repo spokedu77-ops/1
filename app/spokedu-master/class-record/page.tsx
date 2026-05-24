@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { isSameDay } from 'date-fns';
-import { AlertTriangle, BookOpen, CalendarDays, Check, ChevronRight, ClipboardList, ExternalLink, FileText, History, MessageCircle, Play, Send, Star, UserCheck, UserX } from 'lucide-react';
+import { AlertTriangle, BookOpen, CalendarDays, Check, ChevronRight, ClipboardList, ExternalLink, FileText, History, MessageCircle, MonitorPlay, Play, Send, Star, UserCheck, UserX } from 'lucide-react';
 import { Suspense, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -93,6 +93,18 @@ function RecordListView() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class records</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
         <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 후 출석, 관찰, 동작 기록을 저장하면 학생 이력과 설명 문구에 자동으로 연결됩니다.</p>
+        <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:max-w-[760px]">
+          {[
+            { label: '수업안에서 시작', href: '/spokedu-master/library', icon: BookOpen },
+            { label: '큰 화면 실행', href: '/spokedu-master/spomove', icon: MonitorPlay },
+            { label: '설명 문구 확인', href: '/spokedu-master/report', icon: FileText },
+          ].map(({ label, href, icon: Icon }) => (
+            <Link key={label} href={href} className="flex h-12 items-center justify-center gap-2 rounded-[14px] text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+              <Icon size={15} />
+              {label}
+            </Link>
+          ))}
+        </div>
       </header>
 
       <section className="mb-5 px-[22px] sm:px-8 lg:px-10">
@@ -280,6 +292,9 @@ function RecordEntryView() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class record</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
+        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+          오늘 수업의 출석, 관찰, 동작 체크를 남겨 학생 이력과 수업 설명 문구로 이어갑니다.
+        </p>
       </header>
 
       {!recordStatus.allowed ? (

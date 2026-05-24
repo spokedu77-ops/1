@@ -235,7 +235,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex items-center gap-2">
-          <Link href="/spokedu-master/shop" className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.04)]" aria-label="교구 스토어">
+          <Link href="/spokedu-master/shop" className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.04)]" aria-label="수업 준비 키트">
             <ShoppingBag className="h-5 w-5 text-slate-600" />
             {cartCount > 0 ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white">{cartCount}</span> : null}
           </Link>
@@ -385,7 +385,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <div className="grid gap-2 sm:grid-cols-3">
             <MetaCard label="수업안" value={`${program.duration}분 · ${space}`} />
             <MetaCard label="연결 SPOMOVE" value={cleanDrillName(primaryDrill)} />
-            <MetaCard label="설명 도구" value="학부모·기관용 문구 복사" />
+            <MetaCard label="설명 문구" value="학부모·기관용 문구 복사" />
           </div>
         </DetailSection>
 
@@ -410,7 +410,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
             {cartNotice ? (
               <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-emerald-100 bg-emerald-50 p-3">
                 <p className="text-xs font-black text-emerald-700">{cartNotice}</p>
-                <Link href="/spokedu-master/shop" className="text-xs font-black text-emerald-700">스토어 보기</Link>
+                <Link href="/spokedu-master/shop" className="text-xs font-black text-emerald-700">준비물 보기</Link>
               </div>
             ) : null}
             <div className="grid gap-2 sm:grid-cols-2">

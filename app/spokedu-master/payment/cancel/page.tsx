@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, XCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, Home, XCircle } from 'lucide-react';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
@@ -36,12 +36,20 @@ function CancelContent() {
             다시 결제하기
           </Link>
           <Link
-            href="/spokedu-master/library"
+            href="/spokedu-master/dashboard"
             className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black"
             style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
           >
-            <ArrowLeft size={16} />
-            라이브러리로 돌아가기
+            <Home size={16} />
+            홈으로 돌아가기
+          </Link>
+          <Link
+            href="/spokedu-master/subscription"
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-black"
+            style={{ background: 'transparent', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
+          >
+            <ArrowLeft size={15} />
+            플랜 다시 보기
           </Link>
         </div>
         <p className="text-[11px]" style={{ color: 'var(--spm-t3)' }}>

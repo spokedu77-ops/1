@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { LandingSection } from './landing-section';
-import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
+import { MediaPanel } from './visual';
 import {
   recordFilters,
   recordsPage,
@@ -13,18 +13,14 @@ import {
 } from '../data/records-page';
 import { HOME_MEDIA } from '../data/home-media';
 import {
-  btnPrimary,
   cardInteractive,
   fineHover,
-  landingH1,
-  landingHeroCopy,
-  landingHeroGrid,
-  landingHeroSubtitle,
-  landingHeroVisual,
   landingPageStack,
   landingSectionTitle,
 } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
+import { LandingFinalCta } from './landing-final-cta';
+import { LandingHero } from './landing-hero';
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
@@ -34,7 +30,7 @@ function matchesFilter(record: FieldRecordItem, filter: RecordFilterId): boolean
   return record.filters.includes(filter);
 }
 
-function RecordCard({ record }: { record: FieldRecordItem }) {
+function RecordCard({ record, photoPriority = false }: { record: FieldRecordItem; photoPriority?: boolean }) {
   return (
     <Link
       href={record.href}
@@ -46,7 +42,7 @@ function RecordCard({ record }: { record: FieldRecordItem }) {
         media={HOME_MEDIA[record.mediaKey]}
         className="aspect-[5/4] max-h-[220px] shrink-0 rounded-none border-0 sm:aspect-[16/10] sm:max-h-none"
         sizes="card3"
-        photoPriority
+        photoPriority={photoPriority}
       />
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-indigo-600">
@@ -72,8 +68,6 @@ function RecordCard({ record }: { record: FieldRecordItem }) {
 export function RecordsLanding() {
   const reducedMotion = useReducedMotion();
   const [activeFilter, setActiveFilter] = useState<RecordFilterId>('all');
-  const heroMedia = HOME_MEDIA[recordsPage.hero.mediaKey];
-  const ctaMedia = HOME_MEDIA.trackDispatch;
 
   const filteredRecords = useMemo(
     () => recordsPage.fieldRecords.filter((r) => matchesFilter(r, activeFilter)),
@@ -82,36 +76,13 @@ export function RecordsLanding() {
 
   return (
     <div className={landingPageStack}>
-      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className={landingHeroGrid}>
-          <div className={landingHeroCopy}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">
-              {recordsPage.hero.kicker}
-            </p>
-            <h1 className={`${landingH1} text-slate-950`}>
-              {recordsPage.hero.lines.map((line, index) => (
-                <motion.span
-                  key={line}
-                  initial={reducedMotion ? false : { opacity: 0, y: 24 }}
-                  animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.07 * index }}
-                  className="block"
-                >
-                  {line}
-                </motion.span>
-              ))}
-            </h1>
-            <p
-              className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-lg`}
-            >
-              {recordsPage.hero.subtitle}
-            </p>
-          </div>
-          <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" priority sizes="heroSplit" />
-          </div>
-        </div>
-      </LandingSection>
+      <LandingHero
+        kicker={recordsPage.hero.kicker}
+        lines={recordsPage.hero.lines}
+        subtitle={recordsPage.hero.subtitle}
+        media={HOME_MEDIA[recordsPage.hero.mediaKey]}
+        priority
+      />
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 py-6 sm:px-7 sm:py-7">
         <h2 className={landingSectionTitle}>{recordsPage.roleCompare.title}</h2>
@@ -175,36 +146,26 @@ export function RecordsLanding() {
               transition={{ duration: 0.35, delay: 0.04 * index }}
               className="min-h-0"
             >
-              <RecordCard record={record} />
+              <RecordCard record={record} photoPriority={index === 0} />
             </motion.div>
           ))}
         </div>
       </LandingSection>
 
-      <LandingSection className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 sm:rounded-3xl sm:px-8 sm:py-10">
-        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="photo" sizes="full" className="h-full w-full" />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
-        <div className="relative mx-auto max-w-xl text-center">
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl [word-break:keep-all]">
-            {recordsPage.cta.title}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
-            {recordsPage.cta.description}
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link
-              href={recordsPage.cta.href}
-              data-track={inferTrackFromHref(recordsPage.cta.href)}
-              data-track-label={recordsPage.cta.trackLabel}
-              className={`${btnPrimary} min-h-12 !w-full sm:!min-w-[18rem] sm:!w-auto`}
-            >
-              {recordsPage.cta.label}
-            </Link>
-          </div>
-        </div>
-      </LandingSection>
+      <LandingFinalCta
+        title={recordsPage.cta.title}
+        description={recordsPage.cta.description}
+        tone="light"
+        backgroundMedia={HOME_MEDIA.trackDispatch}
+        links={[
+          {
+            label: recordsPage.cta.label,
+            href: recordsPage.cta.href,
+            trackLabel: recordsPage.cta.trackLabel,
+            variant: 'primary',
+          },
+        ]}
+      />
     </div>
   );
 }

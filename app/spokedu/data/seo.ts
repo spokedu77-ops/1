@@ -46,6 +46,8 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
   home: {
     url: SPOKEDU_IMAGES.home.hero.src,
     alt: SPOKEDU_IMAGES.home.hero.alt,
+    width: 1920,
+    height: 1280,
   },
   about: {
     url: SPOKEDU_IMAGES.programs.spomove.src,

@@ -16,6 +16,7 @@ export function GradientVisual({ media, className = '', showLabel = false, inten
 
   return (
     <motion.div
+      data-spokedu-visual="placeholder"
       className={`relative h-full w-full overflow-hidden bg-slate-900 ${className}`}
       aria-hidden={!showLabel}
     >

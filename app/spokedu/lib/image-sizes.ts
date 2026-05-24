@@ -1,7 +1,14 @@
 /** next/image `sizes` — 실제 레이아웃 기준 (과다 다운로드 방지) */
 export const IMAGE_SIZES = {
   heroSplit: '(max-width: 768px) 100vw, 50vw',
-  heroWide: '(max-width: 1024px) 100vw, 55vw',
+  heroWide: '(max-width: 1024px) 100vw, 58vw',
+  heroCollageMain: '(max-width: 1024px) 92vw, 38vw',
+  heroCollageSub: '(max-width: 1024px) 44vw, 18vw',
+  heroEditorialMain: '(max-width: 1024px) 100vw, 56vw',
+  heroEditorialThumb: '(max-width: 1024px) 46vw, 27vw',
+  gateCard: '(max-width: 768px) 92vw, 33vw',
+  fieldFeatured: '(max-width: 1024px) 100vw, 42vw',
+  fieldSecondary: '(max-width: 1024px) 100vw, 38vw',
   card3: '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw',
   card4: '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw',
   gateThumb: '(max-width: 768px) 92vw, 280px',

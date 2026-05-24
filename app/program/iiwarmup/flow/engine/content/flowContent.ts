@@ -12,7 +12,9 @@ export interface FlowLevelContent {
   label: string;
   /** 실행 중 화면에 뜨는 짧은 지시어 */
   cueWord: string;
-  /** 학생에게 설명하는 동작 안내 */
+  /** 레벨 인트로 overlay용 1줄 핵심 요약 */
+  shortInstruction: string;
+  /** 시작 화면 상세 안내 (길어도 됨) */
   instruction: string;
   /** 교육적 이유 (왜 이 동작인지) */
   why: string;
@@ -73,9 +75,10 @@ export const FLOW_LEVEL_CONTENT: Record<number, FlowLevelContent> = {
     tag: 'LEVEL 1',
     label: '점프',
     cueWord: 'JUMP!',
-    instruction: '화면의 다리를 따라 왼쪽, 가운데, 오른쪽으로 점프하세요',
-    why: '심박수를 서서히 높이며 잠들어 있던 몸을 깨웁니다',
-    muscle: '하체·발목 근육 활성화',
+    shortInstruction: '다리가 오는 방향으로 점프해서 착지하세요',
+    instruction: '화면에 나타나는 다리 위로 점프하세요. 왼쪽·가운데·오른쪽 중 다리가 있는 방향으로 이동해 착지합니다. 리듬감 있게 한 박자씩 뛰어보세요.',
+    why: '수업 전 굳어 있던 하체와 발목을 깨우고, 심박수를 서서히 올려 뇌에 산소를 공급합니다. 첫 10초면 몸의 온도가 달라집니다.',
+    muscle: '하체·발목·무릎 근육 활성화',
     color: '#93c5fd',
     colorBg: 'rgba(59,130,246,0.15)',
     colorBorder: 'rgba(147,197,253,0.6)',
@@ -84,9 +87,10 @@ export const FLOW_LEVEL_CONTENT: Record<number, FlowLevelContent> = {
     tag: 'LEVEL 2',
     label: '가속',
     cueWord: 'FASTER!',
-    instruction: '속도가 빨라집니다. 리듬을 맞춰 계속 점프하세요',
-    why: '심폐 기능을 자극해 집중력 준비 상태를 만듭니다',
-    muscle: '심박수 상승·전신 혈액순환',
+    shortInstruction: '속도가 빨라집니다 — 리듬 잃지 말고 계속!',
+    instruction: '이제 다리가 더 빠르게 다가옵니다. 눈과 발이 함께 움직이도록 리듬을 유지하세요. 속도에 당황하지 말고 다음 다리를 미리 확인하는 습관을 들여보세요.',
+    why: '빠른 박자에 맞춰 움직이면 심폐 기능이 자극되고 뇌의 각성 상태가 높아집니다. 이 단계에서 집중력 준비가 완료됩니다.',
+    muscle: '심박수 상승·전신 혈액순환·협응력',
     color: '#22d3ee',
     colorBg: 'rgba(34,211,238,0.12)',
     colorBorder: 'rgba(34,211,238,0.7)',
@@ -95,9 +99,10 @@ export const FLOW_LEVEL_CONTENT: Record<number, FlowLevelContent> = {
     tag: 'LEVEL 3',
     label: '펀치',
     cueWord: 'PUNCH!',
-    instruction: '다가오는 박스를 주먹으로 치세요',
-    why: '상체 근육과 반응 속도를 동시에 깨웁니다',
-    muscle: '어깨·상체·회전 근육 활성화',
+    shortInstruction: '박스가 오면 주먹으로 치세요',
+    instruction: '다리 위에 박스가 나타나면 주먹으로 쳐서 부수세요. 박스가 부서지는 순간 다음 다리로 점프합니다. 박스가 없는 다리는 그냥 뛰어 올라가면 됩니다.',
+    why: '팔을 뻗어 치는 동작은 어깨와 상체 근육을 활성화하고, 타이밍 판단 능력을 자극합니다. 상체와 하체가 동시에 깨어납니다.',
+    muscle: '어깨·팔·상체 회전 근육 활성화',
     color: '#f87171',
     colorBg: 'rgba(239,68,68,0.12)',
     colorBorder: 'rgba(239,68,68,0.7)',
@@ -106,9 +111,10 @@ export const FLOW_LEVEL_CONTENT: Record<number, FlowLevelContent> = {
     tag: 'LEVEL 4',
     label: '숙이기',
     cueWord: 'DUCK!',
-    instruction: '우주선이 지나갈 때 몸을 낮게 숙이세요',
-    why: '척추와 복근을 스트레칭하고 주의 전환 반응을 훈련합니다',
-    muscle: '척추·복근·고관절 유연성',
+    shortInstruction: '우주선이 오면 몸을 낮게 숙이세요',
+    instruction: '우주선이 낮게 날아올 때 몸을 재빨리 낮게 숙이세요. 경고 선이 깜빡이면 미리 준비하세요. 우주선이 지나가면 다시 바로 서서 점프 자세를 준비합니다.',
+    why: '순간적인 자세 전환은 척추와 고관절의 유연성을 키우고, 빠른 상황 판단력을 훈련합니다. 주의 전환 반응 속도가 높아집니다.',
+    muscle: '척추·복근·고관절 유연성·반응속도',
     color: '#fbbf24',
     colorBg: 'rgba(245,158,11,0.12)',
     colorBorder: 'rgba(245,158,11,0.7)',
@@ -117,9 +123,10 @@ export const FLOW_LEVEL_CONTENT: Record<number, FlowLevelContent> = {
     tag: 'LEVEL 5',
     label: '전체',
     cueWord: 'ALL IN!',
-    instruction: '박스는 주먹으로, 우주선은 숙이기로 반응하세요',
-    why: '전신 협응과 순간 판단 능력을 함께 훈련합니다',
-    muscle: '전신 협응·집중력 최고조',
+    shortInstruction: '박스 → 펀치 / 우주선 → 숙이기 / 다리 → 점프',
+    instruction: '모든 동작이 섞여서 나옵니다. 박스가 보이면 주먹으로 치고, 우주선이 오면 재빨리 숙이고, 다리를 향해 계속 점프하세요. 무엇이 올지 예측하며 반응하세요.',
+    why: '전신 협응과 순간 판단 능력을 동시에 훈련하는 최고 난이도 단계입니다. 이 단계를 완주하면 뇌와 몸이 완전히 준비된 상태가 됩니다.',
+    muscle: '전신 협응·순간판단·집중력 최고조',
     color: '#a78bfa',
     colorBg: 'rgba(167,139,250,0.12)',
     colorBorder: 'rgba(167,139,250,0.7)',
@@ -173,9 +180,9 @@ export function getRestContent(restIndex: number): FlowRestContent {
 // ─── 시작 콘텐츠 ─────────────────────────────────────────────────────────────
 
 export const FLOW_START_CONTENT: FlowStartContent = {
-  title: 'SPOKEDU FLOW',
-  subtitle: '화면을 따라 몸을 움직이는 움직임 워밍업',
-  body: '몸이 준비되면 수업 집중력이 훨씬 높아집니다',
+  title: 'FLOW',
+  subtitle: '수업 전 5분 — 몸을 깨우는 움직임 워밍업',
+  body: '화면을 따라 점프·펀치·숙이기를 하면\n뇌에 산소가 공급되어 집중력이 훨씬 높아집니다.',
   buttonLabel: '시작하기',
 };
 

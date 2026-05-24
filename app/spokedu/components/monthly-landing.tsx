@@ -2,21 +2,13 @@
 
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
+import { LandingFinalCta } from './landing-final-cta';
+import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
-import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
+import { MediaPanel } from './visual';
 import { HOME_MEDIA } from '../data/home-media';
 import { monthlyPage } from '../data/monthly-page';
-import {
-  btnPrimary,
-  fineHover,
-  landingH1,
-  landingHeroCopy,
-  landingHeroGrid,
-  landingHeroSubtitle,
-  landingHeroVisual,
-  landingPageStack,
-  landingSectionTitle,
-} from '../lib/ui-classes';
+import { fineHover, landingPageStack, landingSectionTitle } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
@@ -49,52 +41,21 @@ function BenefitCard({
 
 export function MonthlyLanding() {
   const reducedMotion = useReducedMotion();
-  const heroMedia = HOME_MEDIA[monthlyPage.hero.mediaKey];
-  const definitionMedia = HOME_MEDIA[monthlyPage.definition.mediaKey];
-  const ctaMedia = HOME_MEDIA[monthlyPage.cta.mediaKey];
 
   return (
     <div className={landingPageStack}>
-      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className={landingHeroGrid}>
-          <div className={landingHeroCopy}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">
-              {monthlyPage.hero.kicker}
-            </p>
-            <h1 className={`${landingH1} text-slate-950`}>
-              {monthlyPage.hero.lines.map((line, index) => (
-                <motion.span
-                  key={line}
-                  initial={reducedMotion ? false : { opacity: 0, y: 24 }}
-                  animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.07 * index }}
-                  className="block"
-                >
-                  {line}
-                </motion.span>
-              ))}
-            </h1>
-            <p
-              className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-lg`}
-            >
-              {monthlyPage.hero.subtitle}
-            </p>
-            <div className="mt-6 sm:mt-7">
-              <Link
-                href={monthlyPage.hero.cta.href}
-                data-track={inferTrackFromHref(monthlyPage.hero.cta.href)}
-                data-track-label={monthlyPage.hero.cta.trackLabel}
-                className={`${btnPrimary} min-h-12 !w-full sm:!w-auto`}
-              >
-                {monthlyPage.hero.cta.label}
-              </Link>
-            </div>
-          </div>
-          <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" priority sizes="heroSplit" />
-          </div>
-        </div>
-      </LandingSection>
+      <LandingHero
+        kicker={monthlyPage.hero.kicker}
+        lines={monthlyPage.hero.lines}
+        subtitle={monthlyPage.hero.subtitle}
+        media={HOME_MEDIA[monthlyPage.hero.mediaKey]}
+        priority
+        primaryCta={{
+          label: monthlyPage.hero.cta.label,
+          href: monthlyPage.hero.cta.href,
+          trackLabel: monthlyPage.hero.cta.trackLabel,
+        }}
+      />
 
       <LandingSection className="space-y-4 sm:space-y-5" delay={0.04}>
         <h2 className={landingSectionTitle}>{monthlyPage.definition.title}</h2>
@@ -103,7 +64,7 @@ export function MonthlyLanding() {
             {monthlyPage.definition.body}
           </p>
           <MediaPanel
-            media={definitionMedia}
+            media={HOME_MEDIA[monthlyPage.definition.mediaKey]}
             className="aspect-[16/10] min-h-[180px] overflow-hidden rounded-2xl border border-slate-200/80 lg:aspect-auto lg:min-h-[200px]"
             sizes="card2"
             photoPriority
@@ -197,30 +158,20 @@ export function MonthlyLanding() {
         </div>
       </LandingSection>
 
-      <LandingSection className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 sm:rounded-3xl sm:px-8 sm:py-10">
-        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="photo" sizes="full" className="h-full w-full" />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
-        <div className="relative mx-auto max-w-xl text-center">
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl [word-break:keep-all]">
-            {monthlyPage.cta.title}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
-            {monthlyPage.cta.description}
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link
-              href={monthlyPage.cta.href}
-              data-track={inferTrackFromHref(monthlyPage.cta.href)}
-              data-track-label={monthlyPage.cta.trackLabel}
-              className={`${btnPrimary} min-h-12 !w-full sm:!min-w-[18rem] sm:!w-auto`}
-            >
-              {monthlyPage.cta.label}
-            </Link>
-          </div>
-        </div>
-      </LandingSection>
+      <LandingFinalCta
+        title={monthlyPage.cta.title}
+        description={monthlyPage.cta.description}
+        tone="light"
+        backgroundMedia={HOME_MEDIA[monthlyPage.cta.mediaKey]}
+        links={[
+          {
+            label: monthlyPage.cta.label,
+            href: monthlyPage.cta.href,
+            trackLabel: monthlyPage.cta.trackLabel,
+            variant: 'primary',
+          },
+        ]}
+      />
     </div>
   );
 }

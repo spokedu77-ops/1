@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, BookOpen, CalendarDays, ChevronRight, Clipboard, Clock3, Layers3, MapPin, MonitorPlay, Play, Sparkles, Zap } from 'lucide-react';
+import { Bell, BookOpen, CalendarDays, ChevronRight, Clipboard, Clock3, MapPin, MonitorPlay, Play, Sparkles, Zap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -82,6 +82,17 @@ function getProgramOutcome(program: Program) {
   return focusItems.length > 0 ? focusItems.join(' · ') : program.category;
 }
 
+function getPackageProof(program: Program, drill?: Drill) {
+  const equipmentCount = program.equipment?.length ?? 0;
+  const hasCopy = Boolean(program.lessonDetail?.parentNote || program.lessonDetail?.coachScript);
+  return [
+    { label: '수업안', value: `${program.duration}분` },
+    { label: '화면 활동', value: drill ? '연결' : isSpomoveLinked(program) ? '추천' : '선택' },
+    { label: '준비물', value: equipmentCount > 0 ? `${equipmentCount}개` : '기본' },
+    { label: '설명 문구', value: hasCopy ? '포함' : '생성' },
+  ];
+}
+
 function PlanStatusChip() {
   const profile = useProfile();
   const daysLeft = getTrialDaysLeft(profile);
@@ -139,15 +150,59 @@ function NotificationButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+function DashboardHeader({ onNotificationClick }: { onNotificationClick: () => void }) {
+  const flow = [
+    { label: '수업안', icon: BookOpen },
+    { label: '큰 화면', icon: MonitorPlay },
+    { label: '설명 문구', icon: Clipboard },
+  ];
+
+  return (
+    <header className="px-1 py-2 sm:px-0">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl">
+          <p className="text-xs font-black tracking-[0.16em] text-indigo-500">SPOKEDU MASTER HOME</p>
+          <h1 className="mt-2 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
+            오늘 쓸 수업을 고르고 바로 실행하세요
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-slate-600">
+            수업안, 큰 화면 활동, 설명 문구를 한 흐름으로 이어갑니다.
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <PlanStatusChip />
+          <NotificationButton onClick={onNotificationClick} />
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {flow.map(({ label, icon: Icon }, index) => (
+          <div key={label} className="flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-[0_6px_18px_rgba(15,23,42,0.04)]">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-indigo-50 text-indigo-600">
+              <Icon className="h-3.5 w-3.5" />
+            </span>
+            <span className="min-w-0">
+              <span className="text-[10px] font-black text-slate-400">STEP {index + 1}</span>
+              <strong className="ml-1 text-xs font-black text-slate-950">{label}</strong>
+            </span>
+          </div>
+        ))}
+      </div>
+    </header>
+  );
+}
+
 function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
   const heroImage = getHeroImage(program);
   const spomoveHref = drill
     ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
     : '/spokedu-master/spomove';
   const focusItems = getFocusItems(program, 3);
+  const proof = getPackageProof(program, drill);
 
   return (
-    <section className="relative min-h-[520px] overflow-hidden rounded-[22px] bg-slate-950 shadow-[0_2px_4px_rgba(15,23,42,0.04),0_28px_80px_rgba(15,23,42,0.16)]">
+    <section className="relative min-h-[500px] overflow-hidden rounded-[22px] bg-slate-950 shadow-[0_2px_4px_rgba(15,23,42,0.04),0_28px_80px_rgba(15,23,42,0.16)]">
       {heroImage ? (
         <Image
           src={heroImage}
@@ -163,7 +218,7 @@ function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
       )}
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,0.92),rgba(15,23,42,0.66)_45%,rgba(15,23,42,0.22)),linear-gradient(0deg,rgba(15,23,42,0.7),rgba(15,23,42,0.05)_42%)]" />
 
-      <div className="relative flex min-h-[520px] flex-col justify-between p-5 text-white sm:p-8 lg:p-10">
+      <div className="relative flex min-h-[500px] flex-col justify-between p-5 text-white sm:p-8 lg:p-10">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-black text-slate-950">
             <Sparkles className="h-3.5 w-3.5" />
@@ -186,23 +241,16 @@ function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
           <h1 className="mt-3 max-w-3xl text-4xl font-black leading-[1.05] sm:text-5xl lg:text-6xl">
             {program.title}
           </h1>
-          <p className="mt-5 max-w-2xl text-sm font-semibold leading-7 text-slate-100 sm:text-base">
+          <p className="mt-5 max-w-xl text-sm font-semibold leading-7 text-slate-100 sm:text-base">
             {program.lessonDetail?.objective || program.description}
           </p>
 
-          <div className="mt-6 grid max-w-2xl gap-2 sm:grid-cols-3">
-            <span className="flex min-h-16 items-center gap-2 rounded-2xl border border-white/14 bg-white/12 px-4 py-3 backdrop-blur">
-              <Clock3 className="h-4 w-4 shrink-0 text-indigo-100" />
-              <span className="min-w-0 text-sm font-black">{program.duration}분</span>
-            </span>
-            <span className="flex min-h-16 items-center gap-2 rounded-2xl border border-white/14 bg-white/12 px-4 py-3 backdrop-blur">
-              <MapPin className="h-4 w-4 shrink-0 text-indigo-100" />
-              <span className="min-w-0 truncate text-sm font-black">{program.space}</span>
-            </span>
-            <span className="flex min-h-16 items-center gap-2 rounded-2xl border border-white/14 bg-white/12 px-4 py-3 backdrop-blur">
-              <Layers3 className="h-4 w-4 shrink-0 text-indigo-100" />
-              <span className="min-w-0 truncate text-sm font-black">{focusItems[0] ?? getProgramOutcome(program)}</span>
-            </span>
+          <div className="mt-6 flex max-w-2xl flex-wrap gap-2">
+            {[`${program.duration}분`, program.space, focusItems[0] ?? getProgramOutcome(program)].map((item) => (
+              <span key={item} className="rounded-full border border-white/16 bg-white/12 px-3 py-1.5 text-xs font-black text-white backdrop-blur">
+                {item}
+              </span>
+            ))}
           </div>
 
           <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
@@ -220,13 +268,18 @@ function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
               <MonitorPlay className="h-4 w-4" />
               큰 화면 실행
             </Link>
-            <Link
-              href={`/spokedu-master/library/${program.id}`}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/16 bg-slate-950/28 px-5 text-sm font-black text-white backdrop-blur transition hover:bg-slate-950/40"
-            >
-              <BookOpen className="h-4 w-4" />
-              패키지 보기
-            </Link>
+          </div>
+
+          <div className="mt-5 flex max-w-xl flex-wrap gap-2">
+            {proof.map((item) => (
+              <Link
+                key={item.label}
+                href={item.label === '설명 문구' ? `/spokedu-master/report?program=${program.id}` : `/spokedu-master/library/${program.id}`}
+                className="rounded-full bg-slate-950/32 px-3 py-1.5 text-[11px] font-bold text-white/78 backdrop-blur transition hover:bg-slate-950/46"
+              >
+                {item.label} · {item.value}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
@@ -234,10 +287,11 @@ function HomeHero({ program, drill }: { program: Program; drill?: Drill }) {
   );
 }
 
-function TodayCommandPanel({ program, drill, weeklyCount }: { program: Program; drill?: Drill; weeklyCount: number }) {
+function TodayCommandPanel({ program, drill }: { program: Program; drill?: Drill }) {
   const spomoveHref = drill
     ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}`
     : '/spokedu-master/spomove';
+  const reportHref = `/spokedu-master/report?program=${program.id}`;
 
   const actions = [
     {
@@ -264,62 +318,47 @@ function TodayCommandPanel({ program, drill, weeklyCount }: { program: Program; 
     {
       title: '설명 문구',
       caption: '학부모·기관용 복사',
-      href: `/spokedu-master/library/${program.id}#copy`,
+      href: reportHref,
       icon: Clipboard,
       tone: 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100',
     },
   ];
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)] sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-black tracking-[0.14em] text-indigo-500">오늘 바로 실행</p>
-            <h2 className="mt-1 text-xl font-black text-slate-950">누르면 수업이 시작되는 홈</h2>
-          </div>
-          <Link href="/spokedu-master/library" className="hidden text-sm font-black text-indigo-600 sm:inline-flex">
-            전체 자료
-          </Link>
+    <section className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-[0_12px_34px_rgba(15,23,42,0.05)] sm:p-4">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+        <div className="shrink-0 px-1 sm:w-[180px]">
+          <p className="text-[11px] font-black tracking-[0.14em] text-indigo-500">오늘 바로 실행</p>
+          <h2 className="mt-1 text-lg font-black text-slate-950">수업 시작</h2>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid flex-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {actions.map((action) => {
             const Icon = action.icon;
             return (
               <Link
                 key={action.title}
                 href={action.href}
-                className={`flex min-h-[120px] flex-col justify-between rounded-2xl border border-slate-200 p-4 transition ${action.tone}`}
+                className={`flex min-h-16 items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 transition ${action.tone}`}
               >
-                <Icon className="h-5 w-5" />
-                <span>
-                  <strong className="block text-base font-black">{action.title}</strong>
-                  <span className="mt-1 line-clamp-2 block text-xs font-semibold opacity-72">{action.caption}</span>
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className="min-w-0">
+                  <strong className="block truncate text-sm font-black">{action.title}</strong>
+                  <span className="mt-0.5 block truncate text-[11px] font-semibold opacity-70">{action.caption}</span>
                 </span>
               </Link>
             );
           })}
         </div>
-      </div>
-
-      <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
-        <p className="text-xs font-black tracking-[0.14em] text-slate-400">이번 주 상태</p>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {[
-            { label: '추천', value: `${weeklyCount + 1}` },
-            { label: '화면', value: drill ? 'ON' : '-' },
-            { label: '문구', value: '복사' },
-          ].map((item) => (
-            <div key={item.label} className="rounded-2xl bg-slate-50 p-3 text-center">
-              <p className="text-[11px] font-bold text-slate-400">{item.label}</p>
-              <p className="mt-1 text-xl font-black text-slate-950">{item.value}</p>
-            </div>
-          ))}
+        <div className="flex shrink-0 gap-2 xl:w-[170px] xl:flex-col">
+          <Link href="/spokedu-master/plan" className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-50 px-3 text-xs font-black text-slate-700 transition hover:bg-slate-100">
+            <CalendarDays className="h-3.5 w-3.5" />
+            계획
+          </Link>
+          <Link href="/spokedu-master/library" className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-50 px-3 text-xs font-black text-slate-700 transition hover:bg-slate-100">
+            <BookOpen className="h-3.5 w-3.5" />
+            전체
+          </Link>
         </div>
-        <Link href="/spokedu-master/plan" className="mt-4 flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 text-sm font-black text-slate-800 transition hover:bg-white">
-          <CalendarDays className="h-4 w-4" />
-          주간 계획 보기
-        </Link>
       </div>
     </section>
   );
@@ -332,8 +371,8 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
     : '/spokedu-master/spomove';
 
   return (
-    <article className="flex min-h-[280px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_2px_4px_rgba(15,23,42,0.04),0_12px_30px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(15,23,42,0.06),0_20px_44px_rgba(15,23,42,0.12)]">
-      <Link href={`/spokedu-master/library/${program.id}`} className="relative h-44 shrink-0 overflow-hidden bg-slate-100">
+    <article className="flex min-h-[300px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_2px_4px_rgba(15,23,42,0.04),0_12px_30px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(15,23,42,0.06),0_20px_44px_rgba(15,23,42,0.12)]">
+      <Link href={`/spokedu-master/library/${program.id}`} className="relative h-52 shrink-0 overflow-hidden bg-slate-100">
         {getHeroImage(program) ? (
           <Image
             src={getHeroImage(program) as string}
@@ -359,23 +398,20 @@ function ProgramPackageCard({ program, drill }: { program: Program; drill?: Dril
       </Link>
 
       <div className="flex flex-1 flex-col p-4">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
-          <Clock3 className="h-3.5 w-3.5 shrink-0" />
-          <span>{program.duration}분</span>
-          <span className="text-slate-300">·</span>
-          <span className="min-w-0 truncate">{program.grade}</span>
-        </div>
-        <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-400">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 truncate">{program.space}</span>
-        </div>
-
-        <div className="mt-3 flex min-h-[24px] flex-wrap gap-1.5">
+        <div className="flex min-h-[24px] flex-wrap gap-1.5">
           {focusItems.map((item) => (
             <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
               {item}
             </span>
           ))}
+        </div>
+
+        <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-400">
+          <Clock3 className="h-3.5 w-3.5 shrink-0" />
+          <span>{program.duration}분</span>
+          <span className="text-slate-300">·</span>
+          <MapPin className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate">{program.space}</span>
         </div>
 
         <div className="mt-auto flex gap-2 pt-4">
@@ -418,6 +454,16 @@ function WeeklySpomoveCard({ drill }: { drill: Drill }) {
         <p className="text-xs font-bold tracking-[0.14em] text-indigo-300">큰 화면 추천</p>
         <h3 className="mt-3 text-2xl font-black leading-tight text-white">{drillTitle}</h3>
         <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-400">{drillCaption}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <span className="rounded-xl bg-white/8 px-3 py-2">
+            <span className="block text-[10px] font-bold text-white/40">사용 환경</span>
+            <span className="mt-0.5 block text-xs font-black text-white">TV·빔</span>
+          </span>
+          <span className="rounded-xl bg-white/8 px-3 py-2">
+            <span className="block text-[10px] font-bold text-white/40">수업 연결</span>
+            <span className="mt-0.5 block text-xs font-black text-white">즉시 실행</span>
+          </span>
+        </div>
       </div>
       <Link
         href={`/spokedu-master/spomove/session?drill=${drill.id}&mode=projector`}
@@ -451,7 +497,7 @@ function SubscriptionConfidenceStrip() {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
           <Link href="/spokedu-master/payment?plan=pro" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white transition hover:bg-indigo-500">
-            Pro 시작
+            Pro 전환
             <ChevronRight className="h-4 w-4" />
           </Link>
           <Link href="/spokedu-master/subscription" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-black text-slate-700 transition hover:bg-white">
@@ -539,26 +585,17 @@ export default function DashboardView() {
   return (
     <>
       <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-6 overflow-y-auto bg-[#f4f6fb] px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-400">SPOKEDU MASTER</p>
-            <h1 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">이번 주 수업 준비</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <PlanStatusChip />
-            <NotificationButton onClick={() => setNotificationOpen(true)} />
-          </div>
-        </header>
+        <DashboardHeader onNotificationClick={() => setNotificationOpen(true)} />
 
         <HomeHero program={heroProgram} drill={heroDrill} />
 
-        <TodayCommandPanel program={heroProgram} drill={weeklyDrill} weeklyCount={weeklyPrograms.length} />
+        <TodayCommandPanel program={heroProgram} drill={weeklyDrill} />
 
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <p className="text-xs font-bold tracking-[0.14em] text-indigo-500">주간 큐레이션</p>
-              <h2 className="mt-1 text-xl font-black text-slate-950">이번 주 바로 꺼내 쓰는 4선</h2>
+              <h2 className="mt-1 text-xl font-black text-slate-950">이번 주 추천 수업</h2>
             </div>
             <Link href="/spokedu-master/library" className="text-sm font-bold text-indigo-600 hover:text-indigo-500">
               전체 보기

@@ -213,6 +213,44 @@ export class FlowAudio {
     osc.stop(t + 0.26);
   }
 
+  /** 가속 구간 시작 시 상승하는 sweep 사운드 */
+  sfxSprint(): void {
+    if (!this.ctx || !this.sfxGain || !this.noiseBuffer) return;
+    const t = this.ctx.currentTime;
+
+    // rising tone: sawtooth 200Hz → 600Hz over 0.3s
+    const osc = this.ctx.createOscillator();
+    const oscGain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, t);
+    osc.frequency.exponentialRampToValueAtTime(600, t + 0.3);
+    oscGain.gain.setValueAtTime(0.0001, t);
+    oscGain.gain.exponentialRampToValueAtTime(0.18, t + 0.04);
+    oscGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+    osc.connect(oscGain);
+    oscGain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.38);
+
+    // whoosh layer
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(400, t);
+    filter.frequency.exponentialRampToValueAtTime(3200, t + 0.28);
+    filter.Q.setValueAtTime(1.2, t);
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.0001, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.55, t + 0.05);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    src.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.sfxGain);
+    src.start(t);
+    src.stop(t + 0.36);
+  }
+
   private playKick(t: number): void {
     if (!this.ctx || !this.bgmGain) return;
     const osc = this.ctx.createOscillator();

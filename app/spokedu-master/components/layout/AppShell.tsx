@@ -76,9 +76,9 @@ function OperationsBanner() {
         style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}
         role="status"
       >
-        <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>무료 체험이 종료되었습니다.</p>
+        <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>체험 기간이 종료되었습니다.</p>
         <Link href="/spokedu-master/payment?plan=pro" className="shrink-0 rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)' }}>
-          Pro 시작
+          Pro 전환
         </Link>
       </div>
     );

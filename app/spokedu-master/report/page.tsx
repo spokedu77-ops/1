@@ -11,6 +11,7 @@ import {
   MessageCircle,
   MonitorPlay,
   Search,
+  Send,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
@@ -65,7 +66,7 @@ function buildCopyBlocks(audience: Audience, program: Program, record?: ClassRec
   const setupSummary = detail?.setupNotes?.length ? detail.setupNotes.slice(0, 2).join(' ') : `${program.space}에서 준비물 ${equipment}을 활용합니다.`;
   const spomoveSummary = detail?.relatedSpomoveIds?.length
     ? 'SPOMOVE 화면 신호를 연결하면 학생들이 신호를 보고 판단하고 즉시 움직이는 참여형 활동으로 확장됩니다.'
-    : '수업 흐름에 따라 타이머, 점수판, 설명 도구를 함께 활용할 수 있습니다.';
+    : '수업 흐름에 따라 타이머, 점수판, 설명 문구를 함께 활용할 수 있습니다.';
   const recordMeta = record ? ` 오늘 기록은 출석 ${record.present}명, 집중 관찰 ${record.focusCount}명, 동작 체크 ${record.skillCount}개로 정리되었습니다.` : '';
 
   if (audience === 'parent') {
@@ -188,6 +189,7 @@ function ReportContent() {
     ? programPool.filter((item) => item.title.includes(programSearch) || item.tags.some((tag) => tag.includes(programSearch)))
     : programPool;
   const copyBlocks = useMemo(() => (program ? buildCopyBlocks(audience, program, selectedRecord) : []), [audience, program, selectedRecord]);
+  const combinedCopy = useMemo(() => copyBlocks.map((block) => `[${block.title}]\n${block.text}`).join('\n\n'), [copyBlocks]);
   const activeAudience = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0]!;
   const detail = program?.lessonDetail;
   const primaryDrillId = detail?.relatedSpomoveIds[0] ?? 'reactTrain';
@@ -206,15 +208,15 @@ function ReportContent() {
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Explanation</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 설명 도구</h1>
+        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 설명 문구</h1>
         <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
           수업 후 30초 안에 대상별 문구를 골라 복사하세요.
         </p>
         <div className="mt-5 grid gap-2 sm:grid-cols-3">
           {[
-            { label: '학부모 안내', value: '수업 직후 바로 공유' },
-            { label: '기관 설명', value: '상담·운영 문구 정리' },
-            { label: '학교 기록', value: '차시 기록용 문장 제공' },
+            { label: '복사 속도', value: '30초 안에 발송' },
+            { label: '대상별 문장', value: '보호자·기관·학교' },
+            { label: '수업 연결', value: '수업안과 SPOMOVE' },
           ].map((item) => (
             <div key={item.label} className="rounded-[14px] px-3 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
               <p className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>{item.label}</p>
@@ -317,9 +319,15 @@ function ReportContent() {
                       ) : null}
                     </div>
                   </div>
-                  <Link href={`/spokedu-master/spomove/session?drill=${primaryDrillId}&mode=projector&program=${program.id}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.18)', border: '1px solid rgba(99,102,241,0.28)' }} aria-label="SPOMOVE 실행">
-                    <MonitorPlay size={16} color="#a5b4fc" />
-                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => copyText(`all-${audience}-${program.id}`, combinedCopy)}
+                    className="hidden h-10 shrink-0 items-center gap-1.5 rounded-[12px] px-3 text-[12px] font-black text-white sm:flex"
+                    style={{ background: copiedKey === `all-${audience}-${program.id}` ? 'var(--spm-grn)' : 'var(--spm-acc)' }}
+                  >
+                    {copiedKey === `all-${audience}-${program.id}` ? <Check size={14} /> : <Send size={14} />}
+                    {copiedKey === `all-${audience}-${program.id}` ? '전체 복사됨' : '전체 복사'}
+                  </button>
                 </div>
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -333,6 +341,26 @@ function ReportContent() {
                       <p className="mt-1 line-clamp-3 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t)' }}>{value || '-'}</p>
                     </div>
                   ))}
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => copyText(`all-${audience}-${program.id}`, combinedCopy)}
+                    className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white sm:hidden"
+                    style={{ background: copiedKey === `all-${audience}-${program.id}` ? 'var(--spm-grn)' : 'var(--spm-acc)' }}
+                  >
+                    {copiedKey === `all-${audience}-${program.id}` ? <Check size={14} /> : <Send size={14} />}
+                    {copiedKey === `all-${audience}-${program.id}` ? '전체 복사됨' : '전체 복사'}
+                  </button>
+                  <Link href={`/spokedu-master/library/${program.id}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+                    <BookOpen size={14} />
+                    수업안 열기
+                  </Link>
+                  <Link href={`/spokedu-master/spomove/session?drill=${primaryDrillId}&mode=projector&program=${program.id}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                    <MonitorPlay size={14} />
+                    큰 화면 실행
+                  </Link>
                 </div>
               </div>
 

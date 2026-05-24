@@ -1,23 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { privatePage } from '../data/private-page';
-import { inferTrackFromHref } from '../lib/tracking';
-import {
-  btnPrimary,
-  btnPrimaryOnDark,
-  landingH1,
-  landingHeroCopy,
-  landingHeroGrid,
-  landingHeroSubtitle,
-  landingHeroVisual,
-  landingPageStack,
-  landingSectionTitle,
-} from '../lib/ui-classes';
-import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
+import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import { LandingFinalCta } from './landing-final-cta';
+import { LandingHero } from './landing-hero';
+import { MediaPanel } from './visual';
 
 const whoCardShell =
   'flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white px-4 py-5 shadow-sm shadow-slate-900/[0.03] sm:px-5 sm:py-6';
@@ -41,50 +31,17 @@ function Section({ children, className = '', delay = 0 }: { children: ReactNode;
 }
 
 export default function PrivateLanding() {
-  const reducedMotion = useReducedMotion();
-  const heroMedia = HOME_MEDIA[privatePage.hero.mediaKey];
-  const ctaMedia = HOME_MEDIA[privatePage.finalCta.mediaKey];
-
   return (
     <div className={landingPageStack}>
-      <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className={landingHeroGrid}>
-          <div className={landingHeroCopy}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-700">학부모 · 개인수업</p>
-            <h1 className={`${landingH1} text-slate-950`}>
-              {privatePage.hero.lines.map((line, index) => (
-                <motion.span
-                  key={line}
-                  initial={reducedMotion ? false : { opacity: 0, y: 24 }}
-                  animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.07 * index }}
-                  className="block"
-                >
-                  {line}
-                </motion.span>
-              ))}
-            </h1>
-            <p
-              className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-md`}
-            >
-              {privatePage.hero.subtitle}
-            </p>
-            <div className="pt-2 sm:pt-3">
-              <Link
-                href={privatePage.heroCtas.primary.href}
-                data-track="cta-contact"
-                data-track-label={privatePage.heroCtas.primary.trackLabel}
-                className={`${btnPrimary} min-h-12 !w-full sm:!w-auto`}
-              >
-                {privatePage.heroCtas.primary.label}
-              </Link>
-            </div>
-          </div>
-          <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" priority sizes="heroSplit" />
-          </div>
-        </div>
-      </section>
+      <LandingHero
+        kicker="학부모 · 개인수업"
+        kickerClassName="text-violet-700"
+        lines={privatePage.hero.lines}
+        subtitle={privatePage.hero.subtitle}
+        media={HOME_MEDIA[privatePage.hero.mediaKey]}
+        priority
+        primaryCta={privatePage.heroCtas.primary}
+      />
 
       <Section className="space-y-5 sm:space-y-7">
         <h2 className={landingSectionTitle}>{privatePage.whoNeeds.title}</h2>
@@ -103,7 +60,7 @@ export default function PrivateLanding() {
       <Section className="space-y-6 sm:space-y-8">
         <h2 className={landingSectionTitle}>{privatePage.classCompare.title}</h2>
         <div className="grid gap-4 sm:grid-cols-2 sm:items-stretch sm:gap-5">
-          {privatePage.classCompare.items.map((item) => (
+          {privatePage.classCompare.items.map((item, index) => (
             <article
               key={item.title}
               className="flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white"
@@ -111,7 +68,7 @@ export default function PrivateLanding() {
               <MediaPanel
                 media={HOME_MEDIA[item.mediaKey]}
                 className="aspect-[16/10] min-h-[160px] shrink-0 rounded-none border-0 sm:min-h-0"
-                photoPriority
+                photoPriority={index === 0}
               />
               <div className="flex flex-1 flex-col border-t border-slate-100 p-4 sm:p-5">
                 <h3 className="text-base font-semibold text-slate-950 sm:text-lg">{item.title}</h3>
@@ -143,7 +100,6 @@ export default function PrivateLanding() {
           <MediaPanel
             media={HOME_MEDIA[privatePage.classFormat.mediaKey]}
             className="aspect-[21/9] min-h-[140px] rounded-none border-0 sm:min-h-0"
-            photoPriority
           />
         </div>
       </Section>
@@ -183,30 +139,13 @@ export default function PrivateLanding() {
         </div>
       </Section>
 
-      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-12 text-white sm:rounded-[2rem] sm:px-10 sm:py-16">
-        <div className="pointer-events-none absolute inset-0 opacity-75" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="soft" animateZoom className="h-full w-full" />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/80" aria-hidden />
-        <div className="relative mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl [word-break:keep-all]">
-            {privatePage.finalCta.title}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-200 [word-break:keep-all] sm:text-base">
-            {privatePage.finalCta.description}
-          </p>
-          <div className="mt-8 flex justify-center">
-            <Link
-              href={privatePage.finalCta.primary.href}
-              data-track={inferTrackFromHref(privatePage.finalCta.primary.href)}
-              data-track-label={privatePage.finalCta.primary.trackLabel}
-              className={`${btnPrimaryOnDark} min-h-12 !w-full sm:!min-w-[16rem] sm:!w-auto`}
-            >
-              {privatePage.finalCta.primary.label}
-            </Link>
-          </div>
-        </div>
-      </Section>
+      <LandingFinalCta
+        title={privatePage.finalCta.title}
+        description={privatePage.finalCta.description}
+        tone="dark"
+        backgroundMedia={HOME_MEDIA[privatePage.finalCta.mediaKey]}
+        links={[{ ...privatePage.finalCta.primary, variant: 'on-dark-primary' }]}
+      />
     </div>
   );
 }

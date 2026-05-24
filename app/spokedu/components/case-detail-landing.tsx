@@ -2,23 +2,16 @@
 
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
+import { LandingFinalCta } from './landing-final-cta';
+import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
-import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
+import { MediaPanel } from './visual';
 import type { CaseData } from '../data/cases';
 import { casesPage } from '../data/cases-page';
 import { HOME_MEDIA, type HomeMediaItem } from '../data/home-media';
 import { getProgramBySlug } from '../data/programs';
 import { SPOKEDU_BASE_PATH } from '../data/site';
-import {
-  btnPrimary,
-  fineHover,
-  landingH1,
-  landingHeroCopy,
-  landingHeroGrid,
-  landingHeroVisual,
-  landingPageStack,
-  landingSectionTitle,
-} from '../lib/ui-classes';
+import { fineHover, landingPageStack, landingSectionTitle } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
@@ -60,28 +53,23 @@ export function CaseDetailLanding({ item }: CaseDetailLandingProps) {
 
   return (
     <div className={landingPageStack}>
-      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className={landingHeroGrid}>
-          <div className={landingHeroCopy}>
-            <Link
-              href={backHref}
-              data-track={inferTrackFromHref(backHref)}
-              data-track-label={`case-detail-back-${item.slug}`}
-              className={`text-sm font-semibold text-slate-500 ${fineHover}hover:text-indigo-700 ${focusRing}`}
-            >
-              ← 운영 사례
-            </Link>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">기관 협업 운영 사례</p>
-            <h1 className={`${landingH1} text-slate-950 [word-break:keep-all]`}>{item.title}</h1>
-            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8 [word-break:keep-all]">
-              {item.coreChallenge}
-            </p>
-          </div>
-          <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" priority sizes="heroSplit" />
-          </div>
-        </div>
-      </LandingSection>
+      <div>
+        <Link
+          href={backHref}
+          data-track={inferTrackFromHref(backHref)}
+          data-track-label={`case-detail-back-${item.slug}`}
+          className={`mb-4 inline-block text-sm font-semibold text-slate-500 ${fineHover}hover:text-indigo-700 ${focusRing}`}
+        >
+          ← 운영 사례
+        </Link>
+        <LandingHero
+          kicker="기관 협업 운영 사례"
+          lines={[item.title]}
+          subtitle={item.coreChallenge}
+          media={heroMedia}
+          priority
+        />
+      </div>
 
       <LandingSection className="space-y-4" delay={0.04}>
         <h2 className={landingSectionTitle}>기관 · 대상 · 운영 형태</h2>
@@ -179,41 +167,26 @@ export function CaseDetailLanding({ item }: CaseDetailLandingProps) {
         </LandingSection>
       ) : null}
 
-      <LandingSection
-        className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 sm:rounded-3xl sm:px-8 sm:py-10"
-        delay={0.12}
-      >
-        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-          <MediaRenderer media={heroMedia} intensity="photo" sizes="full" className="h-full w-full" />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
-        <div className="relative mx-auto max-w-xl text-center">
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl [word-break:keep-all]">
-            {casesPage.cta.title}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
-            {casesPage.cta.description}
-          </p>
-          <div className="mt-6 flex flex-col items-center gap-2.5 sm:flex-row sm:justify-center">
-            <Link
-              href={dispatchHref}
-              data-track={inferTrackFromHref(dispatchHref)}
-              data-track-label={`case-detail-dispatch-${item.slug}`}
-              className={`${btnPrimary} min-h-12 !w-full sm:!min-w-[18rem] sm:!w-auto`}
-            >
-              {casesPage.cta.label}
-            </Link>
-            <Link
-              href={backHref}
-              data-track={inferTrackFromHref(backHref)}
-              data-track-label={`case-detail-cta-back-${item.slug}`}
-              className={`text-sm font-semibold text-slate-600 ${fineHover}hover:text-indigo-700 ${focusRing}`}
-            >
-              사례 목록으로
-            </Link>
-          </div>
-        </div>
-      </LandingSection>
+      <LandingFinalCta
+        title={casesPage.cta.title}
+        description={casesPage.cta.description}
+        tone="light"
+        backgroundMedia={heroMedia}
+        links={[
+          {
+            label: casesPage.cta.label,
+            href: dispatchHref,
+            trackLabel: `case-detail-dispatch-${item.slug}`,
+            variant: 'primary',
+          },
+          {
+            label: '사례 목록으로',
+            href: backHref,
+            trackLabel: `case-detail-cta-back-${item.slug}`,
+            variant: 'on-light-outline',
+          },
+        ]}
+      />
     </div>
   );
 }

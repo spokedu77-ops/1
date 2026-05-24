@@ -47,6 +47,16 @@ interface TodaySession {
   created_by?: string | null;
 }
 
+/** 오늘 수업 카드용 — locale 한 줄 문자열(오후 01:30) 줄바꿈 방지 */
+function formatTodaySessionTimeBadge(date: Date): { ampm: string; clock: string } {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  return {
+    ampm: hours < 12 ? '오전' : '오후',
+    clock: `${hours % 12 || 12}:${String(minutes).padStart(2, '0')}`,
+  };
+}
+
 const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
   must: { label: '필독', color: 'bg-rose-50 text-rose-600 border-rose-100' },
   general: { label: '일반', color: 'bg-slate-50 text-slate-600 border-slate-100' },
@@ -353,7 +363,7 @@ export default function TeacherMainPage() {
           <div className="space-y-3">
             {todaySessions.map((s) => {
               const start = new Date(s.start_at);
-              const timeStr = start.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+              const { ampm, clock } = formatTodaySessionTimeBadge(start);
               const status = String(s.status || '');
               const isAssist =
                 !!todayUserId &&
@@ -365,9 +375,10 @@ export default function TeacherMainPage() {
                   onClick={() => router.push('/teacher/my-classes')}
                   className="w-full p-4 rounded-[24px] bg-white border-2 border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 text-left transition-all flex items-center gap-4 cursor-pointer active:scale-[0.99]"
                 >
-                  <div className="w-14 h-14 rounded-xl bg-slate-900 text-white flex flex-col items-center justify-center shrink-0">
-                    <span className="text-[10px] font-black uppercase">오늘</span>
-                    <span className="text-base font-black leading-none">{timeStr}</span>
+                  <div className="w-[3.75rem] h-14 rounded-xl bg-slate-900 text-white flex flex-col items-center justify-center shrink-0 gap-0.5 py-1.5">
+                    <span className="text-[9px] font-bold leading-none text-white/55">오늘</span>
+                    <span className="text-[9px] font-bold leading-none text-white/75">{ampm}</span>
+                    <span className="text-[15px] font-black leading-none tabular-nums tracking-tight">{clock}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">

@@ -79,4 +79,52 @@ export class AdaptiveQuality {
         return 1;
     }
   }
+
+  /** 별 스폰 개수 계수. HIGH=1, MED=0.55, LOW=0.25 */
+  getStarCountScale(): number {
+    switch (this.tier) {
+      case 'MED':
+        return 0.55;
+      case 'LOW':
+        return 0.25;
+      default:
+        return 1;
+    }
+  }
+
+  /** 파편·코인 최대 개수 계수. HIGH=1, MED=0.6, LOW=0.3 */
+  getShardCapScale(): number {
+    switch (this.tier) {
+      case 'MED':
+        return 0.6;
+      case 'LOW':
+        return 0.3;
+      default:
+        return 1;
+    }
+  }
+
+  /** WebGL pixelRatio 상한. HIGH=2, MED=1.5, LOW=1 */
+  getPixelRatioMax(): number {
+    switch (this.tier) {
+      case 'MED':
+        return 1.5;
+      case 'LOW':
+        return 1;
+      default:
+        return 2;
+    }
+  }
+
+  /** 2D speedLine 동시 DOM 요소 상한. HIGH=없음(0=무제한), MED=12, LOW=6 */
+  get2DLineCountCap(): number {
+    switch (this.tier) {
+      case 'MED':
+        return 12;
+      case 'LOW':
+        return 6;
+      default:
+        return 0;
+    }
+  }
 }

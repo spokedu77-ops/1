@@ -332,7 +332,7 @@ function PaymentContent() {
               결제 전에, SPOKEDU MASTER가 매 수업에서 해줄 일을 확인하세요.
             </h2>
             <p className="mt-4 max-w-[690px] text-[14px] font-semibold leading-7 sm:text-[15px]" style={{ color: 'var(--spm-t2)' }}>
-              이 결제는 자료 몇 개를 여는 비용이 아니라, 라이브러리에서 수업을 고르고 SPOMOVE로 실행하고 설명 도구로 수업의 가치를 남기는 구독입니다.
+              이 결제는 자료 몇 개를 여는 비용이 아니라, 라이브러리에서 수업을 고르고 SPOMOVE로 실행하고 설명 문구로 수업의 가치를 남기는 구독입니다.
             </p>
             <div className="mt-6 grid gap-2 sm:grid-cols-3">
               {OUTCOME_STATS.map((item) => (

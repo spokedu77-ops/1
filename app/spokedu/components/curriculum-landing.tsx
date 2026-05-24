@@ -1,23 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { curriculumPage } from '../data/curriculum-page';
-import { inferTrackFromHref } from '../lib/tracking';
-import {
-  btnPrimary,
-  btnPrimaryOnDark,
-  landingH1,
-  landingHeroCopy,
-  landingHeroGrid,
-  landingHeroSubtitle,
-  landingHeroVisual,
-  landingPageStack,
-  landingSectionTitle,
-} from '../lib/ui-classes';
-import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
+import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import { LandingFinalCta } from './landing-final-cta';
+import { LandingHero } from './landing-hero';
+import { MediaPanel } from './visual';
 
 const contentCardShell =
   'flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-slate-200/80 bg-white';
@@ -41,52 +31,17 @@ function Section({ children, className = '', delay = 0 }: { children: ReactNode;
 }
 
 export default function CurriculumLanding() {
-  const reducedMotion = useReducedMotion();
-  const heroMedia = HOME_MEDIA[curriculumPage.hero.mediaKey];
-  const ctaMedia = HOME_MEDIA[curriculumPage.finalCta.mediaKey];
-
   return (
     <div className={landingPageStack}>
-      <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className={landingHeroGrid}>
-          <div className={landingHeroCopy}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
-              강사 · 기관 · 파트너 · 교육 콘텐츠
-            </p>
-            <h1 className={`${landingH1} text-slate-950`}>
-              {curriculumPage.hero.lines.map((line, index) => (
-                <motion.span
-                  key={line}
-                  initial={reducedMotion ? false : { opacity: 0, y: 24 }}
-                  animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.07 * index }}
-                  className="block"
-                >
-                  {line}
-                </motion.span>
-              ))}
-            </h1>
-            <p
-              className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-lg`}
-            >
-              {curriculumPage.hero.subtitle}
-            </p>
-            <div className="pt-2 sm:pt-3">
-              <Link
-                href={curriculumPage.heroCtas.primary.href}
-                data-track="cta-contact"
-                data-track-label={curriculumPage.heroCtas.primary.trackLabel}
-                className={`${btnPrimary} min-h-12 !w-full sm:!w-auto`}
-              >
-                {curriculumPage.heroCtas.primary.label}
-              </Link>
-            </div>
-          </div>
-          <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" priority sizes="heroSplit" />
-          </div>
-        </div>
-      </section>
+      <LandingHero
+        kicker="강사 · 기관 · 파트너 · 교육 콘텐츠"
+        kickerClassName="text-teal-700"
+        lines={curriculumPage.hero.lines}
+        subtitle={curriculumPage.hero.subtitle}
+        media={HOME_MEDIA[curriculumPage.hero.mediaKey]}
+        priority
+        primaryCta={curriculumPage.heroCtas.primary}
+      />
 
       <Section className="space-y-5 sm:space-y-7">
         <div>
@@ -96,12 +51,12 @@ export default function CurriculumLanding() {
           </p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
-          {curriculumPage.contentProducts.items.map((item) => (
+          {curriculumPage.contentProducts.items.map((item, index) => (
             <article key={item.title} className={contentCardShell}>
               <MediaPanel
                 media={HOME_MEDIA[item.mediaKey]}
                 className="aspect-[5/3] min-h-[120px] shrink-0 rounded-none border-0 sm:min-h-0"
-                photoPriority
+                photoPriority={index === 0}
               />
               <div className="flex flex-1 flex-col border-t border-slate-100 p-4">
                 <h3 className="text-sm font-semibold text-slate-950 sm:text-base">{item.title}</h3>
@@ -153,30 +108,13 @@ export default function CurriculumLanding() {
         </ol>
       </Section>
 
-      <Section className="relative overflow-hidden rounded-[1.75rem] bg-slate-950 px-6 py-12 text-white sm:rounded-[2rem] sm:px-10 sm:py-16">
-        <div className="pointer-events-none absolute inset-0 opacity-75" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="soft" animateZoom className="h-full w-full" />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/80" aria-hidden />
-        <div className="relative mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl [word-break:keep-all]">
-            {curriculumPage.finalCta.title}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-200 [word-break:keep-all] sm:text-base">
-            {curriculumPage.finalCta.description}
-          </p>
-          <div className="mt-8 flex justify-center">
-            <Link
-              href={curriculumPage.finalCta.primary.href}
-              data-track={inferTrackFromHref(curriculumPage.finalCta.primary.href)}
-              data-track-label={curriculumPage.finalCta.primary.trackLabel}
-              className={`${btnPrimaryOnDark} min-h-12 !w-full sm:!min-w-[18rem] sm:!w-auto`}
-            >
-              {curriculumPage.finalCta.primary.label}
-            </Link>
-          </div>
-        </div>
-      </Section>
+      <LandingFinalCta
+        title={curriculumPage.finalCta.title}
+        description={curriculumPage.finalCta.description}
+        tone="dark"
+        backgroundMedia={HOME_MEDIA[curriculumPage.finalCta.mediaKey]}
+        links={[{ ...curriculumPage.finalCta.primary, variant: 'on-dark-primary' }]}
+      />
     </div>
   );
 }

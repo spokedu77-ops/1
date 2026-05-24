@@ -28,6 +28,10 @@ import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTrain
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { CSS, S } from './styles';
+import FlowGameClient from './flow/FlowGameClient';
+import { buildStages } from './flow/engine/modules/stageBuilder';
+import { SELECTABLE_MODULE_KEYS } from './flow/engine/modules/flowModules';
+import type { FlowStats } from './flow/engine/FlowEngine';
 import type { DupStats } from './lib/signals';
 import { preloadVariantFruitImages } from './lib/preloadVariantFruitImages';
 import { variantFruitUrlsForPreload } from './lib/variantFruitAssets';
@@ -59,6 +63,8 @@ type Screen =
   | 'flow'
   | 'result';
 
+type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'sprint' | 'freeze' | 'balance' | 'bigJump';
+
 type Settings = {
   mode: string;
   level: number;
@@ -77,6 +83,10 @@ type Settings = {
   kidsSafeMode: boolean;
   /** 반응 인지 2·3·4·5번 변형 색지각 이미지 테마 (Asset Hub 1번 섹션과 localStorage 동기화) */
   variantColorTheme: SpomoveColorThemeId;
+  /** 플로우 추가 동작 기능 플래그 */
+  flowFeatures: Set<FlowFeatureKey>;
+  /** 플로우 배경 색상 테마 */
+  flowColorTheme: 'default' | 'space' | 'neon';
 };
 
 const defaultSettings: Settings = {
@@ -97,6 +107,8 @@ const defaultSettings: Settings = {
   accel: false,
   kidsSafeMode: false,
   variantColorTheme: 'color',
+  flowFeatures: new Set<FlowFeatureKey>(),
+  flowColorTheme: 'default',
 };
 
 export type MemoryGameAutoLaunch = {
@@ -113,6 +125,10 @@ export type MemoryGameAutoLaunch = {
   numberRule?: string;
   /** 반응 인지 2·3·4·5번만 */
   variantColorTheme?: SpomoveColorThemeId;
+  /** Flow 2.0: 선택된 추가 동작 키 배열 → 내부에서 Set<FlowFeatureKey>로 변환 */
+  flowFeatures?: string[];
+  /** Flow 2.0: 배경 색상 테마 */
+  flowColorTheme?: 'default' | 'space' | 'neon';
 };
 
 export default function MemoryGameApp({
@@ -280,13 +296,18 @@ export default function MemoryGameApp({
         : modeDef.levels[0]?.id ?? 1;
 
     if (autoLaunch) {
+      const { flowFeatures: flowFeaturesArr, flowColorTheme: fcTheme, ...restAutoLaunch } = autoLaunch;
       const merged: Settings = {
         ...defaultSettings,
         mode: normalized.mode,
         level: targetLevel,
-        ...autoLaunch,
+        ...restAutoLaunch,
         /** Training 임베드: 항상 3초 카운트다운 후 시작 (전달값 0이어도 무시) */
         warmup: 3,
+        flowFeatures: flowFeaturesArr?.length
+          ? new Set(flowFeaturesArr as FlowFeatureKey[])
+          : defaultSettings.flowFeatures,
+        flowColorTheme: fcTheme ?? 'default',
       };
       autoLaunchCfgRef.current = merged;
       setSettings(merged);
@@ -512,26 +533,10 @@ export default function MemoryGameApp({
       const warmupSec = Math.max(3, cfg.warmup ?? 0);
 
       if (cfg.mode === 'flow') {
+        // FlowGameClient(Flow 2.0)가 자체 카운트다운과 스테이지 전환을 처리
         flowCompleteGuardRef.current = false;
-        if (warmupSec <= 0) {
-          setScreen('flow');
-          setCountdown(null);
-        } else {
-          // 홈 화면을 거치면 플리커가 보여서, flow 화면에서 카운트다운을 진행한다.
-          setScreen('flow');
-          setCountdown(warmupSec);
-          let c = warmupSec;
-          timerRef.current = setInterval(() => {
-            c--;
-            if (c <= 0) {
-              if (timerRef.current) clearInterval(timerRef.current);
-              timerRef.current = null;
-              setCountdown(null);
-            } else {
-              setCountdown(c);
-            }
-          }, 900);
-        }
+        setScreen('flow');
+        setCountdown(null);
       } else {
         // spatial(순차기억)·시지각 반응도 warmup 카운트다운 적용
         const nextScreen: Screen =
@@ -936,30 +941,127 @@ export default function MemoryGameApp({
               )}
             </div>
             {settings.mode === 'flow' && (
-              <div style={S.sec}>
-                {stepNum(3, '키즈 세이프 모드')}
-                <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                  플로우 3D·이동 체감 속도만 낮춥니다. 레벨당 시간과 상단 진행바는 그대로입니다.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => set('kidsSafeMode', !settings.kidsSafeMode)}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem 0.9rem',
-                    borderRadius: '0.75rem',
-                    border: `2px solid ${settings.kidsSafeMode ? '#F97316' : 'var(--border)'}`,
-                    background: settings.kidsSafeMode ? '#FFF7ED' : 'var(--card)',
-                    color: settings.kidsSafeMode ? '#C2410C' : 'var(--text)',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    textAlign: 'left',
-                  }}
-                >
-                  키즈 세이프 모드 {settings.kidsSafeMode ? '켜짐 ✓' : '끔'}
-                </button>
-              </div>
+              <>
+                <div style={S.sec}>
+                  {stepNum(3, '배경 테마')}
+                  <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+                    {(
+                      [
+                        { key: 'default', label: '기본', desc: '검정 배경, 노랑·초록·빨강 다리' },
+                        { key: 'space',   label: '우주',  desc: '다크 퍼플 배경, 보라·파랑·청록 다리' },
+                        { key: 'neon',    label: '네온',  desc: '다크 틸 배경, 청록·빨강·노랑 다리' },
+                      ] as { key: 'default' | 'space' | 'neon'; label: string; desc: string }[]
+                    ).map(({ key, label, desc }) => {
+                      const active = settings.flowColorTheme === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setSettings((s) => ({ ...s, flowColorTheme: key }))}
+                          style={{
+                            flex: 1,
+                            minWidth: '80px',
+                            padding: '0.65rem 0.5rem',
+                            borderRadius: '0.9rem',
+                            border: `2px solid ${active ? '#8B5CF6' : 'var(--border)'}`,
+                            background: active ? 'rgba(139,92,246,0.12)' : 'var(--card)',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            textAlign: 'center',
+                          }}
+                          title={desc}
+                        >
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: active ? '#8B5CF6' : 'var(--text)', marginBottom: '0.1rem' }}>
+                            {active ? '✓ ' : ''}{label}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div style={S.sec}>
+                  {stepNum(4, '추가 동작 선택')}
+                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
+                    선택한 동작이 게임 중 추가됩니다. 복수 선택 가능합니다.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                    {(
+                      [
+                        { key: 'faster',   icon: '⚡', label: '속도 증가 (FASTER)',  desc: '이전 스테이지보다 다리 이동 속도가 빨라집니다.' },
+                        { key: 'punch',    icon: '👊', label: '박스 펀치 (PUNCH)',   desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
+                        { key: 'duck',     icon: '🛸', label: 'UFO 숙이기 (DUCK)',   desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
+                        { key: 'reach',    icon: '🆙', label: '높은 박스 (REACH)',   desc: '높은 보라색 박스가 추가 등장합니다. 팔을 뻗어 치세요.' },
+                        { key: 'sprint',   icon: '💨', label: '속도 폭발 (SPRINT)',  desc: '스프린트 링 통과 시 속도가 폭발합니다.' },
+                        { key: 'freeze',   icon: '❄️', label: '정지 신호 (FREEZE)',  desc: '얼음 벽 신호 등장 — 즉시 정지 억제 훈련입니다.' },
+                        { key: 'balance',  icon: '🦶', label: '한 발 착지 (BALANCE)', desc: '큐에 따라 한 발로 착지하는 균형 훈련입니다.' },
+                        { key: 'bigJump',  icon: '🏔️', label: '넓은 점프 (BIG JUMP)', desc: '다리 간격이 넓어지고 점프 높이가 높아집니다.' },
+                      ] as { key: FlowFeatureKey; icon: string; label: string; desc: string }[]
+                    ).map(({ key, icon, label, desc }) => {
+                      const active = settings.flowFeatures.has(key);
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => {
+                            setSettings((s) => {
+                              const next = new Set(s.flowFeatures);
+                              if (next.has(key)) next.delete(key);
+                              else next.add(key);
+                              return { ...s, flowFeatures: next };
+                            });
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.75rem',
+                            padding: '0.75rem 0.9rem',
+                            borderRadius: '1rem',
+                            border: `2px solid ${active ? '#22C55E' : 'var(--border)'}`,
+                            background: active ? 'rgba(34,197,94,0.08)' : 'var(--card)',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            textAlign: 'left',
+                            transition: 'all 0.13s',
+                          }}
+                        >
+                          <span style={{ fontSize: '1.3rem', lineHeight: 1, marginTop: '0.05rem' }}>{icon}</span>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: active ? '#16A34A' : 'var(--text)', marginBottom: '0.15rem' }}>
+                              {active ? '✓ ' : ''}{label}
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{desc}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div style={S.sec}>
+                  {stepNum(5, '키즈 세이프 모드')}
+                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
+                    플로우 3D·이동 체감 속도만 낮춥니다. 레벨당 시간과 상단 진행바는 그대로입니다.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => set('kidsSafeMode', !settings.kidsSafeMode)}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem 0.9rem',
+                      borderRadius: '0.75rem',
+                      border: `2px solid ${settings.kidsSafeMode ? '#F97316' : 'var(--border)'}`,
+                      background: settings.kidsSafeMode ? '#FFF7ED' : 'var(--card)',
+                      color: settings.kidsSafeMode ? '#C2410C' : 'var(--text)',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      textAlign: 'left',
+                    }}
+                  >
+                    키즈 세이프 모드 {settings.kidsSafeMode ? '켜짐 ✓' : '끔'}
+                  </button>
+                </div>
+              </>
             )}
             {settings.mode !== 'flow' && (
               <>
@@ -1201,29 +1303,27 @@ export default function MemoryGameApp({
   }
 
   if (screen === 'flow') {
+    // SELECTABLE_MODULE_KEYS 순서로 선택된 모듈 정렬 → 스테이지 도입 순서 결정
+    const selectedModules = SELECTABLE_MODULE_KEYS.filter((k) => settings.flowFeatures.has(k as FlowFeatureKey));
+    const stages = buildStages(selectedModules, 25);
+
+    const handleFlowDone = (stats: FlowStats) => {
+      if (flowCompleteGuardRef.current) return;
+      flowCompleteGuardRef.current = true;
+      if (document.fullscreenElement) document.exitFullscreen();
+      const cfg = { ...settings, mode: 'flow', level: 1 };
+      setResult({ count: stats.stagesCompleted, cfg });
+      setScreen('result');
+    };
+
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 320 }}>
-        <style>{CSS}</style>
-        <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
-          <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1.2rem', color: '#fff', fontWeight: 700, fontSize: '1.02rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {countdown !== null ? <><span style={{ color: '#FCA5A5' }}>⏱</span> 시작까지 {countdown}초</> : <><span style={{ color: '#86EFAC' }}>🎯</span> 진행 중</>}
-          </div>
-          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
-        </div>
-        {countdown !== null ? (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30, backdropFilter: 'blur(8px)' }}>
-            <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
-          </div>
-        ) : null}
-        {countdown === null ? (
-          <iframe
-            src={`/program/iiwarmup/flow?autoStart=1&memoryPreset=shortFlow5${settings.kidsSafeMode ? '&kidsSafe=1' : ''}`}
-            title="SPOMOVE FLOW Program"
-            style={{ width: '100%', height: '100%', border: 0 }}
-            allow="autoplay"
-          />
-        ) : null}
-      </div>
+      <FlowGameClient
+        stages={stages}
+        colorTheme={settings.flowColorTheme}
+        motionScale={settings.kidsSafeMode ? 0.5 : 1}
+        onComplete={handleFlowDone}
+        onExit={stop}
+      />
     );
   }
 

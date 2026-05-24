@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Award, Check, ChevronRight, ExternalLink, FileText, Link2, Plus, Trash2, TrendingUp, TriangleAlert } from 'lucide-react';
+import { Award, BookOpen, Check, ChevronRight, ClipboardList, ExternalLink, FileText, Link2, Plus, Trash2, TrendingUp, TriangleAlert } from 'lucide-react';
 import { useLayoutEffect, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { createParentShareToken } from '../lib/subscription';
@@ -47,6 +47,7 @@ export default function StudentsPage() {
     setAddOpen(false);
   };
   const selectedRecordCount = selected ? records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length : 0;
+  const recordedStudentCount = students.filter((student) => records.some((record) => record.students.some((item) => item.studentId === student.id))).length;
   const copyParentLink = async (studentId: string, token: string) => {
     const url = `${window.location.origin}/spokedu-master/parent/${studentId}?token=${token}`;
     await navigator.clipboard.writeText(url).catch(() => undefined);
@@ -72,7 +73,7 @@ export default function StudentsPage() {
             <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>student history</p>
             <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
             <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-              수업 기록이 쌓이면 학생별 성장 이력, 출석률, 동작 발전을 한눈에 확인할 수 있습니다.
+              수업 기록에서 남긴 출석, 관찰, 동작 체크를 학생별 성장 근거로 정리합니다.
             </p>
           </div>
           <button type="button" onClick={() => setAddOpen(true)} className="mt-1 flex h-11 shrink-0 items-center gap-2 rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
@@ -81,6 +82,19 @@ export default function StudentsPage() {
           </button>
         </div>
       </header>
+
+      <section className="mx-[22px] mb-5 grid gap-2 sm:mx-8 sm:grid-cols-3 lg:mx-10">
+        {[
+          ['기록 연결', `${recordedStudentCount}/${students.length || 0}명`],
+          ['수업 기록', `${records.length}건`],
+          ['다음 액션', '설명 문구'],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+            <p className="mt-1 text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{value}</p>
+          </div>
+        ))}
+      </section>
 
       {students.length === 0 ? (
         <section className="mx-[22px] rounded-[18px] p-6 text-center sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -163,17 +177,27 @@ export default function StudentsPage() {
                 <div className="space-y-2">{selected.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
               </div>
               <div className="grid grid-cols-3 gap-2">
+                <Link href="/spokedu-master/class-record" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                  <ClipboardList size={15} />
+                  기록
+                </Link>
                 <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
                   <FileText size={15} />
                   설명 문구
                 </Link>
-                <button type="button" onClick={() => void copyParentLink(selected.id, selectedParentToken)} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: copiedLinkId === selected.id ? 'rgba(16,185,129,0.13)' : 'var(--spm-s3)', color: copiedLinkId === selected.id ? 'var(--spm-grn)' : 'var(--spm-t)' }}>
-                  {copiedLinkId === selected.id ? <Check size={15} /> : <Link2 size={15} />}
-                  {copiedLinkId === selected.id ? '복사됨' : '링크 복사'}
-                </button>
                 <Link href={`/spokedu-master/parent/${selected.id}?token=${selectedParentToken}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <ExternalLink size={15} />
                   미리보기
+                </Link>
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => void copyParentLink(selected.id, selectedParentToken)} className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: copiedLinkId === selected.id ? 'rgba(16,185,129,0.13)' : 'var(--spm-s3)', color: copiedLinkId === selected.id ? 'var(--spm-grn)' : 'var(--spm-t)' }}>
+                  {copiedLinkId === selected.id ? <Check size={14} /> : <Link2 size={14} />}
+                  {copiedLinkId === selected.id ? '복사됨' : '보호자 링크 복사'}
+                </button>
+                <Link href="/spokedu-master/library" className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                  <BookOpen size={14} />
+                  다음 수업안
                 </Link>
               </div>
             </div>

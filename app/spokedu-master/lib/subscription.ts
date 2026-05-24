@@ -36,11 +36,11 @@ export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
 
 export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao' | 'ai' | 'pdf', isAdmin = false): LimitStatus {
   if (isAdmin) return { allowed: true, label: '관리자' };
-  const label = kind === 'kakao' ? '준비 중' : kind === 'ai' ? '준비 중' : '설명 도구 우선';
+  const label = kind === 'kakao' ? '준비 중' : kind === 'ai' ? '준비 중' : '설명 문구 우선';
   return {
     allowed: false,
     label,
-    reason: '상용화 첫 버전에서는 외부 자동 발송과 자동 리포트보다 라이브러리, SPOMOVE, 수업 설명 도구를 우선 제공합니다.',
+    reason: '상용화 첫 버전에서는 외부 자동 발송과 자동 리포트보다 라이브러리, SPOMOVE, 수업 설명 문구를 우선 제공합니다.',
   };
 }
 

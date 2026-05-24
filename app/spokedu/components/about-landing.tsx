@@ -6,19 +6,10 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { aboutPage } from '../data/about-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import {
-  btnPrimary,
-  cardInteractive,
-  fineHover,
-  landingH1,
-  landingHeroCopy,
-  landingHeroGrid,
-  landingHeroSubtitle,
-  landingHeroVisual,
-  landingPageStack,
-  landingSectionTitle,
-} from '../lib/ui-classes';
-import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
+import { cardInteractive, fineHover, landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import { LandingFinalCta } from './landing-final-cta';
+import { LandingHero } from './landing-hero';
+import { MediaPanel } from './visual';
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
@@ -54,39 +45,16 @@ function Section({
 
 export function AboutLanding() {
   const reducedMotion = useReducedMotion();
-  const heroMedia = HOME_MEDIA[aboutPage.hero.mediaKey];
-  const ctaMedia = HOME_MEDIA[aboutPage.finalCta.mediaKey];
 
   return (
     <div className={landingPageStack}>
-      <section className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className={landingHeroGrid}>
-          <div className={landingHeroCopy}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">
-              {aboutPage.hero.kicker}
-            </p>
-            <h1 className={`${landingH1} text-slate-950`}>
-              {aboutPage.hero.lines.map((line, index) => (
-                <motion.span
-                  key={line}
-                  initial={reducedMotion ? false : { opacity: 0, y: 24 }}
-                  animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.07 * index }}
-                  className="block"
-                >
-                  {line}
-                </motion.span>
-              ))}
-            </h1>
-            <p className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-lg`}>
-              {aboutPage.hero.subtitle}
-            </p>
-          </div>
-          <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" priority sizes="heroSplit" />
-          </div>
-        </div>
-      </section>
+      <LandingHero
+        kicker={aboutPage.hero.kicker}
+        lines={aboutPage.hero.lines}
+        subtitle={aboutPage.hero.subtitle}
+        media={HOME_MEDIA[aboutPage.hero.mediaKey]}
+        priority
+      />
 
       <Section className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 py-6 sm:px-7 sm:py-7">
         <h2 className={landingSectionTitle}>{aboutPage.definition.title}</h2>
@@ -127,7 +95,7 @@ export function AboutLanding() {
                   media={HOME_MEDIA[card.mediaKey]}
                   className="aspect-[16/10] shrink-0 rounded-none border-0"
                   sizes="card3"
-                  photoPriority
+                  photoPriority={index === 0}
                 />
                 <div className={`flex flex-1 flex-col border-t-4 p-4 sm:p-5 ${roleAccent[index] ?? ''}`}>
                   <h3 className="text-base font-bold leading-snug text-slate-950 [word-break:keep-all] sm:text-lg">
@@ -230,37 +198,16 @@ export function AboutLanding() {
         </p>
       </Section>
 
-      <Section className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 sm:rounded-3xl sm:px-8 sm:py-10">
-        <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-          <MediaRenderer media={ctaMedia} intensity="photo" sizes="full" className="h-full w-full" />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-white/78" aria-hidden />
-        <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl [word-break:keep-all]">
-            {aboutPage.finalCta.title}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
-            {aboutPage.finalCta.description}
-          </p>
-          <div className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
-            {aboutPage.finalCta.links.map((item, index) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                data-track={inferTrackFromHref(item.href)}
-                data-track-label={item.trackLabel}
-                className={`inline-flex min-h-12 w-full items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold ${focusRing} ${
-                  index === 0
-                    ? `${btnPrimary} !border-transparent`
-                    : `border-indigo-200 bg-white text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50`
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </Section>
+      <LandingFinalCta
+        title={aboutPage.finalCta.title}
+        description={aboutPage.finalCta.description}
+        tone="light"
+        backgroundMedia={HOME_MEDIA[aboutPage.finalCta.mediaKey]}
+        links={aboutPage.finalCta.links.map((item, index) => ({
+          ...item,
+          variant: index === 0 ? 'primary' : 'on-light-outline',
+        }))}
+      />
     </div>
   );
 }

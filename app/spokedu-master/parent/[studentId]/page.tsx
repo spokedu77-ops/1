@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { Award, CalendarDays, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Award, CalendarDays, CheckCircle2, LockKeyhole, ShieldAlert } from 'lucide-react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { validateParentShareToken } from '../../lib/subscription';
 import { useMasterStore } from '../../store';
@@ -42,7 +42,9 @@ function ParentStudentViewContent() {
   const records = useMasterStore((state) => state.classRecords);
   const student = students.find((item) => item.id === params.studentId);
   const tokenStatus = validateParentShareToken(token, params.studentId);
-  const studentRecords = records.filter((record) => record.students.some((item) => item.studentId === params.studentId));
+  const studentRecords = records
+    .filter((record) => record.students.some((item) => item.studentId === params.studentId))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const latestRecord = studentRecords[0];
   const latestStudentRecord = latestRecord?.students.find((item) => item.studentId === params.studentId);
 
@@ -59,9 +61,22 @@ function ParentStudentViewContent() {
       <main className="mx-auto w-full max-w-[760px] px-[22px] py-7 sm:px-8">
         <header className="mb-6">
           <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU GROWTH</p>
-          <h1 className="mt-3 text-[34px] font-black leading-[1.12]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{student.name} 성장 기록</h1>
-          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>앱 설치 없이 보호자에게 공유되는 읽기 전용 화면입니다. 공유 링크는 7일 동안만 유효합니다.</p>
+          <h1 className="mt-3 text-[34px] font-black leading-[1.12]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{student.name} 수업 참여 기록</h1>
+          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>강사가 공유한 읽기 전용 화면입니다. 링크는 7일 동안만 유효하며 수정이나 댓글 입력은 지원하지 않습니다.</p>
         </header>
+
+        <section className="mb-5 grid gap-2 sm:grid-cols-3">
+          {[
+            ['읽기 전용', '보호자 확인용'],
+            ['유효 기간', '7일'],
+            ['공유 범위', '해당 학생 기록'],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+              <p className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>{value}</p>
+            </div>
+          ))}
+        </section>
 
         <section className="mb-5 overflow-hidden rounded-[22px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(16,185,129,0.12), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.28)' }}>
           <div className="flex items-start justify-between gap-4">
@@ -92,7 +107,7 @@ function ParentStudentViewContent() {
             <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>오늘의 요약</h2>
           </div>
           <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            {latestRecord ? `${latestRecord.programTitle} 수업에서 ${student.name}의 참여 기록이 저장되었습니다. 오늘 기록은 다음 안내 자료와 성장 기록을 더 구체적으로 만드는 데 활용됩니다.` : `${student.name}의 최근 성장 기록을 확인할 수 있습니다. 수업 기록이 쌓일수록 더 구체적인 변화가 표시됩니다.`}
+            {latestRecord ? `${latestRecord.programTitle} 수업에서 ${student.name}의 참여 기록이 저장되었습니다. 오늘 기록은 수업 안내와 다음 활동 준비를 더 구체적으로 만드는 데 활용됩니다.` : `${student.name}의 수업 참여 기록을 확인할 수 있습니다. 수업 기록이 쌓일수록 더 구체적인 변화가 표시됩니다.`}
           </p>
           {latestStudentRecord ? (
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -122,21 +137,36 @@ function ParentStudentViewContent() {
 
         <section className="mb-5 rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h2 className="mb-4 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>동작 성장</h2>
-          <div className="space-y-4">{student.skills.map((skill) => <SkillBar key={skill.label} label={skill.label} value={skill.value} delta={skill.delta} />)}</div>
+          {student.skills.length ? (
+            <div className="space-y-4">{student.skills.map((skill) => <SkillBar key={skill.label} label={skill.label} value={skill.value} delta={skill.delta} />)}</div>
+          ) : (
+            <p className="rounded-[13px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>수업 기록이 쌓이면 동작 성장 항목이 표시됩니다.</p>
+          )}
         </section>
 
         <section className="mb-5 rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h2 className="mb-4 flex items-center gap-2 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}><Award size={18} color="var(--spm-amb)" />배지</h2>
-          <div className="flex flex-wrap gap-2">{student.badges.map((badge) => <span key={badge} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.13)', color: 'var(--spm-amb)' }}>{badge}</span>)}</div>
+          {student.badges.length ? (
+            <div className="flex flex-wrap gap-2">{student.badges.map((badge) => <span key={badge} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.13)', color: 'var(--spm-amb)' }}>{badge}</span>)}</div>
+          ) : (
+            <p className="rounded-[13px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>아직 표시할 배지가 없습니다.</p>
+          )}
         </section>
 
         <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h2 className="mb-4 flex items-center gap-2 text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}><CalendarDays size={18} color="var(--spm-acc)" />최근 기록</h2>
-          <div className="space-y-2">{student.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
+          {student.history.length ? (
+            <div className="space-y-2">{student.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
+          ) : (
+            <p className="rounded-[13px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>최근 수업 기록이 아직 없습니다.</p>
+          )}
         </section>
 
         <footer className="py-6 text-center">
-          <p className="text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>이 링크는 7일 동안 유효한 보호자 공유 링크입니다. 학생 성장 기록은 승인된 링크에서만 열람됩니다.</p>
+          <p className="mx-auto flex max-w-[520px] items-center justify-center gap-2 text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>
+            <LockKeyhole size={13} />
+            이 링크는 7일 동안 유효하며, 해당 학생 기록만 열람됩니다.
+          </p>
           <Link href="/spokedu-master/landing" className="mt-4 inline-flex rounded-full px-4 py-2 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>SPOKEDU MASTER</Link>
         </footer>
       </main>

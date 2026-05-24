@@ -30,15 +30,16 @@ export function MediaPanel({
   sizes = 'card3',
 }: MediaPanelProps) {
   return (
-    <div className={`relative bg-slate-200 ${className}`} role="img" aria-label={media.alt}>
+    <figure className={`relative m-0 bg-slate-200 ${className}`}>
       <MediaRenderer
         media={media}
         intensity={photoPriority ? 'photo' : 'soft'}
+        strictPhoto={photoPriority}
         showLabel={showLabel}
         className="absolute inset-0 h-full w-full"
         sizes={resolveSizes(sizes)}
         priority={priority}
       />
-    </div>
+    </figure>
   );
 }

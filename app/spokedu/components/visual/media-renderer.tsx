@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import type { HomeMediaItem } from '../../data/home-media';
 import { SPOKEDU_FALLBACK_FIELD } from '../../data/images';
+import { homePhotoGrade } from '../../lib/ui-classes';
 import { BrandOverlay } from './brand-overlay';
 import { GradientVisual } from './gradient-visual';
 
@@ -16,6 +17,8 @@ type MediaRendererProps = {
   priority?: boolean;
   sizes?: string;
   animateZoom?: boolean;
+  /** Home 등: 로드 실패 시 gradient/SVG placeholder 대신 빈 실사 영역 */
+  strictPhoto?: boolean;
 };
 
 function resolveFallback(media: HomeMediaItem): string {
@@ -30,6 +33,7 @@ export function MediaRenderer({
   priority = false,
   sizes = '(max-width: 768px) 100vw, 50vw',
   animateZoom = false,
+  strictPhoto = false,
 }: MediaRendererProps) {
   const reducedMotion = useReducedMotion();
   const primarySrc = media.src;
@@ -47,10 +51,15 @@ export function MediaRenderer({
       setImgSrc(fallbackSrc);
       return;
     }
-    setUseImage(false);
+    if (!strictPhoto) {
+      setUseImage(false);
+    }
   };
 
   if (!useImage || !imgSrc) {
+    if (strictPhoto) {
+      return null;
+    }
     return (
       <GradientVisual
         media={media}
@@ -79,6 +88,9 @@ export function MediaRenderer({
     );
   }
 
+  const isLocalSpokedu = imgSrc.startsWith('/images/spokedu/');
+  const photoClass = intensity === 'photo' ? homePhotoGrade : 'object-cover';
+
   const imageNode = (
     <Image
       src={imgSrc}
@@ -86,13 +98,15 @@ export function MediaRenderer({
       fill
       sizes={sizes}
       priority={priority}
-      className="object-cover"
+      unoptimized={isLocalSpokedu}
+      className={photoClass}
+      style={media.objectPosition ? { objectPosition: media.objectPosition } : undefined}
       onError={handleError}
     />
   );
 
   return (
-    <figure className={`relative h-full w-full overflow-hidden bg-slate-200 ${className}`}>
+    <div className={`relative h-full w-full overflow-hidden bg-slate-200 ${className}`}>
       {animateZoom && !reducedMotion ? (
         <motion.div
           className="absolute inset-0"
@@ -110,6 +124,6 @@ export function MediaRenderer({
           {media.label}
         </figcaption>
       ) : null}
-    </figure>
+    </div>
   );
 }

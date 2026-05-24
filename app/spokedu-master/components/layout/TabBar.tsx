@@ -7,8 +7,8 @@ const TAB_DEFS = [
   { key: 'dashboard', label: '홈', Icon: Home },
   { key: 'library', label: '라이브러리', Icon: BookOpen },
   { key: 'spomove', label: 'SPOMOVE', Icon: Zap },
-  { key: 'report', label: '설명 도구', Icon: FileText },
-  { key: 'profile', label: '내 정보', Icon: User },
+  { key: 'report', label: '설명 문구', Icon: FileText },
+  { key: 'profile', label: '계정', Icon: User },
 ] as const;
 
 function useSubscriberTabs(basePath: string) {
@@ -95,8 +95,9 @@ export function DesktopRail({ basePath = '/spokedu-master' }: { basePath?: strin
         })}
       </div>
       <div className="mt-6 rounded-[14px] p-3" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-        <p className="text-[10px] font-semibold leading-5" style={{ color: '#64748b' }}>
-          문의: <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>support@spokedu.com</a>
+        <p className="text-[11px] font-black" style={{ color: '#0f172a' }}>수업 실행 루프</p>
+        <p className="mt-1 text-[10px] font-semibold leading-5" style={{ color: '#64748b' }}>
+          수업안, 큰 화면, 설명 문구를 한 번에 이어갑니다.
         </p>
       </div>
     </aside>

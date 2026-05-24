@@ -11,7 +11,7 @@ export type HomeVisitorGateCard = {
 };
 
 export type HomeFieldRecordCard = {
-  proofId: 'proof-lab' | 'proof-spomove' | 'proof-oneday' | 'proof-camp';
+  proofId: 'proof-spomove' | 'proof-rhythm' | 'proof-oneday' | 'proof-camp';
   tagline: string;
   venue: string;
   sessionLine: string;
@@ -41,6 +41,19 @@ export const homePage = {
       '선생님에게는 커리큘럼 콘텐츠',
     ] as const,
   },
+  /** Hero 직후 신뢰 스트립 — 숫자 과장 없이 실제 운영 맥락만 */
+  trustStrip: {
+    eyebrow: '운영 증거',
+    /** 의도한 줄바꿈 — 모바일에서도 ‘기|관’ 분리 방지 */
+    titleLines: ['현장에서 운영해 온', '프로그램과 기관'] as const,
+    items: [
+      { label: '양천·동작 키움센터', detail: 'SPOMOVE 정규수업' },
+      { label: '지역아동센터', detail: '원데이 체육행사' },
+      { label: 'PLAYZ Lounge', detail: '방학캠프' },
+      { label: 'SPOMOVE · PAPS', detail: '기관·개인 프로그램' },
+      { label: '커리큘럼', detail: '수업안·강사교육' },
+    ] as const,
+  },
   heroCtas: {
     primary: {
       label: '어떤 수업이 필요한지 보기',
@@ -51,6 +64,7 @@ export const homePage = {
   },
   visitorGate: {
     id: 'visitor-gate',
+    eyebrow: '맞춤 선택',
     title: '어떤 수업이 필요하신가요?',
     lead: '아이 · 기관 · 강사 — 목적에 맞는 수업을 선택하세요.',
     cards: [
@@ -84,6 +98,7 @@ export const homePage = {
     ] satisfies HomeVisitorGateCard[],
   },
   fieldRecords: {
+    eyebrow: '운영 사례',
     title: '현장 기록',
     lead: 'LAB·기관·행사·캠프까지, 스포키듀가 실제로 운영해 온 현장입니다.',
     recordsHref: `${SPOKEDU_BASE_PATH}/records`,
@@ -91,20 +106,20 @@ export const homePage = {
     recordsCtaLabel: '현장 기록 더 보기',
     cards: [
       {
-        proofId: 'proof-lab',
-        tagline: 'LAB',
-        venue: '스포키듀 LAB',
-        sessionLine: '프로그램 개발 · 강사 교육 운영 허브',
-        href: `${SPOKEDU_BASE_PATH}/records`,
-        trackLabel: 'cta-home-proof-lab',
-      },
-      {
         proofId: 'proof-spomove',
         tagline: 'SPOMOVE',
         venue: '양천거점형키움센터',
         sessionLine: '초등 저학년 SPOMOVE 정규수업',
         href: `${SPOKEDU_BASE_PATH}/cases/yangcheon-spomove`,
         trackLabel: 'cta-home-proof-spomove',
+      },
+      {
+        proofId: 'proof-rhythm',
+        tagline: 'SPOMOVE',
+        venue: '동작거점형키움센터',
+        sessionLine: '초등학생 · SPOMOVE 연계 수업',
+        href: `${SPOKEDU_BASE_PATH}/cases/dongjak-rhythm`,
+        trackLabel: 'cta-home-proof-dongjak',
       },
       {
         proofId: 'proof-oneday',
@@ -125,6 +140,7 @@ export const homePage = {
     ] satisfies HomeFieldRecordCard[],
   },
   programSystem: {
+    eyebrow: '수업 콘텐츠',
     title: '수업은 프로그램이 되고,\n프로그램은 커리큘럼이 됩니다',
     lead: '현장에서 검증한 프로그램을, 기관·강사가 바로 운영할 수 있는 형태로 정리합니다.',
     cta: {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { FlowEngine, type FlowDomRefs, type FlowTimingOverrides, type FlowFeatureFlags } from './engine/FlowEngine';
 import type { FlowPhaseDetail } from './engine/FlowTypes';
@@ -26,34 +26,41 @@ type OverlayState =
 function StartOverlay() {
   const c = FLOW_START_CONTENT;
   return (
-    <div className="absolute inset-0 z-[1100] flex flex-col items-center justify-center bg-black/92 text-center px-6">
-      <p className="mb-2 text-xs tracking-[0.3em] text-blue-400 uppercase">{c.subtitle}</p>
+    <div className="absolute inset-0 z-[1100] flex flex-col items-center justify-center bg-black/92 text-center px-6 overflow-y-auto py-8">
+      <p className="mb-1 text-[10px] tracking-[0.35em] text-blue-400/70 uppercase">{c.subtitle}</p>
       <h1
-        className="mb-3 text-5xl font-black text-white"
+        className="mb-2 text-5xl font-black text-white tracking-widest"
         style={{ fontFamily: "'Black Han Sans', sans-serif" }}
       >
         {c.title}
       </h1>
-      <p className="mb-8 max-w-xs text-sm text-white/50">{c.body}</p>
+      <p className="mb-7 max-w-xs text-sm text-white/45 leading-relaxed whitespace-pre-line">{c.body}</p>
 
-      <div className="flex flex-col gap-2 w-full max-w-sm">
+      <div className="flex flex-col gap-2.5 w-full max-w-sm">
         {[1, 2, 3, 4, 5].map((lv) => {
           const lc = FLOW_LEVEL_CONTENT[lv]!;
           return (
             <div
               key={lv}
-              className="flex items-center gap-3 rounded-xl px-4 py-2.5"
+              className="flex flex-col gap-1 rounded-xl px-4 py-3 text-left"
               style={{ background: lc.colorBg, border: `1px solid ${lc.colorBorder}` }}
             >
-              <span
-                className="w-16 shrink-0 text-xs font-bold tracking-wider"
-                style={{ color: lc.color }}
-              >
-                {lc.tag}
-              </span>
-              <span className="text-sm text-white/80">
-                {lc.label} — {lc.cueWord}
-              </span>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span
+                  className="text-[10px] font-bold tracking-widest"
+                  style={{ color: lc.color }}
+                >
+                  {lc.tag}
+                </span>
+                <span className="text-sm font-bold text-white">{lc.label}</span>
+                <span
+                  className="ml-auto text-xs font-black tracking-wider"
+                  style={{ color: lc.color }}
+                >
+                  {lc.cueWord}
+                </span>
+              </div>
+              <p className="text-sm text-white/75 leading-snug">{lc.shortInstruction}</p>
             </div>
           );
         })}
@@ -80,10 +87,9 @@ function LevelIntroOverlay({ levelNum }: { levelNum: number }) {
       >
         {lc.label.toUpperCase()}
       </h2>
-      <p className="mb-3 max-w-xs text-lg text-white/80">{lc.instruction}</p>
-      <p className="max-w-xs text-sm text-white/40">{lc.why}</p>
+      <p className="mb-4 max-w-xs text-xl font-semibold text-white/90 leading-snug">{lc.shortInstruction}</p>
       <div
-        className="mt-6 rounded-full border px-4 py-1.5 text-sm font-medium"
+        className="rounded-full border px-4 py-1.5 text-sm font-medium"
         style={{ borderColor: lc.colorBorder, color: lc.color, background: lc.colorBg }}
       >
         {lc.muscle}
@@ -210,6 +216,20 @@ function CompleteOverlay({
   );
 }
 
+// shortFlow5Timing은 컴포넌트 외부 상수 — 렌더마다 새 객체 생성 방지
+const SHORT_FLOW5_TIMING_BASE: Omit<FlowTimingOverrides, 'features' | 'motionTimeScale'> = {
+  welcomeDurationMs: 10000,
+  lv1GuideDurationMs: 5000,
+  durations: [10, 15, 10, 30, 10, 30, 30, 15],
+  introCountdownSec: 5,
+  introCountdownDelayMs: 0,
+  startAfterCountdownDelayMs: 0,
+  interLevelCountdownSec: 10,
+  restResumeDelayMs: 0,
+  endingAutoCloseSec: 15,
+  skipRestPhases: true,
+};
+
 // ── Main component ────────────────────────────────────────────────────────────
 function FlowPhaseContent() {
   const searchParams = useSearchParams();
@@ -229,42 +249,38 @@ function FlowPhaseContent() {
   const memoryPreset = searchParams.get('memoryPreset');
   const kidsSafe = searchParams.get('kidsSafe') === '1' || searchParams.get('kidsSafe') === 'true';
   const skipRestParam = searchParams.get('skipRest') === '1';
-  const durationsRaw = searchParams.get('durations');
-  const customDurations = durationsRaw
-    ? durationsRaw.split(',').map(Number).filter((x) => Number.isFinite(x) && x > 0)
-    : null;
-  const featuresRaw = (searchParams.get('features') ?? '').split(',').filter(Boolean);
-  const featureFlags: FlowFeatureFlags = {
-    bigJump:  featuresRaw.includes('bigJump'),
-    sprint:   featuresRaw.includes('sprint'),
-    freeze:   featuresRaw.includes('freeze'),
-    balance:  featuresRaw.includes('balance'),
-    reach:    featuresRaw.includes('reach'),
-  };
+  // 안정적인 primitive string으로 처리 — split/map/filter는 useMemo 내부에서
+  const durationsStr = searchParams.get('durations') ?? '';
+  const featuresStr = searchParams.get('features') ?? '';
+  const colorThemeParam = searchParams.get('colorTheme') ?? 'default';
 
-  const shortFlow5Timing: FlowTimingOverrides = {
-    welcomeDurationMs: 5000,
-    lv1GuideDurationMs: 5000,
-    durations: [10, 15, 10, 30, 10, 30, 30, 15],
-    introCountdownSec: 5,
-    introCountdownDelayMs: 0,
-    startAfterCountdownDelayMs: 0,
-    interLevelCountdownSec: 10,
-    restResumeDelayMs: 0,
-    endingAutoCloseSec: 15,
-    skipRestPhases: true,
-  };
+  // featureFlags를 useMemo로 안정화 — featuresStr이 바뀔 때만 새 객체 생성
+  const featureFlags: FlowFeatureFlags = useMemo(() => {
+    const raw = featuresStr.split(',').filter(Boolean);
+    return {
+      bigJump: raw.includes('bigJump'),
+      sprint:  raw.includes('sprint'),
+      freeze:  raw.includes('freeze'),
+      balance: raw.includes('balance'),
+      reach:   raw.includes('reach'),
+    };
+  }, [featuresStr]);
 
-  const timingOverrides: FlowTimingOverrides | undefined = (() => {
+  // timingOverrides를 useMemo로 안정화 — 의존값이 실제로 바뀔 때만 새 객체 생성
+  const timingOverrides: FlowTimingOverrides | undefined = useMemo(() => {
+    const theme = colorThemeParam || 'default';
     if (memoryPreset === 'shortFlow5') {
-      return { ...shortFlow5Timing, features: featureFlags, ...(kidsSafe ? { motionTimeScale: 0.5 } : {}) };
+      return { ...SHORT_FLOW5_TIMING_BASE, features: featureFlags, colorTheme: theme, ...(kidsSafe ? { motionTimeScale: 0.5 as const } : {}) };
     }
-    const base: FlowTimingOverrides = { features: featureFlags };
+    const customDurations = durationsStr
+      ? durationsStr.split(',').map(Number).filter((x) => Number.isFinite(x) && x > 0)
+      : null;
+    const base: FlowTimingOverrides = { features: featureFlags, colorTheme: theme };
     if (kidsSafe) base.motionTimeScale = 0.5;
     if (customDurations && customDurations.length === 8) base.durations = customDurations;
     if (skipRestParam) base.skipRestPhases = true;
     return base;
-  })();
+  }, [memoryPreset, featureFlags, kidsSafe, durationsStr, skipRestParam, colorThemeParam]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<FlowEngine | null>(null);
@@ -537,11 +553,9 @@ function FlowPhaseContent() {
       >
         <h1
           ref={introTitleRef}
-          className="text-6xl font-bold text-blue-400 mb-6"
+          className="text-6xl font-bold text-blue-400 mb-6 hidden"
           style={{ fontFamily: "'Black Han Sans', sans-serif" }}
-        >
-          SPOKEDU
-        </h1>
+        />
         {!autoStart && (
           <button
             ref={startBtnRef}
@@ -597,15 +611,15 @@ function FlowPhaseContent() {
           />
         </div>
         <div
-          className="absolute top-6 right-6 flex items-center gap-2.5 rounded-xl border-2 border-blue-500 bg-black/60 px-4 py-2 text-lg"
+          className="absolute bottom-6 left-6 flex items-center gap-2.5 rounded-xl border border-blue-500/60 bg-black/55 px-3 py-1.5 text-base backdrop-blur-sm"
           style={{ fontFamily: "'Black Han Sans', sans-serif" }}
         >
-          <div>
+          <div className="text-white/70">
             LV <span ref={levelNumRef}>1</span>
           </div>
           <div
             ref={levelTagRef}
-            className="rounded-full border px-2.5 py-0.5 text-sm tracking-wider"
+            className="rounded-full border px-2.5 py-0.5 text-xs tracking-wider"
             style={{
               borderColor: 'rgba(147,197,253,0.6)',
               color: '#93c5fd',

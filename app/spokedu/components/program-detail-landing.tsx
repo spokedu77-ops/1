@@ -2,30 +2,18 @@
 
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
+import { LandingFinalCta } from './landing-final-cta';
+import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
-import { HeroCtaStack } from './hero-cta-stack';
 import { CaseProofCard } from './case-proof-card';
-import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
+import { MediaPanel } from './visual';
 import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
 import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { programDetailBlocks, type ProgramDetailSlug } from '../data/program-details';
 import { getProgramBySlug } from '../data/programs';
-import {
-  btnPrimary,
-  fineHover,
-  landingH1,
-  landingHeroCopy,
-  landingHeroGrid,
-  landingHeroVisual,
-  landingPageStack,
-  landingSectionTitle,
-  linkMuted,
-} from '../lib/ui-classes';
+import { landingPageStack, landingSectionTitle, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
-
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
 const whyVariants: LandingCardVariant[] = ['glass', 'gradient', 'image'];
 const activityVariants: LandingCardVariant[] = ['image', 'gradient', 'glass'];
@@ -48,34 +36,17 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
 
   return (
     <div className={landingPageStack}>
-      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className={landingHeroGrid}>
-          <div className={landingHeroCopy}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">{program.category}</p>
-            <h1 className={`${landingH1} text-slate-950`}>{program.title}</h1>
-            <p className="max-w-md text-base leading-relaxed text-slate-600 sm:text-lg sm:leading-8">{detail.heroSubtitle}</p>
-            <HeroCtaStack
-              primary={{
-                href: detail.primaryCta.href,
-                label: detail.primaryCta.label,
-                track: inferTrackFromHref(detail.primaryCta.href),
-                trackLabel: detail.primaryCta.trackLabel,
-              }}
-              secondary={[
-                {
-                  href: detail.secondaryCta.href,
-                  label: detail.secondaryCta.label,
-                  track: inferTrackFromHref(detail.secondaryCta.href),
-                  trackLabel: detail.secondaryCta.trackLabel,
-                },
-              ]}
-            />
-          </div>
-          <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" />
-          </div>
-        </div>
-      </LandingSection>
+      <LandingHero
+        kicker={program.category}
+        lines={[program.title]}
+        subtitle={detail.heroSubtitle}
+        media={heroMedia}
+        primaryCta={{
+          label: detail.primaryCta.label,
+          href: detail.primaryCta.href,
+          trackLabel: detail.primaryCta.trackLabel,
+        }}
+      />
 
       <LandingSection className="space-y-3" delay={0.05}>
         <h2 className={landingSectionTitle}>이 프로그램이 필요한 이유</h2>
@@ -104,6 +75,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
                 <MediaPanel
                   media={HOME_MEDIA[item.mediaKey]}
                   className="aspect-[16/8] rounded-none border-0 border-b border-slate-200/80"
+                  photoPriority={index === 0}
                 />
                 <div className="p-3.5 sm:p-4">
                   <p
@@ -175,45 +147,32 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
         </LandingSection>
       ) : null}
 
-      <LandingSection
-        className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-5 py-8 shadow-xl shadow-indigo-900/10 ring-1 ring-white/60 sm:rounded-3xl sm:px-8 sm:py-10"
-        delay={0.15}
-      >
-        <div className="pointer-events-none absolute inset-0 opacity-35" aria-hidden>
-          <MediaRenderer media={heroMedia} intensity="photo" className="h-full w-full" />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-white/80" aria-hidden />
-        <div className="relative max-w-xl">
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{detail.finalCtaTitle}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{detail.finalCtaSub}</p>
-          <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
-            <Link
-              href={detail.primaryCta.href}
-              data-track={inferTrackFromHref(detail.primaryCta.href)}
-              data-track-label={detail.primaryCta.trackLabel}
-              className={`${btnPrimary} !w-full`}
-            >
-              {detail.primaryCta.label}
-            </Link>
-            <Link
-              href={detail.secondaryCta.href}
-              data-track={inferTrackFromHref(detail.secondaryCta.href)}
-              data-track-label={detail.secondaryCta.trackLabel}
-              className={`inline-flex min-h-11 w-full items-center justify-center rounded-full border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-300 ${fineHover}hover:bg-indigo-50 ${focusRing}`}
-            >
-              {detail.secondaryCta.label}
-            </Link>
-          </div>
-          <Link
-            href="/spokedu/programs"
-            data-track={inferTrackFromHref('/spokedu/programs')}
-            data-track-label="program-all-link"
-            className={`mt-4 inline-block text-sm text-slate-600 underline-offset-2 ${fineHover}hover:text-indigo-700 ${fineHover}hover:underline ${focusRing}`}
-          >
-            전체 프로그램 보기 →
-          </Link>
-        </div>
-      </LandingSection>
+      <LandingFinalCta
+        title={detail.finalCtaTitle}
+        description={detail.finalCtaSub}
+        tone="light"
+        backgroundMedia={heroMedia}
+        links={[
+          {
+            label: detail.primaryCta.label,
+            href: detail.primaryCta.href,
+            trackLabel: detail.primaryCta.trackLabel,
+            variant: 'primary',
+          },
+          {
+            label: detail.secondaryCta.label,
+            href: detail.secondaryCta.href,
+            trackLabel: detail.secondaryCta.trackLabel,
+            variant: 'on-light-outline',
+          },
+          {
+            label: '전체 프로그램 보기',
+            href: '/spokedu/programs',
+            trackLabel: 'program-all-link',
+            variant: 'on-light-outline',
+          },
+        ]}
+      />
     </div>
   );
 }

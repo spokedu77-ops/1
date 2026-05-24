@@ -1,13 +1,13 @@
 {
   "base": "http://localhost:3000",
-  "timestamp": "2026-05-22T16:55:37.884Z",
+  "timestamp": "2026-05-23T15:58:48.156Z",
   "pageResults": [
     {
       "path": "/spokedu",
       "status": 200,
       "grade": "A",
-      "title": "SPOKEDU 스포키듀 | 아동·청소년 체육교육 브랜드",
-      "h1": "움직임으로 아이의 성장을 설계합니다",
+      "title": "SPOKEDU 스포키듀 | 현장 체육교육 운영 브랜드",
+      "h1": "현장 수업에서 시작해 아이의 움직임을 설계합니다",
       "footerCount": 1,
       "issues": []
     },
@@ -132,8 +132,8 @@
       "path": "/spokedu/monthly/2026-05",
       "status": 200,
       "grade": "A",
-      "title": "2026년 5월 월간 스포키듀 | 월간 스포키듀 · SPOKEDU",
-      "h1": "2026년 5월 월간 스포키듀",
+      "title": "2026년 5월 월간형 수업 | 월간형 체육수업 · SPOKEDU",
+      "h1": "2026년 5월 월간형 수업",
       "footerCount": 1,
       "issues": []
     },
@@ -261,9 +261,8 @@
       "viewport": "360",
       "path": "/spokedu",
       "h1Lines": [
-        "움직임으로",
-        "아이의 성장을",
-        "설계합니다"
+        "현장 수업에서 시작해",
+        "아이의 움직임을 설계합니다"
       ],
       "h1Width": 332,
       "overflowX": false
@@ -292,9 +291,8 @@
       "viewport": "390",
       "path": "/spokedu",
       "h1Lines": [
-        "움직임으로",
-        "아이의 성장을",
-        "설계합니다"
+        "현장 수업에서 시작해",
+        "아이의 움직임을 설계합니다"
       ],
       "h1Width": 362,
       "overflowX": false
@@ -323,9 +321,8 @@
       "viewport": "430",
       "path": "/spokedu",
       "h1Lines": [
-        "움직임으로",
-        "아이의 성장을",
-        "설계합니다"
+        "현장 수업에서 시작해",
+        "아이의 움직임을 설계합니다"
       ],
       "h1Width": 402,
       "overflowX": false

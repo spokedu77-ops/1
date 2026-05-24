@@ -175,6 +175,8 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
   return modeId === 'reactTrain' ? 'time' : 'reps';
 }
 
+type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'sprint' | 'freeze' | 'balance' | 'bigJump';
+
 type LaunchSettings = {
   speed: number;
   timeMode: 'time' | 'reps';
@@ -186,6 +188,8 @@ type LaunchSettings = {
   kidsSafeMode: boolean;
   numberRule: string;
   variantColorTheme: SpomoveColorThemeId;
+  flowFeatures: FlowFeatureKey[];
+  flowColorTheme: 'default' | 'space' | 'neon';
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
@@ -199,6 +203,8 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   kidsSafeMode: false,
   numberRule: 'odd_left',
   variantColorTheme: 'color',
+  flowFeatures: [],
+  flowColorTheme: 'default',
 };
 
 type PagePhase =
@@ -259,6 +265,8 @@ function TrainingPortal({
     kidsSafeMode: launch.kidsSafeMode,
     numberRule: launch.numberRule,
     variantColorTheme: launch.variantColorTheme,
+    flowFeatures: launch.flowFeatures,
+    flowColorTheme: launch.flowColorTheme,
   };
 
   return createPortal(
@@ -697,6 +705,109 @@ function SettingsScreen({
                     : '(시지각 반응 전체 속도/스폰 간격 완화)'}
                 </span>
               </button>
+            </section>
+          ) : null}
+
+          {/* Flow 전용: 배경 테마 */}
+          {isFlowOrChallenge ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>배경 테마</label>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(
+                  [
+                    { key: 'default' as const, label: '기본', desc: '검정 · 노랑/초록/빨강' },
+                    { key: 'space'   as const, label: '우주',  desc: '다크 퍼플 · 보라/파랑' },
+                    { key: 'neon'    as const, label: '네온',  desc: '다크 틸 · 청록/빨강' },
+                  ]
+                ).map(({ key, label, desc }) => {
+                  const active = launch.flowColorTheme === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, flowColorTheme: key }))}
+                      style={{
+                        flex: 1,
+                        padding: '10px 6px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? '#8B5CF6' : T.border}`,
+                        background: active ? 'rgba(139,92,246,0.16)' : T.card,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <div style={{ fontWeight: 900, fontSize: 13, color: active ? '#8B5CF6' : T.text }}>{active ? '✓ ' : ''}{label}</div>
+                      <div style={{ fontSize: 10, color: T.muted, marginTop: 3, lineHeight: 1.4 }}>{desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* Flow 전용: 추가 동작 선택 */}
+          {isFlowOrChallenge ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>추가 동작 선택</label>
+                <p style={{ margin: '4px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  선택한 동작이 스테이지별로 순차 추가됩니다. 복수 선택 가능합니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {(
+                  [
+                    { key: 'faster'   as FlowFeatureKey, icon: '⚡', label: '속도 증가 (FASTER)',   desc: '이전 스테이지보다 이동 속도가 빨라집니다.' },
+                    { key: 'punch'    as FlowFeatureKey, icon: '👊', label: '박스 펀치 (PUNCH)',    desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
+                    { key: 'duck'     as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기 (DUCK)',    desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
+                    { key: 'reach'    as FlowFeatureKey, icon: '🆙', label: '높은 박스 (REACH)',    desc: '높은 보라색 박스가 추가 등장합니다. 팔을 뻗어 치세요.' },
+                    { key: 'sprint'   as FlowFeatureKey, icon: '💨', label: '속도 폭발 (SPRINT)',   desc: '스프린트 링 통과 시 속도가 폭발합니다.' },
+                    { key: 'freeze'   as FlowFeatureKey, icon: '❄️', label: '정지 신호 (FREEZE)',   desc: '얼음 벽 신호 — 즉시 정지 억제 훈련입니다.' },
+                    { key: 'balance'  as FlowFeatureKey, icon: '🦶', label: '한 발 착지 (BALANCE)', desc: '큐에 따라 한 발로 착지하는 균형 훈련입니다.' },
+                    { key: 'bigJump'  as FlowFeatureKey, icon: '🏔️', label: '넓은 점프 (BIG JUMP)', desc: '다리 간격이 넓어지고 점프 높이가 높아집니다.' },
+                  ]
+                ).map(({ key, icon, label, desc }) => {
+                  const active = launch.flowFeatures.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setLaunch((s) => {
+                          const next = active
+                            ? s.flowFeatures.filter((k) => k !== key)
+                            : [...s.flowFeatures, key];
+                          return { ...s, flowFeatures: next };
+                        });
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 10,
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? '#22C55E' : T.border}`,
+                        background: active ? 'rgba(34,197,94,0.10)' : T.card,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        textAlign: 'left',
+                        transition: 'all 0.13s',
+                      }}
+                    >
+                      <span style={{ fontSize: '1.15rem', lineHeight: 1, marginTop: 2 }}>{icon}</span>
+                      <div>
+                        <div style={{ fontWeight: 900, fontSize: 13, color: active ? '#16A34A' : T.text, marginBottom: 2 }}>
+                          {active ? '✓ ' : ''}{label}
+                        </div>
+                        <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.45 }}>{desc}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </section>
           ) : null}
 

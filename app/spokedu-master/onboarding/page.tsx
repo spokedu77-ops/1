@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Check, School, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react';
+import { ArrowRight, BookOpen, Check, Clipboard, MonitorPlay, School, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateCenterCode, type CenterValidationResult } from '../lib/serviceContracts';
@@ -9,6 +9,12 @@ import type { UserRole } from '../types';
 
 const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등'];
 const PROGRAM_TYPES = ['놀이체육', 'SPOMOVE', '협응성', '민첩성', '체력'];
+const STEP_LABELS = ['환경', '도입', '프로필', '시작'];
+const STARTER_PACK = [
+  { icon: BookOpen, title: '추천 수업안', desc: '오늘 바로 열 수 있는 대표 패키지' },
+  { icon: MonitorPlay, title: '큰 화면 활동', desc: 'TV와 빔에서 실행하는 SPOMOVE' },
+  { icon: Clipboard, title: '설명 문구', desc: '학부모·기관 안내 복사' },
+] as const;
 
 function StepDot({ active, done }: { active: boolean; done: boolean }) {
   return <span className="h-2.5 w-2.5 rounded-full" style={{ background: active ? 'var(--spm-acc)' : done ? 'var(--spm-grn)' : 'var(--spm-s4)' }} />;
@@ -104,7 +110,7 @@ export default function OnboardingPage() {
 
   const finish = () => {
     applyProfile();
-    router.replace('/spokedu-master/library');
+    router.replace('/spokedu-master/dashboard');
   };
 
   const finishWithPayment = (plan: 'pro' | 'team') => {
@@ -114,14 +120,22 @@ export default function OnboardingPage() {
 
   return (
     <div className="h-full overflow-y-auto pb-8" style={{ background: 'var(--spm-bg)' }}>
-      <main className="mx-auto flex min-h-full w-full max-w-[880px] flex-col justify-center px-[22px] py-8 sm:px-8">
+      <main className="mx-auto grid min-h-full w-full max-w-[1080px] gap-6 px-[22px] py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
+        <div>
         <div className="mb-8">
           <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
-          <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 준비는 쉽게, 수업은 더 몰입감 있게</h1>
-          <p className="mt-3 max-w-[640px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>프로그램 라이브러리에서 수업을 고르고, SPOMOVE를 큰 화면으로 실행하고, 수업의 의미를 설명 문구로 남깁니다.</p>
+          <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>내 수업 환경에 맞춰 시작합니다</h1>
+          <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>몇 가지만 고르면 홈에 추천 수업, 큰 화면 활동, 설명 문구가 바로 준비됩니다.</p>
         </div>
 
-        <div className="mb-6 flex gap-2">{[0, 1, 2, 3].map((item) => <StepDot key={item} active={step === item} done={step > item} />)}</div>
+        <div className="mb-6 grid grid-cols-4 gap-2">
+          {[0, 1, 2, 3].map((item) => (
+            <div key={item} className="flex items-center gap-2">
+              <StepDot active={step === item} done={step > item} />
+              <span className="text-[11px] font-black" style={{ color: step === item ? 'var(--spm-t)' : 'var(--spm-t3)' }}>{STEP_LABELS[item]}</span>
+            </div>
+          ))}
+        </div>
 
         <section className="rounded-[20px] p-5" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
           {step === 0 ? (
@@ -173,20 +187,14 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-                라이브러리에서 수업안을 고르면 SPOMOVE 연결과 수업 설명 문구가 바로 연결됩니다.
+                홈에서 추천 수업을 열고, 큰 화면을 실행하고, 설명 문구까지 바로 이어갑니다.
               </p>
-              <div className="grid gap-2">
-                {([
-                  { step: '1', label: '라이브러리에서 수업 고르기', caption: '오늘 쓸 수업안을 검색하거나 태그로 찾습니다', color: 'rgba(99,102,241,0.14)', accent: 'var(--spm-acc)' },
-                  { step: '2', label: 'SPOMOVE 큰 화면 실행', caption: '프로젝터·TV에 연결해 아이들이 신호를 보고 움직입니다', color: 'rgba(16,185,129,0.12)', accent: 'var(--spm-grn)' },
-                  { step: '3', label: '수업 도구 활용', caption: '타이머, 팀 나누기, 학생 뽑기를 수업 중에 바로 씁니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
-                ] as const).map(({ step: num, label, caption, color, accent }) => (
-                  <div key={num} className="flex items-center gap-3 rounded-[12px] p-3" style={{ background: color }}>
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-black text-white" style={{ background: accent }}>{num}</span>
-                    <span>
-                      <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
-                      <span className="mt-0.5 block text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>{caption}</span>
-                    </span>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {STARTER_PACK.map(({ icon: Icon, title, desc }) => (
+                  <div key={title} className="rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                    <Icon size={18} color="var(--spm-acc)" />
+                    <strong className="mt-3 block text-[13px]" style={{ color: 'var(--spm-t)' }}>{title}</strong>
+                    <span className="mt-1 block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{desc}</span>
                   </div>
                 ))}
               </div>
@@ -208,7 +216,7 @@ export default function OnboardingPage() {
                   className="mt-2 w-full text-center text-[11px] font-semibold"
                   style={{ color: 'var(--spm-t3)' }}
                 >
-                  14일 무료 체험 먼저 해보기
+                  홈에서 무료 체험 시작
                 </button>
               </div>
             </div>
@@ -228,6 +236,30 @@ export default function OnboardingPage() {
             </div>
           )}
         </section>
+        </div>
+
+        <aside className="rounded-[22px] p-5" style={{ background: 'linear-gradient(180deg, rgba(99,102,241,0.16), rgba(16,185,129,0.08))', border: '1px solid var(--spm-br2)' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>Start Kit</p>
+          <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>가입 직후 홈에 열리는 것</h2>
+          <div className="mt-5 space-y-3">
+            {STARTER_PACK.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="flex items-center gap-3 rounded-[15px] p-3" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s2)' }}>
+                  <Icon size={18} color="var(--spm-acc)" />
+                </span>
+                <span>
+                  <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>{title}</strong>
+                  <span className="mt-0.5 block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{desc}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 rounded-[15px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>체험 기간</p>
+            <p className="mt-1 text-[28px] font-black leading-none" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>14일</p>
+            <p className="mt-2 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>카드 없이 먼저 홈과 수업 패키지를 확인합니다.</p>
+          </div>
+        </aside>
       </main>
     </div>
   );

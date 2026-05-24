@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, LayoutList, ListOrdered, Pause, Play, RotateCcw, Shuffle, Timer, Users } from 'lucide-react';
+import { BookOpen, FileText, LayoutList, ListOrdered, MonitorPlay, Pause, Play, RotateCcw, Shuffle, Timer, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -16,6 +16,20 @@ const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
   { id: 'teams', label: '팀 나누기', icon: Users },
   { id: 'order', label: '진행 순서', icon: ListOrdered },
 ];
+
+const TOOL_STATUS = [
+  { label: '즉시 실행', value: '5개 도구' },
+  { label: '명단 기반', value: '선택·팀·순서' },
+  { label: '수업 후', value: '설명 문구 연결' },
+] as const;
+
+const TOOL_HELP: Record<TabId, string> = {
+  stopwatch: '운동 루틴, 스테이션, 미션 제한 시간을 화면에 크게 띄웁니다.',
+  scoreboard: '팀 경쟁 활동에서 점수를 크게 보여주고 흐름을 끊지 않습니다.',
+  picker: '발표, 시범, 시작 순서를 공정하게 뽑습니다.',
+  teams: '참여 수준을 고려해 팀을 빠르게 나눕니다.',
+  order: '게임, 발표, 로테이션 순서를 한 번에 정합니다.',
+};
 
 const SAMPLE_STUDENTS: StudentProfile[] = [
   { id: 'sample-1', name: '민준', group: 'A그룹', meta: '', level: '', attendance: 0, classes: 0, streak: 0, risk: null, skills: [{ label: '균형', value: 72, delta: '+4' }], badges: [], history: [] },
@@ -141,7 +155,7 @@ function StudentModeNote({ usingSample }: { usingSample: boolean }) {
   if (!usingSample) return null;
   return (
     <div className="mx-auto mb-4 max-w-[520px] rounded-[14px] px-4 py-3 text-center text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.24)', color: 'var(--spm-amb)' }}>
-      학생 명단 기능은 확장 단계입니다. 지금은 예시 명단으로 도구 흐름만 확인합니다.
+      등록된 학생 명단이 없어서 예시 명단으로 진행 콘솔 흐름을 보여줍니다.
     </div>
   );
 }
@@ -333,9 +347,54 @@ export default function ClassToolsView() {
   const storeStudents = useMasterStore((state) => state.students);
   const students = useMemo(() => (storeStudents.length ? storeStudents : SAMPLE_STUDENTS), [storeStudents]);
   const usingSample = storeStudents.length === 0;
+  const ActiveIcon = TABS.find((item) => item.id === tab)?.icon ?? Timer;
 
   return (
     <div className="flex h-full min-h-0 flex-col" style={{ background: 'var(--spm-bg)' }}>
+      <section className="shrink-0 border-b px-5 py-5 sm:px-7" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-[640px]">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>CLASS COMMAND</p>
+            <h1 className="mt-1 text-[26px] font-black leading-tight sm:text-[34px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+              수업 중 바로 꺼내 쓰는 진행 콘솔
+            </h1>
+            <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+              타이머, 점수판, 학생 선택, 팀 배분, 진행 순서를 한 화면에서 처리합니다.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3 lg:w-[420px]">
+            {TOOL_STATUS.map((item) => (
+              <div key={item.label} className="rounded-[14px] px-4 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{item.label}</p>
+                <p className="mt-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-5 flex flex-col gap-3 rounded-[16px] px-4 py-4 sm:flex-row sm:items-center sm:justify-between" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}>
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'var(--spm-acc)', color: 'white' }}>
+              <ActiveIcon size={18} />
+            </span>
+            <div>
+              <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{TABS.find((item) => item.id === tab)?.label}</p>
+              <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{TOOL_HELP[tab]}</p>
+            </div>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Link href="/spokedu-master/library" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="수업안 열기">
+              <BookOpen size={16} />
+            </Link>
+            <Link href="/spokedu-master/spomove" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="큰 화면 실행">
+              <MonitorPlay size={16} />
+            </Link>
+            <Link href="/spokedu-master/report" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="설명 문구">
+              <FileText size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <div className="flex shrink-0 overflow-x-auto border-b" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
         {TABS.map(({ id, label, icon: Icon }) => {
           const active = tab === id;

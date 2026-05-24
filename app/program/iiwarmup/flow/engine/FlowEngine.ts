@@ -95,6 +95,8 @@ export type FlowTimingOverrides = {
   motionTimeScale?: number;
   /** 활성화된 인터랙션 기능 플래그 */
   features?: Partial<FlowFeatureFlags>;
+  /** 배경 색상 테마: 'default' | 'space' | 'neon' */
+  colorTheme?: string;
 };
 
 export interface FlowFeatureFlags {
@@ -184,6 +186,15 @@ export class FlowEngine {
   private isResting = false;
   private movementActive = false;
   private features: FlowFeatureFlags = { bigJump: false, sprint: false, freeze: false, balance: false, reach: false };
+  private colorTheme = 'default';
+  /** 다음 브리지 스폰 시 스프린트 게이트 부착 */
+  private sprintGateQueued = false;
+  /** 다음 브리지 스폰 시 프리즈 사인 부착 */
+  private freezeSignQueued = false;
+  /** 스프린트 경고가 이번 사이클에 이미 큐잉됐는지 */
+  private sprintGateWarned = false;
+  /** 프리즈 경고가 이번 사이클에 이미 큐잉됐는지 */
+  private freezeSignWarned = false;
   /** 휴식 구간 순서 (1부터 시작, getRestContent 키와 대응) */
   private restIndex = 0;
   /** 완료 화면에서 표시할 플레이된 레벨 번호 목록 */
@@ -299,6 +310,7 @@ export class FlowEngine {
   private hitShakeOffsetX = 0;
   private hitShakeOffsetY = 0;
   private restStartMs = 0;
+  private restPausedElapsedMs = 0;
   private pendingTimeouts: Array<ReturnType<typeof setTimeout>> = [];
   private panoStatusText = '';
   private bgmStatusText = '';
@@ -397,6 +409,12 @@ export class FlowEngine {
     this.movementActive = true;
     this.isResting = false;
     this.currentSpeedValue = 0;
+    this.sprintCycleTimer = this.SPRINT_CYCLE_SEC;
+    this.sprintActiveTimer = 0;
+    this.freezeCycleTimer = this.FREEZE_CYCLE_MIN_SEC + Math.random() * (this.FREEZE_CYCLE_MAX_SEC - this.FREEZE_CYCLE_MIN_SEC);
+    this.freezeActiveTimer = 0;
+    this.balanceCycleTimer = this.BALANCE_CYCLE_MIN_SEC + Math.random() * (this.BALANCE_CYCLE_MAX_SEC - this.BALANCE_CYCLE_MIN_SEC);
+    this.balanceActiveTimer = 0;
 
     // 레벨 인덱스 매핑 (displayLevels = [1, 2, 0, 3, 0, 4, 5, -1])
     const levelToIndex: Record<1 | 2 | 3 | 4 | 5, number> = {
@@ -482,10 +500,25 @@ export class FlowEngine {
     return this.displayLevels[this.currentLevelIndex];
   }
 
+  private static readonly THEMES: Record<string, {
+    bg: number; fog: number;
+    laneColors: [number, number, number];
+    ambientIntensity: number; pointColor: number;
+  }> = {
+    default: { bg: 0x000000, fog: 0x000000, laneColors: [0xfdd835, 0x43a047, 0xe53935], ambientIntensity: 0.7, pointColor: 0x3b82f6 },
+    space:   { bg: 0x05020f, fog: 0x05020f, laneColors: [0x7c3aed, 0x2563eb, 0x06b6d4], ambientIntensity: 0.55, pointColor: 0x9333ea },
+    neon:    { bg: 0x000d0a, fog: 0x000d0a, laneColors: [0x06d6a0, 0xef4444, 0xfbbf24], ambientIntensity: 0.45, pointColor: 0x22c55e },
+  };
+
+  private getTheme() {
+    return FlowEngine.THEMES[this.colorTheme] ?? FlowEngine.THEMES['default']!;
+  }
+
   private init3D(): void {
+    const theme = this.getTheme();
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x000000);
-    this.scene.fog = new THREE.Fog(0x000000, FOG_NEAR, FOG_FAR_BY_LEVEL[1]);
+    this.scene.background = new THREE.Color(theme.bg);
+    this.scene.fog = new THREE.Fog(theme.fog, FOG_NEAR, FOG_FAR_BY_LEVEL[1]);
 
     this.camera = new THREE.PerspectiveCamera(
       60,
@@ -505,12 +538,13 @@ export class FlowEngine {
     }
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     const devicePixelRatio = window.devicePixelRatio ?? 1;
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const pixelRatioMax = this.adaptiveQuality.getPixelRatioMax();
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, pixelRatioMax));
 
-    const amb = new THREE.AmbientLight(0xffffff, 0.7);
+    const amb = new THREE.AmbientLight(0xffffff, theme.ambientIntensity);
     this.scene.add(amb);
 
-    const spot = new THREE.PointLight(0x3b82f6, 15, 10000);
+    const spot = new THREE.PointLight(theme.pointColor, 15, 10000);
     spot.position.set(0, 2000, 1000);
     this.scene.add(spot);
 
@@ -552,6 +586,7 @@ export class FlowEngine {
         onHitStop: () => {
           if (this.getCurrentLevelNum() === HIT_STOP_LEVEL) this.hitStopFramesRemaining = HIT_STOP_FRAMES;
         },
+        getShardCapScale: () => this.adaptiveQuality.getShardCapScale(),
       },
       this.features.reach
     );
@@ -564,7 +599,7 @@ export class FlowEngine {
       if (this.stars) return;
 
       const starGeo = new THREE.BufferGeometry();
-      const starCount = STAR_COUNT;
+      const starCount = Math.floor(STAR_COUNT * this.adaptiveQuality.getStarCountScale());
       const starPos = new Float32Array(starCount * 3);
       for (let i = 0; i < starCount; i++) {
         starPos[i * 3] = (Math.random() - 0.5) * 25000;
@@ -814,7 +849,7 @@ export class FlowEngine {
     }
 
     const group = new THREE.Group();
-    const laneColors = [0xfdd835, 0x43a047, 0xe53935];
+    const laneColors = this.getTheme().laneColors;
     const randLane = isFirst ? 1 : Math.floor(Math.random() * 3);
     const bridgeColor = laneColors[randLane];
 
@@ -904,11 +939,24 @@ export class FlowEngine {
         this.obstacleManager.attachBoxToBridge(bridgeObj, levelNumForSpawn);
       }
     }
+
+    // 스프린트 게이트 / 프리즈 사인 부착 (큐에 있을 때만)
+    if (this.sprintGateQueued && this.features.sprint) {
+      this.obstacleManager.attachSprintGate(bridgeObj);
+      this.sprintGateQueued = false;
+    }
+    if (this.freezeSignQueued && this.features.freeze) {
+      this.obstacleManager.attachFreezeSign(bridgeObj);
+      this.freezeSignQueued = false;
+    }
   }
 
   private spawn2DSpeedLine(): void {
     const container = getRefEl(this.domRefs.speedLinesOverlay);
     if (!container) return;
+
+    const cap = this.adaptiveQuality.get2DLineCountCap();
+    if (cap > 0 && container.childElementCount >= cap) return;
 
     const line = document.createElement('div');
     line.className = 'speed-line-2d';
@@ -1299,9 +1347,30 @@ export class FlowEngine {
         this.isPausedByVisibility = true;
         this.movementActive = false;
         this.audio.setMasterGain(0);
+        // restCountdownTimer 일시정지: 경과 시간 저장 후 interval 제거
+        if (this.restCountdownTimer !== null) {
+          this.restPausedElapsedMs = performance.now() - this.restStartMs;
+          clearInterval(this.restCountdownTimer);
+          this.restCountdownTimer = null;
+        }
       }
     } else {
       if (this.isPausedByVisibility) {
+        // restCountdownTimer 재개: restStartMs를 경과분만큼 당겨서 재생성
+        if (this.isResting && this.restPausedElapsedMs > 0) {
+          this.restStartMs = performance.now() - this.restPausedElapsedMs;
+          this.restPausedElapsedMs = 0;
+          // interval은 doCountdownStart 완료 후 이미 진행 중인 registerTimeout에 의해 자연 종료됨
+          // 여기서는 1초 tick만 재개
+          if (this.restCountdownTimer === null) {
+            this.restCountdownTimer = setInterval(() => {
+              const elapsed = Math.floor((performance.now() - this.restStartMs) / 1000);
+              const restDurationSec = this.durations[this.currentLevelIndex] ?? 30;
+              const remaining = Math.max(0, restDurationSec - elapsed);
+              this.dispatchPhase({ type: 'rest-tick', remainingSec: remaining });
+            }, 1000);
+          }
+        }
         this.doCountdownStart(() => {
           this.isPausedByVisibility = false;
           this.movementActive = true;
@@ -1363,7 +1432,8 @@ export class FlowEngine {
 
     this.clearScheduledTimeouts();
     this.clearCountdown();
-    const COUNTDOWN_DELAY_MS = this.INTRO_COUNTDOWN_DELAY_MS;
+    // WELCOME_DURATION만큼 순수 읽기 시간을 확보한 뒤 카운트다운 시작
+    const COUNTDOWN_DELAY_MS = this.WELCOME_DURATION + this.INTRO_COUNTDOWN_DELAY_MS;
     this.registerTimeout(() => {
       if (cdOverlay) {
         cdOverlay.classList.remove('hidden');
@@ -1429,6 +1499,11 @@ export class FlowEngine {
       balance:  f.balance  ?? false,
       reach:    f.reach    ?? false,
     };
+    this.colorTheme = timing?.colorTheme ?? 'default';
+    this.sprintGateQueued = false;
+    this.sprintGateWarned = false;
+    this.freezeSignQueued = false;
+    this.freezeSignWarned = false;
 
     this.totalPlaySecForHud = this.durations
       .filter((_, i) => this.displayLevels[i] >= 1 && this.displayLevels[i] <= 5)
@@ -1463,8 +1538,9 @@ export class FlowEngine {
     const hud = getRefEl(this.domRefs.hud);
     if (hud) hud.classList.remove('hidden');
 
-    // 엔진 수명 = 페이지 수명. 3D 리소스는 1회 생성 후 재사용. 재시작 기능 도입 시 리셋 경로 추가 후 init3D는 !this.scene 일 때만 호출하도록 변경 권장.
-    this.init3D();
+    if (!this.scene) {
+      this.init3D();
+    }
     this.spawnBridge(true, 1);
 
     this.gameState = 'playing';
@@ -1505,6 +1581,10 @@ export class FlowEngine {
   };
 
   private startLoop(): void {
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = 0;
+    }
     this.clock = new THREE.Clock();
     const animate = () => {
       if (this.clock == null) return;
@@ -1536,7 +1616,13 @@ export class FlowEngine {
       this.hitStopFramesRemaining--;
     }
 
+    const tierBefore = this.adaptiveQuality.getTier();
     this.adaptiveQuality.update(dt);
+    const tierAfter = this.adaptiveQuality.getTier();
+    if (tierAfter !== tierBefore && this.renderer) {
+      const dpr = window.devicePixelRatio ?? 1;
+      this.renderer.setPixelRatio(Math.min(dpr, this.adaptiveQuality.getPixelRatioMax()));
+    }
 
     const currentLevelNum = this.getCurrentLevelNum();
     const inHitStop = this.hitStopFramesRemaining > 0;
@@ -1659,15 +1745,21 @@ export class FlowEngine {
         if (this.sprintActiveTimer <= 0) {
           this.sprintActiveTimer = 0;
           this.sprintCycleTimer = this.SPRINT_CYCLE_SEC;
+          this.sprintGateWarned = false;
         }
         speedScalar *= this.SPRINT_MULTIPLIER;
         this.flashPulseValue = Math.min(1.0, this.flashPulseValue + 0.04 * dt * 60);
       } else {
         this.sprintCycleTimer -= dt;
+        // 3초 전에 스프린트 게이트 큐잉 (1사이클당 1회)
+        if (!this.sprintGateWarned && this.sprintCycleTimer <= 3.0) {
+          this.sprintGateWarned = true;
+          this.sprintGateQueued = true;
+        }
         if (this.sprintCycleTimer <= 0) {
           this.sprintActiveTimer = this.SPRINT_DURATION_SEC;
           showInstruction(this.domRefs, 'FASTER!', 'text-cyan-300', 800);
-          this.audio.sfxCoin();
+          this.audio.sfxSprint();
         }
       }
     }
@@ -1681,12 +1773,18 @@ export class FlowEngine {
           this.movementActive = true;
           this.freezeCycleTimer = this.FREEZE_CYCLE_MIN_SEC +
             Math.random() * (this.FREEZE_CYCLE_MAX_SEC - this.FREEZE_CYCLE_MIN_SEC);
+          this.freezeSignWarned = false;
           showInstruction(this.domRefs, 'GO!', 'text-emerald-400', 500);
         } else {
           speedScalar = 0;
         }
       } else {
         this.freezeCycleTimer -= dt;
+        // 4초 전에 프리즈 사인 큐잉 (1사이클당 1회)
+        if (!this.freezeSignWarned && this.freezeCycleTimer <= 4.0) {
+          this.freezeSignWarned = true;
+          this.freezeSignQueued = true;
+        }
         if (this.freezeCycleTimer <= 0) {
           this.freezeActiveTimer = this.FREEZE_HOLD_SEC;
           showInstruction(this.domRefs, 'FREEZE!', 'text-blue-300', 1200);
@@ -1733,7 +1831,13 @@ export class FlowEngine {
         this.bridges[i].mesh.position.z += currentSpeed * 50 * dt60Motion;
         if (this.bridges[i].mesh.position.z > pruneZ) {
           if (this.activeBridge === this.bridges[i]) this.activeBridge = null;
-          this.scene.remove(this.bridges[i].mesh);
+          const b = this.bridges[i].mesh;
+          b.traverse((obj) => {
+            const m = obj as THREE.Mesh;
+            if (m.geometry) m.geometry.dispose();
+            if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach((mat) => (mat as THREE.Material).dispose());
+          });
+          this.scene.remove(b);
           this.bridges.splice(i, 1);
         }
       }

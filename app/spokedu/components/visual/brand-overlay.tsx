@@ -26,7 +26,7 @@ export function BrandOverlay({ tone = 'indigo', intensity = 'bold', className = 
   if (photo) {
     return (
       <div
-        className={`pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/25 via-transparent to-transparent ${className}`}
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/18 via-transparent to-transparent ${className}`}
         aria-hidden
       />
     );

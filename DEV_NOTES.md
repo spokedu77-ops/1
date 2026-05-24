@@ -1,10 +1,26 @@
 # DEV_NOTES
 
+## SPOKEDU Home → Global 100%
+
+- **코드 준비 ~96%** — 사진 넣으면 100 가능: `app/spokedu/docs/PHOTO_DROPIN_100.md`. QA: `verify-spokedu-image-slots`, `spokedu-home-images-qa`, `spokedu-landings-visual-qa`, `spokedu-qa`.
+- 로드맵: `app/spokedu/docs/HOME_GLOBAL_100.md`
+- 운영자 사진 요청: `public/images/spokedu/PHOTO_REQUEST.md` (파일명 동일 덮어쓰기)
+- 2026-05-24 **가정 Phase 1+**: `node scripts/fetch-spokedu-images.mjs` → 슬롯 채움 후 Phase 2–4 (`homePhotoGrade`, `homeIntroCluster`, LCP preload, 현장 대표 카드 무게↑, Final CTA 좌측 정렬).
+- 2026-05-24 **Phase 5**: `HomeStructuredData`, `homeSkipLink`, below-fold 이미지 lazy, QA `overflowX`·H1 줄수, trust 5번째 칩 모바일 `col-span-2`, 게이트 360 min-height.
+- 2026-05-24 **QA pass**: placeholder 오탐 수정(`data-spokedu-visual`), H1 2줄 검증, `MediaPanel` figure 시맨틱, `HOME_SIGNOFF.md`.
+- 2026-05-24 **서브 랜딩 통일**: `LandingHero`/`LandingFinalCta` 전 페이지 적용 완료 (Curriculum·Contact 포함). `dispatch-landing` JSX 태그 오류 수정. `app/spokedu/docs/LANDING_UNIFY.md`.
+- 2026-05-24 **사진 드롭인 100 준비**: `LandingPageRoot` Hero preload 10페이지, `PHOTO_DROPIN_100.md`, `verify-spokedu-image-slots.mjs`, `spokedu-landings-visual-qa.mjs`.
+- 2026-05-23 Home Phase 2: Hero 셸·타이포·`HomeTrustStrip`·`HomeSectionHeading`·게이트 01/02/03·한국어 줄바꿈.
+- 2026-05-23 Home Phase 3: `HomeHeroEditorial`(대표 1컷+썸 2)·`homePageStack`·섹션 eyebrow 한국어·비주얼 60% 비중.
+- 2026-05-23 Home Phase 4: `HomePhotoZoom`·`HomeFinalCta`·Hero 진입 모션·신뢰 스트립 모바일 스크롤·프로그램 hover 정리.
+- 2026-05-23 Home Phase 5: 스톡 아동·체육 톤 재배치(4260325/8612031)·`HomeSectionRule`·QA 4 viewport pass.
+
 ## 작업 날짜
 
 - 2026-05-21
 - 2026-05-22 노트 분석 업데이트
 - 2026-05-22 `/spokedu` RC 배포 준비 (테스트 리드 삭제, post-deploy 스크립트)
+- 2026-05-23 SPOKEDU MASTER 구독 UX 재정렬: 설명보다 실행 가치, 홈은 조종석, 구독 흐름은 바로 실행 중심
 
 ## `/spokedu` 배포 준비 (RC)
 
@@ -26,16 +42,56 @@
 - `app/spokedu-master/components/ui/ClassModeView.tsx`
 - `app/spokedu-master/components/ui/ClassToolsView.tsx`
 - `app/spokedu-master/dashboard/DashboardView.tsx`
+- `app/spokedu-master/landing/page.tsx`
+- `app/spokedu-master/onboarding/page.tsx`
 - `app/spokedu-master/library/LibraryView.tsx`
 - `app/spokedu-master/library/[id]/LibraryDetailView.tsx`
+- `app/spokedu-master/payment/page.tsx`
+- `app/spokedu-master/profile/page.tsx`
 - `app/spokedu-master/report/page.tsx`
 - `app/spokedu-master/spomove/SpomoveHubView.tsx`
 - `app/spokedu-master/spomove/session/page.tsx`
+- `app/spokedu-master/subscription/page.tsx`
 - `app/api/spokedu-master/drills/route.ts`
 - `app/admin/spomove/training/_player/page.tsx`
 - `app/spokedu/components/seo-related-links.tsx`
 - `app/spokedu/data/seo.ts`
 - `DEV_NOTES.md`
+
+## 2026-05-23 Codex 진행 요약
+
+- 큰 방향을 `기능 설명이 많은 구독 서비스`에서 `누르면 수업이 시작되는 체육교육 OTT 조종석`으로 재정렬했다.
+- 홈은 다시 끝난 화면이 아니라고 판단했다. `수업안과 영상`, `이번 주 추천 이유`, `수업 흐름`처럼 텍스트로 가치를 설명하던 블록을 줄이고, `오늘 바로 실행` 패널로 바꿨다. 핵심 버튼은 `수업안 열기`, `큰 화면 실행`, `수업 모드`, `설명 문구`다.
+- `전시장` 같은 번역투 표현은 `바로 꺼내 쓰는 수업 패키지` 계열로 바꿨다. 라이브러리는 보여주는 곳이 아니라 수업을 꺼내 쓰는 곳이어야 한다.
+- 랜딩은 텍스트 중심 설명 페이지에서 실제 수업 이미지가 깔린 브랜드 첫 화면으로 바꿨다. `SPOKEDU MASTER`를 첫 뷰포트 신호로 세우고 `체육교육 OTT · 14일 무료 체험`을 명확히 했다.
+- 온보딩은 정보 입력 절차가 아니라 가입 직후 홈에 열리는 `Start Kit`를 보여주는 흐름으로 바꿨다. 완료 후 이동도 `/library`가 아니라 `/dashboard`로 조정했다.
+- 구독 관리 화면은 기능 설명 카드보다 결제 후 열리는 실행 항목을 먼저 보여주도록 바꿨다. `이번 주 수업안 4개`, `큰 화면 활동 무제한`, `설명 문구 복사`, `주간 계획 연결`을 상단 가치로 노출했다.
+- 프로필은 설정 화면이 아니라 계정 상태 확인 후 수업 실행으로 돌아가는 화면으로 정리했다. `홈으로 돌아가 수업 실행`과 `내 계정에서 바로 할 일` 액션을 추가했다.
+- 설명 도구는 단순 문구 카드 모음이 아니라 수업 직후 커뮤니케이션 도구로 보이게 했다. 대상별 문구 `전체 복사`, `수업안 열기`, `큰 화면 실행`을 같은 맥락에 배치했다.
+- 상세 페이지에는 `구독 패키지 가치`, `강사 오프닝 멘트`, `수업 전 브리핑`을 추가해 수업 하나가 준비/실행/설명까지 연결된 상품처럼 보이게 했다.
+- 수업 모드는 홈에서 전면 CTA로 올라갔기 때문에, 진행 화면에도 `수업 초점`, `준비물`, `화면 활동` 운영 체크 레일을 추가했다. 현장에서는 긴 설명보다 현재 수업을 바로 굴리는 정보가 우선이다.
+- 수업 계획 화면은 `수업 기록` 중심 CTA를 낮추고 Phase 1 핵심인 `수업안`, `시작`, `화면`, `설명`으로 카드 액션을 재정렬했다. 빈 날짜도 `수업 추가`와 `라이브러리 보기`로 바로 이어지게 했다.
+- 네비게이션 문구를 실행 루프에 맞춰 줄였다. `설명 도구`는 `설명 문구`, `내 정보`는 `계정`으로 바꾸고, 데스크톱 레일 하단 안내도 문의 박스보다 `수업 실행 루프` 메시지로 정리했다.
+- MASTER 메타데이터를 `반응형 구독 플랫폼`에서 `체육교육 OTT 구독 서비스`와 `수업 실행 루프` 언어로 맞췄다.
+- SPOMOVE 허브는 개발자용 엔진 소개가 아니라 `체육관 TV가 바로 수업 도구가 됩니다`라는 구매자 언어로 바꿨다.
+- 콘텐츠 쪽은 Funstick 외 프로그램에도 기존 이미지 자산을 매핑해 카드와 상세가 빈 자료처럼 보이는 문제를 줄였다.
+- `loadDrills`가 API 실패 시 빈 SPOMOVE로 굳는 문제를 수정했다. 실패 시 `STATIC_DRILLS` fallback을 사용한다.
+- 개발 중 반복되던 `date-fns/isSameDay` HMR 오류는 실제 코드 문제가 아니라 PWA service worker와 dev HMR 캐시 충돌로 판단했다. 개발 모드에서는 `/spokedu-master-sw.js`를 등록하지 않고, 이미 등록된 `/spokedu-master/` service worker를 해제하도록 `AppShell`을 수정했다.
+- React key 경고는 홈 추천 초점 태그 중복이 원인이었다. `uniqueTextItems()`로 렌더링 전 중복 제거하도록 수정했다.
+
+### 2026-05-23 검증 기록
+
+- 반복 검증 기준: 수정 파일별 `npx.cmd eslint ...`, 전체 `npx.cmd tsc --noEmit --pretty false`, 주요 라운드마다 `npm.cmd run build`.
+- 확인한 주요 route: `/spokedu-master/dashboard`, `/spokedu-master/library`, `/spokedu-master/library/figure-8-agility`, `/spokedu-master/spomove`, `/spokedu-master/landing`, `/spokedu-master/onboarding`, `/spokedu-master/payment?plan=pro`, `/spokedu-master/subscription`, `/spokedu-master/profile`, `/spokedu-master/report`.
+- 2026-05-23 후반 기준 `npm.cmd run build` 통과.
+- dev server는 포트 3000에서 재기동했으며, 마지막 확인 PID는 `8980`.
+
+### 2026-05-23 남은 판단
+
+- 홈은 방향이 맞아졌지만 아직 최종 polish 전이다. 모바일/태블릿 캡처로 버튼 밀도, 히어로 높이, 카드 균일성 확인이 필요하다.
+- 구독 전환 설득은 “텍스트 설명”보다 “몇 초 안에 수업을 실행하는 경험”을 계속 우선해야 한다.
+- 결제/구독/프로필의 사업자 정보는 랜딩 기준 `스포케듀 / 최지훈 / 311-63-00356`으로 통일해야 한다.
+- 수업 기록, 학생 이력, 센터 운영은 Phase 2/3 확장 기능으로 계속 낮춰 둔다. Phase 1의 주인공은 라이브러리, SPOMOVE, 설명 문구, 구독 결제다.
 
 ## 해결한 문제
 
@@ -334,3 +390,393 @@
 - `npx.cmd eslint app/spokedu-master/spomove/SpomoveHubView.tsx` 통과.
 - `npx.cmd tsc --noEmit --pretty false` 통과.
 - `npm.cmd run build` 통과. 213개 페이지 빌드 완료.
+
+## 2026-05-23 Codex 결제 플로우 정리
+
+### 수정한 파일
+- `app/spokedu-master/payment/page.tsx`
+- `app/spokedu-master/payment/success/page.tsx`
+- `app/spokedu-master/payment/cancel/page.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 결제 성공 후 목적지가 라이브러리 중심으로 흐르던 것을 홈 중심의 수업 실행 루프로 바꿨다.
+- 성공 화면에서 바로 `수업안`, `큰 화면`, `설명 문구`로 이동할 수 있게 구성했다.
+- 취소 화면은 사용자가 이탈하지 않도록 `홈으로 돌아가기`와 `플랜 다시 보기`를 제공한다.
+- `설명 도구` 표현을 `설명 문구`로 통일했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/payment/page.tsx app/spokedu-master/payment/success/page.tsx app/spokedu-master/payment/cancel/page.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/payment?plan=pro` 200 확인.
+- `/spokedu-master/payment/success` 200 확인.
+- `/spokedu-master/payment/cancel` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 수업 도구 콘솔 정리
+
+### 수정한 파일
+- `app/spokedu-master/components/ui/ClassToolsView.tsx`
+- `app/spokedu-master/report/page.tsx`
+- `app/spokedu-master/profile/page.tsx`
+- `app/spokedu-master/subscription/page.tsx`
+- `app/spokedu-master/lib/subscription.ts`
+- `app/spokedu-master/library/[id]/LibraryDetailView.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 수업 도구 첫 화면이 단순 탭 목록처럼 보여 구독 기능의 가치가 약했다.
+- 상단을 `CLASS COMMAND` 현장 진행 콘솔로 바꾸고, 즉시 실행 도구 수, 명단 기반 기능, 설명 문구 연결 상태를 보여주게 했다.
+- 현재 선택한 도구가 어떤 현장 문제를 해결하는지 짧은 기능 설명으로 보여준다.
+- 수업안, 큰 화면, 설명 문구로 바로 이동하는 아이콘 CTA를 추가했다.
+- `설명 도구`, `전시장` 잔여 표현을 제거하고 `설명 문구` 표현으로 통일했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/components/ui/ClassToolsView.tsx app/spokedu-master/report/page.tsx app/spokedu-master/profile/page.tsx app/spokedu-master/subscription/page.tsx app/spokedu-master/lib/subscription.ts app/spokedu-master/library/[id]/LibraryDetailView.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/class-tools` 200 확인.
+- `/spokedu-master/report` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 수업 준비 키트 정리
+
+### 수정한 파일
+- `app/spokedu-master/shop/page.tsx`
+- `app/spokedu-master/profile/page.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- `교구 스토어`가 구독 OTT 안에서 별도 판매몰처럼 보일 위험이 있었다.
+- 페이지 제목과 카피를 `수업 준비 키트`로 바꿔 라이브러리 수업안의 준비물 확인 흐름으로 정리했다.
+- 상단에 `수업안 확인`, `큰 화면 실행`, `설명 문구` CTA를 추가해 쇼핑 페이지가 수업 실행 루프 안에 남도록 했다.
+- 추천 세트는 `스타터 키트`, `센터 공용 운영 키트`로 바꾸고 대상 적합도를 표시했다.
+- 개별 교구에는 `연결 수업`을 표시해 단순 상품이 아니라 수업 패키지의 준비물처럼 보이게 했다.
+- 프로필의 교구 메뉴 설명을 `구매합니다`에서 `수업안에 맞는 준비물을 확인합니다`로 바꿨다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/shop/page.tsx app/spokedu-master/profile/page.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/shop` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 학생/기록/센터 운영 정리
+
+### 수정한 파일
+- `app/spokedu-master/students/page.tsx`
+- `app/spokedu-master/class-record/page.tsx`
+- `app/spokedu-master/director/page.tsx`
+- `app/spokedu-master/profile/page.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 학생/기록/센터 화면이 CRM 또는 출결 관리 서비스처럼 보일 위험이 있었다.
+- 학생 이력은 `수업 기록에서 남긴 성장 근거`를 보는 화면으로 톤을 조정했다.
+- 학생 화면 상단에 기록 연결, 수업 기록, 설명 문구 액션 상태를 추가했다.
+- 학생 상세 CTA를 `기록`, `설명 문구`, `미리보기`, `보호자 링크 복사`, `다음 수업안` 흐름으로 정리했다.
+- 수업 기록 목록 상단에 `수업안에서 시작`, `큰 화면 실행`, `설명 문구 확인` CTA를 추가했다.
+- 수업 기록 작성 화면에 오늘 기록이 학생 이력과 설명 문구로 이어진다는 설명을 추가했다.
+- 센터 대시보드는 `센터 수업 운영`으로 이름을 바꾸고, 수업안 사용/기록률/케어 신호를 보는 운영 화면으로 조정했다.
+- 프로필의 수업 기록/학생 이력 설명도 관리형 문구에서 수업 후 근거 문구로 바꿨다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/students/page.tsx app/spokedu-master/class-record/page.tsx app/spokedu-master/director/page.tsx app/spokedu-master/profile/page.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/students` 200 확인.
+- `/spokedu-master/class-record` 200 확인.
+- `/spokedu-master/director` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 보호자 공유/신뢰 화면 정리
+
+### 수정한 파일
+- `app/spokedu-master/parent/[studentId]/page.tsx`
+- `app/spokedu-master/privacy/page.tsx`
+- `app/spokedu-master/terms/page.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 보호자 공유 화면이 외부에 노출되는 화면인데 신뢰 신호가 충분히 전면에 나오지 않았다.
+- 보호자 화면 제목을 `성장 기록` 중심에서 `수업 참여 기록`으로 조정했다.
+- 읽기 전용, 7일 유효, 해당 학생 기록만 열람 가능하다는 신뢰 정보를 상단과 하단에 표시했다.
+- 학생별 최신 기록을 날짜 기준 내림차순으로 정렬해 가장 최근 수업이 요약에 반영되게 했다.
+- 동작 성장, 배지, 최근 기록이 비어 있을 때 빈 화면으로 보이지 않도록 안내 문구를 추가했다.
+- 개인정보처리방침에 학생 이름, 반/그룹, 출석, 관찰 메모, 동작 체크 기록 등 수업 운영 정보 항목을 추가했다.
+- 이용약관에 수업 기록, 학생 이력, 보호자 공유 링크가 수업 운영 보조 자료임을 명시했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/parent/[studentId]/page.tsx app/spokedu-master/privacy/page.tsx app/spokedu-master/terms/page.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/parent/sample-1` 200 확인.
+- `/spokedu-master/privacy` 200 확인.
+- `/spokedu-master/terms` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 입구/체험 종료 화면 정리
+
+### 수정한 파일
+- `app/spokedu-master/page.tsx`
+- `app/spokedu-master/components/ui/TrialGateWall.tsx`
+- `app/spokedu-master/components/layout/AppShell.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- `/spokedu-master` 루트가 리다이렉트 전 `null`만 반환해 빈 화면처럼 보일 수 있었다.
+- 루트 진입 화면에 SPOKEDU MASTER 로딩 브랜딩을 추가해 수업 실행 화면으로 이동 중임을 보여준다.
+- 체험 종료 벽의 문구를 차단형에서 `수업 루프를 계속 쓰는 구독 전환` 톤으로 바꿨다.
+- Pro CTA를 `Pro로 수업 루프 계속 쓰기`로 바꿔 결제 이유를 명확히 했다.
+- 체험 종료 벽의 기능 목록을 수업안, SPOMOVE, 설명 문구, 수업 진행 콘솔 중심으로 정리했다.
+- 체험 잔여 배너와 종료 배너의 버튼 문구를 `Pro 전환`으로 통일했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/page.tsx app/spokedu-master/components/ui/TrialGateWall.tsx app/spokedu-master/components/layout/AppShell.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 전체 문구 톤 정리
+
+### 수정한 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `app/spokedu-master/profile/page.tsx`
+- `app/spokedu-master/subscription/page.tsx`
+- `app/spokedu-master/components/ui/ClassToolsView.tsx`
+- `app/spokedu-master/spomove/session/page.tsx`
+- `app/spokedu-master/library/[id]/LibraryDetailView.tsx`
+- `app/spokedu-master/landing/page.tsx`
+- `app/spokedu-master/director/page.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 전체 화면을 다시 검색해 `Pro 시작`, `교구 스토어`, `무료 자료실`, `확장 기능`, `확장 단계`처럼 현재 서비스 톤과 어긋나는 표현을 정리했다.
+- `Pro 시작`은 결제 전환 맥락에 맞게 `Pro 전환`으로 통일했다.
+- `교구 스토어`는 `수업 준비 키트` 또는 `준비물 보기`로 바꿨다.
+- `무료 자료실`은 서비스 가치를 낮춰 보이게 하므로 `단순 자료 모음`으로 수정했다.
+- SPOMOVE 세션 종료 후 `수업 기록은 확장 기능` 표현을 `수업 기록으로 오늘 활동 남기기`로 바꿨다.
+- Class Tools의 샘플 명단 안내를 `확장 단계`가 아니라 등록 명단이 없을 때의 예시 흐름으로 설명했다.
+
+### 검증
+- `rg -n "전시장|설명 도구|무료 자료실|구매합니다|교구 스토어|Pro 시작|수업 기록은 확장 기능|확장 단계|강사와 수업 현황을 관리합니다" app\\spokedu-master` 결과 없음.
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx app/spokedu-master/profile/page.tsx app/spokedu-master/subscription/page.tsx app/spokedu-master/components/ui/ClassToolsView.tsx app/spokedu-master/spomove/session/page.tsx app/spokedu-master/library/[id]/LibraryDetailView.tsx app/spokedu-master/landing/page.tsx app/spokedu-master/director/page.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/dashboard` 200 확인.
+- `/spokedu-master/profile` 200 확인.
+- `/spokedu-master/landing` 200 확인.
+- `/spokedu-master/spomove/session` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 홈 운영 루프 재정리
+
+### 수정한 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 홈의 `이번 주 상태 / 추천 4 / 화면 ON / 문구 복사` 블록이 상태값처럼 보일 뿐 실제 활용 방식이 애매했다.
+- 해당 블록을 제거하고 `오늘 운영 루프`로 재구성했다.
+- 오른쪽 패널은 이제 `수업안 확인`, `큰 화면 준비`, `수업 후 문구`, `주간 계획 반영`의 4단계 행동으로 이어진다.
+- `설명 문구` CTA는 라이브러리 해시가 아니라 실제 설명 문구 페이지(`/spokedu-master/report?program=...`)로 연결한다.
+- 홈의 목표를 숫자판이 아니라 수업 준비부터 안내까지 이어지는 실행 조종판으로 잡았다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/dashboard` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-24 Codex 홈 주간 카드 압축
+
+### 수정한 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 방향 기준
+- 주간 추천 카드는 읽는 카드가 아니라 고르는 카드다.
+- 작은 카드 안에서는 이미지, 제목, 핵심 태그, 실행 버튼만 남긴다.
+
+### 해결한 문제
+- 주간 카드 안에 시간/학년, 공간, 초점 태그, 패키지 증거 칩이 겹쳐 정보량이 많았다.
+- 카드 이미지 영역을 44에서 52 높이로 키워 콘텐츠의 시각적 매력을 우선했다.
+- 패키지 증거 칩은 카드에서 제거하고 히어로의 압축 메타에만 남겼다.
+- 카드 하단 메타는 초점 태그와 시간/공간만 남겨 더 가볍게 만들었다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/dashboard` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-24 Codex 홈 실행 바 압축
+
+### 수정한 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 방향 기준
+- 홈은 계속 `미니멀한 프리미엄 실행 홈` 기준을 유지한다.
+- 같은 의미를 반복하는 카드형 설명은 제거한다.
+
+### 해결한 문제
+- `오늘 바로 실행`과 `오늘 운영 루프`가 동시에 보여 같은 기능을 두 번 설명하고 있었다.
+- 두 영역을 하나의 얇은 실행 바 형태로 합쳤다.
+- 주요 액션은 `수업안 열기`, `큰 화면 실행`, `수업 모드`, `설명 문구`로 유지하되, 큰 카드가 아니라 낮은 높이의 버튼 행으로 압축했다.
+- `계획`, `전체` 보조 링크를 오른쪽에 작게 배치해 홈의 밀도를 낮췄다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/dashboard` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 홈 디톡스 방향 고정
+
+### 수정한 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 방향 기준
+- 홈은 `미니멀한 프리미엄 실행 홈`으로 고정한다.
+- 텍스트로 설득하지 않고 이미지, 짧은 제목, 강한 CTA, 압축된 패키지 메타로 설득한다.
+- 기능은 숨기지 않되 표처럼 설명하지 않는다.
+
+### 해결한 문제
+- 히어로의 `추천 이유` 박스가 과설명으로 보여 제거했다.
+- `수업안 / 화면 활동 / 준비물 / 설명 문구` 증거는 작은 메타 링크로 압축했다.
+- 히어로 CTA는 `수업 바로 시작`, `큰 화면 실행` 2개로 줄였다.
+- 상단 문구는 `오늘 쓸 수업을 고르고 바로 실행하세요`로 단순화했다.
+- 주간 큐레이션 카드에서 추천 이유 문장을 제거하고 이미지, 제목, 태그, 압축 메타, 실행 버튼 중심으로 정리했다.
+- 주간 큐레이션 제목을 `이번 주 추천 수업`으로 단순화했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/dashboard` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 홈 첫 화면 밀도 조정
+
+### 수정한 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 헤더와 히어로가 모두 카드처럼 보여 첫 화면이 무겁고 겹쳐 보일 수 있었다.
+- 홈 헤더를 카드형 섹션에서 꺼내 제품 선언 영역으로 가볍게 바꿨다.
+- `수업안`, `큰 화면`, `설명 문구` 흐름은 작은 pill 형태로 유지해 첫 화면 메시지는 남겼다.
+- 히어로 최소 높이를 520px에서 500px로 줄여 첫 뷰 안에 핵심 콘텐츠가 더 많이 들어오게 했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/dashboard` 200 확인.
+- `npm.cmd run build` 1차 실행은 `app/spokedu/lib/ui-classes.ts`의 이전 선언 순서 오류 캐시로 실패했으나, 현재 워크트리 기준 타입 검사 통과 후 재실행에서 통과.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 홈 첫 인상 헤더 강화
+
+### 수정한 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 홈 상단이 `SPOKEDU MASTER / 이번 주 수업 준비` 수준이라 서비스 약속이 약했다.
+- `고르고, 켜고, 설명까지 끝내는 수업 홈`으로 첫 문장을 강화했다.
+- 헤더 안에 `수업안`, `큰 화면`, `설명 문구` 3단계 흐름을 넣어 체육교육 OTT 구독 서비스의 핵심 루프를 첫 화면에서 바로 보이게 했다.
+- 오늘 실행 패널의 제목을 `수업 시작까지 3클릭`으로 바꿔 기능성이 더 직접적으로 보이게 했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/dashboard` 200 확인.
+- `npm.cmd run build` 통과. 182개 정적 페이지 생성 완료.
+
+## 2026-05-23 Codex 홈 히어로/큐레이션 추천력 강화
+
+### 수정한 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- 홈 히어로가 이미지와 CTA는 갖췄지만, 왜 이 수업이 이번 주 대표인지 설득력이 약했다.
+- 히어로 안에 `추천 이유`와 `수업안`, `화면 활동`, `준비물`, `설명 문구` 패키지 증거를 추가했다.
+- 주간 큐레이션 카드에도 추천 이유와 패키지 구성 요약을 추가해 단순 목록이 아니라 구독 패키지처럼 보이게 했다.
+- 주간 큐레이션 제목을 `추천 이유까지 보이는 이번 주 4선`으로 조정했다.
+- SPOMOVE 추천 카드에도 사용 환경과 수업 연결 정보를 추가했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx` 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `/spokedu-master/dashboard` 200 확인.
+
+## 2026-05-24 Flow Phase 엔진 강화
+
+### 수정한 파일
+- `app/program/iiwarmup/flow/engine/FlowEngine.ts`
+- `app/program/iiwarmup/flow/engine/FlowAudio.ts`
+- `app/program/iiwarmup/flow/engine/entities/ObstacleManager.ts`
+- `app/program/iiwarmup/flow/engine/systems/AdaptiveQuality.ts`
+- `app/program/iiwarmup/flow/engine/content/flowContent.ts`
+- `app/program/iiwarmup/flow/FlowPhaseClient.tsx`
+- `app/admin/spomove/training/_player/MemoryGameApp.tsx`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- **컬러 테마**: `FlowTimingOverrides.colorTheme` 추가. `default` / `space` / `neon` 3가지 씬 색상 테마 지원. 씬 배경·안개·레인 색·조명 색·환경광 강도를 테마별로 분리했다.
+- **스프린트 게이트 시각 경고**: 스프린트 사이클 3초 전에 브릿지에 시안색 토러스 아치를 부착해 플레이어에게 가속 구간을 미리 알린다.
+- **프리즈 사인 시각 경고**: 프리즈 사이클 4초 전에 브릿지에 반투명 얼음 벽을 부착해 정지 신호를 미리 알린다.
+- **씬 재사용**: `start()` 재호출 시 이미 씬이 있으면 `init3D()`를 다시 실행하지 않는다.
+- **RAF 중복 방지**: `startLoop()` 진입 시 기존 `rafId`를 취소하고 새 루프를 시작한다.
+- **적응형 픽셀 레이트**: `AdaptiveQuality` 티어 변경 시 `renderer.setPixelRatio()`를 즉시 갱신한다.
+- **브릿지 자원 해제**: 브릿지 제거 시 `geometry.dispose()`·`material.dispose()` 호출로 GPU 메모리 누수를 줄였다.
+- **sfxSprint 추가**: 스프린트 시작 시 상승 소톱니파 + 노이즈 whoosh 사운드를 재생한다. 기존 `sfxCoin()` 오용을 교체했다.
+- **AdaptiveQuality 재작성**: 저FPS 지속 시간 누적 방식으로 변경. `coordContract`에서 상수를 가져온다.
+- **flowContent `shortInstruction` 추가**: 레벨 인트로 overlay용 1줄 핵심 요약 필드. 전 레벨 설명을 현장 지시어 수준으로 강화했다.
+- **FlowPhaseClient useMemo 안정화**: `featureFlags`·`timingOverrides`를 `useMemo`로 감싸 렌더마다 엔진이 재초기화되는 문제를 방지했다.
+- **colorTheme URL 파람**: `?colorTheme=space|neon|default` 지원.
+- **MemoryGameApp 플로우 설정 확장**: 배경 테마(Step 3)·추가 동작 선택(Step 4: reach·sprint·freeze·balance·bigJump) UI 추가. 선택값이 iframe URL에 반영된다.
+- **shardCapScale 연동**: `getShardCapScale` 콜백으로 파편·코인 스폰 수를 품질 티어에 맞게 조절한다.
+
+### 남은 문제
+- 스프린트 게이트·프리즈 사인의 실제 브라우저 위치·크기 QA 필요.
+- `colorTheme` 재시작 없이는 배경·안개 색상이 바뀌지 않는다 (첫 시작 시에만 테마 적용).
+- `MemoryGameApp`의 기존 unused warning 8개는 이전부터 존재하던 것으로 현재 작업 범위 외다.
+
+### 검증
+- `npx.cmd eslint` (Flow 엔진 6개 파일) 경고 0개 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.
+- `MemoryGameApp.tsx` 기존 경고 8개 유지, 신규 경고 없음.
+
+## 2026-05-24 Flow 2.0 React 클라이언트 + MemoryGameApp 연동
+
+### 수정/생성한 파일
+- `app/admin/spomove/training/_player/flow/FlowGameClient.tsx` (신규)
+- `app/admin/spomove/training/_player/MemoryGameApp.tsx`
+- `app/admin/spomove/training/_player/flow/engine/entities/ObstacleManager.ts`
+- `app/admin/spomove/training/_player/flow/engine/FlowEngine.ts`
+- `DEV_NOTES.md`
+
+### 해결한 문제
+- **FlowGameClient.tsx 신규 생성**: Flow 2.0 엔진을 구동하는 React 클라이언트 컴포넌트. `FlowEngine` 생명주기 관리, HUD(타이머 바·스테이지 도트·지시어 플래시), 오버레이(카운트다운·스테이지 인트로·완료 화면), 키보드·터치·화면 버튼 입력을 처리한다.
+- **MemoryGameApp iframe → FlowGameClient 교체**: `screen === 'flow'`에서 `/program/iiwarmup/flow` iframe을 제거하고, `buildStages(selectedModules, 25)` 결과를 `FlowGameClient`에 직접 전달하는 방식으로 교체했다.
+- **MemoryGameApp flow 카운트다운 제거**: 부모의 warmup countdown이 FlowGameClient의 자체 카운트다운과 중복되므로, flow 모드는 항상 `setCountdown(null)`로 즉시 화면 전환한다.
+- **FlowFeatureKey 확장**: 기존 5개(`reach/sprint/freeze/balance/bigJump`)에서 8개(`faster/punch/duck/reach/sprint/freeze/balance/bigJump`)로 확장해 Flow 2.0의 모든 SELECTABLE_MODULE_KEYS를 지원한다.
+- **추가 동작 선택 UI 확장**: 기존 5개 버튼에서 8개 버튼으로 확장. `faster(속도 증가)`, `punch(박스 펀치)`, `duck(UFO 숙이기)`가 추가됐다.
+- **ObstacleManager.update() 서명 정리**: 사용하지 않는 `isMoving` 파라미터를 제거했다.
+
+### Flow 2.0 전체 구조
+- `flow/engine/modules/flowModules.ts` — 9개 모듈 SSOT
+- `flow/engine/modules/stageBuilder.ts` — 누적 스테이지 빌더 (선택 N개 → N+1 스테이지)
+- `flow/engine/FlowEngine.ts` — Three.js 엔진 (stage 배열 입력, 콜백 출력)
+- `flow/engine/FlowAudio.ts` — Web Audio API 오디오
+- `flow/engine/AdaptiveQuality.ts` — 저FPS 적응형 품질
+- `flow/engine/entities/ObstacleManager.ts` — 박스/UFO/스프린트게이트/프리즈벽/파편
+- `flow/FlowGameClient.tsx` — React 클라이언트 (HUD + 오버레이 + 입력)
+
+### 남은 작업
+- 실제 브라우저에서 `/admin/spomove/training?mode=flow` 진입 → 모듈 선택 → 게임 시작 QA.
+- 스테이지별 카메라·속도·장애물 밸런스 실기 확인.
+- 완료 화면 → 결과 화면 전환이 정상 동작하는지 확인.
+
+### 검증
+- `npx.cmd eslint` (신규 파일 7개 포함) 경고 0개 통과.
+- `npx.cmd tsc --noEmit --pretty false` 통과.

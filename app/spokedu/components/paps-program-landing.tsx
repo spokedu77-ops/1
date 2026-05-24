@@ -1,76 +1,32 @@
 'use client';
 
-import Link from 'next/link';
-import { motion, useReducedMotion } from 'framer-motion';
+import { LandingFinalCta } from './landing-final-cta';
+import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
-import { MediaPanel, MediaRenderer, MotionPoster } from './visual';
+import { MediaPanel } from './visual';
 import { HOME_MEDIA } from '../data/home-media';
 import { papsProgramPage } from '../data/paps-program-page';
-import {
-  btnPrimary,
-  fineHover,
-  landingH1,
-  landingHeroCopy,
-  landingHeroGrid,
-  landingHeroSubtitle,
-  landingHeroVisual,
-  landingPageStack,
-  landingSectionTitle,
-} from '../lib/ui-classes';
-import { inferTrackFromHref } from '../lib/tracking';
-
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
 
 const elementCardShell =
   'flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5 sm:py-5';
 
 export default function PapsProgramLanding() {
-  const reducedMotion = useReducedMotion();
-  const heroMedia = HOME_MEDIA[papsProgramPage.hero.mediaKey];
-
   return (
     <div className={landingPageStack}>
-      <LandingSection className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className={landingHeroGrid}>
-          <div className={landingHeroCopy}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-lime-800">
-              {papsProgramPage.hero.kicker}
-            </p>
-            <h1 className={`${landingH1} text-slate-950`}>
-              {papsProgramPage.hero.lines.map((line, index) => (
-                <motion.span
-                  key={line}
-                  initial={reducedMotion ? false : { opacity: 0, y: 24 }}
-                  animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.07 * index }}
-                  className="block"
-                >
-                  {line}
-                </motion.span>
-              ))}
-            </h1>
-            <p
-              className={`${landingHeroSubtitle} max-w-[20.5rem] [word-break:keep-all] sm:max-w-lg`}
-            >
-              {papsProgramPage.hero.subtitle}
-            </p>
-            <div className="pt-2 sm:pt-3">
-              <Link
-                href={papsProgramPage.heroCta.href}
-                data-track="cta-contact"
-                data-track-label={papsProgramPage.heroCta.trackLabel}
-                className={`${btnPrimary} min-h-12 !w-full sm:!w-auto`}
-              >
-                {papsProgramPage.heroCta.label}
-              </Link>
-            </div>
-          </div>
-          <div className={landingHeroVisual}>
-            <MotionPoster media={heroMedia} variant="cinematic" priority sizes="heroSplit" />
-          </div>
-        </div>
-      </LandingSection>
+      <LandingHero
+        kicker={papsProgramPage.hero.kicker}
+        kickerClassName="text-lime-800"
+        lines={papsProgramPage.hero.lines}
+        subtitle={papsProgramPage.hero.subtitle}
+        media={HOME_MEDIA[papsProgramPage.hero.mediaKey]}
+        priority
+        primaryCta={{
+          label: papsProgramPage.heroCta.label,
+          href: papsProgramPage.heroCta.href,
+          trackLabel: papsProgramPage.heroCta.trackLabel,
+        }}
+      />
 
       <LandingSection className="rounded-2xl border border-lime-200/70 bg-gradient-to-br from-lime-50/60 via-white to-emerald-50/40 px-5 py-6 sm:px-7 sm:py-7">
         <h2 className={landingSectionTitle}>{papsProgramPage.overview.title}</h2>
@@ -148,38 +104,26 @@ export default function PapsProgramLanding() {
         </dl>
       </LandingSection>
 
-      <LandingSection className="relative overflow-hidden rounded-2xl border border-lime-200/70 bg-gradient-to-br from-lime-50 via-white to-emerald-50/50 px-5 py-8 sm:rounded-3xl sm:px-8 sm:py-10">
-        <div className="pointer-events-none absolute inset-0 opacity-35" aria-hidden>
-          <MediaRenderer media={heroMedia} intensity="photo" className="h-full w-full" />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-white/82" aria-hidden />
-        <div className="relative mx-auto max-w-xl text-center">
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl [word-break:keep-all]">
-            {papsProgramPage.finalCta.title}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
-            {papsProgramPage.finalCta.description}
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link
-              href={papsProgramPage.finalCta.href}
-              data-track={inferTrackFromHref(papsProgramPage.finalCta.href)}
-              data-track-label={papsProgramPage.finalCta.trackLabel}
-              className={`${btnPrimary} min-h-12 !w-full sm:!min-w-[18rem] sm:!w-auto`}
-            >
-              {papsProgramPage.finalCta.label}
-            </Link>
-          </div>
-          <Link
-            href="/spokedu/programs"
-            data-track={inferTrackFromHref('/spokedu/programs')}
-            data-track-label="program-paps-all"
-            className={`mt-4 inline-block text-sm text-slate-600 underline-offset-2 ${fineHover}hover:text-indigo-700 ${fineHover}hover:underline ${focusRing}`}
-          >
-            전체 프로그램 보기 →
-          </Link>
-        </div>
-      </LandingSection>
+      <LandingFinalCta
+        title={papsProgramPage.finalCta.title}
+        description={papsProgramPage.finalCta.description}
+        tone="light"
+        backgroundMedia={HOME_MEDIA[papsProgramPage.hero.mediaKey]}
+        links={[
+          {
+            label: papsProgramPage.finalCta.label,
+            href: papsProgramPage.finalCta.href,
+            trackLabel: papsProgramPage.finalCta.trackLabel,
+            variant: 'primary',
+          },
+          {
+            label: '전체 프로그램 보기',
+            href: '/spokedu/programs',
+            trackLabel: 'program-paps-all',
+            variant: 'on-light-outline',
+          },
+        ]}
+      />
     </div>
   );
 }

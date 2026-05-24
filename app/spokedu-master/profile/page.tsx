@@ -48,7 +48,7 @@ const PLANS: PlanInfo[] = [
     price: '14일 무료',
     badge: '체험',
     description: '라이브러리와 SPOMOVE의 핵심 흐름을 먼저 확인하는 체험 플랜입니다.',
-    includes: ['일부 프로그램 열람', 'SPOMOVE 제한 체험', '수업 설명 도구 체험'],
+    includes: ['일부 프로그램 열람', 'SPOMOVE 제한 체험', '수업 설명 문구 체험'],
     target: '처음 확인하는 개인 강사·교사',
     action: '체험 유지',
   },
@@ -68,9 +68,9 @@ const PLANS: PlanInfo[] = [
     price: '39,900원/월',
     badge: '추천',
     description: '수업 준비, SPOMOVE 실행, 설명 문구까지 개인 강사가 매주 쓰는 표준 플랜입니다.',
-    includes: ['전체 프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 설명 도구', '추천 수업·최근 사용'],
+    includes: ['전체 프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 설명 문구', '추천 수업·최근 사용'],
     target: '매주 수업을 준비하는 전문 강사',
-    action: 'Pro 시작',
+    action: 'Pro 전환',
     recommended: true,
   },
   {
@@ -96,21 +96,30 @@ const PLANS: PlanInfo[] = [
   },
 ];
 
-const VALUE_CARDS = [
+const QUICK_ACTIONS = [
   {
     icon: BookOpen,
-    title: '라이브러리',
-    caption: '오늘 쓸 수업안을 빠르게 찾기',
+    title: '수업안 열기',
+    caption: '오늘 쓸 패키지 찾기',
+    href: '/spokedu-master/library',
   },
   {
     icon: MonitorPlay,
-    title: 'SPOMOVE',
-    caption: '큰 화면 반응훈련 바로 실행',
+    title: '큰 화면 실행',
+    caption: '체육관 TV와 빔 연결',
+    href: '/spokedu-master/spomove',
   },
   {
     icon: FileText,
-    title: '설명 도구',
-    caption: '학부모·기관·학교용 문구 준비',
+    title: '설명 문구',
+    caption: '수업 후 안내문 만들기',
+    href: '/spokedu-master/report',
+  },
+  {
+    icon: CalendarDays,
+    title: '주간 계획',
+    caption: '이번 주 수업 흐름 정리',
+    href: '/spokedu-master/plan',
   },
 ];
 
@@ -118,25 +127,25 @@ const EXPANSION_LINKS = [
   {
     icon: ClipboardList,
     label: '수업 기록',
-    caption: '수업 출석과 관찰을 기록합니다.',
+    caption: '수업 후 출석과 관찰을 남깁니다.',
     href: '/spokedu-master/class-record',
   },
   {
     icon: UsersRound,
     label: '학생 이력',
-    caption: '학생별 성장 이력을 관리합니다.',
+    caption: '기록에서 남은 성장 근거를 봅니다.',
     href: '/spokedu-master/students',
   },
   {
     icon: Building2,
     label: '센터 운영',
-    caption: '강사와 수업 현황을 관리합니다.',
+    caption: '수업안과 기록 흐름을 확인합니다.',
     href: '/spokedu-master/director',
   },
   {
     icon: ShoppingBag,
-    label: '교구 스토어',
-    caption: '수업에 필요한 교구를 구매합니다.',
+    label: '수업 준비 키트',
+    caption: '수업안에 맞는 준비물을 확인합니다.',
     href: '/spokedu-master/shop',
   },
 ];
@@ -375,22 +384,40 @@ export default function SpokeduMasterProfilePage() {
                 구독 관리
               </Link>
             </div>
-            <button type="button" onClick={() => setPlanOpen(true)} className="mt-5 h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-              플랜과 도입 방식 보기
-            </button>
+            <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
+              <Link href="/spokedu-master/dashboard" className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                홈으로 돌아가 수업 실행
+              </Link>
+              <button type="button" onClick={() => setPlanOpen(true)} className="h-12 rounded-[12px] px-5 text-[14px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+                플랜 보기
+              </button>
+            </div>
+            {currentPlan === 'free' ? (
+              <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+                체험 기간 동안 홈, 라이브러리, 큰 화면 실행 흐름을 먼저 확인합니다.
+              </p>
+            ) : null}
           </section>
 
-          <section className="grid gap-3 sm:grid-cols-3">
-            {VALUE_CARDS.map((item) => {
+          <section>
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Account Actions</p>
+                <h2 className="mt-1 text-[20px] font-black" style={{ color: 'var(--spm-t)' }}>내 계정에서 바로 할 일</h2>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {QUICK_ACTIONS.map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.title} className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                <Link key={item.title} href={item.href} className="rounded-[16px] p-4 transition active:scale-[0.99]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
                   <Icon size={18} color="var(--spm-acc)" />
                   <p className="mt-3 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>{item.title}</p>
                   <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{item.caption}</p>
-                </div>
+                </Link>
               );
             })}
+            </div>
           </section>
 
           <PwaInstallCard />
@@ -408,7 +435,7 @@ export default function SpokeduMasterProfilePage() {
               <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Expansion</p>
               <h2 className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>확장 기능 준비</h2>
               <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                Phase 1에서는 라이브러리, SPOMOVE, 설명 도구를 우선 완성합니다.
+                Phase 1에서는 라이브러리, SPOMOVE, 설명 문구를 우선 완성합니다.
               </p>
             </div>
             <div className="grid gap-2">

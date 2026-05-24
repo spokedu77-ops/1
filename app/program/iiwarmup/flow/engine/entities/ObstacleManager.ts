@@ -65,6 +65,8 @@ export interface ObstacleManagerCallbacks {
   onHitStop?: () => void;
   /** UFO duck 0.8초 전 경고 (UFO당 1회) */
   onUfoWarn?: () => void;
+  /** 파편·코인 스폰 계수 (0~1). 반환값이 낮을수록 더 적게 생성 */
+  getShardCapScale?: () => number;
 }
 
 export class ObstacleManager {
@@ -184,6 +186,88 @@ export class ObstacleManager {
     this.boxes.push({ mesh: boxGroup, reward, isReach, warnedReach: false });
   }
 
+  /** 스프린트 게이트: 속도 부스터 구간 예고 아치 (브릿지 앞에 부착) */
+  attachSprintGate(bridge: FlowBridge): void {
+    const group = new THREE.Group();
+
+    // 메인 링 (torus)
+    const torusGeo = new THREE.TorusGeometry(190, 11, 8, 30);
+    const torusMat = new THREE.MeshPhongMaterial({
+      color: 0x22d3ee,
+      emissive: 0x22d3ee,
+      emissiveIntensity: 0.9,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const torus = new THREE.Mesh(torusGeo, torusMat);
+    torus.position.y = 200;
+    group.add(torus);
+
+    // 외부 글로우 링
+    const glowGeo = new THREE.TorusGeometry(190, 26, 6, 30);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0x22d3ee,
+      transparent: true,
+      opacity: 0.2,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    glow.position.y = 200;
+    group.add(glow);
+
+    // 좌우 기둥
+    const pilGeo = new THREE.CylinderGeometry(5, 5, 400, 6);
+    const pilMat = new THREE.MeshBasicMaterial({
+      color: 0x22d3ee,
+      transparent: true,
+      opacity: 0.55,
+    });
+    const leftPil = new THREE.Mesh(pilGeo, pilMat);
+    leftPil.position.set(-190, 200, 0);
+    const rightPil = leftPil.clone();
+    rightPil.position.set(190, 200, 0);
+    group.add(leftPil, rightPil);
+
+    group.position.set(0, 0, -(this.bridgeLength * 0.3));
+    bridge.mesh.add(group);
+  }
+
+  /** 프리즈 사인: 정지 신호 예고 얼음 벽 (브릿지 앞에 부착) */
+  attachFreezeSign(bridge: FlowBridge): void {
+    const group = new THREE.Group();
+
+    // 얼음 벽 패널
+    const wallGeo = new THREE.BoxGeometry(390, 220, 10);
+    const wallMat = new THREE.MeshPhongMaterial({
+      color: 0xbae6fd,
+      emissive: 0x0ea5e9,
+      emissiveIntensity: 0.45,
+      transparent: true,
+      opacity: 0.45,
+      shininess: 80,
+    });
+    const wall = new THREE.Mesh(wallGeo, wallMat);
+    wall.position.y = 110;
+    group.add(wall);
+
+    // 테두리 강조 글로우
+    const borderGeo = new THREE.BoxGeometry(395, 225, 4);
+    const borderMat = new THREE.MeshBasicMaterial({
+      color: 0x7dd3fc,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const border = new THREE.Mesh(borderGeo, borderMat);
+    border.position.y = 110;
+    group.add(border);
+
+    group.position.set(0, 0, -(this.bridgeLength * 0.3));
+    bridge.mesh.add(group);
+  }
+
   /** UFO: 레벨 4 이상. 다리(bridge) 위에 스폰, 다리와 함께 이동 */
   trySpawnUfo(levelNum: number, bridge: FlowBridge): boolean {
     if (levelNum < 4 || Math.random() >= UFO_SPAWN_RATE) return false;
@@ -245,7 +329,8 @@ export class ObstacleManager {
       this.callbacks.onShowInstruction?.('PUNCH!', 'text-red-400', 220);
     }
 
-    const shardCount = 18 + Math.floor(Math.random() * 15);
+    const shardScale = this.callbacks.getShardCapScale?.() ?? 1;
+    const shardCount = Math.floor((18 + Math.floor(Math.random() * 15)) * shardScale);
     for (let i = 0; i < shardCount; i++) {
       const sSize = 12 + Math.random() * 18;
       const sGeo = new THREE.BoxGeometry(sSize, sSize * 0.5, sSize * 0.3);
@@ -278,7 +363,7 @@ export class ObstacleManager {
 
     if (box.reward) {
       this.callbacks.onCoin?.();
-      const coinCount = 14 + Math.floor(Math.random() * 6);
+      const coinCount = Math.floor((14 + Math.floor(Math.random() * 6)) * shardScale);
       for (let i = 0; i < coinCount; i++) {
       const cGeo = new THREE.CylinderGeometry(8, 8, 3, 12, 1);
       const cMat = new THREE.MeshPhongMaterial({

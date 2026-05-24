@@ -7,6 +7,7 @@ import {
   FileText,
   MonitorPlay,
   Pause,
+  Package,
   Play,
   RotateCcw,
   Timer,
@@ -149,6 +150,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
     const title = cleanProgramText(program, 'title', 'SPOKEDU 수업');
     const category = cleanProgramText(program, 'category', '체육 수업');
     const focus = cleanText(program.lessonDetail?.developmentFocus, category);
+    const equipment = cleanList(program.equipment, ['현장 기본 교구']);
     const steps = cleanList(program.lessonDetail?.rules?.length ? program.lessonDetail.rules : program.steps, [
       '공간과 준비물을 확인하고 학생들이 움직일 범위를 정합니다.',
       '규칙을 짧게 설명하고 시범을 보여줍니다.',
@@ -168,6 +170,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
       title,
       category,
       focus,
+      equipment,
       grade: cleanProgramText(program, 'grade', '전 학년'),
       duration: program.duration,
       space: cleanProgramText(program, 'space', '실내 또는 체육 공간'),
@@ -281,6 +284,22 @@ export default function ClassModeView({ programId }: { programId: string }) {
               <MonitorPlay className="h-4 w-4 text-indigo-200" />
               <span className="max-w-[220px] truncate text-xs font-black text-indigo-100">{lesson.spomoveName}</span>
             </Link>
+          </section>
+
+          <section className="mx-auto grid w-full max-w-5xl shrink-0 gap-2 px-4 pb-5 sm:grid-cols-3 sm:px-6">
+            {[
+              { icon: Timer, label: '수업 초점', value: lesson.focus },
+              { icon: Package, label: '준비물', value: lesson.equipment.slice(0, 3).join(', ') },
+              { icon: MonitorPlay, label: '화면 활동', value: lesson.spomoveUse },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex min-h-14 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3">
+                <Icon className="h-4 w-4 shrink-0 text-white/35" />
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-white/25">{label}</span>
+                  <span className="mt-0.5 block truncate text-xs font-black text-white/72">{value}</span>
+                </span>
+              </div>
+            ))}
           </section>
 
           <section className="flex shrink-0 justify-center pb-5">

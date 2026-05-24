@@ -22,6 +22,8 @@ export type HomeMediaItem = {
   label: string;
   fallbackGradient: string;
   tone: HomeMediaTone;
+  /** object-cover 앵커 (예: Hero KBS 로고 좌상단) */
+  objectPosition?: string;
 };
 
 function fromPhoto(
@@ -31,7 +33,8 @@ function fromPhoto(
   return {
     type: 'image',
     src: asset.src,
-    fallbackSrc: asset.fallback ?? SPOKEDU_FALLBACK_FIELD,
+    /** Home: SVG 카테고리 placeholder 사용 금지 — 실사 공통 fallback만 */
+    fallbackSrc: SPOKEDU_FALLBACK_FIELD,
     poster: null,
     alt: item.alt ?? asset.alt,
     ...item,
@@ -50,6 +53,14 @@ export const HOME_MEDIA = {
     label: '체육수업 현장',
     fallbackGradient: 'from-indigo-600 via-indigo-800 to-slate-900',
     tone: 'indigo',
+    objectPosition: 'left top',
+  }),
+  heroThumbMedia: fromPhoto(SPOKEDU_IMAGES.home.heroMedia, {
+    id: 'hero-thumb-media',
+    label: '방송·미디어',
+    fallbackGradient: 'from-violet-500 via-indigo-700 to-slate-900',
+    tone: 'violet',
+    objectPosition: 'left top',
   }),
   trackPrivate: fromPhoto(SPOKEDU_IMAGES.private.oneToOne, {
     id: 'track-private',
@@ -81,9 +92,27 @@ export const HOME_MEDIA = {
     fallbackGradient: 'from-sky-400 via-blue-600 to-indigo-950',
     tone: 'sky',
   }),
-  proofCenter: fromPhoto(SPOKEDU_IMAGES.dispatch.groupClass, {
+  proofYangcheon: fromPhoto(SPOKEDU_IMAGES.records.yangcheon, {
+    id: 'proof-yangcheon',
+    label: '양천 SPOMOVE',
+    fallbackGradient: 'from-sky-400 via-blue-600 to-indigo-950',
+    tone: 'sky',
+  }),
+  proofDongjak: fromPhoto(SPOKEDU_IMAGES.records.dongjak, {
+    id: 'proof-dongjak',
+    label: '동작 SPOMOVE',
+    fallbackGradient: 'from-cyan-400 via-teal-600 to-slate-900',
+    tone: 'sky',
+  }),
+  proofDasarang: fromPhoto(SPOKEDU_IMAGES.records.dasarang, {
+    id: 'proof-dasarang',
+    label: '원데이 행사',
+    fallbackGradient: 'from-lime-400 via-emerald-600 to-slate-900',
+    tone: 'lime',
+  }),
+  proofCenter: fromPhoto(SPOKEDU_IMAGES.dispatch.kiwoomCenter, {
     id: 'proof-center',
-    label: '리듬챌린지',
+    label: '기관 수업',
     fallbackGradient: 'from-cyan-400 via-teal-600 to-slate-900',
     tone: 'sky',
   }),
@@ -98,6 +127,12 @@ export const HOME_MEDIA = {
     label: '방학캠프',
     fallbackGradient: 'from-amber-300 via-orange-500 to-slate-900',
     tone: 'amber',
+  }),
+  gateCurriculum: fromPhoto(SPOKEDU_IMAGES.curriculum.instructorTraining, {
+    id: 'gate-curriculum',
+    label: '강사 교육',
+    fallbackGradient: 'from-emerald-500 via-teal-700 to-slate-900',
+    tone: 'lime',
   }),
   proofEvent: fromPhoto(SPOKEDU_IMAGES.dispatch.oneDayEvent, {
     id: 'proof-event',
@@ -145,6 +180,7 @@ export const HOME_MEDIA = {
   programCurriculum: fromPhoto(SPOKEDU_IMAGES.programs.curriculumContent, {
     id: 'program-curriculum',
     label: '커리큘럼',
+    alt: SPOKEDU_IMAGES.programs.curriculumContent.alt,
     fallbackGradient: 'from-indigo-400 to-slate-900',
     tone: 'indigo',
   }),
@@ -184,7 +220,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
   },
   {
     id: 'proof-spomove',
-    media: HOME_MEDIA.proofClass,
+    media: HOME_MEDIA.proofYangcheon,
     category: '기관 정규수업',
     title: '양천거점형키움센터 SPOMOVE',
     description: '보고, 선택하고, 반응하는 에듀테크 체육수업',
@@ -195,7 +231,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
   },
   {
     id: 'proof-rhythm',
-    media: HOME_MEDIA.proofCenter,
+    media: HOME_MEDIA.proofDongjak,
     category: '기관 정규수업',
     title: '동작거점형키움센터 리듬챌린지',
     description: '리듬과 타이밍을 몸으로 경험한 반응형 수업',
@@ -206,7 +242,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
   },
   {
     id: 'proof-oneday',
-    media: HOME_MEDIA.proofCommunity,
+    media: HOME_MEDIA.proofDasarang,
     category: '원데이 행사',
     title: '다사랑영등포지역아동센터 원데이',
     description: '협동 미션과 움직임 놀이로 구성한 원데이 체육행사',

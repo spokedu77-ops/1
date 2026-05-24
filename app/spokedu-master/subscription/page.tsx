@@ -7,8 +7,8 @@ import {
   Calendar,
   CheckCircle2,
   ChevronRight,
+  Clipboard,
   CreditCard,
-  FileText,
   Loader2,
   Mail,
   MonitorPlay,
@@ -49,35 +49,18 @@ const PLAN_SUMMARY: Record<PlanKey, string> = {
   school: '학교·기관용 라이선스와 참여형 체육수업 패키지',
 };
 
-const INCLUDED_VALUES = [
-  {
-    icon: BookOpen,
-    title: '수업 라이브러리',
-    body: '센터 커리큘럼 기반 프로그램을 구독자용 카드, 필터, 수업안으로 정리합니다.',
-  },
-  {
-    icon: MonitorPlay,
-    title: 'SPOMOVE 큰 화면',
-    body: '빔, TV, 태블릿에서 바로 실행할 수 있는 반응훈련 화면을 제공합니다.',
-  },
-  {
-    icon: FileText,
-    title: '수업 설명 도구',
-    body: '학부모·기관·학교에 체육수업의 의미를 설명할 문구를 빠르게 만듭니다.',
-  },
-];
-
-const SUBSCRIPTION_LOOP = [
-  { label: '고르기', body: '이번 주 수업 패키지를 홈과 라이브러리에서 선택합니다.' },
-  { label: '실행하기', body: 'SPOMOVE와 Class Mode로 수업 현장에서 바로 진행합니다.' },
-  { label: '설명하기', body: '학부모와 기관에 보낼 수업 설명 문구를 남깁니다.' },
-];
-
 const TRUST_POINTS = [
   '토스페이먼츠 기반 보안 결제를 사용합니다.',
   '다음 결제일 전까지 언제든 구독 취소를 요청할 수 있습니다.',
   '유료 콘텐츠 특성상 사용 시작 이후 환불은 이용 내역에 따라 제한될 수 있습니다.',
 ];
+
+const UNLOCK_ITEMS = [
+  { icon: BookOpen, title: '이번 주 수업안', value: '4개', caption: '홈에서 바로 열기' },
+  { icon: MonitorPlay, title: '큰 화면 활동', value: '무제한', caption: 'TV·빔 실행' },
+  { icon: Clipboard, title: '설명 문구', value: '복사', caption: '수업 직후 안내' },
+  { icon: Calendar, title: '주간 계획', value: '연결', caption: '수업 흐름 관리' },
+] as const;
 
 function statusLabel(status?: string) {
   if (status === 'active') return '활성 구독';
@@ -119,14 +102,14 @@ export default function SubscriptionPage() {
       return {
         eyebrow: '구독이 정상 적용 중입니다',
         title: `${planLabel} 플랜으로 수업 준비 흐름을 유지하고 있어요.`,
-        body: '라이브러리, SPOMOVE, 설명 도구가 하나의 수업 루프로 이어집니다.',
+        body: '라이브러리, SPOMOVE, 설명 문구가 하나의 수업 루프로 이어집니다.',
       };
     }
 
     return {
       eyebrow: '구독을 시작하면 바로 열립니다',
       title: '수업 준비는 라이브러리에서, 몰입은 SPOMOVE에서 시작하세요.',
-      body: '무료 자료실이 아니라, 체육수업을 고르고 실행하고 설명하는 구독형 수업 운영 경험을 제공합니다.',
+      body: '단순 자료 모음이 아니라, 체육수업을 고르고 실행하고 설명하는 구독형 수업 운영 경험을 제공합니다.',
     };
   }, [isPaid, planLabel]);
 
@@ -184,26 +167,29 @@ export default function SubscriptionPage() {
                   {heroCopy.body}
                 </p>
 
-                <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                  {INCLUDED_VALUES.map((item) => {
+                <div className="mt-7 grid gap-3 sm:grid-cols-4">
+                  {UNLOCK_ITEMS.map((item) => {
                     const Icon = item.icon;
                     return (
                       <div key={item.title} className="rounded-[16px] p-4" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
-                        <Icon size={18} color="var(--spm-acc)" />
-                        <p className="mt-3 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{item.title}</p>
-                        <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{item.body}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <Icon size={18} color="var(--spm-acc)" />
+                          <span className="text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{item.value}</span>
+                        </div>
+                        <p className="mt-3 text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{item.title}</p>
+                        <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>{item.caption}</p>
                       </div>
                     );
                   })}
                 </div>
-                <div className="mt-5 grid gap-2 sm:grid-cols-3">
-                  {SUBSCRIPTION_LOOP.map((item, index) => (
-                    <div key={item.label} className="rounded-[14px] p-4" style={{ background: 'rgba(255,255,255,0.52)', border: '1px solid rgba(255,255,255,0.62)' }}>
-                      <span className="text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>0{index + 1}</span>
-                      <p className="mt-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{item.label}</p>
-                      <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{item.body}</p>
-                    </div>
-                  ))}
+                <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                  <Link href={`/spokedu-master/payment?plan=${recommendedPlan}`} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-[13px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 10px 28px rgba(99,102,241,0.28)' }}>
+                    {isPaid ? '플랜 변경하기' : 'Pro로 수업 열기'}
+                    <ChevronRight size={16} />
+                  </Link>
+                  <Link href="/spokedu-master/dashboard" className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-[13px] text-[14px] font-black" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)', color: 'var(--spm-t)' }}>
+                    홈에서 기능 보기
+                  </Link>
                 </div>
               </div>
 
@@ -252,6 +238,17 @@ export default function SubscriptionPage() {
                         <p className="text-right text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>{PLAN_PRICES[plan]}</p>
                       </div>
                       <p className="mt-3 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{PLAN_SUMMARY[plan]}</p>
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        {[
+                          plan === 'team' ? '강사 3명' : '개인 계정',
+                          'SPOMOVE',
+                          '설명 문구',
+                        ].map((item) => (
+                          <span key={item} className="rounded-[10px] px-2 py-2 text-center text-[11px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                            {item}
+                          </span>
+                        ))}
+                      </div>
                       <Link
                         href={isCurrent ? '/spokedu-master/library' : `/spokedu-master/payment?plan=${plan}`}
                         className="mt-4 flex h-11 items-center justify-center gap-1.5 rounded-[12px] text-[13px] font-black"
@@ -323,9 +320,9 @@ export default function SubscriptionPage() {
               <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
                 <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>사업자 정보</p>
                 <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
-                  {[
-                    ['상호', '스포키듀'],
-                    ['대표자', '최진우'],
+                  {[ 
+                    ['상호', '스포케듀'],
+                    ['대표자', '최지훈'],
                     ['사업자등록번호', '311-63-00356'],
                     ['통신판매업', '신고 준비 중'],
                     ['고객센터', 'support@spokedu.com'],
