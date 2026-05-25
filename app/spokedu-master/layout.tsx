@@ -4,11 +4,11 @@ import { AppShell } from './components/layout/AppShell';
 
 export const metadata: Metadata = {
   title: {
-    default: 'SPOKEDU MASTER — 체육교육 OTT 구독 서비스',
-    template: '%s — SPOKEDU MASTER',
+    default: 'SPOKEDU MASTER · 체육교육 수업 자료 구독 서비스',
+    template: '%s · SPOKEDU MASTER',
   },
-  description: '수업안, SPOMOVE 큰 화면 활동, 설명 문구를 하나의 수업 실행 루프로 연결하는 체육교육 OTT 구독 서비스.',
-  keywords: ['체육교육', '놀이체육', 'SPOMOVE', '수업 준비', '체육 강사', '스포츠 교육', '반응훈련'],
+  description: '체육 강사가 수업 전 확인할 수업안과 영상 자료, 현장에서 쓰는 SPOMOVE 큰 화면 활동을 제공하는 구독 서비스.',
+  keywords: ['체육교육', '유아체육', 'SPOMOVE', '수업 자료', '체육 강사', '스포츠 교육', '반응훈련'],
   authors: [{ name: 'SPOKEDU' }],
   creator: 'SPOKEDU',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com'),
@@ -16,14 +16,14 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ko_KR',
     siteName: 'SPOKEDU MASTER',
-    title: 'SPOKEDU MASTER — 체육교육 OTT 구독 서비스',
-    description: '수업안, SPOMOVE 큰 화면 실행, 설명 문구를 하나의 수업 실행 루프로 연결합니다.',
+    title: 'SPOKEDU MASTER · 체육교육 수업 자료 구독 서비스',
+    description: '수업 전 확인하는 수업안과 영상 자료, 현장에서 쓰는 SPOMOVE 큰 화면 활동을 제공합니다.',
     images: [{ url: '/api/spokedu-master/og', width: 1200, height: 630, alt: 'SPOKEDU MASTER' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SPOKEDU MASTER',
-    description: '수업안, 큰 화면 활동, 설명 문구를 연결한 체육교육 OTT 구독 서비스',
+    description: '체육 수업안과 SPOMOVE 큰 화면 활동을 제공하는 체육교육 구독 서비스',
     images: ['/api/spokedu-master/og'],
   },
   robots: {

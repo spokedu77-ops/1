@@ -42,6 +42,7 @@ export const programsPage = {
     items: [
       { need: '몰입형 체육수업이 필요하다면', program: 'SPOMOVE' },
       { need: '체력 향상과 점검이 필요하다면', program: 'PAPS' },
+      { need: '월별 테마로 정규수업을 이어가려면', program: '월간 뉴스포츠' },
       { need: '행사성 체험이 필요하다면', program: '원데이 이벤트' },
       { need: '방학 돌봄형 프로그램이 필요하다면', program: '방학캠프' },
     ] as const,
@@ -72,6 +73,17 @@ export const programsPage = {
           ctaLabel: 'PAPS 프로그램 보기',
           ctaTrack: 'cta-program-paps',
           mediaKey: 'programPaps',
+        },
+        {
+          slug: 'monthly-newsports',
+          title: '월간 뉴스포츠',
+          description:
+            '매월 뉴스포츠 메타 테마를 잡고, 교구·협동 활동으로 정규·방과후 수업 흐름을 이어가는 월간형 프로그램입니다.',
+          fit: '키움·방과후·돌봄, 월 4회 정규 체육',
+          detailHref: `${SPOKEDU_BASE_PATH}/programs/monthly-newsports`,
+          ctaLabel: '월간 뉴스포츠 보기',
+          ctaTrack: 'cta-program-monthly-newsports',
+          mediaKey: 'programMonthlyNewsports',
         },
       ],
     },

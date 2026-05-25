@@ -3,10 +3,11 @@ import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH } from './site';
 
 /** /spokedu/programs 목록·링크·트랙 매핑의 단일 기준 */
-export type ProgramCategory = '에듀테크' | '기초체력' | '놀이체육' | '행사형' | '캠프형' | '콘텐츠';
+export type ProgramCategory = '에듀테크' | '기초체력' | '월간형' | '놀이체육' | '행사형' | '캠프형' | '콘텐츠';
 export type ProgramSlug =
   | 'spomove'
   | 'paps'
+  | 'monthly-newsports'
   | 'oneday-event'
   | 'camp'
   | 'play-class'
@@ -14,7 +15,7 @@ export type ProgramSlug =
 
 export type ProgramTrack = 'Private' | 'Dispatch' | 'Curriculum';
 
-export const PROGRAM_DETAIL_SLUGS = ['spomove', 'paps', 'oneday-event', 'camp'] as const;
+export const PROGRAM_DETAIL_SLUGS = ['spomove', 'paps', 'monthly-newsports', 'oneday-event', 'camp'] as const;
 export type ProgramDetailSlug = (typeof PROGRAM_DETAIL_SLUGS)[number];
 
 export type ProgramRegistryItem = {
@@ -38,6 +39,7 @@ export type ProgramRegistryItem = {
 const programImages = {
   spomove: SPOKEDU_IMAGES.programs.spomove,
   paps: SPOKEDU_IMAGES.programs.paps,
+  'monthly-newsports': SPOKEDU_IMAGES.programs.newsportsMonthly,
   'play-class': SPOKEDU_IMAGES.programs.playClass,
   'oneday-event': SPOKEDU_IMAGES.programs.oneDay,
   camp: SPOKEDU_IMAGES.programs.camp,
@@ -75,6 +77,21 @@ export const programRegistry: ProgramRegistryItem[] = [
     listCtaLabel: '자세히 보기',
     listCtaTrack: 'cta-program-paps',
     mediaKey: 'programPaps',
+  },
+  {
+    slug: 'monthly-newsports',
+    title: '월간 뉴스포츠',
+    category: '월간형',
+    listDescription: '뉴스포츠 메타 테마 월간 수업',
+    tracks: ['Dispatch', 'Curriculum'],
+    effects: ['월별테마', '협동', '교구활용', '뉴스포츠'],
+    target: '키움·방과후·돌봄 정규수업, 월 4회 흐름이 필요한 기관',
+    hasDetailPage: true,
+    detailHref: `${SPOKEDU_BASE_PATH}/programs/monthly-newsports`,
+    inquiryHref: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    listCtaLabel: '자세히 보기',
+    listCtaTrack: 'cta-program-monthly-newsports',
+    mediaKey: 'programMonthlyNewsports',
   },
   {
     slug: 'play-class',

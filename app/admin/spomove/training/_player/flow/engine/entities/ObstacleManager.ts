@@ -23,7 +23,6 @@ const BOX_HIT_Z      = 80;    // tryPunchBox 판정 반경
 const BOX_RATE       = 0.55;
 const UFO_RATE       = 0.45;
 const UFO_HEIGHT     = 180;   // UFO 중심 Y (원본 coordContract 동일)
-const UFO_WARN_Z     = 1800;
 const REACH_Y        = 200;
 const STANDARD_BOX_Y = 40;
 
@@ -105,6 +104,9 @@ export class ObstacleManager {
     this.goldSpawned = 0;
   }
 
+  hasSprintGate(): boolean { return this.sprintGates.length > 0; }
+  hasFreezeWall(): boolean { return this.freezeWalls.length > 0; }
+
   // ── 스폰 결정 ───────────────────────────────────────────────────────────────
 
   shouldSpawnBox(activeModules: Set<FlowModuleKey>): boolean {
@@ -142,40 +144,68 @@ export class ObstacleManager {
   private makeBox(isReach: boolean, reward: boolean): THREE.Group {
     const g = new THREE.Group();
 
-    const bodyColor  = isReach ? 0xf3e8ff : 0xffedd5;
-    const bodyEmit   = isReach ? 0xa855f7 : 0xffa07a;
-    const lidColor   = isReach ? 0xe9d5ff : 0xfde68a;
-    const lidEmit    = isReach ? 0x9333ea : 0xfbbf24;
-    const bandColor  = isReach ? 0x7c3aed : 0x2563eb;
-    const glowColor  = isReach ? 0xc084fc : (reward ? 0xfacc15 : 0xf97316);
+    if (isReach) {
+      // REACH: 밝은 보라, 1.8× 크기, 하단 글로잉 기둥으로 높이 강조
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(70, 80, 65),
+        new THREE.MeshPhongMaterial({ color: 0x9900ff, emissive: 0x6600cc, emissiveIntensity: 0.55, shininess: 90 }),
+      );
+      body.position.y = 40;
+      g.add(body);
 
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(65, 45, 55),
-      new THREE.MeshPhongMaterial({ color: bodyColor, emissive: bodyEmit, emissiveIntensity: 0.25, shininess: 25 }),
-    );
-    body.position.y = 22.5;
-    g.add(body);
+      const lid = new THREE.Mesh(
+        new THREE.BoxGeometry(76, 20, 70),
+        new THREE.MeshPhongMaterial({ color: 0xcc66ff, emissive: 0xaa00ff, emissiveIntensity: 0.5, shininess: 80 }),
+      );
+      lid.position.y = 86;
+      g.add(lid);
 
-    const lid = new THREE.Mesh(
-      new THREE.BoxGeometry(68, 18, 58),
-      new THREE.MeshPhongMaterial({ color: lidColor, emissive: lidEmit, emissiveIntensity: 0.3, shininess: 40 }),
-    );
-    lid.position.y = 50;
-    g.add(lid);
+      // 바닥까지 이어지는 보라 기둥 → "높이" 시각화
+      const pillar = new THREE.Mesh(
+        new THREE.BoxGeometry(14, REACH_Y, 14),
+        new THREE.MeshBasicMaterial({ color: 0xaa00ff, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }),
+      );
+      pillar.position.y = -REACH_Y / 2;
+      g.add(pillar);
 
-    const band = new THREE.Mesh(
-      new THREE.BoxGeometry(18, 70, 60),
-      new THREE.MeshPhongMaterial({ color: bandColor, emissive: bandColor, emissiveIntensity: 0.4, shininess: 60 }),
-    );
-    band.position.y = 35;
-    g.add(band);
+      const glow = new THREE.Mesh(
+        new THREE.SphereGeometry(90, 10, 6),
+        new THREE.MeshBasicMaterial({ color: 0xcc00ff, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false }),
+      );
+      glow.position.y = 40;
+      g.add(glow);
+    } else {
+      // PUNCH: 선명한 주황, 표준 크기
+      const glowColor = reward ? 0xfacc15 : 0xff6600;
 
-    const glow = new THREE.Mesh(
-      new THREE.SphereGeometry(75, 10, 6),
-      new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false }),
-    );
-    glow.position.y = 35;
-    g.add(glow);
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(65, 45, 55),
+        new THREE.MeshPhongMaterial({ color: 0xff6600, emissive: 0xff3300, emissiveIntensity: 0.4, shininess: 40 }),
+      );
+      body.position.y = 22.5;
+      g.add(body);
+
+      const lid = new THREE.Mesh(
+        new THREE.BoxGeometry(68, 18, 58),
+        new THREE.MeshPhongMaterial({ color: 0xff9933, emissive: 0xff6600, emissiveIntensity: 0.35, shininess: 50 }),
+      );
+      lid.position.y = 50;
+      g.add(lid);
+
+      const band = new THREE.Mesh(
+        new THREE.BoxGeometry(18, 70, 60),
+        new THREE.MeshPhongMaterial({ color: 0xcc2200, emissive: 0xcc2200, emissiveIntensity: 0.5, shininess: 60 }),
+      );
+      band.position.y = 35;
+      g.add(band);
+
+      const glow = new THREE.Mesh(
+        new THREE.SphereGeometry(75, 10, 6),
+        new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false }),
+      );
+      glow.position.y = 35;
+      g.add(glow);
+    }
 
     return g;
   }
@@ -282,7 +312,7 @@ export class ObstacleManager {
     const scale = this.cb.getShardScale?.() ?? 1;
     const n = Math.floor(count * scale);
     for (let i = 0; i < n; i++) {
-      const geo = new THREE.BoxGeometry(10 + Math.random() * 16, 10 + Math.random() * 16, 8);
+      const geo = new THREE.BoxGeometry(14 + Math.random() * 22, 14 + Math.random() * 22, 10);
       const mat = new THREE.MeshBasicMaterial({
         color: isGold ? 0xfacc15 : 0xff7700,
         transparent: true,
@@ -324,7 +354,7 @@ export class ObstacleManager {
       if (!box.autoHitDone && wz > BOX_AUTO_HIT_Z) {
         box.autoHitDone = true;
         const wp = box.mesh.getWorldPosition(new THREE.Vector3());
-        this.spawnShards(wp, box.isReach ? 28 : 22, box.reward);
+        this.spawnShards(wp, box.isReach ? 80 : 65, box.reward);
         this.cb.onBoxAutoHit?.(box.isReach);
         this.cb.onBoxHit?.(box.reward);
         this.cb.onCameraShake?.(box.reward ? 1.5 : 1.0, 150);
@@ -345,10 +375,12 @@ export class ObstacleManager {
     // UFO
     for (const ufo of this.ufos) {
       const wz = ufo.mesh.getWorldPosition(new THREE.Vector3()).z;
-      if (!ufo.warned && wz > UFO_WARN_Z - 400) {
+      // 텍스트 경고: 플레이어 700 유닛 앞 (~0.5초) → 실제로 UFO가 보이기 시작할 때
+      if (!ufo.warned && wz > playerWorldZ - 700) {
         ufo.warned = true;
         this.cb.onUfoWarn?.();
       }
+      // 카메라 딥: 플레이어 200 유닛 앞 — 통과 직전
       if (!ufo.duckStarted && wz > playerWorldZ - 200) {
         ufo.duckStarted = true;
         this.cb.onUfoDuckStart?.();
@@ -367,10 +399,11 @@ export class ObstacleManager {
       return true;
     });
 
-    // 스프린트 게이트 통과 판정
+    // 스프린트 게이트 통과 판정 — userData.triggered 로 단 1회만 발화
     this.sprintGates = this.sprintGates.filter((g) => {
       const wz = g.getWorldPosition(new THREE.Vector3()).z;
-      if (wz > playerWorldZ - 30 && wz < playerWorldZ + 150) {
+      if (!g.userData['triggered'] && wz > playerWorldZ - 30 && wz < playerWorldZ + 150) {
+        g.userData['triggered'] = true;
         this.cb.onSprintGatePassed?.();
       }
       if (wz > playerWorldZ + 300) {
@@ -380,10 +413,11 @@ export class ObstacleManager {
       return true;
     });
 
-    // 프리즈 벽 통과 판정
+    // 프리즈 벽 통과 판정 — userData.triggered 로 단 1회만 발화
     this.freezeWalls = this.freezeWalls.filter((w) => {
       const wz = w.getWorldPosition(new THREE.Vector3()).z;
-      if (wz > playerWorldZ - 30 && wz < playerWorldZ + 150) {
+      if (!w.userData['triggered'] && wz > playerWorldZ - 30 && wz < playerWorldZ + 150) {
+        w.userData['triggered'] = true;
         this.cb.onFreezeWallPassed?.();
       }
       if (wz > playerWorldZ + 300) {
@@ -398,7 +432,7 @@ export class ObstacleManager {
       const s = this.shards[i];
       s.vel.y -= (s.type === 'coin' ? 0.35 : 0.45) * dt60;
       s.vel.multiplyScalar(Math.pow(0.97, dt60));
-      s.mesh.position.addScaledVector(s.vel, dt60 * 0.38);
+      s.mesh.position.addScaledVector(s.vel, dt60 * 0.55);
       s.life -= (s.type === 'coin' ? 0.012 : 0.028) * dt60;
       const mat = s.mesh.material as THREE.MeshBasicMaterial;
       mat.opacity = Math.max(0, s.life);

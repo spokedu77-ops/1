@@ -100,7 +100,7 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
   about: {
     title: '스포키듀 소개 | 현장 체육교육 운영 브랜드',
     description:
-      '현장 수업에서 시작해 프로그램·커리큘럼 콘텐츠로 확장하는 아동·청소년 체육교육 운영 브랜드. 개인·기관·콘텐츠 3축 운영.',
+      '대표 소개·연혁과 함께, 현장 수업에서 프로그램·커리큘럼으로 확장하는 아동·청소년 체육교육 운영 브랜드 SPOKEDU를 소개합니다.',
   },
   private: {
     title: '개인·소그룹 체육수업 | SPOKEDU',
@@ -178,6 +178,10 @@ export const seoMetaInsights = seoMeta.insights;
 const PROGRAM_OG: Partial<Record<string, SeoOgImage>> = {
   spomove: { url: SPOKEDU_IMAGES.programs.spomove.src, alt: SPOKEDU_IMAGES.programs.spomove.alt },
   paps: { url: SPOKEDU_IMAGES.programs.paps.src, alt: SPOKEDU_IMAGES.programs.paps.alt },
+  'monthly-newsports': {
+    url: SPOKEDU_IMAGES.programs.newsportsMonthly.src,
+    alt: SPOKEDU_IMAGES.programs.newsportsMonthly.alt,
+  },
   'oneday-event': { url: SPOKEDU_IMAGES.programs.oneDay.src, alt: SPOKEDU_IMAGES.programs.oneDay.alt },
   camp: { url: SPOKEDU_IMAGES.programs.camp.src, alt: SPOKEDU_IMAGES.programs.camp.alt },
 };

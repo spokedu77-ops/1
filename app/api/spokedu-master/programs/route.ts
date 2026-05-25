@@ -34,25 +34,37 @@ function extractYouTubeId(url: string): string | null {
   return match?.[1] ?? null;
 }
 
+const INVALID_VIDEO_VALUES = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
+
+function normalizeVideoUrl(value: string | null | undefined): string | undefined {
+  const text = (value ?? '').trim();
+  if (!text || INVALID_VIDEO_VALUES.has(text.toLowerCase().replace(/\s+/g, ''))) return undefined;
+
+  try {
+    const url = new URL(text);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? text : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function buildThumbnailUrl(videoUrl: string | null | undefined): string | undefined {
-  if (!videoUrl) return undefined;
-  const id = extractYouTubeId(videoUrl);
-  return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : undefined;
+  const normalized = normalizeVideoUrl(videoUrl);
+  if (!normalized) return undefined;
+  const id = extractYouTubeId(normalized);
+  return id ? `https://img.youtube.com/vi/${id}/maxresdefault.jpg` : undefined;
 }
 
 function inferRelatedSpomoveIds(input: { title: string; category: string; tags: string[]; description: string; steps: string[] }): string[] {
   const text = [input.title, input.category, input.description, ...input.tags, ...input.steps].join(' ');
-  const candidates: string[] = [];
+  const hasExplicitScreenCue = /SPOMOVE|스포무브|화면 활동|화면 신호|색 신호|출발 신호/i.test(text);
 
-  if (/펀스틱|펜싱|fencing|funstick|찌르기|상대|거리|타이밍/i.test(text)) candidates.push('reactTrain', 'simon');
-  if (/민첩|스피드|반응|출발|방향|전환|공간|신호|순발/i.test(text)) candidates.push('reactTrain', 'basic');
-  if (/협동|릴레이|팀|규칙|역할|전략/i.test(text)) candidates.push('basic', 'taskswitch');
-  if (/균형|자세|밸런스|멈춤|정지|중심/i.test(text)) candidates.push('gonogo');
-  if (/리듬|박자|표현|음악|거울/i.test(text)) candidates.push('flow');
-  if (/기억|집중|인지|순서|패턴/i.test(text)) candidates.push('spatial', 'stroop');
-  if (candidates.length === 0 && /SPOMOVE|화면|신호/i.test(text)) candidates.push('reactTrain');
+  if (/펀스틱|펜싱|fencing|funstick|찌르기|상대|거리|타이밍/i.test(text)) return ['reactTrain', 'simon'];
+  if (hasExplicitScreenCue && /민첩|스피드|반응|출발|방향|전환|순발|사다리|스프린트/i.test(text)) return ['reactTrain', 'basic'];
+  if (hasExplicitScreenCue && /균형|자세|밸런스|멈춤|정지|중심/i.test(text)) return ['gonogo'];
+  if (hasExplicitScreenCue && /리듬|박자|표현|음악|거울|패턴 전환/i.test(text)) return ['flow'];
 
-  return [...new Set(candidates)].slice(0, 2);
+  return [];
 }
 
 function normalizeSpomoveIds(ids: string[]): string[] {
@@ -85,7 +97,7 @@ function inferObjective(program: Program) {
 
 function buildParentNote(program: Program) {
   const focus = inferFocus(program);
-  return `오늘은 "${program.title}" 활동으로 ${focus}을(를) 연습했습니다. 아이들이 신호를 보고 판단하고, 몸을 조절하며, 친구들과 함께 움직이는 경험을 했습니다.`;
+  return `오늘은 "${program.title}" 활동으로 ${focus}을(를) 연습했습니다. 아이들이 규칙을 이해하고, 몸을 조절하며, 친구들과 함께 움직이는 경험을 했습니다.`;
 }
 
 function buildContentQuality(program: Program): Program {
@@ -109,13 +121,13 @@ function buildContentQuality(program: Program): Program {
     tags: [...new Set([...program.tags, ...(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : [])])],
     lessonDetail: {
       ...detail,
-      recommendedAge: detail.recommendedAge || program.grade || '전학년',
-      recommendedPlayers: detail.recommendedPlayers || '6~20명',
+      recommendedAge: detail.recommendedAge || program.grade || '대상 확인 필요',
+      recommendedPlayers: detail.recommendedPlayers || '현장 규모에 맞게 조정',
       objective: detail.objective || inferObjective(program),
       developmentFocus: detail.developmentFocus || inferFocus(program),
       coachScript:
         detail.coachScript ||
-        `${program.title}은(는) 속도보다 규칙 이해와 안전한 움직임을 먼저 잡는 것이 중요합니다. 첫 라운드는 천천히 진행하고, 이후 신호 반응과 움직임 정확도를 올립니다.`,
+        `${program.title}은(는) 속도보다 규칙 이해와 안전한 움직임을 먼저 잡는 것이 중요합니다. 첫 라운드는 천천히 진행하고, 이후 움직임 정확도와 참여 밀도를 올립니다.`,
       parentNote: detail.parentNote || buildParentNote(program),
       fieldTips: detail.fieldTips.length > 0 ? detail.fieldTips : [
         '첫 라운드는 성공 경험을 만드는 데 집중합니다.',
@@ -123,7 +135,7 @@ function buildContentQuality(program: Program): Program {
       ],
       variations: detail.variations.length > 0 ? detail.variations : [
         '초급: 이동 거리와 제한 시간을 줄입니다.',
-        '중급: 신호나 역할을 추가해 판단 요소를 늘립니다.',
+        '중급: 역할이나 이동 조건을 추가해 판단 요소를 늘립니다.',
         '고급: 팀전 또는 라운드제로 확장합니다.',
       ],
       safetyNotes: detail.safetyNotes.length > 0 ? detail.safetyNotes : [
@@ -133,7 +145,7 @@ function buildContentQuality(program: Program): Program {
       relatedSpomoveIds,
       briefingNotes: detail.briefingNotes?.length ? detail.briefingNotes : [
         '오늘 활동의 목표와 성공 기준을 30초 안에 안내합니다.',
-        relatedSpomoveIds.length > 0 ? 'SPOMOVE 신호를 언제 연결할지 미리 정합니다.' : '활동 중 관찰할 움직임 포인트를 먼저 정합니다.',
+        relatedSpomoveIds.length > 0 ? '화면 활동을 사용할 구간과 멈춤 기준을 미리 정합니다.' : '활동 중 관찰할 움직임 포인트를 먼저 정합니다.',
       ],
       rules: rules.length > 0 ? rules : [
         '활동 구역과 대기 구역을 나눕니다.',
@@ -149,6 +161,8 @@ function buildContentQuality(program: Program): Program {
 }
 
 function applyPremiumContentOverlay(program: Program): Program {
+  return program;
+
   const key = [program.title, program.category, program.description, ...program.tags].join(' ').toLowerCase();
   if (!/(펀스틱|funstick|펜싱|fencing)/i.test(key)) return program;
 
@@ -203,11 +217,11 @@ function applyPremiumContentOverlay(program: Program): Program {
         '펀스틱은 휘두르지 않고 목표물을 향해 "밀어 찌르기"로만 사용합니다.',
       ],
       relatedSpomoveIds:
-        current?.relatedSpomoveIds && current.relatedSpomoveIds.length > 0 ? normalizeSpomoveIds(current.relatedSpomoveIds) : ['reactTrain', 'simon'],
-      videoUrl: current?.videoUrl,
-      heroImageUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
-      setupImageUrl: '/images/spokedu-master/programs/funstick-fencing/setup.png',
-      galleryImageUrls: ['/images/spokedu-master/programs/funstick-fencing/gallery-1.jpeg'],
+        (current?.relatedSpomoveIds?.length ?? 0) > 0 ? normalizeSpomoveIds(current?.relatedSpomoveIds ?? []) : ['reactTrain', 'simon'],
+      videoUrl: normalizeVideoUrl(current?.videoUrl),
+      heroImageUrl: current?.heroImageUrl,
+      setupImageUrl: current?.setupImageUrl,
+      galleryImageUrls: current?.galleryImageUrls ?? [],
       briefingNotes: [
         '구독자가 모달을 열자마자 활동 가치, 준비물, 안전 기준, 실행 순서를 한 번에 판단할 수 있어야 합니다.',
         '현장 사진은 신뢰를 만들고, 배치도는 수업 직전 준비 시간을 줄이는 역할을 합니다.',
@@ -255,11 +269,13 @@ function inferCleanFocus(category: string) {
 }
 
 function cleanFunstickProgram(program: Program): Program {
+  return program;
+
   return {
     ...program,
-    title: '펀스틱 펜싱 Funstick Fencing',
-    category: '민첩·반응',
-    grade: '초등 3학년 이상',
+    title: cleanText(program.title, '펀스틱 활동'),
+    category: cleanText(program.category, '민첩·반응'),
+    grade: cleanText(program.grade, '대상 확인 필요'),
     duration: program.duration || 20,
     space: '실내 체육관 · 넓은 활동 공간',
     description:
@@ -300,10 +316,10 @@ function cleanFunstickProgram(program: Program): Program {
         '펀스틱은 휘두르지 않고 목표물을 향한 가벼운 찌르기로만 사용합니다.',
       ],
       relatedSpomoveIds: ['reactTrain', 'simon'],
-      videoUrl: program.lessonDetail?.videoUrl,
-      heroImageUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
-      setupImageUrl: '/images/spokedu-master/programs/funstick-fencing/setup.png',
-      galleryImageUrls: ['/images/spokedu-master/programs/funstick-fencing/gallery-1.jpeg'],
+      videoUrl: normalizeVideoUrl(program.lessonDetail?.videoUrl),
+      heroImageUrl: program.lessonDetail?.heroImageUrl,
+      setupImageUrl: program.lessonDetail?.setupImageUrl,
+      galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
       briefingNotes: [
         '현장 사진은 신뢰를 만들고, 배치도는 수업 직전 준비 시간을 줄입니다.',
         '구독자는 활동 가치, 준비물, 안전 기준, 실행 순서를 한 번에 판단할 수 있어야 합니다.',
@@ -353,39 +369,35 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
     ...program,
     title,
     category,
-    grade: cleanText(program.grade, '전학년'),
-    space: cleanText(program.space, '실내 또는 체육 공간'),
+    grade: cleanText(program.grade, '대상 확인 필요'),
+    space: cleanText(program.space, '공간 확인 필요'),
     description,
     steps,
     equipment,
     tags: [...new Set(cleanList(program.tags, [category, focus.split('/')[0].trim()]).concat(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : []))],
     lessonDetail: {
-      recommendedAge: cleanText(program.lessonDetail?.recommendedAge, cleanText(program.grade, '전학년')),
-      recommendedPlayers: cleanText(program.lessonDetail?.recommendedPlayers, '6~20명'),
+      recommendedAge: cleanText(program.lessonDetail?.recommendedAge, cleanText(program.grade, '대상 확인 필요')),
+      recommendedPlayers: cleanText(program.lessonDetail?.recommendedPlayers, '현장 규모에 맞게 조정'),
       objective: cleanText(program.lessonDetail?.objective, `${title}을 통해 ${focus}을 경험합니다.`),
       developmentFocus: focus,
       coachScript: cleanText(program.lessonDetail?.coachScript, `${title}은 속도보다 규칙 이해와 안전한 움직임을 먼저 확인한 뒤 진행합니다.`),
       parentNote: cleanText(program.lessonDetail?.parentNote, `오늘은 ${title} 활동으로 ${focus}을 연습했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`),
-      fieldTips: cleanList(program.lessonDetail?.fieldTips, ['처음 라운드는 성공 경험을 만들고, 이후 신호 반응이나 역할 변화를 추가합니다.']),
+      fieldTips: cleanList(program.lessonDetail?.fieldTips, ['처음 라운드는 성공 경험을 만들고, 이후 이동 거리, 역할, 난이도를 조정합니다.']),
       variations: cleanList(program.lessonDetail?.variations, ['도구 수를 줄여 난이도를 낮춥니다.', '개인전에서 팀전으로 확장합니다.']),
       safetyNotes: cleanList(program.lessonDetail?.safetyNotes, ['충돌 위험이 있는 구간은 대기선과 이동선을 분리합니다.']),
       relatedSpomoveIds,
-      videoUrl: program.lessonDetail?.videoUrl,
+      videoUrl: normalizeVideoUrl(program.lessonDetail?.videoUrl),
       heroImageUrl: program.lessonDetail?.heroImageUrl,
       setupImageUrl: program.lessonDetail?.setupImageUrl,
       galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
       briefingNotes: cleanList(program.lessonDetail?.briefingNotes, ['수업 목표, 안전 기준, 진행 순서를 수업 전에 짧게 확인합니다.']),
       rules: cleanList(program.lessonDetail?.rules, steps),
-      setupNotes: cleanList(program.lessonDetail?.setupNotes, [`공간: ${cleanText(program.space, '실내 또는 체육 공간')}`, `준비물: ${equipment.join(', ')}`]),
+      setupNotes: cleanList(program.lessonDetail?.setupNotes, [`공간: ${cleanText(program.space, '공간 확인 필요')}`, `준비물: ${equipment.join(', ')}`]),
     },
   };
 }
 
 export async function GET() {
-  const serverSupabase = await createServerSupabaseClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   const supabase = getServiceSupabase();
   const { data: curriculumRows, error: currErr } = await supabase
     .from('curriculum')
@@ -480,7 +492,7 @@ export async function GET() {
     const overlay = overlayByCurriculumId.get(row.id);
     const title = (row.title ?? '').trim() || `커리큘럼 #${row.id}`;
     const categoryName = (meta?.sm_theme ?? overlay?.main_theme ?? '일반').trim() || '일반';
-    const videoUrl = (overlay?.video_url ?? row.url ?? '').trim() || undefined;
+    const videoUrl = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(row.url);
     const equipment = overlay?.equipment
       ? String(overlay.equipment).split('\n').map((item) => item.trim()).filter(Boolean)
       : (row.equipment ?? []).filter(Boolean);
@@ -525,9 +537,9 @@ export async function GET() {
       curriculumId: row.id,
       title,
       category: categoryName,
-      grade: meta?.sm_grade ?? '전학년',
+      grade: meta?.sm_grade ?? '대상 확인 필요',
       duration: meta?.sm_duration ?? 20,
-      space: meta?.sm_space ?? '실내',
+      space: meta?.sm_space ?? '공간 확인 필요',
       description: coachScript,
       steps,
       equipment,
@@ -538,8 +550,8 @@ export async function GET() {
       isHot: meta?.sm_is_hot ?? false,
       thumbnailUrl,
       lessonDetail: {
-        recommendedAge: meta?.sm_grade ?? '전학년',
-        recommendedPlayers: '6~20명',
+        recommendedAge: meta?.sm_grade ?? '대상 확인 필요',
+        recommendedPlayers: overlay?.group_size ?? '현장 규모에 맞게 조정',
         objective: meta?.sm_objective ?? '',
         developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
         coachScript: meta?.sm_coach_script ?? coachScript,

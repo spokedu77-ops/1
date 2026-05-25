@@ -111,7 +111,11 @@ export default function ProgramsLanding() {
               {group.lead}
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
+          <div
+            className={`grid gap-3 sm:items-stretch sm:gap-4 ${
+              group.programs.length >= 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'
+            }`}
+          >
             {group.programs.map((program, programIndex) => (
               <ProgramCard
                 key={program.slug}

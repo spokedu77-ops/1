@@ -27,12 +27,6 @@ type MetaRow = {
 type DrillWithOrder = Drill & { _order: number };
 
 export async function GET() {
-  const serverSupabase = await createServerSupabaseClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const supabase = getServiceSupabase();
   const { data: metaRows } = await supabase
     .from('spokedu_master_drill_meta')

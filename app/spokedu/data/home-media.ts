@@ -159,6 +159,12 @@ export const HOME_MEDIA = {
     fallbackGradient: 'from-lime-400 via-green-600 to-slate-900',
     tone: 'lime',
   }),
+  programMonthlyNewsports: fromPhoto(SPOKEDU_IMAGES.programs.newsportsMonthly, {
+    id: 'program-monthly-newsports',
+    label: '월간 뉴스포츠',
+    fallbackGradient: 'from-sky-400 via-cyan-600 to-slate-900',
+    tone: 'sky',
+  }),
   programPlay: fromPhoto(SPOKEDU_IMAGES.programs.playClass, {
     id: 'program-play',
     label: '놀이체육',

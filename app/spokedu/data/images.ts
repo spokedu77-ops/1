@@ -139,6 +139,12 @@ export const SPOKEDU_IMAGES = {
       'program-paps-running.jpg',
       'PAPS 연계 놀이체육 프로그램 수업',
     ),
+    newsportsMonthly: defineImage(
+      'programs',
+      'program-monthly-newsports',
+      'program-monthly-newsports.png',
+      '월간 뉴스포츠 메타 테마 — 협동·교구 기반 수업 장면',
+    ),
     playClass: defineImage('programs', 'program-play-class', 'program-play-pe.jpg', '놀이체육 정규수업 장면'),
     oneDay: defineImage(
       'programs',
@@ -318,6 +324,7 @@ export const spokeduPageImageMap: PageImageSlot[] = [
 export const programCatalogImages = [
   SPOKEDU_IMAGES.programs.spomove,
   SPOKEDU_IMAGES.programs.paps,
+  SPOKEDU_IMAGES.programs.newsportsMonthly,
   SPOKEDU_IMAGES.programs.playClass,
   SPOKEDU_IMAGES.programs.oneDay,
   SPOKEDU_IMAGES.programs.camp,

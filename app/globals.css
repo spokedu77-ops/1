@@ -1,3 +1,4 @@
+@import url("https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -19,8 +20,8 @@
   --spm-br: rgba(15, 23, 42, 0.07);
   --spm-br2: rgba(15, 23, 42, 0.11);
   --spm-br3: rgba(15, 23, 42, 0.18);
-  --spm-font-body: var(--font-plus-jakarta), system-ui, sans-serif;
-  --spm-font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --spm-font-body: "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --spm-font-display: "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
 }
 
 @keyframes spmSkeleton {

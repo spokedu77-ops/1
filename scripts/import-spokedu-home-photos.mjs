@@ -13,6 +13,7 @@ const ROOT = join(__dirname, '../public/images/spokedu');
 const DOWNLOADS = [
   // Home 1–10
   { url: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png', path: 'home/home-hero-movement.png' },
+  { url: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png', path: 'about/founder.png' },
   { url: 'https://i.postimg.cc/Vk0txnwG/seupokidyu-laeb-cheyuggwan-hyeobchan-13.jpg', path: 'home/home-lab-energy.jpg' },
   { url: 'https://i.postimg.cc/4xWDWVRM/SE-5e4e5035-6810-11ee-a584-85f14318c83a.jpg', path: 'home/home-hero-media.jpg' },
   { url: 'https://i.postimg.cc/dV5b5rcf/20231008-152307.jpg', path: 'private/private-coaching.jpg' },
@@ -62,6 +63,7 @@ async function main() {
   copy('dispatch/dispatch-group-class.jpg', 'cases/representative.jpg');
   copy('records/yangcheon.jpg', 'monthly/hero.jpg');
   copy('records/playz.jpg', 'monthly/representative.jpg');
+  copy('records/dasarang.png', 'programs/program-monthly-newsports.png');
 
   console.log('Done — spokedu home photos imported.');
 }

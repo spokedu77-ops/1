@@ -89,6 +89,47 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
       trackLabel: 'program-paps-dispatch',
     },
   },
+  'monthly-newsports': {
+    mediaKey: 'programMonthlyNewsports',
+    heroSubtitle:
+      '매월 뉴스포츠 메타 테마를 중심으로 교구·협동 활동을 이어가는 월간형 정규·방과후 체육 프로그램입니다.',
+    whyPoints: [
+      '월별 테마로 수업 흐름이 이어짐',
+      '안전한 교구와 협동 미션 중심',
+      '키움·방과후·돌봄 시간표에 맞춰 운영',
+    ],
+    activities: [
+      {
+        title: '뉴스포츠 메타 테마',
+        description: '그달의 주제와 목표를 한 달 흐름으로 설계합니다.',
+        mediaKey: 'programMonthlyNewsports',
+      },
+      {
+        title: '협동·스테이션',
+        description: '회전 운영으로 참여 밀도를 유지합니다.',
+        mediaKey: 'proofDasarang',
+      },
+      {
+        title: '난이도 변형',
+        description: '연령·공간에 맞춰 규칙과 미션을 조절합니다.',
+        mediaKey: 'trackDispatch',
+      },
+    ],
+    targets: ['키움·방과후 정규수업', '월 4회 흐름이 필요한 기관', '뉴스포츠·협동 중심 프로그램'],
+    caseSlugs: ['dasarang-oneday'],
+    finalCtaTitle: '월간 뉴스포츠 도입 상담',
+    finalCtaSub: '운영 주기와 공간을 확인한 뒤 월간 테마안을 제안합니다.',
+    primaryCta: {
+      label: '월간 뉴스포츠 문의',
+      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+      trackLabel: 'program-monthly-newsports-inquiry',
+    },
+    secondaryCta: {
+      label: '월간 수업 전체 보기',
+      href: `${SPOKEDU_BASE_PATH}/monthly`,
+      trackLabel: 'program-monthly-newsports-monthly',
+    },
+  },
   'oneday-event': {
     mediaKey: 'programOneday',
     heroSubtitle:

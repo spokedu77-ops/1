@@ -13,12 +13,13 @@ import { FLOW_MODULES } from './engine/modules/flowModules';
 import type { FlowStageConfig } from './engine/modules/stageBuilder';
 
 interface FlowGameClientProps {
-  stages:       FlowStageConfig[];
-  colorTheme?:  'default' | 'space' | 'neon';
-  motionScale?: number;
-  bgmPath?:     string;
-  onComplete:   (stats: FlowStats) => void;
-  onExit:       () => void;
+  stages:         FlowStageConfig[];
+  colorTheme?:    'default' | 'space' | 'neon' | 'ocean';
+  motionScale?:   number;
+  bgmPath?:       string;
+  onComplete:     (stats: FlowStats) => void;
+  onExit:         () => void;
+  onEngineReady?: (api: { loadBgmLate: (path: string) => Promise<void> }) => void;
 }
 
 const S = {
@@ -50,6 +51,7 @@ export default function FlowGameClient({
   bgmPath,
   onComplete,
   onExit,
+  onEngineReady,
 }: FlowGameClientProps) {
   const canvasRef      = useRef<HTMLCanvasElement>(null);
   const flashRef       = useRef<HTMLDivElement>(null);
@@ -103,7 +105,10 @@ export default function FlowGameClient({
     );
 
     engineRef.current = engine;
-    engine.init(flashRef.current).then(() => engine.start());
+    engine.init(flashRef.current).then(() => {
+      onEngineReady?.({ loadBgmLate: (p) => engine.loadBgmLate(p) });
+      engine.start();
+    });
 
     return () => {
       engine.dispose();
@@ -260,6 +265,15 @@ export default function FlowGameClient({
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ─── 스테이지 플래시 ─────────────────────────────────────────────── */}
+      {phase === 'stage-flash' && currentStage && (
+        <div style={{ ...S.overlay, pointerEvents: 'none' }}>
+          <p style={{ fontSize: '1.8rem', fontWeight: 900, color: currentStage.color, letterSpacing: '0.25em', opacity: 0.9 }}>
+            STAGE CLEAR
+          </p>
         </div>
       )}
 

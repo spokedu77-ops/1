@@ -7,6 +7,8 @@ import { HOME_MEDIA } from '../data/home-media';
 import { aboutPage } from '../data/about-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import { cardInteractive, fineHover, landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import { AboutFounderSection } from './about-founder-section';
+import { AboutHistorySection } from './about-history-section';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { MediaPanel } from './visual';
@@ -71,6 +73,31 @@ export function AboutLanding() {
             </li>
           ))}
         </ul>
+        <p className="mt-4 text-xs text-slate-500">
+          <span className="font-medium text-slate-600">더 보기</span>{' '}
+          <a
+            href="#founder"
+            className={`font-semibold text-indigo-700 underline-offset-2 ${fineHover}hover:underline ${focusRing}`}
+          >
+            대표 소개
+          </a>
+          <span className="text-slate-300" aria-hidden>
+            {' '}
+            ·{' '}
+          </span>
+          <a
+            href="#history"
+            className={`font-semibold text-indigo-700 underline-offset-2 ${fineHover}hover:underline ${focusRing}`}
+          >
+            연혁
+          </a>
+        </p>
+      </Section>
+
+      <Section className="rounded-2xl border border-slate-200/80 bg-white px-4 py-6 shadow-sm sm:px-6 sm:py-8 lg:px-8">
+        <AboutFounderSection />
+        <div className="my-8 border-t border-slate-100 sm:my-10" aria-hidden />
+        <AboutHistorySection />
       </Section>
 
       <Section className="space-y-4 sm:space-y-5">

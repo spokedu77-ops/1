@@ -86,7 +86,9 @@ type Settings = {
   /** 플로우 추가 동작 기능 플래그 */
   flowFeatures: Set<FlowFeatureKey>;
   /** 플로우 배경 색상 테마 */
-  flowColorTheme: 'default' | 'space' | 'neon';
+  flowColorTheme: 'default' | 'space' | 'neon' | 'ocean';
+  /** 플로우 스테이지당 시간(초) */
+  flowDuration: number;
 };
 
 const defaultSettings: Settings = {
@@ -109,6 +111,7 @@ const defaultSettings: Settings = {
   variantColorTheme: 'color',
   flowFeatures: new Set<FlowFeatureKey>(),
   flowColorTheme: 'default',
+  flowDuration: 25,
 };
 
 export type MemoryGameAutoLaunch = {
@@ -128,7 +131,9 @@ export type MemoryGameAutoLaunch = {
   /** Flow 2.0: 선택된 추가 동작 키 배열 → 내부에서 Set<FlowFeatureKey>로 변환 */
   flowFeatures?: string[];
   /** Flow 2.0: 배경 색상 테마 */
-  flowColorTheme?: 'default' | 'space' | 'neon';
+  flowColorTheme?: 'default' | 'space' | 'neon' | 'ocean';
+  /** Flow 2.0: 스테이지당 시간(초) */
+  flowDuration?: number;
 };
 
 export default function MemoryGameApp({
@@ -203,6 +208,31 @@ export default function MemoryGameApp({
   const trainingContainerRef = useRef<HTMLDivElement>(null);
   const visualReactionContainerRef = useRef<HTMLDivElement>(null);
   const flowCompleteGuardRef = useRef(false);
+  const flowBgmPathRef = useRef<string | undefined>(undefined);
+  const flowEngineApiRef = useRef<{ loadBgmLate: (path: string) => Promise<void> } | null>(null);
+
+  // ── Flow 즐겨찾기 ────────────────────────────────────────────────────────
+  const FLOW_PRESETS_KEY = 'spomove_flow_presets';
+  interface FlowPreset { id: string; name: string; features: string[]; colorTheme: string; duration: number; }
+  const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem(FLOW_PRESETS_KEY) || '[]') as FlowPreset[]; } catch { return []; }
+  });
+  const saveFlowPreset = () => {
+    const name = prompt('즐겨찾기 이름을 입력하세요', `세팅 ${flowPresets.length + 1}`);
+    if (!name) return;
+    const next = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], colorTheme: settings.flowColorTheme, duration: settings.flowDuration }];
+    setFlowPresets(next);
+    localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(next));
+  };
+  const loadFlowPreset = (p: FlowPreset) => {
+    setSettings((s) => ({ ...s, flowFeatures: new Set(p.features as FlowFeatureKey[]), flowColorTheme: p.colorTheme as Settings['flowColorTheme'], flowDuration: p.duration }));
+  };
+  const deleteFlowPreset = (id: string) => {
+    const next = flowPresets.filter((p) => p.id !== id);
+    setFlowPresets(next);
+    localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(next));
+  };
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   /** startSession 진입 후에만 onExit 허용 — 초기 home·카운트다운 대기 home에서 오동작 방지 */
   const sessionLaunchedRef = useRef(false);
@@ -535,6 +565,10 @@ export default function MemoryGameApp({
       if (cfg.mode === 'flow') {
         // FlowGameClient(Flow 2.0)가 자체 카운트다운과 스테이지 전환을 처리
         flowCompleteGuardRef.current = false;
+        // BGM: 랜덤 픽 → FlowAudio가 내부에서 재생 (부모 BgmPlayer와 이중 재생 방지)
+        flowBgmPathRef.current = spomoveBgmList.length > 0
+          ? spomoveBgmList[Math.floor(Math.random() * spomoveBgmList.length)]!
+          : undefined;
         setScreen('flow');
         setCountdown(null);
       } else {
@@ -620,6 +654,16 @@ export default function MemoryGameApp({
     }
   }, [spomoveBgmLoading, spomoveBgmList, screen]);
 
+  // Flow BGM 늦은 로딩 — 첫 시작 시 BGM 목록이 아직 없을 때 엔진에 주입
+  useEffect(() => {
+    if (screen !== 'flow') return;
+    if (spomoveBgmLoading || spomoveBgmList.length === 0) return;
+    if (flowBgmPathRef.current) return;
+    const path = spomoveBgmList[Math.floor(Math.random() * spomoveBgmList.length)]!;
+    flowBgmPathRef.current = path;
+    void flowEngineApiRef.current?.loadBgmLate(path);
+  }, [screen, spomoveBgmLoading, spomoveBgmList]);
+
   const stop = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -637,6 +681,8 @@ export default function MemoryGameApp({
     setPendingAutoStart(false);
     autoLaunchCfgRef.current = null;
     bgmPlayerRef.current?.fadeOut(220);
+    flowEngineApiRef.current = null;
+    flowBgmPathRef.current = undefined;
     if (autoLaunch) {
       // training 포털(autoLaunch): 내부 setup이 아니라 포털 바깥 트레이닝 설정 화면으로 복귀
       onExit?.();
@@ -947,10 +993,11 @@ export default function MemoryGameApp({
                   <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
                     {(
                       [
-                        { key: 'default', label: '기본', desc: '검정 배경, 노랑·초록·빨강 다리' },
-                        { key: 'space',   label: '우주',  desc: '다크 퍼플 배경, 보라·파랑·청록 다리' },
-                        { key: 'neon',    label: '네온',  desc: '다크 틸 배경, 청록·빨강·노랑 다리' },
-                      ] as { key: 'default' | 'space' | 'neon'; label: string; desc: string }[]
+                        { key: 'default', label: '🌑 기본', desc: '순수 검정 배경, 노랑·초록·빨강 다리' },
+                        { key: 'space',   label: '🔮 우주', desc: '딥 퍼플 배경, 보라·파랑·청록 다리' },
+                        { key: 'neon',    label: '💚 네온', desc: '야간 초록 배경, 형광 청록·빨강·노랑 다리' },
+                        { key: 'ocean',   label: '🌊 바다', desc: '딥 네이비 배경, 하늘색·청록·흰 다리' },
+                      ] as { key: 'default' | 'space' | 'neon' | 'ocean'; label: string; desc: string }[]
                     ).map(({ key, label, desc }) => {
                       const active = settings.flowColorTheme === key;
                       return (
@@ -1038,7 +1085,27 @@ export default function MemoryGameApp({
                   </div>
                 </div>
                 <div style={S.sec}>
-                  {stepNum(5, '키즈 세이프 모드')}
+                  {stepNum(5, '스테이지당 시간')}
+                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
+                    각 스테이지가 끝나는 시간입니다. 스테이지 수 × 이 시간 = 총 운동 시간.
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    {[15, 20, 25, 30, 45, 60].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setSettings((s) => ({ ...s, flowDuration: n }))}
+                        style={{
+                          flex: 1, minWidth: '48px', padding: '0.55rem 0.4rem', borderRadius: '0.75rem', border: `2px solid ${settings.flowDuration === n ? '#3B82F6' : 'var(--border)'}`, background: settings.flowDuration === n ? 'rgba(59,130,246,0.12)' : 'var(--card)', color: settings.flowDuration === n ? '#3B82F6' : 'var(--text)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.88rem', textAlign: 'center',
+                        }}
+                      >
+                        {n}초
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={S.sec}>
+                  {stepNum(6, '키즈 세이프 모드')}
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
                     플로우 3D·이동 체감 속도만 낮춥니다. 레벨당 시간과 상단 진행바는 그대로입니다.
                   </p>
@@ -1060,6 +1127,33 @@ export default function MemoryGameApp({
                   >
                     키즈 세이프 모드 {settings.kidsSafeMode ? '켜짐 ✓' : '끔'}
                   </button>
+                </div>
+                <div style={S.sec}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>⭐ 즐겨찾기</div>
+                    <button
+                      type="button"
+                      onClick={saveFlowPreset}
+                      style={{ padding: '0.3rem 0.8rem', borderRadius: '0.6rem', border: '1.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.8)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem' }}
+                    >
+                      + 현재 설정 저장
+                    </button>
+                  </div>
+                  {flowPresets.length === 0 ? (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>저장된 즐겨찾기가 없습니다.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      {flowPresets.map((p) => (
+                        <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)', background: 'var(--card)' }}>
+                          <button type="button" onClick={() => loadFlowPreset(p)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', color: 'var(--text)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.86rem' }}>
+                            {p.name}
+                            <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>{p.features.length}개 동작 · {p.duration}초</span>
+                          </button>
+                          <button type="button" onClick={() => deleteFlowPreset(p.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '0.9rem', padding: '0.15rem 0.3rem', borderRadius: '0.4rem', fontFamily: 'inherit' }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -1305,7 +1399,7 @@ export default function MemoryGameApp({
   if (screen === 'flow') {
     // SELECTABLE_MODULE_KEYS 순서로 선택된 모듈 정렬 → 스테이지 도입 순서 결정
     const selectedModules = SELECTABLE_MODULE_KEYS.filter((k) => settings.flowFeatures.has(k as FlowFeatureKey));
-    const stages = buildStages(selectedModules, 25);
+    const stages = buildStages(selectedModules, settings.flowDuration);
 
     const handleFlowDone = (stats: FlowStats) => {
       if (flowCompleteGuardRef.current) return;
@@ -1321,8 +1415,10 @@ export default function MemoryGameApp({
         stages={stages}
         colorTheme={settings.flowColorTheme}
         motionScale={settings.kidsSafeMode ? 0.5 : 1}
+        bgmPath={flowBgmPathRef.current}
         onComplete={handleFlowDone}
         onExit={stop}
+        onEngineReady={(api) => { flowEngineApiRef.current = api; }}
       />
     );
   }

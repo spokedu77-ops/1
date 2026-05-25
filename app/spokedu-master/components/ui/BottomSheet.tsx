@@ -9,11 +9,13 @@ export function BottomSheet({
   title,
   children,
   onClose,
+  size = 'default',
 }: {
   open: boolean;
   title: string;
   children: ReactNode;
   onClose: () => void;
+  size?: 'default' | 'document';
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -65,12 +67,17 @@ export function BottomSheet({
 
   if (!open) return null;
 
+  const panelClassName =
+    size === 'document'
+      ? 'relative max-h-[92dvh] w-full max-w-[1360px] overflow-y-auto rounded-t-[14px] p-4 shadow-2xl outline-none sm:rounded-[14px] sm:p-6'
+      : 'relative max-h-[88dvh] w-full max-w-[720px] overflow-y-auto rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6';
+
   return (
     <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm sm:items-center sm:px-6" role="presentation">
       <button type="button" aria-label={`${title} 닫기`} className="absolute inset-0 cursor-default" onClick={onClose} />
       <div
         ref={dialogRef}
-        className="relative max-h-[88dvh] w-full max-w-[720px] overflow-y-auto rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6"
+        className={panelClassName}
         style={{ background: '#ffffff', border: '1px solid #e2e8f0', paddingBottom: 'max(20px, env(safe-area-inset-bottom))' }}
         role="dialog"
         aria-modal="true"

@@ -11,6 +11,8 @@ import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { isTrialExpired } from '../../lib/subscription';
 import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
 
+const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+
 function FloatingTimerPill() {
   const running = useMasterStore((state) => state.classTimerRunning);
   const ms = useMasterStore((state) => state.classTimerMs);
@@ -56,7 +58,7 @@ function FloatingTimerPill() {
           style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}
           aria-label="타이머 초기화"
         >
-          ×
+          x
         </button>
       </div>
     </div>
@@ -76,8 +78,10 @@ function OperationsBanner() {
         style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}
         role="status"
       >
-        <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>체험 기간이 종료되었습니다.</p>
-        <Link href="/spokedu-master/payment?plan=pro" className="shrink-0 rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)' }}>
+        <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>
+          체험 기간이 종료되었습니다.
+        </p>
+        <Link href="/spokedu-master/payment?plan=pro" className="flex min-h-9 shrink-0 items-center rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)' }}>
           Pro 전환
         </Link>
       </div>
@@ -111,6 +115,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isParentView = pathname.startsWith(`${basePath}/parent`);
   const isPayment = pathname.startsWith(`${basePath}/payment`);
   const isLanding = pathname.startsWith(`${basePath}/landing`);
+  const isDashboard = pathname === basePath || pathname.startsWith(`${basePath}/dashboard`);
   const hideChrome = isOnboarding || isParentView || isPayment || isLanding;
 
   useEffect(() => {
@@ -157,16 +162,28 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }, [basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isSession, profile, router]);
 
   if (isSession) {
-    return <div className="min-h-dvh bg-black" style={{ fontFamily: 'var(--spm-font-body)' }}>{children}</div>;
+    return (
+      <div className="min-h-dvh bg-black" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
+        {children}
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-dvh" style={{ background: '#eef2f7', color: '#0f172a' }}>
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-slate-200" style={{ background: '#f5f7fb', color: '#0f172a', fontFamily: 'var(--spm-font-body)' }}>
+    <div className="min-h-dvh" style={{ background: isDashboard ? '#050505' : '#eef2f7', color: isDashboard ? '#ffffff' : '#0f172a' }}>
+      <div
+        className={`relative mx-auto flex min-h-dvh w-full overflow-hidden border-x ${isDashboard ? 'max-w-none' : 'max-w-[1440px]'}`}
+        style={{
+          background: isDashboard ? '#0a0a0a' : '#f5f7fb',
+          borderColor: isDashboard ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+          color: isDashboard ? '#ffffff' : '#0f172a',
+          fontFamily: SPOKEDU_MASTER_FONT,
+        }}
+      >
         {hideChrome ? null : <DesktopRail basePath={basePath} />}
         <div className="flex min-w-0 flex-1 flex-col">
           {hideChrome ? null : <StatusBar />}
-          <main className="min-h-0 flex-1 overflow-hidden" style={{ background: '#f5f7fb' }}>
+          <main className="min-h-0 flex-1 overflow-hidden" style={{ background: isDashboard ? '#0a0a0a' : '#f5f7fb' }}>
             {shellMounted && !hideChrome && !isAdmin ? <OperationsBanner /> : null}
             {shellMounted && !hideChrome && !isAdmin ? <TrialCountdownBanner /> : null}
             <ErrorBoundary>{children}</ErrorBoundary>

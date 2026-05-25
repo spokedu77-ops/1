@@ -189,7 +189,8 @@ type LaunchSettings = {
   numberRule: string;
   variantColorTheme: SpomoveColorThemeId;
   flowFeatures: FlowFeatureKey[];
-  flowColorTheme: 'default' | 'space' | 'neon';
+  flowColorTheme: 'default' | 'space' | 'neon' | 'ocean';
+  flowDuration: number;
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
@@ -205,6 +206,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   variantColorTheme: 'color',
   flowFeatures: [],
   flowColorTheme: 'default',
+  flowDuration: 25,
 };
 
 type PagePhase =
@@ -267,6 +269,7 @@ function TrainingPortal({
     variantColorTheme: launch.variantColorTheme,
     flowFeatures: launch.flowFeatures,
     flowColorTheme: launch.flowColorTheme,
+    flowDuration: launch.flowDuration,
   };
 
   return createPortal(
@@ -276,7 +279,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flowColorTheme}-${launch.flowDuration}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -502,6 +505,27 @@ function SettingsScreen({
   const [guideOpen, setGuideOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
+  // ── Flow 즐겨찾기 ──────────────────────────────────────────────────────────
+  const FLOW_PRESETS_KEY = 'spomove_flow_presets_v2';
+  interface FlowPreset { id: string; name: string; features: FlowFeatureKey[]; colorTheme: LaunchSettings['flowColorTheme']; duration: number; }
+  const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem(FLOW_PRESETS_KEY) ?? '[]') as FlowPreset[]; } catch { return []; }
+  });
+  const saveFlowPreset = () => {
+    const name = window.prompt('즐겨찾기 이름', `세팅 ${flowPresets.length + 1}`);
+    if (!name) return;
+    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], colorTheme: launch.flowColorTheme, duration: launch.flowDuration }];
+    setFlowPresets(next);
+    localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(next));
+  };
+  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features], flowColorTheme: p.colorTheme, flowDuration: p.duration }));
+  const deleteFlowPreset = (id: string) => {
+    const next = flowPresets.filter((p) => p.id !== id);
+    setFlowPresets(next);
+    localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(next));
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const storedTheme = parseStoredVariantTheme(localStorage.getItem(SPOMOVE_VARIANT_THEME_LS_KEY));
@@ -717,9 +741,10 @@ function SettingsScreen({
               <div style={{ display: 'flex', gap: 8 }}>
                 {(
                   [
-                    { key: 'default' as const, label: '기본', desc: '검정 · 노랑/초록/빨강' },
+                    { key: 'default' as const, label: '기본',  desc: '검정 · 노랑/초록/빨강' },
                     { key: 'space'   as const, label: '우주',  desc: '다크 퍼플 · 보라/파랑' },
                     { key: 'neon'    as const, label: '네온',  desc: '다크 틸 · 청록/빨강' },
+                    { key: 'ocean'   as const, label: '🌊 바다', desc: '딥 네이비 · 하늘/청록' },
                   ]
                 ).map(({ key, label, desc }) => {
                   const active = launch.flowColorTheme === key;
@@ -741,6 +766,38 @@ function SettingsScreen({
                     >
                       <div style={{ fontWeight: 900, fontSize: 13, color: active ? '#8B5CF6' : T.text }}>{active ? '✓ ' : ''}{label}</div>
                       <div style={{ fontSize: 10, color: T.muted, marginTop: 3, lineHeight: 1.4 }}>{desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* Flow 전용: 스테이지 시간 */}
+          {isFlowOrChallenge ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>스테이지당 시간</label>
+                <p style={{ margin: '3px 0 0', fontSize: 10, color: T.textDim }}>스테이지 한 구간을 달리는 시간입니다.</p>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[15, 20, 25, 30, 45, 60].map((sec) => {
+                  const active = launch.flowDuration === sec;
+                  return (
+                    <button
+                      key={sec}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, flowDuration: sec }))}
+                      style={{
+                        flex: '1 1 60px', padding: '9px 6px', borderRadius: 12,
+                        border: `1.5px solid ${active ? '#3B82F6' : T.border}`,
+                        background: active ? 'rgba(59,130,246,0.14)' : T.card,
+                        color: active ? '#3B82F6' : T.textDim,
+                        fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 900 : 700,
+                        cursor: 'pointer', textAlign: 'center',
+                      }}
+                    >
+                      {sec}초
                     </button>
                   );
                 })}
@@ -808,6 +865,49 @@ function SettingsScreen({
                   );
                 })}
               </div>
+            </section>
+          ) : null}
+
+          {/* Flow 전용: 즐겨찾기 */}
+          {isFlowOrChallenge ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>즐겨찾기</label>
+                <button
+                  type="button"
+                  onClick={saveFlowPreset}
+                  style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B', background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)', borderRadius: 8, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  + 현재 설정 저장
+                </button>
+              </div>
+              {flowPresets.length === 0 ? (
+                <p style={{ margin: 0, fontSize: 11, color: T.textDim }}>저장된 즐겨찾기가 없습니다. 설정 후 저장하세요.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {flowPresets.map((p) => (
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, border: `1px solid ${T.border}`, background: T.card }}>
+                      <button
+                        type="button"
+                        onClick={() => loadFlowPreset(p)}
+                        style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>{p.name}</div>
+                        <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>
+                          {p.colorTheme} · {p.duration}초 · {p.features.length > 0 ? p.features.join(', ') : '기본'}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteFlowPreset(p.id)}
+                        style={{ fontSize: 11, color: 'rgba(255,100,100,0.7)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: 6, fontFamily: 'inherit' }}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           ) : null}
 
