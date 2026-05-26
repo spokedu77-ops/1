@@ -1886,3 +1886,185 @@
 - `npx.cmd tsc --noEmit --pretty false`
 - `/spokedu-master` 200 확인
 - `npm.cmd run build`
+
+## 2026-05-27 Codex 홈/라이브러리 상품 언어 재정리
+
+### 수정 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `app/spokedu-master/library/LibraryView.tsx`
+- `app/spokedu-master/components/layout/TabBar.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 홈의 `금주 추천/영상 먼저/실내 수업` 메타 카드는 상품 가치를 높이기보다 텍스트 밀도만 늘렸다.
+- 라이브러리와 SPOMOVE를 데이터 근거 없이 한 흐름처럼 보이게 하면 신뢰도가 떨어진다.
+- `20분`, `공간 확인 필요`, `수업 자료 6/6 준비`, `수업안/세팅/문구`처럼 검증되지 않은 준비도 표시는 상용 화면에서 빼야 한다.
+- 홈/라이브러리의 1차 클릭은 상세 페이지 이동보다 빠른 미리보기 모달이 맞다.
+
+### 적용
+- 홈 섹션을 `금주 추천 프로그램`, `실내에서도 바로 사용하는 수업`, `스포무브`로 재배열했다.
+- 홈의 요약 메타 카드와 `영상으로 먼저 익히는 수업` row를 제거했다.
+- 홈 카드와 히어로 CTA가 상세 페이지 대신 빠른 미리보기 모달을 열도록 바꿨다.
+- SPOMOVE row는 라이브러리 수업안과 억지 연결하지 않고 별도 화면 활동으로 표현했다.
+- 라이브러리 카드에서 `20분`, 준비도, 수업안/세팅/문구 고정 배지를 제거했다.
+- 라이브러리 썸네일은 `heroImageUrl -> thumbnailUrl -> YouTube maxres thumbnail` 순서로 보정했다.
+- 라이브러리 카드 태그는 테마/대상/인원/기능/공간/참고 영상 기반으로 정리했다.
+- `화면 활동과 연결되는 수업` 섹션을 제거하고, SPOMOVE는 별도 전체보기 CTA로 유지했다.
+- 수업 보조도구 접근성을 위해 하단/사이드 내비게이션에 `도구` 탭을 추가했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx`
+- `npx.cmd eslint app/spokedu-master/library/LibraryView.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `npm.cmd run build`
+- `/spokedu-master` 200 확인
+- Playwright 스크린샷 검증은 브라우저 바이너리 미설치로 보류됨
+
+## 2026-05-27 Codex 빠른 미리보기/내비게이션 보강
+
+### 수정 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `app/spokedu-master/components/layout/TabBar.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 홈에서 카드 클릭 후 열리는 모달이 실제 참고 영상을 먼저 보여주지 않으면 “빠른 미리보기”라는 이름이 약하다.
+- 사진 데이터가 없는 프로그램도 영상이 있다면 YouTube 썸네일을 홈 카드 fallback으로 써야 한다.
+- 모바일 하단 탭이 6개가 되면서 `라이브러리`, `설명 문구`는 폭 대비 길다.
+
+### 적용
+- 홈 `getHeroImage` fallback에 YouTube `maxresdefault` 썸네일을 추가했다.
+- 홈 빠른 미리보기 모달에서 YouTube embed, 직접 영상, 외부 영상 링크를 우선 표시하도록 했다.
+- 하단/사이드 내비게이션 라벨을 `라이브러리 -> 수업`, `설명 문구 -> 문구`로 줄였다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx`
+- `npx.cmd eslint app/spokedu-master/components/layout/TabBar.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/spokedu-master` 200 확인
+
+## 2026-05-27 Codex 수업 기록/설명 문구 신뢰도 정리
+
+### 수정 파일
+- `app/spokedu-master/class-record/page.tsx`
+- `app/spokedu-master/report/page.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 수업 기록과 설명 문구는 “자동 연결”처럼 과장하면 안 된다. 기록은 학생 이력과 문구 작성의 근거로 남는 흐름이어야 한다.
+- `신호`, `20분`, `수업안과 SPOMOVE 연결` 같은 문구는 실제 데이터 근거가 없으면 구매자 신뢰를 깎는다.
+- SPOMOVE 실행 CTA는 명시 연결된 수업안에서만 보여야 하고, 기본값으로 `reactTrain`을 끼워 넣으면 안 된다.
+
+### 적용
+- 수업 기록 빈 상태와 상단 CTA를 `수업 고르기`, `수업 도구`, `학생 명단` 중심으로 정리했다.
+- 학생 명단이 없을 때 바로 학생 등록과 수업 도구로 이동할 수 있게 했다.
+- 수업 기록의 보호자 미리보기에서 근거 없는 `신호를 보고 판단` 문구를 제거했다.
+- 설명 문구 페이지에서 duration 노출과 placeholder 메타를 숨겼다.
+- 설명 문구 페이지의 SPOMOVE 실행 버튼은 명시 연결이 있을 때만 노출되도록 바꿨다.
+- 설명 문구 카피를 `연결`보다 `수업안·기록 기반` 언어로 정리했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/report/page.tsx app/spokedu-master/class-record/page.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/spokedu-master/class-record` 200 확인
+- `/spokedu-master/class-record?program=funstick-fencing` 200 확인
+- `/spokedu-master/report` 200 확인
+- `npm.cmd run build`
+
+## 2026-05-27 Codex 홈 미리보기/수업안 모달 정합성 보강
+
+### 수정 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `app/spokedu-master/library/LibraryView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 홈 카드를 눌렀을 때 열리는 빠른 미리보기는 긴 교안 전체가 아니라, 구매자가 클릭 직후 판단할 핵심 정보가 먼저 보여야 한다.
+- 라이브러리 모달의 좌측 내비게이션에 실제 없는 `참고 영상`, `응용`, `교구 세팅` 항목이 남으면 신뢰도가 떨어진다.
+- placeholder 교구/공간 값은 모달 안에서도 숨기는 것이 맞다.
+
+### 적용
+- 홈 빠른 미리보기 상단 미디어에 `참고 영상/대표 이미지` 상태 배지를 추가했다.
+- 홈 빠른 미리보기에서 대상, 인원, 공간, 초점 정보를 카드로 먼저 보여주도록 정리했다.
+- 홈 빠른 미리보기의 준비 영역을 체크리스트형 `수업 전 확인`으로 바꾸고, 세팅 메모가 있으면 함께 표시한다.
+- `수업 흐름` 표현을 `진행 순서`로 바꿔 교안 문법과 맞췄다.
+- 홈 미리보기 하단 액션을 `설명 문구 복사`와 `수업안 열기`로 정리했다.
+- 라이브러리 모달 내비게이션은 실제 섹션이 있을 때만 항목을 표시한다.
+- 라이브러리 모달에서 placeholder 교구/공간/세팅 값을 숨기고, SPOMOVE 배지는 `명시 연결`로 표현했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx app/spokedu-master/library/LibraryView.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/spokedu-master` 200 확인
+- `/spokedu-master/library` 200 확인
+- `npm.cmd run build`
+
+## 2026-05-27 Codex 홈 큐레이션 언어/카드 CTA 정리
+
+### 수정 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 홈 row 설명이 내부 운영자 설명처럼 길면 구매자가 왜 봐야 하는지 바로 느끼기 어렵다.
+- `참고 영상`, `실내 가능`은 필터/태그 언어로는 딱딱해 보여 홈에서는 `영상 확인`, `실내`로 줄이는 편이 낫다.
+- 카드가 썸네일만 있고 클릭 결과가 불명확하면 홈의 탐색성이 약해진다.
+
+### 적용
+- 홈 카테고리 언어를 `영상 확인`, `실내`로 정리했다.
+- 히어로 CTA를 `수업 미리보기`, `수업 전체보기`로 통일했다.
+- 카드 우상단 메타를 `영상 보고 준비`, `공간 부담 적음`, `준비물 간단`, `수업안 확인` 중 하나로 보여주게 했다.
+- 카드 하단에 `미리보기` CTA 텍스트를 추가해 클릭 결과를 명확히 했다.
+- row 설명을 구매자에게 바로 읽히는 문장으로 줄였다.
+- SPOMOVE row 설명은 라이브러리 연결이 아니라 TV·빔 기반 별도 화면 활동으로 표현했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/spokedu-master` 200 확인
+- `npm.cmd run build`
+
+## 2026-05-27 Codex 홈 카드 추천 근거 보강
+
+### 수정 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 홈 정렬은 이미지, 영상, 진행 순서, 세팅 정보가 있는 프로그램을 우선하지만, 화면에서는 왜 추천인지 잘 드러나지 않았다.
+- 긴 설명 박스를 추가하면 다시 지저분해지므로 카드 하단에 한 줄 근거만 붙이는 방식이 맞다.
+
+### 적용
+- 프로그램 카드 데이터에 `reason`을 추가했다.
+- 금주 추천 카드는 `영상과 진행 순서를 함께 확인`, `목표와 발달 초점이 정리된 수업`, `준비물이 적어 바로 열기 좋음` 같은 짧은 근거를 표시한다.
+- 실내 수업 row는 공간 정보를 바탕으로 `실내 체육관 운영에 맞춰 확인`처럼 row 맥락에 맞춘 근거를 표시한다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/spokedu-master` 200 확인
+- `npm.cmd run build`
+
+## 2026-05-27 Codex 홈 모바일 밀도 보정
+
+### 수정 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 모바일에서 히어로 CTA 두 개가 한 줄로 버티면 320~390px 폭에서 답답하거나 넘칠 위험이 있다.
+- 카테고리 필터가 모바일에서 줄바꿈으로 여러 줄을 만들면 첫 화면 세로 밀도가 무너진다.
+- 카드 rail은 너무 작은 고정 폭보다 화면 폭 기준으로 잡아야 썸네일과 텍스트가 답답하지 않다.
+
+### 적용
+- 모바일 히어로 높이와 하단 여백을 살짝 줄이고, H1/본문 크기를 모바일 기준으로 보정했다.
+- 히어로 CTA는 작은 모바일에서는 세로 스택, 420px 이상부터 가로 배치되도록 바꿨다.
+- 카테고리 필터는 모바일에서 가로 스크롤 rail로 바꾸고, 태블릿 이상에서는 wrap으로 유지했다.
+- 홈 row 카드와 SPOMOVE 카드 폭을 모바일에서 `72vw`, 최소 250px, 최대 340px로 조정했다.
+- 홈 본문 좌우 padding을 모바일에서 20px 기준으로 맞췄다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/spokedu-master` 200 확인
+- `npm.cmd run build`

@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { isSameDay } from 'date-fns';
-import { AlertTriangle, BookOpen, CalendarDays, Check, ChevronRight, ClipboardList, ExternalLink, FileText, History, MessageCircle, MonitorPlay, Play, Send, Star, UserCheck, UserX } from 'lucide-react';
-import { Suspense, useMemo, useState } from 'react';
+import { AlertTriangle, BookOpen, CalendarDays, Check, ChevronRight, ClipboardList, ExternalLink, FileText, History, MessageCircle, Play, Send, Shuffle, Star, UserCheck, UserPlus, UserX } from 'lucide-react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BottomSheet } from '../components/ui/BottomSheet';
@@ -42,10 +42,15 @@ function EmptyRecordState() {
         <ClipboardList size={22} color="var(--spm-acc)" />
       </span>
       <h2 className="mt-4 text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>아직 수업 기록이 없습니다.</h2>
-      <p className="mx-auto mt-2 max-w-[420px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업안을 선택해 첫 기록을 시작하세요. 기록이 쌓이면 학생 이력과 설명 문구를 더 풍부하게 만들 수 있습니다.</p>
-      <Link href="/spokedu-master/library" className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-        <BookOpen size={15} /> 라이브러리로 이동
-      </Link>
+      <p className="mx-auto mt-2 max-w-[420px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업안을 고르거나 학생 명단을 먼저 등록해 첫 기록을 시작하세요. 기록이 쌓이면 학생 이력과 설명 문구의 근거가 됩니다.</p>
+      <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+        <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+          <BookOpen size={15} /> 수업 고르기
+        </Link>
+        <Link href="/spokedu-master/students" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+          <UserPlus size={15} /> 학생 명단
+        </Link>
+      </div>
     </div>
   );
 }
@@ -92,12 +97,12 @@ function RecordListView() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class records</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 후 출석, 관찰, 동작 기록을 저장하면 학생 이력과 설명 문구에 자동으로 연결됩니다.</p>
+        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 후 출석, 관찰, 동작 기록을 저장해 학생 이력과 설명 문구의 근거로 남깁니다.</p>
         <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:max-w-[760px]">
           {[
-            { label: '수업안에서 시작', href: '/spokedu-master/library', icon: BookOpen },
-            { label: '큰 화면 실행', href: '/spokedu-master/spomove', icon: MonitorPlay },
-            { label: '설명 문구 확인', href: '/spokedu-master/report', icon: FileText },
+            { label: '수업 고르기', href: '/spokedu-master/library', icon: BookOpen },
+            { label: '수업 도구', href: '/spokedu-master/class-tools', icon: Shuffle },
+            { label: '학생 명단', href: '/spokedu-master/students', icon: UserPlus },
           ].map(({ label, href, icon: Icon }) => (
             <Link key={label} href={href} className="flex h-12 items-center justify-center gap-2 rounded-[14px] text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
               <Icon size={15} />
@@ -192,12 +197,12 @@ function RecordEntryView() {
   const retryQueue = useMasterStore((state) => state.operational.retryQueue);
   const todayLesson = lessons.find((l) => isSameDay(new Date(l.date), new Date()) && !l.done) ?? lessons.find((l) => isSameDay(new Date(l.date), new Date()));
   const requestedProgramId = searchParams.get('program');
-  const program = programs.find((item) => item.id === requestedProgramId) ?? programs[0]!;
+  const program = programs.find((item) => item.id === requestedProgramId) ?? programs[0];
   const activeClassId = todayLesson?.classId ?? students[0]?.group ?? '수업';
   const activePeriod = todayLesson?.period ?? 3;
-  const activeLessonTitle = requestedProgramId ? program.title : todayLesson?.title ?? program.title;
+  const activeLessonTitle = requestedProgramId ? program?.title : todayLesson?.title ?? program?.title ?? '수업 기록';
   const skills = useMemo(() => {
-    const fromTags = program.tags.filter((t) => t !== 'SPOMOVE').slice(0, 6);
+    const fromTags = (program?.tags ?? []).filter((t) => t !== 'SPOMOVE').slice(0, 6);
     return fromTags.length >= 2 ? fromTags : DEFAULT_SKILLS;
   }, [program]);
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>(() => Object.fromEntries(students.map((student) => [student.id, 'pending'])));
@@ -212,8 +217,10 @@ function RecordEntryView() {
 
   const selectedStudent = students.find((student) => student.id === selectedId);
   const firstPresentStudent = students.find((student) => attendance[student.id] === 'present');
-  const packageFocus = program.lessonDetail?.developmentFocus ?? program.tags.slice(0, 3).join(', ');
-  const packageMeta = `${program.grade} · ${program.duration}분 · ${program.space}`;
+  const packageFocus = program?.lessonDetail?.developmentFocus ?? program?.tags.slice(0, 3).join(', ') ?? '';
+  const packageMeta = [program?.category, program?.grade, program?.space]
+    .filter((item) => item && !/확인 필요|활동 공간 확인|미정|undefined|null/i.test(String(item)))
+    .join(' · ');
   const present = Object.values(attendance).filter((value) => value === 'present').length;
   const absent = Object.values(attendance).filter((value) => value === 'absent').length;
   const focusCount = Object.values(focused).filter(Boolean).length;
@@ -226,7 +233,25 @@ function RecordEntryView() {
   const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance;
   const canPreviewKakao = canSaveRecord && present > 0;
   const parentToken = firstPresentStudent ? createParentShareToken(firstPresentStudent.id) : '';
-  const parentCopyPreview = `오늘 ${activeClassId}은 "${program.title}" 수업을 진행했습니다. ${packageFocus}을(를) 중심으로 아이들이 신호를 보고 판단하고 몸을 조절하는 경험을 했습니다.`;
+  const parentCopyPreview = `오늘 ${activeClassId}은 "${program?.title ?? activeLessonTitle}" 수업을 진행했습니다. ${packageFocus}을(를) 중심으로 아이들의 참여와 움직임 조절 과정을 관찰했습니다.`;
+
+  useEffect(() => {
+    setAttendance((prev) => Object.fromEntries(students.map((student) => [student.id, prev[student.id] ?? 'pending'])) as Record<string, AttendanceStatus>);
+  }, [students]);
+
+  if (!program) {
+    return (
+      <div className="h-full overflow-y-auto p-[22px]" style={{ background: 'var(--spm-bg)' }}>
+        <div className="rounded-[18px] p-6 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <h1 className="text-[20px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>기록할 수업안이 없습니다</h1>
+          <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리 데이터를 불러온 뒤 다시 시도해 주세요.</p>
+          <Link href="/spokedu-master/library" className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+            <BookOpen size={15} /> 라이브러리로 이동
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const toggleSkill = (studentId: string, skill: string) => {
     setCheckedSkills((prev) => {
@@ -293,7 +318,7 @@ function RecordEntryView() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class record</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
         <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          오늘 수업의 출석, 관찰, 동작 체크를 남겨 학생 이력과 수업 설명 문구로 이어갑니다.
+          오늘 수업의 출석, 관찰, 동작 체크를 남겨 학생 이력과 설명 문구의 근거로 사용합니다.
         </p>
       </header>
 
@@ -315,7 +340,7 @@ function RecordEntryView() {
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>{activeClassId} / {activePeriod}교시</p>
             <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{activeLessonTitle}</h2>
-            <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>{packageMeta} · {packageFocus}</p>
+            <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>{[packageMeta, packageFocus].filter(Boolean).join(' · ')}</p>
           </div>
           <Link href={`/spokedu-master/class-mode/${program.id}`} className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-acc)' }} aria-label="수업 시작">
             <Play size={18} color="#fff" fill="#fff" />
@@ -337,7 +362,10 @@ function RecordEntryView() {
           <div className="rounded-[18px] p-5 md:col-span-2 xl:col-span-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>등록된 학생이 없습니다.</p>
             <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>학생 명단이 있어야 출석, 동작 기록, 보호자 공유까지 이어지는 수업 기록을 만들 수 있습니다.</p>
-            <Link href="/spokedu-master/students" className="mt-4 inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 추가하기</Link>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href="/spokedu-master/students" className="inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 추가하기</Link>
+              <Link href="/spokedu-master/class-tools" className="inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>수업 도구로 이동</Link>
+            </div>
           </div>
         )}
       </section>
@@ -350,7 +378,7 @@ function RecordEntryView() {
           </div>
           <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.13)', color: 'var(--spm-acc)' }}>발송 전 복사 검토</span>
         </div>
-        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업이 끝나면 기록은 학생 이력에 남고, 프로그램 맥락은 보호자·센터·학교용 설명 문구로 이어집니다.</p>
+        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업이 끝나면 기록은 학생 이력에 남고, 프로그램 맥락은 보호자·센터·학교용 설명 문구의 근거로 활용됩니다.</p>
         <div className="mt-4 grid gap-2 md:grid-cols-3">
           <OutcomeCard icon={<History size={15} color="var(--spm-acc)" />} label="학생 이력" value={`출석 ${present}명 · 관찰 ${focusCount}명`} />
           <OutcomeCard icon={<FileText size={15} color="var(--spm-acc)" />} label="설명 근거" value={packageFocus || '활동 목표와 관찰 포인트'} />

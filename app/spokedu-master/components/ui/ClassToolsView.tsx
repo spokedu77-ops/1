@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, FileText, LayoutList, ListOrdered, MonitorPlay, Pause, Play, RotateCcw, Shuffle, Timer, Users } from 'lucide-react';
+import { BookOpen, LayoutList, ListOrdered, MonitorPlay, Pause, Play, RotateCcw, Shuffle, Timer, UserPlus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -18,9 +18,9 @@ const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
 ];
 
 const TOOL_STATUS = [
-  { label: '즉시 실행', value: '5개 도구' },
-  { label: '명단 기반', value: '선택·팀·순서' },
-  { label: '수업 후', value: '설명 문구 연결' },
+  { label: '화면 도구', value: '타이머·점수판' },
+  { label: '명단 도구', value: '선택·팀·순서' },
+  { label: '운영 방식', value: '수업 중 즉시 실행' },
 ] as const;
 
 const TOOL_HELP: Record<TabId, string> = {
@@ -37,6 +37,15 @@ const SAMPLE_STUDENTS: StudentProfile[] = [
   { id: 'sample-3', name: '지호', group: 'B그룹', meta: '', level: '', attendance: 0, classes: 0, streak: 0, risk: null, skills: [{ label: '협동', value: 68, delta: '+2' }], badges: [], history: [] },
   { id: 'sample-4', name: '하윤', group: 'B그룹', meta: '', level: '', attendance: 0, classes: 0, streak: 0, risk: null, skills: [{ label: '민첩', value: 76, delta: '+5' }], badges: [], history: [] },
 ];
+
+function shuffleItems<T>(items: T[]) {
+  const copied = [...items];
+  for (let index = copied.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(Math.random() * (index + 1));
+    [copied[index], copied[target]] = [copied[target]!, copied[index]!];
+  }
+  return copied;
+}
 
 function ActionButton({
   onClick,
@@ -154,8 +163,12 @@ function ScoreboardTab() {
 function StudentModeNote({ usingSample }: { usingSample: boolean }) {
   if (!usingSample) return null;
   return (
-    <div className="mx-auto mb-4 max-w-[520px] rounded-[14px] px-4 py-3 text-center text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.24)', color: 'var(--spm-amb)' }}>
-      등록된 학생 명단이 없어서 예시 명단으로 진행 콘솔 흐름을 보여줍니다.
+    <div className="mx-auto mb-4 flex max-w-[560px] flex-col items-center gap-3 rounded-[14px] px-4 py-3 text-center text-[12px] font-bold sm:flex-row sm:justify-between sm:text-left" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.24)', color: 'var(--spm-amb)' }}>
+      <span>등록된 학생 명단이 없어 예시 명단으로 흐름을 보여줍니다.</span>
+      <Link href="/spokedu-master/students" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.26)', color: 'var(--spm-amb)' }}>
+        <UserPlus size={14} />
+        명단 등록
+      </Link>
     </div>
   );
 }
@@ -246,7 +259,7 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
   }, [students]);
 
   const random = useCallback(() => {
-    const shuffled = [...students].sort(() => Math.random() - 0.5);
+    const shuffled = shuffleItems(students);
     const mid = Math.ceil(shuffled.length / 2);
     setTeams({ a: shuffled.slice(0, mid), b: shuffled.slice(mid) });
   }, [students]);
@@ -315,7 +328,7 @@ function OrderTab({ students, usingSample }: { students: StudentProfile[]; using
   const key = students.map((student) => student.id).join('|');
 
   const reshuffle = useCallback(() => {
-    setOrdered([...students].sort(() => Math.random() - 0.5));
+    setOrdered(shuffleItems(students));
   }, [students]);
 
   useEffect(() => { reshuffle(); }, [key, reshuffle]);
@@ -359,7 +372,7 @@ export default function ClassToolsView() {
               수업 중 바로 꺼내 쓰는 진행 콘솔
             </h1>
             <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              타이머, 점수판, 학생 선택, 팀 배분, 진행 순서를 한 화면에서 처리합니다.
+              타이머, 점수판, 학생 선택, 팀 배분, 진행 순서를 수업 중 바로 처리합니다.
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-3 lg:w-[420px]">
@@ -388,8 +401,8 @@ export default function ClassToolsView() {
             <Link href="/spokedu-master/spomove" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="큰 화면 실행">
               <MonitorPlay size={16} />
             </Link>
-            <Link href="/spokedu-master/report" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="설명 문구">
-              <FileText size={16} />
+            <Link href="/spokedu-master/students" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="학생 명단">
+              <UserPlus size={16} />
             </Link>
           </div>
         </div>
@@ -433,11 +446,11 @@ export default function ClassToolsView() {
 
       <div className="shrink-0 border-t px-5 py-3" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
         <Link
-          href="/spokedu-master/report"
+          href="/spokedu-master/students"
           className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black"
           style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
         >
-          <FileText size={14} />설명 문구 보기
+          <UserPlus size={14} />학생 명단 관리
         </Link>
       </div>
     </div>

@@ -15,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/spokedu/programs',
     '/spokedu/programs/spomove',
     '/spokedu/programs/paps',
+    '/spokedu/programs/monthly-newsports',
     '/spokedu/programs/oneday-event',
     '/spokedu/programs/camp',
     '/spokedu/records',

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Award, BookOpen, Check, ChevronRight, ClipboardList, ExternalLink, FileText, Link2, Plus, Trash2, TrendingUp, TriangleAlert } from 'lucide-react';
-import { useLayoutEffect, useState } from 'react';
+import { Award, BookOpen, Check, ChevronRight, ClipboardList, FileText, Link2, Plus, Shuffle, Trash2, TrendingUp, TriangleAlert, Users } from 'lucide-react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { createParentShareToken } from '../lib/subscription';
 import { useMasterStore } from '../store';
@@ -35,6 +35,11 @@ export default function StudentsPage() {
   const [newGroup, setNewGroup] = useState('');
   const [newMeta, setNewMeta] = useState('');
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
+
+  useEffect(() => {
+    if (selectedId && students.some((student) => student.id === selectedId)) return;
+    setSelectedId(students[0]?.id ?? null);
+  }, [selectedId, students]);
 
   const handleAdd = () => {
     if (!newName.trim()) return;
@@ -85,9 +90,9 @@ export default function StudentsPage() {
 
       <section className="mx-[22px] mb-5 grid gap-2 sm:mx-8 sm:grid-cols-3 lg:mx-10">
         {[
+          ['등록 명단', `${students.length || 0}명`],
           ['기록 연결', `${recordedStudentCount}/${students.length || 0}명`],
           ['수업 기록', `${records.length}건`],
-          ['다음 액션', '설명 문구'],
         ].map(([label, value]) => (
           <div key={label} className="rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{label}</p>
@@ -98,9 +103,23 @@ export default function StudentsPage() {
 
       {students.length === 0 ? (
         <section className="mx-[22px] rounded-[18px] p-6 text-center sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <h2 className="text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>아직 등록된 학생이 없습니다</h2>
-          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>수업 기록을 저장하면 학생 이력에 자동으로 반영됩니다.</p>
-          <Link href="/spokedu-master/class-record" className="mt-5 inline-flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>수업 기록 시작</Link>
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(99,102,241,0.14)', color: 'var(--spm-acc)' }}>
+            <Users size={24} />
+          </div>
+          <h2 className="mt-4 text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>아직 등록된 학생이 없습니다</h2>
+          <p className="mx-auto mt-2 max-w-[520px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>
+            학생을 등록하면 수업 도구의 무작위 선택, 팀 나누기, 진행 순서가 실제 명단으로 작동합니다.
+          </p>
+          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+            <button type="button" onClick={() => setAddOpen(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+              <Plus size={15} />
+              학생 추가
+            </button>
+            <Link href="/spokedu-master/class-tools" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+              <Shuffle size={15} />
+              수업 도구로 돌아가기
+            </Link>
+          </div>
         </section>
       ) : null}
 
@@ -163,31 +182,43 @@ export default function StudentsPage() {
             <div className="space-y-5 border-t p-5" style={{ borderColor: 'var(--spm-br2)' }}>
               <div>
                 <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>동작 성장</h3>
-                <div className="space-y-4">{selected.skills.map((skill) => <SkillBar key={skill.label} label={skill.label} value={skill.value} delta={skill.delta} />)}</div>
+                {selected.skills.length > 0 ? (
+                  <div className="space-y-4">{selected.skills.map((skill) => <SkillBar key={skill.label} label={skill.label} value={skill.value} delta={skill.delta} />)}</div>
+                ) : (
+                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 누적된 동작 기록이 없습니다.</p>
+                )}
               </div>
               <div>
                 <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
                   <Award size={17} color="var(--spm-amb)" />
                   배지
                 </h3>
-                <div className="flex flex-wrap gap-2">{selected.badges.map((badge) => <span key={badge} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.13)', color: 'var(--spm-amb)' }}>{badge}</span>)}</div>
+                {selected.badges.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">{selected.badges.map((badge) => <span key={badge} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.13)', color: 'var(--spm-amb)' }}>{badge}</span>)}</div>
+                ) : (
+                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>수업 기록이 쌓이면 배지가 표시됩니다.</p>
+                )}
               </div>
               <div>
                 <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>최근 이력</h3>
-                <div className="space-y-2">{selected.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
+                {selected.history.length > 0 ? (
+                  <div className="space-y-2">{selected.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
+                ) : (
+                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장된 수업 이력이 없습니다.</p>
+                )}
               </div>
               <div className="grid grid-cols-3 gap-2">
+                <Link href="/spokedu-master/class-tools" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                  <Shuffle size={15} />
+                  도구
+                </Link>
                 <Link href="/spokedu-master/class-record" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <ClipboardList size={15} />
                   기록
                 </Link>
-                <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <FileText size={15} />
-                  설명 문구
-                </Link>
-                <Link href={`/spokedu-master/parent/${selected.id}?token=${selectedParentToken}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-                  <ExternalLink size={15} />
-                  미리보기
+                  문구
                 </Link>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">

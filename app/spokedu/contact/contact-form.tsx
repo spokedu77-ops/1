@@ -74,7 +74,8 @@ const accentStyles = {
   },
 } as const;
 
-const SUBMIT_ERROR_MESSAGE = '문의 접수 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+const SUBMIT_ERROR_MESSAGE =
+  '문의 내용을 전송하는 중 일시적인 문제가 발생했습니다.\n잠시 후 다시 시도하시거나, 아래 전화·이메일로 직접 연락 주셔도 빠르게 안내드립니다.';
 
 function isInquiryType(value: string | null): value is InquiryType {
   return contactTypeOptions.some((option) => option.id === value);

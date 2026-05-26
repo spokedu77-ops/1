@@ -24,7 +24,7 @@ import { useMemo } from 'react';
 import { cleanText } from '../lib/clean';
 import { formatReactionTime } from '../lib/utils';
 import { useIsPro, useMasterStore, useStats } from '../store';
-import type { Drill, Program } from '../types';
+import type { Drill } from '../types';
 
 type IntentKey = 'ready' | 'reaction' | 'control' | 'flow';
 
@@ -171,6 +171,7 @@ const INTENT_META: Record<
 };
 
 const MODE_ORDER = ['reactTrain', 'basic', 'simon', 'flanker', 'gonogo', 'taskswitch', 'spatial', 'stroop', 'flow'];
+const NATIVE_ENGINE_MODES = new Set(['reactTrain', 'flow', 'flash', 'pattern', 'diagonal', 'memory', 'spatial']);
 
 function canonicalMode(drill: Drill) {
   const raw = drill.engine?.mode || drill.id;
@@ -189,10 +190,6 @@ function drillEnName(drill: Drill) {
   return cleanText(drill.enName, modePreset(drill).enName);
 }
 
-function drillCategory(drill: Drill) {
-  return cleanText(drill.category, modePreset(drill).category);
-}
-
 function drillDescription(drill: Drill) {
   return cleanText(drill.description, modePreset(drill).description);
 }
@@ -209,9 +206,9 @@ function drillIntent(drill: Drill): IntentKey {
   return modePreset(drill).intent;
 }
 
-function linkedPrograms(drill: Drill, programs: Program[]) {
-  const ids = new Set([drill.id, canonicalMode(drill)]);
-  return programs.filter((program) => program.lessonDetail?.relatedSpomoveIds?.some((id) => ids.has(id))).slice(0, 3);
+function hasNativeEngine(drill: Drill) {
+  const mode = drill.engine?.mode;
+  return Boolean(mode && NATIVE_ENGINE_MODES.has(mode));
 }
 
 function sessionHref(drillId: string, mode: 'projector' | 'mobile' | 'class' = 'projector') {
@@ -279,11 +276,11 @@ function LaunchModeCard({ href, icon: Icon, title, caption, tone }: { href: stri
   );
 }
 
-function FeaturedCard({ drill, index, isLocked, programs }: { drill: Drill; index: number; isLocked: boolean; programs: Program[] }) {
+function FeaturedCard({ drill, index, isLocked }: { drill: Drill; index: number; isLocked: boolean }) {
   const href = isLocked ? '/spokedu-master/payment?plan=pro' : sessionHref(drill.id);
-  const related = linkedPrograms(drill, programs);
   const tones = ['#635bff', '#10b981', '#f59e0b', '#ec4899'];
   const tone = tones[index % tones.length];
+  const engineLabel = hasNativeEngine(drill) ? '전용 엔진' : '기본 실행';
 
   return (
     <Link href={href} className="group relative flex min-h-[236px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
@@ -304,7 +301,7 @@ function FeaturedCard({ drill, index, isLocked, programs }: { drill: Drill; inde
           <SlidersHorizontal className="h-4 w-4" />
           설정으로
         </span>
-        <span className="text-xs font-bold text-slate-500">{related.length > 0 ? `${related.length}개 수업 연동` : drillCategory(drill)}</span>
+        <span className="text-xs font-bold text-slate-500">{engineLabel}</span>
       </div>
 
       {isLocked ? (
@@ -368,11 +365,11 @@ function IntentSection({ id, intent, drills, isPro }: { id: string; intent: Inte
   );
 }
 
-function CatalogModeCard({ drill, isLocked, programs }: { drill: Drill; isLocked: boolean; programs: Program[] }) {
+function CatalogModeCard({ drill, isLocked }: { drill: Drill; isLocked: boolean }) {
   const href = isLocked ? '/spokedu-master/payment?plan=pro' : sessionHref(drill.id);
-  const related = linkedPrograms(drill, programs);
   const levelCount = drill.levels?.length ?? 1;
   const firstLevel = drill.levels?.[0];
+  const engineLabel = hasNativeEngine(drill) ? '전용 엔진' : '기본 실행';
 
   return (
     <Link href={href} className="group grid min-h-[188px] grid-cols-[auto_1fr] gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
@@ -391,9 +388,8 @@ function CatalogModeCard({ drill, isLocked, programs }: { drill: Drill; isLocked
             <SlidersHorizontal className="h-3.5 w-3.5" />
             설정으로
           </span>
-          {related.length > 0 ? (
-            <span className="inline-flex h-9 items-center rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-600">{related.length}개 수업 연동</span>
-          ) : firstLevel ? (
+          <span className="inline-flex h-9 items-center rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-600">{engineLabel}</span>
+          {firstLevel ? (
             <span className="inline-flex h-9 min-w-0 items-center rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-600">{firstLevel.enName}</span>
           ) : null}
         </span>
@@ -406,7 +402,6 @@ export default function SpomoveHubView() {
   const isPro = useIsPro();
   const sessions = useMasterStore((state) => state.sessions);
   const rawDrills = useMasterStore((state) => state.drills);
-  const programs = useMasterStore((state) => state.programs);
   const stats = useStats();
 
   const drills = useMemo(() => sortDrills(rawDrills), [rawDrills]);
@@ -427,11 +422,12 @@ export default function SpomoveHubView() {
     [drills],
   );
   const recent = sessions.slice(0, 3);
-  const linkedProgramCount = useMemo(() => programs.filter((program) => program.lessonDetail?.relatedSpomoveIds?.length).length, [programs]);
+  const nativeEngineCount = useMemo(() => drills.filter(hasNativeEngine).length, [drills]);
+  const fallbackEngineCount = Math.max(drills.length - nativeEngineCount, 0);
   const hubStats = [
     { label: '실행 모드', value: `${drills.length}개` },
-    { label: '수업 연동', value: `${linkedProgramCount}개` },
-    { label: '도입 루틴', value: `${intentDrills.ready.length}개` },
+    { label: '전용 엔진', value: `${nativeEngineCount}개` },
+    { label: '기본 실행', value: `${fallbackEngineCount}개` },
   ];
 
   return (
@@ -469,9 +465,9 @@ export default function SpomoveHubView() {
                     <MonitorPlay className="h-4 w-4" />
                     큰 화면 실행
                   </Link>
-                  <Link href="/spokedu-master/library" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 transition hover:border-indigo-200">
+                  <Link href="/spokedu-master/class-tools" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 transition hover:border-indigo-200">
                     <Shapes className="h-4 w-4" />
-                    수업과 연결
+                    수업 도구 열기
                   </Link>
                 </div>
               </div>
@@ -502,9 +498,9 @@ export default function SpomoveHubView() {
               <h2 className="mt-1 text-xl font-black text-slate-950">바로 실행하는 대표 모드</h2>
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {featuredDrills.map((drill, index) => (
-              <FeaturedCard key={drill.id} drill={drill} index={index} isLocked={drill.isPro && !isPro} programs={programs} />
+              <FeaturedCard key={drill.id} drill={drill} index={index} isLocked={drill.isPro && !isPro} />
             ))}
           </div>
         </section>
@@ -535,7 +531,7 @@ export default function SpomoveHubView() {
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-2">
               {drills.map((drill) => (
-                <CatalogModeCard key={drill.id} drill={drill} isLocked={drill.isPro && !isPro} programs={programs} />
+                <CatalogModeCard key={drill.id} drill={drill} isLocked={drill.isPro && !isPro} />
               ))}
             </div>
           </div>

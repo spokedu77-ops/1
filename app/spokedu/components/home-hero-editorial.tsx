@@ -22,7 +22,7 @@ export function HomeHeroEditorial({ main, thumbA, thumbB }: HomeHeroEditorialPro
       animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
       transition={{ duration: 0.65, ease: [0.25, 0.1, 0.25, 1] }}
     >
-      <div className="relative aspect-[4/5] min-h-[280px] w-full overflow-hidden rounded-[1.5rem] ring-1 ring-slate-900/10 sm:min-h-[320px] sm:rounded-[1.75rem] lg:aspect-[5/6] lg:max-h-[min(72vh,640px)] lg:rounded-[2rem]">
+      <div className="relative aspect-[16/10] w-full min-h-[200px] overflow-hidden rounded-[1.5rem] ring-1 ring-slate-900/10 sm:min-h-[220px] sm:rounded-[1.75rem] lg:max-h-[min(52vh,480px)] lg:rounded-[2rem]">
         <MediaPanel
           media={main}
           className="absolute inset-0 h-full w-full rounded-none border-0"

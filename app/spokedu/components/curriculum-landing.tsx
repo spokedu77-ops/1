@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
@@ -106,6 +107,43 @@ export default function CurriculumLanding() {
             </li>
           ))}
         </ol>
+      </Section>
+
+      <Section className="overflow-hidden rounded-[1.75rem] border border-indigo-200/60 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/40 px-5 py-8 sm:rounded-[2rem] sm:px-8 sm:py-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">강사용 구독 도구</p>
+        <h2 className="mt-2 text-xl font-black leading-snug text-slate-950 [word-break:keep-all] sm:text-2xl">
+          수업안·SPOMOVE·설명 문구를 매주 쓸 수 있는 도구
+        </h2>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
+          SPOKEDU MASTER는 프로그램 라이브러리, 큰 화면 실행 도구, 수업 기록, 보호자·기관 설명 문구를 한 곳에서 제공하는 강사용 구독 플랫폼입니다. 커리큘럼 콘텐츠를 실제 수업에서 반복 활용하고 싶은 강사와 기관에 적합합니다.
+        </p>
+        <ul className="mt-4 flex flex-wrap gap-2" aria-label="SPOKEDU MASTER 주요 기능">
+          {['프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 기록', '설명 문구 자동 생성', '7일 무료 체험'].map((tag) => (
+            <li key={tag}>
+              <span className="rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-800">
+                {tag}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href="/spokedu-master/landing"
+            data-track="curriculum-to-master-landing"
+            data-track-label="curriculum-master-cta-primary"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+          >
+            SPOKEDU MASTER 살펴보기
+          </Link>
+          <Link
+            href="/spokedu-master/landing"
+            data-track="curriculum-to-master-trial"
+            data-track-label="curriculum-master-cta-trial"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-indigo-300 bg-white px-5 text-sm font-bold text-indigo-700 transition hover:border-indigo-400 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+          >
+            7일 무료 체험
+          </Link>
+        </div>
       </Section>
 
       <LandingFinalCta

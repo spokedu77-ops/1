@@ -89,7 +89,7 @@ function getModeConfig(mode: LaunchMode) {
       showMetricsDuringRun: false,
       showReactionBadge: false,
       title: '큰 화면 실행 완료',
-      description: '전체 참여 활동이 끝났습니다. 연결된 수업안이 있으면 설명 문구로 바로 이어갈 수 있습니다.',
+      description: '전체 참여 활동이 끝났습니다. 필요하면 수업 기록이나 설명 문구로 이어갈 수 있습니다.',
     };
   }
   return {
@@ -150,34 +150,6 @@ function TopBar({
           {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
         </button>
         <button type="button" onClick={onExit} className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white" aria-label="나가기">
-          <X size={16} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function IframePlayer({
-  src,
-  title,
-  isFullscreen,
-  onToggleFullscreen,
-  onExit,
-}: {
-  src: string;
-  title: string;
-  isFullscreen: boolean;
-  onToggleFullscreen: () => void;
-  onExit: () => void;
-}) {
-  return (
-    <div className="relative h-dvh overflow-hidden bg-black text-white">
-      <iframe src={src} title={title} className="h-full w-full border-0" allow="fullscreen; autoplay" />
-      <div className="absolute right-4 top-4 z-30 flex items-center gap-2">
-        <button type="button" onClick={onToggleFullscreen} className="grid h-11 w-11 place-items-center rounded-full bg-black/45 text-white backdrop-blur" aria-label={isFullscreen ? '전체화면 해제' : '전체화면'}>
-          {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
-        </button>
-        <button type="button" onClick={onExit} className="grid h-11 w-11 place-items-center rounded-full bg-black/45 text-white backdrop-blur" aria-label="나가기">
           <X size={16} />
         </button>
       </div>
@@ -373,11 +345,6 @@ function SpomoveSessionContent() {
         }}
       />
     );
-  }
-
-  if (drill?.engine && engineMode && state !== 'done') {
-    const playerSrc = `/admin/spomove/training/_player?mode=${encodeURIComponent(engineMode)}&level=${encodeURIComponent(String(engineLevel))}&embed=1`;
-    return <IframePlayer src={playerSrc} title={drillName} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} onExit={exitSession} />;
   }
 
   if (!drill) return null;

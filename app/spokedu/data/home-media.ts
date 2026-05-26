@@ -53,14 +53,15 @@ export const HOME_MEDIA = {
     label: '체육수업 현장',
     fallbackGradient: 'from-indigo-600 via-indigo-800 to-slate-900',
     tone: 'indigo',
-    objectPosition: 'left top',
+    /** 가로 Hero 프레임 — 상단 KBS·현장 인물이 함께 보이도록 */
+    objectPosition: '50% 22%',
   }),
   heroThumbMedia: fromPhoto(SPOKEDU_IMAGES.home.heroMedia, {
     id: 'hero-thumb-media',
     label: '방송·미디어',
     fallbackGradient: 'from-violet-500 via-indigo-700 to-slate-900',
     tone: 'violet',
-    objectPosition: 'left top',
+    objectPosition: '50% 20%',
   }),
   trackPrivate: fromPhoto(SPOKEDU_IMAGES.private.oneToOne, {
     id: 'track-private',

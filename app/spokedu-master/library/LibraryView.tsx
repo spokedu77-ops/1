@@ -8,14 +8,12 @@ import {
   Clipboard,
   ExternalLink,
   FileText,
-  Layers3,
   Lock,
   MapPin,
   MonitorPlay,
   Play,
   Search,
   Sparkles,
-  Timer,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -28,7 +26,7 @@ import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
 import { useIsPro, useMasterStore } from '../store';
 import type { Drill, Program } from '../types';
 
-const QUICK_FILTERS = ['전체', 'SPOMOVE', '유아', '초등', '준비물 적음', '좁은 공간', '협동', '민첩'];
+const QUICK_FILTERS = ['전체', '유아', '초등', '준비물 적음', '좁은 공간', '협동', '민첩', '참고 영상'];
 
 function hasSpomoveLink(program: Program) {
   const related = program.lessonDetail?.relatedSpomoveIds ?? [];
@@ -65,18 +63,18 @@ function isSmallSpace(program: Program) {
 function matchesFilter(program: Program, filter: string) {
   const text = `${program.title} ${program.category} ${program.grade} ${program.space} ${program.description} ${program.tags.join(' ')}`;
   if (filter === '전체') return true;
-  if (filter === 'SPOMOVE') return hasSpomoveLink(program);
   if (filter === '유아') return /유아|유치|5세|6세|7세/.test(text);
   if (filter === '초등') return /초등|저학년|고학년/.test(text);
   if (filter === '준비물 적음') return hasLowPrep(program);
   if (filter === '좁은 공간') return isSmallSpace(program);
   if (filter === '협동') return /협동|팀|릴레이|짝|관계/.test(text);
   if (filter === '민첩') return /민첩|순발|반응|스피드|속도/.test(text);
+  if (filter === '참고 영상') return Boolean(program.lessonDetail?.videoUrl);
   return true;
 }
 
 function getHeroImage(program: Program) {
-  return program.lessonDetail?.heroImageUrl || program.thumbnailUrl;
+  return program.lessonDetail?.heroImageUrl || program.thumbnailUrl || getVideoThumbnail(program.lessonDetail?.videoUrl);
 }
 
 function getYouTubeId(url?: string) {
@@ -136,17 +134,29 @@ function getSearchText(program: Program) {
     .toLowerCase();
 }
 
-function getPackageCompleteness(program: Program) {
+function isPlaceholderText(value?: string | number | null) {
+  const text = String(value ?? '').trim();
+  return !text || /확인 필요|활동 공간 확인|미정|undefined|null|NaN/i.test(text);
+}
+
+function splitFocusTags(value?: string) {
+  return (value ?? '')
+    .split(/[\/,·]/)
+    .map((item) => item.trim())
+    .filter((item) => item && !isPlaceholderText(item));
+}
+
+function getProgramInfoTags(program: Program) {
   const detail = program.lessonDetail;
-  const checks = [
-    Boolean(detail?.objective || program.description),
-    program.equipment.length > 0,
-    (detail?.rules?.length ?? program.steps.length) > 0,
-    (detail?.setupNotes?.length ?? 0) > 0 || Boolean(program.space),
-    Boolean(detail?.parentNote),
-    hasSpomoveLink(program),
+  const candidates = [
+    program.category,
+    detail?.recommendedAge || program.grade,
+    detail?.recommendedPlayers,
+    ...splitFocusTags(detail?.developmentFocus),
+    program.space,
+    ...(detail?.videoUrl ? ['참고 영상'] : []),
   ];
-  return checks.filter(Boolean).length;
+  return Array.from(new Set(candidates.filter((item): item is string => Boolean(item) && !isPlaceholderText(item)))).slice(0, 6);
 }
 
 function SectionTitle({ eyebrow, title, actionHref }: { eyebrow: string; title: string; actionHref?: string }) {
@@ -167,7 +177,7 @@ function SectionTitle({ eyebrow, title, actionHref }: { eyebrow: string; title: 
 }
 
 function CompactMeta({ program }: { program: Program }) {
-  const items = [program.grade, `${program.duration}분`, program.space].filter(Boolean);
+  const items = getProgramInfoTags(program).slice(0, 4);
 
   return (
     <div className="mt-3 flex flex-wrap gap-1.5">
@@ -184,7 +194,7 @@ function ValueChips({ program }: { program: Program }) {
   const chips = [
     hasLowPrep(program) ? '준비 간편' : null,
     isSmallSpace(program) ? '좁은 공간' : null,
-    hasSpomoveLink(program) ? '화면 활동' : null,
+    program.lessonDetail?.videoUrl ? '참고 영상' : null,
   ].filter(Boolean) as string[];
 
   return (
@@ -214,10 +224,9 @@ function ProgramCard({
   onFavorite: () => void;
 }) {
   const heroImage = getHeroImage(program);
-  const completeness = getPackageCompleteness(program);
 
   return (
-    <article className="group flex min-h-[420px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
+    <article className="group flex min-h-[350px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
       <button type="button" onClick={onPreview} className="relative h-44 overflow-hidden text-left">
         {heroImage ? (
           <>
@@ -247,21 +256,6 @@ function ProgramCard({
           <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{program.description}</p>
           <CompactMeta program={program} />
           <ValueChips program={program} />
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <span className="rounded-xl bg-slate-50 px-2 py-2 text-center text-[11px] font-black text-slate-600">
-              수업안
-            </span>
-            <span className="rounded-xl bg-slate-50 px-2 py-2 text-center text-[11px] font-black text-slate-600">
-              세팅
-            </span>
-            <span className="rounded-xl bg-slate-50 px-2 py-2 text-center text-[11px] font-black text-slate-600">
-              문구
-            </span>
-          </div>
-          <div className="mt-3 flex items-center justify-between rounded-xl bg-indigo-50 px-3 py-2">
-            <span className="text-[11px] font-black text-indigo-700">수업 자료</span>
-            <span className="text-[11px] font-black text-indigo-700">{completeness}/6 준비</span>
-          </div>
         </button>
 
         <div className="mt-auto flex items-center justify-between gap-3 pt-4">
@@ -289,10 +283,10 @@ function ProgramCard({
   );
 }
 
-function FeaturedProgram({ program, drill, onPreview }: { program: Program; drill?: Drill; onPreview: () => void }) {
+function FeaturedProgram({ program, onPreview }: { program: Program; onPreview: () => void }) {
   const heroImage = getHeroImage(program);
   const detail = program.lessonDetail;
-  const spomoveHref = drill ? `/spokedu-master/spomove/session?drill=${drill.id}&mode=projector&program=${program.id}` : null;
+  const tags = getProgramInfoTags(program);
 
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
@@ -306,27 +300,23 @@ function FeaturedProgram({ program, drill, onPreview }: { program: Program; dril
             <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{program.title}</h1>
             <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600">{detail?.objective || program.description}</p>
             <ValueChips program={program} />
-            <div className="mt-5 grid gap-2 sm:grid-cols-3">
-              <FeatureMetric icon={Timer} label="수업 시간" value={`${program.duration}분`} />
-              <FeatureMetric icon={MapPin} label="공간" value={program.space} />
-              <FeatureMetric icon={Layers3} label="활용 흐름" value="숙지·실행·복사" />
+            <div className="mt-5 flex flex-wrap gap-2">
+              {tags.slice(0, 6).map((tag) => (
+                <span key={tag} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white">
-              <BookOpen className="h-4 w-4" />
-              수업안 보기
-            </Link>
-            {spomoveHref ? (
-              <Link href={spomoveHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800">
-                <MonitorPlay className="h-4 w-4" />
-                지정 화면 열기
-              </Link>
-            ) : null}
-            <button type="button" onClick={onPreview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-slate-500 hover:text-slate-900">
+            <button type="button" onClick={onPreview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white">
               <BookOpen className="h-4 w-4" />
               빠른 미리보기
             </button>
+            <Link href="/spokedu-master/spomove" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800">
+              <MonitorPlay className="h-4 w-4" />
+              SPOMOVE 전체보기
+            </Link>
           </div>
         </div>
         <button type="button" onClick={onPreview} className="relative min-h-[260px] overflow-hidden" style={{ background: 'var(--spm-s2)' }}>
@@ -339,30 +329,16 @@ function FeaturedProgram({ program, drill, onPreview }: { program: Program; dril
             <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, var(--spm-s3) 0%, var(--spm-s4) 100%)' }} />
           )}
           <div className="absolute bottom-5 left-5 right-5 rounded-[18px] border border-white/25 bg-white/88 p-4 text-left shadow-[0_18px_46px_rgba(15,23,42,0.2)] backdrop-blur-xl">
-            <p className="text-xs font-bold text-slate-500">수업 활용 흐름</p>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl bg-slate-100 px-2 py-3 text-xs font-bold text-slate-800">수업안</div>
-              <div className="rounded-xl bg-slate-100 px-2 py-3 text-xs font-bold text-slate-800">화면 활동</div>
-              <div className="rounded-xl bg-slate-100 px-2 py-3 text-xs font-bold text-slate-800">설명 문구</div>
+            <p className="text-xs font-bold text-slate-500">빠른 미리보기</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {tags.slice(0, 4).map((tag) => (
+                <span key={tag} className="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-800">{tag}</span>
+              ))}
             </div>
           </div>
         </button>
       </div>
     </section>
-  );
-}
-
-function FeatureMetric({ icon: Icon, label, value }: { icon: typeof Timer; label: string; value: string }) {
-  return (
-    <div className="flex min-h-[72px] items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-indigo-600 shadow-sm">
-        <Icon className="h-4 w-4" />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[11px] font-black text-slate-400">{label}</span>
-        <span className="mt-1 block truncate text-sm font-black text-slate-950">{value}</span>
-      </span>
-    </div>
   );
 }
 
@@ -397,7 +373,9 @@ function ProgramModal({
     : null;
   const parentCopy = getParentCopy(program);
   const rules = detail?.rules?.length ? detail.rules : program.steps;
-  const setupNotes = detail?.setupNotes?.length ? detail.setupNotes : [`공간: ${program.space}`, `준비물: ${program.equipment.join(', ') || '현장 기본 도구'}`];
+  const equipment = program.equipment.filter((item) => !isPlaceholderText(item));
+  const setupFallback = [`공간: ${program.space}`, `준비물: ${equipment.join(', ') || '현장 기본 도구'}`].filter((item) => !isPlaceholderText(item));
+  const setupNotes = (detail?.setupNotes?.length ? detail.setupNotes : setupFallback).filter((item) => !isPlaceholderText(item));
   const safetyNotes = detail?.safetyNotes?.length
     ? detail.safetyNotes
     : ['활동 전 공간의 장애물을 정리합니다.', '교구를 던지거나 밀치지 않도록 약속합니다.', '속도보다 안전한 이동과 정확한 규칙 수행을 우선합니다.'];
@@ -408,7 +386,17 @@ function ProgramModal({
     ['인원', detail?.recommendedPlayers || '소그룹~학급'],
     ['기능', detail?.developmentFocus || program.category],
     ['공간', program.space],
-  ].filter(([, value]) => value && !/확인 필요|미정|undefined|null/i.test(value));
+  ].filter(([, value]) => value && !isPlaceholderText(value));
+  const sectionNavItems = [
+    '개요',
+    '사전 체크',
+    setupNotes.length || setupImage ? '교구 세팅' : null,
+    '안전',
+    hasVideo ? '참고 영상' : null,
+    rules.length ? '활동 방법' : null,
+    variations.length ? '응용' : null,
+    '설명 문구',
+  ].filter((item): item is string => Boolean(item));
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -421,7 +409,7 @@ function ProgramModal({
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
           <nav className="sticky top-0 rounded-[10px] border border-slate-200 bg-slate-50 p-3">
-            {['개요', '사전 체크', '교구 세팅', '안전', '참고 영상', '활동 방법', '응용', '설명 문구'].map((item) => (
+            {sectionNavItems.map((item) => (
               <a key={item} href={`#program-${item}`} className="block rounded-lg px-3 py-2 text-xs font-black text-slate-600 transition hover:bg-white hover:text-slate-950">
                 {item}
               </a>
@@ -436,7 +424,7 @@ function ProgramModal({
                 <CategoryIcon category={program.category} size={28} />
               </span>
               {locked ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">PRO 전용</span> : null}
-              {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-black text-indigo-700">SPOMOVE 연결</span> : null}
+              {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-black text-indigo-700">SPOMOVE 명시 연결</span> : null}
             </div>
             <h1 className="text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{program.title}</h1>
             <p className="mt-4 border-l-2 border-slate-900 pl-4 text-sm font-semibold leading-7 text-slate-700">
@@ -467,7 +455,7 @@ function ProgramModal({
             <div className="mt-4 rounded-lg border border-slate-200 p-4">
               <p className="text-xs font-black text-slate-700">필요 교구</p>
               <ul className="mt-3 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:gap-x-6 lg:gap-y-2">
-                {(program.equipment.length ? program.equipment : ['현장 기본 도구']).map((item) => (
+                {(equipment.length ? equipment : ['현장 기본 도구']).map((item) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-slate-700">
                     <span className="h-3.5 w-3.5 border border-slate-500 bg-white" />
                     {item}
@@ -477,6 +465,7 @@ function ProgramModal({
             </div>
           </section>
 
+          {setupNotes.length || setupImage ? (
           <section id="program-교구 세팅" className="rounded-[10px] border border-slate-200 bg-white p-5">
             <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
               <MapPin className="h-4 w-4 text-indigo-600" />
@@ -503,6 +492,7 @@ function ProgramModal({
               ))}
             </ul>
           </section>
+          ) : null}
 
           <section id="program-안전" className="rounded-[10px] border border-slate-200 bg-white p-5">
             <h2 className="text-base font-black text-slate-950">활동 전 선행되어야 할 사전 교육</h2>
@@ -609,11 +599,7 @@ function ProgramModal({
             <p className="mt-3 rounded-lg bg-white p-4 text-sm leading-7 text-emerald-900">{parentCopy}</p>
           </section>
 
-          <div className="sticky bottom-0 z-10 grid gap-2 rounded-[10px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-4">
-            <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-black text-white">
-              <BookOpen className="h-4 w-4" />
-              상세 보기
-            </Link>
+          <div className="sticky bottom-0 z-10 grid gap-2 rounded-[10px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-3">
             <button type="button" onClick={copyParentNote} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-700">
               <Clipboard className="h-4 w-4" />
               {copied ? '복사 완료' : '문구 복사'}
@@ -660,17 +646,16 @@ export default function LibraryView() {
     });
   }, [filter, pool, query]);
 
-  const spomovePrograms = useMemo(() => pool.filter(hasSpomoveLink).slice(0, 6), [pool]);
   const favoritePrograms = useMemo(() => pool.filter((program) => favorites.includes(program.id)).slice(0, 6), [favorites, pool]);
   const packageStats = useMemo(() => {
-    const spomoveCount = pool.filter(hasSpomoveLink).length;
+    const videoCount = pool.filter((program) => program.lessonDetail?.videoUrl).length;
+    const indoorCount = pool.filter(isSmallSpace).length;
     const lowPrepCount = pool.filter(hasLowPrep).length;
-    const denseCount = pool.filter((program) => getPackageCompleteness(program) >= 5).length;
     return [
       { label: '전체 패키지', value: `${pool.length}개` },
-      { label: '화면 활동 연동', value: `${spomoveCount}개` },
+      { label: '참고 영상', value: `${videoCount}개` },
       { label: '준비 간편', value: `${lowPrepCount}개` },
-      { label: '고밀도 구성', value: `${denseCount}개` },
+      { label: '실내 가능', value: `${indoorCount}개` },
     ];
   }, [pool]);
 
@@ -697,7 +682,7 @@ export default function LibraryView() {
                   바로 꺼내 쓰는 수업 패키지
                 </h1>
                 <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600">
-                  수업안, 준비물, 공간 세팅, 큰 화면 활동, 학부모 설명 문구까지 한 번에 확인하고 바로 실행합니다.
+                  수업안, 참고 영상, 교구 세팅, 설명 문구를 한 화면에서 빠르게 확인합니다. SPOMOVE는 별도 화면 활동으로 분리해 운영합니다.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -744,7 +729,7 @@ export default function LibraryView() {
           </div>
         </header>
 
-        {featured ? <FeaturedProgram program={featured} drill={getPrimaryDrill(featured, drills)} onPreview={() => setSelected(featured)} /> : null}
+        {featured ? <FeaturedProgram program={featured} onPreview={() => setSelected(featured)} /> : null}
 
         {favoritePrograms.length > 0 ? (
           <section>
@@ -752,11 +737,6 @@ export default function LibraryView() {
             <ProgramGrid programs={favoritePrograms} isPro={isPro} favorites={favorites} usedProgramIds={usedProgramIds} toggleFavorite={toggleFavorite} setSelected={setSelected} />
           </section>
         ) : null}
-
-        <section>
-          <SectionTitle eyebrow="SPOMOVE Linked" title="화면 활동과 연결되는 수업" actionHref="/spokedu-master/spomove" />
-          <ProgramGrid programs={spomovePrograms} isPro={isPro} favorites={favorites} usedProgramIds={usedProgramIds} toggleFavorite={toggleFavorite} setSelected={setSelected} />
-        </section>
 
         <section>
           <SectionTitle eyebrow="All Programs" title={query || filter !== '전체' ? `검색 결과 ${filteredPrograms.length}개` : '전체 수업 패키지'} />

@@ -4,7 +4,7 @@ import SpomoveHubView from './SpomoveHubView';
 
 export const metadata: Metadata = {
   title: 'SPOMOVE',
-  description: '빔, TV, 태블릿에서 바로 실행하는 화면 기반 반응훈련입니다. 라이브러리 수업과 연결해 몰입형 움직임 활동을 만듭니다.',
+  description: '빔, TV, 태블릿에서 바로 실행하는 화면 기반 반응훈련입니다. 수업안과 별도로 바로 꺼내 쓰는 움직임 활동입니다.',
 };
 
 export default function SpokeduMasterSpomovePage() {

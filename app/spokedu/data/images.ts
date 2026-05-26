@@ -57,11 +57,8 @@ function defineImage(
   };
 }
 
-/** 전용 실사 교체 대상 — 운영·에셋 교체 시 참고 */
-export const SPOKEDU_PLACEHOLDER_IMAGE_ASSETS = [
-  'cases/hero.jpg',
-  'cases/representative.jpg',
-] as const;
+/** 전용 실사 교체 대상 — 현재 모두 운영 파일로 교체 완료 */
+export const SPOKEDU_PLACEHOLDER_IMAGE_ASSETS: readonly string[] = [] as const;
 
 export const SPOKEDU_IMAGES = {
   home: {
@@ -189,14 +186,8 @@ export const SPOKEDU_IMAGES = {
     seodaemun: defineImage('records', 'record-seodaemun', 'seodaemun.jpg', '서대문형무소 어린이날 체험 부스 기록'),
   },
   cases: {
-    hero: defineImage('cases', 'cases-hero', 'hero.jpg', '스포키듀 수업 사례 모음 대표 장면', {
-      assetStatus: 'placeholder-copy',
-      placeholderNote: '임시: records/yangcheon.jpg 복사본 → Cases Hero 전용 실사로 교체',
-    }),
-    representative: defineImage('cases', 'cases-rep', 'representative.jpg', '대표 수업 사례 현장 사진', {
-      assetStatus: 'placeholder-copy',
-      placeholderNote: '임시: dispatch-group-class.jpg 복사본 → Cases 대표 전용 실사로 교체',
-    }),
+    hero: defineImage('cases', 'cases-hero', 'hero.jpg', '스포키듀 수업 사례 모음 대표 장면'),
+    representative: defineImage('cases', 'cases-rep', 'representative.jpg', '대표 수업 사례 현장 사진'),
   },
   monthly: {
     hero: defineImage('monthly', 'monthly-hero', 'hero.jpg', '월간 스포키듀 운영 기록 대표 장면'),
