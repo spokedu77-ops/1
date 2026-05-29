@@ -57,14 +57,13 @@ export default function FlowGameClient({
   const flashRef       = useRef<HTMLDivElement>(null);
   const engineRef      = useRef<FlowEngine | null>(null);
   const instrTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const balTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const instrPrioRef   = useRef(0);
 
   const [phase,          setPhase]         = useState<FlowGamePhase>('idle');
   const [countdown,      setCountdown]     = useState<number | null>(null);
   const [stageIdx,       setStageIdx]      = useState(0);
   const [timerSec,       setTimerSec]      = useState(stages[0]?.durationSec ?? 25);
   const [instruction,    setInstruction]   = useState<{ text: string; cls: string } | null>(null);
-  const [balanceCue,     setBalanceCue]    = useState<'left' | 'right' | null>(null);
   const [stats,          setStats]         = useState<FlowStats | null>(null);
   const [totalProgress,  setTotalProgress] = useState(0);
 
@@ -87,17 +86,18 @@ export default function FlowGameClient({
           setTimerSec(rem);
           setTotalProgress(prog);
         },
-        onInstruction:  (text, colorClass, ms) => {
+        onInstruction:  (text, colorClass, ms, priority = 1) => {
+          // 우선순위가 낮은 지시문은 현재 표시 중인 것을 덮어쓰지 않음
+          if (instrTimerRef.current && priority < instrPrioRef.current) return;
           if (instrTimerRef.current) clearTimeout(instrTimerRef.current);
+          instrPrioRef.current = priority;
           setInstruction({ text, cls: colorClass });
-          instrTimerRef.current = setTimeout(() => setInstruction(null), ms);
+          instrTimerRef.current = setTimeout(() => {
+            setInstruction(null);
+            instrPrioRef.current = 0;
+          }, ms);
         },
         onComplete:     (s) => { setStats(s); onComplete(s); },
-        onBalanceCue:   (foot) => {
-          setBalanceCue(foot);
-          if (balTimerRef.current) clearTimeout(balTimerRef.current);
-          balTimerRef.current = setTimeout(() => setBalanceCue(null), 2500);
-        },
         onCameraShake:  () => {},
         onFlash:        () => {},
       },
@@ -181,7 +181,7 @@ export default function FlowGameClient({
             <div style={{ height: '100%', width: `${totalProgress * 100}%`, background: currentStage.color, transition: 'width 0.12s linear' }} />
           </div>
 
-          {/* 지시어 플래시 — 크고 명확하게 */}
+          {/* 지시어 플래시 */}
           {instruction && (
             <div
               className={instruction.cls}
@@ -190,31 +190,49 @@ export default function FlowGameClient({
                 top: '35%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                fontSize: 'clamp(3rem, 10vw, 5rem)',
+                fontSize: 'clamp(3.5rem, 12vw, 6rem)',
                 fontWeight: 900,
+                fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
                 pointerEvents: 'none',
-                letterSpacing: '0.08em',
-                textShadow: '0 0 50px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.5)',
+                letterSpacing: '0.06em',
+                textShadow: '0 0 60px rgba(255,255,255,0.9), 0 0 25px rgba(255,255,255,0.6)',
                 whiteSpace: 'nowrap',
-                animation: 'flowInstPop 0.15s ease-out',
+                animation: 'flowInstPop 0.12s ease-out',
               }}
             >
               {instruction.text}
             </div>
           )}
-
-          {/* 밸런스 큐 */}
-          {balanceCue && (
-            <div style={{
-              position: 'absolute', bottom: 56, left: '50%', transform: 'translateX(-50%)',
-              fontSize: '1.6rem', fontWeight: 800, color: '#86efac',
-              background: 'rgba(0,0,0,0.65)', padding: '0.35rem 1.4rem', borderRadius: '2rem',
-              letterSpacing: '0.05em',
-            }}>
-              {balanceCue === 'left' ? '← 왼발!' : '오른발 →'}
-            </div>
-          )}
         </>
+      )}
+
+      {/* ─── 스테이지 인트로 (게임 정지, 5초) ─────────────────────────── */}
+      {phase === 'stage-intro' && currentStage && (
+        <div style={{ ...S.overlay, background: currentStage.isBonus ? 'rgba(40,30,0,0.95)' : 'rgba(0,0,0,0.90)' }}>
+          <p style={{ fontSize: '0.6rem', color: currentStage.color, fontWeight: 800, letterSpacing: '0.4em', marginBottom: '0.6rem' }}>
+            {currentStage.isBonus ? '🏆 BONUS STAGE' : currentStage.label}
+          </p>
+          <h2 style={{
+            fontSize: 'clamp(2.5rem, 8vw, 4rem)', fontWeight: 900, color: '#fff',
+            fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
+            letterSpacing: '0.06em', marginBottom: '0.6rem',
+          }}>
+            {currentStage.cueWord}
+          </h2>
+          <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.8)', maxWidth: 320, lineHeight: 1.6 }}>
+            {currentStage.shortInstruction}
+          </p>
+          <div style={{ marginTop: '1.6rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 360 }}>
+            {[...currentStage.activeModules].filter(k => k !== 'jump').map((key) => {
+              const mod = FLOW_MODULES[key];
+              return (
+                <span key={key} style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.2rem 0.7rem', borderRadius: '9999px', border: `1px solid ${mod.colorBorder}`, color: mod.color, background: mod.colorBg }}>
+                  {mod.icon} {mod.tag}
+                </span>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* ─── 카운트다운 ──────────────────────────────────────────────────── */}
@@ -230,49 +248,6 @@ export default function FlowGameClient({
           </div>
           <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
             준비하세요
-          </p>
-        </div>
-      )}
-
-      {/* ─── 스테이지 인트로 ─────────────────────────────────────────────── */}
-      {phase === 'stage-intro' && currentStage && (
-        <div style={{ ...S.overlay, background: 'rgba(0,0,0,0.84)' }}>
-          <p style={{ fontSize: '0.65rem', color: currentStage.color, fontWeight: 800, letterSpacing: '0.35em', marginBottom: '0.5rem' }}>
-            {currentStage.label}
-          </p>
-          <h2 style={{
-            fontSize: '3rem', fontWeight: 900, color: '#fff', marginBottom: '0.5rem',
-            fontFamily: "'Black Han Sans',sans-serif", letterSpacing: '0.06em',
-          }}>
-            {currentStage.cueWord}
-          </h2>
-          <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.8)', maxWidth: 300, lineHeight: 1.55 }}>
-            {currentStage.shortInstruction}
-          </p>
-
-          {currentStage.activeModules.size > 1 && (
-            <div style={{ marginTop: '1.4rem', display: 'flex', gap: '0.45rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 320 }}>
-              {[...currentStage.activeModules].map((key) => {
-                const mod = FLOW_MODULES[key];
-                return (
-                  <span
-                    key={key}
-                    style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.18rem 0.6rem', borderRadius: '9999px', border: `1px solid ${mod.colorBorder}`, color: mod.color, background: mod.colorBg }}
-                  >
-                    {mod.icon} {mod.tag}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ─── 스테이지 플래시 ─────────────────────────────────────────────── */}
-      {phase === 'stage-flash' && currentStage && (
-        <div style={{ ...S.overlay, pointerEvents: 'none' }}>
-          <p style={{ fontSize: '1.8rem', fontWeight: 900, color: currentStage.color, letterSpacing: '0.25em', opacity: 0.9 }}>
-            STAGE CLEAR
           </p>
         </div>
       )}
@@ -325,6 +300,10 @@ export default function FlowGameClient({
         @keyframes flowInstPop {
           from { transform: translate(-50%, -50%) scale(0.7); opacity: 0.4; }
           to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+        }
+        @keyframes stageIntroPop {
+          from { transform: translateX(-50%) scale(0.88) translateY(-8px); opacity: 0; }
+          to   { transform: translateX(-50%) scale(1)    translateY(0);    opacity: 1; }
         }
       `}</style>
     </div>

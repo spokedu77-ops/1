@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ClipboardList, Maximize, Minimize, Play, RotateCcw, X } from 'lucide-react';
+import { Check, ClipboardList, Clock3, Gauge, MapPin, Maximize, Minimize, Play, RotateCcw, Users, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -8,15 +8,14 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { hasBrokenText } from '../../lib/clean';
 import { useSession } from '../../hooks/useSession';
 import { SESSION_CUES } from '../../lib/data';
+import { OFFICIAL_SPOMOVE_PRESETS, formatSpomovePresetDuration, isSupportedMasterEngineMode } from '../../lib/spomovePresets';
 import { isTrialExpired } from '../../lib/subscription';
 import { useIsPro, useMasterStore, useProfile } from '../../store';
-import type { Cue, Session } from '../../types';
+import type { Cue, Session, SpomoveLaunchPreset } from '../../types';
 import { EngineRouter } from './EngineRouter';
 
 type SessionState = 'idle' | 'countdown' | 'running' | 'done' | 'paused';
 type LaunchMode = 'projector' | 'mobile' | 'class';
-
-const SUPPORTED_ENGINE_MODES = new Set(['reactTrain', 'flow', 'flash', 'pattern', 'diagonal', 'memory', 'spatial']);
 
 const CLEAN_CUES: Cue[] = [
   { symbol: 'L', label: '왼쪽', bgColor: '#1a0a3a' },
@@ -157,11 +156,88 @@ function TopBar({
   );
 }
 
+function EngineBriefing({
+  preset,
+  drillName,
+  engineMode,
+  engineLevel,
+  durationSec,
+  speedSec,
+  onStart,
+}: {
+  preset: SpomoveLaunchPreset | null;
+  drillName: string;
+  engineMode: string;
+  engineLevel: number;
+  durationSec?: number;
+  speedSec?: number;
+  onStart: () => void;
+}) {
+  const title = preset?.title || drillName;
+  const subtitle = preset?.subtitle || '관리자가 저장한 초·속도·단계 그대로 큰 화면에서 실행합니다.';
+  const facts = [
+    { icon: Clock3, label: '시간', value: durationSec ? formatSpomovePresetDuration(durationSec) : '기본값' },
+    { icon: Gauge, label: '속도', value: speedSec ? `${speedSec.toFixed(1)}초 간격` : '기본값' },
+    { icon: Users, label: '대상', value: preset?.target || '현장 판단' },
+    { icon: MapPin, label: '공간', value: preset?.space || 'TV·빔 화면' },
+  ];
+
+  return (
+    <div className="flex h-full items-center justify-center px-5 pb-8 pt-24 sm:px-8">
+      <section className="w-full max-w-[880px] overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.06] shadow-[0_28px_90px_rgba(0,0,0,0.38)] backdrop-blur-xl">
+        <div className="border-b border-white/10 bg-white/[0.04] px-5 py-4 sm:px-7">
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-indigo-200/70">SPOMOVE official preset</p>
+          <h1 className="mt-2 text-[30px] font-black leading-tight text-white sm:text-[44px]">{title}</h1>
+          <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/58">{subtitle}</p>
+        </div>
+
+        <div className="grid gap-4 p-5 sm:grid-cols-4 sm:p-7">
+          {facts.map(({ icon: Icon, label, value }) => (
+            <div key={label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <Icon className="h-4 w-4 text-indigo-200" />
+              <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-white/34">{label}</p>
+              <p className="mt-1 line-clamp-2 text-sm font-black text-white">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-4 border-t border-white/10 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-7">
+          <div className="min-w-0">
+            <div className="flex flex-wrap gap-2">
+              {(preset?.tags?.length ? preset.tags : ['큰 화면', `Lv.${engineLevel}`, engineMode]).map((tag) => (
+                <span key={tag} className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-[12px] font-black text-white/78">
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <p className="mt-3 text-xs font-semibold leading-5 text-white/42">
+              {preset?.useCase || '수업 중 화면 활동이 필요할 때 바로 실행하는 세팅입니다.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onStart}
+            className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-white px-6 text-sm font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Play className="h-5 w-5 fill-black" />
+            이 세팅으로 시작
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function SpomoveSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedDrillId = searchParams.get('drill') ?? 'reactTrain';
   const launchMode = normalizeMode(searchParams.get('mode'));
+  const presetId = searchParams.get('preset') ?? '';
+  const requestedEngineMode = searchParams.get('engineMode') ?? '';
+  const requestedLevel = Number(searchParams.get('level') ?? '');
+  const requestedDuration = Number(searchParams.get('duration') ?? '');
+  const requestedSpeed = Number(searchParams.get('speed') ?? '');
   const programId = searchParams.get('program') ?? '';
   const programs = useMasterStore((state) => state.programs);
   const drills = useMasterStore((state) => state.drills);
@@ -170,6 +246,7 @@ function SpomoveSessionContent() {
   const { activeSession, stats, start, end, markCue, markResponse, pause, resume } = useSession();
 
   const drill = useMemo(() => drills.find((item) => item.id === requestedDrillId || item.engine?.mode === requestedDrillId) ?? drills[0] ?? null, [drills, requestedDrillId]);
+  const preset = useMemo(() => OFFICIAL_SPOMOVE_PRESETS.find((item) => item.id === presetId) ?? null, [presetId]);
   const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
   const modeConfig = useMemo(() => getModeConfig(launchMode), [launchMode]);
   const cues = useMemo(() => (drill?.cues?.length ? drill.cues : SESSION_CUES).map(cleanCue), [drill]);
@@ -182,6 +259,7 @@ function SpomoveSessionContent() {
   const [cueSerial, setCueSerial] = useState(0);
   const [lastRT, setLastRT] = useState<number | null>(null);
   const [finalSession, setFinalSession] = useState<Session | null>(null);
+  const [remotePreset, setRemotePreset] = useState<SpomoveLaunchPreset | null>(null);
   const timeoutRef = useRef<number | null>(null);
 
   const maxCues = modeConfig.maxCues;
@@ -191,6 +269,21 @@ function SpomoveSessionContent() {
   const best = stats?.best ?? finalSession?.best ?? 0;
   const showResultStats = launchMode === 'mobile';
   const isScreenMode = launchMode === 'projector' || launchMode === 'class';
+
+  useEffect(() => {
+    if (!presetId || preset) return;
+    let alive = true;
+    fetch('/api/spokedu-master/spomove-presets')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json: { data?: SpomoveLaunchPreset[] } | null) => {
+        if (!alive || !Array.isArray(json?.data)) return;
+        setRemotePreset(json.data.find((item) => item.id === presetId) ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [preset, presetId]);
 
   useEffect(() => {
     if (!drill) {
@@ -330,14 +423,20 @@ function SpomoveSessionContent() {
     else void document.exitFullscreen?.();
   };
 
-  const engineMode = drill?.engine?.mode;
-  const engineLevel = drill?.engine?.level ?? 1;
+  const resolvedPreset = remotePreset ?? preset;
+  const engineMode = requestedEngineMode || resolvedPreset?.engineMode || drill?.engine?.mode;
+  const engineLevel = Number.isFinite(requestedLevel) && requestedLevel > 0 ? requestedLevel : resolvedPreset?.engineLevel ?? drill?.engine?.level ?? 1;
+  const engineDurationSec = Number.isFinite(requestedDuration) && requestedDuration > 0 ? requestedDuration : resolvedPreset?.durationSec;
+  const engineSpeedSec = Number.isFinite(requestedSpeed) && requestedSpeed > 0 ? requestedSpeed : resolvedPreset?.speedSec;
+  const canRunEngine = Boolean(drill?.engine && engineMode && isSupportedMasterEngineMode(engineMode));
 
-  if (drill?.engine && engineMode && SUPPORTED_ENGINE_MODES.has(engineMode) && state !== 'done') {
+  if (canRunEngine && engineMode && state === 'running') {
     return (
       <EngineRouter
         mode={engineMode}
         level={engineLevel}
+        durationSec={engineDurationSec}
+        speedSec={engineSpeedSec}
         onExit={exitSession}
         onComplete={() => {
           setFinalSession(null);
@@ -360,7 +459,19 @@ function SpomoveSessionContent() {
     >
       {state !== 'running' ? <TopBar drillName={drillName} mode={launchMode} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} onExit={exitSession} /> : null}
 
-      {state === 'idle' ? (
+      {state === 'idle' && canRunEngine && engineMode ? (
+        <EngineBriefing
+          preset={resolvedPreset}
+          drillName={drillName}
+          engineMode={engineMode}
+          engineLevel={engineLevel}
+          durationSec={engineDurationSec}
+          speedSec={engineSpeedSec}
+          onStart={startCountdown}
+        />
+      ) : null}
+
+      {state === 'idle' && !canRunEngine ? (
         <div className="flex h-full flex-col items-center justify-center px-8 text-center">
           <button
             type="button"

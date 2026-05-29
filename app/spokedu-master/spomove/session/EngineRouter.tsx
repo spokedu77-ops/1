@@ -32,6 +32,8 @@ export type EngineCompletePayload = {
 type Props = {
   mode: string;
   level: number;
+  durationSec?: number;
+  speedSec?: number;
   onComplete: (payload: EngineCompletePayload) => void;
   onExit: () => void;
 };
@@ -50,7 +52,7 @@ function resolveVariant(level: number): 'flow' | 'flash' | 'pattern' {
   return 'pattern';
 }
 
-export function EngineRouter({ mode, level, onComplete, onExit }: Props) {
+export function EngineRouter({ mode, level, durationSec, speedSec, onComplete, onExit }: Props) {
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
       onComplete({ engineMode: mode, engineLevel: level, stims: stats.stims, maxCombo: stats.maxCombo });
@@ -75,8 +77,8 @@ export function EngineRouter({ mode, level, onComplete, onExit }: Props) {
       <Suspense fallback={<LoadingOverlay />}>
         <VisualReactionTraining
           variant={variant}
-          durationSec={60 + level * 15}
-          speedSec={Math.max(0.4, 1.4 - level * 0.12)}
+          durationSec={durationSec ?? 60 + level * 15}
+          speedSec={speedSec ?? Math.max(0.4, 1.4 - level * 0.12)}
           onExit={onExit}
           onComplete={handleReactTrainComplete}
         />
@@ -88,9 +90,9 @@ export function EngineRouter({ mode, level, onComplete, onExit }: Props) {
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <DiagonalReactionTraining
-          durationSec={60 + level * 10}
+          durationSec={durationSec ?? 60 + level * 10}
           speedLevel={Math.min(level, 5)}
-          speedSec={Math.max(0.8, 5.6 - Math.min(level, 5) * 0.8)}
+          speedSec={speedSec ?? Math.max(0.8, 5.6 - Math.min(level, 5) * 0.8)}
           onExit={onExit}
           onComplete={handleDiagonalComplete}
         />
@@ -106,7 +108,7 @@ export function EngineRouter({ mode, level, onComplete, onExit }: Props) {
           onExit={onExit}
           onComplete={handleMemoryComplete}
           audioMode="beep"
-          speedSec={1.2}
+          speedSec={speedSec ?? 1.2}
         />
       </Suspense>
     );

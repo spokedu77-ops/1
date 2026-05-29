@@ -40,6 +40,27 @@ export interface Drill {
   engine?: { mode: string; level: number };
 }
 
+export type SpomovePresetIntent = 'warmup' | 'focus' | 'space' | 'finish';
+
+export interface SpomoveLaunchPreset {
+  id: string;
+  title: string;
+  subtitle: string;
+  intent: SpomovePresetIntent;
+  drillId: string;
+  engineMode: string;
+  engineLevel: number;
+  durationSec: number;
+  speedSec: number;
+  mode: 'projector' | 'mobile' | 'class';
+  tags: string[];
+  target: string;
+  space: string;
+  useCase: string;
+  isVisible?: boolean;
+  displayOrder?: number;
+}
+
 /** Supabase에서 로드된 프로그램 커스터마이징 메타 */
 export interface SmProgramMeta {
   curriculumId: number;

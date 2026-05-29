@@ -39,11 +39,9 @@ const JUMP_TRIGGER_REL = PAD_START_REL - PAD_DEPTH * PAD_TRIGGER_RATIO; // -1880
 const BASE_SPEED = 0.6;
 // 스테이지별 배수 (원본 LV1=0.8, LV2+=1.0, LV4+=1.25 참조)
 const SPEED_MULTS: number[] = [0.8, 1.0, 1.0, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25];
-const SPRINT_MULT  = 1.45;
 
 // 점프 파라미터 (원본 동일)
 const JUMP_HEIGHT   = 98;
-const JUMP_HEIGHT_BIG = 147;
 // 점프 지속 시간 by 스테이지 (원본 LV1=0.72, LV2=0.70, LV3+=0.64 근사)
 const JUMP_DURATIONS: number[] = [0.72, 0.70, 0.64, 0.62, 0.62, 0.62, 0.62, 0.62, 0.62];
 
@@ -82,15 +80,8 @@ const SPEEDLINE_LEVEL_MULT = 38;
 // 브릿지 프룬
 const BRIDGE_PRUNE_Z = 5000;
 
-// 특수 모듈
-const SPRINT_CYCLE  = 12;
-const SPRINT_DUR    = 3;
-const FREEZE_MIN    = 10;
-const FREEZE_MAX    = 18;
-const FREEZE_HOLD   = 1.8;
-const BALANCE_MIN   = 14;
-const BALANCE_MAX   = 22;
-const STAGE_FLASH_DUR = 0.5;
+// 펀치 벽 타격 시퀀스
+const WALL_BREAK_INTERVAL = 0.32; // 타격 간격 (초)
 
 // 테마 (레인 색상은 LANE_COLORS로 통일, fog 색상이 하늘·수평선 색 결정)
 const THEMES: Record<string, {
@@ -106,20 +97,14 @@ const THEMES: Record<string, {
 
 // ─── 타입 ────────────────────────────────────────────────────────────────────
 
-export type FlowGamePhase =
-  | 'idle'
-  | 'countdown'
-  | 'stage-intro'
-  | 'playing'
-  | 'stage-flash'
-  | 'complete';
+export type FlowGamePhase = 'idle' | 'countdown' | 'stage-intro' | 'playing' | 'complete';
 
 export interface FlowEngineCallbacks {
   onPhaseChange:  (phase: FlowGamePhase) => void;
   onCountdown:    (n: number) => void;
   onStageChange:  (stageIndex: number) => void;
   onTimerUpdate:  (remainingSec: number, totalProgress: number) => void;
-  onInstruction:  (text: string, colorClass: string, ms: number) => void;
+  onInstruction:  (text: string, colorClass: string, ms: number, priority?: number) => void;
   onComplete:     (stats: FlowStats) => void;
   onBalanceCue:   (foot: 'left' | 'right') => void;
   onCameraShake:  (intensity: number, ms: number) => void;
@@ -208,10 +193,11 @@ export class FlowEngine {
   private hitShakeIntensity = 0;
   private hitShakeDuration  = 0;
 
-  // ── duck 자동 dip (원본 DUCK_DIP_TARGET=-80, DUCK_PITCH_TARGET=0.55) ────────
+  // ── duck ──────────────────────────────────────────────────────────────────
   private duckDipOffset    = 0;
   private duckBounceOffset = 0;
   private duckPitchX       = 0;
+  private duckHold         = false; // UFO 통과 전까지 딥 유지
 
   // ── 게임 시간 ─────────────────────────────────────────────────────────────
   private gameTime   = 0;   // motionScale 적용 누적 (bob/점프용)
@@ -226,17 +212,13 @@ export class FlowEngine {
   private motionScale   = 1;
 
   // ── 특수 모듈 ─────────────────────────────────────────────────────────────
-  private sprintCycle      = SPRINT_CYCLE;
-  private sprintActive     = 0;
-  private sprintGateWarned = false;
-  private freezeCycle      = 0;
-  private freezeActive     = 0;
-  private freezeSignWarned = false;
-  private balanceCycle     = 0;
-  private balanceActive    = 0;
-  private sprintGateQueued = false;
-  private freezeWallQueued = false;
   private currentSpeed     = 0;
+  // 펀치 벽 타격 시퀀스
+  private wallBreakActive  = false;
+  private wallBreakHits    = 0;
+  private wallBreakTimer   = 0;
+  private jumpInstrCooldown = 0;
+  private isBonus = false; // 보너스 스테이지 여부
 
   private stats:     FlowStats = { stagesCompleted: 0, totalSec: 0 };
   private countdownTimer: ReturnType<typeof setTimeout> | null = null;
@@ -260,9 +242,8 @@ export class FlowEngine {
 
     await this.audio.init();
     if (this.opts.bgmPath) await this.audio.loadBgm(this.opts.bgmPath);
-
     this.init3D();
-    this.startCountdown();
+    // startCountdown은 start()에서 — 렌더 루프 시작 후 호출해야 blank screen 없음
   }
 
   private init3D(): void {
@@ -294,31 +275,49 @@ export class FlowEngine {
 
     this.obstacles = new ObstacleManager(this.scene, BRIDGE_LENGTH, {
       onBoxHit:           () => {},
-      onBoxWarn:          () => { /* 어드밴스 경고 텍스트 제거 — autoHit에서만 표시 */ },
+      onBoxWarn:          (isReach) => {
+        // 박스가 접근 중일 때 문구 — 박스가 화면에 있는 동안만 (350ms ≈ 500유닛/1440속도)
+        if (isReach) return; // 두드리기 벽은 별도 시퀀스에서 처리
+        if (this.isBonus) return;
+        if (!this.activeModules.has('punch')) return;
+        this.showInstruction('펀치!', 'text-red-400', 350, 2);
+      },
       onUfoWarn:          () => {
-        // UFO가 -700 유닛 앞 → 플레이어 도달까지 ~490ms → 텍스트는 700ms만
+        // UFO 접근 시 문구 — UFO가 화면에 있는 동안만 (320ms ≈ 450유닛/1440속도)
         if (!this.activeModules.has('duck')) return;
-        this.showInstruction('숙여!', 'text-cyan-300', 700);
+        if (this.isBonus) return;
+        this.showInstruction('숙여!', 'text-cyan-300', 320, 2);
       },
       onUfoDuckStart:     () => {
-        // UFO가 플레이어 200 유닛 앞 — 카메라 딥 효과만 (텍스트 없음)
         if (!this.activeModules.has('duck')) return;
-        this.duckDipOffset = -80;
-        this.duckPitchX    = 0.55;
+        // 문구는 onUfoWarn에서 이미 표시 — 여기서는 카메라 딥만
+        this.duckDipOffset = -120;
+        this.duckPitchX    = 0.70;
+        this.duckHold      = true;  // UFO 통과 전까지 딥 유지
       },
       onUfoPassed:        () => {
-        this.duckBounceOffset = 50;
-        this.duckPitchX = 0;
+        this.duckHold         = false; // 회복 시작
+        this.duckBounceOffset = 90;
+        this.duckPitchX       = -0.18; // 통과 후 살짝 위를 봄
         this.audio.sfxLand();
+      },
+      onPunchWallEnter:   () => {
+        // 펀치 벽 진입 — FlowEngine이 타격 시퀀스 시작
+        if (!this.activeModules.has('reach')) return;
+        this.wallBreakActive = true;
+        this.wallBreakHits   = 0;
+        this.wallBreakTimer  = WALL_BREAK_INTERVAL;
       },
       onBoxAutoHit:       (isReach: boolean) => {
         this.microJolt += 0.65;
-        const am = this.activeModules;
-        if (isReach && am.has('reach')) this.showInstruction('뻗어!', 'text-purple-300', 900);
-        else if (!isReach && am.has('punch')) this.showInstruction('펀치!', 'text-red-400', 900);
+        this.audio.sfxPunch();
+        // 펀치 문구는 onBoxWarn에서 이미 표시됨 — 여기서는 이펙트만
+        if (isReach && this.activeModules.has('reach')) {
+          this.hitShakeRemaining = 220;
+          this.hitShakeIntensity = 1.2;
+          this.hitShakeDuration  = 220;
+        }
       },
-      onSprintGatePassed: () => { this.triggerSprint(); },
-      onFreezeWallPassed: () => { this.triggerFreeze(); },
       onCameraShake:      (int, ms) => {
         this.hitShakeRemaining = ms;
         this.hitShakeIntensity = int;
@@ -480,16 +479,12 @@ export class FlowEngine {
 
   private spawnBridge(isFirst: boolean): void {
     if (!this.scene) return;
-    const stage   = this.stageList[this.stageIdx];
-    const bigJump = stage?.activeModules.has('bigJump') ?? false;
-
     let spawnZ: number;
     if (isFirst) {
       spawnZ = PLAYER_Z;
     } else if (this.bridges.length > 0) {
       const last = this.bridges[this.bridges.length - 1];
-      const gap  = bigJump ? Math.round(BRIDGE_GAP * 1.7) : BRIDGE_GAP;
-      spawnZ = last.mesh.position.z - (BRIDGE_LENGTH + PAD_DEPTH + gap);
+      spawnZ = last.mesh.position.z - (BRIDGE_LENGTH + PAD_DEPTH + BRIDGE_GAP);
     } else {
       spawnZ = -8000;
     }
@@ -531,17 +526,29 @@ export class FlowEngine {
     };
     this.bridges.push(bridgeObj);
 
+    const stage = this.stageList[this.stageIdx];
     if (!isFirst && this.obstacles && stage) {
-      const am       = stage.activeModules;
+      const am = stage.activeModules;
       const hasPunch = am.has('punch') || am.has('reach');
       const hasDuck  = am.has('duck');
 
-      if (hasDuck && hasPunch) {
+      if (this.isBonus && hasDuck && hasPunch) {
+        // 보너스: UFO / 펀치박스 / 두드리기벽 균등 배분 (각 25%, 25% nothing)
+        const r = Math.random();
+        if (r < 0.25) { /* nothing */ }
+        else if (r < 0.5 && !this.obstacles.hasActiveUfo() && !this.obstacles.hasActiveBox()) {
+          this.obstacles.attachUfo(bridgeObj);
+        } else if (r < 0.75 && !this.obstacles.hasActiveBox()) {
+          if (am.has('punch')) this.obstacles.attachBox(bridgeObj, am, false); // 펀치박스 강제
+        } else if (!this.obstacles.hasActiveBox() && am.has('reach')) {
+          this.obstacles.attachBox(bridgeObj, am, true); // 두드리기벽 강제
+        }
+      } else if (hasDuck && hasPunch) {
         const r = Math.random();
         if (r > 0.35 && r < 0.65) {
           if (this.obstacles.shouldSpawnBox(am)) this.obstacles.attachBox(bridgeObj, am);
         } else if (r >= 0.65) {
-          this.obstacles.attachUfo(bridgeObj);
+          if (this.obstacles.shouldSpawnUfo(am)) this.obstacles.attachUfo(bridgeObj);
         }
       } else if (hasDuck && !hasPunch) {
         if (this.obstacles.shouldSpawnUfo(am)) this.obstacles.attachUfo(bridgeObj);
@@ -549,8 +556,6 @@ export class FlowEngine {
         if (this.obstacles.shouldSpawnBox(am)) this.obstacles.attachBox(bridgeObj, am);
       }
 
-      if (this.sprintGateQueued) { this.obstacles.attachSprintGate(bridgeObj); this.sprintGateQueued = false; }
-      if (this.freezeWallQueued) { this.obstacles.attachFreezeWall(bridgeObj); this.freezeWallQueued = false; }
     }
   }
 
@@ -561,7 +566,12 @@ export class FlowEngine {
     let n = 3;
     const tick = () => {
       this.cb.onCountdown?.(n);
-      if (n <= 0) { this.startStage(0); return; }
+      if (n <= 0) {
+        this.setPhase('playing');
+        this.audio.resume().then(() => this.audio.startMusic());
+        this.startStage(0);
+        return;
+      }
       n--;
       this.countdownTimer = setTimeout(tick, 1000);
     };
@@ -576,53 +586,47 @@ export class FlowEngine {
     if (!stage) { this.endGame(); return; }
 
     this.activeModules = stage.activeModules;
+    this.isBonus       = stage.isBonus;
     this.stageTimer    = 0;
-    this.jumpHeight    = stage.activeModules.has('bigJump') ? JUMP_HEIGHT_BIG : JUMP_HEIGHT;
+    this.jumpHeight    = JUMP_HEIGHT;
     this.jumpDuration  = JUMP_DURATIONS[Math.min(idx, JUMP_DURATIONS.length - 1)]!;
     this.resetSpecialTimers();
     this.obstacles?.clearAll();
     for (const b of this.bridges) { b.hasBox = false; b.instructionFired = false; }
-    this.activeBridge      = null;
-    this.lastJumpBridgeId  = -1;
+    this.activeBridge = null;
+    // lastJumpBridgeId 유지 → phantom jump 방지
     this.cb.onStageChange?.(idx);
-    this.setPhase('stage-intro');
-
-    this.countdownTimer = setTimeout(() => {
-      this.setPhase('playing');
-      this.audio.resume().then(() => this.audio.startMusic());
-    }, 3000);
+    // 스테이지 0은 카운트다운 후 already-playing. 1+부터 5초 인트로
+    if (idx > 0) {
+      this.setPhase('stage-intro');
+      this.countdownTimer = setTimeout(() => this.setPhase('playing'), 5000);
+    }
   }
 
   private resetSpecialTimers(): void {
-    this.sprintCycle      = SPRINT_CYCLE;
-    this.sprintActive     = 0;
-    this.sprintGateWarned = false;
-    this.sprintGateQueued = false;
-    this.freezeCycle      = FREEZE_MIN + Math.random() * (FREEZE_MAX - FREEZE_MIN);
-    this.freezeActive     = 0;
-    this.freezeSignWarned = false;
-    this.freezeWallQueued = false;
-    this.balanceCycle     = BALANCE_MIN + Math.random() * (BALANCE_MAX - BALANCE_MIN);
-    this.balanceActive    = 0;
-    this.isJumping        = false;
-    this.jumpProgress     = 0;
-    this.playerJumpY      = 0;
+    this.wallBreakActive  = false;
+    this.wallBreakHits    = 0;
+    this.wallBreakTimer   = 0;
+    this.duckHold         = false;
+    this.duckDipOffset    = 0;
+    this.duckPitchX       = 0;
+    this.duckBounceOffset = 0;
+    this.jumpInstrCooldown = 0;
+    this.isJumping    = false;
+    this.jumpProgress = 0;
+    this.playerJumpY  = 0;
   }
 
   private endStage(): void {
     this.stats.stagesCompleted++;
-    this.setPhase('stage-flash');
     this.audio.sfxStageUp();
-    // 스테이지 클리어 플래시
-    this.flashPulseValue    = 1.0;
-    this.hitShakeRemaining  = 250;
-    this.hitShakeIntensity  = 0.9;
-    this.hitShakeDuration   = 250;
-    setTimeout(() => {
-      const next = this.stageIdx + 1;
-      if (next < this.stageList.length) this.startStage(next);
-      else this.endGame();
-    }, STAGE_FLASH_DUR * 1000);
+    this.flashPulseValue   = 1.0;
+    this.hitShakeRemaining = 250;
+    this.hitShakeIntensity = 0.9;
+    this.hitShakeDuration  = 250;
+    const next = this.stageIdx + 1;
+    if (next < this.stageList.length) this.startStage(next);
+    else this.endGame();
   }
 
   private endGame(): void {
@@ -639,29 +643,6 @@ export class FlowEngine {
   }
 
   // ── 특수 모듈 트리거 ─────────────────────────────────────────────────────
-
-  private triggerSprint(): void {
-    this.sprintActive = SPRINT_DUR;
-    this.audio.sfxSprint();
-    // 강한 섬광 + 즉각적인 FOV 점프 + 쉐이크 (내부 직접 세팅)
-    this.flashPulseValue    = 1.0;
-    this.targetFov          = FOV_MAX;
-    this.hitShakeRemaining  = 200;
-    this.hitShakeIntensity  = 1.4;
-    this.hitShakeDuration   = 200;
-    this.showInstruction('가속!', 'text-cyan-300', 1400);
-  }
-
-  private triggerFreeze(): void {
-    this.freezeActive = FREEZE_HOLD;
-    this.audio.sfxFreeze();
-    // 섬광 + 쉐이크 (내부 직접 세팅)
-    this.flashPulseValue    = 0.85;
-    this.hitShakeRemaining  = 300;
-    this.hitShakeIntensity  = 1.0;
-    this.hitShakeDuration   = 300;
-    this.showInstruction('얼음!', 'text-sky-300', 2000);
-  }
 
   // ── 게임 루프 ────────────────────────────────────────────────────────────
 
@@ -735,6 +716,7 @@ export class FlowEngine {
     if (!stage) return;
 
     this.stageTimer += dt;
+    if (this.jumpInstrCooldown > 0) this.jumpInstrCooldown = Math.max(0, this.jumpInstrCooldown - dt);
     const remaining     = Math.max(0, stage.durationSec - this.stageTimer);
     const totalProgress = (this.stageIdx * stage.durationSec + this.stageTimer) /
       (this.stageList.length * stage.durationSec);
@@ -746,9 +728,7 @@ export class FlowEngine {
     const stageMult   = SPEED_MULTS[Math.min(this.stageIdx, SPEED_MULTS.length - 1)]!;
     // faster 모듈: 해당 스테이지 추가 속도 +15%
     const fasterMult  = this.activeModules.has('faster') ? 1.15 : 1.0;
-    let speedScalar = 1.0;
-    if (this.freezeActive > 0) speedScalar = 0;
-    else if (this.sprintActive > 0) speedScalar = SPRINT_MULT;
+    let speedScalar = this.wallBreakActive ? 0.0 : 1.0;
     this.currentSpeed = BASE_SPEED * stageMult * fasterMult * speedScalar;
     const bridgeMove  = this.currentSpeed * 50 * dt60M;
 
@@ -782,13 +762,13 @@ export class FlowEngine {
         const relZ = PLAYER_Z - b.mesh.position.z;
         this.isOnPad = relZ < PAD_START_REL;
 
-        // 점프 트리거: PAD_TRIGGER_RATIO 기준
+        // 점프 트리거 — isJumping 체크를 여기서도 (checkBridge 두 번 호출 가능 경로 방어)
         if (
           relZ <= JUMP_TRIGGER_REL &&
-          b.bridgeId !== this.lastJumpBridgeId
+          b.bridgeId !== this.lastJumpBridgeId &&
+          !this.isJumping
         ) {
           this.lastJumpBridgeId = b.bridgeId;
-          // 다음 브릿지로 targetX 설정
           const nextIdx = this.bridges.indexOf(b) + 1;
           if (nextIdx < this.bridges.length) {
             const nextB = this.bridges[nextIdx];
@@ -871,84 +851,36 @@ export class FlowEngine {
 
     this.microJolt *= Math.exp(-JOLT_DECAY * dtM);
 
-    // duck dip 회복
-    this.duckDipOffset    += (0 - this.duckDipOffset) * 0.12 * dt60;
-    this.duckPitchX       += (0 - this.duckPitchX)    * 0.15 * dt60;
-    this.duckBounceOffset *= Math.pow(0.99, dt60);
-
-    // ── 특수 모듈: sprint ─────────────────────────────────────────────────
-    if (this.activeModules.has('sprint')) {
-      if (this.sprintActive > 0) {
-        this.sprintActive -= dt;
-        if (this.sprintActive <= 0) {
-          this.sprintActive     = 0;
-          this.sprintCycle      = SPRINT_CYCLE;
-          this.sprintGateWarned = false;
-          this.sprintGateQueued = false;
-          this.showInstruction('계속!', 'text-emerald-400', 600);
-        }
-        this.flashPulseValue = Math.min(1, this.flashPulseValue + 0.04 * dt60);
-      } else {
-        this.sprintCycle -= dt;
-        // 임계값 6초: 게이트가 기존 브릿지에 즉시 부착되면 ~2-3초 후 도달 → 사이클 안에 확실히 통과
-        if (!this.sprintGateWarned && this.sprintCycle <= 6) {
-          this.sprintGateWarned = true;
-          this.sprintGateQueued = true;
-          this.showInstruction('링 통과!', 'text-cyan-400', 1200);
-        }
-        if (this.sprintCycle <= 0) {
-          this.sprintCycle      = SPRINT_CYCLE;
-          this.sprintGateWarned = false;
-          this.sprintGateQueued = false;
-        }
-      }
+    // duck dip 회복 — UFO 통과 전까지 홀드, 통과 후 천천히 회복
+    if (!this.duckHold) {
+      this.duckDipOffset += (0 - this.duckDipOffset) * 0.038 * dt60;
+      this.duckPitchX    += (0 - this.duckPitchX)    * 0.042 * dt60;
     }
+    this.duckBounceOffset *= Math.pow(0.985, dt60);
 
-    // ── 특수 모듈: freeze ─────────────────────────────────────────────────
-    if (this.activeModules.has('freeze')) {
-      if (this.freezeActive > 0) {
-        this.freezeActive -= dt;
-        if (this.freezeActive <= 0) {
-          this.freezeActive     = 0;
-          this.freezeCycle      = FREEZE_MIN + Math.random() * (FREEZE_MAX - FREEZE_MIN);
-          this.freezeSignWarned = false;
-          this.freezeWallQueued = false;
-          this.showInstruction('계속!', 'text-emerald-400', 600);
-        }
-      } else {
-        this.freezeCycle -= dt;
-        // 임계값 7초로 상향
-        if (!this.freezeSignWarned && this.freezeCycle <= 7) {
-          this.freezeSignWarned = true;
-          this.freezeWallQueued = true;
-          this.showInstruction('벽 접근!', 'text-sky-300', 1200);
-        }
-        if (this.freezeCycle <= 0) {
-          this.freezeCycle      = FREEZE_MIN + Math.random() * (FREEZE_MAX - FREEZE_MIN);
-          this.freezeSignWarned = false;
-          this.freezeWallQueued = false;
-        }
-      }
-    }
-
-    // ── 큐된 게이트·벽 즉시 부착 (신규 브릿지 대기 없이 기존 브릿지에 부착) ──
-    this.tryAttachQueuedObstacles();
-
-    // ── 특수 모듈: balance ────────────────────────────────────────────────
-    if (this.activeModules.has('balance')) {
-      if (this.balanceActive > 0) {
-        this.balanceActive -= dt;
-        if (this.balanceActive <= 0) {
-          this.balanceActive = 0;
-          this.balanceCycle  = BALANCE_MIN + Math.random() * (BALANCE_MAX - BALANCE_MIN);
-        }
-      } else {
-        this.balanceCycle -= dt;
-        if (this.balanceCycle <= 0) {
-          const foot = Math.random() < 0.5 ? 'left' : 'right';
-          // onBalanceCue → FlowGameClient 하단 패널 표시 (showInstruction 중복 제거)
-          this.cb.onBalanceCue?.(foot);
-          this.balanceActive = 2.5;
+    // ── 펀치 벽 타격 시퀀스 ───────────────────────────────────────────────
+    if (this.wallBreakActive) {
+      this.wallBreakTimer -= dt;
+      if (this.wallBreakTimer <= 0) {
+        this.wallBreakHits++;
+        const done = this.obstacles?.hitPunchWall() ?? true;
+        this.microJolt += 0.55;
+        this.audio.sfxPunch();
+        this.hitShakeRemaining = 130;
+        this.hitShakeIntensity = 0.75 + this.wallBreakHits * 0.1;
+        this.hitShakeDuration  = 130;
+        if (!this.isBonus) this.showInstruction('두드려!', 'text-yellow-300', 260, 2);
+        if (done) {
+          this.wallBreakActive = false;
+          this.wallBreakHits   = 0;
+          this.obstacles?.breakPunchWall();
+          this.flashPulseValue   = 1.0;
+          this.hitShakeRemaining = 300;
+          this.hitShakeIntensity = 1.5;
+          this.hitShakeDuration  = 300;
+          if (!this.isBonus) this.showInstruction('두드려!', 'text-orange-300', 600, 3);
+        } else {
+          this.wallBreakTimer = WALL_BREAK_INTERVAL;
         }
       }
     }
@@ -976,62 +908,20 @@ export class FlowEngine {
   // ── 자동 점프 ────────────────────────────────────────────────────────────
 
   private triggerAutoJump(): void {
-    if (this.isJumping) return;
+    if (this.isJumping) return; // 이미 점프 중이면 절대 재진입 금지
     this.isJumping     = true;
     this.jumpProgress  = 0;
     this.jumpStartTime = this.gameTime;
     this.microJolt    += MICROJOLT_AMOUNT;
     this.audio.sfxJump();
-    if (this.activeModules.has('bigJump')) {
-      this.showInstruction('크게 점프!', 'text-orange-300', 1000);
-    } else if (this.activeModules.has('jump')) {
-      this.showInstruction('점프!', 'text-yellow-300', 700);
+    if (this.jumpInstrCooldown <= 0 && !this.isBonus) {
+      this.showInstruction('점프!', 'text-blue-300', 260, 1);
+      this.jumpInstrCooldown = 3.0;
     }
   }
 
   // 어드밴스 경고는 ObstacleManager.onBoxWarn 으로 이관됨
   private checkObstacleInstructions(): void { /* no-op */ }
-
-  /**
-   * 큐된 게이트·벽을 신규 브릿지 스폰 대기 없이, 현재 씬의 브릿지 중
-   * 플레이어로부터 가장 가까운 "앞"(Z 작은쪽) 브릿지에 즉시 부착.
-   * → 경고 후 2~4초 내 게이트/벽이 플레이어에 도달하도록 보장.
-   */
-  private tryAttachQueuedObstacles(): void {
-    if (!this.obstacles) return;
-
-    if (this.sprintGateQueued && !this.obstacles.hasSprintGate()) {
-      const target = this.findGateBridge();
-      if (target) {
-        this.obstacles.attachSprintGate(target);
-        this.sprintGateQueued = false;
-      }
-    }
-
-    if (this.freezeWallQueued && !this.obstacles.hasFreezeWall()) {
-      const target = this.findGateBridge();
-      if (target) {
-        this.obstacles.attachFreezeWall(target);
-        this.freezeWallQueued = false;
-      }
-    }
-  }
-
-  /** 게이트 부착 대상: 아직 플레이어 앞에 있고 가장 가까운 브릿지 */
-  private findGateBridge(): BridgeObj | null {
-    let best: BridgeObj | null = null;
-    let bestDist = Infinity;
-    for (const b of this.bridges) {
-      // 게이트 월드 Z = bridge.z - BRIDGE_LENGTH*0.3
-      const gateZ = b.mesh.position.z - BRIDGE_LENGTH * 0.3;
-      // 플레이어보다 앞(낮은 Z), 너무 멀지 않은 범위
-      if (gateZ < PLAYER_Z - 80 && gateZ > -20000) {
-        const dist = PLAYER_Z - gateZ;
-        if (dist < bestDist) { bestDist = dist; best = b; }
-      }
-    }
-    return best;
-  }
 
   // ── 카메라 업데이트 (원본 updateCamera 이식) ──────────────────────────────
 
@@ -1139,15 +1029,15 @@ export class FlowEngine {
 
   // ── 유틸 ─────────────────────────────────────────────────────────────────
 
-  private showInstruction(text: string, colorClass: string, ms: number): void {
-    this.cb.onInstruction?.(text, colorClass, ms);
+  private showInstruction(text: string, colorClass: string, ms: number, priority = 1): void {
+    this.cb.onInstruction?.(text, colorClass, ms, priority);
   }
 
   getPhase(): FlowGamePhase { return this.phase; }
 
   // ── 시작 / 종료 ──────────────────────────────────────────────────────────
 
-  start(): void { this.startLoop(); }
+  start(): void { this.startLoop(); this.startCountdown(); }
 
   /** BGM 리스트가 늦게 로딩됐을 때 — init 이후 외부에서 호출 */
   async loadBgmLate(storagePath: string): Promise<void> {

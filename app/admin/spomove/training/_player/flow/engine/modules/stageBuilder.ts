@@ -1,26 +1,23 @@
 /**
  * Flow 2.0 — 스테이지 빌더
- * 선택한 모듈 배열 → 누적 스테이지 설정 배열 변환
  *
- * 예) selected = ['punch', 'duck', 'freeze']
- *   → Stage 1: {jump}
- *   → Stage 2: {jump, punch}
- *   → Stage 3: {jump, punch, duck}
- *   → Stage 4: {jump, punch, duck, freeze}
+ * 구조:
+ *   Stage 1      : {jump} — 기본 달리기
+ *   Stage 2..N   : {jump, 해당모듈만} — 기능 하나씩 단독 훈련
+ *   BONUS Stage  : {jump, 전체 모듈} — 종합 (선택 모듈 2개 이상일 때만 추가)
  */
 
 import { FLOW_MODULES } from './flowModules';
 import type { FlowModuleKey } from './flowModules';
 
 export interface FlowStageConfig {
-  stageIndex: number;   // 0-based
-  stageNum: number;     // 1-based (화면 표시용)
-  label: string;        // "STAGE 3"
+  stageIndex: number;
+  stageNum: number;
+  label: string;
   durationSec: number;
-  /** 이 스테이지에서 활성화된 모듈 전체 */
   activeModules: Set<FlowModuleKey>;
-  /** 이 스테이지에서 새로 추가된 모듈 (스테이지 인트로 강조용) */
   newModule: FlowModuleKey;
+  isBonus: boolean;
   color: string;
   colorBg: string;
   colorBorder: string;
@@ -33,12 +30,13 @@ export interface FlowStagePreview {
   label: string;
   modules: FlowModuleKey[];
   newModule: FlowModuleKey;
+  isBonus: boolean;
   color: string;
 }
 
 /**
  * @param selectedModules 선택된 모듈 (순서 = 스테이지 도입 순서, base 제외)
- * @param durationSec 스테이지당 시간 (초)
+ * @param durationSec     스테이지당 시간 (초)
  */
 export function buildStages(
   selectedModules: FlowModuleKey[],
@@ -47,7 +45,7 @@ export function buildStages(
   const stages: FlowStageConfig[] = [];
   const baseMod = FLOW_MODULES.jump;
 
-  // Stage 1: jump only (base)
+  // Stage 1: 점프만
   stages.push({
     stageIndex: 0,
     stageNum: 1,
@@ -55,6 +53,7 @@ export function buildStages(
     durationSec,
     activeModules: new Set<FlowModuleKey>(['jump']),
     newModule: 'jump',
+    isBonus: false,
     color: baseMod.color,
     colorBg: baseMod.colorBg,
     colorBorder: baseMod.colorBorder,
@@ -62,19 +61,18 @@ export function buildStages(
     shortInstruction: baseMod.shortInstruction,
   });
 
-  // 누적 스테이지
-  const cumulative = new Set<FlowModuleKey>(['jump']);
+  // 각 모듈 단독 스테이지: jump + 해당 모듈만
   for (let i = 0; i < selectedModules.length; i++) {
-    const key = selectedModules[i];
-    cumulative.add(key);
+    const key = selectedModules[i]!;
     const mod = FLOW_MODULES[key];
     stages.push({
       stageIndex: i + 1,
       stageNum: i + 2,
       label: `STAGE ${i + 2}`,
       durationSec,
-      activeModules: new Set(cumulative),
+      activeModules: new Set<FlowModuleKey>(['jump', key]),
       newModule: key,
+      isBonus: false,
       color: mod.color,
       colorBg: mod.colorBg,
       colorBorder: mod.colorBorder,
@@ -83,10 +81,28 @@ export function buildStages(
     });
   }
 
+  // 보너스 스테이지: 전체 합산 (선택 모듈 2개 이상)
+  if (selectedModules.length >= 2) {
+    const bonusIdx = selectedModules.length + 1;
+    stages.push({
+      stageIndex: bonusIdx,
+      stageNum: bonusIdx + 1,
+      label: 'BONUS',
+      durationSec: 60, // 보너스 스테이지는 항상 1분 고정
+      activeModules: new Set<FlowModuleKey>(['jump', ...selectedModules]),
+      newModule: selectedModules[selectedModules.length - 1]!,
+      isBonus: true,
+      color: '#fbbf24',
+      colorBg: 'rgba(251,191,36,0.15)',
+      colorBorder: 'rgba(251,191,36,0.6)',
+      cueWord: '보너스!',
+      shortInstruction: '지금까지 배운 모든 동작을 펼쳐보세요!',
+    });
+  }
+
   return stages;
 }
 
-/** UI 프리뷰용 (렌더링에 필요한 정보만) */
 export function buildStagePreview(
   selectedModules: FlowModuleKey[],
 ): FlowStagePreview[] {
@@ -96,6 +112,7 @@ export function buildStagePreview(
     label: s.label,
     modules: [...s.activeModules],
     newModule: s.newModule,
+    isBonus: s.isBonus,
     color: s.color,
   }));
 }

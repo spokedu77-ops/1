@@ -19,12 +19,13 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { cleanText } from '../lib/clean';
+import { OFFICIAL_SPOMOVE_PRESETS, USER_SPOMOVE_PRESETS_KEY, spomovePresetHref } from '../lib/spomovePresets';
 import { formatReactionTime } from '../lib/utils';
 import { useIsPro, useMasterStore, useStats } from '../store';
-import type { Drill } from '../types';
+import type { Drill, SpomoveLaunchPreset } from '../types';
 
 type IntentKey = 'ready' | 'reaction' | 'control' | 'flow';
 
@@ -276,6 +277,49 @@ function LaunchModeCard({ href, icon: Icon, title, caption, tone }: { href: stri
   );
 }
 
+const PRESET_TONES: Record<SpomoveLaunchPreset['intent'], string> = {
+  warmup: '#635bff',
+  focus: '#10b981',
+  space: '#f59e0b',
+  finish: '#ec4899',
+};
+
+function PresetCard({ preset }: { preset: SpomoveLaunchPreset }) {
+  const tone = PRESET_TONES[preset.intent];
+  return (
+    <Link
+      href={spomovePresetHref(preset)}
+      className="group flex min-h-[232px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+    >
+      <span>
+        <span className="inline-flex h-10 items-center rounded-full px-3 text-xs font-black text-white" style={{ background: tone }}>
+          {preset.durationSec < 60 ? `${preset.durationSec}초` : `${Math.floor(preset.durationSec / 60)}분 ${preset.durationSec % 60 ? `${preset.durationSec % 60}초` : ''}`.trim()}
+        </span>
+        <h3 className="mt-4 text-xl font-black leading-tight text-slate-950">{preset.title}</h3>
+        <p className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{preset.subtitle}</p>
+      </span>
+
+      <span className="mt-5 space-y-3">
+        <span className="block rounded-2xl bg-slate-50 p-3">
+          <span className="block text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">추천 상황</span>
+          <span className="mt-1 block text-sm font-bold leading-5 text-slate-800">{preset.useCase}</span>
+        </span>
+        <span className="flex flex-wrap gap-2">
+          {[preset.target, preset.space, ...preset.tags.slice(0, 2)].map((tag) => (
+            <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-600">
+              {tag}
+            </span>
+          ))}
+        </span>
+        <span className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-black text-white">
+          <MonitorPlay className="h-4 w-4" />
+          이 세팅으로 실행
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 function FeaturedCard({ drill, index, isLocked }: { drill: Drill; index: number; isLocked: boolean }) {
   const href = isLocked ? '/spokedu-master/payment?plan=pro' : sessionHref(drill.id);
   const tones = ['#635bff', '#10b981', '#f59e0b', '#ec4899'];
@@ -403,8 +447,11 @@ export default function SpomoveHubView() {
   const sessions = useMasterStore((state) => state.sessions);
   const rawDrills = useMasterStore((state) => state.drills);
   const stats = useStats();
+  const [userPresets, setUserPresets] = useState<SpomoveLaunchPreset[]>([]);
+  const [officialPresets, setOfficialPresets] = useState<SpomoveLaunchPreset[]>(OFFICIAL_SPOMOVE_PRESETS);
 
   const drills = useMemo(() => sortDrills(rawDrills), [rawDrills]);
+  const launchPresets = useMemo(() => [...userPresets, ...officialPresets], [officialPresets, userPresets]);
   const defaultDrill = drills[0];
   const defaultDrillId = defaultDrill?.id ?? 'reactTrain';
   const featuredDrills = useMemo(() => {
@@ -429,6 +476,32 @@ export default function SpomoveHubView() {
     { label: '전용 엔진', value: `${nativeEngineCount}개` },
     { label: '기본 실행', value: `${fallbackEngineCount}개` },
   ];
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(USER_SPOMOVE_PRESETS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) {
+        setUserPresets(parsed.filter((item): item is SpomoveLaunchPreset => Boolean(item?.id && item?.title && item?.drillId)));
+      }
+    } catch {
+      setUserPresets([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/spokedu-master/spomove-presets')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json: { data?: SpomoveLaunchPreset[] } | null) => {
+        if (!alive) return;
+        if (Array.isArray(json?.data) && json.data.length > 0) setOfficialPresets(json.data);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <main className="h-full overflow-y-auto bg-[#f5f7fb]">
@@ -476,6 +549,26 @@ export default function SpomoveHubView() {
             </div>
           </section>
         </header>
+
+        <section>
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-black tracking-[0.14em] text-indigo-500">공식 실행 프리셋</p>
+              <h2 className="mt-1 text-2xl font-black text-slate-950">오늘 수업에 바로 쓰는 SPOMOVE 세팅</h2>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
+                초, 속도, 단계까지 맞춰둔 실행값입니다. 드릴을 고르는 화면이 아니라 현장 상황에 맞는 세팅을 바로 여는 구조로 운영합니다.
+              </p>
+            </div>
+            <Link href="/admin/spomove/training" className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-800 transition hover:border-indigo-200">
+              관리자 세팅으로 가기
+            </Link>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {launchPresets.map((preset) => (
+              <PresetCard key={preset.id} preset={preset} />
+            ))}
+          </div>
+        </section>
 
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">

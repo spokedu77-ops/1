@@ -63,7 +63,7 @@ type Screen =
   | 'flow'
   | 'result';
 
-type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'sprint' | 'freeze' | 'balance' | 'bigJump';
+type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach';
 
 type Settings = {
   mode: string;
@@ -1038,11 +1038,7 @@ export default function MemoryGameApp({
                         { key: 'faster',   icon: '⚡', label: '속도 증가 (FASTER)',  desc: '이전 스테이지보다 다리 이동 속도가 빨라집니다.' },
                         { key: 'punch',    icon: '👊', label: '박스 펀치 (PUNCH)',   desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
                         { key: 'duck',     icon: '🛸', label: 'UFO 숙이기 (DUCK)',   desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
-                        { key: 'reach',    icon: '🆙', label: '높은 박스 (REACH)',   desc: '높은 보라색 박스가 추가 등장합니다. 팔을 뻗어 치세요.' },
-                        { key: 'sprint',   icon: '💨', label: '속도 폭발 (SPRINT)',  desc: '스프린트 링 통과 시 속도가 폭발합니다.' },
-                        { key: 'freeze',   icon: '❄️', label: '정지 신호 (FREEZE)',  desc: '얼음 벽 신호 등장 — 즉시 정지 억제 훈련입니다.' },
-                        { key: 'balance',  icon: '🦶', label: '한 발 착지 (BALANCE)', desc: '큐에 따라 한 발로 착지하는 균형 훈련입니다.' },
-                        { key: 'bigJump',  icon: '🏔️', label: '넓은 점프 (BIG JUMP)', desc: '다리 간격이 넓어지고 점프 높이가 높아집니다.' },
+                        { key: 'reach',    icon: '🧱', label: '펀치 벽 두드리기',      desc: '브릿지를 막는 벽이 등장합니다. 5번 연속 두드려 부수세요.' },
                       ] as { key: FlowFeatureKey; icon: string; label: string; desc: string }[]
                     ).map(({ key, icon, label, desc }) => {
                       const active = settings.flowFeatures.has(key);

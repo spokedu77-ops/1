@@ -26,6 +26,7 @@ function FloatingTimerPill() {
       setDisplayMs(ms);
       return;
     }
+
     const id = setInterval(() => setDisplayMs(ms + (startedAt ? Date.now() - startedAt : 0)), 500);
     return () => clearInterval(id);
   }, [running, ms, startedAt]);

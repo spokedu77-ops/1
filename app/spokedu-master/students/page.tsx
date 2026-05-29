@@ -71,7 +71,7 @@ export default function StudentsPage() {
   const selectedParentToken = selected ? parentShareTokens[selected.id] ?? '' : '';
 
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

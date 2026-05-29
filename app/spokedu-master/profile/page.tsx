@@ -344,7 +344,7 @@ export default function SpokeduMasterProfilePage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="mx-auto max-w-[1180px] px-5 pb-6 pt-5 sm:px-8">
         <div className="flex flex-wrap items-center gap-4">
           <div className="grid h-[72px] w-[72px] place-items-center rounded-full text-[26px] font-black text-white" style={{ background: profile?.avatarColor ?? '#312e81', fontFamily: 'var(--spm-font-display)' }}>

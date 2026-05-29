@@ -93,7 +93,7 @@ function RecordListView() {
   });
 
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class records</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
@@ -241,7 +241,7 @@ function RecordEntryView() {
 
   if (!program) {
     return (
-      <div className="h-full overflow-y-auto p-[22px]" style={{ background: 'var(--spm-bg)' }}>
+      <div className="h-full overflow-y-auto p-[22px] pb-28 lg:pb-[22px]" style={{ background: 'var(--spm-bg)' }}>
         <div className="rounded-[18px] p-6 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h1 className="text-[20px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>기록할 수업안이 없습니다</h1>
           <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리 데이터를 불러온 뒤 다시 시도해 주세요.</p>
@@ -313,7 +313,7 @@ function RecordEntryView() {
   };
 
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class record</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>

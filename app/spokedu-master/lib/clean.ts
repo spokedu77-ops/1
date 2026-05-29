@@ -5,7 +5,7 @@ export const BROKEN_TEXT_PATTERN =
 
 export function hasBrokenText(value: string | undefined): boolean {
   if (!value) return false;
-  return value.includes('�') || BROKEN_TEXT_PATTERN.test(value);
+  return value.includes('�') || /[ìíëêðÃÂ]/.test(value) || BROKEN_TEXT_PATTERN.test(value);
 }
 
 export function cleanText(value: string | undefined, fallback: string): string {

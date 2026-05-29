@@ -1,14 +1,7 @@
 /**
  * Flow 2.0 — ObstacleManager
- * 모듈 조건 기반 장애물 생성·업데이트·제거
- *
  * 지원 장애물:
- *   box        — punch 모듈 (일반 박스)
- *   reachBox   — reach 모듈 (높은 보라 박스)
- *   ufo        — duck 모듈
- *   sprintGate — sprint 모듈 (청록 링 아치)
- *   freezeWall — freeze 모듈 (얼음 벽)
- *   shard/coin — 파편·코인 파티클
+ *   box (punch) / punchWall (reach) / ufo (duck) / shard·coin
  */
 
 import * as THREE from 'three';
@@ -16,15 +9,16 @@ import type { FlowModuleKey } from '../modules/flowModules';
 
 // ─── 상수 ────────────────────────────────────────────────────────────────────
 
-const BOX_WARN_Z     = -200;  // 어드밴스 경고: 박스가 이 Z 넘으면 PUNCH 텍스트
-const BOX_AUTO_HIT_Z = 300;   // 자동 파괴 이펙트: 카메라에서 300 유닛 앞
-const BOX_DESTROY_Z  = 450;   // 박스 최종 삭제 Z
-const BOX_HIT_Z      = 80;    // tryPunchBox 판정 반경
-const BOX_RATE       = 0.55;
-const UFO_RATE       = 0.45;
-const UFO_HEIGHT     = 180;   // UFO 중심 Y (원본 coordContract 동일)
-const REACH_Y        = 200;
-const STANDARD_BOX_Y = 40;
+const BOX_WARN_Z      = -200;  // 박스 접근 경고: 약 350ms 전 (500유닛/1440속도)
+const BOX_AUTO_HIT_Z  = 300;   // 일반 박스 자동 파괴 Z
+const BOX_DESTROY_Z   = 450;
+const BOX_RATE        = 0.55;
+const UFO_RATE        = 0.45;
+const UFO_HEIGHT      = 180;
+const STANDARD_BOX_Y  = 40;
+const PUNCH_WALL_HP   = 5;    // 펀치 벽 총 타격 횟수
+const WALL_W          = 90;
+const WALL_H          = 210;
 
 // ─── 타입 ────────────────────────────────────────────────────────────────────
 
@@ -39,12 +33,13 @@ export interface FlowBridge {
 
 interface BoxEntity {
   mesh: THREE.Group;
-  isReach: boolean;
+  isReach: boolean;   // true = 다단 펀치 벽(REACH), false = 일반 박스(PUNCH)
   reward: boolean;
   warnedReach: boolean;
   warnFired: boolean;
   bridgeRef: FlowBridge;
   autoHitDone: boolean;
+  hitCount: number;   // 펀치 벽 전용: 현재까지 맞은 횟수 (0 → PUNCH_WALL_HP-1)
 }
 
 interface UfoEntity {
@@ -65,13 +60,12 @@ interface ShardEntity {
 
 export interface ObstacleCallbacks {
   onBoxHit?: (reward: boolean) => void;
-  onBoxWarn?: (isReach: boolean) => void;      // 어드밴스 경고 (박스 접근)
-  onBoxAutoHit?: (isReach: boolean) => void;  // 플레이어 구역 자동 파괴
+  onBoxWarn?: (isReach: boolean) => void;
+  onBoxAutoHit?: (isReach: boolean) => void; // 일반 박스 자동 파괴
+  onPunchWallEnter?: () => void;             // 펀치 벽 진입 → FlowEngine이 타격 시퀀스 제어
   onUfoDuckStart?: () => void;
   onUfoPassed?: () => void;
   onUfoWarn?: () => void;
-  onSprintGatePassed?: () => void;
-  onFreezeWallPassed?: () => void;
   onCameraShake?: (intensity: number, ms: number) => void;
   onFlash?: () => void;
   getShardScale?: () => number;
@@ -87,8 +81,7 @@ export class ObstacleManager {
   private boxes: BoxEntity[] = [];
   private ufos: UfoEntity[] = [];
   private shards: ShardEntity[] = [];
-  private sprintGates: THREE.Group[] = [];
-  private freezeWalls: THREE.Group[] = [];
+  private wallBreakRef: BoxEntity | null = null; // 현재 타격 중인 펀치 벽
 
   private goldBudget = 3;
   private goldSpawned = 0;
@@ -104,75 +97,93 @@ export class ObstacleManager {
     this.goldSpawned = 0;
   }
 
-  hasSprintGate(): boolean { return this.sprintGates.length > 0; }
-  hasFreezeWall(): boolean { return this.freezeWalls.length > 0; }
+  // ── 슬롯 체크 ──────────────────────────────────────────────────────────────
+
+  hasActiveBox(): boolean { return this.boxes.length > 0; }
+  hasActiveUfo(): boolean { return this.ufos.some((u) => !u.passed); }
 
   // ── 스폰 결정 ───────────────────────────────────────────────────────────────
 
   shouldSpawnBox(activeModules: Set<FlowModuleKey>): boolean {
     if (!activeModules.has('punch') && !activeModules.has('reach')) return false;
-    if (this.ufos.some((u) => !u.passed)) return false;
-    return Math.random() < BOX_RATE;
+    if (this.boxes.length > 0) return false; // 동시 다중 박스/벽 방지
+    // reach 전용일 때 더 높은 확률 (단독 모듈이라 자주 보여야 함)
+    const rate = activeModules.has('reach') && !activeModules.has('punch') ? 0.72 : BOX_RATE;
+    return Math.random() < rate;
   }
 
   shouldSpawnUfo(activeModules: Set<FlowModuleKey>): boolean {
     if (!activeModules.has('duck')) return false;
-    if (this.boxes.some(() => true)) return false;
+    if (this.boxes.length > 0) return false;
+    if (this.ufos.some((u) => !u.passed)) return false; // 동시 다중 UFO 방지
     return Math.random() < UFO_RATE;
   }
 
   // ── 박스 ────────────────────────────────────────────────────────────────────
 
-  attachBox(bridge: FlowBridge, activeModules: Set<FlowModuleKey>): void {
+  attachBox(bridge: FlowBridge, activeModules: Set<FlowModuleKey>, forceIsReach?: boolean): void {
     if (bridge.hasBox) return;
     bridge.hasBox = true;
 
-    const isReach =
-      activeModules.has('reach') &&
-      (!activeModules.has('punch') || Math.random() < 0.45);
+    const isReach = forceIsReach !== undefined
+      ? forceIsReach
+      : (activeModules.has('reach') && (!activeModules.has('punch') || Math.random() < 0.45));
 
     const reward = this.goldSpawned < this.goldBudget && Math.random() < 0.5;
     if (reward) this.goldSpawned++;
 
     const group = this.makeBox(isReach, reward);
-    const yPos = isReach ? REACH_Y : STANDARD_BOX_Y;
-    group.position.set(0, yPos, -(this.bridgeLength * 0.1));
+    const yPos = isReach ? 0 : STANDARD_BOX_Y;
+    // 벽은 브릿지 더 앞쪽(-25%)에 배치 → 더 일찍, 더 크게 보임
+    const localZ = isReach ? -(this.bridgeLength * 0.25) : -(this.bridgeLength * 0.1);
+    group.position.set(0, yPos, localZ);
     bridge.mesh.add(group);
-    this.boxes.push({ mesh: group, isReach, reward, warnedReach: false, warnFired: false, bridgeRef: bridge, autoHitDone: false });
+    this.boxes.push({ mesh: group, isReach, reward, warnedReach: false, warnFired: false, bridgeRef: bridge, autoHitDone: false, hitCount: 0 });
   }
 
   private makeBox(isReach: boolean, reward: boolean): THREE.Group {
     const g = new THREE.Group();
 
     if (isReach) {
-      // REACH: 밝은 보라, 1.8× 크기, 하단 글로잉 기둥으로 높이 강조
+      // PUNCH WALL: 브릿지 전폭을 막는 황금색 다단 펀치 벽
+      const surfY = 40; // bridge top surface Y (bridge-local)
+      const centerY = surfY + WALL_H / 2;
+
+      // 벽 몸체
       const body = new THREE.Mesh(
-        new THREE.BoxGeometry(70, 80, 65),
-        new THREE.MeshPhongMaterial({ color: 0x9900ff, emissive: 0x6600cc, emissiveIntensity: 0.55, shininess: 90 }),
+        new THREE.BoxGeometry(WALL_W, WALL_H, 14),
+        new THREE.MeshPhongMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.4, shininess: 55 }),
       );
-      body.position.y = 40;
+      body.position.y = centerY;
       g.add(body);
 
-      const lid = new THREE.Mesh(
-        new THREE.BoxGeometry(76, 20, 70),
-        new THREE.MeshPhongMaterial({ color: 0xcc66ff, emissive: 0xaa00ff, emissiveIntensity: 0.5, shininess: 80 }),
-      );
-      lid.position.y = 86;
-      g.add(lid);
+      // 가로 보강재 (시각적 분리선)
+      for (let r = 1; r < 3; r++) {
+        const rib = new THREE.Mesh(
+          new THREE.BoxGeometry(WALL_W + 2, 5, 16),
+          new THREE.MeshBasicMaterial({ color: 0x92400e }),
+        );
+        rib.position.y = surfY + (WALL_H / 3) * r;
+        g.add(rib);
+      }
 
-      // 바닥까지 이어지는 보라 기둥 → "높이" 시각화
-      const pillar = new THREE.Mesh(
-        new THREE.BoxGeometry(14, REACH_Y, 14),
-        new THREE.MeshBasicMaterial({ color: 0xaa00ff, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }),
-      );
-      pillar.position.y = -REACH_Y / 2;
-      g.add(pillar);
+      // HP 바 세그먼트 3개 — 벽 위쪽
+      for (let hp = 0; hp < PUNCH_WALL_HP; hp++) {
+        const seg = new THREE.Mesh(
+          new THREE.BoxGeometry(22, 10, 16),
+          new THREE.MeshBasicMaterial({ color: 0xfde68a }),
+        );
+        seg.position.set(-23 + hp * 24, surfY + WALL_H + 12, 0);
+        seg.userData['hpIndex'] = hp;
+        g.add(seg);
+      }
 
+      // 글로우
       const glow = new THREE.Mesh(
-        new THREE.SphereGeometry(90, 10, 6),
-        new THREE.MeshBasicMaterial({ color: 0xcc00ff, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false }),
+        new THREE.BoxGeometry(WALL_W + 22, WALL_H + 22, 26),
+        new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false }),
       );
-      glow.position.y = 40;
+      glow.position.y = centerY;
       g.add(glow);
     } else {
       // PUNCH: 선명한 주황, 표준 크기
@@ -250,62 +261,6 @@ export class ObstacleManager {
     return true;
   }
 
-  // ── 스프린트 게이트 ──────────────────────────────────────────────────────────
-
-  attachSprintGate(bridge: FlowBridge): void {
-    const g = new THREE.Group();
-
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(190, 11, 8, 28),
-      new THREE.MeshPhongMaterial({ color: 0x22d3ee, emissive: 0x22d3ee, emissiveIntensity: 0.9, transparent: true, opacity: 0.9 }),
-    );
-    ring.position.y = 200;
-    g.add(ring);
-
-    const glow = new THREE.Mesh(
-      new THREE.TorusGeometry(190, 28, 6, 28),
-      new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false }),
-    );
-    glow.position.y = 200;
-    g.add(glow);
-
-    const pilGeo = new THREE.CylinderGeometry(5, 5, 400, 6);
-    const pilMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.55 });
-    const lp = new THREE.Mesh(pilGeo, pilMat);
-    lp.position.set(-190, 200, 0);
-    const rp = lp.clone();
-    rp.position.set(190, 200, 0);
-    g.add(lp, rp);
-
-    g.position.set(0, 0, -(this.bridgeLength * 0.3));
-    bridge.mesh.add(g);
-    this.sprintGates.push(g);
-  }
-
-  // ── 프리즈 벽 ────────────────────────────────────────────────────────────────
-
-  attachFreezeWall(bridge: FlowBridge): void {
-    const g = new THREE.Group();
-
-    const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(400, 230, 10),
-      new THREE.MeshPhongMaterial({ color: 0xbae6fd, emissive: 0x0ea5e9, emissiveIntensity: 0.45, transparent: true, opacity: 0.45, shininess: 80 }),
-    );
-    wall.position.y = 115;
-    g.add(wall);
-
-    const edge = new THREE.Mesh(
-      new THREE.BoxGeometry(404, 234, 5),
-      new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }),
-    );
-    edge.position.y = 115;
-    g.add(edge);
-
-    g.position.set(0, 0, -(this.bridgeLength * 0.3));
-    bridge.mesh.add(g);
-    this.freezeWalls.push(g);
-  }
-
   // ── 파편·코인 ────────────────────────────────────────────────────────────────
 
   spawnShards(pos: THREE.Vector3, count: number, isGold: boolean): void {
@@ -334,6 +289,36 @@ export class ObstacleManager {
     }
   }
 
+  // ── 펀치 벽 API (FlowEngine이 타격 시퀀스 제어) ─────────────────────────────
+
+  /** 한 번 타격. HP 바 업데이트 + 파편. true 반환 = 마지막 타격 직전까지 완료 */
+  hitPunchWall(): boolean {
+    const box = this.wallBreakRef;
+    if (!box) return true;
+    box.hitCount++;
+    // HP 바 세그먼트 순서대로 숨김
+    const targetIdx = box.hitCount - 1;
+    box.mesh.traverse((child) => {
+      if ((child as THREE.Object3D).userData['hpIndex'] === targetIdx) child.visible = false;
+    });
+    const wp = box.mesh.getWorldPosition(new THREE.Vector3());
+    this.spawnShards(new THREE.Vector3(wp.x, wp.y + 80, wp.z), 16, false);
+    return box.hitCount >= PUNCH_WALL_HP; // true = 시퀀스 완료
+  }
+
+  /** 벽 최종 파괴 — 폭발 + 씬에서 제거 */
+  breakPunchWall(): void {
+    const box = this.wallBreakRef;
+    if (!box) return;
+    const wp = box.mesh.getWorldPosition(new THREE.Vector3());
+    this.spawnShards(wp, 180, box.reward);
+    box.bridgeRef.hasBox = false;
+    box.mesh.parent?.remove(box.mesh);
+    const idx = this.boxes.indexOf(box);
+    if (idx >= 0) this.boxes.splice(idx, 1);
+    this.wallBreakRef = null;
+  }
+
   // ── 메인 업데이트 ────────────────────────────────────────────────────────────
 
   update(dt: number, playerWorldZ: number): void {
@@ -344,18 +329,26 @@ export class ObstacleManager {
       const box = this.boxes[i];
       const wz = box.mesh.getWorldPosition(new THREE.Vector3()).z;
 
-      // 어드밴스 경고 (박스가 충분히 가까워졌을 때)
-      if (!box.warnFired && wz > BOX_WARN_Z) {
-        box.warnFired = true;
-        this.cb.onBoxWarn?.(box.isReach);
+      // 펀치 벽: 플레이어 180 유닛 앞 — 눈앞에 꽉 차는 거리
+      if (box.isReach && !box.autoHitDone && wz > playerWorldZ - 180) {
+        box.autoHitDone = true;
+        this.wallBreakRef = box;
+        this.cb.onPunchWallEnter?.();
+        continue;
       }
 
-      // 자동 파괴 이펙트 (카메라에서 300 유닛 앞)
-      if (!box.autoHitDone && wz > BOX_AUTO_HIT_Z) {
+      // 일반 박스 접근 경고 — 박스가 화면에 보이는 타이밍
+      if (!box.isReach && !box.warnFired && wz > BOX_WARN_Z) {
+        box.warnFired = true;
+        this.cb.onBoxWarn?.(false);
+      }
+
+      // 일반 박스 자동 파괴
+      if (!box.isReach && !box.autoHitDone && wz > BOX_AUTO_HIT_Z) {
         box.autoHitDone = true;
         const wp = box.mesh.getWorldPosition(new THREE.Vector3());
-        this.spawnShards(wp, box.isReach ? 80 : 65, box.reward);
-        this.cb.onBoxAutoHit?.(box.isReach);
+        this.spawnShards(wp, 65, box.reward);
+        this.cb.onBoxAutoHit?.(false);
         this.cb.onBoxHit?.(box.reward);
         this.cb.onCameraShake?.(box.reward ? 1.5 : 1.0, 150);
         this.cb.onFlash?.();
@@ -375,8 +368,8 @@ export class ObstacleManager {
     // UFO
     for (const ufo of this.ufos) {
       const wz = ufo.mesh.getWorldPosition(new THREE.Vector3()).z;
-      // 텍스트 경고: 플레이어 700 유닛 앞 (~0.5초) → 실제로 UFO가 보이기 시작할 때
-      if (!ufo.warned && wz > playerWorldZ - 700) {
+      // UFO가 플레이어 350 유닛 앞(~240ms) — 화면에 뚜렷이 보일 때 경고
+      if (!ufo.warned && wz > playerWorldZ - 350) {
         ufo.warned = true;
         this.cb.onUfoWarn?.();
       }
@@ -399,34 +392,6 @@ export class ObstacleManager {
       return true;
     });
 
-    // 스프린트 게이트 통과 판정 — userData.triggered 로 단 1회만 발화
-    this.sprintGates = this.sprintGates.filter((g) => {
-      const wz = g.getWorldPosition(new THREE.Vector3()).z;
-      if (!g.userData['triggered'] && wz > playerWorldZ - 30 && wz < playerWorldZ + 150) {
-        g.userData['triggered'] = true;
-        this.cb.onSprintGatePassed?.();
-      }
-      if (wz > playerWorldZ + 300) {
-        g.parent?.remove(g);
-        return false;
-      }
-      return true;
-    });
-
-    // 프리즈 벽 통과 판정 — userData.triggered 로 단 1회만 발화
-    this.freezeWalls = this.freezeWalls.filter((w) => {
-      const wz = w.getWorldPosition(new THREE.Vector3()).z;
-      if (!w.userData['triggered'] && wz > playerWorldZ - 30 && wz < playerWorldZ + 150) {
-        w.userData['triggered'] = true;
-        this.cb.onFreezeWallPassed?.();
-      }
-      if (wz > playerWorldZ + 300) {
-        w.parent?.remove(w);
-        return false;
-      }
-      return true;
-    });
-
     // 파편·코인
     for (let i = this.shards.length - 1; i >= 0; i--) {
       const s = this.shards[i];
@@ -443,40 +408,14 @@ export class ObstacleManager {
     }
   }
 
-  /** 박스 펀치 시도 — 성공 시 파편 스폰하고 true 반환 */
-  tryPunchBox(playerWorldPos: THREE.Vector3, activeModules: Set<FlowModuleKey>): boolean {
-    for (let i = this.boxes.length - 1; i >= 0; i--) {
-      const box = this.boxes[i];
-      const bwz = box.mesh.getWorldPosition(new THREE.Vector3()).z;
-      const isReachable = box.isReach
-        ? activeModules.has('reach')
-        : activeModules.has('punch');
-      if (!isReachable) continue;
-      if (bwz > playerWorldPos.z - BOX_HIT_Z && bwz < playerWorldPos.z + BOX_HIT_Z) {
-        const wp = box.mesh.getWorldPosition(new THREE.Vector3());
-        this.spawnShards(wp, box.isReach ? 22 : 18, box.reward);
-        box.mesh.parent?.remove(box.mesh);
-        this.boxes.splice(i, 1);
-        this.cb.onBoxHit?.(box.reward);
-        this.cb.onCameraShake?.(box.reward ? 1.2 : 0.8, 120);
-        this.cb.onFlash?.();
-        return true;
-      }
-    }
-    return false;
-  }
-
   /** 스테이지 전환 시 모든 장애물 제거 */
   clearAll(): void {
     for (const b of this.boxes) b.mesh.parent?.remove(b.mesh);
     for (const u of this.ufos) u.mesh.parent?.remove(u.mesh);
-    for (const g of this.sprintGates) g.parent?.remove(g);
-    for (const w of this.freezeWalls) w.parent?.remove(w);
     for (const s of this.shards) this.scene.remove(s.mesh);
     this.boxes = [];
     this.ufos = [];
-    this.sprintGates = [];
-    this.freezeWalls = [];
     this.shards = [];
+    this.wallBreakRef = null;
   }
 }

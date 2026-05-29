@@ -8,8 +8,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { TRAINING_ENGINE_GUIDE_VIDEOS } from '@/app/lib/spomove/trainingEngineGuideVideos';
 import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
+import { USER_SPOMOVE_PRESETS_KEY, isSupportedMasterEngineMode } from '@/app/spokedu-master/lib/spomovePresets';
+import type { SpomoveLaunchPreset } from '@/app/spokedu-master/types';
 
-import { isSpomoveCatalogTbdMode, MODES, SPOMOVE_CATALOG_SLOT_IDS } from './_player/constants';
+import { isSpomoveCatalogTbdMode, MODES, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch } from './_player/MemoryGameApp';
 import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
@@ -175,7 +177,7 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
   return modeId === 'reactTrain' ? 'time' : 'reps';
 }
 
-type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'sprint' | 'freeze' | 'balance' | 'bigJump';
+type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach';
 
 type LaunchSettings = {
   speed: number;
@@ -559,6 +561,53 @@ function SettingsScreen({
   const isSpatial = modeId === 'spatial';
   const isFlowOrChallenge = modeId === 'flow';
 
+  const saveMasterLaunchPreset = async () => {
+    const name = window.prompt('구독 서비스에 표시할 프리셋 이름', `${modeLabelKoEn(modeId)} ${levelLabel(modeId, levelId)}`);
+    if (!name) return;
+    const engine = resolveTrainingEngine(modeId, levelId);
+    if (!isSupportedMasterEngineMode(engine.engineMode)) {
+      window.alert('아직 SPOKEDU MASTER 실행 화면에 이식되지 않은 엔진입니다. 먼저 이 엔진을 구독 서비스 세션에 연결해야 합니다.');
+      return;
+    }
+    const durationSec = isFlowOrChallenge ? launch.flowDuration : launch.timeMode === 'time' ? launch.duration : Math.max(30, Math.round(launch.targetReps * launch.speed));
+    const preset: SpomoveLaunchPreset = {
+      id: `admin-${Date.now()}`,
+      title: name.trim().slice(0, 48),
+      subtitle: `${levelLabelKoEn(modeId, levelId)} · ${durationSec}초 · ${launch.speed.toFixed(1)}초 간격`,
+      intent: isFlowOrChallenge ? 'finish' : modeId === 'reactTrain' ? 'warmup' : 'focus',
+      drillId: modeId,
+      engineMode: engine.engineMode,
+      engineLevel: engine.engineLevel,
+      durationSec,
+      speedSec: launch.speed,
+      mode: 'projector',
+      tags: [levelLabel(modeId, levelId), `${durationSec}초`, launch.kidsSafeMode ? '키즈 세이프' : '기본'],
+      target: '관리자 설정',
+      space: '현장 선택',
+      useCase: '관리자가 Training에서 저장한 실행 세팅',
+    };
+
+    try {
+      const res = await fetch('/api/spokedu-master/spomove-presets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preset),
+      });
+      if (res.ok) {
+        window.alert('SPOKEDU MASTER 공식 SPOMOVE 프리셋으로 저장했습니다.');
+        return;
+      }
+
+      const raw = window.localStorage.getItem(USER_SPOMOVE_PRESETS_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      const next = [preset, ...(Array.isArray(list) ? list : [])].slice(0, 12);
+      window.localStorage.setItem(USER_SPOMOVE_PRESETS_KEY, JSON.stringify(next));
+      window.alert('DB 저장은 실패했지만, 이 브라우저의 SPOKEDU MASTER SPOMOVE 홈에 임시 저장했습니다.');
+    } catch {
+      window.alert('프리셋 저장에 실패했습니다.');
+    }
+  };
+
   return (
     <div style={{ background: T.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header style={{
@@ -817,14 +866,10 @@ function SettingsScreen({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {(
                   [
-                    { key: 'faster'   as FlowFeatureKey, icon: '⚡', label: '속도 증가 (FASTER)',   desc: '이전 스테이지보다 이동 속도가 빨라집니다.' },
-                    { key: 'punch'    as FlowFeatureKey, icon: '👊', label: '박스 펀치 (PUNCH)',    desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
-                    { key: 'duck'     as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기 (DUCK)',    desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
-                    { key: 'reach'    as FlowFeatureKey, icon: '🆙', label: '높은 박스 (REACH)',    desc: '높은 보라색 박스가 추가 등장합니다. 팔을 뻗어 치세요.' },
-                    { key: 'sprint'   as FlowFeatureKey, icon: '💨', label: '속도 폭발 (SPRINT)',   desc: '스프린트 링 통과 시 속도가 폭발합니다.' },
-                    { key: 'freeze'   as FlowFeatureKey, icon: '❄️', label: '정지 신호 (FREEZE)',   desc: '얼음 벽 신호 — 즉시 정지 억제 훈련입니다.' },
-                    { key: 'balance'  as FlowFeatureKey, icon: '🦶', label: '한 발 착지 (BALANCE)', desc: '큐에 따라 한 발로 착지하는 균형 훈련입니다.' },
-                    { key: 'bigJump'  as FlowFeatureKey, icon: '🏔️', label: '넓은 점프 (BIG JUMP)', desc: '다리 간격이 넓어지고 점프 높이가 높아집니다.' },
+                    { key: 'faster'   as FlowFeatureKey, icon: '⚡', label: '속도 증가 (FASTER)',  desc: '이전 스테이지보다 이동 속도가 빨라집니다.' },
+                    { key: 'punch'    as FlowFeatureKey, icon: '👊', label: '박스 펀치 (PUNCH)',   desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
+                    { key: 'duck'     as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기 (DUCK)',   desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
+                    { key: 'reach'    as FlowFeatureKey, icon: '🧱', label: '펀치 벽 두드리기',      desc: '브릿지를 막는 벽이 등장합니다. 5번 두드려 부수세요.' },
                   ]
                 ).map(({ key, icon, label, desc }) => {
                   const active = launch.flowFeatures.includes(key);
@@ -1156,6 +1201,26 @@ function SettingsScreen({
             }}
           >
             훈련 시작 ▶
+          </button>
+          <button
+            type="button"
+            onClick={saveMasterLaunchPreset}
+            style={{
+              width: '100%',
+              marginTop: 10,
+              padding: '13px 20px',
+              borderRadius: 14,
+              border: `1px solid ${T.border}`,
+              background: T.card,
+              color: T.text,
+              fontFamily: 'inherit',
+              fontSize: 13,
+              fontWeight: 900,
+              cursor: 'pointer',
+              letterSpacing: '0.04em',
+            }}
+          >
+            구독 SPOMOVE 프리셋으로 저장
           </button>
         </div>
       </div>

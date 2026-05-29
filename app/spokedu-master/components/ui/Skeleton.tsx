@@ -69,7 +69,7 @@ export function SkeletonHero() {
 
 export function DashboardSkeleton() {
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: '#f5f7fb' }}>
+    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: '#f5f7fb' }}>
       <div className="flex items-center justify-between px-[22px] pb-[18px] pt-[22px] sm:px-8 lg:px-10">
         <div className="space-y-2">
           <Skeleton height={12} width={80} />
@@ -108,7 +108,7 @@ export function DashboardSkeleton() {
 
 export function LibrarySkeleton() {
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: '#f5f7fb' }}>
+    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: '#f5f7fb' }}>
       <div className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <Skeleton height={12} width={100} className="mb-2" />
         <Skeleton height={42} width={200} className="mb-5" />

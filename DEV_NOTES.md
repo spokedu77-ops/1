@@ -1,5 +1,122 @@
 # DEV_NOTES
 
+## 2026-05-29 Codex - SPOKEDU MASTER menu naming and navigation pass
+
+### Decision
+- Adopted: remove provider-centered abstract labels such as `프로그램 허브`.
+- Adopted: keep `놀이체육` and `스포무브` independent in the primary navigation. They can be combined on Home as a recommended routine, but should not be forced into one product concept.
+- Deferred: Route Group migration, B2B multi-tenant billing schema, Grace Period code, and preview upsell logic.
+- Rejected for now: changing route paths, proxy rules, and database structure in the same pass as the menu copy. That would raise schedule and regression risk.
+
+### Applied
+- File: `app/spokedu-master/components/layout/TabBar.tsx`
+- Primary navigation now uses:
+  - 홈
+  - 놀이체육
+  - 스포무브
+  - 수업도구
+  - 수업기록
+  - 학부모안내
+  - 계정
+- Desktop rail and mobile bottom tab share the same menu definition.
+- `수업도구` was restored because timer, scoreboard, beat tools, and other in-class utilities are part of the live teaching flow.
+- `기관설정` was replaced with `계정` because the product must support individual teachers as well as centers. The existing profile page already contains subscription management and lesson kit store entry points, so `계정` is the broader and less exclusionary primary label.
+- Mobile navigation was reduced to five visible items: `홈`, `놀이체육`, `스포무브`, `수업도구`, `더보기`.
+- `수업기록`, `학부모안내`, and `계정` moved into the mobile `더보기` bottom sheet because they matter, but are less urgent than live class preparation and execution.
+- Desktop keeps the full menu visible because there is enough horizontal space and scan cost is lower.
+
+## 2026-05-29 Codex - Home copy alignment after mobile navigation pass
+
+### Decision
+- Home should not become a feature explanation board. It should help teachers decide what to open before class.
+- Keep the current OTT row structure, but align copy with the finalized navigation language: `놀이체육`, `스포무브`, and `수업도구`.
+
+### Applied
+- File: `app/spokedu-master/dashboard/DashboardView.tsx`
+- Category labels shortened from `영상 확인`, `민첩·반응` to `영상`, `반응·민첩`.
+- Hero badge changed to `이번 주 대표 수업안`.
+- Hero CTA changed to `빠른 미리보기` and `놀이체육 보기`.
+- Section titles changed to:
+  - `금주 추천 수업안`
+  - `실내 수업 큐레이션`
+  - `스포무브 바로 실행`
+- Section subtitles now describe why the row exists, without adding more text blocks.
+
+## 2026-05-29 Codex - Shared chrome Korean text cleanup
+
+### Decision
+- Broken Korean in common UI chrome is a product trust issue, not a cosmetic detail.
+- Fix layout-level text before deeper visual QA because every SPOKEDU MASTER page inherits these components.
+
+### Applied
+- Files:
+  - `app/spokedu-master/components/layout/AppShell.tsx`
+  - `app/spokedu-master/components/layout/StatusBar.tsx`
+  - `app/spokedu-master/components/ui/BottomSheet.tsx`
+- Rewrote broken labels for timer status, offline banner, trial expiration, notification/profile aria labels, and bottom sheet close buttons.
+
+### Verified
+- `npx.cmd eslint app/spokedu-master/components/layout/AppShell.tsx app/spokedu-master/components/layout/StatusBar.tsx app/spokedu-master/components/ui/BottomSheet.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+
+## 2026-05-29 Codex - Mobile home readability pass
+
+### Decision
+- The Home hero should show the actual class thumbnail more clearly. Too much dark overlay makes the service feel less concrete.
+- Mobile bottom navigation needs extra content padding so the last row is not visually buried under the fixed tab bar.
+
+### Applied
+- File: `app/spokedu-master/dashboard/DashboardView.tsx`
+- Reduced hero overlay opacity to improve thumbnail visibility while keeping text contrast.
+- Increased mobile bottom padding from `pb-14` to `pb-28`, with smaller padding again on desktop.
+
+## 2026-05-29 Codex - Mobile bottom navigation page padding and class tools cleanup
+
+### Decision
+- Moving `수업기록`, `학부모안내`, and `계정` into `더보기` does not mean those pages can be left with weak mobile layout.
+- Fixed bottom navigation requires enough bottom padding on scroll containers, especially pages with save/copy actions.
+- `수업도구` is a primary mobile tab, so broken Korean there has high product-trust cost.
+
+### Applied
+- Files:
+  - `app/spokedu-master/class-record/page.tsx`
+  - `app/spokedu-master/report/page.tsx`
+  - `app/spokedu-master/profile/page.tsx`
+  - `app/spokedu-master/components/ui/ClassToolsView.tsx`
+- Raised mobile bottom padding on record/report/profile scroll containers.
+- Repaired broken Korean in ClassTools header, tool status/help constants, sample students, scoreboard labels, reset button, order header, and action aria labels.
+- Re-scanned `ClassToolsView.tsx` for mojibake patterns and repaired remaining visible strings in stopwatch, picker, team split, order, and student roster actions.
+
+### Verified
+- `npx.cmd eslint app/spokedu-master/components/ui/ClassToolsView.tsx app/spokedu-master/class-record/page.tsx app/spokedu-master/report/page.tsx app/spokedu-master/profile/page.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+
+## 2026-05-29 Codex - Secondary app page mobile padding pass
+
+### Decision
+- Pages reachable from `더보기`, `계정`, or `수업도구` still need safe mobile bottom spacing.
+- Fixed mobile navigation should not cover final actions, empty states, or management buttons.
+
+### Applied
+- Files:
+  - `app/spokedu-master/students/page.tsx`
+  - `app/spokedu-master/shop/page.tsx`
+  - `app/spokedu-master/director/page.tsx`
+  - `app/spokedu-master/plan/PlanView.tsx`
+- Changed mobile scroll container bottom padding from `pb-7` to `pb-28`, while keeping desktop at `lg:pb-7`.
+
+### Verified
+- `npx.cmd eslint app/spokedu-master/students/page.tsx app/spokedu-master/shop/page.tsx app/spokedu-master/director/page.tsx app/spokedu-master/plan/PlanView.tsx app/spokedu-master/components/ui/ClassToolsView.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- Mobile labels were kept short enough to avoid ellipsis-based clipping.
+
+### Verified
+- `npx.cmd eslint app/spokedu-master/components/layout/TabBar.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/spokedu-master/class-record` returns unauthenticated redirect.
+- `/spokedu-master/subscription` returns unauthenticated redirect.
+- `npm.cmd run build`
+
 ## 2026-05-25 Codex 홈 다크 크롬 정리
 
 ### 수정 파일
@@ -1839,6 +1956,53 @@
 - `npx.cmd tsc --noEmit --pretty false`
 - `/spokedu-master` 200 확인
 - `npm.cmd run build`
+
+## 2026-05-28 Codex SPOMOVE 실행 프리셋 1차 전환
+
+### 수정 파일
+- `app/spokedu-master/types/index.ts`
+- `app/spokedu-master/lib/spomovePresets.ts`
+- `app/admin/spomove/training/page.tsx`
+- `app/api/spokedu-master/spomove-presets/route.ts`
+- `sql/75_spokedu_master_spomove_presets.sql`
+- `app/admin/note/_components/BubbleToolbar.tsx`
+- `app/spokedu-master/spomove/SpomoveHubView.tsx`
+- `app/spokedu-master/spomove/session/page.tsx`
+- `app/spokedu-master/spomove/session/EngineRouter.tsx`
+
+### 판단
+- `SPOMOVE 드릴 메타 편집` 중심은 구독 서비스의 구매 이유와 약하다.
+- 선생님이 원하는 것은 드릴 설명이 아니라 “오늘 바로 열 수 있는 초/속도/단계 세팅”이다.
+- 따라서 SPOMOVE 홈의 첫 상품 단위를 드릴 카탈로그가 아니라 공식 실행 프리셋으로 전환한다.
+
+### 적용
+- 공식 SPOMOVE 실행 프리셋 데이터 `OFFICIAL_SPOMOVE_PRESETS`를 추가했다.
+- `admin/spomove/training` 설정 화면에서 현재 세팅을 `구독 SPOMOVE 프리셋으로 저장`할 수 있게 했다.
+- `spokedu_master_spomove_presets` 테이블용 SQL 75번을 추가했다.
+- `/api/spokedu-master/spomove-presets` GET/POST API를 추가했다.
+- SQL 75 적용 후 첫 API 조회에서 기본 공식 프리셋을 DB에 자동 upsert 하도록 했다.
+- DB 테이블이 아직 적용되지 않은 환경에서는 기본 공식 프리셋으로 fallback 한다.
+- 관리자 저장은 API POST를 우선 사용하고, 실패 시 같은 브라우저 로컬 임시 저장으로 fallback 한다.
+- 저장된 로컬 프리셋은 같은 브라우저의 `/spokedu-master/spomove` 공식 프리셋보다 먼저 노출된다.
+- `/api/spokedu-master/spomove-presets?admin=1` 관리자 전체 조회와 PATCH/DELETE를 추가했다.
+- `admin/spokedu-master/spomove`에 공식 실행 프리셋 운영 패널을 추가했다.
+- 관리자 패널에서 제목, 설명, 시간, 속도, 순서, 숨김, 삭제를 처리할 수 있게 했다.
+- 아직 SPOKEDU MASTER 세션에 이식되지 않은 엔진은 저장을 막아 깨진 프리셋이 상품 화면에 올라가지 않게 했다.
+- `/spokedu-master/spomove` 상단에 `공식 실행 프리셋` 섹션을 추가했다.
+- 각 프리셋은 대상, 공간, 추천 상황, 시간 태그를 보여주고 바로 실행 CTA로 연결한다.
+- 프리셋 URL에 `preset`, `engineMode`, `level`, `duration`, `speed` 값을 전달한다.
+- 세션 페이지와 `EngineRouter`가 프리셋의 duration/speed/level 값을 실제 엔진 실행값으로 받도록 연결했다.
+
+### 검증
+- `npx.cmd eslint app/admin/note/_components/BubbleToolbar.tsx app/admin/spokedu-master/spomove/page.tsx app/api/spokedu-master/spomove-presets/route.ts app/admin/spomove/training/page.tsx app/spokedu-master/spomove/SpomoveHubView.tsx app/spokedu-master/spomove/session/page.tsx app/spokedu-master/spomove/session/EngineRouter.tsx app/spokedu-master/lib/spomovePresets.ts`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/api/spokedu-master/spomove-presets` 200 확인
+- `/api/spokedu-master/spomove-presets` source `db` 확인
+- `/admin/spokedu-master/spomove` 200 확인
+- `/admin/spomove/training` 200 확인
+- `/spokedu-master/spomove` 200 확인
+- `/spokedu-master/spomove/session?drill=reactTrain&mode=projector&preset=warmup-visual-60&engineMode=reactTrain&level=1&duration=60&speed=1.4` 200 확인
+- `npm.cmd run build`
 ## 2026-05-25 Codex Downloads Figma 다크 OTT 홈 복제
 
 ### 참고
@@ -2067,4 +2231,186 @@
 - `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx`
 - `npx.cmd tsc --noEmit --pretty false`
 - `/spokedu-master` 200 확인
+- `npm.cmd run build`
+
+## 2026-05-28 Codex 홈 추천 품질 게이트 보강
+
+### 수정 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 홈 완성도는 더 엄격하게 보면 80%대가 아니라 72% 수준이다. 구조는 잡혔지만 데이터 품질, 썸네일 일관성, 추천 근거가 아직 상용 구매 화면의 핵심 리스크다.
+- 홈 추천에는 단순히 정렬상 앞에 있는 수업이 아니라, 비주얼·진행 정보·수업 맥락이 갖춰진 수업안이 먼저 올라와야 한다.
+
+### 적용
+- `isHomeShowcaseProgram()` 품질 게이트를 추가했다.
+- 홈 대표/추천 row는 비주얼, 진행 정보, 수업 맥락, readiness가 있는 수업안을 우선 선택한다.
+- 부족할 때만 기존 풀에서 fallback 하도록 `takeUniquePrograms()`를 2단계 선별로 바꿨다.
+- 히어로 선택도 showcase 수업을 우선하고, 없을 때만 fallback 한다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `npm.cmd run build`
+- dev 서버 재시작 후 `/spokedu-master` 200 확인
+
+## 2026-05-28 Codex 홈 미디어 품질 게이트 강화
+
+### 수정 파일
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 실제 로컬 정적 이미지가 있는 프로그램은 현재 `펀스틱 펜싱` 중심이다. 텍스트 교안이 좋아도 홈 OTT 카드에 비주얼이 없으면 상용감이 떨어진다.
+- 홈 row는 개수를 채우는 것보다, 비주얼 없는 약한 수업안을 추천으로 노출하지 않는 편이 더 신뢰롭다.
+- 부족한 카드 수는 코드로 감추기보다 콘텐츠/썸네일 보강 필요 신호로 봐야 한다.
+
+### 적용
+- `isHomeDisplayableProgram()`을 추가해 홈 카드 최소 조건을 비주얼+수업 맥락으로 정의했다.
+- `takeUniquePrograms()`는 strict 모드에서 showcase 수업만 선택하고, 약한 데이터 fallback을 하지 않게 했다.
+- 금주 추천/실내 row는 strict 모드로 운영해 비주얼 없는 수업안이 홈 추천에 섞이지 않도록 했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/spokedu-master` 200 확인
+- `npm.cmd run build`
+
+## 2026-05-28 Codex 관리자 프로그램 태그 직접 편집 보강
+
+### 수정 파일
+- `app/admin/spokedu-master/programs/page.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 홈/라이브러리 노출 태그를 코드에서 수정하게 두면 운영 속도가 너무 느리다.
+- `sm_tags`, `sm_development_focus` 저장 구조는 이미 있으므로 관리자 UI에서 직접 추가/삭제가 가능해야 한다.
+- 프리셋만 누르는 방식은 `거리 판단`, `반응 타이밍`, `스포츠맨십` 같은 현장 언어를 운영자가 바로 조정하기 어렵다.
+
+### 적용
+- 관리자 프로그램 편집 패널에 태그 직접 입력 필드를 추가했다.
+- Enter 또는 `추가` 버튼으로 태그를 추가할 수 있게 했다.
+- 현재 저장될 태그를 칩으로 보여주고, 칩 클릭 시 삭제되게 했다.
+- 기존 프리셋 태그 선택 방식은 유지했다.
+
+### 검증
+- `npx.cmd eslint app/admin/spokedu-master/programs/page.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/admin/spokedu-master/programs` 200 확인
+- `npm.cmd run build`
+## 2026-05-28 Codex SPOMOVE 프리셋 실행 UX + 홈 재정렬
+
+### 수정 파일
+- `app/spokedu-master/lib/spomovePresets.ts`
+- `app/spokedu-master/spomove/session/page.tsx`
+- `app/api/spokedu-master/spomove-presets/route.ts`
+- `app/admin/spomove/training/page.tsx`
+- `app/admin/spokedu-master/spomove/page.tsx`
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `app/admin/note/_components/NoteEditor.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- SPOMOVE 프리셋은 “누르면 바로 랜덤 실행”처럼 보이면 안 된다. 구독자는 수업 전에 초, 속도, 단계, 대상, 공간을 확인하고 시작해야 신뢰한다.
+- 홈의 SPOMOVE 영역은 일반 드릴 목록이 아니라 관리자에서 저장한 공식 실행 세팅이어야 한다. 라이브러리는 수업안/영상, SPOMOVE는 화면 실행 프리셋으로 역할을 분리한다.
+- 지원되지 않은 엔진이 구독 서비스로 노출되면 상용 신뢰도가 바로 무너진다. 지원 엔진 목록을 한 곳으로 모으고 API, 관리자, 실행 화면에서 같이 쓰게 했다.
+- 기존 DB에 깨진 한글로 seed된 공식 프리셋이 남아 있을 가능성이 있어, 공식 ID의 깨진 문구는 코드 기준 문구로 보정한다.
+
+### 적용
+- 공식 SPOMOVE 프리셋 문구를 정상 한글로 재작성하고 `SUPPORTED_MASTER_ENGINE_MODES`, `isSupportedMasterEngineMode`, `formatSpomovePresetDuration`을 공통 유틸로 추가했다.
+- `/spokedu-master/spomove/session`에서 지원 엔진 프리셋은 바로 엔진으로 튀지 않고 실행 브리핑 화면을 먼저 보여준다.
+- 실행 브리핑에는 프리셋명, 설명, 시간, 속도, 대상, 공간, 태그, 사용 맥락을 표시하고 `이 세팅으로 시작`을 눌러 카운트다운 후 엔진을 실행한다.
+- SPOMOVE 프리셋 API는 공개 조회 시 지원 엔진만 노출하고, POST/PATCH에서도 미이식 엔진 저장을 막는다.
+- 관리자 SPOMOVE 프리셋 관리 카드에 `구독 실행 가능`/`이식 필요` 상태 배지를 추가했다.
+- 홈의 세 번째 row를 일반 드릴 나열에서 공식 SPOMOVE 프리셋 row로 교체했다.
+- 홈 row 배열은 `금주 추천 프로그램` → `실내에서도 바로 사용하는 수업` → `스포무브`로 정리했다.
+- 전체 타입 검증을 막던 노트 에디터 `EditorView` 타입 불일치를 수정했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/spomove/session/page.tsx app/spokedu-master/lib/spomovePresets.ts app/admin/spomove/training/page.tsx app/api/spokedu-master/spomove-presets/route.ts app/admin/spokedu-master/spomove/page.tsx app/spokedu-master/dashboard/DashboardView.tsx app/admin/note/_components/NoteEditor.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/spokedu-master` 200
+- `/spokedu-master/spomove` 200
+- `/admin/spokedu-master/spomove` 200
+- `/spokedu-master/spomove/session?drill=reactTrain&mode=projector&preset=warmup-visual-60&engineMode=reactTrain&level=1&duration=60&speed=1.4` 200
+- `npm.cmd run build`
+
+## 2026-05-28 Codex 홈/SPOMOVE 한글 깨짐 방어 보강
+
+### 수정 파일
+- `app/spokedu-master/lib/clean.ts`
+- `app/spokedu-master/dashboard/DashboardView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- DB에는 정상 UTF-8이 아니라 `ìì...` 형태로 보이는 mojibake가 남아 있을 수 있다.
+- 화면에 한글이 한 번이라도 깨져 보이면 구독 서비스 신뢰도가 크게 떨어진다. 특히 홈과 SPOMOVE 프리셋은 구매자가 가장 먼저 보는 영역이라 더 보수적으로 막아야 한다.
+
+### 적용
+- `hasBrokenText()`가 기존 `�` 계열뿐 아니라 `ì`, `í`, `ë`, `ê`, `Ã`, `Â` 계열 mojibake도 깨진 텍스트로 판정하게 했다.
+- 홈 파일에서 인코딩 변환 후 파서 오류를 만들던 깨진 정규식/문자열을 정상 한글과 안전한 정규식으로 복구했다.
+- 홈 SPOMOVE row 제목, 설명, `전체보기` 문구를 정상 한글로 고정했다.
+- API 응답은 PowerShell 기본 디코딩으로 보면 깨져 보일 수 있어 RawContentStream을 UTF-8로 직접 디코딩해 정상 한글 응답을 확인했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/dashboard/DashboardView.tsx app/spokedu-master/lib/clean.ts app/api/spokedu-master/spomove-presets/route.ts`
+- `npx.cmd tsc --noEmit --pretty false`
+- `/api/spokedu-master/spomove-presets` RawContentStream UTF-8 정상 한글 확인
+- `/spokedu-master` 200
+- 프리셋 세션 URL 200
+- `npm.cmd run build`
+
+## 2026-05-29 Codex SPOKEDU MASTER 라우팅 보안 1단계
+
+### 수정 파일
+- `proxy.ts`
+- `DEV_NOTES.md`
+
+### 판단
+- 외부 제안의 큰 방향인 보안 우선순위는 채택했다.
+- 단, `middleware.ts` 신규 작성은 채택하지 않았다. 현재 프로젝트는 이미 `proxy.ts`에서 Supabase 세션 쿠키 갱신을 담당하므로, 기존 흐름을 유지한 채 보호 경로만 추가하는 편이 안전하다.
+- “미구독은 무조건 결제 페이지”도 그대로 채택하지 않았다. 현재 서비스에는 14일 체험 로직이 이미 있으므로, active 구독/관리자/체험 기간 중 사용자는 보호 경로에 접근 가능해야 한다.
+- B2B 멀티테넌시 최종 모델은 2단계에서 별도 SQL과 RLS로 설계하고, 이번 단계에서는 현존 `spokedu_master_subscriptions` 기준의 최소 서버 가드를 적용했다.
+
+### 적용
+- `/spokedu-master/:path*`를 proxy matcher에 추가했다.
+- `/spokedu-master`, `/spokedu-master/dashboard`, `/spokedu-master/library`, `/spokedu-master/spomove` 등 구독자 앱 내부 경로를 서버 라우팅 단계에서 보호한다.
+- `/spokedu-master/landing`, `/spokedu-master/payment`, `/spokedu-master/payment/*`, `/spokedu-master/privacy`, `/spokedu-master/terms`, `/spokedu-master/parent/*`는 공개/결제/공유 퍼널로 유지한다.
+- 비로그인 사용자가 보호 경로에 접근하면 `/login?next=원래경로`로 리다이렉트한다.
+- 로그인했지만 active 구독도 아니고 14일 체험 기간도 끝난 사용자는 `/spokedu-master/payment?next=원래경로`로 리다이렉트한다.
+- `SPM_ADMIN_EMAILS`에 포함된 운영자 이메일은 구독 상태와 무관하게 통과한다.
+
+### 검증
+- `npx.cmd eslint proxy.ts`
+- `npx.cmd tsc --noEmit --pretty false`
+- 비로그인 `/spokedu-master/dashboard` 307
+- 비로그인 `/spokedu-master/spomove` 307
+- 공개 `/spokedu-master/landing` 200
+- 공개 `/spokedu-master/parent/123` 200
+- 공개 `/spokedu-master/payment` 200
+- `npm.cmd run build`
+## 2026-05-29 Codex - 모바일 내비게이션 후속 정리
+
+### 수정 파일
+- `app/spokedu-master/subscription/page.tsx`
+- `app/spokedu-master/components/ui/Skeleton.tsx`
+- `app/spokedu-master/components/ui/ClassToolsView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 모바일 하단 탭을 5개 핵심 구조로 줄였으면, 각 페이지의 마지막 버튼과 로딩 화면도 하단 탭에 가리지 않아야 한다.
+- 구독 관리 화면은 결제와 직접 연결되는 신뢰 영역이므로 깨진 한글, 어색한 공급자식 문구, 모호한 버튼명을 남기면 안 된다.
+- 수업도구는 현장 실행 탭이므로 하단 탭과 내부 푸터가 겹치지 않게 별도 안전 여백이 필요하다.
+
+### 적용
+- 구독 관리 화면의 깨진 한글을 정상 한국어 문구로 복구하고, `라이브러리` 표현을 현재 네비게이션 언어인 `놀이체육`으로 맞췄다.
+- 구독 화면 하단 여백을 `pb-28 lg:pb-16`으로 조정해 모바일 하단 탭과 겹치지 않게 했다.
+- 홈/라이브러리 스켈레톤 로딩 화면도 `pb-28 lg:pb-7`로 맞춰 로딩 중에도 하단 탭에 콘텐츠가 가리지 않게 했다.
+- 수업도구 루트에 모바일 전용 하단 안전 여백을 추가해 학생 명단 관리 버튼이 하단 탭 밑으로 숨지 않게 했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/subscription/page.tsx app/spokedu-master/components/ui/Skeleton.tsx app/spokedu-master/components/ui/ClassToolsView.tsx`
+- `npx.cmd tsc --noEmit --pretty false`
+- `git diff --check -- app/spokedu-master/subscription/page.tsx app/spokedu-master/components/ui/Skeleton.tsx app/spokedu-master/components/ui/ClassToolsView.tsx`
 - `npm.cmd run build`

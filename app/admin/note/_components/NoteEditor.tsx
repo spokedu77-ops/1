@@ -1,15 +1,44 @@
 'use client';
 
+/* eslint-disable react-hooks/refs */
+
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Heading from '@tiptap/extension-heading';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Typography from '@tiptap/extension-typography';
 import Image from '@tiptap/extension-image';
 import CharacterCount from '@tiptap/extension-character-count';
+import type { EditorView } from '@tiptap/pm/view';
 import { parseInlineMarkupToHtml, type InlineMark } from '@/app/lib/note/inlineMarkup';
+import {
+  adjustBulletIndent,
+  continueBulletOnEnter,
+  indentPlainTextBlock,
+  tryConvertMarkdownBulletTrigger,
+} from './noteBulletInput';
+
+const UnderlineWithShortcut = Underline.extend({
+  addKeyboardShortcuts() {
+    return {
+      'Mod-u': () => this.editor.commands.toggleUnderline(),
+    };
+  },
+});
+
+const HeadingWithShortcuts = Heading.extend({
+  addKeyboardShortcuts() {
+    return {
+      'Mod-Alt-0': () => this.editor.commands.setParagraph(),
+      'Mod-Alt-1': () => this.editor.commands.toggleHeading({ level: 1 }),
+      'Mod-Alt-2': () => this.editor.commands.toggleHeading({ level: 2 }),
+      'Mod-Alt-3': () => this.editor.commands.toggleHeading({ level: 3 }),
+    };
+  },
+}).configure({ levels: [1, 2, 3] });
 
 type RichField = 'text' | 'body';
 
@@ -17,6 +46,13 @@ type NoteEditorChange = {
   text: string;
   html: string;
 };
+
+type ToolbarPosition = {
+  top: number;
+  left: number;
+};
+
+type TextStyle = 'paragraph' | 'heading1' | 'heading2' | 'heading3';
 
 function legacyTextToEditorHtml(text: string): string {
   if (text.trim().length === 0) return '<p></p>';
@@ -49,9 +85,92 @@ function applyEditorMark(editor: Editor, mark: InlineMark) {
   if (mark === 'code') chain.toggleCode().run();
 }
 
+function applyEditorTextStyle(editor: Editor, style: TextStyle) {
+  const chain = editor.chain().focus() as unknown as {
+    setParagraph?: () => { run: () => void };
+    toggleHeading?: (attrs: { level: 1 | 2 | 3 }) => { run: () => void };
+    setHeading?: (attrs: { level: 1 | 2 | 3 }) => { run: () => void };
+    setNode?: (type: string, attrs?: Record<string, unknown>) => { run: () => void };
+  };
+
+  const setParagraph = () => {
+    if (typeof chain.setParagraph === 'function') {
+      chain.setParagraph().run();
+      return;
+    }
+    if (typeof chain.setNode === 'function') {
+      chain.setNode('paragraph').run();
+    }
+  };
+
+  const setHeading = (level: 1 | 2 | 3) => {
+    if (!editor.schema.nodes.heading) return;
+    if (editor.isActive('heading', { level })) {
+      setParagraph();
+      return;
+    }
+    if (typeof chain.toggleHeading === 'function') {
+      chain.toggleHeading({ level }).run();
+      return;
+    }
+    if (typeof chain.setHeading === 'function') {
+      chain.setHeading({ level }).run();
+      return;
+    }
+    if (typeof chain.setNode === 'function') {
+      chain.setNode('heading', { level }).run();
+    }
+  };
+
+  if (style === 'paragraph') {
+    setParagraph();
+    return;
+  }
+  if (style === 'heading1') {
+    setHeading(1);
+    return;
+  }
+  if (style === 'heading2') {
+    setHeading(2);
+    return;
+  }
+  setHeading(3);
+}
+
 function firstImageFile(files: FileList | null | undefined): File | null {
   if (!files) return null;
   return Array.from(files).find((file) => file.type.startsWith('image/')) ?? null;
+}
+
+function resolveToolbarPosition(editor: Editor): ToolbarPosition | null {
+  const { from, to, empty } = editor.state.selection;
+  if (empty || from >= to) return null;
+  const selectedText = editor.state.doc.textBetween(from, to);
+  if (selectedText.length === 0) return null;
+  const start = editor.view.coordsAtPos(from);
+  const end = editor.view.coordsAtPos(to);
+  return {
+    left: (start.left + end.right) / 2,
+    top: Math.min(start.top, end.top) - 10,
+  };
+}
+
+function selectLineAtPos(editor: Editor, pos: number): boolean {
+  const $pos = editor.state.doc.resolve(pos);
+  for (let depth = $pos.depth; depth > 0; depth -= 1) {
+    if (!$pos.node(depth).isTextblock) continue;
+    const from = $pos.start(depth);
+    const to = $pos.end(depth);
+    if (to <= from) return false;
+    editor.chain().focus().setTextSelection({ from, to }).run();
+    return true;
+  }
+  return false;
+}
+
+function handleTextIndent(view: EditorView, direction: 'in' | 'out') {
+  if (adjustBulletIndent(view, direction)) return true;
+  return indentPlainTextBlock(view, direction);
 }
 
 export function NoteEditor({
@@ -72,6 +191,7 @@ export function NoteEditor({
   onIndent,
   onNavigatePrevious,
   onNavigateNext,
+  tabBehavior = 'block-indent',
   resetKey,
 }: {
   content: Record<string, unknown> | null | undefined;
@@ -82,7 +202,11 @@ export function NoteEditor({
   onChange: (change: NoteEditorChange) => void;
   onEnter: () => void;
   onSlashChange?: (show: boolean, query: string) => void;
-  onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
+  onShowFormatToolbar?: (
+    applyMark: (mark: InlineMark) => void,
+    applyTextStyle: (style: TextStyle) => void,
+    position: ToolbarPosition,
+  ) => void;
   onHideFormatToolbar?: () => void;
   uploadImage?: (file: File) => Promise<string>;
   enterCreatesBlock?: boolean;
@@ -91,11 +215,46 @@ export function NoteEditor({
   onIndent?: (direction: 'in' | 'out') => void;
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
+  tabBehavior?: 'block-indent' | 'insert-text-indent';
   resetKey?: string;
 }) {
   const pendingChangeRef = useRef<NoteEditorChange | null>(null);
   const changeTimerRef = useRef<number | null>(null);
   const lastResetKeyRef = useRef<string | undefined>(resetKey);
+  const editorRef = useRef<Editor | null>(null);
+
+  const callbacksRef = useRef({
+    onChange,
+    onEnter,
+    onSlashChange,
+    onShowFormatToolbar,
+    onHideFormatToolbar,
+    uploadImage,
+    onEmptyBackspace,
+    onIndent,
+    onNavigatePrevious,
+    onNavigateNext,
+    enterCreatesBlock,
+    tabBehavior,
+    flushPendingChange: () => {},
+  });
+
+  callbacksRef.current = {
+    onChange,
+    onEnter,
+    onSlashChange,
+    onShowFormatToolbar,
+    onHideFormatToolbar,
+    uploadImage,
+    onEmptyBackspace,
+    onIndent,
+    onNavigatePrevious,
+    onNavigateNext,
+    enterCreatesBlock,
+    tabBehavior,
+    flushPendingChange: callbacksRef.current.flushPendingChange,
+  };
+
   const sourceHtml = useMemo(
     () => richTextSourceHtml({ content, field, text }),
     [content, field, text],
@@ -109,8 +268,10 @@ export function NoteEditor({
     const pending = pendingChangeRef.current;
     if (!pending) return;
     pendingChangeRef.current = null;
-    onChange(pending);
-  }, [onChange]);
+    callbacksRef.current.onChange(pending);
+  }, []);
+
+  callbacksRef.current.flushPendingChange = flushPendingChange;
 
   const scheduleChange = useCallback((change: NoteEditorChange) => {
     pendingChangeRef.current = change;
@@ -119,6 +280,19 @@ export function NoteEditor({
       flushPendingChange();
     }, 220);
   }, [flushPendingChange]);
+
+  const notifyFormatToolbar = useCallback((currentEditor: Editor) => {
+    const position = resolveToolbarPosition(currentEditor);
+    if (!position) {
+      callbacksRef.current.onHideFormatToolbar?.();
+      return;
+    }
+    callbacksRef.current.onShowFormatToolbar?.(
+      (mark) => applyEditorMark(currentEditor, mark),
+      (style) => applyEditorTextStyle(currentEditor, style),
+      position,
+    );
+  }, []);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -132,7 +306,8 @@ export function NoteEditor({
         codeBlock: false,
         horizontalRule: false,
       }),
-      Underline,
+      HeadingWithShortcuts,
+      UnderlineWithShortcut,
       Link.configure({ openOnClick: false, autolink: true }),
       Typography,
       Image.configure({ inline: false, allowBase64: false }),
@@ -144,75 +319,122 @@ export function NoteEditor({
       attributes: {
         class: `note-rich-editor min-h-[1.5rem] w-full outline-none ${className}`,
       },
-      handleKeyDown: (view, event) => {
-        if (event.key === 'Escape') {
-          onSlashChange?.(false, '');
-          return false;
-        }
-        if (event.key === 'Tab' && onIndent) {
-          event.preventDefault();
-          flushPendingChange();
-          onIndent(event.shiftKey ? 'out' : 'in');
-          return true;
-        }
-        if (event.key === 'Backspace' && editor?.isEmpty && onEmptyBackspace) {
-          event.preventDefault();
-          flushPendingChange();
-          onEmptyBackspace();
-          return true;
-        }
-        if (event.key === 'ArrowUp' && onNavigatePrevious) {
-          const { selection } = view.state;
-          if (selection.empty && selection.from <= 1) {
+      handleDOMEvents: {
+        keydown: (view, event) => {
+          if (event.key === ' ' && tryConvertMarkdownBulletTrigger(view)) {
             event.preventDefault();
-            flushPendingChange();
-            onNavigatePrevious();
+            return true;
+          }
+          if (event.key !== 'Tab') return false;
+          const { tabBehavior: currentTabBehavior, onIndent: currentOnIndent, flushPendingChange: flush } = callbacksRef.current;
+          if (currentTabBehavior === 'insert-text-indent') {
+            event.preventDefault();
+            return handleTextIndent(view, event.shiftKey ? 'out' : 'in');
+          }
+          if (!currentOnIndent) return false;
+          event.preventDefault();
+          flush();
+          currentOnIndent(event.shiftKey ? 'out' : 'in');
+          return true;
+        },
+      },
+      handleKeyDown: (view, event) => {
+        const {
+          tabBehavior: currentTabBehavior,
+          onIndent: currentOnIndent,
+          flushPendingChange: flush,
+          onSlashChange: currentOnSlashChange,
+          onEmptyBackspace: currentOnEmptyBackspace,
+          onNavigatePrevious: currentOnNavigatePrevious,
+          onNavigateNext: currentOnNavigateNext,
+          onEnter: currentOnEnter,
+          enterCreatesBlock: currentEnterCreatesBlock,
+        } = callbacksRef.current;
+
+        if (event.key === ' ' && tryConvertMarkdownBulletTrigger(view)) {
+          event.preventDefault();
+          return true;
+        }
+        if (event.key === 'Tab') {
+          if (currentTabBehavior === 'insert-text-indent') {
+            event.preventDefault();
+            return handleTextIndent(view, event.shiftKey ? 'out' : 'in');
+          }
+          if (currentOnIndent) {
+            event.preventDefault();
+            flush();
+            currentOnIndent(event.shiftKey ? 'out' : 'in');
             return true;
           }
         }
-        if (event.key === 'ArrowDown' && onNavigateNext) {
+        if (event.key === 'Escape') {
+          currentOnSlashChange?.(false, '');
+          return false;
+        }
+        if (event.key === 'Backspace' && editorRef.current?.isEmpty && currentOnEmptyBackspace) {
+          event.preventDefault();
+          flush();
+          currentOnEmptyBackspace();
+          return true;
+        }
+        if (event.key === 'ArrowUp' && currentOnNavigatePrevious) {
+          const { selection } = view.state;
+          if (selection.empty && selection.from <= 1) {
+            event.preventDefault();
+            flush();
+            currentOnNavigatePrevious();
+            return true;
+          }
+        }
+        if (event.key === 'ArrowDown' && currentOnNavigateNext) {
           const { doc, selection } = view.state;
           if (selection.empty && selection.to >= doc.content.size - 1) {
             event.preventDefault();
-            flushPendingChange();
-            onNavigateNext();
+            flush();
+            currentOnNavigateNext();
             return true;
           }
         }
         if (event.key === 'Enter' && event.shiftKey) {
           return false;
         }
-        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+        if (event.key === 'Enter' && currentTabBehavior === 'insert-text-indent' && continueBulletOnEnter(view)) {
           event.preventDefault();
-          onSlashChange?.(false, '');
-          flushPendingChange();
-          onEnter();
           return true;
         }
-        if (event.key === 'Enter' && enterCreatesBlock) {
+        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
           event.preventDefault();
-          onSlashChange?.(false, '');
-          flushPendingChange();
-          onEnter();
+          currentOnSlashChange?.(false, '');
+          flush();
+          currentOnEnter();
+          return true;
+        }
+        if (event.key === 'Enter' && currentEnterCreatesBlock) {
+          event.preventDefault();
+          currentOnSlashChange?.(false, '');
+          flush();
+          currentOnEnter();
           return true;
         }
         return false;
       },
       handlePaste: (_view, event) => {
         const file = firstImageFile(event.clipboardData?.files);
-        if (!file || !uploadImage) return false;
+        const currentUploadImage = callbacksRef.current.uploadImage;
+        if (!file || !currentUploadImage) return false;
         event.preventDefault();
-        void uploadImage(file).then((url) => {
-          editor?.chain().focus().setImage({ src: url }).run();
+        void currentUploadImage(file).then((url) => {
+          editorRef.current?.chain().focus().setImage({ src: url }).run();
         });
         return true;
       },
       handleDrop: (_view, event) => {
         const file = firstImageFile(event.dataTransfer?.files);
-        if (!file || !uploadImage) return false;
+        const currentUploadImage = callbacksRef.current.uploadImage;
+        if (!file || !currentUploadImage) return false;
         event.preventDefault();
-        void uploadImage(file).then((url) => {
-          editor?.chain().focus().setImage({ src: url }).run();
+        void currentUploadImage(file).then((url) => {
+          editorRef.current?.chain().focus().setImage({ src: url }).run();
         });
         return true;
       },
@@ -220,18 +442,45 @@ export function NoteEditor({
     onUpdate: ({ editor: currentEditor }) => {
       const nextText = currentEditor.getText();
       const slashMatch = nextText.match(/^\/([^\n]*)$/);
-      onSlashChange?.(!!slashMatch, slashMatch?.[1] ?? '');
+      callbacksRef.current.onSlashChange?.(!!slashMatch, slashMatch?.[1] ?? '');
       scheduleChange({ text: nextText, html: currentEditor.getHTML() });
     },
     onFocus: ({ editor: currentEditor }) => {
-      onShowFormatToolbar?.((mark) => applyEditorMark(currentEditor, mark));
+      notifyFormatToolbar(currentEditor);
+    },
+    onSelectionUpdate: ({ editor: currentEditor }) => {
+      if (!currentEditor.isFocused) {
+        callbacksRef.current.onHideFormatToolbar?.();
+        return;
+      }
+      notifyFormatToolbar(currentEditor);
     },
     onBlur: () => {
       flushPendingChange();
-      onHideFormatToolbar?.();
-      onSlashChange?.(false, '');
+      callbacksRef.current.onHideFormatToolbar?.();
+      callbacksRef.current.onSlashChange?.(false, '');
     },
   });
+
+  editorRef.current = editor;
+
+  useEffect(() => {
+    if (!editor) return;
+    const handleDoubleClick = (event: MouseEvent) => {
+      const coords = editor.view.posAtCoords({ left: event.clientX, top: event.clientY });
+      if (!coords) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (!selectLineAtPos(editor, coords.pos)) return;
+      requestAnimationFrame(() => {
+        notifyFormatToolbar(editor);
+      });
+    };
+    editor.view.dom.addEventListener('dblclick', handleDoubleClick, true);
+    return () => {
+      editor.view.dom.removeEventListener('dblclick', handleDoubleClick, true);
+    };
+  }, [editor, notifyFormatToolbar]);
 
   useEffect(() => () => {
     flushPendingChange();
@@ -239,10 +488,17 @@ export function NoteEditor({
 
   useEffect(() => {
     if (!editor) return;
+    if ((editor as { isDestroyed?: boolean }).isDestroyed) return;
     const resetKeyChanged = lastResetKeyRef.current !== resetKey;
     if (resetKeyChanged) lastResetKeyRef.current = resetKey;
     if (!resetKeyChanged && editor.isFocused) return;
-    if (resetKeyChanged || editor.getHTML() !== sourceHtml) {
+    let currentHtml = '';
+    try {
+      currentHtml = editor.getHTML();
+    } catch {
+      return;
+    }
+    if (resetKeyChanged || currentHtml !== sourceHtml) {
       if (changeTimerRef.current !== null) {
         window.clearTimeout(changeTimerRef.current);
         changeTimerRef.current = null;
@@ -250,7 +506,7 @@ export function NoteEditor({
       pendingChangeRef.current = null;
       editor.commands.setContent(sourceHtml, { emitUpdate: false });
     }
-  }, [editor, sourceHtml]);
+  }, [editor, resetKey, sourceHtml]);
 
   useEffect(() => {
     if (!editor || autoFocusSignal <= 0) return;
@@ -277,6 +533,25 @@ export function NoteEditor({
         }
         .note-rich-editor p {
           margin: 0;
+        }
+        .note-rich-editor h1,
+        .note-rich-editor h2,
+        .note-rich-editor h3 {
+          margin: 0;
+          font-weight: 700;
+          color: rgb(15 23 42);
+        }
+        .note-rich-editor h1 {
+          font-size: 1.625rem;
+          line-height: 1.35;
+        }
+        .note-rich-editor h2 {
+          font-size: 1.3rem;
+          line-height: 1.4;
+        }
+        .note-rich-editor h3 {
+          font-size: 1.05rem;
+          line-height: 1.45;
         }
         .note-rich-editor p:empty::after {
           content: '';

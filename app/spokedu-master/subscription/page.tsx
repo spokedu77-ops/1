@@ -36,30 +36,30 @@ const PLAN_LABELS: Record<string, string> = {
 };
 
 const PLAN_PRICES: Record<PlanKey, string> = {
-  lite: '19,900원/월',
-  pro: '39,900원/월',
-  team: '79,000원/월',
+  lite: '19,900원',
+  pro: '39,900원',
+  team: '79,000원',
   school: '문의',
 };
 
 const PLAN_SUMMARY: Record<PlanKey, string> = {
-  lite: '개인 강사가 라이브러리와 SPOMOVE를 가볍게 시작하는 플랜',
-  pro: '수업 준비, SPOMOVE 실행, 설명 문구까지 모두 쓰는 표준 플랜',
-  team: '강사 여러 명이 같은 수업 품질과 설명 자료를 공유하는 센터 플랜',
-  school: '학교·기관용 라이선스와 참여형 체육수업 패키지',
+  lite: '개인 선생님이 놀이체육 라이브러리와 SPOMOVE를 가볍게 시작하는 플랜',
+  pro: '수업 준비, SPOMOVE 실행, 안내 문구까지 한 번에 쓰는 표준 플랜',
+  team: '여러 강사가 같은 수업 자료와 운영 기록을 공유하는 센터 플랜',
+  school: '학교, 기관, 대형 센터를 위한 맞춤형 체육 수업 패키지',
 };
 
 const TRUST_POINTS = [
-  '토스페이먼츠 기반 보안 결제를 사용합니다.',
-  '다음 결제일 전까지 언제든 구독 취소를 요청할 수 있습니다.',
-  '유료 콘텐츠 특성상 사용 시작 이후 환불은 이용 내역에 따라 제한될 수 있습니다.',
+  '구독 및 결제 변경은 담당자가 확인한 뒤 안전하게 처리합니다.',
+  '다음 결제일 전까지 언제든 구독 변경 또는 취소 문의를 남길 수 있습니다.',
+  '유료 콘텐츠 이용 내역이 있는 경우 환불 가능 여부는 사용 이력에 따라 안내됩니다.',
 ];
 
 const UNLOCK_ITEMS = [
-  { icon: BookOpen, title: '이번 주 수업안', value: '4개', caption: '홈에서 바로 열기' },
-  { icon: MonitorPlay, title: '큰 화면 활동', value: '무제한', caption: 'TV·빔 실행' },
-  { icon: Clipboard, title: '설명 문구', value: '복사', caption: '수업 직후 안내' },
-  { icon: Calendar, title: '주간 계획', value: '연결', caption: '수업 흐름 관리' },
+  { icon: BookOpen, title: '놀이체육', value: '수업안', caption: '영상, 준비물, 진행법 확인' },
+  { icon: MonitorPlay, title: '스포무브', value: '큰 화면', caption: 'TV와 빔에서 바로 실행' },
+  { icon: Clipboard, title: '학부모안내', value: '문구', caption: '수업 후 안내문 작성' },
+  { icon: Calendar, title: '운영 흐름', value: '연결', caption: '준비부터 기록까지 관리' },
 ] as const;
 
 function statusLabel(status?: string) {
@@ -101,15 +101,15 @@ export default function SubscriptionPage() {
     if (isPaid) {
       return {
         eyebrow: '구독이 정상 적용 중입니다',
-        title: `${planLabel} 플랜으로 수업 준비 흐름을 유지하고 있어요.`,
-        body: '라이브러리, SPOMOVE, 설명 문구가 하나의 수업 루프로 이어집니다.',
+        title: `${planLabel} 플랜으로 수업 운영 흐름을 유지하고 있어요`,
+        body: '놀이체육, SPOMOVE, 학부모 안내 기능이 하나의 수업 운영 루프로 이어집니다.',
       };
     }
 
     return {
       eyebrow: '구독을 시작하면 바로 열립니다',
-      title: '수업 준비는 라이브러리에서, 몰입은 SPOMOVE에서 시작하세요.',
-      body: '단순 자료 모음이 아니라, 체육수업을 고르고 실행하고 설명하는 구독형 수업 운영 경험을 제공합니다.',
+      title: '수업 준비는 놀이체육에서, 몰입은 SPOMOVE에서 시작하세요',
+      body: '단순 자료 모음이 아니라 체육 수업을 고르고, 실행하고, 안내하는 구독형 수업 운영 환경을 제공합니다.',
     };
   }, [isPaid, planLabel]);
 
@@ -134,7 +134,7 @@ export default function SubscriptionPage() {
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-[1180px] gap-5 px-5 pb-16 sm:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <main className="mx-auto grid w-full max-w-[1180px] gap-5 px-5 pb-28 sm:px-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:pb-16">
         {loading ? (
           <div className="flex h-60 items-center justify-center rounded-[18px] lg:col-span-2" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <Loader2 size={22} className="animate-spin" color="var(--spm-t3)" />
@@ -188,7 +188,7 @@ export default function SubscriptionPage() {
                     <ChevronRight size={16} />
                   </Link>
                   <Link href="/spokedu-master/dashboard" className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-[13px] text-[14px] font-black" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)', color: 'var(--spm-t)' }}>
-                    홈에서 기능 보기
+                    홈으로 돌아가기
                   </Link>
                 </div>
               </div>
@@ -242,7 +242,7 @@ export default function SubscriptionPage() {
                         {[
                           plan === 'team' ? '강사 3명' : '개인 계정',
                           'SPOMOVE',
-                          '설명 문구',
+                          '안내 문구',
                         ].map((item) => (
                           <span key={item} className="rounded-[10px] px-2 py-2 text-center text-[11px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
                             {item}
@@ -254,7 +254,7 @@ export default function SubscriptionPage() {
                         className="mt-4 flex h-11 items-center justify-center gap-1.5 rounded-[12px] text-[13px] font-black"
                         style={{ background: isCurrent ? 'var(--spm-s3)' : 'var(--spm-acc)', color: isCurrent ? 'var(--spm-t)' : '#fff' }}
                       >
-                        {isCurrent ? '라이브러리로 이동' : '플랜 선택'}
+                        {isCurrent ? '놀이체육으로 이동' : '플랜 선택'}
                         <ChevronRight size={15} />
                       </Link>
                     </div>
@@ -285,7 +285,7 @@ export default function SubscriptionPage() {
                   </a>
                 </div>
                 <p className="mt-3 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                  결제 변경과 구독 취소는 이메일로 안전하게 처리합니다.
+                  결제 변경과 구독 취소는 메일로 요청을 남기면 확인 후 안내합니다.
                 </p>
               </section>
 
@@ -303,9 +303,9 @@ export default function SubscriptionPage() {
               </section>
 
               <section className="rounded-[20px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>센터·학교 도입 상담</p>
+                <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>센터·기관 도입 상담</p>
                 <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-                  강사 계정 여러 개, 학교 라이선스, 기관 견적은 별도 상담으로 안내합니다.
+                  여러 강사 계정, 학교 라이선스, 기관 견적은 별도 상담으로 안내합니다.
                 </p>
                 <a
                   href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20기관%20도입%20상담"
@@ -313,16 +313,16 @@ export default function SubscriptionPage() {
                   style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
                 >
                   <Users size={15} />
-                  기관 상담 요청
+                  도입 상담 요청
                 </a>
               </section>
 
               <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
                 <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>사업자 정보</p>
                 <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
-                  {[ 
-                    ['상호', '스포케듀'],
-                    ['대표자', '최지훈'],
+                  {[
+                    ['상호', '스포키듀'],
+                    ['대표자', '최승환'],
                     ['사업자등록번호', '311-63-00356'],
                     ['통신판매업', '신고 준비 중'],
                     ['고객센터', 'support@spokedu.com'],

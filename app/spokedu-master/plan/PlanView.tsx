@@ -126,7 +126,7 @@ export default function PlanView() {
   const listGroups = filteredLessons.reduce<Record<string, typeof filteredLessons>>((acc, lesson) => { const key = format(new Date(lesson.date), 'M월 d일 EEEE', { locale: ko }); acc[key] = [...(acc[key] ?? []), lesson]; return acc; }, {});
 
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10"><p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>lesson plan</p><div className="mt-1 flex items-end justify-between gap-3"><div><h1 className="text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 계획</h1><p className="mt-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>수업안, 큰 화면, 설명 문구까지 한 번에 이어갑니다.</p></div><button type="button" onClick={() => setSheetOpen(true)} className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'var(--spm-acc)' }} aria-label="수업 추가"><Plus size={19} color="#fff" /></button></div></header>
       <section className="mb-5 flex gap-2 overflow-x-auto px-[22px] sm:px-8 lg:px-10">{classes.map((item) => <Chip key={item} label={item} active={classFilter === item} onClick={() => setClassFilter(item)} />)}</section>
       <ProgressCard done={doneCount} total={filteredLessons.length} />

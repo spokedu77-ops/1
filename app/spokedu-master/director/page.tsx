@@ -30,7 +30,7 @@ export default function DirectorPage() {
   const centerName = profile?.centerName ?? profile?.school ?? '센터';
 
   return (
-    <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>director dashboard</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 수업 운영</h1>

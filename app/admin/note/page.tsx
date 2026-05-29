@@ -35,6 +35,9 @@ import {
   GripVertical,
   ChevronDown,
   MessageSquareQuote,
+  Globe,
+  Link2,
+  Copy,
 } from 'lucide-react';
 
 import {
@@ -66,6 +69,8 @@ type NoteDocument = {
   is_archived: boolean;
   is_favorite: boolean;
   is_pinned: boolean;
+  is_public: boolean;
+  share_token: string | null;
   parent_id: string | null;
   slug: string | null;
   created_at: string;
@@ -90,6 +95,12 @@ type SortKey = 'recent' | 'title';
 type NoteCollaborator = {
   id: string; document_id: string; user_id: string;
   last_active_at: string; last_cursor: any;
+};
+
+type FormatToolbarState = {
+  applyMark: (mark: InlineMark) => void;
+  applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void;
+  position: { top: number; left: number };
 };
 
 const BLOCK_TYPES: { type: NoteBlock['type']; label: string; icon: React.ElementType; desc: string }[] = [
@@ -248,7 +259,11 @@ function BlockContent({
   onEnter: () => void;
   onAddBelow: (type?: NoteBlock['type']) => void;
   onOpenDocument?: (documentId: string) => void;
-  onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
+  onShowFormatToolbar?: (
+    applyMark: (mark: InlineMark) => void,
+    applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    position: { top: number; left: number },
+  ) => void;
   onHideFormatToolbar?: () => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
@@ -271,6 +286,7 @@ function BlockContent({
     placeholder,
     textClassName,
     field = 'text',
+    tabBehavior = 'block-indent',
     enterCreatesBlock = false,
     onEditorEnter = onEnter,
     onEditorBackspace = onEmptyBackspace,
@@ -279,6 +295,7 @@ function BlockContent({
     placeholder: string;
     textClassName: string;
     field?: 'text' | 'body';
+    tabBehavior?: 'block-indent' | 'insert-text-indent';
     enterCreatesBlock?: boolean;
     onEditorEnter?: () => void;
     onEditorBackspace?: () => void;
@@ -300,6 +317,7 @@ function BlockContent({
           autoFocusSignal={autoFocusSignal ?? 0}
           onEmptyBackspace={onEditorBackspace}
           onIndent={onIndentChange}
+          tabBehavior={tabBehavior}
           onNavigatePrevious={onNavigatePrevious}
           onNavigateNext={onNavigateNext}
           onSlashChange={(nextShow, nextQuery) => {
@@ -556,7 +574,13 @@ function BlockContent({
           <input
             value={title}
             onChange={(e) => patchToggle({ title: e.target.value })}
-            className="flex-1 bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+            onKeyDown={(e) => {
+              if (e.key === 'Tab' && onIndentChange) {
+                e.preventDefault();
+                onIndentChange(e.shiftKey ? 'out' : 'in');
+              }
+            }}
+            className="flex-1 bg-transparent text-[15px] font-semibold leading-6 text-slate-800 outline-none placeholder:text-slate-400"
             placeholder="토글 제목"
           />
           <button
@@ -575,6 +599,7 @@ function BlockContent({
               placeholder: '토글 본문을 입력하세요',
               textClassName: 'text-[15px] leading-7 text-slate-800',
               field: 'body',
+              tabBehavior: 'insert-text-indent',
             })}
             {toggleImages.length > 0 && (
               <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
@@ -676,7 +701,11 @@ function SortableBlockRow({
   onEnter: () => void;
   onAddBelow: (type?: NoteBlock['type']) => void;
   onOpenDocument?: (documentId: string) => void;
-  onShowFormatToolbar?: (applyMark: (mark: InlineMark) => void) => void;
+  onShowFormatToolbar?: (
+    applyMark: (mark: InlineMark) => void,
+    applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    position: { top: number; left: number },
+  ) => void;
   onHideFormatToolbar?: () => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
@@ -827,7 +856,9 @@ function AdminNotePageContent() {
   const [focusSignal, setFocusSignal] = useState(0);
   /** 상단 '이미지' 블록 추가 시 토글 안에 넣을 대상 (토글 블록 클릭으로 설정) */
   const [focusedToggleId, setFocusedToggleId] = useState<string | null>(null);
-  const [formatToolbar, setFormatToolbar] = useState<{ applyMark: (mark: InlineMark) => void } | null>(null);
+  const [formatToolbar, setFormatToolbar] = useState<FormatToolbarState | null>(null);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
+  const [togglingPublic, setTogglingPublic] = useState(false);
   const [docTab, setDocTab] = useState<'active' | 'trash' | 'block-trash'>('active');
   const [trashedBlocks, setTrashedBlocks] = useState<NoteBlock[]>([]);
   const [loadingTrashedBlocks, setLoadingTrashedBlocks] = useState(false);
@@ -1212,8 +1243,12 @@ function AdminNotePageContent() {
     router.replace(`/admin/note?id=${encodeURIComponent(documentId)}`);
   }, [router]);
 
-  const showFormatToolbar = useCallback((applyMark: (mark: InlineMark) => void) => {
-    setFormatToolbar({ applyMark });
+  const showFormatToolbar = useCallback((
+    applyMark: (mark: InlineMark) => void,
+    applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    position: { top: number; left: number },
+  ) => {
+    setFormatToolbar({ applyMark, applyTextStyle, position });
   }, []);
 
   const hideFormatToolbar = useCallback(() => {
@@ -1255,6 +1290,45 @@ function AdminNotePageContent() {
     } catch (e) { devLogger.error('[Note] createDoc', e); setError(e instanceof Error ? e.message : '생성 실패'); }
     finally { setLoadingState('idle'); }
   };
+
+  const handleTogglePublic = useCallback(async (doc: NoteDocument) => {
+    const next = !doc.is_public;
+    setTogglingPublic(true);
+    setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, is_public: next } : d)));
+    try {
+      const res = await fetch('/api/admin/note/documents', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: doc.id, is_public: next }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '공개 설정 변경 실패');
+      }
+      const json = (await res.json()) as { document: NoteDocument };
+      setDocuments((prev) => prev.map((d) => (d.id === doc.id ? json.document : d)));
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] togglePublic', e);
+      setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, is_public: doc.is_public } : d)));
+      setError(e instanceof Error ? e.message : '공개 설정 변경 실패');
+    } finally {
+      setTogglingPublic(false);
+    }
+  }, [triggerSave]);
+
+  const handleCopyPublicLink = useCallback(async (doc: NoteDocument) => {
+    if (!doc.share_token) return;
+    const url = `${window.location.origin}/note/p/${doc.share_token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareLinkCopied(true);
+      window.setTimeout(() => setShareLinkCopied(false), 2000);
+    } catch {
+      setError('링크 복사에 실패했습니다.');
+    }
+  }, []);
 
   const handleRenameDocument = (docId: string, title: string) => {
     const safeTitle = title.trim() || '제목 없음';
@@ -1400,8 +1474,12 @@ function AdminNotePageContent() {
         : 0;
     let nextDepth = currentDepth;
     if (direction === 'in') {
-      if (idx === 0) return;
-      nextDepth = Math.min(6, currentDepth + 1, prevDepth + 1);
+      if (idx === 0) {
+        // 첫 블록도 최소 1단계 들여쓰기가 가능해야 토글 본문에서 Tab 체감이 난다.
+        nextDepth = Math.min(6, currentDepth + 1);
+      } else {
+        nextDepth = Math.min(6, currentDepth + 1, prevDepth + 1);
+      }
     } else {
       const oneStepOut = Math.max(0, currentDepth - 1);
       nextDepth = idx === 0 ? 0 : Math.min(oneStepOut, prevDepth + 1);
@@ -1628,6 +1706,15 @@ function AdminNotePageContent() {
     const onKey = (e: KeyboardEvent) => {
       const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z';
       if (!isUndo) return;
+      const target = e.target as HTMLElement | null;
+      const isEditingTarget = !!target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable ||
+        !!target.closest('[contenteditable="true"]')
+      );
+      // 에디터 입력 중 Ctrl/Cmd+Z는 브라우저/에디터 기본 실행취소를 사용한다.
+      if (isEditingTarget) return;
       e.preventDefault();
       void handleUndoDeleteBlock();
     };
@@ -2032,14 +2119,7 @@ function AdminNotePageContent() {
             <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white">
               <div className="sticky top-0 z-40 border-b border-slate-100 bg-white/85 backdrop-blur-xl">
                 <div className="mx-auto flex max-w-4xl min-w-0 items-center gap-1 overflow-x-hidden px-4 py-2 md:px-10 lg:px-16">
-                  {formatToolbar ? (
-                    <>
-                      <BubbleToolbar applyMark={formatToolbar.applyMark} />
-                      <span className="ml-2 text-[11px] font-medium text-slate-400">선택 영역 서식</span>
-                    </>
-                  ) : (
-                    <span className="text-[11px] font-medium text-slate-400">문서 안에서 `/` 입력 · 블록 왼쪽 `+`로 바로 추가</span>
-                  )}
+                  <span className="text-[11px] font-medium text-slate-400">문서 안에서 `/` 입력 · 블록 왼쪽 `+`로 바로 추가</span>
                 </div>
                 <div className="mx-auto flex max-w-4xl min-w-0 flex-wrap gap-1.5 overflow-x-hidden px-4 pb-2 md:px-10 lg:px-16">
                   {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
@@ -2070,6 +2150,42 @@ function AdminNotePageContent() {
                   value={activeDocument.title === '제목 없음' ? '' : activeDocument.title}
                   onChange={(e) => handleRenameDocument(activeDocument.id, e.target.value || '제목 없음')}
                 />
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={togglingPublic}
+                    onClick={() => activeDocument && handleTogglePublic(activeDocument)}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors disabled:opacity-50 ${
+                      activeDocument.is_public
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Globe className="h-3.5 w-3.5" />
+                    {activeDocument.is_public ? '웹에 공개됨' : '웹에 공개'}
+                  </button>
+                  {activeDocument.is_public && activeDocument.share_token && (
+                    <>
+                      <a
+                        href={`/note/p/${activeDocument.share_token}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-600 hover:bg-slate-50"
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        공개 페이지 열기
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyPublicLink(activeDocument)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-600 hover:bg-slate-50"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        {shareLinkCopied ? '복사됨' : '링크 복사'}
+                      </button>
+                    </>
+                  )}
+                </div>
                 <div className="mb-10 flex flex-wrap items-center gap-3 text-[12px] text-slate-400">
                   <span>수정 {relativeTime(activeDocument.updated_at)}</span>
                   {collaborators.length > 0 && (
@@ -2169,6 +2285,15 @@ function AdminNotePageContent() {
           {activeBlock ? <DragPreview block={activeBlock} /> : null}
         </DragOverlay>
       </DndContext>
+
+      {formatToolbar && (
+        <div
+          className="fixed z-[90] -translate-x-1/2 -translate-y-full rounded-xl border border-slate-200 bg-white/95 p-1 shadow-xl backdrop-blur"
+          style={{ left: formatToolbar.position.left, top: formatToolbar.position.top }}
+        >
+          <BubbleToolbar applyMark={formatToolbar.applyMark} applyTextStyle={formatToolbar.applyTextStyle} />
+        </div>
+      )}
     </div>
   );
 }

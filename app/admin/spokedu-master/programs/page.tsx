@@ -79,10 +79,22 @@ function EditPanel({
   const [coachScript, setCoachScript] = useState(item.meta?.sm_coach_script ?? '');
   const [parentNote, setParentNote] = useState(item.meta?.sm_parent_note ?? '');
   const [spomoveIds, setSpomoveIds] = useState((item.meta?.sm_related_spomove_ids ?? []).join(', '));
+  const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
 
   const toggleTag = (tag: string) => {
     setTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+  };
+
+  const addTag = () => {
+    const next = tagInput.trim();
+    if (!next) return;
+    setTags((prev) => prev.includes(next) ? prev : [...prev, next]);
+    setTagInput('');
+  };
+
+  const removeTag = (tag: string) => {
+    setTags((prev) => prev.filter((item) => item !== tag));
   };
 
   const handleSave = async () => {
@@ -141,6 +153,48 @@ function EditPanel({
 
           <div>
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-500">태그</p>
+            <div className="mb-3 flex gap-2">
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag();
+                  }
+                }}
+                placeholder="태그 직접 입력"
+                className="h-9 min-w-0 flex-1 rounded-lg border px-2.5 text-[13px] font-medium outline-none"
+                style={{ background: '#1f2937', borderColor: '#374151', color: '#e5e7eb' }}
+              />
+              <button
+                type="button"
+                onClick={addTag}
+                className="h-9 shrink-0 rounded-lg px-3 text-[12px] font-bold"
+                style={{ background: '#374151', color: '#e5e7eb' }}
+              >
+                추가
+              </button>
+            </div>
+            {tags.length > 0 ? (
+              <div className="mb-3 flex flex-wrap gap-1.5 rounded-lg border border-[#1f2937] bg-[#0d1117] p-2">
+                {tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                    style={{ background: 'rgba(99,102,241,0.18)', color: '#c7d2fe', border: '1px solid rgba(99,102,241,0.4)' }}
+                    title={`${tag} 삭제`}
+                  >
+                    {tag}
+                    <X size={12} />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mb-3 rounded-lg border border-dashed border-[#374151] px-3 py-2 text-[11px] font-semibold text-gray-500">노출 태그가 없습니다. 직접 입력하거나 아래 프리셋을 선택하세요.</p>
+            )}
             <div className="flex flex-wrap gap-1.5">
               {TAG_PRESETS.map((tag) => (
                 <TagChip key={tag} label={tag} active={tags.includes(tag)} onClick={() => toggleTag(tag)} />

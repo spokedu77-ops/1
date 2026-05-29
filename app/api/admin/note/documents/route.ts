@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { allocateSlugForActiveRow, slugifyTitle } from '@/app/lib/server/noteDocumentSlug';
+import { generateNoteShareToken } from '@/app/lib/server/noteShareToken';
 
 type NoteDocument = {
   id: string;
@@ -9,11 +10,16 @@ type NoteDocument = {
   is_archived: boolean;
   is_favorite: boolean;
   is_pinned: boolean;
+  is_public: boolean;
+  share_token: string | null;
   parent_id: string | null;
   slug: string | null;
   created_at: string;
   updated_at: string;
 };
+
+const DOCUMENT_SELECT =
+  'id, title, is_archived, is_favorite, is_pinned, is_public, share_token, parent_id, slug, created_at, updated_at';
 
 async function insertAuditLog({
   documentId,
@@ -110,7 +116,7 @@ export async function GET(request: NextRequest) {
 
       const { data: sourceDocs, error: sourceDocsError } = await supabase
         .from('note_documents')
-        .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
+        .select(DOCUMENT_SELECT)
         .in('id', sourceDocIds)
         .is('deleted_at', null)
         .order('updated_at', { ascending: false });
@@ -124,7 +130,7 @@ export async function GET(request: NextRequest) {
 
     const query = supabase
       .from('note_documents')
-      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
+      .select(DOCUMENT_SELECT)
       .order('is_pinned', { ascending: false })
       .order('is_favorite', { ascending: false })
       .order('updated_at', { ascending: false })
@@ -189,7 +195,7 @@ export async function POST(request: NextRequest) {
         created_by: auth.ok ? auth.userId : null,
         updated_by: auth.ok ? auth.userId : null,
       })
-      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
+      .select(DOCUMENT_SELECT)
       .single();
 
     if (error) {
@@ -246,6 +252,20 @@ export async function PATCH(request: NextRequest) {
     if (typeof body.is_pinned === 'boolean') {
       updates.is_pinned = body.is_pinned;
     }
+    if (typeof body.is_public === 'boolean') {
+      updates.is_public = body.is_public;
+      if (body.is_public) {
+        const supabaseForToken = getServiceSupabase();
+        const { data: currentDoc } = await supabaseForToken
+          .from('note_documents')
+          .select('share_token')
+          .eq('id', id)
+          .maybeSingle();
+        if (!currentDoc?.share_token) {
+          updates.share_token = generateNoteShareToken();
+        }
+      }
+    }
     if (body.parent_id === null || typeof body.parent_id === 'string') {
       updates.parent_id = body.parent_id;
     }
@@ -264,7 +284,7 @@ export async function PATCH(request: NextRequest) {
 
     const { data: beforeDocument, error: beforeError } = await supabase
       .from('note_documents')
-      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
+      .select(DOCUMENT_SELECT)
       .eq('id', id)
       .maybeSingle();
     if (beforeError) {
@@ -280,7 +300,7 @@ export async function PATCH(request: NextRequest) {
         updated_by: auth.userId,
       })
       .eq('id', id)
-      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
+      .select(DOCUMENT_SELECT)
       .single();
 
     if (error) {
@@ -322,7 +342,7 @@ export async function DELETE(request: NextRequest) {
     const now = new Date().toISOString();
     const { data: beforeDocument, error: beforeError } = await supabase
       .from('note_documents')
-      .select('id, title, is_archived, is_favorite, is_pinned, parent_id, slug, created_at, updated_at')
+      .select(DOCUMENT_SELECT)
       .eq('id', id)
       .maybeSingle();
     if (beforeError) {

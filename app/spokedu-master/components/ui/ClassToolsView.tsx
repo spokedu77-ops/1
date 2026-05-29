@@ -363,7 +363,7 @@ export default function ClassToolsView() {
   const ActiveIcon = TABS.find((item) => item.id === tab)?.icon ?? Timer;
 
   return (
-    <div className="flex h-full min-h-0 flex-col" style={{ background: 'var(--spm-bg)' }}>
+    <div className="flex h-full min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
       <section className="shrink-0 border-b px-5 py-5 sm:px-7" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-[640px]">
@@ -398,7 +398,7 @@ export default function ClassToolsView() {
             <Link href="/spokedu-master/library" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="수업안 열기">
               <BookOpen size={16} />
             </Link>
-            <Link href="/spokedu-master/spomove" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="큰 화면 실행">
+            <Link href="/spokedu-master/spomove" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="스포무브 실행">
               <MonitorPlay size={16} />
             </Link>
             <Link href="/spokedu-master/students" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="학생 명단">
