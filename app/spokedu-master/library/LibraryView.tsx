@@ -387,9 +387,16 @@ function ProgramModal({
     ['기능', detail?.developmentFocus || program.category],
     ['공간', program.space],
   ].filter(([, value]) => value && !isPlaceholderText(value));
+  const focusTags = getProgramInfoTags(program).slice(0, 6);
+  const decisionCards = [
+    { label: '영상', value: hasVideo ? '있음' : '없음', tone: hasVideo ? 'text-red-600 bg-red-50 border-red-100' : 'text-slate-500 bg-slate-50 border-slate-200' },
+    { label: '교구', value: equipment.length ? `${equipment.length}개` : '기본', tone: 'text-emerald-700 bg-emerald-50 border-emerald-100' },
+    { label: '진행', value: rules.length ? `${rules.length}단계` : '확인', tone: 'text-indigo-700 bg-indigo-50 border-indigo-100' },
+    { label: '공간', value: program.space, tone: 'text-slate-700 bg-slate-50 border-slate-200' },
+  ];
   const sectionNavItems = [
     '개요',
-    '사전 체크',
+    '수업 전 체크',
     setupNotes.length || setupImage ? '교구 세팅' : null,
     '안전',
     hasVideo ? '참고 영상' : null,
@@ -405,7 +412,7 @@ function ProgramModal({
   };
 
   return (
-    <BottomSheet open title="수업안" onClose={onClose} size="document">
+    <BottomSheet open title="빠른 미리보기" onClose={onClose} size="document">
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
           <nav className="sticky top-0 rounded-[10px] border border-slate-200 bg-slate-50 p-3">
@@ -430,6 +437,23 @@ function ProgramModal({
             <p className="mt-4 border-l-2 border-slate-900 pl-4 text-sm font-semibold leading-7 text-slate-700">
               {detail?.objective || program.description}
             </p>
+            <div className="mt-5 grid gap-2 sm:grid-cols-4">
+              {decisionCards.map((item) => (
+                <div key={item.label} className={`rounded-[12px] border px-3 py-3 ${item.tone}`}>
+                  <p className="text-[11px] font-black">{item.label}</p>
+                  <p className="mt-1 truncate text-sm font-black">{item.value}</p>
+                </div>
+              ))}
+            </div>
+            {focusTags.length > 0 ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {focusTags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </header>
 
           <section id="program-개요" className="rounded-[10px] border border-slate-200 bg-white p-5">
@@ -437,27 +461,27 @@ function ProgramModal({
               <BookOpen className="h-4 w-4 text-rose-600" />
               프로그램 개요
             </h2>
-            <div className="mt-4 max-w-xl overflow-hidden rounded-lg border border-slate-200">
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {overviewRows.map(([label, value]) => (
-                <div key={label} className="grid grid-cols-[120px_1fr] border-b border-slate-200 last:border-b-0">
-                  <div className="bg-slate-50 px-3 py-2 text-xs font-black text-slate-600">{label}</div>
-                  <div className="px-3 py-2 text-xs font-semibold text-slate-800">{value}</div>
+                <div key={label} className="rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-[11px] font-black text-slate-500">{label}</p>
+                  <p className="mt-1 text-sm font-black text-slate-900">{value}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          <section id="program-사전 체크" className="rounded-[10px] border border-slate-200 bg-white p-5">
+          <section id="program-수업 전 체크" className="rounded-[10px] border border-slate-200 bg-white p-5">
             <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
               <Check className="h-4 w-4 text-emerald-600" />
-              사전 체크 Pre-Activity Checklist
+              수업 전 체크
             </h2>
-            <div className="mt-4 rounded-lg border border-slate-200 p-4">
+            <div className="mt-4 rounded-[12px] border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-black text-slate-700">필요 교구</p>
-              <ul className="mt-3 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:gap-x-6 lg:gap-y-2">
+              <ul className="mt-3 flex flex-wrap gap-2">
                 {(equipment.length ? equipment : ['현장 기본 도구']).map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-sm text-slate-700">
-                    <span className="h-3.5 w-3.5 border border-slate-500 bg-white" />
+                  <li key={item} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
                     {item}
                   </li>
                 ))}
@@ -471,24 +495,26 @@ function ProgramModal({
               <MapPin className="h-4 w-4 text-indigo-600" />
               초기 교구 세팅
             </h2>
-            <div className="mt-4 overflow-hidden rounded-[10px] border border-slate-200 bg-slate-50">
-              <div className="relative aspect-[16/7] min-h-[220px]">
-                {setupImage ? (
+            <div className="mt-4 overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50">
+              {setupImage ? (
+                <div className="relative aspect-[16/7] min-h-[220px]">
                   <Image src={setupImage} alt="" fill sizes="(min-width: 1024px) 900px, 100vw" className="object-cover" unoptimized />
-                ) : (
-                  <div className="grid h-full place-items-center bg-white px-6 text-center">
-                    <div>
-                      <MapPin className="mx-auto h-8 w-8 text-slate-300" />
-                      <p className="mt-3 text-base font-black text-slate-700">교구 세팅 사진 아직 없음</p>
-                      <p className="mt-1 text-xs font-semibold text-slate-400">아래 세팅 메모만 확인하세요.</p>
-                    </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 bg-white px-4 py-4">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-400">
+                    <MapPin className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-black text-slate-800">세팅 사진 없음</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">사진이 없는 수업은 아래 세팅 메모만 표시합니다.</p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-4 grid gap-2">
               {setupNotes.slice(0, 5).map((item) => (
-                <li key={item} className="ml-5 list-disc text-sm leading-6 text-slate-700">{item}</li>
+                <li key={item} className="rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold leading-6 text-slate-700">{item}</li>
               ))}
             </ul>
           </section>
@@ -496,10 +522,10 @@ function ProgramModal({
 
           <section id="program-안전" className="rounded-[10px] border border-slate-200 bg-white p-5">
             <h2 className="text-base font-black text-slate-950">활동 전 선행되어야 할 사전 교육</h2>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-4 grid gap-2">
               {safetyNotes.map((item) => (
-                <li key={item} className="flex gap-3 text-sm leading-6 text-slate-700">
-                  <span className="mt-1 h-4 w-4 shrink-0 border border-slate-500" />
+                <li key={item} className="flex gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold leading-6 text-slate-700">
+                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-slate-500" />
                   {item}
                 </li>
               ))}
@@ -550,12 +576,12 @@ function ProgramModal({
           ) : null}
 
           <section id="program-활동 방법" className="rounded-[10px] border border-slate-200 bg-white p-5">
-            <h2 className="text-base font-black text-slate-950">활동 방법 How to Play</h2>
-            <ol className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+            <h2 className="text-base font-black text-slate-950">활동 방법</h2>
+            <ol className="mt-4 grid gap-2">
               {rules.map((step, index) => (
-                <li key={`${step}-${index}`} className="grid grid-cols-[28px_1fr] gap-3 text-sm leading-6 text-slate-800">
-                  <span className="font-black text-slate-500">{index + 1}.</span>
-                  <span>{step}</span>
+                <li key={`${step}-${index}`} className="grid grid-cols-[34px_1fr] gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800">
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-950 text-xs font-black text-white">{index + 1}</span>
+                  <span className="font-semibold">{step}</span>
                 </li>
               ))}
             </ol>
@@ -563,12 +589,12 @@ function ProgramModal({
 
           {variations.length > 0 ? (
             <section id="program-응용" className="rounded-[10px] border border-slate-200 bg-white p-5">
-              <h2 className="text-base font-black text-slate-950">응용 방법 Variations</h2>
-              <ul className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+              <h2 className="text-base font-black text-slate-950">응용 방법</h2>
+              <ul className="mt-4 grid gap-2">
                 {variations.map((item, index) => (
-                  <li key={`${item}-${index}`} className="grid grid-cols-[18px_1fr] gap-3 text-sm leading-6 text-slate-800">
+                  <li key={`${item}-${index}`} className="grid grid-cols-[18px_1fr] gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800">
                     <span className="mt-2 h-1.5 w-1.5 rounded-full bg-slate-500" />
-                    <span>{item}</span>
+                    <span className="font-semibold">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -599,16 +625,16 @@ function ProgramModal({
             <p className="mt-3 rounded-lg bg-white p-4 text-sm leading-7 text-emerald-900">{parentCopy}</p>
           </section>
 
-          <div className="sticky bottom-0 z-10 grid gap-2 rounded-[10px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-3">
-            <button type="button" onClick={copyParentNote} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-700">
+          <div className="sticky bottom-0 z-10 grid grid-cols-[1fr_auto] gap-2 rounded-[10px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-3">
+            <button type="button" onClick={copyParentNote} className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-700">
               <Clipboard className="h-4 w-4" />
               {copied ? '복사 완료' : '문구 복사'}
             </button>
-            <button type="button" onClick={onFavorite} className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black ${favorite ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
+            <button type="button" onClick={onFavorite} className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black sm:px-4 ${favorite ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-700'}`} aria-label={favorite ? '저장 해제' : '저장'}>
               <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
-              저장
+              <span className="hidden sm:inline">저장</span>
             </button>
-            <button type="button" onClick={() => window.print()} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-700">
+            <button type="button" onClick={() => window.print()} className="hidden h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-700 sm:inline-flex">
               <FileText className="h-4 w-4" />
               인쇄
             </button>

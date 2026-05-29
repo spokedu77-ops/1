@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { ChevronLeft, Save, Tag, X } from 'lucide-react';
+import { ChevronLeft, RefreshCw, Save, Sparkles, Tag, X } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -11,12 +11,35 @@ const SM_GRADES = ['유아', '초등 저학년', '초등 고학년', '전학년'
 const SM_SPACES = ['좁은 공간', '넓은 공간', '실내', '실외 가능'];
 const TAG_PRESETS = ['유아', '초등', 'SPOMOVE', '민첩성', '협동', '준비물 없음', '좁은 공간', '넓은 공간', '리듬', '균형'];
 
+const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
+
+function normalizeVideoUrl(value: string | null | undefined): string | undefined {
+  const text = (value ?? '').trim();
+  if (!text || INVALID_VIDEO.has(text.toLowerCase().replace(/\s+/g, ''))) return undefined;
+  try {
+    const url = new URL(text);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? text : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 type CurriculumRow = {
   id: number;
   title: string | null;
+  url: string | null;
   month: number | null;
   week: number | null;
   display_order: number | null;
+};
+
+type HomeFeaturedPreview = {
+  curriculumId: number;
+  title: string;
+  score: number;
+  hasVideo: boolean;
+  currentHot: boolean;
+  currentOrder: number | null;
 };
 
 type MetaRow = {
@@ -321,6 +344,9 @@ function EditPanel({
                 className="h-9 w-full rounded-lg border px-2.5 text-[13px] font-medium outline-none"
                 style={{ background: '#1f2937', borderColor: '#374151', color: '#e5e7eb', colorScheme: 'dark' }}
               />
+              <p className="mt-1 text-[10px] leading-4 text-gray-500">
+                0~7은 MASTER 홈 추천 슬롯입니다. 상단 「8개 일괄 적용」으로 HOT+순서를 한 번에 맞출 수 있습니다.
+              </p>
             </div>
           </div>
 
@@ -366,15 +392,157 @@ function EditPanel({
   );
 }
 
+function HomeFeaturedPanel({ onApplied }: { onApplied: () => void }) {
+  const [preview, setPreview] = useState<HomeFeaturedPreview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
+  const [replaceHot, setReplaceHot] = useState(true);
+
+  const loadPreview = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/spokedu-master/programs/home-featured?limit=8');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? '미리보기 실패');
+      setPreview((json.data ?? []) as HomeFeaturedPreview[]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '미리보기 실패');
+      setPreview([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPreview();
+  }, [loadPreview]);
+
+  const applyHomeFeatured = async () => {
+    setApplying(true);
+    try {
+      const res = await fetch('/api/admin/spokedu-master/programs/home-featured', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 8, replaceHot }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? '적용 실패');
+      toast.success(json.message ?? '홈 추천 8개 저장 완료');
+      onApplied();
+      await loadPreview();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '적용 실패');
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const withVideo = preview.filter((item) => item.hasVideo).length;
+
+  return (
+    <section
+      className="mb-6 rounded-xl border border-[#1f2937] p-4"
+      style={{ background: '#111827' }}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-[14px] font-bold text-white">
+            <Sparkles size={16} color="#fcd34d" />
+            MASTER 홈 추천 8개
+          </h2>
+          <p className="mt-1 max-w-xl text-[12px] leading-5 text-gray-500">
+            참고 영상 URL·메타 완성도·표시 순서로 상위 8개를 골라 HOT + 표시 순서 0~7을 일괄 저장합니다.
+            적용 후 MASTER 홈 탭을 새로고침하세요.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void loadPreview()}
+            disabled={loading || applying}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-bold disabled:opacity-50"
+            style={{ background: '#1f2937', color: '#9ca3af' }}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            미리보기
+          </button>
+          <button
+            type="button"
+            onClick={() => void applyHomeFeatured()}
+            disabled={loading || applying || preview.length === 0}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-bold text-white disabled:opacity-50"
+            style={{ background: '#6366f1' }}
+          >
+            {applying ? '저장 중...' : '8개 일괄 적용'}
+          </button>
+        </div>
+      </div>
+
+      <label className="mt-3 flex cursor-pointer items-center gap-2 text-[12px] text-gray-400">
+        <input
+          type="checkbox"
+          checked={replaceHot}
+          onChange={(e) => setReplaceHot(e.target.checked)}
+          className="rounded border-gray-600"
+        />
+        기존 HOT 전부 해제 후 위 8개만 HOT으로 설정
+      </label>
+
+      <p className="mt-2 text-[11px] font-semibold text-gray-500">
+        미리보기 {preview.length}개 · 영상 있음 {withVideo}개
+        {withVideo < 8 ? ' — 영상 없는 수업은 홈 카드가 비어 보일 수 있습니다.' : ''}
+      </p>
+
+      {loading ? (
+        <div className="mt-4 flex justify-center py-6">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+        </div>
+      ) : (
+        <ol className="mt-3 space-y-1.5">
+          {preview.map((item, index) => (
+            <li
+              key={item.curriculumId}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-[12px]"
+              style={{ background: '#0d1117', border: '1px solid #1f2937' }}
+            >
+              <span className="w-5 shrink-0 text-center font-black text-indigo-400">{index}</span>
+              <span className="min-w-0 flex-1 truncate font-semibold text-gray-200">{item.title}</span>
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black"
+                style={{
+                  background: item.hasVideo ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                  color: item.hasVideo ? '#6ee7b7' : '#fca5a5',
+                }}
+              >
+                {item.hasVideo ? '영상 OK' : '영상 없음'}
+              </span>
+              {item.currentHot ? (
+                <span className="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black" style={{ background: 'rgba(245,158,11,0.12)', color: '#fcd34d' }}>
+                  현재 HOT
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
 function ProgramCard({
   item,
+  videoUrl,
+  homeSlot,
   onEdit,
 }: {
   item: ProgramItem;
+  videoUrl?: string;
+  homeSlot: number | null;
   onEdit: () => void;
 }) {
   const meta = item.meta;
   const title = (item.title ?? '').trim() || `커리큘럼 #${item.id}`;
+  const hasVideo = Boolean(videoUrl);
 
   return (
     <div
@@ -394,6 +562,22 @@ function ProgramCard({
         >
           편집
         </button>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1">
+        {homeSlot != null ? (
+          <span className="rounded-full px-2 py-0.5 text-[9px] font-black" style={{ background: 'rgba(99,102,241,0.2)', color: '#c7d2fe' }}>
+            홈 #{homeSlot}
+          </span>
+        ) : null}
+        <span
+          className="rounded-full px-2 py-0.5 text-[9px] font-black"
+          style={{
+            background: hasVideo ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.1)',
+            color: hasVideo ? '#6ee7b7' : '#fca5a5',
+          }}
+        >
+          {hasVideo ? '영상' : '영상 없음'}
+        </span>
       </div>
       {meta ? (
         <div className="mt-2.5 flex flex-wrap gap-1">
@@ -415,6 +599,7 @@ function ProgramCard({
 
 export default function AdminSmProgramsPage() {
   const [items, setItems] = useState<ProgramItem[]>([]);
+  const [videoByCurriculumId, setVideoByCurriculumId] = useState<Map<number, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ProgramItem | null>(null);
   const [query, setQuery] = useState('');
@@ -422,19 +607,45 @@ export default function AdminSmProgramsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const supabase = getSupabaseBrowserClient();
-    const [{ data: currRows }, { data: metaRows }] = await Promise.all([
+    const [{ data: currRows }, { data: metaRows }, { data: overlayRows }] = await Promise.all([
       supabase
         .from('curriculum')
-        .select('id,title,month,week,display_order')
+        .select('id,title,url,month,week,display_order')
         .eq('is_sub', false)
         .order('display_order', { ascending: true, nullsFirst: false })
         .order('id', { ascending: false }),
       supabase.from('spokedu_master_program_meta').select('*'),
+      supabase
+        .from('spokedu_pro_programs')
+        .select('source_center_curriculum_id,video_url,updated_at')
+        .not('source_center_curriculum_id', 'is', null),
     ]);
 
     const metaMap = new Map<number, MetaRow>();
     for (const m of (metaRows ?? []) as MetaRow[]) metaMap.set(m.curriculum_id, m);
 
+    const overlayMap = new Map<number, { video_url: string | null; updated_at: string | null }>();
+    for (const row of overlayRows ?? []) {
+      const id = row.source_center_curriculum_id as number | null;
+      if (id == null) continue;
+      const prev = overlayMap.get(id);
+      if (!prev) {
+        overlayMap.set(id, row);
+        continue;
+      }
+      const prevTime = prev.updated_at ? Date.parse(prev.updated_at) : 0;
+      const nextTime = row.updated_at ? Date.parse(row.updated_at) : 0;
+      if (nextTime >= prevTime) overlayMap.set(id, row);
+    }
+
+    const videoMap = new Map<number, string>();
+    for (const r of (currRows ?? []) as CurriculumRow[]) {
+      const overlay = overlayMap.get(r.id);
+      const video = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(r.url);
+      if (video) videoMap.set(r.id, video);
+    }
+
+    setVideoByCurriculumId(videoMap);
     setItems(
       (currRows ?? []).map((r: CurriculumRow) => ({ ...r, meta: metaMap.get(r.id) ?? null }))
     );
@@ -446,6 +657,15 @@ export default function AdminSmProgramsPage() {
   const filtered = query
     ? items.filter((item) => (item.title ?? '').toLowerCase().includes(query.toLowerCase()) || String(item.id).includes(query))
     : items;
+
+  const homeSlotById = new Map<number, number>();
+  for (const item of items) {
+    if (!item.meta?.sm_is_hot) continue;
+    const order = item.meta.sm_display_order;
+    if (typeof order === 'number' && order >= 0 && order < 8) {
+      homeSlotById.set(item.id, order);
+    }
+  }
 
   const handleSave = (updated: MetaRow) => {
     setItems((prev) =>
@@ -482,6 +702,7 @@ export default function AdminSmProgramsPage() {
       </header>
 
       <main className="p-6">
+        <HomeFeaturedPanel onApplied={() => void load()} />
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
@@ -489,7 +710,13 @@ export default function AdminSmProgramsPage() {
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((item) => (
-              <ProgramCard key={item.id} item={item} onEdit={() => setEditing(item)} />
+              <ProgramCard
+                key={item.id}
+                item={item}
+                videoUrl={videoByCurriculumId.get(item.id)}
+                homeSlot={homeSlotById.get(item.id) ?? null}
+                onEdit={() => setEditing(item)}
+              />
             ))}
           </div>
         )}

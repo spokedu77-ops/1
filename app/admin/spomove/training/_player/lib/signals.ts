@@ -1028,7 +1028,7 @@ function wouldExceedColorBalance(
 export function createBasicSignalGenerator(
   level: number,
   colors: ColorItem[],
-  fruitSlides: FruitSlide[] = DEFAULT_FRUIT_SLIDES
+  fruitSlides: FruitSlide[] | undefined = undefined
 ) {
   let prev1: string | null = null;
   let prev2: string | null = null;
@@ -1048,7 +1048,9 @@ export function createBasicSignalGenerator(
   let lastVariantPanelImageUrls: (string | null)[] = [null, null, null];
 
   const genOpts = (): GenerateSignalOptions => {
-    const o: GenerateSignalOptions = { fruitSlides };
+    const o: GenerateSignalOptions = {};
+    // fruitSlides가 undefined면 opts에 포함하지 않음 → generateSignal에서 usesImageTheme=false → 색상 폴백 사용
+    if (fruitSlides !== undefined) o.fruitSlides = fruitSlides;
     if (level === 2 || level === 4) o.excludeVariantImageUrl = lastVariantImageUrl;
     else if (level === 3) o.excludeVariantPairKey = lastVariantPairKey;
     else if (level === 5) o.excludeVariantPanelImageUrls = lastVariantPanelImageUrls;

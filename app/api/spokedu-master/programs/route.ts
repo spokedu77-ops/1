@@ -364,6 +364,7 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
     program.description,
     `${title} 활동으로 ${focus}을 자연스럽게 경험하는 체육 수업 패키지입니다.`,
   );
+  const thumbnailUrl = program.thumbnailUrl ?? buildThumbnailUrl(program.lessonDetail?.videoUrl);
 
   return {
     ...program,
@@ -374,6 +375,7 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
     description,
     steps,
     equipment,
+    thumbnailUrl,
     tags: [...new Set(cleanList(program.tags, [category, focus.split('/')[0].trim()]).concat(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : []))],
     lessonDetail: {
       recommendedAge: cleanText(program.lessonDetail?.recommendedAge, cleanText(program.grade, '대상 확인 필요')),
@@ -387,7 +389,7 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
       safetyNotes: cleanList(program.lessonDetail?.safetyNotes, ['충돌 위험이 있는 구간은 대기선과 이동선을 분리합니다.']),
       relatedSpomoveIds,
       videoUrl: normalizeVideoUrl(program.lessonDetail?.videoUrl),
-      heroImageUrl: program.lessonDetail?.heroImageUrl,
+      heroImageUrl: program.lessonDetail?.heroImageUrl ?? thumbnailUrl,
       setupImageUrl: program.lessonDetail?.setupImageUrl,
       galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
       briefingNotes: cleanList(program.lessonDetail?.briefingNotes, ['수업 목표, 안전 기준, 진행 순서를 수업 전에 짧게 확인합니다.']),
@@ -548,6 +550,7 @@ export async function GET() {
       isPro: meta?.sm_is_pro ?? false,
       isNew: meta?.sm_is_new ?? false,
       isHot: meta?.sm_is_hot ?? false,
+      homeSortOrder: meta?.sm_display_order ?? (typeof row.display_order === 'number' ? row.display_order : 5000 + index),
       thumbnailUrl,
       lessonDetail: {
         recommendedAge: meta?.sm_grade ?? '대상 확인 필요',
@@ -561,7 +564,7 @@ export async function GET() {
         safetyNotes: [],
         relatedSpomoveIds,
         videoUrl,
-        heroImageUrl: undefined,
+        heroImageUrl: thumbnailUrl,
         setupImageUrl: undefined,
         galleryImageUrls: [],
         briefingNotes: [],

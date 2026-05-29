@@ -6,6 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
 import type { CartItem, ClassRecord, ClassStudentRecord, Drill, Lesson, Notification, Program, Session, StudentProfile, UserProfile } from '../types';
 import { DRILLS as STATIC_DRILLS, PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
+import { enrichProgramsWithStaticVisuals } from '../lib/enrich-programs';
 
 type ActiveSession = {
   drillId: string;
@@ -26,6 +27,7 @@ interface MasterState {
   programs: Program[];
   programsLoaded: boolean;
   loadPrograms: () => Promise<void>;
+  reloadPrograms: () => Promise<void>;
   drills: Drill[];
   drillsLoaded: boolean;
   loadDrills: () => Promise<void>;
@@ -159,19 +161,24 @@ export const useMasterStore = create<MasterState>()(
       programsLoaded: false,
       loadPrograms: async () => {
         if (get().programsLoaded) return;
+        await get().reloadPrograms();
+      },
+      reloadPrograms: async () => {
         try {
-          const res = await fetch('/api/spokedu-master/programs');
+          const res = await fetch('/api/spokedu-master/programs', { cache: 'no-store' });
           if (res.ok) {
             const json = await res.json() as { data?: Program[] };
             if (Array.isArray(json.data) && json.data.length > 0) {
-              set({ programs: json.data, programsLoaded: true });
+              set({ programs: enrichProgramsWithStaticVisuals(json.data), programsLoaded: true });
               return;
             }
           }
         } catch {
-          // Keep static fallback when the network is unavailable.
+          if (get().programsLoaded && get().programs.length > 0) return;
         }
-        set({ programs: STATIC_PROGRAMS, programsLoaded: true });
+        if (!get().programsLoaded || get().programs.length === 0) {
+          set({ programs: STATIC_PROGRAMS, programsLoaded: true });
+        }
       },
       drills: [],
       drillsLoaded: false,

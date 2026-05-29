@@ -106,6 +106,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const profile = useProfile();
   const setOnline = useMasterStore((state) => state.setOnline);
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
+  const reloadPrograms = useMasterStore((state) => state.reloadPrograms);
   const loadDrills = useMasterStore((state) => state.loadDrills);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const [shellMounted, setShellMounted] = useState(false);
@@ -116,7 +117,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isParentView = pathname.startsWith(`${basePath}/parent`);
   const isPayment = pathname.startsWith(`${basePath}/payment`);
   const isLanding = pathname.startsWith(`${basePath}/landing`);
-  const isDashboard = pathname === basePath || pathname.startsWith(`${basePath}/dashboard`);
   const hideChrome = isOnboarding || isParentView || isPayment || isLanding;
 
   useEffect(() => {
@@ -125,6 +125,19 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     void loadDrills();
     void syncSubscription();
   }, [loadPrograms, loadDrills, syncSubscription]);
+
+  useEffect(() => {
+    const refreshProgramsOnFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      void reloadPrograms();
+    };
+    window.addEventListener('focus', refreshProgramsOnFocus);
+    document.addEventListener('visibilitychange', refreshProgramsOnFocus);
+    return () => {
+      window.removeEventListener('focus', refreshProgramsOnFocus);
+      document.removeEventListener('visibilitychange', refreshProgramsOnFocus);
+    };
+  }, [reloadPrograms]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
@@ -171,20 +184,20 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }
 
   return (
-    <div className="min-h-dvh" style={{ background: isDashboard ? '#050505' : '#eef2f7', color: isDashboard ? '#ffffff' : '#0f172a' }}>
+    <div className="min-h-dvh" style={{ background: '#eef2f7', color: '#0f172a' }}>
       <div
-        className={`relative mx-auto flex min-h-dvh w-full overflow-hidden border-x ${isDashboard ? 'max-w-none' : 'max-w-[1440px]'}`}
+        className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x"
         style={{
-          background: isDashboard ? '#0a0a0a' : '#f5f7fb',
-          borderColor: isDashboard ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
-          color: isDashboard ? '#ffffff' : '#0f172a',
+          background: '#f5f7fb',
+          borderColor: '#e2e8f0',
+          color: '#0f172a',
           fontFamily: SPOKEDU_MASTER_FONT,
         }}
       >
         {hideChrome ? null : <DesktopRail basePath={basePath} />}
         <div className="flex min-w-0 flex-1 flex-col">
           {hideChrome ? null : <StatusBar />}
-          <main className="min-h-0 flex-1 overflow-hidden" style={{ background: isDashboard ? '#0a0a0a' : '#f5f7fb' }}>
+          <main className="min-h-0 flex-1 overflow-hidden" style={{ background: '#f5f7fb' }}>
             {shellMounted && !hideChrome && !isAdmin ? <OperationsBanner /> : null}
             {shellMounted && !hideChrome && !isAdmin ? <TrialCountdownBanner /> : null}
             <ErrorBoundary>{children}</ErrorBoundary>

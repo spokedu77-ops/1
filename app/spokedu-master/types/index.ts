@@ -198,6 +198,8 @@ export interface Program {
   isPro: boolean;
   isNew: boolean;
   isHot?: boolean;
+  /** 홈·라이브러리 노출 우선순위 (낮을수록 앞). API: sm_display_order */
+  homeSortOrder?: number;
   /** YouTube 썸네일 URL (hqdefault.jpg 기준) */
   thumbnailUrl?: string;
   /** curriculum_id: Supabase curriculum 테이블의 id (동적 로딩 시 추적용) */

@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { isRefreshTokenError } from '@/app/lib/supabase/auth';
 import { parseSafeNextRedirect } from '@/app/lib/auth/safeNextRedirect';
+import { resolvePostLoginRedirect } from '@/app/lib/auth/postLoginRedirect';
+import { resolveLoginEmail } from '@/app/lib/auth/loginEmail';
 
 function LoginContent() {
   const [id, setId] = useState('');
@@ -52,7 +54,7 @@ function LoginContent() {
 
     try {
       const supabase = getSupabaseBrowserClient();
-      const loginEmail = id.includes('@') ? id : `${id}@spokedu.com`;
+      const loginEmail = resolveLoginEmail(id);
       const rawPw = pw.replace(/-/g, '');
 
       // 90초 타임아웃: Supabase cold start(프로젝트 재시작) 대기 포함
@@ -88,19 +90,16 @@ function LoginContent() {
       const loggedInUser = data?.user;
 
       if (loggedInUser) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', loggedInUser.id)
-          .single();
+        const redirectPath = await resolvePostLoginRedirect(nextSafe, supabase, loggedInUser);
 
-        if (nextSafe) {
-          router.push(nextSafe);
-        } else if (profile?.role === 'admin' || profile?.role === 'master') {
-          router.push('/admin');
-        } else {
-          router.push('/teacher/my-classes');
+        if (type === 'admin' && !nextSafe && redirectPath !== '/admin') {
+          setLoginError('관리자 권한이 없는 계정입니다. 등록된 관리자 계정으로 로그인해 주세요.');
+          await supabase.auth.signOut();
+          setIsLoading(false);
+          return;
         }
+
+        router.push(redirectPath);
         router.refresh();
       } else {
         setIsLoading(false);
@@ -138,6 +137,14 @@ function LoginContent() {
                 다른 이메일로 로그인하면 체험 권한이 연결되지 않을 수 있습니다.
               </p>
             </div>
+          )}
+          {type === 'admin' && !showSpokeduProNextHint && (
+            <p className="mt-4 text-xs font-medium text-slate-500 leading-relaxed">
+              관리자 ID는 <span className="font-bold text-slate-700">choijihoon</span>,{' '}
+              <span className="font-bold text-slate-700">kimkoomin</span>,{' '}
+              <span className="font-bold text-slate-700">kimyoonki</span> 또는 해당 @spokedu.com 이메일입니다.
+              <span className="block mt-1 text-slate-400">admin 입력 시 최지훈(choijihoon) 계정으로 연결됩니다.</span>
+            </p>
           )}
         </div>
 

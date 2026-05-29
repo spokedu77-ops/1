@@ -8,6 +8,7 @@ import { User, School, BookOpen, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { isRefreshTokenError } from '@/app/lib/supabase/auth';
+import { resolvePostLoginRedirect } from '@/app/lib/auth/postLoginRedirect';
 
 export default function SpokeduGatePage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -38,16 +39,9 @@ export default function SpokeduGatePage() {
           return;
         }
         const user = session.user;
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        const role = profile?.role;
-        if (role === 'admin' || role === 'master') {
-          router.replace('/admin');
-          return;
-        }
-        if (role === 'teacher' || role != null) {
-          router.replace('/teacher/my-classes');
-          return;
-        }
+        const redirectPath = await resolvePostLoginRedirect(null, supabase, user);
+        router.replace(redirectPath);
+        return;
       } catch {
         // 에러 시 역할 선택 화면 유지
       }

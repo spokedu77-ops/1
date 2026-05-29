@@ -1,5 +1,85 @@
 # DEV_NOTES
 
+## 2026-05-29 Codex - 홈 완성도 우선순위 1~3 (API·채우기·병합)
+
+### 왜 체감 완성도가 안 올랐는지
+- 로그인 시 **API curriculum**만 쓰는데, strict 큐레이션은 비주얼 없는 수업을 숨겨 **row가 비어 보임**.
+- 정적 `data.ts` 보강은 API가 있으면 **거의 반영되지 않음**.
+
+### 우선순위 1 — API 실데이터 경로 (`programs` GET)
+- `homeSortOrder`: `sm_display_order` 없으면 curriculum `display_order` (없으면 5000+index).
+- `normalizeProgramForMaster`: YouTube 썸네일 → `thumbnailUrl` + `heroImageUrl` 유지.
+- 영상 있는 수업은 홈 비주얼 게이트 통과 가능.
+
+### 우선순위 2 — 홈 큐레이션 채우기 (`DashboardView`)
+- `takeHomeCuratedPrograms`: showcase → HOT+영상/비주얼 → displayable → 진행+맥락 → 맥락만 → 전체 순으로 **limit까지 채움** (strict 제거).
+- 히어로: HOT+비주얼/영상 → showcase → HOT → … 순.
+- 정렬: `homeSortOrder` → `isHot` → showcase 품질.
+
+### 우선순위 3 — 정적 패키지 병합 (`enrich-programs.ts` + store)
+- API 로드 후 제목 매칭으로 정적 프로그램의 **hero/HOT/순서/rules** 보강 (펀스틱 등).
+
+### 체감 완성도 (로그인·API 기준 추정)
+- 작업 전: **55~58%** (빈 row·허전함)
+- 작업 후: **62~66%** (카드 채움·히어로·HOT 반영) — **전용 썸네일·admin HOT 8개 채우기** 전까지 75% 미달
+
+### 우선순위 4 — admin 홈 추천 8개 일괄 설정
+- `POST/GET /api/admin/spokedu-master/programs/home-featured` — 영상 URL·메타·표시순서 점수로 상위 8개 선정, HOT + `sm_display_order` 0~7 일괄 upsert (`replaceHot` 기본 true).
+- `admin/spokedu-master/programs` — 「MASTER 홈 추천 8개」패널(미리보기·일괄 적용), 카드에 `홈 #n`·영상 배지.
+
+### 체감 (4 적용 후 추정)
+- admin에서 8개 적용 + MASTER 새로고침: **66~70%** (HOT·순서·영상 있는 수업이 히어로/추천 row를 채움).
+- **75%**: 전용 16:9 썸네일·showcase 메타 풀세트·로그인 Playwright CI.
+
+### 우선순위 5 — 홈 UX·운영 반영
+- **대시보드 카피**: 「수업안/초점」→ 「추천 수업」「발달 영역」「수업 자료」「라이브러리에서 보기」 등 현장 용어에 맞게 조정.
+- **미리보기 모달**: YouTube `autoplay=1&mute=1`, mp4 `autoPlay` — 탭 복귀 시 `reloadPrograms()`로 admin HOT 변경 반영(포커스/visibility).
+- `scripts/spokedu-master-home-logged-qa.mjs` — env 자격증명 있을 때만 로그인 홈·라이트 배경·추천 row·autoplay·콘솔 스모크.
+
+### 다음 (콘텐츠·CI)
+- 전용 16:9 썸네일 (콘텐츠 작업).
+- CI에 `spokedu-master-home-logged-qa.mjs` + QA 시크릿 연결.
+
+## 2026-05-29 Codex - 홈(대시보드) 라이트 배경 복귀 + 큐레이션 후속
+
+### Decision
+- 홈만 다크 OTT 크롬을 유지하면 라이브러리·수업도구와 다른 제품처럼 보인다. 홈도 **다른 MASTER 페이지와 동일한 밝은 문서형 배경**(`#f5f7fb`)으로 맞춘다.
+- 히어로는 전체 화면 다크 오버레이 대신 **라이브러리 `FeaturedProgram`과 같은 흰 카드 + 썸네일** 구조를 쓴다.
+- “금주”는 실제 주간 편성이 없으므로 row 제목을 **「추천 수업안」**으로 정리한다. 히어로 배지는 **「대표 수업안」**.
+- strict 큐레이션으로 row가 비면 숨기지 않고 **빈 상태 안내 + 놀이체육 링크**를 보여 준다(콘텐츠 보강 신호).
+- 개인화 1차: store `favorites` 기반 **「저장한 수업」** row 추가.
+
+### Applied
+- `app/spokedu-master/components/layout/AppShell.tsx` — `isDashboard` 다크 배경/무제한 폭 제거, 전 경로 라이트 셸 통일.
+- `app/spokedu-master/components/layout/StatusBar.tsx`, `TabBar.tsx` — `isDarkChrome` 분기 제거.
+- `app/spokedu-master/dashboard/DashboardView.tsx` — 본문·카드·필터·SPOMOVE row 라이트 스타일, 빈 row UX, 즐겨찾기 row.
+- `scripts/spokedu-master-dashboard-qa.mjs` — 비로그인 보호·공개 경로 스모크.
+
+### Remaining (상용 todos)
+- 운영 DB 프로그램: admin에서 `HOT` + `표시 순서`(작을수록 앞) + 참고 영상 URL·대표 이미지 채우기.
+- 전용 16:9 썸네일 촬영/업로드는 콘텐츠 작업.
+- 로그인 세션 Playwright: 홈 라이트 UI·가로 스크롤·콘솔 0건 CI 고정은 추후.
+
+## 2026-05-29 Codex - 홈 큐레이션·콘텐츠 파이프라인 2차
+
+### Applied
+- `Program.homeSortOrder` 추가. API는 `sm_display_order` 매핑, 정렬 시 낮은 숫자 우선.
+- `programs` API: 유효한 YouTube 썸네일이 있으면 `lessonDetail.heroImageUrl`에도 동일 URL 설정(홈 비주얼 게이트 통과).
+- `DashboardView`: **최근 수업** row (`classRecords` 최신순), `compareHomePrograms`에 `homeSortOrder` 반영.
+- 정적 fallback `data.ts`: HOT 5개·`homeSortOrder` 0~5, figure-8/agility/rhythm에 공용 고화질 이미지 경로.
+- `admin/spokedu-master/programs`: 표시 순서 필드에 홈 노출 안내 문구.
+- `scripts/spokedu-master-home-content-audit.mjs`: 정적 프로그램 showcase 5개 이상 여부 점검.
+
+### Verified
+- ReadLints: DashboardView, programs route, types, data.ts, admin programs — 신규 오류 없음.
+
+### Remaining (이전 항목 계속)
+- showcase급 프로그램 5~8개: admin curriculum + `sm_*` 메타·전용 16:9 썸네일 (코드만으로 해결 불가).
+- 로그인 세션 Playwright: 홈 라이트 UI·가로 스크롤·콘솔 0건 CI 고정은 추후.
+
+### Verified (1차 라이트 배경)
+- ReadLints: AppShell, StatusBar, TabBar, DashboardView — 신규 오류 없음.
+
 ## 2026-05-29 Codex - SPOKEDU MASTER menu naming and navigation pass
 
 ### Decision
@@ -2413,4 +2493,72 @@
 - `npx.cmd eslint app/spokedu-master/subscription/page.tsx app/spokedu-master/components/ui/Skeleton.tsx app/spokedu-master/components/ui/ClassToolsView.tsx`
 - `npx.cmd tsc --noEmit --pretty false`
 - `git diff --check -- app/spokedu-master/subscription/page.tsx app/spokedu-master/components/ui/Skeleton.tsx app/spokedu-master/components/ui/ClassToolsView.tsx`
+- `npm.cmd run build`
+## 2026-05-29 Codex - 놀이체육 미리보기 모달 1차 개선
+
+### 수정 파일
+- `app/spokedu-master/library/LibraryView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- PowerShell `Get-Content` 출력은 한글을 깨져 보이게 만들 수 있어, 앞으로 깨진 한글 검사는 Node로 UTF-8 원문을 직접 읽어 판단한다.
+- 놀이체육 모달은 긴 문서보다 수업 전 빠른 판단이 먼저다. 선생님이 열자마자 영상 유무, 교구 수, 진행 단계, 공간을 확인할 수 있어야 한다.
+- SPOMOVE는 명시 연결된 수업안에만 남긴다. 억지 연결은 제품 신뢰도를 떨어뜨린다.
+
+### 적용
+- 모달 제목을 `수업안`에서 `빠른 미리보기`로 변경했다.
+- 모달 상단에 `영상`, `교구`, `진행`, `공간` 판단 카드를 추가했다.
+- 프로그램 개요를 표 형태에서 2열 카드형 정보 블록으로 바꿔 웹에서 불필요한 여백과 문서 느낌을 줄였다.
+- 실제 UTF-8 원문 기준으로 `LibraryView.tsx`의 깨진 문자 패턴이 없는지 검사했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/library/LibraryView.tsx`
+- Node UTF-8 원문 기반 깨진 문자 패턴 검사
+- `npx.cmd tsc --noEmit --pretty false`
+- `git diff --check -- app/spokedu-master/library/LibraryView.tsx app/spokedu-master/subscription/page.tsx app/spokedu-master/components/ui/Skeleton.tsx app/spokedu-master/components/ui/ClassToolsView.tsx DEV_NOTES.md`
+- `npm.cmd run build`
+## 2026-05-29 Codex - 놀이체육 모달 하단 정보 밀도 개선
+
+### 수정 파일
+- `app/spokedu-master/library/LibraryView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 미리보기 상단은 빠른 판단에 가까워졌지만, 하단 섹션은 아직 문서 양식이 남아 있었다.
+- 교구 세팅 사진이 없을 때 큰 빈 박스를 보여주는 것은 신뢰도를 깎는다. 사진이 없으면 작게 알리고 세팅 메모를 더 잘 보여주는 편이 낫다.
+- 웹에서는 긴 여백보다 카드형 체크 정보가 더 빠르게 스캔된다.
+
+### 적용
+- `사전 체크 Pre-Activity Checklist`를 `수업 전 체크`로 줄였다.
+- 필요 교구를 체크박스 목록에서 칩 형태로 바꿔 모바일/웹 모두에서 공간을 덜 쓰게 했다.
+- 세팅 사진이 없는 경우 큰 빈 이미지 영역 대신 작은 안내 패널로 표시하게 했다.
+- 세팅 메모, 안전 안내, 활동 방법, 응용 방법을 카드형 리스트로 바꿔 문서 느낌을 줄이고 스캔성을 높였다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/library/LibraryView.tsx`
+- Node UTF-8 원문 기반 깨진 문자 패턴 검사
+- `npx.cmd tsc --noEmit --pretty false`
+- `git diff --check -- app/spokedu-master/library/LibraryView.tsx DEV_NOTES.md`
+- `npm.cmd run build`
+## 2026-05-29 Codex - 놀이체육 모달 모바일 액션 정리
+
+### 수정 파일
+- `app/spokedu-master/library/LibraryView.tsx`
+- `DEV_NOTES.md`
+
+### 판단
+- 모바일 현장에서는 `문구 복사`가 가장 중요한 액션이고, `인쇄`는 우선순위가 낮다.
+- 하단 고정 액션이 세로로 길어지면 모달 본문을 가리고 답답해진다.
+- 네비게이션 라벨과 실제 섹션 제목은 같은 언어로 맞아야 한다.
+
+### 적용
+- 모달 내부 섹션 라벨을 `사전 체크`에서 `수업 전 체크`로 통일했다.
+- 모바일 하단 고정 액션을 `문구 복사 + 저장 아이콘` 구조로 줄였다.
+- `인쇄`는 데스크톱 이상에서만 노출되도록 변경했다.
+
+### 검증
+- `npx.cmd eslint app/spokedu-master/library/LibraryView.tsx`
+- Node UTF-8 원문 기반 깨진 문자 패턴 검사
+- `npx.cmd tsc --noEmit --pretty false`
+- `git diff --check -- app/spokedu-master/library/LibraryView.tsx DEV_NOTES.md`
 - `npm.cmd run build`
