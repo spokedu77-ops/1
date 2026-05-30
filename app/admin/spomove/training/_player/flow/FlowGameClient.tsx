@@ -56,14 +56,14 @@ export default function FlowGameClient({
   const canvasRef      = useRef<HTMLCanvasElement>(null);
   const flashRef       = useRef<HTMLDivElement>(null);
   const engineRef      = useRef<FlowEngine | null>(null);
-  const instrTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const instrTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);  // 미사용, 호환 유지
   const instrPrioRef   = useRef(0);
 
   const [phase,          setPhase]         = useState<FlowGamePhase>('idle');
   const [countdown,      setCountdown]     = useState<number | null>(null);
   const [stageIdx,       setStageIdx]      = useState(0);
   const [timerSec,       setTimerSec]      = useState(stages[0]?.durationSec ?? 25);
-  const [instruction,    setInstruction]   = useState<{ text: string; cls: string } | null>(null);
+  // instruction 상태 제거 — 중앙 문구 표시 없음
   const [stats,          setStats]         = useState<FlowStats | null>(null);
   const [totalProgress,  setTotalProgress] = useState(0);
 
@@ -86,17 +86,7 @@ export default function FlowGameClient({
           setTimerSec(rem);
           setTotalProgress(prog);
         },
-        onInstruction:  (text, colorClass, ms, priority = 1) => {
-          // 우선순위가 낮은 지시문은 현재 표시 중인 것을 덮어쓰지 않음
-          if (instrTimerRef.current && priority < instrPrioRef.current) return;
-          if (instrTimerRef.current) clearTimeout(instrTimerRef.current);
-          instrPrioRef.current = priority;
-          setInstruction({ text, cls: colorClass });
-          instrTimerRef.current = setTimeout(() => {
-            setInstruction(null);
-            instrPrioRef.current = 0;
-          }, ms);
-        },
+        onInstruction:  () => { /* 문구 표시 제거 */ },
         onComplete:     (s) => { setStats(s); onComplete(s); },
         onCameraShake:  () => {},
         onFlash:        () => {},
@@ -181,37 +171,7 @@ export default function FlowGameClient({
             <div style={{ height: '100%', width: `${totalProgress * 100}%`, background: currentStage.color, transition: 'width 0.12s linear' }} />
           </div>
 
-          {/* 지시어 플래시 */}
-          {instruction && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '32%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                fontSize: 'clamp(4.5rem, 16vw, 9rem)',
-                fontWeight: 900,
-                fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
-                pointerEvents: 'none',
-                letterSpacing: '0.04em',
-                color: instruction.cls,
-                textShadow: [
-                  `0 0 90px ${instruction.cls}`,
-                  `0 0 45px ${instruction.cls}bb`,
-                  `0 0 18px ${instruction.cls}77`,
-                  '3px 3px 0 #000',
-                  '-3px -3px 0 #000',
-                  '3px -3px 0 #000',
-                  '-3px 3px 0 #000',
-                  '0 4px 0 #000',
-                ].join(','),
-                whiteSpace: 'nowrap',
-                animation: 'flowInstPop 0.10s cubic-bezier(0.22,1.8,0.36,1)',
-              }}
-            >
-              {instruction.text}
-            </div>
-          )}
+          {/* 지시어 플래시 제거 */}
         </>
       )}
 

@@ -340,13 +340,7 @@ export class FlowEngine {
       strip.position.set(i * LANE_WIDTH, -30, -20000);
       this.scene.add(strip);
     }
-    const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22 });
-    for (const x of [-LANE_WIDTH * 1.5, -LANE_WIDTH * 0.5, LANE_WIDTH * 0.5, LANE_WIDTH * 1.5]) {
-      const line = new THREE.Mesh(new THREE.PlaneGeometry(3, 60000), lineMat);
-      line.rotation.x = -Math.PI / 2;
-      line.position.set(x, -29, -20000);
-      this.scene.add(line);
-    }
+    // 구분선 제거 — 흰 선이 배경에서 계속 보이는 문제
   }
 
   // ── 별 ───────────────────────────────────────────────────────────────────
@@ -370,20 +364,6 @@ export class FlowEngine {
 
   private buildDefaultAtmosphere(): void {
     if (!this.scene) return;
-
-    // 트랙 양 가장자리 네온 엣지 라인
-    for (const xPos of [-(LANE_WIDTH * 1.5 + 4), LANE_WIDTH * 1.5 + 4]) {
-      const edge = new THREE.Mesh(
-        new THREE.PlaneGeometry(5, 60000),
-        new THREE.MeshBasicMaterial({
-          color: 0x818cf8, transparent: true, opacity: 0.85,
-          blending: THREE.AdditiveBlending, depthWrite: false,
-        }),
-      );
-      edge.rotation.x = -Math.PI / 2;
-      edge.position.set(xPos, -28, -20000);
-      this.scene.add(edge);
-    }
 
     // 지평선 글로우 빔
     const horizon = new THREE.Mesh(
