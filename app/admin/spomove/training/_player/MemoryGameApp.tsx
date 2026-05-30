@@ -136,6 +136,33 @@ export type MemoryGameAutoLaunch = {
   flowDuration?: number;
 };
 
+/** Training 포털 복귀 시 설정 화면에 되돌릴 실행 세션 정보 */
+export type TrainingExitResume = {
+  levelId: number;
+  launch: MemoryGameAutoLaunch;
+};
+
+export function settingsToExitResume(s: Settings): TrainingExitResume {
+  return {
+    levelId: s.level,
+    launch: {
+      speed: s.speed,
+      timeMode: s.timeMode as 'time' | 'reps',
+      duration: s.duration,
+      targetReps: s.targetReps,
+      warmup: s.warmup,
+      accel: s.accel,
+      intervalMode: s.intervalMode,
+      kidsSafeMode: s.kidsSafeMode,
+      numberRule: s.numberRule,
+      variantColorTheme: s.variantColorTheme,
+      flowFeatures: [...s.flowFeatures],
+      flowColorTheme: s.flowColorTheme,
+      flowDuration: s.flowDuration,
+    },
+  };
+}
+
 export default function MemoryGameApp({
   initialMode,
   initialLevel,
@@ -150,8 +177,8 @@ export default function MemoryGameApp({
   embed?: boolean;
   /** 제공 시 설정 화면을 건너뛰고 이 설정으로 훈련을 즉시 시작 */
   autoLaunch?: MemoryGameAutoLaunch;
-  /** autoLaunch 모드에서 내부적으로 훈련이 끝나 home/result로 돌아갈 때 부모에게 닫힘 신호 */
-  onExit?: () => void;
+  /** autoLaunch 모드에서 포털을 닫을 때 — resume에 실제 실행 세션 설정을 전달 */
+  onExit?: (resume?: TrainingExitResume) => void;
   /** initialMode가 MODES에 없을 때 (매핑 누락) 부모에 알림 */
   onUnavailable?: () => void;
 }) {
@@ -685,12 +712,12 @@ export default function MemoryGameApp({
     flowBgmPathRef.current = undefined;
     if (autoLaunch) {
       // training 포털(autoLaunch): 내부 setup이 아니라 포털 바깥 트레이닝 설정 화면으로 복귀
-      onExit?.();
+      onExit?.(settingsToExitResume(settings));
       return;
     }
     // 일반 admin/memory-game: 현재 설정을 유지한 내부 setup으로 복귀
     setScreen('setup');
-  }, [autoLaunch, onExit]);
+  }, [autoLaunch, onExit, settings]);
 
   const handleFlowComplete = useCallback(() => {
     if (flowCompleteGuardRef.current) return;
@@ -1591,7 +1618,7 @@ export default function MemoryGameApp({
     const goToList = () => {
       setSettings(cfg);
       if (autoLaunch) {
-        onExit?.();
+        onExit?.(settingsToExitResume(cfg));
         return;
       }
       setScreen('setup');

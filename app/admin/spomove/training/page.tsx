@@ -13,7 +13,7 @@ import type { SpomoveLaunchPreset } from '@/app/spokedu-master/types';
 
 import { isSpomoveCatalogTbdMode, MODES, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
-import type { MemoryGameAutoLaunch } from './_player/MemoryGameApp';
+import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryGameApp';
 import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
 import { SpeedSelector } from './_player/components/SpeedSelector';
 import {
@@ -211,6 +211,24 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowDuration: 25,
 };
 
+function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: LaunchSettings): LaunchSettings {
+  return {
+    speed: auto.speed ?? fallback.speed,
+    timeMode: auto.timeMode ?? fallback.timeMode,
+    duration: auto.duration ?? fallback.duration,
+    targetReps: auto.targetReps ?? fallback.targetReps,
+    warmup: auto.warmup ?? fallback.warmup,
+    accel: auto.accel ?? fallback.accel,
+    intervalMode: auto.intervalMode ?? fallback.intervalMode,
+    kidsSafeMode: auto.kidsSafeMode ?? fallback.kidsSafeMode,
+    numberRule: auto.numberRule ?? fallback.numberRule,
+    variantColorTheme: auto.variantColorTheme ?? fallback.variantColorTheme,
+    flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
+    flowColorTheme: auto.flowColorTheme ?? fallback.flowColorTheme,
+    flowDuration: auto.flowDuration ?? fallback.flowDuration,
+  };
+}
+
 type PagePhase =
   | { tag: 'catalog' }
   | { tag: 'settings'; modeId: string; levelId?: number; launch?: LaunchSettings }
@@ -254,7 +272,7 @@ function TrainingPortal({
   modeId: string;
   levelId: number;
   launch: LaunchSettings;
-  onClose: () => void;
+  onClose: (resume?: TrainingExitResume) => void;
 }) {
   if (typeof document === 'undefined') return null;
 
@@ -541,9 +559,11 @@ function SettingsScreen({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    // 훈련 복귀 시에는 initial(launch)에 담긴 테마를 유지
+    if (typeof initialLevelId === 'number') return;
     const storedTheme = parseStoredVariantTheme(localStorage.getItem(SPOMOVE_VARIANT_THEME_LS_KEY));
     setLaunch((s) => ({ ...s, variantColorTheme: storedTheme }));
-  }, []);
+  }, [initialLevelId]);
 
   useEffect(() => {
     if (modeId !== 'basic' || levelId !== 4) return;
@@ -1342,12 +1362,17 @@ function SpomoveTrainingPageContent() {
           modeId={phase.modeId}
           levelId={phase.levelId}
           launch={phase.launch}
-          onClose={() => setPhase({
-            tag: 'settings',
-            modeId: phase.modeId,
-            levelId: phase.levelId,
-            launch: phase.launch,
-          })}
+          onClose={(resume) => {
+            const fallbackLaunch = phase.launch;
+            setPhase({
+              tag: 'settings',
+              modeId: phase.modeId,
+              levelId: resume?.levelId ?? phase.levelId,
+              launch: resume?.launch
+                ? autoLaunchToLaunchSettings(resume.launch, fallbackLaunch)
+                : fallbackLaunch,
+            });
+          }}
         />
       )}
 
