@@ -32,9 +32,8 @@ const PAD_TRIGGER_RATIO  = 0.65;
 
 // 점프 트리거: relZ = PLAYER_Z - bridge.z <= padStartRel - PAD_DEPTH * PAD_TRIGGER_RATIO
 // = -1750 - 130 = -1880  →  bridge.z >= PLAYER_Z + 1880 = 2280
-const PAD_START_REL      = -(BRIDGE_LENGTH / 2);                         // -1750
-const JUMP_TRIGGER_REL   = PAD_START_REL - PAD_DEPTH * PAD_TRIGGER_RATIO; // -1880
-const JUMP_PRE_WARN_REL  = JUMP_TRIGGER_REL + 650;                        // -1230 ≈ 0.45s 전
+const PAD_START_REL    = -(BRIDGE_LENGTH / 2);                         // -1750
+const JUMP_TRIGGER_REL = PAD_START_REL - PAD_DEPTH * PAD_TRIGGER_RATIO; // -1880
 
 // 속도 (원본: currentSpeed * 50 * dt60)
 const BASE_SPEED = 0.6;
@@ -156,7 +155,10 @@ export class FlowEngine {
   private bridges:      BridgeObj[] = [];
   private activeBridge: BridgeObj | null = null;
   private lastJumpBridgeId = -1;
-  private bridgeIdCnt   = 0;
+  private bridgeIdCnt      = 0;
+  private bridgeLaneIdx    = 0; // 빨강(1)→노랑(2)→초록(0) 순환
+  // 브릿지 레인 순서: 빨강(center=1) → 노랑(right=2) → 초록(left=0)
+  private static readonly BRIDGE_LANE_SEQ = [1, 2, 0] as const;
 
   // ── 카메라 (원본 동일 변수) ────────────────────────────────────────────────
   private visualX      = 0;
@@ -279,25 +281,14 @@ export class FlowEngine {
 
     this.obstacles = new ObstacleManager(this.scene, BRIDGE_LENGTH, {
       onBoxHit:           () => {},
-      onBoxWarn:          (isReach) => {
-        // 박스가 접근 중일 때 문구 — 박스가 화면에 있는 동안만 (350ms ≈ 500유닛/1440속도)
-        if (isReach) return; // 두드리기 벽은 별도 시퀀스에서 처리
-        if (this.isBonus) return;
-        if (!this.activeModules.has('punch')) return;
-        this.showInstruction('펀치!', '#ff4400', 500, 2);
-      },
-      onUfoWarn:          () => {
-        // UFO 접근 시 문구 — UFO가 화면에 있는 동안만 (320ms ≈ 450유닛/1440속도)
-        if (!this.activeModules.has('duck')) return;
-        if (this.isBonus) return;
-        this.showInstruction('숙여!', '#ffdd00', 600, 2);
-      },
+      onBoxWarn:          () => { /* 사전 경고 없음 — 펀치 문구는 autoHit 순간에 표시 */ },
+      onUfoWarn:          () => { /* 사전 경고 없음 — 숙여 문구는 duckStart 순간에 표시 */ },
       onUfoDuckStart:     () => {
         if (!this.activeModules.has('duck')) return;
-        // 문구는 onUfoWarn에서 이미 표시 — 여기서는 카메라 딥만
         this.duckDipOffset = -120;
         this.duckPitchX    = 0.70;
-        this.duckHold      = true;  // UFO 통과 전까지 딥 유지
+        this.duckHold      = true;
+        if (!this.isBonus) this.showInstruction('숙여!', '#ffdd00', 5000, 2);
       },
       onUfoPassed:        () => {
         this.duckHold         = false; // 회복 시작
@@ -315,7 +306,9 @@ export class FlowEngine {
       onBoxAutoHit:       (isReach: boolean) => {
         this.microJolt += 0.65;
         this.audio.sfxPunch();
-        // 펀치 문구는 onBoxWarn에서 이미 표시됨 — 여기서는 이펙트만
+        if (!this.isBonus && this.activeModules.has('punch') && !isReach) {
+          this.showInstruction('펀치!', '#ff4400', 5000, 2);
+        }
         if (isReach && this.activeModules.has('reach')) {
           this.hitShakeRemaining = 220;
           this.hitShakeIntensity = 1.2;
@@ -557,12 +550,14 @@ export class FlowEngine {
       spawnZ = -8000;
     }
 
-    const randLane = isFirst ? 1 : Math.floor(Math.random() * 3);
-    const g        = new THREE.Group();
+    const randLane    = FlowEngine.BRIDGE_LANE_SEQ[this.bridgeLaneIdx % 3]!;
+    this.bridgeLaneIdx++;
+    const bridgeColor = LANE_COLORS[randLane]!;
+    const g           = new THREE.Group();
 
     const top = new THREE.Mesh(
       new THREE.BoxGeometry(LANE_WIDTH - 5, 8, BRIDGE_LENGTH),
-      new THREE.MeshBasicMaterial({ color: 0x3b82f6 }), // 항상 파랑 고정
+      new THREE.MeshBasicMaterial({ color: bridgeColor }), // 빨강→노랑→초록 순환
     );
     top.position.y = 40;
     g.add(top);
@@ -661,6 +656,7 @@ export class FlowEngine {
     this.resetSpecialTimers();
     this.obstacles?.clearAll();
     for (const b of this.bridges) { b.hasBox = false; b.instructionFired = false; b.preJumpFired = false; }
+    this.bridgeLaneIdx = 0; // 스테이지마다 빨강부터 다시 시작
     this.activeBridge = null;
     // lastJumpBridgeId 유지 → phantom jump 방지
     this.cb.onStageChange?.(idx);
@@ -853,13 +849,6 @@ export class FlowEngine {
         const relZ = PLAYER_Z - b.mesh.position.z;
         this.isOnPad = relZ < PAD_START_REL;
 
-        // 점프 사전 경고 — 실제 점프보다 ~0.45초 앞서 표시
-        if (relZ <= JUMP_PRE_WARN_REL && !b.preJumpFired && this.jumpInstrCooldown <= 0 && !this.isBonus) {
-          b.preJumpFired = true;
-          this.showInstruction('점프!', '#ffffff', 550, 1);
-          this.jumpInstrCooldown = 3.0;
-        }
-
         // 점프 트리거 — isJumping 체크를 여기서도 (checkBridge 두 번 호출 가능 경로 방어)
         if (
           relZ <= JUMP_TRIGGER_REL &&
@@ -967,7 +956,7 @@ export class FlowEngine {
         this.hitShakeRemaining = 130;
         this.hitShakeIntensity = 0.75 + this.wallBreakHits * 0.1;
         this.hitShakeDuration  = 130;
-        if (!this.isBonus) this.showInstruction('두드려!', '#ffaa00', 280, 2);
+        if (!this.isBonus) this.showInstruction('두드려!', '#ffaa00', 5000, 2);
         if (done) {
           this.wallBreakActive = false;
           this.wallBreakHits   = 0;
@@ -976,7 +965,7 @@ export class FlowEngine {
           this.hitShakeRemaining = 300;
           this.hitShakeIntensity = 1.5;
           this.hitShakeDuration  = 300;
-          if (!this.isBonus) this.showInstruction('부숴!', '#ff6600', 700, 3);
+          if (!this.isBonus) this.showInstruction('부숴!', '#ff6600', 5000, 3);
         } else {
           this.wallBreakTimer = WALL_BREAK_INTERVAL;
         }
@@ -1018,7 +1007,10 @@ export class FlowEngine {
     this.jumpStartTime = this.gameTime;
     this.microJolt    += MICROJOLT_AMOUNT;
     this.audio.sfxJump();
-    // 문구는 checkBridge의 사전 경고(JUMP_PRE_WARN_REL)에서 표시
+    if (this.jumpInstrCooldown <= 0 && !this.isBonus) {
+      this.showInstruction('점프!', '#ffffff', 5000, 1);
+      this.jumpInstrCooldown = 3.0;
+    }
   }
 
   // 어드밴스 경고는 ObstacleManager.onBoxWarn 으로 이관됨

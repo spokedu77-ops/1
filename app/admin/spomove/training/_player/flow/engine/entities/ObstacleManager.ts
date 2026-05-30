@@ -49,6 +49,12 @@ interface UfoEntity {
   duckStarted: boolean;
   passed: boolean;
   age: number;
+  // 애니메이션 대상 참조
+  discBody:  THREE.Mesh;
+  ringLower: THREE.Mesh;
+  beam:      THREE.Mesh;
+  antLight:  THREE.Mesh;
+  enginePods: THREE.Mesh[];
 }
 
 interface ShardEntity {
@@ -336,77 +342,137 @@ export class ObstacleManager {
   attachUfo(bridge: FlowBridge): boolean {
     const group = new THREE.Group();
 
-    // ① 메인 디스크 — 더 납작하고 넓게
-    const disc = new THREE.Mesh(
-      new THREE.CylinderGeometry(160, 175, 14, 16),
+    // ① 메인 선체 디스크 — 금속 질감, 넓고 납작
+    const discBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(165, 180, 20, 28),
       new THREE.MeshPhongMaterial({
-        color: 0xc0e8ff,
-        emissive: 0x2563eb,
-        emissiveIntensity: 0.5,
-        shininess: 110,
+        color: 0x94a3b8,
+        emissive: 0x0f1f3d,
+        emissiveIntensity: 0.25,
+        shininess: 95,
       }),
     );
-    group.add(disc); // children[0]
+    group.add(discBody);
 
-    // ② 돔
-    const dome = new THREE.Mesh(
-      new THREE.SphereGeometry(125, 14, 7, 0, Math.PI * 2, 0, Math.PI / 2),
+    // ② 상단 2단 선체 — 갈수록 좁아지는 탑 구조
+    const hullMid = new THREE.Mesh(
+      new THREE.CylinderGeometry(105, 148, 22, 22),
+      new THREE.MeshPhongMaterial({ color: 0x64748b, emissive: 0x0f172a, emissiveIntensity: 0.3, shininess: 70 }),
+    );
+    hullMid.position.y = 20;
+    group.add(hullMid);
+
+    const hullTop = new THREE.Mesh(
+      new THREE.CylinderGeometry(58, 95, 18, 18),
+      new THREE.MeshPhongMaterial({ color: 0x475569, emissive: 0x1e3a5f, emissiveIntensity: 0.35, shininess: 80 }),
+    );
+    hullTop.position.y = 38;
+    group.add(hullTop);
+
+    // ③ 조종석 돔 — 반투명 유리
+    const cockpit = new THREE.Mesh(
+      new THREE.SphereGeometry(52, 18, 9, 0, Math.PI * 2, 0, Math.PI / 2),
       new THREE.MeshPhongMaterial({
-        color: 0x93c5fd,
+        color: 0x7dd3fc,
         transparent: true, opacity: 0.55,
-        emissive: 0x1d4ed8, emissiveIntensity: 0.3,
+        emissive: 0x1d4ed8, emissiveIntensity: 0.55,
+        shininess: 200,
       }),
     );
-    dome.position.y = 7;
-    group.add(dome); // children[1]
+    cockpit.position.y = 50;
+    group.add(cockpit);
 
-    // ③ 스캔 빔 (아래로)
-    const beam = new THREE.Mesh(
-      new THREE.CylinderGeometry(65, 5, UFO_HEIGHT - 50, 10),
+    // ④ 안테나 + 신호 램프
+    const antStalk = new THREE.Mesh(
+      new THREE.CylinderGeometry(3, 5, 34, 8),
+      new THREE.MeshPhongMaterial({ color: 0x334155, shininess: 55 }),
+    );
+    antStalk.position.y = 86;
+    group.add(antStalk);
+
+    const antLight = new THREE.Mesh(
+      new THREE.SphereGeometry(8, 10, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff2222 }),
+    );
+    antLight.position.y = 103;
+    group.add(antLight);
+
+    // ⑤ 선체 외장 패널 8개 (디스크 테두리)
+    const panelMat = new THREE.MeshPhongMaterial({ color: 0x475569, emissive: 0x0f172a, shininess: 45 });
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(32, 10, 18), panelMat);
+      panel.position.set(Math.cos(a) * 158, 2, Math.sin(a) * 158);
+      panel.rotation.y = a;
+      group.add(panel);
+    }
+
+    // ⑥ 하단 엔진 포드 6개 (디스크 아래 발광)
+    const enginePods: THREE.Mesh[] = [];
+    for (let i = 0; i < 6; i++) {
+      const a   = (i / 6) * Math.PI * 2;
+      const pod = new THREE.Mesh(
+        new THREE.CylinderGeometry(11, 9, 14, 10),
+        new THREE.MeshPhongMaterial({ color: 0x1e3a5f, emissive: 0x3b82f6, emissiveIntensity: 0.9, shininess: 90 }),
+      );
+      pod.position.set(Math.cos(a) * 115, -13, Math.sin(a) * 115);
+      group.add(pod);
+      enginePods.push(pod);
+    }
+
+    // ⑦ 하단 발광 링 (토러스)
+    const ringLower = new THREE.Mesh(
+      new THREE.TorusGeometry(172, 7, 10, 44),
       new THREE.MeshBasicMaterial({
-        color: 0x7dd3fc, transparent: true, opacity: 0.14,
+        color: 0x38bdf8, transparent: true, opacity: 0.65,
         blending: THREE.AdditiveBlending, depthWrite: false,
       }),
     );
-    beam.position.y = -(UFO_HEIGHT - 50) / 2;
-    group.add(beam); // children[2]
+    ringLower.position.y = -5;
+    group.add(ringLower);
 
-    // ④ 지면 그림자 원
-    const shadow = new THREE.Mesh(
-      new THREE.CircleGeometry(130, 16),
+    // ⑧ 스캔 빔 — 역원뿔
+    const beam = new THREE.Mesh(
+      new THREE.ConeGeometry(85, UFO_HEIGHT - 40, 14, 1, true),
       new THREE.MeshBasicMaterial({
-        color: 0x38bdf8, transparent: true, opacity: 0.28,
+        color: 0x7dd3fc, transparent: true, opacity: 0.10,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+      }),
+    );
+    beam.rotation.x = Math.PI; // 빔이 아래를 향하도록
+    beam.position.y = -(UFO_HEIGHT - 40) / 2;
+    group.add(beam);
+
+    // ⑨ 지면 원형 그림자
+    const shadow = new THREE.Mesh(
+      new THREE.CircleGeometry(145, 20),
+      new THREE.MeshBasicMaterial({
+        color: 0x38bdf8, transparent: true, opacity: 0.22,
         blending: THREE.AdditiveBlending, depthWrite: false,
       }),
     );
     shadow.rotation.x = -Math.PI / 2;
-    shadow.position.y = 42;
-    group.add(shadow); // children[3]
+    shadow.position.y = 44;
+    group.add(shadow);
 
-    // ⑤ 하단 발광 링
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(140, 6, 8, 32),
+    // ⑩ 전체 글로우 후광
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(210, 10, 8),
       new THREE.MeshBasicMaterial({
-        color: 0x38bdf8, transparent: true, opacity: 0.6,
+        color: 0x3b82f6, transparent: true, opacity: 0.06,
         blending: THREE.AdditiveBlending, depthWrite: false,
       }),
     );
-    group.add(ring); // children[4]
-
-    // ⑥ 디스크 하단 포드 4개 (소형 엔진)
-    for (let i = 0; i < 4; i++) {
-      const angle = (i / 4) * Math.PI * 2;
-      const pod = new THREE.Mesh(
-        new THREE.SphereGeometry(12, 8, 6),
-        new THREE.MeshPhongMaterial({ color: 0x1e40af, emissive: 0x3b82f6, emissiveIntensity: 0.8, shininess: 80 }),
-      );
-      pod.position.set(Math.cos(angle) * 130, -8, Math.sin(angle) * 130);
-      group.add(pod);
-    }
+    group.add(glow);
 
     group.position.set(0, UFO_HEIGHT, -(this.bridgeLength * 0.2));
     bridge.mesh.add(group);
-    this.ufos.push({ mesh: group, warned: false, duckStarted: false, passed: false, age: 0 });
+    this.ufos.push({
+      mesh: group,
+      warned: false, duckStarted: false, passed: false,
+      age: 0,
+      discBody, ringLower, beam, antLight, enginePods,
+    });
     return true;
   }
 
@@ -528,28 +594,31 @@ export class ObstacleManager {
     for (const ufo of this.ufos) {
       ufo.age += dt;
 
-      // 호버링 + 기울기 + 빔 펄스 애니메이션
-      ufo.mesh.position.y   = UFO_HEIGHT + Math.sin(ufo.age * 2.6) * 14;
-      ufo.mesh.rotation.z   = Math.sin(ufo.age * 1.7) * 0.24;  // 좌우 뱅킹
-      ufo.mesh.rotation.x   = -0.08 + Math.sin(ufo.age * 1.1) * 0.07; // 앞뒤 흔들
+      // 호버링 + 좌우 뱅킹 (우주선 특유의 불안정한 부유감)
+      ufo.mesh.position.y = UFO_HEIGHT + Math.sin(ufo.age * 2.4) * 13;
+      ufo.mesh.rotation.z = Math.sin(ufo.age * 1.6) * 0.20;
+      ufo.mesh.rotation.x = -0.06 + Math.sin(ufo.age * 0.9) * 0.06;
 
-      // 디스크 자체 회전
-      const disc = ufo.mesh.children[0] as THREE.Mesh;
-      if (disc) disc.rotation.y = ufo.age * 1.5;
+      // 선체 디스크 자체 회전
+      ufo.discBody.rotation.y = ufo.age * 1.2;
 
-      // 빔 opacity 펄스
-      const beam = ufo.mesh.children[2] as THREE.Mesh;
-      if (beam?.material) {
-        (beam.material as THREE.MeshBasicMaterial).opacity =
-          0.06 + Math.abs(Math.sin(ufo.age * 5.2)) * 0.16;
-      }
+      // 빔 펄스
+      (ufo.beam.material as THREE.MeshBasicMaterial).opacity =
+        0.06 + Math.abs(Math.sin(ufo.age * 5.5)) * 0.18;
 
-      // 발광 링 펄스
-      const ring = ufo.mesh.children[4] as THREE.Mesh;
-      if (ring?.material) {
-        (ring.material as THREE.MeshBasicMaterial).opacity =
-          0.4 + Math.sin(ufo.age * 3.8) * 0.22;
-      }
+      // 링 펄스
+      (ufo.ringLower.material as THREE.MeshBasicMaterial).opacity =
+        0.45 + Math.sin(ufo.age * 4.0) * 0.22;
+
+      // 안테나 신호 램프 깜빡임
+      const antOn = Math.sin(ufo.age * 8) > 0.3;
+      (ufo.antLight.material as THREE.MeshBasicMaterial).color.setHex(antOn ? 0xff2222 : 0x440000);
+
+      // 엔진 포드 순차 점등
+      ufo.enginePods.forEach((pod, i) => {
+        const on = Math.sin(ufo.age * 6 - i * 1.05) > 0;
+        (pod.material as THREE.MeshPhongMaterial).emissiveIntensity = on ? 1.1 : 0.3;
+      });
 
       const wz = ufo.mesh.getWorldPosition(this._tmpVec).z;
 
