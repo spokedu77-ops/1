@@ -1,4 +1,6 @@
 import { PROGRAMS as STATIC_PROGRAMS } from './data';
+import { pickBestHeroUrl } from './program-visual';
+import { applyTrustedReferenceVideo, resolveTrustedReferenceVideoUrl } from './verified-program-video';
 import type { Program } from '../types';
 
 function normalizeTitle(title: string) {
@@ -18,8 +20,8 @@ export function enrichProgramsWithStaticVisuals(programs: Program[]): Program[] 
 
     const staticHero = patch.lessonDetail?.heroImageUrl ?? patch.thumbnailUrl;
     const apiHero = program.lessonDetail?.heroImageUrl ?? program.thumbnailUrl;
-    const mergedHero = apiHero ?? staticHero;
-    const mergedThumb = program.thumbnailUrl ?? patch.thumbnailUrl ?? mergedHero;
+    const mergedHero = pickBestHeroUrl(apiHero, staticHero);
+    const mergedThumb = pickBestHeroUrl(program.thumbnailUrl, patch.thumbnailUrl, mergedHero);
 
     const apiOrder = program.homeSortOrder ?? 9999;
     const patchOrder = patch.homeSortOrder ?? 9999;
@@ -28,7 +30,11 @@ export function enrichProgramsWithStaticVisuals(programs: Program[]): Program[] 
     const detail = program.lessonDetail ?? patch.lessonDetail;
     if (!detail) return program;
 
-    return {
+    const mergedVideo =
+      resolveTrustedReferenceVideoUrl(detail.videoUrl, program) ||
+      resolveTrustedReferenceVideoUrl(patch.lessonDetail?.videoUrl, { id: patch.id, title: patch.title });
+
+    return applyTrustedReferenceVideo({
       ...program,
       thumbnailUrl: mergedThumb,
       isHot: program.isHot || Boolean(patch.isHot),
@@ -38,10 +44,10 @@ export function enrichProgramsWithStaticVisuals(programs: Program[]): Program[] 
         heroImageUrl: mergedHero,
         rules: detail.rules?.length ? detail.rules : patch.lessonDetail?.rules ?? detail.rules,
         setupNotes: detail.setupNotes?.length ? detail.setupNotes : patch.lessonDetail?.setupNotes ?? [],
-        videoUrl: detail.videoUrl ?? patch.lessonDetail?.videoUrl,
+        videoUrl: mergedVideo,
         objective: detail.objective || patch.lessonDetail?.objective || program.description,
         developmentFocus: detail.developmentFocus || patch.lessonDetail?.developmentFocus || '',
       },
-    };
+    });
   });
 }

@@ -20,6 +20,11 @@ import { useMemo, useState } from 'react';
 
 import { CategoryIcon } from '../../components/ui/ProgramThumb';
 import { cleanList, cleanText, DRILL_FALLBACK, hasBrokenText, PROGRAM_FALLBACK } from '../../lib/clean';
+import {
+  getExternalVideoUrl,
+  getVideoEmbedUrl,
+  isDirectVideoUrl,
+} from '../../lib/program-media';
 import { useIsPro, useMasterStore } from '../../store';
 import type { Drill, Program } from '../../types';
 
@@ -41,29 +46,6 @@ function cleanDrillName(drill: Drill | undefined, fallback = 'SPOMOVE 드릴') {
   if (!drill) return fallback;
   if (hasBrokenText(drill.name)) return DRILL_FALLBACK[drill.id] ?? fallback;
   return drill.name;
-}
-
-function getYouTubeId(url?: string) {
-  if (!url) return undefined;
-  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-  return match?.[1];
-}
-
-function getVideoEmbedUrl(url?: string) {
-  const youtubeId = getYouTubeId(url);
-  if (youtubeId) return `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`;
-  return undefined;
-}
-
-function isDirectVideoUrl(url?: string) {
-  return Boolean(url && /\.(mp4|webm|ogg)(\?.*)?$/i.test(url));
-}
-
-function getExternalVideoUrl(url?: string) {
-  const text = (url ?? '').trim();
-  if (!/^https?:\/\//i.test(text)) return undefined;
-  if (getVideoEmbedUrl(text) || isDirectVideoUrl(text)) return undefined;
-  return text;
 }
 
 function getPrimaryDrill(program: Program, drills: Drill[]) {
@@ -140,7 +122,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-[#f5f7fb] px-6 text-center">
         <BookOpenFallback />
-        <h1 className="mt-5 text-xl font-black text-slate-950">수업안을 찾을 수 없습니다.</h1>
+        <h1 className="mt-5 text-xl font-black text-slate-950">수업을 찾을 수 없습니다.</h1>
         <p className="mt-2 text-sm text-slate-400">라이브러리에서 다른 프로그램을 선택해 주세요.</p>
         <Link href="/spokedu-master/library" className="mt-6 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-extrabold text-white">
           라이브러리로 돌아가기
@@ -158,7 +140,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const equipment = fallbackProgramValue(program, 'equipment', ['현장 기본 교구']) as string[];
   const favorite = favorites.includes(program.id);
   const locked = program.isPro && !isPro;
-  const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl);
+  const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl, { autoplay: true });
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(detail?.videoUrl) : undefined;
   const setupImage = detail?.setupImageUrl;
@@ -252,7 +234,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
             {locked ? (
               <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-black text-amber-800">
                 <Lock className="mr-2 inline h-4 w-4" />
-                Pro 전용 수업안입니다.
+                Pro 전용 수업입니다.
               </div>
             ) : null}
           </section>
@@ -312,9 +294,16 @@ export default function LibraryDetailView({ id }: { id: string }) {
               <div className="overflow-hidden rounded-[10px] bg-slate-950">
                 <div className="relative aspect-video">
                   {videoEmbedUrl ? (
-                    <iframe src={videoEmbedUrl} title={`${title} 영상`} className="h-full w-full" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
+                    <iframe
+                      key={`${program.id}-${videoEmbedUrl}`}
+                      src={videoEmbedUrl}
+                      title={`${title} 참고 영상`}
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                      allowFullScreen
+                    />
                   ) : directVideoUrl ? (
-                    <video src={directVideoUrl} className="h-full w-full object-cover" controls muted playsInline />
+                    <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay muted />
                   ) : externalVideoUrl ? (
                     <div className="grid h-full place-items-center bg-slate-950 p-6 text-center text-white">
                       <div>
@@ -358,7 +347,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
           {relatedSpomoveIds.length > 0 ? (
             <DetailSection title="SPOMOVE 활동" icon={MonitorPlay}>
-              <p className="mb-4 text-sm font-semibold leading-6 text-slate-500">이 수업안에 명시 연결된 큰 화면 활동입니다.</p>
+              <p className="mb-4 text-sm font-semibold leading-6 text-slate-500">이 수업에 명시 연결된 큰 화면 활동입니다.</p>
               <div className="grid gap-3 md:grid-cols-2">
                 {relatedSpomoveIds.map((spomoveId) => {
                   const drill = drills.find((item) => item.id === spomoveId);

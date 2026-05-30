@@ -10,6 +10,18 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
 import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
+import {
+  getExternalVideoUrl,
+  getImageFallbackSrc,
+  getTrustedProgramVideoUrl,
+  getVideoEmbedUrl,
+  isDirectVideoUrl,
+  isRemoteImage,
+  normalizeImageSrc,
+  programHasPlayableVideo,
+  resolveProgramHero,
+} from '../lib/program-media';
+import { isFunstickFencingProgram } from '../lib/verified-program-video';
 import { OFFICIAL_SPOMOVE_PRESETS, formatSpomovePresetDuration, spomovePresetHref } from '../lib/spomovePresets';
 import { useMasterStore } from '../store';
 import type { Program, SpomoveLaunchPreset } from '../types';
@@ -62,38 +74,8 @@ function getProgramSpace(program: Program) {
   return displayText(program.space, '');
 }
 
-function getYouTubeId(url?: string) {
-  if (!url) return undefined;
-  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-  return match?.[1];
-}
-
-function getVideoThumbnail(url?: string) {
-  const youtubeId = getYouTubeId(url);
-  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : undefined;
-}
-
-function getVideoEmbedUrl(url?: string, options?: { autoplay?: boolean }) {
-  const youtubeId = getYouTubeId(url);
-  if (!youtubeId) return undefined;
-  const autoplay = options?.autoplay ? '1' : '0';
-  const mute = options?.autoplay ? '1' : '0';
-  return `https://www.youtube.com/embed/${youtubeId}?autoplay=${autoplay}&mute=${mute}&playsinline=1&rel=0&modestbranding=1`;
-}
-
-function isDirectVideoUrl(url?: string) {
-  return Boolean(url && /\.(mp4|webm|ogg)(\?.*)?$/i.test(url));
-}
-
-function getExternalVideoUrl(url?: string) {
-  const text = (url ?? '').trim();
-  if (!/^https?:\/\//i.test(text)) return undefined;
-  if (getVideoEmbedUrl(text) || isDirectVideoUrl(text)) return undefined;
-  return text;
-}
-
 function getHeroImage(program: Program | undefined) {
-  return program?.lessonDetail?.heroImageUrl || program?.thumbnailUrl || getVideoThumbnail(program?.lessonDetail?.videoUrl);
+  return program ? resolveProgramHero(program) : undefined;
 }
 
 function normalizeTitle(title: string) {
@@ -114,21 +96,24 @@ function buildProgramPool(programs: Program[]) {
   return uniquePrograms(programs.length > 0 ? programs : STATIC_PROGRAMS);
 }
 
-function normalizeImageSrc(src: string) {
-  if (!src.includes('img.youtube.com')) return src;
-  return src
-    .replace('/mqdefault.jpg', '/maxresdefault.jpg')
-    .replace('/hqdefault.jpg', '/maxresdefault.jpg')
-    .replace('/default.jpg', '/maxresdefault.jpg');
-}
+/** API에 영상·비주얼이 부족할 때 정적 HOT 쇼케이스를 홈 풀에 보강한다 */
+function mergeStaticShowcaseForHome(apiPool: Program[]) {
+  const seen = new Set(apiPool.map((program) => normalizeTitle(getProgramTitle(program))));
+  const extras: Program[] = [];
 
-function getImageFallbackSrc(src: string) {
-  if (!src.includes('img.youtube.com') || !src.includes('/maxresdefault.jpg')) return undefined;
-  return src.replace('/maxresdefault.jpg', '/hqdefault.jpg');
-}
+  for (const staticProgram of STATIC_PROGRAMS) {
+    const isShowcase = staticProgram.isHot || (staticProgram.homeSortOrder ?? 9999) < 8;
+    if (!isShowcase) continue;
 
-function isRemoteImage(src: string) {
-  return /^https?:\/\//.test(src);
+    const key = normalizeTitle(staticProgram.title);
+    if (!key || seen.has(key)) continue;
+    if (!programHasPlayableVideo(staticProgram) && !getHeroImage(staticProgram)) continue;
+
+    extras.push(staticProgram);
+    seen.add(key);
+  }
+
+  return [...apiPool, ...extras].sort(compareHomePrograms);
 }
 
 function CoverImage({
@@ -194,15 +179,22 @@ function getCardTags(program: Program) {
     getProgramSpace(program),
     ...focusTags,
     ...program.tags,
-    ...(program.lessonDetail?.videoUrl ? ['영상 확인'] : []),
   ]
     .filter(Boolean)
-    .filter((item) => !isPlaceholderText(item));
+    .filter((item) => !isPlaceholderText(item) && item !== '영상 확인');
   return Array.from(new Set(tags)).slice(0, 5);
 }
 
+/** 썸네일 우측 상단 — 영상 있을 때는 비우고 좌측 「참고 영상」만 쓴다 */
+function getProgramThumbOverlayCue(program: Program) {
+  if (programHasPlayableVideo(program)) return null;
+  if (/실내|체육관|교실|복도|좁은 공간/.test(getSearchText(program))) return '공간 부담 적음';
+  if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 간단';
+  return '자료 보기';
+}
+
 function getProgramCue(program: Program) {
-  if (program.lessonDetail?.videoUrl) return '영상 보고 준비';
+  if (programHasPlayableVideo(program)) return '미리보기에서 참고 영상 확인';
   if (/실내|체육관|교실|복도|좁은 공간/.test(getSearchText(program))) return '공간 부담 적음';
   if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 간단';
   return '자료 보기';
@@ -268,7 +260,7 @@ function getSearchText(program: Program) {
 function programMatchesCategory(program: Program, category: string) {
   const text = getSearchText(program);
   if (category === '전체') return true;
-  if (category === '영상') return Boolean(program.lessonDetail?.videoUrl);
+  if (category === '영상') return programHasPlayableVideo(program);
   if (category === '반응·민첩') return /민첩|반응|순발|스피드|속도|방향|전환/.test(text);
   if (category === '협동') return /협동|릴레이|팀|그룹|대결/.test(text);
   if (category === '저학년') return /유아|저학년|1학년|2학년|초등\s*[12]|초등 1|초등 2/.test(text);
@@ -311,7 +303,7 @@ function isHomeShowcaseProgram(program: Program) {
 }
 
 function hasHomeVideo(program: Program) {
-  return Boolean(program.lessonDetail?.videoUrl);
+  return programHasPlayableVideo(program);
 }
 
 function isHomeHotCandidate(program: Program) {
@@ -348,7 +340,7 @@ function toVideoItem(program: Program, intent: 'weekly' | 'indoor' = 'weekly'): 
     href: `/spokedu-master/library/${program.id}`,
     thumbnail: getHeroImage(program),
     meta: tags[0] || '체육 수업',
-    hasVideo: Boolean(program.lessonDetail?.videoUrl),
+    hasVideo: programHasPlayableVideo(program),
     tags: getCardTags(program),
     reason: getCurationReason(program, intent),
     program,
@@ -356,8 +348,15 @@ function toVideoItem(program: Program, intent: 'weekly' | 'indoor' = 'weekly'): 
 }
 
 function pickHeroProgram(programs: Program[]) {
-  const sorted = [...buildProgramPool(programs)].sort(compareHomePrograms);
+  const pool = buildProgramPool(programs);
+  const funstickHero =
+    pool.find((program) => program.id === 'funstick-fencing') ||
+    pool.find((program) => isFunstickFencingProgram(program));
+  const sorted = [...pool].sort(compareHomePrograms);
   return (
+    funstickHero ||
+    sorted.find((program) => programHasPlayableVideo(program) && isHomeHotCandidate(program)) ||
+    sorted.find((program) => programHasPlayableVideo(program) && isHomeShowcaseProgram(program)) ||
     sorted.find(isHomeHotCandidate) ||
     sorted.find(isHomeShowcaseProgram) ||
     sorted.find((program) => program.isHot) ||
@@ -405,6 +404,7 @@ function takeHomeCuratedPrograms(programs: Program[], usedIds: Set<string>, limi
 function Hero({ program, onPreview }: { program: Program; onPreview: () => void }) {
   const heroImage = getHeroImage(program);
   const tags = getCardTags(program);
+  const hasVideo = programHasPlayableVideo(program);
 
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
@@ -430,7 +430,7 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
           <div className="mt-8 flex flex-col gap-3 min-[420px]:flex-row">
             <button type="button" onClick={onPreview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white">
               <Play className="h-4 w-4 fill-current" />
-              빠른 미리보기
+              {hasVideo ? '영상 바로 보기' : '빠른 미리보기'}
             </button>
             <Link href="/spokedu-master/library" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800">
               <BookOpen className="h-4 w-4" />
@@ -443,13 +443,22 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
             <>
               <CoverImage src={heroImage} alt={getProgramTitle(program)} sizes="(min-width: 1024px) 460px, 100vw" className="object-cover" priority quality={92} />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 to-transparent" />
+              {hasVideo ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl ring-4 ring-white/40">
+                    <Play className="ml-1 h-7 w-7 fill-current" />
+                  </span>
+                </div>
+              ) : null}
             </>
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-slate-100 to-white" />
           )}
           <div className="absolute bottom-5 left-5 right-5 rounded-[18px] border border-white/25 bg-white/88 p-4 text-left shadow-[0_18px_46px_rgba(15,23,42,0.2)] backdrop-blur-xl">
-            <p className="text-xs font-bold text-slate-500">수업 준비</p>
-            <p className="mt-1 text-sm font-black text-slate-950">{getProgramCue(program)}</p>
+            <p className="text-xs font-bold text-slate-500">{hasVideo ? '참고 영상' : '수업 준비'}</p>
+            <p className="mt-1 text-sm font-black text-slate-950">
+              {hasVideo ? '탭하면 미리보기에서 바로 재생' : getProgramCue(program)}
+            </p>
           </div>
         </button>
       </div>
@@ -503,30 +512,40 @@ function CategoryStrip({
 }
 
 function VideoCard({ item, onPreview }: { item: VideoItem; onPreview: (program: Program) => void }) {
+  const showPlay = item.hasVideo;
+  const thumbOverlayCue = item.program ? getProgramThumbOverlayCue(item.program) : item.meta;
   return (
     <button type="button" onClick={() => item.program && onPreview(item.program)} className="group block w-full cursor-pointer text-left">
       <div className="relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition-all duration-300 group-hover:border-indigo-200 group-hover:shadow-[0_18px_40px_rgba(99,102,241,0.12)]">
         {item.thumbnail ? (
           <CoverImage src={item.thumbnail} alt={item.title} sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw" className="object-cover transition-all duration-500 ease-out group-hover:scale-[1.03]" quality={90} />
         ) : (
-          <div className="absolute inset-0 grid place-items-center bg-slate-100">
-            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
+          <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-indigo-100 via-slate-50 to-white">
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white text-indigo-600 ring-1 ring-indigo-100 shadow-sm">
               {item.program ? <CategoryIcon category={getProgramCategory(item.program)} size={30} /> : <Play className="h-7 w-7" />}
             </div>
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent opacity-80 transition-opacity group-hover:opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
 
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-slate-950 shadow-xl">
-            <Play className="ml-0.5 h-6 w-6 fill-current" />
+        <div className={`absolute inset-0 flex items-center justify-center ${showPlay ? 'opacity-100' : 'opacity-0 transition-opacity duration-300 group-hover:opacity-100'}`}>
+          <div className={`flex items-center justify-center rounded-full shadow-xl ${showPlay ? 'h-12 w-12 bg-red-600 text-white ring-4 ring-white/30' : 'h-14 w-14 bg-white text-slate-950'}`}>
+            <Play className={`fill-current ${showPlay ? 'ml-0.5 h-5 w-5' : 'ml-0.5 h-6 w-6'}`} />
           </div>
         </div>
 
-        <div className="absolute right-3 top-3 rounded-lg border border-white/20 bg-black/55 px-3 py-1.5 text-[12px] font-bold text-white backdrop-blur-sm">
-          {item.program ? getProgramCue(item.program) : item.meta}
-        </div>
+        {showPlay ? (
+          <div className="absolute left-3 top-3 rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-black text-white shadow-md">
+            참고 영상
+          </div>
+        ) : null}
+
+        {thumbOverlayCue ? (
+          <div className="absolute right-3 top-3 rounded-lg border border-white/20 bg-black/55 px-3 py-1.5 text-[12px] font-bold text-white backdrop-blur-sm">
+            {thumbOverlayCue}
+          </div>
+        ) : null}
 
         <div className="absolute bottom-3 left-3 right-3">
           <CompactTagList tags={item.tags} max={3} onMedia />
@@ -710,9 +729,10 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
   const [copied, setCopied] = useState(false);
   const detail = program.lessonDetail;
   const heroImage = getHeroImage(program);
-  const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl, { autoplay: true });
-  const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
-  const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(detail?.videoUrl) : undefined;
+  const trustedVideoUrl = getTrustedProgramVideoUrl(program);
+  const videoEmbedUrl = getVideoEmbedUrl(trustedVideoUrl, { autoplay: true });
+  const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(trustedVideoUrl) ? trustedVideoUrl : undefined;
+  const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(trustedVideoUrl) : undefined;
   const tags = getCardTags(program);
   const rules = detail?.rules?.length ? detail.rules : program.steps;
   const equipment = program.equipment.filter((item) => !isPlaceholderText(item));
@@ -853,7 +873,7 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
 }
 
 export default function DashboardView() {
-  const { programs, programsLoaded, favorites, classRecords } = useMasterStore();
+  const { programs, programsLoaded, favorites, classRecords, reloadPrograms } = useMasterStore();
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState('전체');
   const [search, setSearch] = useState('');
@@ -862,7 +882,8 @@ export default function DashboardView() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    void reloadPrograms();
+  }, [reloadPrograms]);
 
   useEffect(() => {
     let alive = true;
@@ -878,7 +899,10 @@ export default function DashboardView() {
     };
   }, []);
 
-  const programPool = useMemo(() => buildProgramPool(programs).sort(compareHomePrograms), [programs]);
+  const programPool = useMemo(
+    () => mergeStaticShowcaseForHome(buildProgramPool(programs).sort(compareHomePrograms)),
+    [programs],
+  );
   const filteredPrograms = useMemo(() => {
     const query = search.trim().toLowerCase();
     return programPool.filter((program) => {
@@ -888,6 +912,12 @@ export default function DashboardView() {
     });
   }, [activeCategory, programPool, search]);
   const heroProgram = useMemo(() => pickHeroProgram(filteredPrograms.length ? filteredPrograms : programPool), [filteredPrograms, programPool]);
+  const homeStats = useMemo(() => {
+    const pool = programPool;
+    const withVideo = pool.filter((program) => programHasPlayableVideo(program)).length;
+    const withThumb = pool.filter((program) => Boolean(getHeroImage(program))).length;
+    return { total: pool.length, withVideo, withThumb };
+  }, [programPool]);
   const curatedRows = useMemo(() => {
     const usedIds = new Set<string>();
     if (heroProgram) usedIds.add(heroProgram.id);
@@ -942,6 +972,11 @@ export default function DashboardView() {
   return (
     <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-7 overflow-y-auto bg-[#f5f7fb] px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-16">
       <Hero program={heroProgram} onPreview={() => setSelectedProgram(heroProgram)} />
+      {homeStats.withVideo < 4 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-950">
+          참고 영상이 있는 수업이 {homeStats.withVideo}개뿐이라 카드가 단조로울 수 있습니다. admin에서 curriculum URL·영상을 채우거나 「8개 일괄 적용」 후 새로고침하세요.
+        </div>
+      ) : null}
       <CategoryStrip activeCategory={activeCategory} search={search} onCategoryChange={setActiveCategory} onSearchChange={setSearch} />
       {recentLessons.length > 0 ? (
         <VideoRow

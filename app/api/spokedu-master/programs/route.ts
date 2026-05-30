@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import type { Program } from '@/app/spokedu-master/types';
+import { pickBestHeroUrl } from '@/app/spokedu-master/lib/program-visual';
+import {
+  applyTrustedReferenceVideo,
+  resolveTrustedReferenceVideoUrl,
+} from '@/app/spokedu-master/lib/verified-program-video';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#312e81', '#3730a3', '#4338ca', '#4f46e5'],
@@ -364,7 +369,8 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
     program.description,
     `${title} 활동으로 ${focus}을 자연스럽게 경험하는 체육 수업 패키지입니다.`,
   );
-  const thumbnailUrl = program.thumbnailUrl ?? buildThumbnailUrl(program.lessonDetail?.videoUrl);
+  const youtubeThumb = buildThumbnailUrl(program.lessonDetail?.videoUrl);
+  const thumbnailUrl = pickBestHeroUrl(program.thumbnailUrl, youtubeThumb);
 
   return {
     ...program,
@@ -389,7 +395,7 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
       safetyNotes: cleanList(program.lessonDetail?.safetyNotes, ['충돌 위험이 있는 구간은 대기선과 이동선을 분리합니다.']),
       relatedSpomoveIds,
       videoUrl: normalizeVideoUrl(program.lessonDetail?.videoUrl),
-      heroImageUrl: program.lessonDetail?.heroImageUrl ?? thumbnailUrl,
+      heroImageUrl: pickBestHeroUrl(program.lessonDetail?.heroImageUrl, thumbnailUrl),
       setupImageUrl: program.lessonDetail?.setupImageUrl,
       galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
       briefingNotes: cleanList(program.lessonDetail?.briefingNotes, ['수업 목표, 안전 기준, 진행 순서를 수업 전에 짧게 확인합니다.']),
@@ -494,7 +500,11 @@ export async function GET() {
     const overlay = overlayByCurriculumId.get(row.id);
     const title = (row.title ?? '').trim() || `커리큘럼 #${row.id}`;
     const categoryName = (meta?.sm_theme ?? overlay?.main_theme ?? '일반').trim() || '일반';
-    const videoUrl = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(row.url);
+    const programForTrust = { id: String(row.id), title };
+    const videoUrl = resolveTrustedReferenceVideoUrl(
+      normalizeVideoUrl(overlay?.video_url),
+      programForTrust,
+    );
     const equipment = overlay?.equipment
       ? String(overlay.equipment).split('\n').map((item) => item.trim()).filter(Boolean)
       : (row.equipment ?? []).filter(Boolean);
@@ -573,7 +583,10 @@ export async function GET() {
       },
     };
 
-    return normalizeProgramForMaster(buildContentQuality(applyPremiumContentOverlay(program)), index);
+    return normalizeProgramForMaster(
+      applyTrustedReferenceVideo(buildContentQuality(applyPremiumContentOverlay(program))),
+      index,
+    );
   });
 
   return NextResponse.json({ data: programs, total: programs.length });

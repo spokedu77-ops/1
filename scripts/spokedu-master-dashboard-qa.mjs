@@ -23,7 +23,7 @@ async function main() {
     process.exit(1);
   }
   console.log('\nAll routing checks passed.');
-  console.log('Next: node scripts/spokedu-master-home-content-audit.mjs');
+  console.log('Next: npm run qa:spokedu-master');
   console.log('Logged-in: SPOKEDU_MASTER_QA_ID=... SPOKEDU_MASTER_QA_PASSWORD=... node scripts/spokedu-master-home-logged-qa.mjs');
   console.log('Admin: /admin/spokedu-master/programs → 「8개 일괄 적용」 후 MASTER 홈 새로고침.');
   console.log('로그인 후 /spokedu-master/dashboard — 라이트 배경, 추천 row, 히어로·HOT 카드는 브라우저에서 확인하세요.');

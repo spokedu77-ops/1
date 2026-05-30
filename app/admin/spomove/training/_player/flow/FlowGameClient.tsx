@@ -184,20 +184,29 @@ export default function FlowGameClient({
           {/* 지시어 플래시 */}
           {instruction && (
             <div
-              className={instruction.cls}
               style={{
                 position: 'absolute',
-                top: '35%',
+                top: '32%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                fontSize: 'clamp(3.5rem, 12vw, 6rem)',
+                fontSize: 'clamp(4.5rem, 16vw, 9rem)',
                 fontWeight: 900,
                 fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
                 pointerEvents: 'none',
-                letterSpacing: '0.06em',
-                textShadow: '0 0 60px rgba(255,255,255,0.9), 0 0 25px rgba(255,255,255,0.6)',
+                letterSpacing: '0.04em',
+                color: instruction.cls,
+                textShadow: [
+                  `0 0 90px ${instruction.cls}`,
+                  `0 0 45px ${instruction.cls}bb`,
+                  `0 0 18px ${instruction.cls}77`,
+                  '3px 3px 0 #000',
+                  '-3px -3px 0 #000',
+                  '3px -3px 0 #000',
+                  '-3px 3px 0 #000',
+                  '0 4px 0 #000',
+                ].join(','),
                 whiteSpace: 'nowrap',
-                animation: 'flowInstPop 0.12s ease-out',
+                animation: 'flowInstPop 0.10s cubic-bezier(0.22,1.8,0.36,1)',
               }}
             >
               {instruction.text}
@@ -206,27 +215,37 @@ export default function FlowGameClient({
         </>
       )}
 
-      {/* ─── 스테이지 인트로 (게임 정지, 5초) ─────────────────────────── */}
+      {/* ─── 스테이지 인트로 — 3D씬 위 상단 배너 (게임은 계속 달림) ──── */}
       {phase === 'stage-intro' && currentStage && (
-        <div style={{ ...S.overlay, background: currentStage.isBonus ? 'rgba(40,30,0,0.95)' : 'rgba(0,0,0,0.90)' }}>
-          <p style={{ fontSize: '0.6rem', color: currentStage.color, fontWeight: 800, letterSpacing: '0.4em', marginBottom: '0.6rem' }}>
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0,
+          background: currentStage.isBonus
+            ? 'linear-gradient(to bottom, rgba(40,25,0,0.96) 0%, rgba(20,12,0,0.7) 70%, transparent 100%)'
+            : 'linear-gradient(to bottom, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.6) 70%, transparent 100%)',
+          padding: '2rem 2rem 5rem',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          animation: 'stageIntroPop 0.25s ease-out',
+          pointerEvents: 'none',
+        }}>
+          <p style={{ fontSize: '0.58rem', color: currentStage.color, fontWeight: 800, letterSpacing: '0.45em', marginBottom: '0.4rem' }}>
             {currentStage.isBonus ? '🏆 BONUS STAGE' : currentStage.label}
           </p>
           <h2 style={{
-            fontSize: 'clamp(2.5rem, 8vw, 4rem)', fontWeight: 900, color: '#fff',
+            fontSize: 'clamp(2.2rem, 7vw, 3.5rem)', fontWeight: 900, color: '#fff',
             fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
-            letterSpacing: '0.06em', marginBottom: '0.6rem',
+            letterSpacing: '0.06em', marginBottom: '0.5rem',
+            textShadow: `0 0 40px ${currentStage.color}, 0 2px 0 #000`,
           }}>
             {currentStage.cueWord}
           </h2>
-          <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.8)', maxWidth: 320, lineHeight: 1.6 }}>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', maxWidth: 300, lineHeight: 1.5, textAlign: 'center', marginBottom: '0.8rem' }}>
             {currentStage.shortInstruction}
           </p>
-          <div style={{ marginTop: '1.6rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 360 }}>
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 360 }}>
             {[...currentStage.activeModules].filter(k => k !== 'jump').map((key) => {
               const mod = FLOW_MODULES[key];
               return (
-                <span key={key} style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.2rem 0.7rem', borderRadius: '9999px', border: `1px solid ${mod.colorBorder}`, color: mod.color, background: mod.colorBg }}>
+                <span key={key} style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.15rem 0.6rem', borderRadius: '9999px', border: `1px solid ${mod.colorBorder}`, color: mod.color, background: mod.colorBg }}>
                   {mod.icon} {mod.tag}
                 </span>
               );
@@ -254,24 +273,43 @@ export default function FlowGameClient({
 
       {/* ─── 완료 ────────────────────────────────────────────────────────── */}
       {phase === 'complete' && stats && (
-        <div style={{ ...S.overlay, background: 'rgba(0,0,0,0.90)' }}>
-          <p style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800, letterSpacing: '0.35em', marginBottom: '0.5rem' }}>
-            COMPLETE
+        <div style={{ ...S.overlay, background: 'rgba(0,4,18,0.92)' }}>
+          {/* 별 반짝 애니 */}
+          <p style={{
+            fontSize: '0.6rem', color: '#fbbf24', fontWeight: 800,
+            letterSpacing: '0.5em', marginBottom: '0.6rem',
+            animation: 'flowInstPop 0.4s ease-out',
+          }}>
+            🏆 &nbsp;ALL CLEAR
           </p>
-          <h2 style={{ fontSize: '2.8rem', fontWeight: 900, color: '#fff', marginBottom: '0.6rem', fontFamily: "'Black Han Sans',sans-serif" }}>
+          <h2 style={{
+            fontSize: 'clamp(3rem, 10vw, 5.5rem)', fontWeight: 900, color: '#fff',
+            fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
+            letterSpacing: '0.05em', marginBottom: '0.3rem',
+            textShadow: '0 0 60px #fbbf24, 0 0 25px #f59e0b88, 3px 3px 0 #000',
+            animation: 'flowInstPop 0.35s cubic-bezier(0.22,1.8,0.36,1)',
+          }}>
             FLOW DONE!
           </h2>
-          <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: 1.8, marginBottom: '2rem' }}>
-            <span>{stats.stagesCompleted} / {stages.length} 스테이지</span>
-            <span> · {Math.round(stats.totalSec)}초</span>
-          </div>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.45)', marginBottom: '1.6rem' }}>
+            {stats.stagesCompleted} / {stages.length} 스테이지 완료&nbsp;·&nbsp;{Math.round(stats.totalSec)}초
+          </p>
 
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 300, marginBottom: '2rem' }}>
-            {stages.map((s) => {
-              const mod = FLOW_MODULES[s.newModule];
+          {/* 스테이지별 달성 배지 */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 340, marginBottom: '2.2rem' }}>
+            {stages.map((s, si) => {
+              const mod      = FLOW_MODULES[s.newModule];
+              const done     = si < stats.stagesCompleted;
               return (
-                <span key={s.stageIndex} style={{ fontSize: '0.65rem', padding: '0.15rem 0.55rem', borderRadius: '9999px', border: `1px solid ${mod.colorBorder}`, color: mod.color, background: mod.colorBg }}>
-                  {mod.icon} {mod.tag}
+                <span key={s.stageIndex} style={{
+                  fontSize: '0.65rem', fontWeight: 700,
+                  padding: '0.2rem 0.7rem', borderRadius: '9999px',
+                  border: `1px solid ${done ? mod.colorBorder : 'rgba(255,255,255,0.15)'}`,
+                  color:      done ? mod.color      : 'rgba(255,255,255,0.25)',
+                  background: done ? mod.colorBg    : 'transparent',
+                  opacity:    done ? 1 : 0.4,
+                }}>
+                  {done ? mod.icon : '○'} {mod.tag}
                 </span>
               );
             })}
@@ -279,7 +317,15 @@ export default function FlowGameClient({
 
           <button
             onClick={onExit}
-            style={{ padding: '0.65rem 2.2rem', borderRadius: '1rem', border: '2px solid #22d3ee', background: 'rgba(34,211,238,0.12)', color: '#22d3ee', fontWeight: 800, cursor: 'pointer', fontSize: '1rem', fontFamily: 'inherit' }}
+            style={{
+              padding: '0.75rem 2.8rem', borderRadius: '1.2rem',
+              border: '2px solid #fbbf24',
+              background: 'rgba(251,191,36,0.14)',
+              color: '#fbbf24', fontWeight: 900, cursor: 'pointer',
+              fontSize: '1.05rem', fontFamily: 'inherit',
+              letterSpacing: '0.05em',
+              boxShadow: '0 0 24px rgba(251,191,36,0.25)',
+            }}
           >
             나가기
           </button>
@@ -298,8 +344,9 @@ export default function FlowGameClient({
 
       <style>{`
         @keyframes flowInstPop {
-          from { transform: translate(-50%, -50%) scale(0.7); opacity: 0.4; }
-          to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+          0%   { transform: translate(-50%, -50%) scale(0.55); opacity: 0; }
+          70%  { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+          100% { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
         }
         @keyframes stageIntroPop {
           from { transform: translateX(-50%) scale(0.88) translateY(-8px); opacity: 0; }

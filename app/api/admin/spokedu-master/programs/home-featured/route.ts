@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { PROGRAMS as STATIC_PROGRAMS } from '@/app/spokedu-master/lib/data';
+import { isDedicatedMasterHero } from '@/app/spokedu-master/lib/program-visual';
 
 const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
 
@@ -45,9 +47,20 @@ type OverlayRow = {
   updated_at: string | null;
 };
 
+function normalizeTitle(title: string) {
+  return title.toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
+}
+
+const staticDedicatedByTitle = new Map<string, boolean>();
+for (const program of STATIC_PROGRAMS) {
+  const hero = program.lessonDetail?.heroImageUrl ?? program.thumbnailUrl;
+  staticDedicatedByTitle.set(normalizeTitle(program.title), isDedicatedMasterHero(hero));
+}
+
 function scoreHomeFeatured(row: CurriculumRow, meta: MetaRow | null, videoUrl: string | undefined) {
   let score = 0;
   if (videoUrl) score += 50;
+  if (staticDedicatedByTitle.get(normalizeTitle((row.title ?? '').trim()))) score += 18;
   if (meta?.sm_objective?.trim()) score += 12;
   if (meta?.sm_development_focus?.trim()) score += 8;
   if (meta?.sm_coach_script?.trim()) score += 8;

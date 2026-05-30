@@ -17,7 +17,7 @@ import type { FlowModuleKey } from './modules/flowModules';
 
 // ─── 상수 (원본 coordContract 완전 동일) ────────────────────────────────────
 
-// 레인 색상: 왼쪽(0)=초록, 가운데(1)=빨강, 오른쪽(2)=노랑 — 모든 테마 공통
+// 레인 색상: 레인 구분용 — 브릿지 상판은 항상 파랑으로 고정
 const LANE_COLORS: [number, number, number] = [0x22c55e, 0xef4444, 0xfbbf24];
 const LANE_WIDTH         = 80;
 const BRIDGE_LENGTH      = 3500;
@@ -32,8 +32,9 @@ const PAD_TRIGGER_RATIO  = 0.65;
 
 // 점프 트리거: relZ = PLAYER_Z - bridge.z <= padStartRel - PAD_DEPTH * PAD_TRIGGER_RATIO
 // = -1750 - 130 = -1880  →  bridge.z >= PLAYER_Z + 1880 = 2280
-const PAD_START_REL    = -(BRIDGE_LENGTH / 2);           // -1750
-const JUMP_TRIGGER_REL = PAD_START_REL - PAD_DEPTH * PAD_TRIGGER_RATIO; // -1880
+const PAD_START_REL      = -(BRIDGE_LENGTH / 2);                         // -1750
+const JUMP_TRIGGER_REL   = PAD_START_REL - PAD_DEPTH * PAD_TRIGGER_RATIO; // -1880
+const JUMP_PRE_WARN_REL  = JUMP_TRIGGER_REL + 650;                        // -1230 ≈ 0.45s 전
 
 // 속도 (원본: currentSpeed * 50 * dt60)
 const BASE_SPEED = 0.6;
@@ -88,7 +89,7 @@ const THEMES: Record<string, {
   bg: number; fog: number; fogNear: number; fogFar: number;
   ambientInt: number; pointColor: number;
 }> = {
-  default: { bg: 0x000000, fog: 0x000000, fogNear: 500, fogFar: 3200, ambientInt: 0.7,  pointColor: 0x3b82f6 },
+  default: { bg: 0x000814, fog: 0x000814, fogNear: 500, fogFar: 3200, ambientInt: 0.7,  pointColor: 0x3b82f6 },
   space:   { bg: 0x0c0030, fog: 0x090022, fogNear: 400, fogFar: 3500, ambientInt: 0.6,  pointColor: 0xb06ef7 },
   neon:    { bg: 0x001508, fog: 0x000d05, fogNear: 400, fogFar: 3500, ambientInt: 0.5,  pointColor: 0x00ff88 },
   // ocean: bg·fog를 동일한 바다 파란색 → 멀리 보이는 하늘·수평선이 전부 파랗게 채워짐
@@ -126,6 +127,7 @@ export interface FlowEngineOptions {
 interface BridgeObj extends FlowBridge {
   padDepth:         number;
   instructionFired: boolean;
+  preJumpFired:     boolean;
 }
 
 // ─── 엔진 ────────────────────────────────────────────────────────────────────
@@ -143,8 +145,9 @@ export class FlowEngine {
   private oceanSurface: THREE.Mesh | null = null;
   private oceanBubbles: THREE.Points | null = null;
   private oceanTime = 0;
-  private clock     = new THREE.Clock();
-  private rafId     = 0;
+  private lastTickMs = -1;
+  private rafId      = 0;
+  private oceanFrameIdx = 0;
 
   private audio = new FlowAudio();
   private aq    = new AdaptiveQuality();
@@ -269,7 +272,8 @@ export class FlowEngine {
     this.scene.add(pt);
 
     this.buildStars();
-    if ((this.opts.colorTheme ?? 'default') === 'ocean') this.buildOceanEnvironment();
+    if ((this.opts.colorTheme ?? 'default') === 'ocean')   this.buildOceanEnvironment();
+    if ((this.opts.colorTheme ?? 'default') === 'default') this.buildDefaultAtmosphere();
     this.buildSpeedLines();
     this.createTrackLanes();
 
@@ -280,13 +284,13 @@ export class FlowEngine {
         if (isReach) return; // 두드리기 벽은 별도 시퀀스에서 처리
         if (this.isBonus) return;
         if (!this.activeModules.has('punch')) return;
-        this.showInstruction('펀치!', 'text-red-400', 350, 2);
+        this.showInstruction('펀치!', '#ff4400', 500, 2);
       },
       onUfoWarn:          () => {
         // UFO 접근 시 문구 — UFO가 화면에 있는 동안만 (320ms ≈ 450유닛/1440속도)
         if (!this.activeModules.has('duck')) return;
         if (this.isBonus) return;
-        this.showInstruction('숙여!', 'text-cyan-300', 320, 2);
+        this.showInstruction('숙여!', '#ffdd00', 600, 2);
       },
       onUfoDuckStart:     () => {
         if (!this.activeModules.has('duck')) return;
@@ -367,6 +371,70 @@ export class FlowEngine {
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     this.stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, transparent: true, opacity: 0.75 }));
     this.scene.add(this.stars);
+  }
+
+  // ── default 테마 대기 이펙트 ─────────────────────────────────────────────
+
+  private buildDefaultAtmosphere(): void {
+    if (!this.scene) return;
+
+    // 트랙 양 가장자리 네온 엣지 라인
+    for (const xPos of [-(LANE_WIDTH * 1.5 + 4), LANE_WIDTH * 1.5 + 4]) {
+      const edge = new THREE.Mesh(
+        new THREE.PlaneGeometry(5, 60000),
+        new THREE.MeshBasicMaterial({
+          color: 0x818cf8, transparent: true, opacity: 0.85,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        }),
+      );
+      edge.rotation.x = -Math.PI / 2;
+      edge.position.set(xPos, -28, -20000);
+      this.scene.add(edge);
+    }
+
+    // 지평선 글로우 빔
+    const horizon = new THREE.Mesh(
+      new THREE.BoxGeometry(22000, 22, 8),
+      new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false }),
+    );
+    horizon.position.set(0, 4, -2600);
+    this.scene.add(horizon);
+
+    // 원거리 발광 기둥 (양쪽 배경 분위기)
+    const pillarColors = [0x4f46e5, 0x2563eb, 0x7c3aed, 0x1d4ed8, 0x6366f1, 0x4338ca];
+    for (let i = 0; i < 8; i++) {
+      const h   = 2000 + Math.random() * 1200;
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const pillar = new THREE.Mesh(
+        new THREE.BoxGeometry(12 + Math.random() * 22, h, 35),
+        new THREE.MeshBasicMaterial({
+          color: pillarColors[i % pillarColors.length],
+          transparent: true,
+          opacity: 0.03 + Math.random() * 0.03,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        }),
+      );
+      pillar.position.set(
+        side * (600 + Math.random() * 1800),
+        h * 0.5,
+        -1200 - i * 400 + Math.random() * 200,
+      );
+      this.scene.add(pillar);
+    }
+
+    // 먼 거리 수평선 위 글로우 후광
+    for (let i = 0; i < 3; i++) {
+      const halo = new THREE.Mesh(
+        new THREE.BoxGeometry(18000, 6 + i * 3, 6),
+        new THREE.MeshBasicMaterial({
+          color: 0x6366f1, transparent: true,
+          opacity: 0.12 - i * 0.03,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        }),
+      );
+      halo.position.set(0, 4 + i * 5, -2400 - i * 180);
+      this.scene.add(halo);
+    }
   }
 
   // ── 바다 환경 (ocean 테마 전용) ──────────────────────────────────────────
@@ -489,13 +557,12 @@ export class FlowEngine {
       spawnZ = -8000;
     }
 
-    const randLane    = isFirst ? 1 : Math.floor(Math.random() * 3);
-    const bridgeColor = LANE_COLORS[randLane]!;
-    const g           = new THREE.Group();
+    const randLane = isFirst ? 1 : Math.floor(Math.random() * 3);
+    const g        = new THREE.Group();
 
     const top = new THREE.Mesh(
       new THREE.BoxGeometry(LANE_WIDTH - 5, 8, BRIDGE_LENGTH),
-      new THREE.MeshBasicMaterial({ color: bridgeColor }),
+      new THREE.MeshBasicMaterial({ color: 0x3b82f6 }), // 항상 파랑 고정
     );
     top.position.y = 40;
     g.add(top);
@@ -523,6 +590,7 @@ export class FlowEngine {
       x: (randLane - 1) * LANE_WIDTH,
       hasBox: false, padMesh: pad, padDepth: PAD_DEPTH,
       instructionFired: false,
+      preJumpFired: false,
     };
     this.bridges.push(bridgeObj);
 
@@ -592,14 +660,14 @@ export class FlowEngine {
     this.jumpDuration  = JUMP_DURATIONS[Math.min(idx, JUMP_DURATIONS.length - 1)]!;
     this.resetSpecialTimers();
     this.obstacles?.clearAll();
-    for (const b of this.bridges) { b.hasBox = false; b.instructionFired = false; }
+    for (const b of this.bridges) { b.hasBox = false; b.instructionFired = false; b.preJumpFired = false; }
     this.activeBridge = null;
     // lastJumpBridgeId 유지 → phantom jump 방지
     this.cb.onStageChange?.(idx);
-    // 스테이지 0은 카운트다운 후 already-playing. 1+부터 5초 인트로
+    // 스테이지 0은 카운트다운 후 already-playing. 1+부터 2초 배너 (게임은 계속 달림)
     if (idx > 0) {
       this.setPhase('stage-intro');
-      this.countdownTimer = setTimeout(() => this.setPhase('playing'), 5000);
+      this.countdownTimer = setTimeout(() => this.setPhase('playing'), 2000);
     }
   }
 
@@ -635,6 +703,23 @@ export class FlowEngine {
     this.audio.sfxComplete();
     this.setPhase('complete');
     this.cb.onComplete?.(this.stats);
+    this.spawnCompleteEffect();
+  }
+
+  private spawnCompleteEffect(): void {
+    if (!this.obstacles) return;
+    // 카메라 앞 가운데에서 축하 파티클 3연속 버스트
+    const base = new THREE.Vector3(0, 120, PLAYER_Z - 150);
+    this.obstacles.spawnShards(base, 200, true);
+    setTimeout(() => {
+      const left  = new THREE.Vector3(-160, 90, PLAYER_Z - 200);
+      const right = new THREE.Vector3( 160, 90, PLAYER_Z - 200);
+      this.obstacles?.spawnShards(left,  120, true);
+      this.obstacles?.spawnShards(right, 120, true);
+    }, 220);
+    setTimeout(() => {
+      this.obstacles?.spawnShards(new THREE.Vector3(0, 160, PLAYER_Z - 180), 160, true);
+    }, 480);
   }
 
   private setPhase(p: FlowGamePhase): void {
@@ -648,11 +733,16 @@ export class FlowEngine {
 
   private startLoop(): void {
     if (this.rafId) cancelAnimationFrame(this.rafId);
-    this.clock = new THREE.Clock();
-    const animate = () => {
+    this.lastTickMs = -1;
+    const animate = (now: number) => {
       this.rafId = requestAnimationFrame(animate);
-      const rawDt = this.clock.getDelta();
-      this.update(rawDt);
+      if (this.lastTickMs < 0) { this.lastTickMs = now; return; }
+      const rawDt = (now - this.lastTickMs) / 1000;
+      // 120/144hz 제한: tier별 최소 간격 미달이면 스킵
+      const minInterval = this.aq.getTier() === 'LOW' ? 1 / 30 : 1 / 60;
+      if (rawDt < minInterval - 0.001) return;
+      this.lastTickMs = now;
+      this.update(Math.min(rawDt, 0.1));
       if (this.renderer && this.scene && this.camera) {
         this.renderer.render(this.scene, this.camera);
       }
@@ -678,13 +768,13 @@ export class FlowEngine {
     // 바다 파도 애니메이션
     if (this.oceanSurface || this.oceanBubbles) {
       this.oceanTime += dt;
-      if (this.oceanSurface) {
+      // 꼭짓점 계산 — tier에 따라 N프레임마다 1회
+      if (this.oceanSurface && this.aq.shouldUpdateOcean(this.oceanFrameIdx)) {
         const pos = this.oceanSurface.geometry.attributes['position'] as THREE.BufferAttribute;
         const t   = this.oceanTime;
         for (let i = 0; i < pos.count; i++) {
           const wx = pos.getX(i);
           const wz = pos.getZ(i);
-          // 3중 사인파 → 자연스러운 불규칙 파도
           pos.setY(i,
             Math.sin(wx * 0.0020 + t * 1.15) * 28
             + Math.sin(wz * 0.0008 + t * 0.80) * 20
@@ -693,6 +783,7 @@ export class FlowEngine {
         }
         pos.needsUpdate = true;
       }
+      this.oceanFrameIdx++;
       if (this.oceanBubbles) {
         const bp = this.oceanBubbles.geometry.attributes['position'] as THREE.BufferAttribute;
         for (let i = 0; i < bp.count; i++) {
@@ -761,6 +852,13 @@ export class FlowEngine {
         foundActive = true;
         const relZ = PLAYER_Z - b.mesh.position.z;
         this.isOnPad = relZ < PAD_START_REL;
+
+        // 점프 사전 경고 — 실제 점프보다 ~0.45초 앞서 표시
+        if (relZ <= JUMP_PRE_WARN_REL && !b.preJumpFired && this.jumpInstrCooldown <= 0 && !this.isBonus) {
+          b.preJumpFired = true;
+          this.showInstruction('점프!', '#ffffff', 550, 1);
+          this.jumpInstrCooldown = 3.0;
+        }
 
         // 점프 트리거 — isJumping 체크를 여기서도 (checkBridge 두 번 호출 가능 경로 방어)
         if (
@@ -869,7 +967,7 @@ export class FlowEngine {
         this.hitShakeRemaining = 130;
         this.hitShakeIntensity = 0.75 + this.wallBreakHits * 0.1;
         this.hitShakeDuration  = 130;
-        if (!this.isBonus) this.showInstruction('두드려!', 'text-yellow-300', 260, 2);
+        if (!this.isBonus) this.showInstruction('두드려!', '#ffaa00', 280, 2);
         if (done) {
           this.wallBreakActive = false;
           this.wallBreakHits   = 0;
@@ -878,7 +976,7 @@ export class FlowEngine {
           this.hitShakeRemaining = 300;
           this.hitShakeIntensity = 1.5;
           this.hitShakeDuration  = 300;
-          if (!this.isBonus) this.showInstruction('두드려!', 'text-orange-300', 600, 3);
+          if (!this.isBonus) this.showInstruction('부숴!', '#ff6600', 700, 3);
         } else {
           this.wallBreakTimer = WALL_BREAK_INTERVAL;
         }
@@ -889,13 +987,19 @@ export class FlowEngine {
     if (this.speedLines) {
       const lvOpacity = 0.20 + this.stageIdx * 0.045;
       const targetOp  = Math.min(0.65, lvOpacity);
-      this.speedLines.children.forEach((l) => {
-        const m   = l as THREE.Mesh;
+      const children  = this.speedLines.children;
+      for (let i = 0; i < children.length; i++) {
+        const m   = children[i] as THREE.Mesh;
+        const mat = m.material as THREE.MeshBasicMaterial;
+        if (!this.aq.isSpeedLineActive(i)) {
+          // 비활성 라인은 즉시 숨김 — tier 전환 시 잔상 방지
+          if (mat.opacity > 0) mat.opacity = 0;
+          continue;
+        }
         m.position.z += (SPEEDLINE_BASE_SPEED + this.stageIdx * SPEEDLINE_LEVEL_MULT) * dt60M;
         if (m.position.z > 2500) m.position.z = -12000;
-        const mat = m.material as THREE.MeshBasicMaterial;
         mat.opacity += (targetOp - mat.opacity) * 0.15 * dt60M;
-      });
+      }
     }
 
     // flash 감쇠
@@ -914,10 +1018,7 @@ export class FlowEngine {
     this.jumpStartTime = this.gameTime;
     this.microJolt    += MICROJOLT_AMOUNT;
     this.audio.sfxJump();
-    if (this.jumpInstrCooldown <= 0 && !this.isBonus) {
-      this.showInstruction('점프!', 'text-blue-300', 260, 1);
-      this.jumpInstrCooldown = 3.0;
-    }
+    // 문구는 checkBridge의 사전 경고(JUMP_PRE_WARN_REL)에서 표시
   }
 
   // 어드밴스 경고는 ObstacleManager.onBoxWarn 으로 이관됨

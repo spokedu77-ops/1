@@ -45,7 +45,7 @@ export const PROGRAMS: Program[] = [
     isNew: true,
     isHot: true,
     homeSortOrder: 0,
-    thumbnailUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
+    thumbnailUrl: '/images/spokedu-master/programs/funstick-fencing/hero.svg',
     lessonDetail: {
       recommendedAge: '초등 3학년 이상',
       recommendedPlayers: '2명 페어 · 6~20명 순환 운영',
@@ -75,7 +75,7 @@ export const PROGRAMS: Program[] = [
         '미끄러운 바닥에서는 이동 범위를 줄이고 정지형 라운드부터 시작합니다.',
       ],
       relatedSpomoveIds: ['reactTrain', 'simon'],
-      heroImageUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
+      heroImageUrl: '/images/spokedu-master/programs/funstick-fencing/hero.svg',
       setupImageUrl: '/images/spokedu-master/programs/funstick-fencing/setup.png',
       galleryImageUrls: ['/images/spokedu-master/programs/funstick-fencing/gallery-1.jpeg'],
       briefingNotes: [
@@ -119,7 +119,7 @@ export const PROGRAMS: Program[] = [
     isNew: false,
     isHot: true,
     homeSortOrder: 1,
-    thumbnailUrl: '/images/spokedu/records/playz.webp',
+    thumbnailUrl: '/images/spokedu-master/programs/figure-8-agility/hero.svg',
     lessonDetail: {
       recommendedAge: '초등 3~6학년',
       recommendedPlayers: '6~12명',
@@ -148,7 +148,7 @@ export const PROGRAMS: Program[] = [
         '바닥이 미끄러우면 달리기 대신 빠른 걷기로 진행합니다.',
       ],
       relatedSpomoveIds: ['reactTrain', 'basic'],
-      heroImageUrl: '/images/spokedu/records/playz.webp',
+      heroImageUrl: '/images/spokedu-master/programs/figure-8-agility/hero.svg',
       galleryImageUrls: [],
       briefingNotes: [
         '수업 전 8자 경로와 대기선을 먼저 구분합니다.',
@@ -191,7 +191,7 @@ export const PROGRAMS: Program[] = [
     isNew: true,
     isHot: true,
     homeSortOrder: 3,
-    thumbnailUrl: '/images/spokedu/records/playz.webp',
+    thumbnailUrl: '/images/spokedu-master/programs/team-relay-challenge/hero.svg',
     lessonDetail: {
       recommendedAge: '전 학년',
       recommendedPlayers: '8~20명',
@@ -220,7 +220,7 @@ export const PROGRAMS: Program[] = [
         '달리기 속도가 과해지면 이동 거리를 줄이고 정확한 전달 라운드로 전환합니다.',
       ],
       relatedSpomoveIds: ['basic', 'taskswitch'],
-      heroImageUrl: '/images/spokedu/records/playz.webp',
+      heroImageUrl: '/images/spokedu-master/programs/team-relay-challenge/hero.svg',
       galleryImageUrls: [],
       briefingNotes: [
         '팀별 역할과 교대 규칙을 먼저 안내합니다.',
@@ -401,7 +401,7 @@ export const PROGRAMS: Program[] = [
     isNew: false,
     isHot: true,
     homeSortOrder: 2,
-    thumbnailUrl: '/images/spokedu/cases/hero.jpg',
+    thumbnailUrl: '/images/spokedu-master/programs/agility-ladder-sprint/hero.svg',
     lessonDetail: {
       recommendedAge: '초등 4~6학년',
       recommendedPlayers: '6~16명',
@@ -430,7 +430,7 @@ export const PROGRAMS: Program[] = [
         '미끄러운 바닥에서는 양말 착용을 금지하고 운동화를 확인합니다.',
       ],
       relatedSpomoveIds: ['reactTrain', 'basic'],
-      heroImageUrl: '/images/spokedu/cases/hero.jpg',
+      heroImageUrl: '/images/spokedu-master/programs/agility-ladder-sprint/hero.svg',
       galleryImageUrls: [],
       briefingNotes: [
         '사다리를 바닥에 고정하고 이탈 방지 처리를 합니다.',
@@ -542,7 +542,7 @@ export const PROGRAMS: Program[] = [
     isNew: false,
     isHot: true,
     homeSortOrder: 4,
-    thumbnailUrl: '/images/spokedu/cases/hero.jpg',
+    thumbnailUrl: '/images/spokedu-master/programs/shadow-tag-game/hero.svg',
     lessonDetail: {
       recommendedAge: '초등 전 학년',
       recommendedPlayers: '8~24명',
@@ -571,7 +571,7 @@ export const PROGRAMS: Program[] = [
         '충돌 방지를 위해 두 손을 가슴 앞에 붙이고 이동하는 안전 자세를 먼저 연습합니다.',
       ],
       relatedSpomoveIds: ['gonogo', 'basic'],
-      heroImageUrl: '/images/spokedu/cases/hero.jpg',
+      heroImageUrl: '/images/spokedu-master/programs/shadow-tag-game/hero.svg',
       galleryImageUrls: [],
       briefingNotes: [
         '경기 구역 크기를 인원수에 맞게 조정합니다 (1인당 약 4~6㎡).',
@@ -614,7 +614,7 @@ export const PROGRAMS: Program[] = [
     isNew: true,
     isHot: true,
     homeSortOrder: 5,
-    thumbnailUrl: '/images/spokedu/curriculum-instructor-training.webp',
+    thumbnailUrl: '/images/spokedu-master/programs/rhythm-body-percussion/hero.svg',
     lessonDetail: {
       recommendedAge: '유아~초등 3학년',
       recommendedPlayers: '6~24명',
@@ -643,7 +643,7 @@ export const PROGRAMS: Program[] = [
         '움직임 중 옆 친구와 팔이 부딪히지 않도록 충분한 간격을 유지합니다.',
       ],
       relatedSpomoveIds: ['stroop', 'taskswitch'],
-      heroImageUrl: '/images/spokedu/curriculum-instructor-training.webp',
+      heroImageUrl: '/images/spokedu-master/programs/rhythm-body-percussion/hero.svg',
       galleryImageUrls: [],
       briefingNotes: [
         '패턴 2~3가지를 미리 정하고 각 패턴의 이름을 붙여 신호와 연결합니다.',

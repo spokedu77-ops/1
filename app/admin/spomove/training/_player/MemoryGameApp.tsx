@@ -1588,104 +1588,157 @@ export default function MemoryGameApp({
       : '이번 세션에서 실제 처리한 신호 총량입니다.';
     const mainColor = mo?.accent ?? '#F97316';
     const student = students.find((s) => s.id === selectedStudentId);
+    const goToList = () => {
+      setSettings(cfg);
+      if (autoLaunch) {
+        onExit?.();
+        return;
+      }
+      setScreen('setup');
+    };
+    const statBox: React.CSSProperties = {
+      border: '1px solid var(--border)',
+      borderRadius: '0.65rem',
+      padding: '0.55rem 0.7rem',
+      background: 'var(--subtle-bg)',
+    };
     return (
-      <div style={S.page}>
+      <div style={{ ...S.page, height: '100vh', minHeight: '100vh' }}>
         <style>{CSS}</style>
-        <div style={S.scroll}>
-          <div style={{ ...S.card, paddingTop: '1.8rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontSize: '1.1rem' }}>{mo?.icon}</span>
-                <span style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text-muted)' }}>{mo?.title} · {resultLevelLabel(cfg.mode, cfg.level)}</span>
-              </div>
-              {student && <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><div style={{ width: 20, height: 20, borderRadius: '50%', background: student.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 900, color: '#fff' }}>{student.name[0]}</div><span style={{ fontSize: '0.96rem', fontWeight: 700, color: student.color }}>{student.name}</span></div>}
-            </div>
-            <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-              <div style={{ fontSize: 'clamp(5rem,20vw,7rem)', fontWeight: 900, lineHeight: 1, color: mainColor, letterSpacing: '-0.03em' }}>{mainVal}</div>
-              <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginTop: '0.35rem' }}>{mainLabel}</div>
-              <div style={{ fontSize: '0.86rem', fontWeight: 500, color: 'var(--text-muted)', marginTop: '0.45rem', lineHeight: 1.55, maxWidth: '22rem', marginLeft: 'auto', marginRight: 'auto' }}>{mainHint}</div>
-            </div>
-            <div style={{ marginBottom: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '0.75rem 0.85rem', background: '#F8FAFC' }}>
-                <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 800 }}>총 수행 시간</div>
-                <div style={{ fontSize: '1.05rem', color: '#0F172A', fontWeight: 900, marginTop: '0.2rem' }}>{Math.max(0, Math.round(totalSec))}초</div>
-              </div>
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '0.75rem 0.85rem', background: '#F8FAFC' }}>
-                <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 800 }}>평균 반응 밀도</div>
-                <div style={{ fontSize: '1.05rem', color: '#0F172A', fontWeight: 900, marginTop: '0.2rem' }}>{spm != null ? `${spm} SPM` : '-'}</div>
-              </div>
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '0.75rem 0.85rem', background: '#F8FAFC' }}>
-                <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 800 }}>목표 달성률</div>
-                <div style={{ fontSize: '1.05rem', color: '#0F172A', fontWeight: 900, marginTop: '0.2rem' }}>{completionRate != null ? `${completionRate}%` : '시간모드'}</div>
-              </div>
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '0.75rem 0.85rem', background: '#F8FAFC' }}>
-                <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 800 }}>수행 안정도</div>
-                <div style={{ fontSize: '1.05rem', color: '#0F172A', fontWeight: 900, marginTop: '0.2rem' }}>{consistency != null ? `${consistency}점` : '-'}</div>
-              </div>
-            </div>
-            <div style={{ textAlign: 'left', marginBottom: '1rem', padding: '0.85rem 1rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '0.75rem', color: '#334155' }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0F172A', marginBottom: '0.45rem' }}>
-                이번 활동 기대 효과
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '1.05rem', fontSize: '0.82rem', lineHeight: 1.7 }}>
-                <li>반응 전환 속도 향상 및 처리량 증가</li>
-                <li>주의 집중 지속시간 향상</li>
-                <li>규칙 준수 및 억제 제어 정확도 강화</li>
-              </ul>
-            </div>
-            {cfg.mode === 'basic' && dupStats && (
+        <header
+          style={{
+            flexShrink: 0,
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.65rem clamp(0.75rem, 3vw, 1.25rem)',
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--card)',
+          }}
+        >
+          <button
+            type="button"
+            style={{
+              ...S.btn,
+              ...S.bSecondary,
+              justifySelf: 'start',
+              padding: '0.55rem 0.9rem',
+              fontSize: '0.88rem',
+              borderRadius: '0.75rem',
+            }}
+            onClick={goToList}
+          >
+            ← 목록으로
+          </button>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem',
+              fontSize: 'clamp(0.82rem, 2.4vw, 0.96rem)',
+              fontWeight: 800,
+              color: 'var(--text)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <span>{mo?.icon}</span>
+            <span>{mo?.title} · {resultLevelLabel(cfg.mode, cfg.level)}</span>
+          </div>
+          <button
+            type="button"
+            style={{
+              ...S.btn,
+              ...S.bPrimary,
+              justifySelf: 'end',
+              padding: '0.55rem 1rem',
+              fontSize: '0.88rem',
+              borderRadius: '0.75rem',
+            }}
+            onClick={() => startSession(cfg)}
+          >
+            다시 ▶
+          </button>
+        </header>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 'clamp(0.75rem, 3vw, 1.5rem)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 'clamp(20rem, 92vw, 32rem)',
+              textAlign: 'center',
+            }}
+          >
+            {student ? (
               <div
                 style={{
-                  textAlign: 'left',
-                  marginBottom: '1rem',
-                  padding: '0.85rem 1rem',
-                  background: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '0.75rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  color: '#475569',
-                  lineHeight: 1.65,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  marginBottom: '0.65rem',
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '999px',
+                  background: 'var(--subtle-bg)',
+                  border: '1px solid var(--border)',
                 }}
               >
-                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', marginBottom: '0.5rem' }}>이번 세션 해석</div>
-                <p style={{ margin: '0 0 0.55rem' }}>
-                  <strong style={{ color: '#334155' }}>신호가 얼마나 바뀌었나요?</strong>{' '}
-                  바로 이어서 똑같은 신호(같은 색·같은 그림 등)가 나온 비율이{' '}
-                  <strong style={{ color: '#1E293B' }}>{Math.round(dupStats.dupRatio * 100)}%</strong>
-                  이에요. 숫자가 낮을수록 매번 다른 과제를 보는 쪽에 가깝습니다.
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong style={{ color: '#334155' }}>같은 신호를 연달아 본 적은?</strong>{' '}
-                  {dupStats.maxConsecutiveSame >= 3 ? (
-                    <>
-                      최대 <strong style={{ color: '#B45309' }}>{dupStats.maxConsecutiveSame}번</strong>까지 이어졌어요. 속도를 조금 낮추거나 휴식을 넣으면 집중하기 더 수월해요.
-                    </>
-                  ) : (
-                    <>
-                      최대 <strong style={{ color: '#1E293B' }}>{dupStats.maxConsecutiveSame}번</strong>까지 이어졌어요. 2번 이내면 설계 목표에 가깝습니다.
-                    </>
-                  )}
+                <div style={{ width: 20, height: 20, borderRadius: '50%', background: student.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 900, color: '#fff' }}>{student.name[0]}</div>
+                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: student.color }}>{student.name}</span>
+              </div>
+            ) : null}
+            <div style={{ fontSize: 'clamp(4rem, 18vw, 6.5rem)', fontWeight: 900, lineHeight: 1, color: mainColor, letterSpacing: '-0.03em' }}>{mainVal}</div>
+            <div style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text)', marginTop: '0.35rem' }}>{mainLabel}</div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.5, maxWidth: '20rem', marginLeft: 'auto', marginRight: 'auto' }}>{mainHint}</div>
+            <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem', textAlign: 'left' }}>
+              <div style={statBox}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>총 수행 시간</div>
+                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{Math.max(0, Math.round(totalSec))}초</div>
+              </div>
+              <div style={statBox}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>평균 반응 밀도</div>
+                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{spm != null ? `${spm} SPM` : '-'}</div>
+              </div>
+              <div style={statBox}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>목표 달성률</div>
+                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{completionRate != null ? `${completionRate}%` : '시간모드'}</div>
+              </div>
+              <div style={statBox}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>수행 안정도</div>
+                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{consistency != null ? `${consistency}점` : '-'}</div>
+              </div>
+            </div>
+            {cfg.mode === 'basic' && dupStats ? (
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  padding: '0.65rem 0.75rem',
+                  background: 'var(--subtle-bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '0.65rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 500,
+                  color: 'var(--text-muted)',
+                  lineHeight: 1.55,
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>이번 세션 해석</div>
+                <p style={{ margin: '0 0 0.35rem' }}>
+                  연속 동일 신호 비율 <strong style={{ color: 'var(--text)' }}>{Math.round(dupStats.dupRatio * 100)}%</strong>
+                  · 최대 연속 <strong style={{ color: 'var(--text)' }}>{dupStats.maxConsecutiveSame}번</strong>
                 </p>
               </div>
-            )}
-            <div style={{ display: 'flex', gap: '0.6rem' }}>
-              <button
-                type="button"
-                style={{ ...S.btn, ...S.bSecondary, flex: 1 }}
-                onClick={() => {
-                  setSettings(cfg);
-                  if (autoLaunch) {
-                    onExit?.();
-                    return;
-                  }
-                  setScreen('setup');
-                }}
-              >
-                목록으로
-              </button>
-              <button type="button" style={{ ...S.btn, ...S.bPrimary, flex: 2 }} onClick={() => startSession(cfg)}>다시</button>
-            </div>
+            ) : null}
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { Activity, Scale, Star, Target, Timer, Users, Zap } from 'lucide-react';
 import Image from 'next/image';
+import { resolveProgramHero } from '../../lib/program-media';
 import type { Program } from '../../types';
 
 export function CategoryIcon({
@@ -26,7 +27,7 @@ export function CategoryIcon({
 }
 
 export function ProgramThumb({ program, size = 72 }: { program: Program; size?: number }) {
-  const imageUrl = (program.lessonDetail?.heroImageUrl || program.thumbnailUrl)
+  const imageUrl = resolveProgramHero(program)
     ?.replace('/mqdefault.jpg', '/hqdefault.jpg')
     .replace('/default.jpg', '/hqdefault.jpg');
 

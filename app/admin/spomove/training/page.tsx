@@ -213,7 +213,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
 
 type PagePhase =
   | { tag: 'catalog' }
-  | { tag: 'settings'; modeId: string }
+  | { tag: 'settings'; modeId: string; levelId?: number; launch?: LaunchSettings }
   | { tag: 'training'; modeId: string; levelId: number; launch: LaunchSettings };
 
 function SettingsGuideVideoIframe({ videoUrl, accent }: { videoUrl?: string | null; accent: string }) {
@@ -491,18 +491,29 @@ function CatalogModeCard({
 function SettingsScreen({
   modeId,
   initial,
+  initialLevelId,
   onStart,
   onBack,
 }: {
   modeId: string;
   initial: LaunchSettings;
+  /** 훈련 중 STOP·완료 후 복귀 시 이전에 선택한 난이도 유지 */
+  initialLevelId?: number;
   onStart: (levelId: number, launch: LaunchSettings) => void;
   onBack: () => void;
 }) {
   const m = MODES[modeId];
   const accent = m?.accent ?? '#F97316';
 
-  const [levelId, setLevelId] = useState<number>(() => m?.levels?.[0]?.id ?? 1);
+  const [levelId, setLevelId] = useState<number>(() => {
+    if (
+      typeof initialLevelId === 'number' &&
+      m?.levels?.some((lv) => lv.id === initialLevelId)
+    ) {
+      return initialLevelId;
+    }
+    return m?.levels?.[0]?.id ?? 1;
+  });
   const [launch, setLaunch] = useState<LaunchSettings>(initial);
   const [guideOpen, setGuideOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -1304,7 +1315,7 @@ function SpomoveTrainingPageContent() {
 
   if (phase.tag === 'settings') {
     const modeId = phase.modeId;
-    const initial: LaunchSettings = {
+    const initial: LaunchSettings = phase.launch ?? {
       ...DEFAULT_LAUNCH,
       timeMode: pickDefaultTimeMode(modeId),
       // reactTrain은 time 기본
@@ -1314,8 +1325,10 @@ function SpomoveTrainingPageContent() {
     };
     return (
       <SettingsScreen
+        key={`${modeId}-${phase.levelId ?? 'new'}`}
         modeId={modeId}
         initial={initial}
+        initialLevelId={phase.levelId}
         onStart={handleStart}
         onBack={() => setPhase({ tag: 'catalog' })}
       />
@@ -1329,7 +1342,12 @@ function SpomoveTrainingPageContent() {
           modeId={phase.modeId}
           levelId={phase.levelId}
           launch={phase.launch}
-          onClose={() => setPhase({ tag: 'settings', modeId: phase.modeId })}
+          onClose={() => setPhase({
+            tag: 'settings',
+            modeId: phase.modeId,
+            levelId: phase.levelId,
+            launch: phase.launch,
+          })}
         />
       )}
 

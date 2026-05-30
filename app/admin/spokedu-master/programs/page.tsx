@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { ChevronLeft, RefreshCw, Save, Sparkles, Tag, X } from 'lucide-react';
+import { ChevronLeft, ExternalLink, RefreshCw, Save, Sparkles, Tag, Video, X } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -392,6 +392,137 @@ function EditPanel({
   );
 }
 
+type VideoGapRow = {
+  curriculumId: number;
+  title: string;
+  hasVideo: boolean;
+  isHot: boolean;
+  displayOrder: number | null;
+  curriculumUrl: string;
+};
+
+function VideoGapsPanel({ onSeeded }: { onSeeded: () => void }) {
+  const [rows, setRows] = useState<VideoGapRow[]>([]);
+  const [summary, setSummary] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/spokedu-master/programs/video-gaps');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? '불러오기 실패');
+      setRows((json.data ?? []) as VideoGapRow[]);
+      setSummary(json.summary?.message ?? '');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '불러오기 실패');
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const hotGaps = rows.filter((row) => row.isHot);
+
+  const seedReferenceVideos = async (dryRun: boolean) => {
+    setSeeding(true);
+    try {
+      const res = await fetch('/api/admin/spokedu-master/programs/seed-reference-videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hotOnly: true, dryRun }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? '자동 채우기 실패');
+      toast.success(json.message ?? '완료');
+      if (!dryRun) onSeeded();
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '자동 채우기 실패');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  return (
+    <section className="mb-6 rounded-xl border border-[#1f2937] p-4" style={{ background: '#111827' }}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-[14px] font-bold text-white">
+            <Video size={16} color="#f87171" />
+            홈이 단조로운 이유 — 참고 영상 없음
+          </h2>
+          <p className="mt-1 max-w-xl text-[12px] leading-5 text-gray-500">
+            MASTER 홈 카드는 YouTube 썸네일·미리보기 재생이 체감의 핵심입니다. curriculum URL 또는 SPOMOVE overlay 영상을 채우세요.
+          </p>
+          {summary ? <p className="mt-2 text-[11px] font-semibold text-amber-200/90">{summary}</p> : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void load()}
+            disabled={loading || seeding}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-bold disabled:opacity-50"
+            style={{ background: '#1f2937', color: '#9ca3af' }}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            새로고침
+          </button>
+          <button
+            type="button"
+            onClick={() => void seedReferenceVideos(true)}
+            disabled={loading || seeding}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-bold disabled:opacity-50"
+            style={{ background: '#1f2937', color: '#e5e7eb' }}
+          >
+            미리보기
+          </button>
+          <button
+            type="button"
+            onClick={() => void seedReferenceVideos(false)}
+            disabled={loading || seeding || hotGaps.length === 0}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-bold text-white disabled:opacity-50"
+            style={{ background: '#dc2626' }}
+          >
+            {seeding ? '저장 중...' : 'HOT 참고 영상 자동 채우기'}
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="mt-4 flex justify-center py-6">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+        </div>
+      ) : hotGaps.length === 0 ? (
+        <p className="mt-4 text-[12px] font-semibold text-emerald-400">HOT 수업은 모두 참고 영상이 있습니다.</p>
+      ) : (
+        <ul className="mt-3 max-h-48 space-y-1.5 overflow-y-auto">
+          {hotGaps.slice(0, 12).map((row) => (
+            <li key={row.curriculumId} className="flex items-center gap-2 rounded-lg px-3 py-2 text-[12px]" style={{ background: '#0d1117', border: '1px solid #1f2937' }}>
+              <span className="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black" style={{ background: 'rgba(245,158,11,0.12)', color: '#fcd34d' }}>
+                HOT
+              </span>
+              <span className="min-w-0 flex-1 truncate font-semibold text-gray-200">{row.title}</span>
+              <Link
+                href={`/admin/curriculum?id=${row.curriculumId}`}
+                className="inline-flex shrink-0 items-center gap-1 text-[11px] font-bold text-indigo-400 hover:text-indigo-300"
+              >
+                영상 URL
+                <ExternalLink size={12} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function HomeFeaturedPanel({ onApplied }: { onApplied: () => void }) {
   const [preview, setPreview] = useState<HomeFeaturedPreview[]>([]);
   const [loading, setLoading] = useState(true);
@@ -451,8 +582,12 @@ function HomeFeaturedPanel({ onApplied }: { onApplied: () => void }) {
             MASTER 홈 추천 8개
           </h2>
           <p className="mt-1 max-w-xl text-[12px] leading-5 text-gray-500">
-            참고 영상 URL·메타 완성도·표시 순서로 상위 8개를 골라 HOT + 표시 순서 0~7을 일괄 저장합니다.
+            참고 영상 URL·메타 완성도·표시 순서·전용 16:9 썸네일(data.ts)로 상위 8개를 골라 HOT + 표시 순서 0~7을 일괄 저장합니다.
             적용 후 MASTER 홈 탭을 새로고침하세요.
+          </p>
+          <p className="mt-2 max-w-xl text-[11px] leading-5 text-gray-600">
+            전용 이미지: <code className="text-indigo-300">public/images/spokedu-master/programs/&#123;slug&#125;/hero.jpeg</code>
+            — 가이드는 <code className="text-indigo-300">public/images/spokedu-master/programs/PHOTO_REQUEST.md</code>
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -702,6 +837,7 @@ export default function AdminSmProgramsPage() {
       </header>
 
       <main className="p-6">
+        <VideoGapsPanel onSeeded={() => void load()} />
         <HomeFeaturedPanel onApplied={() => void load()} />
         {loading ? (
           <div className="flex items-center justify-center py-16">

@@ -23,6 +23,13 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
 import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
+import {
+  getExternalVideoUrl,
+  getVideoEmbedUrl,
+  getVideoThumbnail,
+  isDirectVideoUrl,
+  resolveProgramHero,
+} from '../lib/program-media';
 import { useIsPro, useMasterStore } from '../store';
 import type { Drill, Program } from '../types';
 
@@ -74,35 +81,7 @@ function matchesFilter(program: Program, filter: string) {
 }
 
 function getHeroImage(program: Program) {
-  return program.lessonDetail?.heroImageUrl || program.thumbnailUrl || getVideoThumbnail(program.lessonDetail?.videoUrl);
-}
-
-function getYouTubeId(url?: string) {
-  if (!url) return undefined;
-  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-  return match?.[1];
-}
-
-function getVideoEmbedUrl(url?: string) {
-  const youtubeId = getYouTubeId(url);
-  if (youtubeId) return `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`;
-  return undefined;
-}
-
-function isDirectVideoUrl(url?: string) {
-  return Boolean(url && /\.(mp4|webm|ogg)(\?.*)?$/i.test(url));
-}
-
-function getExternalVideoUrl(url?: string) {
-  const text = (url ?? '').trim();
-  if (!/^https?:\/\//i.test(text)) return undefined;
-  if (getVideoEmbedUrl(text) || isDirectVideoUrl(text)) return undefined;
-  return text;
-}
-
-function getVideoThumbnail(url?: string) {
-  const youtubeId = getYouTubeId(url);
-  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : undefined;
+  return resolveProgramHero(program);
 }
 
 function getPrimaryDrill(program: Program, drills: Drill[]) {
@@ -295,7 +274,7 @@ function FeaturedProgram({ program, onPreview }: { program: Program; onPreview: 
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black tracking-[0.14em] text-indigo-600">
               <Sparkles className="h-3.5 w-3.5" />
-              대표 수업안
+              오늘의 추천
             </span>
             <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{program.title}</h1>
             <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600">{detail?.objective || program.description}</p>
@@ -362,7 +341,7 @@ function ProgramModal({
   const locked = program.isPro && !isPro;
   const detail = program.lessonDetail;
   const setupImage = detail?.setupImageUrl;
-  const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl);
+  const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl, { autoplay: true });
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(detail?.videoUrl) : undefined;
   const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
@@ -541,9 +520,16 @@ function ProgramModal({
               <div className="mt-4 overflow-hidden rounded-[10px] bg-slate-950">
                 <div className="relative aspect-video">
                   {activeMedia === 'video' && videoEmbedUrl ? (
-                    <iframe src={videoEmbedUrl} title={`${program.title} 영상`} className="h-full w-full" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
+                    <iframe
+                      key={`${program.id}-${videoEmbedUrl}`}
+                      src={videoEmbedUrl}
+                      title={`${program.title} 참고 영상`}
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                      allowFullScreen
+                    />
                   ) : activeMedia === 'video' && directVideoUrl ? (
-                    <video src={directVideoUrl} className="h-full w-full object-cover" controls muted playsInline />
+                    <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay muted />
                   ) : activeMedia === 'video' && externalVideoUrl ? (
                     <div className="grid h-full place-items-center bg-slate-950 p-6 text-center text-white">
                       <div>
@@ -608,7 +594,7 @@ function ProgramModal({
                 SPOMOVE 활동
               </h2>
               <p className="mt-3 text-sm leading-7 text-indigo-800">
-                {drill?.name ? `${drill.name}은(는) 이 수업안에 명시 연결된 큰 화면 활동입니다.` : '이 수업안에 명시 연결된 큰 화면 활동입니다.'}
+                {drill?.name ? `${drill.name}은(는) 이 수업에 명시 연결된 큰 화면 활동입니다.` : '이 수업에 명시 연결된 큰 화면 활동입니다.'}
               </p>
               <Link href={spomoveHref} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 text-sm font-black text-white">
                 <MonitorPlay className="h-4 w-4" />
@@ -708,7 +694,7 @@ export default function LibraryView() {
                   바로 꺼내 쓰는 수업 패키지
                 </h1>
                 <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600">
-                  수업안, 참고 영상, 교구 세팅, 설명 문구를 한 화면에서 빠르게 확인합니다. SPOMOVE는 별도 화면 활동으로 분리해 운영합니다.
+                  수업 자료, 참고 영상, 교구 세팅, 설명 문구를 한 화면에서 빠르게 확인합니다. SPOMOVE는 별도 화면 활동으로 분리해 운영합니다.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2">
