@@ -24,6 +24,7 @@ import {
   planPromoteDocumentBlocksToRoot,
   sortRootBlocks,
   TOGGLE_INLINE_CHILD_TYPES,
+  type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
 import {
   planToggleBodyRestores,
@@ -1530,7 +1531,7 @@ function AdminNotePageContent() {
 
   const persistBlockReparent = useCallback(async (
     moving: NoteBlock,
-    plan: ReturnType<typeof planBlockDrop>,
+    plan: BlockDropPlan<NoteBlock>,
     prevBlocks: NoteBlock[],
   ) => {
     if (!plan) return;

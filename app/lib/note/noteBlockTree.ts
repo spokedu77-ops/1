@@ -106,9 +106,9 @@ export function getBlocksInParent<T extends NoteBlockLike>(blocks: T[], parentId
     .sort((a, b) => a.order_index - b.order_index);
 }
 
-export type BlockDropPlan = {
+export type BlockDropPlan<T extends BlockWithMeta = BlockWithMeta> = {
   targetParentId: string | null;
-  targetSiblings: BlockWithMeta[];
+  targetSiblings: T[];
   placedInToggle: boolean;
 };
 
@@ -117,7 +117,7 @@ export function planBlockDrop<T extends BlockWithMeta>(
   blocks: T[],
   movingId: string,
   overId: string,
-): BlockDropPlan | null {
+): BlockDropPlan<T> | null {
   const byId = new Map(blocks.map((block) => [block.id, block]));
   const moving = byId.get(movingId);
   const over = byId.get(overId);
@@ -132,7 +132,7 @@ export function planBlockDrop<T extends BlockWithMeta>(
   const withoutMoving = (parentId: string | null) =>
     getBlocksInParent(blocks, parentId).filter((block) => block.id !== moving.id);
 
-  const finish = (targetParentId: string | null, ordered: T[]): BlockDropPlan => {
+  const finish = (targetParentId: string | null, ordered: T[]): BlockDropPlan<T> => {
     const parentBlock = targetParentId ? byId.get(targetParentId) : undefined;
     return {
       targetParentId,
