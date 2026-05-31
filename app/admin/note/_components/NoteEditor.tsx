@@ -71,8 +71,13 @@ function richTextSourceHtml({
   text: string;
 }) {
   const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
+  const legacyHtmlKey = field === 'body' ? 'legacyBodyHtml' : null;
   const html = content?.[htmlKey];
   if (typeof html === 'string' && html.trim().length > 0) return html;
+  if (legacyHtmlKey) {
+    const legacyHtml = content?.[legacyHtmlKey];
+    if (typeof legacyHtml === 'string' && legacyHtml.trim().length > 0) return legacyHtml;
+  }
   return legacyTextToEditorHtml(text);
 }
 

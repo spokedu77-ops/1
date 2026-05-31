@@ -1,4 +1,5 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { planPromoteDocumentBlocksToRoot } from '@/app/lib/note/noteBlockTree';
 
 export type PublicNoteDocument = {
   id: string;
@@ -9,6 +10,7 @@ export type PublicNoteDocument = {
 
 export type PublicNoteBlock = {
   id: string;
+  parent_block_id?: string | null;
   type: string;
   order_index: number;
   content: Record<string, unknown> | null;
@@ -30,7 +32,7 @@ export async function getPublicNoteByToken(token: string) {
 
   const { data: blocks, error: blocksError } = await supabase
     .from('note_blocks')
-    .select('id, type, order_index, content')
+      .select('id, parent_block_id, type, order_index, content')
     .eq('document_id', document.id)
     .is('deleted_at', null)
     .order('order_index', { ascending: true });
@@ -67,7 +69,7 @@ export async function getPublicNoteByToken(token: string) {
       updated_at: document.updated_at,
       share_token: document.share_token,
     } satisfies PublicNoteDocument,
-    blocks: (blocks ?? []) as PublicNoteBlock[],
+    blocks: planPromoteDocumentBlocksToRoot((blocks ?? []) as PublicNoteBlock[]).blocks,
     publicPages,
   };
 }

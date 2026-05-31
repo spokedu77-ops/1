@@ -4,13 +4,23 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Check, CheckSquare, ChevronDown, FileText, Image as ImageIcon } from 'lucide-react';
 import type { PublicNoteBlock, PublicNoteDocument } from '@/app/lib/server/publicNote';
+import { buildChildrenByParentBlock, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
+import { hasToggleBodyContent, resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
+import { resolveVideoEmbedContent, videoProviderLabel } from '@/app/lib/note/videoEmbed';
+import { VideoEmbedFrame } from '@/app/admin/note/_components/VideoEmbedFrame';
 
 function blockDepth(content: Record<string, unknown> | null | undefined) {
   return Math.max(0, Math.min(6, Number(content?.depth ?? 0)));
 }
 
 function richHtml(content: Record<string, unknown> | null | undefined, field: 'text' | 'body' = 'text') {
-  const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
+  if (field === 'body') {
+    const { text, html } = resolveToggleBodyForDisplay(content);
+    if (html.trim()) return html;
+    if (!text.trim()) return '';
+    return text.split('\n').map((line) => `<p>${line || '<br>'}</p>`).join('');
+  }
+  const htmlKey = 'html';
   const html = content?.[htmlKey];
   if (typeof html === 'string' && html.trim()) return html;
   const plain = content?.[field];
@@ -40,12 +50,19 @@ function RichText({
 function PublicBlock({
   block,
   publicPages,
+  childBlocks = [],
+  renderChildBlock,
+  isInsideToggle = false,
 }: {
   block: PublicNoteBlock;
   publicPages: Record<string, string>;
+  childBlocks?: PublicNoteBlock[];
+  renderChildBlock?: (child: PublicNoteBlock) => React.ReactNode;
+  isInsideToggle?: boolean;
 }) {
-  const depth = blockDepth(block.content);
-  const indentStyle = { marginLeft: `${depth * 20}px` };
+  const depth = isInsideToggle ? 0 : blockDepth(block.content);
+  const indentStyle = isInsideToggle ? undefined : { marginLeft: `${depth * 20}px` };
+  const rootBlockShell = isInsideToggle ? '' : 'rounded-lg border border-slate-200 bg-white px-3 py-2';
 
   if (block.type === 'divider') {
     return (
@@ -66,7 +83,10 @@ function PublicBlock({
   if (block.type === 'todo') {
     const checked = !!block.content?.checked;
     return (
-      <div className="flex items-start gap-3 py-1.5" style={indentStyle}>
+      <div
+        className={`flex items-start gap-3 ${isInsideToggle ? 'py-1.5' : `${rootBlockShell} py-2`}`}
+        style={indentStyle}
+      >
         <span
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${
             checked ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 bg-white'
@@ -115,6 +135,19 @@ function PublicBlock({
     );
   }
 
+  if (block.type === 'video') {
+    const embed = resolveVideoEmbedContent(block.content);
+    if (!embed) return null;
+    return (
+      <div className={isInsideToggle ? 'py-1.5' : `${rootBlockShell} py-2`} style={indentStyle}>
+        <p className="mb-2 text-[11px] font-medium text-slate-400">
+          {videoProviderLabel(embed.provider)} 영상
+        </p>
+        <VideoEmbedFrame embedUrl={embed.embedUrl} title={`${videoProviderLabel(embed.provider)} 영상`} />
+      </div>
+    );
+  }
+
   if (block.type === 'page') {
     const pageId = typeof block.content?.page_document_id === 'string' ? block.content.page_document_id : '';
     const title =
@@ -145,11 +178,20 @@ function PublicBlock({
   }
 
   if (block.type === 'toggle') {
-    return <PublicToggleBlock block={block} publicPages={publicPages} indentStyle={indentStyle} />;
+    return (
+      <PublicToggleBlock
+        block={block}
+        publicPages={publicPages}
+        indentStyle={indentStyle}
+        childBlocks={childBlocks}
+        renderChildBlock={renderChildBlock}
+        isInsideToggle={isInsideToggle}
+      />
+    );
   }
 
   return (
-    <div className="py-1.5" style={indentStyle}>
+    <div className={isInsideToggle ? 'py-0.5' : `${rootBlockShell} py-2`} style={indentStyle}>
       <RichText content={block.content} className="text-[15px] leading-7 text-slate-800" />
     </div>
   );
@@ -159,10 +201,16 @@ function PublicToggleBlock({
   block,
   publicPages,
   indentStyle,
+  childBlocks = [],
+  renderChildBlock,
+  isInsideToggle = false,
 }: {
   block: PublicNoteBlock;
   publicPages: Record<string, string>;
-  indentStyle: React.CSSProperties;
+  indentStyle?: React.CSSProperties;
+  childBlocks?: PublicNoteBlock[];
+  renderChildBlock?: (child: PublicNoteBlock) => React.ReactNode;
+  isInsideToggle?: boolean;
 }) {
   const [open, setOpen] = useState(!block.content?.collapsed);
   const title = typeof block.content?.title === 'string'
@@ -172,20 +220,35 @@ function PublicToggleBlock({
   const images = Array.isArray(rawImages)
     ? rawImages.map((url) => (typeof url === 'string' ? url.trim() : '')).filter(Boolean)
     : [];
+  const hasLegacyBody = hasToggleBodyContent(block.content);
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2" style={indentStyle}>
+    <div
+      className={
+        isInsideToggle
+          ? 'py-0.5'
+          : 'rounded-lg border border-slate-200 bg-white px-3 py-2'
+      }
+      style={indentStyle}
+    >
       <button
         type="button"
-        className="mb-1 flex w-full items-center gap-2 text-left"
+        className="flex w-full items-center gap-2 text-left"
         onClick={() => setOpen((v) => !v)}
       >
         <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${open ? '' : '-rotate-90'}`} />
         <span className="text-[15px] font-semibold leading-6 text-slate-800">{title || '토글'}</span>
       </button>
       {open && (
-        <>
-          <RichText content={block.content} field="body" className="text-[15px] leading-7 text-slate-800" />
+        <div className="pl-6">
+          {hasLegacyBody ? (
+            <RichText content={block.content} field="body" className="text-[15px] leading-7 text-slate-800" />
+          ) : null}
+          {childBlocks.length > 0 && (
+            <div className="space-y-0">
+              {childBlocks.map((child) => renderChildBlock?.(child))}
+            </div>
+          )}
           {images.length > 0 && (
             <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
               {images.map((url) => (
@@ -199,7 +262,7 @@ function PublicToggleBlock({
               ))}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -214,6 +277,20 @@ export function PublicNoteView({
   blocks: PublicNoteBlock[];
   publicPages: Record<string, string>;
 }) {
+  const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(blocks), [blocks]);
+  const rootBlocks = useMemo(() => sortRootBlocks(blocks), [blocks]);
+
+  const renderPublicBlock = (block: PublicNoteBlock, insideToggle = false): React.ReactNode => (
+    <PublicBlock
+      key={block.id}
+      block={block}
+      publicPages={publicPages}
+      isInsideToggle={insideToggle}
+      childBlocks={childrenByParentBlock.get(block.id) ?? []}
+      renderChildBlock={(child) => renderPublicBlock(child, true)}
+    />
+  );
+
   return (
     <div className="min-h-screen bg-white">
       <div className="border-b border-slate-100 bg-slate-50/80">
@@ -229,9 +306,7 @@ export function PublicNoteView({
           {document.title}
         </h1>
         <div className="space-y-0.5">
-          {blocks.map((block) => (
-            <PublicBlock key={block.id} block={block} publicPages={publicPages} />
-          ))}
+          {rootBlocks.map((block) => renderPublicBlock(block))}
         </div>
       </article>
       <style jsx global>{`

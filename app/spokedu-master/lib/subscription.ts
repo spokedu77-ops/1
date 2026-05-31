@@ -22,6 +22,18 @@ export function isTrialExpired(profile: UserProfile | null): boolean {
   return (profile?.plan ?? 'free') === 'free' && getTrialDaysLeft(profile) <= 0;
 }
 
+export function isActiveMasterPlan(profile: UserProfile | null): boolean {
+  return profile?.plan === 'pro' || profile?.plan === 'team' || Boolean(profile?.isAdmin);
+}
+
+export function getUpgradeHref(profile: UserProfile | null): string {
+  return isActiveMasterPlan(profile) ? '/spokedu-master/subscription' : '/spokedu-master/profile?plans=1';
+}
+
+export function getUpgradeLabel(profile: UserProfile | null): string {
+  return isActiveMasterPlan(profile) ? '구독 관리' : 'MASTER로 열기';
+}
+
 export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
   if (profile?.isAdmin) return { allowed: true, label: '관리자' };
   if (isTrialExpired(profile)) {

@@ -78,10 +78,17 @@ function formatDate(date: string | null | undefined) {
   });
 }
 
+function planChangeMailto(currentPlan: string | undefined, nextPlan: PlanKey) {
+  const subject = encodeURIComponent('SPOKEDU MASTER 플랜 변경 문의');
+  const body = encodeURIComponent(`현재 플랜: ${PLAN_LABELS[currentPlan ?? 'free'] ?? 'Trial'} / 변경 희망 플랜: ${PLAN_LABELS[nextPlan]}`);
+  return `mailto:support@spokedu.com?subject=${subject}&body=${body}`;
+}
+
 export default function SubscriptionPage() {
   const [sub, setSub] = useState<SubData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [changeRequestPlan, setChangeRequestPlan] = useState<PlanKey | null>(null);
 
   useEffect(() => {
     void fetch('/api/spokedu-master/subscription')
@@ -96,6 +103,7 @@ export default function SubscriptionPage() {
   const currentPlanKey = (sub?.plan === 'team' || sub?.plan === 'school' || sub?.plan === 'lite' ? sub.plan : 'pro') as PlanKey;
   const periodEndDate = formatDate(sub?.periodEnd);
   const recommendedPlan: PlanKey = sub?.plan === 'pro' ? 'team' : 'pro';
+  const changeRequestHref = changeRequestPlan ? planChangeMailto(sub?.plan, changeRequestPlan) : '';
 
   const heroCopy = useMemo(() => {
     if (isPaid) {
@@ -183,8 +191,12 @@ export default function SubscriptionPage() {
                   })}
                 </div>
                 <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                  <Link href={`/spokedu-master/payment?plan=${recommendedPlan}`} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-[13px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 10px 28px rgba(99,102,241,0.28)' }}>
-                    {isPaid ? '플랜 변경하기' : 'Pro로 수업 열기'}
+                  <Link href={isPaid ? '#' : `/spokedu-master/payment?plan=${recommendedPlan}`} onClick={(event) => {
+                    if (!isPaid) return;
+                    event.preventDefault();
+                    setChangeRequestPlan(recommendedPlan);
+                  }} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-[13px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 10px 28px rgba(99,102,241,0.28)' }}>
+                    {isPaid ? '플랜 변경 문의' : 'Pro로 수업 열기'}
                     <ChevronRight size={16} />
                   </Link>
                   <Link href="/spokedu-master/dashboard" className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-[13px] text-[14px] font-black" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)', color: 'var(--spm-t)' }}>
@@ -223,9 +235,23 @@ export default function SubscriptionPage() {
                 {error ? <p className="mt-4 text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>{error}</p> : null}
               </section>
 
+              {changeRequestPlan ? (
+                <div className="rounded-[16px] p-4" style={{ background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.24)' }}>
+                  <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>플랜 변경 문의가 필요합니다</p>
+                  <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+                    활성 구독의 플랜 변경은 중복 결제를 방지하기 위해 담당자 확인 후 처리됩니다. 현재 플랜: {PLAN_LABELS[sub?.plan ?? 'free'] ?? 'Trial'} / 변경 희망 플랜: {PLAN_LABELS[changeRequestPlan]}
+                  </p>
+                  <a href={changeRequestHref} className="mt-3 inline-flex h-10 items-center justify-center rounded-[12px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-acc)', color: '#fff' }}>
+                    변경 문의 메일 보내기
+                  </a>
+                </div>
+              ) : null}
+
               <section className="grid gap-3 md:grid-cols-2">
                 {(['pro', 'team'] as PlanKey[]).map((plan) => {
                   const isCurrent = sub?.plan === plan && isPaid;
+                  const isChangeRequest = isPaid && !isCurrent;
+                  const ctaHref = isCurrent ? '/spokedu-master/library' : isChangeRequest ? '#' : `/spokedu-master/payment?plan=${plan}`;
                   return (
                     <div key={plan} className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: isCurrent ? '1px solid rgba(16,185,129,0.35)' : '1px solid var(--spm-br2)' }}>
                       <div className="flex items-start justify-between gap-3">
@@ -250,11 +276,16 @@ export default function SubscriptionPage() {
                         ))}
                       </div>
                       <Link
-                        href={isCurrent ? '/spokedu-master/library' : `/spokedu-master/payment?plan=${plan}`}
+                        href={ctaHref}
+                        onClick={(event) => {
+                          if (!isChangeRequest) return;
+                          event.preventDefault();
+                          setChangeRequestPlan(plan);
+                        }}
                         className="mt-4 flex h-11 items-center justify-center gap-1.5 rounded-[12px] text-[13px] font-black"
-                        style={{ background: isCurrent ? 'var(--spm-s3)' : 'var(--spm-acc)', color: isCurrent ? 'var(--spm-t)' : '#fff' }}
+                        style={{ background: isCurrent || isChangeRequest ? 'var(--spm-s3)' : 'var(--spm-acc)', border: isChangeRequest ? '1px solid var(--spm-br2)' : undefined, color: isCurrent || isChangeRequest ? 'var(--spm-t)' : '#fff' }}
                       >
-                        {isCurrent ? '놀이체육으로 이동' : '플랜 선택'}
+                        {isCurrent ? '놀이체육으로 이동' : isChangeRequest ? '플랜 변경 문의' : '플랜 선택'}
                         <ChevronRight size={15} />
                       </Link>
                     </div>

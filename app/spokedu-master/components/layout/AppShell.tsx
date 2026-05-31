@@ -82,7 +82,7 @@ function OperationsBanner() {
         <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>
           체험 기간이 종료되었습니다.
         </p>
-        <Link href="/spokedu-master/payment?plan=pro" className="flex min-h-9 shrink-0 items-center rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)' }}>
+        <Link href="/spokedu-master/profile?plans=1" className="flex min-h-9 shrink-0 items-center rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)' }}>
           Pro 전환
         </Link>
       </div>

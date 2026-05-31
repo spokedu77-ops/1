@@ -23,7 +23,7 @@ import {
 } from '../lib/program-media';
 import { isFunstickFencingProgram } from '../lib/verified-program-video';
 import { OFFICIAL_SPOMOVE_PRESETS, formatSpomovePresetDuration, spomovePresetHref } from '../lib/spomovePresets';
-import { useMasterStore } from '../store';
+import { useMasterStore, useProfile } from '../store';
 import type { Program, SpomoveLaunchPreset } from '../types';
 
 const CATEGORIES = ['전체', '영상', '반응·민첩', '협동', '저학년', '실내'];
@@ -46,6 +46,11 @@ type DrillItem = {
   href: string;
   meta: string;
   description: string;
+};
+
+type DashboardKpi = {
+  label: string;
+  value: number | string;
 };
 
 function isPlaceholderText(value: string | undefined) {
@@ -401,44 +406,59 @@ function takeHomeCuratedPrograms(programs: Program[], usedIds: Set<string>, limi
   return selected;
 }
 
-function Hero({ program, onPreview }: { program: Program; onPreview: () => void }) {
+function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardKpi[]; onPreview: () => void }) {
   const heroImage = getHeroImage(program);
   const tags = getCardTags(program);
   const hasVideo = programHasPlayableVideo(program);
+  const mobilePrimaryKpis = new Set(['전체 수업 자료', '영상 포함 수업', 'SPOMOVE 세팅']);
 
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
       <div className="grid lg:grid-cols-[1fr_460px]">
-        <div className="flex min-h-[320px] flex-col justify-between p-6 sm:min-h-[360px] sm:p-8">
+        <div className="flex min-h-[240px] flex-col justify-between p-4 sm:min-h-[360px] sm:p-8">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black tracking-[0.14em] text-indigo-600">
+            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-[11px] font-black tracking-[0.12em] text-indigo-600 sm:text-xs sm:tracking-[0.14em]">
               <Sparkles className="h-3.5 w-3.5" />
-              오늘의 추천
+              SPOKEDU 운영 대시보드
             </span>
-            <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{getProgramTitle(program)}</h1>
-            <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600">
-              {displayText(program.lessonDetail?.objective || program.description, '수업 흐름과 참고 자료를 확인할 수 있습니다.')}
+            <h1 className="mt-3 max-w-2xl text-2xl font-black leading-tight text-slate-950 sm:mt-5 sm:text-4xl">오늘 수업 준비, 5분 안에 끝내세요</h1>
+            <p className="mt-2 max-w-2xl text-[13px] font-semibold leading-5 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7">
+              대상·공간·교구에 맞는 놀이체육 수업안과 참고 영상을 확인하고, SPOMOVE 활동은 TV·빔 화면으로 바로 실행할 수 있습니다.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-3 hidden flex-wrap gap-1.5 sm:mt-5 sm:flex sm:gap-2">
               {tags.slice(0, 6).map((tag) => (
                 <span key={tag} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
                   {tag}
                 </span>
               ))}
             </div>
+            <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-6 sm:grid-cols-3 sm:gap-2.5 xl:grid-cols-5">
+              {kpis.map((item) => (
+                <div key={item.label} className={`${mobilePrimaryKpis.has(item.label) ? '' : 'hidden sm:block'} rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 sm:rounded-2xl sm:px-3 sm:py-3`}>
+                  <p className="text-[10px] font-bold leading-none text-slate-500 sm:text-[11px] sm:leading-normal">{item.label}</p>
+                  <p className={`mt-1 font-black text-slate-950 ${typeof item.value === 'number' ? 'text-lg leading-none sm:text-xl sm:leading-normal' : 'text-[12px] leading-4 sm:text-[13px] sm:leading-5'}`}>
+                    {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="mt-8 flex flex-col gap-3 min-[420px]:flex-row">
-            <button type="button" onClick={onPreview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-extrabold text-white">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-8 sm:flex sm:flex-row sm:gap-3">
+            <button type="button" onClick={onPreview} className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-extrabold text-white sm:min-h-12 sm:px-5">
               <Play className="h-4 w-4 fill-current" />
-              {hasVideo ? '영상 바로 보기' : '빠른 미리보기'}
+              오늘 수업 준비하기
             </button>
-            <Link href="/spokedu-master/library" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800">
+            <Link href="/spokedu-master/library" className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-800 sm:min-h-12 sm:gap-2 sm:px-5 sm:text-sm">
               <BookOpen className="h-4 w-4" />
-              놀이체육 보기
+              수업 자료 둘러보기
+            </Link>
+            <Link href="/spokedu-master/spomove" className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-indigo-100 bg-indigo-50 px-3 text-[13px] font-bold text-indigo-700 sm:min-h-12 sm:gap-2 sm:px-5 sm:text-sm">
+              <MonitorPlay className="h-4 w-4" />
+              SPOMOVE 실행
             </Link>
           </div>
         </div>
-        <button type="button" onClick={onPreview} className="relative min-h-[240px] overflow-hidden bg-slate-100 sm:min-h-[260px]">
+        <button type="button" onClick={onPreview} className="relative hidden min-h-[260px] overflow-hidden bg-slate-100 sm:block">
           {heroImage ? (
             <>
               <CoverImage src={heroImage} alt={getProgramTitle(program)} sizes="(min-width: 1024px) 460px, 100vw" className="object-cover" priority quality={92} />
@@ -511,9 +531,22 @@ function CategoryStrip({
   );
 }
 
-function VideoCard({ item, onPreview }: { item: VideoItem; onPreview: (program: Program) => void }) {
+function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPreview: (program: Program) => void; premiumLabel?: string }) {
   const showPlay = item.hasVideo;
+  const detail = item.program?.lessonDetail;
+  const target = item.program ? detail?.recommendedAge || getProgramGrade(item.program) : '';
+  const space = item.program ? getProgramSpace(item.program) : '';
+  const equipmentCount = item.program?.equipment.filter((equipment) => !isPlaceholderText(equipment)).length ?? 0;
+  const hasLessonPlan = Boolean((detail?.rules?.length ?? 0) > 0 || (item.program?.steps.length ?? 0) > 0);
+  const operationBadges = [
+    item.hasVideo ? '영상 포함' : null,
+    hasLessonPlan ? '수업안 포함' : null,
+    equipmentCount > 0 ? `교구 ${equipmentCount}개` : null,
+    target && !isPlaceholderText(target) ? target : null,
+    space && !isPlaceholderText(space) ? space : null,
+  ].filter((badge): badge is string => Boolean(badge) && !isPlaceholderText(badge)).slice(0, 4);
   const thumbOverlayCue = item.program ? getProgramThumbOverlayCue(item.program) : item.meta;
+  const cleanOverlayCue = thumbOverlayCue && !isPlaceholderText(thumbOverlayCue) ? thumbOverlayCue : null;
   return (
     <button type="button" onClick={() => item.program && onPreview(item.program)} className="group block w-full cursor-pointer text-left">
       <div className="relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition-all duration-300 group-hover:border-indigo-200 group-hover:shadow-[0_18px_40px_rgba(99,102,241,0.12)]">
@@ -541,22 +574,32 @@ function VideoCard({ item, onPreview }: { item: VideoItem; onPreview: (program: 
           </div>
         ) : null}
 
-        {thumbOverlayCue ? (
+        {premiumLabel ? (
+          <div className="absolute right-3 top-3 rounded-lg border border-indigo-100 bg-white/92 px-2.5 py-1 text-[11px] font-black text-indigo-700 shadow-sm backdrop-blur-sm">
+            {premiumLabel}
+          </div>
+        ) : cleanOverlayCue ? (
           <div className="absolute right-3 top-3 rounded-lg border border-white/20 bg-black/55 px-3 py-1.5 text-[12px] font-bold text-white backdrop-blur-sm">
-            {thumbOverlayCue}
+            {cleanOverlayCue}
           </div>
         ) : null}
 
         <div className="absolute bottom-3 left-3 right-3">
-          <CompactTagList tags={item.tags} max={3} onMedia />
+          <CompactTagList tags={item.tags} max={2} onMedia />
         </div>
       </div>
 
       <h3 className="mt-3 line-clamp-2 text-[15px] font-bold leading-snug text-slate-950">{item.title}</h3>
       <p className="mt-1 line-clamp-1 text-[12px] font-semibold text-slate-500">{item.reason}</p>
-      <div className="mt-2 flex min-w-0 items-center justify-between gap-3">
-        <CompactTagList tags={item.tags} max={2} />
-        <span className="shrink-0 text-[12px] font-bold text-indigo-600">미리보기</span>
+      <div className="mt-2 flex min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap gap-1.5">
+          {operationBadges.map((badge) => (
+            <span key={badge} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold leading-none text-slate-600">
+              {badge}
+            </span>
+          ))}
+        </div>
+        <span className="shrink-0 text-[12px] font-bold text-indigo-600">수업 열기</span>
       </div>
     </button>
   );
@@ -582,6 +625,7 @@ function VideoRow({
   actionHref = '/spokedu-master/library',
   actionLabel = '놀이체육 보기',
   emptyMessage,
+  showPremiumBadges = false,
 }: {
   title: string;
   subtitle: string;
@@ -590,6 +634,7 @@ function VideoRow({
   actionHref?: string;
   actionLabel?: string;
   emptyMessage?: string;
+  showPremiumBadges?: boolean;
 }) {
   if (videos.length === 0 && !emptyMessage) return null;
 
@@ -609,13 +654,43 @@ function VideoRow({
       {videos.length === 0 && emptyMessage ? <CurationEmptyState message={emptyMessage} /> : null}
       {videos.length > 0 ? (
         <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:gap-5 sm:px-6 lg:-mx-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
-          {videos.map((item) => (
+          {videos.map((item, index) => (
             <div key={item.id} className="w-[72vw] min-w-[250px] max-w-[340px] shrink-0 sm:w-[290px] xl:w-[340px]">
-              <VideoCard item={item} onPreview={onPreview} />
+              <VideoCard item={item} onPreview={onPreview} premiumLabel={showPremiumBadges && index >= 2 ? 'MASTER' : undefined} />
             </div>
           ))}
         </div>
       ) : null}
+    </section>
+  );
+}
+
+function ContinueLessonsSection({ lessons, onPreview }: { lessons: VideoItem[]; onPreview: (program: Program) => void }) {
+  if (lessons.length === 0) return null;
+
+  return (
+    <section className="rounded-[18px] border border-slate-200 bg-white px-4 py-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)] sm:px-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-[18px] font-bold tracking-[-0.01em] text-slate-950 sm:text-[20px]">내 수업 이어하기</h2>
+          <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-500">최근 기록과 저장한 수업을 빠르게 다시 열 수 있습니다.</p>
+        </div>
+        <div className="flex gap-3 text-[13px] font-bold text-indigo-600">
+          <Link href="/spokedu-master/class-record" className="transition hover:text-indigo-800">
+            수업기록
+          </Link>
+          <Link href="/spokedu-master/library" className="transition hover:text-indigo-800">
+            저장 목록
+          </Link>
+        </div>
+      </div>
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-5 sm:px-5 [&::-webkit-scrollbar]:hidden">
+        {lessons.map((item) => (
+          <div key={item.id} className="w-[64vw] min-w-[220px] max-w-[270px] shrink-0 sm:w-[240px]">
+            <VideoCard item={item} onPreview={onPreview} />
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -667,7 +742,7 @@ function DrillRow({ title, subtitle, drills }: { title: string; subtitle: string
   );
 }
 
-function SpomovePresetCard({ preset }: { preset: SpomoveLaunchPreset }) {
+function SpomovePresetCard({ preset, premiumLabel }: { preset: SpomoveLaunchPreset; premiumLabel?: string }) {
   return (
     <Link href={spomovePresetHref(preset)} className="group block cursor-pointer">
       <div className="relative flex aspect-video flex-col justify-between overflow-hidden rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-slate-50 p-4 shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition-all duration-300 group-hover:border-indigo-200 group-hover:shadow-[0_18px_40px_rgba(99,102,241,0.12)]">
@@ -675,15 +750,19 @@ function SpomovePresetCard({ preset }: { preset: SpomoveLaunchPreset }) {
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg">
             <MonitorPlay className="h-5 w-5" />
           </span>
-          <span className="rounded-lg border border-indigo-100 bg-white px-3 py-1.5 text-[12px] font-bold text-indigo-700">
-            {formatSpomovePresetDuration(preset.durationSec)}
-          </span>
+          <div className="flex flex-col items-end gap-1.5">
+            <span className="rounded-lg border border-indigo-100 bg-white px-3 py-1.5 text-[12px] font-bold text-indigo-700">{premiumLabel || '공식 실행'}</span>
+            <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-[12px] font-bold text-slate-700">{formatSpomovePresetDuration(preset.durationSec)}</span>
+          </div>
         </div>
         <div>
           <h3 className="line-clamp-2 text-[18px] font-bold leading-snug text-slate-950">{preset.title}</h3>
           <p className="mt-2 line-clamp-2 text-[12px] font-semibold leading-5 text-slate-600">{preset.useCase || preset.subtitle}</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {[preset.target, preset.space, ...preset.tags].filter((tag): tag is string => Boolean(tag)).slice(0, 3).map((tag) => (
+            {['TV·빔 실행', preset.target, preset.space, ...preset.tags]
+              .filter((tag): tag is string => Boolean(tag) && !isPlaceholderText(tag))
+              .slice(0, 3)
+              .map((tag) => (
               <span key={tag} className="max-w-full whitespace-nowrap rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold leading-none text-slate-700">
                 {tag}
               </span>
@@ -698,29 +777,50 @@ function SpomovePresetCard({ preset }: { preset: SpomoveLaunchPreset }) {
   );
 }
 
-function SpomovePresetRow({ presets }: { presets: SpomoveLaunchPreset[] }) {
+function SpomovePresetRow({ presets, showPremiumBadges = false }: { presets: SpomoveLaunchPreset[]; showPremiumBadges?: boolean }) {
   return (
     <section>
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-[21px] font-bold tracking-[-0.01em] text-slate-950 sm:text-[24px]">스포무브 바로 실행</h2>
-          <p className="mt-1 max-w-2xl text-[13px] font-semibold leading-5 text-slate-500">TV나 빔에 띄우기 전에 초, 속도, 단계를 확인한 공식 세팅입니다.</p>
+          <h2 className="text-[21px] font-bold tracking-[-0.01em] text-slate-950 sm:text-[24px]">TV·빔으로 바로 실행하는 SPOMOVE</h2>
+          <p className="mt-1 max-w-2xl text-[13px] font-semibold leading-5 text-slate-500">초·속도·단계를 미리 맞춰둔 공식 실행 세팅으로 현장에서 바로 시작할 수 있습니다.</p>
         </div>
         <Link href="/spokedu-master/spomove" className="shrink-0 text-[13px] font-bold text-indigo-600 transition hover:text-indigo-800">
-          스포무브 보기
+          실행 세팅 보기
         </Link>
       </div>
       {presets.length === 0 ? (
         <CurationEmptyState message="지금 표시할 공식 SPOMOVE 세팅이 없습니다. 스포무브 화면에서 전체 목록을 확인해 주세요." />
       ) : (
       <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:gap-5 sm:px-6 lg:-mx-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
-        {presets.map((preset) => (
+        {presets.map((preset, index) => (
           <div key={preset.id} className="w-[72vw] min-w-[250px] max-w-[340px] shrink-0 sm:w-[290px] xl:w-[340px]">
-            <SpomovePresetCard preset={preset} />
+            <SpomovePresetCard preset={preset} premiumLabel={showPremiumBadges && index >= 2 ? 'MASTER 실행' : undefined} />
           </div>
         ))}
       </div>
       )}
+    </section>
+  );
+}
+
+function SubscriptionValueSection() {
+  return (
+    <section className="rounded-[18px] border border-indigo-100 bg-white px-4 py-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)] sm:px-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-[15px] font-black text-slate-950">수업안 · 참고 영상 · SPOMOVE 실행 · 수업 기록까지 한 번에</p>
+          <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-500">MASTER 구독으로 전체 자료와 실행 세팅을 열람하세요.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+          <Link href="/spokedu-master/profile?plans=1" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-4 text-[13px] font-black text-white">
+            구독 플랜 보기
+          </Link>
+          <Link href="/spokedu-master/library" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-[13px] font-bold text-slate-800">
+            샘플 수업 보기
+          </Link>
+        </div>
+      </div>
     </section>
   );
 }
@@ -874,6 +974,8 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
 
 export default function DashboardView() {
   const { programs, programsLoaded, favorites, classRecords, reloadPrograms } = useMasterStore();
+  const profile = useProfile();
+  const isSubscribed = profile?.plan === 'pro' || profile?.plan === 'team' || Boolean(profile?.isAdmin);
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState('전체');
   const [search, setSearch] = useState('');
@@ -918,6 +1020,16 @@ export default function DashboardView() {
     const withThumb = pool.filter((program) => Boolean(getHeroImage(program))).length;
     return { total: pool.length, withVideo, withThumb };
   }, [programPool]);
+  const dashboardKpis = useMemo(
+    () => [
+      { label: '전체 수업 자료', value: programPool.length },
+      { label: '영상 포함 수업', value: homeStats.withVideo },
+      { label: '저장한 수업', value: favorites.length || '저장하기' },
+      { label: '최근 기록', value: classRecords.length || '기록하기' },
+      { label: 'SPOMOVE 세팅', value: spomovePresets.length },
+    ],
+    [classRecords.length, favorites.length, homeStats.withVideo, programPool.length, spomovePresets.length],
+  );
   const curatedRows = useMemo(() => {
     const usedIds = new Set<string>();
     if (heroProgram) usedIds.add(heroProgram.id);
@@ -964,6 +1076,19 @@ export default function DashboardView() {
 
     return recentPrograms.map((program) => toVideoItem(program, 'weekly'));
   }, [classRecords, curatedRows.indoorLessons, curatedRows.weeklyLessons, favoriteLessons, heroProgram, programPool]);
+  const continueLessons = useMemo(() => {
+    const seen = new Set<string>();
+    const combined: VideoItem[] = [];
+
+    for (const item of [...recentLessons, ...favoriteLessons]) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      combined.push(item);
+      if (combined.length >= 4) break;
+    }
+
+    return combined;
+  }, [favoriteLessons, recentLessons]);
 
   if (!mounted || !programsLoaded || !heroProgram) {
     return <DashboardSkeleton />;
@@ -971,50 +1096,29 @@ export default function DashboardView() {
 
   return (
     <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-7 overflow-y-auto bg-[#f5f7fb] px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-16">
-      <Hero program={heroProgram} onPreview={() => setSelectedProgram(heroProgram)} />
-      {homeStats.withVideo < 4 ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-950">
-          참고 영상이 있는 수업이 {homeStats.withVideo}개뿐이라 카드가 단조로울 수 있습니다. admin에서 curriculum URL·영상을 채우거나 「8개 일괄 적용」 후 새로고침하세요.
-        </div>
-      ) : null}
+      <Hero program={heroProgram} kpis={dashboardKpis} onPreview={() => setSelectedProgram(heroProgram)} />
       <CategoryStrip activeCategory={activeCategory} search={search} onCategoryChange={setActiveCategory} onSearchChange={setSearch} />
-      {recentLessons.length > 0 ? (
-        <VideoRow
-          title="최근 수업"
-          subtitle="수업 기록에 남긴 활동을 바로 다시 엽니다."
-          videos={recentLessons}
-          onPreview={setSelectedProgram}
-          actionHref="/spokedu-master/class-record"
-          actionLabel="수업기록 보기"
-        />
-      ) : null}
-      {favoriteLessons.length > 0 ? (
-        <VideoRow
-          title="저장한 수업"
-          subtitle="즐겨찾기에 저장한 수업을 바로 다시 엽니다."
-          videos={favoriteLessons}
-          onPreview={setSelectedProgram}
-          actionHref="/spokedu-master/library"
-          actionLabel="저장 목록 더보기"
-        />
-      ) : null}
       <VideoRow
-        title="추천 수업"
-        subtitle="운영 추천(HOT)·표시 순서·수업 완성도 순으로 골랐습니다. 부족하면 다음 단계 수업으로 채웁니다."
+        title="오늘 바로 운영 가능한 수업"
+        subtitle="대상, 공간, 교구 조건을 빠르게 확인하고 수업안과 참고 영상까지 바로 열어볼 수 있습니다."
         videos={curatedRows.weeklyLessons}
         onPreview={setSelectedProgram}
-        actionLabel="놀이체육 보기"
+        actionLabel="전체 수업 보기"
         emptyMessage="표시할 수업이 없습니다. 놀이체육에서 전체 목록을 확인해 주세요."
+        showPremiumBadges={!isSubscribed}
       />
+      <ContinueLessonsSection lessons={continueLessons} onPreview={setSelectedProgram} />
+      <SpomovePresetRow presets={spomovePresets} showPremiumBadges={!isSubscribed} />
       <VideoRow
-        title="실내 수업 큐레이션"
-        subtitle="체육관, 교실, 좁은 공간에서 운영 부담이 낮은 수업입니다."
+        title="좁은 공간에서도 운영 쉬운 수업"
+        subtitle="체육관이 없거나 이동이 어려운 날에도 교실, 복도, 제한된 공간에서 안정적으로 운영할 수 있습니다."
         videos={curatedRows.indoorLessons}
         onPreview={setSelectedProgram}
-        actionLabel="더 찾아보기"
+        actionLabel="공간별 수업 보기"
         emptyMessage="실내 필터에 맞는 수업이 없습니다. 카테고리를 바꾸거나 놀이체육 전체에서 찾아보세요."
+        showPremiumBadges={!isSubscribed}
       />
-      <SpomovePresetRow presets={spomovePresets} />
+      {!isSubscribed ? <SubscriptionValueSection /> : null}
       {selectedProgram ? <HomeProgramPreview program={selectedProgram} onClose={() => setSelectedProgram(null)} /> : null}
     </main>
   );

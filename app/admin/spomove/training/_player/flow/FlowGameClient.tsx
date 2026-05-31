@@ -17,6 +17,7 @@ interface FlowGameClientProps {
   colorTheme?:    'default' | 'space' | 'neon' | 'ocean';
   motionScale?:   number;
   bgmPath?:       string;
+  bgImageUrl?:    string;
   onComplete:     (stats: FlowStats) => void;
   onExit:         () => void;
   onEngineReady?: (api: { loadBgmLate: (path: string) => Promise<void> }) => void;
@@ -49,6 +50,7 @@ export default function FlowGameClient({
   colorTheme = 'default',
   motionScale = 1,
   bgmPath,
+  bgImageUrl,
   onComplete,
   onExit,
   onEngineReady,
@@ -91,7 +93,7 @@ export default function FlowGameClient({
         onCameraShake:  () => {},
         onFlash:        () => {},
       },
-      { stages, colorTheme, motionScale, bgmPath },
+      { stages, colorTheme, motionScale, bgmPath, bgImageUrl },
     );
 
     engineRef.current = engine;
@@ -105,7 +107,7 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, colorTheme, motionScale, bgmPath]);
+  }, [stages.length, colorTheme, motionScale, bgmPath, bgImageUrl]);
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 
@@ -175,41 +177,49 @@ export default function FlowGameClient({
         </>
       )}
 
-      {/* ─── 스테이지 인트로 — 3D씬 위 상단 배너 (게임은 계속 달림) ──── */}
+      {/* ─── 스테이지 인트로 — 중앙 팝업 (3D씬은 계속 달림) ─────────── */}
       {phase === 'stage-intro' && currentStage && (
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          background: currentStage.isBonus
-            ? 'linear-gradient(to bottom, rgba(40,25,0,0.96) 0%, rgba(20,12,0,0.7) 70%, transparent 100%)'
-            : 'linear-gradient(to bottom, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.6) 70%, transparent 100%)',
-          padding: '2rem 2rem 5rem',
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          animation: 'stageIntroPop 0.25s ease-out',
+          position: 'absolute', inset: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.55)',
+          animation: 'stageIntroBg 0.3s ease-out',
           pointerEvents: 'none',
         }}>
-          <p style={{ fontSize: '0.58rem', color: currentStage.color, fontWeight: 800, letterSpacing: '0.45em', marginBottom: '0.4rem' }}>
-            {currentStage.isBonus ? '🏆 BONUS STAGE' : currentStage.label}
-          </p>
-          <h2 style={{
-            fontSize: 'clamp(2.2rem, 7vw, 3.5rem)', fontWeight: 900, color: '#fff',
-            fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
-            letterSpacing: '0.06em', marginBottom: '0.5rem',
-            textShadow: `0 0 40px ${currentStage.color}, 0 2px 0 #000`,
+          <div style={{
+            background: currentStage.isBonus ? 'rgba(40,25,0,0.95)' : 'rgba(5,8,20,0.95)',
+            border: `2px solid ${currentStage.color}44`,
+            borderRadius: '1.5rem',
+            padding: '2rem 2.5rem',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            maxWidth: 360, width: '90%',
+            boxShadow: `0 0 60px ${currentStage.color}33`,
+            animation: 'stageIntroCard 0.35s cubic-bezier(0.22,1.4,0.36,1)',
           }}>
-            {currentStage.cueWord}
-          </h2>
-          <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', maxWidth: 300, lineHeight: 1.5, textAlign: 'center', marginBottom: '0.8rem' }}>
-            {currentStage.shortInstruction}
-          </p>
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 360 }}>
-            {[...currentStage.activeModules].filter(k => k !== 'jump').map((key) => {
-              const mod = FLOW_MODULES[key];
-              return (
-                <span key={key} style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.15rem 0.6rem', borderRadius: '9999px', border: `1px solid ${mod.colorBorder}`, color: mod.color, background: mod.colorBg }}>
-                  {mod.icon} {mod.tag}
-                </span>
-              );
-            })}
+            <p style={{ fontSize: '0.58rem', color: currentStage.color, fontWeight: 800, letterSpacing: '0.5em', marginBottom: '0.6rem' }}>
+              {currentStage.isBonus ? '🏆 BONUS' : currentStage.label}
+            </p>
+            <h2 style={{
+              fontSize: 'clamp(2.4rem, 8vw, 4rem)', fontWeight: 900, color: '#fff',
+              fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
+              letterSpacing: '0.04em', marginBottom: '0.6rem', textAlign: 'center',
+              textShadow: `0 0 30px ${currentStage.color}, 3px 3px 0 #000`,
+            }}>
+              {currentStage.cueWord}
+            </h2>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, textAlign: 'center', marginBottom: '1rem' }}>
+              {currentStage.shortInstruction}
+            </p>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {[...currentStage.activeModules].filter(k => k !== 'jump').map((key) => {
+                const mod = FLOW_MODULES[key];
+                return (
+                  <span key={key} style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.2rem 0.7rem', borderRadius: '9999px', border: `1px solid ${mod.colorBorder}`, color: mod.color, background: mod.colorBg }}>
+                    {mod.icon} {mod.tag}
+                  </span>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -308,9 +318,13 @@ export default function FlowGameClient({
           70%  { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
           100% { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
         }
-        @keyframes stageIntroPop {
-          from { transform: translateX(-50%) scale(0.88) translateY(-8px); opacity: 0; }
-          to   { transform: translateX(-50%) scale(1)    translateY(0);    opacity: 1; }
+        @keyframes stageIntroBg {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes stageIntroCard {
+          from { transform: scale(0.8) translateY(20px); opacity: 0; }
+          to   { transform: scale(1)   translateY(0);    opacity: 1; }
         }
       `}</style>
     </div>

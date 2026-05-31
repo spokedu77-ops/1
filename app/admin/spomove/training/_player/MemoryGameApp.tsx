@@ -63,7 +63,7 @@ type Screen =
   | 'flow'
   | 'result';
 
-type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach';
+type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'rock';
 
 type Settings = {
   mode: string;
@@ -89,6 +89,8 @@ type Settings = {
   flowColorTheme: 'default' | 'space' | 'neon' | 'ocean';
   /** 플로우 스테이지당 시간(초) */
   flowDuration: number;
+  /** 플로우 배경 이미지 URL */
+  flowBgImageUrl: string;
 };
 
 const defaultSettings: Settings = {
@@ -112,6 +114,7 @@ const defaultSettings: Settings = {
   flowFeatures: new Set<FlowFeatureKey>(),
   flowColorTheme: 'default',
   flowDuration: 25,
+  flowBgImageUrl: '',
 };
 
 export type MemoryGameAutoLaunch = {
@@ -134,6 +137,8 @@ export type MemoryGameAutoLaunch = {
   flowColorTheme?: 'default' | 'space' | 'neon' | 'ocean';
   /** Flow 2.0: 스테이지당 시간(초) */
   flowDuration?: number;
+  /** Flow 2.0: 배경 이미지 URL */
+  flowBgImageUrl?: string;
 };
 
 /** Training 포털 복귀 시 설정 화면에 되돌릴 실행 세션 정보 */
@@ -1055,6 +1060,30 @@ export default function MemoryGameApp({
                   </div>
                 </div>
                 <div style={S.sec}>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.4rem' }}>
+                    배경 이미지 URL <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(선택)</span>
+                  </p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                    JPG / PNG 직접 URL. 비우면 기본 테마 사용.
+                  </p>
+                  <input
+                    type="text"
+                    placeholder="https://... 또는 /images/bg.jpg"
+                    value={settings.flowBgImageUrl}
+                    onChange={(e) => setSettings((s) => ({ ...s, flowBgImageUrl: e.target.value }))}
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '0.55rem 0.75rem',
+                      borderRadius: '0.7rem',
+                      border: '1.5px solid var(--border)',
+                      background: 'var(--card)',
+                      color: 'var(--text)',
+                      fontSize: '0.82rem',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+                <div style={S.sec}>
                   {stepNum(4, '추가 동작 선택')}
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
                     선택한 동작이 게임 중 추가됩니다. 복수 선택 가능합니다.
@@ -1062,10 +1091,11 @@ export default function MemoryGameApp({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                     {(
                       [
-                        { key: 'faster',   icon: '⚡', label: '속도 증가 (FASTER)',  desc: '이전 스테이지보다 다리 이동 속도가 빨라집니다.' },
-                        { key: 'punch',    icon: '👊', label: '박스 펀치 (PUNCH)',   desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
-                        { key: 'duck',     icon: '🛸', label: 'UFO 숙이기 (DUCK)',   desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
-                        { key: 'reach',    icon: '🧱', label: '펀치 벽 두드리기',      desc: '브릿지를 막는 벽이 등장합니다. 5번 연속 두드려 부수세요.' },
+                        { key: 'faster',   icon: '⚡', label: '속도 증가 (FASTER)',    desc: '이전 스테이지보다 다리 이동 속도가 빨라집니다.' },
+                        { key: 'punch',    icon: '👊', label: '박스 펀치 (PUNCH)',     desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
+                        { key: 'duck',     icon: '🛸', label: 'UFO 숙이기 (DUCK)',     desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
+                        { key: 'reach',    icon: '🧱', label: '펀치 벽 두드리기',        desc: '브릿지를 막는 벽이 등장합니다. 5번 연속 두드려 부수세요.' },
+                        { key: 'rock',     icon: '🪨', label: '돌뿌리 점프 (ROCK)',    desc: '다리 위 돌뿌리가 등장합니다. 제때 뛰어서 넘으세요.' },
                       ] as { key: FlowFeatureKey; icon: string; label: string; desc: string }[]
                     ).map(({ key, icon, label, desc }) => {
                       const active = settings.flowFeatures.has(key);
@@ -1439,6 +1469,7 @@ export default function MemoryGameApp({
         colorTheme={settings.flowColorTheme}
         motionScale={settings.kidsSafeMode ? 0.5 : 1}
         bgmPath={flowBgmPathRef.current}
+        bgImageUrl={settings.flowBgImageUrl || undefined}
         onComplete={handleFlowDone}
         onExit={stop}
         onEngineReady={(api) => { flowEngineApiRef.current = api; }}

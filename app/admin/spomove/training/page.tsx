@@ -177,7 +177,7 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
   return modeId === 'reactTrain' ? 'time' : 'reps';
 }
 
-type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach';
+type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'rock';
 
 type LaunchSettings = {
   speed: number;
@@ -193,6 +193,7 @@ type LaunchSettings = {
   flowFeatures: FlowFeatureKey[];
   flowColorTheme: 'default' | 'space' | 'neon' | 'ocean';
   flowDuration: number;
+  flowBgImageUrl: string;
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
@@ -209,6 +210,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowFeatures: [],
   flowColorTheme: 'default',
   flowDuration: 25,
+  flowBgImageUrl: '',
 };
 
 function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: LaunchSettings): LaunchSettings {
@@ -226,6 +228,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
     flowColorTheme: auto.flowColorTheme ?? fallback.flowColorTheme,
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
+    flowBgImageUrl: fallback.flowBgImageUrl,
   };
 }
 
@@ -290,6 +293,7 @@ function TrainingPortal({
     flowFeatures: launch.flowFeatures,
     flowColorTheme: launch.flowColorTheme,
     flowDuration: launch.flowDuration,
+    flowBgImageUrl: launch.flowBgImageUrl || undefined,
   };
 
   return createPortal(
@@ -885,6 +889,32 @@ function SettingsScreen({
             </section>
           ) : null}
 
+          {/* Flow 전용: 배경 이미지 URL */}
+          {isFlowOrChallenge ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>배경 이미지 URL <span style={{ fontWeight: 400 }}>(선택)</span></label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim }}>JPG / PNG URL. 비우면 기본 테마 사용.</p>
+              </div>
+              <input
+                type="text"
+                placeholder="https://... 또는 /images/bg.jpg"
+                value={launch.flowBgImageUrl}
+                onChange={(e) => setLaunch((s) => ({ ...s, flowBgImageUrl: e.target.value }))}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  border: `1.5px solid ${T.border}`,
+                  background: T.card,
+                  color: T.text,
+                  fontSize: 13,
+                  fontFamily: 'inherit',
+                }}
+              />
+            </section>
+          ) : null}
+
           {/* Flow 전용: 추가 동작 선택 */}
           {isFlowOrChallenge ? (
             <section style={{ marginBottom: 26 }}>
@@ -897,10 +927,11 @@ function SettingsScreen({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {(
                   [
-                    { key: 'faster'   as FlowFeatureKey, icon: '⚡', label: '속도 증가 (FASTER)',  desc: '이전 스테이지보다 이동 속도가 빨라집니다.' },
-                    { key: 'punch'    as FlowFeatureKey, icon: '👊', label: '박스 펀치 (PUNCH)',   desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
-                    { key: 'duck'     as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기 (DUCK)',   desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
-                    { key: 'reach'    as FlowFeatureKey, icon: '🧱', label: '펀치 벽 두드리기',      desc: '브릿지를 막는 벽이 등장합니다. 5번 두드려 부수세요.' },
+                    { key: 'faster'   as FlowFeatureKey, icon: '⚡', label: '속도 증가 (FASTER)',     desc: '이전 스테이지보다 이동 속도가 빨라집니다.' },
+                    { key: 'punch'    as FlowFeatureKey, icon: '👊', label: '박스 펀치 (PUNCH)',      desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
+                    { key: 'duck'     as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기 (DUCK)',      desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
+                    { key: 'reach'    as FlowFeatureKey, icon: '🧱', label: '펀치 벽 두드리기',         desc: '브릿지를 막는 벽이 등장합니다. 5번 두드려 부수세요.' },
+                    { key: 'rock'     as FlowFeatureKey, icon: '🪨', label: '돌뿌리 점프 (ROCK)',     desc: '다리 위 돌뿌리가 등장합니다. 제때 뛰어서 넘으세요.' },
                   ]
                 ).map(({ key, icon, label, desc }) => {
                   const active = launch.flowFeatures.includes(key);

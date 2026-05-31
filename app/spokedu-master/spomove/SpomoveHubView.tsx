@@ -23,8 +23,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { cleanText } from '../lib/clean';
 import { OFFICIAL_SPOMOVE_PRESETS, USER_SPOMOVE_PRESETS_KEY, spomovePresetHref } from '../lib/spomovePresets';
+import { getUpgradeHref } from '../lib/subscription';
 import { formatReactionTime } from '../lib/utils';
-import { useIsPro, useMasterStore, useStats } from '../store';
+import { useIsPro, useMasterStore, useProfile, useStats } from '../store';
 import type { Drill, SpomoveLaunchPreset } from '../types';
 
 type IntentKey = 'ready' | 'reaction' | 'control' | 'flow';
@@ -320,8 +321,8 @@ function PresetCard({ preset }: { preset: SpomoveLaunchPreset }) {
   );
 }
 
-function FeaturedCard({ drill, index, isLocked }: { drill: Drill; index: number; isLocked: boolean }) {
-  const href = isLocked ? '/spokedu-master/payment?plan=pro' : sessionHref(drill.id);
+function FeaturedCard({ drill, index, isLocked, upgradeHref }: { drill: Drill; index: number; isLocked: boolean; upgradeHref: string }) {
+  const href = isLocked ? upgradeHref : sessionHref(drill.id);
   const tones = ['#635bff', '#10b981', '#f59e0b', '#ec4899'];
   const tone = tones[index % tones.length];
   const engineLabel = hasNativeEngine(drill) ? '전용 엔진' : '기본 실행';
@@ -360,7 +361,7 @@ function FeaturedCard({ drill, index, isLocked }: { drill: Drill; index: number;
   );
 }
 
-function IntentSection({ id, intent, drills, isPro }: { id: string; intent: IntentKey; drills: Drill[]; isPro: boolean }) {
+function IntentSection({ id, intent, drills, isPro, upgradeHref }: { id: string; intent: IntentKey; drills: Drill[]; isPro: boolean; upgradeHref: string }) {
   if (drills.length === 0) return null;
   const meta = INTENT_META[intent];
   const Icon = meta.icon;
@@ -392,7 +393,7 @@ function IntentSection({ id, intent, drills, isPro }: { id: string; intent: Inte
         {drills.map((drill) => {
           const locked = drill.isPro && !isPro;
           return (
-            <Link key={`${id}-${drill.id}`} href={locked ? '/spokedu-master/payment?plan=pro' : sessionHref(drill.id)} className="flex min-h-[96px] items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:border-indigo-200 hover:bg-white">
+            <Link key={`${id}-${drill.id}`} href={locked ? upgradeHref : sessionHref(drill.id)} className="flex min-h-[96px] items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:border-indigo-200 hover:bg-white">
               <DrillGlyph drill={drill} className="h-12 w-12 text-xl" />
               <span className="min-w-0 flex-1">
                 <strong className="line-clamp-1 text-sm font-black text-slate-950">{drillName(drill)}</strong>
@@ -409,8 +410,8 @@ function IntentSection({ id, intent, drills, isPro }: { id: string; intent: Inte
   );
 }
 
-function CatalogModeCard({ drill, isLocked }: { drill: Drill; isLocked: boolean }) {
-  const href = isLocked ? '/spokedu-master/payment?plan=pro' : sessionHref(drill.id);
+function CatalogModeCard({ drill, isLocked, upgradeHref }: { drill: Drill; isLocked: boolean; upgradeHref: string }) {
+  const href = isLocked ? upgradeHref : sessionHref(drill.id);
   const levelCount = drill.levels?.length ?? 1;
   const firstLevel = drill.levels?.[0];
   const engineLabel = hasNativeEngine(drill) ? '전용 엔진' : '기본 실행';
@@ -444,6 +445,8 @@ function CatalogModeCard({ drill, isLocked }: { drill: Drill; isLocked: boolean 
 
 export default function SpomoveHubView() {
   const isPro = useIsPro();
+  const profile = useProfile();
+  const upgradeHref = getUpgradeHref(profile);
   const sessions = useMasterStore((state) => state.sessions);
   const rawDrills = useMasterStore((state) => state.drills);
   const stats = useStats();
@@ -593,7 +596,7 @@ export default function SpomoveHubView() {
           </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {featuredDrills.map((drill, index) => (
-              <FeaturedCard key={drill.id} drill={drill} index={index} isLocked={drill.isPro && !isPro} />
+              <FeaturedCard key={drill.id} drill={drill} index={index} isLocked={drill.isPro && !isPro} upgradeHref={upgradeHref} />
             ))}
           </div>
         </section>
@@ -607,10 +610,10 @@ export default function SpomoveHubView() {
         </section>
 
         <section className="space-y-4">
-          <IntentSection id="ready" intent="ready" drills={intentDrills.ready} isPro={isPro} />
-          <IntentSection id="reaction" intent="reaction" drills={intentDrills.reaction} isPro={isPro} />
-          <IntentSection id="control" intent="control" drills={intentDrills.control} isPro={isPro} />
-          <IntentSection id="flow" intent="flow" drills={intentDrills.flow} isPro={isPro} />
+          <IntentSection id="ready" intent="ready" drills={intentDrills.ready} isPro={isPro} upgradeHref={upgradeHref} />
+          <IntentSection id="reaction" intent="reaction" drills={intentDrills.reaction} isPro={isPro} upgradeHref={upgradeHref} />
+          <IntentSection id="control" intent="control" drills={intentDrills.control} isPro={isPro} upgradeHref={upgradeHref} />
+          <IntentSection id="flow" intent="flow" drills={intentDrills.flow} isPro={isPro} upgradeHref={upgradeHref} />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1fr_380px]">
@@ -624,7 +627,7 @@ export default function SpomoveHubView() {
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-2">
               {drills.map((drill) => (
-                <CatalogModeCard key={drill.id} drill={drill} isLocked={drill.isPro && !isPro} />
+                <CatalogModeCard key={drill.id} drill={drill} isLocked={drill.isPro && !isPro} upgradeHref={upgradeHref} />
               ))}
             </div>
           </div>

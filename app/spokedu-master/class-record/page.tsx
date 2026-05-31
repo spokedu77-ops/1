@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { sendKakaoClassSummary, type KakaoSummaryResult } from '../lib/serviceContracts';
-import { canCreateClassRecord, canUseMonthlyLimit, createParentShareToken } from '../lib/subscription';
+import { canCreateClassRecord, canUseMonthlyLimit, createParentShareToken, getUpgradeHref, getUpgradeLabel } from '../lib/subscription';
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, ClassRecord, StudentProfile } from '../types';
 
@@ -227,6 +227,8 @@ function RecordEntryView() {
   const recordedSkills = Object.values(checkedSkills).reduce((sum, items) => sum + items.length, 0);
   const progress = useMemo(() => Math.round(((present + absent) / Math.max(students.length, 1)) * 100), [absent, present, students.length]);
   const recordStatus = canCreateClassRecord(profile);
+  const upgradeHref = getUpgradeHref(profile);
+  const upgradeLabel = getUpgradeLabel(profile);
   const kakaoStatus = canUseMonthlyLimit(profile?.plan ?? 'free', classRecords.filter((record) => record.kakaoSent).length, 'kakao', profile?.isAdmin);
   const hasStudents = students.length > 0;
   const hasAttendance = present + absent > 0;
@@ -329,7 +331,7 @@ function RecordEntryView() {
             <div>
               <p className="text-[14px] font-black" style={{ color: 'var(--spm-red)' }}>{recordStatus.label}</p>
               <p className="mt-1 text-[12px] leading-5" style={{ color: 'var(--spm-t2)' }}>{recordStatus.reason}</p>
-              <Link href="/spokedu-master/payment?plan=pro" className="mt-3 inline-flex text-[12px] font-black" style={{ color: 'var(--spm-red)' }}>Pro로 시작하기</Link>
+              <Link href={upgradeHref} className="mt-3 inline-flex text-[12px] font-black" style={{ color: 'var(--spm-red)' }}>{upgradeLabel}</Link>
             </div>
           </div>
         </section>

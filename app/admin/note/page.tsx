@@ -15,6 +15,27 @@ import { NoteEditor } from './_components/NoteEditor';
 import { BubbleToolbar } from './_components/BubbleToolbar';
 import { SlashMenu } from './_components/SlashMenu';
 import {
+  buildChildrenByParentBlock,
+  collectDescendantBlockIds,
+  filterSiblingBlocks,
+  buildReparentContentPatch,
+  getBlocksInParent,
+  planBlockDrop,
+  planPromoteDocumentBlocksToRoot,
+  sortRootBlocks,
+  TOGGLE_INLINE_CHILD_TYPES,
+} from '@/app/lib/note/noteBlockTree';
+import {
+  planToggleBodyRestores,
+  resolveToggleBodyForDisplay,
+} from '@/app/lib/note/toggleBody';
+import {
+  buildVideoBlockContentFromUrl,
+  resolveVideoEmbedContent,
+  videoProviderLabel,
+} from '@/app/lib/note/videoEmbed';
+import { VideoEmbedFrame } from './_components/VideoEmbedFrame';
+import {
   Plus,
   FileText,
   Star,
@@ -24,6 +45,7 @@ import {
   CheckSquare,
   Type,
   Image as ImageIcon,
+  Video,
   Minus,
   ArrowLeft,
   Search,
@@ -45,7 +67,7 @@ import {
   DragOverlay,
   PointerSensor,
   TouchSensor,
-  closestCenter,
+  closestCorners,
   useDroppable,
   useSensor,
   useSensors,
@@ -82,7 +104,7 @@ type NoteBlock = {
   id: string;
   document_id: string;
   parent_block_id?: string | null;
-  type: 'heading' | 'text' | 'todo' | 'divider' | 'image' | 'toggle' | 'callout' | 'page' | string;
+  type: 'heading' | 'text' | 'todo' | 'divider' | 'image' | 'video' | 'toggle' | 'callout' | 'page' | string;
   order_index: number;
   content: any;
   created_at: string;
@@ -113,16 +135,41 @@ const BLOCK_TYPES: { type: NoteBlock['type']; label: string; icon: React.Element
   { type: 'code',     label: '코드',        icon: Type,        desc: '고정폭 코드 블록' },
   { type: 'divider',  label: '구분선',      icon: Minus,       desc: '가로 구분선' },
   { type: 'image',    label: '이미지',      icon: ImageIcon,   desc: 'URL 또는 붙여넣기 이미지' },
+  { type: 'video',    label: '영상',        icon: Video,       desc: 'YouTube · Vimeo 링크 임베드' },
 ];
 
-function defaultBlockContent(type: NoteBlock['type']) {
+function defaultBlockContent(type: NoteBlock['type'], options?: { insideToggle?: boolean }) {
   if (type === 'heading') return { text: '' };
-  if (type === 'todo') return { text: '', checked: false };
-  if (type === 'toggle') return { title: '', body: '', collapsed: false, depth: 0, images: [] };
+  if (type === 'todo') {
+    return {
+      text: '',
+      checked: false,
+      ...(options?.insideToggle ? { createdInsideToggle: true } : {}),
+    };
+  }
+  if (type === 'toggle') {
+    return {
+      title: '',
+      body: '',
+      collapsed: false,
+      depth: 0,
+      images: [],
+      ...(options?.insideToggle ? { createdInsideToggle: true } : {}),
+    };
+  }
   if (type === 'callout') return { text: '', icon: '💡', depth: 0 };
   if (type === 'divider') return {};
   if (type === 'page') return { page_document_id: '', title: '문서' };
   if (type === 'code') return { text: '', language: 'plain', depth: 0 };
+  if (type === 'image') return { url: '' };
+  if (type === 'video') return { url: '' };
+  if (type === 'text') {
+    return {
+      text: '',
+      depth: 0,
+      ...(options?.insideToggle ? { createdInsideToggle: true, placedInToggle: true } : {}),
+    };
+  }
   return { text: '', depth: 0 };
 }
 
@@ -251,6 +298,11 @@ function BlockContent({
   isDragging,
   focusedToggleId,
   uploadImage,
+  childBlocks = [],
+  renderChildBlock,
+  onAddChildBelow,
+  isInsideToggle = false,
+  isDropTarget = false,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -273,11 +325,20 @@ function BlockContent({
   isDragging?: boolean;
   focusedToggleId?: string | null;
   uploadImage?: (file: File) => Promise<string>;
+  childBlocks?: NoteBlock[];
+  renderChildBlock?: (child: NoteBlock) => React.ReactNode;
+  onAddChildBelow?: (type?: NoteBlock['type']) => void;
+  isInsideToggle?: boolean;
+  isDropTarget?: boolean;
 }) {
   const [showSlash, setShowSlash] = useState(false);
   const [slashQuery, setSlashQuery] = useState('');
 
   const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
+  const contentMarginLeft = isInsideToggle ? 0 : blockDepth * 20;
+  const rootBlockShell = isInsideToggle ? '' : 'rounded-lg border border-slate-200 bg-white px-3 py-2';
+  const enterCreatesBlockBelow =
+    !isInsideToggle || block.type === 'text' || block.type === 'todo';
 
   const renderFormatToolbar = () => null;
 
@@ -347,7 +408,10 @@ function BlockContent({
 
   if (block.type === 'divider') {
     return (
-      <div className="flex items-center gap-3 py-3">
+      <div
+        className={`flex items-center gap-3 ${isInsideToggle ? 'py-3' : `${rootBlockShell} py-3`}`}
+        style={{ marginLeft: `${contentMarginLeft}px` }}
+      >
         <div className="flex-1 border-t border-slate-200" />
         <button type="button"
           className="rounded p-1 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-500"
@@ -361,7 +425,7 @@ function BlockContent({
     const checked = !!block.content?.checked;
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div className="flex items-start gap-3 py-1.5" style={{ marginLeft: `${blockDepth * 20}px` }}>
+      <div className={`flex items-start gap-3 ${isInsideToggle ? 'py-1.5' : rootBlockShell}`} style={{ marginLeft: `${contentMarginLeft}px` }}>
         <button type="button"
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
             checked ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 bg-white hover:border-blue-400'
@@ -376,8 +440,8 @@ function BlockContent({
             text,
             placeholder: '할 일을 입력하세요',
             textClassName: `text-[15px] leading-6 ${checked ? 'text-slate-400 line-through' : 'text-slate-800'}`,
-            enterCreatesBlock: true,
-            onEditorEnter: () => onAddBelow('todo'),
+            enterCreatesBlock: enterCreatesBlockBelow,
+            onEditorEnter: enterCreatesBlockBelow ? () => onAddBelow('todo') : onEnter,
           })}
           {showSlash && (
             <SlashMenu
@@ -399,15 +463,15 @@ function BlockContent({
   if (block.type === 'heading') {
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div className="flex items-start gap-3 py-3" style={{ marginLeft: `${blockDepth * 20}px` }}>
+      <div className={`flex items-start gap-3 ${isInsideToggle ? 'py-3' : rootBlockShell}`} style={{ marginLeft: `${contentMarginLeft}px` }}>
         <div className="relative flex-1">
           {renderFormatToolbar()}
           {renderFormattedTextarea({
             text,
             placeholder: '제목',
             textClassName: 'text-2xl font-bold leading-tight text-slate-900',
-            enterCreatesBlock: true,
-            onEditorEnter: () => onAddBelow('text'),
+            enterCreatesBlock: enterCreatesBlockBelow,
+            onEditorEnter: enterCreatesBlockBelow ? () => onAddBelow('text') : onEnter,
           })}
           {showSlash && (
             <SlashMenu
@@ -448,6 +512,39 @@ function BlockContent({
             <img src={url} alt="" className="max-h-80 w-full object-contain" />
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (block.type === 'video') {
+    const url = typeof block.content?.url === 'string' ? block.content.url : '';
+    const embed = resolveVideoEmbedContent(block.content);
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
+        <div className="mb-2 flex items-center gap-2">
+          <Video className="h-4 w-4 shrink-0 text-slate-400" />
+          <input
+            className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm text-slate-700 outline-none transition-colors focus:border-blue-400 focus:bg-white"
+            placeholder="YouTube 또는 Vimeo URL을 붙여넣으세요"
+            value={url}
+            onChange={(e) => onUpdate(buildVideoBlockContentFromUrl(e.target.value))}
+          />
+          <button type="button" className="shrink-0 rounded p-1 text-slate-400 hover:text-rose-500" onClick={onDelete}>
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+        {embed ? (
+          <div className="space-y-2">
+            <p className="text-[11px] font-medium text-slate-400">
+              {videoProviderLabel(embed.provider)} 임베드
+            </p>
+            <VideoEmbedFrame embedUrl={embed.embedUrl} title={`${videoProviderLabel(embed.provider)} 영상`} />
+          </div>
+        ) : url.trim() ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+            YouTube 또는 Vimeo 링크만 지원합니다.
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -494,7 +591,7 @@ function BlockContent({
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     const icon = typeof block.content?.icon === 'string' && block.content.icon.trim() ? block.content.icon : '💡';
     return (
-      <div className="relative rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2" style={{ marginLeft: `${blockDepth * 20}px` }}>
+      <div className="relative rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2" style={{ marginLeft: `${contentMarginLeft}px` }}>
         <div className="mb-1 flex items-center gap-2">
           <input
             value={icon}
@@ -523,7 +620,7 @@ function BlockContent({
   if (block.type === 'code') {
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div className="relative rounded-xl border border-slate-200 bg-slate-950 px-4 py-3 shadow-sm" style={{ marginLeft: `${blockDepth * 20}px` }}>
+      <div className="relative rounded-xl border border-slate-200 bg-slate-950 px-4 py-3 shadow-sm" style={{ marginLeft: `${contentMarginLeft}px` }}>
         <div className="mb-2 flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Code</span>
           <button
@@ -547,7 +644,7 @@ function BlockContent({
     const title = typeof block.content?.title === 'string'
       ? block.content.title
       : (typeof block.content?.text === 'string' ? block.content.text : '');
-    const body = typeof block.content?.body === 'string' ? block.content.body : '';
+    const { text: body } = resolveToggleBodyForDisplay(block.content);
     const collapsed = !!block.content?.collapsed;
     const rawIm = block.content?.images;
     const toggleImages = Array.isArray(rawIm)
@@ -558,16 +655,27 @@ function BlockContent({
       onUpdate({ ...block.content, title, body, collapsed, images: toggleImages, ...partial });
     return (
       <div
-        className={`relative rounded-lg border bg-white px-3 py-2 ${
-          isThisToggleFocused ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'
+        className={`relative ${
+          isInsideToggle
+            ? 'py-0.5'
+            : `rounded-lg border bg-white px-3 py-2 ${
+                isDropTarget
+                  ? 'border-blue-400 ring-2 ring-blue-100'
+                  : isThisToggleFocused
+                    ? 'border-blue-400 ring-2 ring-blue-100'
+                    : 'border-slate-200'
+              }`
         }`}
-        style={{ marginLeft: `${blockDepth * 20}px` }}
+        style={isInsideToggle ? undefined : { marginLeft: `${contentMarginLeft}px` }}
       >
-        <div className="mb-1 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            className={`transition-transform ${collapsed ? '-rotate-90' : ''}`}
-            onClick={() => patchToggle({ collapsed: !collapsed })}
+            className={`relative z-20 shrink-0 transition-transform ${collapsed ? '-rotate-90' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              patchToggle({ collapsed: !collapsed });
+            }}
           >
             <ChevronDown className="h-4 w-4 text-slate-500" />
           </button>
@@ -580,8 +688,8 @@ function BlockContent({
                 onIndentChange(e.shiftKey ? 'out' : 'in');
               }
             }}
-            className="flex-1 bg-transparent text-[15px] font-semibold leading-6 text-slate-800 outline-none placeholder:text-slate-400"
-            placeholder="토글 제목"
+            className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold leading-6 text-slate-800 outline-none placeholder:text-slate-400"
+            placeholder="토글"
           />
           <button
             type="button"
@@ -592,15 +700,22 @@ function BlockContent({
           </button>
         </div>
         {!collapsed && (
-          <>
+          <div className="overflow-visible pl-6">
             {renderFormatToolbar()}
             {renderFormattedTextarea({
               text: body,
-              placeholder: '토글 본문을 입력하세요',
+              placeholder: '',
               textClassName: 'text-[15px] leading-7 text-slate-800',
               field: 'body',
               tabBehavior: 'insert-text-indent',
+              enterCreatesBlock: false,
+              onEditorBackspace: undefined,
             })}
+            {childBlocks.length > 0 && (
+              <div className="space-y-0">
+                {childBlocks.map((child) => renderChildBlock?.(child))}
+              </div>
+            )}
             {toggleImages.length > 0 && (
               <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">토글 안 이미지</p>
@@ -637,7 +752,7 @@ function BlockContent({
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     );
@@ -646,15 +761,15 @@ function BlockContent({
   // text (default)
   const text = typeof block.content?.text === 'string' ? block.content.text : '';
   return (
-    <div className="flex items-start gap-3 py-1.5" style={{ marginLeft: `${blockDepth * 20}px` }}>
-      <div className="relative flex-1">
+    <div className={`flex items-start gap-3 ${isInsideToggle ? 'py-0.5' : rootBlockShell}`} style={{ marginLeft: `${contentMarginLeft}px` }}>
+      <div className="relative min-w-0 flex-1">
         {renderFormatToolbar()}
         {renderFormattedTextarea({
           text,
-          placeholder: '내용을 입력하세요… (/ 로 블록 타입 변경)',
+          placeholder: isInsideToggle ? '' : '내용을 입력하세요… (/ 로 블록 타입 변경)',
           textClassName: 'text-[15px] leading-7 text-slate-800',
-          enterCreatesBlock: true,
-          onEditorEnter: () => onAddBelow('text'),
+          enterCreatesBlock: enterCreatesBlockBelow,
+          onEditorEnter: enterCreatesBlockBelow ? onEnter : undefined,
         })}
         {showSlash && (
           <SlashMenu
@@ -693,6 +808,9 @@ function SortableBlockRow({
   onFocusToggle,
   uploadImage,
   isDropTarget,
+  childBlocks,
+  renderChildBlock,
+  onAddChildBelow,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -716,6 +834,9 @@ function SortableBlockRow({
   onFocusToggle?: (blockId: string | null) => void;
   uploadImage?: (file: File) => Promise<string>;
   isDropTarget?: boolean;
+  childBlocks?: NoteBlock[];
+  renderChildBlock?: (child: NoteBlock) => React.ReactNode;
+  onAddChildBelow?: (type?: NoteBlock['type']) => void;
 }) {
   const {
     attributes,
@@ -734,6 +855,64 @@ function SortableBlockRow({
   };
   const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
 
+  const blockControls = (
+    <div className="flex h-7 shrink-0 items-center gap-0.5 rounded-md bg-white/90 shadow-sm ring-1 ring-slate-200/70 backdrop-blur">
+      <button
+        type="button"
+        className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+        aria-label="아래에 새 블록 추가"
+        title="아래에 텍스트 블록 추가"
+        onClick={() => onAddBelow('text')}
+      >
+        <Plus className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        className="flex h-6 w-5 cursor-grab items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 active:cursor-grabbing"
+        aria-label="드래그하여 순서 변경"
+        title="드래그해서 이동"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+    </div>
+  );
+
+  const blockContentNode = (
+    <div
+      className="min-w-0 flex-1"
+      onMouseDownCapture={() => {
+        onFocusToggle?.(block.type === 'toggle' ? block.id : null);
+      }}
+    >
+      <BlockContent
+        block={block}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        onChangeType={onChangeType}
+        onEnter={onEnter}
+        onAddBelow={onAddBelow}
+        onOpenDocument={onOpenDocument}
+        onShowFormatToolbar={onShowFormatToolbar}
+        onHideFormatToolbar={onHideFormatToolbar}
+        autoFocusSignal={autoFocusSignal}
+        onEmptyBackspace={onEmptyBackspace}
+        onIndentChange={onIndentChange}
+        onNavigatePrevious={onNavigatePrevious}
+        onNavigateNext={onNavigateNext}
+        isDragging={isDragging}
+        focusedToggleId={focusedToggleId}
+        uploadImage={uploadImage}
+        childBlocks={childBlocks}
+        renderChildBlock={renderChildBlock}
+        onAddChildBelow={onAddChildBelow}
+        isInsideToggle={false}
+        isDropTarget={isDropTarget}
+      />
+    </div>
+  );
+
   return (
     <div
       ref={setNodeRef}
@@ -749,26 +928,8 @@ function SortableBlockRow({
       {isDropTarget && !isDragging && (
         <div className="pointer-events-none absolute left-10 right-1 top-0 h-0.5 rounded-full bg-blue-400/80" />
       )}
-      <div className="sticky left-0 mt-1 flex h-7 shrink-0 items-center gap-0.5 rounded-md bg-white/80 opacity-0 shadow-sm ring-1 ring-slate-200/70 backdrop-blur transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
-          className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-          aria-label="아래에 새 블록 추가"
-          title="아래에 텍스트 블록 추가"
-          onClick={() => onAddBelow('text')}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          className="flex h-6 w-5 cursor-grab items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 active:cursor-grabbing"
-          aria-label="드래그하여 순서 변경"
-          title="드래그해서 이동"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+      <div className="sticky left-0 mt-1 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto">
+        {blockControls}
       </div>
       {blockDepth > 0 && (
         <div className="pointer-events-none mt-1 flex h-7 shrink-0 items-center gap-1 px-0.5" aria-hidden>
@@ -778,9 +939,114 @@ function SortableBlockRow({
         </div>
       )}
 
-      {/* 블록 콘텐츠 */}
+      {blockContentNode}
+    </div>
+  );
+}
+
+/* ─── ToggleInlineRow (토글 안 — 블록 UI 없이 인라인) ─────────────────────── */
+function ToggleInlineRow({
+  block,
+  onUpdate,
+  onDelete,
+  onChangeType,
+  onEnter,
+  onAddBelow,
+  onOpenDocument,
+  onShowFormatToolbar,
+  onHideFormatToolbar,
+  autoFocusSignal,
+  onEmptyBackspace,
+  onIndentChange,
+  onNavigatePrevious,
+  onNavigateNext,
+  focusedToggleId,
+  onFocusToggle,
+  uploadImage,
+  isDropTarget,
+  childBlocks,
+  renderChildBlock,
+}: {
+  block: NoteBlock;
+  onUpdate: (content: any) => void;
+  onDelete: () => void;
+  onChangeType: (type: NoteBlock['type']) => void;
+  onEnter: () => void;
+  onAddBelow: (type?: NoteBlock['type']) => void;
+  onOpenDocument?: (documentId: string) => void;
+  onShowFormatToolbar?: (
+    applyMark: (mark: InlineMark) => void,
+    applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    position: { top: number; left: number },
+  ) => void;
+  onHideFormatToolbar?: () => void;
+  autoFocusSignal?: number;
+  onEmptyBackspace?: () => void;
+  onIndentChange?: (direction: 'in' | 'out') => void;
+  onNavigatePrevious?: () => void;
+  onNavigateNext?: () => void;
+  focusedToggleId?: string | null;
+  onFocusToggle?: (blockId: string | null) => void;
+  uploadImage?: (file: File) => Promise<string>;
+  isDropTarget?: boolean;
+  childBlocks?: NoteBlock[];
+  renderChildBlock?: (child: NoteBlock) => React.ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  const addBelowType: NoteBlock['type'] =
+    block.type === 'todo' || block.type === 'toggle' ? block.type : 'text';
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative py-0 transition-colors ${
+        isDragging ? 'bg-blue-50/60' : isDropTarget ? 'bg-blue-50/40' : ''
+      }`}
+    >
+      {isDropTarget && !isDragging && (
+        <div className="pointer-events-none absolute left-0 right-0 top-0 h-0.5 rounded-full bg-blue-400/80" />
+      )}
+      <div className="pointer-events-none absolute -left-12 top-0.5 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="pointer-events-auto flex h-7 items-center gap-0.5 rounded-md bg-white/95 shadow-sm ring-1 ring-slate-200/70 backdrop-blur">
+          <button
+            type="button"
+            className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            aria-label="아래에 추가"
+            title="아래에 같은 종류 추가"
+            onClick={() => onAddBelow(addBelowType)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            className="flex h-6 w-5 cursor-grab items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 active:cursor-grabbing"
+            aria-label="드래그하여 순서 변경"
+            title="드래그해서 이동"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
       <div
-        className="flex-1 min-w-0"
+        className="min-w-0"
         onMouseDownCapture={() => {
           onFocusToggle?.(block.type === 'toggle' ? block.id : null);
         }}
@@ -803,6 +1069,10 @@ function SortableBlockRow({
           isDragging={isDragging}
           focusedToggleId={focusedToggleId}
           uploadImage={uploadImage}
+          childBlocks={childBlocks}
+          renderChildBlock={renderChildBlock}
+          isInsideToggle
+          isDropTarget={isDropTarget}
         />
       </div>
     </div>
@@ -814,6 +1084,7 @@ function DragPreview({ block }: { block: NoteBlock }) {
   const text =
     block.type === 'divider' ? '── 구분선 ──'
     : block.type === 'image' ? `🖼 ${block.content?.url || '이미지'}`
+    : block.type === 'video' ? `▶ ${block.content?.url || '영상'}`
     : (block.content?.text as string) || '(빈 블록)';
 
   const typeLabel = BLOCK_TYPES.find((t) => t.type === block.type)?.label ?? block.type;
@@ -865,12 +1136,15 @@ function AdminNotePageContent() {
   const [restoringBlockId, setRestoringBlockId] = useState<string | null>(null);
   const [purgingBlockId, setPurgingBlockId] = useState<string | null>(null);
   const [lastDeletedBlockId, setLastDeletedBlockId] = useState<string | null>(null);
+  const undoCreateBlockIdRef = useRef<string | null>(null);
+  const [showCreateUndo, setShowCreateUndo] = useState(false);
 
   const saveTimersRef = useRef<Record<string, number | undefined>>({});
   const savedTimerRef = useRef<number | undefined>(undefined);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const blocksRef = useRef<NoteBlock[]>([]);
+  const expandedDuringDragRef = useRef<Set<string>>(new Set());
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -988,7 +1262,66 @@ function AdminNotePageContent() {
         const res = await fetch(`/api/admin/note/blocks?documentId=${encodeURIComponent(selectedId)}`, { credentials: 'include' });
         if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 로드 실패'); }
         const json = (await res.json()) as { blocks: NoteBlock[] };
-        setBlocks(json.blocks ?? []);
+        let loadedBlocks = json.blocks ?? [];
+        let trashedBlocks: NoteBlock[] = [];
+        try {
+          const trashRes = await fetch(
+            `/api/admin/note/blocks/trash?documentId=${encodeURIComponent(selectedId)}`,
+            { credentials: 'include' },
+          );
+          if (trashRes.ok) {
+            const trashJson = (await trashRes.json()) as { blocks?: NoteBlock[] };
+            trashedBlocks = trashJson.blocks ?? [];
+          }
+        } catch (e) {
+          devLogger.error('[Note] loadBlocksTrashForRestore', e);
+        }
+        const restorePlans = planToggleBodyRestores(loadedBlocks, trashedBlocks);
+        if (restorePlans.length > 0) {
+          for (const plan of restorePlans) {
+            await fetch('/api/admin/note/blocks', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ id: plan.toggleId, content: plan.restoredContent }),
+            });
+            if (plan.removeChildBlockId) {
+              await fetch(`/api/admin/note/blocks?id=${encodeURIComponent(plan.removeChildBlockId)}`, {
+                method: 'DELETE',
+                credentials: 'include',
+              });
+            }
+            if (plan.purgeTrashedChildBlockId) {
+              await fetch(
+                `/api/admin/note/blocks/trash/purge?id=${encodeURIComponent(plan.purgeTrashedChildBlockId)}`,
+                { method: 'DELETE', credentials: 'include' },
+              );
+            }
+          }
+          loadedBlocks = loadedBlocks
+            .map((block) => {
+              const plan = restorePlans.find((entry) => entry.toggleId === block.id);
+              return plan ? { ...block, content: plan.restoredContent } : block;
+            })
+            .filter((block) => !restorePlans.some((entry) => entry.removeChildBlockId === block.id));
+        }
+        const promotePlans = planPromoteDocumentBlocksToRoot(loadedBlocks);
+        if (promotePlans.patches.length > 0) {
+          for (const patch of promotePlans.patches) {
+            await fetch('/api/admin/note/blocks', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                id: patch.id,
+                parent_block_id: patch.parent_block_id,
+                order_index: patch.order_index,
+              }),
+            });
+          }
+          loadedBlocks = promotePlans.blocks;
+        }
+        setBlocks(loadedBlocks);
       } catch (e) { devLogger.error('[Note] loadBlocks', e); setError(e instanceof Error ? e.message : '로드 실패'); }
       finally { setLoadingBlocks(false); }
     };
@@ -1003,6 +1336,10 @@ function AdminNotePageContent() {
   useEffect(() => {
     blocksRef.current = blocks;
   }, [blocks]);
+
+  const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(blocks), [blocks]);
+  const rootBlocks = useMemo(() => sortRootBlocks(blocks), [blocks]);
+  const allSortableBlockIds = useMemo(() => blocks.map((block) => block.id), [blocks]);
 
   const loadTrashedBlocks = useCallback(async () => {
     if (!selectedId) {
@@ -1100,6 +1437,7 @@ function AdminNotePageContent() {
 
   /* ── DnD handlers ── */
   const handleDragStart = useCallback((event: DragStartEvent) => {
+    expandedDuringDragRef.current.clear();
     setActiveBlockId(event.active.id as string);
     setOverBlockId(null);
   }, []);
@@ -1164,16 +1502,80 @@ function AdminNotePageContent() {
     }
     const overId = String(event.over.id);
     setOverBlockId(overId.startsWith('doc:') ? null : overId);
+
+    if (overId.startsWith('doc:')) return;
+    const overBlock = blocksRef.current.find((block) => block.id === overId);
+    if (overBlock?.type !== 'toggle') return;
+    const content = (overBlock.content ?? {}) as Record<string, unknown>;
+    if (!content.collapsed || expandedDuringDragRef.current.has(overBlock.id)) return;
+
+    expandedDuringDragRef.current.add(overBlock.id);
+    const nextContent = { ...content, collapsed: false };
+    setBlocks((prev) => prev.map((block) => (
+      block.id === overBlock.id ? { ...block, content: nextContent } : block
+    )));
+    void fetch('/api/admin/note/blocks', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ id: overBlock.id, content: nextContent }),
+    }).catch((e) => devLogger.error('[Note] expandToggleOnDrag', e));
   }, []);
 
   const handleDragCancel = useCallback((_event: DragCancelEvent) => {
     setActiveBlockId(null);
     setOverBlockId(null);
+    expandedDuringDragRef.current.clear();
   }, []);
+
+  const persistBlockReparent = useCallback(async (
+    moving: NoteBlock,
+    plan: ReturnType<typeof planBlockDrop>,
+    prevBlocks: NoteBlock[],
+  ) => {
+    if (!plan) return;
+    const oldParentId = moving.parent_block_id ?? null;
+    const parentChanged = oldParentId !== plan.targetParentId;
+    const contentPatch = buildReparentContentPatch(moving.content, moving.type, plan.placedInToggle);
+    const oldSiblings = parentChanged
+      ? getBlocksInParent(prevBlocks, oldParentId)
+        .filter((block) => block.id !== moving.id)
+        .map((block, index) => ({ ...block, order_index: index }))
+      : [];
+
+    const orders = [
+      ...plan.targetSiblings.map((block, index) => ({ id: block.id, order_index: index })),
+      ...oldSiblings.map((block) => ({ id: block.id, order_index: block.order_index })),
+    ];
+
+    try {
+      await fetch('/api/admin/note/blocks', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          id: moving.id,
+          parent_block_id: plan.targetParentId,
+          order_index: plan.targetSiblings.findIndex((block) => block.id === moving.id),
+          ...(contentPatch ? { content: contentPatch } : {}),
+        }),
+      });
+      await fetch('/api/admin/note/blocks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ orders }),
+      });
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] reparentBlock', e);
+    }
+  }, [triggerSave]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveBlockId(null);
     setOverBlockId(null);
+    expandedDuringDragRef.current.clear();
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -1219,16 +1621,64 @@ function AdminNotePageContent() {
       return;
     }
 
+    const prevBlocks = blocksRef.current;
+    const moving = prevBlocks.find((block) => block.id === active.id);
+    if (!moving) return;
+
+    const plan = planBlockDrop(prevBlocks, moving.id, overId);
+    if (!plan) return;
+
+    const targetMap = new Map(plan.targetSiblings.map((block) => [block.id, block]));
+    const oldParentId = moving.parent_block_id ?? null;
+    const parentChanged = oldParentId !== plan.targetParentId;
+    const oldSiblings = parentChanged
+      ? getBlocksInParent(prevBlocks, oldParentId)
+        .filter((block) => block.id !== moving.id)
+        .map((block, index) => ({ ...block, order_index: index }))
+      : [];
+    const oldMap = new Map(oldSiblings.map((block) => [block.id, block]));
+    const contentPatch = buildReparentContentPatch(moving.content, moving.type, plan.placedInToggle);
+
     setBlocks((prev) => {
-      const oldIndex = prev.findIndex((b) => b.id === active.id);
-      const newIndex = prev.findIndex((b) => b.id === over.id);
-      if (oldIndex < 0 || newIndex < 0) return prev;
-      const reordered = arrayMove(prev, oldIndex, newIndex);
-      const { normalized, depthPatches } = normalizeDepthByOrder(reordered);
-      void persistOrderAndDepth(normalized, depthPatches);
-      return normalized;
+      const next = prev.map((block) => {
+        if (block.id === moving.id) {
+          return {
+            ...block,
+            parent_block_id: plan.targetParentId,
+            order_index: plan.targetSiblings.findIndex((item) => item.id === moving.id),
+            content: contentPatch ?? block.content,
+          };
+        }
+        if (targetMap.has(block.id)) return targetMap.get(block.id)!;
+        if (oldMap.has(block.id)) return oldMap.get(block.id)!;
+        return block;
+      });
+
+      if (plan.targetParentId === null) {
+        const rootOnly = sortRootBlocks(next);
+        const { normalized, depthPatches } = normalizeDepthByOrder(rootOnly);
+        const depthMap = new Map(normalized.map((block) => [block.id, block]));
+        const withDepth = next.map((block) => depthMap.get(block.id) ?? block);
+        void persistBlockReparent(moving, plan, prevBlocks);
+        if (depthPatches.length > 0) {
+          void Promise.all(
+            depthPatches.map((patch) =>
+              fetch('/api/admin/note/blocks', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id: patch.id, content: patch.content }),
+              }),
+            ),
+          ).catch((e) => devLogger.error('[Note] depth-sync-after-reparent', e));
+        }
+        return withDepth;
+      }
+
+      void persistBlockReparent(moving, plan, prevBlocks);
+      return next;
     });
-  }, [normalizeDepthByOrder, persistOrderAndDepth, selectedId]);
+  }, [normalizeDepthByOrder, persistBlockReparent, persistOrderAndDepth, selectedId, triggerSave]);
 
   /* handlers */
   const handleSelectDocument = (doc: NoteDocument) => {
@@ -1462,6 +1912,11 @@ function AdminNotePageContent() {
     }, 600);
   }, [triggerSave]);
 
+  const registerCreatedBlockUndo = useCallback((blockId: string) => {
+    undoCreateBlockIdRef.current = blockId;
+    setShowCreateUndo(true);
+  }, []);
+
   const handleIndentBlock = useCallback((block: NoteBlock, direction: 'in' | 'out') => {
     const content = (block.content ?? {}) as Record<string, unknown>;
     const currentDepth = Math.max(0, Math.min(6, Number(content.depth ?? 0)));
@@ -1489,12 +1944,109 @@ function AdminNotePageContent() {
   }, [handleUpdateBlock]);
 
   const handleNavigateBlock = useCallback((block: NoteBlock, direction: 'previous' | 'next') => {
-    const ordered = [...blocks].sort((a, b) => a.order_index - b.order_index);
-    const idx = ordered.findIndex((b) => b.id === block.id);
+    const siblings = filterSiblingBlocks(blocks, block);
+    const idx = siblings.findIndex((b) => b.id === block.id);
     if (idx < 0) return;
-    const target = direction === 'previous' ? ordered[idx - 1] : ordered[idx + 1];
+    const target = direction === 'previous' ? siblings[idx - 1] : siblings[idx + 1];
     if (target) focusBlockEditor(target.id);
   }, [blocks, focusBlockEditor]);
+
+  const handleInsertBlockAfter = useCallback(async (afterBlock: NoteBlock, type: NoteBlock['type'] = 'text') => {
+    if (!selectedId) return;
+    try {
+      setLoadingState('saving');
+      const parentId = afterBlock.parent_block_id ?? null;
+      const siblings = blocksRef.current
+        .filter((b) => (b.parent_block_id ?? null) === parentId)
+        .sort((a, b) => a.order_index - b.order_index);
+      const afterIndex = siblings.findIndex((b) => b.id === afterBlock.id);
+      const insertIndex = afterIndex >= 0 ? afterIndex + 1 : siblings.length;
+      const parentBlock = parentId ? blocksRef.current.find((b) => b.id === parentId) : null;
+      const insideToggle = parentBlock?.type === 'toggle';
+      const res = await fetch('/api/admin/note/blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          documentId: selectedId,
+          type,
+          content: defaultBlockContent(type, { insideToggle }),
+          order_index: insertIndex,
+          parent_block_id: parentId,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '블록 추가 실패');
+      }
+      const json = (await res.json()) as { block: NoteBlock };
+      const nextSiblings = [...siblings.slice(0, insertIndex), json.block, ...siblings.slice(insertIndex)]
+        .map((block, index) => ({ ...block, order_index: index }));
+      const siblingIds = new Set(nextSiblings.map((block) => block.id));
+      setBlocks((prev) => {
+        const others = prev.filter((block) => !siblingIds.has(block.id));
+        return [...others, ...nextSiblings];
+      });
+      focusBlockEditor(json.block.id);
+      registerCreatedBlockUndo(json.block.id);
+      void fetch('/api/admin/note/blocks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ orders: nextSiblings.map((block) => ({ id: block.id, order_index: block.order_index })) }),
+      }).then(() => triggerSave()).catch((e) => devLogger.error('[Note] normalizeInsertOrder', e));
+    } catch (e) {
+      devLogger.error('[Note] insertBlockAfter', e);
+      setError(e instanceof Error ? e.message : '블록 추가 실패');
+      setLoadingState('idle');
+    }
+  }, [selectedId, triggerSave, focusBlockEditor, registerCreatedBlockUndo]);
+
+  const handleInsertBlockInParent = useCallback(async (parentBlockId: string, type: NoteBlock['type'] = 'text') => {
+    if (!selectedId) return;
+    const parent = blocksRef.current.find((b) => b.id === parentBlockId);
+    if (parent?.type === 'toggle') {
+      const content = (parent.content ?? {}) as Record<string, unknown>;
+      if (content.collapsed) {
+        handleUpdateBlock(parent, { ...content, collapsed: false });
+      }
+    }
+    const siblings = blocksRef.current
+      .filter((b) => b.parent_block_id === parentBlockId)
+      .sort((a, b) => a.order_index - b.order_index);
+    if (siblings.length > 0) {
+      await handleInsertBlockAfter(siblings[siblings.length - 1], type);
+      return;
+    }
+    try {
+      setLoadingState('saving');
+      const res = await fetch('/api/admin/note/blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          documentId: selectedId,
+          type,
+          content: defaultBlockContent(type, { insideToggle: true }),
+          order_index: 0,
+          parent_block_id: parentBlockId,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || '블록 추가 실패');
+      }
+      const json = (await res.json()) as { block: NoteBlock };
+      setBlocks((prev) => [...prev, json.block]);
+      focusBlockEditor(json.block.id);
+      registerCreatedBlockUndo(json.block.id);
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] insertBlockInParent', e);
+      setError(e instanceof Error ? e.message : '블록 추가 실패');
+      setLoadingState('idle');
+    }
+  }, [selectedId, handleInsertBlockAfter, handleUpdateBlock, triggerSave, focusBlockEditor, registerCreatedBlockUndo]);
 
   const handleAddBlock = useCallback(async (type: NoteBlock['type']) => {
     if (!selectedId) return;
@@ -1517,7 +2069,7 @@ function AdminNotePageContent() {
           credentials: 'include',
           body: JSON.stringify({
             title: '새 문서',
-            parent_id: selectedId, // 현재 문서의 하위 문서로 생성
+            parent_id: selectedId,
           }),
         });
         if (!createDocRes.ok) {
@@ -1529,11 +2081,17 @@ function AdminNotePageContent() {
         setDocuments((prev) => [newDoc, ...prev]);
 
         const pageBlockContent = { page_document_id: newDoc.id, title: newDoc.title };
+        const parentBlockId = focusedToggleId ?? null;
         const res = await fetch('/api/admin/note/blocks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ documentId: selectedId, type: 'page', content: pageBlockContent }),
+          body: JSON.stringify({
+            documentId: selectedId,
+            type: 'page',
+            content: pageBlockContent,
+            parent_block_id: parentBlockId,
+          }),
         });
         if (!res.ok) {
           const j = await res.json().catch(() => null);
@@ -1542,26 +2100,21 @@ function AdminNotePageContent() {
         const json = (await res.json()) as { block: NoteBlock };
         setBlocks((prev) => [json.block, ...prev]);
         focusBlockEditor(json.block.id);
+        registerCreatedBlockUndo(json.block.id);
         triggerSave();
         return;
       }
-      const defaultContent = defaultBlockContent(type);
-      const res = await fetch('/api/admin/note/blocks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ documentId: selectedId, type, content: defaultContent }) });
-      if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 추가 실패'); }
-      const json = (await res.json()) as { block: NoteBlock };
-      setBlocks((prev) => [json.block, ...prev]);
-      focusBlockEditor(json.block.id);
-      triggerSave();
-    } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
-  }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock, focusBlockEditor]);
 
-  const handleInsertBlockAfter = useCallback(async (afterBlock: NoteBlock, type: NoteBlock['type'] = 'text') => {
-    if (!selectedId) return;
-    try {
-      setLoadingState('saving');
-      const ordered = [...blocks].sort((a, b) => a.order_index - b.order_index);
-      const afterIndex = ordered.findIndex((b) => b.id === afterBlock.id);
-      const insertIndex = afterIndex >= 0 ? afterIndex + 1 : ordered.length;
+      const parentBlockId =
+        type === 'video' || type === 'image'
+          ? null
+          : (focusedToggleId ?? null);
+      if (parentBlockId) {
+        await handleInsertBlockInParent(parentBlockId, type);
+        return;
+      }
+
+      const defaultContent = defaultBlockContent(type);
       const res = await fetch('/api/admin/note/blocks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1569,32 +2122,18 @@ function AdminNotePageContent() {
         body: JSON.stringify({
           documentId: selectedId,
           type,
-          content: defaultBlockContent(type),
-          order_index: insertIndex,
-          parent_block_id: afterBlock.parent_block_id ?? null,
+          content: defaultContent,
+          parent_block_id: null,
         }),
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '블록 추가 실패');
-      }
+      if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 추가 실패'); }
       const json = (await res.json()) as { block: NoteBlock };
-      const next = [...ordered.slice(0, insertIndex), json.block, ...ordered.slice(insertIndex)]
-        .map((block, index) => ({ ...block, order_index: index }));
-      setBlocks(next);
+      setBlocks((prev) => [json.block, ...prev]);
       focusBlockEditor(json.block.id);
-      void fetch('/api/admin/note/blocks', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ orders: next.map((block) => ({ id: block.id, order_index: block.order_index })) }),
-      }).then(() => triggerSave()).catch((e) => devLogger.error('[Note] normalizeInsertOrder', e));
-    } catch (e) {
-      devLogger.error('[Note] insertBlockAfter', e);
-      setError(e instanceof Error ? e.message : '블록 추가 실패');
-      setLoadingState('idle');
-    }
-  }, [blocks, selectedId, triggerSave, focusBlockEditor]);
+      registerCreatedBlockUndo(json.block.id);
+      triggerSave();
+    } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
+  }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock, focusBlockEditor, handleInsertBlockInParent, registerCreatedBlockUndo]);
 
   const handleChangeBlockType = useCallback(async (block: NoteBlock, type: NoteBlock['type']) => {
     const defaultContent = defaultBlockContent(type);
@@ -1606,7 +2145,7 @@ function AdminNotePageContent() {
     } catch (e) { devLogger.error('[Note] changeBlockType', e); }
   }, [focusBlockEditor, triggerSave]);
 
-  const handleDeleteBlock = useCallback(async (block: NoteBlock, focusPrevious = false) => {
+  const handleDeleteBlock = useCallback(async (block: NoteBlock, focusPrevious = false, skipDeleteUndo = false) => {
     const ordered = [...blocksRef.current].sort((a, b) => a.order_index - b.order_index);
     const idx = ordered.findIndex((b) => b.id === block.id);
     if (idx < 0) return;
@@ -1615,7 +2154,10 @@ function AdminNotePageContent() {
       if (nextFocus) focusBlockEditor(nextFocus);
     }
 
-    setBlocks((prev) => prev.filter((b) => b.id !== block.id));
+    setBlocks((prev) => {
+      const descendants = collectDescendantBlockIds(block.id, prev);
+      return prev.filter((b) => b.id !== block.id && !descendants.has(b.id));
+    });
     try {
       const res = await fetch(`/api/admin/note/blocks?id=${encodeURIComponent(block.id)}`, {
         method: 'DELETE',
@@ -1625,7 +2167,9 @@ function AdminNotePageContent() {
         const j = await res.json().catch(() => null);
         throw new Error(j?.error || '삭제 실패');
       }
-      setLastDeletedBlockId(block.id);
+      if (!skipDeleteUndo) {
+        setLastDeletedBlockId(block.id);
+      }
       if (docTab === 'block-trash') {
         setMobileTab('list');
       }
@@ -1701,8 +2245,17 @@ function AdminNotePageContent() {
     await handleRestoreBlockFromTrash(candidate);
   }, [handleRestoreBlockFromTrash, lastDeletedBlockId, trashedBlocks]);
 
+  const handleUndoCreateBlock = useCallback(async () => {
+    const blockId = undoCreateBlockIdRef.current;
+    if (!blockId) return;
+    undoCreateBlockIdRef.current = null;
+    setShowCreateUndo(false);
+    const block = blocksRef.current.find((b) => b.id === blockId);
+    if (!block) return;
+    await handleDeleteBlock(block, false, true);
+  }, [handleDeleteBlock]);
+
   useEffect(() => {
-    if (!lastDeletedBlockId) return;
     const onKey = (e: KeyboardEvent) => {
       const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z';
       if (!isUndo) return;
@@ -1713,14 +2266,18 @@ function AdminNotePageContent() {
         target.isContentEditable ||
         !!target.closest('[contenteditable="true"]')
       );
-      // 에디터 입력 중 Ctrl/Cmd+Z는 브라우저/에디터 기본 실행취소를 사용한다.
       if (isEditingTarget) return;
+      if (!undoCreateBlockIdRef.current && !lastDeletedBlockId) return;
       e.preventDefault();
+      if (undoCreateBlockIdRef.current) {
+        void handleUndoCreateBlock();
+        return;
+      }
       void handleUndoDeleteBlock();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleUndoDeleteBlock, lastDeletedBlockId]);
+  }, [handleUndoCreateBlock, handleUndoDeleteBlock, lastDeletedBlockId]);
 
   const renderDocumentTree = (doc: NoteDocument, depth = 0): React.ReactNode => {
     const children = childrenByParent.get(doc.id) ?? [];
@@ -1742,6 +2299,65 @@ function AdminNotePageContent() {
           </div>
         )}
       </div>
+    );
+  };
+
+  const renderToggleInlineChild = (block: NoteBlock): React.ReactNode => {
+    const childBlocks = childrenByParentBlock.get(block.id) ?? [];
+    return (
+      <ToggleInlineRow
+        key={block.id}
+        block={block}
+        childBlocks={childBlocks}
+        renderChildBlock={renderToggleInlineChild}
+        onUpdate={(content) => handleUpdateBlock(block, content)}
+        onDelete={() => handleDeleteBlock(block)}
+        onChangeType={(type) => handleChangeBlockType(block, type)}
+        onEnter={() => handleInsertBlockAfter(block, 'text')}
+        onAddBelow={(type) => { void handleInsertBlockAfter(block, type ?? block.type); }}
+        onOpenDocument={handleOpenDocumentById}
+        onShowFormatToolbar={showFormatToolbar}
+        onHideFormatToolbar={hideFormatToolbar}
+        autoFocusSignal={focusedEditorBlockId === block.id ? focusSignal : 0}
+        onEmptyBackspace={() => handleDeleteBlock(block, true)}
+        onIndentChange={(direction) => handleIndentBlock(block, direction)}
+        onNavigatePrevious={() => handleNavigateBlock(block, 'previous')}
+        onNavigateNext={() => handleNavigateBlock(block, 'next')}
+        focusedToggleId={focusedToggleId}
+        onFocusToggle={setFocusedToggleId}
+        uploadImage={uploadNoteImage}
+        isDropTarget={overBlockId === block.id}
+      />
+    );
+  };
+
+  const renderSortableBlock = (block: NoteBlock): React.ReactNode => {
+    const childBlocks = childrenByParentBlock.get(block.id) ?? [];
+    return (
+      <SortableBlockRow
+        key={block.id}
+        block={block}
+        childBlocks={childBlocks}
+        renderChildBlock={renderToggleInlineChild}
+        onAddChildBelow={(type) => { void handleInsertBlockInParent(block.id, type ?? 'text'); }}
+        onUpdate={(content) => handleUpdateBlock(block, content)}
+        onDelete={() => handleDeleteBlock(block)}
+        onChangeType={(type) => handleChangeBlockType(block, type)}
+        onEnter={() => handleInsertBlockAfter(block, 'text')}
+        onAddBelow={(type) => handleInsertBlockAfter(block, type ?? 'text')}
+        onOpenDocument={handleOpenDocumentById}
+        onShowFormatToolbar={showFormatToolbar}
+        onHideFormatToolbar={hideFormatToolbar}
+        autoFocusSignal={focusedEditorBlockId === block.id ? focusSignal : 0}
+        onEmptyBackspace={() => handleDeleteBlock(block, true)}
+        onIndentChange={(direction) => handleIndentBlock(block, direction)}
+        onNavigatePrevious={() => handleNavigateBlock(block, 'previous')}
+        onNavigateNext={() => handleNavigateBlock(block, 'next')}
+        focusedToggleId={focusedToggleId}
+        onFocusToggle={setFocusedToggleId}
+        uploadImage={uploadNoteImage}
+        isDropTarget={overBlockId === block.id}
+      />
     );
   };
 
@@ -1816,6 +2432,17 @@ function AdminNotePageContent() {
           <button type="button" className="ml-2 underline" onClick={() => setError(null)}>닫기</button>
         </div>
       )}
+      {showCreateUndo && (
+        <div className="shrink-0 border-b border-sky-200 bg-sky-50 px-4 py-2 text-[12px] font-medium text-sky-700">
+          블록을 추가했습니다.
+          <button type="button" className="ml-2 underline" onClick={() => void handleUndoCreateBlock()}>
+            실행 취소
+          </button>
+          <span className="ml-2 text-[11px] text-sky-600">
+            (<kbd className="rounded border border-sky-300 bg-white px-1 py-0.5 text-[10px]">Ctrl/Cmd+Z</kbd>)
+          </span>
+        </div>
+      )}
       {lastDeletedBlockId && (
         <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12px] font-medium text-amber-700">
           블록을 휴지통으로 이동했습니다.
@@ -1830,7 +2457,7 @@ function AdminNotePageContent() {
       {/* ── 콘텐츠 ── */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -2047,7 +2674,9 @@ function AdminNotePageContent() {
                                       ? '구분선'
                                       : block.type === 'image'
                                         ? (block.content?.url || '이미지 블록')
-                                        : (block.content?.text || block.content?.title || '(내용 없음)')}
+                                        : block.type === 'video'
+                                          ? (block.content?.url || '영상 블록')
+                                          : (block.content?.text || block.content?.title || '(내용 없음)')}
                                   </p>
                                 </div>
                                 <div className="flex shrink-0 items-center gap-1">
@@ -2129,7 +2758,11 @@ function AdminNotePageContent() {
                       title={
                         type === 'image' && focusedToggleId
                           ? '선택한 토글 블록 안에 이미지 슬롯을 추가합니다. 토글을 한 번 클릭한 뒤 누르세요.'
-                          : undefined
+                          : type === 'video'
+                            ? '문서 본문에 영상 블록을 추가합니다 (YouTube · Vimeo).'
+                            : focusedToggleId
+                              ? '선택한 토글 안에 블록을 추가합니다. 토글을 한 번 클릭한 뒤 누르세요.'
+                              : undefined
                       }
                       onClick={() => handleAddBlock(type)}
                       className="flex items-center gap-1.5 rounded-md border border-transparent bg-slate-50 px-2.5 py-1.5 text-[12px] font-medium text-slate-500 transition-all hover:border-slate-200 hover:bg-white hover:text-slate-900 hover:shadow-sm"
@@ -2219,7 +2852,7 @@ function AdminNotePageContent() {
                 )}
 
                 {/* 빈 문서 */}
-                {blocks.length === 0 && (
+                {rootBlocks.length === 0 && (
                   <div className="mb-8 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-10 text-center">
                     <p className="text-[15px] font-semibold text-slate-600">새 페이지를 시작하세요</p>
                     <p className="mt-1 text-[13px] text-slate-400">텍스트를 바로 쓰거나 `/`로 제목, 체크리스트, 콜아웃을 선택할 수 있습니다.</p>
@@ -2244,33 +2877,11 @@ function AdminNotePageContent() {
 
                 {/* 블록 목록 (DnD) */}
                 <SortableContext
-                  items={blocks.map((b) => b.id)}
+                  items={allSortableBlockIds}
                   strategy={verticalListSortingStrategy}
                 >
                   <div className="space-y-0.5 pb-24">
-                    {blocks.map((block) => (
-                      <SortableBlockRow
-                        key={block.id}
-                        block={block}
-                        onUpdate={(content) => handleUpdateBlock(block, content)}
-                        onDelete={() => handleDeleteBlock(block)}
-                        onChangeType={(type) => handleChangeBlockType(block, type)}
-                        onEnter={() => handleInsertBlockAfter(block, 'text')}
-                        onAddBelow={(type) => handleInsertBlockAfter(block, type ?? 'text')}
-                        onOpenDocument={handleOpenDocumentById}
-                        onShowFormatToolbar={showFormatToolbar}
-                        onHideFormatToolbar={hideFormatToolbar}
-                        autoFocusSignal={focusedEditorBlockId === block.id ? focusSignal : 0}
-                        onEmptyBackspace={() => handleDeleteBlock(block, true)}
-                        onIndentChange={(direction) => handleIndentBlock(block, direction)}
-                        onNavigatePrevious={() => handleNavigateBlock(block, 'previous')}
-                        onNavigateNext={() => handleNavigateBlock(block, 'next')}
-                        focusedToggleId={focusedToggleId}
-                        onFocusToggle={setFocusedToggleId}
-                        uploadImage={uploadNoteImage}
-                        isDropTarget={overBlockId === block.id}
-                      />
-                    ))}
+                    {rootBlocks.map((block) => renderSortableBlock(block))}
                   </div>
                 </SortableContext>
 

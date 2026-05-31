@@ -20,7 +20,7 @@ import type { FlowModuleKey } from './modules/flowModules';
 // 레인 색상: 레인 구분용 — 브릿지 상판은 항상 파랑으로 고정
 const LANE_COLORS: [number, number, number] = [0x22c55e, 0xef4444, 0xfbbf24];
 const LANE_WIDTH         = 80;
-const BRIDGE_LENGTH      = 3500;
+const BRIDGE_LENGTH      = 4200;
 const BRIDGE_GAP         = 450;
 const PAD_DEPTH          = 200;
 const PLAYER_Z           = 400;
@@ -41,7 +41,9 @@ const BASE_SPEED = 0.6;
 const SPEED_MULTS: number[] = [0.8, 1.0, 1.0, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25];
 
 // 점프 파라미터 (원본 동일)
-const JUMP_HEIGHT   = 98;
+const JUMP_HEIGHT      = 98;
+const MINI_JUMP_HEIGHT = 72;   // 돌뿌리 미니점프 — 높고 빠르게
+const MINI_JUMP_DUR    = 0.24;
 // 점프 지속 시간 by 스테이지 (원본 LV1=0.72, LV2=0.70, LV3+=0.64 근사)
 const JUMP_DURATIONS: number[] = [0.72, 0.70, 0.64, 0.62, 0.62, 0.62, 0.62, 0.62, 0.62];
 
@@ -121,6 +123,7 @@ export interface FlowEngineOptions {
   colorTheme?:  string;
   motionScale?: number;
   bgmPath?:     string;
+  bgImageUrl?:  string; // 배경 이미지 URL (일반 JPG/PNG)
 }
 
 interface BridgeObj extends FlowBridge {
@@ -290,10 +293,11 @@ export class FlowEngine {
         this.duckHold      = true;
         if (!this.isBonus) this.showInstruction('숙여!', '#ffdd00', 5000, 2);
       },
+      onRockApproach:     () => { this.triggerMiniJump(); },
       onUfoPassed:        () => {
-        this.duckHold         = false; // 회복 시작
+        this.duckHold         = false;
         this.duckBounceOffset = 90;
-        this.duckPitchX       = -0.18; // 통과 후 살짝 위를 봄
+        this.duckPitchX       = -0.18;
         this.audio.sfxLand();
       },
       onPunchWallEnter:   () => {
@@ -325,6 +329,13 @@ export class FlowEngine {
     });
 
     for (let i = 0; i < 3; i++) this.spawnBridge(i === 0);
+
+    // 배경 이미지 로드
+    if (this.opts.bgImageUrl) {
+      new THREE.TextureLoader().load(this.opts.bgImageUrl, (tex) => {
+        if (this.scene) this.scene.background = tex;
+      });
+    }
   }
 
   // ── 파란 바닥 레인 (원본과 완전 동일) ─────────────────────────────────────
@@ -362,53 +373,7 @@ export class FlowEngine {
 
   // ── default 테마 대기 이펙트 ─────────────────────────────────────────────
 
-  private buildDefaultAtmosphere(): void {
-    if (!this.scene) return;
-
-    // 지평선 글로우 빔
-    const horizon = new THREE.Mesh(
-      new THREE.BoxGeometry(22000, 22, 8),
-      new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false }),
-    );
-    horizon.position.set(0, 4, -2600);
-    this.scene.add(horizon);
-
-    // 원거리 발광 기둥 (양쪽 배경 분위기)
-    const pillarColors = [0x4f46e5, 0x2563eb, 0x7c3aed, 0x1d4ed8, 0x6366f1, 0x4338ca];
-    for (let i = 0; i < 8; i++) {
-      const h   = 2000 + Math.random() * 1200;
-      const side = Math.random() < 0.5 ? -1 : 1;
-      const pillar = new THREE.Mesh(
-        new THREE.BoxGeometry(12 + Math.random() * 22, h, 35),
-        new THREE.MeshBasicMaterial({
-          color: pillarColors[i % pillarColors.length],
-          transparent: true,
-          opacity: 0.03 + Math.random() * 0.03,
-          blending: THREE.AdditiveBlending, depthWrite: false,
-        }),
-      );
-      pillar.position.set(
-        side * (600 + Math.random() * 1800),
-        h * 0.5,
-        -1200 - i * 400 + Math.random() * 200,
-      );
-      this.scene.add(pillar);
-    }
-
-    // 먼 거리 수평선 위 글로우 후광
-    for (let i = 0; i < 3; i++) {
-      const halo = new THREE.Mesh(
-        new THREE.BoxGeometry(18000, 6 + i * 3, 6),
-        new THREE.MeshBasicMaterial({
-          color: 0x6366f1, transparent: true,
-          opacity: 0.12 - i * 0.03,
-          blending: THREE.AdditiveBlending, depthWrite: false,
-        }),
-      );
-      halo.position.set(0, 4 + i * 5, -2400 - i * 180);
-      this.scene.add(halo);
-    }
-  }
+  private buildDefaultAtmosphere(): void { /* 제거 — 배경 이미지 없을 때 기본 검정만 */ }
 
   // ── 바다 환경 (ocean 테마 전용) ──────────────────────────────────────────
   //
@@ -571,34 +536,40 @@ export class FlowEngine {
 
     const stage = this.stageList[this.stageIdx];
     if (!isFirst && this.obstacles && stage) {
-      const am = stage.activeModules;
+      const am       = stage.activeModules;
       const hasPunch = am.has('punch') || am.has('reach');
       const hasDuck  = am.has('duck');
 
-      if (this.isBonus && hasDuck && hasPunch) {
-        // 보너스: UFO / 펀치박스 / 두드리기벽 균등 배분 (각 25%, 25% nothing)
+      // ── 장애물: 보너스는 33% 각 타입, 일반은 50% 하나 ───────────────────
+      if (this.isBonus) {
         const r = Math.random();
-        if (r < 0.25) { /* nothing */ }
-        else if (r < 0.5 && !this.obstacles.hasActiveUfo() && !this.obstacles.hasActiveBox()) {
+        if (r < 0.33 && hasDuck && !this.obstacles.hasActiveUfo()) {
           this.obstacles.attachUfo(bridgeObj);
-        } else if (r < 0.75 && !this.obstacles.hasActiveBox()) {
-          if (am.has('punch')) this.obstacles.attachBox(bridgeObj, am, false); // 펀치박스 강제
-        } else if (!this.obstacles.hasActiveBox() && am.has('reach')) {
-          this.obstacles.attachBox(bridgeObj, am, true); // 두드리기벽 강제
+        } else if (r < 0.66 && hasPunch && !this.obstacles.hasActiveBox()) {
+          this.obstacles.attachBox(bridgeObj, am);
         }
-      } else if (hasDuck && hasPunch) {
-        const r = Math.random();
-        if (r > 0.35 && r < 0.65) {
-          if (this.obstacles.shouldSpawnBox(am)) this.obstacles.attachBox(bridgeObj, am);
-        } else if (r >= 0.65) {
-          if (this.obstacles.shouldSpawnUfo(am)) this.obstacles.attachUfo(bridgeObj);
+      } else if (Math.random() < 0.50) {
+        if (hasPunch && hasDuck) {
+          // 두 모듈 모두 활성: 50/50으로 하나 선택
+          if (Math.random() < 0.5) {
+            if (!this.obstacles.hasActiveBox()) this.obstacles.attachBox(bridgeObj, am);
+          } else {
+            if (!this.obstacles.hasActiveUfo()) this.obstacles.attachUfo(bridgeObj);
+          }
+        } else if (hasPunch && !this.obstacles.hasActiveBox()) {
+          this.obstacles.attachBox(bridgeObj, am);
+        } else if (hasDuck && !this.obstacles.hasActiveUfo()) {
+          this.obstacles.attachUfo(bridgeObj);
         }
-      } else if (hasDuck && !hasPunch) {
-        if (this.obstacles.shouldSpawnUfo(am)) this.obstacles.attachUfo(bridgeObj);
-      } else if (hasPunch && !hasDuck) {
-        if (this.obstacles.shouldSpawnBox(am)) this.obstacles.attachBox(bridgeObj, am);
       }
 
+      // ── 돌뿌리: 50% 독립 확률, 브릿지 중앙 근처 배치 ───────────────────
+      const hasReachWall = bridgeObj.hasBox && am.has('reach');
+      if (!hasReachWall && am.has('rock') && Math.random() < 0.50) {
+        // localZ: 브릿지 중앙(-200 ~ -600) — 너무 끝은 아닌 중간 구간
+        const localZ = Math.round((-200 - Math.random() * 400) / 200) * 200;
+        this.obstacles.attachRock(bridgeObj, localZ);
+      }
     }
   }
 
@@ -640,10 +611,10 @@ export class FlowEngine {
     this.activeBridge = null;
     // lastJumpBridgeId 유지 → phantom jump 방지
     this.cb.onStageChange?.(idx);
-    // 스테이지 0은 카운트다운 후 already-playing. 1+부터 2초 배너 (게임은 계속 달림)
+    // 스테이지 0은 카운트다운 후 already-playing. 1+부터 3초 인트로
     if (idx > 0) {
       this.setPhase('stage-intro');
-      this.countdownTimer = setTimeout(() => this.setPhase('playing'), 2000);
+      this.countdownTimer = setTimeout(() => this.setPhase('playing'), 3000);
     }
   }
 
@@ -880,15 +851,24 @@ export class FlowEngine {
       }
       this.playerJumpY = Math.max(0, curve * this.jumpHeight);
       if (this.jumpProgress >= 1) {
+        const isMini = this.jumpHeight === MINI_JUMP_HEIGHT;
         this.playerJumpY = 0;
         this.isJumping   = false;
         this.jumpProgress = 0;
         this.isChangingLane = false;
-        this.landingStabilityTimer = 0.12;
-        this.impactYTimer  = 0.05;
-        this.impactZTimer  = 0.04;
-        this.landingImpactY = LANDING_IMPACT_Y;
-        this.landingImpactZ = LANDING_IMPACT_Z;
+        this.landingStabilityTimer = isMini ? 0.06 : 0.12;
+        this.impactYTimer  = isMini ? 0.04 : 0.05;
+        this.impactZTimer  = isMini ? 0.03 : 0.04;
+        this.landingImpactY = isMini ? LANDING_IMPACT_Y * 1.4 : LANDING_IMPACT_Y;
+        this.landingImpactZ = isMini ? LANDING_IMPACT_Z * 1.4 : LANDING_IMPACT_Z;
+        // 미니점프 착지 — 강한 지면 충격
+        if (isMini) {
+          this.microJolt          += 1.0;
+          this.flashPulseValue     = Math.min(1, this.flashPulseValue + 0.45);
+          this.hitShakeRemaining   = 220;
+          this.hitShakeIntensity   = 1.2;
+          this.hitShakeDuration    = 220;
+        }
         this.audio.sfxLand();
       }
     }
@@ -952,16 +932,17 @@ export class FlowEngine {
       }
     }
 
-    // ── 스피드라인 opacity ────────────────────────────────────────────────
+    // ── 스피드라인 opacity — 실제 속도에 비례, 속도 0이면 완전 투명 ────────
     if (this.speedLines) {
-      const lvOpacity = 0.20 + this.stageIdx * 0.045;
-      const targetOp  = Math.min(0.65, lvOpacity);
+      // 최대 속도 대비 현재 속도 비율 → 0이면 완전 숨김
+      const maxSpeed  = BASE_SPEED * 1.25;
+      const speedRatio = Math.max(0, (this.currentSpeed - 0.05) / maxSpeed);
+      const targetOp  = speedRatio * Math.min(0.65, 0.20 + this.stageIdx * 0.045);
       const children  = this.speedLines.children;
       for (let i = 0; i < children.length; i++) {
         const m   = children[i] as THREE.Mesh;
         const mat = m.material as THREE.MeshBasicMaterial;
         if (!this.aq.isSpeedLineActive(i)) {
-          // 비활성 라인은 즉시 숨김 — tier 전환 시 잔상 방지
           if (mat.opacity > 0) mat.opacity = 0;
           continue;
         }
@@ -981,16 +962,36 @@ export class FlowEngine {
   // ── 자동 점프 ────────────────────────────────────────────────────────────
 
   private triggerAutoJump(): void {
-    if (this.isJumping) return; // 이미 점프 중이면 절대 재진입 금지
+    if (this.isJumping) return;
     this.isJumping     = true;
     this.jumpProgress  = 0;
     this.jumpStartTime = this.gameTime;
+    this.jumpHeight    = JUMP_HEIGHT;
+    this.jumpDuration  = JUMP_DURATIONS[Math.min(this.stageIdx, JUMP_DURATIONS.length - 1)]!;
     this.microJolt    += MICROJOLT_AMOUNT;
     this.audio.sfxJump();
     if (this.jumpInstrCooldown <= 0 && !this.isBonus) {
       this.showInstruction('점프!', '#ffffff', 5000, 1);
       this.jumpInstrCooldown = 3.0;
     }
+  }
+
+  private triggerMiniJump(): void {
+    if (this.isJumping) return;
+    this.isJumping     = true;
+    this.jumpProgress  = 0;
+    this.jumpStartTime = this.gameTime;
+    this.jumpHeight    = MINI_JUMP_HEIGHT;
+    this.jumpDuration  = MINI_JUMP_DUR;
+    // 도약 순간 — 강한 위로 충격 + 화면 흔들림
+    this.microJolt        += 1.2;
+    this.flashPulseValue   = Math.min(1, this.flashPulseValue + 0.4);
+    this.hitShakeRemaining = 180;
+    this.hitShakeIntensity = 1.0;
+    this.hitShakeDuration  = 180;
+    // FOV 확장 — 뛰어오르는 순간 더 와이드하게 느껴짐
+    this.targetFov = Math.min(FOV_MAX, this.currentFov + 14);
+    this.audio.sfxJump();
   }
 
   // 어드밴스 경고는 ObstacleManager.onBoxWarn 으로 이관됨

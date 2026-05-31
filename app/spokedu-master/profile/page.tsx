@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   BookOpen,
   Building2,
@@ -20,7 +20,7 @@ import {
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
@@ -234,6 +234,8 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   const selectPlan = (plan: PlanInfo) => {
     if (plan.id === currentPlan) return;
+    const hasActivePaidPlan = currentPlan === 'pro' || currentPlan === 'team';
+    const selectedPaidPlan = plan.id === 'pro' || plan.id === 'team';
     if (plan.id === 'school' || plan.contact) {
       setNotice('학교·기관 플랜은 도입 범위와 계정 수가 달라 별도 상담으로 진행합니다. support@spokedu.com으로 문의해 주세요.');
       return;
@@ -244,6 +246,10 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
     }
     if (plan.id === 'free') {
       setNotice('무료 체험은 신규 계정에 자동 적용됩니다. 이미 체험 중이라면 현재 상태가 유지됩니다.');
+      return;
+    }
+    if (hasActivePaidPlan && selectedPaidPlan) {
+      router.push('/spokedu-master/subscription');
       return;
     }
     onClose();
@@ -318,6 +324,8 @@ export default function SpokeduMasterProfilePage() {
   const setProfile = useMasterStore((state) => state.setProfile);
   const resetProfile = useMasterStore((state) => state.resetProfile);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const hasAutoOpenedPlans = useRef(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const [name, setName] = useState(profile?.name ?? '선생님');
@@ -329,6 +337,20 @@ export default function SpokeduMasterProfilePage() {
   const currentPlanName = planName(currentPlan);
   const statusText = planStatusText(currentPlan, daysLeft, profile?.isAdmin);
   const initial = (profile?.name ?? '선생님').slice(0, 1);
+
+  const shouldOpenPlans = searchParams.get('plans') === '1' || searchParams.get('plan') === '1';
+
+  useEffect(() => {
+    if (shouldOpenPlans && !hasAutoOpenedPlans.current) {
+      hasAutoOpenedPlans.current = true;
+      setPlanOpen(true);
+    }
+  }, [shouldOpenPlans]);
+
+  const handlePlanClose = () => {
+    setPlanOpen(false);
+    if (shouldOpenPlans) router.replace('/spokedu-master/profile', { scroll: false });
+  };
 
   const saveProfile = () => {
     setProfile({ name: name.trim() || '선생님', school: school.trim() });
@@ -457,7 +479,7 @@ export default function SpokeduMasterProfilePage() {
         setSchool={setSchool}
         onSave={saveProfile}
       />
-      <PlanSheet open={planOpen} onClose={() => setPlanOpen(false)} />
+      <PlanSheet open={planOpen} onClose={handlePlanClose} />
 
       <div className="mx-auto max-w-[1180px] px-5 pt-7 sm:px-8">
         <button
