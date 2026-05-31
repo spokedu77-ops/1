@@ -53,7 +53,7 @@ type DashboardKpi = {
   value: number | string;
 };
 
-function isPlaceholderText(value: string | undefined) {
+function isPlaceholderText(value?: string | null) {
   const text = (value ?? '').trim();
   return !text || hasBrokenText(text) || /확인 필요|활동 공간 확인|조정|미정|undefined|null/i.test(text);
 }
