@@ -20,7 +20,7 @@ import {
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
@@ -319,7 +319,7 @@ function ProfileSheet({
   );
 }
 
-export default function SpokeduMasterProfilePage() {
+function SpokeduMasterProfileContent() {
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
   const resetProfile = useMasterStore((state) => state.resetProfile);
@@ -501,5 +501,13 @@ export default function SpokeduMasterProfilePage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SpokeduMasterProfilePage() {
+  return (
+    <Suspense fallback={<div className="h-full" style={{ background: 'var(--spm-bg)' }} />}>
+      <SpokeduMasterProfileContent />
+    </Suspense>
   );
 }
