@@ -196,6 +196,7 @@ export function NoteEditor({
   onIndent,
   onNavigatePrevious,
   onNavigateNext,
+  onEditorFocus,
   tabBehavior = 'block-indent',
   resetKey,
 }: {
@@ -220,6 +221,7 @@ export function NoteEditor({
   onIndent?: (direction: 'in' | 'out') => void;
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
+  onEditorFocus?: () => void;
   tabBehavior?: 'block-indent' | 'insert-text-indent';
   resetKey?: string;
 }) {
@@ -239,6 +241,7 @@ export function NoteEditor({
     onIndent,
     onNavigatePrevious,
     onNavigateNext,
+    onEditorFocus,
     enterCreatesBlock,
     tabBehavior,
     flushPendingChange: () => {},
@@ -255,6 +258,7 @@ export function NoteEditor({
     onIndent,
     onNavigatePrevious,
     onNavigateNext,
+    onEditorFocus,
     enterCreatesBlock,
     tabBehavior,
     flushPendingChange: callbacksRef.current.flushPendingChange,
@@ -451,6 +455,7 @@ export function NoteEditor({
       scheduleChange({ text: nextText, html: currentEditor.getHTML() });
     },
     onFocus: ({ editor: currentEditor }) => {
+      callbacksRef.current.onEditorFocus?.();
       notifyFormatToolbar(currentEditor);
     },
     onSelectionUpdate: ({ editor: currentEditor }) => {

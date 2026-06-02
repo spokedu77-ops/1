@@ -1,11 +1,12 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Toaster } from 'sonner';
 import Sidebar from './components/Sidebar';
 import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
+import { AppSidebarProvider, useAppSidebar } from './providers/AppSidebarProvider';
 import { QueryProvider } from './providers/QueryProvider';
 import { I18nProvider } from './providers/I18nProvider';
 import './globals.css';
@@ -25,10 +26,10 @@ const fontVariables = {
 
 const naverSiteVerification = process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION?.trim();
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+function RootLayoutShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const hideSidebar = isFullscreenPath(pathname);
-  const [isDesktopOpen, setIsDesktopOpen] = useState(true);
+  const { isDesktopOpen, toggleDesktop } = useAppSidebar();
   const fullscreenWrapStyle = hideSidebar
     ? { minHeight: 'var(--viewport-height-px, 100dvh)', height: 'var(--viewport-height-px, 100dvh)', width: '100vw', maxWidth: '100%' }
     : undefined;
@@ -64,7 +65,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               {!hideSidebar && (
                 <Sidebar
                   isDesktopOpen={isDesktopOpen}
-                  onToggleDesktop={() => setIsDesktopOpen((value) => !value)}
+                  onToggleDesktop={toggleDesktop}
                 />
               )}
 
@@ -83,5 +84,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </QueryProvider>
       </body>
     </html>
+  );
+}
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <AppSidebarProvider>
+      <RootLayoutShell>{children}</RootLayoutShell>
+    </AppSidebarProvider>
   );
 }

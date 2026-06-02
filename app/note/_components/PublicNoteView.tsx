@@ -62,7 +62,11 @@ function PublicBlock({
 }) {
   const depth = isInsideToggle ? 0 : blockDepth(block.content);
   const indentStyle = isInsideToggle ? undefined : { marginLeft: `${depth * 20}px` };
-  const rootBlockShell = isInsideToggle ? '' : 'rounded-lg border border-slate-200 bg-white px-3 py-2';
+  const isBorderlessInlineBlock = block.type === 'text' || block.type === 'todo';
+  const rootBlockShell =
+    isInsideToggle || isBorderlessInlineBlock
+      ? ''
+      : 'rounded-lg border border-slate-200 bg-white px-3 py-2';
 
   if (block.type === 'divider') {
     return (
@@ -84,7 +88,7 @@ function PublicBlock({
     const checked = !!block.content?.checked;
     return (
       <div
-        className={`flex items-start gap-3 ${isInsideToggle ? 'py-1.5' : `${rootBlockShell} py-2`}`}
+        className={`flex items-start gap-3 ${isInsideToggle || isBorderlessInlineBlock ? 'py-1.5' : `${rootBlockShell} py-2`}`}
         style={indentStyle}
       >
         <span
@@ -191,7 +195,10 @@ function PublicBlock({
   }
 
   return (
-    <div className={isInsideToggle ? 'py-0.5' : `${rootBlockShell} py-2`} style={indentStyle}>
+    <div
+      className={isInsideToggle || isBorderlessInlineBlock ? 'py-0.5' : `${rootBlockShell} py-2`}
+      style={indentStyle}
+    >
       <RichText content={block.content} className="text-[15px] leading-7 text-slate-800" />
     </div>
   );

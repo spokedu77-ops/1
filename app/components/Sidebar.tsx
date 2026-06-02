@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAppSidebar } from '@/app/providers/AppSidebarProvider';
 import {
   BookOpen,
   Box,
@@ -43,12 +44,12 @@ type MenuGroup = {
 
 export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: SidebarProps) {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
+  const { isMobileOpen, setMobileOpen, toggleMobile } = useAppSidebar();
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
+    setMobileOpen(false);
+  }, [pathname, setMobileOpen]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -167,21 +168,21 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       <div className="fixed left-0 top-0 z-[300] flex h-12 w-full items-center justify-between bg-[#1e293b] px-4 pt-[env(safe-area-inset-top)] shadow-lg md:hidden md:pt-0">
         <h1 className="text-lg font-semibold uppercase italic tracking-tighter text-blue-400">SPOKEDU</h1>
         <button
-          onClick={() => setIsOpen((current) => !current)}
+          onClick={toggleMobile}
           className="flex min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-lg bg-slate-800 p-2 text-white outline-none transition-colors hover:bg-slate-700 active:bg-slate-600"
-          aria-label={isOpen ? '사이드바 닫기' : '사이드바 열기'}
+          aria-label={isMobileOpen ? '사이드바 닫기' : '사이드바 열기'}
         >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
+          {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {isOpen ? (
-        <button className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setIsOpen(false)} aria-label="메뉴 닫기" />
+      {isMobileOpen ? (
+        <button className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setMobileOpen(false)} aria-label="메뉴 닫기" />
       ) : null}
 
       <aside
         className={`fixed left-0 top-0 z-[260] flex h-screen w-64 flex-col bg-[#1e293b] text-white transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${isDesktopOpen ? 'md:translate-x-0' : 'md:-translate-x-full'}`}
       >
         <div className="hidden border-b border-slate-700 p-6 text-left md:block">

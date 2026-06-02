@@ -17,21 +17,31 @@ export function getTrialDaysLeft(profile: UserProfile | null): number {
   return Math.max(0, Math.ceil((new Date(profile.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
 }
 
-export function isTrialExpired(profile: UserProfile | null): boolean {
-  if (profile?.isAdmin) return false;
-  return (profile?.plan ?? 'free') === 'free' && getTrialDaysLeft(profile) <= 0;
+export function isActiveTrial(profile: UserProfile | null): boolean {
+  return (profile?.plan ?? 'free') === 'free' && getTrialDaysLeft(profile) > 0;
 }
 
-export function isActiveMasterPlan(profile: UserProfile | null): boolean {
+export function isTrialExpired(profile: UserProfile | null): boolean {
+  if (profile?.isAdmin) return false;
+  return (profile?.plan ?? 'free') === 'free' && !isActiveTrial(profile);
+}
+
+export function isPaidMasterPlan(profile: UserProfile | null): boolean {
   return profile?.plan === 'pro' || profile?.plan === 'team' || Boolean(profile?.isAdmin);
 }
 
+export const isActiveMasterPlan = isPaidMasterPlan;
+
+export function hasMasterAccess(profile: UserProfile | null): boolean {
+  return isPaidMasterPlan(profile) || isActiveTrial(profile);
+}
+
 export function getUpgradeHref(profile: UserProfile | null): string {
-  return isActiveMasterPlan(profile) ? '/spokedu-master/subscription' : '/spokedu-master/profile?plans=1';
+  return isPaidMasterPlan(profile) ? '/spokedu-master/subscription' : '/spokedu-master/profile?plans=1';
 }
 
 export function getUpgradeLabel(profile: UserProfile | null): string {
-  return isActiveMasterPlan(profile) ? '구독 관리' : 'MASTER로 열기';
+  return isPaidMasterPlan(profile) ? '구독 관리' : '구독 플랜 보기';
 }
 
 export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
@@ -52,7 +62,7 @@ export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao'
   return {
     allowed: false,
     label,
-    reason: '상용화 첫 버전에서는 외부 자동 발송과 자동 리포트보다 라이브러리, SPOMOVE, 수업 설명 문구를 우선 제공합니다.',
+    reason: '첫 버전에서는 자동 발송과 자동 리포트보다 라이브러리, SPOMOVE, 수업 설명 문구를 우선 제공합니다.',
   };
 }
 

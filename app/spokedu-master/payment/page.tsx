@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { isPaidMasterPlan } from '../lib/subscription';
 import { useMasterStore, useProfile } from '../store';
 
 declare global {
@@ -27,6 +28,7 @@ declare global {
 }
 
 type PlanKey = 'pro' | 'team';
+type SubscriptionGuardState = 'checking' | 'active' | 'inactive' | 'failed' | 'no-session';
 
 const PLANS: Record<PlanKey, {
   title: string;
@@ -156,7 +158,7 @@ function PaymentContent() {
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const [planKey, setPlanKey] = useState<PlanKey>(normalizePlan(params.get('plan')));
   const plan = PLANS[planKey];
-  const alreadySubscribed = profile?.plan === 'pro' || profile?.plan === 'team';
+  const localAlreadySubscribed = isPaidMasterPlan(profile);
 
   const [email, setEmail] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -164,7 +166,12 @@ function PaymentContent() {
   const [isAuthed, setIsAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [subscriptionGuard, setSubscriptionGuard] = useState<SubscriptionGuardState>('checking');
+  const [serverPlan, setServerPlan] = useState<PlanKey | null>(null);
   const [error, setError] = useState('');
+  const alreadySubscribed =
+    subscriptionGuard === 'active' ||
+    ((subscriptionGuard === 'failed' || subscriptionGuard === 'no-session') && localAlreadySubscribed);
 
   const orderSummary = useMemo(() => {
     return {
@@ -191,13 +198,31 @@ function PaymentContent() {
         if (session?.user?.email) {
           setEmail(session.user.email);
           setIsAuthed(true);
+          try {
+            const res = await fetch('/api/spokedu-master/subscription', { cache: 'no-store' });
+            const json = await res.json() as { plan?: string; status?: string; isAdmin?: boolean };
+            const activePlan = json.status === 'active' && (json.plan === 'pro' || json.plan === 'team' || json.isAdmin);
+            if (activePlan) {
+              setServerPlan(json.plan === 'team' || json.isAdmin ? 'team' : 'pro');
+              setSubscriptionGuard('active');
+            } else {
+              setSubscriptionGuard('inactive');
+              void syncSubscription();
+            }
+          } catch {
+            setSubscriptionGuard('failed');
+          }
+        } else {
+          setSubscriptionGuard('no-session');
         }
+      } catch {
+        setSubscriptionGuard('failed');
       } finally {
         setCheckingSession(false);
       }
     };
     void checkSession();
-  }, []);
+  }, [syncSubscription]);
 
   const sendOtp = async () => {
     if (!email.includes('@')) {
@@ -285,7 +310,7 @@ function PaymentContent() {
   };
 
   if (alreadySubscribed) {
-    const activePlanLabel = profile?.plan === 'team' ? 'Center' : 'Pro';
+    const activePlanLabel = (serverPlan ?? profile?.plan) === 'team' ? 'Center' : 'Pro';
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center px-5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
         <div className="w-full max-w-[440px] space-y-6 text-center">
@@ -419,7 +444,7 @@ function PaymentContent() {
             </div>
           </section>
 
-          {checkingSession ? (
+          {checkingSession || subscriptionGuard === 'checking' ? (
             <section className="flex h-40 items-center justify-center rounded-[20px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
               <Loader2 size={22} className="animate-spin" color="var(--spm-t3)" />
             </section>

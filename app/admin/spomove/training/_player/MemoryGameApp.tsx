@@ -83,6 +83,8 @@ type Settings = {
   kidsSafeMode: boolean;
   /** 반응 인지 2·3·4·5번 변형 색지각 이미지 테마 (Asset Hub 1번 섹션과 localStorage 동기화) */
   variantColorTheme: SpomoveColorThemeId;
+  /** basic 3번 + 색상 테마: 전면 색상 위 숫자 오버레이 범위 */
+  basicNumberOverlay: 'none' | '2' | '3';
   /** 플로우 추가 동작 기능 플래그 */
   flowFeatures: Set<FlowFeatureKey>;
   /** 플로우 배경 색상 테마 */
@@ -111,6 +113,7 @@ const defaultSettings: Settings = {
   accel: false,
   kidsSafeMode: false,
   variantColorTheme: 'color',
+  basicNumberOverlay: 'none',
   flowFeatures: new Set<FlowFeatureKey>(),
   flowColorTheme: 'default',
   flowDuration: 25,
@@ -131,6 +134,8 @@ export type MemoryGameAutoLaunch = {
   numberRule?: string;
   /** 반응 인지 2·3·4·5번만 */
   variantColorTheme?: SpomoveColorThemeId;
+  /** basic 3번 + 색상 테마: 숫자 오버레이 범위 */
+  basicNumberOverlay?: 'none' | '2' | '3';
   /** Flow 2.0: 선택된 추가 동작 키 배열 → 내부에서 Set<FlowFeatureKey>로 변환 */
   flowFeatures?: string[];
   /** Flow 2.0: 배경 색상 테마 */
@@ -302,7 +307,7 @@ export default function MemoryGameApp({
 
   /** 변형 색지각(basic 2·3·4·5번): 설정·워밍업·훈련 중 이미지 프리로드 */
   const basicVariantLevel = useMemo(
-    () => settings.mode === 'basic' && (settings.level === 2 || settings.level === 3 || settings.level === 4 || settings.level === 5),
+    () => settings.mode === 'basic' && (settings.level === 3 || settings.level === 4 || settings.level === 5 || settings.level === 6),
     [settings.mode, settings.level]
   );
 
@@ -391,16 +396,6 @@ export default function MemoryGameApp({
     });
   }, []);
 
-  useEffect(() => {
-    if (settings.mode !== 'basic' || settings.level !== 4) return;
-    if (settings.variantColorTheme !== 'color') return;
-    // 4번은 색상 테마 비허용(과일 고정)
-    setSettings((s) => ({ ...s, variantColorTheme: 'fruit' }));
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, 'fruit');
-    }
-  }, [settings.mode, settings.level, settings.variantColorTheme]);
-
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
     setDisplayCount(countRef.current);
@@ -455,6 +450,7 @@ export default function MemoryGameApp({
     audioMode: settings.audioMode,
     colors: COLORS,
     fruitSlides: variantSignalSlides,
+    basicNumberOverlay: settings.basicNumberOverlay,
     onSignal,
     onFinish,
   });
@@ -470,6 +466,7 @@ export default function MemoryGameApp({
     audioMode: settings.audioMode,
     colors: COLORS,
     fruitSlides: variantSignalSlides,
+    basicNumberOverlay: settings.basicNumberOverlay,
     onSignal,
     onFinish,
   });
@@ -992,7 +989,6 @@ export default function MemoryGameApp({
                       .sort((a, b) =>
                         SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')
                       )
-                      .filter((tid) => !(settings.mode === 'basic' && settings.level === 4 && tid === 'color'))
                       .map((tid) => (
                       <button
                         key={tid}
@@ -1568,24 +1564,6 @@ export default function MemoryGameApp({
             >
               🎨 테마: {SPOMOVE_COLOR_THEME_LABELS[settings.variantColorTheme]}
             </div>
-            {settings.level === 3 && (
-              <div
-                style={{
-                  textAlign: 'center',
-                  background: 'rgba(0,0,0,0.55)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '2rem',
-                  padding: '0.5rem 1.2rem',
-                  color: 'rgba(255,255,255,0.85)',
-                  fontSize: 'clamp(0.72rem,2vw,0.9rem)',
-                  fontWeight: 600,
-                  lineHeight: 1.45,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                }}
-              >
-                두 색 위치을 동시에 한 발씩 밟으세요
-              </div>
-            )}
           </div>
         )}
         <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>

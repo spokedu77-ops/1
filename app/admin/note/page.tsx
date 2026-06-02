@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { useAppSidebar } from '@/app/providers/AppSidebarProvider';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import { NoteEditor } from './_components/NoteEditor';
 import { BubbleToolbar } from './_components/BubbleToolbar';
@@ -302,6 +303,7 @@ function BlockContent({
   childBlocks = [],
   renderChildBlock,
   onAddChildBelow,
+  onEditorFocus,
   isInsideToggle = false,
   isDropTarget = false,
 }: {
@@ -329,6 +331,7 @@ function BlockContent({
   childBlocks?: NoteBlock[];
   renderChildBlock?: (child: NoteBlock) => React.ReactNode;
   onAddChildBelow?: (type?: NoteBlock['type']) => void;
+  onEditorFocus?: () => void;
   isInsideToggle?: boolean;
   isDropTarget?: boolean;
 }) {
@@ -337,7 +340,11 @@ function BlockContent({
 
   const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
   const contentMarginLeft = isInsideToggle ? 0 : blockDepth * 20;
-  const rootBlockShell = isInsideToggle ? '' : 'rounded-lg border border-slate-200 bg-white px-3 py-2';
+  const isBorderlessInlineBlock = block.type === 'text' || block.type === 'todo';
+  const rootBlockShell =
+    isInsideToggle || isBorderlessInlineBlock
+      ? ''
+      : 'rounded-lg border border-slate-200 bg-white px-3 py-2';
   const enterCreatesBlockBelow =
     !isInsideToggle || block.type === 'text' || block.type === 'todo';
 
@@ -382,6 +389,7 @@ function BlockContent({
           tabBehavior={tabBehavior}
           onNavigatePrevious={onNavigatePrevious}
           onNavigateNext={onNavigateNext}
+          onEditorFocus={onEditorFocus}
           onSlashChange={(nextShow, nextQuery) => {
             setShowSlash(nextShow);
             setSlashQuery(nextQuery);
@@ -426,7 +434,10 @@ function BlockContent({
     const checked = !!block.content?.checked;
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div className={`flex items-start gap-3 ${isInsideToggle ? 'py-1.5' : rootBlockShell}`} style={{ marginLeft: `${contentMarginLeft}px` }}>
+      <div
+        className={`flex items-start gap-3 ${isInsideToggle || isBorderlessInlineBlock ? 'py-1.5' : rootBlockShell}`}
+        style={{ marginLeft: `${contentMarginLeft}px` }}
+      >
         <button type="button"
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
             checked ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 bg-white hover:border-blue-400'
@@ -683,6 +694,7 @@ function BlockContent({
           <input
             value={title}
             onChange={(e) => patchToggle({ title: e.target.value })}
+            onFocus={() => onEditorFocus?.()}
             onKeyDown={(e) => {
               if (e.key === 'Tab' && onIndentChange) {
                 e.preventDefault();
@@ -762,7 +774,10 @@ function BlockContent({
   // text (default)
   const text = typeof block.content?.text === 'string' ? block.content.text : '';
   return (
-    <div className={`flex items-start gap-3 ${isInsideToggle ? 'py-0.5' : rootBlockShell}`} style={{ marginLeft: `${contentMarginLeft}px` }}>
+    <div
+      className={`flex items-start gap-3 ${isInsideToggle || isBorderlessInlineBlock ? 'py-0.5' : rootBlockShell}`}
+      style={{ marginLeft: `${contentMarginLeft}px` }}
+    >
       <div className="relative min-w-0 flex-1">
         {renderFormatToolbar()}
         {renderFormattedTextarea({
@@ -812,6 +827,7 @@ function SortableBlockRow({
   childBlocks,
   renderChildBlock,
   onAddChildBelow,
+  onEditorFocus,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -838,6 +854,7 @@ function SortableBlockRow({
   childBlocks?: NoteBlock[];
   renderChildBlock?: (child: NoteBlock) => React.ReactNode;
   onAddChildBelow?: (type?: NoteBlock['type']) => void;
+  onEditorFocus?: () => void;
 }) {
   const {
     attributes,
@@ -884,6 +901,7 @@ function SortableBlockRow({
     <div
       className="min-w-0 flex-1"
       onMouseDownCapture={() => {
+        onEditorFocus?.();
         onFocusToggle?.(block.type === 'toggle' ? block.id : null);
       }}
     >
@@ -908,6 +926,7 @@ function SortableBlockRow({
         childBlocks={childBlocks}
         renderChildBlock={renderChildBlock}
         onAddChildBelow={onAddChildBelow}
+        onEditorFocus={onEditorFocus}
         isInsideToggle={false}
         isDropTarget={isDropTarget}
       />
@@ -967,6 +986,7 @@ function ToggleInlineRow({
   isDropTarget,
   childBlocks,
   renderChildBlock,
+  onEditorFocus,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -992,6 +1012,7 @@ function ToggleInlineRow({
   isDropTarget?: boolean;
   childBlocks?: NoteBlock[];
   renderChildBlock?: (child: NoteBlock) => React.ReactNode;
+  onEditorFocus?: () => void;
 }) {
   const {
     attributes,
@@ -1049,7 +1070,10 @@ function ToggleInlineRow({
       <div
         className="min-w-0"
         onMouseDownCapture={() => {
-          onFocusToggle?.(block.type === 'toggle' ? block.id : null);
+          onEditorFocus?.();
+          if (block.type === 'toggle') {
+            onFocusToggle?.(block.id);
+          }
         }}
       >
         <BlockContent
@@ -1072,6 +1096,7 @@ function ToggleInlineRow({
           uploadImage={uploadImage}
           childBlocks={childBlocks}
           renderChildBlock={renderChildBlock}
+          onEditorFocus={onEditorFocus}
           isInsideToggle
           isDropTarget={isDropTarget}
         />
@@ -1119,6 +1144,7 @@ function AdminNotePageContent() {
   const [collaborators, setCollaborators] = useState<NoteCollaborator[]>([]);
   const [backlinks, setBacklinks] = useState<NoteDocument[]>([]);
   const [mobileTab, setMobileTab] = useState<'list' | 'editor'>('list');
+  const { closeAll, setDesktopOpen, setMobileOpen } = useAppSidebar();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('recent');
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -1145,6 +1171,7 @@ function AdminNotePageContent() {
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const blocksRef = useRef<NoteBlock[]>([]);
+  const focusedEditorBlockIdRef = useRef<string | null>(null);
   const expandedDuringDragRef = useRef<Set<string>>(new Set());
 
   const sensors = useSensors(
@@ -1164,8 +1191,21 @@ function AdminNotePageContent() {
 
   const focusBlockEditor = useCallback((blockId: string | null) => {
     if (!blockId) return;
+    focusedEditorBlockIdRef.current = blockId;
     setFocusedEditorBlockId(blockId);
     setFocusSignal((v) => v + 1);
+    const block = blocksRef.current.find((b) => b.id === blockId);
+    if (!block) return;
+    if (block.type === 'toggle') {
+      setFocusedToggleId(block.id);
+      return;
+    }
+    const parentId = block.parent_block_id ?? null;
+    if (!parentId) return;
+    const parent = blocksRef.current.find((b) => b.id === parentId);
+    if (parent?.type === 'toggle') {
+      setFocusedToggleId(parent.id);
+    }
   }, []);
 
   const filteredDocuments = useMemo(() => {
@@ -1227,8 +1267,12 @@ function AdminNotePageContent() {
   /* init from URL */
   useEffect(() => {
     const initialId = searchParams.get('id');
-    if (initialId) { setSelectedId(initialId); setMobileTab('editor'); }
-  }, [searchParams]);
+    if (initialId) {
+      setSelectedId(initialId);
+      setMobileTab('editor');
+      closeAll();
+    }
+  }, [searchParams, closeAll]);
 
   /* load documents */
   useEffect(() => {
@@ -1245,6 +1289,8 @@ function AdminNotePageContent() {
         if ((docTab === 'active' || docTab === 'block-trash') && !selectedId && json.documents?.length > 0) {
           const preferred = json.documents.find((d) => d.is_pinned) ?? json.documents[0];
           setSelectedId(preferred.id);
+          setMobileTab('editor');
+          closeAll();
           router.replace(`/admin/note?id=${encodeURIComponent(preferred.id)}`);
         }
       } catch (e) { devLogger.error('[Note] loadDocs', e); setError(e instanceof Error ? e.message : '로드 실패'); }
@@ -1682,17 +1728,25 @@ function AdminNotePageContent() {
   }, [normalizeDepthByOrder, persistBlockReparent, persistOrderAndDepth, selectedId, triggerSave]);
 
   /* handlers */
+  const handleGoToDashboard = useCallback(() => {
+    setDesktopOpen(true);
+    setMobileOpen(false);
+    router.push('/admin');
+  }, [router, setDesktopOpen, setMobileOpen]);
+
   const handleSelectDocument = (doc: NoteDocument) => {
     setSelectedId(doc.id);
     setMobileTab('editor');
+    closeAll();
     router.replace(`/admin/note?id=${encodeURIComponent(doc.id)}`);
   };
 
   const handleOpenDocumentById = useCallback((documentId: string) => {
     setSelectedId(documentId);
     setMobileTab('editor');
+    closeAll();
     router.replace(`/admin/note?id=${encodeURIComponent(documentId)}`);
-  }, [router]);
+  }, [router, closeAll]);
 
   const showFormatToolbar = useCallback((
     applyMark: (mark: InlineMark) => void,
@@ -1736,7 +1790,9 @@ function AdminNotePageContent() {
       const json = (await res.json()) as { document: NoteDocument };
       const newDoc = json.document;
       setDocuments((prev) => [newDoc, ...prev]);
-      setSelectedId(newDoc.id); setMobileTab('editor');
+      setSelectedId(newDoc.id);
+      setMobileTab('editor');
+      closeAll();
       router.replace(`/admin/note?id=${encodeURIComponent(newDoc.id)}`);
     } catch (e) { devLogger.error('[Note] createDoc', e); setError(e instanceof Error ? e.message : '생성 실패'); }
     finally { setLoadingState('idle'); }
@@ -1952,16 +2008,18 @@ function AdminNotePageContent() {
     if (target) focusBlockEditor(target.id);
   }, [blocks, focusBlockEditor]);
 
-  const handleInsertBlockAfter = useCallback(async (afterBlock: NoteBlock, type: NoteBlock['type'] = 'text') => {
+  const insertBlockAmongSiblings = useCallback(async (
+    parentId: string | null,
+    type: NoteBlock['type'],
+    insertIndex: number,
+  ) => {
     if (!selectedId) return;
     try {
       setLoadingState('saving');
-      const parentId = afterBlock.parent_block_id ?? null;
       const siblings = blocksRef.current
         .filter((b) => (b.parent_block_id ?? null) === parentId)
         .sort((a, b) => a.order_index - b.order_index);
-      const afterIndex = siblings.findIndex((b) => b.id === afterBlock.id);
-      const insertIndex = afterIndex >= 0 ? afterIndex + 1 : siblings.length;
+      const clampedIndex = Math.max(0, Math.min(insertIndex, siblings.length));
       const parentBlock = parentId ? blocksRef.current.find((b) => b.id === parentId) : null;
       const insideToggle = parentBlock?.type === 'toggle';
       const res = await fetch('/api/admin/note/blocks', {
@@ -1972,7 +2030,7 @@ function AdminNotePageContent() {
           documentId: selectedId,
           type,
           content: defaultBlockContent(type, { insideToggle }),
-          order_index: insertIndex,
+          order_index: clampedIndex,
           parent_block_id: parentId,
         }),
       });
@@ -1981,7 +2039,7 @@ function AdminNotePageContent() {
         throw new Error(j?.error || '블록 추가 실패');
       }
       const json = (await res.json()) as { block: NoteBlock };
-      const nextSiblings = [...siblings.slice(0, insertIndex), json.block, ...siblings.slice(insertIndex)]
+      const nextSiblings = [...siblings.slice(0, clampedIndex), json.block, ...siblings.slice(clampedIndex)]
         .map((block, index) => ({ ...block, order_index: index }));
       const siblingIds = new Set(nextSiblings.map((block) => block.id));
       setBlocks((prev) => {
@@ -1997,11 +2055,21 @@ function AdminNotePageContent() {
         body: JSON.stringify({ orders: nextSiblings.map((block) => ({ id: block.id, order_index: block.order_index })) }),
       }).then(() => triggerSave()).catch((e) => devLogger.error('[Note] normalizeInsertOrder', e));
     } catch (e) {
-      devLogger.error('[Note] insertBlockAfter', e);
+      devLogger.error('[Note] insertBlockAmongSiblings', e);
       setError(e instanceof Error ? e.message : '블록 추가 실패');
       setLoadingState('idle');
     }
   }, [selectedId, triggerSave, focusBlockEditor, registerCreatedBlockUndo]);
+
+  const handleInsertBlockAfter = useCallback(async (afterBlock: NoteBlock, type: NoteBlock['type'] = 'text') => {
+    const parentId = afterBlock.parent_block_id ?? null;
+    const siblings = blocksRef.current
+      .filter((b) => (b.parent_block_id ?? null) === parentId)
+      .sort((a, b) => a.order_index - b.order_index);
+    const afterIndex = siblings.findIndex((b) => b.id === afterBlock.id);
+    const insertIndex = afterIndex >= 0 ? afterIndex + 1 : siblings.length;
+    await insertBlockAmongSiblings(parentId, type, insertIndex);
+  }, [insertBlockAmongSiblings]);
 
   const handleInsertBlockInParent = useCallback(async (parentBlockId: string, type: NoteBlock['type'] = 'text') => {
     if (!selectedId) return;
@@ -2015,39 +2083,34 @@ function AdminNotePageContent() {
     const siblings = blocksRef.current
       .filter((b) => b.parent_block_id === parentBlockId)
       .sort((a, b) => a.order_index - b.order_index);
+    const focusedId = focusedEditorBlockIdRef.current ?? focusedEditorBlockId;
+
+    const focusedChild = focusedId
+      ? siblings.find((b) => b.id === focusedId) ?? null
+      : null;
+    if (focusedChild) {
+      await handleInsertBlockAfter(focusedChild, type);
+      return;
+    }
+
+    if (focusedId === parentBlockId) {
+      await insertBlockAmongSiblings(parentBlockId, type, 0);
+      return;
+    }
+
     if (siblings.length > 0) {
       await handleInsertBlockAfter(siblings[siblings.length - 1], type);
       return;
     }
-    try {
-      setLoadingState('saving');
-      const res = await fetch('/api/admin/note/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          documentId: selectedId,
-          type,
-          content: defaultBlockContent(type, { insideToggle: true }),
-          order_index: 0,
-          parent_block_id: parentBlockId,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '블록 추가 실패');
-      }
-      const json = (await res.json()) as { block: NoteBlock };
-      setBlocks((prev) => [...prev, json.block]);
-      focusBlockEditor(json.block.id);
-      registerCreatedBlockUndo(json.block.id);
-      triggerSave();
-    } catch (e) {
-      devLogger.error('[Note] insertBlockInParent', e);
-      setError(e instanceof Error ? e.message : '블록 추가 실패');
-      setLoadingState('idle');
-    }
-  }, [selectedId, handleInsertBlockAfter, handleUpdateBlock, triggerSave, focusBlockEditor, registerCreatedBlockUndo]);
+
+    await insertBlockAmongSiblings(parentBlockId, type, 0);
+  }, [
+    selectedId,
+    focusedEditorBlockId,
+    handleInsertBlockAfter,
+    handleUpdateBlock,
+    insertBlockAmongSiblings,
+  ]);
 
   const handleAddBlock = useCallback(async (type: NoteBlock['type']) => {
     if (!selectedId) return;
@@ -2106,10 +2169,7 @@ function AdminNotePageContent() {
         return;
       }
 
-      const parentBlockId =
-        type === 'video' || type === 'image'
-          ? null
-          : (focusedToggleId ?? null);
+      const parentBlockId = focusedToggleId ?? null;
       if (parentBlockId) {
         await handleInsertBlockInParent(parentBlockId, type);
         return;
@@ -2326,6 +2386,7 @@ function AdminNotePageContent() {
         onNavigateNext={() => handleNavigateBlock(block, 'next')}
         focusedToggleId={focusedToggleId}
         onFocusToggle={setFocusedToggleId}
+        onEditorFocus={() => focusBlockEditor(block.id)}
         uploadImage={uploadNoteImage}
         isDropTarget={overBlockId === block.id}
       />
@@ -2356,6 +2417,7 @@ function AdminNotePageContent() {
         onNavigateNext={() => handleNavigateBlock(block, 'next')}
         focusedToggleId={focusedToggleId}
         onFocusToggle={setFocusedToggleId}
+        onEditorFocus={() => focusBlockEditor(block.id)}
         uploadImage={uploadNoteImage}
         isDropTarget={overBlockId === block.id}
       />
@@ -2367,7 +2429,7 @@ function AdminNotePageContent() {
     <div className="flex h-[calc(100vh-4rem)] max-w-full flex-col overflow-x-hidden bg-white md:h-screen md:overflow-hidden">
 
       {/* ── 상단 헤더 ── */}
-      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
+      <div className="relative flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
         {/* 모바일 탭 */}
         <div className="flex items-center gap-0 md:hidden">
           {(['list', 'editor'] as const).map((tab) => (
@@ -2390,6 +2452,14 @@ function AdminNotePageContent() {
           </span>
           <span className="text-[13px] font-medium text-slate-500">관리자 공용 노트</span>
         </div>
+
+        <button
+          type="button"
+          onClick={handleGoToDashboard}
+          className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 md:inline-flex"
+        >
+          대시보드로
+        </button>
 
         {/* 저장 상태 (데스크톱) */}
         <div className="hidden items-center gap-4 md:flex">
@@ -2466,7 +2536,7 @@ function AdminNotePageContent() {
       >
         <div className="flex min-h-0 min-w-0 flex-1 overflow-x-hidden">
 
-          {/* ── 사이드바 ── */}
+          {/* ── 노트 목록 사이드바 */}
           <div className={`flex flex-col border-r border-slate-100 bg-slate-50 ${
             mobileTab === 'list' ? 'flex w-full' : 'hidden'
           } md:flex md:w-[260px] md:shrink-0`}>

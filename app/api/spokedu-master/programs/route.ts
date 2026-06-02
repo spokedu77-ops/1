@@ -501,10 +501,8 @@ export async function GET() {
     const title = (row.title ?? '').trim() || `커리큘럼 #${row.id}`;
     const categoryName = (meta?.sm_theme ?? overlay?.main_theme ?? '일반').trim() || '일반';
     const programForTrust = { id: String(row.id), title };
-    const videoUrl = resolveTrustedReferenceVideoUrl(
-      normalizeVideoUrl(overlay?.video_url),
-      programForTrust,
-    );
+    const rawVideoUrl = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(row.url);
+    const videoUrl = resolveTrustedReferenceVideoUrl(rawVideoUrl, programForTrust);
     const equipment = overlay?.equipment
       ? String(overlay.equipment).split('\n').map((item) => item.trim()).filter(Boolean)
       : (row.equipment ?? []).filter(Boolean);

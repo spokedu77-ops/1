@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
+import { hasMasterAccess } from '../lib/subscription';
 import type { CartItem, ClassRecord, ClassStudentRecord, Drill, Lesson, Notification, Program, Session, StudentProfile, UserProfile } from '../types';
 import { DRILLS as STATIC_DRILLS, PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
 import { enrichProgramsWithStaticVisuals } from '../lib/enrich-programs';
@@ -344,14 +345,7 @@ export const useMasterStore = create<MasterState>()(
 
 export const useProfile = () => useMasterStore((state) => state.profile);
 export const useOperationalStatus = () => useMasterStore((state) => state.operational);
-export const useIsPro = () => useMasterStore((state) => {
-  if (state.profile?.isAdmin) return true;
-  const plan = state.profile?.plan ?? 'free';
-  if (plan !== 'free') return true;
-  const trialEndsAt = state.profile?.trialEndsAt;
-  if (!trialEndsAt) return false;
-  return new Date(trialEndsAt).getTime() > Date.now();
-});
+export const useIsPro = () => useMasterStore((state) => hasMasterAccess(state.profile));
 export const useCartCount = () => useMasterStore((state) => state.cart.reduce((total, item) => item.qty + total, 0));
 export const useUnreadCount = () => useMasterStore((state) => state.notifications.filter((notification) => !notification.read).length);
 export const useClassTimerState = () =>

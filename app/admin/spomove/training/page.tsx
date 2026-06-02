@@ -190,6 +190,7 @@ type LaunchSettings = {
   kidsSafeMode: boolean;
   numberRule: string;
   variantColorTheme: SpomoveColorThemeId;
+  basicNumberOverlay: 'none' | '2' | '3';
   flowFeatures: FlowFeatureKey[];
   flowColorTheme: 'default' | 'space' | 'neon' | 'ocean';
   flowDuration: number;
@@ -207,6 +208,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   kidsSafeMode: false,
   numberRule: 'odd_left',
   variantColorTheme: 'color',
+  basicNumberOverlay: 'none',
   flowFeatures: [],
   flowColorTheme: 'default',
   flowDuration: 25,
@@ -225,6 +227,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     kidsSafeMode: auto.kidsSafeMode ?? fallback.kidsSafeMode,
     numberRule: auto.numberRule ?? fallback.numberRule,
     variantColorTheme: auto.variantColorTheme ?? fallback.variantColorTheme,
+    basicNumberOverlay: auto.basicNumberOverlay ?? fallback.basicNumberOverlay,
     flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
     flowColorTheme: auto.flowColorTheme ?? fallback.flowColorTheme,
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
@@ -290,6 +293,7 @@ function TrainingPortal({
     kidsSafeMode: launch.kidsSafeMode,
     numberRule: launch.numberRule,
     variantColorTheme: launch.variantColorTheme,
+    basicNumberOverlay: launch.basicNumberOverlay,
     flowFeatures: launch.flowFeatures,
     flowColorTheme: launch.flowColorTheme,
     flowDuration: launch.flowDuration,
@@ -569,12 +573,6 @@ function SettingsScreen({
     setLaunch((s) => ({ ...s, variantColorTheme: storedTheme }));
   }, [initialLevelId]);
 
-  useEffect(() => {
-    if (modeId !== 'basic' || levelId !== 4) return;
-    if (launch.variantColorTheme !== 'color') return;
-    // 4번은 색상 테마 비허용(과일 고정)
-    setLaunch((s) => ({ ...s, variantColorTheme: 'fruit' }));
-  }, [modeId, levelId, launch.variantColorTheme]);
 
   const guideBlock = useMemo(
     () => GUIDE_BLOCKS.find((b) => b.id === modeId) ?? null,
@@ -725,10 +723,10 @@ function SettingsScreen({
 
           <div style={{ height: 1, background: T.border, margin: '22px 0 26px' }} />
 
-          {/* 난이도 */}
+          {/* 세부 테마 */}
           <section style={{ marginBottom: 22 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>세부 테마</label>
               <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
                 {levelLabelKoEn(modeId, levelId)}
               </div>
@@ -1090,7 +1088,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 변형 색지각 테마 */}
-          {modeId === 'basic' && (levelId === 2 || levelId === 3 || levelId === 4 || levelId === 5) ? (
+          {modeId === 'basic' && (levelId === 3 || levelId === 4 || levelId === 5 || levelId === 6) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>변형 색지각 이미지 테마</label>
@@ -1101,7 +1099,6 @@ function SettingsScreen({
                   .sort((a, b) =>
                     SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')
                   )
-                  .filter((tid) => !(modeId === 'basic' && levelId === 4 && tid === 'color'))
                   .map((tid) => {
                   const active = launch.variantColorTheme === tid;
                   return (
@@ -1127,6 +1124,45 @@ function SettingsScreen({
                       }}
                     >
                       {active ? '✓ ' : ''}{SPOMOVE_COLOR_THEME_LABELS[tid]}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 숫자 오버레이 (basic 3번 + 색상 테마 전용) */}
+          {modeId === 'basic' && levelId === 3 && launch.variantColorTheme === 'color' ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>숫자 오버레이</label>
+              </div>
+              <p style={{ margin: '0 0 10px', fontSize: 11, color: T.textDim, lineHeight: 1.6 }}>
+                색상 화면 위에 숫자를 표시합니다. 색을 보고 그 번호 위치로 점프하거나 숫자를 말하는 확장 과제입니다.
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(['none', '2', '3'] as const).map((opt) => {
+                  const active = launch.basicNumberOverlay === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, basicNumberOverlay: opt }))}
+                      style={{
+                        flex: 1,
+                        padding: '10px 6px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 13,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt === 'none' ? '없음' : opt}
                     </button>
                   );
                 })}

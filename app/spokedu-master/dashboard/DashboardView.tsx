@@ -21,6 +21,7 @@ import {
   programHasPlayableVideo,
   resolveProgramHero,
 } from '../lib/program-media';
+import { isPaidMasterPlan } from '../lib/subscription';
 import { isFunstickFencingProgram } from '../lib/verified-program-video';
 import { OFFICIAL_SPOMOVE_PRESETS, formatSpomovePresetDuration, spomovePresetHref } from '../lib/spomovePresets';
 import { useMasterStore, useProfile } from '../store';
@@ -79,6 +80,29 @@ function getProgramSpace(program: Program) {
   return displayText(program.space, '');
 }
 
+function isVerifiedSmallSpaceProgram(program: Program) {
+  const space = getProgramSpace(program);
+  if (!space || isPlaceholderText(space)) return false;
+  return /좁은|교실|복도|실내|소규모|제한된 공간/.test(space);
+}
+
+function hasVerifiedGrade(program: Program) {
+  return Boolean(getProgramGrade(program));
+}
+
+function hasVerifiedSpace(program: Program) {
+  return Boolean(getProgramSpace(program));
+}
+
+function getValidEquipment(program: Program) {
+  return program.equipment.filter((item) => !isPlaceholderText(item));
+}
+
+function formatSpaceBadge(space: string) {
+  if (/체육관/.test(space) && /운동장/.test(space)) return '넓은 공간';
+  return space;
+}
+
 function getHeroImage(program: Program | undefined) {
   return program ? resolveProgramHero(program) : undefined;
 }
@@ -99,26 +123,6 @@ function uniquePrograms(programs: Program[]) {
 
 function buildProgramPool(programs: Program[]) {
   return uniquePrograms(programs.length > 0 ? programs : STATIC_PROGRAMS);
-}
-
-/** API에 영상·비주얼이 부족할 때 정적 HOT 쇼케이스를 홈 풀에 보강한다 */
-function mergeStaticShowcaseForHome(apiPool: Program[]) {
-  const seen = new Set(apiPool.map((program) => normalizeTitle(getProgramTitle(program))));
-  const extras: Program[] = [];
-
-  for (const staticProgram of STATIC_PROGRAMS) {
-    const isShowcase = staticProgram.isHot || (staticProgram.homeSortOrder ?? 9999) < 8;
-    if (!isShowcase) continue;
-
-    const key = normalizeTitle(staticProgram.title);
-    if (!key || seen.has(key)) continue;
-    if (!programHasPlayableVideo(staticProgram) && !getHeroImage(staticProgram)) continue;
-
-    extras.push(staticProgram);
-    seen.add(key);
-  }
-
-  return [...apiPool, ...extras].sort(compareHomePrograms);
 }
 
 function CoverImage({
@@ -276,11 +280,13 @@ function programMatchesCategory(program: Program, category: string) {
 function getHomeReadiness(program: Program) {
   const detail = program.lessonDetail;
   const checks = [
-    Boolean(getHeroImage(program)),
-    Boolean(detail?.videoUrl),
+    programHasPlayableVideo(program),
+    hasHomeVisual(program),
+    hasVerifiedGrade(program),
+    hasVerifiedSpace(program),
     Boolean(detail?.rules?.length || program.steps.length),
-    Boolean(detail?.setupNotes?.length || program.equipment.length),
-    Boolean(detail?.developmentFocus || program.category),
+    Boolean(detail?.objective || program.description),
+    getValidEquipment(program).length > 0,
   ];
   const penalty = [program.title, program.category, program.grade, program.space, program.description, detail?.objective].filter(isPlaceholderText).length;
   return checks.filter(Boolean).length - penalty;
@@ -300,23 +306,23 @@ function hasHomeContext(program: Program) {
 }
 
 function isHomeDisplayableProgram(program: Program) {
-  return hasHomeVisual(program) && hasHomeContext(program);
+  return getHomeReadiness(program) >= 3 && (hasHomeVisual(program) || hasHomeVideo(program));
 }
 
 function isHomeShowcaseProgram(program: Program) {
-  return hasHomeVisual(program) && hasHomeFlow(program) && hasHomeContext(program) && getHomeReadiness(program) >= 3;
+  return isHomeDisplayableProgram(program) && hasHomeFlow(program) && hasHomeContext(program) && hasVerifiedGrade(program) && hasVerifiedSpace(program);
 }
 
 function hasHomeVideo(program: Program) {
   return programHasPlayableVideo(program);
 }
 
-function isHomeHotCandidate(program: Program) {
-  return Boolean(program.isHot) && (hasHomeVisual(program) || hasHomeVideo(program));
+function isVideoReadyProgram(program: Program) {
+  return hasHomeVideo(program) && isHomeShowcaseProgram(program);
 }
 
-function isHomeContextProgram(program: Program) {
-  return hasHomeFlow(program) && hasHomeContext(program);
+function isHomeHotCandidate(program: Program) {
+  return Boolean(program.isHot) && isHomeDisplayableProgram(program);
 }
 
 function getHomeSortOrder(program: Program) {
@@ -355,33 +361,31 @@ function toVideoItem(program: Program, intent: 'weekly' | 'indoor' = 'weekly'): 
 function pickHeroProgram(programs: Program[]) {
   const pool = buildProgramPool(programs);
   const funstickHero =
-    pool.find((program) => program.id === 'funstick-fencing') ||
-    pool.find((program) => isFunstickFencingProgram(program));
+    pool.find((program) => program.id === 'funstick-fencing' && isHomeShowcaseProgram(program)) ||
+    pool.find((program) => isFunstickFencingProgram(program) && isHomeShowcaseProgram(program));
   const sorted = [...pool].sort(compareHomePrograms);
   return (
     funstickHero ||
+    sorted.find(isVideoReadyProgram) ||
     sorted.find((program) => programHasPlayableVideo(program) && isHomeHotCandidate(program)) ||
     sorted.find((program) => programHasPlayableVideo(program) && isHomeShowcaseProgram(program)) ||
     sorted.find(isHomeHotCandidate) ||
     sorted.find(isHomeShowcaseProgram) ||
-    sorted.find((program) => program.isHot) ||
     sorted.find(isHomeDisplayableProgram) ||
-    sorted.find(isHomeContextProgram) ||
     sorted[0]
   );
 }
 
-/** 홈 row는 품질 단계를 내려가며 limit까지 채운다. 빈 row보다 수업 선택을 우선한다. */
+/** 홈 row는 검증된 콘텐츠만 노출한다. 부족한 개수는 억지로 채우지 않는다. */
 function takeHomeCuratedPrograms(programs: Program[], usedIds: Set<string>, limit: number) {
   const selected: Program[] = [];
   const sorted = [...programs].sort(compareHomePrograms);
 
   const tiers: Array<(program: Program) => boolean> = [
+    (program) => isVideoReadyProgram(program),
     (program) => isHomeShowcaseProgram(program),
     (program) => isHomeHotCandidate(program),
     (program) => isHomeDisplayableProgram(program),
-    (program) => isHomeContextProgram(program),
-    (program) => hasHomeContext(program),
   ];
 
   const addProgram = (program: Program) => {
@@ -398,11 +402,6 @@ function takeHomeCuratedPrograms(programs: Program[], usedIds: Set<string>, limi
     }
   }
 
-  for (const program of sorted) {
-    if (selected.length >= limit) return selected;
-    addProgram(program);
-  }
-
   return selected;
 }
 
@@ -415,7 +414,7 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
       <div className="grid lg:grid-cols-[1fr_460px]">
-        <div className="flex min-h-[240px] flex-col justify-between p-4 sm:min-h-[360px] sm:p-8">
+        <div className="flex min-h-[220px] flex-col justify-between p-4 sm:min-h-[340px] sm:p-7 lg:p-8">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-[11px] font-black tracking-[0.12em] text-indigo-600 sm:text-xs sm:tracking-[0.14em]">
               <Sparkles className="h-3.5 w-3.5" />
@@ -425,16 +424,16 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
             <p className="mt-2 max-w-2xl text-[13px] font-semibold leading-5 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7">
               대상·공간·교구에 맞는 놀이체육 수업안과 참고 영상을 확인하고, SPOMOVE 활동은 TV·빔 화면으로 바로 실행할 수 있습니다.
             </p>
-            <div className="mt-3 hidden flex-wrap gap-1.5 sm:mt-5 sm:flex sm:gap-2">
-              {tags.slice(0, 6).map((tag) => (
-                <span key={tag} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
+            <div className="mt-3 hidden flex-wrap gap-1.5 sm:mt-4 sm:flex">
+              {tags.slice(0, 4).map((tag) => (
+                <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1.5 text-[11px] font-black text-slate-700">
                   {tag}
                 </span>
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-6 sm:grid-cols-3 sm:gap-2.5 xl:grid-cols-5">
+            <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-5 sm:grid-cols-3 sm:gap-2 xl:grid-cols-5">
               {kpis.map((item) => (
-                <div key={item.label} className={`${mobilePrimaryKpis.has(item.label) ? '' : 'hidden sm:block'} rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 sm:rounded-2xl sm:px-3 sm:py-3`}>
+                <div key={item.label} className={`${mobilePrimaryKpis.has(item.label) ? '' : 'hidden sm:block'} rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 sm:rounded-xl sm:px-3 sm:py-2.5`}>
                   <p className="text-[10px] font-bold leading-none text-slate-500 sm:text-[11px] sm:leading-normal">{item.label}</p>
                   <p className={`mt-1 font-black text-slate-950 ${typeof item.value === 'number' ? 'text-lg leading-none sm:text-xl sm:leading-normal' : 'text-[12px] leading-4 sm:text-[13px] sm:leading-5'}`}>
                     {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
@@ -443,26 +442,26 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
               ))}
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-8 sm:flex sm:flex-row sm:gap-3">
-            <button type="button" onClick={onPreview} className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-extrabold text-white sm:min-h-12 sm:px-5">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-7 sm:flex sm:flex-row sm:gap-3">
+            <button type="button" onClick={onPreview} className="col-span-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-[13px] font-extrabold text-white sm:min-h-12 sm:px-5 sm:text-sm">
               <Play className="h-4 w-4 fill-current" />
-              오늘 수업 준비하기
+              {hasVideo ? '영상으로 수업 준비하기' : '오늘 수업 준비하기'}
             </button>
-            <Link href="/spokedu-master/library" className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-800 sm:min-h-12 sm:gap-2 sm:px-5 sm:text-sm">
+            <Link href="/spokedu-master/library" className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[12px] font-bold text-slate-800 sm:min-h-12 sm:gap-2 sm:px-5 sm:text-sm">
               <BookOpen className="h-4 w-4" />
               수업 자료 둘러보기
             </Link>
-            <Link href="/spokedu-master/spomove" className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-indigo-100 bg-indigo-50 px-3 text-[13px] font-bold text-indigo-700 sm:min-h-12 sm:gap-2 sm:px-5 sm:text-sm">
+            <Link href="/spokedu-master/spomove" className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-indigo-100 bg-indigo-50 px-3 text-[12px] font-bold text-indigo-700 sm:min-h-12 sm:gap-2 sm:px-5 sm:text-sm">
               <MonitorPlay className="h-4 w-4" />
               SPOMOVE 실행
             </Link>
           </div>
         </div>
-        <button type="button" onClick={onPreview} className="relative hidden min-h-[260px] overflow-hidden bg-slate-100 sm:block">
+        <button type="button" onClick={onPreview} className="relative hidden min-h-[250px] overflow-hidden bg-slate-100 sm:block">
           {heroImage ? (
             <>
               <CoverImage src={heroImage} alt={getProgramTitle(program)} sizes="(min-width: 1024px) 460px, 100vw" className="object-cover" priority quality={92} />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/36 to-transparent" />
               {hasVideo ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl ring-4 ring-white/40">
@@ -535,16 +534,14 @@ function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPrevi
   const showPlay = item.hasVideo;
   const detail = item.program?.lessonDetail;
   const target = item.program ? detail?.recommendedAge || getProgramGrade(item.program) : '';
-  const space = item.program ? getProgramSpace(item.program) : '';
+  const space = item.program ? formatSpaceBadge(getProgramSpace(item.program)) : '';
   const equipmentCount = item.program?.equipment.filter((equipment) => !isPlaceholderText(equipment)).length ?? 0;
   const hasLessonPlan = Boolean((detail?.rules?.length ?? 0) > 0 || (item.program?.steps.length ?? 0) > 0);
   const operationBadges = [
-    item.hasVideo ? '영상 포함' : null,
-    hasLessonPlan ? '수업안 포함' : null,
-    equipmentCount > 0 ? `교구 ${equipmentCount}개` : null,
     target && !isPlaceholderText(target) ? target : null,
     space && !isPlaceholderText(space) ? space : null,
-  ].filter((badge): badge is string => Boolean(badge) && !isPlaceholderText(badge)).slice(0, 4);
+    item.hasVideo ? '영상 포함' : equipmentCount > 0 ? `교구 ${equipmentCount}개` : hasLessonPlan ? '수업안 포함' : null,
+  ].filter((badge): badge is string => Boolean(badge) && !isPlaceholderText(badge)).slice(0, 3);
   const thumbOverlayCue = item.program ? getProgramThumbOverlayCue(item.program) : item.meta;
   const cleanOverlayCue = thumbOverlayCue && !isPlaceholderText(thumbOverlayCue) ? thumbOverlayCue : null;
   return (
@@ -585,13 +582,13 @@ function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPrevi
         ) : null}
 
         <div className="absolute bottom-3 left-3 right-3">
-          <CompactTagList tags={item.tags} max={2} onMedia />
+          <CompactTagList tags={item.tags} max={showPlay ? 1 : 2} onMedia />
         </div>
       </div>
 
       <h3 className="mt-3 line-clamp-2 text-[15px] font-bold leading-snug text-slate-950">{item.title}</h3>
       <p className="mt-1 line-clamp-1 text-[12px] font-semibold text-slate-500">{item.reason}</p>
-      <div className="mt-2 flex min-w-0 items-start justify-between gap-3">
+      <div className="mt-2 flex min-w-0 items-start justify-between gap-2">
         <div className="flex min-w-0 flex-wrap gap-1.5">
           {operationBadges.map((badge) => (
             <span key={badge} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold leading-none text-slate-600">
@@ -599,7 +596,7 @@ function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPrevi
             </span>
           ))}
         </div>
-        <span className="shrink-0 text-[12px] font-bold text-indigo-600">수업 열기</span>
+        <span className="shrink-0 whitespace-nowrap text-[12px] font-bold text-indigo-600">{item.hasVideo ? '영상 확인' : '수업 열기'}</span>
       </div>
     </button>
   );
@@ -975,7 +972,7 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
 export default function DashboardView() {
   const { programs, programsLoaded, favorites, classRecords, reloadPrograms } = useMasterStore();
   const profile = useProfile();
-  const isSubscribed = profile?.plan === 'pro' || profile?.plan === 'team' || Boolean(profile?.isAdmin);
+  const isSubscribed = isPaidMasterPlan(profile);
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState('전체');
   const [search, setSearch] = useState('');
@@ -1001,10 +998,7 @@ export default function DashboardView() {
     };
   }, []);
 
-  const programPool = useMemo(
-    () => mergeStaticShowcaseForHome(buildProgramPool(programs).sort(compareHomePrograms)),
-    [programs],
-  );
+  const programPool = useMemo(() => buildProgramPool(programs).sort(compareHomePrograms), [programs]);
   const filteredPrograms = useMemo(() => {
     const query = search.trim().toLowerCase();
     return programPool.filter((program) => {
@@ -1036,8 +1030,8 @@ export default function DashboardView() {
 
     const weeklySource = filteredPrograms.length ? filteredPrograms : programPool.filter((program) => program.isHot);
     const weekly = takeHomeCuratedPrograms(weeklySource.length ? weeklySource : programPool, usedIds, 4);
-    const indoorCandidates = programPool.filter((program) => /실내|체육관|교실|복도|좁은 공간/.test(getSearchText(program)));
-    const indoor = takeHomeCuratedPrograms(indoorCandidates.length ? indoorCandidates : programPool, usedIds, 8);
+    const indoorCandidates = programPool.filter(isVerifiedSmallSpaceProgram);
+    const indoor = takeHomeCuratedPrograms(indoorCandidates, usedIds, 8);
 
     return {
       weeklyLessons: weekly.map((program) => toVideoItem(program, 'weekly')),
@@ -1051,7 +1045,7 @@ export default function DashboardView() {
     curatedRows.weeklyLessons.forEach((item) => usedIds.add(item.id));
     curatedRows.indoorLessons.forEach((item) => usedIds.add(item.id));
     const selected = programPool.filter((program) => favorites.includes(program.id) && !usedIds.has(program.id) && isHomeDisplayableProgram(program));
-    return takeHomeCuratedPrograms(selected.length ? selected : programPool.filter((p) => favorites.includes(p.id)), usedIds, 8).map((program) =>
+    return takeHomeCuratedPrograms(selected, usedIds, 8).map((program) =>
       toVideoItem(program, 'weekly'),
     );
   }, [curatedRows.indoorLessons, curatedRows.weeklyLessons, favorites, heroProgram, programPool]);
@@ -1069,7 +1063,7 @@ export default function DashboardView() {
     for (const record of [...classRecords].sort((a, b) => b.date.localeCompare(a.date))) {
       if (recentPrograms.length >= 6) break;
       const program = programsById.get(record.programId);
-      if (!program || usedIds.has(program.id)) continue;
+      if (!program || usedIds.has(program.id) || !isHomeDisplayableProgram(program)) continue;
       recentPrograms.push(program);
       usedIds.add(program.id);
     }
@@ -1095,7 +1089,7 @@ export default function DashboardView() {
   }
 
   return (
-    <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-7 overflow-y-auto bg-[#f5f7fb] px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-16">
+    <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-6 overflow-y-auto bg-[#f5f7fb] px-4 pb-28 pt-4 sm:gap-7 sm:px-6 sm:pt-5 lg:px-8 lg:pb-16">
       <Hero program={heroProgram} kpis={dashboardKpis} onPreview={() => setSelectedProgram(heroProgram)} />
       <CategoryStrip activeCategory={activeCategory} search={search} onCategoryChange={setActiveCategory} onSearchChange={setSearch} />
       <VideoRow
@@ -1109,15 +1103,17 @@ export default function DashboardView() {
       />
       <ContinueLessonsSection lessons={continueLessons} onPreview={setSelectedProgram} />
       <SpomovePresetRow presets={spomovePresets} showPremiumBadges={!isSubscribed} />
-      <VideoRow
-        title="좁은 공간에서도 운영 쉬운 수업"
-        subtitle="체육관이 없거나 이동이 어려운 날에도 교실, 복도, 제한된 공간에서 안정적으로 운영할 수 있습니다."
-        videos={curatedRows.indoorLessons}
-        onPreview={setSelectedProgram}
-        actionLabel="공간별 수업 보기"
-        emptyMessage="실내 필터에 맞는 수업이 없습니다. 카테고리를 바꾸거나 놀이체육 전체에서 찾아보세요."
-        showPremiumBadges={!isSubscribed}
-      />
+      {curatedRows.indoorLessons.length > 0 ? (
+        <VideoRow
+          title="실내에서 운영하기 쉬운 수업"
+          subtitle="교실, 복도, 소규모 공간처럼 이동이 어려운 날에도 안정적으로 운영할 수 있습니다."
+          videos={curatedRows.indoorLessons}
+          onPreview={setSelectedProgram}
+          actionLabel="공간별 수업 보기"
+          emptyMessage="실내 필터에 맞는 수업이 없습니다. 카테고리를 바꾸거나 놀이체육 전체에서 찾아보세요."
+          showPremiumBadges={!isSubscribed}
+        />
+      ) : null}
       {!isSubscribed ? <SubscriptionValueSection /> : null}
       {selectedProgram ? <HomeProgramPreview program={selectedProgram} onClose={() => setSelectedProgram(null)} /> : null}
     </main>

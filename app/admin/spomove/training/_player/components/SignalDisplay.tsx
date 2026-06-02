@@ -108,7 +108,8 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     );
   }
 
-  if (type === 'full_color' || type === 'gonogo_color')
+  if (type === 'full_color' || type === 'gonogo_color') {
+    const overlayNumber = (content as { overlayNumber?: number } | undefined)?.overlayNumber;
     return (
       <div key={animKey} className="signal-blink" style={C}>
         {content && (
@@ -136,8 +137,30 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             )}
           </div>
         )}
+        {overlayNumber != null && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}>
+            <span style={{
+              fontSize: 'clamp(180px, 42vmin, 420px)',
+              fontWeight: 900,
+              lineHeight: 1,
+              color: content?.textColor as string ?? '#fff',
+              textShadow: '0 4px 40px rgba(0,0,0,0.35)',
+            }}>
+              {overlayNumber}
+            </span>
+          </div>
+        )}
       </div>
     );
+  }
 
   if (type === 'gonogo_shape') {
     const shape = content?.shape as 'circle' | 'triangle' | undefined;

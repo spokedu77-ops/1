@@ -310,6 +310,8 @@ export type GenerateSignalOptions = {
   fruitSlides?: FruitSlide[];
   /** Task Switching 1단계: 직전 trial 규칙(연속 반대로 방지·약 30% 반대로 비율) */
   taskSwitchPrevRule?: 'color' | 'position' | 'reverse' | null;
+  /** basic 3번 + 색상 테마: 전면 색상 위에 오버레이할 숫자 범위 */
+  basicNumberOverlay?: 'none' | '2' | '3';
 };
 
 export function generateSignal(
@@ -330,8 +332,12 @@ export function generateSignal(
 
   if (mode === 'basic') {
     if (level === 1) {
+      const a = r(ARROWS);
+      return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
+    }
+    if (level === 2) {
       const c = r(activeColors);
-      /** Think Studio StageA와 동일 2×2(PAD_GRID: 위 빨·초 / 아래 파·노), 해당 칸만 강조 */
+      /** Think Studio StageA와 동일 2×2(PAD_GRID: 위 빨·노 / 아래 초·파), 해당 칸만 강조 */
       return {
         type: 'think_quad',
         bg: '#0F172A',
@@ -345,19 +351,30 @@ export function generateSignal(
         voice: null,
       };
     }
-    if (level === 2) {
+    if (level === 3) {
       const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
       const themed =
         vSlides.length > 0 ? r(vSlides.filter((s) => (s.imageUrl ?? '').trim())) : null;
       const c = themed?.color ?? r(activeColors);
+      const numMode = opts?.basicNumberOverlay;
+      const overlayNumber =
+        numMode === '2' ? Math.floor(Math.random() * 2) + 1
+        : numMode === '3' ? Math.floor(Math.random() * 3) + 1
+        : null;
       return {
         type: 'full_color',
         bg: c.bg,
-        content: { symbol: c.symbol, textColor: c.text, name: c.name, imageUrl: themed?.imageUrl ?? null },
+        content: {
+          symbol: c.symbol,
+          textColor: c.text,
+          name: c.name,
+          imageUrl: themed?.imageUrl ?? null,
+          ...(overlayNumber != null ? { overlayNumber } : {}),
+        },
         voice: null,
       };
     }
-    if (level === 3) {
+    if (level === 4) {
       const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
       const pool = uniqueSlidesByImageUrl(rawSlides.filter((s) => (s.imageUrl ?? '').trim()));
       const vSlides =
@@ -376,20 +393,16 @@ export function generateSignal(
         voice: null,
       };
     }
-    if (level === 4) {
+    if (level === 5) {
       const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
       const pool = uniqueSlidesByImageUrl(rawSlides.filter((s) => (s.imageUrl ?? '').trim()));
-      if (pool.length < 2) {
-        if (usesImageTheme) return null;
-        const c = r(activeColors);
-        return {
-          type: 'full_color',
-          bg: c.bg,
-          content: { symbol: c.symbol, textColor: c.text, name: c.name, imageUrl: null },
-          voice: null,
-        };
-      }
-      const vSlides = pool;
+      const vSlides =
+        pool.length >= 1
+          ? pool
+          : usesImageTheme
+            ? []
+            : colorSlidesFromPalette(activeColors);
+      if (vSlides.length < 1) return null;
       const panels = buildVariantTier2(opts?.excludeVariantImageUrl ?? null, vSlides);
       return {
         type: 'basic_variant_color',
@@ -398,7 +411,7 @@ export function generateSignal(
         voice: null,
       };
     }
-    if (level === 5) {
+    if (level === 6) {
       const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
       const pool = uniqueSlidesByImageUrl(rawSlides.filter((s) => (s.imageUrl ?? '').trim()));
       const vSlides =
@@ -415,10 +428,6 @@ export function generateSignal(
         content: { variantTier: 4, panels },
         voice: null,
       };
-    }
-    if (level === 6) {
-      const a = r(ARROWS);
-      return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
     }
   }
 
@@ -875,7 +884,10 @@ export type DupStats = {
 
 export function signalFingerprint(sig: Record<string, unknown>): string {
   const t = sig.type as string;
-  if (t === 'full_color') return `fc:${String(sig.bg ?? '')}`;
+  if (t === 'full_color') {
+    const num = (sig.content as { overlayNumber?: number })?.overlayNumber;
+    return `fc:${String(sig.bg ?? '')}${num != null ? `:${num}` : ''}`;
+  }
   if (t === 'think_quad') {
     const id = (sig.content as { colorId?: string })?.colorId ?? '';
     return `tq:${id}`;
@@ -1028,7 +1040,8 @@ function wouldExceedColorBalance(
 export function createBasicSignalGenerator(
   level: number,
   colors: ColorItem[],
-  fruitSlides: FruitSlide[] | undefined = undefined
+  fruitSlides: FruitSlide[] | undefined = undefined,
+  basicNumberOverlay?: 'none' | '2' | '3'
 ) {
   let prev1: string | null = null;
   let prev2: string | null = null;
@@ -1051,9 +1064,10 @@ export function createBasicSignalGenerator(
     const o: GenerateSignalOptions = {};
     // fruitSlides가 undefined면 opts에 포함하지 않음 → generateSignal에서 usesImageTheme=false → 색상 폴백 사용
     if (fruitSlides !== undefined) o.fruitSlides = fruitSlides;
-    if (level === 2 || level === 4) o.excludeVariantImageUrl = lastVariantImageUrl;
-    else if (level === 3) o.excludeVariantPairKey = lastVariantPairKey;
-    else if (level === 5) o.excludeVariantPanelImageUrls = lastVariantPanelImageUrls;
+    if (basicNumberOverlay && basicNumberOverlay !== 'none') o.basicNumberOverlay = basicNumberOverlay;
+    if (level === 3 || level === 5) o.excludeVariantImageUrl = lastVariantImageUrl;
+    else if (level === 4) o.excludeVariantPairKey = lastVariantPairKey;
+    else if (level === 6) o.excludeVariantPanelImageUrls = lastVariantPanelImageUrls;
     return o;
   };
 

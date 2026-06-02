@@ -28,6 +28,7 @@ export function useTrainingTimer({
   audioMode,
   colors,
   fruitSlides,
+  basicNumberOverlay,
   onSignal,
   onFinish,
 }: {
@@ -43,6 +44,7 @@ export function useTrainingTimer({
   colors: ColorItem[];
   /** basic 변형 색지각(3~5번) 슬롯; 미전달 시 signals 기본값 */
   fruitSlides?: FruitSlide[];
+  basicNumberOverlay?: 'none' | '2' | '3';
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
@@ -62,7 +64,7 @@ export function useTrainingTimer({
     const fruitOpts = fruitSlides ? { fruitSlides } : undefined;
     const { engineMode, engineLevel } = resolveTrainingEngine(mode, level);
     if (engineMode === 'basic') {
-      genRef.current = createBasicSignalGenerator(level, colors, fruitSlides);
+      genRef.current = createBasicSignalGenerator(level, colors, fruitSlides, basicNumberOverlay);
     } else if (engineMode === 'simon') {
       genRef.current = createSimonSignalGenerator(engineLevel, colors);
     } else if (engineMode === 'taskswitch') {
@@ -139,7 +141,7 @@ export function useTrainingTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, fruitSlides, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };
