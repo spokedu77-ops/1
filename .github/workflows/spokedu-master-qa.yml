@@ -70,17 +70,26 @@ jobs:
     name: Logged-in home (optional)
     runs-on: ubuntu-latest
     needs: routing
-    if: ${{ github.event_name != 'pull_request' && secrets.SPOKEDU_MASTER_QA_ID != '' && secrets.SPOKEDU_MASTER_QA_PASSWORD != '' }}
+    if: github.event_name != 'pull_request'
+    env:
+      SPOKEDU_MASTER_QA_ID: ${{ secrets.SPOKEDU_MASTER_QA_ID }}
+      SPOKEDU_MASTER_QA_PASSWORD: ${{ secrets.SPOKEDU_MASTER_QA_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+        if: env.SPOKEDU_MASTER_QA_ID != '' && env.SPOKEDU_MASTER_QA_PASSWORD != ''
       - uses: actions/setup-node@v4
+        if: env.SPOKEDU_MASTER_QA_ID != '' && env.SPOKEDU_MASTER_QA_PASSWORD != ''
         with:
           node-version: '20'
           cache: npm
       - run: npm ci
+        if: env.SPOKEDU_MASTER_QA_ID != '' && env.SPOKEDU_MASTER_QA_PASSWORD != ''
       - run: npm i -D playwright@1.52.0
+        if: env.SPOKEDU_MASTER_QA_ID != '' && env.SPOKEDU_MASTER_QA_PASSWORD != ''
       - run: npx playwright install chromium --with-deps
+        if: env.SPOKEDU_MASTER_QA_ID != '' && env.SPOKEDU_MASTER_QA_PASSWORD != ''
       - name: Start Next.js
+        if: env.SPOKEDU_MASTER_QA_ID != '' && env.SPOKEDU_MASTER_QA_PASSWORD != ''
         run: |
           npm run build
           npm run start -- -p 3099 &
@@ -94,6 +103,4 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       - run: node scripts/spokedu-master-home-logged-qa.mjs http://127.0.0.1:3099
-        env:
-          SPOKEDU_MASTER_QA_ID: ${{ secrets.SPOKEDU_MASTER_QA_ID }}
-          SPOKEDU_MASTER_QA_PASSWORD: ${{ secrets.SPOKEDU_MASTER_QA_PASSWORD }}
+        if: env.SPOKEDU_MASTER_QA_ID != '' && env.SPOKEDU_MASTER_QA_PASSWORD != ''
