@@ -238,11 +238,13 @@ function resolveStatus(checks: QualityReport['checks']): MaterialStatus {
   if (!coreReady) return 'incomplete';
 
   const operationReady = checks.duration && coreReady;
-  const hasHomeMedia = checks.video || checks.heroImage || checks.thumbnail;
-  const homeReady = operationReady && hasHomeMedia && checks.safety && (checks.homeExposure || checks.duration);
+  if (!operationReady) return 'needs-improvement';
+
+  const hasHomeMedia = checks.video || checks.heroImage;
+  const homeReady = operationReady && hasHomeMedia && checks.safety;
   if (homeReady) return 'home-ready';
 
-  const needsProductWork = checks.video && (!checks.heroImage || !checks.setupImage || !checks.safety || !checks.variations);
+  const needsProductWork = operationReady && (hasHomeMedia || !checks.safety || !checks.variations || !checks.setupImage);
   if (needsProductWork) return 'needs-improvement';
 
   return 'ready';
@@ -251,7 +253,6 @@ function resolveStatus(checks: QualityReport['checks']): MaterialStatus {
 function qualityReasons(checks: QualityReport['checks']) {
   const items: Array<[string, boolean]> = [
     ['영상', checks.video],
-    ['썸네일', checks.thumbnail],
     ['대표 이미지', checks.heroImage],
     ['세팅 이미지', checks.setupImage],
     ['대상', checks.target],
@@ -268,6 +269,37 @@ function qualityReasons(checks: QualityReport['checks']) {
     ['홈 노출', checks.homeExposure],
   ];
   return items.map(([label, ok]) => `${label} ${ok ? '있음' : '없음'}`);
+}
+
+function missingQualityLabels(checks: QualityReport['checks']) {
+  const items: Array<[string, boolean]> = [
+    ['대상', checks.target],
+    ['공간', checks.space],
+    ['시간', checks.duration],
+    ['준비물', checks.equipment],
+    ['세팅 방법', checks.setupNotes],
+    ['활동 방법', checks.steps],
+    ['안전 포인트', checks.safety],
+    ['응용 방법', checks.variations],
+    ['학부모 문구', checks.parentNote],
+    ['대표 이미지', checks.heroImage],
+    ['세팅 이미지', checks.setupImage],
+    ['SPOMOVE', checks.spomove],
+    ['홈 노출', checks.homeExposure],
+  ];
+  return items.filter(([, ok]) => !ok).map(([label]) => label);
+}
+
+function qualitySummary(report: QualityReport) {
+  const missing = missingQualityLabels(report.checks);
+  if (report.status === 'home-ready') {
+    return report.checks.homeExposure ? '홈 노출 조건 충족' : '홈 노출 가능, 노출 설정만 확인';
+  }
+  if (report.status === 'ready') return '운영 자료로 사용 가능';
+  if (report.status === 'needs-improvement') {
+    return missing.length ? `보강 필요: ${missing.slice(0, 3).join(', ')}` : '홈 노출 전 상품성 확인 필요';
+  }
+  return missing.length ? `부족: ${missing.slice(0, 4).join(', ')}` : '핵심 정보 확인 필요';
 }
 
 function getItemQuality(item: ProgramItem): QualityReport {
@@ -322,10 +354,26 @@ function matchesFilter(item: ProgramItem, filter: FilterKey) {
   const quality = getItemQuality(item);
   if (filter === 'all') return true;
   if (filter === 'incomplete' || filter === 'ready' || filter === 'home-ready') return quality.status === filter;
-  if (filter === 'image-needed') return !quality.checks.thumbnail || !quality.checks.heroImage || !quality.checks.setupImage;
+  if (filter === 'image-needed') return !quality.checks.heroImage || !quality.checks.setupImage;
   if (filter === 'safety-needed') return !quality.checks.safety;
   if (filter === 'spomove-needed') return !quality.checks.spomove;
   return true;
+}
+
+function displayOrderOf(item: ProgramItem) {
+  return item.meta?.sm_display_order ?? item.curriculum.displayOrder ?? 9999;
+}
+
+function sortForFilter(items: ProgramItem[], filter: FilterKey) {
+  const qualityWeight = (item: ProgramItem) => missingQualityLabels(getItemQuality(item).checks).length;
+  const copy = [...items];
+  if (filter === 'home-ready') {
+    return copy.sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+  }
+  if (filter === 'image-needed' || filter === 'safety-needed' || filter === 'spomove-needed' || filter === 'incomplete') {
+    return copy.sort((a, b) => qualityWeight(b) - qualityWeight(a) || displayOrderOf(a) - displayOrderOf(b));
+  }
+  return copy;
 }
 
 function toForm(item: ProgramItem): EditForm {
@@ -412,6 +460,19 @@ function Flag({ ok, label }: { ok: boolean; label: string }) {
     >
       {label}
     </span>
+  );
+}
+
+function QualityFlags({ report }: { report: QualityReport }) {
+  const hasImage = report.checks.heroImage && report.checks.setupImage;
+  return (
+    <div className="flex flex-wrap gap-1">
+      <Flag ok={report.checks.video} label="영상" />
+      <Flag ok={hasImage} label="이미지" />
+      <Flag ok={report.checks.safety} label="안전" />
+      <Flag ok={report.checks.spomove} label="SPOMOVE" />
+      <Flag ok={report.checks.homeExposure} label="홈" />
+    </div>
   );
 }
 
@@ -521,12 +582,13 @@ export default function AdminSmProgramsPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return items.filter((item) => {
+    const next = items.filter((item) => {
       if (!matchesFilter(item, activeFilter)) return false;
       if (!q) return true;
       const haystack = `${item.effective.title} ${item.curriculum.id} ${item.effective.target} ${item.effective.space}`.toLowerCase();
       return haystack.includes(q);
     });
+    return sortForFilter(next, activeFilter);
   }, [activeFilter, items, query]);
 
   const summary = useMemo(() => ({
@@ -617,6 +679,7 @@ export default function AdminSmProgramsPage() {
   };
 
   const selectedQuality = form ? getFormQuality(form) : null;
+  const selectedQualitySummary = selectedQuality ? qualitySummary(selectedQuality) : '';
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -649,7 +712,7 @@ export default function AdminSmProgramsPage() {
         </div>
       </header>
 
-      <main className="grid min-h-[calc(100vh-73px)] grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[380px_minmax(0,1fr)]">
+      <main className="grid min-h-[calc(100vh-73px)] grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
         <aside className="border-r border-slate-200 bg-white">
           <div className="space-y-3 border-b border-slate-200 p-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -706,6 +769,8 @@ export default function AdminSmProgramsPage() {
             ) : filtered.map((item) => {
               const selectedNow = item.curriculum.id === selectedId;
               const quality = getItemQuality(item);
+              const summaryText = qualitySummary(quality);
+              const missingText = missingQualityLabels(quality.checks).join(', ');
               return (
                 <button
                   key={item.curriculum.id}
@@ -713,6 +778,7 @@ export default function AdminSmProgramsPage() {
                   onClick={() => selectItem(item)}
                   className="mb-2 block w-full rounded-lg border p-3 text-left transition-colors"
                   style={{ borderColor: selectedNow ? '#6366f1' : '#e2e8f0', background: selectedNow ? '#eef2ff' : '#ffffff' }}
+                  title={missingText ? `부족한 항목: ${missingText}` : summaryText}
                 >
                   <div className="flex items-start gap-2">
                     <div className="min-w-0 flex-1">
@@ -721,24 +787,10 @@ export default function AdminSmProgramsPage() {
                     </div>
                     <StatusPill status={quality.status} />
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    <Flag ok={quality.checks.video} label="영상" />
-                    <Flag ok={quality.checks.thumbnail} label="썸네일" />
-                    <Flag ok={quality.checks.heroImage} label="대표" />
-                    <Flag ok={quality.checks.setupImage} label="세팅 이미지" />
-                    <Flag ok={quality.checks.target} label="대상" />
-                    <Flag ok={quality.checks.space} label="공간" />
-                    <Flag ok={quality.checks.duration} label="시간" />
-                    <Flag ok={quality.checks.equipment} label="준비물" />
-                    <Flag ok={quality.checks.setupNotes} label="세팅" />
-                    <Flag ok={quality.checks.steps} label="순서" />
-                    <Flag ok={quality.checks.safety} label="안전" />
-                    <Flag ok={quality.checks.variations} label="난이도" />
-                    <Flag ok={quality.checks.operationTips} label="운영 팁" />
-                    <Flag ok={quality.checks.parentNote} label="학부모" />
-                    <Flag ok={quality.checks.spomove} label="SPOMOVE" />
-                    <Flag ok={quality.checks.homeExposure} label="홈" />
+                  <div className="mt-2">
+                    <QualityFlags report={quality} />
                   </div>
+                  <p className="mt-2 line-clamp-2 text-[11px] font-bold leading-4 text-slate-500">{summaryText}</p>
                 </button>
               );
             })}
@@ -767,16 +819,22 @@ export default function AdminSmProgramsPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-[13px] font-black text-slate-900">홈 노출 가능 조건</p>
-                      <p className="mt-1 text-[12px] font-semibold text-slate-500">부족한 항목만 빠르게 확인합니다.</p>
+                      <p className="mt-1 text-[12px] font-semibold text-slate-500">{selectedQualitySummary}</p>
                     </div>
                     <StatusPill status={selectedQuality.status} />
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {selectedQuality.reasons.map((reason) => {
-                      const ok = reason.endsWith('있음');
-                      return <Flag key={reason} ok={ok} label={reason} />;
-                    })}
+                  <div className="mt-3">
+                    <QualityFlags report={selectedQuality} />
                   </div>
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-[11px] font-black text-slate-400">세부 조건 보기</summary>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {selectedQuality.reasons.map((reason) => {
+                        const ok = reason.endsWith('있음') || reason.endsWith('입력됨');
+                        return <Flag key={reason} ok={ok} label={reason} />;
+                      })}
+                    </div>
+                  </details>
                 </div>
               ) : null}
 
