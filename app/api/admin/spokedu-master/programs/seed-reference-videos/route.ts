@@ -15,6 +15,30 @@ function normalizeVideoUrl(value: string | null | undefined): string | undefined
   }
 }
 
+type OverlayVideoRow = {
+  id: number;
+  source_center_curriculum_id: number | null;
+  video_url: string | null;
+  updated_at: string | null;
+};
+
+function latestOverlayByCurriculumId(rows: OverlayVideoRow[]) {
+  const map = new Map<number, OverlayVideoRow>();
+  for (const row of rows) {
+    const curriculumId = row.source_center_curriculum_id;
+    if (curriculumId == null) continue;
+    const prev = map.get(curriculumId);
+    if (!prev) {
+      map.set(curriculumId, row);
+      continue;
+    }
+    const prevTime = prev.updated_at ? Date.parse(prev.updated_at) : 0;
+    const nextTime = row.updated_at ? Date.parse(row.updated_at) : 0;
+    if (nextTime >= prevTime) map.set(curriculumId, row);
+  }
+  return map;
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
@@ -50,6 +74,16 @@ export async function POST(request: Request) {
       }
     }
 
+    let overlayById = new Map<number, OverlayVideoRow>();
+    if (ids.length > 0) {
+      const { data: overlayRows, error: overlayErr } = await supabase
+        .from('spokedu_pro_programs')
+        .select('id,source_center_curriculum_id,video_url,updated_at')
+        .in('source_center_curriculum_id', ids);
+      if (overlayErr) throw overlayErr;
+      overlayById = latestOverlayByCurriculumId((overlayRows ?? []) as OverlayVideoRow[]);
+    }
+
     const candidates: { id: number; title: string; url: string }[] = [];
 
     for (const row of curriculumRows ?? []) {
@@ -57,10 +91,10 @@ export async function POST(request: Request) {
       const meta = metaById.get(id);
       if (hotOnly && !meta?.sm_is_hot) continue;
 
-      const existing = normalizeVideoUrl(row.url as string | null);
+      const existing = normalizeVideoUrl(overlayById.get(id)?.video_url) ?? normalizeVideoUrl(row.url as string | null);
       if (existing) continue;
 
-      const title = ((row.title as string | null) ?? '').trim() || `커리큘럼 #${id}`;
+      const title = ((row.title as string | null) ?? '').trim() || `curriculum #${id}`;
       const resolved = resolveReferenceVideoForSeed(title, id);
       if (!resolved) continue;
 
@@ -69,8 +103,19 @@ export async function POST(request: Request) {
 
     if (!dryRun) {
       for (const item of candidates) {
-        const { error } = await supabase.from('curriculum').update({ url: item.url }).eq('id', item.id);
-        if (error) throw error;
+        const existing = overlayById.get(item.id);
+        if (existing?.id) {
+          const { error } = await supabase
+            .from('spokedu_pro_programs')
+            .update({ title: item.title, video_url: item.url, source_center_curriculum_id: item.id, is_published: true })
+            .eq('id', existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('spokedu_pro_programs')
+            .insert({ title: item.title, video_url: item.url, source_center_curriculum_id: item.id, is_published: true, center_curriculum_is_sub: false });
+          if (error) throw error;
+        }
       }
     }
 
@@ -82,8 +127,8 @@ export async function POST(request: Request) {
       items: candidates,
       message:
         candidates.length > 0
-          ? `${dryRun ? '적용 예정' : '저장 완료'} ${candidates.length}개 curriculum.url — MASTER 홈을 새로고침하세요.`
-          : '채울 수 있는 참고 영상 규칙이 없습니다. curriculum에 URL을 직접 입력하세요.',
+          ? `${dryRun ? '적용 예정' : '저장 완료'} ${candidates.length}개 참고 영상이 MASTER overlay에 반영됩니다.`
+          : '채울 수 있는 참고 영상 규칙이 없습니다. MASTER 편집기에서 영상 URL을 입력하세요.',
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'seed failed' }, { status: 500 });

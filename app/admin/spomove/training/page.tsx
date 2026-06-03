@@ -110,10 +110,10 @@ function modeLabelKoEn(modeId: string): string {
 const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Quad Color': '사분할 색상',
   'Full-Screen Color': '전면 색상',
-  'Variant Color (1)': '변형 색상 2패널',
-  'Variant Color (2)': '변형 색상 3패널',
-  'Variant Color (3)': '변형 색상 3',
-  'Variant 3': '변형 색상 3패널',
+  'Variant Color (1)': '전면 2패널 (서로 다른 색)',
+  'Variant Color (2)': '전면 3패널 (같은 색)',
+  'Variant Color (3)': '전면 3패널 (서로 다른 색)',
+  'Variant 3': '전면 3패널 (서로 다른 색)',
   'Spatial Orientation': '공간 방향',
   'Arrow Stroop / Reverse': '화살표 스트룹/역스트룹',
   'Arrow + BG Interference': '화살표 + 배경 간섭',
@@ -1483,11 +1483,6 @@ function SpomoveTrainingPageContent() {
         <header style={{
           borderBottom: `1px solid ${T.border}`,
           padding: '18px 24px 14px',
-          position: 'sticky',
-          top: 0,
-          background: 'rgba(10,10,10,0.72)',
-          zIndex: 20,
-          backdropFilter: 'blur(18px)',
         }}>
           <div style={{ maxWidth: 960, margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>

@@ -60,6 +60,15 @@ function buildThumbnailUrl(videoUrl: string | null | undefined): string | undefi
   return id ? `https://img.youtube.com/vi/${id}/maxresdefault.jpg` : undefined;
 }
 
+function normalizeImageUrl(value: string | null | undefined): string | undefined {
+  const text = (value ?? '').trim();
+  return text || undefined;
+}
+
+function normalizeImageUrls(value: string[] | null | undefined): string[] {
+  return (value ?? []).map((item) => item.trim()).filter(Boolean);
+}
+
 function inferRelatedSpomoveIds(input: { title: string; category: string; tags: string[]; description: string; steps: string[] }): string[] {
   const text = [input.title, input.category, input.description, ...input.tags, ...input.steps].join(' ');
   const hasExplicitScreenCue = /SPOMOVE|스포무브|화면 활동|화면 신호|색 신호|출발 신호/i.test(text);
@@ -257,6 +266,18 @@ function cleanList(items: string[] | null | undefined, fallback: string[]) {
   return cleaned.length > 0 ? cleaned : fallback;
 }
 
+function extractLabeledSection(lines: string[], label: string) {
+  const start = lines.findIndex((line) => line.trim() === `[${label}]`);
+  if (start < 0) return [];
+  const values: string[] = [];
+  for (let i = start + 1; i < lines.length; i += 1) {
+    const line = lines[i].trim();
+    if (/^\[[^\]]+\]$/.test(line)) break;
+    if (line) values.push(line);
+  }
+  return values;
+}
+
 function inferCleanCategory(text: string) {
   if (/펀스틱|펜싱|fencing|funstick|민첩|반응|스피드|방향/.test(text)) return '민첩·반응';
   if (/협동|팀|릴레이|관계/.test(text)) return '협동';
@@ -437,13 +458,17 @@ export async function GET() {
     sm_coach_script: string | null;
     sm_parent_note: string | null;
     sm_related_spomove_ids: string[] | null;
+    sm_thumbnail_url: string | null;
+    sm_hero_image_url: string | null;
+    sm_setup_image_url: string | null;
+    sm_gallery_image_urls: string[] | null;
   };
 
   const metaByCurriculumId = new Map<number, MetaRow>();
   if (curriculumIds.length > 0) {
     const { data: metaRows } = await supabase
       .from('spokedu_master_program_meta')
-      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids')
+      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls')
       .in('curriculum_id', curriculumIds);
     for (const meta of (metaRows ?? []) as MetaRow[]) {
       metaByCurriculumId.set(meta.curriculum_id, meta);
@@ -451,6 +476,7 @@ export async function GET() {
   }
 
   type OverlayRow = {
+    title: string | null;
     source_center_curriculum_id: number | null;
     video_url: string | null;
     activity_tip: string | null;
@@ -468,7 +494,7 @@ export async function GET() {
   if (curriculumIds.length > 0) {
     const { data: overlayRows } = await supabase
       .from('spokedu_pro_programs')
-      .select('source_center_curriculum_id,video_url,activity_tip,activity_method,equipment,checklist,updated_at,function_type,function_types,main_theme,group_size')
+      .select('title,source_center_curriculum_id,video_url,activity_tip,activity_method,equipment,checklist,updated_at,function_type,function_types,main_theme,group_size')
       .in('source_center_curriculum_id', curriculumIds);
     for (const overlay of (overlayRows ?? []) as OverlayRow[]) {
       const curriculumId = overlay.source_center_curriculum_id;
@@ -498,7 +524,7 @@ export async function GET() {
   const programs: Program[] = (curriculumRows as CurrRow[]).map((row, index) => {
     const meta = metaByCurriculumId.get(row.id);
     const overlay = overlayByCurriculumId.get(row.id);
-    const title = (row.title ?? '').trim() || `커리큘럼 #${row.id}`;
+    const title = (overlay?.title ?? row.title ?? '').trim() || `커리큘럼 #${row.id}`;
     const categoryName = (meta?.sm_theme ?? overlay?.main_theme ?? '일반').trim() || '일반';
     const programForTrust = { id: String(row.id), title };
     const rawVideoUrl = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(row.url);
@@ -510,9 +536,13 @@ export async function GET() {
       ? String(overlay.activity_method).split('\n').map((item) => item.trim()).filter(Boolean)
       : (row.steps ?? []).filter(Boolean);
     const coachScript = (overlay?.activity_tip ?? row.expert_tip ?? '').trim() || '';
-    const fieldTips = overlay?.checklist
+    const checklistLines = overlay?.checklist
       ? String(overlay.checklist).split('\n').map((item) => item.trim()).filter(Boolean)
       : (row.check_list ?? []).filter(Boolean);
+    const fieldTips = checklistLines.filter((item) => !/^\[[^\]]+\]$/.test(item));
+    const setupNotes = extractLabeledSection(checklistLines, '세팅 방법');
+    const briefingNotes = extractLabeledSection(checklistLines, '사전 교육');
+    const safetyNotes = extractLabeledSection(checklistLines, '안전 포인트');
 
     const smColors = meta?.sm_colors;
     const colors: [string, string, string, string] =
@@ -540,7 +570,11 @@ export async function GET() {
       (meta?.sm_related_spomove_ids?.length ?? 0) > 0
         ? (meta!.sm_related_spomove_ids as string[])
         : inferredRelatedSpomoveIds;
-    const thumbnailUrl = buildThumbnailUrl(videoUrl);
+    const fallbackThumbnailUrl = buildThumbnailUrl(videoUrl);
+    const thumbnailUrl = normalizeImageUrl(meta?.sm_thumbnail_url) ?? fallbackThumbnailUrl;
+    const heroImageUrl = normalizeImageUrl(meta?.sm_hero_image_url) ?? thumbnailUrl;
+    const setupImageUrl = normalizeImageUrl(meta?.sm_setup_image_url);
+    const galleryImageUrls = normalizeImageUrls(meta?.sm_gallery_image_urls);
 
     const program: Program = {
       id: String(row.id),
@@ -569,15 +603,15 @@ export async function GET() {
         parentNote: meta?.sm_parent_note ?? '',
         fieldTips,
         variations: [],
-        safetyNotes: [],
+        safetyNotes,
         relatedSpomoveIds,
         videoUrl,
-        heroImageUrl: thumbnailUrl,
-        setupImageUrl: undefined,
-        galleryImageUrls: [],
-        briefingNotes: [],
+        heroImageUrl,
+        setupImageUrl,
+        galleryImageUrls,
+        briefingNotes,
         rules: steps,
-        setupNotes: [],
+        setupNotes,
       },
     };
 
@@ -609,7 +643,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_duration', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors', 'sm_objective', 'sm_development_focus', 'sm_coach_script', 'sm_parent_note', 'sm_related_spomove_ids'];
+  const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_duration', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors', 'sm_objective', 'sm_development_focus', 'sm_coach_script', 'sm_parent_note', 'sm_related_spomove_ids', 'sm_thumbnail_url', 'sm_hero_image_url', 'sm_setup_image_url', 'sm_gallery_image_urls'];
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) patch[key] = body[key];

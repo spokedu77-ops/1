@@ -15,6 +15,7 @@ import {
 } from '@/app/lib/curriculum/constants';
 import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
 import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
+import CenterEquipmentActivityDetailModal from '@/app/components/curriculum/CenterEquipmentActivityDetailModal';
 import { sortCenterCurriculumByDisplayOrder } from '@/app/lib/curriculum/sortCenterCurriculum';
 import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
 import {
@@ -263,6 +264,19 @@ const yuaSessionSlots = useMemo(() => {
  const currentEquipment = useMemo(() => {
    return centerEquipmentList.find((e) => e.number === selectedEquipmentNumber) ?? null;
  }, [centerEquipmentList, selectedEquipmentNumber]);
+
+ const equipmentGuideChipLabelByNumber = useMemo(() => {
+   const map = new Map<number, string>();
+   for (const num of EQUIPMENT_GUIDE_NUMBERS) {
+     const row = centerEquipmentList.find((e) => e.number === num);
+     const trimmed = String(row?.name ?? '').trim();
+     map.set(num, trimmed.length > 0 ? trimmed : `${num}번 교구`);
+   }
+   return map;
+ }, [centerEquipmentList]);
+
+ const selectedEquipmentDisplayName =
+   equipmentGuideChipLabelByNumber.get(selectedEquipmentNumber) ?? `${selectedEquipmentNumber}번 교구`;
 
  const closeAllTeacherOverlays = useCallback(() => {
    setCategoryPickerOpen(false);
@@ -540,17 +554,20 @@ useEffect(() => {
                     <button type="button" onClick={() => setCenterViewMode('center')} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold text-sm mb-2">
                       <ArrowLeft size={18} /> 커리큘럼으로
                     </button>
-                    <div className="w-full grid grid-cols-12 gap-1 sm:gap-2">
-                      {EQUIPMENT_GUIDE_NUMBERS.map((num) => (
+                    <div className="w-full grid grid-cols-6 sm:grid-cols-12 gap-1.5 sm:gap-2">
+                      {EQUIPMENT_GUIDE_NUMBERS.map((num) => {
+                        const chipLabel = equipmentGuideChipLabelByNumber.get(num) ?? `${num}번 교구`;
+                        return (
                         <button key={num} type="button" onClick={() => setSelectedEquipmentNumber(num)}
-                          className={`min-h-[44px] sm:min-h-[48px] rounded-lg sm:rounded-xl flex items-center justify-center transition-all border font-black text-xs sm:text-sm touch-manipulation
-                            ${selectedEquipmentNumber === num ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'}`}
+                          title={`${num}번 · ${chipLabel}`}
+                          className={`min-h-[44px] sm:min-h-[48px] rounded-lg sm:rounded-xl flex items-center justify-center transition-all border font-bold text-[10px] sm:text-xs leading-tight px-1 py-2 touch-manipulation
+                            ${selectedEquipmentNumber === num ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-700 border-slate-100 hover:border-indigo-200'}`}
                         >
-                          {num}번
+                          <span className="line-clamp-2 text-center break-keep">{chipLabel}</span>
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
-                    {/* 번호-단계 사이: 해당 번호 교구 1개 (읽기 전용) */}
                     <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
                       <div className="aspect-square w-24 h-24 sm:w-32 sm:h-32 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
                         {currentEquipment?.image_url ? (
@@ -597,7 +614,7 @@ useEffect(() => {
                         </div>
                       ) : (
                         <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
-                          {selectedEquipmentNumber}번 · 단계 {selectedEquipmentStep}에 등록된 활동이 없습니다.
+                          {selectedEquipmentDisplayName} · 단계 {selectedEquipmentStep}에 등록된 활동이 없습니다.
                         </div>
                       )}
                     </div>
@@ -615,7 +632,7 @@ useEffect(() => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="block font-black text-slate-900 text-base sm:text-lg">{CENTER_SECTIONS[0].label}</span>
-                    <span className="block text-xs sm:text-sm text-slate-500 font-medium mt-0.5">1~12번 교구 · 단계별 활동 보기</span>
+                    <span className="block text-xs sm:text-sm text-slate-500 font-medium mt-0.5">12종 교구명 · 단계별 활동 보기</span>
                   </div>
                   <ChevronRight size={22} className="text-slate-300 shrink-0" />
                 </button>
@@ -1044,23 +1061,11 @@ useEffect(() => {
      )}
 
      {isEquipmentDetailOpen && selectedEquipmentItem && (
-       <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-         <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => dismissTeacherOverlay()} />
-         <div className="relative bg-white w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
-           <div className="p-6 border-b border-slate-100 flex justify-between items-start">
-             <h2 className="text-xl font-black text-slate-900">{selectedEquipmentItem.number}번 · {selectedEquipmentItem.step}단계 활동</h2>
-             <button type="button" onClick={() => dismissTeacherOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400"><X size={20}/></button>
-           </div>
-           <div className="p-6 overflow-y-auto space-y-4">
-             {selectedEquipmentItem.activity_image_url && (
-               <div className="aspect-video rounded-2xl bg-slate-100 overflow-hidden">
-                 <img src={selectedEquipmentItem.activity_image_url} alt="" className="w-full h-full object-cover" />
-               </div>
-             )}
-             <div className="text-slate-600 text-sm font-bold leading-relaxed whitespace-pre-wrap">{selectedEquipmentItem.activity_text || '등록된 활동 내용이 없습니다.'}</div>
-           </div>
-         </div>
-       </div>
+       <CenterEquipmentActivityDetailModal
+         item={selectedEquipmentItem}
+         equipmentDisplayName={selectedEquipmentDisplayName}
+         onClose={() => dismissTeacherOverlay()}
+       />
      )}
    </div>
  );

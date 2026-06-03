@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 
 const COLOR_OPTIONS = [
   { id: 'red', label: '빨강', hex: '#FF3B3B' },
@@ -1591,6 +1592,39 @@ button {
   -webkit-font-smoothing: antialiased;
 }
 
+.spm-home-btn {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 10001;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line-2);
+  background: rgba(12, 14, 20, 0.88);
+  backdrop-filter: blur(18px);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.spm-home-btn:hover {
+  border-color: var(--accent-line);
+  color: var(--accent-2);
+  transform: translateY(-1px);
+}
+
+.spm-home-btn svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
 @media (max-width: 380px) {
   .spm-page, .spm-inter {
     padding-left: 12px;
@@ -1785,10 +1819,26 @@ function Block({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function ScreenShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
   return (
     <>
       <style>{CSS}</style>
-      <div className="spm-wrap">{children}</div>
+      <div className="spm-wrap">
+        <button
+          type="button"
+          className="spm-home-btn"
+          onClick={() => router.push('/teacher')}
+          aria-label="강사 대시보드 홈"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M3 10.5L12 3l9 7.5" />
+            <path d="M5 9.5V20h14V9.5" />
+          </svg>
+          홈
+        </button>
+        {children}
+      </div>
     </>
   );
 }

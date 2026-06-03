@@ -20,6 +20,7 @@ import {
 } from '@/app/lib/curriculum/constants';
 import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
 import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
+import CenterEquipmentActivityDetailModal from '@/app/components/curriculum/CenterEquipmentActivityDetailModal';
 import { sortCenterCurriculumByDisplayOrder } from '@/app/lib/curriculum/sortCenterCurriculum';
 import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
 import {
@@ -1475,7 +1476,6 @@ export default function AdminCurriculumPage() {
                          );
                        })}
                      </div>
-                     {/* 번호-단계 사이: 해당 번호 교구 1개 (이름+이미지, 편집) */}
                      <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
                        <div className="aspect-square w-24 h-24 sm:w-32 sm:h-32 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
                          {currentEquipment?.image_url ? (
@@ -2245,32 +2245,20 @@ export default function AdminCurriculumPage() {
       )}
 
       {isEquipmentDetailOpen && selectedEquipmentItem && (
-        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
-          <div className="relative bg-white w-full max-w-lg rounded-[32px] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-start">
-              <h2 className="text-xl font-black text-slate-900">{selectedEquipmentItem.number}번 · {selectedEquipmentItem.step}단계 활동</h2>
-              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400"><X size={20}/></button>
-            </div>
-            <div className="p-6 overflow-y-auto space-y-4">
-              {selectedEquipmentItem.activity_image_url && (
-                <div className="aspect-video rounded-2xl bg-slate-100 overflow-hidden">
-                  <img src={selectedEquipmentItem.activity_image_url} alt="" className="w-full h-full object-cover" />
-                </div>
-              )}
-              <div className="text-slate-600 text-sm font-bold leading-relaxed whitespace-pre-wrap">{selectedEquipmentItem.activity_text || '등록된 활동 내용이 없습니다.'}</div>
-            </div>
-          </div>
-        </div>
+        <CenterEquipmentActivityDetailModal
+          item={selectedEquipmentItem}
+          equipmentDisplayName={selectedEquipmentDisplayName}
+          onClose={() => dismissCurriculumOverlay()}
+        />
       )}
 
       {isEquipmentEditOpen && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentEdit} />
           <form onSubmit={handleEquipmentSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{editingEquipmentId ? '활동 수정' : '활동 등록'}</h2>
-              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
+              <button type="button" onClick={closeEquipmentEdit} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
                 <X />
               </button>
             </div>
@@ -2309,11 +2297,11 @@ export default function AdminCurriculumPage() {
 
       {isEquipmentMasterEditOpen && (
         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentMasterEdit} />
           <form onSubmit={handleEquipmentMasterSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">「{selectedEquipmentDisplayName}」 편집</h2>
-              <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
+              <button type="button" onClick={closeEquipmentMasterEdit} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
                 <X />
               </button>
             </div>

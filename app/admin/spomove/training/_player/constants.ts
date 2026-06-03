@@ -75,9 +75,9 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 1, name: '1단계', enName: 'Spatial Orientation', desc: '화면 방향 신호를 보고 해당 방향 위치로 이동합니다.' },
       { id: 2, name: '2단계', enName: 'Quad Color', desc: '4분할 색 신호를 보고 해당 위치로 이동합니다.' },
       { id: 3, name: '3단계', enName: 'Full-Screen Color', desc: '화면 전체 색 신호를 보고 해당 위치로 이동합니다.' },
-      { id: 4, name: '4단계', enName: 'Variant Color (1)', desc: '부분적으로 변형된 색 신호를 보고 판단합니다.' },
-      { id: 5, name: '5단계', enName: 'Variant Color (2)', desc: '여러 색 신호가 섞인 화면에서 목표 색을 판단합니다.' },
-      { id: 6, name: '6단계', enName: 'Variant 3', desc: '세 가지 색 패턴을 구분하며 반응합니다.' },
+      { id: 4, name: '전면 2패널 (서로 다른 색)', enName: 'Variant Color (1)', desc: '전면 2패널에 서로 다른 색 신호가 나타납니다.' },
+      { id: 5, name: '전면 3패널 (같은 색)', enName: 'Variant Color (2)', desc: '전면 3패널에 같은 색(이미지) 신호가 나타납니다.' },
+      { id: 6, name: '전면 3패널 (서로 다른 색)', enName: 'Variant 3', desc: '전면 3패널에 서로 다른 색 신호가 나타납니다.' },
     ],
   },
   simon: {

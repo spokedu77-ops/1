@@ -99,8 +99,26 @@ function getValidEquipment(program: Program) {
 }
 
 function formatSpaceBadge(space: string) {
+  if (/교실/.test(space) && /체육관/.test(space)) return '교실/체육관';
+  if (/체육관/.test(space) && /복도/.test(space)) return '체육관/복도';
+  if (/교실/.test(space) && /복도/.test(space)) return '교실/복도';
   if (/체육관/.test(space) && /운동장/.test(space)) return '넓은 공간';
   return space;
+}
+
+function formatGradeBadge(grade: string) {
+  if (/유아/.test(grade) && /저학년/.test(grade)) return '저학년';
+  if (/저학년/.test(grade) && /고학년|고등/.test(grade)) return '초등 전학년';
+  if (/초등/.test(grade) && /저학년/.test(grade)) return '저학년';
+  if (/초등/.test(grade) && /고학년/.test(grade)) return '고학년';
+  return grade.replace(/초등\s*/g, '').replace(/~/g, '-').trim();
+}
+
+function formatCompactBadge(value: string) {
+  return formatSpaceBadge(formatGradeBadge(value))
+    .replace(/현장 규모에 맞게 조정/g, '인원 조정')
+    .replace(/운영에 맞춰 확인/g, '운영')
+    .trim();
 }
 
 function getHeroImage(program: Program | undefined) {
@@ -191,7 +209,7 @@ function getCardTags(program: Program) {
   ]
     .filter(Boolean)
     .filter((item) => !isPlaceholderText(item) && item !== '영상 확인');
-  return Array.from(new Set(tags)).slice(0, 5);
+  return Array.from(new Set(tags.map(formatCompactBadge))).slice(0, 5);
 }
 
 /** 썸네일 우측 상단 — 영상 있을 때는 비우고 좌측 「참고 영상」만 쓴다 */
@@ -213,13 +231,13 @@ function getCurationReason(program: Program, intent: 'weekly' | 'indoor' = 'week
   const detail = program.lessonDetail;
   if (intent === 'indoor') {
     if (isPlaceholderText(program.space)) return '좁은 공간 운영에 맞춰 확인';
-    return `${getProgramSpace(program)} 운영에 맞춰 확인`;
+    return `${formatSpaceBadge(getProgramSpace(program))} 운영`;
   }
-  if (detail?.videoUrl && (detail.rules?.length || program.steps.length)) return '영상과 진행 순서를 함께 확인';
-  if (detail?.objective && detail?.developmentFocus) return '목표와 발달 영역이 정리된 수업';
-  if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물이 적어 바로 시작 좋음';
-  if (program.isHot) return '현장 활용도가 높은 대표 수업';
-  return '오늘 수업 준비용으로 먼저 확인';
+  if (detail?.videoUrl && (detail.rules?.length || program.steps.length)) return '영상과 순서를 함께 확인';
+  if (detail?.objective && detail?.developmentFocus) return '목표와 진행 흐름 정리';
+  if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 적은 수업';
+  if (program.isHot) return '현장 활용도 높은 수업';
+  return '오늘 바로 준비';
 }
 
 function CompactTagList({ tags, max = 3, className = '', onMedia = false }: { tags: string[]; max?: number; className?: string; onMedia?: boolean }) {
@@ -420,18 +438,18 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
               <Sparkles className="h-3.5 w-3.5" />
               SPOKEDU 운영 대시보드
             </span>
-            <h1 className="mt-3 max-w-2xl text-2xl font-black leading-tight text-slate-950 sm:mt-5 sm:text-4xl">오늘 수업 준비, 5분 안에 끝내세요</h1>
+            <h1 className="mt-3 max-w-2xl text-2xl font-black leading-tight text-slate-950 sm:mt-4 sm:text-4xl">오늘 수업 준비, 5분 안에 끝내세요</h1>
             <p className="mt-2 max-w-2xl text-[13px] font-semibold leading-5 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7">
               대상·공간·교구에 맞는 놀이체육 수업안과 참고 영상을 확인하고, SPOMOVE 활동은 TV·빔 화면으로 바로 실행할 수 있습니다.
             </p>
-            <div className="mt-3 hidden flex-wrap gap-1.5 sm:mt-4 sm:flex">
+            <div className="mt-3 hidden flex-wrap gap-1.5 sm:flex">
               {tags.slice(0, 4).map((tag) => (
                 <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1.5 text-[11px] font-black text-slate-700">
                   {tag}
                 </span>
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-5 sm:grid-cols-3 sm:gap-2 xl:grid-cols-5">
+            <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-4 sm:grid-cols-3 sm:gap-2 xl:grid-cols-5">
               {kpis.map((item) => (
                 <div key={item.label} className={`${mobilePrimaryKpis.has(item.label) ? '' : 'hidden sm:block'} rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 sm:rounded-xl sm:px-3 sm:py-2.5`}>
                   <p className="text-[10px] font-bold leading-none text-slate-500 sm:text-[11px] sm:leading-normal">{item.label}</p>
@@ -442,8 +460,8 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
               ))}
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-7 sm:flex sm:flex-row sm:gap-3">
-            <button type="button" onClick={onPreview} className="col-span-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-[13px] font-extrabold text-white sm:min-h-12 sm:px-5 sm:text-sm">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:flex sm:flex-row sm:gap-3">
+            <button type="button" onClick={onPreview} className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-[13px] font-extrabold text-white shadow-[0_10px_24px_rgba(79,70,229,0.22)] sm:min-h-12 sm:px-5 sm:text-sm">
               <Play className="h-4 w-4 fill-current" />
               {hasVideo ? '영상으로 수업 준비하기' : '오늘 수업 준비하기'}
             </button>
@@ -474,8 +492,8 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-slate-100 to-white" />
           )}
           <div className="absolute bottom-5 left-5 right-5 rounded-[18px] border border-white/25 bg-white/88 p-4 text-left shadow-[0_18px_46px_rgba(15,23,42,0.2)] backdrop-blur-xl">
-            <p className="text-xs font-bold text-slate-500">{hasVideo ? '참고 영상' : '수업 준비'}</p>
-            <p className="mt-1 text-sm font-black text-slate-950">
+            <p className="text-[12px] font-bold text-slate-500">{hasVideo ? '참고 영상' : '수업 준비'}</p>
+            <p className="mt-1 text-[15px] font-black leading-5 text-slate-950">
               {hasVideo ? '탭하면 미리보기에서 바로 재생' : getProgramCue(program)}
             </p>
           </div>
@@ -533,15 +551,15 @@ function CategoryStrip({
 function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPreview: (program: Program) => void; premiumLabel?: string }) {
   const showPlay = item.hasVideo;
   const detail = item.program?.lessonDetail;
-  const target = item.program ? detail?.recommendedAge || getProgramGrade(item.program) : '';
+  const target = item.program ? formatGradeBadge(detail?.recommendedAge || getProgramGrade(item.program)) : '';
   const space = item.program ? formatSpaceBadge(getProgramSpace(item.program)) : '';
   const equipmentCount = item.program?.equipment.filter((equipment) => !isPlaceholderText(equipment)).length ?? 0;
   const hasLessonPlan = Boolean((detail?.rules?.length ?? 0) > 0 || (item.program?.steps.length ?? 0) > 0);
   const operationBadges = [
     target && !isPlaceholderText(target) ? target : null,
     space && !isPlaceholderText(space) ? space : null,
-    item.hasVideo ? '영상 포함' : equipmentCount > 0 ? `교구 ${equipmentCount}개` : hasLessonPlan ? '수업안 포함' : null,
-  ].filter((badge): badge is string => Boolean(badge) && !isPlaceholderText(badge)).slice(0, 3);
+    equipmentCount > 0 ? `교구 ${equipmentCount}` : hasLessonPlan ? '수업안' : null,
+  ].filter((badge): badge is string => Boolean(badge) && !isPlaceholderText(badge)).map(formatCompactBadge).slice(0, 3);
   const thumbOverlayCue = item.program ? getProgramThumbOverlayCue(item.program) : item.meta;
   const cleanOverlayCue = thumbOverlayCue && !isPlaceholderText(thumbOverlayCue) ? thumbOverlayCue : null;
   return (
@@ -566,7 +584,7 @@ function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPrevi
         </div>
 
         {showPlay ? (
-          <div className="absolute left-3 top-3 rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-black text-white shadow-md">
+          <div className="absolute left-3 top-3 rounded-lg bg-red-600/95 px-2.5 py-1 text-[11px] font-black text-white shadow-md">
             참고 영상
           </div>
         ) : null}
@@ -586,17 +604,23 @@ function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPrevi
         </div>
       </div>
 
-      <h3 className="mt-3 line-clamp-2 text-[15px] font-bold leading-snug text-slate-950">{item.title}</h3>
-      <p className="mt-1 line-clamp-1 text-[12px] font-semibold text-slate-500">{item.reason}</p>
-      <div className="mt-2 flex min-w-0 items-start justify-between gap-2">
+      <div className="mt-3 space-y-2">
+        <div>
+          <h3 className="line-clamp-1 text-[15px] font-extrabold leading-5 text-slate-950">{item.title}</h3>
+          <p className="mt-0.5 line-clamp-1 text-[12px] font-semibold leading-4 text-slate-500">{item.reason}</p>
+        </div>
         <div className="flex min-w-0 flex-wrap gap-1.5">
           {operationBadges.map((badge) => (
-            <span key={badge} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold leading-none text-slate-600">
+            <span key={badge} className="max-w-full truncate rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold leading-none text-slate-600">
               {badge}
             </span>
           ))}
         </div>
-        <span className="shrink-0 whitespace-nowrap text-[12px] font-bold text-indigo-600">{item.hasVideo ? '영상 확인' : '수업 열기'}</span>
+        <span className={`inline-flex h-8 w-fit items-center justify-center rounded-lg px-3 text-[12px] font-black ${
+          item.hasVideo ? 'bg-indigo-600 text-white shadow-[0_8px_18px_rgba(79,70,229,0.18)]' : 'border border-slate-200 bg-white text-slate-800'
+        }`}>
+          {item.hasVideo ? '영상 확인' : '수업 열기'}
+        </span>
       </div>
     </button>
   );
@@ -758,6 +782,7 @@ function SpomovePresetCard({ preset, premiumLabel }: { preset: SpomoveLaunchPres
           <div className="mt-3 flex flex-wrap gap-1.5">
             {['TV·빔 실행', preset.target, preset.space, ...preset.tags]
               .filter((tag): tag is string => Boolean(tag) && !isPlaceholderText(tag))
+              .map(formatCompactBadge)
               .slice(0, 3)
               .map((tag) => (
               <span key={tag} className="max-w-full whitespace-nowrap rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold leading-none text-slate-700">
@@ -830,17 +855,19 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
   const videoEmbedUrl = getVideoEmbedUrl(trustedVideoUrl, { autoplay: true });
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(trustedVideoUrl) ? trustedVideoUrl : undefined;
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(trustedVideoUrl) : undefined;
-  const tags = getCardTags(program);
   const rules = detail?.rules?.length ? detail.rules : program.steps;
   const equipment = program.equipment.filter((item) => !isPlaceholderText(item));
   const setupNotes = (detail?.setupNotes ?? []).filter((item) => !isPlaceholderText(item));
-  const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
+  const safetyNotes = (detail?.safetyNotes ?? []).filter((item) => !isPlaceholderText(item));
+  const equipmentSummary = equipment.length > 1 ? `${equipment[0]} 외 ${equipment.length - 1}` : equipment[0] ?? '';
   const previewFacts = [
-    ['대상', detail?.recommendedAge || getProgramGrade(program)],
-    ['인원', detail?.recommendedPlayers],
-    ['공간', getProgramSpace(program)],
-    ['발달 영역', detail?.developmentFocus || getProgramCategory(program)],
+    ['대상', formatGradeBadge(detail?.recommendedAge || getProgramGrade(program))],
+    ['공간', formatSpaceBadge(getProgramSpace(program))],
+    ['시간', program.duration ? `${program.duration}분` : ''],
+    ['준비물', equipmentSummary],
   ].filter(([, value]) => value && !isPlaceholderText(value));
+  const setupPreview = setupNotes.slice(0, 2);
+  const safetyPreview = safetyNotes[0];
   const parentCopy =
     detail?.parentNote ||
     `오늘은 ${getProgramTitle(program)} 활동으로 ${detail?.developmentFocus || getProgramCategory(program)}을 자연스럽게 경험했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`;
@@ -853,8 +880,8 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
 
   return (
     <BottomSheet open title="수업 미리보기" onClose={onClose} size="document">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
-        <div className="space-y-4">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
+        <div className="lg:h-fit lg:self-start">
           <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
             <div className="relative aspect-video">
               {videoEmbedUrl ? (
@@ -872,9 +899,9 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
                 <div className="grid h-full place-items-center bg-slate-950 p-6 text-center text-white">
                   <div>
                     <Play className="mx-auto h-10 w-10 fill-current text-red-500" />
-                    <p className="mt-4 text-base font-black">외부 영상</p>
+                    <p className="mt-4 text-base font-black">참고 영상 링크</p>
                     <a href={externalVideoUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-black text-slate-950">
-                      영상 열기
+                      유튜브에서 열기
                     </a>
                   </div>
                 </div>
@@ -885,83 +912,88 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
                   <CategoryIcon category={getProgramCategory(program)} size={48} />
                 </div>
               )}
-              <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-black text-white backdrop-blur">
-                {hasVideo ? (videoEmbedUrl || directVideoUrl ? '자동 재생' : '영상 링크') : '대표 이미지'}
-              </div>
-              {videoEmbedUrl || directVideoUrl ? (
-                <p className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-lg bg-black/50 px-3 py-2 text-center text-[11px] font-semibold text-white backdrop-blur">
-                  브라우저 정책상 음소거로 시작됩니다. 소리는 영상 컨트롤에서 켤 수 있습니다.
-                </p>
-              ) : null}
             </div>
           </div>
+        </div>
+        <div className="space-y-3.5">
+          <header>
+            <p className="text-xs font-black tracking-[0.14em] text-indigo-600">{getProgramCategory(program)}</p>
+            <h2 className="mt-2 text-2xl font-black leading-tight text-slate-950">{getProgramTitle(program)}</h2>
+            <p className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{detail?.objective || program.description}</p>
+          </header>
           {previewFacts.length > 0 ? (
-            <section className="grid gap-2 sm:grid-cols-2">
+            <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
               {previewFacts.map(([label, value]) => (
-                <div key={label} className="rounded-[14px] border border-slate-200 bg-white p-3">
-                  <p className="text-[10px] font-black tracking-[0.12em] text-slate-400">{label}</p>
-                  <p className="mt-1 text-sm font-black text-slate-900">{value}</p>
+                <div key={label} className="rounded-[13px] border border-indigo-100 bg-indigo-50/60 px-3 py-2.5">
+                  <p className="text-[10px] font-black tracking-[0.12em] text-indigo-500">{label}</p>
+                  <p className="mt-1 line-clamp-2 text-[13px] font-black leading-4 text-slate-950">{value}</p>
                 </div>
               ))}
             </section>
           ) : null}
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-4">
-          <header>
-            <p className="text-xs font-black tracking-[0.14em] text-indigo-600">{getProgramCategory(program)}</p>
-            <h2 className="mt-2 text-2xl font-black leading-tight text-slate-950">{getProgramTitle(program)}</h2>
-            <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">{detail?.objective || program.description}</p>
-          </header>
-          <section className="rounded-[16px] border border-slate-200 bg-white p-4">
-            <h3 className="text-sm font-black text-slate-950">수업 자료</h3>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {(equipment.length ? equipment.slice(0, 6) : ['도구 정보 아직 없음']).map((item) => (
-                <div key={item} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700">
-                  <span className="h-3.5 w-3.5 shrink-0 border border-slate-400 bg-white" />
-                  {item}
-                </div>
-              ))}
-            </div>
-            {setupNotes.length > 0 ? (
-              <ul className="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
-                {setupNotes.slice(0, 3).map((item) => (
-                  <li key={item} className="text-xs font-semibold leading-5 text-slate-500">- {item}</li>
+          {equipment.length > 0 ? (
+            <section className="rounded-[16px] border border-slate-200 bg-white p-3.5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+              <h3 className="text-sm font-black text-slate-950">수업 자료</h3>
+              <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
+                {equipment.slice(0, 4).map((item) => (
+                  <div key={item} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700">
+                    <span className="grid h-4 w-4 shrink-0 place-items-center rounded border border-indigo-200 bg-white text-[10px] font-black text-indigo-600">✓</span>
+                    <span className="min-w-0 leading-5">{item}</span>
+                  </div>
                 ))}
-              </ul>
-            ) : null}
-          </section>
+              </div>
+            </section>
+          ) : null}
+          {setupPreview.length > 0 || safetyPreview ? (
+            <section className="rounded-[16px] border border-slate-200 bg-white p-3.5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+              {setupPreview.length > 0 ? (
+                <div>
+                  <p className="text-sm font-black text-slate-950">세팅 팁</p>
+                  <ul className="mt-2 space-y-1.5">
+                    {setupPreview.map((item) => (
+                      <li key={item} className="text-xs font-semibold leading-5 text-slate-500">- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {safetyPreview ? (
+                <div className={setupPreview.length > 0 ? 'mt-3 border-t border-slate-100 pt-3' : ''}>
+                  <p className="text-sm font-black text-slate-950">안전 포인트</p>
+                  <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">- {safetyPreview}</p>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
           {rules.length > 0 ? (
-            <section className="rounded-[16px] border border-slate-200 bg-white p-4">
+            <section className="rounded-[16px] border border-slate-200 bg-white p-3.5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
               <h3 className="flex items-center gap-2 text-sm font-black text-slate-950">
                 <BookOpen className="h-4 w-4 text-indigo-600" />
                 진행 순서
               </h3>
               <ul className="mt-3 space-y-2">
-                {rules.slice(0, 4).map((step, index) => (
-                  <li key={`${step}-${index}`} className="grid grid-cols-[22px_1fr] gap-2 text-sm leading-6 text-slate-700">
-                    <span className="font-black text-slate-400">{index + 1}</span>
-                    <span>{step}</span>
+                {rules.slice(0, 3).map((step, index) => (
+                  <li key={`${step}-${index}`} className="grid grid-cols-[28px_1fr] gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-xs font-black text-indigo-600 ring-1 ring-slate-200">{index + 1}</span>
+                    <span className="min-w-0 font-semibold">{step}</span>
                   </li>
                 ))}
               </ul>
             </section>
           ) : null}
           <div className="grid gap-2 sm:grid-cols-2">
-            <button type="button" onClick={copyParentNote} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-black text-white">
+            <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white shadow-[0_10px_22px_rgba(79,70,229,0.18)] sm:h-11">
+              <BookOpen className="h-4 w-4" />
+              수업 자료 보기
+            </Link>
+            <button type="button" onClick={copyParentNote} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 sm:h-11">
               <Clipboard className="h-4 w-4" />
               {copied ? '복사 완료' : '학부모 문구 복사'}
             </button>
-            <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-900">
-              <BookOpen className="h-4 w-4" />
-              라이브러리에서 보기
-            </Link>
+            {externalVideoUrl ? (
+              <a href={externalVideoUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 w-full items-center justify-center rounded-xl text-xs font-black text-slate-500 sm:col-span-2">
+                유튜브에서 열기
+              </a>
+            ) : null}
           </div>
         </div>
       </div>
