@@ -36,9 +36,11 @@ const EMPTY_BADGE = 'inline-flex items-center rounded-full bg-slate-100 px-2 py-
 
 interface CentersClientProps {
   initialCenters: Center[];
+  /** CentersHubClient 탭 안에 embed 시 상단 제목 숨김 */
+  embedded?: boolean;
 }
 
-export default function CentersClient({ initialCenters }: CentersClientProps) {
+export default function CentersClient({ initialCenters, embedded = false }: CentersClientProps) {
   const [centers, setCenters] = useState<Center[]>(initialCenters);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -142,10 +144,12 @@ export default function CentersClient({ initialCenters }: CentersClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]">
+    <div className={`${embedded ? '' : 'min-h-screen'} bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]`}>
       <div className="p-4 sm:p-6 md:p-8 min-w-0">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">센터 관리</h1>
+        <div className={`flex flex-col gap-4 sm:flex-row sm:items-center ${embedded ? 'sm:justify-end mb-4' : 'sm:justify-between mb-6'}`}>
+          {!embedded ? (
+            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">센터 관리</h1>
+          ) : null}
           <button
             type="button"
             onClick={() => setIsCreateOpen(true)}

@@ -8,7 +8,7 @@
  */
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
 const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || process.env.SPOKEDU_MASTER_QA_EMAIL || '';
-const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || '';
+const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
 
 async function loadPlaywright() {
   try {
@@ -43,9 +43,9 @@ async function main() {
 
   try {
     await page.goto(`${BASE}/login?next=${encodeURIComponent('/spokedu-master/dashboard')}`, { waitUntil: 'domcontentloaded' });
-    await page.getByPlaceholder('아이디를 입력하세요').fill(QA_ID);
-    await page.getByPlaceholder('비밀번호를 입력하세요').fill(QA_PASSWORD);
-    await page.getByRole('button', { name: /로그인/i }).click();
+    await page.locator('input[type="text"]').first().fill(QA_ID);
+    await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
+    await page.locator('button[type="submit"]').click();
     await page.waitForURL(/\/spokedu-master\/dashboard/, { timeout: 90000, waitUntil: 'domcontentloaded' });
 
     const mainBg = await page.locator('main').first().evaluate((el) => getComputedStyle(el).backgroundColor);

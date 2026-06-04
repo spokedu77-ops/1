@@ -50,7 +50,7 @@ const PLANS: Record<PlanKey, {
     shortTitle: 'Pro',
     price: '39,900',
     amount: 39900,
-    period: '월',
+    period: '30일',
     badge: '개인 강사 추천',
     description: '수업 라이브러리, SPOMOVE 큰 화면, 설명 문구까지 개인 강사가 바로 쓰는 표준 플랜입니다.',
     primaryFor: '개인 강사, 프리랜서 체육교육자, 소규모 클래스 운영자',
@@ -70,7 +70,7 @@ const PLANS: Record<PlanKey, {
     shortTitle: 'Center',
     price: '79,000',
     amount: 79000,
-    period: '월',
+    period: '30일',
     badge: '강사 3명 포함',
     description: '센터·도장·체육관에서 여러 강사가 같은 수업 품질과 설명 자료를 공유하는 플랜입니다.',
     primaryFor: '센터, 도장, 체육관, 강사 2명 이상 운영 조직',
@@ -517,7 +517,7 @@ function PaymentContent() {
             <ul className="mt-3 space-y-2">
               {[
                 '토스페이먼츠 보안 결제로 진행됩니다.',
-                '다음 결제일 전 구독 취소를 요청할 수 있습니다.',
+                '이용 기간 만료 전 플랜 변경이나 해지 문의를 남길 수 있습니다.',
                 '디지털 콘텐츠 이용 시작 후 환불은 이용 내역에 따라 제한될 수 있습니다.',
               ].map((item) => (
                 <li key={item} className="flex gap-2 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>

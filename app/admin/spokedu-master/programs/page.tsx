@@ -155,6 +155,18 @@ const FILTER_OPTIONS: Array<{ key: FilterKey; label: string }> = [
   { key: 'spomove-needed', label: 'SPOMOVE 연결 필요' },
 ];
 
+const SPACE_OPTIONS = ['체육관', '운동장', '교실', '작은 공간', 'ALL'];
+const TARGET_OPTIONS = ['미취학', '초등 저학년', '초등 고학년 이상', 'ALL'];
+const THEME_OPTIONS = ['육상 놀이체육', '술래형(대결)', '도전형(챌린지)', '경쟁형(개인 또는 팀 간)', '협동형(팀 내)'];
+const MOVEMENT_OPTIONS = ['동적', '정적'];
+const BODY_FUNCTION_OPTIONS = ['유연성', '민첩성', '순발력', '협응력', '근지구력', '심폐지구력', '리듬감', '평형성', '근력'];
+const GROUP_SIZE_OPTIONS = ['1:1', '소수', '다수', 'ALL'];
+const TAG_PREFIX = {
+  movement: '움직임:',
+  bodyFunction: '신체 기능:',
+  groupSize: '인원:',
+} as const;
+
 function splitLines(value: string) {
   return value
     .split('\n')
@@ -171,6 +183,32 @@ function csvToList(value: string) {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function listToCsvValue(value: string[]) {
+  return value.filter(Boolean).join(', ');
+}
+
+function toggleOption(list: string[], option: string) {
+  const hasOption = list.includes(option);
+  if (option === 'ALL') return hasOption ? [] : ['ALL'];
+  const withoutAll = list.filter((item) => item !== 'ALL');
+  return hasOption ? withoutAll.filter((item) => item !== option) : [...withoutAll, option];
+}
+
+function taggedValue(prefix: string, option: string) {
+  return `${prefix}${option}`;
+}
+
+function selectedTaggedOptions(tags: string, prefix: string) {
+  return csvToList(tags)
+    .filter((tag) => tag.startsWith(prefix))
+    .map((tag) => tag.slice(prefix.length));
+}
+
+function updateTaggedOptions(tags: string, prefix: string, nextOptions: string[]) {
+  const otherTags = csvToList(tags).filter((tag) => !tag.startsWith(prefix));
+  return listToCsvValue([...otherTags, ...nextOptions.map((option) => taggedValue(prefix, option))]);
 }
 
 function imageUrlList(value: string) {
@@ -418,10 +456,43 @@ function toForm(item: ProgramItem): EditForm {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block">
+    <div className="block">
       <span className="mb-1 block text-[11px] font-black text-slate-500">{label}</span>
       {children}
-    </label>
+    </div>
+  );
+}
+
+function ChoiceChips({
+  options,
+  selected,
+  onChange,
+}: {
+  options: string[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  return (
+    <div className="flex min-h-10 flex-wrap gap-1.5 rounded-lg border border-slate-200 bg-white p-2">
+      {options.map((option) => {
+        const active = selected.includes(option);
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(toggleOption(selected, option))}
+            className="h-8 rounded-full border px-3 text-[12px] font-black transition-colors"
+            style={{
+              borderColor: active ? '#4f46e5' : '#e2e8f0',
+              background: active ? '#eef2ff' : '#f8fafc',
+              color: active ? '#4338ca' : '#64748b',
+            }}
+          >
+            {option}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -841,12 +912,43 @@ export default function AdminSmProgramsPage() {
               <div className="space-y-5">
                 <section className="rounded-lg border border-slate-200 bg-white p-5">
                   <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><Sparkles size={16} />기본 정보</h3>
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     <Field label="수업명"><TextInput value={form.title} onChange={(e) => updateForm('title', e.target.value)} /></Field>
-                    <Field label="주제/테마"><TextInput value={form.theme} onChange={(e) => updateForm('theme', e.target.value)} /></Field>
-                    <Field label="대상"><TextInput value={form.target} onChange={(e) => updateForm('target', e.target.value)} /></Field>
-                    <Field label="공간"><TextInput value={form.space} onChange={(e) => updateForm('space', e.target.value)} /></Field>
                     <Field label="시간(분)"><TextInput type="number" min={0} value={form.duration} onChange={(e) => updateForm('duration', e.target.value)} /></Field>
+                  </div>
+                  <div className="mt-4 grid gap-4">
+                    <Field label="공간">
+                      <ChoiceChips options={SPACE_OPTIONS} selected={csvToList(form.space)} onChange={(next) => updateForm('space', listToCsvValue(next))} />
+                    </Field>
+                    <Field label="대상">
+                      <ChoiceChips options={TARGET_OPTIONS} selected={csvToList(form.target)} onChange={(next) => updateForm('target', listToCsvValue(next))} />
+                    </Field>
+                    <Field label="주제/테마">
+                      <ChoiceChips options={THEME_OPTIONS} selected={csvToList(form.theme)} onChange={(next) => updateForm('theme', listToCsvValue(next))} />
+                    </Field>
+                    <div className="grid gap-4 lg:grid-cols-3">
+                      <Field label="움직임">
+                        <ChoiceChips
+                          options={MOVEMENT_OPTIONS}
+                          selected={selectedTaggedOptions(form.tags, TAG_PREFIX.movement)}
+                          onChange={(next) => updateForm('tags', updateTaggedOptions(form.tags, TAG_PREFIX.movement, next))}
+                        />
+                      </Field>
+                      <Field label="신체 기능">
+                        <ChoiceChips
+                          options={BODY_FUNCTION_OPTIONS}
+                          selected={selectedTaggedOptions(form.tags, TAG_PREFIX.bodyFunction)}
+                          onChange={(next) => updateForm('tags', updateTaggedOptions(form.tags, TAG_PREFIX.bodyFunction, next))}
+                        />
+                      </Field>
+                      <Field label="인원">
+                        <ChoiceChips
+                          options={GROUP_SIZE_OPTIONS}
+                          selected={selectedTaggedOptions(form.tags, TAG_PREFIX.groupSize)}
+                          onChange={(next) => updateForm('tags', updateTaggedOptions(form.tags, TAG_PREFIX.groupSize, next))}
+                        />
+                      </Field>
+                    </div>
                   </div>
                   <div className="mt-4 grid gap-4">
                     <Field label="한 줄 설명"><TextArea rows={4} value={form.description} onChange={(e) => updateForm('description', e.target.value)} /></Field>

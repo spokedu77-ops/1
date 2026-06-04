@@ -1,408 +1,342 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  BookOpen,
-  Check,
-  Clipboard,
-  FileText,
-  GraduationCap,
-  Megaphone,
-  MessageCircle,
-  MonitorPlay,
-  Search,
-  Send,
-  UsersRound,
-  type LucideIcon,
-} from 'lucide-react';
-import { Suspense, useMemo, useState } from 'react';
+import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Save, Search, UsersRound } from 'lucide-react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
-import { isTrialExpired } from '../lib/subscription';
-import { useIsPro, useMasterStore, useProfile } from '../store';
-import type { ClassRecord, Program } from '../types';
+import { useMasterStore } from '../store';
+import type { Program } from '../types';
 
-type Audience = 'parent' | 'center' | 'school' | 'promo';
-type CopyBlock = { title: string; caption: string; text: string };
+type Audience = 'parent' | 'center' | 'school';
+type SavedExplanation = {
+  id: string;
+  programId: string;
+  programTitle: string;
+  audience: Audience;
+  text: string;
+  createdAt: string;
+};
 
-const AUDIENCES: Array<{ id: Audience; label: string; description: string; Icon: LucideIcon }> = [
-  { id: 'parent', label: '보호자용', description: '수업 직후 안내 메시지', Icon: UsersRound },
-  { id: 'center', label: '기관용', description: '상담·운영 설명 문구', Icon: FileText },
-  { id: 'school', label: '학교 기록용', description: '차시 활동 기록 문구', Icon: GraduationCap },
-  { id: 'promo', label: '홍보용', description: '블로그·SNS 소개 문구', Icon: Megaphone },
+const STORAGE_KEY = 'spokedu-master-explanations-v1';
+
+const AUDIENCES: Array<{ id: Audience; label: string; description: string; Icon: typeof MessageCircle }> = [
+  { id: 'parent', label: '학부모용', description: '따뜻하고 이해하기 쉬운 안내 문구', Icon: UsersRound },
+  { id: 'center', label: '기관용', description: '운영 목적과 기대 효과 중심 설명', Icon: FileText },
+  { id: 'school', label: '학교용', description: '수업 활동 기록과 참여 내용 중심', Icon: GraduationCap },
 ];
 
-function joinList(values: string[]) {
-  return values.filter(Boolean).join(', ') || '기본 움직임';
+const MOODS = ['활기찼음', '차분했음', '집중도가 높았음', '도전 분위기', '협동 분위기'];
+const REACTIONS = ['적극적으로 참여함', '처음엔 조심스러웠지만 점차 참여함', '규칙을 이해하며 움직임', '친구와 상호작용이 좋았음', '반복하며 자신감이 생김'];
+const FOCUS_SKILLS = ['참여', '반응', '협동', '방향 전환', '공간 인식', '자기조절'];
+
+function compactList(values: Array<string | undefined | null>) {
+  return values.map((value) => value?.trim()).filter(Boolean).join(' / ');
 }
 
-function isPlaceholderMeta(value: string | undefined): boolean {
+function clean(value: string | undefined | null, fallback = '') {
   const text = (value ?? '').trim();
-  return !text || /확인 필요|활동 공간 확인|공간 확인 필요|대상 확인 필요|미정|undefined|null|조정/i.test(text);
+  if (!text || /확인 필요|정보 없음|미정|undefined|null/i.test(text)) return fallback;
+  return text;
 }
 
-function compactMeta(values: Array<string | undefined>) {
-  return values.filter((value): value is string => Boolean(value && !isPlaceholderMeta(value))).join(' / ');
+function toggle(items: string[], item: string) {
+  return items.includes(item) ? items.filter((value) => value !== item) : [...items, item];
 }
 
-function hasExplicitSpomoveLink(program: Program) {
-  return (program.lessonDetail?.relatedSpomoveIds ?? []).length > 0;
-}
-
-function getPrimarySpomoveDrillId(program: Program, drillIds: string[]) {
-  const related = program.lessonDetail?.relatedSpomoveIds ?? [];
-  return related.find((id) => drillIds.includes(id)) ?? related[0] ?? null;
-}
-
-function getSpomoveSessionHref(program: Program, drillId: string) {
-  return `/spokedu-master/spomove/session?drill=${drillId}&mode=projector&program=${program.id}`;
-}
-
-function normalizeTitle(title: string) {
-  return title.toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
-}
-
-function uniquePrograms(programs: Program[]) {
-  const seen = new Set<string>();
-  return programs.filter((program) => {
-    const key = normalizeTitle(program.title);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+function loadSaved(): SavedExplanation[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '[]') as SavedExplanation[];
+    return Array.isArray(parsed) ? parsed.slice(0, 10) : [];
+  } catch {
+    return [];
+  }
 }
 
 function buildProgramPool(programs: Program[]) {
-  return uniquePrograms(programs.length > 0 ? programs : STATIC_PROGRAMS);
+  return programs.length > 0 ? programs : STATIC_PROGRAMS;
 }
 
-function buildCopyBlocks(audience: Audience, program: Program, record?: ClassRecord): CopyBlock[] {
+function buildExplanation(input: {
+  audience: Audience;
+  program: Program;
+  mood: string;
+  reaction: string;
+  focusSkills: string[];
+  note: string;
+}) {
+  const { audience, program, mood, reaction, focusSkills, note } = input;
   const detail = program.lessonDetail;
-  const focus = detail?.developmentFocus || joinList(program.tags);
-  const objective = detail?.objective || program.description;
-  const equipment = joinList(program.equipment);
-  const baseMeta = compactMeta([program.grade, program.space]) || '현장 체육 수업';
-  const parentNote = detail?.parentNote || `오늘은 "${program.title}" 활동으로 ${focus}을 자연스럽게 경험했습니다.`;
-  const coachPoint = detail?.coachScript || `${program.title}은 ${focus}을 중심으로 수업 흐름을 구성합니다.`;
-  const safetySummary = detail?.safetyNotes?.length ? detail.safetyNotes.slice(0, 2).join(' ') : '이동 동선, 충돌 가능성, 도구 간격을 사전에 확인합니다.';
-  const setupSummary = detail?.setupNotes?.length ? detail.setupNotes.slice(0, 2).join(' ') : `${program.space}에서 준비물 ${equipment}을 활용합니다.`;
-  const spomoveSummary = detail?.relatedSpomoveIds?.length
-    ? '명시 연결된 SPOMOVE 활동이 있는 수업안입니다. 큰 화면 활동은 수업 상황에 맞게 별도로 실행해 활용할 수 있습니다.'
-    : '필요하면 타이머, 점수판, 명단 도구를 보조로 활용할 수 있습니다.';
-  const recordMeta = record ? ` 오늘 기록은 출석 ${record.present}명, 집중 관찰 ${record.focusCount}명, 동작 체크 ${record.skillCount}개로 정리되었습니다.` : '';
+  const title = clean(program.title, '오늘 수업');
+  const objective = clean(detail?.objective, clean(program.description, '움직임을 경험하며 몸의 기능을 익히는 활동입니다.'));
+  const focus = focusSkills.length ? focusSkills.join(', ') : clean(detail?.developmentFocus, program.tags.slice(0, 3).join(', '));
+  const space = clean(program.space, '수업 공간');
+  const equipment = program.equipment.length ? program.equipment.join(', ') : '현장 기본 도구';
+  const safety = detail?.safetyNotes?.slice(0, 2).join(' ') || '이동 방향과 활동 간격을 확인하며 안전하게 진행했습니다.';
+  const variation = detail?.variations?.[0] ? `수준에 따라 ${detail.variations[0]} 방식으로 조절할 수 있습니다.` : '';
+  const noteLine = note.trim() ? ` 특이사항: ${note.trim()}` : '';
 
   if (audience === 'parent') {
-    return [
-      {
-        title: '수업 직후 안내',
-        caption: '보호자에게 바로 보낼 수 있는 완성형 문구',
-        text: `${parentNote} 단순히 뛰어노는 시간이 아니라 규칙을 이해하고, 몸의 속도와 방향을 조절하는 과정에 초점을 두었습니다. ${spomoveSummary}${recordMeta}`,
-      },
-      {
-        title: '짧은 알림',
-        caption: '카카오톡이나 문자에 붙이기 좋은 버전',
-        text: `오늘은 "${program.title}"로 ${focus}을 연습했습니다. 아이들이 규칙 안에서 판단하고 몸을 조절하는 경험을 했습니다.${record ? ` 출석 ${record.present}명 기록을 저장했습니다.` : ''}`,
-      },
-      {
-        title: '상담 메모',
-        caption: '상담 기록이나 수업 노트에 남기는 문구',
-        text: `${program.title}: ${objective} 관찰 포인트는 ${focus}. 수업 중 코칭 포인트는 “${coachPoint}”입니다.`,
-      },
-    ];
+    return `오늘은 "${title}" 수업으로 아이들이 ${focus}을 자연스럽게 경험했습니다. ${mood} 분위기 속에서 ${reaction} 모습을 보였고, 움직임을 따라 하거나 규칙에 맞춰 몸을 조절하는 과정에 초점을 두었습니다. ${safety} 오늘의 움직임 경험이 아이들의 신체 표현과 수업 참여 자신감으로 이어질 수 있도록 마무리했습니다.${noteLine}`;
   }
 
   if (audience === 'center') {
-    return [
-      {
-        title: '센터 수업 설명',
-        caption: '원장·상담자가 수업 가치를 설명할 때',
-        text: `"${program.title}"은 ${baseMeta} 조건에 맞춘 체육교육 프로그램입니다. 핵심 목표는 ${objective}입니다. 준비물, 공간 세팅, 안전 체크, 코치 멘트, 보호자 설명 문구까지 함께 정리되어 있어 강사별 수업 품질 편차를 줄이는 데 도움이 됩니다.`,
-      },
-      {
-        title: '운영 메모',
-        caption: '강사 공유나 수업 배정에 쓰는 요약',
-        text: `권장 대상: ${program.grade}. 공간: ${program.space}. 준비물: ${equipment}. 발달 포인트: ${focus}. 공간 세팅: ${setupSummary}`,
-      },
-      {
-        title: '도입 제안 문구',
-        caption: '센터 도입 제안서에 넣기 좋은 문구',
-        text: `SPOKEDU MASTER는 프로그램 라이브러리, SPOMOVE 실행, 수업 설명 문구를 한곳에 제공해 강사별 수업 준비 시간을 줄이고 보호자에게 체육수업의 가치를 설명할 수 있게 돕는 구독형 체육교육 플랫폼입니다. 센터는 같은 콘텐츠 기준으로 강사 수업 품질을 맞추고, 수업 직후 보호자 커뮤니케이션까지 일관되게 운영할 수 있습니다.`,
-      },
-    ];
+    return `"${title}"은 ${compactList([program.grade, space]) || '현장 수업'} 조건에서 운영할 수 있는 체육수업 자료입니다. 수업 목적은 ${objective} 준비물은 ${equipment}이며, 활동 구성은 도입 안내, 주요 움직임 경험, 정리 피드백 순서로 운영했습니다. 오늘 수업은 ${mood} 분위기에서 진행되었고 아이들은 ${reaction} 흐름을 보였습니다. 기대 효과는 ${focus}을 수업 장면 안에서 확인하고 설명할 수 있다는 점입니다.${noteLine}`;
   }
 
-  if (audience === 'school') {
-    return [
-      {
-        title: '차시 기록',
-        caption: '학교 수업 기록에 맞춘 기본 문구',
-        text: `차시 활동명: ${program.title}. 활동 목표는 ${objective}이며, 주요 관찰 요소는 ${focus}입니다. 준비물은 ${equipment}이고, ${program.space} 환경에서 운영할 수 있습니다. 학생 참여형 신체활동으로 수업 전개 또는 마무리 활동에 활용 가능합니다. ${spomoveSummary}`,
-      },
-      {
-        title: '수업 준비 기록',
-        caption: '준비물·안전 확인용',
-        text: `활동 준비물: ${equipment}. 공간 조건: ${program.space}. 공간 세팅: ${setupSummary} 안전 확인: ${safetySummary}`,
-      },
-      {
-        title: '교사용 요약',
-        caption: '동료 교사 공유용',
-        text: `${program.title}은 ${program.grade} 학생에게 적합한 신체활동입니다. ${focus}을 중심으로 참여형 체육수업을 구성할 수 있으며, 코칭 핵심은 “${coachPoint}”입니다.`,
-      },
-    ];
-  }
-
-  return [
-    {
-      title: '홍보 소개',
-      caption: '블로그·SNS 기본 소개',
-      text: `${program.title} 수업은 아이들이 즐겁게 움직이면서 ${focus}을 기르는 체육교육 프로그램입니다. 준비물과 공간 세팅, 안전 기준, 설명 문구까지 함께 제공되어 수업 준비는 줄이고 수업의 완성도는 높일 수 있습니다. ${spomoveSummary}`,
-    },
-    {
-      title: '짧은 홍보 문구',
-      caption: '이미지 카드나 공지 하단에 적합',
-      text: `수업 준비는 쉽게, 수업은 더 몰입감 있게. ${program.title}로 아이들의 움직임과 집중을 함께 끌어올립니다.`,
-    },
-    {
-      title: '화면 활동 강조',
-      caption: 'SPOMOVE를 별도 기능으로 소개할 때',
-      text: `SPOMOVE는 빔이나 TV에 띄워 쓰는 큰 화면 활동입니다. 라이브러리 수업안과 별개로 필요한 순간 선택해 실행하면, 아이들의 집중과 참여 리듬을 만드는 보조 도구로 활용할 수 있습니다.`,
-    },
-  ];
+  return `수업 활동명: ${title}. 활동 목표는 ${objective} 주요 참여 내용은 ${focus}을 중심으로 한 신체활동입니다. ${space}에서 ${equipment}을 활용해 수업을 진행했으며, 학생들은 ${mood} 분위기 속에서 ${reaction} 모습을 보였습니다. 안전 지도는 ${safety} ${variation} 오늘 수업은 체육수업의 의미를 움직임 경험과 참여 과정으로 남기는 활동 기록입니다.${noteLine}`;
 }
 
-function CopyCard({ block, copied, onCopy }: { block: CopyBlock; copied: boolean; onCopy: () => void }) {
+function ChipGroup({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (next: string[]) => void }) {
   return (
-    <article className="overflow-hidden rounded-[16px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-      <div className="flex items-center justify-between gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--spm-br)' }}>
-        <div className="min-w-0">
-          <h3 className="text-[13px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{block.title}</h3>
-          <p className="mt-0.5 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{block.caption}</p>
-        </div>
-        <button type="button" onClick={onCopy} className="flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-black" style={{ background: copied ? 'rgba(16,185,129,0.14)' : 'var(--spm-acc)', color: copied ? 'var(--spm-grn)' : '#fff' }}>
-          {copied ? <Check size={13} /> : <Clipboard size={13} />}
-          {copied ? '복사됨' : '복사'}
-        </button>
-      </div>
-      <p className="whitespace-pre-line px-4 py-4 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t)' }}>
-        {block.text}
-      </p>
-    </article>
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((option) => {
+        const active = selected.includes(option);
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(toggle(selected, option))}
+            className="min-h-9 rounded-full border px-3 text-[12px] font-black"
+            style={{
+              background: active ? 'var(--spm-acc)' : 'var(--spm-s2)',
+              borderColor: active ? 'transparent' : 'var(--spm-br2)',
+              color: active ? '#fff' : 'var(--spm-t2)',
+            }}
+          >
+            {option}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function SingleChoice({ options, value, onChange }: { options: string[]; value: string; onChange: (next: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((option) => {
+        const active = value === option;
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(option)}
+            className="min-h-9 rounded-full border px-3 text-[12px] font-black"
+            style={{
+              background: active ? 'var(--spm-acc)' : 'var(--spm-s2)',
+              borderColor: active ? 'transparent' : 'var(--spm-br2)',
+              color: active ? '#fff' : 'var(--spm-t2)',
+            }}
+          >
+            {option}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
 function ReportContent() {
   const searchParams = useSearchParams();
   const programs = useMasterStore((state) => state.programs);
-  const classRecords = useMasterStore((state) => state.classRecords);
-  const drills = useMasterStore((state) => state.drills);
   const programPool = useMemo(() => buildProgramPool(programs), [programs]);
-  const recentProgramId = classRecords[0]?.programId ?? programPool[0]?.id ?? '';
-  const urlProgramId = searchParams.get('program');
-  const profile = useProfile();
-  const isPro = useIsPro();
-  const trialExpired = isTrialExpired(profile);
+  const initialProgramId = searchParams.get('programId') ?? searchParams.get('program') ?? programPool[0]?.id ?? '';
+  const [programId, setProgramId] = useState(initialProgramId);
   const [audience, setAudience] = useState<Audience>('parent');
-  const [programId, setProgramId] = useState(urlProgramId ?? recentProgramId);
-  const [copiedKey, setCopiedKey] = useState('');
-  const [programSearch, setProgramSearch] = useState('');
+  const [mood, setMood] = useState(MOODS[0]);
+  const [reaction, setReaction] = useState(REACTIONS[0]);
+  const [focusSkills, setFocusSkills] = useState<string[]>(['참여', '반응']);
+  const [note, setNote] = useState('');
+  const [search, setSearch] = useState('');
+  const [generated, setGenerated] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState<SavedExplanation[]>([]);
+
+  useEffect(() => setSaved(loadSaved()), []);
+
+  useEffect(() => {
+    if (!programId && programPool[0]?.id) setProgramId(programPool[0].id);
+  }, [programId, programPool]);
 
   const program = programPool.find((item) => item.id === programId) ?? programPool[0];
-  const selectedRecord = classRecords.find((record) => record.programId === program?.id);
-  const filteredPrograms = programSearch.trim()
-    ? programPool.filter((item) => item.title.includes(programSearch) || item.tags.some((tag) => tag.includes(programSearch)))
+  const filteredPrograms = search.trim()
+    ? programPool.filter((item) => `${item.title} ${item.category} ${item.tags.join(' ')}`.toLowerCase().includes(search.trim().toLowerCase()))
     : programPool;
-  const copyBlocks = useMemo(() => (program ? buildCopyBlocks(audience, program, selectedRecord) : []), [audience, program, selectedRecord]);
-  const combinedCopy = useMemo(() => copyBlocks.map((block) => `[${block.title}]\n${block.text}`).join('\n\n'), [copyBlocks]);
-  const activeAudience = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0]!;
-  const detail = program?.lessonDetail;
-  const spomoveDrillId =
-    program && hasExplicitSpomoveLink(program) ? getPrimarySpomoveDrillId(program, drills.map((drill) => drill.id)) : null;
-  const spomoveSessionHref = program && spomoveDrillId ? getSpomoveSessionHref(program, spomoveDrillId) : null;
+  const audienceMeta = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0];
+  const draft = program ? buildExplanation({ audience, program, mood, reaction, focusSkills, note }) : '';
+  const output = generated || draft;
 
-  const copyText = async (key: string, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedKey(key);
-      window.setTimeout(() => setCopiedKey(''), 1600);
-    } catch {
-      setCopiedKey('');
-    }
+  const copyOutput = async () => {
+    await navigator.clipboard.writeText(output);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1300);
+  };
+
+  const saveOutput = () => {
+    if (!program || !output.trim()) return;
+    const next: SavedExplanation = {
+      id: `${Date.now()}`,
+      programId: program.id,
+      programTitle: program.title,
+      audience,
+      text: output,
+      createdAt: new Date().toISOString(),
+    };
+    const list = [next, ...saved].slice(0, 10);
+    setSaved(list);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   };
 
   return (
-    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div className="h-full overflow-y-auto pb-28 lg:pb-8" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Explanation</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 설명 문구</h1>
-        <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          수업 후 30초 안에 대상별 문구를 골라 복사하세요.
+        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>lesson explanation</p>
+        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 설명 도구</h1>
+        <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+          수업이 끝나면 오늘의 활동이 설명 가능한 문장으로 정리됩니다. 체육수업의 의미를 학부모, 기관, 학교에 맞는 언어로 남깁니다.
         </p>
-        <div className="mt-5 grid gap-2 sm:grid-cols-3">
-          {[
-            { label: '복사 속도', value: '30초 안에 발송' },
-            { label: '대상별 문장', value: '보호자·기관·학교' },
-            { label: '작성 근거', value: '수업안·기록 기반' },
-          ].map((item) => (
-            <div key={item.label} className="rounded-[14px] px-3 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-              <p className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>{item.label}</p>
-              <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t)' }}>{item.value}</p>
-            </div>
-          ))}
-        </div>
       </header>
 
-      <div className="scrollbar-hide mb-6 flex gap-1.5 overflow-x-auto px-[22px] sm:px-8 lg:px-10">
-        {AUDIENCES.map(({ id, label, Icon }) => {
-          const locked = !profile?.isAdmin && (trialExpired || !isPro) && id !== 'parent';
-          const active = audience === id && !locked;
-          const cls = 'flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-bold';
-          const sty = {
-            background: active ? 'var(--spm-acc)' : 'var(--spm-s2)',
-            color: active ? '#fff' : locked ? 'var(--spm-t3)' : 'var(--spm-t2)',
-            border: active ? '1px solid transparent' : '1px solid var(--spm-br2)',
-          };
-          if (locked) {
-            return (
-              <Link key={id} href="/spokedu-master/payment?plan=pro" className={cls} style={sty}>
-                <Icon size={13} />{label}
-                <span className="ml-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-black" style={{ background: 'rgba(245,158,11,0.18)', color: 'var(--spm-amb)' }}>PRO</span>
-              </Link>
-            );
-          }
-          return (
-            <button key={id} type="button" onClick={() => setAudience(id)} className={cls} style={sty}>
-              <Icon size={13} />{label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[340px_minmax(0,1fr)] lg:px-10">
+      <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
         <aside className="space-y-4">
           <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-3 flex items-center gap-2">
-              <BookOpen size={15} color="var(--spm-acc)" />
-              <h2 className="text-[14px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>활동 선택</h2>
+              <BookOpen size={16} color="var(--spm-acc)" />
+              <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>수업 선택</h2>
             </div>
-            <div className="relative mb-2.5">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" color="var(--spm-t3)" />
-              <input type="text" value={programSearch} onChange={(event) => setProgramSearch(event.target.value)} placeholder="활동 검색" className="h-9 w-full rounded-[10px] border pl-8 pr-3 text-[12px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <div className="relative mb-3">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" color="var(--spm-t3)" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="수업명, 주제 검색"
+                className="h-10 w-full rounded-[11px] border pl-9 pr-3 text-[13px] font-bold outline-none"
+                style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+              />
             </div>
-            <div className="scrollbar-hide max-h-[300px] space-y-1 overflow-y-auto">
-              {filteredPrograms.length > 0 ? filteredPrograms.map((item) => (
-                <button key={item.id} type="button" onClick={() => setProgramId(item.id)} className="w-full rounded-[11px] px-3 py-2.5 text-left active:scale-[0.99]" style={{ background: programId === item.id ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: programId === item.id ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent' }}>
-                  <strong className="block text-[12px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
-                  <span className="mt-0.5 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{compactMeta([item.grade, item.space]) || item.category}</span>
+            <div className="scrollbar-hide max-h-[330px] space-y-1 overflow-y-auto">
+              {filteredPrograms.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setProgramId(item.id);
+                    setGenerated('');
+                  }}
+                  className="w-full rounded-[12px] px-3 py-2.5 text-left"
+                  style={{ background: item.id === program?.id ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: item.id === program?.id ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent' }}
+                >
+                  <strong className="block line-clamp-1 text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
+                  <span className="mt-1 block line-clamp-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{compactList([item.grade, item.space]) || item.category}</span>
                 </button>
-              )) : (
-                <p className="py-4 text-center text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>검색 결과가 없습니다.</p>
-              )}
+              ))}
             </div>
           </section>
 
-          <section className="rounded-[18px] p-4" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.16), rgba(16,185,129,0.1))', border: '1px solid rgba(99,102,241,0.2)' }}>
-            <MessageCircle size={16} color="#a5b4fc" />
-            <h2 className="mt-2.5 text-[14px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{activeAudience.label} 템플릿</h2>
-            <p className="mt-1.5 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-              {activeAudience.description}
-            </p>
-            {program ? (
-              <div className={`mt-4 grid gap-2 ${spomoveSessionHref ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                <Link href={`/spokedu-master/library/${program.id}`} className="flex h-10 items-center justify-center rounded-[11px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-                  수업안
-                </Link>
-                {spomoveSessionHref ? (
-                  <Link href={spomoveSessionHref} className="flex h-10 items-center justify-center gap-1 rounded-[11px] text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                    <MonitorPlay size={13} />실행
-                  </Link>
-                ) : null}
-              </div>
-            ) : null}
+          <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>최근 만든 설명</h2>
+            <div className="mt-3 space-y-2">
+              {saved.length ? saved.slice(0, 5).map((item) => (
+                <button key={item.id} type="button" onClick={() => setGenerated(item.text)} className="block w-full rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
+                  <strong className="block line-clamp-1 text-[12px]" style={{ color: 'var(--spm-t)' }}>{item.programTitle}</strong>
+                  <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{AUDIENCES.find((aud) => aud.id === item.audience)?.label} · {new Date(item.createdAt).toLocaleDateString('ko-KR')}</span>
+                </button>
+              )) : (
+                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장한 설명이 없습니다.</p>
+              )}
+            </div>
           </section>
         </aside>
 
         <section className="space-y-4">
-          {program ? (
-            <>
-              <div className="rounded-[18px] p-4" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.14), var(--spm-s1))', border: '1px solid rgba(99,102,241,0.2)' }}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: '#818cf8' }}>
-                      {activeAudience.label} · {selectedRecord ? '수업 기록 반영' : '수업안 기반'}
-                    </p>
-                    <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all', letterSpacing: 0 }}>
-                      {program.title}
-                    </h2>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {[program.grade, program.space, program.lessonDetail?.recommendedPlayers].filter((tag): tag is string => Boolean(tag && !isPlaceholderMeta(tag))).map((tag) => (
-                        <span key={tag} className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>
-                          {tag}
-                        </span>
-                      ))}
-                      {selectedRecord ? (
-                        <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: 'rgba(16,185,129,0.14)', color: 'var(--spm-grn)' }}>
-                          출석 {selectedRecord.present}명
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => copyText(`all-${audience}-${program.id}`, combinedCopy)}
-                    className="hidden h-10 shrink-0 items-center gap-1.5 rounded-[12px] px-3 text-[12px] font-black text-white sm:flex"
-                    style={{ background: copiedKey === `all-${audience}-${program.id}` ? 'var(--spm-grn)' : 'var(--spm-acc)' }}
-                  >
-                    {copiedKey === `all-${audience}-${program.id}` ? <Check size={14} /> : <Send size={14} />}
-                    {copiedKey === `all-${audience}-${program.id}` ? '전체 복사됨' : '전체 복사'}
-                  </button>
-                </div>
+          <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>오늘 수업 정리</p>
+                <h2 className="mt-1 text-[24px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program?.title ?? '수업을 선택하세요'}</h2>
+              </div>
+              {program ? (
+                <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                  <BookOpen size={14} />
+                  수업 자료 보기
+                </Link>
+              ) : null}
+            </div>
 
-                <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  {[
-                    { label: '수업 의도', value: detail?.objective || program.description || program.tags.slice(0, 2).join(' · ') },
-                    { label: '발달 포인트', value: detail?.developmentFocus || program.tags.join(' · ') || program.category },
-                    { label: '수업 기록', value: selectedRecord ? `출석 ${selectedRecord.present}명 · 관찰 ${selectedRecord.focusCount}명` : compactMeta([program.grade, program.space]) },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                      <p className="text-[10px] font-black uppercase tracking-[0.08em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-                      <p className="mt-1 line-clamp-3 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t)' }}>{value || '-'}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className={`mt-4 grid gap-2 ${spomoveSessionHref ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-                  <button
-                    type="button"
-                    onClick={() => copyText(`all-${audience}-${program.id}`, combinedCopy)}
-                    className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white sm:hidden"
-                    style={{ background: copiedKey === `all-${audience}-${program.id}` ? 'var(--spm-grn)' : 'var(--spm-acc)' }}
-                  >
-                    {copiedKey === `all-${audience}-${program.id}` ? <Check size={14} /> : <Send size={14} />}
-                    {copiedKey === `all-${audience}-${program.id}` ? '전체 복사됨' : '전체 복사'}
-                  </button>
-                  <Link href={`/spokedu-master/library/${program.id}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-                    <BookOpen size={14} />
-                    수업안 열기
-                  </Link>
-                  {spomoveSessionHref ? (
-                    <Link href={spomoveSessionHref} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                      <MonitorPlay size={14} />
-                      큰 화면 실행
-                    </Link>
-                  ) : null}
+            <div className="mt-5 grid gap-5">
+              <div>
+                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>설명 대상</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {AUDIENCES.map(({ id, label, description, Icon }) => {
+                    const active = audience === id;
+                    return (
+                      <button key={id} type="button" onClick={() => { setAudience(id); setGenerated(''); }} className="rounded-[14px] p-3 text-left" style={{ background: active ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: active ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
+                        <Icon size={16} color={active ? 'var(--spm-acc)' : 'var(--spm-t3)'} />
+                        <strong className="mt-2 block text-[13px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
+                        <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>{description}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {copyBlocks.map((block) => {
-                const key = `${audience}-${program.id}-${block.title}`;
-                return <CopyCard key={key} block={block} copied={copiedKey === key} onCopy={() => copyText(key, block.text)} />;
-              })}
-            </>
-          ) : (
-            <div className="rounded-[18px] p-8 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-              <p className="text-[14px] font-bold" style={{ color: 'var(--spm-t)' }}>수업안을 불러오는 중입니다.</p>
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>수업 분위기</p>
+                  <SingleChoice options={MOODS} value={mood} onChange={(next) => { setMood(next); setGenerated(''); }} />
+                </div>
+                <div>
+                  <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>아이들 반응</p>
+                  <SingleChoice options={REACTIONS} value={reaction} onChange={(next) => { setReaction(next); setGenerated(''); }} />
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>강조 기능</p>
+                <ChipGroup options={FOCUS_SKILLS} selected={focusSkills} onChange={(next) => { setFocusSkills(next); setGenerated(''); }} />
+              </div>
+
+              <label className="block">
+                <span className="mb-2 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>특이사항</span>
+                <textarea
+                  value={note}
+                  onChange={(event) => { setNote(event.target.value); setGenerated(''); }}
+                  rows={4}
+                  placeholder="예: 처음에는 어려워했지만 두 번째 라운드부터 규칙을 이해하고 적극적으로 참여함"
+                  className="w-full resize-y rounded-[13px] border px-3 py-3 text-[13px] font-semibold leading-6 outline-none"
+                  style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+                />
+              </label>
             </div>
-          )}
+          </section>
+
+          <section className="rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.14), var(--spm-s1))', border: '1px solid rgba(99,102,241,0.22)' }}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: '#818cf8' }}>{audienceMeta.label}</p>
+                <h2 className="mt-1 text-[22px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>생성된 설명 문구</h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => setGenerated(draft)} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                  <FileText size={14} />
+                  문구 생성
+                </button>
+                <button type="button" onClick={copyOutput} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: copied ? 'rgba(16,185,129,0.16)' : 'var(--spm-s2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+                  {copied ? <Check size={14} /> : <Clipboard size={14} />}
+                  {copied ? '복사 완료' : '복사'}
+                </button>
+                <button type="button" onClick={saveOutput} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+                  <Save size={14} />
+                  저장
+                </button>
+              </div>
+            </div>
+            <p className="mt-4 whitespace-pre-line rounded-[14px] p-4 text-[15px] font-semibold leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+              {output}
+            </p>
+          </section>
         </section>
       </div>
     </div>

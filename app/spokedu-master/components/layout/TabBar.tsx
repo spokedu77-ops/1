@@ -14,7 +14,7 @@ const PRIMARY_TABS = [
 
 const SECONDARY_TABS = [
   { key: 'class-record', label: '수업기록', caption: '출석, 참여도, 성장 기록', Icon: ClipboardList },
-  { key: 'report', label: '학부모안내', caption: '피드백 리포트와 안내 문구', Icon: MessageSquare },
+  { key: 'report', label: '수업설명', caption: '학부모, 기관, 학교용 설명', Icon: MessageSquare },
   { key: 'profile', label: '계정', caption: '구독, 스토어, 내 정보', Icon: UserRound },
 ] as const;
 

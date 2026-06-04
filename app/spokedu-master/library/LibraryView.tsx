@@ -22,7 +22,6 @@ import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
-import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
 import {
   getExternalVideoUrl,
   getVideoEmbedUrl,
@@ -55,7 +54,7 @@ function uniquePrograms(programs: Program[]) {
 }
 
 function buildProgramPool(programs: Program[]) {
-  return uniquePrograms(programs.length > 0 ? programs : STATIC_PROGRAMS);
+  return uniquePrograms(programs);
 }
 
 function hasLowPrep(program: Program) {
@@ -632,13 +631,16 @@ function ProgramModal({
 }
 
 export default function LibraryView() {
-  const { programs, drills, classRecords, favorites, toggleFavorite } = useMasterStore();
+  const { programs, programsLoaded, programsError, drills, classRecords, favorites, toggleFavorite } = useMasterStore();
   const isPro = useIsPro();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('전체');
   const [selected, setSelected] = useState<Program | null>(null);
 
-  const pool = useMemo(() => buildProgramPool(programs), [programs]);
+  const pool = useMemo(
+    () => buildProgramPool(programs),
+    [programs],
+  );
   const usedProgramIds = useMemo(() => new Set(classRecords.map((record) => record.programId)), [classRecords]);
 
   const featured = useMemo(() => {
@@ -678,7 +680,27 @@ export default function LibraryView() {
     }, {});
   }, [pool]);
 
-  if (pool.length === 0) return <LibrarySkeleton />;
+  if (pool.length === 0) {
+    if (!programsLoaded) return <LibrarySkeleton />;
+    const message =
+      programsError === 'unauthorized'
+        ? '로그인 후 수업 자료를 확인할 수 있습니다.'
+        : programsError === 'forbidden'
+          ? '체험 기간이 종료되어 수업 자료를 불러올 수 없습니다. 구독 플랜을 확인해 주세요.'
+          : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    return (
+      <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto bg-[#f5f7fb] px-4 py-16 sm:px-6 lg:px-8">
+        <section className="w-full max-w-xl rounded-[18px] border border-slate-200 bg-white p-6 text-center shadow-sm">
+          <Lock className="mx-auto h-6 w-6 text-slate-400" />
+          <h1 className="mt-3 text-xl font-black text-slate-950">수업 자료를 불러올 수 없습니다.</h1>
+          <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{message}</p>
+          <Link href="/spokedu-master/subscription" className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">
+            구독 플랜 확인
+          </Link>
+        </section>
+      </main>
+    );
+  }
 
   const selectedDrill = selected ? getPrimaryDrill(selected, drills) : undefined;
 

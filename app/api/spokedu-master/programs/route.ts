@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 import type { Program } from '@/app/spokedu-master/types';
 import { pickBestHeroUrl } from '@/app/spokedu-master/lib/program-visual';
 import {
@@ -427,6 +428,9 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
 }
 
 export async function GET() {
+  const access = await requireSpokeduMasterAccess();
+  if (!access.ok) return access.response;
+
   const supabase = getServiceSupabase();
   const { data: curriculumRows, error: currErr } = await supabase
     .from('curriculum')

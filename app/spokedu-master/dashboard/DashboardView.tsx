@@ -9,7 +9,6 @@ import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
 import {
   getExternalVideoUrl,
   getImageFallbackSrc,
@@ -140,7 +139,7 @@ function uniquePrograms(programs: Program[]) {
 }
 
 function buildProgramPool(programs: Program[]) {
-  return uniquePrograms(programs.length > 0 ? programs : STATIC_PROGRAMS);
+  return uniquePrograms(programs);
 }
 
 function CoverImage({
@@ -377,7 +376,7 @@ function toVideoItem(program: Program, intent: 'weekly' | 'indoor' = 'weekly'): 
 }
 
 function pickHeroProgram(programs: Program[]) {
-  const pool = buildProgramPool(programs);
+  const pool = uniquePrograms(programs);
   const funstickHero =
     pool.find((program) => program.id === 'funstick-fencing' && isHomeShowcaseProgram(program)) ||
     pool.find((program) => isFunstickFencingProgram(program) && isHomeShowcaseProgram(program));
@@ -847,6 +846,23 @@ function SubscriptionValueSection() {
   );
 }
 
+function ExplanationToolEntry({ program }: { program: Program }) {
+  return (
+    <section className="rounded-[18px] border border-indigo-100 bg-white px-4 py-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)] sm:px-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[15px] font-black text-slate-950">수업 설명 도구</p>
+          <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-500">수업이 끝나면 오늘의 활동이 설명 가능한 문장으로 정리됩니다.</p>
+        </div>
+        <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-[13px] font-black text-white">
+          <Clipboard className="h-4 w-4" />
+          설명 만들기
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 function HomeProgramPreview({ program, onClose }: { program: Program; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const detail = program.lessonDetail;
@@ -1002,7 +1018,7 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
 }
 
 export default function DashboardView() {
-  const { programs, programsLoaded, favorites, classRecords, reloadPrograms } = useMasterStore();
+  const { programs, programsLoaded, programsError, favorites, classRecords, reloadPrograms } = useMasterStore();
   const profile = useProfile();
   const isSubscribed = isPaidMasterPlan(profile);
   const [mounted, setMounted] = useState(false);
@@ -1030,7 +1046,10 @@ export default function DashboardView() {
     };
   }, []);
 
-  const programPool = useMemo(() => buildProgramPool(programs).sort(compareHomePrograms), [programs]);
+  const programPool = useMemo(
+    () => buildProgramPool(programs).sort(compareHomePrograms),
+    [programs],
+  );
   const filteredPrograms = useMemo(() => {
     const query = search.trim().toLowerCase();
     return programPool.filter((program) => {
@@ -1116,13 +1135,34 @@ export default function DashboardView() {
     return combined;
   }, [favoriteLessons, recentLessons]);
 
-  if (!mounted || !programsLoaded || !heroProgram) {
+  if (!mounted || !programsLoaded) {
     return <DashboardSkeleton />;
+  }
+
+  if (!heroProgram) {
+    const message =
+      programsError === 'unauthorized'
+        ? '로그인 후 수업 자료를 불러올 수 있습니다.'
+        : programsError === 'forbidden'
+          ? '체험 기간이 종료되어 수업 자료를 불러올 수 없습니다. 구독 플랜을 확인해 주세요.'
+          : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    return (
+      <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto bg-[#f5f7fb] px-4 py-16 sm:px-6 lg:px-8">
+        <section className="w-full max-w-xl rounded-[22px] border border-slate-200 bg-white p-6 text-center shadow-[0_16px_48px_rgba(15,23,42,0.06)]">
+          <h1 className="text-xl font-black text-slate-950">수업 자료를 불러올 수 없습니다.</h1>
+          <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{message}</p>
+          <Link href="/spokedu-master/subscription" className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">
+            구독 플랜 확인
+          </Link>
+        </section>
+      </main>
+    );
   }
 
   return (
     <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-6 overflow-y-auto bg-[#f5f7fb] px-4 pb-28 pt-4 sm:gap-7 sm:px-6 sm:pt-5 lg:px-8 lg:pb-16">
       <Hero program={heroProgram} kpis={dashboardKpis} onPreview={() => setSelectedProgram(heroProgram)} />
+      <ExplanationToolEntry program={heroProgram} />
       <CategoryStrip activeCategory={activeCategory} search={search} onCategoryChange={setActiveCategory} onSearchChange={setSearch} />
       <VideoRow
         title="오늘 바로 운영 가능한 수업"

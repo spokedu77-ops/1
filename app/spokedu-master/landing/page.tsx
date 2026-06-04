@@ -34,7 +34,7 @@ const PRICING = [
     title: 'Pro',
     badge: '가장 인기',
     price: '39,900',
-    period: '월',
+    period: '30일',
     desc: '전문 강사가 매주 쓰는 수업 준비 환경',
     includes: ['전체 프로그램 라이브러리 무제한', 'SPOMOVE 큰 화면 실행', '수업 도구 전체', '설명 문구 (학부모·기관·학교용)'],
     accent: 'rgba(99,102,241,0.18)',
@@ -47,7 +47,7 @@ const PRICING = [
     title: 'Center',
     badge: '강사 3명 포함',
     price: '79,000',
-    period: '월',
+    period: '30일',
     desc: '센터와 도장이 강사 수업 품질을 맞추는 플랜',
     includes: ['Pro 기능 전체', '강사 3명 계정 포함', '센터용 수업 도구', '추가 강사 확장 가능'],
     accent: 'rgba(16,185,129,0.12)',
@@ -150,7 +150,7 @@ export default function LandingPage() {
               구독 가치 보기 <ChevronRight size={16} />
             </Link>
             </div>
-            <p className="mt-4 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.62)' }}>신용카드 없이 시작 · 14일 후 자동 만료 · 언제든 취소</p>
+            <p className="mt-4 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.62)' }}>신용카드 없이 시작 · 14일 후 자동 만료 · 결제 후 30일 이용</p>
           </div>
           <div className="grid gap-3">
             {HERO_PROOF.map((item) => (
@@ -225,7 +225,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-[760px]">
           <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>플랜과 가격</p>
           <h2 className="mb-4 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 품질에 맞는 플랜</h2>
-          <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>14일 무료 체험 후 선택 · 언제든지 취소 가능</p>
+          <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>14일 무료 체험 후 선택 · 결제 후 30일 이용</p>
           <div className="grid gap-5 md:grid-cols-2">
             {PRICING.map((p) => (
               <div key={p.id} className="rounded-[22px] p-6" style={{ background: p.accent, border: `1.5px solid ${p.border}` }}>
@@ -258,7 +258,7 @@ export default function LandingPage() {
           <div className="mt-8 flex items-start gap-3 rounded-[14px] px-5 py-4" style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.16)' }}>
             <Shield size={16} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
             <p className="text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              토스페이먼츠 보안 결제 · 언제든지 취소 가능 · 다음 결제일 전 취소 시 요금 없음 · 카드 정보는 SPOKEDU 서버에 저장되지 않습니다.
+              토스페이먼츠 보안 결제 · 결제 후 30일 이용 · 플랜 변경은 문의 기반으로 처리 · 카드 정보는 SPOKEDU 서버에 저장되지 않습니다.
             </p>
           </div>
           <p className="mt-5 text-center text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>

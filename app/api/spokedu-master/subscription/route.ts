@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
+import {
+  isSpokeduMasterPaidPlanActive,
+  isSpokeduMasterPaidPlanExpired,
+  type SpokeduMasterSubscriptionRow,
+} from '@/app/lib/server/spokeduMasterAccess';
 
 type SubscriptionRow = {
   plan: string;
   status: string;
   period_end: string | null;
 };
-
-const ADMIN_EMAILS = (process.env.SPM_ADMIN_EMAILS ?? 'choijihoon@spokedu.com')
-  .split(',')
-  .map((email) => email.trim().toLowerCase())
-  .filter(Boolean);
 
 export async function GET() {
   const supabase = await createServerSupabaseClient();
@@ -23,8 +23,7 @@ export async function GET() {
     return NextResponse.json({ plan: 'free', status: 'none', isAdmin: false });
   }
 
-  const email = user.email?.toLowerCase() ?? '';
-  const isAdmin = ADMIN_EMAILS.includes(email);
+  const isAdmin = await isPlatformAdminUser(user, supabase);
 
   if (isAdmin) {
     return NextResponse.json({
@@ -49,8 +48,15 @@ export async function GET() {
     return NextResponse.json({ plan: 'free', status: data?.status ?? 'none', isAdmin: false, userId: user.id, email: user.email ?? null, trialEndsAt });
   }
 
-  if (data.period_end && new Date(data.period_end) < new Date()) {
-    return NextResponse.json({ plan: 'free', status: 'expired', isAdmin: false, userId: user.id, email: user.email ?? null, trialEndsAt });
+  if (!isSpokeduMasterPaidPlanActive(data as SpokeduMasterSubscriptionRow | null)) {
+    return NextResponse.json({
+      plan: 'free',
+      status: 'expired',
+      isAdmin: false,
+      userId: user.id,
+      email: user.email ?? null,
+      trialEndsAt: isSpokeduMasterPaidPlanExpired(data as SpokeduMasterSubscriptionRow | null) ? null : trialEndsAt,
+    });
   }
 
   return NextResponse.json({

@@ -368,10 +368,16 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
           <DetailSection id={parentSectionId} title="학부모 설명 문구" icon={Clipboard}>
             <p className="rounded-xl bg-emerald-50 p-4 text-sm font-semibold leading-7 text-emerald-900">{parentCopy}</p>
-            <button type="button" onClick={copyParentNote} className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-bold text-emerald-700">
-              <Clipboard className="h-4 w-4" />
-              {copied ? '복사 완료' : '학부모 문구 복사'}
-            </button>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={copyParentNote} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-bold text-emerald-700">
+                <Clipboard className="h-4 w-4" />
+                {copied ? '복사 완료' : '학부모 문구 복사'}
+              </button>
+              <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+                <FileText className="h-4 w-4" />
+                수업 설명 만들기
+              </Link>
+            </div>
           </DetailSection>
 
           <div className="sticky bottom-0 z-20 flex flex-col gap-2 rounded-[14px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:flex-row">
@@ -385,6 +391,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
               <Clipboard className="h-4 w-4" />
               {copied ? '복사 완료' : '문구 복사'}
             </button>
+            <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+              <FileText className="h-4 w-4" />
+              설명 만들기
+            </Link>
             <button
               type="button"
               onClick={() => toggleFavorite(program.id)}

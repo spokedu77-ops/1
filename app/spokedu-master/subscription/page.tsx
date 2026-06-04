@@ -51,7 +51,7 @@ const PLAN_SUMMARY: Record<PlanKey, string> = {
 
 const TRUST_POINTS = [
   '구독 및 결제 변경은 담당자가 확인한 뒤 안전하게 처리합니다.',
-  '다음 결제일 전까지 언제든 구독 변경 또는 취소 문의를 남길 수 있습니다.',
+  '이용 기간 만료 전까지 플랜 변경 또는 해지 문의를 남길 수 있습니다.',
   '유료 콘텐츠 이용 내역이 있는 경우 환불 가능 여부는 사용 이력에 따라 안내됩니다.',
 ];
 
@@ -212,7 +212,7 @@ export default function SubscriptionPage() {
                     <h3 className="mt-2 text-[27px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>{planLabel}</h3>
                   </div>
                   <div className="rounded-[14px] px-4 py-3 text-right" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
-                    <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>월 구독료</p>
+                    <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>30일 이용료</p>
                     <p className="mt-1 text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>
                       {isPaid ? PLAN_PRICES[currentPlanKey] : '미구독'}
                     </p>
@@ -222,8 +222,8 @@ export default function SubscriptionPage() {
                 <div className="mt-5 grid gap-3 md:grid-cols-2">
                   <div className="rounded-[15px] p-4" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
                     <Calendar size={16} color="var(--spm-t3)" />
-                    <p className="mt-3 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>다음 결제일</p>
-                    <p className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>{periodEndDate ?? '구독 시작 후 표시됩니다'}</p>
+                    <p className="mt-3 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이용 만료일</p>
+                    <p className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>{periodEndDate ?? '결제 후 표시됩니다'}</p>
                   </div>
                   <div className="rounded-[15px] p-4" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
                     <Shield size={16} color="var(--spm-grn)" />

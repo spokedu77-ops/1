@@ -6,7 +6,6 @@ import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
 import { hasMasterAccess } from '../lib/subscription';
 import type { CartItem, ClassRecord, ClassStudentRecord, Drill, Lesson, Notification, Program, Session, StudentProfile, UserProfile } from '../types';
-import { DRILLS as STATIC_DRILLS, PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
 import { enrichProgramsWithStaticVisuals } from '../lib/enrich-programs';
 
 type ActiveSession = {
@@ -24,13 +23,17 @@ type OperationalStatus = {
   retryQueue: RetryQueueItem[];
 };
 
+export type ContentLoadError = 'unauthorized' | 'forbidden' | 'server' | 'network' | null;
+
 interface MasterState {
   programs: Program[];
   programsLoaded: boolean;
+  programsError: ContentLoadError;
   loadPrograms: () => Promise<void>;
   reloadPrograms: () => Promise<void>;
   drills: Drill[];
   drillsLoaded: boolean;
+  drillsError: ContentLoadError;
   loadDrills: () => Promise<void>;
   profile: UserProfile | null;
   setProfile: (profile: Partial<UserProfile>) => void;
@@ -155,54 +158,72 @@ function applyStudentRecord(student: StudentProfile, record: ClassStudentRecord,
   };
 }
 
+function errorFromStatus(status: number): Exclude<ContentLoadError, null> {
+  if (status === 401) return 'unauthorized';
+  if (status === 403) return 'forbidden';
+  return 'server';
+}
+
 export const useMasterStore = create<MasterState>()(
   persist(
     (set, get) => ({
       programs: [],
       programsLoaded: false,
+      programsError: null,
       loadPrograms: async () => {
-        if (get().programsLoaded) return;
+        if (get().programsLoaded && !get().programsError) return;
         await get().reloadPrograms();
       },
       reloadPrograms: async () => {
         try {
           const res = await fetch('/api/spokedu-master/programs', { cache: 'no-store' });
-          if (res.ok) {
-            const json = await res.json() as { data?: Program[] };
-            if (Array.isArray(json.data) && json.data.length > 0) {
-              set({ programs: enrichProgramsWithStaticVisuals(json.data), programsLoaded: true });
-              return;
-            }
+          if (!res.ok) {
+            const error = errorFromStatus(res.status);
+            set((state) => ({
+              programs: error === 'unauthorized' || error === 'forbidden' ? [] : state.programs,
+              programsLoaded: true,
+              programsError: error,
+            }));
+            return;
+          }
+
+          const json = await res.json() as { data?: Program[] };
+          if (Array.isArray(json.data)) {
+            set({ programs: enrichProgramsWithStaticVisuals(json.data), programsLoaded: true, programsError: null });
+            return;
           }
         } catch {
-          if (get().programsLoaded && get().programs.length > 0) return;
+          set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'network' }));
+          return;
         }
-        if (!get().programsLoaded || get().programs.length === 0) {
-          set({ programs: STATIC_PROGRAMS, programsLoaded: true });
-        }
+        set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'server' }));
       },
       drills: [],
       drillsLoaded: false,
+      drillsError: null,
       loadDrills: async () => {
-        if (get().drillsLoaded) return;
+        if (get().drillsLoaded && !get().drillsError) return;
         try {
           const res = await fetch('/api/spokedu-master/drills');
           if (!res.ok) {
-            set({ drills: STATIC_DRILLS, drillsLoaded: true });
+            const error = errorFromStatus(res.status);
+            set((state) => ({
+              drills: error === 'unauthorized' || error === 'forbidden' ? [] : state.drills,
+              drillsLoaded: true,
+              drillsError: error,
+            }));
             return;
           }
           const json = await res.json() as { data?: Drill[] };
-          if (Array.isArray(json.data) && json.data.length > 0) {
-            const usable = json.data;
-            if (usable.length > 0) {
-              set({ drills: usable, drillsLoaded: true });
-              return;
-            }
+          if (Array.isArray(json.data)) {
+            set({ drills: json.data, drillsLoaded: true, drillsError: null });
+            return;
           }
         } catch {
-          // Keep static fallback when the network is unavailable.
+          set((state) => ({ drills: state.drills, drillsLoaded: true, drillsError: 'network' }));
+          return;
         }
-        set({ drills: STATIC_DRILLS, drillsLoaded: true });
+        set((state) => ({ drills: state.drills, drillsLoaded: true, drillsError: 'server' }));
       },
       profile: defaultProfile,
       setProfile: (profile) => set((state) => ({ profile: state.profile ? { ...state.profile, ...profile } : { ...defaultProfile, ...profile } })),

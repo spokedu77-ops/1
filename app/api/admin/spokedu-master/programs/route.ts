@@ -273,10 +273,7 @@ export async function PATCH(request: Request) {
       activity_method: overlayPatch.activity_method ?? null,
       activity_tip: overlayPatch.activity_tip ?? null,
       function_types: overlayPatch.function_types ?? null,
-      main_theme: overlayPatch.main_theme ?? null,
-      group_size: overlayPatch.group_size ?? null,
       is_published: overlayPatch.is_published ?? true,
-      center_curriculum_is_sub: false,
     };
 
     if (existing?.id) {
@@ -295,6 +292,11 @@ export async function PATCH(request: Request) {
     const data = await loadPrograms();
     return NextResponse.json({ data, total: data.length });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'save failed' }, { status: 500 });
+    const message = error instanceof Error
+      ? error.message
+      : typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
+        ? error.message
+        : 'save failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

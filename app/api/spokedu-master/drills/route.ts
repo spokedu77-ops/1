@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 import { MODES, SPOMOVE_CATALOG_SLOT_IDS, isSpomoveCatalogTbdMode } from '@/app/admin/spomove/training/_player/constants';
 import type { Drill } from '@/app/spokedu-master/types';
 
@@ -27,6 +28,9 @@ type MetaRow = {
 type DrillWithOrder = Drill & { _order: number };
 
 export async function GET() {
+  const access = await requireSpokeduMasterAccess();
+  if (!access.ok) return access.response;
+
   const supabase = getServiceSupabase();
   const { data: metaRows } = await supabase
     .from('spokedu_master_drill_meta')
