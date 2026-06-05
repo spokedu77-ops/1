@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { BookOpen, Clipboard, MonitorPlay, Play, Search, Sparkles } from 'lucide-react';
+import { BookOpen, Clipboard, FileText, MonitorPlay, Play, Search, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -186,7 +186,7 @@ function getProgramTags(program: Program) {
   const tags = [getProgramCategory(program), getProgramGrade(program), getProgramSpace(program), ...program.tags]
     .filter(Boolean)
     .filter((item) => !isPlaceholderText(item));
-  return Array.from(new Set(tags)).slice(0, 4);
+  return Array.from(new Set(tags.map(formatCompactBadge))).slice(0, 4);
 }
 
 function getCardTags(program: Program) {
@@ -203,6 +203,10 @@ function getCardTags(program: Program) {
     .filter(Boolean)
     .filter((item) => !isPlaceholderText(item) && item !== '영상 확인');
   return Array.from(new Set(tags.map(formatCompactBadge))).slice(0, 5);
+}
+
+function uniqueLabels(labels: string[]) {
+  return Array.from(new Set(labels.map(formatCompactBadge).filter(Boolean)));
 }
 
 /** 썸네일 우측 상단 — 영상 있을 때는 비우고 좌측 「참고 영상」만 쓴다 */
@@ -234,14 +238,15 @@ function getCurationReason(program: Program, intent: 'weekly' | 'indoor' = 'week
 }
 
 function CompactTagList({ tags, max = 3, className = '', onMedia = false }: { tags: string[]; max?: number; className?: string; onMedia?: boolean }) {
-  const visibleTags = tags.slice(0, max);
-  const hiddenCount = Math.max(tags.length - visibleTags.length, 0);
+  const uniqueTags = uniqueLabels(tags);
+  const visibleTags = uniqueTags.slice(0, max);
+  const hiddenCount = Math.max(uniqueTags.length - visibleTags.length, 0);
 
   return (
     <div className={`flex min-w-0 flex-wrap items-center gap-1.5 ${className}`}>
-      {visibleTags.map((tag) => (
+      {visibleTags.map((tag, index) => (
         <span
-          key={tag}
+          key={`${tag}-${index}`}
           className={`max-w-full shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold leading-none ${
             onMedia ? 'border border-white/20 bg-black/55 text-white backdrop-blur-sm' : 'bg-slate-100 text-slate-700'
           }`}
@@ -416,9 +421,11 @@ function takeHomeCuratedPrograms(programs: Program[], usedIds: Set<string>, limi
 
 function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardKpi[]; onPreview: () => void }) {
   const heroImage = getHeroImage(program);
-  const tags = getCardTags(program);
+  const tags = uniqueLabels(getCardTags(program));
   const hasVideo = programHasPlayableVideo(program);
-  const mobilePrimaryKpis = new Set(['전체 수업 자료', '영상 포함 수업', 'SPOMOVE 세팅']);
+  const totalLessons = kpis.find((item) => item.label === '전체 수업 자료')?.value;
+  const videoLessons = kpis.find((item) => item.label === '영상 포함 수업')?.value;
+  const spomoveCount = kpis.find((item) => item.label === 'SPOMOVE 세팅')?.value;
 
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
@@ -427,43 +434,46 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-[11px] font-black tracking-[0.12em] text-indigo-600 sm:text-xs sm:tracking-[0.14em]">
               <Sparkles className="h-3.5 w-3.5" />
-              SPOKEDU 운영 대시보드
+              오늘 수업 시작 허브
             </span>
             <h1 className="mt-3 max-w-2xl text-2xl font-black leading-tight text-slate-950 sm:mt-4 sm:text-4xl">오늘 수업 준비, 5분 안에 끝내세요</h1>
             <p className="mt-2 max-w-2xl text-[13px] font-semibold leading-5 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7">
               대상·공간·교구에 맞는 놀이체육 수업안과 참고 영상을 확인하고, SPOMOVE 활동은 TV·빔 화면으로 바로 실행할 수 있습니다.
             </p>
             <div className="mt-3 hidden flex-wrap gap-1.5 sm:flex">
-              {tags.slice(0, 4).map((tag) => (
-                <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1.5 text-[11px] font-black text-slate-700">
+              {tags.slice(0, 4).map((tag, index) => (
+                <span key={`${tag}-${index}`} className="rounded-full bg-slate-100 px-2.5 py-1.5 text-[11px] font-black text-slate-700">
                   {tag}
                 </span>
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-4 sm:grid-cols-3 sm:gap-2 xl:grid-cols-5">
-              {kpis.map((item) => (
-                <div key={item.label} className={`${mobilePrimaryKpis.has(item.label) ? '' : 'hidden sm:block'} rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 sm:rounded-xl sm:px-3 sm:py-2.5`}>
-                  <p className="text-[10px] font-bold leading-none text-slate-500 sm:text-[11px] sm:leading-normal">{item.label}</p>
-                  <p className={`mt-1 font-black text-slate-950 ${typeof item.value === 'number' ? 'text-lg leading-none sm:text-xl sm:leading-normal' : 'text-[12px] leading-4 sm:text-[13px] sm:leading-5'}`}>
-                    {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
-                  </p>
-                </div>
-              ))}
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-slate-500 sm:mt-4 sm:text-xs">
+              {typeof totalLessons === 'number' ? <span className="rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-slate-200">수업 자료 {totalLessons.toLocaleString()}개</span> : null}
+              {typeof videoLessons === 'number' ? <span className="rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-slate-200">영상 중심 수업 {videoLessons.toLocaleString()}개</span> : null}
+              {typeof spomoveCount === 'number' ? <span className="rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-slate-200">SPOMOVE 세팅 {spomoveCount.toLocaleString()}개</span> : null}
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:flex sm:flex-row sm:gap-3">
-            <button type="button" onClick={onPreview} className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-[13px] font-extrabold text-white shadow-[0_10px_24px_rgba(79,70,229,0.22)] sm:min-h-12 sm:px-5 sm:text-sm">
-              <Play className="h-4 w-4 fill-current" />
-              {hasVideo ? '영상으로 수업 준비하기' : '오늘 수업 준비하기'}
-            </button>
-            <Link href="/spokedu-master/library" className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[12px] font-bold text-slate-800 sm:min-h-12 sm:gap-2 sm:px-5 sm:text-sm">
-              <BookOpen className="h-4 w-4" />
-              수업 자료 둘러보기
-            </Link>
-            <Link href="/spokedu-master/spomove" className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-indigo-100 bg-indigo-50 px-3 text-[12px] font-bold text-indigo-700 sm:min-h-12 sm:gap-2 sm:px-5 sm:text-sm">
-              <MonitorPlay className="h-4 w-4" />
-              SPOMOVE 실행
-            </Link>
+          <div className="mt-4 space-y-3 sm:mt-6">
+            <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-row sm:gap-3">
+              <Link href="/spokedu-master/library" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-[14px] font-extrabold text-white shadow-[0_10px_24px_rgba(79,70,229,0.22)]">
+                <BookOpen className="h-4 w-4" />
+                오늘 쓸 수업 고르기
+              </Link>
+              <button type="button" onClick={onPreview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-[13px] font-bold text-slate-800 sm:text-sm">
+                <Play className="h-4 w-4 fill-current" />
+                {hasVideo ? '대표 수업 미리보기' : '대표 수업 보기'}
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-bold text-slate-500">
+              <Link href="/spokedu-master/spomove" className="inline-flex items-center gap-1.5 text-indigo-700">
+                <MonitorPlay className="h-4 w-4" />
+                SPOMOVE 세팅 열기
+              </Link>
+              <Link href="/spokedu-master/report" className="inline-flex items-center gap-1.5 text-slate-600">
+                <FileText className="h-4 w-4" />
+                수업 후 설명 만들기
+              </Link>
+            </div>
           </div>
         </div>
         <button type="button" onClick={onPreview} className="relative hidden min-h-[250px] overflow-hidden bg-slate-100 sm:block">
@@ -550,7 +560,8 @@ function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPrevi
     target && !isPlaceholderText(target) ? target : null,
     space && !isPlaceholderText(space) ? space : null,
     equipmentCount > 0 ? `교구 ${equipmentCount}` : hasLessonPlan ? '수업안' : null,
-  ].filter((badge): badge is string => Boolean(badge) && !isPlaceholderText(badge)).map(formatCompactBadge).slice(0, 3);
+  ].filter((badge): badge is string => Boolean(badge) && !isPlaceholderText(badge));
+  const compactOperationBadges = uniqueLabels(operationBadges).slice(0, 3);
   const thumbOverlayCue = item.program ? getProgramThumbOverlayCue(item.program) : item.meta;
   const cleanOverlayCue = thumbOverlayCue && !isPlaceholderText(thumbOverlayCue) ? thumbOverlayCue : null;
   return (
@@ -601,8 +612,8 @@ function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPrevi
           <p className="mt-0.5 line-clamp-1 text-[12px] font-semibold leading-4 text-slate-500">{item.reason}</p>
         </div>
         <div className="flex min-w-0 flex-wrap gap-1.5">
-          {operationBadges.map((badge) => (
-            <span key={badge} className="max-w-full truncate rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold leading-none text-slate-600">
+          {compactOperationBadges.map((badge, index) => (
+            <span key={`${badge}-${index}`} className="max-w-full truncate rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold leading-none text-slate-600">
               {badge}
             </span>
           ))}
@@ -774,9 +785,10 @@ function SpomovePresetCard({ preset, premiumLabel }: { preset: SpomoveLaunchPres
             {['TV·빔 실행', preset.target, preset.space, ...preset.tags]
               .filter((tag): tag is string => Boolean(tag) && !isPlaceholderText(tag))
               .map(formatCompactBadge)
+              .filter((tag, index, list) => list.indexOf(tag) === index)
               .slice(0, 3)
-              .map((tag) => (
-              <span key={tag} className="max-w-full whitespace-nowrap rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold leading-none text-slate-700">
+              .map((tag, index) => (
+              <span key={`${tag}-${index}`} className="max-w-full whitespace-nowrap rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold leading-none text-slate-700">
                 {tag}
               </span>
             ))}

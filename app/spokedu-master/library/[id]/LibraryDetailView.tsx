@@ -218,8 +218,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
               ['개요', 'detail-overview'],
               ['준비물', 'detail-equipment'],
               ['세팅 방법', 'detail-setup'],
-              ['진행 순서', 'detail-steps'],
-              ['난이도 조절', 'detail-variations'],
+              ['활동 방법', 'detail-steps'],
+              ['응용 방법', 'detail-variations'],
               ['운영 팁', 'detail-tips'],
               ['학부모 설명', parentSectionId],
             ].map(([label, href]) => (
@@ -262,6 +262,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
                   <FileText className="h-10 w-10" />
                 </div>
               )}
+              {videoEmbedUrl || directVideoUrl ? (
+                <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-red-600/95 px-3 py-1.5 text-xs font-black text-white shadow-lg">
+                  참고 영상 먼저 보기
+                </div>
+              ) : null}
             </div>
             <div className="p-5 sm:p-6 lg:p-7">
               <div className="flex flex-wrap items-center gap-2">
@@ -287,8 +292,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
           {(setupImage || setupNotes.length > 0) ? (
             <DetailSection id="detail-setup" title="세팅 방법" icon={MapPin}>
               {setupImage ? (
-                <div className="mb-4 overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50">
-                  <div className="relative aspect-[16/7] min-h-[180px]">
+                <div className="mb-4 overflow-hidden rounded-[14px] border border-indigo-100 bg-indigo-50/40">
+                  <div className="relative aspect-video min-h-[200px]">
                     <Image src={setupImage} alt={`${title} 세팅 방법`} fill sizes="(min-width: 1024px) 900px, 100vw" className="object-cover" unoptimized />
                   </div>
                 </div>
@@ -312,7 +317,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           ) : null}
 
           {ruleItems.length > 0 ? (
-            <DetailSection id="detail-steps" title="진행 순서" icon={FileText}>
+            <DetailSection id="detail-steps" title="활동 방법" icon={FileText}>
               <ol className="space-y-3">
                 {ruleItems.map((step, index) => (
                   <li key={`${step}-${index}`} className="grid grid-cols-[32px_1fr] gap-3 rounded-xl bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-800">
@@ -325,7 +330,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           ) : null}
 
           {variations.length > 0 ? (
-            <DetailSection id="detail-variations" title="난이도 조절" icon={FileText}>
+            <DetailSection id="detail-variations" title="응용 방법" icon={FileText}>
               <BulletList items={variations} />
             </DetailSection>
           ) : null}

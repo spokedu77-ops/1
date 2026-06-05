@@ -68,7 +68,7 @@ const TRAINING_MATRIX_ROWS: ReadonlyArray<{
     axis: '시지각-반응 처리',
     s1: '시지각 반응',
     s2: '반응 인지',
-    s3: 'Flow Mode / 시각-운동 추적',
+    s3: 'Dive Mode / 시각-운동 추적',
     s4: '미정',
   },
   {
@@ -762,7 +762,7 @@ function SettingsScreen({
             </div>
           </section>
 
-          {/* 속도 (FLOW는 내부 타이밍으로 동작하므로 숨김) */}
+          {/* 속도 (DIVE MODE는 내부 타이밍으로 동작하므로 숨김) */}
           {!isFlowOrChallenge ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -779,7 +779,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 키즈 세이프 모드 (시지각 반응 + 플로우) */}
+          {/* 키즈 세이프 모드 (시지각 반응 + 다이브) */}
           {isReactTrain || isFlowOrChallenge ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>

@@ -110,6 +110,8 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const loadDrills = useMasterStore((state) => state.loadDrills);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const [shellMounted, setShellMounted] = useState(false);
+  const [storeHydrated, setStoreHydrated] = useState(false);
+  const [subscriptionSynced, setSubscriptionSynced] = useState(false);
 
   const isAdmin = basePath.startsWith('/admin');
   const isSession = pathname.startsWith(`${basePath}/spomove/session`) || pathname.startsWith(`${basePath}/class-mode`);
@@ -123,8 +125,14 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     setShellMounted(true);
     void loadPrograms();
     void loadDrills();
-    void syncSubscription();
+    void syncSubscription().finally(() => setSubscriptionSynced(true));
   }, [loadPrograms, loadDrills, syncSubscription]);
+
+  useEffect(() => {
+    setStoreHydrated(useMasterStore.persist.hasHydrated());
+    const unsubscribe = useMasterStore.persist.onFinishHydration(() => setStoreHydrated(true));
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
@@ -170,10 +178,11 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   useEffect(() => {
     if (isAdmin || isLanding) return;
+    if (!storeHydrated || !subscriptionSynced) return;
     if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !profile.onboardingDone) {
       router.replace(`${basePath}/onboarding`);
     }
-  }, [basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isSession, profile, router]);
+  }, [basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isSession, profile, router, storeHydrated, subscriptionSynced]);
 
   if (isSession) {
     return (

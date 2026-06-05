@@ -146,6 +146,7 @@ function ReportContent() {
   const programs = useMasterStore((state) => state.programs);
   const programPool = useMemo(() => buildProgramPool(programs), [programs]);
   const initialProgramId = searchParams.get('programId') ?? searchParams.get('program') ?? programPool[0]?.id ?? '';
+  const hasProgramQuery = Boolean(searchParams.get('programId') ?? searchParams.get('program'));
   const [programId, setProgramId] = useState(initialProgramId);
   const [audience, setAudience] = useState<Audience>('parent');
   const [mood, setMood] = useState(MOODS[0]);
@@ -202,8 +203,18 @@ function ReportContent() {
         </p>
       </header>
 
-      <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
-        <aside className="space-y-4">
+      {hasProgramQuery && program ? (
+        <section className="mx-[22px] mb-5 rounded-[18px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.24)' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>selected lesson</p>
+          <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program.title} 설명 만들기</h2>
+          <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
+            {compactList([normalizeMasterTarget(program.grade), normalizeMasterSpace(program.space), displayMasterDuration(program.duration)])}
+          </p>
+        </section>
+      ) : null}
+
+      <div className={`grid gap-5 px-[22px] sm:px-8 lg:px-10 ${hasProgramQuery ? 'lg:grid-cols-[minmax(0,1fr)_320px]' : 'lg:grid-cols-[360px_minmax(0,1fr)]'}`}>
+        <aside className={`space-y-4 ${hasProgramQuery ? 'order-2' : 'order-1'}`}>
           <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-3 flex items-center gap-2">
               <BookOpen size={16} color="var(--spm-acc)" />
@@ -219,7 +230,7 @@ function ReportContent() {
                 style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
               />
             </div>
-            <div className="scrollbar-hide max-h-[330px] space-y-1 overflow-y-auto">
+            <div className={`scrollbar-hide space-y-1 overflow-y-auto ${hasProgramQuery ? 'max-h-[220px] lg:max-h-[420px]' : 'max-h-[330px]'}`}>
               {filteredPrograms.map((item) => (
                 <button
                   key={item.id}
@@ -253,7 +264,7 @@ function ReportContent() {
           </section>
         </aside>
 
-        <section className="space-y-4">
+        <section className={`space-y-4 ${hasProgramQuery ? 'order-1' : 'order-2'}`}>
           <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>

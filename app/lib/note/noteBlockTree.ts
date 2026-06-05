@@ -176,6 +176,64 @@ function arrayMove<T>(list: T[], from: number, to: number): T[] {
   return next;
 }
 
+/** Tab/Shift+Tab으로 블록을 한 단계 안쪽(이전 형제 토글 안) 또는 바깥(부모 다음)으로 옮길 계획. */
+export function planBlockTabIndent<T extends BlockWithMeta>(
+  blocks: T[],
+  blockId: string,
+  direction: 'in' | 'out',
+): BlockDropPlan<T> | null {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const moving = byId.get(blockId);
+  if (!moving) return null;
+
+  const movingParentId = moving.parent_block_id ?? null;
+
+  if (direction === 'in') {
+    const siblings = getBlocksInParent(blocks, movingParentId);
+    const idx = siblings.findIndex((block) => block.id === moving.id);
+    if (idx <= 0) return null;
+
+    const prev = siblings[idx - 1];
+    if (prev.type !== 'toggle') return null;
+    if (!TOGGLE_INLINE_CHILD_TYPES.has(moving.type)) return null;
+
+    const descendantIds = collectDescendantBlockIds(moving.id, blocks);
+    if (descendantIds.has(prev.id)) return null;
+
+    const children = getBlocksInParent(blocks, prev.id).filter((block) => block.id !== moving.id);
+    const targetSiblings = [...children, moving].map((block, index) => ({ ...block, order_index: index }));
+    return {
+      targetParentId: prev.id,
+      targetSiblings,
+      placedInToggle: true,
+    };
+  }
+
+  if (!movingParentId) return null;
+
+  const parent = byId.get(movingParentId);
+  if (!parent) return null;
+
+  const grandParentId = parent.parent_block_id ?? null;
+  const cousins = getBlocksInParent(blocks, grandParentId).filter((block) => block.id !== moving.id);
+  const parentIdx = cousins.findIndex((block) => block.id === parent.id);
+  if (parentIdx < 0) return null;
+
+  const insertAt = parentIdx + 1;
+  const targetSiblings = [
+    ...cousins.slice(0, insertAt),
+    moving,
+    ...cousins.slice(insertAt),
+  ].map((block, index) => ({ ...block, order_index: index }));
+
+  const grandParent = grandParentId ? byId.get(grandParentId) : undefined;
+  return {
+    targetParentId: grandParentId,
+    targetSiblings,
+    placedInToggle: grandParent?.type === 'toggle',
+  };
+}
+
 export function buildReparentContentPatch(
   content: Record<string, unknown> | null | undefined,
   blockType: string,

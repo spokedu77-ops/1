@@ -19,7 +19,7 @@ type NoteDocument = {
 };
 
 const DOCUMENT_SELECT =
-  'id, title, is_archived, is_favorite, is_pinned, is_public, share_token, parent_id, slug, created_at, updated_at';
+  'id, title, is_archived, is_favorite, is_pinned, is_public, share_token, parent_id, slug, properties, created_at, updated_at';
 
 async function insertAuditLog({
   documentId,
@@ -268,6 +268,9 @@ export async function PATCH(request: NextRequest) {
     }
     if (body.parent_id === null || typeof body.parent_id === 'string') {
       updates.parent_id = body.parent_id;
+    }
+    if (body.properties !== undefined) {
+      updates.properties = body.properties ?? null;
     }
     if (typeof body.slug === 'string') {
       const desired = slugifyTitle(body.slug);

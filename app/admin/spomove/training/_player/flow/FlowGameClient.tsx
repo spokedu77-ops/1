@@ -259,7 +259,7 @@ export default function FlowGameClient({
             textShadow: '0 0 60px #fbbf24, 0 0 25px #f59e0b88, 3px 3px 0 #000',
             animation: 'flowInstPop 0.35s cubic-bezier(0.22,1.8,0.36,1)',
           }}>
-            FLOW DONE!
+            DIVE DONE!
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.45)', marginBottom: '1.6rem' }}>
             {stats.stagesCompleted} / {stages.length} 스테이지 완료&nbsp;·&nbsp;{Math.round(stats.totalSec)}초

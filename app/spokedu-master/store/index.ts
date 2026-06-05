@@ -237,16 +237,19 @@ export const useMasterStore = create<MasterState>()(
             json.isAdmin ? 'team' :
             json.status === 'active' && json.plan === 'team' ? 'team' :
             json.status === 'active' && json.plan === 'pro' ? 'pro' : 'free';
+          const hasActivePaidAccess = json.isAdmin || serverPlan === 'pro' || serverPlan === 'team';
+          const hasExpiredPaidAccess = json.status === 'expired';
           set((state) => ({
             profile: state.profile
               ? {
                   ...state.profile,
                   plan: serverPlan,
                   role: serverPlan === 'team' ? 'director' : 'teacher',
+                  onboardingDone: hasActivePaidAccess || hasExpiredPaidAccess ? true : state.profile.onboardingDone,
                   isAdmin: json.isAdmin ?? false,
                   ...(json.userId ? { id: json.userId } : {}),
                   ...(json.email ? { email: json.email } : {}),
-                  trialEndsAt: json.isAdmin ? null : (json.trialEndsAt ?? state.profile.trialEndsAt),
+                  trialEndsAt: json.isAdmin || hasExpiredPaidAccess ? null : (json.trialEndsAt ?? state.profile.trialEndsAt),
                 }
               : state.profile,
           }));

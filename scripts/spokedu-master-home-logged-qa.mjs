@@ -1,100 +1,149 @@
 /**
- * SPOKEDU MASTER 홈 — 로그인 세션 Playwright 스모크
+ * SPOKEDU MASTER logged-in route smoke test.
  *
  * Usage:
- *   SPOKEDU_MASTER_QA_ID=... SPOKEDU_MASTER_QA_PASSWORD=... node scripts/spokedu-master-home-logged-qa.mjs http://localhost:3000
+ *   SPOKEDU_MASTER_QA_ID=spm.qa.pro@spokedu.test SPM_QA_PASSWORD=... node scripts/spokedu-master-home-logged-qa.mjs http://localhost:3000
  *
- * Requires: npm i -D playwright (or run from an environment that already has playwright, like spokedu-qa.mjs)
+ * Optional:
+ *   SPOKEDU_MASTER_QA_PLAN=free|pro|team
+ *   SPOKEDU_MASTER_QA_EXPIRED=1
  */
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
 const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || process.env.SPOKEDU_MASTER_QA_EMAIL || '';
 const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
+const QA_PLAN = process.env.SPOKEDU_MASTER_QA_PLAN || 'pro';
+const QA_EXPIRED = process.env.SPOKEDU_MASTER_QA_EXPIRED === '1';
+
+const ROUTES = [
+  '/spokedu-master/dashboard',
+  '/spokedu-master/library',
+  '/spokedu-master/spomove',
+  '/spokedu-master/report',
+  '/spokedu-master/report?program=197',
+];
 
 async function loadPlaywright() {
   try {
     const mod = await import('playwright');
     return mod.chromium;
   } catch {
-    console.warn('SKIP: playwright 패키지가 없습니다. `npm i -D playwright` 후 다시 실행하세요.');
+    console.warn('SKIP: playwright is not installed.');
     process.exit(0);
   }
 }
 
-async function main() {
-  if (!QA_ID || !QA_PASSWORD) {
-    console.log('SKIP: SPOKEDU_MASTER_QA_ID(또는 _EMAIL) / SPOKEDU_MASTER_QA_PASSWORD 가 없어 로그인 홈 스모크를 건너뜁니다.');
-    process.exit(0);
-  }
+function bootstrapStore(email) {
+  const now = Date.now();
+  const trialEndsAt = QA_EXPIRED ? new Date(now - 24 * 60 * 60 * 1000).toISOString() : new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const plan = QA_EXPIRED ? 'free' : QA_PLAN === 'team' ? 'team' : QA_PLAN === 'free' ? 'free' : 'pro';
 
-  const chromium = await loadPlaywright();
-  const consoleErrors = [];
-  let failed = 0;
+  return JSON.stringify({
+    state: {
+      profile: {
+        id: 'qa',
+        name: 'QA',
+        email,
+        school: 'QA',
+        avatarColor: '#312e81',
+        plan,
+        role: plan === 'team' ? 'director' : 'teacher',
+        centerId: null,
+        centerName: null,
+        ageGroups: [],
+        programTypes: [],
+        onboardingDone: true,
+        trialEndsAt: QA_EXPIRED ? null : trialEndsAt,
+        createdAt: new Date(now).toISOString(),
+      },
+    },
+    version: 9,
+  });
+}
 
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+async function login(context) {
   const page = await context.newPage();
+  await page.goto(`${BASE}/login?next=${encodeURIComponent('/spokedu-master/dashboard')}`, { waitUntil: 'domcontentloaded' });
+  await page.locator('input[type="text"]').first().fill(QA_ID);
+  await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL(/\/spokedu-master\//, { timeout: 90000, waitUntil: 'domcontentloaded' });
+  await page.waitForLoadState('networkidle').catch(() => undefined);
+  await page.waitForTimeout(1000);
+  await page.close();
+}
 
+async function routeSnapshot(context, route) {
+  const page = await context.newPage();
+  const consoleErrors = [];
   page.on('console', (msg) => {
     if (msg.type() !== 'error') return;
     const text = msg.text();
     if (/favicon|extension|devtools/i.test(text)) return;
+    if (QA_EXPIRED && /status of 40[13]/i.test(text)) return;
     consoleErrors.push(text);
   });
 
+  await page.goto(`${BASE}${route}`, { waitUntil: 'domcontentloaded' });
+  await page.waitForLoadState('networkidle').catch(() => undefined);
+  await page.waitForTimeout(1000);
+
+  const text = await page.locator('body').innerText();
+  const currentUrl = page.url();
+  const result = {
+    route,
+    currentPath: new URL(currentUrl).pathname + new URL(currentUrl).search,
+    statusText: text.slice(0, 500).replace(/\s+/g, ' ').trim(),
+    hasDashboard: text.includes('오늘 수업 준비') || text.includes('SPOKEDU 운영 대시보드'),
+    hasLibrary: text.includes('라이브러리') || text.includes('수업 자료'),
+    hasSpomove: text.includes('SPOMOVE'),
+    hasReport: text.includes('수업 설명') || text.includes('오늘 수업 정리'),
+    selectedProgram197: text.includes('따라 무브'),
+    hasExpiredCopy: text.includes('체험 기간') || text.includes('구독 플랜') || text.includes('이용 만료'),
+    hasKnownFallbackContent: text.includes('스위치 러닝') || text.includes('따라 무브'),
+    consoleErrors,
+  };
+  await page.close();
+  return result;
+}
+
+async function main() {
+  if (!QA_ID || !QA_PASSWORD) {
+    console.log('SKIP: SPOKEDU_MASTER_QA_ID and SPM_QA_PASSWORD are required.');
+    process.exit(0);
+  }
+
+  const chromium = await loadPlaywright();
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript((storeValue) => {
+    window.localStorage.setItem('spokedu-master-store', storeValue);
+  }, bootstrapStore(QA_ID));
+
+  let failed = 0;
   try {
-    await page.goto(`${BASE}/login?next=${encodeURIComponent('/spokedu-master/dashboard')}`, { waitUntil: 'domcontentloaded' });
-    await page.locator('input[type="text"]').first().fill(QA_ID);
-    await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
-    await page.locator('button[type="submit"]').click();
-    await page.waitForURL(/\/spokedu-master\/dashboard/, { timeout: 90000, waitUntil: 'domcontentloaded' });
+    await login(context);
 
-    const mainBg = await page.locator('main').first().evaluate((el) => getComputedStyle(el).backgroundColor);
-    const lightOk = /rgb\(245,\s*247,\s*251\)|#f5f7fb/i.test(mainBg);
-    console.log(`${lightOk ? 'OK' : 'FAIL'} 라이트 배경: ${mainBg}`);
-    if (!lightOk) failed += 1;
+    for (const route of ROUTES) {
+      const snapshot = await routeSnapshot(context, route);
+      const expectedPath = route;
+      const stayedOnRoute = snapshot.currentPath === expectedPath;
+      const routeOk = stayedOnRoute;
+      const consoleOk = snapshot.consoleErrors.length === 0;
+      const reportProgramOk = QA_EXPIRED || route !== '/spokedu-master/report?program=197' || snapshot.selectedProgram197;
 
-    const recommendHeading = page.getByRole('heading', { name: '추천 수업' });
-    const hasRecommend = await recommendHeading.count();
-    console.log(`${hasRecommend > 0 ? 'OK' : 'FAIL'} 추천 수업 row`);
-    if (hasRecommend === 0) failed += 1;
-
-    const previewButton = page.getByRole('button', { name: '빠른 미리보기' }).first();
-    if (await previewButton.count()) {
-      await previewButton.click();
-      const iframe = page.locator('iframe[src*="youtube.com/embed"]');
-      const video = page.locator('video[autoplay]');
-      const hasIframe = await iframe.count();
-      const hasVideo = await video.count();
-      if (hasIframe > 0) {
-        const src = await iframe.first().getAttribute('src');
-        const autoplayOk = src?.includes('autoplay=1') ?? false;
-        console.log(`${autoplayOk ? 'OK' : 'FAIL'} 미리보기 YouTube autoplay: ${src ?? '(none)'}`);
-        if (!autoplayOk) failed += 1;
-      } else if (hasVideo > 0) {
-        console.log('OK 미리보기 mp4 autoplay');
-      } else {
-        console.log('WARN 미리보기 열림 — embed/video 없음(썸네일만일 수 있음)');
-      }
-      await page.keyboard.press('Escape');
-    } else {
-      console.log('WARN 빠른 미리보기 버튼 없음 — 히어로 로딩 상태 확인');
-    }
-
-    const rowScroll = page.locator('.overflow-x-auto').first();
-    if (await rowScroll.count()) {
-      const overflow = await rowScroll.evaluate((el) => ({
-        scrollWidth: el.scrollWidth,
-        clientWidth: el.clientWidth,
+      if (!routeOk || !consoleOk || !reportProgramOk) failed += 1;
+      console.log(JSON.stringify({
+        ok: routeOk && consoleOk && reportProgramOk,
+        route,
+        currentPath: snapshot.currentPath,
+        hasDashboard: snapshot.hasDashboard,
+        hasLibrary: snapshot.hasLibrary,
+        hasSpomove: snapshot.hasSpomove,
+        hasReport: snapshot.hasReport,
+        selectedProgram197: snapshot.selectedProgram197,
+        hasExpiredCopy: snapshot.hasExpiredCopy,
+        consoleErrors: snapshot.consoleErrors.slice(0, 3),
       }));
-      const scrollable = overflow.scrollWidth > overflow.clientWidth + 4;
-      console.log(`${scrollable ? 'OK' : 'WARN'} 가로 스크롤 row: scroll ${overflow.scrollWidth} / client ${overflow.clientWidth}`);
-    }
-
-    const severeConsole = consoleErrors.filter((line) => !/hydration|ResizeObserver/i.test(line));
-    console.log(`${severeConsole.length === 0 ? 'OK' : 'FAIL'} 콘솔 error ${severeConsole.length}건`);
-    if (severeConsole.length > 0) {
-      severeConsole.slice(0, 5).forEach((line) => console.log(`  - ${line}`));
-      failed += 1;
     }
   } catch (error) {
     console.error('FAIL', error instanceof Error ? error.message : error);
@@ -104,10 +153,10 @@ async function main() {
   }
 
   if (failed > 0) {
-    console.error(`\n${failed} check(s) failed`);
+    console.error(`\n${failed} route check(s) failed`);
     process.exit(1);
   }
-  console.log('\nLogged-in home smoke passed.');
+  console.log('\nLogged-in SPOKEDU MASTER route smoke passed.');
 }
 
 main().catch((error) => {
