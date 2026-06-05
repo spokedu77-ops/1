@@ -17,7 +17,7 @@ interface CenterTbdEventPanelProps {
   teachers: CenterTbdTeacherOption[];
   saving?: boolean;
   onClose: () => void;
-  onSave: (item: CenterTbdClass) => void | Promise<void>;
+  onSave: (item: CenterTbdClass) => void | Promise<unknown>;
   onDelete: (classId: string) => void | Promise<void>;
 }
 
