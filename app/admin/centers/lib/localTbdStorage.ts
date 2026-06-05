@@ -61,7 +61,7 @@ function padTime(n: number) {
   return String(n).padStart(2, '0');
 }
 
-export function toTimeInputValue(time: string, fallback = '10:00') {
+export function toTimeInputValue(time: string | null | undefined, fallback = '10:00') {
   const t = String(time ?? '').trim();
   if (/^\d{2}:\d{2}$/.test(t)) return t;
   return fallback;
@@ -267,10 +267,13 @@ export function clearLocalTbdClasses() {
   }
 }
 
+type BuildRoundSeed = Pick<CenterTbdRound, 'roundIndex'> &
+  Partial<Pick<CenterTbdRound, 'id' | 'date' | 'startTime' | 'endTime'>>;
+
 export function buildRounds(
   roundTotal: number,
   anchorDate: string,
-  lastExisting?: CenterTbdRound[],
+  lastExisting?: BuildRoundSeed[],
   defaultStart = '10:00',
   defaultEnd = '11:00'
 ) {
