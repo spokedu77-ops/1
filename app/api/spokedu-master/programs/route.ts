@@ -8,6 +8,11 @@ import {
   applyTrustedReferenceVideo,
   resolveTrustedReferenceVideoUrl,
 } from '@/app/spokedu-master/lib/verified-program-video';
+import {
+  normalizeMasterDuration,
+  normalizeMasterSpace,
+  normalizeMasterTarget,
+} from '@/app/spokedu-master/lib/programDisplayTags';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#312e81', '#3730a3', '#4338ca', '#4f46e5'],
@@ -420,7 +425,7 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
       heroImageUrl: pickBestHeroUrl(program.lessonDetail?.heroImageUrl, thumbnailUrl),
       setupImageUrl: program.lessonDetail?.setupImageUrl,
       galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
-      briefingNotes: cleanList(program.lessonDetail?.briefingNotes, ['수업 목표, 안전 기준, 진행 순서를 수업 전에 짧게 확인합니다.']),
+      briefingNotes: cleanList(program.lessonDetail?.briefingNotes, ['활동 흐름과 진행 순서를 수업 전에 짧게 확인합니다.']),
       rules: cleanList(program.lessonDetail?.rules, steps),
       setupNotes: cleanList(program.lessonDetail?.setupNotes, [`공간: ${cleanText(program.space, '공간 확인 필요')}`, `준비물: ${equipment.join(', ')}`]),
     },
@@ -580,14 +585,18 @@ export async function GET() {
     const setupImageUrl = normalizeImageUrl(meta?.sm_setup_image_url);
     const galleryImageUrls = normalizeImageUrls(meta?.sm_gallery_image_urls);
 
+    const displayGrade = normalizeMasterTarget(meta?.sm_grade ?? '') || '대상 확인 필요';
+    const displaySpace = normalizeMasterSpace(meta?.sm_space ?? '') || '공간 확인 필요';
+    const displayDuration = normalizeMasterDuration(meta?.sm_duration) ?? 10;
+
     const program: Program = {
       id: String(row.id),
       curriculumId: row.id,
       title,
       category: categoryName,
-      grade: meta?.sm_grade ?? '대상 확인 필요',
-      duration: meta?.sm_duration ?? 20,
-      space: meta?.sm_space ?? '공간 확인 필요',
+      grade: displayGrade,
+      duration: displayDuration,
+      space: displaySpace,
       description: coachScript,
       steps,
       equipment,
@@ -599,7 +608,7 @@ export async function GET() {
       homeSortOrder: meta?.sm_display_order ?? (typeof row.display_order === 'number' ? row.display_order : 5000 + index),
       thumbnailUrl,
       lessonDetail: {
-        recommendedAge: meta?.sm_grade ?? '대상 확인 필요',
+        recommendedAge: displayGrade,
         recommendedPlayers: overlay?.group_size ?? '현장 규모에 맞게 조정',
         objective: meta?.sm_objective ?? '',
         developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',

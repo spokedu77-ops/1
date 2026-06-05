@@ -1,17 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Upload, RefreshCw } from 'lucide-react';
 import CenterTbdEventPanel from './CenterTbdEventPanel';
+import { useCenterTbdSchedule } from '../hooks/useCenterTbdSchedule';
 import {
-  createDefaultLocalTbdClass,
+  createDefaultCenterTbdClass,
   flattenClassesToCalendarItems,
-  loadLocalTbdClasses,
-  saveLocalTbdClasses,
   teacherUndecided,
   teachersLine,
   type LocalTbdCalendarItem,
-  type LocalTbdClass,
+  type CenterTbdClass,
 } from '../lib/localTbdStorage';
 
 function getMonthGrid(anchor: Date) {
@@ -117,25 +116,28 @@ function MonthEventRow({
 }
 
 export default function CenterTbdCalendar() {
-  const [classes, setClasses] = useState<LocalTbdClass[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const {
+    classes,
+    teachers,
+    loading,
+    saving,
+    importing,
+    error,
+    localOnlyCount,
+    showImportBanner,
+    reload,
+    saveClass,
+    removeClass,
+    importFromLocal,
+  } = useCenterTbdSchedule();
+
   const [monthAnchor, setMonthAnchor] = useState<Date>(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [panelOpen, setPanelOpen] = useState(false);
-  const [panelClass, setPanelClass] = useState<LocalTbdClass | null>(null);
+  const [panelClass, setPanelClass] = useState<CenterTbdClass | null>(null);
   const [panelIsNew, setPanelIsNew] = useState(false);
-
-  useEffect(() => {
-    setClasses(loadLocalTbdClasses());
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    saveLocalTbdClasses(classes);
-  }, [classes, hydrated]);
 
   const calendarItems = useMemo(() => flattenClassesToCalendarItems(classes), [classes]);
 
@@ -170,7 +172,7 @@ export default function CenterTbdCalendar() {
   );
 
   const openCreate = useCallback(() => {
-    setPanelClass(createDefaultLocalTbdClass(new Date(), 4));
+    setPanelClass(createDefaultCenterTbdClass(new Date(), 4));
     setPanelIsNew(true);
     setPanelOpen(true);
   }, []);
@@ -179,22 +181,6 @@ export default function CenterTbdCalendar() {
     setPanelOpen(false);
     setPanelClass(null);
     setPanelIsNew(false);
-  }, []);
-
-  const handleSave = useCallback((saved: LocalTbdClass) => {
-    setClasses((prev) => {
-      const idx = prev.findIndex((c) => c.id === saved.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = saved;
-        return next;
-      }
-      return [...prev, saved];
-    });
-  }, []);
-
-  const handleDelete = useCallback((classId: string) => {
-    setClasses((prev) => prev.filter((c) => c.id !== classId));
   }, []);
 
   const today = new Date();
@@ -252,110 +238,160 @@ export default function CenterTbdCalendar() {
           <span className="text-xs font-black text-slate-600">{monthInfo.monthLabel}</span>
         </div>
 
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-xs font-black text-white hover:bg-indigo-700"
-        >
-          <Plus size={14} />
-          수업 추가
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void reload()}
+            disabled={loading}
+            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            aria-label="새로고침"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            새로고침
+          </button>
+          <button
+            type="button"
+            onClick={openCreate}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-xs font-black text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            <Plus size={14} />
+            수업 추가
+          </button>
+        </div>
       </nav>
 
-      <div className="rounded-lg mx-4 sm:mx-6 mt-3 mb-1 border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-        로컬 메모 · 이 브라우저에만 저장되며 수업 관리 DB와 연동되지 않습니다.
-      </div>
+      {error ? (
+        <div className="mx-4 sm:mx-6 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800">
+          {error}
+        </div>
+      ) : null}
+
+      {showImportBanner ? (
+        <div className="mx-4 sm:mx-6 mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+          <span>
+            이 브라우저에만 저장된 수업 {localOnlyCount}개가 있습니다. 서버가 비어 있을 때만 한 번 올릴 수
+            있습니다.
+          </span>
+          <button
+            type="button"
+            onClick={() => void importFromLocal()}
+            disabled={importing}
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-3 py-1.5 text-xs font-black text-white hover:bg-amber-700 disabled:opacity-60"
+          >
+            <Upload size={14} />
+            {importing ? '올리는 중…' : '서버에 올리기'}
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-lg mx-4 sm:mx-6 mt-3 mb-1 border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
+          관리자 간 공유 · 수업 관리 DB(classes-v2)와 연동되지 않습니다.
+        </div>
+      )}
 
       <div className="flex-1 overflow-auto bg-slate-50 p-4 sm:p-6">
-        <div className="max-w-[1600px] mx-auto rounded-2xl border border-slate-300 bg-slate-200 overflow-hidden shadow-sm">
-          <div className="grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300">
-            {['월', '화', '수', '목', '금', '토', '일'].map((w) => (
-              <div
-                key={w}
-                className="bg-slate-100 px-2 py-2 text-center text-[11px] font-black text-slate-600"
-              >
-                {w}
-              </div>
-            ))}
+        {loading ? (
+          <div className="max-w-[1600px] mx-auto rounded-2xl border border-slate-300 bg-white p-12 text-center text-sm text-slate-500">
+            불러오는 중…
           </div>
-
-          {monthWeekRows.map((weekCells, wIdx) => (
-            <div
-              key={`week-${wIdx}`}
-              className="grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300 last:border-b-0 items-stretch"
-            >
-              {weekCells.map((cell, dIdx) => {
-                if (!cell) {
-                  return (
-                    <div
-                      key={`pad-${wIdx}-${dIdx}`}
-                      className="bg-slate-100/80 min-h-[100px] min-w-0"
-                    />
-                  );
-                }
-                const key = dayMapKey(cell);
-                const dayEvents = eventsByMonthDay.get(key) || [];
-                const isToday = isSameLocalCalendarDay(cell, today);
-                const isPastDay = isPastCalendarDay(cell);
-                const headerLabel = cell.toLocaleDateString('ko-KR', {
-                  month: 'long',
-                  day: 'numeric',
-                });
-
-                return (
+        ) : (
+          <>
+            <div className="max-w-[1600px] mx-auto rounded-2xl border border-slate-300 bg-slate-200 overflow-hidden shadow-sm">
+              <div className="grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300">
+                {['월', '화', '수', '목', '금', '토', '일'].map((w) => (
                   <div
-                    key={key}
-                    className={`flex flex-col min-w-0 min-h-0 border border-slate-200/80 ${
-                      isToday
-                        ? 'z-[1] bg-blue-50/60 shadow-md ring-[3px] ring-blue-600 ring-inset'
-                        : 'bg-white'
-                    }`}
+                    key={w}
+                    className="bg-slate-100 px-2 py-2 text-center text-[11px] font-black text-slate-600"
                   >
-                    <div
-                      className={`shrink-0 flex items-center justify-center gap-1 flex-wrap py-1.5 px-1 text-[10px] font-black text-white ${
-                        isToday ? 'bg-blue-800' : 'bg-blue-600'
-                      }`}
-                    >
-                      {isToday ? (
-                        <span className="rounded px-1 py-px text-[8px] font-black uppercase tracking-wide bg-white/25 text-white">
-                          오늘
-                        </span>
-                      ) : null}
-                      <span>{headerLabel}</span>
-                    </div>
-                    <div className="flex flex-col flex-1 min-h-0 min-w-0 p-0">
-                      {dayEvents.length === 0 ? (
-                        <div className={`flex-1 min-h-[48px] ${isToday ? 'bg-blue-50/30' : 'bg-white'}`} />
-                      ) : (
-                        dayEvents.map((ev) => (
-                          <MonthEventRow
-                            key={ev.roundId}
-                            ev={ev}
-                            isPastDay={isPastDay}
-                            onOpen={openClass}
-                          />
-                        ))
-                      )}
-                    </div>
+                    {w}
                   </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+                ))}
+              </div>
 
-        <p className="mt-3 text-[11px] font-bold text-slate-500">
-          수업 추가 시 총 회차와 회차별 날짜를 설정할 수 있습니다. 메인 강사 미정은 빨간 칸으로 표시됩니다.
-        </p>
+              {monthWeekRows.map((weekCells, wIdx) => (
+                <div
+                  key={`week-${wIdx}`}
+                  className="grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300 last:border-b-0 items-stretch"
+                >
+                  {weekCells.map((cell, dIdx) => {
+                    if (!cell) {
+                      return (
+                        <div
+                          key={`pad-${wIdx}-${dIdx}`}
+                          className="bg-slate-100/80 min-h-[100px] min-w-0"
+                        />
+                      );
+                    }
+                    const key = dayMapKey(cell);
+                    const dayEvents = eventsByMonthDay.get(key) || [];
+                    const isToday = isSameLocalCalendarDay(cell, today);
+                    const isPastDay = isPastCalendarDay(cell);
+                    const headerLabel = cell.toLocaleDateString('ko-KR', {
+                      month: 'long',
+                      day: 'numeric',
+                    });
+
+                    return (
+                      <div
+                        key={key}
+                        className={`flex flex-col min-w-0 min-h-0 border border-slate-200/80 ${
+                          isToday
+                            ? 'z-[1] bg-blue-50/60 shadow-md ring-[3px] ring-blue-600 ring-inset'
+                            : 'bg-white'
+                        }`}
+                      >
+                        <div
+                          className={`shrink-0 flex items-center justify-center gap-1 flex-wrap py-1.5 px-1 text-[10px] font-black text-white ${
+                            isToday ? 'bg-blue-800' : 'bg-blue-600'
+                          }`}
+                        >
+                          {isToday ? (
+                            <span className="rounded px-1 py-px text-[8px] font-black uppercase tracking-wide bg-white/25 text-white">
+                              오늘
+                            </span>
+                          ) : null}
+                          <span>{headerLabel}</span>
+                        </div>
+                        <div className="flex flex-col flex-1 min-h-0 min-w-0 p-0">
+                          {dayEvents.length === 0 ? (
+                            <div
+                              className={`flex-1 min-h-[48px] ${isToday ? 'bg-blue-50/30' : 'bg-white'}`}
+                            />
+                          ) : (
+                            dayEvents.map((ev) => (
+                              <MonthEventRow
+                                key={ev.roundId}
+                                ev={ev}
+                                isPastDay={isPastDay}
+                                onOpen={openClass}
+                              />
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-3 text-[11px] font-bold text-slate-500">
+              같은 날 여러 회차·수업을 각각 다른 시간으로 설정할 수 있습니다. 메인 강사 미정은 빨간 칸으로
+              표시됩니다.
+            </p>
+          </>
+        )}
       </div>
 
       <CenterTbdEventPanel
         open={panelOpen}
         classItem={panelClass}
         isNew={panelIsNew}
+        teachers={teachers}
+        saving={saving}
         onClose={closePanel}
-        onSave={handleSave}
-        onDelete={handleDelete}
+        onSave={saveClass}
+        onDelete={removeClass}
       />
     </div>
   );

@@ -24,6 +24,7 @@ import {
   isDirectVideoUrl,
   resolveProgramHero,
 } from '../../lib/program-media';
+import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../../lib/programDisplayTags';
 import { useMasterStore } from '../../store';
 import type { Drill, Program } from '../../types';
 
@@ -153,18 +154,16 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const detail = program.lessonDetail;
   const title = usableText(program.title, 'SPOKEDU 수업');
   const category = usableText(program.category, '체육 수업');
-  const grade = usableText(program.grade);
-  const space = usableText(program.space);
+  const grade = usableText(normalizeMasterTarget(program.grade));
+  const space = usableText(normalizeMasterSpace(program.space));
   const description = usableText(program.description, `${title} 수업 운영안입니다.`);
   const equipment = usableList(program.equipment);
-  const recommendedAge = usableText(detail?.recommendedAge, grade);
-  const objective = usableText(detail?.objective, description);
+  const recommendedAge = usableText(normalizeMasterTarget(detail?.recommendedAge), grade);
   const focus = usableText(detail?.developmentFocus, category);
   const ruleItems = usableList(detail?.rules?.length ? detail.rules : program.steps);
   const setupNotes = usableList(detail?.setupNotes);
   const briefingNotes = usableList(detail?.briefingNotes);
   const fieldTips = usableList(detail?.fieldTips);
-  const safetyNotes = usableList(detail?.safetyNotes);
   const variations = usableList(detail?.variations);
   const parentCopy = getParentCopy(program, title, focus);
   const favorite = favorites.includes(program.id);
@@ -183,7 +182,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const overviewRows = [
     ['대상', recommendedAge],
     ['공간', space],
-    ['시간', program.duration ? `${program.duration}분` : ''],
+    ['시간', displayMasterDuration(program.duration)],
     ['준비물', equipment.length > 1 ? `${equipment[0]} 외 ${equipment.length - 1}` : equipment[0] ?? ''],
   ].filter(([, value]) => value && !PLACEHOLDER_PATTERN.test(value)) as Array<[string, string]>;
 
@@ -220,7 +219,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
               ['준비물', 'detail-equipment'],
               ['세팅 방법', 'detail-setup'],
               ['진행 순서', 'detail-steps'],
-              ['안전 포인트', 'detail-safety'],
               ['난이도 조절', 'detail-variations'],
               ['운영 팁', 'detail-tips'],
               ['학부모 설명', parentSectionId],
@@ -271,7 +269,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 {usageCount > 0 ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">{usageCount}회 사용</span> : null}
               </div>
               <h1 className="mt-4 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{title}</h1>
-              <p className="mt-3 max-w-3xl text-sm font-semibold leading-7 text-slate-700">{objective}</p>
+              <p className="mt-3 max-w-3xl text-sm font-semibold leading-7 text-slate-700">{description}</p>
               {overviewRows.length > 0 ? (
                 <div className="mt-5">
                   <FactGrid rows={overviewRows} />
@@ -323,12 +321,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
                   </li>
                 ))}
               </ol>
-            </DetailSection>
-          ) : null}
-
-          {safetyNotes.length > 0 ? (
-            <DetailSection id="detail-safety" title="안전 포인트" icon={CheckCircle2}>
-              <BulletList items={safetyNotes} />
             </DetailSection>
           ) : null}
 

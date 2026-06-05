@@ -5,15 +5,20 @@
  * 직접 supabase.auth.getUser() / getSession()을 API 라우트 안에서 구현하지 마세요.
  *
  * 관리자 판단 기준 (순서대로):
- *   1. users.role = 'admin' | 'master'
- *   2. users.is_admin = true
- *   3. users.name이 ADMIN_NAMES에 포함
- *   4. profiles.role = 'admin' | 'master'  (fallback)
+ *   1. 운영진 auth 이메일 (choijihoon / kimkoomin / kimyoonki @spokedu.com, ADMIN_EMAILS env)
+ *   2. users.role = 'admin' | 'master'
+ *   3. users.is_admin = true
+ *   4. users.name이 ADMIN_NAMES에 포함
+ *   5. profiles.role = 'admin' | 'master'  (fallback)
  */
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { ADMIN_NAMES, ROLES, getAdminEmails } from '@/app/lib/constants/admin';
+import {
+  isKnownPlatformAdminEmail,
+  isPlatformAdminFromProfileRole,
+  isPlatformAdminFromUserRow,
+} from '@/app/lib/auth/platformAdminIdentity';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
 // ─── 결과 타입 ────────────────────────────────────────────────────────────────
@@ -40,12 +45,6 @@ export function getServiceSupabase() {
 
 // ─── 관리자 판별 로직 ──────────────────────────────────────────────────────────
 
-function isAdminRole(role: unknown): boolean {
-  if (!role || typeof role !== 'string') return false;
-  const lower = role.trim().toLowerCase();
-  return lower === ROLES.ADMIN || lower === ROLES.MASTER;
-}
-
 type ServerSupabase = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 
 /**
@@ -66,8 +65,7 @@ export async function isPlatformAdminUser(
       return cached.isAdmin;
     }
 
-    const adminEmails = getAdminEmails();
-    if (adminEmails.length > 0 && userEmail && adminEmails.includes(userEmail)) {
+    if (isKnownPlatformAdminEmail(userEmail)) {
       adminDecisionCache.set(uid, { isAdmin: true, expiresAt: now + ADMIN_AUTH_CACHE_TTL_MS });
       return true;
     }
@@ -86,19 +84,14 @@ export async function isPlatformAdminUser(
     const { data: userRow } = await usersPromise;
     const u = userRow as { role?: string; is_admin?: boolean; name?: string } | null;
 
-    if (
-      u &&
-      (isAdminRole(u.role) ||
-        u.is_admin === true ||
-        (typeof u.name === 'string' && (ADMIN_NAMES as readonly string[]).includes(u.name)))
-    ) {
+    if (isPlatformAdminFromUserRow(u)) {
       adminDecisionCache.set(uid, { isAdmin: true, expiresAt: now + ADMIN_AUTH_CACHE_TTL_MS });
       return true;
     }
 
     const { data: profileRow } = await profilesPromise;
     const p = profileRow as { role?: string } | null;
-    if (p && isAdminRole(p.role)) {
+    if (isPlatformAdminFromProfileRole(p?.role)) {
       adminDecisionCache.set(uid, { isAdmin: true, expiresAt: now + ADMIN_AUTH_CACHE_TTL_MS });
       return true;
     }

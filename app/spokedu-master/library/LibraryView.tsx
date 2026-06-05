@@ -29,10 +29,11 @@ import {
   isDirectVideoUrl,
   resolveProgramHero,
 } from '../lib/program-media';
+import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
 import { useIsPro, useMasterStore } from '../store';
 import type { Drill, Program } from '../types';
 
-const QUICK_FILTERS = ['전체', '유아', '초등', '준비물 적음', '좁은 공간', '협동', '민첩', '참고 영상'];
+const QUICK_FILTERS = ['전체', '미취학', '초등학생 이상', '체육관', '교실', '협동', '민첩', '참고 영상'];
 
 function hasSpomoveLink(program: Program) {
   const related = program.lessonDetail?.relatedSpomoveIds ?? [];
@@ -62,17 +63,14 @@ function hasLowPrep(program: Program) {
   return program.equipment.length <= 2 || /준비물 없음|준비물 적음|간편|no prep/i.test(text);
 }
 
-function isSmallSpace(program: Program) {
-  return /좁은|실내|교실|소규모/.test(`${program.space} ${program.tags.join(' ')}`);
-}
-
 function matchesFilter(program: Program, filter: string) {
   const text = `${program.title} ${program.category} ${program.grade} ${program.space} ${program.description} ${program.tags.join(' ')}`;
   if (filter === '전체') return true;
-  if (filter === '유아') return /유아|유치|5세|6세|7세/.test(text);
-  if (filter === '초등') return /초등|저학년|고학년/.test(text);
+  if (filter === '미취학') return normalizeMasterTarget(program.grade) === '미취학';
+  if (filter === '초등학생 이상') return normalizeMasterTarget(program.grade) === '초등학생 이상';
+  if (filter === '체육관') return normalizeMasterSpace(program.space) === '체육관';
+  if (filter === '교실') return normalizeMasterSpace(program.space) === '교실';
   if (filter === '준비물 적음') return hasLowPrep(program);
-  if (filter === '좁은 공간') return isSmallSpace(program);
   if (filter === '협동') return /협동|팀|릴레이|짝|관계/.test(text);
   if (filter === '민첩') return /민첩|순발|반응|스피드|속도/.test(text);
   if (filter === '참고 영상') return Boolean(program.lessonDetail?.videoUrl);
@@ -104,7 +102,6 @@ function getSearchText(program: Program) {
     program.description,
     program.equipment.join(' '),
     program.tags.join(' '),
-    program.lessonDetail?.objective,
     program.lessonDetail?.developmentFocus,
   ]
     .filter(Boolean)
@@ -128,10 +125,10 @@ function getProgramInfoTags(program: Program) {
   const detail = program.lessonDetail;
   const candidates = [
     program.category,
-    detail?.recommendedAge || program.grade,
+    normalizeMasterTarget(detail?.recommendedAge || program.grade),
     detail?.recommendedPlayers,
     ...splitFocusTags(detail?.developmentFocus),
-    program.space,
+    normalizeMasterSpace(program.space),
     ...(detail?.videoUrl ? ['참고 영상'] : []),
   ];
   return Array.from(new Set(candidates.filter((item): item is string => Boolean(item) && !isPlaceholderText(item)))).slice(0, 6);
@@ -171,7 +168,7 @@ function CompactMeta({ program }: { program: Program }) {
 function ValueChips({ program }: { program: Program }) {
   const chips = [
     hasLowPrep(program) ? '준비 간편' : null,
-    isSmallSpace(program) ? '좁은 공간' : null,
+    normalizeMasterSpace(program.space) === '교실' ? '교실' : null,
     program.lessonDetail?.videoUrl ? '참고 영상' : null,
   ].filter(Boolean) as string[];
 
@@ -263,7 +260,6 @@ function ProgramCard({
 
 function FeaturedProgram({ program, onPreview }: { program: Program; onPreview: () => void }) {
   const heroImage = getHeroImage(program);
-  const detail = program.lessonDetail;
   const tags = getProgramInfoTags(program);
 
   return (
@@ -276,7 +272,7 @@ function FeaturedProgram({ program, onPreview }: { program: Program; onPreview: 
               오늘의 추천
             </span>
             <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{program.title}</h1>
-            <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600">{detail?.objective || program.description}</p>
+            <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-600">{program.description}</p>
             <ValueChips program={program} />
             <div className="mt-5 flex flex-wrap gap-2">
               {tags.slice(0, 6).map((tag) => (
@@ -352,31 +348,28 @@ function ProgramModal({
   const parentCopy = getParentCopy(program);
   const rules = detail?.rules?.length ? detail.rules : program.steps;
   const equipment = program.equipment.filter((item) => !isPlaceholderText(item));
-  const setupFallback = [`공간: ${program.space}`, `준비물: ${equipment.join(', ') || '현장 기본 도구'}`].filter((item) => !isPlaceholderText(item));
+  const setupFallback = [`공간: ${normalizeMasterSpace(program.space)}`, `준비물: ${equipment.join(', ') || '현장 기본 도구'}`].filter((item) => !isPlaceholderText(item));
   const setupNotes = (detail?.setupNotes?.length ? detail.setupNotes : setupFallback).filter((item) => !isPlaceholderText(item));
-  const safetyNotes = detail?.safetyNotes?.length
-    ? detail.safetyNotes
-    : ['활동 전 공간의 장애물을 정리합니다.', '교구를 던지거나 밀치지 않도록 약속합니다.', '속도보다 안전한 이동과 정확한 규칙 수행을 우선합니다.'];
   const variations = detail?.variations?.length ? detail.variations : detail?.fieldTips ?? [];
   const overviewRows = [
     ['테마', program.category],
-    ['대상', detail?.recommendedAge || program.grade],
+    ['대상', normalizeMasterTarget(detail?.recommendedAge || program.grade)],
     ['인원', detail?.recommendedPlayers || '소그룹~학급'],
     ['기능', detail?.developmentFocus || program.category],
-    ['공간', program.space],
+    ['공간', normalizeMasterSpace(program.space)],
+    ['시간', displayMasterDuration(program.duration)],
   ].filter(([, value]) => value && !isPlaceholderText(value));
   const focusTags = getProgramInfoTags(program).slice(0, 6);
   const decisionCards = [
     { label: '영상', value: hasVideo ? '있음' : '없음', tone: hasVideo ? 'text-red-600 bg-red-50 border-red-100' : 'text-slate-500 bg-slate-50 border-slate-200' },
     { label: '교구', value: equipment.length ? `${equipment.length}개` : '기본', tone: 'text-emerald-700 bg-emerald-50 border-emerald-100' },
     { label: '진행', value: rules.length ? `${rules.length}단계` : '확인', tone: 'text-indigo-700 bg-indigo-50 border-indigo-100' },
-    { label: '공간', value: program.space, tone: 'text-slate-700 bg-slate-50 border-slate-200' },
+    { label: '공간', value: normalizeMasterSpace(program.space), tone: 'text-slate-700 bg-slate-50 border-slate-200' },
   ];
   const sectionNavItems = [
     '개요',
     '수업 전 체크',
     setupNotes.length || setupImage ? '교구 세팅' : null,
-    '안전',
     hasVideo ? '참고 영상' : null,
     rules.length ? '활동 방법' : null,
     variations.length ? '응용' : null,
@@ -413,7 +406,7 @@ function ProgramModal({
             </div>
             <h1 className="text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{program.title}</h1>
             <p className="mt-4 border-l-2 border-slate-900 pl-4 text-sm font-semibold leading-7 text-slate-700">
-              {detail?.objective || program.description}
+              {program.description}
             </p>
             <div className="mt-5 grid gap-2 sm:grid-cols-4">
               {decisionCards.map((item) => (
@@ -497,18 +490,6 @@ function ProgramModal({
             </ul>
           </section>
           ) : null}
-
-          <section id="program-안전" className="rounded-[10px] border border-slate-200 bg-white p-5">
-            <h2 className="text-base font-black text-slate-950">활동 전 선행되어야 할 사전 교육</h2>
-            <ul className="mt-4 grid gap-2">
-              {safetyNotes.map((item) => (
-                <li key={item} className="flex gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold leading-6 text-slate-700">
-                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-slate-500" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </section>
 
           {hasVideo ? (
             <section id="program-참고 영상" className="rounded-[10px] border border-slate-200 bg-white p-5">
@@ -663,7 +644,7 @@ export default function LibraryView() {
   const favoritePrograms = useMemo(() => pool.filter((program) => favorites.includes(program.id)).slice(0, 6), [favorites, pool]);
   const packageStats = useMemo(() => {
     const videoCount = pool.filter((program) => program.lessonDetail?.videoUrl).length;
-    const indoorCount = pool.filter(isSmallSpace).length;
+    const indoorCount = pool.filter((program) => normalizeMasterSpace(program.space) === '교실').length;
     const lowPrepCount = pool.filter(hasLowPrep).length;
     return [
       { label: '전체 패키지', value: `${pool.length}개` },

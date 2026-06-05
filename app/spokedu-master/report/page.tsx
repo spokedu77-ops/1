@@ -5,6 +5,7 @@ import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Sav
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
+import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
 import { useMasterStore } from '../store';
 import type { Program } from '../types';
 
@@ -69,23 +70,25 @@ function buildExplanation(input: {
   const { audience, program, mood, reaction, focusSkills, note } = input;
   const detail = program.lessonDetail;
   const title = clean(program.title, '오늘 수업');
-  const objective = clean(detail?.objective, clean(program.description, '움직임을 경험하며 몸의 기능을 익히는 활동입니다.'));
+  const description = clean(program.description, '움직임을 경험하며 몸의 기능을 익히는 활동입니다.');
   const focus = focusSkills.length ? focusSkills.join(', ') : clean(detail?.developmentFocus, program.tags.slice(0, 3).join(', '));
-  const space = clean(program.space, '수업 공간');
+  const target = clean(normalizeMasterTarget(program.grade), '수업 대상');
+  const space = clean(normalizeMasterSpace(program.space), '수업 공간');
+  const duration = displayMasterDuration(program.duration);
   const equipment = program.equipment.length ? program.equipment.join(', ') : '현장 기본 도구';
-  const safety = detail?.safetyNotes?.slice(0, 2).join(' ') || '이동 방향과 활동 간격을 확인하며 안전하게 진행했습니다.';
   const variation = detail?.variations?.[0] ? `수준에 따라 ${detail.variations[0]} 방식으로 조절할 수 있습니다.` : '';
+  const activity = (detail?.rules?.length ? detail.rules : program.steps).slice(0, 2).join(' ');
   const noteLine = note.trim() ? ` 특이사항: ${note.trim()}` : '';
 
   if (audience === 'parent') {
-    return `오늘은 "${title}" 수업으로 아이들이 ${focus}을 자연스럽게 경험했습니다. ${mood} 분위기 속에서 ${reaction} 모습을 보였고, 움직임을 따라 하거나 규칙에 맞춰 몸을 조절하는 과정에 초점을 두었습니다. ${safety} 오늘의 움직임 경험이 아이들의 신체 표현과 수업 참여 자신감으로 이어질 수 있도록 마무리했습니다.${noteLine}`;
+    return `오늘은 "${title}" 수업으로 아이들이 ${focus}을 자연스럽게 경험했습니다. ${mood} 분위기 속에서 ${reaction} 모습을 보였고, ${description} 오늘의 움직임 경험이 아이들의 신체 표현과 수업 참여 자신감으로 이어질 수 있도록 마무리했습니다.${noteLine}`;
   }
 
   if (audience === 'center') {
-    return `"${title}"은 ${compactList([program.grade, space]) || '현장 수업'} 조건에서 운영할 수 있는 체육수업 자료입니다. 수업 목적은 ${objective} 준비물은 ${equipment}이며, 활동 구성은 도입 안내, 주요 움직임 경험, 정리 피드백 순서로 운영했습니다. 오늘 수업은 ${mood} 분위기에서 진행되었고 아이들은 ${reaction} 흐름을 보였습니다. 기대 효과는 ${focus}을 수업 장면 안에서 확인하고 설명할 수 있다는 점입니다.${noteLine}`;
+    return `"${title}"은 ${compactList([target, space, duration]) || '현장 수업'} 조건에서 운영할 수 있는 체육수업 자료입니다. 준비물은 ${equipment}이며, 활동 구성은 ${activity || '도입 안내, 주요 움직임 경험, 정리 피드백'} 흐름으로 운영했습니다. 오늘 수업은 ${mood} 분위기에서 진행되었고 아이들은 ${reaction} 흐름을 보였습니다. 기대 효과는 ${focus}을 수업 장면 안에서 확인하고 설명할 수 있다는 점입니다.${noteLine}`;
   }
 
-  return `수업 활동명: ${title}. 활동 목표는 ${objective} 주요 참여 내용은 ${focus}을 중심으로 한 신체활동입니다. ${space}에서 ${equipment}을 활용해 수업을 진행했으며, 학생들은 ${mood} 분위기 속에서 ${reaction} 모습을 보였습니다. 안전 지도는 ${safety} ${variation} 오늘 수업은 체육수업의 의미를 움직임 경험과 참여 과정으로 남기는 활동 기록입니다.${noteLine}`;
+  return `수업 활동명: ${title}. 주요 참여 내용은 ${focus}을 중심으로 한 신체활동입니다. ${compactList([target, space, duration])} 조건에서 ${equipment}을 활용해 수업을 진행했으며, 학생들은 ${mood} 분위기 속에서 ${reaction} 모습을 보였습니다. ${variation} 오늘 수업은 체육수업의 의미를 움직임 경험과 참여 과정으로 남기는 활동 기록입니다.${noteLine}`;
 }
 
 function ChipGroup({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (next: string[]) => void }) {
@@ -229,7 +232,7 @@ function ReportContent() {
                   style={{ background: item.id === program?.id ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: item.id === program?.id ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent' }}
                 >
                   <strong className="block line-clamp-1 text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
-                  <span className="mt-1 block line-clamp-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{compactList([item.grade, item.space]) || item.category}</span>
+                  <span className="mt-1 block line-clamp-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{compactList([normalizeMasterTarget(item.grade), normalizeMasterSpace(item.space), displayMasterDuration(item.duration)]) || item.category}</span>
                 </button>
               ))}
             </div>

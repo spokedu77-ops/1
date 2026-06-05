@@ -23,10 +23,11 @@ import {
 import { isPaidMasterPlan } from '../lib/subscription';
 import { isFunstickFencingProgram } from '../lib/verified-program-video';
 import { OFFICIAL_SPOMOVE_PRESETS, formatSpomovePresetDuration, spomovePresetHref } from '../lib/spomovePresets';
+import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
 import { useMasterStore, useProfile } from '../store';
 import type { Program, SpomoveLaunchPreset } from '../types';
 
-const CATEGORIES = ['전체', '영상', '반응·민첩', '협동', '저학년', '실내'];
+const CATEGORIES = ['전체', '영상', '미취학', '초등학생 이상', '체육관', '교실'];
 
 type VideoItem = {
   id: string;
@@ -98,20 +99,13 @@ function getValidEquipment(program: Program) {
 }
 
 function formatSpaceBadge(space: string) {
-  if (/교실/.test(space) && /체육관/.test(space)) return '교실/체육관';
-  if (/체육관/.test(space) && /복도/.test(space)) return '체육관/복도';
-  if (/교실/.test(space) && /복도/.test(space)) return '교실/복도';
-  if (/체육관/.test(space) && /운동장/.test(space)) return '넓은 공간';
-  return space;
+  return normalizeMasterSpace(space) || space;
 }
 
 function formatGradeBadge(grade: string) {
-  if (/유아/.test(grade) && /저학년/.test(grade)) return '저학년';
-  if (/저학년/.test(grade) && /고학년|고등/.test(grade)) return '초등 전학년';
-  if (/초등/.test(grade) && /저학년/.test(grade)) return '저학년';
-  if (/초등/.test(grade) && /고학년/.test(grade)) return '고학년';
-  return grade.replace(/초등\s*/g, '').replace(/~/g, '-').trim();
+  return normalizeMasterTarget(grade) || grade;
 }
+
 
 function formatCompactBadge(value: string) {
   return formatSpaceBadge(formatGradeBadge(value))
@@ -214,14 +208,14 @@ function getCardTags(program: Program) {
 /** 썸네일 우측 상단 — 영상 있을 때는 비우고 좌측 「참고 영상」만 쓴다 */
 function getProgramThumbOverlayCue(program: Program) {
   if (programHasPlayableVideo(program)) return null;
-  if (/실내|체육관|교실|복도|좁은 공간/.test(getSearchText(program))) return '공간 부담 적음';
+  if (normalizeMasterSpace(program.space) === '교실') return '교실 운영';
   if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 간단';
   return '자료 보기';
 }
 
 function getProgramCue(program: Program) {
   if (programHasPlayableVideo(program)) return '미리보기에서 참고 영상 확인';
-  if (/실내|체육관|교실|복도|좁은 공간/.test(getSearchText(program))) return '공간 부담 적음';
+  if (normalizeMasterSpace(program.space) === '교실') return '교실 운영';
   if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 간단';
   return '자료 보기';
 }
@@ -229,11 +223,11 @@ function getProgramCue(program: Program) {
 function getCurationReason(program: Program, intent: 'weekly' | 'indoor' = 'weekly') {
   const detail = program.lessonDetail;
   if (intent === 'indoor') {
-    if (isPlaceholderText(program.space)) return '좁은 공간 운영에 맞춰 확인';
+    if (isPlaceholderText(program.space)) return '교실 운영 여부 확인';
     return `${formatSpaceBadge(getProgramSpace(program))} 운영`;
   }
   if (detail?.videoUrl && (detail.rules?.length || program.steps.length)) return '영상과 순서를 함께 확인';
-  if (detail?.objective && detail?.developmentFocus) return '목표와 진행 흐름 정리';
+  if (program.description && detail?.developmentFocus) return '설명과 진행 흐름 정리';
   if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 적은 수업';
   if (program.isHot) return '현장 활용도 높은 수업';
   return '오늘 바로 준비';
@@ -284,13 +278,12 @@ function getSearchText(program: Program) {
 }
 
 function programMatchesCategory(program: Program, category: string) {
-  const text = getSearchText(program);
   if (category === '전체') return true;
   if (category === '영상') return programHasPlayableVideo(program);
-  if (category === '반응·민첩') return /민첩|반응|순발|스피드|속도|방향|전환/.test(text);
-  if (category === '협동') return /협동|릴레이|팀|그룹|대결/.test(text);
-  if (category === '저학년') return /유아|저학년|1학년|2학년|초등\s*[12]|초등 1|초등 2/.test(text);
-  if (category === '실내') return /실내|체육관|교실|복도|좁은 공간/.test(text);
+  if (category === '미취학') return normalizeMasterTarget(program.grade) === '미취학';
+  if (category === '초등학생 이상') return normalizeMasterTarget(program.grade) === '초등학생 이상';
+  if (category === '체육관') return normalizeMasterSpace(program.space) === '체육관';
+  if (category === '교실') return normalizeMasterSpace(program.space) === '교실';
   return true;
 }
 
@@ -302,10 +295,10 @@ function getHomeReadiness(program: Program) {
     hasVerifiedGrade(program),
     hasVerifiedSpace(program),
     Boolean(detail?.rules?.length || program.steps.length),
-    Boolean(detail?.objective || program.description),
+    Boolean(program.description),
     getValidEquipment(program).length > 0,
   ];
-  const penalty = [program.title, program.category, program.grade, program.space, program.description, detail?.objective].filter(isPlaceholderText).length;
+  const penalty = [program.title, program.category, program.grade, program.space, program.description].filter(isPlaceholderText).length;
   return checks.filter(Boolean).length - penalty;
 }
 
@@ -318,8 +311,7 @@ function hasHomeFlow(program: Program) {
 }
 
 function hasHomeContext(program: Program) {
-  const detail = program.lessonDetail;
-  return Boolean((detail?.objective && !isPlaceholderText(detail.objective)) || (program.description && !isPlaceholderText(program.description)));
+  return Boolean(program.description && !isPlaceholderText(program.description));
 }
 
 function isHomeDisplayableProgram(program: Program) {
@@ -874,16 +866,16 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
   const rules = detail?.rules?.length ? detail.rules : program.steps;
   const equipment = program.equipment.filter((item) => !isPlaceholderText(item));
   const setupNotes = (detail?.setupNotes ?? []).filter((item) => !isPlaceholderText(item));
-  const safetyNotes = (detail?.safetyNotes ?? []).filter((item) => !isPlaceholderText(item));
+  const briefingNotes = (detail?.briefingNotes ?? []).filter((item) => !isPlaceholderText(item));
+  const checklistPreview = [...setupNotes, ...briefingNotes].slice(0, 4);
+  const variationPreview = (detail?.variations ?? []).filter((item) => !isPlaceholderText(item)).slice(0, 2);
   const equipmentSummary = equipment.length > 1 ? `${equipment[0]} 외 ${equipment.length - 1}` : equipment[0] ?? '';
   const previewFacts = [
     ['대상', formatGradeBadge(detail?.recommendedAge || getProgramGrade(program))],
     ['공간', formatSpaceBadge(getProgramSpace(program))],
-    ['시간', program.duration ? `${program.duration}분` : ''],
+    ['시간', displayMasterDuration(program.duration)],
     ['준비물', equipmentSummary],
   ].filter(([, value]) => value && !isPlaceholderText(value));
-  const setupPreview = setupNotes.slice(0, 2);
-  const safetyPreview = safetyNotes[0];
   const parentCopy =
     detail?.parentNote ||
     `오늘은 ${getProgramTitle(program)} 활동으로 ${detail?.developmentFocus || getProgramCategory(program)}을 자연스럽게 경험했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`;
@@ -896,7 +888,7 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
 
   return (
     <BottomSheet open title="수업 미리보기" onClose={onClose} size="document">
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)]">
         <div className="lg:h-fit lg:self-start">
           <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
             <div className="relative aspect-video">
@@ -935,63 +927,70 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
           <header>
             <p className="text-xs font-black tracking-[0.14em] text-indigo-600">{getProgramCategory(program)}</p>
             <h2 className="mt-2 text-2xl font-black leading-tight text-slate-950">{getProgramTitle(program)}</h2>
-            <p className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{detail?.objective || program.description}</p>
+            <p className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{program.description}</p>
           </header>
           {previewFacts.length > 0 ? (
             <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
               {previewFacts.map(([label, value]) => (
-                <div key={label} className="rounded-[13px] border border-indigo-100 bg-indigo-50/60 px-3 py-2.5">
+                <div key={label} className="rounded-[10px] border border-indigo-100 bg-indigo-50/60 px-3 py-2.5">
                   <p className="text-[10px] font-black tracking-[0.12em] text-indigo-500">{label}</p>
                   <p className="mt-1 line-clamp-2 text-[13px] font-black leading-4 text-slate-950">{value}</p>
                 </div>
               ))}
             </section>
           ) : null}
-          {equipment.length > 0 ? (
-            <section className="rounded-[16px] border border-slate-200 bg-white p-3.5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
-              <h3 className="text-sm font-black text-slate-950">수업 자료</h3>
-              <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
-                {equipment.slice(0, 4).map((item) => (
-                  <div key={item} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700">
-                    <span className="grid h-4 w-4 shrink-0 place-items-center rounded border border-indigo-200 bg-white text-[10px] font-black text-indigo-600">✓</span>
-                    <span className="min-w-0 leading-5">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
-          {setupPreview.length > 0 || safetyPreview ? (
-            <section className="rounded-[16px] border border-slate-200 bg-white p-3.5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
-              {setupPreview.length > 0 ? (
-                <div>
-                  <p className="text-sm font-black text-slate-950">세팅 팁</p>
-                  <ul className="mt-2 space-y-1.5">
-                    {setupPreview.map((item) => (
-                      <li key={item} className="text-xs font-semibold leading-5 text-slate-500">- {item}</li>
+          {equipment.length > 0 || checklistPreview.length > 0 ? (
+            <section className={`grid gap-3 ${equipment.length > 0 && checklistPreview.length > 0 ? 'md:grid-cols-2' : ''}`}>
+              {equipment.length > 0 ? (
+                <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+                  <h3 className="text-[13px] font-black uppercase tracking-[0.08em] text-emerald-700">준비물</h3>
+                  <ul className="mt-3 space-y-2">
+                    {equipment.slice(0, 6).map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-[13px] font-bold leading-5 text-slate-700">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                        <span className="min-w-0">{item}</span>
+                      </li>
                     ))}
                   </ul>
                 </div>
               ) : null}
-              {safetyPreview ? (
-                <div className={setupPreview.length > 0 ? 'mt-3 border-t border-slate-100 pt-3' : ''}>
-                  <p className="text-sm font-black text-slate-950">안전 포인트</p>
-                  <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">- {safetyPreview}</p>
+              {checklistPreview.length > 0 ? (
+                <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+                  <h3 className="text-[13px] font-black uppercase tracking-[0.08em] text-indigo-700">수업 전 체크</h3>
+                  <ul className="mt-3 space-y-2">
+                    {checklistPreview.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-[13px] font-bold leading-5 text-slate-700">
+                        <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border border-indigo-200 bg-indigo-50 text-[10px] font-black text-indigo-600">✓</span>
+                        <span className="min-w-0">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ) : null}
             </section>
           ) : null}
           {rules.length > 0 ? (
-            <section className="rounded-[16px] border border-slate-200 bg-white p-3.5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+            <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
               <h3 className="flex items-center gap-2 text-sm font-black text-slate-950">
                 <BookOpen className="h-4 w-4 text-indigo-600" />
-                진행 순서
+                활동 방법
               </h3>
               <ul className="mt-3 space-y-2">
                 {rules.slice(0, 3).map((step, index) => (
-                  <li key={`${step}-${index}`} className="grid grid-cols-[28px_1fr] gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
+                  <li key={`${step}-${index}`} className="grid grid-cols-[28px_1fr] gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
                     <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-xs font-black text-indigo-600 ring-1 ring-slate-200">{index + 1}</span>
                     <span className="min-w-0 font-semibold">{step}</span>
                   </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+          {variationPreview.length > 0 ? (
+            <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+              <h3 className="text-sm font-black text-slate-950">응용 방법</h3>
+              <ul className="mt-3 space-y-2">
+                {variationPreview.map((item) => (
+                  <li key={item} className="rounded-lg bg-slate-50 px-3 py-2 text-[13px] font-semibold leading-5 text-slate-600">{item}</li>
                 ))}
               </ul>
             </section>
@@ -1001,7 +1000,11 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
               <BookOpen className="h-4 w-4" />
               수업 자료 보기
             </Link>
-            <button type="button" onClick={copyParentNote} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 sm:h-11">
+            <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 sm:h-11">
+              <Clipboard className="h-4 w-4" />
+              설명 만들기
+            </Link>
+            <button type="button" onClick={copyParentNote} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 sm:col-span-2">
               <Clipboard className="h-4 w-4" />
               {copied ? '복사 완료' : '학부모 문구 복사'}
             </button>

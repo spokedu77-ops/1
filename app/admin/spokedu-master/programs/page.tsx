@@ -17,10 +17,19 @@ import {
   Video,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  MASTER_DURATION_TAGS,
+  MASTER_SPACE_TAGS,
+  MASTER_TARGET_TAGS,
+  displayMasterDuration,
+  normalizeMasterDuration,
+  normalizeMasterSpace,
+  normalizeMasterTarget,
+} from '@/app/spokedu-master/lib/programDisplayTags';
 
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
-type FilterKey = 'all' | 'incomplete' | 'ready' | 'home-ready' | 'image-needed' | 'safety-needed' | 'spomove-needed';
+type FilterKey = 'all' | 'incomplete' | 'ready' | 'home-ready' | 'image-needed' | 'spomove-needed';
 
 type CurriculumRow = {
   id: number;
@@ -151,12 +160,11 @@ const FILTER_OPTIONS: Array<{ key: FilterKey; label: string }> = [
   { key: 'ready', label: '운영 가능' },
   { key: 'home-ready', label: '홈 노출 가능' },
   { key: 'image-needed', label: '이미지 필요' },
-  { key: 'safety-needed', label: '안전 포인트 필요' },
   { key: 'spomove-needed', label: 'SPOMOVE 연결 필요' },
 ];
 
-const SPACE_OPTIONS = ['체육관', '운동장', '교실', '작은 공간', 'ALL'];
-const TARGET_OPTIONS = ['미취학', '초등 저학년', '초등 고학년 이상', 'ALL'];
+const SPACE_OPTIONS = [...MASTER_SPACE_TAGS];
+const TARGET_OPTIONS = [...MASTER_TARGET_TAGS];
 const THEME_OPTIONS = ['육상 놀이체육', '술래형(대결)', '도전형(챌린지)', '경쟁형(개인 또는 팀 간)', '협동형(팀 내)'];
 const MOVEMENT_OPTIONS = ['동적', '정적'];
 const BODY_FUNCTION_OPTIONS = ['유연성', '민첩성', '순발력', '협응력', '근지구력', '심폐지구력', '리듬감', '평형성', '근력'];
@@ -261,7 +269,6 @@ type QualityReport = {
     equipment: boolean;
     setupNotes: boolean;
     steps: boolean;
-    safety: boolean;
     variations: boolean;
     operationTips: boolean;
     parentNote: boolean;
@@ -272,17 +279,17 @@ type QualityReport = {
 };
 
 function resolveStatus(checks: QualityReport['checks']): MaterialStatus {
-  const coreReady = checks.target && checks.space && checks.equipment && checks.steps;
+  const coreReady = checks.target && checks.space && checks.duration && checks.equipment && checks.steps;
   if (!coreReady) return 'incomplete';
 
-  const operationReady = checks.duration && coreReady;
+  const operationReady = coreReady;
   if (!operationReady) return 'needs-improvement';
 
   const hasHomeMedia = checks.video || checks.heroImage;
-  const homeReady = operationReady && hasHomeMedia && checks.safety;
+  const homeReady = operationReady && hasHomeMedia;
   if (homeReady) return 'home-ready';
 
-  const needsProductWork = operationReady && (hasHomeMedia || !checks.safety || !checks.variations || !checks.setupImage);
+  const needsProductWork = operationReady && (hasHomeMedia || !checks.variations || !checks.setupImage || !checks.parentNote);
   if (needsProductWork) return 'needs-improvement';
 
   return 'ready';
@@ -299,7 +306,6 @@ function qualityReasons(checks: QualityReport['checks']) {
     ['준비물', checks.equipment],
     ['세팅 방법', checks.setupNotes],
     ['진행 순서', checks.steps],
-    ['안전 포인트', checks.safety],
     ['난이도 조절', checks.variations],
     ['운영 팁', checks.operationTips],
     ['학부모 문구', checks.parentNote],
@@ -317,7 +323,6 @@ function missingQualityLabels(checks: QualityReport['checks']) {
     ['준비물', checks.equipment],
     ['세팅 방법', checks.setupNotes],
     ['활동 방법', checks.steps],
-    ['안전 포인트', checks.safety],
     ['응용 방법', checks.variations],
     ['학부모 문구', checks.parentNote],
     ['대표 이미지', checks.heroImage],
@@ -356,7 +361,6 @@ function getItemQuality(item: ProgramItem): QualityReport {
     equipment: item.effective.equipment.length > 0,
     setupNotes: Boolean(extractSection(checklist, '세팅 방법')),
     steps: item.effective.steps.length > 0,
-    safety: item.effective.safetyNotes.length > 0,
     variations: Boolean(extractSection(activityTip, '난이도 낮추기') || extractSection(activityTip, '난이도 높이기') || extractSection(activityTip, '응용 방법')),
     operationTips: Boolean(extractSection(activityTip, '운영 팁') || activityTip.trim()),
     parentNote: Boolean(item.effective.parentNote),
@@ -378,7 +382,6 @@ function getFormQuality(form: EditForm): QualityReport {
     equipment: splitLines(form.equipment).length > 0,
     setupNotes: Boolean(form.setupNotes.trim()),
     steps: splitLines(form.steps).length > 0,
-    safety: Boolean(form.safetyNotes.trim()),
     variations: Boolean(form.easier.trim() || form.harder.trim() || form.variations.trim()),
     operationTips: Boolean(form.operationTips.trim()),
     parentNote: Boolean(form.parentNote.trim()),
@@ -393,7 +396,6 @@ function matchesFilter(item: ProgramItem, filter: FilterKey) {
   if (filter === 'all') return true;
   if (filter === 'incomplete' || filter === 'ready' || filter === 'home-ready') return quality.status === filter;
   if (filter === 'image-needed') return !quality.checks.heroImage || !quality.checks.setupImage;
-  if (filter === 'safety-needed') return !quality.checks.safety;
   if (filter === 'spomove-needed') return !quality.checks.spomove;
   return true;
 }
@@ -408,7 +410,7 @@ function sortForFilter(items: ProgramItem[], filter: FilterKey) {
   if (filter === 'home-ready') {
     return copy.sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   }
-  if (filter === 'image-needed' || filter === 'safety-needed' || filter === 'spomove-needed' || filter === 'incomplete') {
+  if (filter === 'image-needed' || filter === 'spomove-needed' || filter === 'incomplete') {
     return copy.sort((a, b) => qualityWeight(b) - qualityWeight(a) || displayOrderOf(a) - displayOrderOf(b));
   }
   return copy;
@@ -424,9 +426,9 @@ function toForm(item: ProgramItem): EditForm {
     title: overlay?.title || item.curriculum.title,
     description: meta?.sm_coach_script || activityTip || '',
     objective: meta?.sm_objective || '',
-    target: meta?.sm_grade || '',
-    space: meta?.sm_space || '',
-    duration: meta?.sm_duration ? String(meta.sm_duration) : '',
+    target: normalizeMasterTarget(meta?.sm_grade || ''),
+    space: normalizeMasterSpace(meta?.sm_space || ''),
+    duration: normalizeMasterDuration(meta?.sm_duration) ? String(normalizeMasterDuration(meta?.sm_duration)) : '',
     theme: meta?.sm_theme || overlay?.main_theme || '',
     tags: listToCsv(meta?.sm_tags),
     videoUrl: overlay?.video_url || '',
@@ -540,7 +542,6 @@ function QualityFlags({ report }: { report: QualityReport }) {
     <div className="flex flex-wrap gap-1">
       <Flag ok={report.checks.video} label="영상" />
       <Flag ok={hasImage} label="이미지" />
-      <Flag ok={report.checks.safety} label="안전" />
       <Flag ok={report.checks.spomove} label="SPOMOVE" />
       <Flag ok={report.checks.homeExposure} label="홈" />
     </div>
@@ -552,7 +553,6 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
   const tags = csvToList(form.tags).slice(0, 4);
   const equipment = splitLines(form.equipment).slice(0, 4);
   const steps = splitLines(form.steps).slice(0, 4);
-  const safety = splitLines(form.safetyNotes).slice(0, 3);
   const mediaLabel = form.heroImageUrl || form.thumbnailUrl || form.videoUrl || item.curriculum.url || '미디어 URL 없음';
 
   return (
@@ -568,7 +568,7 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
           </div>
           <div className="p-3">
             <p className="line-clamp-2 text-[15px] font-black text-slate-950">{title}</p>
-            <p className="mt-1 text-[12px] font-bold text-slate-500">{form.target || '대상 미입력'} · {form.duration || '시간 미입력'}분</p>
+            <p className="mt-1 text-[12px] font-bold text-slate-500">{form.target || '대상 미입력'} · {displayMasterDuration(form.duration) || '시간 미입력'}</p>
             <div className="mt-2 flex flex-wrap gap-1">
               {tags.map((tag) => <span key={tag} className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-700">{tag}</span>)}
             </div>
@@ -583,7 +583,7 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
         </div>
         <div className="rounded-lg border border-slate-200 p-4">
           <p className="text-[16px] font-black text-slate-950">{title}</p>
-          <p className="mt-2 text-[12px] font-semibold leading-5 text-slate-600">{form.objective || form.description || '수업 목표 또는 설명이 필요합니다.'}</p>
+          <p className="mt-2 text-[12px] font-semibold leading-5 text-slate-600">{form.description || '한 줄 설명이 필요합니다.'}</p>
           <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600">
             <span>공간: {form.space || '미입력'}</span>
             <span>SPOMOVE: {form.relatedSpomoveIds || '없음'}</span>
@@ -606,10 +606,6 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
             <ol className="mt-1 list-decimal space-y-1 pl-4 font-semibold">
               {(steps.length ? steps : ['진행 순서 미입력']).map((step) => <li key={step}>{step}</li>)}
             </ol>
-          </div>
-          <div>
-            <p className="font-black text-slate-900">안전 포인트</p>
-            <p className="mt-1 font-semibold">{safety.join(' / ') || '미입력'}</p>
           </div>
         </div>
       </section>
@@ -701,9 +697,9 @@ export default function AdminSmProgramsPage() {
           meta: {
             sm_tags: csvToList(form.tags),
             sm_theme: form.theme.trim() || null,
-            sm_grade: form.target.trim() || null,
-            sm_space: form.space.trim() || null,
-            sm_duration: form.duration.trim() ? Number(form.duration) : null,
+            sm_grade: normalizeMasterTarget(form.target) || null,
+            sm_space: normalizeMasterSpace(form.space) || null,
+            sm_duration: normalizeMasterDuration(form.duration),
             sm_is_pro: form.dashboardVisible,
             sm_is_new: form.isNew,
             sm_is_hot: form.showHome || form.isHot || form.publicationStatus === 'featured',
@@ -914,14 +910,24 @@ export default function AdminSmProgramsPage() {
                   <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><Sparkles size={16} />기본 정보</h3>
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     <Field label="수업명"><TextInput value={form.title} onChange={(e) => updateForm('title', e.target.value)} /></Field>
-                    <Field label="시간(분)"><TextInput type="number" min={0} value={form.duration} onChange={(e) => updateForm('duration', e.target.value)} /></Field>
+                    <Field label="시간">
+                      <ChoiceChips
+                        options={MASTER_DURATION_TAGS.map((item) => item.label)}
+                        selected={displayMasterDuration(form.duration) ? [displayMasterDuration(form.duration)] : []}
+                        onChange={(next) => {
+                          const selected = next.at(-1) ?? '';
+                          const option = MASTER_DURATION_TAGS.find((item) => item.label === selected);
+                          updateForm('duration', option ? String(option.value) : '');
+                        }}
+                      />
+                    </Field>
                   </div>
                   <div className="mt-4 grid gap-4">
                     <Field label="공간">
-                      <ChoiceChips options={SPACE_OPTIONS} selected={csvToList(form.space)} onChange={(next) => updateForm('space', listToCsvValue(next))} />
+                      <ChoiceChips options={SPACE_OPTIONS} selected={form.space ? [normalizeMasterSpace(form.space)] : []} onChange={(next) => updateForm('space', next.at(-1) ?? '')} />
                     </Field>
                     <Field label="대상">
-                      <ChoiceChips options={TARGET_OPTIONS} selected={csvToList(form.target)} onChange={(next) => updateForm('target', listToCsvValue(next))} />
+                      <ChoiceChips options={TARGET_OPTIONS} selected={form.target ? [normalizeMasterTarget(form.target)] : []} onChange={(next) => updateForm('target', next.at(-1) ?? '')} />
                     </Field>
                     <Field label="주제/테마">
                       <ChoiceChips options={THEME_OPTIONS} selected={csvToList(form.theme)} onChange={(next) => updateForm('theme', listToCsvValue(next))} />
@@ -952,7 +958,6 @@ export default function AdminSmProgramsPage() {
                   </div>
                   <div className="mt-4 grid gap-4">
                     <Field label="한 줄 설명"><TextArea rows={4} value={form.description} onChange={(e) => updateForm('description', e.target.value)} /></Field>
-                    <Field label="수업 목표"><TextArea rows={5} value={form.objective} onChange={(e) => updateForm('objective', e.target.value)} /></Field>
                   </div>
                 </section>
 
@@ -972,7 +977,6 @@ export default function AdminSmProgramsPage() {
                     <Field label="준비물"><TextArea rows={7} value={form.equipment} onChange={(e) => updateForm('equipment', e.target.value)} /></Field>
                     <Field label="세팅 방법"><TextArea rows={7} value={form.setupNotes} onChange={(e) => updateForm('setupNotes', e.target.value)} /></Field>
                     <Field label="활동 전 사전 교육"><TextArea rows={6} value={form.briefingNotes} onChange={(e) => updateForm('briefingNotes', e.target.value)} /></Field>
-                    <Field label="안전 포인트"><TextArea rows={6} value={form.safetyNotes} onChange={(e) => updateForm('safetyNotes', e.target.value)} /></Field>
                   </div>
                 </section>
 
@@ -1013,6 +1017,8 @@ export default function AdminSmProgramsPage() {
                 <details className="rounded-lg border border-slate-200 bg-white p-5">
                   <summary className="cursor-pointer text-[15px] font-black text-slate-900">고급 설정</summary>
                   <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    <Field label="기존 수업 목표"><TextArea rows={5} value={form.objective} onChange={(e) => updateForm('objective', e.target.value)} /></Field>
+                    <Field label="기존 안전 포인트"><TextArea rows={5} value={form.safetyNotes} onChange={(e) => updateForm('safetyNotes', e.target.value)} /></Field>
                     <Field label="썸네일 이미지 URL"><TextInput value={form.thumbnailUrl} onChange={(e) => updateForm('thumbnailUrl', e.target.value)} placeholder="/images/spokedu-master/programs/.../thumb.jpeg" /></Field>
                     <Field label="갤러리 이미지 URL(줄바꿈 또는 쉼표 구분)"><TextArea rows={5} value={form.galleryImageUrls} onChange={(e) => updateForm('galleryImageUrls', e.target.value)} placeholder="/images/.../scene-1.jpeg&#10;/images/.../scene-2.jpeg" /></Field>
                     <Field label="관련 SPOMOVE preset/drill"><TextArea rows={5} value={form.relatedSpomoveIds} onChange={(e) => updateForm('relatedSpomoveIds', e.target.value)} placeholder="reactTrain, simon" /></Field>

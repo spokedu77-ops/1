@@ -59,15 +59,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const check = async () => {
       const now = Date.now();
       const mem = cache;
-      if (mem && now - mem.ts < CACHE_TTL) {
-        if (mem.admin) setIsAdmin(true);
-        else router.replace('/teacher/my-classes');
+      if (mem?.admin && now - mem.ts < CACHE_TTL) {
+        setIsAdmin(true);
         return;
       }
       const stored = readStorageCache();
-      if (stored && now - stored.ts < CACHE_TTL) {
-        if (stored.admin) setIsAdmin(true);
-        else router.replace('/teacher/my-classes');
+      if (stored?.admin && now - stored.ts < CACHE_TTL) {
+        setIsAdmin(true);
         return;
       }
 
@@ -86,12 +84,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return;
       }
 
-      cache = { admin: !!json.admin, ts: Date.now() };
-      writeStorageCache(cache);
-
       if (json.admin) {
+        cache = { admin: true, ts: Date.now() };
+        writeStorageCache(cache);
         setIsAdmin(true);
-      } else if (json.reason === 'no-session') {
+        return;
+      }
+
+      try {
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+      cache = null;
+
+      if (json.reason === 'no-session') {
         router.replace('/login');
       } else {
         router.replace('/teacher/my-classes');

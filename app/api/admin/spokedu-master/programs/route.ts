@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
+import {
+  normalizeMasterDuration,
+  normalizeMasterSpace,
+  normalizeMasterTarget,
+} from '@/app/spokedu-master/lib/programDisplayTags';
 
 type MaterialStatus = 'incomplete' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
@@ -122,12 +127,11 @@ function completeness(input: {
   duration: string;
   equipment: string[];
   steps: string[];
-  safetyNotes: string[];
   videoUrl: string | null;
 }): MaterialStatus {
-  const coreReady = Boolean(input.target && input.space && input.equipment.length > 0 && input.steps.length > 0);
+  const coreReady = Boolean(input.target && input.space && input.duration && input.equipment.length > 0 && input.steps.length > 0);
   if (!coreReady) return 'incomplete';
-  const homeReady = Boolean(input.videoUrl && input.duration && input.safetyNotes.length > 0);
+  const homeReady = Boolean(input.videoUrl);
   return homeReady ? 'home-ready' : 'ready';
 }
 
@@ -174,10 +178,10 @@ async function loadPrograms() {
     const checklist = overlay?.checklist ? splitLines(overlay.checklist) : safeArray(row.check_list);
     const steps = overlay?.activity_method ? splitLines(overlay.activity_method) : safeArray(row.steps);
     const safetyNotes = extractSection(overlay?.checklist, '안전 포인트');
-    const target = (meta?.sm_grade ?? overlay?.group_size ?? '').trim();
-    const space = (meta?.sm_space ?? '').trim();
-    const duration = meta?.sm_duration ? String(meta.sm_duration) : '';
-    const status = completeness({ target, space, duration, equipment, steps, safetyNotes, videoUrl });
+    const target = normalizeMasterTarget(meta?.sm_grade ?? overlay?.group_size ?? '');
+    const space = normalizeMasterSpace(meta?.sm_space ?? '');
+    const duration = normalizeMasterDuration(meta?.sm_duration) ? String(normalizeMasterDuration(meta?.sm_duration)) : '';
+    const status = completeness({ target, space, duration, equipment, steps, videoUrl });
 
     return {
       curriculum: {
